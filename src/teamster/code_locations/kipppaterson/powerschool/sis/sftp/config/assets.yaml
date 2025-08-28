@@ -26,6 +26,7 @@ assets:
   - asset_name: schoolstaff
   - asset_name: sections
   - asset_name: spenrollments
+  - asset_name: student_email
   - asset_name: studentcontactassoc
   - asset_name: studentcontactdetail
   - asset_name: studentcorefields

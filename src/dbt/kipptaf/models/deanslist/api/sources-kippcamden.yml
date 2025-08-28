@@ -33,14 +33,6 @@ sources:
               - kippcamden
               - deanslist
               - stg_deanslist__followups
-      - name: stg_deanslist__homework
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - stg_deanslist__homework
       - name: stg_deanslist__incidents
         meta:
           dagster:
@@ -49,14 +41,6 @@ sources:
               - kippcamden
               - deanslist
               - stg_deanslist__incidents
-      - name: stg_deanslist__lists
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - stg_deanslist__lists
       - name: stg_deanslist__terms
         meta:
           dagster:
@@ -75,14 +59,6 @@ sources:
               - kippcamden
               - deanslist
               - stg_deanslist__users
-      - name: stg_deanslist__dff_stats
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - stg_deanslist__dff_stats
       - name: int_deanslist__incidents__penalties
         meta:
           dagster:
@@ -91,14 +67,6 @@ sources:
               - kippcamden
               - deanslist
               - int_deanslist__incidents__penalties
-      - name: int_deanslist__incidents__actions
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - int_deanslist__incidents__actions
       - name: int_deanslist__incidents__custom_fields
         meta:
           dagster:

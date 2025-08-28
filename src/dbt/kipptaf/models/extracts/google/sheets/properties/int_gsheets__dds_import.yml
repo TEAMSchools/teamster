@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: int_gsheets__dds_import
+    config:
+      enabled: false
     columns:
       - name: students_student_number
         data_type: int64

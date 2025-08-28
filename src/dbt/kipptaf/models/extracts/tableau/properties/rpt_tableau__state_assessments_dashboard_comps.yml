@@ -1,0 +1,5 @@
+version: 2
+models:
+  - name: rpt_tableau__state_assessments_dashboard_comps
+    conifg:
+      enabled: false

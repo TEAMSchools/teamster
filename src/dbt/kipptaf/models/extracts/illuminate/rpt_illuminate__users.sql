@@ -1,3 +1,37 @@
+with
+    union_relations as (
+        select
+            employee_number,
+            powerschool_teacher_number,
+            family_name_1,
+            given_name,
+            user_principal_name,
+            sam_account_name,
+            uac_account_disable,
+            home_business_unit_name,
+            job_title,
+        from {{ ref("int_people__staff_roster") }}
+
+        union all
+
+        select
+            null as employee_number,
+
+            teachernumber as powerschool_teacher_number,
+            last_name as family_name_1,
+            first_name as given_name,
+            email_addr as user_principal_name,
+            email_addr as sam_account_name,
+
+            if(ptaccess = 1 or psaccess = 1, 0, 2) as uac_account_disable,
+
+            'KIPP Paterson' as home_business_unit_name,
+
+            title as job_title,
+        from {{ ref("stg_powerschool__users") }}
+        where _dbt_source_relation like '%kipppaterson%'
+    )
+
 -- trunk-ignore(sqlfluff/ST06)
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
@@ -45,4 +79,4 @@ select
     null as `30 Phone1`,
     null as `31 Phone2`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("int_people__staff_roster") }}
+from union_relations

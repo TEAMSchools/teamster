@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: rpt_tableau__pm_outlier_detection
+    config:
+      enabled: false
     columns:
       - name: observer_employee_number
         data_type: int64
