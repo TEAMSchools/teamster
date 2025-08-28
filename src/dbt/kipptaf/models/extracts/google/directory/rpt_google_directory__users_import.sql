@@ -13,7 +13,7 @@ with
 
             if(enroll_status = 0, false, true) as suspended,
         from {{ ref("int_extracts__student_enrollments") }}
-        where rn_all = 1 and student_email is not null
+        where rn_all = 1 and student_email is not null and region != 'Paterson'
     ),
 
     with_google as (
