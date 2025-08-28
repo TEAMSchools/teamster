@@ -15,7 +15,7 @@ select
     e.student_number,
 from {{ ref("int_pearson__all_assessments") }} as a
 left join
-    {{ ref("base_powerschool__student_enrollments") }} as e
+    {{ ref("int_extracts__student_enrollments") }} as e
     on a.localstudentidentifier = e.student_number
     and a.academic_year = e.academic_year
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
