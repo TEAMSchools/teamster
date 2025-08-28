@@ -103,7 +103,7 @@ with
                 sum(max_scale_score) over (partition by student_number, scope)
             ) as superscore,
 
-        from max_score
+        from running_max_score
         where score_type not in ('act_composite', 'sat_total_score')
     ),
 
@@ -158,7 +158,7 @@ select
     mr.max_running_scale_score,
 
     round(coalesce(d.superscore, a.superscore)) as superscore,
-    round(dr.running_superscore) as running_superscore,
+    round(dr.running_superscore, 1) as running_superscore,
 
 from scores as s
 left join
