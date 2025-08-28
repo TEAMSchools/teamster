@@ -20,27 +20,27 @@ def main() -> None:
 
     manifest = json.loads(s=path.read_text())
 
-    nodes = []
-    for _, v in manifest["nodes"].items():
-        nodes.append(
-            {
-                "name": v["name"],
-                "resource_type": v["resource_type"],
-                "relation_name": v["relation_name"],
-                "enabled": v["config"]["enabled"],
-            }
-        )
+    # nodes = []
+    # for _, v in manifest["nodes"].items():
+    #     nodes.append(
+    #         {
+    #             "name": v["name"],
+    #             "resource_type": v["resource_type"],
+    #             "relation_name": v["relation_name"],
+    #             "enabled": v["config"]["enabled"],
+    #         }
+    #     )
 
-    sources = []
-    for _, v in manifest["sources"].items():
-        sources.append(
-            {
-                "name": v["name"],
-                "resource_type": v["resource_type"],
-                "relation_name": v["relation_name"],
-                "enabled": v["config"]["enabled"],
-            }
-        )
+    # sources = []
+    # for _, v in manifest["sources"].items():
+    #     sources.append(
+    #         {
+    #             "name": v["name"],
+    #             "resource_type": v["resource_type"],
+    #             "relation_name": v["relation_name"],
+    #             "enabled": v["config"]["enabled"],
+    #         }
+    #     )
 
     disabled = []
     for _, v in manifest["disabled"].items():
@@ -53,7 +53,8 @@ def main() -> None:
             }
         )
 
-    models = nodes + sources + disabled
+    # models = nodes + sources + disabled
+    models = disabled
 
     with open(f"{args.project}.csv", "w", newline="") as output_file:
         dict_writer = csv.DictWriter(f=output_file, fieldnames=models[0].keys())

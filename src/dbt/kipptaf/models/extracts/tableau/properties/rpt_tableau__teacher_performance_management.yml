@@ -1,5 +1,5 @@
 version: 2
 models:
   - name: rpt_tableau__teacher_performance_management
-    conifg:
+    config:
       enabled: false

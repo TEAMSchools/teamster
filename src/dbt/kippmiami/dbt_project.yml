@@ -51,47 +51,15 @@ models:
             +enabled: false
           stg_powerschool__gpprogresssubjectenrolled:
             +enabled: false
-          stg_powerschool__gpprogresssubjectrequested:
-            +enabled: false
-          stg_powerschool__gpprogresssubjectwaived:
-            +enabled: false
-          stg_powerschool__gpprogresssubjwaivedapplied:
-            +enabled: false
-          stg_powerschool__gpselectedcrs:
-            +enabled: false
-          stg_powerschool__gpselectedcrtype:
-            +enabled: false
-          stg_powerschool__gpselector:
-            +enabled: false
-          stg_powerschool__gpstudentwaiver:
-            +enabled: false
-          stg_powerschool__gptarget:
-            +enabled: false
-          stg_powerschool__gpversion:
-            +enabled: false
-          stg_powerschool__gradplan:
-            +enabled: false
-          stg_powerschool__period:
-            +enabled: false
           stg_powerschool__s_nj_crs_x:
             +enabled: false
           stg_powerschool__s_nj_ren_x:
             +enabled: false
           stg_powerschool__s_nj_stu_x:
             +enabled: false
-          stg_powerschool__s_nj_usr_x:
-            +enabled: false
           stg_powerschool__s_stu_x:
             +enabled: false
-          stg_powerschool__sced_code_mapping:
-            +enabled: false
           stg_powerschool__studentrace:
-            +enabled: false
-          stg_powerschool__u_def_ext_students:
-            +enabled: false
-          stg_powerschool__u_storedgrades_de:
-            +enabled: false
-          stg_powerschool__prefs:
             +enabled: false
   renlearn:
     +materialized: table
