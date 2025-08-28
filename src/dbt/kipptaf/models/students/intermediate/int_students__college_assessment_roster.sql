@@ -67,7 +67,7 @@ with
         select
             student_number,
             scope,
-            admin_season,
+            grade_season,
 
             if(
                 scope = 'ACT',
@@ -89,7 +89,7 @@ with
         }}
     )
 
-select s.*,
+select s.*, rm.running_max_scale_score,
 from scores as s
 left join
     running_max_score as rm
