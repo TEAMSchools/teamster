@@ -13,7 +13,7 @@ with
 
             if(enroll_status = 0, false, true) as suspended,
         from {{ ref("base_powerschool__student_enrollments") }}
-        where rn_all = 1 and student_email_google is not null
+        where rn_all = 1 and student_email_google is not null and region != 'Paterson'
     ),
 
     with_google as (

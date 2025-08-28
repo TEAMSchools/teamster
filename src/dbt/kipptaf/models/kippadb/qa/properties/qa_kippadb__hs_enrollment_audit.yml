@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: qa_kippadb__hs_enrollment_audit
+    config:
+      enabled: false
     columns:
       - name: enrollment_id
         data_type: string

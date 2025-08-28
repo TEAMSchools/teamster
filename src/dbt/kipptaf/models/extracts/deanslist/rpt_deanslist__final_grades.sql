@@ -16,8 +16,7 @@ with
             enr.sections_section_number,
             enr.students_student_number,
             enr.teacher_lastfirst,
-
-            s.grade_level,
+            enr.students_grade_level as grade_level,
 
             rt.name as term_name,
             rt.code as term_code,
@@ -26,10 +25,6 @@ with
             coalesce(enr.cc_currenttardies, 0) as currenttardies,
             abs(enr.courses_sched_do_not_print - 1) as include_grades_display,
         from {{ ref("base_powerschool__course_enrollments") }} as enr
-        inner join
-            {{ ref("stg_powerschool__students") }} as s
-            on enr.students_student_number = s.student_number
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="s") }}
         inner join
             {{ ref("stg_reporting__terms") }} as rt
             on enr.cc_schoolid = rt.school_id

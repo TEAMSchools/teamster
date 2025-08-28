@@ -4,6 +4,7 @@ models:
     config:
       contract:
         enforced: true
+      enabled: false
     columns:
       - name: dob
         data_type: string
