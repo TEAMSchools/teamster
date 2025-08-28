@@ -63,7 +63,7 @@ select
     g.admin_season as benchmark_season,
     g.grade_level_standard as benchmark_goal,
 
-from {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
+from {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
 inner join
     {{ ref("stg_reporting__terms") }} as t
     on e.academic_year = t.academic_year
