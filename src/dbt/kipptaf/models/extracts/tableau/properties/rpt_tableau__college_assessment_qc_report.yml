@@ -1,5 +1,5 @@
 version: 2
 models:
   - name: rpt_tableau__college_assessment_qc_report
-    conifg:
+    config:
       enabled: false
