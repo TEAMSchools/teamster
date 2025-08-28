@@ -73,7 +73,7 @@ with
                 scope = 'ACT',
                 avg(running_max_scale_score) over (partition by student_number, scope),
                 sum(running_max_scale_score) over (partition by student_number, scope)
-            ) as superscore,
+            ) as runnning_superscore,
 
         from running_max_score
         where score_type not in ('act_composite', 'sat_total_score')
@@ -89,10 +89,14 @@ with
         }}
     )
 
-select s.*, rm.running_max_scale_score,
+select s.*, rm.running_max_scale_score, dr.runnning_superscore,
 from scores as s
 left join
     running_max_score as rm
     on s.student_number = rm.student_number
     and s.grade_season = rm.grade_season
     and s.score_type = rm.score_type
+left join
+    dedup_runnning_superscore as dr
+    on s.student_number = dr.student_number
+    and s.scope = dr.scope
