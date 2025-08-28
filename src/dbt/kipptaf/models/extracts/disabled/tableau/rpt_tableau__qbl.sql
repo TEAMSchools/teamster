@@ -115,10 +115,10 @@ left join
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
-    and (co.grade_level between 0 and 8)
     and co.enroll_status = 0
-    and co.region != 'Miami'
     and not co.is_self_contained
+    and co.grade_level between 0 and 8
+    and co.region != 'Miami'
 
 union all
 
@@ -217,8 +217,8 @@ left join
 left join
     {{ ref("int_assessments__academic_goals") }} as ag
     on asr.academic_year = ag.academic_year
-    and co.schoolid = ag.school_id
     and asr.subject_area = ag.illuminate_subject_area
+    and co.schoolid = ag.school_id
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on co.student_number = sf.student_number
@@ -230,7 +230,7 @@ left join
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
-    and (co.grade_level between 9 and 12)
     and co.enroll_status = 0
-    and co.region != 'Miami'
     and not co.is_self_contained
+    and co.grade_level between 9 and 12
+    and co.region != 'Miami'

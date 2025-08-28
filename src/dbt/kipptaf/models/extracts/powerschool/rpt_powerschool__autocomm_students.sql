@@ -43,10 +43,10 @@ select
     if(se.enroll_status = 0, 1, 0) as allowwebaccess,
     if(se.is_retained_year, 1, 0) as retained_tf,
 
+    /* only import password for new students */
     if(
         s.student_web_password is not null, null, se.student_web_password
     ) as student_web_password,
-
     if(
         s.student_web_password is not null, null, se.student_web_password
     ) as web_password,
@@ -67,9 +67,9 @@ select
     case
         when se.grade_level = 12 and pfs.fafsa = 'N'
         then pfs.fafsa
-        when se.grade_level = 12 and f.overgrad_fafsa_opt_out = 'Yes'
+        when se.grade_level = 12 and se.overgrad_fafsa_opt_out = 'Yes'
         then 'E'
-        when se.grade_level = 12 and f.has_fafsa = 'Yes'
+        when se.grade_level = 12 and se.has_fafsa = 'Yes'
         then 'C'
     end as s_stu_x__fafsa,
 
@@ -87,12 +87,6 @@ left join
     grad_path_pivot as g
     on se.student_number = g.student_number
     and {{ union_dataset_join_clause(left_alias="se", right_alias="g") }}
-left join
-    {{ ref("int_extracts__student_enrollments") }} as f
-    on se.academic_year = f.academic_year
-    and se.student_number = f.student_number
-    and {{ union_dataset_join_clause(left_alias="se", right_alias="f") }}
-    and f.rn_year = 1
 left join
     {{ ref("stg_powerschool__s_stu_x") }} as pfs
     on se.students_dcid = pfs.studentsdcid

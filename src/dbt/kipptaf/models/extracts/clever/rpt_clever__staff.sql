@@ -47,11 +47,11 @@ with
         from {{ ref("int_people__staff_roster") }} as sr
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
-            on (sch.state_excludefromreporting = 0)
+            on sch.state_excludefromreporting = 0
         where
-            not sr.is_prestart
+            sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
+            and not sr.is_prestart
             and sr.assignment_status not in ('Terminated', 'Deceased')
-            and sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
             and (
                 sr.home_department_name
                 in ('Data', 'Teaching and Learning', 'Executive')
@@ -79,8 +79,8 @@ with
             and sch.state_excludefromreporting = 0
         where
             not sr.is_prestart
-            and sr.assignment_status not in ('Terminated', 'Deceased')
             and sr.home_work_location_powerschool_school_id = 0
+            and sr.assignment_status not in ('Terminated', 'Deceased')
 
         union all
 
