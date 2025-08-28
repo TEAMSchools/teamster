@@ -4,6 +4,7 @@ models:
     config:
       contract:
         enforced: true
+      enabled: false
     columns:
       - name: name
         data_type: string
