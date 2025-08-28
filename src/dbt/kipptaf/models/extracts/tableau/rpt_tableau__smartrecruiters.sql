@@ -1,7 +1,8 @@
 with
 
     date_spine as (
-        select date_week_start, date_add(date_week, interval 6 day) as date_week_end,
+        select
+            date_week_start, date_add(date_week_start, interval 6 day) as date_week_end,
         from
             unnest(
                 generate_date_array(
@@ -11,7 +12,7 @@ with
                     interval 1 week
                 )
             ) as date_week_start
-    )
+    ),
 
     applications as (
         select
