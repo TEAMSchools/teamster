@@ -26,7 +26,7 @@ def main() -> None:
             {
                 "name": v["name"],
                 "resource_type": v["resource_type"],
-                "relation_type": v["relation_name"],
+                "relation_name": v["relation_name"],
                 "enabled": v["config"]["enabled"],
             }
         )
@@ -37,7 +37,7 @@ def main() -> None:
             {
                 "name": v["name"],
                 "resource_type": v["resource_type"],
-                "relation_type": v["relation_name"],
+                "relation_name": v["relation_name"],
                 "enabled": v["config"]["enabled"],
             }
         )
@@ -48,7 +48,7 @@ def main() -> None:
             {
                 "name": v[0]["name"],
                 "resource_type": v[0]["resource_type"],
-                "relation_type": v[0]["relation_name"],
+                "relation_name": v[0]["relation_name"],
                 "enabled": v[0]["config"]["enabled"],
             }
         )
