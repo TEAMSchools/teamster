@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: int_adp_workforce_now__workers__work_assignments__custom_fields
+    config:
+      enabled: false
     columns:
       - name: associate_oid
         data_type: string
