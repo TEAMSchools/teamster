@@ -1,0 +1,5 @@
+version: 2
+models:
+  - name: rpt_tableau__student_attrition_over_time
+    config:
+      enabled: false

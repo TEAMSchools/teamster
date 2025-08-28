@@ -7,13 +7,7 @@ import subprocess
 
 
 def main() -> None:
-    commands = [
-        "uv self update",
-        "uv tool upgrade datamodel-code-generator dagster-dg",
-        "uv lock --upgrade",
-        "uv sync",
-        "trunk upgrade -y",
-    ]
+    commands = ["uv lock --upgrade", "uv sync", "trunk upgrade -y"]
 
     for cmd in commands:
         # trunk-ignore(bandit/B603)
