@@ -22,6 +22,10 @@ select
 
     s.admin_season,
 
+    case
+        s.admin_season when 'BOY' then 1 when 'MOY' then 2 else 3
+    end as admin_season_order,
+
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     {{ ref("int_assessments__college_assessment") }} as a
