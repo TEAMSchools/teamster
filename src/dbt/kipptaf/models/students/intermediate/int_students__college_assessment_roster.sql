@@ -83,4 +83,4 @@ with
     )
 
 select *,
-from running_superscore
+from scores
