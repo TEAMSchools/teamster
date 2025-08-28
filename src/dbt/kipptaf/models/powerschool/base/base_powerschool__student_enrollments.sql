@@ -39,13 +39,6 @@ with
 select
     ar.* except (lep_status, lunchstatus, spedlep),
 
-    sr.mail as advisor_email,
-    sr.work_cell as advisor_phone,
-
-    sl.username as student_web_id,
-    sl.default_password as student_web_password,
-    sl.google_email as student_email_google,
-
     /* regional differences */
     suf.fleid,
     suf.newark_enrollment_number,
@@ -76,6 +69,9 @@ select
     njs.lepbegindate,
     njs.lependdate,
 
+    sr.mail as advisor_email,
+    sr.work_cell as advisor_phone,
+
     tpd.total_balance as lunch_balance,
 
     adb.id as salesforce_contact_id,
@@ -92,6 +88,10 @@ select
     coalesce(njr.pid_504_tf, suf.is_504, false) as is_504,
 
     coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,
+
+    if(ar.region = 'Paterson', se.email, sl.google_email) as student_email_google,
+    if(ar.region = 'Paterson', null, sl.username) as student_web_id,
+    if(ar.region = 'Paterson', null, sl.default_password) as student_web_password,
 
     if(ar.region = 'Miami' and fte.survey_2 is not null, true, false) as is_fldoe_fte_2,
     if(ar.region = 'Miami' and fte.survey_3 is not null, true, false) as is_fldoe_fte_3,
@@ -163,12 +163,6 @@ select
     end as salesforce_contact_college_match_gpa_band,
 from with_region as ar
 left join
-    {{ ref("int_people__staff_roster") }} as sr
-    on ar.advisor_teachernumber = sr.powerschool_teacher_number
-left join
-    {{ ref("stg_people__student_logins") }} as sl
-    on ar.student_number = sl.student_number
-left join
     {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
     on ar.students_dcid = suf.studentsdcid
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="suf") }}
@@ -180,6 +174,15 @@ left join
     {{ ref("stg_powerschool__s_nj_ren_x") }} as njr
     on ar.reenrollments_dcid = njr.reenrollmentsdcid
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="njr") }}
+left join
+    {{ ref("stg_powerschool__student_email") }} as se
+    on ar.student_number = se.student_number
+left join
+    {{ ref("stg_people__student_logins") }} as sl
+    on ar.student_number = sl.student_number
+left join
+    {{ ref("int_people__staff_roster") }} as sr
+    on ar.advisor_teachernumber = sr.powerschool_teacher_number
 left join
     {{ ref("int_edplan__njsmart_powerschool_union") }} as sped
     on ar.student_number = sped.student_number
