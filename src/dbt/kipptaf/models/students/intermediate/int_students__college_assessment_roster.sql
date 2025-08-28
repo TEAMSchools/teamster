@@ -82,5 +82,5 @@ with
         where score_type not in ('act_composite', 'sat_total_score')
     )
 
-select *
+select *,
 from running_superscore
