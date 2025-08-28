@@ -1,5 +1,17 @@
 with
-    date_spine as ()
+
+    date_spine as (
+        select date_week_start, date_add(date_week, interval 6 day) as date_week_end,
+        from
+            unnest(
+                generate_date_array(
+                    /* first Monday of reporting period for recruiters*/
+                    '2020-10-05',
+                    current_date('{{ var("local_timezone") }}'),
+                    interval 1 week
+                )
+            ) as date_week_start
+    )
 
     applications as (
         select
@@ -77,5 +89,9 @@ with
             )
     )
 
-select *,
+select applications_unpivoted.*, date_spine.date_week_start, date_spine.date_week_end,
 from applications_unpivoted
+inner join
+    date_spine
+    on applications_unpivoted.date_val
+    between date_spine.date_week_start and date_spine.date_week_end
