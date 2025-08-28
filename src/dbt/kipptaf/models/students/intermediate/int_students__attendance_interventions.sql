@@ -56,6 +56,13 @@ with
                 order_by="call_date desc",
             )
         }}
+    ),
+
+    schoolid_crosswalk as (
+        select powerschool_school_id, deanslist_school_id,
+        from {{ ref("stg_people__location_crosswalk") }}
+        where deanslist_school_id is not null and powerschool_school_id is not null
+        group by powerschool_school_id, deanslist_school_id
     )
 
 select
@@ -90,6 +97,4 @@ left join
     and {{ union_dataset_join_clause(left_alias="ada", right_alias="c") }}
     and sc.commlog_reason = c.reason
     and {{ union_dataset_join_clause(left_alias="sc", right_alias="c") }}
-left join
-    {{ ref("stg_people__location_crosswalk") }} as lc
-    on c.dl_school_id = lc.deanslist_school_id
+left join schoolid_crosswalk as lc on c.dl_school_id = lc.deanslist_school_id
