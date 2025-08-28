@@ -1,5 +1,4 @@
 with
-
     date_spine as (
         select
             date_week_start, date_add(date_week_start, interval 6 day) as date_week_end,
@@ -75,7 +74,20 @@ with
 
     ),
 
-    applications_unpivoted as (
+    final as (
+        select date_spine.*, applications.*,
+        from date_spine
+        left join
+            applications
+            on date_spine.date_week_end > applications.new_date
+            and (
+                date_spine.date_week_end < applications.rejected_date
+                or applications.rejected_date is not null
+            )
+            and (date_spine.date_week_end < applications.hired_date)
+    )
+
+{# applications_unpivoted as (
         select *,
         from
             applications unpivot (
@@ -88,11 +100,18 @@ with
                     phone_screen_requested_date
                 )
             )
-    )
+    ), #}
+{# final as (
 
-select applications_unpivoted.*, date_spine.date_week_start, date_spine.date_week_end,
-from applications_unpivoted
-inner join
-    date_spine
-    on applications_unpivoted.date_val
-    between date_spine.date_week_start and date_spine.date_week_end
+        select
+            applications_unpivoted.*,
+            date_spine.date_week_start,
+            date_spine.date_week_end,
+        from date_spine
+        left join
+            applications_unpivoted
+            on applications_unpivoted.date_val
+            between date_spine.date_week_start and date_spine.date_week_end
+    ) #}
+select *,
+from final
