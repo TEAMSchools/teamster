@@ -124,13 +124,7 @@ with
         where course_number != 'LOG300'
     ),
 
-    cc_overlap as (
-        select _dbt_source_relation, studyear, course_number,
-        from cc_lag
-        where dateleft <= dateleft_prev
-    ),
-
-    cc_overlap as (
+    enr_dupes as (
         select
             cc._dbt_source_relation,
             cc.cc_academic_year,
@@ -141,10 +135,11 @@ with
             cc.students_student_number,
         from {{ ref("base_powerschool__course_enrollments") }} as cc
         inner join
-            cc_overlap as cco
+            cc_lag as cco
             on cc.cc_studyear = cco.studyear
             and cc.cc_course_number = cco.course_number
             and {{ union_dataset_join_clause(left_alias="cc", right_alias="cco") }}
+            and cco.dateleft <= cco.dateleft_prev
     )
 
 select
@@ -328,7 +323,7 @@ select distinct
 
 from student_enrollments as se
 inner join
-    cc_overlap as ceo
+    enr_dupes as ceo
     on se.student_number = ceo.students_student_number
     and se.academic_year = ceo.cc_academic_year
     and {{ union_dataset_join_clause(left_alias="se", right_alias="ceo") }}
