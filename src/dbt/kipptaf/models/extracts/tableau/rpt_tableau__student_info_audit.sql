@@ -22,7 +22,7 @@ with
             se._dbt_source_relation,
             se.student_number,
             se.state_studentnumber,
-            se.lastfirst,
+            se.student_name as lastfirst,
             se.enroll_status,
             se.gender,
             se.ethnicity,
@@ -31,7 +31,7 @@ with
             se.region,
             se.schoolid,
             se.school_name,
-            se.school_abbreviation,
+            se.school as school_abbreviation,
             se.grade_level,
             se.advisory_name,
             se.fteid,
@@ -87,7 +87,7 @@ with
                 then 1
                 else 0
             end as race_eth_flag,
-        from {{ ref("base_powerschool__student_enrollments") }} as se
+        from {{ ref("int_extracts__student_enrollments") }} as se
         left join
             {{ ref("stg_powerschool__fte") }} as fte
             on se.schoolid = fte.schoolid

@@ -4,14 +4,14 @@ with
             co.student_number,
             co.academic_year,
             co.grade_level,
-            co.school_abbreviation as school_name,
+            co.school as school_name,
 
             b.behavior_date,
             b.behavior,
             b.notes,
 
             cast(left(b.behavior, length(b.behavior) - 5) as int) as cs_hours,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         left join
             {{ ref("stg_deanslist__behavior") }} as b
             on co.student_number = b.student_school_id

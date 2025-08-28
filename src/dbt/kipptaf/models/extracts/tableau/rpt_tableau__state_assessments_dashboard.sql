@@ -73,9 +73,9 @@ with
             on e.students_student_number = c.students_student_number
             and e.courses_credittype = c.courses_credittype
         where
-            e.cc_academic_year >= {{ var("current_academic_year") - 7 }}
-            and e.rn_credittype_year = 1
+            e.rn_credittype_year = 1
             and not e.is_dropped_section
+            and e.cc_academic_year >= {{ var("current_academic_year") - 7 }}
             and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
     ),
 
@@ -85,7 +85,9 @@ with
             test_name,
             test_code,
             region,
+
             'Spring' as season,
+
             {% for entity in comparison_entities %}
                 avg(
                     case
@@ -149,15 +151,17 @@ with
 
         from {{ ref("int_pearson__all_assessments") }}
         where
-            academic_year >= {{ var("current_academic_year") - 7 }}
-            and testscalescore is not null
+            testscalescore is not null
+            and academic_year >= {{ var("current_academic_year") - 7 }}
 
         union all
 
         select
             _dbt_source_relation,
             academic_year,
+
             null as localstudentidentifier,
+
             student_id as state_id,
             assessment_name,
             discipline,
@@ -165,12 +169,16 @@ with
             performance_level as performance_band_level,
             is_proficient,
             achievement_level as performance_band,
+
             null as lep_status,
             null as is_504,
             null as iep_status,
             null as race_ethnicity,
+
             cast(assessment_grade as int) as test_grade,
+
             'Actual' as results_type,
+
             administration_window as `admin`,
             season,
             assessment_subject as `subject`,
@@ -178,6 +186,7 @@ with
 
         from {{ ref("int_fldoe__all_assessments") }}
         where scale_score is not null
+
     /* disabled until next december
         union all
 
@@ -301,7 +310,7 @@ select
     a.subject,
     a.test_code,
     a.test_grade,
-    a.`admin`,
+    a.admin,
     a.season,
     a.score,
     a.performance_band,
@@ -345,8 +354,6 @@ inner join
     on a.academic_year = e.academic_year
     and a.localstudentidentifier = e.student_number
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
-    and a.results_type = 'Actual'
-    and a.academic_year >= {{ var("current_academic_year") - 7 }}
     and e.rn_year = 1
     and e.grade_level > 2
 left join
@@ -381,6 +388,9 @@ left join
     and a.localstudentidentifier = sf2.student_number
     and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
     and sf2.rn_year = 1
+where
+    a.results_type = 'Actual'
+    and a.academic_year >= {{ var("current_academic_year") - 7 }}
 
 union all
 
@@ -420,7 +430,7 @@ select
     a.subject,
     a.test_code,
     a.test_grade,
-    a.`admin`,
+    a.admin,
     a.season,
     a.score,
     a.performance_band,
@@ -464,8 +474,6 @@ inner join
     on a.academic_year = e.academic_year
     and a.state_id = e.state_studentnumber
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
-    and a.results_type = 'Actual'
-    and a.academic_year >= {{ var("current_academic_year") - 7 }}
     and e.region = 'Miami'
     and e.rn_year = 1
     and e.grade_level > 2
@@ -501,6 +509,9 @@ left join
     and a.state_id = sf2.state_studentnumber
     and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
     and sf2.rn_year = 1
+where
+    a.results_type = 'Actual'
+    and a.academic_year >= {{ var("current_academic_year") - 7 }}
 
 union all
 
@@ -540,7 +551,7 @@ select
     a.subject,
     a.test_code,
     a.test_grade,
-    a.`admin`,
+    a.admin,
     a.season,
     a.score,
     a.performance_band,
@@ -584,8 +595,6 @@ inner join
     on a.academic_year = e.academic_year
     and a.state_id = e.state_studentnumber
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
-    and a.academic_year = {{ var("current_academic_year") - 1 }}
-    and a.results_type = 'Preliminary'
     and e.rn_year = 1
     and e.grade_level > 2
 left join
@@ -620,3 +629,6 @@ left join
     and a.localstudentidentifier = sf2.student_number
     and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
     and sf2.rn_year = 1
+where
+    a.academic_year = {{ var("current_academic_year") - 1 }}
+    and a.results_type = 'Preliminary'

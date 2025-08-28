@@ -87,12 +87,12 @@ select
     co.student_number,
     co.state_studentnumber as mdcps_id,
     co.fleid,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.grade_level,
     co.schoolid,
     co.school_name,
     co.advisory_name as team,
-    co.school_abbreviation,
+    co.school as school_abbreviation,
     co.year_in_network,
     co.gender,
     co.ethnicity,
@@ -220,7 +220,7 @@ select
         partition by co.student_number, co.academic_year, subj.fast_subject
         order by administration_window desc
     ) as rn_year_fast,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['PM1', 'PM2', 'PM3']) as administration_window
 left join

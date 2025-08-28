@@ -162,12 +162,14 @@ with
         select
             co.academic_year,
             co.student_number,
-            co.lastfirst as student_name,
+            co.student_name,
             co.region,
             co.grade_level,
             co.grade_level_prev,
             co.year_in_network,
-            co.school_abbreviation as school,
+            co.school as school,
+            co.team as homeroom_section,
+            co.advisor_lastfirst as homeroom_teacher_name,
 
             gb.band,
 
@@ -175,9 +177,6 @@ with
 
             cc.sections_section_number as course_section,
             cc.teacher_lastfirst as course_teacher_name,
-
-            hr.sections_section_number as homeroom_section,
-            hr.teacher_lastfirst as homeroom_teacher_name,
 
             st.scale_score as scale_score_state,
             st.is_proficient_int as is_proficient_int_state,
@@ -215,7 +214,7 @@ with
                 then true
                 else false
             end as is_bucket2_eligible,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         cross join subject_croswalk as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
         inner join
@@ -234,15 +233,6 @@ with
             and s.illuminate_subject_area = cc.illuminate_subject_area
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
-        left join
-            {{ ref("base_powerschool__course_enrollments") }} as hr
-            on co.studentid = hr.cc_studentid
-            and co.yearid = hr.cc_yearid
-            and co.schoolid = hr.cc_schoolid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
-            and hr.cc_course_number = 'HR'
-            and not hr.is_dropped_section
-            and hr.rn_course_number_year = 1
         left join
             state_test_union as st
             on co.student_number = st.student_number
@@ -265,12 +255,14 @@ with
         select
             co.academic_year,
             co.student_number,
-            co.lastfirst as student_name,
+            co.student_name,
             co.region,
             co.grade_level,
             co.grade_level_prev,
             co.year_in_network,
-            co.school_abbreviation as school,
+            co.school as school,
+            co.team as homeroom_section,
+            co.advisor_lastfirst as homeroom_teacher_name,
 
             gb.band,
 
@@ -278,9 +270,6 @@ with
 
             cc.sections_section_number as course_section,
             cc.teacher_lastfirst as course_teacher_name,
-
-            hr.sections_section_number as homeroom_section,
-            hr.teacher_lastfirst as homeroom_teacher_name,
 
             null as scale_score_state,
             null as is_proficient_int_state,
@@ -298,7 +287,7 @@ with
 
             if(ir.scale_score is not null, 1, 0) as is_tested_int,
             if(ir.is_approaching_int = 1, true, false) as is_bucket2_eligible,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         cross join subject_croswalk as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
         inner join
@@ -317,15 +306,6 @@ with
             and s.illuminate_subject_area = cc.illuminate_subject_area
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
-        left join
-            {{ ref("base_powerschool__course_enrollments") }} as hr
-            on co.studentid = hr.cc_studentid
-            and co.yearid = hr.cc_yearid
-            and co.schoolid = hr.cc_schoolid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
-            and hr.cc_course_number = 'HR'
-            and not hr.is_dropped_section
-            and hr.rn_course_number_year = 1
         left join
             iready as ir
             on co.student_number = ir.student_number

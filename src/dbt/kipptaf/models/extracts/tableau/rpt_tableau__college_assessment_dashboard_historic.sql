@@ -18,15 +18,15 @@ with
             ) as expected_course_rank,
         from {{ ref("base_powerschool__course_enrollments") }}
         where
-            courses_course_name in (
+            rn_course_number_year = 1
+            and not is_dropped_section
+            and courses_course_name in (
                 'HR',
                 'College and Career IV',
                 'College and Career I',
                 'College and Career III',
                 'College and Career II'
             )
-            and rn_course_number_year = 1
-            and not is_dropped_section
     ),
 
     expected_course as (

@@ -1,19 +1,19 @@
 with
     students as (
         select
-            first_name,
-            last_name,
+            student_first_name as first_name,
+            student_last_name as last_name,
             school_name,
             grade_level,
-            student_email_google,
+            student_email,
             student_web_password,
             is_out_of_district,
 
             lower(region) as region,
 
             if(enroll_status = 0, false, true) as suspended,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where rn_all = 1 and student_email_google is not null and region != 'Paterson'
+        from {{ ref("int_extracts__student_enrollments") }}
+        where rn_all = 1 and student_email is not null and region != 'Paterson'
     ),
 
     with_google as (
@@ -32,7 +32,7 @@ with
         from students as s
         left join
             {{ ref("stg_google_directory__users") }} as u
-            on s.student_email_google = u.primary_email
+            on s.student_email = u.primary_email
         left join
             {{ ref("stg_google_directory__orgunits") }} as o
             on s.school_name = o.description
@@ -59,7 +59,7 @@ with
     )
 
 select
-    student_email_google as `primaryEmail`,
+    student_email as `primaryEmail`,
     org_unit_path as `orgUnitPath`,
     suspended,
     is_create,
