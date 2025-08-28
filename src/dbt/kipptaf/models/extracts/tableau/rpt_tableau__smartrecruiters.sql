@@ -1,9 +1,9 @@
 with
     applications as (
         select
-            a.application_field_phone_interview_score,
+            a.application_field_phone_interview_score as phone_interview_score,
             a.application_id,
-            a.application_reason_for_rejection,
+            a.application_reason_for_rejection as reason_for_rejection,
             a.application_state,
             a.application_url,
             a.average_rating,
