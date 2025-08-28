@@ -61,6 +61,5 @@
   "trunk.showWhatsNew": false,
   "trunk.showWhatsNewMessage": false,
   "trunk.trunkPath": "./trunk",
-  "trunk.autoInit": false,
-  "dbt.perspectiveTheme": "Vintage"
+  "trunk.autoInit": false
 }
