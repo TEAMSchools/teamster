@@ -160,11 +160,19 @@ sources:
               +enabled: false
             src_powerschool__log:
               +enabled: false
+            src_powerschool__period:
+              +enabled: false
             src_powerschool__pgfinalgrades:
+              +enabled: false
+            src_powerschool__prefs:
               +enabled: false
             src_powerschool__roledef:
               +enabled: false
+            src_powerschool__s_nj_usr_x:
+              +enabled: false
             src_powerschool__s_stu_x:
+              +enabled: false
+            src_powerschool__sced_code_mapping:
               +enabled: false
             src_powerschool__sectionteacher:
               +enabled: false
@@ -185,6 +193,8 @@ sources:
             src_powerschool__u_clg_et_stu:
               +enabled: false
             src_powerschool__u_clg_et_stu_alt:
+              +enabled: false
+            src_powerschool__u_def_ext_students:
               +enabled: false
             src_powerschool__u_studentsuserfields:
               +enabled: false
