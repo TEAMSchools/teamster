@@ -74,7 +74,7 @@ with
                     rejected_date
                 )
             )
-    ),
+    )
 
 select *,
 from final
