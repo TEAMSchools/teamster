@@ -55,6 +55,24 @@ with
             ) as has_phone_screen_requested_status,
             if(a.rejected_date is not null, true, false) as has_rejected_status,
             if(a.new_date is not null, true, false) as has_new_status,
+            if(
+                date_diff(
+                    coalesce(
+                        a.rejected_date,
+                        a.phone_screen_requested_date,
+                        a.phone_screen_complete_date,
+                        a.demo_date,
+                        a.offer_date,
+                        a.hired_date
+                    ),
+                    a.new_date,
+                    day
+                )
+                <= 7
+                and a.application_field_resume_score is not null,
+                true,
+                false
+            ) as reviewed_within_week,
         from {{ ref("stg_smartrecruiters__applications") }} as a
         cross join unnest(split(a.subject_preference, ',')) as subject_preference_unnest
 
