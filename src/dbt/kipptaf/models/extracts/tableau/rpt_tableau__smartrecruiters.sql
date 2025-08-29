@@ -20,7 +20,6 @@ with
             a.application_reason_for_rejection as reason_for_rejection,
             a.application_state,
             a.application_url,
-            a.average_rating,
             a.candidate_email,
             a.candidate_first_name,
             a.candidate_id,
@@ -59,32 +58,51 @@ with
             coalesce(
                 a.application_field_resume_score, a.average_rating
             ) as resume_score,
-            case when a.hired_date is not null then 1 else 0 end as has_hired_status,
-            case when a.offer_date is not null then 1 else 0 end as has_offer_status,
-            case when a.demo_date is not null then 1 else 0 end as has_demo_status,
-            case
-                when a.phone_screen_complete_date is not null then 1 else 0
-            end as has_phone_screen_complete_status,
-            case
-                when a.phone_screen_requested_date is not null then 1 else 0
-            end as has_phone_screen_requested_status,
-            case when a.new_date is not null then 1 else 0 end as has_new_status,
+            if(a.hired_date is not null, true, false) as has_hired_status,
+            if(a.offer_date is not null, true, false) as has_offer_status,
+            if(a.demo_date is not null, true, false) as has_demo_status,
+            if(
+                a.phone_screen_complete_date is not null, true, false
+            ) as has_phone_screen_complete_status,
+            if(
+                a.phone_screen_requested_date is not null, true, false
+            ) as has_phone_screen_requested_date_status,
+            if(a.rejected_date is not null, true, false) as has_rejected_status,
+            if(a.new_date is not null, true, false) as has_new_status,
         from {{ ref("stg_smartrecruiters__applications") }} as a
         cross join unnest(split(a.subject_preference, ',')) as subject_preference_unnest
 
     ),
 
     final as (
-        select date_spine.*, applications.*,
+        select
+            date_spine.*,
+            applications.*,
+            case
+                when applications.has_hired_status
+                then 'Hired'
+                when applications.has_offer_status
+                then 'Offer'
+                when applications.has_demo_status
+                then 'Final Interview'
+                when applications.has_phone_screen_complete_status
+                then 'Phone Screen Complete'
+                when applications.has_phone_screen_requested_date_status
+                then 'Phone Screen Requested'
+                when applications.has_rejected_status
+                then 'Rejected'
+                when applications.has_new_status
+                then 'New'
+                else 'Lead'
+            end as status_by_week,
         from date_spine
         left join
             applications
             on date_spine.date_week_end > applications.new_date
             and (
-                date_spine.date_week_end < applications.rejected_date
-                or applications.rejected_date is not null
+                date_spine.date_week_end < applications.hired_date
+                or date_spine.date_week_end < applications.rejected_date
             )
-            and (date_spine.date_week_end < applications.hired_date)
     )
 
 {# applications_unpivoted as (
