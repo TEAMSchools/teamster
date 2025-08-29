@@ -2,6 +2,7 @@ version: 2
 models:
   - name: stg_adp_workforce_manager__accrual_reporting_period_summary
     config:
+      enabled: false
       contract:
         enforced: true
     columns:
