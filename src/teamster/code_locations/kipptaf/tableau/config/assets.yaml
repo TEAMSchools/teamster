@@ -266,9 +266,10 @@ assets:
       - [kipptaf, tableau, rpt_tableau__state_assessments_dashboard_comps]
     metadata:
       id: 31b6a4a9-e0ca-479b-8f44-0daaa52e109b
-  # - name: Teacher Attendance Dashboard
-  #   deps:
-  #     - [kipptaf, tableau, rpt_tableau__staff_attendance]
-  #   metadata:
-  #     id: acedcb63-36e0-4232-953c-64cbd11b5149
-  #     cron_schedule: 0 12 * * *
+  - name: Renewal Approval Tool
+    deps:
+      - [kipptaf, tableau, rpt_tableau__renewal_responses_feed]
+      - [kipptaf, tableau, rpt_tableau__staff_performance_compliance_history]
+      - [kipptaf, tableau, rpt_tableau__staff_renewal_feed]
+    metadata:
+      id: 5f8c5385-845b-4d8b-bf68-6f9323cb4ca8
