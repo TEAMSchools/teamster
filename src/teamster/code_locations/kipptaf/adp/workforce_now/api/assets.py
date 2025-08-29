@@ -3,6 +3,7 @@ from dagster import (
     AssetCheckSeverity,
     AssetCheckSpec,
     AssetExecutionContext,
+    AssetKey,
     DailyPartitionsDefinition,
     Output,
     asset,
@@ -84,6 +85,7 @@ def adp_workforce_now_workers(
 
 @asset(
     key=[*key_prefix, "workers_sync"],
+    deps=[AssetKey(["kipptaf", "extracts", "rpt_adp_workforce_now__worker_update"])],
     check_specs=[
         AssetCheckSpec(name="zero_api_errors", asset=[*key_prefix, "workers_sync"])
     ],
