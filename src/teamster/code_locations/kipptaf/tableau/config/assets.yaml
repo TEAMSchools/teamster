@@ -211,7 +211,7 @@ assets:
       cron_schedule: 0 20 * * 0
   - name: Content Team Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__teacher_development]
+      - [kipptaf, tableau, rpt_tableau__content_team]
     metadata:
       id: 7f960a60-8ddd-4b66-92f0-20cad02a34f1
       cron_schedule: 0 6 * * *
