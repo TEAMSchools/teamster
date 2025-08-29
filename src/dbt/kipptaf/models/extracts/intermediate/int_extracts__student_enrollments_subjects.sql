@@ -251,13 +251,11 @@ select
     sj.grad_unpivot_subject,
     sj.discipline,
 
+    a.is_iep_eligible as is_grad_iep_exempt,
+
     sip.is_sipps,
 
     dr.measure_standard_level_int as dibels_most_recent_composite_int,
-
-    a.values_column as ps_grad_path_code,
-
-    coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
 
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
 
@@ -326,6 +324,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
     and sj.discipline = a.discipline
     and a.value_type = 'Graduation Pathway'
+    and a.values_column = 'M'
 left join
     {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as se
     on co.students_dcid = se.studentsdcid
@@ -397,13 +396,11 @@ select
     sj.grad_unpivot_subject,
     sj.discipline,
 
+    a.is_iep_eligible as is_grad_iep_exempt,
+
     null as is_sipps,
 
     null as dibels_most_recent_composite_int,
-
-    a.values_column as ps_grad_path_code,
-
-    coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
 
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
 
@@ -448,6 +445,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
     and sj.discipline = a.discipline
     and a.value_type = 'Graduation Pathway'
+    and a.values_column = 'M'
 left join
     {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as se
     on co.students_dcid = se.studentsdcid
