@@ -79,6 +79,10 @@ with
     final as (
         select
             s.student_number,
+            s.attrition_year,
+            s.attrition_day,
+
+            coalesce(ed.is_enrolled_day_int, 0) as is_enrolled_day_int,
             last_value(ed.student_name ignore nulls) over (
                 partition by s.student_number order by s.attrition_day
             ) as student_name,
@@ -97,9 +101,6 @@ with
             last_value(ed.exitdate ignore nulls) over (
                 partition by s.student_number order by s.attrition_day
             ) as exitdate,
-            s.attrition_year,
-            s.attrition_day,
-            coalesce(ed.is_enrolled_day_int, 0) as is_enrolled_day_int,
         from attrition_scaffold as s
         left join
             enrolled_days as ed
