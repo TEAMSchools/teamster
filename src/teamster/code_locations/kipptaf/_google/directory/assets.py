@@ -3,6 +3,7 @@ from dagster import (
     AssetCheckSeverity,
     AssetCheckSpec,
     AssetExecutionContext,
+    AssetKey,
     Output,
     StaticPartitionsDefinition,
     asset,
@@ -142,7 +143,7 @@ def members(context: AssetExecutionContext, google_directory: GoogleDirectoryRes
 
 @asset(
     key=[*key_prefix, "role_assignments_create"],
-    deps=["kipptaf/extracts/rpt_google_directory__admin_import"],
+    deps=[AssetKey(["kipptaf", "extracts", "rpt_google_directory__admin_import"])],
     check_specs=[
         AssetCheckSpec(
             name="zero_api_errors", asset=[*key_prefix, "role_assignments_create"]
@@ -189,7 +190,7 @@ def google_directory_role_assignments_create(
 
 @asset(
     key=[*key_prefix, "user_create"],
-    deps=["kipptaf/extracts/rpt_google_directory__users_import"],
+    deps=[AssetKey(["kipptaf", "extracts", "rpt_google_directory__users_import"])],
     check_specs=[
         AssetCheckSpec(name="zero_api_errors", asset=[*key_prefix, "user_create"])
     ],
@@ -251,7 +252,7 @@ def google_directory_user_create(
 
 @asset(
     key=[*key_prefix, "user_update"],
-    deps=["kipptaf/extracts/rpt_google_directory__users_import"],
+    deps=[AssetKey(["kipptaf", "extracts", "rpt_google_directory__users_import"])],
     check_specs=[
         AssetCheckSpec(name="zero_api_errors", asset=[*key_prefix, "user_update"])
     ],

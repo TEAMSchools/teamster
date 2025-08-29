@@ -1,0 +1,26 @@
+version: 2
+models:
+  - name: stg_overgrad__custom_fields
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: id
+        data_type: int64
+      - name: created_at
+        data_type: string
+      - name: updated_at
+        data_type: string
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: resource_class
+        data_type: string
+      - name: field_type
+        data_type: string
+      - name: format
+        data_type: string
+      - name: student_can_view
+        data_type: boolean
+      - name: student_can_edit
+        data_type: boolean
