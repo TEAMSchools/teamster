@@ -5,6 +5,7 @@ from dagster import (
     AssetCheckSeverity,
     AssetCheckSpec,
     AssetExecutionContext,
+    AssetKey,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     Output,
@@ -71,6 +72,7 @@ grow_multi_partitions_assets = [
 
 @asset(
     key=[*key_prefix, "user_sync"],
+    deps=[AssetKey(["kipptaf", "extracts", "rpt_schoolmint_grow__users"])],
     check_specs=[
         AssetCheckSpec(name="zero_api_errors", asset=[*key_prefix, "user_sync"])
     ],

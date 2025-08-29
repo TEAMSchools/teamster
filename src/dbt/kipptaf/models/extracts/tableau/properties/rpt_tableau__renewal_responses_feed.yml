@@ -1,8 +1,6 @@
 version: 2
 models:
   - name: rpt_tableau__renewal_responses_feed
-    config:
-      enabled: false
     columns:
       - name: survey_id
         data_type: string

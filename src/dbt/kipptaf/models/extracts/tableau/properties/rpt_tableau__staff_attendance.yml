@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: rpt_tableau__staff_attendance
+    config:
+      enabled: false
     columns:
       - name: adp_associate_id
         data_type: string
