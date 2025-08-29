@@ -1,8 +1,6 @@
 version: 2
 models:
   - name: rpt_tableau__state_assessments_dashboard
-    config:
-      enabled: false
     columns:
       - name: academic_year
         data_type: int64

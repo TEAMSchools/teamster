@@ -260,6 +260,12 @@ assets:
       - [kipptaf, tableau, rpt_tableau__school_community_diagnostic]
     metadata:
       id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
+  - name: State Testing Analysis Tool
+    deps:
+      - [kipptaf, tableau, rpt_tableau__state_assessments_dashboard]
+      - [kipptaf, tableau, rpt_tableau__state_assessments_dashboard_comps]
+    metadata:
+      id: 31b6a4a9-e0ca-479b-8f44-0daaa52e109b
   # - name: Teacher Attendance Dashboard
   #   deps:
   #     - [kipptaf, tableau, rpt_tableau__staff_attendance]
