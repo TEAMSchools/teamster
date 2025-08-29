@@ -111,7 +111,7 @@ select
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
-    {{ ref("stg_google_sheets__dibels_expected_assessments") }} as a
+    {{ ref("int_google_sheets__dibels_expected_assessments") }} as a
     on s.academic_year = a.academic_year
     and s.region = a.region
     and s.grade_level = a.grade

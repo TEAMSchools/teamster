@@ -38,7 +38,7 @@ with
             {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
         inner join
-            {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
+            {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
             on bss.academic_year = e.academic_year
             and bss.region = e.region
             and bss.assessment_grade_int = e.grade
@@ -88,7 +88,7 @@ with
 
         from {{ ref("int_amplify__dibels_data_farming_unpivot") }} as df
         inner join
-            {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
+            {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
             on df.academic_year = e.academic_year
             and df.region = e.region
             and df.assessment_grade_int = e.grade
@@ -137,7 +137,7 @@ with
 
         from {{ ref("stg_amplify__pm_student_summary") }} as p
         inner join
-            {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
+            {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
             on p.academic_year = e.academic_year
             and p.region = e.region
             and p.assessment_grade_int = e.grade

@@ -1,8 +1,6 @@
 version: 2
 models:
   - name: rpt_tableau__seat_tracker_snapshot
-    config:
-      enabled: false
     columns:
       - name: date_week
         data_type: date

@@ -241,6 +241,8 @@ assets:
   - name: Recruitment Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__smartrecruiters]
+      - [kipptaf, tableau, rpt_tableau__seat_tracker]
+      - [kipptaf, tableau, rpt_tableau__seat_tracker_snapshot]
     metadata:
       id: 970826ab-8d1c-4468-9b84-62f6432a9642
       cron_schedule: 0 7 * * *
