@@ -17,3 +17,21 @@ snapshots:
             - kipptaf
             - kippadb
             - snapshot_kippadb__standardized_test_rollup
+  - name: snapshot_kippadb__app_rollup
+    relation: ref("int_kippadb__app_rollup")
+    config:
+      schema: kippadb
+      strategy: check
+      unique_key: applicant
+      check_cols:
+        - is_submitted_ba
+        - is_accepted_ba
+        - is_matriculated_ba
+        - is_submitted_quality_bar_4yr_int
+      dbt_valid_to_current: "'9999-12-31'"
+      meta:
+        dagster:
+          asset_key:
+            - kipptaf
+            - kippadb
+            - snapshot_kippadb__app_rollup
