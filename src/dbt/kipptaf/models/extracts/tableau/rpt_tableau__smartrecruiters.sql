@@ -1,97 +1,98 @@
 with
-    applications_unpivot as (
+    applications as (
         select
-            application_id,
-            candidate_id,
-            job_city,
-            recruiters,
-            department_internal,
-            job_title,
-            application_status,
-            reason_for_rejection,
-            phone_interview_score,
-            status_type,
-            date_val,
-            coalesce(resume_score, star_score) as resume_score,
+            a.application_field_phone_interview_score as phone_interview_score,
+            a.application_id,
+            a.application_reason_for_rejection as reason_for_rejection,
+            a.application_state,
+            a.application_url,
+            a.candidate_email,
+            a.candidate_first_name,
+            a.candidate_id,
+            a.candidate_last_name,
+            a.candidate_linkedin_profile_url,
+            a.department_internal,
+            a.department_org_field_value,
+            a.job_city,
+            a.job_title,
+            a.recruiters,
+            a.source_subtype,
+            a.source_type,
+            a.source,
+            a.new_date,
+            a.hired_date,
+            a.offer_date,
+            a.demo_date,
+            a.phone_screen_complete_date,
+            a.phone_screen_requested_date,
+            a.last_update_date,
+            a.rejected_date,
+            a.time_in_application_state_in_review,
+            a.time_in_application_state_interview,
+            a.time_in_application_state_lead,
+            a.time_in_application_state_new,
+            a.time_in_application_state_offered,
+            a.time_in_application_status_in_review_resume_review,
+            a.time_in_application_status_interview_demo,
+            a.time_in_application_status_interview_phone_screen_complete,
+            a.time_in_application_status_interview_phone_screen_requested,
+            trim(subject_preference_unnest) as subject_preference,
+            coalesce(
+                a.application_field_school_shared_with_miami,
+                a.application_field_school_shared_with_new_jersey
+            ) as school_shared_with,
+            coalesce(
+                a.application_field_resume_score, a.average_rating
+            ) as resume_score,
+            if(a.hired_date is not null, true, false) as has_hired_status,
+            if(a.offer_date is not null, true, false) as has_offer_status,
+            if(a.demo_date is not null, true, false) as has_demo_status,
             if(
-                subject_preference is null, 'No Preference', subject_preference
-            ) as subject_preference,
+                a.phone_screen_complete_date is not null, true, false
+            ) as has_phone_screen_complete_status,
+            if(
+                a.phone_screen_requested_date is not null, true, false
+            ) as has_phone_screen_requested_status,
+            if(a.rejected_date is not null, true, false) as has_rejected_status,
+            if(a.new_date is not null, true, false) as has_new_status,
+            if(
+                date_diff(
+                    coalesce(
+                        a.rejected_date,
+                        a.phone_screen_requested_date,
+                        a.phone_screen_complete_date,
+                        a.demo_date,
+                        a.offer_date,
+                        a.hired_date
+                    ),
+                    a.new_date,
+                    day
+                )
+                <= 7
+                and a.application_field_resume_score is not null,
+                true,
+                false
+            ) as reviewed_within_week,
+        from {{ ref("stg_smartrecruiters__applications") }} as a
+        cross join unnest(split(a.subject_preference, ',')) as subject_preference_unnest
+
+    ),
+
+    final as (
+        select *,
         from
-            {{ ref("stg_smartrecruiters__applications") }} unpivot (
-                date_val for status_type in (
+            applications unpivot (
+                date_value for status_type in (
                     demo_date,
                     hired_date,
                     new_date,
                     offer_date,
                     phone_screen_complete_date,
-                    phone_screen_requested_date
+                    phone_screen_requested_date,
+                    rejected_date
                 )
             )
-    ),
-
-    applications_unnested as (
-        select
-            au.application_id,
-            au.candidate_id,
-            au.job_city,
-            au.recruiters,
-            au.department_internal,
-            au.job_title,
-            au.application_status,
-            au.reason_for_rejection,
-            au.phone_interview_score,
-            au.status_type,
-            au.date_val,
-            au.resume_score,
-            trim(subject_preference) as subject_preference,
-        from applications_unpivot as au
-        cross join unnest(split(subject_preference, ',')) as subject_preference
     )
 
-select
-    a.application_id,
-    a.job_city,
-    a.recruiters,
-    a.department_internal,
-    a.job_title,
-    a.application_status,
-    a.reason_for_rejection,
-    a.phone_interview_score,
-    a.resume_score,
-    a.subject_preference,
-    a.status_type,
-    a.date_val,
-
-    s.candidate_email,
-    s.candidate_first_and_last_name,
-    s.candidate_first_name,
-    s.candidate_id,
-    s.candidate_last_name,
-    s.candidate_source_subtype,
-    s.candidate_source_type,
-    s.candidate_source,
-    s.candidate_tags_values,
-    s.current_employer,
-    s.teacher_certification_endorsement_question,
-    s.city_of_interest,
-    s.how_did_you_hear_about_kipp_nj_miami,
-    s.out_of_state_teacher_certification_sped_credits,
-    s.kf_are_you_alumnus,
-    s.kf_gender,
-    s.kf_in_which_regions_alumnus,
-    s.kf_race,
-    s.taf_affiliated_orgs,
-    s.taf_current_or_former_kipp_employee,
-    s.taf_current_or_former_kipp_nj_miami_employee,
-    s.taf_expected_salary,
-    s.taf_other_orgs,
-    s.nj_out_of_state_sped_credits,
-    s.candidate_last_first,
-    s.school_shared_with,
-    s.undergrad_gpa,
-    s.grad_gpa,
-    s.certification_in_state,
-    s.certification_out_of_state,
-from applications_unnested as a
-left join
-    {{ ref("stg_smartrecruiters__applicants") }} as s on a.candidate_id = s.candidate_id
+select *,
+from final
