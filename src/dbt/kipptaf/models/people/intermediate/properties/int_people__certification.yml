@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: int_people__certification
+    config:
+      enabled: false
     columns:
       - name: employee_number
         data_type: int64

@@ -1,3 +1,11 @@
+with
+    schoolid_crosswalk as (
+        /* DL school ID not unique, need a better crosswalk */
+        select distinct powerschool_school_id, deanslist_school_id,
+        from {{ ref("stg_people__location_crosswalk") }}
+        where deanslist_school_id is not null and powerschool_school_id is not null
+    )
+
 select
     dlp.student_school_id,
     dlp.create_ts_academic_year,
@@ -49,9 +57,7 @@ select
     ) as days_suspended_iss,
 
 from {{ ref("int_deanslist__incidents__penalties") }} as dlp
-inner join
-    {{ ref("stg_people__location_crosswalk") }} as lc
-    on dlp.school_id = lc.deanslist_school_id
+inner join schoolid_crosswalk as lc on dlp.school_id = lc.deanslist_school_id
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on lc.powerschool_school_id = rt.school_id

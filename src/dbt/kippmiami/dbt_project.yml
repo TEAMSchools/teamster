@@ -66,3 +66,7 @@ models:
     staging:
       stg_renlearn__accelerated_reader:
         +enabled: false
+      stg_renlearn__fast_star:
+        +enabled: false
+      stg_renlearn__star_skill_area:
+        +enabled: false
