@@ -59,10 +59,10 @@ with
     ),
 
     schoolid_crosswalk as (
-        select powerschool_school_id, deanslist_school_id,
+        /* DL school ID not unique, need a better crosswalk */
+        select distinct powerschool_school_id, deanslist_school_id,
         from {{ ref("stg_people__location_crosswalk") }}
         where deanslist_school_id is not null and powerschool_school_id is not null
-        group by powerschool_school_id, deanslist_school_id
     )
 
 select
