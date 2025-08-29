@@ -1,18 +1,4 @@
 with
-    date_spine as (
-        select
-            date_week_start, date_add(date_week_start, interval 6 day) as date_week_end,
-        from
-            unnest(
-                generate_date_array(
-                    /* first Monday of reporting period for recruiters*/
-                    '2020-10-05',
-                    current_date('{{ var("local_timezone") }}'),
-                    interval 1 week
-                )
-            ) as date_week_start
-    ),
-
     applications as (
         select
             a.application_field_phone_interview_score as phone_interview_score,
@@ -66,7 +52,7 @@ with
             ) as has_phone_screen_complete_status,
             if(
                 a.phone_screen_requested_date is not null, true, false
-            ) as has_phone_screen_requested_date_status,
+            ) as has_phone_screen_requested_status,
             if(a.rejected_date is not null, true, false) as has_rejected_status,
             if(a.new_date is not null, true, false) as has_new_status,
         from {{ ref("stg_smartrecruiters__applications") }} as a
@@ -75,59 +61,20 @@ with
     ),
 
     final as (
-        select
-            date_spine.*,
-            applications.*,
-            case
-                when applications.has_hired_status
-                then 'Hired'
-                when applications.has_offer_status
-                then 'Offer'
-                when applications.has_demo_status
-                then 'Final Interview'
-                when applications.has_phone_screen_complete_status
-                then 'Phone Screen Complete'
-                when applications.has_phone_screen_requested_date_status
-                then 'Phone Screen Requested'
-                when applications.has_new_status
-                then 'New'
-                else 'Lead'
-            end as status_by_week,
-        from date_spine
-        left join
-            applications
-            on date_spine.date_week_end > applications.new_date
-            and (
-                date_spine.date_week_end < applications.hired_date
-                or date_spine.date_week_end < applications.rejected_date
-            )
-    )
-
-{# applications_unpivoted as (
         select *,
         from
             applications unpivot (
-                date_val for status_type in (
+                date_value for status_type in (
                     demo_date,
                     hired_date,
                     new_date,
                     offer_date,
                     phone_screen_complete_date,
-                    phone_screen_requested_date
+                    phone_screen_requested_date,
+                    rejected_date
                 )
             )
-    ), #}
-{# final as (
+    ),
 
-        select
-            applications_unpivoted.*,
-            date_spine.date_week_start,
-            date_spine.date_week_end,
-        from date_spine
-        left join
-            applications_unpivoted
-            on applications_unpivoted.date_val
-            between date_spine.date_week_start and date_spine.date_week_end
-    ) #}
 select *,
 from final
