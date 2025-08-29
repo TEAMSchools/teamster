@@ -40,7 +40,7 @@ with
                 partition by academic_year, region, grade, admin_season, round_number
             ) as expected_row_count,
 
-        from {{ ref("stg_google_sheets__dibels_expected_assessments") }}
+        from {{ ref("int_google_sheets__dibels_expected_assessments") }}
         where assessment_include is null and pm_goal_include is null
     ),
 

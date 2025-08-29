@@ -83,12 +83,6 @@ assets:
     metadata:
       id: 6e0915eb-9a46-4971-8e97-6e0749066b9f
       cron_schedule: 0 7 * * *
-  - name: Teacher Attendance Dashboard
-    deps:
-      - [kipptaf, tableau, rpt_tableau__staff_attendance]
-    metadata:
-      id: acedcb63-36e0-4232-953c-64cbd11b5149
-      cron_schedule: 0 12 * * *
   - name: Zendesk Reporting
     deps:
       - [kipptaf, tableau, rpt_tableau__zendesk_tickets]
@@ -114,6 +108,7 @@ assets:
       - [kipptaf, tableau, rpt_tableau__schoolmint_grow_observation_details]
       - [kipptaf, tableau, rpt_tableau__schoolmint_grow_goals]
       - [kipptaf, tableau, rpt_tableau__teacher_observations]
+      - [kipptaf, tableau, rpt_tableau__pm_outlier_detection]
     metadata:
       id: b529ca04-3560-4cff-8898-fd0a65f3e994
       cron_schedule:
@@ -122,13 +117,13 @@ assets:
         - 15 16 * * *
   - name: Attendance Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__attendance_chronic_absenteeism_log]
       - [kipptaf, tableau, rpt_tableau__attendance_comm_log]
       - [kipptaf, tableau, rpt_tableau__attendance_dashboard]
+      - [kipptaf, tableau, rpt_tableau__attendance_interventions]
     metadata:
       id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
       cron_schedule: 0 15 * * *
-  - name: Early Literacy Dashboard
+  - name: Literacy Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__dibels_dashboard]
       - [kipptaf, tableau, rpt_tableau__sight_words_dashboard]
@@ -158,6 +153,8 @@ assets:
   - name: Gradebook Audit - Teacher Report
     deps:
       - [kipptaf, tableau, rpt_tableau__gradebook_audit]
+      - [kipptaf, tableau, rpt_tableau__gradebook_es_comments]
+      - [kipptaf, tableau, rpt_tableau__gradebook_gpa]
     metadata:
       id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
       cron_schedule: 30 7 * * 2
@@ -210,7 +207,7 @@ assets:
       cron_schedule: 0 20 * * 0
   - name: Content Team Dashboard
     deps:
-      - [kipptaf, tableau, rpt_tableau__teacher_development]
+      - [kipptaf, tableau, rpt_tableau__content_team]
     metadata:
       id: 7f960a60-8ddd-4b66-92f0-20cad02a34f1
       cron_schedule: 0 6 * * *
@@ -240,6 +237,8 @@ assets:
   - name: Recruitment Dashboard
     deps:
       - [kipptaf, tableau, rpt_tableau__smartrecruiters]
+      - [kipptaf, tableau, rpt_tableau__seat_tracker]
+      - [kipptaf, tableau, rpt_tableau__seat_tracker_snapshot]
     metadata:
       id: 970826ab-8d1c-4468-9b84-62f6432a9642
       cron_schedule: 0 7 * * *
@@ -256,3 +255,21 @@ assets:
     metadata:
       id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
       cron_schedule: 0 5 * * *
+  - name: School Community Diagnostic Results
+    deps:
+      - [kipptaf, tableau, rpt_tableau__school_community_diagnostic]
+    metadata:
+      id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
+  - name: State Testing Analysis Tool
+    deps:
+      - [kipptaf, tableau, rpt_tableau__state_assessments_dashboard]
+      - [kipptaf, tableau, rpt_tableau__state_assessments_dashboard_comps]
+    metadata:
+      id: 31b6a4a9-e0ca-479b-8f44-0daaa52e109b
+  - name: Renewal Approval Tool
+    deps:
+      - [kipptaf, tableau, rpt_tableau__renewal_responses_feed]
+      - [kipptaf, tableau, rpt_tableau__staff_performance_compliance_history]
+      - [kipptaf, tableau, rpt_tableau__staff_renewal_feed]
+    metadata:
+      id: 5f8c5385-845b-4d8b-bf68-6f9323cb4ca8
