@@ -37,6 +37,9 @@ with
             lead(school_abbreviation, 1) over (
                 partition by student_number order by academic_year asc
             ) as next_year_school,
+            lead(schoolid, 1) over (
+                partition by student_number order by academic_year asc
+            ) as next_year_schoolid,
         from {{ ref("base_powerschool__student_enrollments") }}
         where rn_year = 1
     ),
@@ -170,6 +173,7 @@ select
     adapy.ada_weighted_year as ada_weighted_year_prev,
 
     ny.next_year_school,
+    ny.next_year_schoolid,
 
     'KTAF' as district,
 
