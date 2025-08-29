@@ -1,6 +1,8 @@
 version: 2
 models:
   - name: stg_kippadb__counseling_case
+    config:
+      enabled: false
     columns:
       - name: id
         data_type: string

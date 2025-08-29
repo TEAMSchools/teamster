@@ -19,6 +19,7 @@ asset_key = [CODE_LOCATION, "zendesk", "user_sync"]
 
 @asset(
     key=asset_key,
+    deps=["kipptaf/extracts/rpt_zendesk__users"],
     check_specs=[AssetCheckSpec(name="zero_api_errors", asset=asset_key)],
     group_name="zendesk",
     kinds={"python"},
