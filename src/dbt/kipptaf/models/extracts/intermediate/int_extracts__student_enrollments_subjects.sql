@@ -165,7 +165,7 @@ with
             and student_grade_int between 0 and 2
     ),
 
-    iready_exempt as (
+    magoosh_exempt as (
         select
             _dbt_source_relation,
             students_student_number as student_number,
@@ -184,6 +184,24 @@ with
             courses_course_number = 'LOG300'
             and rn_course_number_year = 1
             and sections_section_number in ('mgmath', 'mgela')
+            and not is_dropped_section
+    ),
+
+    sipps_exempt as (
+        select
+            _dbt_source_relation,
+            students_student_number as student_number,
+            cc_academic_year as academic_year,
+
+            courses_credittype as credit_type,
+
+            true as is_sipps,
+
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where
+            courses_course_number = 'SEM01099G1'
+            and courses_credittype = 'ENG'
+            and rn_course_number_year = 1
             and not is_dropped_section
     ),
 
@@ -221,24 +239,6 @@ with
 
         from {{ ref("int_amplify__all_assessments") }}
         where measure_standard = 'Composite'
-    ),
-
-    sipps as (
-        select
-            _dbt_source_relation,
-            students_student_number as student_number,
-            cc_academic_year as academic_year,
-
-            courses_credittype as credit_type,
-
-            true as is_sipps,
-
-        from {{ ref("base_powerschool__course_enrollments") }}
-        where
-            courses_course_number = 'SEM01099G1'
-            and courses_credittype = 'ENG'
-            and rn_course_number_year = 1
-            and not is_dropped_section
     )
 
 /* current year and current year - 1 only to honor bucket calcs */
@@ -251,11 +251,13 @@ select
     sj.grad_unpivot_subject,
     sj.discipline,
 
-    a.is_iep_eligible as is_grad_iep_exempt,
-
     sip.is_sipps,
 
     dr.measure_standard_level_int as dibels_most_recent_composite_int,
+
+    a.values_column as ps_grad_path_code,
+
+    coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
 
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
 
@@ -269,7 +271,9 @@ select
         dr.measure_standard_level, 'No Composite Score Available'
     ) as dibels_most_recent_composite,
 
-    if(ie.student_number is not null, true, false) as is_exempt_iready,
+    if(ie.student_number is not null, true, false) as is_magoosh,
+
+    if(ie.student_number is not null or sip.is_sipps, true, false) as is_exempt_iready,
 
     if(nj.iready_subject is not null, true, false) as bucket_two,
 
@@ -324,7 +328,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
     and sj.discipline = a.discipline
     and a.value_type = 'Graduation Pathway'
-    and a.values_column = 'M'
 left join
     {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as se
     on co.students_dcid = se.studentsdcid
@@ -356,7 +359,7 @@ left join
     and sj.iready_subject = dr.iready_subject
     and dr.rn_benchmark = 1
 left join
-    iready_exempt as ie
+    magoosh_exempt as ie
     on co.student_number = ie.student_number
     and co.academic_year = ie.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ie") }}
@@ -377,7 +380,7 @@ left join
     on co.student_number = ps.powerschool_student_number
     and sj.discipline = ps.discipline
 left join
-    sipps as sip
+    sipps_exempt as sip
     on co.student_number = sip.student_number
     and co.academic_year = sip.academic_year
     and sj.powerschool_credittype = sip.credit_type
@@ -396,11 +399,13 @@ select
     sj.grad_unpivot_subject,
     sj.discipline,
 
-    a.is_iep_eligible as is_grad_iep_exempt,
-
     null as is_sipps,
 
     null as dibels_most_recent_composite_int,
+
+    a.values_column as ps_grad_path_code,
+
+    coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
 
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
 
@@ -411,6 +416,8 @@ select
     coalesce(db.eoy_composite, 'No Test') as dibels_eoy_composite,
 
     null as dibels_most_recent_composite,
+
+    if(ie.student_number is not null, true, false) as is_magoosh,
 
     if(ie.student_number is not null, true, false) as is_exempt_iready,
 
@@ -445,7 +452,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
     and sj.discipline = a.discipline
     and a.value_type = 'Graduation Pathway'
-    and a.values_column = 'M'
 left join
     {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as se
     on co.students_dcid = se.studentsdcid
@@ -471,7 +477,7 @@ left join
     and sj.iready_subject = db.iready_subject
     and db.rn_year = 1
 left join
-    iready_exempt as ie
+    magoosh_exempt as ie
     on co.student_number = ie.student_number
     and co.academic_year = ie.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ie") }}
