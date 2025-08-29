@@ -62,7 +62,7 @@ adp_payroll_dbt_assets = build_dbt_assets(
 
 asset_specs = [
     AssetSpec(
-        key=[p for p in exposure["fqn"] if p not in ["properties"]],
+        key=exposure["meta"]["dagster"]["key"],
         deps=[
             get_asset_key_for_model(
                 dbt_assets=[core_dbt_assets], model_name=ref["name"]
@@ -70,7 +70,7 @@ asset_specs = [
             for ref in exposure["refs"]
         ],
         metadata={"url": exposure["url"]},
-        kinds={"dbt"},
+        kinds={exposure["meta"]["dagster"]["kinds"]},
     )
     for exposure in manifest["exposures"].values()
 ]
