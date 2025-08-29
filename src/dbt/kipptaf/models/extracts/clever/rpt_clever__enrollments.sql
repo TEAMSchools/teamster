@@ -11,7 +11,9 @@ inner join
     {{ ref("stg_powerschool__students") }} as s
     on cc.studentid = s.id
     and {{ union_dataset_join_clause(left_alias="cc", right_alias="s") }}
-where cc.dateleft >= current_date('{{ var("local_timezone") }}')
+where
+    cc.dateleft >= current_date('{{ var("local_timezone") }}')
+    and cc._dbt_source_relation not like '%kipppaterson%'
 
 union all
 
@@ -27,4 +29,4 @@ select
 
     student_number as student_id,
 from {{ ref("stg_powerschool__students") }}
-where enroll_status in (0, -1)
+where enroll_status in (0, -1) and _dbt_source_relation not like '%kipppaterson%'
