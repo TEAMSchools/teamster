@@ -1,0 +1,5 @@
+version: 2
+models:
+  - name: rpt_gsheets__pm_assignment_roster
+    config:
+      enabled: false
