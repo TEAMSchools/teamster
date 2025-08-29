@@ -86,3 +86,10 @@ exposures:
       - ref("rpt_tableau__crdc_roster")
     label: CRDC Dashboard
     url: https://drive.google.com/file/d/1aChpbS6v37hwIi1QrT1EmpzOHpXkXKaz
+    meta:
+      dagster:
+        key:
+          - kipptaf
+          - tableau
+          - CRDC Dashboard
+        kinds: tableau
