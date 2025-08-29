@@ -89,8 +89,6 @@ with
                 then 'Phone Screen Complete'
                 when applications.has_phone_screen_requested_date_status
                 then 'Phone Screen Requested'
-                when applications.has_rejected_status
-                then 'Rejected'
                 when applications.has_new_status
                 then 'New'
                 else 'Lead'
