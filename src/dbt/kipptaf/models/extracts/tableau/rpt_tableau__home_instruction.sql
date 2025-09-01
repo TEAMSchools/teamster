@@ -31,6 +31,8 @@ select
     dli.approver_name,
     dli.create_lastfirst as referring_staff_name,
     dli.update_lastfirst as reviewing_staff_name,
+
+{# sp.dcid, #}
 from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_deanslist__incidents__penalties") }} as dli
@@ -39,3 +41,11 @@ inner join
     and co.deanslist_school_id = dli.school_id
     -- TODO: Add home_instruction_reason to JOIN
     and (dli.category = 'TX - HI Request (admin only)' or dli.hi_start_date is not null)
+    {# full outer join
+    {{ ref("int_powerschool__spenrollments") }} as sp
+    on co.academic_year = sp.academic_year
+    and co.studentid = sp.studentid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
+    and sp.specprog_name = 'Home Instruction'
+    and sp.enter_date between cast(dli.hi_start_date as date) and cast(dli.hi_end_date as date) #}
+    
