@@ -4,7 +4,10 @@ with
         from {{ ref("int_deanslist__incidents__custom_fields") }}
     )
 
-select *,
+select
+    * except (hi_start_date, hi_end_date),
+    safe.parse_date('%m/%d/%Y', hi_start_date) as hi_start_date,
+    safe.parse_date('%m/%d/%Y', hi_end_date) as hi_end_date,
 from
     pivot_source pivot (
         max(`value`) for field_name in (
@@ -50,6 +53,7 @@ from
             'Teacher Response' as `teacher_response`,
             'Referral to law enforcement' as `referral_to_law_enforcement`,
             'Arrested for school-related activity'
-            as `arrested_for_school_related_activity`
+            as `arrested_for_school_related_activity`,
+            'Home Instruction Reasons' as `home_instruction_reason`
         )
     )
