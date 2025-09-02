@@ -12,6 +12,7 @@ snapshots:
       dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
+          group: iready
           asset_key:
             - kipptaf
             - iready
