@@ -14,7 +14,7 @@ illuminate_dlt_daily_asset_job_schedule = ScheduleDefinition(
 
 illuminate_dlt_hourly_asset_job_schedule = ScheduleDefinition(
     job=illuminate_dlt_hourly_asset_job,
-    cron_schedule="0 * * * *",
+    cron_schedule=["0 0 * * *", "0 17 * * *", "0 14 * * 3", "0 15 * * 5"],
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
