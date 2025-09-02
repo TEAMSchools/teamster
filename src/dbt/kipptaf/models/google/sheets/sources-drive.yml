@@ -288,7 +288,6 @@ sources:
               - google
               - sheets
               - gradebook_exceptions
-<<<<<<< HEAD
       - name: src_google_sheets__kippfwd_goals
         config:
           enabled: true
@@ -321,7 +320,6 @@ sources:
               - kipptaf
               - google_sheets
               - kippfwd_seasons
-=======
       # - name: src_google_sheets__recruitment__school_projections
       #   external:
       #     options:
@@ -367,4 +365,3 @@ sources:
       #         - google
       #         - sheets
       #         - dibels_bm_goals
->>>>>>> 0367d44d77ff6c845cff8baa903cfb457e21f4bd
