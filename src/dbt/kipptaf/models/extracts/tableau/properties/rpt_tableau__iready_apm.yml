@@ -38,12 +38,28 @@ models:
         data_type: string
       - name: subject
         data_type: string
+      - name: team
+        data_type: string
+      - name: tutoring_nj
+        data_type: boolean
+      - name: state_test_proficiency
+        data_type: string
+      - name: nj_student_tier
+        data_type: string
+      - name: is_exempt_iready
+        data_type: boolean
+      - name: is_sipps
+        data_type: boolean
+      - name: is_magoosh
+        data_type: boolean
+      - name: territory
+        data_type: string
+      - name: head_of_school
+        data_type: string
       - name: week_start_monday
         data_type: date
       - name: week_end_sunday
         data_type: date
-      - name: team
-        data_type: string
       - name: lesson_id
         data_type: string
       - name: lesson_name
@@ -65,9 +81,9 @@ models:
       - name: placement_3_level
         data_type: string
       - name: percent_progress_to_annual_typical_growth
-        data_type: float64
+        data_type: numeric
       - name: percent_progress_to_annual_stretch_growth
-        data_type: float64
+        data_type: numeric
       - name: overall_relative_placement
         data_type: string
       - name: overall_relative_placement_int
@@ -96,21 +112,11 @@ models:
         data_type: date
       - name: last_week_time_on_task_min
         data_type: int64
-      - name: tutoring_nj
-        data_type: boolean
-      - name: state_test_proficiency
-        data_type: string
-      - name: nj_student_tier
-        data_type: string
-      - name: is_exempt_iready
-        data_type: boolean
-      - name: territory
-        data_type: string
-      - name: head_of_school
-        data_type: string
       - name: subject_teacher
         data_type: string
       - name: subject_section
+        data_type: string
+      - name: iready_teacher
         data_type: string
       - name: is_curterm
         data_type: boolean
