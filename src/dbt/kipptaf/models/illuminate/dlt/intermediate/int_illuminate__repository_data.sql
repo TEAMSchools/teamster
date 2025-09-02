@@ -1,4 +1,4 @@
-{{- config(materialized="view") -}}
+{{ config(materialized="view") }}
 
 {% set relations = dbt_utils.get_relations_by_prefix(
     schema=generate_schema_name("illuminate"),
