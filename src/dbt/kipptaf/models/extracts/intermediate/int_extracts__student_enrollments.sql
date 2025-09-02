@@ -29,6 +29,21 @@ with
         where school_level = 'ES'
     ),
 
+    next_year_school as (
+        select
+            student_number,
+            academic_year,
+
+            lead(school_abbreviation, 1) over (
+                partition by student_number order by academic_year asc
+            ) as next_year_school,
+            lead(schoolid, 1) over (
+                partition by student_number order by academic_year asc
+            ) as next_year_schoolid,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where rn_year = 1
+    ),
+
     mia_territory as (
         select
             _dbt_source_relation,
@@ -113,6 +128,9 @@ select
 
     adapy.ada_year as ada_unweighted_year_prev,
     adapy.ada_weighted_year as ada_weighted_year_prev,
+
+    ny.next_year_school,
+    ny.next_year_schoolid,
 
     'KTAF' as district,
 
@@ -258,4 +276,8 @@ left join
     on e.studentid = adapy.studentid
     and e.academic_year = (adapy.academic_year + 1)
     and {{ union_dataset_join_clause(left_alias="e", right_alias="adapy") }}
+left join
+    next_year_school as ny
+    on e.student_number = ny.student_number
+    and e.academic_year = ny.academic_year
 where e.grade_level != 99

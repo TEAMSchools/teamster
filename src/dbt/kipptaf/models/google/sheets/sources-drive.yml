@@ -18,7 +18,8 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - zendesk_org_lookup
         columns:
           - name: ADP_Business_Unit
@@ -41,7 +42,8 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - student_graduation_path_combos
       - name: src_google_sheets__student_graduation_path_cutoffs
         external:
@@ -55,7 +57,8 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - student_graduation_path_cutoffs
       - name: src_google_sheets__state_test_comparison
         external:
@@ -69,7 +72,8 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - state_test_comparison
       - name: src_google_sheets__state_test_comparison_demographics
         external:
@@ -83,22 +87,9 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - state_test_comparison_demographics
-      - name: src_google_sheets__state_test_expected_assessments
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
-            sheet_range: src_google_sheets__state_test_expected_assessments
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google_sheets
-              - state_test_expected_assessments
       - name: src_google_sheets__dibels_df_student_xwalk
         external:
           options:
@@ -111,7 +102,8 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - dibels_df_student_xwalk
       - name: src_google_sheets__dibels_expected_assessments
         external:
@@ -125,7 +117,8 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - dibels_expected_assessments
         columns:
           - name: Academic_Year
@@ -172,7 +165,8 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - dibels_foundation_goals
       - name: src_google_sheets__dibels_measures
         external:
@@ -186,7 +180,8 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - dibels_measures
         columns:
           - name: grade_level
@@ -202,6 +197,8 @@ sources:
           - name: description_translation
             data_type: string
       - name: src_google_sheets__dibels_goals_wide
+        config:
+          enabled: false
         external:
           options:
             format: GOOGLE_SHEETS
@@ -213,12 +210,10 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
-              - disabled
+              - google
+              - sheets
               - dibels_goals_wide
       - name: src_google_sheets__dibels_goals_long
-        config:
-          enabled: true
         external:
           options:
             format: GOOGLE_SHEETS
@@ -230,11 +225,10 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - dibels_goals_long
       - name: src_google_sheets__dibels_pm_goals
-        config:
-          enabled: true
         external:
           options:
             format: GOOGLE_SHEETS
@@ -246,27 +240,10 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - dibels_pm_goals
-      - name: src_google_sheets__dibels_bm_goals
-        config:
-          enabled: true
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-            sheet_range: src_google_sheets__dibels_bm_goals
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google_sheets
-              - dibels_bm_goals
       - name: src_google_sheets__gradebook_expectations_assignments
-        config:
-          enabled: true
         external:
           options:
             format: GOOGLE_SHEETS
@@ -278,11 +255,10 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - gradebook_expectations_assignments
       - name: src_google_sheets__gradebook_flags
-        config:
-          enabled: true
         external:
           options:
             format: GOOGLE_SHEETS
@@ -294,11 +270,10 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - gradebook_flags
       - name: src_google_sheets__gradebook_exceptions
-        config:
-          enabled: true
         external:
           options:
             format: GOOGLE_SHEETS
@@ -310,5 +285,51 @@ sources:
           dagster:
             asset_key:
               - kipptaf
-              - google_sheets
+              - google
+              - sheets
               - gradebook_exceptions
+      # - name: src_google_sheets__recruitment__school_projections
+      #   external:
+      #     options:
+      #       format: GOOGLE_SHEETS
+      #       uris:
+      #         - https://docs.google.com/spreadsheets/d/1JPMDSGcdil-ineSk3BZJRnqyms-XXXp2s7vNJeyQp7Q
+      #       sheet_range: src_google_sheets__recruitment__school_projections
+      #       skip_leading_rows: 1
+      #   meta:
+      #     dagster:
+      #       asset_key:
+      #         - kipptaf
+      #         - google
+      #         - sheets
+      #         - recruitment_school_projections
+      # - name: src_google_sheets__state_test_expected_assessments
+      #   external:
+      #     options:
+      #       format: GOOGLE_SHEETS
+      #       uris:
+      #         - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
+      #       sheet_range: src_google_sheets__state_test_expected_assessments
+      #       skip_leading_rows: 1
+      #   meta:
+      #     dagster:
+      #       asset_key:
+      #         - kipptaf
+      #         - google
+      #         - sheets
+      #         - state_test_expected_assessments
+      # - name: src_google_sheets__dibels_bm_goals
+      #   external:
+      #     options:
+      #       format: GOOGLE_SHEETS
+      #       uris:
+      #         - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+      #       sheet_range: src_google_sheets__dibels_bm_goals
+      #       skip_leading_rows: 1
+      #   meta:
+      #     dagster:
+      #       asset_key:
+      #         - kipptaf
+      #         - google
+      #         - sheets
+      #         - dibels_bm_goals

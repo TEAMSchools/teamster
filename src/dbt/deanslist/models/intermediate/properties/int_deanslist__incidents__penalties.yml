@@ -180,8 +180,10 @@ models:
       - name: final_approval
         data_type: string
       - name: hi_end_date
-        data_type: string
+        data_type: date
       - name: hi_start_date
+        data_type: date
+      - name: home_instruction_reason
         data_type: string
       - name: hourly_rate
         data_type: string

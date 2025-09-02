@@ -37,6 +37,11 @@ models:
         +enabled: false
   overgrad:
     +materialized: table
+    staging:
+      stg_overgrad__followings:
+        +enabled: false
+      stg_overgrad__schools:
+        +enabled: false
   pearson:
     +materialized: table
   powerschool:
@@ -47,14 +52,6 @@ models:
           +enabled: false
         odbc:
           +enabled: true
-          stg_powerschool__period:
-            +enabled: false
-          stg_powerschool__sced_code_mapping:
-            +enabled: false
-          stg_powerschool__u_def_ext_students:
-            +enabled: false
-          stg_powerschool__prefs:
-            +enabled: false
   titan:
     +materialized: table
     staging:

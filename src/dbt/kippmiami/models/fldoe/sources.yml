@@ -31,7 +31,7 @@ sources:
               - fldoe
               - fsa
       - name: src_fldoe__fsa
-        conifg:
+        config:
           enabled: false
         meta:
           dagster:
