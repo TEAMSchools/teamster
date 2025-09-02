@@ -73,10 +73,10 @@ with
                 if(
                     scope = 'ACT',
                     avg(running_max_scale_score) over (
-                        partition by student_number, scope
+                        partition by student_number, grade_season
                     ),
                     sum(running_max_scale_score) over (
-                        partition by student_number, scope
+                        partition by student_number, grade_season
                     )
                 ),
                 0
@@ -90,13 +90,19 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="running_superscore",
-                partition_by="student_number,scope",
+                partition_by="student_number,grade_season",
                 order_by="student_number",
             )
         }}
     )
 
-select s.*, rm.running_max_scale_score, dr.runnning_superscore,
+select
+    s.*,
+
+    rm.running_max_scale_score,
+
+    coalesce(dr.runnning_superscore, s.superscore) as running_superscore,
+
 from scores as s
 left join
     running_max_score as rm
@@ -107,3 +113,4 @@ left join
     dedup_runnning_superscore as dr
     on s.student_number = dr.student_number
     and s.scope = dr.scope
+    and s.grade_season = dr.grade_season
