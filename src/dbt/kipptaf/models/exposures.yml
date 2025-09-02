@@ -420,6 +420,50 @@ exposures:
     meta:
       dagster:
         kinds: googlesheets
+  - name: kipp_miami_summer_25_appsheet_stipends_and_bonuses
+    label: KIPP Miami Summer 25 Appsheet Stipends and Bonuses
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1zrnkCF4vmqNPx5cHWGNZvWgaMvGOgaXRriR4Yo4SbBE
+    depends_on:
+      - ref("rpt_gsheets__kippfwd_collab_roster")
+    meta:
+      dagster:
+        kinds: googlesheets
+  - name: tdt_programs_historical_data_tool
+    label: TDT Programs Historical Data Tool
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1p2I-SiEYi-P81v30OkGIOr-r0ul8gjURh0oTakaecEA
+    depends_on:
+      - ref("rpt_gsheets__staff_roster")
+    meta:
+      dagster:
+        kinds: googlesheets
+  - name: miami_2024_renewal_project_plan
+    label: Miami 2024 Renewal Project Plan
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1fiROC7t2Znq6hOsY5Jyjk2gE6U5y-FnNcBV3bnJI0mk
+    depends_on:
+      - ref("rpt_tableau__staff_roster")
+    meta:
+      dagster:
+        kinds: googlesheets
+  - name: fy26_alumni_team_hub
+    label: FY26 Alumni Team Hub
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/10_rcG6uscU5Wze4Q0VBnHcvPQ55KCtizQz5W39NMoRM
+    depends_on:
+      - ref("rpt_gsheets__kfwd_flc")
+    meta:
+      dagster:
+        kinds: googlesheets
 
   - name: access_denied
     label: Access Denied
@@ -427,20 +471,14 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      # https://docs.google.com/spreadsheets/d/1zrnkCF4vmqNPx5cHWGNZvWgaMvGOgaXRriR4Yo4SbBE
       # https://docs.google.com/spreadsheets/d/1-ZAdUcKEQw7LysRQQka8lRPEH_WKGwBz_X5tdNow-sw
       - ref("rpt_gsheets__kippfwd_collab_roster")
       # https://docs.google.com/spreadsheets/d/1-ZAdUcKEQw7LysRQQka8lRPEH_WKGwBz_X5tdNow-sw
       - ref("rpt_gsheets__overgrad_award_letter")
       # https://docs.google.com/spreadsheets/d/1493Y9hzXf80qJuDt9DBRgSYtscF5wjAA_sv5l3n9P18
       - ref("rpt_gsheets__kippfwd_miami_roster")
-      # https://docs.google.com/spreadsheets/d/10_rcG6uscU5Wze4Q0VBnHcvPQ55KCtizQz5W39NMoRM
       # https://docs.google.com/spreadsheets/d/1ZAD7Ww_mw4T3wONEfn1OoU51CA0nSls9FfHfGK5tISY
       - ref("rpt_gsheets__kfwd_flc")
-      # https://docs.google.com/spreadsheets/d/1fiROC7t2Znq6hOsY5Jyjk2gE6U5y-FnNcBV3bnJI0mk
-      - ref("rpt_tableau__staff_roster")
-      # https://docs.google.com/spreadsheets/d/1p2I-SiEYi-P81v30OkGIOr-r0ul8gjURh0oTakaecEA
-      - ref("rpt_gsheets__staff_roster")
     meta:
       dagster:
         kinds: googlesheets
