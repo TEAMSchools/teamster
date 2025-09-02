@@ -13,6 +13,7 @@ snapshots:
       dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
+          group: people
           asset_key:
             - kipptaf
             - people
@@ -27,6 +28,7 @@ snapshots:
       dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
+          group: people
           asset_key:
             - kipptaf
             - people
@@ -41,6 +43,7 @@ snapshots:
       check_cols: all
       meta:
         dagster:
+          group: people
           asset_key:
             - kipptaf
             - people

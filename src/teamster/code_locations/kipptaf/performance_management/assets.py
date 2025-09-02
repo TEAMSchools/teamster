@@ -2,6 +2,7 @@ import numpy
 import pandas
 from dagster import (
     AssetExecutionContext,
+    AssetKey,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
@@ -120,6 +121,7 @@ def get_isolation_forest(df: pandas.DataFrame):
 
 @asset(
     key=[CODE_LOCATION, "performance_management", "outlier_detection"],
+    deps=[AssetKey(["kipptaf", "extracts", "rpt_python__manager_pm_averages"])],
     io_manager_key="io_manager_gcs_avro",
     group_name="performance_management",
     partitions_def=MultiPartitionsDefinition(
