@@ -67,9 +67,8 @@ with
                 when testperformancelevel > 3
                 then 'At/Above'
             end as njsla_proficiency,
-            if(testperformancelevel > 3, true, false) as is_proficient,
-
-        from {{ ref("stg_pearson__njsla") }}
+            is_proficient,
+        from {{ ref("int_pearson__all_assessments") }}
 
         union all
 
