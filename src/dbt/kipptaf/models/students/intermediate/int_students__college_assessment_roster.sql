@@ -69,10 +69,17 @@ with
             scope,
             grade_season,
 
-            if(
-                scope = 'ACT',
-                avg(running_max_scale_score) over (partition by student_number, scope),
-                sum(running_max_scale_score) over (partition by student_number, scope)
+            round(
+                if(
+                    scope = 'ACT',
+                    avg(running_max_scale_score) over (
+                        partition by student_number, scope
+                    ),
+                    sum(running_max_scale_score) over (
+                        partition by student_number, scope
+                    )
+                ),
+                0
             ) as runnning_superscore,
 
         from running_max_score
