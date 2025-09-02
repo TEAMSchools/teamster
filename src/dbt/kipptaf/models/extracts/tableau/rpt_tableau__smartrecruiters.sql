@@ -95,7 +95,7 @@ with
                     and resume_score is not null
                 then true
                 when
-                    date_diff(date_next_status_lead, date_lead, day) <= 7
+                    date_diff(date_next_status_lead, date_new, day) <= 7
                     and resume_score is not null
                 then true
                 else false
