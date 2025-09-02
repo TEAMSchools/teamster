@@ -23,6 +23,7 @@ select
     co.nj_student_tier,
     co.is_exempt_iready,
     co.is_sipps,
+    co.is_magoosh,
     co.territory,
     co.hos as head_of_school,
     co.week_start_monday,
