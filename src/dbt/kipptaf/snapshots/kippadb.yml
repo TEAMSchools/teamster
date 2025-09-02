@@ -13,6 +13,7 @@ snapshots:
       dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
+          group: kippadb
           asset_key:
             - kipptaf
             - kippadb
