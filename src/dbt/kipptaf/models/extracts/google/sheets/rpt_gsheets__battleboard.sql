@@ -106,4 +106,4 @@ left join
     on c.df_employee_number = p.df_employee_number
     and p.academic_year = utilities.global_academic_year() - 1
     #}
-where c.assignment_status not in ('Terminated')
+where c.worker_status_code != 'Terminated'

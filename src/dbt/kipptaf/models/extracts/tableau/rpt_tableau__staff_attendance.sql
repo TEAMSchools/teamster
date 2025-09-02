@@ -133,7 +133,7 @@ left join
     {{ ref("int_people__staff_roster") }} as sl
     on sr.home_work_location_name = sl.home_work_location_name
     and sl.job_title = 'School Leader'
-    and sl.assignment_status != 'Terminated'
+    and sl.worker_status_code != 'Terminated'
 left join
     {{ ref("int_adp_workforce_manager__accrual_summary_pivot") }} as asp
     on td.worker_id = asp.worker_id

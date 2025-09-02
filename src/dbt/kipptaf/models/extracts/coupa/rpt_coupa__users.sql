@@ -99,7 +99,7 @@ with
             on sr.employee_number = cu.employee_number
         where
             not sr.is_prestart
-            and sr.assignment_status not in ('Terminated', 'Deceased')
+            and sr.worker_status_code != 'Terminated'
             and not regexp_contains(sr.worker_type_code, r'Part Time|Intern')
             and cu.employee_number is null
     ),

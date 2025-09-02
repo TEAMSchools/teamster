@@ -89,7 +89,7 @@ with
             case
                 when days_after_termination <= 14
                 then 1
-                when assignment_status not in ('Terminated', 'Deceased')
+                when worker_status_code != 'Terminated'
                 then 1
                 when
                     worker_termination_date
