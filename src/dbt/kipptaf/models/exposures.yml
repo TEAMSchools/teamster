@@ -420,6 +420,28 @@ exposures:
     meta:
       dagster:
         kinds: googlesheets
+  - name: kipp_miami_summer_25_appsheet_stipends_and_bonuses
+    label: KIPP Miami Summer 25 Appsheet Stipends and Bonuses
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1zrnkCF4vmqNPx5cHWGNZvWgaMvGOgaXRriR4Yo4SbBE
+    depends_on:
+      - ref("rpt_gsheets__kippfwd_collab_roster")
+    meta:
+      dagster:
+        kinds: googlesheets
+  - name: tdt_programs_historical_data_tool
+    label: TDT Programs Historical Data Tool
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1p2I-SiEYi-P81v30OkGIOr-r0ul8gjURh0oTakaecEA
+    depends_on:
+      - ref("rpt_gsheets__staff_roster")
+    meta:
+      dagster:
+        kinds: googlesheets
 
   - name: access_denied
     label: Access Denied
@@ -427,7 +449,6 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      # https://docs.google.com/spreadsheets/d/1zrnkCF4vmqNPx5cHWGNZvWgaMvGOgaXRriR4Yo4SbBE
       # https://docs.google.com/spreadsheets/d/1-ZAdUcKEQw7LysRQQka8lRPEH_WKGwBz_X5tdNow-sw
       - ref("rpt_gsheets__kippfwd_collab_roster")
       # https://docs.google.com/spreadsheets/d/1-ZAdUcKEQw7LysRQQka8lRPEH_WKGwBz_X5tdNow-sw
@@ -439,8 +460,6 @@ exposures:
       - ref("rpt_gsheets__kfwd_flc")
       # https://docs.google.com/spreadsheets/d/1fiROC7t2Znq6hOsY5Jyjk2gE6U5y-FnNcBV3bnJI0mk
       - ref("rpt_tableau__staff_roster")
-      # https://docs.google.com/spreadsheets/d/1p2I-SiEYi-P81v30OkGIOr-r0ul8gjURh0oTakaecEA
-      - ref("rpt_gsheets__staff_roster")
     meta:
       dagster:
         kinds: googlesheets
