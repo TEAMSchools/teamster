@@ -43,15 +43,22 @@ with
                 coalesce(date_demo, '9999-12-31'),
                 coalesce(date_offer, '9999-12-31'),
                 coalesce(date_hired, '9999-12-31')
-            ) as date_next_status,
+            ) as date_next_status_new,
+            least(
+                coalesce(date_new, '9999-12-31'),
+                coalesce(date_rejected, '9999-12-31'),
+                coalesce(date_phone_screen_requested, '9999-12-31'),
+                coalesce(date_phone_screen_complete, '9999-12-31'),
+                coalesce(date_demo, '9999-12-31'),
+                coalesce(date_offer, '9999-12-31'),
+                coalesce(date_hired, '9999-12-31')
+            ) as date_next_status_lead,
         from applications
     ),
 
     final as (
         select
-
             application_id,
-
             application_state,
             application_url,
             candidate_email,
@@ -81,20 +88,18 @@ with
             subject_preference,
             school_shared_with,
             resume_score,
-            if(
-                date_next_status = '9999-12-31', null, date_next_status
-            ) as date_next_status,
-            if(
-                date_next_status != '9999-12-31',
-                date_diff(date_next_status, date_new, day),
-                null
-            ) as days_until_reviewed,
-            if(
-                date_diff(date_next_status, date_new, day) <= 7
-                and resume_score is not null,
-                true,
-                false
-            ) as reviewed_within_week,
+            date_trunc(date_new, week(monday)) as application_week_start,
+            case
+                when
+                    date_diff(date_next_status_new, date_new, day) <= 7
+                    and resume_score is not null
+                then true
+                when
+                    date_diff(date_next_status_lead, date_lead, day) <= 7
+                    and resume_score is not null
+                then true
+                else false
+            end as within_week_initial_review,
         from applications_transformed
     )
 {# 
