@@ -11,7 +11,7 @@ with
             worker_termination_date,
             sam_account_name,
             mail,
-            assignment_status,
+            worker_status_code,
             home_work_location_dagster_code_location,
 
             date_diff(
@@ -38,7 +38,7 @@ with
             sr.worker_termination_date,
             sr.sam_account_name,
             sr.mail,
-            sr.assignment_status,
+            sr.worker_status_code,
             sr.home_work_location_dagster_code_location,
             sr.days_after_termination,
         from staff_roster as sr
@@ -64,7 +64,7 @@ with
             sr.worker_termination_date,
             sr.sam_account_name,
             sr.mail,
-            sr.assignment_status,
+            sr.worker_status_code,
             sr.home_work_location_dagster_code_location,
             sr.days_after_termination,
         from staff_roster as sr

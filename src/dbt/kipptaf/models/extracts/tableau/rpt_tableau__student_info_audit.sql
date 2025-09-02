@@ -48,7 +48,7 @@ with
             if(se.dob is null, 1, 0) as missing_dob_flag,
 
             if(
-                regexp_contains(se.lastfirst, r"\s{2,}|[^\w\s',-]"), 1, 0
+                regexp_contains(se.student_name, r"\s{2,}|[^\w\s',-]"), 1, 0
             ) as name_spelling_flag,
 
             if(cec.sectionid_count < 3, true, false) as underenrollment_flag,
