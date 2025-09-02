@@ -37,6 +37,11 @@ models:
         +enabled: false
   overgrad:
     +materialized: table
+    staging:
+      stg_overgrad__followings:
+        +enabled: false
+      stg_overgrad__schools:
+        +enabled: false
   pearson:
     +materialized: table
   powerschool:

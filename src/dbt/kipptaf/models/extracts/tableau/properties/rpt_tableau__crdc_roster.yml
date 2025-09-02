@@ -76,13 +76,3 @@ models:
         data_type: string
       - name: crdc_question_description
         data_type: string
-
-exposures:
-  - name: crdc_dashboard
-    type: dashboard
-    owner:
-      name: Data Team
-    depends_on:
-      - ref("rpt_tableau__crdc_roster")
-    label: CRDC Dashboard
-    url: https://drive.google.com/file/d/1aChpbS6v37hwIi1QrT1EmpzOHpXkXKaz

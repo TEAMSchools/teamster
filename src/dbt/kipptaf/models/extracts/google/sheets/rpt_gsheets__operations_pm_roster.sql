@@ -7,6 +7,7 @@ with
             home_work_location_name,
             home_work_location_abbreviation,
             reports_to_formatted_name,
+
             concat(
                 formatted_name,
                 ' - ',
@@ -32,7 +33,6 @@ select
     roster.home_work_location_abbreviation,
     roster.reports_to_formatted_name,
 
-    -- has to match question title on form
-    roster.name_dropdown as `Ops Teammate Name`,  -- noqa: RF05 
+    -- trunk-ignore(sqlfluff/RF05)
+    roster.name_dropdown as `Ops Teammate Name`,
 from roster
-order by roster.home_work_location_name, roster.formatted_name
