@@ -1,83 +1,103 @@
 with
-    applications as (
+    applications as (select *, from {{ ref("stg_smartrecruiters__applications") }}),
+
+    applications_transformed as (
         select
-            a.application_field_phone_interview_score as phone_interview_score,
-            a.application_id,
-            a.application_reason_for_rejection as reason_for_rejection,
-            a.application_state,
-            a.application_url,
-            a.candidate_email,
-            a.candidate_first_name,
-            a.candidate_id,
-            a.candidate_last_name,
-            a.candidate_linkedin_profile_url,
-            a.department_internal,
-            a.department_org_field_value,
-            a.job_city,
-            a.job_title,
-            a.recruiters,
-            a.source_subtype,
-            a.source_type,
-            a.source,
-            a.new_date,
-            a.hired_date,
-            a.offer_date,
-            a.demo_date,
-            a.phone_screen_complete_date,
-            a.phone_screen_requested_date,
-            a.last_update_date,
-            a.rejected_date,
-            a.time_in_application_state_in_review,
-            a.time_in_application_state_interview,
-            a.time_in_application_state_lead,
-            a.time_in_application_state_new,
-            a.time_in_application_state_offered,
-            a.time_in_application_status_in_review_resume_review,
-            a.time_in_application_status_interview_demo,
-            a.time_in_application_status_interview_phone_screen_complete,
-            a.time_in_application_status_interview_phone_screen_requested,
-            trim(subject_preference_unnest) as subject_preference,
+            application_field_phone_interview_score as phone_interview_score,
+            application_id,
+            application_reason_for_rejection as reason_for_rejection,
+            application_state,
+            application_url,
+            candidate_email,
+            candidate_first_name,
+            candidate_id,
+            candidate_last_name,
+            candidate_linkedin_profile_url,
+            date_demo,
+            date_hired,
+            date_last_update,
+            date_lead,
+            date_new,
+            date_offer,
+            date_phone_screen_complete,
+            date_phone_screen_requested,
+            date_rejected,
+            department_internal,
+            department_org_field_value,
+            job_city,
+            job_title,
+            recruiters,
+            source,
+            source_subtype,
+            source_type,
+            subject_preference,
             coalesce(
-                a.application_field_school_shared_with_miami,
-                a.application_field_school_shared_with_new_jersey
+                application_field_school_shared_with_miami,
+                application_field_school_shared_with_new_jersey
             ) as school_shared_with,
-            coalesce(
-                a.application_field_resume_score, a.average_rating
-            ) as resume_score,
-            if(a.hired_date is not null, true, false) as has_hired_status,
-            if(a.offer_date is not null, true, false) as has_offer_status,
-            if(a.demo_date is not null, true, false) as has_demo_status,
+            coalesce(application_field_resume_score, average_rating) as resume_score,
+            least(
+                coalesce(date_rejected, '9999-12-31'),
+                coalesce(date_phone_screen_requested, '9999-12-31'),
+                coalesce(date_phone_screen_complete, '9999-12-31'),
+                coalesce(date_demo, '9999-12-31'),
+                coalesce(date_offer, '9999-12-31'),
+                coalesce(date_hired, '9999-12-31')
+            ) as date_next_status,
+        from applications
+    ),
+
+    final as (
+        select
+
+            application_id,
+
+            application_state,
+            application_url,
+            candidate_email,
+            candidate_first_name,
+            candidate_id,
+            candidate_last_name,
+            candidate_linkedin_profile_url,
+            date_demo,
+            date_hired,
+            date_last_update,
+            date_lead,
+            date_new,
+            date_offer,
+            date_phone_screen_complete,
+            date_phone_screen_requested,
+            date_rejected,
+            department_internal,
+            department_org_field_value,
+            job_city,
+            job_title,
+            phone_interview_score,
+            reason_for_rejection,
+            recruiters,
+            source,
+            source_subtype,
+            source_type,
+            subject_preference,
+            school_shared_with,
+            resume_score,
             if(
-                a.phone_screen_complete_date is not null, true, false
-            ) as has_phone_screen_complete_status,
+                date_next_status = '9999-12-31', null, date_next_status
+            ) as date_next_status,
             if(
-                a.phone_screen_requested_date is not null, true, false
-            ) as has_phone_screen_requested_status,
-            if(a.rejected_date is not null, true, false) as has_rejected_status,
-            if(a.new_date is not null, true, false) as has_new_status,
+                date_next_status != '9999-12-31',
+                date_diff(date_next_status, date_new, day),
+                null
+            ) as days_until_reviewed,
             if(
-                date_diff(
-                    coalesce(
-                        a.rejected_date,
-                        a.phone_screen_requested_date,
-                        a.phone_screen_complete_date,
-                        a.demo_date,
-                        a.offer_date,
-                        a.hired_date
-                    ),
-                    a.new_date,
-                    day
-                )
-                <= 7
-                and a.application_field_resume_score is not null,
+                date_diff(date_next_status, date_new, day) <= 7
+                and resume_score is not null,
                 true,
                 false
             ) as reviewed_within_week,
-        from {{ ref("stg_smartrecruiters__applications") }} as a
-        cross join unnest(split(a.subject_preference, ',')) as subject_preference_unnest
-
-    ),
-
+        from applications_transformed
+    )
+{# 
     final as (
         select *,
         from
@@ -92,7 +112,6 @@ with
                     rejected_date
                 )
             )
-    )
-
+    ) #}
 select *,
 from final
