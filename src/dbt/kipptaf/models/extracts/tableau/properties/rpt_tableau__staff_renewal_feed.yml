@@ -1,8 +1,6 @@
 version: 2
 models:
   - name: rpt_tableau__staff_renewal_feed
-    config:
-      enabled: false
     columns:
       - name: df_employee_number
         data_type: int64

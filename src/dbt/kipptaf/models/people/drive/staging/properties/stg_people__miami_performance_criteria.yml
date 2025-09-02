@@ -2,6 +2,7 @@ version: 2
 models:
   - name: stg_people__miami_performance_criteria
     config:
+      enabled: false
       contract:
         enforced: true
       tags: google_sheet
