@@ -1,104 +1,74 @@
 select
-    academic_year,
-    region,
-    school_level,
-    schoolid,
-    school,
+    'K-8 Reading and Math' as layer,
+    'Formative Assessments' as indicator,
     student_number,
-    state_studentnumber,
-    student_name,
-    grade_level,
-    gender,
-    ethnicity,
-    iep_status,
-    is_504,
-    lep_status,
-    gifted_and_talented,
-    entrydate,
-    exitdate,
-    enroll_status,
+    academic_year,
+    week_start_monday as term,
+    discipline,
 
-    null as `subject`,
-
-    week_start_monday as term_name,
-    week_start_monday as term_start,
-    week_end_sunday as term_end,
-    attendance_value_sum_running as numerator,
-    membership_value_sum_running as denominator,
-    ada_running as metric_value,
-
-    'ADA Running' as metric_name,
-    'Week' as term_type,
-from {{ ref("int_topline__ada_running_weekly") }}
+    null as numerator,
+    null as denominator,
+    is_mastery_running_int as metric_value,
+from {{ ref("int_topline__formative_assessment_weekly") }}
 
 union all
 
 select
-    academic_year,
-    region,
-    school_level,
-    schoolid,
-    school,
+    'K-8 Reading and Math' as layer,
+    'DIBELS PM Mastery' as indicator,
     student_number,
-    state_studentnumber,
-    student_name,
-    grade_level,
-    gender,
-    ethnicity,
-    iep_status,
-    is_504,
-    lep_status,
-    gifted_and_talented,
-    entrydate,
-    exitdate,
-    enroll_status,
-
-    iready_subject as `subject`,
-    week_start_monday as term_name,
-    week_start_monday as term_start,
-    week_end_sunday as term_end,
+    academic_year,
+    week_start_monday as term,
+    'ELA' as discipline,
 
     null as numerator,
     null as denominator,
-
-    n_lessons_passed_week as metric_value,
-
-    'i-Ready Lessons Passed' as metric_name,
-    'Week' as term_type,
-from {{ ref("int_topline__iready_lessons_weekly") }}
+    met_pm_round_overall_criteria as metric_value,
+from {{ ref("int_topline__dibels_pm_weekly") }}
 
 union all
 
 select
-    academic_year,
-    region,
-    school_level,
-    schoolid,
-    school,
+    'Attendance and Enrollment' as layer,
+    'Successful Contacts' as indicator,
     student_number,
-    state_studentnumber,
-    student_name,
-    grade_level,
-    gender,
-    ethnicity,
-    iep_status,
-    is_504,
-    lep_status,
-    gifted_and_talented,
-    entrydate,
-    exitdate,
-    enroll_status,
+    academic_year,
+    week_start_monday as term,
+    null as discipline,
 
-    iready_subject as `subject`,
-    week_start_monday as term_name,
-    week_start_monday as term_start,
-    week_end_sunday as term_end,
+    successful_comms_sum_running as numerator,
+    required_comms_count_running as denominator,
+    safe_divide(
+        successful_comms_sum_running, required_comms_count_running
+    ) as metric_value,
+from {{ ref("int_topline__attendance_contacts_weekly") }}
+
+union all
+
+select
+    'Attendance and Enrollment' as layer,
+    'Chronic Absenteeism Interventions' as indicator,
+    student_number,
+    academic_year,
+    week_start_monday as term,
+    null as discipline,
+
+    successful_call_count as numerator,
+    total_anticipated_calls as denominator,
+    pct_interventions_complete as metric_value,
+from {{ ref("int_topline__attendance_interventions_weekly") }}
+
+union all
+
+select
+    'GPA, ACT, SAT' as layer,
+    'Highest SAT' as indicator,
+    student_number,
+    academic_year,
+    week_start_monday as term,
+    null as discipline,
 
     null as numerator,
     null as denominator,
-
-    is_proficient as metric_value,
-
-    'i-Ready Diagnostic Proficient' as metric_name,
-    'Week' as term_type,
-from {{ ref("int_topline__iready_diagnostic_weekly") }}
+    score as metric_value,
+from {{ ref("int_topline__college_entrance_exams_weekly") }}
