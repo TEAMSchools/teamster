@@ -41,3 +41,13 @@ class TimeAndAttendance(BaseModel):
     position_id: str | None = None
     supervisor_id: str | None = None
     supervisor_position: str | None = None
+
+
+class EmployeeMemberships(BaseModel):
+    associate_id: str | None = None
+    membership_code: str | None = None
+    membership_description: str | None = None
+    effective_date: str | None = None
+    expiration_date: str | None = None
+    category_code: str | None = None
+    category_description: str | None = None
