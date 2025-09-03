@@ -8,6 +8,7 @@ def _test_definitions_validate(module_names: list[str]):
     for m in module_names:
         module_args.extend(f"-m teamster.code_locations.{m}.definitions".split())
 
+    print(" ".join(["dagster", "definitions", "validate", *module_args]))
     output = subprocess.check_output(
         args=["dagster", "definitions", "validate", *module_args]
     )
