@@ -74,6 +74,36 @@ from {{ ref("int_topline__iready_lessons_weekly") }}
 
 union all
 
+select
+    'K-8 Reading and Math' as layer,
+    'Star Diagnostic' as indicator,
+    student_number,
+    academic_year,
+    week_start_monday as term,
+    discipline,
+
+    null as numerator,
+    null as denominator,
+    is_state_benchmark_proficient_int as metric_value,
+from {{ ref("int_topline__star_assessment_weekly") }}
+
+union all
+
+select
+    'K-8 Reading and Math' as layer,
+    'State Assessments' as indicator,
+    student_number,
+    academic_year,
+    week_start_monday as term,
+    discipline,
+
+    null as numerator,
+    null as denominator,
+    is_proficient_int as metric_value,
+from {{ ref("int_topline__state_assessments_weekly") }}
+
+union all
+
 /* Attendance & Enrollment */
 select
     'Attendance and Enrollment' as layer,
@@ -135,3 +165,19 @@ select
     null as denominator,
     cumulative_y1_gpa_projected_unweighted as metric_value,
 from {{ ref("int_topline__gpa_cumulative_weekly") }}
+
+union all
+
+/* Student & Family Experience */
+select
+    'Student and Family Experience' as layer,
+    'School Community Diagnostic' as indicator,
+    student_number,
+    academic_year,
+    week_start_monday as term,
+    null as discipline,
+
+    null as numerator,
+    null as denominator,
+    average_rating as metric_value,
+from {{ ref("int_topline__school_community_diagnostic_weekly") }}
