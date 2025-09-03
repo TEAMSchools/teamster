@@ -90,6 +90,7 @@ with
             resume_score,
             date_next_status_new,
             date_next_status_lead,
+            {# noqa:LT01 #}
             date_trunc(date_new, week(monday)) as application_week_start,
 
             case
