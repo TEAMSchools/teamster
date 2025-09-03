@@ -1,4 +1,4 @@
-{{- config(materialized="view") -}}
+{{ config(materialized="view") }}
 
 {% set relations = dbt_utils.get_relations_by_prefix(
     schema=generate_schema_name("illuminate"),
@@ -41,3 +41,36 @@ inner join
     and ur.field_name = rf.name
 inner join
     {{ ref("stg_illuminate__public__students") }} as s on ur.student_id = s.student_id
+
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_457") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_456") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_455") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_454") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_453") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_452") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_451") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_450") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_449") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_448") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_447") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_446") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_445") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_444") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_443") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_442") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_441") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_440") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_439") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_438") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_437") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_436") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_435") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_434") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_433") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_432") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_431") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_430") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_429") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_427") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_426") -}}
+    

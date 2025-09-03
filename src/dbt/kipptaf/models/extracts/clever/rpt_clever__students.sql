@@ -69,6 +69,6 @@ left join
 where
     sr.academic_year = {{ var("current_academic_year") }}
     and sr.rn_year = 1
+    and sr.enroll_status in (0, -1)
     and not sr.is_out_of_district
-    and sr.grade_level != 99
     and sr._dbt_source_relation not like '%kipppaterson%'
