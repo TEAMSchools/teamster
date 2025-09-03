@@ -34,5 +34,5 @@ select
     null as followup_init_notes,
     null as followup_close_notes,
     null as drill_down,
-from {{ ref("int_topline__attendance_calls") }}
+from {{ ref("int_topline__attendance_contacts") }}
 where academic_year = {{ var("current_academic_year") }}
