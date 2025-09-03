@@ -272,6 +272,7 @@ select
         then 'Salesforce/Overgrad has FAFSA opt-out mismatch'
         else 'No issues'
     end as fafsa_status_mismatch_category,
+
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join {{ ref("stg_people__location_crosswalk") }} as lc on e.school_name = lc.name
 left join
