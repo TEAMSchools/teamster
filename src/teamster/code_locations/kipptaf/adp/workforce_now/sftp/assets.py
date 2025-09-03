@@ -1,6 +1,7 @@
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.adp.workforce_now.sftp.schema import (
     ADDITIONAL_EARNINGS_REPORT_SCHEMA,
+    EMPLOYEE_MEMBERSHIPS_SCHEMA,
     PENSION_AND_BENEFITS_ENROLLMENTS_SCHEMA,
     TIME_AND_ATTENDANCE_SCHEMA,
 )
@@ -35,8 +36,16 @@ time_and_attendance = build_sftp_file_asset(
     **asset_kwargs,
 )
 
+employee_memberships = build_sftp_file_asset(
+    asset_key=[*key_prefix, "employee_memberships"],
+    remote_file_regex=r"employee_memberships\.csv",
+    avro_schema=EMPLOYEE_MEMBERSHIPS_SCHEMA,
+    **asset_kwargs,
+)
+
 assets = [
     additional_earnings_report,
+    employee_memberships,
     pension_and_benefits_enrollments,
     time_and_attendance,
 ]
