@@ -161,6 +161,22 @@ select
         then '<2.00'
         else 'No GPA'
     end as salesforce_contact_college_match_gpa_band,
+    if(
+        extract(
+            month
+            from coalesce(adb.actual_hs_graduation_date, adb.expected_hs_graduation)
+        )
+        < 10,
+        extract(
+            year
+            from coalesce(adb.actual_hs_graduation_date, adb.expected_hs_graduation)
+        ),
+        extract(
+            year
+            from coalesce(adb.actual_hs_graduation_date, adb.expected_hs_graduation)
+        )
+        + 1
+    ) as salesforce_graduation_year,
 from with_region as ar
 left join
     {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
