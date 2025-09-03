@@ -161,8 +161,7 @@ select
         then '<2.00'
         else 'No GPA'
     end as salesforce_contact_college_match_gpa_band,
-    if
-    (
+    if(
         extract(
             month
             from coalesce(adb.actual_hs_graduation_date, adb.expected_hs_graduation)

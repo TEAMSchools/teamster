@@ -96,8 +96,7 @@ with
 
             if(d.dlm is not null, true, false) as is_dlm,
 
-            if
-            (
+            if(
                 extract(
                     month
                     from
