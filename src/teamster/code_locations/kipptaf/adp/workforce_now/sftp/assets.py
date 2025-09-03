@@ -45,6 +45,7 @@ employee_memberships = build_sftp_file_asset(
 
 assets = [
     additional_earnings_report,
+    employee_memberships,
     pension_and_benefits_enrollments,
     time_and_attendance,
 ]
