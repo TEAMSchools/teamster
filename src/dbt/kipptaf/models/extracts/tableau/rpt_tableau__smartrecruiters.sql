@@ -33,7 +33,7 @@ with
             applications.source_type,
             applications.subject_preference,
             recruiter_single,
-            subject_preference_single,
+            trim(subject_preference_single) as subject_preference_single,
             coalesce(
                 applications.application_field_school_shared_with_miami,
                 applications.application_field_school_shared_with_new_jersey
