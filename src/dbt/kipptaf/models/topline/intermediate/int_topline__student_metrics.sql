@@ -1,3 +1,4 @@
+/* K-8 Reading & Math */
 select
     'K-8 Reading and Math' as layer,
     'Formative Assessments' as indicator,
@@ -28,6 +29,52 @@ from {{ ref("int_topline__dibels_pm_weekly") }}
 
 union all
 
+select
+    'K-8 Reading and Math' as layer,
+    'DIBELS PM Fidelity' as indicator,
+    student_number,
+    academic_year,
+    week_start_monday as term,
+    'ELA' as discipline,
+
+    null as numerator,
+    null as denominator,
+    completed_test_round_int as metric_value,
+from {{ ref("int_topline__dibels_pm_weekly") }}
+
+union all
+
+select
+    'K-8 Reading and Math' as layer,
+    'i-Ready Diagnostic' as indicator,
+    student_number,
+    academic_year,
+    week_start_monday as term,
+    discipline,
+
+    null as numerator,
+    null as denominator,
+    is_proficient as metric_value,
+from {{ ref("int_topline__iready_diagnostic_weekly") }}
+
+union all
+
+select
+    'K-8 Reading and Math' as layer,
+    'i-Ready Lessons' as indicator,
+    student_number,
+    academic_year,
+    week_start_monday as term,
+    discipline,
+
+    null as numerator,
+    null as denominator,
+    n_lessons_passed_week as metric_value,
+from {{ ref("int_topline__iready_lessons_weekly") }}
+
+union all
+
+/* Attendance & Enrollment */
 select
     'Attendance and Enrollment' as layer,
     'Successful Contacts' as indicator,
@@ -60,6 +107,7 @@ from {{ ref("int_topline__attendance_interventions_weekly") }}
 
 union all
 
+/* GPA & ACT/SAT */
 select
     'GPA, ACT, SAT' as layer,
     'Highest SAT' as indicator,
@@ -72,3 +120,18 @@ select
     null as denominator,
     score as metric_value,
 from {{ ref("int_topline__college_entrance_exams_weekly") }}
+
+union all
+
+select
+    'GPA, ACT, SAT' as layer,
+    'Projected Unweighted Cumulative GPA' as indicator,
+    student_number,
+    academic_year,
+    week_start_monday as term,
+    null as discipline,
+
+    null as numerator,
+    null as denominator,
+    cumulative_y1_gpa_projected_unweighted as metric_value,
+from {{ ref("int_topline__gpa_cumulative_weekly") }}
