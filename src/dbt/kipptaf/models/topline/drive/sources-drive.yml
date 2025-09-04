@@ -1,0 +1,36 @@
+version: 2
+
+sources:
+  - name: topline
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_topline
+    tables:
+      - name: src_topline__student_goals
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0
+            sheet_range: src_topline__student_goals
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - topline
+              - student_goals
+      - name: src_topline__aggregate_goals
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0
+            sheet_range: src_topline__aggregate_goals
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - topline
+              - aggregate_goals
