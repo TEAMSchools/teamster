@@ -513,6 +513,18 @@ exposures:
       dagster:
         kinds:
           - googlesheets
+  - name: gsheets__gpa_roster
+    label: gsheets__gpa_roster
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1hXFEfXEEU9aGG5k29nvTTn459JJHEWs0b__iqVoG9-M
+    depends_on:
+      - ref("rpt_gsheets__gpa_roster")
+    meta:
+      dagster:
+        kinds:
+          - googlesheets
 
   # - name: hro_2425_renewal_workbook_data_team_workspace
   #   label: HRO 24-25 Renewal Workbook - Data Team Workspace
