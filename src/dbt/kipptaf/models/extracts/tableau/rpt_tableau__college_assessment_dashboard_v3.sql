@@ -6,18 +6,29 @@ select
     e.school,
     e.student_number,
     e.student_name,
+    e.student_first_name,
+    e.student_last_name,
     e.grade_level,
     e.enroll_status,
     e.cohort,
+    e.iep_status,
     e.is_504,
     e.lep_status,
     e.gifted_and_talented,
     e.advisory,
-    e.salesforce_id as contact_id,
+    e.student_email,
+    e.salesforce_id,
     e.ktc_cohort,
     e.contact_owner_name,
     e.college_match_gpa,
     e.college_match_gpa_bands,
+
+    gc.cumulative_y1_gpa,
+    gc.cumulative_y1_gpa_unweighted,
+    gc.cumulative_y1_gpa_projected,
+    gc.cumulative_y1_gpa_projected_s1,
+    gc.cumulative_y1_gpa_projected_s1_unweighted,
+    gc.core_cumulative_y1_gpa,
 
     r.administration_round,
     r.test_type,
@@ -61,9 +72,16 @@ select
     g2.score as board_score,
     g2.goal as board_goal,
 
-    if(e.iep_status = 'No IEP', 0, 1) as sped,
+    concat(
+        r.admin_season, ' ', r.scope, ' ', r.subject_area, ' ', r.test_type
+    ) as test_for_roster,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
+left join
+    {{ ref("int_powerschool__gpa_cumulative") }} as gc
+    on e.studentid = gc.studentid
+    and e.schoolid = gc.schoolid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="gc") }}
 left join
     {{ ref("int_students__college_assessment_roster") }} as r
     on e.academic_year = r.academic_year
