@@ -20,8 +20,6 @@ with
             e.students_dcid,
             e.courses_credittype as credit_type,
 
-            d.school_level,
-
             coalesce(s.islate, 0) as is_late,
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
@@ -35,6 +33,16 @@ with
                 then false
                 else true
             end as is_expected,
+
+            /* hardcoding year while we look for a better solution to custom grade
+               level vs school level */
+            if(
+                e.cc_academic_year = 2025
+                and e.cc_schoolid = 179905
+                and e.sections_grade_level = 5,
+                'MS',
+                d.school_level
+            ) as school_level,
 
             if(
                 a.scoretype = 'POINTS',

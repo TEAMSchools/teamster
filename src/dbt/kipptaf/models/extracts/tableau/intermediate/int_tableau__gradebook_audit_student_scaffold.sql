@@ -70,7 +70,7 @@ select
     s.academic_year_display,
     s.yearid,
     s.region,
-    s.school_level,
+    s.school_level_alt as school_level,
     s.schoolid,
     s.school,
     s.students_dcid,
@@ -155,7 +155,7 @@ select
 
     -- gpa and ada tag
     if(
-        s.school_level != 'ES'
+        s.school_level_alt != 'ES'
         and s.ada_above_or_at_80
         and qg.quarter_course_grade_points < 2.0,
         true,
@@ -169,7 +169,7 @@ select
 
     -- course comments
     if(
-        s.school_level != 'ES'
+        s.school_level_alt != 'ES'
         and sec.is_quarter_end_date_range
         and qg.quarter_course_percent_grade < 70
         and qg.quarter_comment_value is null,
@@ -287,7 +287,7 @@ select
     s.academic_year_display,
     s.yearid,
     s.region,
-    s.school_level,
+    s.school_level_alt as school_level,
     s.schoolid,
     s.school,
     s.students_dcid,
@@ -383,7 +383,7 @@ select
 
     if(
         ge.assignment_category_code = 'W'
-        and s.school_level != 'ES'
+        and s.school_level_alt != 'ES'
         and abs(
             round(cg.category_quarter_average_all_courses, 2)
             - round(cg.category_quarter_percent_grade, 2)
