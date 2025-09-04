@@ -56,8 +56,7 @@ inner join
 left join
     {{ ref("int_extracts__student_enrollments") }} as y2
     on y1.student_number = y2.student_number
-    and y1.academic_year = (y2.academic_year - 1)
-    and date(y2.academic_year, 10, 1) between y2.entrydate and y2.exitdate
+    and date(y1.academic_year + 1, 10, 1) between y2.entrydate and y2.exitdate
     and {{ union_dataset_join_clause(left_alias="y1", right_alias="y2") }}
 inner join
     attrition_dates as d

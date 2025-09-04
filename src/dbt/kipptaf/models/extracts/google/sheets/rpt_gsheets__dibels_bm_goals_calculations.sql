@@ -123,7 +123,7 @@ with
             region,
             assessment_grade,
             assessment_grade_int,
-            period,
+            `period`,
             benchmark_goal_season,
             school,
 
@@ -150,7 +150,7 @@ with
             region,
             assessment_grade,
             assessment_grade_int,
-            period,
+            `period`,
             benchmark_goal_season,
             school
     ),

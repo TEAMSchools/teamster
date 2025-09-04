@@ -30,6 +30,7 @@ with
     ),
 
     expected_course as (
+        {# TODO: document distinct #}
         select distinct
             _dbt_source_relation,
             cc_academic_year,
