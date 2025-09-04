@@ -2,7 +2,93 @@ with
 
     applications as (select *, from {{ ref("stg_smartrecruiters__applications") }}),
 
-    applications_reviewed as (
+    {# some records have rejected or other dates prior to "new" dates #}
+    {# because reinstating candidates in a job does not create a new application id #}
+    applications_status_after_new as (
+        select applications.application_id, min(date_value) as date_next_status_new,
+        from applications
+        cross join
+            unnest(
+                [
+                    case
+                        when
+                            applications.date_phone_screen_requested
+                            > applications.date_new
+                        then applications.date_phone_screen_requested
+                    end,
+                    case
+                        when
+                            applications.date_phone_screen_complete
+                            > applications.date_new
+                        then applications.date_phone_screen_complete
+                    end,
+                    case
+                        when applications.date_demo > applications.date_new
+                        then applications.date_demo
+                    end,
+                    case
+                        when applications.date_offer > applications.date_new
+                        then applications.date_offer
+                    end,
+                    case
+                        when applications.date_hired > applications.date_new
+                        then applications.date_hired
+                    end,
+                    case
+                        when applications.date_rejected > applications.date_new
+                        then applications.date_rejected
+                    end
+                ]
+            ) as date_value
+        where date_value is not null
+        group by applications.application_id
+    ),
+
+    applications_status_after_lead as (
+        select applications.application_id, min(date_value) as date_next_status_lead,
+        from applications
+        cross join
+            unnest(
+                [
+                    case
+                        when applications.date_new > applications.date_lead
+                        then applications.date_new
+                    end,
+                    case
+                        when
+                            applications.date_phone_screen_requested
+                            > applications.date_lead
+                        then applications.date_phone_screen_requested
+                    end,
+                    case
+                        when
+                            applications.date_phone_screen_complete
+                            > applications.date_lead
+                        then applications.date_phone_screen_complete
+                    end,
+                    case
+                        when applications.date_demo > applications.date_lead
+                        then applications.date_demo
+                    end,
+                    case
+                        when applications.date_offer > applications.date_lead
+                        then applications.date_offer
+                    end,
+                    case
+                        when applications.date_hired > applications.date_lead
+                        then applications.date_hired
+                    end,
+                    case
+                        when applications.date_rejected > applications.date_lead
+                        then applications.date_rejected
+                    end
+                ]
+            ) as date_value
+        where date_value is not null
+        group by applications.application_id
+    ),
+
+    applications_unnested as (
         select
             applications.application_field_phone_interview_score
             as phone_interview_score,
@@ -34,6 +120,8 @@ with
             applications.source_type,
             applications.subject_preference,
             recruiter_single,
+            applications_status_after_new.date_next_status_new,
+            applications_status_after_lead.date_next_status_lead,
             trim(subject_preference_single) as subject_preference_single,
             coalesce(
                 applications.application_field_school_shared_with_miami,
@@ -42,36 +130,23 @@ with
             coalesce(
                 applications.application_field_resume_score, applications.average_rating
             ) as resume_score,
-            {# days from application state: new to next stage reached first #}
-            least(
-                coalesce(applications.date_rejected, '9999-12-31'),
-                coalesce(applications.date_phone_screen_requested, '9999-12-31'),
-                coalesce(applications.date_phone_screen_complete, '9999-12-31'),
-                coalesce(applications.date_demo, '9999-12-31'),
-                coalesce(applications.date_offer, '9999-12-31'),
-                coalesce(applications.date_hired, '9999-12-31')
-            ) as date_next_status_new,
-            {# days from application state: lead to next stage reached first #}
-            if(
-                applications.date_lead is not null,
-                least(
-                    coalesce(applications.date_new, '9999-12-31'),
-                    coalesce(applications.date_rejected, '9999-12-31'),
-                    coalesce(applications.date_phone_screen_requested, '9999-12-31'),
-                    coalesce(applications.date_phone_screen_complete, '9999-12-31'),
-                    coalesce(applications.date_demo, '9999-12-31'),
-                    coalesce(applications.date_offer, '9999-12-31'),
-                    coalesce(applications.date_hired, '9999-12-31')
-                ),
-                null
-            ) as date_next_status_lead,
+
         from applications
+        left join
+            applications_status_after_new
+            on applications.application_id
+            = applications_status_after_new.application_id
+        left join
+            applications_status_after_lead
+            on applications.application_id
+            = applications_status_after_lead.application_id
         {# separating out multi-select fields for reporting #}
         cross join
             unnest(
                 split(applications.subject_preference, ',')
             ) as subject_preference_single
         cross join unnest(split(applications.recruiters, ',')) as recruiter_single
+
     ),
 
     final as (
@@ -123,7 +198,7 @@ with
                 date_next_status_lead != '9999-12-31',
                 date_diff(date_next_status_lead, date_lead, day),
                 date_diff(current_date(), date_lead, day)
-            ) as days_lead_to_new,
+            ) as days_lead_to_other,
             {# application considered reviewed when days between new or lead and next #}
             {# stage <= 7 days and a resume score has been added #}
             case
@@ -137,7 +212,7 @@ with
                 then true
                 else false
             end as within_week_initial_review,
-        from applications_reviewed
+        from applications_unnested
 
     )
 
