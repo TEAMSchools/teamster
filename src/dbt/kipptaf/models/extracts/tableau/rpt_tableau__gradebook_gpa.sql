@@ -50,7 +50,7 @@ with
             enr.academic_year_display,
             enr.yearid,
             enr.region,
-            enr.school_level,
+            enr.school_level_alt as school_level,
             enr.schoolid,
             enr.school,
             enr.grade_level,
