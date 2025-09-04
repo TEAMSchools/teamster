@@ -1,4 +1,5 @@
 with
+
     applications as (select *, from {{ ref("stg_smartrecruiters__applications") }}),
 
     applications_reviewed as (
@@ -103,6 +104,8 @@ with
             date_next_status_new,
             date_next_status_lead,
             date_trunc(date_new, week(monday)) as application_week_start,  -- noqa: LT01
+            date_diff(date_next_status_new, date_new, day) as days_new_to_other,
+            date_diff(date_next_status_lead, date_lead, day) as days_new_to_lead,
             case
                 when
                     date_diff(date_next_status_new, date_new, day) <= 7
