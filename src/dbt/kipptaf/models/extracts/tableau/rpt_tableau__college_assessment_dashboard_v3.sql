@@ -74,7 +74,7 @@ select
     g2.goal as board_goal,
 
     concat(
-        r.admin_season, ' ', r.scope, ' ', r.subject_area, ' ', r.test_type
+        r.grade_season, ' ', r.scope, ' ', r.subject_area, ' ', r.test_type
     ) as test_for_roster,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
@@ -106,4 +106,8 @@ left join
     and r.scope = g2.expected_scope
     and r.subject_area = g2.expected_subject_area
     and g1.goal_type = 'Board'
-where e.rn_year = 1 and e.school_level = 'HS'
+where
+    e.rn_year = 1
+    and e.school_level = 'HS'
+    and r.subject_area not in ('Reading', 'Science', 'Math Test')
+    and r.test_month is not null
