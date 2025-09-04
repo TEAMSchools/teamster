@@ -25,4 +25,5 @@ from {{ ref("int_extracts__student_enrollments") }}
 where
     academic_year = {{ var("current_academic_year") }}
     and rn_year = 1
-    and is_enrolled_y1
+    and exitdate >= date({{ var("current_academic_year") }}, 8, 15)
+order by lastfirst asc

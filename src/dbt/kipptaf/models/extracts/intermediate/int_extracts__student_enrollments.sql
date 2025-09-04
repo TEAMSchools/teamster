@@ -185,6 +185,15 @@ select
     end as race_ethnicity,
 
     case
+        when
+            e.academic_year = 2025
+            and e.school_abbreviation = 'Sumner'
+            and e.grade_level = 5
+        then 'MS'
+        else e.school_level
+    end as school_level_alt,
+
+    case
         when e.school_level in ('ES', 'MS')
         then e.advisory_name
         when e.school_level = 'HS'
