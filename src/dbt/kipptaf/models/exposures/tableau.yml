@@ -9,4 +9,5 @@ exposures:
     url: https://drive.google.com/file/d/1aChpbS6v37hwIi1QrT1EmpzOHpXkXKaz
     meta:
       dagster:
-        kinds: tableau
+        kinds:
+          - tableau

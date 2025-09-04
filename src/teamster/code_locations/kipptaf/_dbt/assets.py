@@ -70,7 +70,7 @@ asset_specs = [
             for ref in exposure["refs"]
         ],
         metadata={"url": exposure.get("url")},
-        kinds={exposure["meta"]["dagster"]["kinds"]},
+        kinds=set(exposure["meta"]["dagster"]["kinds"]),
     )
     for exposure in manifest["exposures"].values()
 ]
