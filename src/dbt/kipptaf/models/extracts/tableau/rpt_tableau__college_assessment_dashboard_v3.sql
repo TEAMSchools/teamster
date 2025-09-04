@@ -17,6 +17,7 @@ select
     e.gifted_and_talented,
     e.advisory,
     e.student_email,
+    e.rn_undergrad,
     e.salesforce_id,
     e.ktc_cohort,
     e.contact_owner_name,

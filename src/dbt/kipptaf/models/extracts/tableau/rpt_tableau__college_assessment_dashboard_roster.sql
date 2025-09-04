@@ -148,7 +148,6 @@ select
     student_name,
     student_first_name,
     student_last_name,
-    grade_level,
     student_email,
     ktc_cohort,
     iep_status,
@@ -177,7 +176,7 @@ select
     {% endfor %}
 
 from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }}
-where test_month is not null
+where test_month is not null and rn_undergrad = 1
 group by
     region,
     schoolid,
@@ -187,7 +186,6 @@ group by
     student_name,
     student_first_name,
     student_last_name,
-    grade_level,
     student_email,
     ktc_cohort,
     iep_status,
