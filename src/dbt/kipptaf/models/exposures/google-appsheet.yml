@@ -10,4 +10,5 @@ exposures:
       - ref("rpt_appsheet__seat_tracker_roster")
     meta:
       dagster:
-        kinds: google
+        kinds:
+          - google
