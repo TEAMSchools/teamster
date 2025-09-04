@@ -126,7 +126,7 @@ with
             psat10_combined_superscore,
             psatnmsqt_combined_superscore,
             sat_combined_superscore,
-            act_composite_supercore,
+            act_composite_superscore,
         from
             {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} pivot (
                 avg(superscore) for scope in (
@@ -134,7 +134,7 @@ with
                     'PSAT10' as psat10_combined_superscore,
                     'PSAT NMSQT' as psatnmsqt_combined_superscore,
                     'SAT' as sat_combined_superscore,
-                    'ACT' as act_composite_supercore
+                    'ACT' as act_composite_superscore
                 )
             )
     )
@@ -159,7 +159,7 @@ select
     s.psat10_combined_superscore,
     s.psatnmsqt_combined_superscore,
     s.sat_combined_superscore,
-    s.act_composite_supercore,
+    s.act_composite_superscore,
 
     {% for test in tests %}
         avg(
@@ -204,4 +204,4 @@ group by
     s.psat10_combined_superscore,
     s.psatnmsqt_combined_superscore,
     s.sat_combined_superscore,
-    s.act_composite_supercore
+    s.act_composite_superscore
