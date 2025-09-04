@@ -1,8 +1,6 @@
 version: 2
 models:
   - name: rpt_gsheets__gpa_roster
-    config:
-      enabled: false
     columns:
       - name: academic_year
         data_type: string

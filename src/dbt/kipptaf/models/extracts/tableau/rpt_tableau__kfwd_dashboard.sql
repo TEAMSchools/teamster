@@ -230,6 +230,7 @@ select
     c.contact_last_outreach as last_outreach_date,
     c.student_number as powerschool_student_number,
     c.is_dlm,
+    c.graduation_year,
 
     ay.academic_year,
 
