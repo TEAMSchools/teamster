@@ -30,3 +30,15 @@ exposures:
         kinds:
           - dbt
           - semanticmodel
+  - name: ad_hoc_reporting_views
+    label: Ad Hoc Reporting
+    type: analysis
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("int_powerschool__attendance_streak")
+    meta:
+      dagster:
+        kinds:
+          - dbt
+          - view
