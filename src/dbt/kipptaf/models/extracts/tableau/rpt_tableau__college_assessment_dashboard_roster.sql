@@ -174,7 +174,10 @@ select
     {% endfor %}
 
 from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }}
-where test_month is not null and rn_undergrad = 1
+where
+    test_month is not null
+    and rn_undergrad = 1
+    and subject_area not in ('English', 'Science', 'Math Test')
 group by
     region,
     schoolid,
