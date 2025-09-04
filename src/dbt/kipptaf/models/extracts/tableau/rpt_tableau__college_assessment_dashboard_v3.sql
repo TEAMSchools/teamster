@@ -109,5 +109,5 @@ left join
 where
     e.rn_year = 1
     and e.school_level = 'HS'
-    and r.subject_area not in ('Reading', 'Science', 'Math Test')
+    and r.subject_area not in ('English', 'Science', 'Math Test')
     and r.test_month is not null
