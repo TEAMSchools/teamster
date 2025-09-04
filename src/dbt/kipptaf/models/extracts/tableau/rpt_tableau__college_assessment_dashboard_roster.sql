@@ -153,6 +153,7 @@ select
     iep_status,
     cumulative_y1_gpa,
     cumulative_y1_gpa_projected,
+    superscore as overall_superscore,
 
     {% for test in tests %}
         avg(
@@ -161,9 +162,6 @@ select
         avg(
             case when test_for_roster = '{{ test.label }}' then max_scale_score end
         ) as {{ test.prefix }}_max_scale_score,
-        avg(
-            case when test_for_roster = '{{ test.label }}' then superscore end
-        ) as {{ test.prefix }}_overall_superscore,
         avg(
             case
                 when test_for_roster = '{{ test.label }}' then running_max_scale_score
@@ -190,4 +188,5 @@ group by
     ktc_cohort,
     iep_status,
     cumulative_y1_gpa,
-    cumulative_y1_gpa_projected
+    cumulative_y1_gpa_projected,
+    superscore
