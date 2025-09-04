@@ -149,6 +149,7 @@ select
     student_first_name,
     student_last_name,
     student_email,
+    enroll_status,
     ktc_cohort,
     iep_status,
     cumulative_y1_gpa,
@@ -176,10 +177,7 @@ select
     {% endfor %}
 
 from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }}
-where
-    test_month is not null
-    and rn_undergrad = 1
-    and subject_area not in ('Reading', 'Science')
+where rn_undergrad = 1
 group by
     region,
     schoolid,
@@ -190,6 +188,7 @@ group by
     student_first_name,
     student_last_name,
     student_email,
+    enroll_status,
     ktc_cohort,
     iep_status,
     cumulative_y1_gpa,
