@@ -42,6 +42,7 @@ with
             coalesce(
                 applications.application_field_resume_score, applications.average_rating
             ) as resume_score,
+            {# days from application state: new to next stage reached first #}
             least(
                 coalesce(applications.date_rejected, '9999-12-31'),
                 coalesce(applications.date_phone_screen_requested, '9999-12-31'),
@@ -50,16 +51,22 @@ with
                 coalesce(applications.date_offer, '9999-12-31'),
                 coalesce(applications.date_hired, '9999-12-31')
             ) as date_next_status_new,
-            least(
-                coalesce(applications.date_new, '9999-12-31'),
-                coalesce(applications.date_rejected, '9999-12-31'),
-                coalesce(applications.date_phone_screen_requested, '9999-12-31'),
-                coalesce(applications.date_phone_screen_complete, '9999-12-31'),
-                coalesce(applications.date_demo, '9999-12-31'),
-                coalesce(applications.date_offer, '9999-12-31'),
-                coalesce(applications.date_hired, '9999-12-31')
+            {# days from application state: lead to next stage reached first #}
+            if(
+                applications.date_lead is not null,
+                least(
+                    coalesce(applications.date_new, '9999-12-31'),
+                    coalesce(applications.date_rejected, '9999-12-31'),
+                    coalesce(applications.date_phone_screen_requested, '9999-12-31'),
+                    coalesce(applications.date_phone_screen_complete, '9999-12-31'),
+                    coalesce(applications.date_demo, '9999-12-31'),
+                    coalesce(applications.date_offer, '9999-12-31'),
+                    coalesce(applications.date_hired, '9999-12-31')
+                ),
+                null
             ) as date_next_status_lead,
         from applications
+        {# separating out multi-select fields for reporting #}
         cross join
             unnest(
                 split(applications.subject_preference, ',')
@@ -104,8 +111,21 @@ with
             date_next_status_new,
             date_next_status_lead,
             date_trunc(date_new, week(monday)) as application_week_start,  -- noqa: LT01
-            date_diff(date_next_status_new, date_new, day) as days_new_to_other,
-            date_diff(date_next_status_lead, date_lead, day) as days_new_to_lead,
+            date_diff(date_hired, date_new, day) as days_to_hire,
+            {# average days to review uses current date in lieu of an application #}
+            {# having a next stage noted #}
+            if(
+                date_next_status_new != '9999-12-31',
+                date_diff(date_next_status_new, date_new, day),
+                date_diff(current_date(), date_new, day)
+            ) as days_new_to_other,
+            if(
+                date_next_status_lead != '9999-12-31',
+                date_diff(date_next_status_lead, date_lead, day),
+                date_diff(current_date(), date_lead, day)
+            ) as days_lead_to_new,
+            {# application considered reviewed when days between new or lead and next #}
+            {# stage <= 7 days and a resume score has been added #}
             case
                 when
                     date_diff(date_next_status_new, date_new, day) <= 7
