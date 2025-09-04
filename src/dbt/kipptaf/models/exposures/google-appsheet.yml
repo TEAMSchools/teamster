@@ -1,0 +1,13 @@
+exposures:
+  - name: unknown_appsheet
+    label: Unknown Appsheet
+    type: application
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_appsheet__assessments")
+      - ref("rpt_appsheet__leadership_development_assignments")
+      - ref("rpt_appsheet__seat_tracker_roster")
+    meta:
+      dagster:
+        kinds: google
