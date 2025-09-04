@@ -74,7 +74,7 @@ select
     g2.goal as board_goal,
 
     concat(
-        r.grade_season, ' ', r.scope, ' ', r.subject_area, ' ', r.test_type
+        's', '_', r.grade_season, ' ', r.scope, ' ', r.subject_area, ' ', r.test_type
     ) as test_for_roster,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
