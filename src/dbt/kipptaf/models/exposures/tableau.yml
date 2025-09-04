@@ -1,0 +1,12 @@
+exposures:
+  - name: crdc_dashboard
+    label: CRDC Dashboard
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__crdc_roster")
+    url: https://drive.google.com/file/d/1aChpbS6v37hwIi1QrT1EmpzOHpXkXKaz
+    meta:
+      dagster:
+        kinds: tableau
