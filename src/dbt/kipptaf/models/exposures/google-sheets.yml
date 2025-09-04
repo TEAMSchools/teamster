@@ -1,15 +1,4 @@
 exposures:
-  - name: crdc_dashboard
-    label: CRDC Dashboard
-    type: dashboard
-    owner:
-      name: Data Team
-    depends_on:
-      - ref("rpt_tableau__crdc_roster")
-    url: https://drive.google.com/file/d/1aChpbS6v37hwIi1QrT1EmpzOHpXkXKaz
-    meta:
-      dagster:
-        kinds: tableau
   - name: powerschool_retention_exemption_log_upload_template
     label: PowerSchool retention exemption log upload template
     type: application
@@ -20,7 +9,8 @@ exposures:
       - ref("int_powerschool__teachers")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: leadership_pm_reminders
     label: Leadership PM Reminders
     type: application
@@ -31,7 +21,8 @@ exposures:
       - ref("rpt_gsheets__leadership_pm_reminders")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: knowbe4_training_status_report_23_24
     label: Knowbe4 Training Status Report 23_24
     type: application
@@ -42,7 +33,8 @@ exposures:
       - ref("rpt_tableau__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: 2024_renewal_project_plan
     label: 2024 Renewal Project Plan
     type: application
@@ -53,7 +45,8 @@ exposures:
       - ref("rpt_tableau__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: rpt_gsheets__miami_lunch_adults
     label: rpt_gsheets__miami_lunch_adults
     type: application
@@ -64,7 +57,8 @@ exposures:
       - ref("int_people__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: kmsa_contact_roster_kipp_camden
     label: KMSA Contact Roster - KIPP Camden
     type: application
@@ -75,7 +69,8 @@ exposures:
       - ref("rpt_gsheets__kfwd_taf_contact_feed")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: camden_sar_accommodations_errors20241031
     label: "[Camden] SAR Accommodations Errors - 20241031"
     type: application
@@ -86,7 +81,8 @@ exposures:
       - ref("base_powerschool__student_enrollments")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: sy25_junior_ptg_tracker_co_2026
     label: SY25 Junior PTG Tracker (c/o 2026)
     type: application
@@ -97,7 +93,8 @@ exposures:
       - ref("rpt_gsheets__kfwd_flc")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: nj_ddi_roster_source
     label: NJ DDI Roster - Source
     type: application
@@ -108,7 +105,8 @@ exposures:
       - ref("rpt_gsheets__ddi_tier_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: sy26_co_2026_workbook
     label: SY 26 - C/O 2026 Workbook
     type: application
@@ -119,7 +117,8 @@ exposures:
       - ref("rpt_gsheets__kfwd_flc")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: gsheets_student_contact_info
     label: gsheets_student_contact_info
     type: application
@@ -130,7 +129,8 @@ exposures:
       - ref("rpt_gsheets__student_contact_info")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: tech_data_feeds
     label: Tech Data Feeds
     type: application
@@ -142,7 +142,8 @@ exposures:
       - ref("stg_ldap__user_person")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: kipp_alumni_employees
     label: kipp_alumni_employees
     type: application
@@ -153,7 +154,8 @@ exposures:
       - ref("int_people__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: staff_roster_source
     label: Staff Roster - Source
     type: application
@@ -164,7 +166,8 @@ exposures:
       - ref("rpt_gsheets__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: grants_timesheet_roster_feed
     label: Grants Timesheet Roster Feed
     type: application
@@ -175,7 +178,8 @@ exposures:
       - ref("int_people__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: miami_demographic_update_sy25
     label: Miami Demographic Update SY25
     type: application
@@ -186,7 +190,8 @@ exposures:
       - ref("rpt_gsheets__student_contact_info")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: miami_demographic_update_sy24
     label: Miami Demographic Update SY24
     type: application
@@ -197,7 +202,8 @@ exposures:
       - ref("rpt_gsheets__student_contact_info")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: che_camden_workspace_feed
     label: CHE & Camden | Workspace Feed
     type: application
@@ -209,7 +215,8 @@ exposures:
       - ref("base_powerschool__student_enrollments")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: location_changers_2025
     label: location_changers_2025
     type: application
@@ -220,7 +227,8 @@ exposures:
       - ref("int_people__staff_roster_history")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: shelbys_secret_staff_roster
     label: Shelby's Secret Staff Roster
     type: application
@@ -231,7 +239,8 @@ exposures:
       - ref("int_people__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: survey_tracking_v3p0
     label: Survey Tracking v3.0
     type: application
@@ -242,7 +251,8 @@ exposures:
       - ref("rpt_tableau__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: gsheets_student_logins
     label: gsheets_student_logins
     type: application
@@ -253,7 +263,8 @@ exposures:
       - ref("rpt_gsheets__student_contact_info")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: gsheets_staff_roster
     label: gsheets_staff_roster
     type: application
@@ -264,7 +275,8 @@ exposures:
       - ref("rpt_gsheets__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: tracker_know_be4_heartbook
     label: Tracker | KnowBe4 + Heartbook
     type: application
@@ -276,7 +288,8 @@ exposures:
       - ref("rpt_tableau__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: staff_demo_roster_kyle_live_feed
     label: "Staff Demo Roster : Kyle Live Feed"
     type: application
@@ -287,7 +300,8 @@ exposures:
       - ref("rpt_tableau__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: gsheets_mtss_rti
     label: gsheets_mtss_rti
     type: application
@@ -298,7 +312,8 @@ exposures:
       - ref("rpt_gsheets__mtss_rti")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: kfwd_missing_account_audit_refreshes_nightly
     label: KFwd Missing Account Audit [refreshes nightly]
     type: application
@@ -309,7 +324,8 @@ exposures:
       - ref("int_kippadb__roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: adp_workforce_now_employees_import
     label: ADP Workforce Now Employees Import
     type: application
@@ -320,7 +336,8 @@ exposures:
       - ref("rpt_adp_workforce_now__data_bridge")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: gsheets__laptop_assignments
     label: gsheets__laptop_assignments
     type: application
@@ -331,7 +348,8 @@ exposures:
       - ref("rpt_gsheets__laptop_assignments")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: class_of_2024_match_steps_tracker
     label: Class of 2024 Match Steps Tracker
     type: application
@@ -342,7 +360,8 @@ exposures:
       - ref("rpt_gsheets__kfwd_flc")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: sy24_junior_ptg_tracker_co_2025
     label: SY24 Junior PTG Tracker (c/o 2025)
     type: application
@@ -353,7 +372,8 @@ exposures:
       - ref("rpt_gsheets__kfwd_flc")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: seat_tracker_finance_mirror_2025
     label: Seat Tracker - Finance Mirror 2025
     type: application
@@ -364,7 +384,8 @@ exposures:
       - ref("int_people__next_year_salary_projections")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: membership_upload_sheet
     label: Membership Upload Sheet
     type: application
@@ -375,7 +396,8 @@ exposures:
       - ref("int_people__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: deans_list_contact_notes_feed
     label: DeansList Contact Notes Feed
     type: application
@@ -386,7 +408,8 @@ exposures:
       - ref("rpt_gsheets__kippfwd_contacts")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: amandas_secret_birthday_roster
     label: Amanda's secret birthday roster
     type: application
@@ -397,7 +420,8 @@ exposures:
       - ref("int_people__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: google_form_dropdown_teachers
     label: "Google Form Dropdown: Teachers"
     type: application
@@ -408,7 +432,8 @@ exposures:
       - ref("int_people__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: renewal_letter_tracking
     label: Renewal Letter Tracking
     type: application
@@ -419,7 +444,8 @@ exposures:
       - ref("rpt_gsheets__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: kipp_miami_summer_25_appsheet_stipends_and_bonuses
     label: KIPP Miami Summer 25 Appsheet Stipends and Bonuses
     type: application
@@ -430,7 +456,8 @@ exposures:
       - ref("rpt_gsheets__kippfwd_collab_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: tdt_programs_historical_data_tool
     label: TDT Programs Historical Data Tool
     type: application
@@ -441,7 +468,8 @@ exposures:
       - ref("rpt_gsheets__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: miami_2024_renewal_project_plan
     label: Miami 2024 Renewal Project Plan
     type: application
@@ -452,7 +480,8 @@ exposures:
       - ref("rpt_tableau__staff_roster")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
   - name: fy26_alumni_team_hub
     label: FY26 Alumni Team Hub
     type: application
@@ -463,7 +492,8 @@ exposures:
       - ref("rpt_gsheets__kfwd_flc")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
 
   - name: access_denied
     label: Access Denied
@@ -481,7 +511,8 @@ exposures:
       - ref("rpt_gsheets__kfwd_flc")
     meta:
       dagster:
-        kinds: googlesheets
+        kinds:
+          - googlesheets
 
   # - name: hro_2425_renewal_workbook_data_team_workspace
   #   label: HRO 24-25 Renewal Workbook - Data Team Workspace
