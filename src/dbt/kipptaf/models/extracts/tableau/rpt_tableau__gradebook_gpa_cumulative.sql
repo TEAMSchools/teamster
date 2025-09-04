@@ -9,7 +9,7 @@ select
     enr.ethnicity,
     enr.yearid,
     enr.region,
-    enr.school_level,
+    enr.school_level_alt as school_level,
     enr.schoolid,
     enr.school,
     enr.grade_level as most_recent_grade_level,
@@ -51,6 +51,6 @@ left join
 where
     enr.rn_undergrad = 1
     and not enr.is_out_of_district
-    and enr.school_level in ('MS', 'HS')
+    and enr.school_level_alt in ('MS', 'HS')
     and enr.enroll_status in (0, 3)
     and enr.region != 'Paterson'

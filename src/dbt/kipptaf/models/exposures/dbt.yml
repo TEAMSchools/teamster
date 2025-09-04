@@ -1,0 +1,32 @@
+exposures:
+  - name: dbt_snapshots
+    label: dbt Snapshots
+    type: analysis
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("snapshot_leadership_development__output")
+      - ref("snapshot_people__employee_numbers")
+      - ref("snapshot_people__student_logins")
+    meta:
+      dagster:
+        kinds:
+          - dbt
+          - table
+  - name: dbt_semantic_layer
+    label: dbt Semantic Layer
+    type: ml
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("dim_observers")
+      - ref("dim_staff")
+      - ref("dim_terms")
+      - ref("fct_microgoals")
+      - ref("fct_observations")
+      - ref("metricflow_time_spine")
+    meta:
+      dagster:
+        kinds:
+          - dbt
+          - semanticmodel
