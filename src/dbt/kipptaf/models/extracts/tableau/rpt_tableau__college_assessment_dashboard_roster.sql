@@ -153,7 +153,6 @@ select
     iep_status,
     cumulative_y1_gpa,
     cumulative_y1_gpa_projected,
-    superscore as overall_superscore,
 
     {% for test in tests %}
         avg(
@@ -162,6 +161,9 @@ select
         avg(
             case when test_for_roster = '{{ test.label }}' then max_scale_score end
         ) as {{ test.prefix }}_max_scale_score,
+        avg(
+            case when test_for_roster = '{{ test.label }}' then superscore end
+        ) as {{ test.prefix }}_overall_superscore,
         avg(
             case
                 when test_for_roster = '{{ test.label }}' then running_max_scale_score
@@ -177,7 +179,7 @@ from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }}
 where
     test_month is not null
     and rn_undergrad = 1
-    and subject_area not in ('English', 'Science', 'Math Test')
+    and subject_area not in ('Reading', 'Science')
 group by
     region,
     schoolid,
@@ -191,5 +193,4 @@ group by
     ktc_cohort,
     iep_status,
     cumulative_y1_gpa,
-    cumulative_y1_gpa_projected,
-    superscore
+    cumulative_y1_gpa_projected
