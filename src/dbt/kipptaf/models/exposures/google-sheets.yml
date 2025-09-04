@@ -494,7 +494,6 @@ exposures:
       dagster:
         kinds:
           - googlesheets
-
   - name: access_denied
     label: Access Denied
     type: application
