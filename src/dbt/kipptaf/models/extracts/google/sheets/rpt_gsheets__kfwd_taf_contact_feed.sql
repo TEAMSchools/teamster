@@ -73,7 +73,7 @@ select
     r.powerschool_emergency_contact_3_phone_primary
     as ps_emergency_contact_3_phone_primary,
     r.region,
-    r.ps_home_address,
+    r.powerschool_home_address as ps_home_address,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("int_kippadb__enrollment_pivot") }} as e on r.contact_id = e.student
 where r.ktc_status like 'TAF%'
