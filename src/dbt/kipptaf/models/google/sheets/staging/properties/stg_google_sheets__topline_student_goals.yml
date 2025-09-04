@@ -29,4 +29,4 @@ models:
       - name: Goal_Direction
         data_type: string
       - name: Cutoff
-        data_type: int64
+        data_type: numeric
