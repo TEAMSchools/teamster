@@ -63,7 +63,7 @@ with
             on sr.google_email = u.primary_email
         where
             sr.user_principal_name is not null
-            and sr.assignment_status not in ('Terminated', 'Deceased')
+            and sr.worker_status_code != 'Terminated'
             and sr.home_work_location_powerschool_school_id != 0
     ),
 

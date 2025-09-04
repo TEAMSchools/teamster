@@ -1,11 +1,11 @@
 select
-    sr.last_name,
-    sr.middle_name,
-    sr.first_name,
+    sr.student_last_name as last_name,
+    sr.student_middle_name as middle_name,
+    sr.student_first_name as first_name,
     sr.gender,
     sr.cohort as graduation_year,
     sr.ethnicity as race,
-    sr.student_email_google as student_email,
+    sr.student_email,
     sr.student_web_id as username,
     sr.gifted_and_talented as ext__gifted,
 
@@ -54,7 +54,7 @@ select
         when sc.contact_type = 'daytime'
         then 'Work'
     end as contact_phone_type,
-from {{ ref("base_powerschool__student_enrollments") }} as sr
+from {{ ref("int_extracts__student_enrollments") }} as sr
 left join
     {{ ref("int_powerschool__student_contacts") }} as sc
     on sr.students_dcid = sc.studentdcid

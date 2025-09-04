@@ -100,9 +100,9 @@ with
 select
     co.academic_year,
     co.student_number,
-    co.lastfirst as student_name,
+    co.student_name,
     co.grade_level,
-    co.school_abbreviation as school,
+    co.school,
     co.lep_status,
     co.gender,
     co.ethnicity as race_ethnicity,
@@ -133,7 +133,7 @@ select
     s.standard_percent_mastery,
     s.star_subject,
     s.rn_subject_round_star,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['BOY', 'MOY', 'EOY']) as administration_round
 left join

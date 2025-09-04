@@ -1,7 +1,7 @@
 select
-    co.school_abbreviation as school,
+    co.school,
     co.student_number,
-    co.lastfirst as student,
+    co.student_name as student,
     co.academic_year,
     co.dob,
     co.is_504,
@@ -17,7 +17,7 @@ select
     if(
         sp.exit_date < current_date('{{ var("local_timezone") }}'), 'Expired', 'Current'
     ) as hi_status,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on co.studentid = sp.studentid

@@ -59,10 +59,10 @@ with
     identifiers as (
         select
             co.student_number,
-            co.lastfirst as student_name,
+            co.student_name,
             co.academic_year,
             co.schoolid,
-            co.school_abbreviation as school,
+            co.school,
             co.region,
             co.grade_level,
             co.enroll_status,
@@ -72,6 +72,9 @@ with
             co.ethnicity,
             co.year_in_network,
             co.is_self_contained,
+            co.team as homeroom_section,
+            co.advisor_lastfirst as homeroom_teacher_name,
+            co.advisor_teachernumber as homeroom_teachernumber,
 
             w.week_start_monday,
             w.week_end_sunday,
@@ -109,10 +112,6 @@ with
             sf.state_test_proficiency,
             sf.is_exempt_iready,
 
-            hr.sections_section_number as homeroom_section,
-            hr.teachernumber as homeroom_teachernumber,
-            hr.teacher_lastfirst as homeroom_teacher_name,
-
             lc.head_of_school_preferred_name_lastfirst as head_of_school,
 
             coalesce(sf.nj_student_tier, 'Unbucketed') as nj_student_tier,
@@ -139,7 +138,7 @@ with
             case
                 when r.is_mastery then 1 when not r.is_mastery then 0
             end as is_mastery_int,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
             {{ ref("int_powerschool__calendar_week") }} as w
             on co.academic_year = w.academic_year
@@ -172,15 +171,6 @@ with
             and co.academic_year = sf.academic_year
             and cc.courses_credittype = sf.powerschool_credittype
             and sf.rn_year = 1
-        left join
-            {{ ref("base_powerschool__course_enrollments") }} as hr
-            on co.studentid = hr.cc_studentid
-            and co.yearid = hr.cc_yearid
-            and co.schoolid = hr.cc_schoolid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
-            and hr.cc_course_number = 'HR'
-            and not hr.is_dropped_section
-            and hr.rn_course_number_year = 1
         left join
             {{ ref("int_people__leadership_crosswalk") }} as lc
             on co.schoolid = lc.home_work_location_powerschool_school_id
