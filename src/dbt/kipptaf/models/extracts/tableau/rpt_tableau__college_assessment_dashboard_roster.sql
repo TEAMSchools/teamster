@@ -246,6 +246,8 @@ select
     b.iep_status,
     b.cumulative_y1_gpa,
     b.cumulative_y1_gpa_projected,
+    b.college_match_gpa,
+    b.college_match_gpa_bands,
 
     s.psat89_combined_superscore,
     s.psat10_combined_superscore,
