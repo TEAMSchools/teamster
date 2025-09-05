@@ -240,7 +240,7 @@ exposures:
           metadata:
             id: 08d133d6-6e48-4218-ae6d-015f7a0abe13
             cron_schedule: 0 4 * * *
-  - name: school_mint_grow_dashboard
+  - name: schoolmint_grow_dashboard
     label: SchoolMint Grow Dashboard
     type: dashboard
     owner:
