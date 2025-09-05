@@ -58,6 +58,8 @@
       `distinct`
 - [ ] All `distinct` usage must be accompanied by an comment explaining it's
       necessity
+- [ ] Do not use `order by` for `select` statements. That should be done in the
+      reporting layer.
 - [ ] If you are adding a new external source, before building, run:
 
       dbt run-operation stage_external_sources --vars "{'ext_full_refresh': 'true'}" --args select: [model name(s)]
