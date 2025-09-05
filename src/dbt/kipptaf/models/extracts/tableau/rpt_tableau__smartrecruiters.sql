@@ -189,28 +189,6 @@ with
             date_next_status_lead,
             date_trunc(date_new, week(monday)) as application_week_start,  -- noqa: LT01
             date_diff(date_hired, date_new, day) as days_to_hire,
-            if(resume_score = 3, 1, 0) as rated_3,
-            if(resume_score = 4, 1, 0) as rated_4,
-            if(resume_score in (3, 4), 1, 0) as rated_3_4,
-            if(resume_score = 3 and date_hired is not null, 1, 0) as hired_3,
-            if(resume_score = 4 and date_hired is not null, 1, 0) as hired_4,
-            if(resume_score in (3, 4) and date_hired is not null, 1, 0) as hired_3_4,
-            if(resume_score = 3 and date_offer is not null, 1, 0) as offer_3,
-            if(resume_score = 4 and date_offer is not null, 1, 0) as offer_4,
-            if(resume_score in (3, 4) and date_offer is not null, 1, 0) as offer_3_4,
-            if(resume_score = 3 and date_demo is not null, 1, 0) as demo_3,
-            if(resume_score = 4 and date_demo is not null, 1, 0) as demo_4,
-            if(resume_score in (3, 4) and date_demo is not null, 1, 0) as demo_3_4,
-            if(
-                resume_score = 3 and date_phone_screen_complete is not null, 1, 0
-            ) as phone_interview_complete_3,
-            if(
-                resume_score = 4 and date_phone_screen_complete is not null, 1, 0
-            ) as phone_interview_complete_4,
-            if(
-                resume_score in (3, 4) and date_phone_screen_complete is not null, 1, 0
-            ) as phone_interview_complete_3_4,
-
             {# average days to review uses current date in lieu of an application #}
             {# having a next stage noted #}
             if(
