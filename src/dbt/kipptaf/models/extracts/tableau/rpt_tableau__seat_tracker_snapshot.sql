@@ -18,6 +18,10 @@ with
 
     staff_roster as (select *, from {{ ref("int_people__staff_roster") }}),
 
+    projections as (
+        select *, from {{ ref("stg_google_sheets__recruitment__school_projections") }}
+    ),
+
     final as (
         select
             date_spine.date_week,
@@ -43,6 +47,8 @@ with
 
             recruiter_info.formatted_name as recruiter,
             recruiter_info.reports_to_formatted_name as recruiter_manager,
+
+            projections.anticipated_hires,
 
             if(seats_snapshot.is_open, 1, 0) as snapshot_open,
             if(seats_snapshot.is_new_hire, 1, 0) as snapshot_new_hire,
@@ -71,6 +77,10 @@ with
         left join
             staff_roster as recruiter_info
             on seats_detail.recruiter = recruiter_info.employee_number
+        left join
+            projections
+            on seats_snapshot.adp_location = trim(projections.primary_site)
+            and seats_snapshot.academic_year = projections.academic_year
     )
 
 select *,
