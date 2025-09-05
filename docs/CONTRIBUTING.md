@@ -1,4 +1,4 @@
-# Welcome to the Teamster contributing guide
+# Welcome to the TEAMster contributing guide
 
 Read our [Code of Conduct](CODE_OF_CONDUCT.md) to keep our community
 approachable and respectable.
@@ -19,7 +19,7 @@ All of our source code is located under the `src/` directory.
 `src/teamster/` contains all of our Dagster code, which powers our data
 orchestration.
 
-`src/dbt/` contains all of our dbt SQL, which is organized by
+`src/dbt/` contains all of our dbt code, which is organized by
 [project](https://docs.getdbt.com/docs/build/projects).
 
 ### dbt Projects
@@ -28,7 +28,7 @@ orchestration.
 views that aggregate regional tables as well as CMO-specific data. This is the
 **only** project that dbt Cloud is configured to work with.
 
-`kippnewark`, `kippcamden`, and `kippmiami` contain region-specific
+`kippnewark`, `kippcamden`, `kippmiami`, and `kipppaterson` contain regional
 configurations that ensure their data is loaded into their respective datasets.
 
 Other projects (e.g. `powerschool`, `deanslist`, `iready`) contain code for
