@@ -28,5 +28,5 @@ models:
         data_type: string
       - name: Goal_Direction
         data_type: string
-      - name: Cutoff
+      - name: cutoff
         data_type: numeric
