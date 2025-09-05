@@ -33,6 +33,7 @@ def build_tableau_workbook_refresh_asset(
         description=label,
         group_name="tableau",
         output_required=False,
+        kinds=set(meta["dagster"]["kinds"]),
         pool="tableau_pat_session_limit",
     )
     def _asset(context: AssetExecutionContext, tableau: TableauServerResource):
