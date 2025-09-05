@@ -79,7 +79,7 @@ with
             on seats_detail.recruiter = recruiter_info.employee_number
         left join
             projections
-            on seats_snapshot.adp_location = trim(projections.primary_site)
+            on seats_snapshot.adp_location = projections.primary_site
             and seats_snapshot.academic_year = projections.academic_year
     )
 
