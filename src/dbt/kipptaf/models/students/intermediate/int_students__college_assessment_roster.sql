@@ -83,7 +83,14 @@ with
             ) as runnning_superscore,
 
         from running_max_score
-        where score_type not in ('act_composite', 'sat_total_score')
+        where
+            score_type not in (
+                'act_composite',
+                'sat_total_score',
+                'psat89_total',
+                'psat10_total',
+                'psatnmsqt_total'
+            )
     ),
 
     dedup_runnning_superscore as (
