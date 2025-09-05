@@ -11,7 +11,8 @@ exposures:
       dagster:
         kinds:
           - tableau
-  - name: Attrition Dashboard
+  - name: attrition_dashboard
+    label: Attrition Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -19,9 +20,15 @@ exposures:
       - ref("rpt_tableau__staff_attrition_details")
     meta:
       dagster:
-        id: 5bf99669-00bb-4906-b2b4-79f2976ac3a4
-        cron_schedule: 0 7 * * *
-  - name: College Admission Readiness Assessments Tracker (CARAT)
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 5bf99669-00bb-4906-b2b4-79f2976ac3a4
+        schedule:
+          cron_schedule: 0 7 * * *
+  - name: college_admission_readiness_assessments_tracker_carat
+    label: College Admission Readiness Assessments Tracker (CARAT)
     type: dashboard
     owner:
       name: Data Team
@@ -31,9 +38,15 @@ exposures:
       - ref("rpt_tableau__college_assessment_dashboard_historic")
     meta:
       dagster:
-        id: 286156c4-2f9e-4983-926b-63c9b11f44f4
-        cron_schedule: 0 6 * * *
-  - name: Data Quality Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 286156c4-2f9e-4983-926b-63c9b11f44f4
+        schedule:
+          cron_schedule: 0 6 * * *
+  - name: data_quality_dashboard
+    label: Data Quality Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -42,9 +55,15 @@ exposures:
       - ref("rpt_tableau__student_info_audit")
     meta:
       dagster:
-        id: 8aff929f-9e6b-4fc9-833a-7edfab8500b6
-        cron_schedule: 0 1 * * *
-  - name: Federal Grants Timesheet Approval
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 8aff929f-9e6b-4fc9-833a-7edfab8500b6
+        schedule:
+          cron_schedule: 0 1 * * *
+  - name: federal_grants_timesheet_approval
+    label: Federal Grants Timesheet Approval
     type: dashboard
     owner:
       name: Data Team
@@ -52,9 +71,15 @@ exposures:
       - ref("rpt_tableau__grants_timesheets")
     meta:
       dagster:
-        id: c7c821a4-a236-4da8-b41e-52b2fd62cbed
-        cron_schedule: 0 * * * *
-  - name: Finance & Accounting Tools & Resources
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: c7c821a4-a236-4da8-b41e-52b2fd62cbed
+        schedule:
+          cron_schedule: 0 * * * *
+  - name: finance_accounting_tools_resources
+    label: Finance & Accounting Tools & Resources
     type: dashboard
     owner:
       name: Data Team
@@ -64,9 +89,15 @@ exposures:
       - ref("rpt_tableau__staff_attrition")
     meta:
       dagster:
-        id: c29963fb-8516-4148-b43f-cddc0f2b4093
-        cron_schedule: 0 13 * * *
-  - name: High School Early Warning Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: c29963fb-8516-4148-b43f-cddc0f2b4093
+        schedule:
+          cron_schedule: 0 13 * * *
+  - name: high_school_early_warning_dashboard
+    label: High School Early Warning Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -78,14 +109,20 @@ exposures:
       - ref("rpt_tableau__hs_early_warning_dashboard")
     meta:
       dagster:
-        id: 6333e047-e7a9-4d8f-a740-3df30f179d11
-        cron_schedule: 0 6 * * *
-  - name: KIPP Forward Data Suite
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 6333e047-e7a9-4d8f-a740-3df30f179d11
+        schedule:
+          cron_schedule: 0 6 * * *
+  - name: kipp_forward_data_suite
+    label: KIPP Forward Data Suite
     type: dashboard
     owner:
       name: Data Team
     depends_on:
-      - [kipptaf, extracts, rpt_gsheets__kfwd_rem_roster]
+      - ref("rpt_gsheets__kfwd_rem_roster")
       - ref("rpt_tableau__kfwd_career_launch_survey")
       - ref("rpt_tableau__kfwd_contact_notes")
       - ref("rpt_tableau__kfwd_dashboard")
@@ -94,11 +131,17 @@ exposures:
       - ref("rpt_tableau__kfwd_verification")
     meta:
       dagster:
-        id: ad72c094-ad35-48f4-86a0-9d2e5b53f59a
-        cron_schedule:
-          - 0 4 * * *
-          - 0 17 * * *
-  - name: NJ Certification Dashboard (Schools View)
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: ad72c094-ad35-48f4-86a0-9d2e5b53f59a
+        schedule:
+          cron_schedule:
+            - 0 4 * * *
+            - 0 17 * * *
+  - name: nj_certification_dashboard_schools_view
+    label: NJ Certification Dashboard (Schools View)
     type: dashboard
     owner:
       name: Data Team
@@ -106,9 +149,15 @@ exposures:
       - ref("rpt_tableau__staff_roster")
     meta:
       dagster:
-        id: ed2976ea-0b3c-4afb-a5d9-7e7e83227e3b
-        cron_schedule: 0 8 * * *
-  - name: Ops Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: ed2976ea-0b3c-4afb-a5d9-7e7e83227e3b
+        schedule:
+          cron_schedule: 0 8 * * *
+  - name: ops_dashboard
+    label: Ops Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -116,9 +165,15 @@ exposures:
       - ref("rpt_tableau__ops_dashboard")
     meta:
       dagster:
-        id: d4124f15-087a-4f27-8694-e47d2ce6ae9c
-        cron_schedule: 0 * * * *
-  - name: Staff Demographic Explorer
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: d4124f15-087a-4f27-8694-e47d2ce6ae9c
+        schedule:
+          cron_schedule: 0 * * * *
+  - name: staff_demographic_explorer
+    label: Staff Demographic Explorer
     type: dashboard
     owner:
       name: Data Team
@@ -126,9 +181,15 @@ exposures:
       - ref("rpt_tableau__staff_roster")
     meta:
       dagster:
-        id: fc15566f-0bcf-453c-aaed-04fbee94d7d7
-        cron_schedule: 0 11 * * 1
-  - name: Staff Roster
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: fc15566f-0bcf-453c-aaed-04fbee94d7d7
+        schedule:
+          cron_schedule: 0 11 * * 1
+  - name: staff_roster
+    label: Staff Roster
     type: dashboard
     owner:
       name: Data Team
@@ -136,9 +197,15 @@ exposures:
       - ref("rpt_tableau__staff_roster")
     meta:
       dagster:
-        id: 6e0915eb-9a46-4971-8e97-6e0749066b9f
-        cron_schedule: 0 7 * * *
-  - name: Zendesk Reporting
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 6e0915eb-9a46-4971-8e97-6e0749066b9f
+        schedule:
+          cron_schedule: 0 7 * * *
+  - name: zendesk_reporting
+    label: Zendesk Reporting
     type: dashboard
     owner:
       name: Data Team
@@ -146,9 +213,15 @@ exposures:
       - ref("rpt_tableau__zendesk_tickets")
     meta:
       dagster:
-        id: 7adabf6e-fa59-4d60-bca8-de3a67005a53
-        cron_schedule: 0 6 * * *
-  - name: Recent Job & Salary Changes
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 7adabf6e-fa59-4d60-bca8-de3a67005a53
+        schedule:
+          cron_schedule: 0 6 * * *
+  - name: recent_job_salary_changes
+    label: Recent Job & Salary Changes
     type: dashboard
     owner:
       name: Data Team
@@ -156,9 +229,15 @@ exposures:
       - ref("rpt_tableau__staff_job_salary_audit")
     meta:
       dagster:
-        id: a571cf7d-9893-4f33-970d-46dd7a392c8e
-        cron_schedule: 0 2 * * *
-  - name: OKRTS Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: a571cf7d-9893-4f33-970d-46dd7a392c8e
+        schedule:
+          cron_schedule: 0 2 * * *
+  - name: okrts_dashboard
+    label: OKRTS Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -168,9 +247,15 @@ exposures:
       - ref("rpt_tableau__suspension_over_time")
     meta:
       dagster:
-        id: 08d133d6-6e48-4218-ae6d-015f7a0abe13
-        cron_schedule: 0 4 * * *
-  - name: SchoolMint Grow Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 08d133d6-6e48-4218-ae6d-015f7a0abe13
+        schedule:
+          cron_schedule: 0 4 * * *
+  - name: school_mint_grow_dashboard
+    label: SchoolMint Grow Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -181,12 +266,18 @@ exposures:
       - ref("rpt_tableau__pm_outlier_detection")
     meta:
       dagster:
-        id: b529ca04-3560-4cff-8898-fd0a65f3e994
-        cron_schedule:
-          - 0 6 * * *
-          - 30 14 * * *
-          - 15 16 * * *
-  - name: Attendance Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: b529ca04-3560-4cff-8898-fd0a65f3e994
+        schedule:
+          cron_schedule:
+            - 0 6 * * *
+            - 30 14 * * *
+            - 15 16 * * *
+  - name: attendance_dashboard
+    label: Attendance Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -196,9 +287,15 @@ exposures:
       - ref("rpt_tableau__attendance_interventions")
     meta:
       dagster:
-        id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
-        cron_schedule: 0 15 * * *
-  - name: Literacy Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
+        schedule:
+          cron_schedule: 0 15 * * *
+  - name: literacy_dashboard
+    label: Literacy Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -207,9 +304,15 @@ exposures:
       - ref("rpt_tableau__sight_words_dashboard")
     meta:
       dagster:
-        id: 72b16a4a-b3a9-47e5-bdff-ae641d9ee9e6
-        cron_schedule: 0 5 * * *
-  - name: Teacher Development Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 72b16a4a-b3a9-47e5-bdff-ae641d9ee9e6
+        schedule:
+          cron_schedule: 0 5 * * *
+  - name: teacher_development_dashboard
+    label: Teacher Development Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -217,12 +320,18 @@ exposures:
       - ref("rpt_tableau__teacher_development")
     meta:
       dagster:
-        id: 8977a813-36c8-48df-8a61-479f374ae78a
-        cron_schedule:
-          - 0 12 * * *
-          - 0 14 * * *
-          - 0 16 * * *
-  - name: Gradebook and GPA Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 8977a813-36c8-48df-8a61-479f374ae78a
+        schedule:
+          cron_schedule:
+            - 0 12 * * *
+            - 0 14 * * *
+            - 0 16 * * *
+  - name: gradebook_and_gpa_dashboard
+    label: Gradebook and GPA Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -235,9 +344,15 @@ exposures:
       - ref("rpt_tableau__gradebook_ms_hs_comments")
     meta:
       dagster:
-        id: 5046a976-ed0e-4c77-93fe-78b732cb5548
-        cron_schedule: 0 4 * * *
-  - name: Gradebook Audit - Teacher Report
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 5046a976-ed0e-4c77-93fe-78b732cb5548
+        schedule:
+          cron_schedule: 0 4 * * *
+  - name: gradebook_audit_teacher_report
+    label: Gradebook Audit - Teacher Report
     type: dashboard
     owner:
       name: Data Team
@@ -247,9 +362,15 @@ exposures:
       - ref("rpt_tableau__gradebook_gpa")
     meta:
       dagster:
-        id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
-        cron_schedule: 30 7 * * 2
-  - name: DDI Suite
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
+        schedule:
+          cron_schedule: 30 7 * * 2
+  - name: ddi_suite
+    label: DDI Suite
     type: dashboard
     owner:
       name: Data Team
@@ -258,13 +379,19 @@ exposures:
       - ref("rpt_tableau__ddi_dashboard")
     meta:
       dagster:
-        id: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
-        cron_schedule:
-          - 0 1 * * *
-          - 40 14 * * 3
-          - 0 16 * * 5
-          - 0 18 * * *
-  - name: APM Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
+        schedule:
+          cron_schedule:
+            - 0 1 * * *
+            - 40 14 * * 3
+            - 0 16 * * 5
+            - 0 18 * * *
+  - name: apm_dashboard
+    label: APM Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -272,9 +399,15 @@ exposures:
       - ref("rpt_tableau__iready_apm")
     meta:
       dagster:
-        id: eb91563d-760b-4f2d-b9f8-65437fe22242
-        cron_schedule: 0 6 * * *
-  - name: Newark Home Instruction Tracker
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: eb91563d-760b-4f2d-b9f8-65437fe22242
+        schedule:
+          cron_schedule: 0 6 * * *
+  - name: newark_home_instruction_tracker
+    label: Newark Home Instruction Tracker
     type: dashboard
     owner:
       name: Data Team
@@ -283,9 +416,15 @@ exposures:
       - ref("rpt_tableau__home_instruction_queue")
     meta:
       dagster:
-        id: 2de24a25-5e9b-4fcd-8c07-307d0ea57660
-        cron_schedule: 0 5 * * *
-  - name: State Testing Accommodations Tracker
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 2de24a25-5e9b-4fcd-8c07-307d0ea57660
+        schedule:
+          cron_schedule: 0 5 * * *
+  - name: state_testing_accommodations_tracker
+    label: State Testing Accommodations Tracker
     type: dashboard
     owner:
       name: Data Team
@@ -293,9 +432,15 @@ exposures:
       - ref("rpt_tableau__state_testing_accomodations")
     meta:
       dagster:
-        id: aca88e07-170f-4d1a-9a4f-a3816463ab27
-        cron_schedule: 0 2 * * *
-  - name: Promotional Status Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: aca88e07-170f-4d1a-9a4f-a3816463ab27
+        schedule:
+          cron_schedule: 0 2 * * *
+  - name: promotional_status_dashboard
+    label: Promotional Status Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -303,9 +448,15 @@ exposures:
       - ref("rpt_tableau__promo_status")
     meta:
       dagster:
-        id: 5698ccc2-b952-4123-878b-48166b686b16
-        cron_schedule: 0 1 * * *
-  - name: Stipend and Bonus Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 5698ccc2-b952-4123-878b-48166b686b16
+        schedule:
+          cron_schedule: 0 1 * * *
+  - name: stipend_and_bonus_dashboard
+    label: Stipend and Bonus Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -313,8 +464,13 @@ exposures:
       - ref("rpt_tableau__stipend_and_bonus_app")
     meta:
       dagster:
-        id: 35484db7-cd5b-4834-828a-5bfc645a09c6
-  - name: Number of School Days Between Two Dates
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 35484db7-cd5b-4834-828a-5bfc645a09c6
+  - name: number_of_school_days_between_two_dates
+    label: Number of School Days Between Two Dates
     type: dashboard
     owner:
       name: Data Team
@@ -322,9 +478,15 @@ exposures:
       - ref("rpt_tableau__powerschool_calendar_day")
     meta:
       dagster:
-        id: fdd90889-8efb-4254-b892-bad96a7d131f
-        cron_schedule: 0 20 * * 0
-  - name: Miami Instructional Rubrics
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: fdd90889-8efb-4254-b892-bad96a7d131f
+        schedule:
+          cron_schedule: 0 20 * * 0
+  - name: miami_instructional_rubrics
+    label: Miami Instructional Rubrics
     type: dashboard
     owner:
       name: Data Team
@@ -332,9 +494,15 @@ exposures:
       - ref("rpt_tableau__content_team")
     meta:
       dagster:
-        id: 7f960a60-8ddd-4b66-92f0-20cad02a34f1
-        cron_schedule: 0 6 * * *
-  - name: Leadership Development
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 7f960a60-8ddd-4b66-92f0-20cad02a34f1
+        schedule:
+          cron_schedule: 0 6 * * *
+  - name: leadership_development
+    label: Leadership Development
     type: dashboard
     owner:
       name: Data Team
@@ -342,9 +510,15 @@ exposures:
       - ref("rpt_tableau__leadership_development")
     meta:
       dagster:
-        id: 8f8b058f-2408-470d-95b0-681d6c8b65f4
-        cron_schedule: 0 * * * *
-  - name: KIPP Miami FAST & i-Ready Analysis
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 8f8b058f-2408-470d-95b0-681d6c8b65f4
+        schedule:
+          cron_schedule: 0 * * * *
+  - name: kipp_miami_fast_iready_analysis
+    label: KIPP Miami FAST & i-Ready Analysis
     type: dashboard
     owner:
       name: Data Team
@@ -354,9 +528,15 @@ exposures:
       - ref("rpt_tableau__miami_k2_star")
     meta:
       dagster:
-        id: 9a4decae-3707-468f-8098-d3f625d770eb
-        cron_schedule: 0 2 * * *
-  - name: Coaching Conversation Tool
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 9a4decae-3707-468f-8098-d3f625d770eb
+        schedule:
+          cron_schedule: 0 2 * * *
+  - name: coaching_conversation_tool
+    label: Coaching Conversation Tool
     type: dashboard
     owner:
       name: Data Team
@@ -364,12 +544,18 @@ exposures:
       - ref("rpt_tableau__schoolmint_grow_observation_details")
     meta:
       dagster:
-        id: db88d328-0d54-4dac-8003-6197841e1432
-        cron_schedule:
-          - 0 6 * * *
-          - 30 14 * * *
-          - 15 16 * * *
-  - name: Recruitment Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: db88d328-0d54-4dac-8003-6197841e1432
+        schedule:
+          cron_schedule:
+            - 0 6 * * *
+            - 30 14 * * *
+            - 15 16 * * *
+  - name: recruitment_dashboard
+    label: Recruitment Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -379,9 +565,15 @@ exposures:
       - ref("rpt_tableau__seat_tracker_snapshot")
     meta:
       dagster:
-        id: 970826ab-8d1c-4468-9b84-62f6432a9642
-        cron_schedule: 0 7 * * *
-  - name: Survey Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 970826ab-8d1c-4468-9b84-62f6432a9642
+        schedule:
+          cron_schedule: 0 7 * * *
+  - name: survey_dashboard
+    label: Survey Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -390,9 +582,15 @@ exposures:
       - ref("rpt_tableau__survey_completion")
     meta:
       dagster:
-        id: b11542a2-6780-4feb-a1dd-534ffe724faf
-        cron_schedule: 0 * * * *
-  - name: Compliance Dashboard
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: b11542a2-6780-4feb-a1dd-534ffe724faf
+        schedule:
+          cron_schedule: 0 * * * *
+  - name: compliance_dashboard
+    label: Compliance Dashboard
     type: dashboard
     owner:
       name: Data Team
@@ -400,9 +598,15 @@ exposures:
       - ref("rpt_tableau__nj_school_register")
     meta:
       dagster:
-        id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
-        cron_schedule: 0 5 * * *
-  - name: School Community Diagnostic Results
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
+        schedule:
+          cron_schedule: 0 5 * * *
+  - name: school_community_diagnostic_results
+    label: School Community Diagnostic Results
     type: dashboard
     owner:
       name: Data Team
@@ -410,8 +614,13 @@ exposures:
       - ref("rpt_tableau__school_community_diagnostic")
     meta:
       dagster:
-        id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
-  - name: State Testing Analysis Tool
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
+  - name: state_testing_analysis_tool
+    label: State Testing Analysis Tool
     type: dashboard
     owner:
       name: Data Team
@@ -420,8 +629,13 @@ exposures:
       - ref("rpt_tableau__state_assessments_dashboard_comps")
     meta:
       dagster:
-        id: 31b6a4a9-e0ca-479b-8f44-0daaa52e109b
-  - name: Renewal Approval Tool
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 31b6a4a9-e0ca-479b-8f44-0daaa52e109b
+  - name: renewal_approval_tool
+    label: Renewal Approval Tool
     type: dashboard
     owner:
       name: Data Team
@@ -431,4 +645,8 @@ exposures:
       - ref("rpt_tableau__staff_renewal_feed")
     meta:
       dagster:
-        id: 5f8c5385-845b-4d8b-bf68-6f9323cb4ca8
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 5f8c5385-845b-4d8b-bf68-6f9323cb4ca8

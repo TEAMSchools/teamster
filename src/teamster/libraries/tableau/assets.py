@@ -8,7 +8,6 @@ from dagster import (
     asset,
 )
 from dagster_shared import check
-from slugify import slugify
 
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
@@ -18,18 +17,11 @@ from teamster.libraries.tableau.resources import TableauServerResource
 
 
 def build_tableau_workbook_refresh_asset(
-    code_location: str, name: str, deps: list[str], metadata: dict[str, str]
+    code_location: str, name: str, metadata: dict[str, str]
 ):
     @asset(
-        key=[
-            code_location,
-            "tableau",
-            slugify(text=name, separator="_", regex_pattern=r"[^A-Za-z0-9_]"),
-        ],
-        description=name,
-        deps=deps,
+        key=[code_location, "tableau", name],
         metadata=metadata,
-        kinds={"tableau"},
         group_name="tableau",
         output_required=False,
         pool="tableau_pat_session_limit",
