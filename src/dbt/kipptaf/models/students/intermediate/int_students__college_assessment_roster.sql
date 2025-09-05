@@ -97,7 +97,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="running_superscore",
-                partition_by="student_number,grade_season",
+                partition_by="student_number,scope,grade_season",
                 order_by="student_number",
             )
         }}

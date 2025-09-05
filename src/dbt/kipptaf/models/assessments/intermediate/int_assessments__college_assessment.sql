@@ -82,7 +82,14 @@ with
             ) as superscore,
 
         from max_score
-        where score_type not in ('act_composite', 'sat_total_score')
+        where
+            score_type not in (
+                'act_composite',
+                'sat_total_score',
+                'psat89_total',
+                'psat10_total',
+                'psatnmsqt_total'
+            )
     ),
 
     dedup_superscore as (
@@ -99,7 +106,14 @@ with
         select student_number, scope, avg(max_scale_score) as superscore,
 
         from max_score
-        where score_type in ('act_composite', 'sat_total_score')
+        where
+            score_type in (
+                'act_composite',
+                'sat_total_score',
+                'psat89_total',
+                'psat10_total',
+                'psatnmsqt_total'
+            )
         group by student_number, scope
     )
 
