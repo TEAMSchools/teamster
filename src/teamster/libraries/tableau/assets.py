@@ -29,7 +29,7 @@ def build_tableau_workbook_refresh_asset(
             )
             for ref in refs
         ],
-        metadata=meta["dagster"]["asset"]["metadata"],
+        metadata=meta["dagster"].get("asset", {}).get("metadata"),
         description=label,
         group_name="tableau",
         output_required=False,
