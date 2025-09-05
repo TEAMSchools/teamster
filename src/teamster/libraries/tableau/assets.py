@@ -7,8 +7,10 @@ from dagster import (
     StaticPartitionsDefinition,
     asset,
 )
+from dagster_dbt import get_asset_key_for_model
 from dagster_shared import check
 
+from teamster.code_locations.kipptaf._dbt.assets import core_dbt_assets
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
@@ -17,11 +19,18 @@ from teamster.libraries.tableau.resources import TableauServerResource
 
 
 def build_tableau_workbook_refresh_asset(
-    code_location: str, name: str, metadata: dict[str, str]
+    code_location: str, name: str, refs: dict, meta: dict, label: str, **kwargs
 ):
     @asset(
         key=[code_location, "tableau", name],
-        metadata=metadata,
+        deps=[
+            get_asset_key_for_model(
+                dbt_assets=[core_dbt_assets], model_name=ref["name"]
+            )
+            for ref in refs
+        ],
+        metadata=meta["dagster"]["asset"]["metadata"],
+        description=label,
         group_name="tableau",
         output_required=False,
         pool="tableau_pat_session_limit",
