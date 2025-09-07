@@ -137,6 +137,21 @@ from {{ ref("int_topline__attendance_interventions_weekly") }}
 
 union all
 
+select
+    'Attendance and Enrollment' as layer,
+    'ADA' as indicator,
+    student_number,
+    academic_year,
+    week_start_monday as term,
+    null as discipline,
+
+    attendance_value_sum_running as numerator,
+    membership_value_sum_running as denominator,
+    ada_running as metric_value,
+from {{ ref("int_topline__ada_running_weekly") }}
+
+union all
+
 /* GPA & ACT/SAT */
 select
     'GPA, ACT, SAT' as layer,
@@ -181,3 +196,18 @@ select
     null as denominator,
     average_rating as metric_value,
 from {{ ref("int_topline__school_community_diagnostic_weekly") }}
+
+union all
+
+select
+    'Student and Family Experience' as layer,
+    'Suspensions' as indicator,
+    student_number,
+    academic_year,
+    week_start_monday as term,
+    null as discipline,
+
+    null as numerator,
+    null as denominator,
+    is_suspended_y1_all_running as metric_value,
+from {{ ref("int_topline__suspension_weekly") }}
