@@ -15,8 +15,10 @@ with
         select '1-2' as band, grade_level,
         from unnest([1, 2]) as grade_level
         union all
-        select '3-8' as band, grade_level,
-        from unnest([3, 4, 5, 6, 7, 8]) as grade_level
+        select '3' as band, 3 as grade_level,
+        union all
+        select '4-8' as band, grade_level,
+        from unnest([4, 5, 6, 7, 8]) as grade_level
     ),
 
     goals as (
