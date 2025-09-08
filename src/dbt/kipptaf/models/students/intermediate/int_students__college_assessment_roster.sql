@@ -39,6 +39,7 @@ with
         where e.school_level = 'HS' and e.rn_year = 1
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     running_max_score as (
         select
             student_number,
@@ -61,7 +62,16 @@ with
             )
     ),
 
-    -- trunk-ignore(sqlfluff/ST03)
+    dedup_running_max_score as (
+        {{
+            dbt_utils.deduplicate(
+                relation="running_max_score",
+                partition_by="student_number,score_type,grade_season",
+                order_by="student_number",
+            )
+        }}
+    ),
+
     running_superscore as (
         select
             student_number,
@@ -105,16 +115,16 @@ with
 select
     s.*,
 
-    rm.running_max_scale_score,
+    dm.running_max_scale_score,
 
     coalesce(dr.runnning_superscore, s.superscore) as running_superscore,
 
 from scores as s
 left join
-    running_max_score as rm
-    on s.student_number = rm.student_number
-    and s.grade_season = rm.grade_season
-    and s.score_type = rm.score_type
+    dedup_running_max_score as dm
+    on s.student_number = dm.student_number
+    and s.grade_season = dm.grade_season
+    and s.score_type = dm.score_type
 left join
     dedup_runnning_superscore as dr
     on s.student_number = dr.student_number
