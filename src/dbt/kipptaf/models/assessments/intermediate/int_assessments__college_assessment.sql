@@ -54,6 +54,22 @@ with
             )
     ),
 
+    growth as (
+        select
+            academic_year,
+            student_number,
+            scope,
+            test_date,
+            scale_score,
+
+            scale_score - lag(scale_score) over (
+                partition by student_number, scope order by test_date
+            ) as previous_total_score,
+
+        from scores
+        where subject_area in ('Composite', 'Combined') and test_date is not null
+    ),
+
     max_score as (
         select student_number, scope, score_type, avg(scale_score) as max_scale_score,
 
@@ -118,7 +134,13 @@ with
     )
 
 select
-    s.*, m.max_scale_score, round(coalesce(d.superscore, a.superscore)) as superscore,
+    s.*,
+
+    m.max_scale_score,
+
+    g.previous_total_score,
+
+    round(coalesce(d.superscore, a.superscore)) as superscore,
 
 from scores as s
 left join
@@ -129,3 +151,9 @@ left join
     dedup_superscore as d on s.student_number = d.student_number and s.scope = d.scope
 left join
     alt_superscore as a on s.student_number = a.student_number and s.scope = a.scope
+left join
+    growth as g
+    on s.student_number = g.student_number
+    and s.scope = g.scope
+    and s.test_date = g.test_date
+    and g.previous_total_score is not null
