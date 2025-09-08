@@ -288,65 +288,36 @@ sources:
               - google
               - sheets
               - gradebook_exceptions
-<<<<<<< HEAD
-      - name: src_google_sheets__kippfwd_goals
-        config:
-          enabled: true
-=======
       - name: src_google_sheets__topline_student_goals
->>>>>>> 00ede52eb63ae0f5bb4629c80e91b39e9808b44b
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
-<<<<<<< HEAD
-              - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
-            sheet_range: src_google_sheets__kippfwd_goals
-=======
               - https://docs.google.com/spreadsheets/d/1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0
             sheet_range: src_google_sheets__topline_student_goals
->>>>>>> 00ede52eb63ae0f5bb4629c80e91b39e9808b44b
             skip_leading_rows: 1
         meta:
           dagster:
             asset_key:
               - kipptaf
-<<<<<<< HEAD
-              - google_sheets
-              - kippfwd_goals
-      - name: src_google_sheets__kippfwd_seasons
-        config:
-          enabled: true
-=======
               - google
               - sheets
               - topline_student_goals
       - name: src_google_sheets__topline_aggregate_goals
->>>>>>> 00ede52eb63ae0f5bb4629c80e91b39e9808b44b
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
-<<<<<<< HEAD
-              - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
-            sheet_range: src_google_sheets__kippfwd_seasons
-=======
               - https://docs.google.com/spreadsheets/d/1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0
             sheet_range: src_google_sheets__topline_aggregate_goals
->>>>>>> 00ede52eb63ae0f5bb4629c80e91b39e9808b44b
             skip_leading_rows: 1
         meta:
           dagster:
             asset_key:
               - kipptaf
-<<<<<<< HEAD
-              - google_sheets
-              - kippfwd_seasons
-=======
               - google
               - sheets
               - topline_aggregate_goals
->>>>>>> 00ede52eb63ae0f5bb4629c80e91b39e9808b44b
       # - name: src_google_sheets__recruitment__school_projections
       #   external:
       #     options:
