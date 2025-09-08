@@ -64,7 +64,7 @@ with
 
             scale_score - lag(scale_score) over (
                 partition by student_number, scope order by test_date
-            ) as previous_total_score,
+            ) as previous_total_score_change,
 
         from scores
         where subject_area in ('Composite', 'Combined') and test_date is not null
@@ -138,7 +138,7 @@ select
 
     m.max_scale_score,
 
-    g.previous_total_score,
+    g.previous_total_score_change,
 
     round(coalesce(d.superscore, a.superscore)) as superscore,
 
@@ -156,4 +156,4 @@ left join
     on s.student_number = g.student_number
     and s.scope = g.scope
     and s.test_date = g.test_date
-    and g.previous_total_score is not null
+    and g.previous_total_score_change is not null

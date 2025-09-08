@@ -41,7 +41,7 @@ select
     r.course_discipline,
     r.score_type,
     r.scale_score,
-    r.previous_total_score,
+    r.previous_total_score_change,
     r.rn_highest,
     r.max_scale_score,
     r.superscore,
