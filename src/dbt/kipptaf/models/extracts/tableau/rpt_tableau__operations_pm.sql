@@ -54,10 +54,7 @@ with
                     then form_responses.text_value
                 end
             ) over (partition by form_responses.response_id) as round_survey,
-        from
-            form_responses
-            and form_responses.last_submitted_date_local
-            between assigned_reviews.start_date and assigned_reviews.end_date
+        from form_responses
 
     ),
 
@@ -74,9 +71,9 @@ with
             ops_pm_roster.home_work_location_abbreviation,
             ops_pm_roster.reports_to_formatted_name,
             responses_pivoted.form_id,
-            responses_pivoted.info_document_title as survey_title,
+            responses_pivoted.survey_title,
             responses_pivoted.item_id,
-            responses_pivoted.item_title as section_title,
+            responses_pivoted.section_title,
             responses_pivoted.question_id,
             responses_pivoted.question_title,
             responses_pivoted.item_abbreviation,
@@ -94,15 +91,7 @@ with
             full_roster.job_title as respondent_job_title,
             if(responses_pivoted.form_employee_number is null, 0, 1) as completion,
         from ops_pm_roster
-        inner join
-            terms
-            on terms.start_date
-            between ops_pm_roster.work_assignment_actual_start_date
-            and ops_pm_roster.effective_date_end
-            or terms.end_date
-            between ops_pm_roster.work_assignment_actual_start_date
-            and ops_pm_roster.effective_date_end
-            and terms.type = 'OPS'
+        inner join terms on terms.type = 'OPS'
         left join
             responses_pivoted
             on ops_pm_roster.employee_number = responses_pivoted.form_employee_number
