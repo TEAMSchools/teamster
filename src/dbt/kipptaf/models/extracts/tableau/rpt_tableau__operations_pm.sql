@@ -8,16 +8,6 @@ with
 
     terms as (select *, from {{ ref("stg_reporting__terms") }}),
 
-    assigned_reviews as (
-        select
-            ops_pm_roster.*,
-            terms.code,
-            terms.name as reporting_term,
-            terms.academic_year,
-        from ops_pm_roster
-        inner join terms on terms.type = 'OPS'
-    ),
-
     form_responses as (
         select *,
         from {{ ref("int_google_forms__form_responses") }}
@@ -46,8 +36,7 @@ with
                 null
             ) as text_value_int,
 
-            -- pivoting out employee_number, walkthrough round and school selection
-            -- items
+            -- pivoting out employee_number, PM round selected
             max(
                 case
                     when form_responses.item_id = '53d2a0dc'
@@ -64,30 +53,64 @@ with
                     when form_responses.item_id = '1511dc24'
                     then form_responses.text_value
                 end
-            ) over (partition by form_responses.response_id) as walkthrough_round,
-        from form_responses
+            ) over (partition by form_responses.response_id) as round_survey,
+        from
+            form_responses
+            and form_responses.last_submitted_date_local
+            between assigned_reviews.start_date and assigned_reviews.end_date
 
     ),
 
     final as (
         select
-            assigned_reviews.*,
-            responses_pivoted.*,
+            terms.academic_year,
+            terms.type,
+            terms.code,
+            terms.name,
+            ops_pm_roster.employee_number,
+            ops_pm_roster.formatted_name,
+            ops_pm_roster.job_title,
+            ops_pm_roster.home_work_location_name,
+            ops_pm_roster.home_work_location_abbreviation,
+            ops_pm_roster.reports_to_formatted_name,
+            responses_pivoted.form_id,
+            responses_pivoted.info_document_title as survey_title,
+            responses_pivoted.item_id,
+            responses_pivoted.item_title as section_title,
+            responses_pivoted.question_id,
+            responses_pivoted.question_title,
+            responses_pivoted.item_abbreviation,
+            responses_pivoted.response_id,
+            responses_pivoted.last_submitted_date_local,
+            responses_pivoted.respondent_email,
+            responses_pivoted.text_value,
+            responses_pivoted.text_value_int,
+            responses_pivoted.form_employee_number,
+            responses_pivoted.round_survey,
             schools.abbreviation,
             schools.region,
             schools.grade_band,
             full_roster.formatted_name as respondent_name,
             full_roster.job_title as respondent_job_title,
             if(responses_pivoted.form_employee_number is null, 0, 1) as completion,
-        from assigned_reviews
+        from ops_pm_roster
+        inner join
+            terms
+            on terms.start_date
+            between ops_pm_roster.work_assignment_actual_start_date
+            and ops_pm_roster.effective_date_end
+            or terms.end_date
+            between ops_pm_roster.work_assignment_actual_start_date
+            and ops_pm_roster.effective_date_end
+            and terms.type = 'OPS'
         left join
             responses_pivoted
-            on assigned_reviews.employee_number = responses_pivoted.form_employee_number
-            and assigned_reviews.reporting_term = responses_pivoted.walkthrough_round
-        left join schools on assigned_reviews.home_work_location_name = schools.name
+            on ops_pm_roster.employee_number = responses_pivoted.form_employee_number
+            and responses_pivoted.last_submitted_date_local
+            between terms.start_date and terms.end_date
+        left join schools on ops_pm_roster.home_work_location_name = schools.name
         left join
             full_roster on responses_pivoted.respondent_email = full_roster.google_email
-
     )
 
 select *,
