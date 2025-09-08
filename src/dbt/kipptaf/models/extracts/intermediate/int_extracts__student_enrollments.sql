@@ -72,6 +72,24 @@ with
             on p.id = s.id
             and {{ union_dataset_join_clause(left_alias="p", right_alias="s") }}
         where p._dbt_source_model = 'stg_overgrad__students'
+    ),
+
+    m_ps_code as (
+        select
+            _dbt_source_relation,
+            studentsdcid,
+
+            case
+                when graduation_pathway_math = 'M' and graduation_pathway_ela = 'M'
+                then 'Yes'
+                when graduation_pathway_math = 'M' and graduation_pathway_ela != 'M'
+                then 'Math only. No ELA match.'
+                when graduation_pathway_math != 'M' and graduation_pathway_ela = 'M'
+                then 'ELA only. No Math match.'
+            end as is_grad_iep_exempt_overall,
+
+        from {{ ref("stg_powerschool__s_nj_stu_x") }}
+        where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
     )
 
 select
@@ -174,6 +192,12 @@ select
 
     ny.next_year_school,
     ny.next_year_schoolid,
+
+    if(
+        e.enroll_status = 0 and mc.is_grad_iep_exempt_overall is not null,
+        mc.is_grad_iep_exempt_overall,
+        null
+    ) as is_grad_iep_exempt_overall,
 
     'KTAF' as district,
 
@@ -332,4 +356,8 @@ left join
     next_year_school as ny
     on e.student_number = ny.student_number
     and e.academic_year = ny.academic_year
+left join
+    m_ps_code as mc
+    on e.students_dcid = mc.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="mc") }}
 where e.grade_level != 99

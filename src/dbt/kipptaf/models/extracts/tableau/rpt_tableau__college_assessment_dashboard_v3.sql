@@ -13,6 +13,7 @@ select
     e.cohort,
     e.iep_status,
     e.is_504,
+    e.is_grad_iep_exempt_overall,
     e.lep_status,
     e.gifted_and_talented,
     e.advisory,
