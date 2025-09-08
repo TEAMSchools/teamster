@@ -86,7 +86,7 @@ with
                 then 'Math only. No ELA match.'
                 when graduation_pathway_math != 'M' and graduation_pathway_ela = 'M'
                 then 'ELA only. No Math match.'
-            end as is_grad_iep_exempt_overall,
+            end as grad_iep_exempt_overall,
 
         from {{ ref("stg_powerschool__s_nj_stu_x") }}
         where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
@@ -194,8 +194,8 @@ select
     ny.next_year_schoolid,
 
     if(
-        e.enroll_status = 0 and mc.is_grad_iep_exempt_overall is not null,
-        mc.is_grad_iep_exempt_overall,
+        e.enroll_status = 0 and mc.grad_iep_exempt_overall is not null,
+        mc.grad_iep_exempt_overall,
         'Not Grad IEP Exempt'
     ) as grad_iep_exempt_status_overall,
 
