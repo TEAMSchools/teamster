@@ -2,6 +2,9 @@ from pydantic import BaseModel
 
 
 class Application(BaseModel):
+    application_custom_step: str | None = None
+    application_field_application_review_score: str | None = None
+    application_field_job_title: str | None = None
     application_field_phone_interview_score: str | None = None
     application_field_resume_score: str | None = None
     application_field_school_shared_with_miami: str | None = None
@@ -9,22 +12,37 @@ class Application(BaseModel):
     application_id: str | None = None
     application_last_update_date: str | None = None
     application_reason_for_rejection: str | None = None
+    application_reason_for_withdrawal: str | None = None
     application_state_hired_date: str | None = None
+    application_state_in_review_date: str | None = None
+    application_state_interview_date: str | None = None
     application_state_lead_date: str | None = None
     application_state_new_date: str | None = None
     application_state_offer_date: str | None = None
     application_state_rejected_date: str | None = None
+    application_state_transferred_date: str | None = None
+    application_state_withdrawn_date: str | None = None
     application_state: str | None = None
+    application_status_before_rejection: str | None = None
+    application_status_before_withdrawal: str | None = None
+    application_status_in_review_performance_task_date: str | None = None
+    application_status_in_review_resume_review_date: str | None = None
     application_status_interview_demo_date: str | None = None
+    application_status_interview_performance_task_date: str | None = None
     application_status_interview_phone_screen_complete_date: str | None = None
     application_status_interview_phone_screen_requested_date: str | None = None
+    application_status: str | None = None
     application_url: str | None = None
     average_rating: str | None = None
     candidate_email: str | None = None
+    candidate_first_and_last_name: str | None = None
     candidate_first_name: str | None = None
     candidate_id: str | None = None
     candidate_last_name: str | None = None
     candidate_linkedin_profile_url: str | None = None
+    candidate_source_subtype: str | None = None
+    candidate_source_type: str | None = None
+    candidate_source: str | None = None
     department_internal: str | None = None
     department_org_field_value: str | None = None
     job_city: str | None = None
