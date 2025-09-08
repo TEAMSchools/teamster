@@ -8,11 +8,11 @@ with
             plan_status,
             adp_location,
             entity,
+            teammate as teammate_employee_number,
+            academic_year,
 
-            cast(academic_year as string) as academic_year,
             cast(dbt_valid_from as date) as valid_from,
             cast(dbt_valid_to as date) as valid_to,
-            cast(teammate as string) as teammate,
 
             if(staffing_status = 'Open', true, false) as is_open,
             if(staffing_status = 'Staffed', true, false) as is_staffed,
@@ -34,12 +34,12 @@ with
             plan_status,
             null as adp_location,
             null as entity,
-            academic_year,
-            valid_from,
+            cast(teammate as int) as teammate_employee_number,
+            cast(academic_year as int) as academic_year,
 
+            valid_from,
             null as valid_to,
 
-            teammate,
             is_open,
             is_staffed,
             is_active,
@@ -66,7 +66,7 @@ select
     os1.adp_location,
     os1.entity,
     os1.academic_year,
-    os1.teammate,
+    os1.teammate_employee_number,
     os1.is_open,
     os1.is_staffed,
     os1.is_active,
