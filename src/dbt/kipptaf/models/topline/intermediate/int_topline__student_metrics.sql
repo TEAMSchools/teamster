@@ -1,213 +1,281 @@
-/* K-8 Reading & Math */
+with
+    metric_union as (
+        /* K-8 Reading & Math */
+        select
+            'K-8 Reading and Math' as layer,
+            'Formative Assessments' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+            is_mastery_running_int as metric_value,
+        from {{ ref("int_topline__formative_assessment_weekly") }}
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
+            'DIBELS PM Mastery' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            'ELA' as discipline,
+
+            null as numerator,
+            null as denominator,
+            met_pm_round_overall_criteria as metric_value,
+        from {{ ref("int_topline__dibels_pm_weekly") }}
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
+            'DIBELS PM Fidelity' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            'ELA' as discipline,
+
+            null as numerator,
+            null as denominator,
+            completed_test_round_int as metric_value,
+        from {{ ref("int_topline__dibels_pm_weekly") }}
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
+            'i-Ready Diagnostic' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+            is_proficient as metric_value,
+        from {{ ref("int_topline__iready_diagnostic_weekly") }}
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
+            'i-Ready Lessons' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+            n_lessons_passed_week as metric_value,
+        from {{ ref("int_topline__iready_lessons_weekly") }}
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
+            'Star Diagnostic' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+            is_state_benchmark_proficient_int as metric_value,
+        from {{ ref("int_topline__star_assessment_weekly") }}
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
+            'State Assessments' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+            is_proficient_int as metric_value,
+        from {{ ref("int_topline__state_assessments_weekly") }}
+
+        union all
+
+        /* Attendance & Enrollment */
+        select
+            'Attendance and Enrollment' as layer,
+            'Total Enrollment' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            if(is_enrolled_week, 1, 0) as metric_value,
+        from {{ ref("int_extracts__student_enrollments_weeks") }}
+
+        union all
+
+        select
+            'Attendance and Enrollment' as layer,
+            'Successful Contacts' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            successful_comms_sum_running as numerator,
+            required_comms_count_running as denominator,
+            safe_divide(
+                successful_comms_sum_running, required_comms_count_running
+            ) as metric_value,
+        from {{ ref("int_topline__attendance_contacts_weekly") }}
+
+        union all
+
+        select
+            'Attendance and Enrollment' as layer,
+            'Chronic Absenteeism Interventions' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            successful_call_count as numerator,
+            total_anticipated_calls as denominator,
+            pct_interventions_complete as metric_value,
+        from {{ ref("int_topline__attendance_interventions_weekly") }}
+
+        union all
+
+        select
+            'Attendance and Enrollment' as layer,
+            'ADA' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            attendance_value_sum_running as numerator,
+            membership_value_sum_running as denominator,
+            ada_running as metric_value,
+        from {{ ref("int_topline__ada_running_weekly") }}
+
+        union all
+
+        select
+            'Attendance and Enrollment' as layer,
+            'Chronic Absenteeism' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            if(ada_running <= 0.90, 1, 0) as metric_value,
+        from {{ ref("int_topline__ada_running_weekly") }}
+
+        union all
+
+        /* GPA & ACT/SAT */
+        select
+            'GPA, ACT, SAT' as layer,
+            'Highest SAT' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            score as metric_value,
+        from {{ ref("int_topline__college_entrance_exams_weekly") }}
+
+        union all
+
+        select
+            'GPA, ACT, SAT' as layer,
+            'Projected Unweighted Cumulative GPA' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            cumulative_y1_gpa_projected_unweighted as metric_value,
+        from {{ ref("int_topline__gpa_cumulative_weekly") }}
+
+        union all
+
+        /* Student & Family Experience */
+        select
+            'Student and Family Experience' as layer,
+            'School Community Diagnostic' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            average_rating as metric_value,
+        from {{ ref("int_topline__school_community_diagnostic_weekly") }}
+
+        union all
+
+        select
+            'Student and Family Experience' as layer,
+            'Suspensions' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            is_suspended_y1_all_running as metric_value,
+        from {{ ref("int_topline__suspension_weekly") }}
+    )
+
 select
-    'K-8 Reading and Math' as layer,
-    'Formative Assessments' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    discipline,
+    co.academic_year,
+    co.student_number,
+    co.studentid,
+    co.student_name,
+    co.region,
+    co.schoolid,
+    co.school,
+    co.iep_status,
+    co.lep_status,
+    co.is_504,
+    co.year_in_network,
+    co.is_retained_year,
+    co.gender,
+    co.ethnicity,
+    co.entrydate,
+    co.exitdate,
+    co.is_enrolled_week,
+    co.is_current_week_mon_sun as is_current_week,
 
-    null as numerator,
-    null as denominator,
-    is_mastery_running_int as metric_value,
-from {{ ref("int_topline__formative_assessment_weekly") }}
-
-union all
-
-select
-    'K-8 Reading and Math' as layer,
-    'DIBELS PM Mastery' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    'ELA' as discipline,
-
-    null as numerator,
-    null as denominator,
-    met_pm_round_overall_criteria as metric_value,
-from {{ ref("int_topline__dibels_pm_weekly") }}
-
-union all
-
-select
-    'K-8 Reading and Math' as layer,
-    'DIBELS PM Fidelity' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    'ELA' as discipline,
-
-    null as numerator,
-    null as denominator,
-    completed_test_round_int as metric_value,
-from {{ ref("int_topline__dibels_pm_weekly") }}
-
-union all
-
-select
-    'K-8 Reading and Math' as layer,
-    'i-Ready Diagnostic' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    discipline,
-
-    null as numerator,
-    null as denominator,
-    is_proficient as metric_value,
-from {{ ref("int_topline__iready_diagnostic_weekly") }}
-
-union all
-
-select
-    'K-8 Reading and Math' as layer,
-    'i-Ready Lessons' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    discipline,
-
-    null as numerator,
-    null as denominator,
-    n_lessons_passed_week as metric_value,
-from {{ ref("int_topline__iready_lessons_weekly") }}
-
-union all
-
-select
-    'K-8 Reading and Math' as layer,
-    'Star Diagnostic' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    discipline,
-
-    null as numerator,
-    null as denominator,
-    is_state_benchmark_proficient_int as metric_value,
-from {{ ref("int_topline__star_assessment_weekly") }}
-
-union all
-
-select
-    'K-8 Reading and Math' as layer,
-    'State Assessments' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    discipline,
-
-    null as numerator,
-    null as denominator,
-    is_proficient_int as metric_value,
-from {{ ref("int_topline__state_assessments_weekly") }}
-
-union all
-
-/* Attendance & Enrollment */
-select
-    'Attendance and Enrollment' as layer,
-    'Successful Contacts' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    null as discipline,
-
-    successful_comms_sum_running as numerator,
-    required_comms_count_running as denominator,
-    safe_divide(
-        successful_comms_sum_running, required_comms_count_running
-    ) as metric_value,
-from {{ ref("int_topline__attendance_contacts_weekly") }}
-
-union all
-
-select
-    'Attendance and Enrollment' as layer,
-    'Chronic Absenteeism Interventions' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    null as discipline,
-
-    successful_call_count as numerator,
-    total_anticipated_calls as denominator,
-    pct_interventions_complete as metric_value,
-from {{ ref("int_topline__attendance_interventions_weekly") }}
-
-union all
-
-select
-    'Attendance and Enrollment' as layer,
-    'ADA' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    null as discipline,
-
-    attendance_value_sum_running as numerator,
-    membership_value_sum_running as denominator,
-    ada_running as metric_value,
-from {{ ref("int_topline__ada_running_weekly") }}
-
-union all
-
-/* GPA & ACT/SAT */
-select
-    'GPA, ACT, SAT' as layer,
-    'Highest SAT' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    null as discipline,
-
-    null as numerator,
-    null as denominator,
-    score as metric_value,
-from {{ ref("int_topline__college_entrance_exams_weekly") }}
-
-union all
-
-select
-    'GPA, ACT, SAT' as layer,
-    'Projected Unweighted Cumulative GPA' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    null as discipline,
-
-    null as numerator,
-    null as denominator,
-    cumulative_y1_gpa_projected_unweighted as metric_value,
-from {{ ref("int_topline__gpa_cumulative_weekly") }}
-
-union all
-
-/* Student & Family Experience */
-select
-    'Student and Family Experience' as layer,
-    'School Community Diagnostic' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    null as discipline,
-
-    null as numerator,
-    null as denominator,
-    average_rating as metric_value,
-from {{ ref("int_topline__school_community_diagnostic_weekly") }}
-
-union all
-
-select
-    'Student and Family Experience' as layer,
-    'Suspensions' as indicator,
-    student_number,
-    academic_year,
-    week_start_monday as term,
-    null as discipline,
-
-    null as numerator,
-    null as denominator,
-    is_suspended_y1_all_running as metric_value,
-from {{ ref("int_topline__suspension_weekly") }}
+    mu.layer,
+    mu.indicator,
+    mu.discipline,
+    mu.term,
+    mu.numerator,
+    mu.denominator,
+    mu.metric_value,
+from {{ ref("int_extracts__student_enrollments_weeks") }} as co
+left join
+    metric_union as mu
+    on co.student_number = mu.student_number
+    and co.academic_year = mu.academic_year
+    and co.week_start_monday = mu.term
+where co.academic_year >= {{ var("current_academic_year") - 1 }}
