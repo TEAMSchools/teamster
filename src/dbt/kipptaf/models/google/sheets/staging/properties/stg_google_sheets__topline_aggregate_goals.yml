@@ -30,3 +30,5 @@ models:
         data_type: string
       - name: goal
         data_type: numeric
+      - name: aggregation_hash
+        data_type: string
