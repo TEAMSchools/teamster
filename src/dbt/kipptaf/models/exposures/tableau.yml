@@ -617,3 +617,15 @@ exposures:
         asset:
           metadata:
             id: 5f8c5385-845b-4d8b-bf68-6f9323cb4ca8
+  - name: operations_systems
+    label: Operations Systems
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__operations_pm")
+      - ref("rpt_tableau__operations_ekg")
+    meta:
+      dagster:
+        kinds:
+          - tableau
