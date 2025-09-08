@@ -79,6 +79,7 @@ select
 
     b.test_admin_for_roster,
     b.scale_score,
+    b.previous_total_score,
     b.running_max_scale_score,
     b.running_superscore,
 
@@ -104,4 +105,4 @@ select
 from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} as b
 left join superscore_pivot as s on b.student_number = s.student_number
 left join max_scale_score_pivot as m on b.student_number = m.student_number
-where b.grade_level >= 11 and b.rn_undergrad = 1
+where b.rn_undergrad = 1
