@@ -72,6 +72,7 @@ with
         }}
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     running_superscore as (
         select
             student_number,
