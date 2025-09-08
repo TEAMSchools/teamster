@@ -73,6 +73,7 @@ asset_specs = [
         kinds=set(exposure["meta"]["dagster"]["kinds"]),
     )
     for exposure in manifest["exposures"].values()
+    if "tableau" not in exposure["meta"]["dagster"]["kinds"]
 ]
 
 assets = [
