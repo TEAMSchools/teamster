@@ -20,6 +20,7 @@ select
     e.rn_undergrad,
     e.salesforce_id,
     e.ktc_cohort,
+    e.year_in_network,
     e.contact_owner_name,
     e.college_match_gpa,
     e.college_match_gpa_bands,
@@ -75,7 +76,11 @@ select
 
     concat(
         's', '_', r.grade_season, ' ', r.scope, ' ', r.subject_area, ' ', r.test_type
-    ) as test_for_roster,
+    ) as test_season_for_roster,
+
+    concat(
+        r.administration_round, ' ', r.scope, ' ', r.subject_area, ' ', r.test_type
+    ) as test_admin_for_roster,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
 left join
