@@ -7,8 +7,6 @@ with
             home_work_location_name,
             home_work_location_abbreviation,
             reports_to_formatted_name,
-            work_assignment_actual_start_date,
-            work_assignment_actual_end_date,
 
             concat(
                 formatted_name,
