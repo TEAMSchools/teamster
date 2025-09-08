@@ -196,8 +196,8 @@ select
     if(
         e.enroll_status = 0 and mc.is_grad_iep_exempt_overall is not null,
         mc.is_grad_iep_exempt_overall,
-        null
-    ) as is_grad_iep_exempt_overall,
+        'Not Grad IEP Exempt'
+    ) as grad_iep_exempt_status_overall,
 
     'KTAF' as district,
 
