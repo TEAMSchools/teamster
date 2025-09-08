@@ -18,7 +18,7 @@ with
             a.course_discipline,
             a.score_type,
             a.scale_score,
-            a.previous_total_score,
+            a.previous_total_score_change,
             a.rn_highest,
             a.max_scale_score,
             a.superscore,
