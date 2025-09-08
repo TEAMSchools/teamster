@@ -161,3 +161,35 @@ sources:
               - kipptaf
               - assessments
               - assessment_expectations
+      - name: src_google_sheets__kippfwd_goals
+        config:
+          enabled: true
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
+            sheet_range: src_google_sheets__kippfwd_goals
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - kippfwd_goals
+      - name: src_google_sheets__kippfwd_seasons
+        config:
+          enabled: true
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
+            sheet_range: src_google_sheets__kippfwd_seasons
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - kippfwd_seasons
