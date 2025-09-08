@@ -45,7 +45,6 @@ with
             academic_year,
             scope,
             score_type,
-            scale_score,
             grade_season,
 
             max(scale_score) over (
