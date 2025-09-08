@@ -171,6 +171,21 @@ with
 
         select
             'Attendance and Enrollment' as layer,
+            'Truancy' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            if(absence_sum_running >= 50, 1, 0) as metric_value,
+        from {{ ref("int_topline__ada_running_weekly") }}
+
+        union all
+
+        select
+            'Attendance and Enrollment' as layer,
             'Chronic Absenteeism' as indicator,
             student_number,
             academic_year,
@@ -250,6 +265,7 @@ select
     co.student_number,
     co.studentid,
     co.student_name,
+    co.grade_level,
     co.region,
     co.schoolid,
     co.school,
