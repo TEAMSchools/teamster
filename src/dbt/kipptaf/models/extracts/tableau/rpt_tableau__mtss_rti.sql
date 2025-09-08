@@ -220,3 +220,4 @@ select
         2
     ) as dibels_scale_current_percentile,
 from current_year
+where enrollment_status = 'Currently Enrolled'
