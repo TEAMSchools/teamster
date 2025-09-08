@@ -79,6 +79,7 @@ select
     b.college_match_gpa_bands,
 
     b.test_admin_for_roster,
+    b.scope,
     b.scale_score,
     b.previous_total_score_change,
     b.running_max_scale_score,
