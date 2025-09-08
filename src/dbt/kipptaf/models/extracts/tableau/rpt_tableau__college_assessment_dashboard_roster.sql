@@ -1,3 +1,19 @@
+{% set pivot_query %}
+    select distinct
+        test_admin_for_roster,
+        lower(replace(replace(test_admin_for_roster,'PSAT 8/9','PSAT89'),' ','_')) as test_admin_for_roster_field_name
+    from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }}
+    where rn_undergrad = 1 and ktc_cohort >= 2025
+{% endset %}
+
+{% set results = run_query(pivot_query) %}
+{% set tests = [] %}
+{% for row in results %}
+    {% set label = row[0] %}
+    {% set prefix = row[1] %}
+    {% do tests.append({"label": label, "prefix": prefix}) %}
+{% endfor %}
+
 with
     superscore_pivot as (
         select
@@ -7,7 +23,6 @@ with
             psatnmsqt_combined_superscore,
             sat_combined_superscore,
             act_composite_superscore,
-
         from
             {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} pivot (
                 avg(superscore) for scope in (
@@ -36,7 +51,6 @@ with
             act_reading_max_score,
             act_english_max_score,
             act_science_max_score,
-
         from
             {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} pivot (
                 avg(max_scale_score) for score_type in (
@@ -78,36 +92,46 @@ select
     b.college_match_gpa,
     b.college_match_gpa_bands,
 
-    b.test_admin_for_roster,
-    b.scope,
-    b.scale_score,
-    b.previous_total_score_change,
-    b.running_max_scale_score,
-    b.running_superscore,
+    s.psat89_combined_superscore,
+    s.psat10_combined_superscore,
+    s.psatnmsqt_combined_superscore,
+    s.sat_combined_superscore,
+    s.act_composite_superscore,
 
-    avg(s.psat89_combined_superscore) as psat89_combined_superscore,
-    avg(s.psat10_combined_superscore) as psat10_combined_superscore,
-    avg(s.psatnmsqt_combined_superscore) as psatnmsqt_combined_superscore,
-    avg(s.sat_combined_superscore) as sat_combined_superscore,
-    avg(s.act_composite_superscore) as act_composite_superscore,
+    m.psat89_ebrw_max_score,
+    m.psat89_math_section_max_score,
+    m.psat10_ebrw_max_score,
+    m.psat10_math_section_max_score,
+    m.psatnmsqt_ebrw_max_score,
+    m.psatnmsqt_math_section_max_score,
+    m.sat_ebrw_max_score,
+    m.sat_math_max_score,
+    m.act_math_max_score,
+    m.act_reading_max_score,
+    m.act_english_max_score,
+    m.act_science_max_score,
 
-    avg(m.psat89_ebrw_max_score) as psat89_ebrw_max_score,
-    avg(m.psat89_math_section_max_score) as psat89_math_section_max_score,
-    avg(m.psat10_ebrw_max_score) as psat10_ebrw_max_score,
-    avg(m.psat10_math_section_max_score) as psat10_math_section_max_score,
-    avg(m.psatnmsqt_ebrw_max_score) as psatnmsqt_ebrw_max_score,
-    avg(m.psatnmsqt_math_section_max_score) as psatnmsqt_math_section_max_score,
-    avg(m.sat_ebrw_max_score) as sat_ebrw_max_score,
-    avg(m.sat_math_max_score) as sat_math_max_score,
-    avg(m.act_math_max_score) as act_math_max_score,
-    avg(m.act_reading_max_score) as act_reading_max_score,
-    avg(m.act_english_max_score) as act_english_max_score,
-    avg(m.act_science_max_score) as act_science_max_score,
+    {% for test in tests %}
+        avg(
+            case
+                when
+                    b.test_admin_for_roster
+                    = '{{ test.label | replace("' ", " '' ") }}' then b.scale_score
+            end
+        ) as {{ test.prefix }}_scale_score,
+        avg(
+            case
+                when b.test_admin_for_roster = '{{ test.label | replace(" '", "''") }}'
+                then b.previous_total_score_change
+            end
+        ) as {{ test.prefix }}_previous_total_score_change
+        {% if not loop.last %},{% endif %}
+    {% endfor %}
 
 from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} as b
 left join superscore_pivot as s on b.student_number = s.student_number
 left join max_scale_score_pivot as m on b.student_number = m.student_number
-where b.rn_undergrad = 1
+where b.rn_undergrad = 1 and b.ktc_cohort >= 2025
 group by
     b.region,
     b.schoolid,
@@ -128,9 +152,20 @@ group by
     b.cumulative_y1_gpa_projected,
     b.college_match_gpa,
     b.college_match_gpa_bands,
-    b.test_admin_for_roster,
-    b.scope,
-    b.scale_score,
-    b.previous_total_score_change,
-    b.running_max_scale_score,
-    b.running_superscore
+    s.psat89_combined_superscore,
+    s.psat10_combined_superscore,
+    s.psatnmsqt_combined_superscore,
+    s.sat_combined_superscore,
+    s.act_composite_superscore,
+    m.psat89_ebrw_max_score,
+    m.psat89_math_section_max_score,
+    m.psat10_ebrw_max_score,
+    m.psat10_math_section_max_score,
+    m.psatnmsqt_ebrw_max_score,
+    m.psatnmsqt_math_section_max_score,
+    m.sat_ebrw_max_score,
+    m.sat_math_max_score,
+    m.act_math_max_score,
+    m.act_reading_max_score,
+    m.act_english_max_score,
+    m.act_science_max_score
