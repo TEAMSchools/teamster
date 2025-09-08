@@ -198,26 +198,38 @@ with
 
 select
     *,
-    round(
-        percent_rank() over (
-            partition by school, grade_level
-            order by iready_most_recent_scale_reading_current asc
+    if(
+        iready_most_recent_scale_reading_current is not null,
+        round(
+            percent_rank() over (
+                partition by school, grade_level
+                order by iready_most_recent_scale_reading_current asc
+            ),
+            2
         ),
-        2
+        null
     ) as iready_reading_current_year_percentile,
-    round(
-        percent_rank() over (
-            partition by school, grade_level
-            order by iready_most_recent_scale_math_current asc
+    if(
+        iready_most_recent_scale_math_current is not null,
+        round(
+            percent_rank() over (
+                partition by school, grade_level
+                order by iready_most_recent_scale_math_current asc
+            ),
+            2
         ),
-        2
+        null
     ) as iready_math_current_year_percentile,
-    round(
-        percent_rank() over (
-            partition by school, grade_level
-            order by most_recent_dibels_scale_current asc
+    if(
+        most_recent_dibels_scale_current is not null,
+        round(
+            percent_rank() over (
+                partition by school, grade_level
+                order by most_recent_dibels_scale_current asc
+            ),
+            2
         ),
-        2
+        null
     ) as dibels_scale_current_percentile,
 from current_year
 where enrollment_status = 'Currently Enrolled'
