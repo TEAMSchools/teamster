@@ -194,29 +194,69 @@ with
             referral_count_prev_year,
         from roster
         where academic_year = {{ var("current_academic_year") }}
+    ),
+
+    iready_reading_percentiles as (
+        select
+            student_number,
+            academic_year,
+            round(
+                percent_rank() over (
+                    partition by school, grade_level
+                    order by iready_most_recent_scale_reading_current asc
+                ),
+                2
+            ) as iready_reading_current_year_percentile
+        from current_year
+        where iready_most_recent_scale_reading_current is not null
+    ),
+
+    iready_math_percentiles as (
+        select
+            student_number,
+            academic_year,
+            round(
+                percent_rank() over (
+                    partition by school, grade_level
+                    order by iready_most_recent_scale_math_current asc
+                ),
+                2
+            ) as iready_math_current_year_percentile
+        from current_year
+        where iready_most_recent_scale_math_current is not null
+    ),
+
+    dibels_percentiles as (
+        select
+            student_number,
+            academic_year,
+            round(
+                percent_rank() over (
+                    partition by school, grade_level
+                    order by most_recent_dibels_scale_current asc
+                ),
+                2
+            ) as dibels_scale_current_percentile
+        from current_year
+        where most_recent_dibels_scale_current is not null
     )
 
 select
-    *,
-    round(
-        percent_rank() over (
-            partition by school, grade_level
-            order by iready_most_recent_scale_reading_current asc
-        ),
-        2
-    ) as iready_reading_current_year_percentile,
-    round(
-        percent_rank() over (
-            partition by school, grade_level
-            order by iready_most_recent_scale_math_current asc
-        ),
-        2
-    ) as iready_math_current_year_percentile,
-    round(
-        percent_rank() over (
-            partition by school, grade_level
-            order by most_recent_dibels_scale_current asc
-        ),
-        2
-    ) as dibels_scale_current_percentile,
-from current_year
+    cy.*,
+    irp_r.iready_reading_current_year_percentile,
+    irp_m.iready_math_current_year_percentile,
+    dp.dibels_scale_current_percentile
+from current_year as cy
+left join
+    iready_reading_percentiles as irp_r
+    on cy.student_number = irp_r.student_number
+    and cy.academic_year = irp_r.academic_year
+left join
+    iready_math_percentiles as irp_m
+    on cy.student_number = irp_m.student_number
+    and cy.academic_year = irp_m.academic_year
+left join
+    dibels_percentiles as dp
+    on cy.student_number = dp.student_number
+    and cy.academic_year = dp.academic_year
+where cy.enrollment_status = 'Currently Enrolled'
