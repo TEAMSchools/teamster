@@ -318,20 +318,30 @@ sources:
               - google
               - sheets
               - topline_aggregate_goals
+<<<<<<< HEAD
       - name: src_google_sheets__kippfwd_goals
         config:
           enabled: true
+=======
+      - name: src_google_sheets__recruitment__school_projections
+>>>>>>> f58883e3208f45c8a826f052fd75dac93c800ca6
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
+<<<<<<< HEAD
               - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
             sheet_range: src_google_sheets__kippfwd_goals
+=======
+              - https://docs.google.com/spreadsheets/d/1JPMDSGcdil-ineSk3BZJRnqyms-XXXp2s7vNJeyQp7Q
+            sheet_range: src_google_sheets__recruitment__school_projections
+>>>>>>> f58883e3208f45c8a826f052fd75dac93c800ca6
             skip_leading_rows: 1
         meta:
           dagster:
             asset_key:
               - kipptaf
+<<<<<<< HEAD
               - google_sheets
               - kippfwd_goals
       - name: src_google_sheets__kippfwd_seasons
@@ -366,6 +376,11 @@ sources:
       #         - google
       #         - sheets
       #         - recruitment_school_projections
+=======
+              - google
+              - sheets
+              - recruitment_school_projections
+>>>>>>> f58883e3208f45c8a826f052fd75dac93c800ca6
       # - name: src_google_sheets__state_test_expected_assessments
       #   external:
       #     options:
