@@ -71,7 +71,7 @@ with
 
             null as numerator,
             null as denominator,
-            n_lessons_passed_week as metric_value,
+            if(n_lessons_passed_week >= 2, 1, 0) as metric_value,
         from {{ ref("int_topline__iready_lessons_weekly") }}
 
         union all
@@ -210,7 +210,7 @@ with
 
             null as numerator,
             null as denominator,
-            score as metric_value,
+            if(score >= 1010, 1, 0) as metric_value,
         from {{ ref("int_topline__college_entrance_exams_weekly") }}
 
         union all
@@ -225,8 +225,23 @@ with
 
             null as numerator,
             null as denominator,
-            cumulative_y1_gpa_projected_unweighted as metric_value,
+            if(cumulative_y1_gpa_projected_unweighted >= 3.00, 1, 0) as metric_value,
         from {{ ref("int_topline__gpa_cumulative_weekly") }}
+
+        union all
+
+        select
+            'GPA, ACT, SAT' as layer,
+            'Weighted Y1 GPA' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            if(gpa_y1 >= 3.00, 1, 0) as metric_value,
+        from {{ ref("int_topline__gpa_term_weekly") }}
 
         union all
 
@@ -258,6 +273,52 @@ with
             null as denominator,
             is_suspended_y1_all_running as metric_value,
         from {{ ref("int_topline__suspension_weekly") }}
+
+        union all
+
+        /* College Matriculation */
+        select
+            'College Matriculation' as layer,
+            'BA Applied' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            if(is_submitted_ba, 1, 0) as metric_value,
+        from {{ ref("int_topline__college_matriculation_weekly") }}
+
+        union all
+
+        select
+            'College Matriculation' as layer,
+            'BA Accepted' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            if(is_accepted_ba, 1, 0) as metric_value,
+        from {{ ref("int_topline__college_matriculation_weekly") }}
+
+        union all
+
+        select
+            'College Matriculation' as layer,
+            'BA Accepted' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            if(is_matriculated_ba, 1, 0) as metric_value,
+        from {{ ref("int_topline__college_matriculation_weekly") }}
     )
 
 select
