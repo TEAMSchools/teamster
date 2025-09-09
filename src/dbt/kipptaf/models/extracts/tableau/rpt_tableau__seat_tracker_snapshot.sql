@@ -59,16 +59,15 @@ with
             recruiter_info.formatted_name as recruiter,
             recruiter_info.reports_to_formatted_name as recruiter_manager,
 
-            if(seats_snapshot.is_open, 1, 0) as snapshot_open,
-            if(seats_snapshot.is_new_hire, 1, 0) as snapshot_new_hire,
-            if(seats_snapshot.is_staffed, 1, 0) as snapshot_staffed,
-            if(seats_snapshot.is_active, 1, 0) as snapshot_active,
-            if(seats_snapshot.is_mid_year_hire, 1, 0) as snapshot_mid_year_hire,
+            if(seats_snapshot.is_open, 1, 0) as open_seats,
+            if(seats_snapshot.is_new_hire, 1, 0) as new_hires,
+            if(seats_snapshot.is_staffed, 1, 0) as staffed_seats,
+            if(seats_snapshot.is_active, 1, 0) as active_seats,
+            if(seats_snapshot.is_mid_year_hire, 1, 0) as mid_year_hires,
         from date_spine
         inner join
             seats_snapshot
-            on date_spine.academic_year = seats_snapshot.academic_year
-            and date_spine.date_week
+            on date_spine.date_week
             between seats_snapshot.valid_from and seats_snapshot.valid_to
         inner join
             seats_detail
