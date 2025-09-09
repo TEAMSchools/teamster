@@ -140,7 +140,7 @@ select
 
     g.previous_total_score_change,
 
-    round(coalesce(d.superscore, a.superscore)) as superscore,
+    round(coalesce(d.superscore, a.superscore), 0) as superscore,
 
 from scores as s
 left join
