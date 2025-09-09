@@ -63,6 +63,21 @@ assets:
       - table_name: standards
   - schema: dna_repositories
     tables:
+      - table_name: repository_472
+      - table_name: repository_471
+      - table_name: repository_470
+      - table_name: repository_469
+      - table_name: repository_468
+      - table_name: repository_467
+      - table_name: repository_466
+      - table_name: repository_465
+      - table_name: repository_464
+      - table_name: repository_463
+      - table_name: repository_462
+      - table_name: repository_461
+      - table_name: repository_460
+      - table_name: repository_459
+      - table_name: repository_458
       - table_name: repository_457
       - table_name: repository_456
       - table_name: repository_455
