@@ -18,6 +18,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            m.is_current_week,
 
             g.org_level,
             g.has_goal,
@@ -53,6 +54,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            m.is_current_week,
             g.org_level,
             g.has_goal,
             g.goal_direction,
@@ -71,6 +73,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            m.is_current_week,
 
             g.org_level,
             g.has_goal,
@@ -103,6 +106,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            m.is_current_week,
             g.org_level,
             g.has_goal,
             g.goal_direction,
@@ -121,6 +125,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            m.is_current_week,
 
             g.org_level,
             g.has_goal,
@@ -151,6 +156,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            m.is_current_week,
             g.org_level,
             g.has_goal,
             g.goal_direction,
