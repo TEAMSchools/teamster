@@ -15,7 +15,7 @@ with
         from {{ ref("stg_google_sheets__topline_aggregate_goals") }}
     ),
 
-    school_agg as (
+    agg_union as (
         select
             m.academic_year,
             m.region,
@@ -71,7 +71,7 @@ with
             m.academic_year,
             m.region,
             null as schoolid,
-            null as school,
+            'All' as school,
             m.layer,
             m.indicator,
             m.discipline,
@@ -112,6 +112,52 @@ with
             g.aggregation_type,
             g.aggregation_hash,
             g.goal
+
+        union all
+
+        select
+            m.academic_year,
+            'All' as region,
+            null as schoolid,
+            'All' as school,
+            m.layer,
+            m.indicator,
+            m.discipline,
+            m.term,
+
+            g.has_goal,
+            g.goal_direction,
+            g.aggregation_type,
+            g.aggregation_hash,
+            g.goal,
+
+            case
+                g.aggregation_type
+                when 'Average'
+                then round(avg(m.metric_value), 3)
+                when 'Divide'
+                then round(safe_divide(sum(m.numerator), sum(m.denominator)), 3)
+                when 'Sum'
+                then round(sum(m.metric_value), 0)
+            end as metric_aggregate_value,
+        from {{ ref("int_topline__student_metrics") }} as m
+        left join
+            goals as g
+            on m.grade_level between g.grade_low and g.grade_high
+            and m.layer = g.layer
+            and m.indicator = g.topline_indicator
+            and g.org_level = 'org'
+        group by
+            m.academic_year,
+            m.layer,
+            m.indicator,
+            m.discipline,
+            m.term,
+            g.has_goal,
+            g.goal_direction,
+            g.aggregation_type,
+            g.aggregation_hash,
+            g.goal
     )
 
 select
@@ -135,5 +181,5 @@ select
         when goal_direction = 'golf'
         then (metric_aggregate_value - goal) / goal
     end as goal_difference_percent,
-from school_agg
-where term <= current_date({{ var("local_timezone") }})
+from agg_union
+where term <= current_date('America/New_York')
