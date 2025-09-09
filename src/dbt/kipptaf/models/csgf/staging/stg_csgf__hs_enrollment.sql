@@ -127,6 +127,21 @@ select
         else 'Did Not State'
     end as gender,
 
+    case
+        when p.passed_algebra_i = 0
+        then 'Has not yet passed/never taken'
+        when p.passed_algebra_i = 1 and p.grade_level <= 8
+        then 'Passed Before 9th'
+        when p.passed_algebra_i = 1 and p.grade_level = 9
+        then 'Passed in 9th'
+        when p.passed_algebra_i = 1 and p.grade_level = 10
+        then 'Passed in 10th'
+        when p.passed_algebra_i = 1 and p.grade_level = 11
+        then 'Passed in 11th'
+        when p.passed_algebra_i = 1 and p.grade_level = 12
+        then 'Passed in 12th'
+    end as passed_algebra_i,
+
     if(e.iep_status = 'Has IEP', 'Y', 'N') as student_has_iep,
 
     if(e.lep_status, 'Y', 'N') as student_is_el,
@@ -142,6 +157,11 @@ left join
     course_tags as c
     on e.studentid = c.cc_studentid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="c") }}
+left join
+    passed_courses as p
+    on e.studentid = p.cc_studentid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="p") }}
+    and p.rn = 1
 where
     e.academic_year = {{ var("current_academic_year") - 1 }}
     and e.school_level = 'HS'
