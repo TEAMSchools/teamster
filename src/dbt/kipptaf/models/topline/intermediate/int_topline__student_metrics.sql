@@ -112,7 +112,7 @@ with
             'Total Enrollment' as indicator,
             student_number,
             academic_year,
-            week_start_monday,
+            week_start_monday as term,
             null as discipline,
 
             null as numerator,
