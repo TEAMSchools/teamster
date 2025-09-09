@@ -31,10 +31,10 @@ dagsterCloudAgent:
   resources:
     requests:
       cpu: 250m
-      memory: 1.0Gi
+      memory: 1.5Gi
     limits:
       cpu: 500m
-      memory: 1.5Gi
+      memory: 2.0Gi
   nodeSelector:
     cloud.google.com/compute-class: Balanced
     cloud.google.com/gke-spot: "true"
