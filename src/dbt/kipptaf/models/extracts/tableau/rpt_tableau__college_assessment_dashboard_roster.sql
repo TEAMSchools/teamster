@@ -39,18 +39,18 @@ with
     max_scale_score_pivot as (
         select
             student_number,
-            avg(psat89_ebrw_max_score) as psat89_ebrw_max_score,
-            avg(psat89_math_section_max_score) as psat89_math_section_max_score,
-            avg(psat10_ebrw_max_score) as psat10_ebrw_max_score,
-            avg(psat10_math_section_max_score) as psat10_math_section_max_score,
-            avg(psatnmsqt_ebrw_max_score) as psatnmsqt_ebrw_max_score,
-            avg(psatnmsqt_math_section_max_score) as psatnmsqt_math_section_max_score,
-            avg(sat_ebrw_max_score) as sat_ebrw_max_score,
-            avg(sat_math_max_score) as sat_math_max_score,
-            avg(act_math_max_score) as act_math_max_score,
-            avg(act_reading_max_score) as act_reading_max_score,
-            avg(act_english_max_score) as act_english_max_score,
-            avg(act_science_max_score) as act_science_max_score,
+            psat89_ebrw_max_score,
+            psat89_math_section_max_score,
+            psat10_ebrw_max_score,
+            psat10_math_section_max_score,
+            psatnmsqt_ebrw_max_score,
+            psatnmsqt_math_section_max_score,
+            sat_ebrw_max_score,
+            sat_math_max_score,
+            act_math_max_score,
+            act_reading_max_score,
+            act_english_max_score,
+            act_science_max_score,
         from
             {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} pivot (
                 avg(max_scale_score) for score_type in (
@@ -69,6 +69,24 @@ with
                 )
             )
         where subject_area not in ('Combined', 'Composite')
+    ),
+
+    max_scale_score_dedup as (
+        select
+            student_number,
+            avg(psat89_ebrw_max_score) as psat89_ebrw_max_score,
+            avg(psat89_math_section_max_score) as psat89_math_section_max_score,
+            avg(psat10_ebrw_max_score) as psat10_ebrw_max_score,
+            avg(psat10_math_section_max_score) as psat10_math_section_max_score,
+            avg(psatnmsqt_ebrw_max_score) as psatnmsqt_ebrw_max_score,
+            avg(psatnmsqt_math_section_max_score) as psatnmsqt_math_section_max_score,
+            avg(sat_ebrw_max_score) as sat_ebrw_max_score,
+            avg(sat_math_max_score) as sat_math_max_score,
+            avg(act_math_max_score) as act_math_max_score,
+            avg(act_reading_max_score) as act_reading_max_score,
+            avg(act_english_max_score) as act_english_max_score,
+            avg(act_science_max_score) as act_science_max_score,
+        from max_scale_score_pivot
         group by student_number
     )
 
@@ -131,7 +149,7 @@ select
 
 from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} as b
 left join superscore_pivot as s on b.student_number = s.student_number
-left join max_scale_score_pivot as m on b.student_number = m.student_number
+left join max_scale_score_dedup as m on b.student_number = m.student_number
 -- only the "current" graduating class is tracked here
 where b.rn_undergrad = 1 and b.ktc_cohort >= 2025
 group by
