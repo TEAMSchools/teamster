@@ -132,6 +132,7 @@ select
 from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} as b
 left join superscore_pivot as s on b.student_number = s.student_number
 left join max_scale_score_pivot as m on b.student_number = m.student_number
+-- only the "current" graduating class is tracked here
 where b.rn_undergrad = 1 and b.ktc_cohort >= 2025
 group by
     b.region,
