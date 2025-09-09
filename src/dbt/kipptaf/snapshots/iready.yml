@@ -4,7 +4,11 @@ snapshots:
     config:
       schema: iready
       strategy: check
-      unique_key: surrogate_key
+      unique_key:
+        - student_id
+        - subject
+        - last_week_start_date
+        - _dbt_source_relation
       check_cols:
         - last_week_lessons_completed
         - last_week_lessons_passed
