@@ -69,7 +69,7 @@ with
             seats_snapshot
             on date_spine.date_week
             between seats_snapshot.valid_from and seats_snapshot.valid_to
-        inner join
+        left join
             seats_detail
             on seats_snapshot.staffing_model_id = seats_detail.staffing_model_id
             and seats_snapshot.academic_year = seats_detail.academic_year
