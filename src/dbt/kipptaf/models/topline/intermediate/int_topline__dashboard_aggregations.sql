@@ -1,6 +1,10 @@
 with
     goals as (
-        select *, if(indicator = 'Total Enrollment', 'Integer', 'Decimal') as data_type,
+        select
+            *,
+            if(
+                topline_indicator = 'Total Enrollment', 'Integer', 'Decimal'
+            ) as data_type,
         from {{ ref("stg_google_sheets__topline_aggregate_goals") }}
     ),
 
