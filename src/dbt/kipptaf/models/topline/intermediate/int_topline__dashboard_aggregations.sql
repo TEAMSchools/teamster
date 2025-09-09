@@ -19,6 +19,7 @@ with
             m.discipline,
             m.term,
 
+            g.org_level,
             g.has_goal,
             g.goal_direction,
             g.aggregation_type,
@@ -52,6 +53,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            g.org_level,
             g.has_goal,
             g.goal_direction,
             g.aggregation_type,
@@ -70,6 +72,7 @@ with
             m.discipline,
             m.term,
 
+            g.org_level,
             g.has_goal,
             g.goal_direction,
             g.aggregation_type,
@@ -100,6 +103,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            g.org_level,
             g.has_goal,
             g.goal_direction,
             g.aggregation_type,
@@ -118,6 +122,7 @@ with
             m.discipline,
             m.term,
 
+            g.org_level,
             g.has_goal,
             g.goal_direction,
             g.aggregation_type,
@@ -146,6 +151,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            g.org_level,
             g.has_goal,
             g.goal_direction,
             g.aggregation_type,
