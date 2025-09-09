@@ -21,6 +21,33 @@ with
             )
     ),
 
+    yearly_tests as (
+        select
+            _dbt_source_relation,
+            student_number,
+            studentid,
+            students_dcid,
+            salesforce_id,
+            grade_level,
+
+            psat89_count,
+            psat10_count,
+            psatnmsqt_count,
+            sat_count,
+            act_count,
+
+        from
+            base_rows pivot (
+                count(score_type) for scope in (
+                    'PSAT 8/9' as psat89_count,
+                    'PSAT10' as psat10_count,
+                    'PSAT NMSQT' as psatnmsqt_count,
+                    'SAT' as sat_count,
+                    'ACT' as act_count
+                )
+            )
+    ),
+
     yearly_test_counts as (
         select
             _dbt_source_relation,
@@ -36,16 +63,7 @@ with
             sum(sat_count) as sat_count,
             sum(act_count) as act_count,
 
-        from
-            base_rows pivot (
-                count(score_type) for scope in (
-                    'PSAT 8/9' as psat89_count,
-                    'PSAT10' as psat10_count,
-                    'PSAT NMSQT' as psatnmsqt_count,
-                    'SAT' as sat_count,
-                    'ACT' as act_count
-                )
-            )
+        from yearly_tests
         group by
             _dbt_source_relation,
             student_number,
