@@ -1,29 +1,43 @@
-select
-    s.academic_year,
-    s.adp_dept,
-    s.adp_location,
-    s.display_name as job_title,
-    s.entity,
-    s.grade_band,
-    s.short_name as `location`,
-    s.plan_status,
-    s.staffing_status,
-    s.status_detail,
-    s.staffing_model_id,
+with
 
-    srr.formatted_name as recruiter,
-    srr.reports_to_formatted_name as recruiter_manager,
-    srt.formatted_name as teammate,
+    seats_detail as (select *, from {{ ref("stg_seat_tracker__seats") }}),
 
-    if(s.staffing_status = 'Open', 1, 0) as `open`,
-    if(s.status_detail in ('New Hire', 'Transfer In'), 1, 0) as new_hire,
-    if(s.staffing_status = 'Staffed', 1, 0) as staffed,
-    if(s.plan_status = 'Active', 1, 0) as active,
-    if(s.mid_year_hire, 1, 0) as mid_year_hire,
-from {{ ref("stg_seat_tracker__seats") }} as s
-/* recruiters */
-left join
-    {{ ref("int_people__staff_roster") }} as srr on s.recruiter = srr.employee_number
-/* all staff */
-left join
-    {{ ref("int_people__staff_roster") }} as srt on s.teammate = srt.employee_number
+    projections as (
+        select *, from {{ ref("stg_google_sheets__recruitment__school_projections") }}
+    ),
+
+    staff_roster as (select *, from {{ ref("int_people__staff_roster") }}),
+
+    final as (
+        select
+            seats_detail.*,
+
+            projections.anticipated_hires,
+
+            teammate_info.formatted_name as teammate_name,
+
+            recruiter_info.formatted_name as recruiter_name,
+            recruiter_info.reports_to_formatted_name as recruiter_manager,
+
+            if(seats_detail.staffing_status = 'Open', 1, 0) as open_seats,
+            if(
+                seats_detail.status_detail in ('New Hire', 'Transfer In'), 1, 0
+            ) as new_hires,
+            if(seats_detail.staffing_status = 'Staffed', 1, 0) as staffed_seats,
+            if(seats_detail.plan_status in ('Active', 'TRUE'), 1, 0) as active_seats,
+            if(seats_detail.mid_year_hire, 1, 0) as mid_year_hires,
+        from seats_detail
+        inner join
+            projections
+            on seats_detail.adp_location = projections.primary_site
+            and seats_detail.academic_year = projections.academic_year
+        left join
+            staff_roster as teammate_info
+            on seats_detail.teammate = teammate_info.employee_number
+        left join
+            staff_roster as recruiter_info
+            on seats_detail.recruiter = recruiter_info.employee_number
+    )
+
+select *,
+from final
