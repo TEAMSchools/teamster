@@ -65,7 +65,7 @@ with
             if(seats_snapshot.is_active, 1, 0) as active_seats,
             if(seats_snapshot.is_mid_year_hire, 1, 0) as mid_year_hires,
         from date_spine
-        inner join
+        left join
             seats_snapshot
             on date_spine.date_week
             between seats_snapshot.valid_from and seats_snapshot.valid_to
