@@ -49,6 +49,7 @@
     "DAGSTER_HOME": "/workspaces/teamster/.dagster/home",
     "DBT_CLOUD_ENVIRONMENT_TYPE": "dev",
     "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt",
+    "GOOGLE_CLOUD_PROJECT": "teamster-332318",
     "PYTHONDONTWRITEBYTECODE": "1",
     "TRUNK_TELEMETRY": "off",
     "UV_ENV_FILE": "/workspaces/teamster/env/.env",
