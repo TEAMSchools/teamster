@@ -39,7 +39,7 @@ with
                 when score_type in ('latest_psat_math_section', 'latest_psat_math_test')
                 then 'MATH'
             end as course_discipline,
-            
+
         from
             {{ ref("int_collegeboard__psat") }} unpivot (
                 score for score_type in (
