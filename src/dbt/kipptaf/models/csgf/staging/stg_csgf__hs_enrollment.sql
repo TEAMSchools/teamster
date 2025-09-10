@@ -128,7 +128,7 @@ select
     end as gender,
 
     case
-        when p.passed_algebra_i = 0
+        when p.passed_algebra_i = 0 or p.passed_algebra_i is null
         then 'Has not yet passed/never taken'
         when p.passed_algebra_i = 1 and p.grade_level <= 8
         then 'Passed Before 9th'
