@@ -63,7 +63,6 @@ with
             on concat(c.nces_subject_area, c.nces_course_id) = x.sced_code
         where
             c.cc_academic_year < {{ var("current_academic_year") }}
-            and c.rn_credittype_year = 1
             and c.rn_course_number_year = 1
             and not c.is_dropped_course
             and x.sced_course_name in (
@@ -89,13 +88,6 @@ select
 
     'NA' as has_participated_in_ib_courses,
     'NA (not offered)' as passed_integrated_math_1,
-
-    case
-        e.school_name
-        when 'KIPP Cooper Norcross High'
-        then 'KIPP Cooper Norcross High School'
-        else e.school_name
-    end as school,
 
     case
         e.ethnicity
@@ -141,6 +133,12 @@ select
         when p.passed_algebra_i = 1 and p.grade_level = 12
         then 'Passed in 12th'
     end as passed_algebra_i,
+
+    if(
+        e.school_name = 'KIPP Cooper Norcross High',
+        'KIPP Cooper Norcross High School',
+        e.school_name
+    ) as school,
 
     if(e.iep_status = 'Has IEP', 'Y', 'N') as student_has_iep,
 
