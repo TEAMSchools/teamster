@@ -42,6 +42,21 @@ inner join
 inner join
     {{ ref("stg_illuminate__public__students") }} as s on ur.student_id = s.student_id
 
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_472") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_471") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_470") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_469") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_468") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_467") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_466") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_465") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_464") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_463") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_462") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_461") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_460") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_459") }}
+    -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_458") }}
     -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_457") }}
     -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_456") }}
     -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_455") }}
