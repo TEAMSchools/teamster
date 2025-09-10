@@ -15,12 +15,13 @@ with
     )
 
 select
-    mc.*,
+    mc.associate_id,
+    mc.memberships,
     if(
         m.category_description = 'Program - Leader Development', true, false
-    ) as in_leadership_program,
+    ) as is_in_leadership_program,
     if(
         m.category_description = 'Program - Teacher Development', true, false
-    ) as in_teacher_program,
+    ) as is_in_teacher_program,
 from memberships_concat mc
 join memberships m on mc.associate_id = m.associate_id
