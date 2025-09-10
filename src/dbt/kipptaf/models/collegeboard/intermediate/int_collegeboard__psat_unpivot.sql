@@ -39,6 +39,7 @@ with
                 when score_type in ('latest_psat_math_section', 'latest_psat_math_test')
                 then 'MATH'
             end as course_discipline,
+            
         from
             {{ ref("int_collegeboard__psat") }} unpivot (
                 score for score_type in (
@@ -72,4 +73,5 @@ select
         partition by powerschool_student_number, test_type, score_type
         order by score desc
     ) as rn_highest,
+
 from psat
