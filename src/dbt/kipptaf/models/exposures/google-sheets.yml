@@ -494,7 +494,6 @@ exposures:
       dagster:
         kinds:
           - googlesheets
-
   - name: access_denied
     label: Access Denied
     type: application
@@ -509,6 +508,30 @@ exposures:
       - ref("rpt_gsheets__kippfwd_miami_roster")
       # https://docs.google.com/spreadsheets/d/1ZAD7Ww_mw4T3wONEfn1OoU51CA0nSls9FfHfGK5tISY
       - ref("rpt_gsheets__kfwd_flc")
+    meta:
+      dagster:
+        kinds:
+          - googlesheets
+  - name: gsheets__gpa_roster
+    label: gsheets__gpa_roster
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1hXFEfXEEU9aGG5k29nvTTn459JJHEWs0b__iqVoG9-M
+    depends_on:
+      - ref("rpt_gsheets__gpa_roster")
+    meta:
+      dagster:
+        kinds:
+          - googlesheets
+  - name: gsheets__operations_pm_roster
+    label: gsheets__operations_pm_roster
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/127EodTR-_E-nbLVBk9BQeB9zYgn7RZmT2L5xtPneqlg/
+    depends_on:
+      - ref("rpt_gsheets__operations_pm_roster")
     meta:
       dagster:
         kinds:
