@@ -106,6 +106,10 @@ select
     p.psatnmsqt_group_2_plus_score,
     p.psatnmsqt_group_2_plus_goal,
 
+    concat(
+        r.administration_round, ' ', r.scope, ' ', r.subject_area, ' ', r.test_type
+    ) as test_admin_for_roster,
+
 from {{ ref("int_extracts__student_enrollments") }} as e
 left join
     {{ ref("int_powerschool__gpa_cumulative") }} as gc
