@@ -65,6 +65,13 @@ select
     ds.academic_year,
     ds.week_start_monday,
     ds.week_end_sunday,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between week_start_monday and week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
 from staff_roster_history as srh
 inner join
     date_spine as ds
