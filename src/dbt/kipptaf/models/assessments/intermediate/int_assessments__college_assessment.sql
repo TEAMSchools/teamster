@@ -85,17 +85,12 @@ with
         group by student_number, scope, score_type
     ),
 
-    -- trunk-ignore(sqlfluff/ST03)
     max_total_score as (
         select
             student_number,
             scope,
 
-            if(
-                scope = 'ACT',
-                avg(max_scale_score) over (partition by student_number, scope),
-                sum(max_scale_score) over (partition by student_number, scope)
-            ) as superscore,
+            if(scope = 'ACT', avg(max_scale_score), sum(max_scale_score)) as superscore,
 
         from max_score
         where
@@ -106,16 +101,7 @@ with
                 'psat10_total',
                 'psatnmsqt_total'
             )
-    ),
-
-    dedup_superscore as (
-        {{
-            dbt_utils.deduplicate(
-                relation="max_total_score",
-                partition_by="student_number,scope",
-                order_by="student_number",
-            )
-        }}
+        group by student_number, scope
     ),
 
     alt_superscore as (
@@ -148,7 +134,7 @@ left join
     on s.student_number = m.student_number
     and s.score_type = m.score_type
 left join
-    dedup_superscore as d on s.student_number = d.student_number and s.scope = d.scope
+    max_total_score as d on s.student_number = d.student_number and s.scope = d.scope
 left join
     alt_superscore as a on s.student_number = a.student_number and s.scope = a.scope
 left join

@@ -95,6 +95,13 @@ left join
     on e.academic_year = r.academic_year
     and e.student_number = r.student_number
     and {{ union_dataset_join_clause(left_alias="e", right_alias="r") }}
+    and r.test_month is not null
+    and r.score_type not in (
+        'psat10_reading',
+        'psat10_math_test',
+        'sat_math_test_score',
+        'sat_reading_test_score'
+    )
 left join
     {{ ref("int_students__college_assessment_participation_roster") }} as p
     on e.student_number = p.student_number
@@ -113,13 +120,4 @@ left join
     and r.scope = g2.expected_scope
     and r.subject_area = g2.expected_subject_area
     and g1.goal_type = 'Board'
-where
-    e.rn_year = 1
-    and e.school_level = 'HS'
-    and r.test_month is not null
-    and r.score_type not in (
-        'psat10_reading',
-        'psat10_math_test',
-        'sat_math_test_score',
-        'sat_reading_test_score'
-    )
+where e.rn_year = 1 and e.school_level = 'HS'
