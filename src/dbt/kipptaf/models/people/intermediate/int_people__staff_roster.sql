@@ -1,8 +1,15 @@
 with
     -- trunk-ignore(sqlfluff/ST03)
     staff_roster_active as (
-        select *,
-        from {{ ref("int_people__staff_roster_history") }}
+        select
+            srh.*,
+            epm.memberships,
+            epm.is_in_leadership_program,
+            epm.is_in_teacher_program,
+        from {{ ref("int_people__staff_roster_history") }} as srh
+        left join
+            {{ ref("int_people__employee_program_memberships") }} as epm
+            on srh.worker_id = epm.associate_id
         where primary_indicator and (is_current_record or is_prestart)
     ),
 
@@ -16,9 +23,5 @@ with
         }}
     )
 
-select d.*, epm.memberships, epm.is_in_leadership_program, epm.is_in_teacher_program,
+select d.*,
 from deduplicate as d
-left join
-    {{ ref("int_people__employee_program_memberships") }} as epm
-    on d.worker_id = epm.associate_id
-where epm.is_in_leadership_program or epm.is_in_teacher_program
