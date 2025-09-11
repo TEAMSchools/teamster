@@ -231,6 +231,8 @@ select
     c.student_number as powerschool_student_number,
     c.is_dlm,
     c.graduation_year,
+    c.exit_school_name,
+    c.powerschool_enroll_status,
 
     ay.academic_year,
 
