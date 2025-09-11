@@ -212,7 +212,6 @@ with
             null as denominator,
             if(score >= 1010, 1, 0) as metric_value,
         from {{ ref("int_topline__college_entrance_exams_weekly") }}
-        where
 
         union all
 
