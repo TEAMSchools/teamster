@@ -29,7 +29,7 @@ with
     ),
 
     calendar as (
-        select schoolid, week_start_monday, week_end_sunday,
+        select schoolid, academic_year, week_start_monday, week_end_sunday,
         from {{ ref("int_powerschool__calendar_week") }}
     ),
 
@@ -38,6 +38,7 @@ with
             teachers.employee_number,
             teachers.school_id,
 
+            calendar.academic_year,
             calendar.week_start_monday,
             calendar.week_end_sunday,
 
@@ -59,10 +60,16 @@ with
         group by
             teachers.employee_number,
             teachers.school_id,
+            calendar.academic_year,
             calendar.week_start_monday,
             calendar.week_end_sunday
     )
 
 select
-    employee_number, school_id, week_start_monday, week_end_sunday, microgoals_assigned,
+    employee_number,
+    school_id,
+    week_start_monday,
+    week_end_sunday,
+    academic_year,
+    microgoals_assigned,
 from final
