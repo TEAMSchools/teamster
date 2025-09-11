@@ -16,12 +16,9 @@ with
         }}
     )
 
--- trunk-ignore(sqlfluff/AM04)
-select d.*,
-       epm.memberships,
-       epm.is_in_leadership_program,
-       epm.is_in_teacher_program,
+select d.*, epm.memberships, epm.is_in_leadership_program, epm.is_in_teacher_program,
 from deduplicate as d
-left join {{ ref("int_people__employee_program_memberships")}} as epm
-  on d.woker_id = epm.associate_id
+left join
+    {{ ref("int_people__employee_program_memberships") }} as epm
+    on d.woker_id = epm.associate_id
 where epm.is_in_leadership_program or epm.is_in_teacher_program
