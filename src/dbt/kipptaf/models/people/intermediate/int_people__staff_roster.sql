@@ -10,7 +10,7 @@ with
         left join
             {{ ref("int_people__employee_program_memberships") }} as epm
             on srh.worker_id = epm.associate_id
-        where primary_indicator and (is_current_record or is_prestart)
+        where srh.primary_indicator and (srh.is_current_record or srh.is_prestart)
     ),
 
     deduplicate as (
@@ -22,7 +22,7 @@ with
             )
         }}
     )
-    
+
 -- trunk-ignore(sqlfluff/AM04)
 select d.*,
 from deduplicate as d
