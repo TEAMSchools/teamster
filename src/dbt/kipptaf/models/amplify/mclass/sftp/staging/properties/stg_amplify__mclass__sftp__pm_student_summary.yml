@@ -2,7 +2,6 @@ version: 2
 models:
   - name: stg_amplify__mclass__sftp__pm_student_summary
     config:
-      enabled: false # TODO: enable for prod when ready
       contract:
         enforced: true
     columns:
@@ -26,11 +25,7 @@ models:
         data_type: string
       - name: student_first_name
         data_type: string
-      - name: student_primary_id
-        data_type: string
       - name: enrollment_teacher_name
-        data_type: string
-      - name: enrollment_teacher_staff_id
         data_type: string
       - name: enrollment_class_name
         data_type: string
@@ -39,8 +34,6 @@ models:
       - name: enrollment_grade
         data_type: string
       - name: assessing_teacher_name
-        data_type: string
-      - name: assessing_teacher_staff_id
         data_type: string
       - name: assessment_class_name
         data_type: string
@@ -96,9 +89,15 @@ models:
         data_type: string
       - name: home_language
         data_type: string
-      - name: secondary_student_id
-        data_type: string
-      - name: additional_student_id
-        data_type: string
       - name: _dagster_partition_key
+        data_type: string
+      - name: additional_student_id_primarysisid
+        data_type: string
+      - name: assessing_teacher_staff_id_teachernumber
+        data_type: string
+      - name: enrollment_teacher_staff_id_teachernumber
+        data_type: string
+      - name: secondary_student_id_stateid
+        data_type: string
+      - name: student_primary_id_studentnumber
         data_type: string
