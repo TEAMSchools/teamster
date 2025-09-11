@@ -24,4 +24,4 @@ select
         m.category_description = 'Program - Teacher Development', true, false
     ) as is_in_teacher_program,
 from memberships_concat as mc
-join memberships as m on mc.associate_id = m.associate_id
+inner join memberships as m on mc.associate_id = m.associate_id
