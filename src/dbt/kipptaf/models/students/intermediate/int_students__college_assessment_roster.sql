@@ -4,12 +4,12 @@
 ] %}
 
 {% set comparison_board_goals = [
-    {"label": "% 16+", "prefix": "per_16_plus"},
-    {"label": "% 880+", "prefix": "per_880_plus"},
-    {"label": "% 17+", "prefix": "per_17_plus"},
-    {"label": "% 890+", "prefix": "per_890_plus"},
-    {"label": "% 21+", "prefix": "per_21_plus"},
-    {"label": "% 1010+", "prefix": "per_1010_plus"},
+    {"label": "% 16+", "prefix": "pct_16_plus"},
+    {"label": "% 880+", "prefix": "pct_880_plus"},
+    {"label": "% 17+", "prefix": "pct_17_plus"},
+    {"label": "% 890+", "prefix": "pct_890_plus"},
+    {"label": "% 21+", "prefix": "pct_21_plus"},
+    {"label": "% 1010+", "prefix": "pct_1010_plus"},
 ] %}
 
 with
@@ -91,22 +91,19 @@ with
             bg.college_ready_score,
             bg.college_ready_goal,
 
-            bd.per_16_plus_score,
-            bd.per_880_plus_score,
-            bd.per_17_plus_score,
-            bd.per_890_plus_score,
-            bd.per_21_plus_score,
-            bd.per_1010_plus_score,
-            bd.per_16_plus_goal,
-            bd.per_880_plus_goal,
-            bd.per_17_plus_goal,
-            bd.per_890_plus_goal,
-            bd.per_21_plus_goal,
-            bd.per_1010_plus_goal,
+            bd.pct_16_plus_score,
+            bd.pct_880_plus_score,
+            bd.pct_17_plus_score,
+            bd.pct_890_plus_score,
+            bd.pct_21_plus_score,
+            bd.pct_1010_plus_score,
+            bd.pct_16_plus_goal,
+            bd.pct_880_plus_goal,
+            bd.pct_17_plus_goal,
+            bd.pct_890_plus_goal,
+            bd.pct_21_plus_goal,
+            bd.pct_1010_plus_goal,
 
-        -- s.admin_season,
-        -- s.admin_season_order,
-        -- s.grade_season,
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
             {{ ref("int_assessments__college_assessment") }} as a
@@ -129,15 +126,9 @@ with
             and a.scope = bd.expected_scope
             and a.subject_area = bd.expected_subject_area
             and e.grade_level = bd.grade_level
-        {#         left join
-            {{ ref("stg_google_sheets__kippfwd_seasons") }} as s
-            on a.scope = s.scope
-            and a.test_month = s.test_month
-            and e.grade_level = s.grade_level #}
         where e.school_level = 'HS' and e.rn_year = 1
     ),
 
-    -- trunk-ignore(sqlfluff/ST03)
     running_max_score as (
         select
             student_number,
