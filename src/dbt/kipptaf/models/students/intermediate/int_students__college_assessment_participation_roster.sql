@@ -1,4 +1,55 @@
+{% set comparison_completion = [
+    {"label": "ACT Group 0", "prefix": "act_group_0"},
+    {"label": "ACT Group 1", "prefix": "act_group_1"},
+    {"label": "ACT Group 2+", "prefix": "act_group_2_plus"},
+    {"label": "SAT Group 0", "prefix": "sat_group_0"},
+    {"label": "SAT Group 1", "prefix": "sat_group_1"},
+    {"label": "SAT Group 2+", "prefix": "sat_group_2_plus"},
+    {"label": "PSAT 8/9 Group 0", "prefix": "psat89_group_0"},
+    {"label": "PSAT 8/9 Group 1", "prefix": "psat89_group_1"},
+    {"label": "PSAT 8/9 Group 2+", "prefix": "psat89_group_2_plus"},
+    {"label": "PSAT10 Group 0", "prefix": "psat10_group_0"},
+    {"label": "PSAT10 Group 1", "prefix": "psat10_group_1"},
+    {"label": "PSAT10 Group 2+", "prefix": "psat10_group_2_plus"},
+    {"label": "PSAT NMSQT Group 0", "prefix": "psatnmsqt_group_0"},
+    {"label": "PSAT NMSQT Group 1", "prefix": "psatnmsqt_group_1"},
+    {"label": "PSAT NMSQT Group 2+", "prefix": "psatnmsqt_group_2_plus"},
+] %}
+
 with
+    completion_goals as (
+        select
+            expected_test_type,
+            'join' as fake_key,
+
+            {% for completion in comparison_completion %}
+                avg(
+                    case
+                        when
+                            concat(expected_scope, ' ', goal_category)
+                            = '{{ completion.label }}'
+                        then score
+                    end
+                ) as {{ completion.prefix }}_score,
+                avg(
+                    case
+                        when
+                            concat(expected_scope, ' ', goal_category)
+                            = '{{ completion.label }}'
+                        then goal
+                    end
+                ) as {{ completion.prefix }}_goal
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
+
+        from {{ ref("stg_google_sheets__kippfwd_goals") }}
+        where
+            expected_test_type = 'Official'
+            and goal_type = 'Attempts'
+            and expected_subject_area in ('Composite', 'Combined')
+        group by expected_test_type
+    ),
+
     base_rows as (
         select
             _dbt_source_relation,
@@ -7,6 +58,7 @@ with
             students_dcid,
             salesforce_id,
             grade_level,
+            test_type,
             scope,
             score_type,
 
@@ -56,6 +108,7 @@ with
             students_dcid,
             salesforce_id,
             grade_level,
+            'join' as fake_key,
 
             sum(psat89_count) as psat89_count,
             sum(psat10_count) as psat10_count,
@@ -74,26 +127,58 @@ with
     )
 
 select
-    *,
+    y.* except (fake_key),
 
-    sum(psat89_count) over (
-        partition by student_number order by grade_level
+    c.act_group_0_score,
+    c.act_group_0_goal,
+    c.act_group_1_score,
+    c.act_group_1_goal,
+    c.act_group_2_plus_score,
+    c.act_group_2_plus_goal,
+    c.sat_group_0_score,
+    c.sat_group_0_goal,
+    c.sat_group_1_score,
+    c.sat_group_1_goal,
+    c.sat_group_2_plus_score,
+    c.sat_group_2_plus_goal,
+    c.psat89_group_0_score,
+    c.psat89_group_0_goal,
+    c.psat89_group_1_score,
+    c.psat89_group_1_goal,
+    c.psat89_group_2_plus_score,
+    c.psat89_group_2_plus_goal,
+    c.psat10_group_0_score,
+    c.psat10_group_0_goal,
+    c.psat10_group_1_score,
+    c.psat10_group_1_goal,
+    c.psat10_group_2_plus_score,
+    c.psat10_group_2_plus_goal,
+    c.psatnmsqt_group_0_score,
+    c.psatnmsqt_group_0_goal,
+    c.psatnmsqt_group_1_score,
+    c.psatnmsqt_group_1_goal,
+    c.psatnmsqt_group_2_plus_score,
+    c.psatnmsqt_group_2_plus_goal,
+
+    sum(y.psat89_count) over (
+        partition by y.student_number order by y.grade_level
     ) as psat89_count_ytd,
 
-    sum(psat10_count) over (
-        partition by student_number order by grade_level
+    sum(y.psat10_count) over (
+        partition by y.student_number order by y.grade_level
     ) as psat10_count_ytd,
 
-    sum(psatnmsqt_count) over (
-        partition by student_number order by grade_level
+    sum(y.psatnmsqt_count) over (
+        partition by y.student_number order by y.grade_level
     ) as psatnmsqt_count_ytd,
 
-    sum(sat_count) over (
-        partition by student_number order by grade_level
+    sum(y.sat_count) over (
+        partition by y.student_number order by y.grade_level
     ) as sat_count_ytd,
 
-    sum(act_count) over (
-        partition by student_number order by grade_level
+    sum(y.act_count) over (
+        partition by y.student_number order by y.grade_level
     ) as act_count_ytd,
 
-from yearly_test_counts
+from yearly_test_counts as y
+left join completion_goals as c on y.fake_key = c.fake_key
