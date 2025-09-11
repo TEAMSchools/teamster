@@ -86,6 +86,7 @@ with
             test_code,
             region,
             'Spring' as season,
+
             {% for entity in comparison_entities %}
                 avg(
                     case
