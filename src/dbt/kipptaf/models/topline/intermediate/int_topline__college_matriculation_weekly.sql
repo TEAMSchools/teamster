@@ -8,6 +8,7 @@ with
             is_submitted_ba,
             is_accepted_ba,
             is_matriculated_ba,
+            is_submitted_quality_bar_4yr_int,
 
             cast(dbt_valid_from as date) as dbt_valid_from_date,
             cast(dbt_valid_to as date) as dbt_valid_to_date,
@@ -35,6 +36,7 @@ select
     m.is_submitted_ba,
     m.is_accepted_ba,
     m.is_matriculated_ba,
+    m.is_submitted_quality_bar_4yr_int,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 left join
     deduplicate as m
