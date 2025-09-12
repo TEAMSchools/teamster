@@ -76,24 +76,19 @@ select
     p.sat_count_ytd,
     p.act_count_ytd,
 
-    p.act_group_1_score,
     p.act_group_1_goal,
-    p.act_group_2_plus_score,
+    p.sat_group_1_goal,
+    p.psat89_group_1_goal,
+    p.psat10_group_1_goal,
+    p.psatnmsqt_group_1_goal,
+
     p.act_group_2_plus_goal,
 
     p.sat_group_1_score,
     p.sat_group_1_goal,
     p.sat_group_2_plus_score,
     p.sat_group_2_plus_goal,
-
-    p.psat89_group_1_score,
-    p.psat89_group_1_goal,
-    p.psat89_group_2_plus_score,
     p.psat89_group_2_plus_goal,
-
-    p.psat10_group_1_score,
-    p.psat10_group_1_goal,
-    p.psat10_group_2_plus_score,
     p.psat10_group_2_plus_goal,
 
     p.psatnmsqt_group_1_score,
