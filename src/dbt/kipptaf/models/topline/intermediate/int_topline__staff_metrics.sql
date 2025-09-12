@@ -42,9 +42,11 @@ select
     ss.academic_year,
     ss.week_start_monday,
     ss.week_end_sunday,
+    ss.is_current_week,
 
     mu.layer,
     mu.indicator,
+    mu.term,
     mu.numerator,
     mu.denominator,
     mu.metric_value,
