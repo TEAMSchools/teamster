@@ -13,7 +13,6 @@ with
                 [
                     'Chronic Absence: 3',
                     'Chronic Absence: 5',
-                    'Chronic Absence: 6',
                     'Chronic Absence: 8',
                     'Chronic Absence: 10',
                     'Chronic Absence: 15+',
