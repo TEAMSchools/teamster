@@ -189,7 +189,7 @@ models:
               arguments:
                 values:
                   - Not Grad IEP Exempt
-                  - Yes
+                  - "Yes"
               config:
                 severity: warn
                 store_failures: true
