@@ -81,7 +81,7 @@ select
     p.act_group_1_goal,
     p.act_group_2_plus_score,
     p.act_group_2_plus_goal,
-    
+
     p.sat_group_1_score,
     p.sat_group_1_goal,
     p.sat_group_2_plus_score,
@@ -96,7 +96,7 @@ select
     p.psat10_group_1_goal,
     p.psat10_group_2_plus_score,
     p.psat10_group_2_plus_goal,
-    
+
     p.psatnmsqt_group_1_score,
     p.psatnmsqt_group_1_goal,
     p.psatnmsqt_group_2_plus_score,
