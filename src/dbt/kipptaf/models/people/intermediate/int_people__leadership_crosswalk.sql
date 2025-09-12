@@ -23,7 +23,7 @@ with
                 'School Leader',
                 'School Leader in Residence'
             )
-            and assignment_status != 'Terminated'
+            and worker_status_code != 'Terminated'
         group by home_work_location_powerschool_school_id, home_work_location_name
     ),
 

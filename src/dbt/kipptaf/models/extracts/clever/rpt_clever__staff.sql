@@ -25,7 +25,7 @@ with
             and not ccw.is_pathways
         where
             not sr.is_prestart
-            and sr.assignment_status not in ('Terminated', 'Deceased')
+            and sr.worker_status_code != 'Terminated'
             and sr.home_department_name not in ('Data', 'Teaching and Learning')
             and coalesce(
                 ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
@@ -47,11 +47,11 @@ with
         from {{ ref("int_people__staff_roster") }} as sr
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
-            on (sch.state_excludefromreporting = 0)
+            on sch.state_excludefromreporting = 0
         where
-            not sr.is_prestart
-            and sr.assignment_status not in ('Terminated', 'Deceased')
-            and sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
+            sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
+            and not sr.is_prestart
+            and sr.worker_status_code != 'Terminated'
             and (
                 sr.home_department_name
                 in ('Data', 'Teaching and Learning', 'Executive')
@@ -79,8 +79,8 @@ with
             and sch.state_excludefromreporting = 0
         where
             not sr.is_prestart
-            and sr.assignment_status not in ('Terminated', 'Deceased')
             and sr.home_work_location_powerschool_school_id = 0
+            and sr.worker_status_code != 'Terminated'
 
         union all
 
@@ -103,7 +103,7 @@ with
             {{ ref("int_people__staff_roster") }} as sr
             on up.employee_number = sr.employee_number
             and not sr.is_prestart
-            and sr.assignment_status not in ('Terminated', 'Deceased')
+            and sr.worker_status_code != 'Terminated'
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
             on sch.schoolstate = 'NJ'
