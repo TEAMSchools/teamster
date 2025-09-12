@@ -46,10 +46,24 @@ select
     r.rn_highest,
     r.max_scale_score,
     r.superscore,
-    r.admin_season,
-    r.grade_season,
     r.running_max_scale_score,
     r.running_superscore,
+    r.hs_ready_score,
+    r.hs_ready_goal,
+    r.college_ready_score,
+    r.college_ready_goal,
+    r.pct_16_plus_score,
+    r.pct_880_plus_score,
+    r.pct_17_plus_score,
+    r.pct_890_plus_score,
+    r.pct_21_plus_score,
+    r.pct_1010_plus_score,
+    r.pct_16_plus_goal,
+    r.pct_880_plus_goal,
+    r.pct_17_plus_goal,
+    r.pct_890_plus_goal,
+    r.pct_21_plus_goal,
+    r.pct_1010_plus_goal,
 
     p.psat89_count,
     p.psat10_count,
@@ -61,24 +75,26 @@ select
     p.psatnmsqt_count_ytd,
     p.sat_count_ytd,
     p.act_count_ytd,
-
-    g1.aligned_goal_category,
-    g1.goal_category,
-    g1.goal_type,
-    g1.goal_subtype,
-    g1.score,
-    g1.goal,
-
-    g2.aligned_goal_category as board_aligned_goal_category,
-    g2.goal_category as board_goal_category,
-    g2.goal_type as board_goal_type,
-    g2.goal_subtype as board_goal_subtype,
-    g2.score as board_score,
-    g2.goal as board_goal,
-
-    concat(
-        's', '_', r.grade_season, ' ', r.scope, ' ', r.subject_area, ' ', r.test_type
-    ) as test_season_for_roster,
+    p.act_group_1_score,
+    p.act_group_1_goal,
+    p.act_group_2_plus_score,
+    p.act_group_2_plus_goal,
+    p.sat_group_1_score,
+    p.sat_group_1_goal,
+    p.sat_group_2_plus_score,
+    p.sat_group_2_plus_goal,
+    p.psat89_group_1_score,
+    p.psat89_group_1_goal,
+    p.psat89_group_2_plus_score,
+    p.psat89_group_2_plus_goal,
+    p.psat10_group_1_score,
+    p.psat10_group_1_goal,
+    p.psat10_group_2_plus_score,
+    p.psat10_group_2_plus_goal,
+    p.psatnmsqt_group_1_score,
+    p.psatnmsqt_group_1_goal,
+    p.psatnmsqt_group_2_plus_score,
+    p.psatnmsqt_group_2_plus_goal,
 
     concat(
         r.administration_round, ' ', r.scope, ' ', r.subject_area, ' ', r.test_type
@@ -95,27 +111,6 @@ left join
     on e.academic_year = r.academic_year
     and e.student_number = r.student_number
     and {{ union_dataset_join_clause(left_alias="e", right_alias="r") }}
-left join
-    {{ ref("int_students__college_assessment_participation_roster") }} as p
-    on e.student_number = p.student_number
-    and e.grade_level = p.grade_level
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="p") }}
-left join
-    {{ ref("stg_google_sheets__kippfwd_goals") }} as g1
-    on r.academic_year = g1.academic_year
-    and r.scope = g1.expected_scope
-    and r.subject_area = g1.expected_subject_area
-    and g1.goal_type in ('Attempts', 'Benchmark')
-left join
-    {{ ref("stg_google_sheets__kippfwd_goals") }} as g2
-    on r.academic_year = g2.academic_year
-    and r.grade_level = g2.grade_level
-    and r.scope = g2.expected_scope
-    and r.subject_area = g2.expected_subject_area
-    and g1.goal_type = 'Board'
-where
-    e.rn_year = 1
-    and e.school_level = 'HS'
     and r.test_month is not null
     and r.score_type not in (
         'psat10_reading',
@@ -123,3 +118,9 @@ where
         'sat_math_test_score',
         'sat_reading_test_score'
     )
+left join
+    {{ ref("int_students__college_assessment_participation_roster") }} as p
+    on e.student_number = p.student_number
+    and e.grade_level = p.grade_level
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="p") }}
+where e.rn_year = 1 and e.school_level = 'HS'
