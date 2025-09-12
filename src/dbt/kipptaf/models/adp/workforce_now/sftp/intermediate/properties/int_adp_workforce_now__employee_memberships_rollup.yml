@@ -1,0 +1,14 @@
+version: 2
+models:
+  - name: int_adp_workforce_now__employee_memberships_rollup
+    columns:
+      - name: associate_id
+        data_type: string
+      - name: is_current
+        data_type: boolean
+      - name: is_leader_development_program
+        data_type: boolean
+      - name: is_teacher_development_program
+        data_type: boolean
+      - name: memberships
+        data_type: string
