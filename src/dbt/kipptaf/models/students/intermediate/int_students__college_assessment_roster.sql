@@ -86,23 +86,58 @@ with
             a.max_scale_score,
             a.superscore,
 
-            bg.hs_ready_score,
+            bg.hs_ready_score as hs_ready_min_score,
+            bg.college_ready_score as college_ready_min_score,
             bg.hs_ready_goal,
-            bg.college_ready_score,
             bg.college_ready_goal,
 
-            bd.pct_16_plus_score,
-            bd.pct_880_plus_score,
-            bd.pct_17_plus_score,
-            bd.pct_890_plus_score,
-            bd.pct_21_plus_score,
-            bd.pct_1010_plus_score,
-            bd.pct_16_plus_goal,
-            bd.pct_880_plus_goal,
-            bd.pct_17_plus_goal,
-            bd.pct_890_plus_goal,
-            bd.pct_21_plus_goal,
-            bd.pct_1010_plus_goal,
+            case
+                a.scope
+                when 'ACT'
+                then bd.pct_16_plus_score
+                when 'SAT'
+                then bd.pct_880_plus_score
+            end as pct_16_880_min_score,
+
+            case
+                a.scope
+                when 'ACT'
+                then bd.pct_17_plus_score
+                when 'SAT'
+                then bd.pct_890_plus_score
+            end as pct_17_890_min_score,
+
+            case
+                a.scope
+                when 'ACT'
+                then bd.pct_21_plus_score
+                when 'SAT'
+                then bd.pct_1010_plus_score
+            end as pct_21_1010_min_score,
+
+            case
+                a.scope
+                when 'ACT'
+                then bd.pct_16_plus_goal
+                when 'SAT'
+                then bd.pct_880_plus_goal
+            end as pct_16_880_goal,
+
+            case
+                a.scope
+                when 'ACT'
+                then bd.pct_17_plus_goal
+                when 'SAT'
+                then bd.pct_890_plus_goal
+            end as pct_17_890_goal,
+
+            case
+                a.scope
+                when 'ACT'
+                then bd.pct_21_plus_goal
+                when 'SAT'
+                then bd.pct_1010_plus_goal
+            end as pct_21_1010_goal,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
