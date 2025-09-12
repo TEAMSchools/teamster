@@ -74,7 +74,7 @@ with
         where p._dbt_source_model = 'stg_overgrad__students'
     ),
 
-    m_ps_code as (
+    graduation_pathway_m as (
         select
             _dbt_source_relation,
             studentsdcid,
@@ -189,6 +189,13 @@ select
 
     adapy.ada_year as ada_unweighted_year_prev,
     adapy.ada_weighted_year as ada_weighted_year_prev,
+
+    gc.cumulative_y1_gpa,
+    gc.cumulative_y1_gpa_unweighted,
+    gc.cumulative_y1_gpa_projected,
+    gc.cumulative_y1_gpa_projected_s1,
+    gc.cumulative_y1_gpa_projected_s1_unweighted,
+    gc.core_cumulative_y1_gpa,
 
     ny.next_year_school,
     ny.next_year_schoolid,
@@ -353,11 +360,16 @@ left join
     and e.academic_year = (adapy.academic_year + 1)
     and {{ union_dataset_join_clause(left_alias="e", right_alias="adapy") }}
 left join
+    {{ ref("int_powerschool__gpa_cumulative") }} as gc
+    on e.studentid = gc.studentid
+    and e.schoolid = gc.schoolid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="gc") }}
+left join
     next_year_school as ny
     on e.student_number = ny.student_number
     and e.academic_year = ny.academic_year
 left join
-    m_ps_code as mc
+    graduation_pathway_m as mc
     on e.students_dcid = mc.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="mc") }}
 where e.grade_level != 99

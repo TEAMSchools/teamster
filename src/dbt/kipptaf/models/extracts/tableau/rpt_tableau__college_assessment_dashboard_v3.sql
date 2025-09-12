@@ -25,13 +25,12 @@ select
     e.contact_owner_name,
     e.college_match_gpa,
     e.college_match_gpa_bands,
-
-    gc.cumulative_y1_gpa,
-    gc.cumulative_y1_gpa_unweighted,
-    gc.cumulative_y1_gpa_projected,
-    gc.cumulative_y1_gpa_projected_s1,
-    gc.cumulative_y1_gpa_projected_s1_unweighted,
-    gc.core_cumulative_y1_gpa,
+    e.cumulative_y1_gpa,
+    e.cumulative_y1_gpa_unweighted,
+    e.cumulative_y1_gpa_projected,
+    e.cumulative_y1_gpa_projected_s1,
+    e.cumulative_y1_gpa_projected_s1_unweighted,
+    e.core_cumulative_y1_gpa,
 
     r.administration_round,
     r.test_type,
@@ -50,11 +49,15 @@ select
     r.running_max_scale_score,
     r.running_superscore,
 
-    p.psat89_count,
-    p.psat10_count,
-    p.psatnmsqt_count,
-    p.sat_count,
+    p.act_count_ytd,
     p.act_count,
+    p.act_group_1_goal,
+    p.act_group_2_plus_goal,
+
+    p.psat10_count_ytd,
+    p.psat10_count,
+    p.psat10_group_1_goal,
+    p.psat10_group_2_plus_goal,
 
     p.psat89_count_ytd,
     p.psat10_count_ytd,
@@ -76,15 +79,23 @@ select
 
     p.act_group_1_goal,
     p.sat_group_1_goal,
+    p.psat89_count,
     p.psat89_group_1_goal,
-    p.psat10_group_1_goal,
-    p.psatnmsqt_group_1_goal,
-
-    p.act_group_2_plus_goal,
-    p.sat_group_2_plus_goal,
     p.psat89_group_2_plus_goal,
-    p.psat10_group_2_plus_goal,
+
+    p.psatnmsqt_count_ytd,
+    p.psatnmsqt_count,
+    p.psatnmsqt_group_1_goal,
+    p.psatnmsqt_group_1_score,
     p.psatnmsqt_group_2_plus_goal,
+    p.psatnmsqt_group_2_plus_score,
+
+    p.sat_count_ytd,
+    p.sat_count,
+    p.sat_group_1_goal,
+    p.sat_group_1_score,
+    p.sat_group_2_plus_goal,
+    p.sat_group_2_plus_score,
 
     concat(
         r.administration_round, ' ', r.scope, ' ', r.subject_area, ' ', r.test_type
