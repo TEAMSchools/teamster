@@ -49,12 +49,12 @@
               kinds:
                 - tableau | googlesheets | ...
                 - ...
-            asset:
-              metadata:
-                id: [lsid]  # optional, for Tableau Server workbooks
-                cron_schedule:  # optional, for Dagster automation
-                  - * * * * *
-                  - ...
+              asset:
+                metadata:
+                  id: [lsid]  # optional, for Tableau Server workbooks
+                  cron_schedule:  # optional, for Dagster automation
+                    - * * * * *
+                    - ...
 
 [Dagster "kinds" Reference](https://docs.dagster.io/guides/build/assets/metadata-and-tags/kind-tags#supported-icons)
 
