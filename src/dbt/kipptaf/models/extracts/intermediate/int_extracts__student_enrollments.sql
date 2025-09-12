@@ -72,6 +72,24 @@ with
             on p.id = s.id
             and {{ union_dataset_join_clause(left_alias="p", right_alias="s") }}
         where p._dbt_source_model = 'stg_overgrad__students'
+    ),
+
+    graduation_pathway_m as (
+        select
+            _dbt_source_relation,
+            studentsdcid,
+
+            case
+                when graduation_pathway_math = 'M' and graduation_pathway_ela = 'M'
+                then 'Yes'
+                when graduation_pathway_math = 'M' and graduation_pathway_ela != 'M'
+                then 'Math only. No ELA match.'
+                when graduation_pathway_math != 'M' and graduation_pathway_ela = 'M'
+                then 'ELA only. No Math match.'
+            end as grad_iep_exempt_overall,
+
+        from {{ ref("stg_powerschool__s_nj_stu_x") }}
+        where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
     )
 
 select
@@ -172,8 +190,21 @@ select
     adapy.ada_year as ada_unweighted_year_prev,
     adapy.ada_weighted_year as ada_weighted_year_prev,
 
+    gc.cumulative_y1_gpa,
+    gc.cumulative_y1_gpa_unweighted,
+    gc.cumulative_y1_gpa_projected,
+    gc.cumulative_y1_gpa_projected_s1,
+    gc.cumulative_y1_gpa_projected_s1_unweighted,
+    gc.core_cumulative_y1_gpa,
+
     ny.next_year_school,
     ny.next_year_schoolid,
+
+    if(
+        e.enroll_status = 0 and mc.grad_iep_exempt_overall is not null,
+        mc.grad_iep_exempt_overall,
+        'Not Grad IEP Exempt'
+    ) as grad_iep_exempt_status_overall,
 
     'KTAF' as district,
 
@@ -329,7 +360,16 @@ left join
     and e.academic_year = (adapy.academic_year + 1)
     and {{ union_dataset_join_clause(left_alias="e", right_alias="adapy") }}
 left join
+    {{ ref("int_powerschool__gpa_cumulative") }} as gc
+    on e.studentid = gc.studentid
+    and e.schoolid = gc.schoolid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="gc") }}
+left join
     next_year_school as ny
     on e.student_number = ny.student_number
     and e.academic_year = ny.academic_year
+left join
+    graduation_pathway_m as mc
+    on e.students_dcid = mc.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="mc") }}
 where e.grade_level != 99
