@@ -1,4 +1,5 @@
 {% set pivot_query %}
+    -- generating a dynamic distinct list of scores available that will then be used on a pivot on the main select statement. 
     select distinct
         test_admin_for_roster,
         lower(replace(replace(test_admin_for_roster,'PSAT 8/9','PSAT89'),' ','_')) as test_admin_for_roster_field_name
