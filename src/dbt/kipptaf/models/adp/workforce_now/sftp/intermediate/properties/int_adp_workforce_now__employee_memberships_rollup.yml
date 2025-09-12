@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: int_adp_workforce_now__employee_memberships
+  - name: int_adp_workforce_now__employee_memberships_rollup
     columns:
       - name: associate_id
         data_type: string
