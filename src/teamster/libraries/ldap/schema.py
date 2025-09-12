@@ -80,6 +80,7 @@ class UserPerson(BaseModel):
     mS_DS_ConsistencyGuid: bytes | None = None
     msDS_ExternalDirectoryObjectId: str | None = None
     msDS_KeyCredentialLink: bytes | None = None
+    msDS_LastKnownRDN: str | None = None
     msDS_SupportedEncryptionTypes: int | None = None
     msExchArchiveGUID: bytes | None = None
     msExchArchiveName: str | None = None
