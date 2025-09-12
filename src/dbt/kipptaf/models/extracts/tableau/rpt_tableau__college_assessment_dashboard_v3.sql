@@ -49,22 +49,6 @@ select
     r.running_max_scale_score,
     r.running_superscore,
 
-    p.act_count_ytd,
-    p.act_count,
-    p.act_group_1_goal,
-    p.act_group_2_plus_goal,
-
-    p.psat10_count_ytd,
-    p.psat10_count,
-    p.psat10_group_1_goal,
-    p.psat10_group_2_plus_goal,
-
-    p.psat89_count_ytd,
-    p.psat10_count_ytd,
-    p.psatnmsqt_count_ytd,
-    p.sat_count_ytd,
-    p.act_count_ytd,
-
     r.hs_ready_min_score,
     r.college_ready_min_score,
     r.pct_16_880_min_score,
@@ -77,11 +61,26 @@ select
     r.pct_17_890_goal,
     r.pct_21_1010_goal,
 
+    p.act_count_ytd,
+    p.act_count,
     p.act_group_1_goal,
-    p.sat_group_1_goal,
+    p.act_group_1_score,
+    p.act_group_2_plus_goal,
+    p.act_group_2_plus_score,
+
+    p.psat89_count_ytd,
     p.psat89_count,
     p.psat89_group_1_goal,
+    p.psat89_group_1_score,
     p.psat89_group_2_plus_goal,
+    p.psat89_group_2_plus_score,
+
+    p.psat10_count_ytd,
+    p.psat10_count,
+    p.psat10_group_1_goal,
+    p.psat10_group_1_score,
+    p.psat10_group_2_plus_goal,
+    p.psat10_group_2_plus_score,
 
     p.psatnmsqt_count_ytd,
     p.psatnmsqt_count,
@@ -102,11 +101,6 @@ select
     ) as test_admin_for_roster,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
-left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gc
-    on e.studentid = gc.studentid
-    and e.schoolid = gc.schoolid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="gc") }}
 left join
     {{ ref("int_students__college_assessment_roster") }} as r
     on e.academic_year = r.academic_year
