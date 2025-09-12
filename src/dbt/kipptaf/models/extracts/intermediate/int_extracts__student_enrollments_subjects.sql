@@ -25,6 +25,14 @@ with
                 iready_subject when 'Reading' then 'ELA' when 'Math' then 'Math'
             end as discipline,
 
+            case
+                iready_subject
+                when 'Reading'
+                then 'English Language Arts'
+                when 'Math'
+                then 'Mathematics'
+            end as fast_subject,
+
         from unnest(['Reading', 'Math']) as iready_subject
     ),
 
@@ -249,6 +257,7 @@ select
     sj.powerschool_credittype,
     sj.grad_unpivot_subject,
     sj.discipline,
+    sj.fast_subject,
 
     sip.is_sipps,
 
@@ -304,6 +313,7 @@ select
         then 'Bucket 1'
         when nj.iready_subject is not null
         then 'Bucket 2'
+        else 'Unbucketed'
     end as nj_student_tier,
 
     case

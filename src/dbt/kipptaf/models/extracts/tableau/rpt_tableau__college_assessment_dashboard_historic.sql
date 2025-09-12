@@ -71,9 +71,10 @@ with
 
             if(e.iep_status = 'No IEP', 0, 1) as sped,
 
-            coalesce(f.is_exempt_state_testing, false) as dlm,
+            {# coalesce(f.is_exempt_state_testing, false) as dlm, #}
+            false as dlm,
         from {{ ref("int_extracts__student_enrollments") }} as e
-        left join
+        inner join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.studentid = s.cc_studentid
             and e.academic_year = s.cc_academic_year
@@ -87,22 +88,20 @@ with
                 'College and Career II',
                 'HR'
             )
-        left join
+        inner join
             expected_course as ec
             on s.cc_academic_year = ec.cc_academic_year
             and s.students_student_number = ec.student_number
             and s.courses_course_name = ec.courses_course_name_expected
             and {{ union_dataset_join_clause(left_alias="s", right_alias="ec") }}
+        {# TODO: clarify - none of the courses in s match a powerschool_credittype in f
         left join
             {{ ref("int_extracts__student_enrollments_subjects") }} as f
             on s.cc_academic_year = f.academic_year
             and s.students_student_number = f.student_number
             and s.courses_credittype = f.powerschool_credittype
-            and f.rn_year = 1
-        where
-            e.rn_year = 1
-            and e.school_level = 'HS'
-            and ec.courses_course_name_expected is not null
+            and f.rn_year = 1 #}
+        where e.rn_year = 1 and e.school_level = 'HS'
     ),
 
     college_assessments_official as (
