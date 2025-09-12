@@ -1,0 +1,4 @@
+models:
+  - name: rpt_tableau__marketing_instagram_post
+    config:
+      enabled: false
