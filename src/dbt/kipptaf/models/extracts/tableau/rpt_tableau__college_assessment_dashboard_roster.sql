@@ -4,7 +4,7 @@
         test_admin_for_roster,
         lower(replace(replace(test_admin_for_roster,'PSAT 8/9','PSAT89'),' ','_')) as test_admin_for_roster_field_name
     from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }}
-    where rn_undergrad = 1 and ktc_cohort >= 2025
+    where rn_undergrad = 1 and ktc_cohort >= {{ var("current_academic_year") }}
 {% endset %}
 
 {% set results = run_query(pivot_query) %}
@@ -151,8 +151,7 @@ select
 from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} as b
 left join superscore_pivot as s on b.student_number = s.student_number
 left join max_scale_score_dedup as m on b.student_number = m.student_number
--- only the "current" graduating class is tracked here
-where b.rn_undergrad = 1 and b.ktc_cohort >= 2025
+where b.rn_undergrad = 1 and b.ktc_cohort >= {{ var("current_academic_year") }}
 group by
     b.region,
     b.schoolid,
