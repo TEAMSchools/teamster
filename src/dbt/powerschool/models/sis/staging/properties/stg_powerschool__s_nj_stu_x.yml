@@ -5,6 +5,12 @@ models:
       contract:
         enforced: true
     columns:
+      - name: studentsdcid
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: examiner_smid
         data_type: string
       - name: parcc_braille_paper
@@ -679,12 +685,6 @@ models:
         data_type: string
       - name: sld_writn_exprsn_yn
         data_type: string
-      - name: studentsdcid
-        data_type: int64
-        data_tests:
-          - unique:
-              config:
-                store_failures: true
       - name: lep_completion_date_refused
         data_type: int64
       - name: military_connected_indicator
