@@ -1,7 +1,8 @@
 {% set pivot_query %}
-    -- generating a dynamic distinct list of scores available that will then be used on a pivot on the main select statement. 
+    /* generating a dynamic list of scores available */
     select distinct
         test_admin_for_roster,
+
         lower(replace(replace(test_admin_for_roster,'PSAT 8/9','PSAT89'),' ','_')) as test_admin_for_roster_field_name
     from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }}
     where rn_undergrad = 1 and ktc_cohort >= {{ var("current_academic_year") }}
