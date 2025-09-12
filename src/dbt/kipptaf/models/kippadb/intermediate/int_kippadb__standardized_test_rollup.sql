@@ -8,6 +8,7 @@ with
             subject_area as test_subject,
             scale_score as score,
         from {{ ref("int_assessments__college_assessment") }}
+        where rn_highest = 1 and scope in ('SAT', 'ACT', 'PSAT 8/9', 'PSAT NMSQT')
         where rn_highest = 1
     )
 
@@ -32,6 +33,6 @@ select
     'Superscore' as test_subject,
 
     round(avg(score), 1) as score,
-from {{ ref("int_kippadb__standardized_test_unpivot") }}
+from tests
 where test_type = 'ACT' and test_subject in ('English', 'Math', 'Reading', 'Science')
 group by school_specific_id, test_type
