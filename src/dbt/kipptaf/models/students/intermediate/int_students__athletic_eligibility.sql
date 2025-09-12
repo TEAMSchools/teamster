@@ -99,7 +99,7 @@ with
             and e.rn_year = 1
             and e.enroll_status = 0
             and e.grade_level >= 5
-            and e.region != 'Paterson'
+            and e.region not in ('Paterson', 'Miami')
     )
 
 select
