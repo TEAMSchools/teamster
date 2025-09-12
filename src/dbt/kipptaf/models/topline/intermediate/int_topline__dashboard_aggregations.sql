@@ -165,7 +165,7 @@ with
             g.goal
     ),
 
-    agg_union_student as (
+    agg_union_staff as (
         select
             m.academic_year,
             m.home_business_unit_name as region,
@@ -174,7 +174,8 @@ with
             m.layer,
             m.indicator,
             null as discipline,
-            
+            m.term,
+            m.is_current_week,
 
             m.employee_number,
             m.powerschool_teacher_number,
@@ -183,7 +184,7 @@ with
             m.assignment_status,
             m.reports_to_user_principal_name,
             m.week_end_sunday,
-           
+
             m.numerator,
             m.denominator,
             m.metric_value,
