@@ -26,3 +26,7 @@ models:
         data_type: string
       - name: salesforce_id
         data_type: string
+      - name: max_scale_score
+        data_type: numeric
+      - name: superscore
+        data_type: numeric
