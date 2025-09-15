@@ -10,5 +10,5 @@ with
         }}
     )
 
-select *
+select *,
 from union_relations
