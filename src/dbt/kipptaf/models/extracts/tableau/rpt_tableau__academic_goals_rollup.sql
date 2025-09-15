@@ -67,7 +67,8 @@ with
                     or `subject` in ('Mathematics', 'Geometry')
                 then 'Math'
             end as `subject`,
-        from {{ ref("stg_pearson__njsla") }}
+        from {{ ref("int_pearson__all_assessments") }}
+        where assessment_name = 'NJSLA'
 
         union all
 
