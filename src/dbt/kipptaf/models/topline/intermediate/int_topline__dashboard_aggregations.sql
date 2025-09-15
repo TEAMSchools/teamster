@@ -189,6 +189,16 @@ with
             m.denominator,
             m.metric_value,
         from {{ ref("int_topline__staff_metrics") }} as m
+    ),
+
+    enrollment_lookup as (
+        select *
+        from agg_union_student as su
+        inner join
+            {{ ref("stg_google_sheets__topline_enrollment_targets") }} as et
+            on su.schoolid = et.schoolid
+            and su.academic_year = et.academic_year
+            and su.region = et.region
     )
 
 select
