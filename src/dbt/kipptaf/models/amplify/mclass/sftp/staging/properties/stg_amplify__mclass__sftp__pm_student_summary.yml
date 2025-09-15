@@ -48,15 +48,15 @@ models:
       - name: pm_period
         data_type: string
       - name: device_date
-        data_type: string
+        data_type: date
       - name: sync_date
-        data_type: string
+        data_type: date
       - name: measure
         data_type: string
       - name: probe_number
-        data_type: string
+        data_type: int64
       - name: total_number_of_probes
-        data_type: string
+        data_type: int64
       - name: score
         data_type: string
       - name: date_of_birth
@@ -92,7 +92,7 @@ models:
       - name: _dagster_partition_key
         data_type: string
       - name: additional_student_id_primarysisid
-        data_type: string
+        data_type: int64
       - name: assessing_teacher_staff_id_teachernumber
         data_type: string
       - name: enrollment_teacher_staff_id_teachernumber
@@ -100,4 +100,4 @@ models:
       - name: secondary_student_id_stateid
         data_type: string
       - name: student_primary_id_studentnumber
-        data_type: string
+        data_type: int64
