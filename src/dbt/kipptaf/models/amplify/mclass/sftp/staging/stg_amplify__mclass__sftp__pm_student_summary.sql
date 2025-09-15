@@ -19,7 +19,7 @@ with
 
             cast(score as numeric) as measure_standard_score,
 
-            cast(device_date as date) as client_date,
+            cast(device_date as date) as device_date,
             cast(sync_date as date) as sync_date,
 
             cast(

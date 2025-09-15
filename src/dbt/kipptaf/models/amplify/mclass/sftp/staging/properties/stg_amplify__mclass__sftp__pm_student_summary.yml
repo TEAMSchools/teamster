@@ -57,8 +57,8 @@ models:
         data_type: int64
       - name: total_number_of_probes
         data_type: int64
-      - name: score
-        data_type: string
+      - name: measure_standard_score
+        data_type: numeric
       - name: date_of_birth
         data_type: string
       - name: gender
@@ -100,4 +100,22 @@ models:
       - name: secondary_student_id_stateid
         data_type: string
       - name: student_primary_id_studentnumber
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: surrogate_key
+        data_type: string
+      - name: region
+        data_type: string
+      - name: measure_name_code
+        data_type: string
+      - name: measure_name
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: assessment_grade_int
+        data_type: int64
+      - name: enrollment_grade_int
         data_type: int64

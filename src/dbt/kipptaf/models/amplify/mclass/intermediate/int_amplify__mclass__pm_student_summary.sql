@@ -10,5 +10,20 @@ with
         }}
     )
 
-select *,
+select
+    * except (
+        enrollment_teacher_staff_id_teachernumber,
+        official_teacher_staff_id,
+        enrollment_teacher_name,
+        official_teacher_name,
+        device_date,
+        client_date
+    ),
+
+    coalesce(
+        enrollment_teacher_staff_id_teachernumber, official_teacher_staff_id
+    ) as official_teacher_staff_id,
+    coalesce(enrollment_teacher_name, official_teacher_name) as official_teacher_name,
+    coalesce(device_date, client_date) as client_date,
+
 from union_relations
