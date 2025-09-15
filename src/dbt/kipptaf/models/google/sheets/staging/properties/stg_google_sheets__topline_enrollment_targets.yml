@@ -14,3 +14,5 @@ models:
         data_type: int64
       - name: Budget_Target
         data_type: int64
+      - name: Region
+        data_type: string
