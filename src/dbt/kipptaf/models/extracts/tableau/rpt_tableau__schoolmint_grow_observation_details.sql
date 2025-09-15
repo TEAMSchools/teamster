@@ -96,7 +96,7 @@ with
                         srh.job_title = 'Teacher in Residence'
                         or tir.prior_year_tir
                         or srh.home_business_unit_name = 'KIPP Miami'
-                        or srh.worker_original_hire_date
+                        or srh.worker_hire_date_recent
                         between '{{ var("current_academic_year") }}-04-01' and date_sub(
                             t.lockbox_date, interval 6 week
                         )
