@@ -298,6 +298,7 @@ select
     e.ms_attended,
     e.advisory,
     e.year_in_network,
+    e.tutoring_nj,
 
     a.race_ethnicity,
     a.lep_status,
@@ -334,7 +335,6 @@ select
     g.assessment_band_goal,
 
     sf.nj_student_tier,
-    sf.is_tutoring as tutoring_nj,
 
     sf2.iready_proficiency_eoy,
 
@@ -418,6 +418,7 @@ select
     e.ms_attended,
     e.advisory,
     e.year_in_network,
+    e.tutoring_nj,
 
     a.race_ethnicity,
     a.lep_status,
@@ -454,7 +455,6 @@ select
     g.assessment_band_goal,
 
     sf.nj_student_tier,
-    sf.is_tutoring as tutoring_nj,
 
     sf2.iready_proficiency_eoy,
 
@@ -539,6 +539,7 @@ select
     e.ms_attended,
     e.advisory,
     e.year_in_network,
+    e.tutoring_nj,
 
     a.race_ethnicity,
     a.lep_status,
@@ -575,7 +576,6 @@ select
     g.assessment_band_goal,
 
     sf.nj_student_tier,
-    sf.is_tutoring as tutoring_nj,
 
     sf2.iready_proficiency_eoy,
 

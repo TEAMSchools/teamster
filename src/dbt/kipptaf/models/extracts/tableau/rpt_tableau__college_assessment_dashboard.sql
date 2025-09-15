@@ -67,9 +67,8 @@ with
     course_subjects_roster as (
         select
             e._dbt_source_relation,
-            e.academic_year,
             e.student_number,
-            e.salesforce_id as contact_id,
+            e.academic_year,
             e.is_exempt_state_testing,
 
             s.courses_course_name,

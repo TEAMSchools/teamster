@@ -115,8 +115,6 @@ models:
       +schema: extracts
       tableau:
         +schema: tableau
-      disabled:
-        +enabled: false
     facebook:
       +enabled: false
     finance:

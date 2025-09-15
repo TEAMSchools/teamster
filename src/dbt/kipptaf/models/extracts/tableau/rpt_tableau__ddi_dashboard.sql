@@ -75,6 +75,7 @@ with
             co.team as homeroom_section,
             co.advisor_lastfirst as homeroom_teacher_name,
             co.advisor_teachernumber as homeroom_teachernumber,
+            co.dibels_most_recent_composite,
 
             w.week_start_monday,
             w.week_end_sunday,
@@ -97,6 +98,7 @@ with
             r.performance_band_label_number,
             r.performance_band_label,
             r.is_replacement,
+            r.hos as head_of_school,
 
             sd.standard_domain,
 
@@ -108,11 +110,8 @@ with
             cc.teacher_lastfirst as course_teacher_name,
             cc.is_foundations,
 
-            sf.dibels_most_recent_composite,
             sf.state_test_proficiency,
             sf.is_exempt_iready,
-
-            lc.head_of_school_preferred_name_lastfirst as head_of_school,
 
             coalesce(sf.nj_student_tier, 'Unbucketed') as nj_student_tier,
 
@@ -171,14 +170,10 @@ with
             and co.academic_year = sf.academic_year
             and cc.courses_credittype = sf.powerschool_credittype
             and sf.rn_year = 1
-        left join
-            {{ ref("int_people__leadership_crosswalk") }} as lc
-            on co.schoolid = lc.home_work_location_powerschool_school_id
         where
             co.enroll_status = 0
             and co.academic_year >= {{ var("current_academic_year") - 2 }}
             and not co.is_out_of_district
-            {# TODO: Remove SY26 #}
             /* Manual filter to avoid dashboard roll-up */
             and sc.module_type != 'WPP'
     ),
@@ -297,12 +292,6 @@ select
     coalesce(ip.is_pass_4_lessons_int_math, 0) as is_passed_iready_4plus_math_int,
 from identifiers as co
 left join
-    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-    on co.student_number = sf.student_number
-    and co.academic_year = sf.academic_year
-    and co.subject_area = sf.illuminate_subject_area
-    and sf.rn_year = 1
-left join
     {{ ref("stg_assessments__qbls_power_standards") }} as qbls
     on co.academic_year = qbls.academic_year
     and co.term = qbls.term_name
@@ -404,12 +393,6 @@ select
     null as is_passed_iready_2plus_math_int,
     null as is_passed_iready_4plus_math_int,
 from identifiers as co
-left join
-    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-    on co.student_number = sf.student_number
-    and co.academic_year = sf.academic_year
-    and co.course_credittype = sf.assessment_dashboard_join
-    and sf.rn_year = 1
 left join
     {{ ref("stg_assessments__qbls_power_standards") }} as qbls
     on co.academic_year = qbls.academic_year

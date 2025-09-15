@@ -18,6 +18,8 @@ with
             co.school_level,
             co.advisor_teachernumber as hr_teachernumber,
             co.hos as head_of_school,
+            co.is_tutoring,
+            co.territory,
 
             asr.assessment_id,
             asr.title,
@@ -112,10 +114,10 @@ select
     d.section_number,
     d.is_foundations,
     d.head_of_school,
+    d.is_tutoring as tutoring_nj,
+    d.territory,
 
     sf.nj_student_tier,
-    sf.is_tutoring as tutoring_nj,
-    sf.territory,
 
     /* retired fields kept for tableau compatibility */
     null as power_standard_goal,

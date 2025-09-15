@@ -90,6 +90,36 @@ with
 
         from {{ ref("stg_powerschool__s_nj_stu_x") }}
         where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
+    ),
+
+    dibels as (
+        select
+            student_number,
+            academic_year,
+            boy_composite,
+            moy_composite,
+            eoy_composite,
+
+            row_number() over (
+                partition by student_number, academic_year order by client_date desc
+            ) as rn_year,
+        from {{ ref("int_amplify__all_assessments") }}
+        where measure_standard = 'Composite'
+    ),
+
+    dibels_recent as (
+        select
+            academic_year,
+            student_number,
+            client_date,
+            measure_standard_level,
+            measure_standard_level_int,
+
+            row_number() over (
+                partition by academic_year, student_number order by client_date desc
+            ) as rn_benchmark,
+        from {{ ref("int_amplify__all_assessments") }}
+        where measure_standard = 'Composite'
     )
 
 select
@@ -133,6 +163,8 @@ select
     mt.territory,
 
     hos.head_of_school_preferred_name_lastfirst as hos,
+    hos.school_leader_preferred_name_lastfirst as school_leader,
+    hos.school_leader_sam_account_name as school_leader_tableau_username,
 
     ovg.overgrad_fafsa_opt_out,
 
@@ -156,6 +188,16 @@ select
 
     ny.next_year_school,
     ny.next_year_schoolid,
+
+    dr.measure_standard_level_int as dibels_most_recent_composite_int,
+
+    coalesce(db.boy_composite, 'No Test') as dibels_boy_composite,
+    coalesce(db.moy_composite, 'No Test') as dibels_moy_composite,
+    coalesce(db.eoy_composite, 'No Test') as dibels_eoy_composite,
+
+    coalesce(
+        dr.measure_standard_level, 'No Composite Score Available'
+    ) as dibels_most_recent_composite,
 
     if(
         e.enroll_status = 0 and mc.grad_iep_exempt_overall is not null,
@@ -329,4 +371,14 @@ left join
     graduation_pathway_m as mc
     on e.students_dcid = mc.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="mc") }}
+left join
+    dibels as db
+    on e.student_number = db.student_number
+    and e.academic_year = db.academic_year
+    and db.rn_year = 1
+left join
+    dibels_recent as dr
+    on e.student_number = dr.student_number
+    and e.academic_year = dr.academic_year
+    and dr.rn_benchmark = 1
 where e.grade_level != 99

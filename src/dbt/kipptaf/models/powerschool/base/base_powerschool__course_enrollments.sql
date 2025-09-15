@@ -52,6 +52,23 @@ select
     csc.exclude_from_gradebook,
     csc.discipline,
 
+    if(ur.courses_course_number = 'SEM01099G1', true, false) as is_sipps,
+    if(
+        ur.courses_course_number = 'LOG300'
+        and ur.sections_section_number in ('mgmath', 'mgela'),
+        true,
+        false
+    ) as is_magoosh,
+    if(
+        ur.courses_course_number = 'SEM01099G1'
+        or (
+            ur.courses_course_number = 'LOG300'
+            and ur.sections_section_number in ('mgmath', 'mgela')
+        ),
+        true,
+        false
+    ) as is_exempt_iready,
+
     if(cx.ap_course_subject is not null, true, false) as is_ap_course,
 
     row_number() over (
