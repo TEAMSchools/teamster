@@ -135,7 +135,7 @@ with
 
             if(p.pm_period = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
 
-        from {{ ref("stg_amplify__pm_student_summary") }} as p
+        from {{ ref("int_amplify__mclass__pm_student_summary") }} as p
         inner join
             {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
             on p.academic_year = e.academic_year
