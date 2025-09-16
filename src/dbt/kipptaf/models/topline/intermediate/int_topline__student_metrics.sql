@@ -1,3 +1,5 @@
+{{ config(materialized="table") }}
+
 with
     metric_union as (
         /* K-8 Reading & Math */
