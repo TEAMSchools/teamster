@@ -8,7 +8,8 @@ with
                 score,
                 additional_student_id_primarysisid,
                 sync_date,
-                total_number_of_probes
+                total_number_of_probes,
+                measure
             ),
 
             cast(probe_number as int) as probe_number,
@@ -27,6 +28,24 @@ with
             ) as student_primary_id_studentnumber,
 
             cast(left(school_year, 4) as int) as academic_year,
+
+            case
+                measure
+                when 'Maze'
+                then 'Reading Comprehension (Maze)'
+                when 'NWF-WRC'
+                then 'Decoding (NWF-WRC)'
+                when 'NWF-CLS'
+                then 'Letter Sounds (NWF-CLS)'
+                when 'ORF'
+                then 'Reading Fluency (ORF)'
+                when 'ORF-Accu'
+                then 'Reading Accuracy (ORF-Accu)'
+                when 'WRF'
+                then 'Word Reading (WRF)'
+                when 'PSF'
+                then 'Phonemic Awareness (PSF)'
+            end as measure,
 
             case
                 measure
