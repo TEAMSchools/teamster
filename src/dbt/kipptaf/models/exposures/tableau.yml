@@ -311,8 +311,8 @@ exposures:
             id: 8977a813-36c8-48df-8a61-479f374ae78a
             cron_schedule:
               - 0 12 * * *
-              - 0 14 * * *
-              - 0 16 * * *
+              - 30 14 * * *
+              - 15 16 * * *
   - name: gradebook_and_gpa_dashboard
     label: Gradebook and GPA Dashboard
     type: dashboard
