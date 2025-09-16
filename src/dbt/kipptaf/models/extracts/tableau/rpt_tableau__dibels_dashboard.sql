@@ -122,7 +122,7 @@ inner join
     and a.assessment_type = 'Benchmark'
     and a.assessment_include is null
 left join
-    {{ ref("rpt_gsheets__dibels_bm_goals_calculations") }} as g
+    {{ ref("stg_google_sheets__dibels_bm_goals") }} as g
     on a.academic_year = g.academic_year
     and a.region = g.region
     and a.grade = g.assessment_grade_int

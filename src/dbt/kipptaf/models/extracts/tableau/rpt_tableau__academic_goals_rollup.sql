@@ -15,8 +15,10 @@ with
         select '1-2' as band, grade_level,
         from unnest([1, 2]) as grade_level
         union all
-        select '3-8' as band, grade_level,
-        from unnest([3, 4, 5, 6, 7, 8]) as grade_level
+        select '3' as band, 3 as grade_level,
+        union all
+        select '4-8' as band, grade_level,
+        from unnest([4, 5, 6, 7, 8]) as grade_level
     ),
 
     goals as (
@@ -65,7 +67,8 @@ with
                     or `subject` in ('Mathematics', 'Geometry')
                 then 'Math'
             end as `subject`,
-        from {{ ref("stg_pearson__njsla") }}
+        from {{ ref("int_pearson__all_assessments") }}
+        where assessment_name = 'NJSLA'
 
         union all
 
@@ -463,6 +466,27 @@ select
             and r.is_bucket2_eligible
             and g.n_bubble_to_move >= r.rank_scale_score
         then 'Bucket 2'
+        when
+            r.region in ('Newark', 'Camden')
+            and r.grade_level between 0 and 3
+            and r.is_bucket2_eligible
+            and r.rank_scale_score > g.n_bubble_to_move
+        then 'Bucket 3'
+        when
+            r.region in ('Newark', 'Camden')
+            and r.subject = 'Math'
+            and r.grade_level between 4 and 8
+            and r.is_bucket2_eligible
+            and r.benchmark_assessment_type = 'i-Ready BOY'
+        then 'Bucket 3'
+        when
+            r.region = 'Newark'
+            and r.subject = 'Reading'
+            and r.grade_level between 4 and 8
+            and r.is_bucket2_eligible
+            and r.benchmark_assessment_type = 'i-Ready BOY'
+        then 'Bucket 3'
+        else 'Bucket 4'
     end as student_tier_calculated,
 from roster_ranked as r
 left join
