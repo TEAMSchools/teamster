@@ -1,5 +1,5 @@
 select
-    b.* except (
+    * except (
         student_primary_id,
         student_primary_id_studentnumber,
         device_date,
@@ -40,170 +40,160 @@ select
         basic_comprehension_maze_national_norm_percentile
     ),
 
-    x.abbreviation as school,
-    x.powerschool_school_id as schoolid,
+    cast(left(school_year, 4) as int) as academic_year,
+    cast(student_primary_id_studentnumber as int) as student_primary_id,
 
-    cast(left(b.school_year, 4) as int) as academic_year,
-    cast(b.student_primary_id_studentnumber as int) as student_primary_id,
-
-    cast(b.device_date as date) as device_date,
-    cast(b.sync_date as date) as sync_date,
+    cast(device_date as date) as device_date,
+    cast(sync_date as date) as sync_date,
 
     -- scores
-    cast(b.basic_comprehension_maze_score as numeric) as basic_comprehension_maze_score,
-    cast(b.composite_score as numeric) as composite_score,
-    cast(b.correct_responses_maze_score as numeric) as correct_responses_maze_score,
-    cast(b.decoding_nwf_wrc_score as numeric) as decoding_nwf_wrc_score,
-    cast(b.error_rate_orf_score as numeric) as error_rate_orf_score,
-    cast(b.incorrect_responses_maze_score as numeric) as incorrect_responses_maze_score,
-    cast(b.letter_names_lnf_score as numeric) as letter_names_lnf_score,
-    cast(b.letter_sounds_nwf_cls_score as numeric) as letter_sounds_nwf_cls_score,
-    cast(b.oral_language_score as numeric) as oral_language_score,
-    cast(b.phonemic_awareness_psf_score as numeric) as phonemic_awareness_psf_score,
-    cast(b.ran_score as numeric) as ran_score,
-    cast(
-        b.reading_accuracy_orf_accu_score as numeric
-    ) as reading_accuracy_orf_accu_score,
-    cast(b.reading_fluency_orf_score as numeric) as reading_fluency_orf_score,
-    cast(b.spelling_score as numeric) as spelling_score,
-    cast(b.vocabulary_score as numeric) as vocabulary_score,
-    cast(b.word_reading_wrf_score as numeric) as word_reading_wrf_score,
-
-    initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)')) as region,
+    cast(basic_comprehension_maze_score as numeric) as basic_comprehension_maze_score,
+    cast(composite_score as numeric) as composite_score,
+    cast(correct_responses_maze_score as numeric) as correct_responses_maze_score,
+    cast(decoding_nwf_wrc_score as numeric) as decoding_nwf_wrc_score,
+    cast(error_rate_orf_score as numeric) as error_rate_orf_score,
+    cast(incorrect_responses_maze_score as numeric) as incorrect_responses_maze_score,
+    cast(letter_names_lnf_score as numeric) as letter_names_lnf_score,
+    cast(letter_sounds_nwf_cls_score as numeric) as letter_sounds_nwf_cls_score,
+    cast(oral_language_score as numeric) as oral_language_score,
+    cast(phonemic_awareness_psf_score as numeric) as phonemic_awareness_psf_score,
+    cast(ran_score as numeric) as ran_score,
+    cast(reading_accuracy_orf_accu_score as numeric) as reading_accuracy_orf_accu_score,
+    cast(reading_fluency_orf_score as numeric) as reading_fluency_orf_score,
+    cast(spelling_score as numeric) as spelling_score,
+    cast(vocabulary_score as numeric) as vocabulary_score,
+    cast(word_reading_wrf_score as numeric) as word_reading_wrf_score,
 
     if(
-        b.assessment_grade = 'K', 0, safe_cast(b.assessment_grade as int)
+        assessment_grade = 'K', 0, safe_cast(assessment_grade as int)
     ) as assessment_grade_int,
 
     if(
-        b.enrollment_grade = 'K', 0, safe_cast(b.enrollment_grade as int)
+        enrollment_grade = 'K', 0, safe_cast(enrollment_grade as int)
     ) as enrollment_grade_int,
 
     -- Tested Out
     if(
-        b.composite_national_norm_percentile = 'Tested Out', true, false
+        composite_national_norm_percentile = 'Tested Out', true, false
     ) as composite_tested_out,
 
     if(
-        b.decoding_nwf_wrc_national_norm_percentile = 'Tested Out', true, false
+        decoding_nwf_wrc_national_norm_percentile = 'Tested Out', true, false
     ) as decoding_nwf_wrc_tested_out,
 
     if(
-        b.letter_names_lnf_national_norm_percentile = 'Tested Out', true, false
+        letter_names_lnf_national_norm_percentile = 'Tested Out', true, false
     ) as letter_names_lnf_tested_out,
 
     if(
-        b.letter_sounds_nwf_cls_national_norm_percentile = 'Tested Out', true, false
+        letter_sounds_nwf_cls_national_norm_percentile = 'Tested Out', true, false
     ) as letter_sounds_nwf_cls_tested_out,
 
     if(
-        b.phonemic_awareness_psf_national_norm_percentile = 'Tested Out', true, false
+        phonemic_awareness_psf_national_norm_percentile = 'Tested Out', true, false
     ) as phonemic_awareness_psf_tested_out,
 
     if(
-        b.reading_accuracy_orf_accu_national_norm_percentile = 'Tested Out', true, false
+        reading_accuracy_orf_accu_national_norm_percentile = 'Tested Out', true, false
     ) as reading_accuracy_orf_accu_tested_out,
 
     if(
-        b.basic_comprehension_maze_national_norm_percentile = 'Tested Out', true, false
+        basic_comprehension_maze_national_norm_percentile = 'Tested Out', true, false
     ) as basic_comprehension_maze_tested_out,
 
     if(
-        b.reading_fluency_orf_national_norm_percentile = 'Tested Out', true, false
+        reading_fluency_orf_national_norm_percentile = 'Tested Out', true, false
     ) as reading_fluency_orf_tested_out,
 
     if(
-        b.word_reading_wrf_national_norm_percentile = 'Tested Out', true, false
+        word_reading_wrf_national_norm_percentile = 'Tested Out', true, false
     ) as word_reading_wrf_tested_out,
 
     -- Discontinued
     if(
-        b.composite_national_norm_percentile = 'Discontinued', true, false
+        composite_national_norm_percentile = 'Discontinued', true, false
     ) as composite_discontinued,
     if(
-        b.decoding_nwf_wrc_national_norm_percentile = 'Discontinued', true, false
+        decoding_nwf_wrc_national_norm_percentile = 'Discontinued', true, false
     ) as decoding_nwf_wrc_discontinued,
     if(
-        b.letter_names_lnf_national_norm_percentile = 'Discontinued', true, false
+        letter_names_lnf_national_norm_percentile = 'Discontinued', true, false
     ) as letter_names_lnf_discontinued,
     if(
-        b.letter_sounds_nwf_cls_national_norm_percentile = 'Discontinued', true, false
+        letter_sounds_nwf_cls_national_norm_percentile = 'Discontinued', true, false
     ) as letter_sounds_nwf_cls_discontinued,
     if(
-        b.phonemic_awareness_psf_national_norm_percentile = 'Discontinued', true, false
+        phonemic_awareness_psf_national_norm_percentile = 'Discontinued', true, false
     ) as phonemic_awareness_psf_discontinued,
     if(
-        b.reading_accuracy_orf_accu_national_norm_percentile = 'Discontinued',
-        true,
-        false
+        reading_accuracy_orf_accu_national_norm_percentile = 'Discontinued', true, false
     ) as reading_accuracy_orf_accu_discontinued,
     if(
-        b.basic_comprehension_maze_national_norm_percentile = 'Discontinued',
-        true,
-        false
+        basic_comprehension_maze_national_norm_percentile = 'Discontinued', true, false
     ) as basic_comprehension_maze_discontinued,
     if(
-        b.reading_fluency_orf_national_norm_percentile = 'Discontinued', true, false
+        reading_fluency_orf_national_norm_percentile = 'Discontinued', true, false
     ) as reading_fluency_orf_discontinued,
     if(
-        b.word_reading_wrf_national_norm_percentile = 'Discontinued', true, false
+        word_reading_wrf_national_norm_percentile = 'Discontinued', true, false
     ) as word_reading_wrf_discontinued,
 
     -- Local Percentiles
-    safe_cast(b.composite_local_percentile as numeric) as composite_local_percentile,
+    safe_cast(composite_local_percentile as numeric) as composite_local_percentile,
     safe_cast(
-        b.letter_names_lnf_local_percentile as numeric
+        letter_names_lnf_local_percentile as numeric
     ) as letter_names_lnf_local_percentile,
     safe_cast(
-        b.phonemic_awareness_psf_local_percentile as numeric
+        phonemic_awareness_psf_local_percentile as numeric
     ) as phonemic_awareness_psf_local_percentile,
     safe_cast(
-        b.letter_sounds_nwf_cls_local_percentile as numeric
+        letter_sounds_nwf_cls_local_percentile as numeric
     ) as letter_sounds_nwf_cls_local_percentile,
     safe_cast(
-        b.decoding_nwf_wrc_local_percentile as numeric
+        decoding_nwf_wrc_local_percentile as numeric
     ) as decoding_nwf_wrc_local_percentile,
     safe_cast(
-        b.word_reading_wrf_local_percentile as numeric
+        word_reading_wrf_local_percentile as numeric
     ) as word_reading_wrf_local_percentile,
     safe_cast(
-        b.reading_accuracy_orf_accu_local_percentile as numeric
+        reading_accuracy_orf_accu_local_percentile as numeric
     ) as reading_accuracy_orf_accu_local_percentile,
     safe_cast(
-        b.reading_fluency_orf_local_percentile as numeric
+        reading_fluency_orf_local_percentile as numeric
     ) as reading_fluency_orf_local_percentile,
     safe_cast(
-        b.basic_comprehension_maze_local_percentile as numeric
+        basic_comprehension_maze_local_percentile as numeric
     ) as basic_comprehension_maze_local_percentile,
 
     -- National Percentiles
     safe_cast(
-        b.composite_national_norm_percentile as numeric
+        composite_national_norm_percentile as numeric
     ) as composite_national_norm_percentile,
     safe_cast(
-        b.letter_names_lnf_national_norm_percentile as numeric
+        letter_names_lnf_national_norm_percentile as numeric
     ) as letter_names_lnf_national_norm_percentile,
     safe_cast(
-        b.phonemic_awareness_psf_national_norm_percentile as numeric
+        phonemic_awareness_psf_national_norm_percentile as numeric
     ) as phonemic_awareness_psf_national_norm_percentile,
     safe_cast(
-        b.letter_sounds_nwf_cls_national_norm_percentile as numeric
+        letter_sounds_nwf_cls_national_norm_percentile as numeric
     ) as letter_sounds_nwf_cls_national_norm_percentile,
     safe_cast(
-        b.decoding_nwf_wrc_national_norm_percentile as numeric
+        decoding_nwf_wrc_national_norm_percentile as numeric
     ) as decoding_nwf_wrc_national_norm_percentile,
     safe_cast(
-        b.word_reading_wrf_national_norm_percentile as numeric
+        word_reading_wrf_national_norm_percentile as numeric
     ) as word_reading_wrf_national_norm_percentile,
     safe_cast(
-        b.reading_accuracy_orf_accu_national_norm_percentile as numeric
+        reading_accuracy_orf_accu_national_norm_percentile as numeric
     ) as reading_accuracy_orf_accu_national_norm_percentile,
     safe_cast(
-        b.reading_fluency_orf_national_norm_percentile as numeric
+        reading_fluency_orf_national_norm_percentile as numeric
     ) as reading_fluency_orf_national_norm_percentile,
     safe_cast(
-        b.basic_comprehension_maze_national_norm_percentile as numeric
+        basic_comprehension_maze_national_norm_percentile as numeric
     ) as basic_comprehension_maze_national_norm_percentile,
+
     {{
         dbt_utils.generate_surrogate_key(
             [
@@ -214,7 +204,4 @@ select
             ]
         )
     }} as surrogate_key,
-
-from
-    {{ source("amplify", "src_amplify__mclass__sftp__benchmark_student_summary") }} as b
-left join {{ ref("stg_people__location_crosswalk") }} as x on b.school_name = x.name
+from {{ source("amplify", "src_amplify__mclass__sftp__benchmark_student_summary") }}
