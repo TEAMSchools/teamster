@@ -7,5 +7,5 @@ select
 
     string_agg(membership_description, ', ') as memberships,
 from {{ ref("stg_adp_workforce_now__employee_memberships") }}
-where membership_code is not null
+where membership_code is not null and is_current
 group by associate_id, is_current
