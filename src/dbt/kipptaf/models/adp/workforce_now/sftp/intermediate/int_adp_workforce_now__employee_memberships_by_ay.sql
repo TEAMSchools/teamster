@@ -29,16 +29,10 @@ with
             em.is_teacher_development_program,
             d.academic_year,
         from {{ ref("stg_adp_workforce_now__employee_memberships") }} as em
-        left join
+        join
             date_spine as d
             on d.membership_effective_date
             between em.effective_date and em.expiration_date
-        left join
-            {{ ref("int_people__staff_roster") }} as sr
-            on em.associate_id = sr.worker_id
-            and sr.worker_termination_date
-            between em.effective_date and em.expiration_date
-        where em.membership_code is not null
     )
 
 select
