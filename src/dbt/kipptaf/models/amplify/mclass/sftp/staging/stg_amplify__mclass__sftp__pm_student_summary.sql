@@ -9,7 +9,8 @@ with
                 additional_student_id_primarysisid,
                 sync_date,
                 total_number_of_probes,
-                measure
+                measure,
+                school_primary_id
             ),
 
             cast(probe_number as int) as probe_number,
@@ -26,6 +27,8 @@ with
             cast(
                 cast(student_primary_id_studentnumber as numeric) as int
             ) as student_primary_id_studentnumber,
+
+            cast(school_primary_id as int) as school_primary_id,
 
             cast(left(school_year, 4) as int) as academic_year,
 
