@@ -32,7 +32,7 @@ with
                 measure
                 when 'Composite'
                 then 'Composite'
-                when 'Reading Comprehension (Maze)'
+                when 'Maze'
                 then 'Comprehension'
                 else substr(measure, strpos(measure, '(') + 1, 3)
             end as measure_name_code,
