@@ -35,6 +35,8 @@ with
                 then round(safe_divide(sum(m.numerator), sum(m.denominator)), 3)
                 when 'Sum'
                 then round(sum(m.metric_value), 0)
+                when 'Comp'
+                then round(sum(m.metric_value), 0) / max(target_value)
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
@@ -90,6 +92,8 @@ with
                 then round(safe_divide(sum(m.numerator), sum(m.denominator)), 3)
                 when 'Sum'
                 then round(sum(m.metric_value), 0)
+                when 'Comp'
+                then round(sum(m.metric_value), 0) / max(target_value)
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
@@ -142,6 +146,8 @@ with
                 then round(safe_divide(sum(m.numerator), sum(m.denominator)), 3)
                 when 'Sum'
                 then round(sum(m.metric_value), 0)
+                when 'Comp'
+                then round(sum(m.metric_value), 0) / max(target_value)
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
@@ -189,16 +195,6 @@ with
             m.denominator,
             m.metric_value,
         from {{ ref("int_topline__staff_metrics") }} as m
-    ),
-
-    enrollment_lookup as (
-        select *
-        from agg_union_student as su
-        inner join
-            {{ ref("stg_google_sheets__topline_enrollment_targets") }} as et
-            on su.schoolid = et.schoolid
-            and su.academic_year = et.academic_year
-            and su.region = et.region
     )
 
 select
