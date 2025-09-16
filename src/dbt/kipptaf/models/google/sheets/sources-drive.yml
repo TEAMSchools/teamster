@@ -243,6 +243,21 @@ sources:
               - google
               - sheets
               - dibels_pm_goals
+      - name: src_google_sheets__dibels_bm_goals
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
+            sheet_range: src_google_sheets__dibels_bm_goals
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - sheets
+              - dibels_bm_goals
       - name: src_google_sheets__gradebook_expectations_assignments
         external:
           options:
@@ -318,7 +333,6 @@ sources:
               - google
               - sheets
               - topline_aggregate_goals
-      - name: src_google_sheets__topline_enrollment_targets
       - name: src_google_sheets__kippfwd_goals
         config:
           enabled: true
@@ -326,8 +340,6 @@ sources:
           options:
             format: GOOGLE_SHEETS
             uris:
-              - https://docs.google.com/spreadsheets/d/1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0
-            sheet_range: src_google_sheets__topline_enrollment_targets
               - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
             sheet_range: src_google_sheets__kippfwd_goals
             skip_leading_rows: 1
@@ -386,18 +398,3 @@ sources:
       #         - google
       #         - sheets
       #         - state_test_expected_assessments
-      # - name: src_google_sheets__dibels_bm_goals
-      #   external:
-      #     options:
-      #       format: GOOGLE_SHEETS
-      #       uris:
-      #         - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
-      #       sheet_range: src_google_sheets__dibels_bm_goals
-      #       skip_leading_rows: 1
-      #   meta:
-      #     dagster:
-      #       asset_key:
-      #         - kipptaf
-      #         - google
-      #         - sheets
-      #         - dibels_bm_goals
