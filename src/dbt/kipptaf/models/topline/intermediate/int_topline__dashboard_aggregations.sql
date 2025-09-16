@@ -169,32 +169,6 @@ with
             g.aggregation_type,
             g.aggregation_hash,
             g.goal
-    ),
-
-    agg_union_staff as (
-        select
-            m.academic_year,
-            m.home_business_unit_name as region,
-            m.home_work_location_powerschool_school_id as schoolid,
-            m.home_work_location_name as school,
-            m.layer,
-            m.indicator,
-            null as discipline,
-            m.term,
-            m.is_current_week,
-
-            m.employee_number,
-            m.powerschool_teacher_number,
-            m.home_department_name,
-            m.job_title,
-            m.assignment_status,
-            m.reports_to_user_principal_name,
-            m.week_end_sunday,
-
-            m.numerator,
-            m.denominator,
-            m.metric_value,
-        from {{ ref("int_topline__staff_metrics") }} as m
     )
 
 select
