@@ -143,7 +143,7 @@ with
             and p.assessment_grade_int = e.grade
             and p.measure = e.expected_measure_standard
             and p.pm_period = e.admin_season
-            and p.client_date between e.start_date and e.end_date
+            and p.sync_date between e.start_date and e.end_date
             and e.assessment_include is null
             and e.pm_goal_include is null
         where p.enrollment_grade = p.assessment_grade and p.assessment_grade is not null
