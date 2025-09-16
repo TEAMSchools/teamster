@@ -8,9 +8,21 @@ with
                 ]
             )
         }}
+    ),
+
+    location_xref as (
+        select
+            ur.*,
+
+            x.abbreviation as school,
+            x.powerschool_school_id as schoolid,
+
+            initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)')) as region,
+        from union_relations as ur
+        left join
+            {{ ref("stg_people__location_crosswalk") }} as x on ur.school_name = x.name
     )
 
--- trunk-ignore(sqlfluff/AM04)
 select
     * except (
         enrollment_teacher_staff_id_teachernumber,
@@ -42,4 +54,4 @@ select
     ) as student_primary_id,
     coalesce(student_id_state_id, secondary_student_id_stateid) as student_id_state_id,
 
-from union_relations
+from location_xref
