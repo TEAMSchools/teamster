@@ -349,10 +349,103 @@ select
     mu.numerator,
     mu.denominator,
     mu.metric_value,
+
+    null as target_value,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 left join
     metric_union as mu
     on co.student_number = mu.student_number
     and co.academic_year = mu.academic_year
     and co.week_start_monday = mu.term
+    and mu.indicator != 'Total Enrollment'
+where co.academic_year >= {{ var("current_academic_year") - 1 }}
+
+union all
+
+select
+    co.academic_year,
+    co.student_number,
+    co.studentid,
+    co.student_name,
+    co.grade_level,
+    co.region,
+    co.schoolid,
+    co.school,
+    co.iep_status,
+    co.lep_status,
+    co.is_504,
+    co.year_in_network,
+    co.is_retained_year,
+    co.gender,
+    co.ethnicity,
+    co.entrydate,
+    co.exitdate,
+    co.is_enrolled_week,
+    co.is_current_week_mon_sun as is_current_week,
+
+    mu.layer,
+    'Budget Target' indicator,
+    mu.discipline,
+    mu.term,
+    mu.numerator,
+    mu.denominator,
+    mu.metric_value,
+
+    et.budget_target as target_value,
+from {{ ref("int_extracts__student_enrollments_weeks") }} as co
+left join
+    metric_union as mu
+    on co.student_number = mu.student_number
+    and co.academic_year = mu.academic_year
+    and co.week_start_monday = mu.term
+    and mu.indicator = 'Total Enrollment'
+left join
+    {{ ref("stg_google_sheets__topline_enrollment_targets") }} as et
+    on co.academic_year = et.academic_year
+    and co.schoolid = et.schoolid
+where co.academic_year >= {{ var("current_academic_year") - 1 }}
+
+union all
+
+select
+    co.academic_year,
+    co.student_number,
+    co.studentid,
+    co.student_name,
+    co.grade_level,
+    co.region,
+    co.schoolid,
+    co.school,
+    co.iep_status,
+    co.lep_status,
+    co.is_504,
+    co.year_in_network,
+    co.is_retained_year,
+    co.gender,
+    co.ethnicity,
+    co.entrydate,
+    co.exitdate,
+    co.is_enrolled_week,
+    co.is_current_week_mon_sun as is_current_week,
+
+    mu.layer,
+    'Seat Target' as indicator,
+    mu.discipline,
+    mu.term,
+    mu.numerator,
+    mu.denominator,
+    mu.metric_value,
+
+    et.seat_target as target_value,
+from {{ ref("int_extracts__student_enrollments_weeks") }} as co
+left join
+    metric_union as mu
+    on co.student_number = mu.student_number
+    and co.academic_year = mu.academic_year
+    and co.week_start_monday = mu.term
+    and mu.indicator = 'Total Enrollment'
+left join
+    {{ ref("stg_google_sheets__topline_enrollment_targets") }} as et
+    on co.academic_year = et.academic_year
+    and co.schoolid = et.schoolid
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
