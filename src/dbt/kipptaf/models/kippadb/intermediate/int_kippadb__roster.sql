@@ -96,35 +96,6 @@ with
 
             if(d.dlm is not null, true, false) as is_dlm,
 
-            if(
-                extract(
-                    month
-                    from
-                        coalesce(
-                            c.contact_actual_hs_graduation_date,
-                            c.contact_expected_hs_graduation
-                        )
-                )
-                < 10,
-                extract(
-                    year
-                    from
-                        coalesce(
-                            c.contact_actual_hs_graduation_date,
-                            c.contact_expected_hs_graduation
-                        )
-                ),
-                extract(
-                    year
-                    from
-                        coalesce(
-                            c.contact_actual_hs_graduation_date,
-                            c.contact_expected_hs_graduation
-                        )
-                )
-                + 1
-            ) as graduation_year,
-
             case
                 when se.enroll_status = 0
                 then concat(se.school_level, se.grade_level)

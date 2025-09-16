@@ -165,6 +165,7 @@ select
     e.contact_2_phone_mobile,
     e.contact_2_email_current,
     e.is_fldoe_fte_2,
+    e.graduation_year,
 
     lc.region as region_official_name,
     lc.deanslist_school_id,
@@ -372,4 +373,3 @@ left join
     graduation_pathway_m as mc
     on e.students_dcid = mc.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="mc") }}
-where e.grade_level != 99

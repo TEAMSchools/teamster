@@ -21,6 +21,7 @@ select
     e.rn_undergrad,
     e.salesforce_id,
     e.ktc_cohort,
+    e.graduation_year,
     e.year_in_network,
     e.contact_owner_name,
     e.college_match_gpa,
