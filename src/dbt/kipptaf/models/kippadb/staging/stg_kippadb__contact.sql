@@ -61,5 +61,20 @@ select
     || mailingstate
     || ' '
     || mailingpostalcode as mailing_address,
+
+    if(
+        extract(
+            month from coalesce(actual_hs_graduation_date__c, expected_hs_graduation__c)
+        )
+        < 10,
+        extract(
+            year from coalesce(actual_hs_graduation_date__c, expected_hs_graduation__c)
+        ),
+        extract(
+            year from coalesce(actual_hs_graduation_date__c, expected_hs_graduation__c)
+        )
+        + 1
+    ) as graduation_year,
+
 from {{ source("kippadb", "contact") }}
 where not isdeleted
