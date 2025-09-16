@@ -36,6 +36,14 @@ with
 
             cast(left(school_year, 4) as int) as academic_year,
 
+            if(
+                assessment_grade = 'K', 0, cast(assessment_grade as int)
+            ) as assessment_grade_int,
+
+            if(
+                enrollment_grade = 'K', 0, cast(enrollment_grade as int)
+            ) as enrollment_grade_int,
+
             case
                 measure
                 when 'Composite'
@@ -55,23 +63,10 @@ with
     )
 
 select
-    p.*,
-
-    x.abbreviation as school,
-    x.powerschool_school_id as schoolid,
-
-    initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)')) as region,
-
-    if(
-        p.assessment_grade = 'K', 0, safe_cast(p.assessment_grade as int)
-    ) as assessment_grade_int,
-
-    if(
-        p.enrollment_grade = 'K', 0, safe_cast(p.enrollment_grade as int)
-    ) as enrollment_grade_int,
+    *,
 
     case
-        p.measure_name_code
+        measure_name_code
         when 'LNF'
         then 'Letter Names'
         when 'PSF'
@@ -82,8 +77,7 @@ select
         then 'Word Reading Fluency'
         when 'ORF'
         then 'Oral Reading Fluency'
-        else p.measure_name_code
+        else measure_name_code
     end as measure_name,
 
-from pm_student_summary as p
-left join {{ ref("stg_people__location_crosswalk") }} as x on p.school_name = x.name
+from pm_student_summary
