@@ -111,7 +111,7 @@ with
             and a.benchmark_goal_season = f.period
             and a.foundation_measure_standard_level = f.grade_goal_type
         where
-            a.academic_year >= 2024
+            a.academic_year = {{ var("current_academic_year") }}
             and a.assessment_type = 'Benchmark'
             and a.measure_standard = 'Composite'
             and a.period != 'EOY'

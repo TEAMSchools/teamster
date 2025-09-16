@@ -286,6 +286,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__dibels_dashboard")
       - ref("rpt_tableau__sight_words_dashboard")
+      - ref("stg_google_sheets__dibels_pm_goals")
     meta:
       dagster:
         kinds:
