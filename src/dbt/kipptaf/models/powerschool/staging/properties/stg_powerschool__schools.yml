@@ -12,7 +12,7 @@ models:
               config:
                 where: state_excludefromreporting = 0
                 store_failures: true
-                # severity: warn
+                severity: warn
       - name: _dbt_source_relation
         data_type: string
       - name: name

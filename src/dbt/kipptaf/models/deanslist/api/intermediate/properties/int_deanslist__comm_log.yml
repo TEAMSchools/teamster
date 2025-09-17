@@ -8,5 +8,5 @@ models:
                 to: ref("stg_people__location_crosswalk")
                 field: deanslist_school_id
               config:
-                # severity: warn
                 store_failures: true
+                severity: warn

@@ -13,8 +13,8 @@ models:
                 to: ref("stg_people__location_crosswalk")
                 field: name
               config:
-                # severity: warn
                 store_failures: true
+                severity: warn
       - name: dl_incident_id
         data_type: int64
       - name: dl_penalty_id
