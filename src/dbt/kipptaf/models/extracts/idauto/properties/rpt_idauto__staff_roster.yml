@@ -1,6 +1,8 @@
-version: 2
 models:
   - name: rpt_idauto__staff_roster
+    config:
+      contract:
+        enforced: true
     columns:
       - name: associate id
         data_type: string

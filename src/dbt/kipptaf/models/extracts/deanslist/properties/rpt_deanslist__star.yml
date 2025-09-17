@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_deanslist__star
+    config:
+      contract:
+        enforced: true
     columns:
       - name: score_type
         data_type: string

@@ -1,6 +1,8 @@
-version: 2
 models:
   - name: rpt_google_directory__admin_import
+    config:
+      contract:
+        enforced: true
     columns:
       - name: google_email
         data_type: string
