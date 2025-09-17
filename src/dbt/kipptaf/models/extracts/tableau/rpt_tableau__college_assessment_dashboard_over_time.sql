@@ -30,29 +30,29 @@ with
 
     metrics_unpivot as (
         select
-            e.academic_year,
-            e.academic_year_display,
-            e.region,
-            e.schoolid,
-            e.school,
-            e.student_number,
-            e.grade_level,
-            e.enroll_status,
-            e.iep_status,
-            e.is_504,
-            e.grad_iep_exempt_status_overall,
-            e.lep_status,
-            e.ktc_cohort,
-            e.graduation_year,
-            e.year_in_network,
-            e.college_match_gpa_bands,
-            e.administration_round,
-            e.test_type,
-            e.test_date,
-            e.test_month,
-            e.scope,
-            e.subject_area,
-            e.score_type,
+            academic_year,
+            academic_year_display,
+            region,
+            schoolid,
+            school,
+            student_number,
+            grade_level,
+            enroll_status,
+            iep_status,
+            is_504,
+            grad_iep_exempt_status_overall,
+            lep_status,
+            ktc_cohort,
+            graduation_year,
+            year_in_network,
+            college_match_gpa_bands,
+            administration_round,
+            test_type,
+            test_date,
+            test_month,
+            scope,
+            subject_area,
+            score_type,
 
             score_category,
             score,
@@ -68,7 +68,7 @@ with
                     running_max_scale_score as 'Running Max Scale Score',
                     running_superscore as 'Running Superscore'
                 )
-            ) as e
+            )
         cross join unnest(['HS-Ready', 'College-Ready']) as metric_name
     ),
 
