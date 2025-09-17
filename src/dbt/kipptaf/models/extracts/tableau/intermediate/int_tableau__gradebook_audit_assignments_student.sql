@@ -20,8 +20,6 @@ select
     a.is_expected_scored as assign_expected_with_score,
 
     -- exempt, nulls and max
-    if(a.is_exempt = 1 and a.is_null = 0, true, false) as assign_exempt_with_score,
-
     if(a.is_expected_null = 1, true, false) as assign_null_score,
 
     if(a.score_entered > a.totalpointvalue, true, false) as assign_score_above_max,
