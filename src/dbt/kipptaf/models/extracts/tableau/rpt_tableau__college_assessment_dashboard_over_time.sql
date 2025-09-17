@@ -54,8 +54,8 @@ with
             e.subject_area,
             e.score_type,
 
-            score_category,
-            score,
+            e.score_category,
+            e.score,
 
             metric_name,
 
