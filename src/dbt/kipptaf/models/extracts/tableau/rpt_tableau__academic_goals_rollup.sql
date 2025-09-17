@@ -477,14 +477,14 @@ select
         when
             r.region in ('Newark', 'Camden')
             and r.subject = 'Math'
-            and r.grade_level between 4 and 8
+            and r.grade_level between 4 and 9
             and r.is_bucket2_eligible
             and r.benchmark_assessment_type = 'i-Ready BOY'
         then 'Bucket 3'
         when
             r.region = 'Newark'
             and r.subject = 'Reading'
-            and r.grade_level between 4 and 8
+            and r.grade_level between 4 and 9
             and r.is_bucket2_eligible
             and r.benchmark_assessment_type = 'i-Ready BOY'
         then 'Bucket 3'
