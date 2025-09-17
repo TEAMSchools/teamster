@@ -12,26 +12,17 @@ models:
       Current enrollment records come from `stg_powerschool__students` and previous
       enrollments come from `stg_powerschool__reenrollments`.
     columns:
-      - name: school_name
-        data_type: string
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref("stg_people__location_crosswalk")
-                field: name
-              config:
-                # severity: warn
-                store_failures: true
       - name: student_number
         data_type: int64
         description: |
           Unique student identifier. Source: `stg_powerschool__students`.
-          For students registered during and after the 2018-19 school year, the 
+          For students registered during and after the 18-19 school year, the 
           student_number is 6 digits in length, with the first digit indicating the 
           student's region:
-            1. Newark
-            2. Camden
-            3. Miami
+            - 1 = Newark
+            - 2 = Camden
+            - 3 = Miami
+            - 4 = Paterson
       - name: _dbt_source_relation
         data_type: string
       - name: studentid
@@ -144,6 +135,8 @@ models:
         data_type: int64
       - name: entry_grade_level
         data_type: int64
+      - name: school_name
+        data_type: string
       - name: school_abbreviation
         data_type: string
       - name: is_homeless
