@@ -6,6 +6,8 @@ select
     e.schoolid,
     e.school,
     e.student_number,
+    e.studentid,
+    e.students_dcid,
     e.student_name,
     e.student_first_name,
     e.student_last_name,
