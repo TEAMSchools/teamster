@@ -2,6 +2,16 @@ version: 2
 models:
   - name: stg_seat_tracker__seats
     columns:
+      - name: adp_location
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_people__location_crosswalk")
+                field: name
+              config:
+                severity: warn
+                store_failures: true
       - name: culture
         data_type: boolean
       - name: flex
@@ -17,8 +27,6 @@ models:
       - name: adp_title
         data_type: string
       - name: display_name
-        data_type: string
-      - name: adp_location
         data_type: string
       - name: short_name
         data_type: string
