@@ -23,6 +23,7 @@ with
             g.org_level,
             g.has_goal,
             g.goal_direction,
+            g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
             g.goal,
@@ -40,7 +41,7 @@ with
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
-            goals as g
+            {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
             on m.region = g.entity
             and m.schoolid = g.schoolid
             and m.grade_level between g.grade_low and g.grade_high
@@ -60,6 +61,7 @@ with
             g.org_level,
             g.has_goal,
             g.goal_direction,
+            g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
             g.goal
@@ -80,6 +82,7 @@ with
             g.org_level,
             g.has_goal,
             g.goal_direction,
+            g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
             g.goal,
@@ -97,7 +100,7 @@ with
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
-            goals as g
+            {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
             on m.region = g.entity
             and m.grade_level between g.grade_low and g.grade_high
             and m.layer = g.layer
@@ -114,6 +117,7 @@ with
             g.org_level,
             g.has_goal,
             g.goal_direction,
+            g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
             g.goal
@@ -134,6 +138,7 @@ with
             g.org_level,
             g.has_goal,
             g.goal_direction,
+            g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
             g.goal,
@@ -151,7 +156,7 @@ with
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
-            goals as g
+            {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
             on m.grade_level between g.grade_low and g.grade_high
             and m.layer = g.layer
             and m.indicator = g.topline_indicator
@@ -166,6 +171,7 @@ with
             g.org_level,
             g.has_goal,
             g.goal_direction,
+            g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
             g.goal
@@ -174,6 +180,12 @@ with
 select
     *,
 
+    if(
+        aggregation_data_type = 'Numeric', metric_aggregate_value, null
+    ) as metric_aggregate_value_numeric,
+    if(
+        aggregation_data_type = 'Integer', metric_aggregate_value, null
+    ) as metric_aggregate_value_integer,
     case
         when not has_goal
         then null
