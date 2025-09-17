@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: stg_ldap__user_person
+    config:
+      contract:
+        enforced: true
     columns:
       - name: distinguished_name
         data_type: string
@@ -12,6 +15,18 @@ models:
         data_type: string
       - name: physical_delivery_office_name
         data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_people__location_crosswalk")
+                field: name
+              config:
+                where:
+                  # for temp staff not in ADP
+                  idauto_status = 'A' and uac_account_disable = 0 and
+                  employee_id like 'TMP%'
+                store_failures: true
+                # severity: warn
       - name: employee_number
         data_type: int64
       - name: uac_account_disable
