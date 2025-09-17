@@ -13,7 +13,7 @@ models:
                 to: ref("stg_people__location_crosswalk")
                 field: name
               config:
-                severity: warn
+                # severity: warn
                 store_failures: true
       - name: _dagster_partition_key
         data_type: string
