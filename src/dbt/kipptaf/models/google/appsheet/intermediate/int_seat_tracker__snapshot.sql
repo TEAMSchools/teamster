@@ -21,8 +21,8 @@ with
                 status_detail in ('New Hire', 'Transfer In'), true, false
             ) as is_new_hire,
         from {{ ref("snapshot_seat_tracker__seats") }}
-        /* hardcoded date for last day of manual snapshot from appsheet*/
-        where dbt_updated_at > '2024-08-07'
+        /* hardcoded date for last day of manual snapshot from appsheet */
+        where dbt_updated_at >= '2024-08-08'
 
         union all
 
@@ -32,12 +32,15 @@ with
             status_detail,
             is_mid_year_hire,
             plan_status,
+
             null as adp_location,
             null as entity,
+
             cast(teammate as int) as teammate_employee_number,
             cast(academic_year as int) as academic_year,
 
             valid_from,
+
             null as valid_to,
 
             is_open,
