@@ -9,7 +9,6 @@ with
                 audit_flag_value for audit_flag_name in (
                     assign_null_score,
                     assign_score_above_max,
-                    assign_exempt_with_score,
                     assign_w_score_less_5,
                     assign_h_score_less_5,
                     assign_f_score_less_5,
