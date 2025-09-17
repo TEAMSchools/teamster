@@ -12,12 +12,16 @@ models:
       Current enrollment records come from `stg_powerschool__students` and previous
       enrollments come from `stg_powerschool__reenrollments`.
     columns:
-      - name: _dbt_source_relation
+      - name: school_name
         data_type: string
-      - name: studentid
-        data_type: int64
-      - name: students_dcid
-        data_type: int64
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_people__location_crosswalk")
+                field: name
+              config:
+                severity: warn
+                store_failures: true
       - name: student_number
         data_type: int64
         description: |
@@ -28,6 +32,12 @@ models:
             1. Newark
             2. Camden
             3. Miami
+      - name: _dbt_såource_relation
+        data_type: string
+      - name: studentid
+        data_type: int64
+      - name: students_dcid
+        data_type: int64
       - name: reenrollments_dcid
         data_type: int64
       - name: grade_level
@@ -134,8 +144,6 @@ models:
         data_type: int64
       - name: entry_grade_level
         data_type: int64
-      - name: school_name
-        data_type: string
       - name: school_abbreviation
         data_type: string
       - name: is_homeless

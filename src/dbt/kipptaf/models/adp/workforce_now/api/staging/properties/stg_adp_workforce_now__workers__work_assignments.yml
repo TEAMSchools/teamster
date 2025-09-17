@@ -2,6 +2,16 @@ version: 2
 models:
   - name: stg_adp_workforce_now__workers__work_assignments
     columns:
+      - name: home_work_location__name_code__name
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_people__location_crosswalk")
+                field: name
+              config:
+                severity: warn
+                store_failures: true
       - name: associate_oid
         data_type: string
       - name: effective_date_start
@@ -597,8 +607,6 @@ models:
       - name: additional_remunerations__rate__amount_value__sum
         data_type: float64
       - name: benefits_eligibility_class__group_code__name
-        data_type: string
-      - name: home_work_location__name_code__name
         data_type: string
       - name: worker_type_code__name
         data_type: string

@@ -2,9 +2,17 @@ version: 2
 models:
   - name: stg_schoolmint_grow__schools
     columns:
-      - name: school_id
-        data_type: string
       - name: name
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_people__location_crosswalk")
+                field: name
+              config:
+                severity: warn
+                store_failures: true
+      - name: school_id
         data_type: string
       - name: abbreviation
         data_type: string
