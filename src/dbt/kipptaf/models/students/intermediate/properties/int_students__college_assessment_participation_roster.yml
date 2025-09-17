@@ -1,0 +1,76 @@
+version: 2
+models:
+  - name: int_students__college_assessment_participation_roster
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: studentid
+        data_type: int64
+      - name: students_dcid
+        data_type: int64
+      - name: salesforce_id
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: psat89_count
+        data_type: int64
+      - name: psat10_count
+        data_type: int64
+      - name: psatnmsqt_count
+        data_type: int64
+      - name: sat_count
+        data_type: int64
+      - name: act_count
+        data_type: int64
+      - name: act_group_1_score
+        data_type: float64
+      - name: act_group_1_goal
+        data_type: float64
+      - name: act_group_2_plus_score
+        data_type: float64
+      - name: act_group_2_plus_goal
+        data_type: float64
+      - name: sat_group_1_score
+        data_type: float64
+      - name: sat_group_1_goal
+        data_type: float64
+      - name: sat_group_2_plus_score
+        data_type: float64
+      - name: sat_group_2_plus_goal
+        data_type: float64
+      - name: psat89_group_1_score
+        data_type: float64
+      - name: psat89_group_1_goal
+        data_type: float64
+      - name: psat89_group_2_plus_score
+        data_type: float64
+      - name: psat89_group_2_plus_goal
+        data_type: float64
+      - name: psat10_group_1_score
+        data_type: float64
+      - name: psat10_group_1_goal
+        data_type: float64
+      - name: psat10_group_2_plus_score
+        data_type: float64
+      - name: psat10_group_2_plus_goal
+        data_type: float64
+      - name: psatnmsqt_group_1_score
+        data_type: float64
+      - name: psatnmsqt_group_1_goal
+        data_type: float64
+      - name: psatnmsqt_group_2_plus_score
+        data_type: float64
+      - name: psatnmsqt_group_2_plus_goal
+        data_type: float64
+      - name: psat89_count_ytd
+        data_type: int64
+      - name: psat10_count_ytd
+        data_type: int64
+      - name: psatnmsqt_count_ytd
+        data_type: int64
+      - name: sat_count_ytd
+        data_type: int64
+      - name: act_count_ytd
+        data_type: int64
