@@ -31,10 +31,14 @@ with
             gb.band,
 
             case
-                g.illuminate_subject_area
-                when 'Text Study'
+                when
+                    g.illuminate_subject_area like 'English%'
+                    or g.illuminate_subject_area = 'Text Study'
                 then 'Reading'
-                when 'Mathematics'
+                when
+                    g.illuminate_subject_area like 'Algebra%'
+                    or g.illuminate_subject_area like 'Geometry%'
+                    or g.illuminate_subject_area = 'Mathematics'
                 then 'Math'
                 else g.illuminate_subject_area
             end as `subject`,
@@ -497,3 +501,4 @@ left join
     and r.school = g.school
     and r.grade_level = g.grade_level
     and r.subject = g.subject
+where r.grade_level = 9
