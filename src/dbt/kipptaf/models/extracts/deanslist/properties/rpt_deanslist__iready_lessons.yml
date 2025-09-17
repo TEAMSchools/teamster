@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_deanslist__iready_lessons
+    config:
+      contract:
+        enforced: true
     columns:
       - name: student_id
         data_type: int64

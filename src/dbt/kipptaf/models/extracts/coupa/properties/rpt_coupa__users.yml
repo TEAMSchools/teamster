@@ -1,6 +1,8 @@
-version: 2
 models:
   - name: rpt_coupa__users
+    config:
+      contract:
+        enforced: true
     columns:
       - name: login
         data_type: string

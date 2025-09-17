@@ -1,6 +1,8 @@
-version: 2
 models:
   - name: rpt_powerschool__autocomm_students_iep
+    config:
+      contract:
+        enforced: true
     columns:
       - name: student_number
         data_type: int64

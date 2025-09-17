@@ -1,6 +1,8 @@
-version: 2
 models:
   - name: rpt_illuminate__student_portal_accounts
+    config:
+      contract:
+        enforced: true
     columns:
       - name: 01 student id
         data_type: int64

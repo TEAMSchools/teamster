@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_deanslist__student_misc
+    config:
+      contract:
+        enforced: true
     columns:
       - name: studentid
         data_type: int64

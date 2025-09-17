@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_deanslist__state_test_scores
+    config:
+      contract:
+        enforced: true
     columns:
       - name: student_number
         data_type: int64

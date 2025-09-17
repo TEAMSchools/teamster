@@ -1,6 +1,8 @@
-version: 2
 models:
   - name: rpt_littlesis__enrollments
+    config:
+      contract:
+        enforced: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

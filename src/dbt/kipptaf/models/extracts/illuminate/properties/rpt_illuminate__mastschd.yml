@@ -1,6 +1,8 @@
-version: 2
 models:
   - name: rpt_illuminate__mastschd
+    config:
+      contract:
+        enforced: true
     columns:
       - name: 01 section id
         data_type: string

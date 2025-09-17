@@ -1,6 +1,8 @@
-version: 2
 models:
   - name: rpt_illuminate__terms
+    config:
+      contract:
+        enforced: true
     columns:
       - name: 01 site id
         data_type: int64
