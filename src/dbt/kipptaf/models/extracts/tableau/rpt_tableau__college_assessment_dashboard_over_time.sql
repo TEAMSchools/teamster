@@ -30,31 +30,7 @@ with
 
     metrics_unpivot as (
         select
-            academic_year,
-            academic_year_display,
-            region,
-            schoolid,
-            school,
-            student_number,
-            grade_level,
-            enroll_status,
-            iep_status,
-            is_504,
-            grad_iep_exempt_status_overall,
-            lep_status,
-            ktc_cohort,
-            graduation_year,
-            year_in_network,
-            college_match_gpa_bands,
-            administration_round,
-            test_type,
-            test_date,
-            test_month,
-            scope,
-            subject_area,
-            score_type,
-            score_category,
-            score,
+            e.*,
 
             metric_name,
 
