@@ -19,6 +19,8 @@ with
         union all
         select '4-8' as band, grade_level,
         from unnest([4, 5, 6, 7, 8]) as grade_level
+        union all
+        select '9' as band, 9 as grade_level
     ),
 
     goals as (
@@ -158,7 +160,7 @@ with
             test_round = 'BOY'
             and rn_subj_round = 1
             and sublevel_number_with_typical is not null
-            and student_grade_int between 0 and 2
+            and student_grade_int in (0, 2, 9)
     ),
 
     roster as (
@@ -260,7 +262,7 @@ with
         where
             co.rn_year = 1
             and co.enroll_status = 0
-            and co.grade_level between 3 and 8
+            and co.grade_level between 3 and 9
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
 
         union all
@@ -475,14 +477,14 @@ select
         when
             r.region in ('Newark', 'Camden')
             and r.subject = 'Math'
-            and r.grade_level between 4 and 8
+            and r.grade_level between 4 and 9
             and r.is_bucket2_eligible
             and r.benchmark_assessment_type = 'i-Ready BOY'
         then 'Bucket 3'
         when
             r.region = 'Newark'
             and r.subject = 'Reading'
-            and r.grade_level between 4 and 8
+            and r.grade_level between 4 and 9
             and r.is_bucket2_eligible
             and r.benchmark_assessment_type = 'i-Ready BOY'
         then 'Bucket 3'
