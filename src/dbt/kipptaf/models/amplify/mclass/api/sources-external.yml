@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: amplify
     schema: |
@@ -7,6 +5,8 @@ sources:
       {{ project_name }}_amplify
     tables:
       - name: src_amplify__benchmark_student_summary
+        config:
+          enabled: false
         external:
           location:
             "{{ var('cloud_storage_uri_base')
@@ -27,6 +27,8 @@ sources:
               - amplify
               - benchmark_student_summary
       - name: src_amplify__pm_student_summary
+        config:
+          enabled: false
         external:
           location:
             "{{ var('cloud_storage_uri_base') }}/amplify/pm_student_summary/*"

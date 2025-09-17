@@ -1,13 +1,11 @@
 with
     calendar as (select *, from {{ ref("int_powerschool__calendar_week") }}),
 
-    {# only active seats for the current academic year #}
+    /* only active seats for the current academic year */
     seat_tracker as (
         select *,
         from {{ ref("int_seat_tracker__snapshot") }}
-        where
-            cast(academic_year as int) = {{ var("current_academic_year") }}
-            and is_active
+        where academic_year = {{ var("current_academic_year") }} and is_active
     ),
 
     locations as (select *, from {{ ref("int_people__location_crosswalk") }}),
@@ -16,9 +14,12 @@ with
         select
             seat_tracker.staffing_model_id,
             seat_tracker.entity,
+
             locations.location_powerschool_school_id as school_id,
+
             calendar.week_start_monday,
             calendar.week_end_sunday,
+
             if(seat_tracker.is_staffed, 1, 0) as is_staffed,
         from seat_tracker
         left join locations on seat_tracker.adp_location = locations.location_name

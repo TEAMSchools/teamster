@@ -3,8 +3,11 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    ref("stg_amplify__benchmark_student_summary"),
                     ref("stg_amplify__mclass__sftp__benchmark_student_summary"),
+                    source(
+                        "amplify",
+                        "stg_amplify__mclass__api__benchmark_student_summary",
+                    ),
                 ]
             )
         }}
