@@ -1,10 +1,13 @@
 with
     date_spine as (
         select
-            membership_effective_date,
+            ay_start_date,
+            date_add(
+                date_add(ay_start_date, interval -3 day), interval 1 year
+            ) as ay_end_date,
             {{
                 date_to_fiscal_year(
-                    date_field="membership_effective_date",
+                    date_field="ay_start_date",
                     start_month=7,
                     year_source="start",
                 )
@@ -13,13 +16,13 @@ with
             unnest(
                 generate_date_array(
                     /* first date of the membership snapshot*/
-                    '2003-04-01',
+                    '2002-07-02',
                     date_add(
                         current_date('{{ var("local_timezone") }}'), interval 1 year
                     ),
                     interval 1 year
                 )
-            ) as membership_effective_date
+            ) as ay_start_date
     ),
     by_academic_year as (
         select
@@ -31,8 +34,10 @@ with
         from {{ ref("stg_adp_workforce_now__employee_memberships") }} as em
         join
             date_spine as d
-            on d.membership_effective_date
-            between em.effective_date and em.expiration_date
+            on (d.ay_start_date between em.effective_date and em.expiration_date)
+            or (d.ay_end_date between em.effective_date and em.expiration_date)
+            or (em.effective_date between d.ay_start_date and d.ay_end_date)
+            or (em.expiration_date between d.ay_start_date and d.ay_end_date)
     )
 
 select
