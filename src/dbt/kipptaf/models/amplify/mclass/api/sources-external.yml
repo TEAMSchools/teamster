@@ -6,7 +6,13 @@ sources:
       {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ project_name }}_amplify
     tables:
+      - name: stg_amplify__mclass__api__benchmark_student_summary
+        identifier: stg_amplify__benchmark_student_summary
+      - name: stg_amplify__mclass__api__pm_student_summary
+        identifier: stg_amplify__pm_student_summary
       - name: src_amplify__benchmark_student_summary
+        config:
+          enabled: false
         external:
           location:
             "{{ var('cloud_storage_uri_base')
@@ -27,6 +33,8 @@ sources:
               - amplify
               - benchmark_student_summary
       - name: src_amplify__pm_student_summary
+        config:
+          enabled: false
         external:
           location:
             "{{ var('cloud_storage_uri_base') }}/amplify/pm_student_summary/*"
