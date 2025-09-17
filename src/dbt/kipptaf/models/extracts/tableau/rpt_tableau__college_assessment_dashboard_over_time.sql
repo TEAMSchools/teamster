@@ -77,7 +77,7 @@ select
     end as metric_pct_goal,
 
 from {{ ref("int_students__college_assessment_roster") }} as e
-cross join unnest(["HS-Ready", "College-Ready"]) as metrics
+cross join unnest(['HS-Ready', 'College-Ready']) as metrics
 left join
     benchmark_goals as bg
     on e.test_type = bg.expected_test_type
