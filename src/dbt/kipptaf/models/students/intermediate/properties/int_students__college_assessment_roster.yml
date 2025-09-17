@@ -104,3 +104,5 @@ models:
         data_type: numeric
       - name: running_superscore
         data_type: numeric
+      - name: test_admin_for_roster
+        data_type: string

@@ -52,6 +52,10 @@ select
     a.running_max_scale_score,
     a.running_superscore,
 
+    concat(
+        a.administration_round, ' ', a.scope, ' ', a.subject_area, ' ', a.test_type
+    ) as test_admin_for_roster,
+
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     {{ ref("int_assessments__college_assessment") }} as a

@@ -4,7 +4,7 @@
         test_admin_for_roster,
 
         lower(replace(replace(test_admin_for_roster,'PSAT 8/9','PSAT89'),' ','_')) as test_admin_for_roster_field_name
-    from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }}
+    from {{ ref("int_students__college_assessment_roster") }}
     where rn_undergrad = 1 and ktc_cohort >= {{ var("current_academic_year") }}
 {% endset %}
 
@@ -26,7 +26,7 @@ with
             sat_combined_superscore,
             act_composite_superscore,
         from
-            {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} pivot (
+            {{ ref("int_students__college_assessment_roster") }} pivot (
                 avg(superscore) for scope in (
                     'PSAT 8/9' as psat89_combined_superscore,
                     'PSAT10' as psat10_combined_superscore,
@@ -54,7 +54,7 @@ with
             act_english_max_score,
             act_science_max_score,
         from
-            {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} pivot (
+            {{ ref("int_students__college_assessment_roster") }} pivot (
                 avg(max_scale_score) for score_type in (
                     'psat89_ebrw' as psat89_ebrw_max_score,
                     'psat89_math_section' as psat89_math_section_max_score,
@@ -149,7 +149,7 @@ select
         {% if not loop.last %},{% endif %}
     {% endfor %}
 
-from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} as b
+from {{ ref("int_students__college_assessment_roster") }} as b
 left join superscore_pivot as s on b.student_number = s.student_number
 left join max_scale_score_dedup as m on b.student_number = m.student_number
 where b.rn_undergrad = 1 and b.ktc_cohort >= {{ var("current_academic_year") }}
