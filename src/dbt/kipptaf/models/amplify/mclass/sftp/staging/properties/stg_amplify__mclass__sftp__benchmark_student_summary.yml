@@ -5,6 +5,16 @@ models:
       contract:
         enforced: true
     columns:
+      - name: school_name
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_people__location_crosswalk")
+                field: name
+              config:
+                store_failures: true
+                severity: warn
       - name: _dagster_partition_key
         data_type: string
       - name: school_year
@@ -18,8 +28,6 @@ models:
       - name: district_name
         data_type: string
       - name: district_primary_id
-        data_type: string
-      - name: school_name
         data_type: string
       - name: school_primary_id
         data_type: string
