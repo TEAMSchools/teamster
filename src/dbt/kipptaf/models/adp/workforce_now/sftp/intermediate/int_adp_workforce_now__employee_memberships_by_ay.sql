@@ -24,6 +24,7 @@ with
                 )
             ) as ay_start_date
     ),
+
     by_academic_year as (
         select
             em.associate_id,
@@ -32,7 +33,7 @@ with
             em.is_teacher_development_program,
             d.academic_year,
         from {{ ref("stg_adp_workforce_now__employee_memberships") }} as em
-        join
+        inner join
             date_spine as d
             on (d.ay_start_date between em.effective_date and em.expiration_date)
             or (d.ay_end_date between em.effective_date and em.expiration_date)
@@ -45,6 +46,6 @@ select
     academic_year,
     max(is_leader_development_program) as is_leader_development_program,
     max(is_teacher_development_program) as is_teacher_development_program,
-    string_agg(membership_description, ', ') as memberships
+    string_agg(membership_description, ', ') as memberships,
 from by_academic_year
 group by associate_id, academic_year
