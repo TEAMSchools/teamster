@@ -501,4 +501,3 @@ left join
     and r.school = g.school
     and r.grade_level = g.grade_level
     and r.subject = g.subject
-where r.grade_level = 9
