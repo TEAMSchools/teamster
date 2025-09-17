@@ -28,7 +28,7 @@ with
         group by expected_test_type, expected_scope, expected_subject_area
     ),
 
-    metrics_unpivot as (
+    unpivot_data as (
         select
             academic_year,
             academic_year_display,
@@ -57,8 +57,6 @@ with
             score_category,
             score,
 
-            metric_name,
-
         from
             {{ ref("int_students__college_assessment_roster") }} unpivot (
                 score for score_category in (
@@ -69,6 +67,39 @@ with
                     running_superscore as 'Running Superscore'
                 )
             )
+    ),
+
+    metrics as (
+        select
+            academic_year,
+            academic_year_display,
+            region,
+            schoolid,
+            school,
+            student_number,
+            grade_level,
+            enroll_status,
+            iep_status,
+            is_504,
+            grad_iep_exempt_status_overall,
+            lep_status,
+            ktc_cohort,
+            graduation_year,
+            year_in_network,
+            college_match_gpa_bands,
+            administration_round,
+            test_type,
+            test_date,
+            test_month,
+            scope,
+            subject_area,
+            score_type,
+            score_category,
+            score,
+
+            metric_name,
+
+        from unpivot_data
         cross join unnest(['HS-Ready', 'College-Ready']) as metric_name
     ),
 
@@ -92,7 +123,7 @@ with
                 then bg.college_ready_pct_goal
             end as metric_pct_goal,
 
-        from metrics_unpivot as e
+        from metrics as e
         left join
             benchmark_goals as bg
             on e.test_type = bg.expected_test_type
