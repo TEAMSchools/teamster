@@ -4,6 +4,10 @@ models:
     columns:
       - name: teachernumber
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: first_name
         data_type: string
       - name: last_name

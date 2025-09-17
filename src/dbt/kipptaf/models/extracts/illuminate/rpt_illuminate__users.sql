@@ -30,6 +30,23 @@ with
             title as job_title,
         from {{ ref("stg_powerschool__users") }}
         where _dbt_source_relation like '%kipppaterson%'
+
+        union all
+
+        select
+            null as employee_number,
+
+            employee_id as powerschool_teacher_number,
+            sn as family_name_1,
+            given_name,
+            user_principal_name,
+            sam_account_name,
+
+            0 as uac_account_disable,
+
+            company as home_business_unit_name,
+            title as job_title,
+        from {{ ref("int_people__temp_staff") }}
     )
 
 -- trunk-ignore(sqlfluff/ST06)
