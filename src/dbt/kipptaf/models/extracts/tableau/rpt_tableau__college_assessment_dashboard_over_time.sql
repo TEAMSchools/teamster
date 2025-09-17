@@ -178,6 +178,7 @@ select
     scope,
     subject_area,
     score_type,
+    score_category,
     test_admin_for_over_time,
     metric_name,
 
@@ -196,6 +197,7 @@ group by
     scope,
     subject_area,
     score_type,
+    score_category,
     test_admin_for_over_time,
     metric_name
 
@@ -208,6 +210,7 @@ select
     scope,
     subject_area,
     score_type,
+    score_category,
     test_admin_for_over_time,
     metric_name,
 
@@ -226,6 +229,7 @@ group by
     scope,
     subject_area,
     score_type,
+    score_category,
     test_admin_for_over_time,
     metric_name
 
@@ -238,6 +242,7 @@ select
     scope,
     subject_area,
     score_type,
+    score_category,
     test_admin_for_over_time,
     metric_name,
 
@@ -256,5 +261,6 @@ group by
     scope,
     subject_area,
     score_type,
+    score_category,
     test_admin_for_over_time,
     metric_name
