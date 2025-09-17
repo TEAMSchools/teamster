@@ -1,3 +1,33 @@
+{% set comparison_benchmarks = [
+    {"label": "College-Ready", "prefix": "college_ready"},
+    {"label": "HS-Ready", "prefix": "hs_ready"},
+] %}
+
+with
+    benchmark_goals as (
+        select
+            expected_test_type,
+            expected_scope,
+            expected_subject_area,
+
+            {% for benchmark in comparison_benchmarks %}
+                avg(
+                    case when goal_subtype = '{{ benchmark.label }}' then score end
+                ) as {{ benchmark.prefix }}_min_score,
+                avg(
+                    case when goal_subtype = '{{ benchmark.label }}' then goal end
+                ) as {{ benchmark.prefix }}_goal
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
+
+        from {{ ref("stg_google_sheets__kippfwd_goals") }}
+        where
+            expected_test_type = 'Official'
+            and goal_type = 'Benchmark'
+            and expected_subject_area in ('Composite', 'Combined')
+        group by expected_test_type, expected_scope, expected_subject_area
+    )
+
 select
     e.academic_year,
     e.academic_year_display,
@@ -48,4 +78,14 @@ select
     e.running_max_scale_score,
     e.running_superscore,
 
+    bg.hs_ready_min_score,
+    bg.college_ready_min_score,
+    bg.hs_ready_goal,
+    bg.college_ready_goal,
+
 from {{ ref("int_students__college_assessment_roster") }} as e
+left join
+    benchmark_goals as bg
+    on e.test_type = bg.expected_test_type
+    and e.scope = bg.expected_scope
+    and e.subject_area = bg.expected_subject_area
