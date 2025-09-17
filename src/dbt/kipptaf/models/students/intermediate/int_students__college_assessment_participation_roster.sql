@@ -23,17 +23,17 @@ with
                         when
                             concat(expected_scope, ' ', goal_category)
                             = '{{ completion.label }}'
-                        then score
+                        then min_score
                     end
-                ) as {{ completion.prefix }}_score,
+                ) as {{ completion.prefix }}_min_score,
                 avg(
                     case
                         when
                             concat(expected_scope, ' ', goal_category)
                             = '{{ completion.label }}'
-                        then goal
+                        then pct_goal
                     end
-                ) as {{ completion.prefix }}_goal
+                ) as {{ completion.prefix }}_pct_goal
                 {% if not loop.last %},{% endif %}
             {% endfor %}
 
@@ -124,26 +124,26 @@ with
 select
     y.* except (fake_key),
 
-    c.act_group_1_score,
-    c.act_group_1_goal,
-    c.act_group_2_plus_score,
-    c.act_group_2_plus_goal,
-    c.sat_group_1_score,
-    c.sat_group_1_goal,
-    c.sat_group_2_plus_score,
-    c.sat_group_2_plus_goal,
-    c.psat89_group_1_score,
-    c.psat89_group_1_goal,
-    c.psat89_group_2_plus_score,
-    c.psat89_group_2_plus_goal,
-    c.psat10_group_1_score,
-    c.psat10_group_1_goal,
-    c.psat10_group_2_plus_score,
-    c.psat10_group_2_plus_goal,
-    c.psatnmsqt_group_1_score,
-    c.psatnmsqt_group_1_goal,
-    c.psatnmsqt_group_2_plus_score,
-    c.psatnmsqt_group_2_plus_goal,
+    c.act_group_1_min_score,
+    c.act_group_1_pct_goal,
+    c.act_group_2_plus_min_score,
+    c.act_group_2_plus_pct_goal,
+    c.sat_group_1_min_score,
+    c.sat_group_1_pct_goal,
+    c.sat_group_2_plus_min_score,
+    c.sat_group_2_plus_pct_goal,
+    c.psat89_group_1_min_score,
+    c.psat89_group_1_pct_goal,
+    c.psat89_group_2_plus_min_score,
+    c.psat89_group_2_plus_pct_goal,
+    c.psat10_group_1_min_score,
+    c.psat10_group_1_pct_goal,
+    c.psat10_group_2_plus_min_score,
+    c.psat10_group_2_plus_pct_goal,
+    c.psatnmsqt_group_1_min_score,
+    c.psatnmsqt_group_1_pct_goal,
+    c.psatnmsqt_group_2_plus_min_score,
+    c.psatnmsqt_group_2_plus_pct_goal,
 
     sum(y.psat89_count) over (
         partition by y.student_number order by y.grade_level

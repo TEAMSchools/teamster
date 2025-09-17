@@ -12,11 +12,11 @@ with
 
             {% for benchmark in comparison_benchmarks %}
                 avg(
-                    case when goal_subtype = '{{ benchmark.label }}' then score end
+                    case when goal_subtype = '{{ benchmark.label }}' then min_score end
                 ) as {{ benchmark.prefix }}_min_score,
                 avg(
-                    case when goal_subtype = '{{ benchmark.label }}' then goal end
-                ) as {{ benchmark.prefix }}_goal
+                    case when goal_subtype = '{{ benchmark.label }}' then pct_goal end
+                ) as {{ benchmark.prefix }}_pct_goal
                 {% if not loop.last %},{% endif %}
             {% endfor %}
 
@@ -71,9 +71,9 @@ select
     case
         metrics
         when 'HS-Ready'
-        then bg.hs_ready_goal
+        then bg.hs_ready_pct_goal
         when 'College-Ready'
-        then bg.college_ready_goal
+        then bg.college_ready_pct_goal
     end as metric_pct_goal,
 
 from {{ ref("int_students__college_assessment_roster") }} as e
