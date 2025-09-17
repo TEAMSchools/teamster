@@ -27,8 +27,6 @@ select
     e.graduation_year,
     e.year_in_network,
     e.contact_owner_name,
-    e.college_match_gpa,
-    e.college_match_gpa_bands,
     e.cumulative_y1_gpa,
     e.cumulative_y1_gpa_unweighted,
     e.cumulative_y1_gpa_projected,
@@ -52,9 +50,13 @@ select
     a.running_max_scale_score,
     a.running_superscore,
 
+    'NJ' as state,
+
     concat(
         a.administration_round, ' ', a.scope, ' ', a.subject_area, ' ', a.test_type
     ) as test_admin_for_roster,
+
+    concat(e.grade_level, ' ', a.test_month) as test_admin_for_over_time,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join

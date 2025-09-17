@@ -104,5 +104,9 @@ models:
         data_type: numeric
       - name: running_superscore
         data_type: numeric
+      - name: state
+        data_type: string
       - name: test_admin_for_roster
+        data_type: string
+      - name: test_admin_for_over_time
         data_type: string

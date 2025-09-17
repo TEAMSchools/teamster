@@ -32,6 +32,7 @@ with
         select
             academic_year,
             academic_year_display,
+            state,
             region,
             schoolid,
             school,
@@ -45,7 +46,6 @@ with
             ktc_cohort,
             graduation_year,
             year_in_network,
-            college_match_gpa_bands,
             administration_round,
             test_type,
             test_date,
@@ -53,6 +53,7 @@ with
             scope,
             subject_area,
             score_type,
+            test_admin_for_over_time,
 
             score_category,
             score,
@@ -73,6 +74,7 @@ with
         select
             e.academic_year,
             e.academic_year_display,
+            state,
             e.region,
             e.schoolid,
             e.school,
@@ -86,7 +88,6 @@ with
             e.ktc_cohort,
             e.graduation_year,
             e.year_in_network,
-            e.college_match_gpa_bands,
             e.administration_round,
             e.test_type,
             e.test_date,
@@ -94,6 +95,7 @@ with
             e.scope,
             e.subject_area,
             e.score_type,
+            e.test_admin_for_over_time,
             e.score_category,
             e.score,
 
@@ -129,39 +131,130 @@ with
             on e.test_type = bg.expected_test_type
             and e.scope = bg.expected_scope
             and e.subject_area = bg.expected_subject_area
+    ),
+
+    met_min_score as (
+        select
+            academic_year,
+            academic_year_display,
+            state,
+            region,
+            schoolid,
+            school,
+            student_number,
+            grade_level,
+            enroll_status,
+            iep_status,
+            is_504,
+            grad_iep_exempt_status_overall,
+            lep_status,
+            ktc_cohort,
+            graduation_year,
+            year_in_network,
+            administration_round,
+            test_type,
+            test_date,
+            test_month,
+            scope,
+            subject_area,
+            score_type,
+            test_admin_for_over_time,
+            score_category,
+            score,
+            metric_name,
+            metric_min_score,
+            metric_pct_goal,
+
+            if(score >= metric_min_score, 1, 0) as met_min_score_int,
+            if(metric_min_score is not null, 1, 0) as denominator_int,
+
+        from goals_check
     )
 
 select
-    academic_year,
-    academic_year_display,
-    region,
-    schoolid,
-    school,
-    student_number,
-    grade_level,
-    enroll_status,
-    iep_status,
-    is_504,
-    grad_iep_exempt_status_overall,
-    lep_status,
-    ktc_cohort,
+    state,
     graduation_year,
-    year_in_network,
-    college_match_gpa_bands,
-    administration_round,
     test_type,
-    test_date,
-    test_month,
     scope,
     subject_area,
     score_type,
-    score_category,
-    score,
+    test_admin_for_over_time,
     metric_name,
-    metric_min_score,
-    metric_pct_goal,
 
-    if(score >= metric_min_score, 1, 0) as met_min_score_int,
-    if(metric_min_score is not null, 1, 0) as denominator_int,
+    'State' as grouping_level,
 
-from goals_check
+    avg(metric_min_score) as metric_min_score,
+    avg(metric_pct_goal) as metric_pct_goal,
+    sum(met_min_score_int) as total_students_met,
+    sum(denominator_int) total_students,
+
+from met_min_score
+group by
+    state,
+    graduation_year,
+    test_type,
+    scope,
+    subject_area,
+    score_type,
+    test_admin_for_over_time,
+    metric_name
+
+union all
+
+select
+    region,
+    graduation_year,
+    test_type,
+    scope,
+    subject_area,
+    score_type,
+    test_admin_for_over_time,
+    metric_name,
+
+    'Region' as grouping_level,
+
+    avg(metric_min_score) as metric_min_score,
+    avg(metric_pct_goal) as metric_pct_goal,
+    sum(met_min_score_int) as total_students_met,
+    sum(denominator_int) total_students,
+
+from met_min_score
+group by
+    region,
+    graduation_year,
+    test_type,
+    scope,
+    subject_area,
+    score_type,
+    test_admin_for_over_time,
+    metric_name
+
+union all
+
+select
+    school,
+    graduation_year,
+    test_type,
+    scope,
+    subject_area,
+    score_type,
+    test_admin_for_over_time,
+    metric_name,
+
+    'School' as grouping_level,
+
+    avg(metric_min_score) as metric_min_score,
+    avg(metric_pct_goal) as metric_pct_goal,
+    sum(met_min_score_int) as total_students_met,
+    sum(denominator_int) total_students,
+
+from met_min_score
+group by
+    school,
+    graduation_year,
+    test_type,
+    scope,
+    subject_area,
+    score_type,
+    test_admin_for_over_time,
+    metric_name
