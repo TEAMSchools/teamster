@@ -74,7 +74,7 @@ with
         select
             e.academic_year,
             e.academic_year_display,
-            state,
+            e.state,
             e.region,
             e.schoolid,
             e.school,
