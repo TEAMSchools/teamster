@@ -102,7 +102,8 @@ with
                         'PSAT10 Math Scale Score'
                     )
                 then concat(filter_group_month, '_4')
-            end as field_name_order,
+            end as expected_field_name_order,
+
         from scores
         where
             filter_group in (
@@ -231,7 +232,7 @@ select
     e.college_match_gpa_bands,
 
     ef.expected_field_name,
-    ef.field_name_order,
+    ef.expected_field_name_order,
 
     s.sat_combined_superscore,
     s.sat_ebrw_highest,
