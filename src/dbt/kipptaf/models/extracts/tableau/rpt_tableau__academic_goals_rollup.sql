@@ -7,17 +7,22 @@ with
             case
                 when grade_level = 0
                 then 'K'
-                when grade_level in (1, 2)
+                when grade_level between 1 and 2
                 then '1-2'
                 when grade_level between 3 and 8
                 then '3-8'
+                else cast(grade_level as string)
             end as band,
 
             case
-                illuminate_subject_area
-                when 'Text Study'
+                when
+                    illuminate_subject_area like 'English%'
+                    or illuminate_subject_area = 'Text Study'
                 then 'Reading'
-                when 'Mathematics'
+                when
+                    illuminate_subject_area like 'Algebra%'
+                    or illuminate_subject_area like 'Geometry%'
+                    or illuminate_subject_area = 'Mathematics'
                 then 'Math'
                 else illuminate_subject_area
             end as `subject`,
@@ -51,7 +56,8 @@ with
                     or `subject` in ('Mathematics', 'Geometry')
                 then 'Math'
             end as `subject`,
-        from {{ ref("stg_pearson__njsla") }}
+        from {{ ref("int_pearson__all_assessments") }}
+        where assessment_name = 'NJSLA'
 
         union all
 
@@ -141,7 +147,7 @@ with
             test_round = 'BOY'
             and rn_subj_round = 1
             and sublevel_number_with_typical is not null
-            and student_grade_int between 0 and 2
+            and student_grade_int in (0, 1, 2, 9)
     ),
 
     roster as (
@@ -201,7 +207,7 @@ with
                 then true
                 when
                     coalesce(st.assessment_type, ir.assessment_type) = 'i-Ready BOY'
-                    and co.grade_level <= 3
+                    and (co.grade_level <= 3 or co.grade_level = 9)
                     and ir.is_approaching_int = 1
                 then true
                 else false
@@ -230,7 +236,7 @@ with
             co.rn_year = 1
             and co.enroll_status = 0
             and not co.is_exempt_state_testing
-            and co.grade_level between 3 and 8
+            and co.grade_level between 3 and 9
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
 
         union all
@@ -431,6 +437,26 @@ select
             and r.is_bucket2_eligible
             and g.n_bubble_to_move >= r.rank_scale_score
         then 'Bucket 2'
+        when
+            r.region in ('Newark', 'Camden')
+            and r.is_bucket2_eligible
+            and r.rank_scale_score > g.n_bubble_to_move
+        then 'Bucket 3'
+        when
+            r.region in ('Newark', 'Camden')
+            and r.subject = 'Math'
+            and r.grade_level between 4 and 9
+            and r.is_bucket2_eligible
+            and r.benchmark_assessment_type = 'i-Ready BOY'
+        then 'Bucket 3'
+        when
+            r.region = 'Newark'
+            and r.subject = 'Reading'
+            and r.grade_level between 4 and 9
+            and r.is_bucket2_eligible
+            and r.benchmark_assessment_type = 'i-Ready BOY'
+        then 'Bucket 3'
+        else 'Bucket 4'
     end as student_tier_calculated,
 from roster_ranked as r
 left join

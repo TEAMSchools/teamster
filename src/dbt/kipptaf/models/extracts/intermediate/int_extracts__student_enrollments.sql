@@ -381,4 +381,3 @@ left join
     on e.student_number = dr.student_number
     and e.academic_year = dr.academic_year
     and dr.rn_benchmark = 1
-where e.grade_level != 99

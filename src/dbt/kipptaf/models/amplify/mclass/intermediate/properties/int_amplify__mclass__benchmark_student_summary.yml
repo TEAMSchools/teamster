@@ -1,11 +1,12 @@
 version: 2
 models:
-  - name: stg_amplify__benchmark_student_summary
+  - name: int_amplify__mclass__benchmark_student_summary
     config:
-      enabled: false
       contract:
         enforced: true
     columns:
+      - name: _dbt_source_relation
+        data_type: string
       - name: account_name
         data_type: string
       - name: alternate_assessment
@@ -56,8 +57,6 @@ models:
         data_type: string
       - name: municipality_primary_id
         data_type: string
-      - name: official_teacher_name
-        data_type: string
       - name: primary_id_student_number
         data_type: int64
       - name: race
@@ -106,8 +105,6 @@ models:
         data_type: string
       - name: correct_responses_maze_score
         data_type: numeric
-      - name: dibels_composite_score_lexile
-        data_type: string
       - name: error_rate_orf_score
         data_type: numeric
       - name: incorrect_responses_maze_score
@@ -146,8 +143,6 @@ models:
         data_type: numeric
       - name: reading_accuracy_orf_accu_score
         data_type: numeric
-      - name: reading_comprehension_maze_score
-        data_type: numeric
       - name: reading_fluency_orf_score
         data_type: numeric
       - name: word_reading_wrf_score
@@ -163,8 +158,6 @@ models:
       - name: phonemic_awareness_psf_semester_growth
         data_type: string
       - name: reading_accuracy_orf_accu_semester_growth
-        data_type: string
-      - name: reading_comprehension_maze_semester_growth
         data_type: string
       - name: reading_fluency_orf_semester_growth
         data_type: string
@@ -182,21 +175,15 @@ models:
         data_type: string
       - name: reading_accuracy_orf_accu_year_growth
         data_type: string
-      - name: reading_comprehension_maze_year_growth
-        data_type: string
       - name: reading_fluency_orf_year_growth
         data_type: string
       - name: word_reading_wrf_year_growth
         data_type: string
-      - name: client_date
-        data_type: date
       - name: sync_date
         data_type: date
       - name: assessment_grade
         data_type: string
       - name: enrollment_grade
-        data_type: string
-      - name: official_teacher_staff_id
         data_type: string
       - name: composite_score
         data_type: numeric
@@ -211,8 +198,6 @@ models:
       - name: phonemic_awareness_psf_national_norm_percentile
         data_type: numeric
       - name: reading_accuracy_orf_accu_national_norm_percentile
-        data_type: numeric
-      - name: reading_comprehension_maze_national_norm_percentile
         data_type: numeric
       - name: reading_fluency_orf_national_norm_percentile
         data_type: numeric
@@ -230,8 +215,6 @@ models:
         data_type: string
       - name: reading_accuracy_orf_accu_level
         data_type: string
-      - name: reading_comprehension_maze_level
-        data_type: string
       - name: reading_fluency_orf_level
         data_type: string
       - name: word_reading_wrf_level
@@ -247,8 +230,6 @@ models:
       - name: phonemic_awareness_psf_tested_out
         data_type: boolean
       - name: reading_accuracy_orf_accu_tested_out
-        data_type: boolean
-      - name: reading_comprehension_maze_tested_out
         data_type: boolean
       - name: reading_fluency_orf_tested_out
         data_type: boolean
@@ -266,8 +247,6 @@ models:
         data_type: boolean
       - name: reading_accuracy_orf_accu_discontinued
         data_type: boolean
-      - name: reading_comprehension_maze_discontinued
-        data_type: boolean
       - name: reading_fluency_orf_discontinued
         data_type: boolean
       - name: word_reading_wrf_discontinued
@@ -278,3 +257,85 @@ models:
         data_type: int64
       - name: surrogate_key
         data_type: string
+      - name: region
+        data_type: string
+      - name: school
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: _dagster_partition_key
+        data_type: string
+      - name: multi_district_organization_name
+        data_type: string
+      - name: reporting_group_name
+        data_type: string
+      - name: school_primary_id
+        data_type: string
+      - name: enrollment_class_name
+        data_type: string
+      - name: enrollment_class_id
+        data_type: string
+      - name: assessment_class_name
+        data_type: string
+      - name: assessment_class_id
+        data_type: string
+      - name: completion_status
+        data_type: string
+      - name: oral_language_level
+        data_type: string
+      - name: title_i
+        data_type: string
+      - name: secondary_student_id
+        data_type: string
+      - name: additional_student_id
+        data_type: string
+      - name: enrollment_teacher_staff_id_teachernumber
+        data_type: string
+      - name: assessing_teacher_staff_id_teachernumber
+        data_type: string
+      - name: secondary_student_id_stateid
+        data_type: string
+      - name: oral_language_score
+        data_type: numeric
+      - name: composite_local_percentile
+        data_type: numeric
+      - name: letter_names_lnf_local_percentile
+        data_type: numeric
+      - name: phonemic_awareness_psf_local_percentile
+        data_type: numeric
+      - name: letter_sounds_nwf_cls_local_percentile
+        data_type: numeric
+      - name: decoding_nwf_wrc_local_percentile
+        data_type: numeric
+      - name: word_reading_wrf_local_percentile
+        data_type: numeric
+      - name: reading_accuracy_orf_accu_local_percentile
+        data_type: numeric
+      - name: reading_fluency_orf_local_percentile
+        data_type: numeric
+      - name: additional_student_id_primarysisid
+        data_type: string
+      - name: reading_comprehension_maze_local_percentile
+        data_type: numeric
+      - name: official_teacher_staff_id
+        data_type: string
+      - name: official_teacher_name
+        data_type: string
+      - name: client_date
+        data_type: date
+      - name: dibels_composite_score_lexile
+        data_type: string
+      - name: reading_comprehension_maze_score
+        data_type: numeric
+      - name: reading_comprehension_maze_semester_growth
+        data_type: string
+      - name: reading_comprehension_maze_year_growth
+        data_type: string
+      - name: reading_comprehension_maze_national_norm_percentile
+        data_type: numeric
+      - name: reading_comprehension_maze_level
+        data_type: string
+      - name: reading_comprehension_maze_tested_out
+        data_type: boolean
+      - name: reading_comprehension_maze_discontinued
+        data_type: boolean

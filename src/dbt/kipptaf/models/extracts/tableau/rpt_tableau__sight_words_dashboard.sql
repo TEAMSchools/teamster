@@ -65,6 +65,7 @@ left join
     on swq.repository_id = sw.repository_id
     and swq.label = sw.field_label
     and co.student_number = sw.local_student_id
+where co.region != 'Paterson'
 
 union all
 
@@ -108,3 +109,4 @@ inner join
     and co.is_enrolled_recent
     and co.iready_subject = 'Reading'
     and co.rn_year = 1
+where co.region != 'Paterson'
