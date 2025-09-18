@@ -15,17 +15,55 @@ with
         from unnest(['Reading', 'Math']) as iready_subject
     ),
 
-    intervention_nj as (
+    prev_yr_iready as (
         select
             _dbt_source_relation,
-            studentid,
-            academic_year,
+            student_id,
+            `subject`,
 
-            regexp_extract(specprog_name, 'Bucket 2 - (\w+)') as discipline,
-        from {{ ref("int_powerschool__spenrollments") }}
+            academic_year_int + 1 as academic_year_next,
+
+            case
+                when overall_relative_placement_int < 3
+                then 'Below/Far Below'
+                when overall_relative_placement_int = 3
+                then 'Approaching'
+                when overall_relative_placement_int > 3
+                then 'At/Above'
+            end as iready_proficiency,
+        from {{ ref("base_iready__diagnostic_results") }}
+        where rn_subj_round = 1 and test_round = 'EOY'
+    ),
+
+    cur_yr_iready as (
+        select
+            _dbt_source_relation,
+            student_id as student_number,
+            academic_year_int as academic_year,
+            `subject`,
+            projected_is_proficient_typical as is_proficient,
+        from {{ ref("base_iready__diagnostic_results") }}
         where
-            rn_student_program_year_desc = 1
-            and specprog_name in ('Bucket 2 - ELA', 'Bucket 2 - Math')
+            test_round = 'BOY'
+            and rn_subj_round = 1
+            and projected_sublevel_number_typical is not null
+            and student_grade_int between 3 and 8
+
+        union all
+
+        select
+            _dbt_source_relation,
+            student_id as student_number,
+            academic_year_int as academic_year,
+            `subject`,
+
+            if(level_number_with_typical >= 4, true, false) as is_proficient,
+        from {{ ref("base_iready__diagnostic_results") }}
+        where
+            test_round = 'BOY'
+            and rn_subj_round = 1
+            and sublevel_number_with_typical is not null
+            and student_grade_int between 0 and 2
     ),
 
     prev_yr_state_test as (
@@ -96,54 +134,17 @@ with
         group by powerschool_student_number, discipline
     ),
 
-    prev_yr_iready as (
+    intervention_nj as (
         select
             _dbt_source_relation,
-            student_id,
-            `subject`,
-            academic_year_int as academic_year,
+            studentid,
+            academic_year,
 
-            case
-                when overall_relative_placement_int < 3
-                then 'Below/Far Below'
-                when overall_relative_placement_int = 3
-                then 'Approaching'
-                when overall_relative_placement_int > 3
-                then 'At/Above'
-            end as iready_proficiency,
-        from {{ ref("base_iready__diagnostic_results") }}
-        where rn_subj_round = 1 and test_round = 'EOY'
-    ),
-
-    cur_yr_iready as (
-        select
-            _dbt_source_relation,
-            student_id as student_number,
-            academic_year_int as academic_year,
-            `subject`,
-            projected_is_proficient_typical as is_proficient,
-        from {{ ref("base_iready__diagnostic_results") }}
+            regexp_extract(specprog_name, r'Bucket 2 - (\w+)') as discipline,
+        from {{ ref("int_powerschool__spenrollments") }}
         where
-            test_round = 'BOY'
-            and rn_subj_round = 1
-            and projected_sublevel_number_typical is not null
-            and student_grade_int between 3 and 8
-
-        union all
-
-        select
-            _dbt_source_relation,
-            student_id as student_number,
-            academic_year_int as academic_year,
-            `subject`,
-
-            if(level_number_with_typical >= 4, true, false) as is_proficient,
-        from {{ ref("base_iready__diagnostic_results") }}
-        where
-            test_round = 'BOY'
-            and rn_subj_round = 1
-            and sublevel_number_with_typical is not null
-            and student_grade_int between 0 and 2
+            rn_student_program_year_desc = 1
+            and specprog_name in ('Bucket 2 - ELA', 'Bucket 2 - Math')
     )
 
 select
@@ -157,13 +158,13 @@ select
 
     a.values_column as ps_grad_path_code,
 
-    coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
-
     coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
 
     coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
 
-    if(nj.iready_subject is not null, true, false) as bucket_two,
+    coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
+
+    if(nj.discipline is not null, true, false) as bucket_two,
 
     if(co.grade_level < 4, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
 
@@ -187,7 +188,7 @@ select
         then 'Bucket 1'
         when co.academic_year >= 2024 and co.grade_level = 11 and ps.max_score >= 420
         then 'Bucket 1'
-        when nj.iready_subject is not null
+        when nj.discipline is not null
         then 'Bucket 2'
         else 'Unbucketed'
     end as nj_student_tier,
@@ -208,30 +209,18 @@ select
 from {{ ref("base_powerschool__student_enrollments") }} as co
 cross join subjects as sj
 left join
-    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as a
-    on co.students_dcid = a.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
-    and sj.discipline = a.discipline
-    and a.value_type = 'Graduation Pathway'
-left join
-    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as se
-    on co.students_dcid = se.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="se") }}
-    and sj.discipline = se.discipline
-    and se.value_type = 'State Assessment Name'
-left join
-    prev_yr_state_test as py
-    /* TODO: find records that only match on SID */
-    on co.state_studentnumber = py.statestudentidentifier
-    and co.academic_year = (py.academic_year + 1)
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="py") }}
-    and sj.illuminate_subject_area = py.subject
-left join
     prev_yr_iready as pr
     on co.student_number = pr.student_id
-    and co.academic_year = (pr.academic_year + 1)
+    and co.academic_year = pr.academic_year_next
     and {{ union_dataset_join_clause(left_alias="co", right_alias="pr") }}
     and sj.iready_subject = pr.subject
+left join
+    prev_yr_state_test as py
+    {# TODO: find records that only match on SID #}
+    on co.state_studentnumber = py.statestudentidentifier
+    and co.academic_year = py.academic_year_next
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="py") }}
+    and sj.illuminate_subject_area = py.subject
 left join
     cur_yr_iready as ci
     on co.student_number = ci.student_number
@@ -239,13 +228,25 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="ci") }}
     and sj.iready_subject = ci.subject
 left join
+    psat_bucket1 as ps
+    on co.student_number = ps.powerschool_student_number
+    and sj.discipline = ps.discipline
+left join
     intervention_nj as nj
     on co.studentid = nj.studentid
     and co.academic_year = nj.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
     and sj.discipline = nj.discipline
 left join
-    psat_bucket1 as ps
-    on co.student_number = ps.powerschool_student_number
-    and sj.discipline = ps.discipline
+    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as se
+    on co.students_dcid = se.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="se") }}
+    and sj.discipline = se.discipline
+    and se.value_type = 'State Assessment Name'
+left join
+    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as a
+    on co.students_dcid = a.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
+    and sj.discipline = a.discipline
+    and a.value_type = 'Graduation Pathway'
 where co.rn_year = 1
