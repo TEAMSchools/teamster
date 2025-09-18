@@ -8,7 +8,7 @@ select
     os.valuescore as value_score,
     os.valuetext as value_text,
 
-    {# repeated records #}
+    /* repeated records */
     os.textboxes as text_boxes,
     os.checkboxes,
 from {{ ref("stg_schoolmint_grow__observations") }} as o
