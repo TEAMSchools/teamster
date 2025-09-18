@@ -19,6 +19,8 @@ with
         union all
         select '4-8' as band, grade_level,
         from unnest([4, 5, 6, 7, 8]) as grade_level
+        union all
+        select '9' as band, 9 as grade_level
     ),
 
     goals as (
@@ -29,10 +31,14 @@ with
             gb.band,
 
             case
-                g.illuminate_subject_area
-                when 'Text Study'
+                when
+                    g.illuminate_subject_area like 'English%'
+                    or g.illuminate_subject_area = 'Text Study'
                 then 'Reading'
-                when 'Mathematics'
+                when
+                    g.illuminate_subject_area like 'Algebra%'
+                    or g.illuminate_subject_area like 'Geometry%'
+                    or g.illuminate_subject_area = 'Mathematics'
                 then 'Math'
                 else g.illuminate_subject_area
             end as `subject`,
@@ -158,7 +164,7 @@ with
             test_round = 'BOY'
             and rn_subj_round = 1
             and sublevel_number_with_typical is not null
-            and student_grade_int between 0 and 2
+            and student_grade_int in (0, 1, 2, 9)
     ),
 
     roster as (
@@ -213,7 +219,7 @@ with
                 then true
                 when
                     coalesce(st.assessment_type, ir.assessment_type) = 'i-Ready BOY'
-                    and co.grade_level <= 3
+                    and (co.grade_level <= 3 or co.grade_level = 9)
                     and ir.is_approaching_int = 1
                 then true
                 else false
@@ -260,7 +266,7 @@ with
         where
             co.rn_year = 1
             and co.enroll_status = 0
-            and co.grade_level between 3 and 8
+            and co.grade_level between 3 and 9
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
 
         union all
@@ -468,21 +474,20 @@ select
         then 'Bucket 2'
         when
             r.region in ('Newark', 'Camden')
-            and r.grade_level between 0 and 3
             and r.is_bucket2_eligible
             and r.rank_scale_score > g.n_bubble_to_move
         then 'Bucket 3'
         when
             r.region in ('Newark', 'Camden')
             and r.subject = 'Math'
-            and r.grade_level between 4 and 8
+            and r.grade_level between 4 and 9
             and r.is_bucket2_eligible
             and r.benchmark_assessment_type = 'i-Ready BOY'
         then 'Bucket 3'
         when
             r.region = 'Newark'
             and r.subject = 'Reading'
-            and r.grade_level between 4 and 8
+            and r.grade_level between 4 and 9
             and r.is_bucket2_eligible
             and r.benchmark_assessment_type = 'i-Ready BOY'
         then 'Bucket 3'
