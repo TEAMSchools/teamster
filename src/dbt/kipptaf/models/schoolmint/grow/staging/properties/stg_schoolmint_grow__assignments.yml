@@ -4,6 +4,10 @@ models:
     columns:
       - name: assignment_id
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: name
         data_type: string
       - name: coaching_activity
