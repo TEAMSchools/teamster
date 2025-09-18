@@ -109,7 +109,6 @@ with
                 englishlearneraccommodatedresponses as numeric
             ) as englishlearneraccommodatedresponses,
             cast(humanreaderorhumansigner as numeric) as humanreaderorhumansigner,
-            cast(localstudentidentifier as numeric) as localstudentidentifier,
             cast(mathematicsresponse as numeric) as mathematicsresponse,
             cast(mathematicsresponseel as numeric) as mathematicsresponseel,
             cast(
@@ -162,6 +161,9 @@ with
             cast(unit4totaltestitems as numeric) as unit4totaltestitems,
             cast(voidscorereason as numeric) as voidscorereason,
 
+            cast(
+                cast(localstudentidentifier as numeric) as int
+            ) as localstudentidentifier,
             cast(
                 cast(shipreportdistrictcode as numeric) as int
             ) as shipreportdistrictcode,
