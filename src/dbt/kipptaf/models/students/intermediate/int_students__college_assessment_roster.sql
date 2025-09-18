@@ -60,6 +60,34 @@ select
 
     concat(e.grade_level, ' ', a.test_month) as test_admin_for_over_time,
 
+    case
+        a.test_month
+        when 'August'
+        then 1
+        when 'September'
+        then 2
+        when 'October'
+        then 3
+        when 'November'
+        then 4
+        when 'December'
+        then 5
+        when 'January'
+        then 6
+        when 'February'
+        then 7
+        when 'March'
+        then 8
+        when 'April'
+        then 9
+        when 'May'
+        then 10
+        when 'June'
+        then 11
+        when 'July'
+        then 12
+    end as month_order,
+
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     {{ ref("int_assessments__college_assessment") }} as a
