@@ -237,7 +237,12 @@ select
     *,
 
     max(met_min_score_int) over (
-        partition by student_number, score_type order by expected_order
+        partition by
+            student_number,
+            expected_score_type,
+            expected_metric_name,
+            expected_score_category
+        order by expected_order
     ) as running_met_min_score,
 
 from met_admin
