@@ -165,13 +165,17 @@ with
             metric_min_score,
             metric_pct_goal,
 
-            if(score >= metric_min_score, 1, 0) as met_min_score_int,
-            if(metric_min_score is not null, 1, 0) as denominator_int,
+            if(score >= metric_min_score, student_number, null) as met_min_score,
+            if(metric_min_score is not null, student_number, null) as denominator,
 
         from goals_check
     )
 
-select
+select *
+from
+    met_min_score
+
+    {# select
     state,
     graduation_year,
     test_type,
@@ -187,8 +191,8 @@ select
 
     avg(metric_min_score) as metric_min_score,
     avg(metric_pct_goal) as metric_pct_goal,
-    sum(met_min_score_int) as total_students_met,
-    sum(denominator_int) as total_students,
+    count(distinct met_min_score) as total_students_met,
+    sum(count denominator_int) as total_students,
 
 from met_min_score
 group by
@@ -267,3 +271,5 @@ group by
     score_category,
     test_admin_for_over_time,
     metric_name
+ #}
+    
