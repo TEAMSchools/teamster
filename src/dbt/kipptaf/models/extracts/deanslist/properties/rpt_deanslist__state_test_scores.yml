@@ -5,7 +5,7 @@ models:
       contract:
         enforced: true
     columns:
-      - name: student_number
+      - name: localstudentidentifier
         data_type: int64
       - name: academic_year
         data_type: string
@@ -20,7 +20,7 @@ models:
       - name: test_name
         data_type: string
       - name: scale_score
-        data_type: float64
+        data_type: numeric
       - name: proficiency_level
         data_type: string
       - name: is_proficient

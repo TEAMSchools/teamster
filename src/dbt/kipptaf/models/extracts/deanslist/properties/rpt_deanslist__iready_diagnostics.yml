@@ -32,9 +32,9 @@ models:
       - name: overall_placement_display
         data_type: string
       - name: pct_progress_typical
-        data_type: float64
+        data_type: numeric
       - name: pct_progress_stretch
-        data_type: float64
+        data_type: numeric
       - name: score_display
         data_type: string
       - name: domain

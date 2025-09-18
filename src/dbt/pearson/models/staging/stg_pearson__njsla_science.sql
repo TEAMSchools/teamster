@@ -72,12 +72,14 @@ with
             cast(accountableschoolcode as int) as accountableschoolcode,
             cast(federalraceethnicity as int) as federalraceethnicity,
             cast(gradelevelwhenassessed as int) as gradelevelwhenassessed,
+            cast(localstudentidentifier as int) as localstudentidentifier,
             cast(shipreportdistrictcode as int) as shipreportdistrictcode,
             cast(shipreportschoolcode as int) as shipreportschoolcode,
             cast(statestudentidentifier as int) as statestudentidentifier,
             cast(testingdistrictcode as int) as testingdistrictcode,
             cast(testingorganizationaltype as int) as testingorganizationaltype,
             cast(testingschoolcode as int) as testingschoolcode,
+
             cast(colorcontrast as numeric) as colorcontrast,
             cast(elaconstructedresponse as numeric) as elaconstructedresponse,
             cast(elalconstructedresponse as numeric) as elalconstructedresponse,
@@ -95,7 +97,6 @@ with
                 homelessprimarynighttimeresidence as numeric
             ) as homelessprimarynighttimeresidence,
             cast(humanreaderorhumansigner as numeric) as humanreaderorhumansigner,
-            cast(localstudentidentifier as numeric) as localstudentidentifier,
             cast(
                 mathematics_scienceaccommodatedresponse as numeric
             ) as mathematics_scienceaccommodatedresponse,

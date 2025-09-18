@@ -78,6 +78,7 @@ with
             cast(accountableschoolcode as int) as accountableschoolcode,
             cast(federalraceethnicity as int) as federalraceethnicity,
             cast(gradelevelwhenassessed as int) as gradelevelwhenassessed,
+            cast(localstudentidentifier as int) as localstudentidentifier,
             cast(
                 responsibleaccountabledistrictcode as int
             ) as responsibleaccountabledistrictcode,
@@ -109,7 +110,6 @@ with
                 englishlearneraccommodatedresponses as numeric
             ) as englishlearneraccommodatedresponses,
             cast(humanreaderorhumansigner as numeric) as humanreaderorhumansigner,
-            cast(localstudentidentifier as numeric) as localstudentidentifier,
             cast(mathematicsresponse as numeric) as mathematicsresponse,
             cast(mathematicsresponseel as numeric) as mathematicsresponseel,
             cast(

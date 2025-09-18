@@ -53,21 +53,21 @@ models:
         data_type: int64
       - name: e2_pct
         data_type: int64
-      - name: q1_pct
+      - name: Q1_pct
         data_type: float64
-      - name: q1_letter
+      - name: Q1_letter
         data_type: string
-      - name: q2_pct
+      - name: Q2_pct
         data_type: float64
-      - name: q2_letter
+      - name: Q2_letter
         data_type: string
-      - name: q3_pct
+      - name: Q3_pct
         data_type: float64
-      - name: q3_letter
+      - name: Q3_letter
         data_type: string
-      - name: q4_pct
+      - name: Q4_pct
         data_type: float64
-      - name: q4_letter
+      - name: Q4_letter
         data_type: string
       - name: y1_pct
         data_type: float64
@@ -83,3 +83,13 @@ models:
         data_type: string
       - name: ctz_rt4
         data_type: string
+      - name: h_rt1
+        data_type: float64
+      - name: h_rt2
+        data_type: float64
+      - name: h_rt3
+        data_type: float64
+      - name: h_rt4
+        data_type: float64
+      - name: h_term
+        data_type: float64

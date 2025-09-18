@@ -6,7 +6,7 @@ models:
     columns:
       - name: "`01 Student ID`"
         data_type: int64
-      - name: "`02 Ssid`"
+      - name: "`02 SSID`"
         data_type: int64
       - name: "`03 Last Name`"
         data_type: int64
