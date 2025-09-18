@@ -122,13 +122,60 @@ select
     e.college_match_gpa,
     e.college_match_gpa_bands,
 
+    expected,
+
     f.filter_group,
     f.score_category,
     f.field_name_order,
     f.score,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
-left join focus_scores as f on e.student_number = f.student_number
+cross join
+    unnest(
+        [
+            'g10_7_official_4_1_1',
+            'g10_7_official_4_2_3',
+            'g10_7_official_4_3_4',
+            'g10_8_official_4_1_1',
+            'g10_8_official_4_2_3',
+            'g10_8_official_4_3_4',
+            'g11_10_official_2_1_1',
+            'g11_10_official_2_1_2',
+            'g11_10_official_2_2_2',
+            'g11_10_official_2_2_3',
+            'g11_10_official_2_3_3',
+            'g11_10_official_2_3_4',
+            'g11_11_official_2_1_1',
+            'g11_11_official_2_1_2',
+            'g11_11_official_2_2_2',
+            'g11_11_official_2_2_3',
+            'g11_11_official_2_3_3',
+            'g11_11_official_2_3_4',
+            'g11_3_official_3_1_1',
+            'g11_3_official_3_2_3',
+            'g11_3_official_3_3_4',
+            'g11_5_official_2_1_1',
+            'g11_5_official_2_2_2',
+            'g11_5_official_2_2_3',
+            'g11_5_official_2_3_3',
+            'g11_5_official_2_3_4',
+            'g11_8_official_2_1_1',
+            'g11_8_official_2_2_2',
+            'g11_8_official_2_2_3',
+            'g11_8_official_2_3_3',
+            'g11_8_official_2_3_4',
+            'g11_9_official_2_1_1',
+            'g11_9_official_2_1_2',
+            'g11_9_official_2_2_2',
+            'g11_9_official_2_2_3',
+            'g11_9_official_2_3_3',
+            'g11_9_official_2_3_4'
+        ]
+    ) as expected
+left join
+    focus_scores as f
+    on e.student_number = f.student_number
+    and expected = f.field_name_order
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.graduation_year = {{ var("current_academic_year") + 1 }}
