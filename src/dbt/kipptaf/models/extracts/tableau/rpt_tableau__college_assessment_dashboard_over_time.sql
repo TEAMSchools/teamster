@@ -183,6 +183,7 @@ select
     metric_name,
 
     'State' as grouping_level,
+    'By Admin' as pct_met_category,
 
     avg(metric_min_score) as metric_min_score,
     avg(metric_pct_goal) as metric_pct_goal,
@@ -215,6 +216,7 @@ select
     metric_name,
 
     'Region' as grouping_level,
+    'By Admin' as pct_met_category,
 
     avg(metric_min_score) as metric_min_score,
     avg(metric_pct_goal) as metric_pct_goal,
@@ -247,6 +249,7 @@ select
     metric_name,
 
     'School' as grouping_level,
+    'By Admin' as pct_met_category,
 
     avg(metric_min_score) as metric_min_score,
     avg(metric_pct_goal) as metric_pct_goal,

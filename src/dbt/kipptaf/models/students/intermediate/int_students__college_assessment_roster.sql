@@ -27,6 +27,8 @@ select
     e.graduation_year,
     e.year_in_network,
     e.contact_owner_name,
+    e.college_match_gpa,
+    e.college_match_gpa_bands,
     e.cumulative_y1_gpa,
     e.cumulative_y1_gpa_unweighted,
     e.cumulative_y1_gpa_projected,
