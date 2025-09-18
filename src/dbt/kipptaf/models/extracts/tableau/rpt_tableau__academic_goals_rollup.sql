@@ -164,7 +164,7 @@ with
             test_round = 'BOY'
             and rn_subj_round = 1
             and sublevel_number_with_typical is not null
-            and student_grade_int in (0, 2, 9)
+            and student_grade_int in (0, 1, 2, 9)
     ),
 
     roster as (
