@@ -78,7 +78,6 @@ with
             cast(accountableschoolcode as int) as accountableschoolcode,
             cast(federalraceethnicity as int) as federalraceethnicity,
             cast(gradelevelwhenassessed as int) as gradelevelwhenassessed,
-            cast(localstudentidentifier as int) as localstudentidentifier,
             cast(
                 responsibleaccountabledistrictcode as int
             ) as responsibleaccountabledistrictcode,
@@ -162,6 +161,9 @@ with
             cast(unit4totaltestitems as numeric) as unit4totaltestitems,
             cast(voidscorereason as numeric) as voidscorereason,
 
+            cast(
+                cast(localstudentidentifier as numeric) as int
+            ) as localstudentidentifier,
             cast(
                 cast(shipreportdistrictcode as numeric) as int
             ) as shipreportdistrictcode,

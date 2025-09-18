@@ -72,7 +72,6 @@ with
             cast(accountableschoolcode as int) as accountableschoolcode,
             cast(federalraceethnicity as int) as federalraceethnicity,
             cast(gradelevelwhenassessed as int) as gradelevelwhenassessed,
-            cast(localstudentidentifier as int) as localstudentidentifier,
             cast(shipreportdistrictcode as int) as shipreportdistrictcode,
             cast(shipreportschoolcode as int) as shipreportschoolcode,
             cast(statestudentidentifier as int) as statestudentidentifier,
@@ -152,6 +151,10 @@ with
             cast(unit3numberofattempteditems as numeric) as unit3numberofattempteditems,
             cast(unit3totaltestitems as numeric) as unit3totaltestitems,
             cast(voidscorereason as numeric) as voidscorereason,
+
+            cast(
+                cast(localstudentidentifier as numeric) as int
+            ) as localstudentidentifier,
 
             cast(left(assessmentyear, 4) as int) as academic_year,
 
