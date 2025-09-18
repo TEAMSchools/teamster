@@ -66,7 +66,6 @@ with
             scope as expected_scope,
             score_type as expected_score_type,
             test_admin_for_over_time as expected_admin,
-            test_date as expected_test_date,
 
         from unpivot_scores
     ),
@@ -77,7 +76,6 @@ with
             e.expected_scope,
             e.expected_score_type,
             e.expected_admin,
-            e.expected_test_date,
 
             expected_metric_name,
             expected_score_category,
@@ -123,7 +121,6 @@ with
             a.expected_admin,
             a.expected_metric_name,
             a.expected_score_category,
-            a.expected_test_date,
 
         from {{ ref("int_students__college_assessment_roster") }} as g
         inner join admin_metrics_scaffold as a on g.grade_level = a.expected_grade_level
@@ -153,7 +150,6 @@ with
             b.expected_admin,
             b.expected_metric_name,
             b.expected_score_category,
-            b.expected_test_date,
 
             u.administration_round,
             u.test_type,
@@ -190,7 +186,6 @@ with
             and b.expected_score_type = u.score_type
             and b.expected_score_category = u.score_category
             and b.expected_admin = u.test_admin_for_over_time
-            and b.expected_test_date = u.test_date
         left join
             benchmark_goals as bg
             on u.test_type = bg.expected_test_type
