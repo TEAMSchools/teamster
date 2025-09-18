@@ -4,63 +4,63 @@ models:
       contract:
         enforced: true
     columns:
-      - name: login
+      - name: "`Login`"
         data_type: string
-      - name: sso identifier
+      - name: "`Sso Identifier`"
         data_type: string
-      - name: email
+      - name: "`Email`"
         data_type: string
-      - name: first name
+      - name: "`First Name`"
         data_type: string
-      - name: last name
+      - name: "`Last Name`"
         data_type: string
-      - name: employee number
+      - name: "`Employee Number`"
         data_type: int64
-      - name: user role names
+      - name: "`User Role Names`"
         data_type: string
-      - name: default address location code
+      - name: "`Default Address Location Code`"
         data_type: string
-      - name: default address street 1
+      - name: "`Default Address Street 1`"
         data_type: string
-      - name: default address street 2
+      - name: "`Default Address Street 2`"
         data_type: string
-      - name: default address city
+      - name: "`Default Address City`"
         data_type: string
-      - name: default address state
+      - name: "`Default Address State`"
         data_type: string
-      - name: default address postal code
+      - name: "`Default Address Postal Code`"
         data_type: string
-      - name: default address attention
+      - name: "`Default Address Attention`"
         data_type: string
-      - name: default address name
+      - name: "`Default Address Name`"
         data_type: string
-      - name: status
+      - name: "`Status`"
         data_type: string
-      - name: sage intacct id
+      - name: "`Sage Intacct ID`"
         data_type: int64
-      - name: sage intacct fund
+      - name: "`Sage Intacct Fund`"
         data_type: int64
-      - name: default address country code
+      - name: "`Default Address Country Code`"
         data_type: string
-      - name: authentication method
+      - name: "`Authentication Method`"
         data_type: string
-      - name: generate password and notify user
+      - name: "`Generate Password And Notify User`"
         data_type: string
-      - name: employee payment channel
+      - name: "`Employee Payment Channel`"
         data_type: string
-      - name: expense user
+      - name: "`Expense User`"
         data_type: string
-      - name: purchasing user
+      - name: "`Purchasing User`"
         data_type: string
-      - name: content groups
+      - name: "`Content Groups`"
         data_type: string
-      - name: mention name
+      - name: "`Mention Name`"
         data_type: string
-      - name: school name
+      - name: "`School Name`"
         data_type: string
-      - name: sage intacct program
+      - name: "`Sage Intacct Program`"
         data_type: int64
-      - name: sage intacct department
+      - name: "`Sage Intacct Department`"
         data_type: int64
-      - name: sage intacct location
+      - name: "`Sage Intacct Location`"
         data_type: int64

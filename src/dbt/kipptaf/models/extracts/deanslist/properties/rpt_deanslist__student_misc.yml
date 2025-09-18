@@ -9,7 +9,7 @@ models:
         data_type: int64
       - name: student_number
         data_type: int64
-      - name: sid
+      - name: SID
         data_type: string
       - name: team
         data_type: string
@@ -32,7 +32,7 @@ models:
       - name: advisor_email
         data_type: string
       - name: lunch_balance
-        data_type: float64
+        data_type: numeric
       - name: dob
         data_type: date
       - name: _dbt_source_relation
@@ -45,7 +45,7 @@ models:
         data_type: string
       - name: ktc_counselor_email
         data_type: string
-      - name: gpa_y1
+      - name: GPA_Y1
         data_type: float64
       - name: gpa_term
         data_type: float64

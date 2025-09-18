@@ -18,6 +18,6 @@ models:
       - name: standard_description
         data_type: string
       - name: percent_correct
-        data_type: float64
+        data_type: numeric
       - name: standard_proficiency
         data_type: string
