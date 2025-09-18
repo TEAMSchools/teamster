@@ -187,7 +187,7 @@ select
     avg(metric_min_score) as metric_min_score,
     avg(metric_pct_goal) as metric_pct_goal,
     sum(met_min_score_int) as total_students_met,
-    sum(denominator_int) total_students,
+    sum(denominator_int) as total_students,
 
 from met_min_score
 group by
@@ -219,7 +219,7 @@ select
     avg(metric_min_score) as metric_min_score,
     avg(metric_pct_goal) as metric_pct_goal,
     sum(met_min_score_int) as total_students_met,
-    sum(denominator_int) total_students,
+    sum(denominator_int) as total_students,
 
 from met_min_score
 group by
@@ -251,7 +251,7 @@ select
     avg(metric_min_score) as metric_min_score,
     avg(metric_pct_goal) as metric_pct_goal,
     sum(met_min_score_int) as total_students_met,
-    sum(denominator_int) total_students,
+    sum(denominator_int) as total_students,
 
 from met_min_score
 group by
