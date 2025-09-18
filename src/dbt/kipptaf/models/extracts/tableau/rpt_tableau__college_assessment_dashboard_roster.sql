@@ -6,7 +6,33 @@ with
             score,
             subject_area,
 
-            concat('G', grade_level, test_month, scope, test_type) as field_name,
+            concat(
+                'G',
+                grade_level,
+                ' ',
+                test_month,
+                ' ',
+                scope,
+                ' ',
+                test_type,
+                ' ',
+                subject_area
+            ) as field_name,
+
+            concat(
+                'G',
+                grade_level,
+                ' ',
+                test_month,
+                ' ',
+                scope,
+                ' ',
+                test_type,
+                ' ',
+                subject_area,
+                ' ',
+                score_category
+            ) as expected_field_name,
 
             concat(scope, ' ', subject_area, ' ', score_category) as filter_group,
 
@@ -38,6 +64,63 @@ with
             graduation_year = {{ var("current_academic_year") + 1 }} and scope != 'ACT'
     ),
 
+    expected_fields as (
+        select distinct
+            'key' as fake_join,
+
+            expected_field_name,
+
+            case
+                when
+                    filter_group in (
+                        'SAT Combined Scale Score',
+                        'PSAT NMSQT Combined Scale Score',
+                        'PSAT10 Combined Scale Score'
+                    )
+                then concat(filter_group_month, '_1')
+
+                when
+                    filter_group in (
+                        'SAT Combined Previous Total Score Change',
+                        'PSAT NMSQT Combined Previous Total Score Change',
+                        'PSAT10 Combined Previous Total Score Change'
+                    )
+                then concat(filter_group_month, '_2')
+
+                when
+                    filter_group in (
+                        'SAT EBRW Scale Score',
+                        'PSAT NMSQT EBRW Scale Score',
+                        'PSAT10 EBRW Scale Score'
+                    )
+                then concat(filter_group_month, '_3')
+
+                when
+                    filter_group in (
+                        'SAT Math Scale Score',
+                        'PSAT NMSQT Math Scale Score',
+                        'PSAT10 Math Scale Score'
+                    )
+                then concat(filter_group_month, '_4')
+            end as field_name_order,
+        from scores
+        where
+            filter_group in (
+                'SAT Combined Scale Score',
+                'SAT Combined Previous Total Score Change',
+                'SAT EBRW Scale Score',
+                'SAT Math Scale Score',
+                'PSAT NMSQT Combined Scale Score',
+                'PSAT NMSQT Combined Previous Total Score Change',
+                'PSAT NMSQT EBRW Scale Score',
+                'PSAT NMSQT Math Scale Score',
+                'PSAT10 Combined Scale Score',
+                'PSAT10 Combined Previous Total Score Change',
+                'PSAT10 EBRW Scale Score',
+                'PSAT10 Math Scale Score'
+            )
+    ),
+
     superscores as (
         select
             student_number, sat_combined_superscore, sat_ebrw_highest, sat_math_highest,
@@ -67,41 +150,12 @@ with
         select
             student_number,
             field_name,
+            expected_field_name,
             subject_area,
             filter_group,
+            field_name
             score_category,
             score,
-
-            case
-                when
-                    filter_group in (
-                        'SAT Combined Scale Score',
-                        'PSAT NMSQT Combined Scale Score',
-                        'PSAT10 Combined Scale Score'
-                    )
-                then concat(filter_group_month, '_1')
-
-                when
-                    filter_group in (
-                        'SAT Combined Previous Total Score Change',
-                        'PSAT NMSQT Combined Previous Total Score Change',
-                        'PSAT10 Combined Previous Total Score Change'
-                    )
-                then concat(filter_group_month, '_2')
-
-                when
-                    filter_group in (
-                        'SAT EBRW Scale Score',
-                        'PSAT NMSQT EBRW Scale Score',
-                        'PSAT10 EBRW Scale Score'
-                    )
-                then concat(filter_group_month, '_3')
-
-                when
-                    filter_group
-                    in ('PSAT NMSQT Math Scale Score', 'PSAT10 Math Scale Score')
-                then concat(filter_group_month, '_4')
-            end as field_name_order,
 
         from scores
         where
@@ -143,58 +197,26 @@ select
     e.college_match_gpa,
     e.college_match_gpa_bands,
 
+    ef.expected_field_name,
+    ef.field_name_order,
+
     s.sat_combined_superscore,
     s.sat_ebrw_highest,
     s.sat_math_highest,
-
-    expected,
 
     f.field_name,
     f.subject_area,
     f.filter_group,
     f.score_category,
-    f.field_name_order,
     f.score,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
+inner join expected_fields as ef on 'key' = fake_join
 left join superscores_dedup as s on e.student_number = s.student_number
-cross join
-    unnest(
-        [
-            'g10_3_official_3_1_1',
-            'g10_3_official_3_2_3',
-            'g10_3_official_3_3_4',
-            'g10_7_official_4_1_1',
-            'g10_7_official_4_2_3',
-            'g10_7_official_4_3_4',
-            'g10_8_official_4_1_1',
-            'g10_8_official_4_2_3',
-            'g10_8_official_4_3_4',
-            'g11_10_official_2_1_1',
-            'g11_10_official_2_1_2',
-            'g11_10_official_2_2_3',
-            'g11_11_official_2_1_1',
-            'g11_11_official_2_1_2',
-            'g11_11_official_2_2_3',
-            'g11_3_official_3_1_1',
-            'g11_3_official_3_2_3',
-            'g11_3_official_3_3_4',
-            'g11_5_official_2_1_1',
-            'g11_5_official_2_1_2',
-            'g11_5_official_2_2_3',
-            'g11_8_official_2_1_1',
-            'g11_8_official_2_2_3',
-            'g11_9_official_2_1_1',
-            'g11_9_official_2_1_2',
-            'g11_9_official_2_2_3',
-            'g12_9_official_2_1_1',
-            'g12_9_official_2_2_3'
-        ]
-    ) as expected
 left join
     focus_scores as f
     on e.student_number = f.student_number
-    and expected = f.field_name_order
+    and ef.expected_field_name = f.expected_field_name
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.graduation_year = {{ var("current_academic_year") + 1 }}
