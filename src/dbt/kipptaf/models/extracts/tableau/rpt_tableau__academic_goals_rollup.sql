@@ -219,7 +219,7 @@ with
                 then true
                 when
                     coalesce(st.assessment_type, ir.assessment_type) = 'i-Ready BOY'
-                    and co.grade_level <= 3
+                    and (co.grade_level <= 3 or co.grade_level = 9)
                     and ir.is_approaching_int = 1
                 then true
                 else false
