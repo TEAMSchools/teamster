@@ -4,6 +4,9 @@ with
             student_number,
             score_category,
             score,
+            subject_area,
+
+            concat('G', grade_level, test_month, scope, test_type) as field_name,
 
             concat(scope, ' ', subject_area, ' ', score_category) as filter_group,
 
@@ -63,6 +66,8 @@ with
     focus_scores as (
         select
             student_number,
+            field_name,
+            subject_area,
             filter_group,
             score_category,
             score,
@@ -144,6 +149,8 @@ select
 
     expected,
 
+    f.field_name,
+    f.subject_area,
     f.filter_group,
     f.score_category,
     f.field_name_order,
