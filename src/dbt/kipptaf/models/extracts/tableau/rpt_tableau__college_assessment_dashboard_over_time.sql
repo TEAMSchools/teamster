@@ -225,8 +225,19 @@ with
             benchmark_goals as bg
             on u.test_type = bg.expected_test_type
             and u.score_type = bg.expected_score_type
+    ),
+
+    met_admin as (
+        select *, if(score >= metric_min_score, 1, 0) as met_min_score_int,
+
+        from roster_and_scores
     )
 
-select *, if(score >= metric_min_score, 1, 0) as met_min_score_int,
+select
+    *,
 
-from roster_and_scores
+    max(met_min_score_int) over (
+        partition by student_number, score_type order by expected_order
+    ) as running_met_min_score,
+
+from met_admin
