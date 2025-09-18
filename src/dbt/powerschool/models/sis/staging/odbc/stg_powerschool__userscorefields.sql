@@ -1,5 +1,4 @@
 select
-    dob,
     gender,
     photolastupdated,
     pscore_legal_first_name,
@@ -10,4 +9,7 @@ select
 
     /* records */
     usersdcid.int_value as usersdcid,
+
+    /* transformations */
+    parse_date('%m/%d/%Y', dob) as dob,
 from {{ source("powerschool_odbc", "src_powerschool__userscorefields") }}

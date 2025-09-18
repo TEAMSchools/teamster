@@ -1,10 +1,12 @@
-version: 2
 models:
   - name: rpt_google_directory__users_import
+    config:
+      contract:
+        enforced: true
     columns:
-      - name: primaryemail
+      - name: primaryEmail
         data_type: string
-      - name: orgunitpath
+      - name: orgUnitPath
         data_type: string
       - name: suspended
         data_type: boolean
@@ -12,17 +14,17 @@ models:
         data_type: boolean
       - name: is_update
         data_type: boolean
-      - name: hashfunction
+      - name: hashFunction
         data_type: string
-      - name: groupkey
+      - name: groupKey
         data_type: string
       - name: name
         data_type: record
-      - name: name.givenname
+      - name: name.givenName
         data_type: string
-      - name: name.familyname
+      - name: name.familyName
         data_type: string
       - name: password
         data_type: string
-      - name: changepasswordatnextlogin
+      - name: changePasswordAtNextLogin
         data_type: boolean
