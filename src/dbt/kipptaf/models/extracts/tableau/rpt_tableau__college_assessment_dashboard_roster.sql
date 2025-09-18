@@ -173,6 +173,39 @@ with
                 'PSAT10 EBRW Scale Score',
                 'PSAT10 Math Scale Score'
             )
+    ),
+
+    students as (
+        select
+            region,
+            schoolid,
+            school,
+            student_number,
+            salesforce_id,
+            student_name,
+            student_first_name,
+            student_last_name,
+            grade_level,
+            student_email,
+            enroll_status,
+            ktc_cohort,
+            graduation_year,
+            year_in_network,
+            iep_status,
+            grad_iep_exempt_status_overall,
+            cumulative_y1_gpa,
+            cumulative_y1_gpa_projected,
+            college_match_gpa,
+            college_match_gpa_bands,
+
+            'key' as fake_join,
+
+        from {{ ref("int_extracts__student_enrollments") }}
+        where
+            academic_year = {{ var("current_academic_year") }}
+            and graduation_year = {{ var("current_academic_year") + 1 }}
+            and school_level = 'HS'
+            and rn_year = 1
     )
 
 select
@@ -210,15 +243,10 @@ select
     f.score_category,
     f.score,
 
-from {{ ref("int_extracts__student_enrollments") }} as e
-inner join expected_fields as ef on 'key' = fake_join
+from students as e
+inner join expected_fields as ef on e.fake_join = ef.fake_join
 left join superscores_dedup as s on e.student_number = s.student_number
 left join
     focus_scores as f
     on e.student_number = f.student_number
     and ef.expected_field_name = f.expected_field_name
-where
-    e.academic_year = {{ var("current_academic_year") }}
-    and e.graduation_year = {{ var("current_academic_year") + 1 }}
-    and e.school_level = 'HS'
-    and e.rn_year = 1
