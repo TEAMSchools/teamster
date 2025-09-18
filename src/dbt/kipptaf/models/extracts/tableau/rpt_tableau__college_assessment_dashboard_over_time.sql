@@ -62,13 +62,22 @@ with
     expected_admins as (
         -- need a distinct list of possible tests to force rows on the main select
         select distinct
-            grade_level, score_type, test_admin_for_over_time as expected_admin,
+            grade_level as expected_grade_level,
+            scope as expected_scope,
+            score_type as expected_score_type,
+            test_admin_for_over_time as expected_admin,
 
         from unpivot_scores
     ),
 
     admin_metrics_scaffold as (
-        select e.grade_level, e.score_type, e.expected_admin, metric_name,
+        select
+            e.expected_grade_level,
+            e.expected_scope,
+            e.expected_score_type,
+            e.expected_admin,
+
+            metric_name,
 
         from expected_admins as e
         cross join unnest(['HS-Ready', 'College-Ready']) as metric_name
@@ -95,11 +104,14 @@ with
             g.graduation_year,
             g.year_in_network,
 
+            a.expected_grade_level,
+            a.expected_scope,
+            a.expected_score_type,
             a.expected_admin,
             a.metric_name,
 
         from {{ ref("int_students__college_assessment_roster") }} as g
-        inner join admin_metrics_scaffold as a on g.grade_level = a.grade_level
+        inner join admin_metrics_scaffold as a on g.grade_level = a.expected_grade_level
     ),
 
     roster_and_scores as (
@@ -120,6 +132,9 @@ with
             b.ktc_cohort,
             b.graduation_year,
             b.year_in_network,
+            b.expected_grade_level,
+            b.expected_scope,
+            b.expected_score_type,
             b.expected_admin,
             b.metric_name,
 
@@ -155,7 +170,7 @@ with
             unpivot_scores as u
             on b.academic_year = u.academic_year
             and b.student_number = u.student_number
-            and b.expected_admin = u.test_admin_for_over_time
+            and b.expected_score_type = u.score_type
         left join
             benchmark_goals as bg
             on u.test_type = bg.expected_test_type
