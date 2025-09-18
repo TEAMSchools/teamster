@@ -456,7 +456,6 @@ select
     g.pct_tested,
     g.n_bubble_to_move,
     g.percent_with_growth_met,
-    g.pct_rank_bfb,
 
     g.percent_with_growth_met - g.pct_proficient as pct_to_grow,
 
