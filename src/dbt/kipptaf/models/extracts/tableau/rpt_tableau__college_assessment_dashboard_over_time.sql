@@ -164,7 +164,7 @@ select
     metric_min_score,
     metric_pct_goal,
 
-    if(score >= metric_min_score, student_number, null) as met_min_score,
-    if(metric_min_score is not null, student_number, null) as denominator,
+    if(score >= metric_min_score, 1, 0) as met_min_score_int,
+    if(metric_min_score is not null, 1, 0) as denominator_int,
 
 from goals_check
