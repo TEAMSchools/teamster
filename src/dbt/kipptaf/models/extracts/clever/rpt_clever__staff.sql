@@ -135,7 +135,7 @@ with
         where g.cn = 'Group Staff NJ Regional'
     )
 
-select
+select distinct  /* some staff are in multiple assignment groups */
     school_id,
     powerschool_teacher_number as staff_id,
     user_principal_name as staff_email,
