@@ -10,4 +10,4 @@ models:
       - name: distinguished_name
         data_type: string
       - name: member
-        data_type: string
+        data_type: array
