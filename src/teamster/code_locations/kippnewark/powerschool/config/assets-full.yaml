@@ -48,6 +48,8 @@ assets:
     partition_column: whenmodified
   - asset_name: users
     partition_column: whenmodified
+  - asset_name: userscorefields
+    partition_column: whenmodified
   - asset_name: u_clg_et_stu
     partition_column: whenmodified
   - asset_name: u_clg_et_stu_alt
@@ -131,8 +133,6 @@ assets:
   # - asset_name: gpstudentwaiver
   #   partition_column: whenmodified
   # - asset_name: s_nj_usr_x
-  #   partition_column: whenmodified
-  # - asset_name: userscorefields
   #   partition_column: whenmodified
   # - asset_name: u_storedgrades_de
   #   partition_column: whenmodified
