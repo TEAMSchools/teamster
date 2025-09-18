@@ -6,7 +6,7 @@ with
                     "schoolmint_grow", "src_schoolmint_grow__assignments"
                 ),
                 partition_by="_id",
-                order_by="_file_name desc",
+                order_by="_dagster_partition_date desc",
             )
         }}
     )
@@ -22,7 +22,7 @@ select
     `type`,
     observation,
 
-    {# records #}
+    /* records */
     user._id as user_id,
     user.name as user_name,
     user.email as user_email,
@@ -37,13 +37,15 @@ select
     progress.percent as progress_percent,
     progress.date as progress_date,
 
-    {# repeated records #}
+    /* repeated records */
     tags,
 
-    timestamp(created) as created,
-    timestamp(lastmodified) as last_modified,
-    timestamp(archivedat) as archived_at,
+    cast(created as timestamp) as created,
+    cast(lastmodified as timestamp) as last_modified,
+    cast(archivedat as timestamp) as archived_at,
 
-    date(timestamp(created), '{{ var("local_timezone") }}') as created_date_local,
+    date(
+        cast(created as timestamp), '{{ var("local_timezone") }}'
+    ) as created_date_local,
 from deduplicate
 where _dagster_partition_archived = 'f'
