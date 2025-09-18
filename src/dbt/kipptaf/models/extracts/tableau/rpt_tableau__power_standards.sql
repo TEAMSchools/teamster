@@ -18,11 +18,11 @@ with
             co.academic_year,
             co.student_number,
             co.state_studentnumber,
-            co.lastfirst as student_name,
+            co.student_name,
             co.advisory_name,
             co.region,
             co.school_level,
-            co.school_abbreviation,
+            co.school as school_abbreviation,
             co.schoolid,
             co.grade_level,
             co.spedlep as iep_status,
@@ -51,7 +51,7 @@ with
                 when asr.performance_band_label_number > 3
                 then 3
             end as growth_band,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
             {{ ref("int_assessments__response_rollup") }} as asr
             on co.student_number = asr.powerschool_student_number
@@ -96,11 +96,11 @@ with
             co.academic_year,
             co.student_number,
             co.state_studentnumber,
-            co.lastfirst as student_name,
+            co.student_name,
             co.advisory_name,
             co.region,
             co.school_level,
-            co.school_abbreviation,
+            co.school as school_abbreviation,
             co.schoolid,
             co.grade_level,
             co.spedlep as iep_status,
@@ -129,7 +129,7 @@ with
                 when asr.performance_band_label_number > 2
                 then 3
             end as growth_band,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
             {{ ref("int_assessments__response_rollup") }} as asr
             on co.student_number = asr.powerschool_student_number
@@ -169,11 +169,11 @@ with
             co.academic_year,
             co.student_number,
             co.state_studentnumber,
-            co.lastfirst as student_name,
+            co.student_name,
             co.advisory_name,
             co.region,
             co.school_level,
-            co.school_abbreviation,
+            co.school as school_abbreviation,
             co.schoolid,
             co.grade_level,
             co.spedlep as iep_status,
@@ -206,7 +206,7 @@ with
                 when asr.performance_band_label_number > 3
                 then 3
             end as growth_band,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
             {{ ref("int_assessments__response_rollup") }} as asr
             on co.student_number = asr.powerschool_student_number
@@ -246,11 +246,11 @@ with
             co.academic_year,
             co.student_number,
             co.state_studentnumber,
-            co.lastfirst as student_name,
+            co.student_name,
             co.advisory_name,
             co.region,
             co.school_level,
-            co.school_abbreviation,
+            co.school as school_abbreviation,
             co.schoolid,
             co.grade_level,
             co.spedlep as iep_status,
@@ -283,7 +283,7 @@ with
                 when asr.performance_band_label_number > 2
                 then 3
             end as growth_band,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
             {{ ref("int_assessments__response_rollup") }} as asr
             on co.student_number = asr.powerschool_student_number

@@ -23,12 +23,12 @@ with
             co.region,
             co.is_self_contained,
             co.school_level,
-            co.school_abbreviation,
+            co.school as school_abbreviation,
             co.grade_level,
             co.advisory_name,
             co.student_number,
             co.state_studentnumber,
-            co.lastfirst as student_name,
+            co.student_name,
             co.special_education_code,
 
             subj as `subject`,
@@ -38,7 +38,7 @@ with
             if(co.lep_status, 'LEP', 'Not LEP') as lep_status,
             if(co.is_504, 'Has 504', 'No 504') as status_504,
 
-            concat(co.lastfirst, ' - ', co.student_number, ' - ', subj) as student,
+            concat(co.student_name, ' - ', co.student_number, ' - ', subj) as student,
 
             case
                 when subj = 'MATH' and nj.asmt_extended_time_math is not null
@@ -84,7 +84,7 @@ with
                 when subj = 'SCI' and co.grade_level = 11
                 then 'SC11'
             end as test_code,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         cross join unnest(['ENG', 'MATH', 'SCI']) as subj
         left join
             courses as c

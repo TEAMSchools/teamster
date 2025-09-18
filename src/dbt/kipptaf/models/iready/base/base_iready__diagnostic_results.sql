@@ -171,6 +171,7 @@ select
     ) as progress_to_stretch,
 
     right(rt.code, 1) as round_number,
+
     coalesce(rt.name, 'Outside Round') as test_round,
 
     if(

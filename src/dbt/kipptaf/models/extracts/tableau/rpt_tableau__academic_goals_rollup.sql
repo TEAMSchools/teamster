@@ -1,52 +1,35 @@
 with
-    subject_croswalk as (
-        select
-            `subject`,
-
-            if(
-                `subject` = 'Reading', 'Text Study', 'Mathematics'
-            ) as illuminate_subject_area,
-        from unnest(['Reading', 'Math']) as `subject`
-    ),
-
-    grade_bands as (
-        select 'K' as band, 0 as grade_level,
-        union all
-        select '1-2' as band, grade_level,
-        from unnest([1, 2]) as grade_level
-        union all
-        select '3' as band, 3 as grade_level,
-        union all
-        select '4-8' as band, grade_level,
-        from unnest([4, 5, 6, 7, 8]) as grade_level
-        union all
-        select '9' as band, 9 as grade_level
-    ),
-
     goals as (
         select
-            g.academic_year,
-            g.region,
+            academic_year,
+            region,
 
-            gb.band,
+            case
+                when grade_level = 0
+                then 'K'
+                when grade_level between 1 and 2
+                then '1-2'
+                when grade_level between 3 and 8
+                then '3-8'
+                else cast(grade_level as string)
+            end as band,
 
             case
                 when
-                    g.illuminate_subject_area like 'English%'
-                    or g.illuminate_subject_area = 'Text Study'
+                    illuminate_subject_area like 'English%'
+                    or illuminate_subject_area = 'Text Study'
                 then 'Reading'
                 when
-                    g.illuminate_subject_area like 'Algebra%'
-                    or g.illuminate_subject_area like 'Geometry%'
-                    or g.illuminate_subject_area = 'Mathematics'
+                    illuminate_subject_area like 'Algebra%'
+                    or illuminate_subject_area like 'Geometry%'
+                    or illuminate_subject_area = 'Mathematics'
                 then 'Math'
-                else g.illuminate_subject_area
+                else illuminate_subject_area
             end as `subject`,
 
-            max(g.grade_band_goal) as grade_band_goal,
-        from {{ ref("int_assessments__academic_goals") }} as g
-        inner join grade_bands as gb on g.grade_level = gb.grade_level
-        group by all
+            max(grade_band_goal) as grade_band_goal,
+        from {{ ref("int_assessments__academic_goals") }}
+        group by academic_year, region, band, `subject`
     ),
 
     state_test_union as (
@@ -171,29 +154,23 @@ with
         select
             co.academic_year,
             co.student_number,
-            co.lastfirst as student_name,
+            co.student_name,
             co.region,
             co.grade_level,
             co.grade_level_prev,
             co.year_in_network,
-            co.school_abbreviation as school,
-
-            gb.band,
-
-            s.subject,
+            co.school as school,
+            co.team as homeroom_section,
+            co.advisor_lastfirst as homeroom_teacher_name,
+            co.iready_subject as `subject`,
 
             cc.sections_section_number as course_section,
             cc.teacher_lastfirst as course_teacher_name,
-
-            hr.sections_section_number as homeroom_section,
-            hr.teacher_lastfirst as homeroom_teacher_name,
 
             st.scale_score as scale_score_state,
             st.is_proficient_int as is_proficient_int_state,
 
             ir.scale_score as scale_score_iready,
-
-            if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
             coalesce(
                 st.assessment_type, ir.assessment_type, 'Untested'
@@ -206,9 +183,20 @@ with
             ) as is_approaching_int,
             coalesce(st.is_below_int, ir.is_below_int) as is_below_int,
 
+            if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+
             if(
                 st.scale_score is not null or ir.scale_score is not null, 1, 0
             ) as is_tested_int,
+
+            case
+                when co.grade_level = 0
+                then 'K'
+                when co.grade_level in (1, 2)
+                then '1-2'
+                when co.grade_level between 3 and 8
+                then '3-8'
+            end as band,
 
             case
                 when
@@ -224,48 +212,30 @@ with
                 then true
                 else false
             end as is_bucket2_eligible,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
-        cross join subject_croswalk as s
-        inner join grade_bands as gb on co.grade_level = gb.grade_level
-        inner join
-            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-            on co.academic_year = sf.academic_year
-            and co.student_number = sf.student_number
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="sf") }}
-            and s.subject = sf.iready_subject
-            and sf.rn_year = 1
-            and not sf.is_exempt_state_testing
+        from {{ ref("int_extracts__student_enrollments_subjects") }} as co
         left join
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
             and co.yearid = cc.cc_yearid
+            and co.illuminate_subject_area = cc.illuminate_subject_area
             and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
-            and s.illuminate_subject_area = cc.illuminate_subject_area
-            and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
-        left join
-            {{ ref("base_powerschool__course_enrollments") }} as hr
-            on co.studentid = hr.cc_studentid
-            and co.yearid = hr.cc_yearid
-            and co.schoolid = hr.cc_schoolid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
-            and hr.cc_course_number = 'HR'
-            and not hr.is_dropped_section
-            and hr.rn_course_number_year = 1
+            and not cc.is_dropped_section
         left join
             state_test_union as st
             on co.student_number = st.student_number
             and co.academic_year = st.academic_year_plus
+            and co.iready_subject = st.subject
             and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
-            and s.subject = st.subject
         left join
             iready as ir
             on co.student_number = ir.student_number
             and co.academic_year = ir.academic_year
-            and s.subject = ir.subject
+            and co.iready_subject = ir.subject
         where
             co.rn_year = 1
             and co.enroll_status = 0
+            and not co.is_exempt_state_testing
             and co.grade_level between 3 and 9
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
 
@@ -274,28 +244,22 @@ with
         select
             co.academic_year,
             co.student_number,
-            co.lastfirst as student_name,
+            co.student_name,
             co.region,
             co.grade_level,
             co.grade_level_prev,
             co.year_in_network,
-            co.school_abbreviation as school,
-
-            gb.band,
-
-            s.subject,
+            co.school as school,
+            co.team as homeroom_section,
+            co.advisor_lastfirst as homeroom_teacher_name,
+            co.iready_subject as `subject`,
 
             cc.sections_section_number as course_section,
             cc.teacher_lastfirst as course_teacher_name,
 
-            hr.sections_section_number as homeroom_section,
-            hr.teacher_lastfirst as homeroom_teacher_name,
-
             null as scale_score_state,
             null as is_proficient_int_state,
             null as scale_score_iready,
-
-            if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
             coalesce(ir.assessment_type, 'Untested') as benchmark_assessment_type,
 
@@ -305,44 +269,38 @@ with
             ir.is_approaching_int,
             ir.is_below_int,
 
+            if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+
             if(ir.scale_score is not null, 1, 0) as is_tested_int,
+
+            case
+                when co.grade_level = 0
+                then 'K'
+                when co.grade_level in (1, 2)
+                then '1-2'
+                when co.grade_level between 3 and 8
+                then '3-8'
+            end as band,
+
             if(ir.is_approaching_int = 1, true, false) as is_bucket2_eligible,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
-        cross join subject_croswalk as s
-        inner join grade_bands as gb on co.grade_level = gb.grade_level
-        inner join
-            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-            on co.academic_year = sf.academic_year
-            and co.student_number = sf.student_number
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="sf") }}
-            and s.subject = sf.iready_subject
-            and sf.rn_year = 1
-            and not sf.is_exempt_state_testing
+        from {{ ref("int_extracts__student_enrollments_subjects") }} as co
         left join
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
             and co.yearid = cc.cc_yearid
+            and co.illuminate_subject_area = cc.illuminate_subject_area
             and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
-            and s.illuminate_subject_area = cc.illuminate_subject_area
-            and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
-        left join
-            {{ ref("base_powerschool__course_enrollments") }} as hr
-            on co.studentid = hr.cc_studentid
-            and co.yearid = hr.cc_yearid
-            and co.schoolid = hr.cc_schoolid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
-            and hr.cc_course_number = 'HR'
-            and not hr.is_dropped_section
-            and hr.rn_course_number_year = 1
+            and not cc.is_dropped_section
         left join
             iready as ir
             on co.student_number = ir.student_number
             and co.academic_year = ir.academic_year
-            and s.subject = ir.subject
+            and co.iready_subject = ir.subject
         where
             co.rn_year = 1
             and co.enroll_status = 0
+            and not co.is_exempt_state_testing
             and co.grade_level between 0 and 2
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
     ),
@@ -352,12 +310,12 @@ with
             *,
 
             rank() over (
-                partition by academic_year, school, grade_level, subject
+                partition by academic_year, school, grade_level, `subject`
                 order by if(is_bucket2_eligible, scale_score_state, null) desc
             ) as rank_scale_score_state,
 
             rank() over (
-                partition by academic_year, school, grade_level, subject
+                partition by academic_year, school, grade_level, `subject`
                 order by if(is_bucket2_eligible, scale_score, null) desc
             ) as rank_scale_score,
         from roster
@@ -384,7 +342,7 @@ with
             and r.subject = g.subject
             and r.academic_year = g.academic_year
             and r.band = g.band
-        group by all
+        group by r.academic_year, r.region, r.subject, r.band, g.grade_band_goal
     ),
 
     school_grade_goals as (
@@ -415,7 +373,14 @@ with
             and r.region = p.region
             and r.subject = p.subject
             and r.band = p.band
-        group by all
+        group by
+            r.academic_year,
+            r.region,
+            r.school,
+            r.grade_level,
+            r.subject,
+            p.bubble_parameter,
+            p.grade_band_goal
     ),
 
     foo as (

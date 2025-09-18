@@ -1,5 +1,6 @@
 with
     overall_filters as (
+        {# TODO: refactor nj_student_tier upstream from int_extracts__student_enrollments_subjects #}
         select
             academic_year,
             student_number,

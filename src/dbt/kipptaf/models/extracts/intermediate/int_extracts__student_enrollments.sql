@@ -90,82 +90,68 @@ with
 
         from {{ ref("stg_powerschool__s_nj_stu_x") }}
         where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
+    ),
+
+    dibels as (
+        select
+            student_number,
+            academic_year,
+            boy_composite,
+            moy_composite,
+            eoy_composite,
+
+            row_number() over (
+                partition by student_number, academic_year order by client_date desc
+            ) as rn_year,
+        from {{ ref("int_amplify__all_assessments") }}
+        where measure_standard = 'Composite'
+    ),
+
+    dibels_recent as (
+        select
+            academic_year,
+            student_number,
+            client_date,
+            measure_standard_level,
+            measure_standard_level_int,
+
+            row_number() over (
+                partition by academic_year, student_number order by client_date desc
+            ) as rn_benchmark,
+        from {{ ref("int_amplify__all_assessments") }}
+        where measure_standard = 'Composite'
     )
 
 select
-    e._dbt_source_relation,
-    e.studentid,
-    e.students_dcid,
-    e.student_number,
+    e.* except (
+        state_studentnumber,
+        lastfirst,
+        last_name,
+        first_name,
+        middle_name,
+        `state`,
+        school_abbreviation,
+        advisory_section_number,
+        student_email_google,
+        salesforce_contact_id,
+        salesforce_contact_df_has_fafsa,
+        salesforce_contact_college_match_display_gpa,
+        salesforce_contact_college_match_gpa_band,
+        salesfoce_contact_owner_name
+    ),
+
     e.lastfirst as student_name,
-    e.last_name as student_last_name,
     e.first_name as student_first_name,
     e.middle_name as student_middle_name,
-    e.enroll_status,
-    e.cohort,
-    e.yearid,
-    e.academic_year,
-    e.entrydate,
-    e.exitdate,
-    e.exitcode,
-    e.exitcomment,
-    e.region,
-    e.school_level,
-    e.schoolid,
-    e.reporting_schoolid,
-    e.school_name,
-    e.school_abbreviation as school,
-    e.grade_level,
-    e.grade_level_prev,
-    e.advisory_name,
-    e.advisory_section_number as team,
-    e.advisor_lastfirst,
+    e.last_name as student_last_name,
     e.student_email_google as student_email,
-    e.student_web_id,
-    e.student_web_password,
-    e.gender,
-    e.ethnicity,
-    e.fedethnicity,
-    e.dob,
-    e.lunch_status,
-    e.spedlep,
-    e.special_education_code,
-    e.lep_status,
-    e.gifted_and_talented,
-    e.is_504,
-    e.is_homeless,
-    e.is_out_of_district,
-    e.is_self_contained,
-    e.is_enrolled_oct01,
-    e.is_enrolled_recent,
-    e.is_enrolled_y1,
-    e.is_retained_year,
-    e.is_retained_ever,
-    e.is_fldoe_fte_all,
-    e.year_in_school,
-    e.year_in_network,
-    e.boy_status,
-    e.rn_year,
-    e.rn_undergrad,
-    e.rn_all,
-    e.code_location,
+    e.school_abbreviation as school,
+    e.advisory_section_number as team,
     e.salesforce_contact_id as salesforce_id,
     e.salesforce_contact_df_has_fafsa as has_fafsa,
     e.salesforce_contact_college_match_display_gpa as college_match_gpa,
     e.salesforce_contact_college_match_gpa_band as college_match_gpa_bands,
     e.salesfoce_contact_owner_name as contact_owner_name,
-    e.ktc_cohort,
-    e.illuminate_student_id,
-    e.contact_1_name,
-    e.contact_1_phone_home,
-    e.contact_1_phone_mobile,
-    e.contact_1_email_current,
-    e.contact_2_name,
-    e.contact_2_phone_home,
-    e.contact_2_phone_mobile,
-    e.contact_2_email_current,
-    e.is_fldoe_fte_2,
-    e.graduation_year,
 
     lc.region as region_official_name,
     lc.deanslist_school_id,
@@ -177,6 +163,8 @@ select
     mt.territory,
 
     hos.head_of_school_preferred_name_lastfirst as hos,
+    hos.school_leader_preferred_name_lastfirst as school_leader,
+    hos.school_leader_sam_account_name as school_leader_tableau_username,
 
     ovg.overgrad_fafsa_opt_out,
 
@@ -200,6 +188,16 @@ select
 
     ny.next_year_school,
     ny.next_year_schoolid,
+
+    dr.measure_standard_level_int as dibels_most_recent_composite_int,
+
+    coalesce(db.boy_composite, 'No Test') as dibels_boy_composite,
+    coalesce(db.moy_composite, 'No Test') as dibels_moy_composite,
+    coalesce(db.eoy_composite, 'No Test') as dibels_eoy_composite,
+
+    coalesce(
+        dr.measure_standard_level, 'No Composite Score Available'
+    ) as dibels_most_recent_composite,
 
     if(
         e.enroll_status = 0 and mc.grad_iep_exempt_overall is not null,
@@ -373,3 +371,13 @@ left join
     graduation_pathway_m as mc
     on e.students_dcid = mc.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="mc") }}
+left join
+    dibels as db
+    on e.student_number = db.student_number
+    and e.academic_year = db.academic_year
+    and db.rn_year = 1
+left join
+    dibels_recent as dr
+    on e.student_number = dr.student_number
+    and e.academic_year = dr.academic_year
+    and dr.rn_benchmark = 1

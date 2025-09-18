@@ -21,8 +21,8 @@ with
                 'No'
             ) as moy_probe_eligible,
 
-        from {{ ref("int_extracts__student_enrollments_subjects") }}
-        where discipline = 'ELA' and enroll_status in (0, 2, 3) and grade_level <= 8
+        from {{ ref("int_extracts__student_enrollments") }}
+        where enroll_status in (0, 2, 3) and grade_level <= 8
     ),
 
     expected_tests as (
@@ -33,7 +33,7 @@ with
             assessment_type,
             admin_season,
             round_number,
-            start_date,
+            `start_date`,
             end_date,
 
             count(*) over (

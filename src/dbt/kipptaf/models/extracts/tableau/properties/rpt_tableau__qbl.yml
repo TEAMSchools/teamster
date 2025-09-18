@@ -1,0 +1,4 @@
+models:
+  - name: rpt_tableau__qbl
+    config:
+      enabled: false

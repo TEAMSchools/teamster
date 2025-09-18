@@ -10,16 +10,14 @@ with
         }}
     ),
 
-    with_code_location as (
-        -- trunk-ignore(sqlfluff/AM04)
-        select *, regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
-        from union_relations
-    )
-
+-- trunk-ignore(sqlfluff/AM04)
 select
     *,
 
     case
-        code_location when 'kippnewark' then 'NJSLA' when 'kippmiami' then 'FL'
+        when _dbt_source_relation like '%kippnewark%'
+        then 'NJSLA'
+        when _dbt_source_relation like '%kippmiami%'
+        then 'FL'
     end as state_assessment_type,
-from with_code_location
+from union_relations
