@@ -126,7 +126,7 @@ models:
       - name: lastorsurname
         data_type: string
       - name: localstudentidentifier
-        data_type: numeric
+        data_type: int64
       - name: mathematicsresponse
         data_type: numeric
       - name: mathematicsresponseel
