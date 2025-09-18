@@ -19,7 +19,8 @@ with
         union all
 
         select
-            employee_id as employee_number,
+            null as employee_number,
+
             given_name,
             sn as family_name_1,
             employee_id as powerschool_teacher_number,
