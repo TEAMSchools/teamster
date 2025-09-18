@@ -224,6 +224,7 @@ with
                 then true
                 else false
             end as is_bucket2_eligible,
+            if(ir.is_below_int = 1, true, false) as is_bucket3_eligible,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         cross join subject_croswalk as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
@@ -307,6 +308,7 @@ with
 
             if(ir.scale_score is not null, 1, 0) as is_tested_int,
             if(ir.is_approaching_int = 1, true, false) as is_bucket2_eligible,
+            if(ir.is_below_int = 1, true, false) as is_bucket3_eligible,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         cross join subject_croswalk as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
@@ -360,6 +362,11 @@ with
                 partition by academic_year, school, grade_level, subject
                 order by if(is_bucket2_eligible, scale_score, null) desc
             ) as rank_scale_score,
+
+            percent_rank() over (
+                partition by academic_year, school, grade_level, subject
+                order by if(is_bucket3_eligible, scale_score, null) desc
+            ) as pct_rank_bfb,
         from roster
     ),
 
@@ -473,7 +480,14 @@ select
             and g.n_bubble_to_move >= r.rank_scale_score
         then 'Bucket 2'
         when
+            r.region in ('Newark')
+            and r.subject = 'Reading'
+            and r.is_bucket2_eligible
+            and r.rank_scale_score > g.n_bubble_to_move
+        then 'Bucket 3'
+        when
             r.region in ('Newark', 'Camden')
+            and r.subject = 'Math'
             and r.is_bucket2_eligible
             and r.rank_scale_score > g.n_bubble_to_move
         then 'Bucket 3'
@@ -490,6 +504,18 @@ select
             and r.grade_level between 4 and 9
             and r.is_bucket2_eligible
             and r.benchmark_assessment_type = 'i-Ready BOY'
+        then 'Bucket 3'
+        when
+            r.region = 'Newark'
+            and r.subject = 'Reading'
+            and r.grade_level = 3
+            and r.pct_rank_bfb <= 0.1
+        then 'Bucket 3'
+        when
+            r.region in ('Newark', 'Camden')
+            and r.subject = 'Math'
+            and r.grade_level = 3
+            and r.pct_rank_bfb <= 0.1
         then 'Bucket 3'
         else 'Bucket 4'
     end as student_tier_calculated,
