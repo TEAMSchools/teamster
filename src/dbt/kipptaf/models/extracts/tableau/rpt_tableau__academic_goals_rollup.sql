@@ -474,7 +474,6 @@ select
         then 'Bucket 2'
         when
             r.region in ('Newark', 'Camden')
-            and r.grade_level between 0 and 3
             and r.is_bucket2_eligible
             and r.rank_scale_score > g.n_bubble_to_move
         then 'Bucket 3'
