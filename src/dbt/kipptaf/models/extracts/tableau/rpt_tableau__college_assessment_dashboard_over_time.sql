@@ -8,6 +8,7 @@ with
         select
             expected_test_type,
             expected_scope,
+            expected_score_type,
             expected_subject_area,
 
             {% for benchmark in comparison_benchmarks %}
@@ -21,31 +22,19 @@ with
             {% endfor %}
 
         from {{ ref("stg_google_sheets__kippfwd_goals") }}
-        where
-            expected_test_type = 'Official'
-            and goal_type = 'Benchmark'
-            and expected_subject_area in ('Composite', 'Combined')
-        group by expected_test_type, expected_scope, expected_subject_area
+        where expected_test_type = 'Official' and goal_type = 'Benchmark'
+        group by
+            expected_test_type,
+            expected_scope,
+            expected_score_type,
+            expected_subject_area
     ),
 
-    unpivot_data as (
+    unpivot_scores as (
         select
             academic_year,
-            academic_year_display,
-            state,
-            region,
-            schoolid,
-            school,
             student_number,
             grade_level,
-            enroll_status,
-            iep_status,
-            is_504,
-            grad_iep_exempt_status_overall,
-            lep_status,
-            ktc_cohort,
-            graduation_year,
-            year_in_network,
             administration_round,
             test_type,
             test_date,
@@ -70,47 +59,83 @@ with
             )
     ),
 
-    metrics as (
-        select
-            e.academic_year,
-            e.academic_year_display,
-            e.state,
-            e.region,
-            e.schoolid,
-            e.school,
-            e.student_number,
-            e.grade_level,
-            e.enroll_status,
-            e.iep_status,
-            e.is_504,
-            e.grad_iep_exempt_status_overall,
-            e.lep_status,
-            e.ktc_cohort,
-            e.graduation_year,
-            e.year_in_network,
-            e.administration_round,
-            e.test_type,
-            e.test_date,
-            e.test_month,
-            e.scope,
-            e.subject_area,
-            e.score_type,
-            e.test_admin_for_over_time,
-            e.score_category,
-            e.score,
+    expected_admins as (
+        -- need a distinct list of possible tests to force rows on the main select
+        select distinct
+            grade_level, score_type, test_admin_for_over_time as expected_admin,
 
-            metric_name,
+        from unpivot_scores
+    ),
 
-        from unpivot_data as e
+    admin_metrics_scaffold as (
+        select e.grade_level, e.score_type, e.expected_admin, metric_name,
+
+        from expected_admins as e
         cross join unnest(['HS-Ready', 'College-Ready']) as metric_name
     ),
 
-    goals_check as (
+    base_roster as (
+        /* open to a better way of doing this: i need to force rows for all possible
+           tests anyone has ever taken */
+        select distinct
+            g.academic_year,
+            g.academic_year_display,
+            g.state,
+            g.region,
+            g.schoolid,
+            g.school,
+            g.student_number,
+            g.grade_level,
+            g.enroll_status,
+            g.iep_status,
+            g.is_504,
+            g.grad_iep_exempt_status_overall,
+            g.lep_status,
+            g.ktc_cohort,
+            g.graduation_year,
+            g.year_in_network,
+
+            a.expected_admin,
+            a.metric_name,
+
+        from {{ ref("int_students__college_assessment_roster") }} as g
+        inner join admin_metrics_scaffold as a on g.grade_level = a.grade_level
+    ),
+
+    roster_and_scores as (
         select
-            e.*,
+            b.academic_year,
+            b.academic_year_display,
+            b.state,
+            b.region,
+            b.schoolid,
+            b.school,
+            b.student_number,
+            b.grade_level,
+            b.enroll_status,
+            b.iep_status,
+            b.is_504,
+            b.grad_iep_exempt_status_overall,
+            b.lep_status,
+            b.ktc_cohort,
+            b.graduation_year,
+            b.year_in_network,
+            b.expected_admin,
+            b.metric_name,
+
+            u.administration_round,
+            u.test_type,
+            u.test_date,
+            u.test_month,
+            u.scope,
+            u.subject_area,
+            u.score_type,
+            u.test_admin_for_over_time,
+            u.score_category,
+            u.score,
 
             case
-                e.metric_name
+                b.metric_name
                 when 'HS-Ready'
                 then bg.hs_ready_min_score
                 when 'College-Ready'
@@ -118,53 +143,28 @@ with
             end as metric_min_score,
 
             case
-                e.metric_name
+                b.metric_name
                 when 'HS-Ready'
                 then bg.hs_ready_pct_goal
                 when 'College-Ready'
                 then bg.college_ready_pct_goal
             end as metric_pct_goal,
 
-        from metrics as e
+        from base_roster as b
+        left join
+            unpivot_scores as u
+            on b.academic_year = u.academic_year
+            and b.student_number = u.student_number
+            and b.expected_admin = u.test_admin_for_over_time
         left join
             benchmark_goals as bg
-            on e.test_type = bg.expected_test_type
-            and e.scope = bg.expected_scope
-            and e.subject_area = bg.expected_subject_area
+            on u.test_type = bg.expected_test_type
+            and u.score_type = bg.expected_score_type
     )
 
 select
-    academic_year,
-    academic_year_display,
-    state,
-    region,
-    schoolid,
-    school,
-    student_number,
-    grade_level,
-    enroll_status,
-    iep_status,
-    is_504,
-    grad_iep_exempt_status_overall,
-    lep_status,
-    ktc_cohort,
-    graduation_year,
-    year_in_network,
-    administration_round,
-    test_type,
-    test_date,
-    test_month,
-    scope,
-    subject_area,
-    score_type,
-    test_admin_for_over_time,
-    score_category,
-    score,
-    metric_name,
-    metric_min_score,
-    metric_pct_goal,
+    *,
 
     if(score >= metric_min_score, 1, 0) as met_min_score_int,
-    if(metric_min_score is not null, 1, 0) as denominator_int,
 
-from goals_check
+from roster_and_scores

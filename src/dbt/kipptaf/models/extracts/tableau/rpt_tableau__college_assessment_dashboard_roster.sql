@@ -65,6 +65,7 @@ with
     ),
 
     expected_fields as (
+        -- need a distinct list of possible tests to force rows on the main select
         select distinct
             'key' as fake_join,
 
