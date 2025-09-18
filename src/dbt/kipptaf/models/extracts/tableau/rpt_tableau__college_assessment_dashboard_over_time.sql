@@ -162,9 +162,6 @@ with
             and u.score_type = bg.expected_score_type
     )
 
-select
-    *,
-
-    if(score >= metric_min_score, 1, 0) as met_min_score_int,
+select *, if(score >= metric_min_score, 1, 0) as met_min_score_int,
 
 from roster_and_scores
