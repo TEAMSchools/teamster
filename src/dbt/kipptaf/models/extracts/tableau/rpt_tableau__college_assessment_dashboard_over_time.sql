@@ -77,10 +77,21 @@ with
             e.expected_score_type,
             e.expected_admin,
 
-            metric_name,
+            expected_metric_name,
+            expected_score_category,
 
         from expected_admins as e
-        cross join unnest(['HS-Ready', 'College-Ready']) as metric_name
+        cross join unnest(['HS-Ready', 'College-Ready']) as expected_metric_name
+        cross join
+            unnest(
+                [
+                    'Scale Score',
+                    'Max Scale Score',
+                    'Superscore',
+                    'Running Max Scale Score',
+                    'Running Superscore'
+                ]
+            ) as expected_score_category
     ),
 
     base_roster as (
@@ -108,7 +119,8 @@ with
             a.expected_scope,
             a.expected_score_type,
             a.expected_admin,
-            a.metric_name,
+            a.expected_metric_name,
+            a.expected_score_category,
 
         from {{ ref("int_students__college_assessment_roster") }} as g
         inner join admin_metrics_scaffold as a on g.grade_level = a.expected_grade_level
@@ -136,7 +148,8 @@ with
             b.expected_scope,
             b.expected_score_type,
             b.expected_admin,
-            b.metric_name,
+            b.expected_metric_name,
+            b.expected_score_category,
 
             u.administration_round,
             u.test_type,
@@ -150,7 +163,7 @@ with
             u.score,
 
             case
-                b.metric_name
+                b.expected_metric_name
                 when 'HS-Ready'
                 then bg.hs_ready_min_score
                 when 'College-Ready'
@@ -158,7 +171,7 @@ with
             end as metric_min_score,
 
             case
-                b.metric_name
+                b.expected_metric_name
                 when 'HS-Ready'
                 then bg.hs_ready_pct_goal
                 when 'College-Ready'
@@ -171,6 +184,8 @@ with
             on b.academic_year = u.academic_year
             and b.student_number = u.student_number
             and b.expected_score_type = u.score_type
+            and b.expected_score_category = u.score_category
+            and b.expected_admin = u.test_admin_for_over_time
         left join
             benchmark_goals as bg
             on u.test_type = bg.expected_test_type
