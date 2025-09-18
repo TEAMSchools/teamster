@@ -113,6 +113,7 @@ select
     e.student_email,
     e.enroll_status,
     e.ktc_cohort,
+    e.graduation_year,
     e.year_in_network,
     e.iep_status,
     e.grad_iep_exempt_status_overall,

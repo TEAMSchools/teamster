@@ -89,24 +89,24 @@ select
     end as month_order,
 
     case
-        when subject_area in ('Combined', 'Composite')
+        when a.subject_area in ('Combined', 'Composite')
         then 1
-        when score_type = 'act_reading'
+        when a.score_type = 'act_reading'
         then 2
-        when score_type = 'act_english'
+        when a.score_type = 'act_english'
         then 3
-        when score_type = 'act_math'
+        when a.score_type = 'act_math'
         then 4
-        when score_type = 'act_science'
+        when a.score_type = 'act_science'
         then 5
-        when subject_area = 'EBRW'
+        when a.subject_area = 'EBRW'
         then 2
-        when subject_area = 'Math'
+        when a.subject_area = 'Math'
         then 3
     end as subject_area_order,
 
     case
-        scope
+        a.scope
         when 'ACT'
         then 1
         when 'SAT'
