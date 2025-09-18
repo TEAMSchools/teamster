@@ -8,11 +8,11 @@ models:
         data_type: string
       - name: org_unit_path
         data_type: string
-      - name: assignedto
+      - name: assignedTo
         data_type: string
-      - name: roleid
+      - name: roleId
         data_type: string
-      - name: orgunitid
+      - name: orgUnitId
         data_type: string
-      - name: scopetype
+      - name: scopeType
         data_type: string
