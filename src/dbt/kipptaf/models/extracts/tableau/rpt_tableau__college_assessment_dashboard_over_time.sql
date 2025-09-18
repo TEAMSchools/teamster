@@ -67,6 +67,34 @@ with
             score_type as expected_score_type,
             test_admin_for_over_time as expected_admin,
 
+            case
+                test_month
+                when 'August'
+                then 1
+                when 'September'
+                then 2
+                when 'October'
+                then 3
+                when 'November'
+                then 4
+                when 'December'
+                then 5
+                when 'January'
+                then 6
+                when 'February'
+                then 7
+                when 'March'
+                then 8
+                when 'April'
+                then 9
+                when 'May'
+                then 10
+                when 'June'
+                then 11
+                when 'July'
+                then 12
+            end as expected_month_order,
+
         from unpivot_scores
     ),
 
@@ -76,9 +104,14 @@ with
             e.expected_scope,
             e.expected_score_type,
             e.expected_admin,
+            e.expected_month_order,
 
             expected_metric_name,
             expected_score_category,
+
+            concat(
+                e.expected_grade_level, '_', e.expected_month_order
+            ) as expected_order,
 
         from expected_admins as e
         cross join unnest(['HS-Ready', 'College-Ready']) as expected_metric_name
@@ -121,6 +154,7 @@ with
             a.expected_admin,
             a.expected_metric_name,
             a.expected_score_category,
+            a.expected_order,
 
         from {{ ref("int_students__college_assessment_roster") }} as g
         inner join admin_metrics_scaffold as a on g.grade_level = a.expected_grade_level
@@ -150,6 +184,7 @@ with
             b.expected_admin,
             b.expected_metric_name,
             b.expected_score_category,
+            b.expected_order,
 
             u.administration_round,
             u.test_type,
