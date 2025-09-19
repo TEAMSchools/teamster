@@ -110,53 +110,54 @@ sources:
         sftp:
           +enabled: false
         odbc:
-          src_powerschool__gpnode:
-            +enabled: false
-          src_powerschool__gpprogresssubject:
-            +enabled: false
-          src_powerschool__gpprogresssubjectearned:
-            +enabled: false
-          src_powerschool__gpprogresssubjectenrolled:
-            +enabled: false
-          src_powerschool__s_nj_crs_x:
-            +enabled: false
-          src_powerschool__s_nj_ren_x:
-            +enabled: false
-          src_powerschool__s_nj_stu_x:
-            +enabled: false
-          src_powerschool__s_stu_x:
-            +enabled: false
-          src_powerschool__studentrace:
-            +enabled: false
-          src_powerschool__gpprogresssubjectrequested:
-            +enabled: false
-          src_powerschool__gpprogresssubjectwaived:
-            +enabled: false
-          src_powerschool__gpprogresssubjwaivedapplied:
-            +enabled: false
-          src_powerschool__gpselectedcrs:
-            +enabled: false
-          src_powerschool__gpselectedcrtype:
-            +enabled: false
-          src_powerschool__gpselector:
-            +enabled: false
-          src_powerschool__gpstudentwaiver:
-            +enabled: false
-          src_powerschool__gptarget:
-            +enabled: false
-          src_powerschool__gpversion:
-            +enabled: false
-          src_powerschool__gradplan:
-            +enabled: false
-          src_powerschool__period:
-            +enabled: false
-          src_powerschool__prefs:
-            +enabled: false
-          src_powerschool__s_nj_usr_x:
-            +enabled: false
-          src_powerschool__sced_code_mapping:
-            +enabled: false
-          src_powerschool__u_def_ext_students:
-            +enabled: false
-          src_powerschool__u_storedgrades_de:
-            +enabled: false
+          powerschool_odbc:
+            src_powerschool__gpnode:
+              +enabled: false
+            src_powerschool__gpprogresssubject:
+              +enabled: false
+            src_powerschool__gpprogresssubjectearned:
+              +enabled: false
+            src_powerschool__gpprogresssubjectenrolled:
+              +enabled: false
+            src_powerschool__s_nj_crs_x:
+              +enabled: false
+            src_powerschool__s_nj_ren_x:
+              +enabled: false
+            src_powerschool__s_nj_stu_x:
+              +enabled: false
+            src_powerschool__s_stu_x:
+              +enabled: false
+            src_powerschool__studentrace:
+              +enabled: false
+            src_powerschool__gpprogresssubjectrequested:
+              +enabled: false
+            src_powerschool__gpprogresssubjectwaived:
+              +enabled: false
+            src_powerschool__gpprogresssubjwaivedapplied:
+              +enabled: false
+            src_powerschool__gpselectedcrs:
+              +enabled: false
+            src_powerschool__gpselectedcrtype:
+              +enabled: false
+            src_powerschool__gpselector:
+              +enabled: false
+            src_powerschool__gpstudentwaiver:
+              +enabled: false
+            src_powerschool__gptarget:
+              +enabled: false
+            src_powerschool__gpversion:
+              +enabled: false
+            src_powerschool__gradplan:
+              +enabled: false
+            src_powerschool__period:
+              +enabled: false
+            src_powerschool__prefs:
+              +enabled: false
+            src_powerschool__s_nj_usr_x:
+              +enabled: false
+            src_powerschool__sced_code_mapping:
+              +enabled: false
+            src_powerschool__u_def_ext_students:
+              +enabled: false
+            src_powerschool__u_storedgrades_de:
+              +enabled: false
