@@ -38,7 +38,6 @@ with
 
             cast(overall_scale_score as int) as overall_scale_score,
             cast(duration_min as int) as duration_min,
-            cast(student_id as int) as student_id,
 
             cast(
                 percent_progress_to_annual_stretch_growth_percent as numeric
@@ -103,6 +102,8 @@ with
             coalesce(
                 most_recent_diagnostic_y_n, most_recent_diagnostic_ytd_y_n
             ) as most_recent_diagnostic_ytd_y_n,
+
+            safe_cast(student_id as int) as student_id,
 
             parse_date('%m/%d/%Y', `start_date`) as `start_date`,
             parse_date('%m/%d/%Y', completion_date) as completion_date,
