@@ -110,68 +110,75 @@ with
                     running_superscore as 'Running Superscore'
                 )
             )
+    ),
+
+    roster as (
+        select
+            e.academic_year,
+            e.academic_year_display,
+            e.state,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.student_number,
+            e.grade_level,
+            e.enroll_status,
+            e.iep_status,
+            e.is_504,
+            e.grad_iep_exempt_status_overall,
+            e.lep_status,
+            e.ktc_cohort,
+            e.graduation_year,
+            e.year_in_network,
+
+            ea.expected_test_academic_year,
+            ea.expected_test_type,
+            ea.expected_test_date,
+            ea.expected_test_month,
+            ea.expected_scope,
+            ea.expected_subject_area,
+            ea.expected_score_type,
+            ea.expected_grade_level,
+            ea.expected_test_admin_for_over_time,
+            ea.expected_metric_name,
+            ea.expected_score_category,
+            ea.expected_metric_min_score,
+            ea.expected_metric_pct_goal,
+
+            s.test_type,
+            s.test_date,
+            s.test_month,
+            s.scope,
+            s.subject_area,
+            s.score_type,
+            s.score_category,
+            s.score,
+
+            if(s.score >= ea.expected_metric_min_score, 1, 0) as met_min_score_int,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join expected_admin_metrics as ea on 'foo' = ea.bar
+        left join
+            scores as s
+            on e.student_number = s.student_number
+            and ea.surrogate_key = s.surrogate_key
+            and ea.expected_score_category = s.score_category
+        where
+            e.academic_year = {{ var("current_academic_year") }}
+            and e.school_level = 'HS'
+            and e.rn_year = 1
     )
 
 select
-    e.academic_year,
-    e.academic_year_display,
-    e.state,
-    e.region,
-    e.schoolid,
-    e.school,
-    e.student_number,
-    e.grade_level,
-    e.enroll_status,
-    e.iep_status,
-    e.is_504,
-    e.grad_iep_exempt_status_overall,
-    e.lep_status,
-    e.ktc_cohort,
-    e.graduation_year,
-    e.year_in_network,
+    *,
 
-    ea.expected_test_academic_year,
-    ea.expected_test_type,
-    ea.expected_test_date,
-    ea.expected_test_month,
-    ea.expected_scope,
-    ea.expected_subject_area,
-    ea.expected_score_type,
-    ea.expected_grade_level,
-    ea.expected_test_admin_for_over_time,
-    ea.expected_metric_name,
-    ea.expected_score_category,
-    ea.expected_metric_min_score,
-    ea.expected_metric_pct_goal,
-
-    s.test_type,
-    s.test_date,
-    s.test_month,
-    s.scope,
-    s.subject_area,
-    s.score_type,
-    s.score_category,
-    s.score,
-
-    if(s.score >= ea.expected_metric_min_score, 1, 0) as met_min_score_int,
-
-    max(if(s.score >= ea.expected_metric_min_score, 1, 0)) over (
+    max(met_min_score_int) over (
         partition by
-            e.student_number,
-            ea.expected_score_type,
-            ea.expected_metric_name,
-            ea.expected_score_category
-        order by ea.expected_test_date
+            student_number,
+            expected_score_type,
+            expected_metric_name,
+            expected_score_category
+        order by expected_test_date
     ) as running_met_min_score,
 
-from {{ ref("int_extracts__student_enrollments") }} as e
-inner join expected_admin_metrics as ea on 'foo' = ea.bar
-left join
-    scores as s
-    on e.student_number = s.student_number
-    and ea.surrogate_key = s.surrogate_key
-    and ea.expected_score_category = s.score_category
-where
-    e.academic_year = {{ var("current_academic_year") }}
-    and e.school_level = 'HS'
-    and e.rn_year = 1
+from roster
