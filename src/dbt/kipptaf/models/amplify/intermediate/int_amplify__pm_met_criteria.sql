@@ -20,6 +20,7 @@ with
             a.end_date,
 
             p.completed_test_round,
+            p.completed_test_round_int,
 
             if(
                 a.measure_standard_score >= g.cumulative_growth_words, 1, 0

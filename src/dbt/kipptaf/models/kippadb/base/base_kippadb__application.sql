@@ -115,6 +115,7 @@ with
 select
     *,
 
+    if(is_matriculated and is_4yr_college, true, false) as is_matriculated_ba,
     if(is_early_action or is_early_decision, true, false) as is_early_action_decision,
     if(is_submitted and is_2yr_college, true, false) as is_submitted_aa,
     if(is_submitted and is_4yr_college, true, false) as is_submitted_ba,

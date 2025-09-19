@@ -19,6 +19,7 @@ with
 
             calendar.week_start_monday,
             calendar.week_end_sunday,
+            calendar.academic_year,
 
             if(seat_tracker.is_staffed, 1, 0) as is_staffed,
         from seat_tracker
@@ -36,5 +37,6 @@ select
     school_id,
     week_start_monday,
     week_end_sunday,
+    academic_year,
     is_staffed,
 from final
