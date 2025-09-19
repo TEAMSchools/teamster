@@ -50,7 +50,7 @@ with
             enr.academic_year_display,
             enr.yearid,
             enr.region,
-            enr.school_level,
+            enr.school_level_alt as school_level,
             enr.schoolid,
             enr.school,
             enr.grade_level,
@@ -131,7 +131,11 @@ with
             and enr.schoolid = gty.schoolid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
             and gty.is_current
-        where enr.rn_year = 1 and not enr.is_out_of_district and enr.enroll_status != -1
+        where
+            enr.rn_year = 1
+            and not enr.is_out_of_district
+            and enr.enroll_status != -1
+            and enr.region != 'Paterson'
     ),
 
     course_enrollments as (

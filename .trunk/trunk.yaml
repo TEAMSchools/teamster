@@ -13,14 +13,14 @@ lint:
     - actionlint@1.7.7
     - git-diff-check
     - gitleaks@8.28.0
-    - hadolint@2.12.1-beta
+    - hadolint@2.13.1
     - isort@6.0.1
     - markdownlint@0.45.0
     - osv-scanner@2.2.2
     - oxipng@9.1.5
     - prettier@3.6.2
-    - pyright@1.1.404
-    - ruff@0.12.10
+    - pyright@1.1.405
+    - ruff@0.13.0
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - sqlfluff@3.4.2

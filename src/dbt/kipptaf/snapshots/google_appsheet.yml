@@ -20,7 +20,9 @@ snapshots:
     config:
       schema: google_appsheet
       strategy: timestamp
-      unique_key: surrogate_key
+      unique_key:
+        - academic_year
+        - staffing_model_id
       updated_at: edited_at
       dbt_valid_to_current: "'9999-12-31'"
       meta:

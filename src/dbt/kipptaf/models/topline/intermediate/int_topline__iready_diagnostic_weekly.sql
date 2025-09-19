@@ -4,6 +4,7 @@ select
     cw.student_name,
     cw.academic_year,
     cw.iready_subject,
+    cw.discipline,
     cw.week_start_monday,
     cw.week_end_sunday,
     cw.week_number_academic_year,

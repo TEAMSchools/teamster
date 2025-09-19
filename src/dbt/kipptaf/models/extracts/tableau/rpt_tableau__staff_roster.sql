@@ -49,6 +49,9 @@ select
     b.level_of_education,
     b.base_remuneration_annual_rate_amount as base_salary,
     b.nj_pension_plan_name,
+    b.memberships,
+    b.is_leader_development_program,
+    b.is_teacher_development_program,
 
     ye.years_at_kipp_total,
     ye.years_teaching_total,

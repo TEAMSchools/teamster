@@ -10,21 +10,22 @@ with
             co.exitdate,
             co.exitcode,
             co.enroll_status,
+            co.next_year_schoolid,
 
             enrollment_day,
 
             1 as is_enrolled_day_int,
 
             if(
-                extract(month from co.enrollment_day) >= 7,
-                extract(year from co.enrollment_day),
-                extract(year from co.enrollment_day) - 1
+                extract(month from enrollment_day) >= 7,
+                extract(year from enrollment_day),
+                extract(year from enrollment_day) - 1
             ) as academic_year,
 
             if(
-                extract(month from co.enrollment_day) < 10,
-                extract(year from co.enrollment_day) - 1,
-                extract(year from co.enrollment_day)
+                extract(month from enrollment_day) < 10,
+                extract(year from enrollment_day) - 1,
+                extract(year from enrollment_day)
             ) as attrition_year,
         from {{ ref("int_extracts__student_enrollments") }} as co
         cross join
@@ -45,7 +46,6 @@ with
     ),
 
     attrition_years_distinct as (
-        {# TODO: explain limitation that requires distinct #}
         select distinct ed.student_number, ed.attrition_year,
         from enrolled_days as ed
         inner join
@@ -67,8 +67,10 @@ with
         from
             unnest(
                 generate_date_array(
-                    {# TODO: comment explaining hard-coded year/date #}
-                    '2022-10-01', current_date('America/New_York'), interval 1 day
+
+                    date({{ var("current_academic_year") - 3 }}, 10, 1),
+                    current_date('America/New_York'),
+                    interval 1 day
                 )
             ) as attrition_day
     ),
@@ -77,49 +79,47 @@ with
         select ayd.student_number, ayd.attrition_year, ac.attrition_day,
         from attrition_years_distinct as ayd
         inner join attrition_calendar as ac on ayd.attrition_year = ac.attrition_year
-    ),
-
-    final as (
-        select
-            s.student_number,
-            s.attrition_year,
-            s.attrition_day,
-
-            coalesce(ed.is_enrolled_day_int, 0) as is_enrolled_day_int,
-
-            last_value(ed.student_name ignore nulls) over (
-                partition by s.student_number order by s.attrition_day
-            ) as student_name,
-
-            last_value(ed.region ignore nulls) over (
-                partition by s.student_number order by s.attrition_day
-            ) as region,
-
-            last_value(ed.school ignore nulls) over (
-                partition by s.student_number order by s.attrition_day
-            ) as school,
-
-            last_value(ed.schoolid ignore nulls) over (
-                partition by s.student_number order by s.attrition_day
-            ) as schoolid,
-
-            last_value(ed.entrydate ignore nulls) over (
-                partition by s.student_number order by s.attrition_day
-            ) as entrydate,
-
-            last_value(ed.exitdate ignore nulls) over (
-                partition by s.student_number order by s.attrition_day
-            ) as exitdate,
-        from attrition_scaffold as s
-        left join
-            enrolled_days as ed
-            on s.student_number = ed.student_number
-            and s.attrition_year = ed.attrition_year
-            and s.attrition_day = ed.enrollment_day
     )
 
-select region, avg(is_enrolled_day_int) as avg_is_enrolled_day,
-from final
-{# TODO: comment explaining hard-coded year/date #}
-where attrition_year = 2024 and attrition_day = '2025-08-22'
-group by region
+select
+    s.student_number,
+    s.attrition_year,
+    s.attrition_day,
+
+    case
+        when s.attrition_day > ed.exitdate and ed.next_year_schoolid = 999999
+        then null
+        when ed.is_enrolled_day_int = 1
+        then 1
+        else 0
+    end as is_enrolled_day_int,
+
+    last_value(ed.student_name ignore nulls) over (
+        partition by s.student_number order by s.attrition_day
+    ) as student_name,
+
+    last_value(ed.region ignore nulls) over (
+        partition by s.student_number order by s.attrition_day
+    ) as region,
+
+    last_value(ed.school ignore nulls) over (
+        partition by s.student_number order by s.attrition_day
+    ) as school,
+
+    last_value(ed.schoolid ignore nulls) over (
+        partition by s.student_number order by s.attrition_day
+    ) as schoolid,
+
+    last_value(ed.entrydate ignore nulls) over (
+        partition by s.student_number order by s.attrition_day
+    ) as entrydate,
+
+    last_value(ed.exitdate ignore nulls) over (
+        partition by s.student_number order by s.attrition_day
+    ) as exitdate,
+from attrition_scaffold as s
+left join
+    enrolled_days as ed
+    on s.student_number = ed.student_number
+    and s.attrition_year = ed.attrition_year
+    and s.attrition_day = ed.enrollment_day

@@ -1,0 +1,57 @@
+version: 2
+models:
+  - name: stg_illuminate__dna_repositories__repository_472
+  - name: stg_illuminate__dna_repositories__repository_471
+  - name: stg_illuminate__dna_repositories__repository_470
+  - name: stg_illuminate__dna_repositories__repository_469
+  - name: stg_illuminate__dna_repositories__repository_468
+  - name: stg_illuminate__dna_repositories__repository_467
+  - name: stg_illuminate__dna_repositories__repository_466
+  - name: stg_illuminate__dna_repositories__repository_465
+  - name: stg_illuminate__dna_repositories__repository_464
+  - name: stg_illuminate__dna_repositories__repository_463
+  - name: stg_illuminate__dna_repositories__repository_462
+  - name: stg_illuminate__dna_repositories__repository_461
+  - name: stg_illuminate__dna_repositories__repository_460
+  - name: stg_illuminate__dna_repositories__repository_459
+  - name: stg_illuminate__dna_repositories__repository_458
+  - name: stg_illuminate__dna_repositories__repository_457
+  - name: stg_illuminate__dna_repositories__repository_456
+  - name: stg_illuminate__dna_repositories__repository_455
+  - name: stg_illuminate__dna_repositories__repository_454
+  - name: stg_illuminate__dna_repositories__repository_453
+  - name: stg_illuminate__dna_repositories__repository_452
+  - name: stg_illuminate__dna_repositories__repository_451
+  - name: stg_illuminate__dna_repositories__repository_450
+  - name: stg_illuminate__dna_repositories__repository_449
+  - name: stg_illuminate__dna_repositories__repository_448
+  - name: stg_illuminate__dna_repositories__repository_447
+  - name: stg_illuminate__dna_repositories__repository_446
+  - name: stg_illuminate__dna_repositories__repository_445
+  - name: stg_illuminate__dna_repositories__repository_444
+  - name: stg_illuminate__dna_repositories__repository_443
+  - name: stg_illuminate__dna_repositories__repository_442
+  - name: stg_illuminate__dna_repositories__repository_441
+  - name: stg_illuminate__dna_repositories__repository_440
+  - name: stg_illuminate__dna_repositories__repository_439
+  - name: stg_illuminate__dna_repositories__repository_438
+  - name: stg_illuminate__dna_repositories__repository_437
+  - name: stg_illuminate__dna_repositories__repository_436
+  - name: stg_illuminate__dna_repositories__repository_435
+  - name: stg_illuminate__dna_repositories__repository_434
+  - name: stg_illuminate__dna_repositories__repository_433
+  - name: stg_illuminate__dna_repositories__repository_432
+  - name: stg_illuminate__dna_repositories__repository_431
+  - name: stg_illuminate__dna_repositories__repository_430
+  - name: stg_illuminate__dna_repositories__repository_429
+  - name: stg_illuminate__dna_repositories__repository_427
+  - name: stg_illuminate__dna_repositories__repository_426
+  - name: stg_illuminate__dna_repositories__repository_428
+    config:
+      enabled: false
+  - name: stg_illuminate__dna_repositories__repository_413
+    config:
+      enabled: false
+  - name: stg_illuminate__dna_repositories__repository_365
+    config:
+      enabled: false

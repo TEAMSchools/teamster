@@ -1,17 +1,15 @@
-import pathlib
-
-from dagster import AssetsDefinition, config_from_files
+from dagster import AssetsDefinition
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf._dbt.assets import manifest
 from teamster.code_locations.kipptaf.tableau.schema import VIEW_COUNT_PER_VIEW_SCHEMA
 from teamster.libraries.sftp.assets import build_sftp_folder_asset
 from teamster.libraries.tableau.assets import build_tableau_workbook_refresh_asset
 
 workbook_refresh_assets: list[AssetsDefinition] = [
-    build_tableau_workbook_refresh_asset(code_location=CODE_LOCATION, **a)
-    for a in config_from_files([f"{pathlib.Path(__file__).parent}/config/assets.yaml"])[
-        "assets"
-    ]
+    build_tableau_workbook_refresh_asset(code_location=CODE_LOCATION, **exposure)
+    for exposure in manifest["exposures"].values()
+    if "tableau" in exposure["meta"]["dagster"].get("kinds", [])
 ]
 
 view_count_per_view = build_sftp_folder_asset(

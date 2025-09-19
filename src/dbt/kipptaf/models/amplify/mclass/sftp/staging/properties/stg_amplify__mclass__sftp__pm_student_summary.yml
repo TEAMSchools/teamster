@@ -2,7 +2,6 @@ version: 2
 models:
   - name: stg_amplify__mclass__sftp__pm_student_summary
     config:
-      enabled: false # TODO: enable for prod when ready
       contract:
         enforced: true
     columns:
@@ -21,16 +20,12 @@ models:
       - name: school_name
         data_type: string
       - name: school_primary_id
-        data_type: string
+        data_type: int64
       - name: student_last_name
         data_type: string
       - name: student_first_name
         data_type: string
-      - name: student_primary_id
-        data_type: string
       - name: enrollment_teacher_name
-        data_type: string
-      - name: enrollment_teacher_staff_id
         data_type: string
       - name: enrollment_class_name
         data_type: string
@@ -39,8 +34,6 @@ models:
       - name: enrollment_grade
         data_type: string
       - name: assessing_teacher_name
-        data_type: string
-      - name: assessing_teacher_staff_id
         data_type: string
       - name: assessment_class_name
         data_type: string
@@ -55,17 +48,17 @@ models:
       - name: pm_period
         data_type: string
       - name: device_date
-        data_type: string
+        data_type: date
       - name: sync_date
-        data_type: string
+        data_type: date
       - name: measure
         data_type: string
       - name: probe_number
-        data_type: string
+        data_type: int64
       - name: total_number_of_probes
-        data_type: string
-      - name: score
-        data_type: string
+        data_type: int64
+      - name: measure_standard_score
+        data_type: numeric
       - name: date_of_birth
         data_type: string
       - name: gender
@@ -96,9 +89,27 @@ models:
         data_type: string
       - name: home_language
         data_type: string
-      - name: secondary_student_id
-        data_type: string
-      - name: additional_student_id
-        data_type: string
       - name: _dagster_partition_key
         data_type: string
+      - name: additional_student_id_primarysisid
+        data_type: int64
+      - name: assessing_teacher_staff_id_teachernumber
+        data_type: string
+      - name: enrollment_teacher_staff_id_teachernumber
+        data_type: string
+      - name: secondary_student_id_stateid
+        data_type: string
+      - name: student_primary_id_studentnumber
+        data_type: int64
+      - name: surrogate_key
+        data_type: string
+      - name: measure_name_code
+        data_type: string
+      - name: measure_name
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: assessment_grade_int
+        data_type: int64
+      - name: enrollment_grade_int
+        data_type: int64

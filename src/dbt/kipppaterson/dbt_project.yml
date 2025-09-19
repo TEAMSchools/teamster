@@ -142,6 +142,8 @@ sources:
               +enabled: false
             src_powerschool__gpprogresssubjectenrolled:
               +enabled: false
+            src_powerschool__gpprogresssubjectrequested:
+              +enabled: false
             src_powerschool__gradecalcformulaweight:
               +enabled: false
             src_powerschool__gradecalcschoolassoc:
@@ -158,13 +160,23 @@ sources:
               +enabled: false
             src_powerschool__gradesectionconfig:
               +enabled: false
+            src_powerschool__gradplan:
+              +enabled: false
             src_powerschool__log:
+              +enabled: false
+            src_powerschool__period:
               +enabled: false
             src_powerschool__pgfinalgrades:
               +enabled: false
+            src_powerschool__prefs:
+              +enabled: false
             src_powerschool__roledef:
               +enabled: false
+            src_powerschool__s_nj_usr_x:
+              +enabled: false
             src_powerschool__s_stu_x:
+              +enabled: false
+            src_powerschool__sced_code_mapping:
               +enabled: false
             src_powerschool__sectionteacher:
               +enabled: false
@@ -182,9 +194,31 @@ sources:
               +enabled: false
             src_powerschool__testscore:
               +enabled: false
+            src_powerschool__userscorefields:
+              +enabled: false
             src_powerschool__u_clg_et_stu:
               +enabled: false
             src_powerschool__u_clg_et_stu_alt:
               +enabled: false
+            src_powerschool__u_def_ext_students:
+              +enabled: false
             src_powerschool__u_studentsuserfields:
+              +enabled: false
+            src_powerschool__u_storedgrades_de:
+              +enabled: false
+            src_powerschool__gpprogresssubjectwaived:
+              +enabled: false
+            src_powerschool__gpprogresssubjwaivedapplied:
+              +enabled: false
+            src_powerschool__gpselectedcrs:
+              +enabled: false
+            src_powerschool__gpselectedcrtype:
+              +enabled: false
+            src_powerschool__gpselector:
+              +enabled: false
+            src_powerschool__gptarget:
+              +enabled: false
+            src_powerschool__gpversion:
+              +enabled: false
+            src_powerschool__gpstudentwaiver:
               +enabled: false
