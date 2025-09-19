@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__miami_k2_iready
     config:

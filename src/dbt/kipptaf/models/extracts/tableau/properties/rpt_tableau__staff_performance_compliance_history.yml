@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__staff_performance_compliance_history
     config:
