@@ -33,7 +33,7 @@ models:
       - name: homeroom_teacher_name
         data_type: string
       - name: scale_score_state
-        data_type: int64
+        data_type: numeric
       - name: is_proficient_int_state
         data_type: int64
       - name: scale_score_iready
@@ -45,7 +45,7 @@ models:
       - name: performance_level
         data_type: int64
       - name: scale_score
-        data_type: int64
+        data_type: numeric
       - name: is_proficient_int
         data_type: int64
       - name: is_approaching_int

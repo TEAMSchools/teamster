@@ -32,3 +32,5 @@ models:
         data_type: boolean
       - name: completion
         data_type: int64
+      - name: survey_response_id
+        data_type: string
