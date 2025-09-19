@@ -4,6 +4,10 @@ models:
     columns:
       - name: measurement_id
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: district
         data_type: string
       - name: name

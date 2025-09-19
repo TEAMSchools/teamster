@@ -78,7 +78,7 @@ where
 
 union all
 
-/* Paterson */
+/* Paterson = all schools in region */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     u.teachernumber as `01 Local User ID`,
@@ -102,3 +102,23 @@ inner join
     and s.state_excludefromreporting = 0
 where
     u._dbt_source_relation like '%kipppaterson%' and (u.ptaccess = 1 or u.psaccess = 1)
+
+union all
+
+/* Temps */
+select
+    -- trunk-ignore-begin(sqlfluff/RF05)
+    employee_id as `01 Local User ID`,
+    powerschool_school_id as `02 Site ID`,
+
+    'School Leadership' as `03 Role Name`,
+
+    concat(
+        {{ current_school_year(var("local_timezone")) }},
+        '-',
+        {{ current_school_year(var("local_timezone")) }} + 1
+    ) as `04 Academic Year`,
+
+    1 as `05 Session Type ID`,
+-- trunk-ignore-end(sqlfluff/RF05)
+from {{ ref("int_people__temp_staff") }}
