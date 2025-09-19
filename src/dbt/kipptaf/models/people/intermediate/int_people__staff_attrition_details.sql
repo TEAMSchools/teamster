@@ -215,6 +215,10 @@ with
             srh.alumni_status,
             srh.worker_original_hire_date as original_hire_date,
 
+            m.memberships,
+            m.is_leader_development_program,
+            m.is_teacher_development_program,
+
             coalesce(srh.years_exp_outside_kipp, 0)
             + cat.years_teaching_at_kipp as total_years_teaching,
         from core_attrition_table as cat
@@ -226,6 +230,10 @@ with
             and cat.employee_number = srh.employee_number
             and srh.job_title != 'Intern'
             and srh.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
+        left join
+            {{ ref("int_adp_workforce_now__employee_memberships_by_ay") }} as m
+            on srh.worker_id = m.associate_id
+            and cat.academic_year = m.academic_year
     ),
 
     ly_combined as (
@@ -256,7 +264,11 @@ with
             level_of_education,
             alumni_status,
             original_hire_date,
+            memberships,
+            is_leader_development_program,
+            is_teacher_development_program,
             total_years_teaching,
+
         from ly_active
 
         union all
@@ -289,6 +301,10 @@ with
             srh.alumni_status,
             srh.worker_original_hire_date as original_hire_date,
 
+            m.memberships,
+            m.is_leader_development_program,
+            m.is_teacher_development_program,
+
             coalesce(srh.years_exp_outside_kipp, 0)
             + cat.years_teaching_at_kipp as total_years_teaching,
         from core_attrition_table as cat
@@ -304,6 +320,10 @@ with
             ly_active as lya
             on cat.academic_year = srh.employee_number
             and cat.employee_number = lya.employee_number
+        left join
+            {{ ref("int_adp_workforce_now__employee_memberships_by_ay") }} as m
+            on srh.worker_id = m.associate_id
+            and cat.academic_year = m.academic_year
         where lya.employee_number is null
     ),
 
@@ -336,6 +356,10 @@ with
             termination_date,
             original_hire_date,
             total_years_teaching,
+
+            memberships,
+            is_leader_development_program,
+            is_teacher_development_program,
 
             if(
                 count(employee_number) over (
@@ -379,5 +403,8 @@ select
     l.original_hire_date,
     l.termination_date,
     l.total_years_teaching,
+    l.memberships,
+    l.is_leader_development_program,
+    l.is_teacher_development_program,
 from ly_deduped as l
 where l.dupe_check != 'dupe'
