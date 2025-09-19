@@ -8,6 +8,7 @@ with
         select
             expected_test_type,
             expected_scope,
+            expected_score_type,
             expected_subject_area,
 
             {% for benchmark in comparison_benchmarks %}
@@ -21,11 +22,12 @@ with
             {% endfor %}
 
         from {{ ref("stg_google_sheets__kippfwd_goals") }}
-        where
-            expected_test_type = 'Official'
-            and goal_type = 'Benchmark'
-            and expected_subject_area in ('Composite', 'Combined')
-        group by expected_test_type, expected_scope, expected_subject_area
+        where expected_test_type = 'Official' and goal_type = 'Benchmark'
+        group by
+            expected_test_type,
+            expected_scope,
+            expected_score_type,
+            expected_subject_area
     ),
 
     unpivot_data as (
