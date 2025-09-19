@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_tableau__powerschool_calendar_day
+    config:
+      contract:
+        enforced: true
     columns:
       - name: date_value
         data_type: date

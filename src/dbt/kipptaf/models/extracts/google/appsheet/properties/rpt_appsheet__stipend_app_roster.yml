@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_appsheet__stipend_app_roster
+    config:
+      contract:
+        enforced: true
     columns:
       - name: employee_number
         data_type: int64

@@ -3,3 +3,5 @@ models:
   - name: rpt_tableau__operations_pm
     config:
       enabled: true
+      contract:
+        enforced: true

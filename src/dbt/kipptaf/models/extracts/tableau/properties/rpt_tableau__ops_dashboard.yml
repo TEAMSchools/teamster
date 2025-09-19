@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_tableau__ops_dashboard
+    config:
+      contract:
+        enforced: true
     columns:
       - name: student_number
         data_type: int64

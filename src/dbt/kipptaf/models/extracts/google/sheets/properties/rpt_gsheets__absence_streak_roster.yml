@@ -3,6 +3,8 @@ models:
   - name: rpt_gsheets__absence_streak_roster
     config:
       enabled: false
+      contract:
+        enforced: true
     columns:
       - name: academic_year
         data_type: int64

@@ -3,6 +3,8 @@ models:
   - name: rpt_tableau__attendance_chronic_absenteeism_log
     config:
       enabled: false
+      contract:
+        enforced: true
     columns:
       - name: student_number
         data_type: int64

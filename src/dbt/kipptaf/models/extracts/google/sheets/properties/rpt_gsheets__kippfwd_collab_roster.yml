@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_gsheets__kippfwd_collab_roster
+    config:
+      contract:
+        enforced: true
     columns:
       - name: salesforce id
         data_type: string

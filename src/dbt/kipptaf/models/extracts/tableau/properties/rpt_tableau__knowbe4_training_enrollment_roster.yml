@@ -1,3 +1,6 @@
 version: 2
 models:
   - name: rpt_tableau__knowbe4_training_enrollment_roster
+    config:
+      contract:
+        enforced: true

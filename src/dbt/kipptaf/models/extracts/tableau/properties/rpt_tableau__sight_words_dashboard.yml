@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_tableau__sight_words_dashboard
+    config:
+      contract:
+        enforced: true
     columns:
       - name: repository_id
         data_type: int64

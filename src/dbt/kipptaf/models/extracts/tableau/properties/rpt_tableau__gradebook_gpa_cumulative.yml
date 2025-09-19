@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_tableau__gradebook_gpa_cumulative
+    config:
+      contract:
+        enforced: true
     columns:
       - name: _dbt_source_relation
         data_type: string

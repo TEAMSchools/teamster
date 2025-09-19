@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_tableau__zendesk_tickets
+    config:
+      contract:
+        enforced: true
     columns:
       - name: ticket_id
         data_type: int64
