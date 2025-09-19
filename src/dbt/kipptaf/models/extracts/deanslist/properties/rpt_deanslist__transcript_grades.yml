@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_deanslist__transcript_grades
     config:

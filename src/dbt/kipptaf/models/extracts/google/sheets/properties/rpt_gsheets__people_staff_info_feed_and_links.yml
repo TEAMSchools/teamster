@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_gsheets__people_staff_info_feed_and_links
     config:

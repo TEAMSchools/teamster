@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_deanslist__hs_transcript_programs
     config:

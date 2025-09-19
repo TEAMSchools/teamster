@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__academic_goals_rollup
     config:

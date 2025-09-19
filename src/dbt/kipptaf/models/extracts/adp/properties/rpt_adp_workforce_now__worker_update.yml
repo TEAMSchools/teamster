@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_adp_workforce_now__worker_update
     config:

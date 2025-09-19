@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__finance_accounting_people_model
     config:

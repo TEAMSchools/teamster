@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_gsheets__dibels_bm_goals_calculations
     config:

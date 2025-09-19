@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_gsheets__nj_state_test_roster
     config:
