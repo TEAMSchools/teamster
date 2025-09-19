@@ -1,192 +1,145 @@
-{% set pivot_query %}
-    /* generating a dynamic list of scores available */
-    select distinct
-        test_admin_for_roster,
-
-        lower(replace(replace(test_admin_for_roster,'PSAT 8/9','PSAT89'),' ','_')) as test_admin_for_roster_field_name
-    from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }}
-    where rn_undergrad = 1 and ktc_cohort >= {{ var("current_academic_year") }}
-{% endset %}
-
-{% set results = run_query(pivot_query) %}
-{% set tests = [] %}
-{% for row in results %}
-    {% set label = row[0] %}
-    {% set prefix = row[1] %}
-    {% do tests.append({"label": label, "prefix": prefix}) %}
-{% endfor %}
-
 with
-    superscore_pivot as (
+    scores as (
         select
-            student_number,
-            psat89_combined_superscore,
-            psat10_combined_superscore,
-            psatnmsqt_combined_superscore,
-            sat_combined_superscore,
-            act_composite_superscore,
+            *,
+
+            concat(
+                expected_field_name, ' ', expected_score_category
+            ) as expected_field_name_score_category,
+
+            concat(
+                expected_scope, ' ', expected_subject_area, ' ', expected_score_category
+            ) as expected_filter_group,
+
         from
-            {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} pivot (
-                avg(superscore) for scope in (
-                    'PSAT 8/9' as psat89_combined_superscore,
-                    'PSAT10' as psat10_combined_superscore,
-                    'PSAT NMSQT' as psatnmsqt_combined_superscore,
-                    'SAT' as sat_combined_superscore,
-                    'ACT' as act_composite_superscore
+            {{ ref("int_students__college_assessment_roster") }} unpivot (
+                score for expected_score_category in (
+                    scale_score as 'Scale Score',
+                    max_scale_score as 'Max Scale Score',
+                    superscore as 'Superscore',
+                    previous_total_score_change as 'Previous Total Score Change'
                 )
             )
-        where subject_area in ('Combined', 'Composite')
+        where
+            graduation_year = {{ var("current_academic_year") + 1 }} and scope != 'ACT'
     ),
 
-    max_scale_score_pivot as (
+    expected_admins as (
+        -- need a distinct list of possible tests to force rows on the main select
+        select distinct
+            surrogate_key,
+            expected_test_type,
+            expected_scope,
+            expected_score_type,
+            expected_subject_area,
+            expected_grade_level,
+            expected_test_date,
+            expected_test_month,
+            expected_field_name,
+            expected_admin_order,
+            expected_filter_group_month,
+            expected_score_category,
+            expected_field_name_score_category,
+            expected_filter_group,
+
+            'foo' as bar,
+
+        from scores
+        where
+            expected_filter_group in (
+                'SAT Combined Scale Score',
+                'SAT Combined Previous Total Score Change',
+                'SAT EBRW Scale Score',
+                'SAT Math Scale Score',
+                'PSAT NMSQT Combined Scale Score',
+                'PSAT NMSQT Combined Previous Total Score Change',
+                'PSAT NMSQT EBRW Scale Score',
+                'PSAT NMSQT Math Scale Score',
+                'PSAT10 Combined Scale Score',
+                'PSAT10 Combined Previous Total Score Change',
+                'PSAT10 EBRW Scale Score',
+                'PSAT10 Math Scale Score'
+            )
+    ),
+
+    superscores as (
         select
-            student_number,
-            psat89_ebrw_max_score,
-            psat89_math_section_max_score,
-            psat10_ebrw_max_score,
-            psat10_math_section_max_score,
-            psatnmsqt_ebrw_max_score,
-            psatnmsqt_math_section_max_score,
-            sat_ebrw_max_score,
-            sat_math_max_score,
-            act_math_max_score,
-            act_reading_max_score,
-            act_english_max_score,
-            act_science_max_score,
+            student_number, sat_combined_superscore, sat_ebrw_highest, sat_math_highest,
+
         from
-            {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} pivot (
-                avg(max_scale_score) for score_type in (
-                    'psat89_ebrw' as psat89_ebrw_max_score,
-                    'psat89_math_section' as psat89_math_section_max_score,
-                    'psat10_ebrw' as psat10_ebrw_max_score,
-                    'psat10_math_section' as psat10_math_section_max_score,
-                    'psatnmsqt_ebrw' as psatnmsqt_ebrw_max_score,
-                    'psatnmsqt_math_section' as psatnmsqt_math_section_max_score,
-                    'sat_ebrw' as sat_ebrw_max_score,
-                    'sat_math' as sat_math_max_score,
-                    'act_math' as act_math_max_score,
-                    'act_reading' as act_reading_max_score,
-                    'act_english' as act_english_max_score,
-                    'act_science' as act_science_max_score
+            scores pivot (
+                avg(score) for expected_filter_group in (
+                    'SAT Combined Superscore' as sat_combined_superscore,
+                    'SAT EBRW Max Scale Score' as sat_ebrw_highest,
+                    'SAT Math Max Scale Score' as sat_math_highest
                 )
             )
-        where subject_area not in ('Combined', 'Composite')
     ),
 
-    max_scale_score_dedup as (
+    superscores_dedup as (
         select
             student_number,
-            avg(psat89_ebrw_max_score) as psat89_ebrw_max_score,
-            avg(psat89_math_section_max_score) as psat89_math_section_max_score,
-            avg(psat10_ebrw_max_score) as psat10_ebrw_max_score,
-            avg(psat10_math_section_max_score) as psat10_math_section_max_score,
-            avg(psatnmsqt_ebrw_max_score) as psatnmsqt_ebrw_max_score,
-            avg(psatnmsqt_math_section_max_score) as psatnmsqt_math_section_max_score,
-            avg(sat_ebrw_max_score) as sat_ebrw_max_score,
-            avg(sat_math_max_score) as sat_math_max_score,
-            avg(act_math_max_score) as act_math_max_score,
-            avg(act_reading_max_score) as act_reading_max_score,
-            avg(act_english_max_score) as act_english_max_score,
-            avg(act_science_max_score) as act_science_max_score,
-        from max_scale_score_pivot
+
+            avg(sat_combined_superscore) as sat_combined_superscore,
+            avg(sat_ebrw_highest) as sat_ebrw_highest,
+            avg(sat_math_highest) as sat_math_highest,
+
+        from superscores
         group by student_number
     )
 
 select
-    b.region,
-    b.schoolid,
-    b.school,
-    b.student_number,
-    b.salesforce_id,
-    b.student_name,
-    b.student_first_name,
-    b.student_last_name,
-    b.grade_level,
-    b.student_email,
-    b.enroll_status,
-    b.ktc_cohort,
-    b.year_in_network,
-    b.iep_status,
-    b.grad_iep_exempt_status_overall,
-    b.cumulative_y1_gpa,
-    b.cumulative_y1_gpa_projected,
-    b.college_match_gpa,
-    b.college_match_gpa_bands,
+    e.region,
+    e.schoolid,
+    e.school,
+    e.student_number,
+    e.salesforce_id,
+    e.student_name,
+    e.student_first_name,
+    e.student_last_name,
+    e.grade_level,
+    e.student_email,
+    e.enroll_status,
+    e.ktc_cohort,
+    e.graduation_year,
+    e.year_in_network,
+    e.iep_status,
+    e.grad_iep_exempt_status_overall,
+    e.cumulative_y1_gpa,
+    e.cumulative_y1_gpa_projected,
+    e.college_match_gpa,
+    e.college_match_gpa_bands,
 
-    s.psat89_combined_superscore,
-    s.psat10_combined_superscore,
-    s.psatnmsqt_combined_superscore,
+    ea.expected_test_type,
+    ea.expected_scope,
+    ea.expected_score_type,
+    ea.expected_subject_area,
+    ea.expected_grade_level,
+    ea.expected_test_date,
+    ea.expected_test_month,
+    ea.expected_field_name,
+    ea.expected_admin_order,
+    ea.expected_filter_group_month,
+    ea.expected_score_category,
+    ea.expected_field_name_score_category,
+    ea.expected_filter_group,
+
     s.sat_combined_superscore,
-    s.act_composite_superscore,
+    s.sat_ebrw_highest,
+    s.sat_math_highest,
 
-    m.psat89_ebrw_max_score,
-    m.psat89_math_section_max_score,
-    m.psat10_ebrw_max_score,
-    m.psat10_math_section_max_score,
-    m.psatnmsqt_ebrw_max_score,
-    m.psatnmsqt_math_section_max_score,
-    m.sat_ebrw_max_score,
-    m.sat_math_max_score,
-    m.act_math_max_score,
-    m.act_reading_max_score,
-    m.act_english_max_score,
-    m.act_science_max_score,
+    a.score,
 
-    {% for test in tests %}
-        avg(
-            case
-                when
-                    b.test_admin_for_roster
-                    = '{{ test.label | replace("' ", " '' ") }}' then b.scale_score
-            end
-        ) as {{ test.prefix }}_scale_score,
-        avg(
-            case
-                when b.test_admin_for_roster = '{{ test.label | replace(" '", "''") }}'
-                then b.previous_total_score_change
-            end
-        ) as {{ test.prefix }}_previous_total_score_change
-        {% if not loop.last %},{% endif %}
-    {% endfor %}
-
-from {{ ref("rpt_tableau__college_assessment_dashboard_v3") }} as b
-left join superscore_pivot as s on b.student_number = s.student_number
-left join max_scale_score_dedup as m on b.student_number = m.student_number
-where b.rn_undergrad = 1 and b.ktc_cohort >= {{ var("current_academic_year") }}
-group by
-    b.region,
-    b.schoolid,
-    b.school,
-    b.student_number,
-    b.salesforce_id,
-    b.student_name,
-    b.student_first_name,
-    b.student_last_name,
-    b.grade_level,
-    b.student_email,
-    b.enroll_status,
-    b.ktc_cohort,
-    b.year_in_network,
-    b.iep_status,
-    b.grad_iep_exempt_status_overall,
-    b.cumulative_y1_gpa,
-    b.cumulative_y1_gpa_projected,
-    b.college_match_gpa,
-    b.college_match_gpa_bands,
-    s.psat89_combined_superscore,
-    s.psat10_combined_superscore,
-    s.psatnmsqt_combined_superscore,
-    s.sat_combined_superscore,
-    s.act_composite_superscore,
-    m.psat89_ebrw_max_score,
-    m.psat89_math_section_max_score,
-    m.psat10_ebrw_max_score,
-    m.psat10_math_section_max_score,
-    m.psatnmsqt_ebrw_max_score,
-    m.psatnmsqt_math_section_max_score,
-    m.sat_ebrw_max_score,
-    m.sat_math_max_score,
-    m.act_math_max_score,
-    m.act_reading_max_score,
-    m.act_english_max_score,
-    m.act_science_max_score
+from {{ ref("int_extracts__student_enrollments") }} as e
+inner join expected_admins as ea on 'foo' = ea.bar
+left join superscores_dedup as s on e.student_number = s.student_number
+left join
+    scores as a
+    on e.student_number = a.student_number
+    and ea.surrogate_key = a.surrogate_key
+    and ea.expected_score_category = a.expected_score_category
+where
+    e.academic_year = {{ var("current_academic_year") }}
+    and e.graduation_year = {{ var("current_academic_year") + 1 }}
+    and e.school_level = 'HS'
+    and e.rn_year = 1
