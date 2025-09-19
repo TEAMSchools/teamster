@@ -121,3 +121,5 @@ models:
         data_type: int64
       - name: enrollment_grade_int
         data_type: int64
+      - name: additional_student_id_sisid
+        data_type: string
