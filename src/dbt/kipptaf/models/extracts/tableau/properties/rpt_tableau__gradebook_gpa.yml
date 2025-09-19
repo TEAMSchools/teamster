@@ -42,7 +42,9 @@ models:
         data_type: string
       - name: hos
         data_type: string
-      - name: region_school_level
+      - name: school_leader
+        data_type: string
+      - name: school_leader_tableau_username
         data_type: string
       - name: year_in_school
         data_type: int64
@@ -74,6 +76,8 @@ models:
         data_type: int64
       - name: ada
         data_type: float64
+      - name: ada_above_or_at_80
+        data_type: boolean
       - name: quarter
         data_type: string
       - name: semester
@@ -85,8 +89,6 @@ models:
       - name: cal_quarter_end_date
         data_type: date
       - name: is_current_quarter
-        data_type: boolean
-      - name: is_quarter_end_date_range
         data_type: boolean
       - name: gpa_for_quarter
         data_type: float64
@@ -100,17 +102,17 @@ models:
         data_type: float64
       - name: gpa_n_failing_y1
         data_type: int64
-      - name: gpa_cumulative_y1_gpa
+      - name: cumulative_y1_gpa
         data_type: float64
-      - name: gpa_cumulative_y1_gpa_unweighted
+      - name: cumulative_y1_gpa_unweighted
         data_type: float64
-      - name: gpa_cumulative_y1_gpa_projected
+      - name: cumulative_y1_gpa_projected
         data_type: float64
-      - name: gpa_cumulative_y1_gpa_projected_s1
+      - name: cumulative_y1_gpa_projected_s1
         data_type: float64
-      - name: gpa_cumulative_y1_gpa_projected_s1_unweighted
+      - name: cumulative_y1_gpa_projected_s1_unweighted
         data_type: float64
-      - name: gpa_core_cumulative_y1_gpa
+      - name: core_cumulative_y1_gpa
         data_type: float64
       - name: sectionid
         data_type: int64
@@ -138,9 +140,7 @@ models:
         data_type: boolean
       - name: nj_student_tier
         data_type: string
-      - name: is_ap_course
-        data_type: boolean
-      - name: tableau_username
+      - name: teacher_tableau_username
         data_type: string
       - name: y1_course_final_percent_grade_adjusted
         data_type: float64
@@ -152,34 +152,14 @@ models:
         data_type: float64
       - name: y1_course_final_grade_points
         data_type: float64
-      - name: quarter_course_in_progress_percent_grade
+      - name: quarter_course_percent_grade
         data_type: float64
-      - name: quarter_course_in_progress_letter_grade
+      - name: quarter_course_letter_grade
         data_type: string
-      - name: quarter_course_in_progress_grade_points
-        data_type: float64
-      - name: quarter_course_in_progress_percent_grade_adjusted
-        data_type: float64
-      - name: quarter_course_in_progress_letter_grade_adjusted
-        data_type: string
-      - name: quarter_course_final_percent_grade
-        data_type: float64
-      - name: quarter_course_final_letter_grade
-        data_type: string
-      - name: quarter_course_final_grade_points
-        data_type: float64
-      - name: quarter_course_percent_grade_that_matters
-        data_type: float64
-      - name: quarter_course_letter_grade_that_matters
-        data_type: string
-      - name: quarter_course_grade_points_that_matters
-        data_type: float64
-      - name: y1_course_in_progress_percent_grade
+      - name: quarter_course_grade_points
         data_type: float64
       - name: y1_course_in_progress_percent_grade_adjusted
         data_type: float64
-      - name: y1_course_in_progress_letter_grade
-        data_type: string
       - name: y1_course_in_progress_letter_grade_adjusted
         data_type: string
       - name: y1_course_in_progress_grade_points
@@ -212,7 +192,5 @@ models:
         data_type: float64
       - name: roster_type
         data_type: string
-      - name: ada_above_or_at_80
-        data_type: boolean
       - name: section_or_period
         data_type: string

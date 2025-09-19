@@ -160,3 +160,5 @@ models:
         data_type: numeric
       - name: form_link
         data_type: string
+      - name: renewal_doc
+        data_type: string

@@ -16,5 +16,5 @@ models:
         data_type: string
       - name: reports_to_formatted_name
         data_type: string
-      - name: ops teammate name
+      - name: "`Ops Teammate Name`"
         data_type: string

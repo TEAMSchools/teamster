@@ -63,11 +63,11 @@ models:
       - name: domain_description
         data_type: string
       - name: percent_correct
-        data_type: float64
+        data_type: numeric
       - name: is_mastery
         data_type: boolean
       - name: performance_band_number
-        data_type: float64
+        data_type: numeric
       - name: performance_band_label
         data_type: string
       - name: is_replacement

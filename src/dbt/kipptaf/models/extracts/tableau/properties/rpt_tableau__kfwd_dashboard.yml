@@ -514,3 +514,21 @@ models:
         data_type: boolean
       - name: has_4yr_ecc_enrollment
         data_type: boolean
+      - name: application_school_name
+        data_type: string
+      - name: entry_school
+        data_type: string
+      - name: exit_school_name
+        data_type: string
+      - name: graduation_year
+        data_type: int64
+      - name: highest_sat_score
+        data_type: numeric
+      - name: is_6yr_grad_any_int
+        data_type: int64
+      - name: is_dlm
+        data_type: boolean
+      - name: powerschool_enroll_status
+        data_type: int64
+      - name: urm_ecc_school
+        data_type: numeric

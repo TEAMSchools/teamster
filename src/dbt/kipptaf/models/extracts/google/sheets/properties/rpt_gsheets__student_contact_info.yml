@@ -35,7 +35,7 @@ models:
       - name: lunch_app_status
         data_type: string
       - name: lunch_balance
-        data_type: float64
+        data_type: numeric
       - name: home_phone
         data_type: string
       - name: mother_cell
@@ -97,4 +97,6 @@ models:
       - name: gifted_and_talented
         data_type: string
       - name: salesforce_contact_id
+        data_type: string
+      - name: home_language
         data_type: string
