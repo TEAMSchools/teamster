@@ -31,57 +31,49 @@ with
         where expected_test_type = 'Official' and goal_type = 'Attempts'
     ),
 
-    expected_admin_metrics as (
-        -- need a distinct list of possible scores and their categories
-        select distinct
-            r.surrogate_key,
-            r.expected_test_academic_year,
-            r.expected_test_type,
-            r.expected_test_date,
-            r.expected_test_month,
-            r.expected_scope,
-            r.expected_subject_area,
-            r.expected_score_type,
-            r.expected_grade_level,
-            r.expected_test_admin_for_over_time,
-
-            'foo' as bar,
-
-            expected_score_category,
-
-            bg.expected_metric_name,
-            bg.min_score as expected_metric_min_score,
-            bg.pct_goal as expected_metric_pct_goal,
-
-        from {{ ref("int_students__college_assessment_roster") }} as r
-        cross join unnest(['Max Scale Score']) as expected_score_category
-        -- must be left join because not all score types have goals
-        left join
-            benchmark_goals as bg
-            on r.expected_test_type = bg.expected_test_type
-            and r.expected_scope = bg.expected_scope
-            and r.expected_score_type = bg.expected_score_type
-            and expected_metric_name = bg.expected_metric_name
-    ),
-
-    scores as (
+    attempts as (
         select
-            academic_year,
-            surrogate_key,
+            _dbt_source_relation,
             student_number,
-            test_type,
-            test_date,
-            test_month,
-            scope,
-            subject_area,
-            score_type,
 
-            score_category,
-            score,
+            attempt_count_ytd,
+
+            case
+                scope
+                when 'act_count_ytd'
+                then 'ACT'
+                when 'sat_count_ytd'
+                then 'SAT'
+                when 'psatnmsqt_count_ytd'
+                then 'PSAT NMSQT'
+                when 'psat10_count_ytd'
+                then 'PSAT10'
+                when 'psat89_count_ytd'
+                then 'PSAT 8/9'
+            end as scope,
 
         from
-            {{ ref("int_students__college_assessment_roster") }}
-            unpivot (score for score_category in (max_scale_score as 'Max Scale Score'))
+            {{ ref("int_students__college_assessment_participation_roster") }} unpivot (
+                attempt_count_ytd for scope in (
+                    psat89_count_ytd,
+                    psat10_count_ytd,
+                    psatnmsqt_count_ytd,
+                    sat_count_ytd,
+                    act_count_ytd
+                )
+            )
+    ),
+
+    attempts_dedup as (
+        select
+            _dbt_source_relation,
+            student_number,
+            scope,
+
+            max(attempt_count_ytd) as attempt_count_ytd,
+
+        from attempts
+        group by _dbt_source_relation, student_number, scope
     ),
 
     roster as (
@@ -103,54 +95,80 @@ with
             e.graduation_year,
             e.year_in_network,
 
-            ea.expected_test_academic_year,
-            ea.expected_test_type,
-            ea.expected_test_date,
-            ea.expected_test_month,
-            ea.expected_scope,
-            ea.expected_subject_area,
-            ea.expected_score_type,
-            ea.expected_grade_level,
-            ea.expected_test_admin_for_over_time,
-            ea.expected_metric_name,
-            ea.expected_score_category,
-            ea.expected_metric_min_score,
-            ea.expected_metric_pct_goal,
+            r.expected_test_type,
+            r.expected_scope,
+            r.expected_subject_area,
+            r.expected_score_type,
 
-            s.test_type,
-            s.test_date,
-            s.test_month,
-            s.scope,
-            s.subject_area,
-            s.score_type,
-            s.score_category,
-            s.score,
+            r.test_type,
+            r.scope,
+            r.subject_area,
+            r.score_type,
 
-            if(s.score >= ea.expected_metric_min_score, 1, 0) as met_min_score_int,
+            bg.expected_metric_name,
+            bg.min_score as expected_metric_min_score,
+            bg.pct_goal as expected_metric_pct_goal,
+
+            avg(
+                if(
+                    bg.expected_metric_name in ('HS-Ready', 'College-Ready'),
+                    r.max_scale_score,
+                    p.attempt_count_ytd
+                )
+            ) as score,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
-        inner join expected_admin_metrics as ea on 'foo' = ea.bar
+        inner join
+            {{ ref("int_students__college_assessment_roster") }} as r
+            on e.student_number = r.student_number
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="r") }}
+            and r.test_type is not null
+            and r.expected_subject_area in ('Composite', 'Combined')
         left join
-            scores as s
-            on e.student_number = s.student_number
-            and ea.surrogate_key = s.surrogate_key
-            and ea.expected_score_category = s.score_category
+            attempts_dedup as p
+            on e.student_number = p.student_number
+            and r.expected_scope = p.scope
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="p") }}
+            and {{ union_dataset_join_clause(left_alias="r", right_alias="p") }}
+        left join
+            benchmark_goals as bg
+            on r.expected_test_type = bg.expected_test_type
+            and r.expected_scope = bg.expected_scope
+            and r.expected_score_type = bg.expected_score_type
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.school_level = 'HS'
             and e.rn_year = 1
+        group by
+            e.academic_year,
+            e.academic_year_display,
+            e.state,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.student_number,
+            e.grade_level,
+            e.enroll_status,
+            e.iep_status,
+            e.is_504,
+            e.grad_iep_exempt_status_overall,
+            e.lep_status,
+            e.ktc_cohort,
+            e.graduation_year,
+            e.year_in_network,
+            r.expected_test_type,
+            r.expected_scope,
+            r.expected_subject_area,
+            r.expected_score_type,
+            r.test_type,
+            r.scope,
+            r.subject_area,
+            r.score_type,
+            bg.expected_metric_name,
+            bg.min_score,
+            bg.pct_goal
     )
 
-select
-    *,
-
-    max(met_min_score_int) over (
-        partition by
-            student_number,
-            expected_score_type,
-            expected_metric_name,
-            expected_score_category
-        order by expected_test_date
-    ) as running_met_min_score,
+select *, if(score >= expected_metric_min_score, 1, 0) as met_min_score_int,
 
 from roster
