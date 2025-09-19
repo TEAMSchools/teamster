@@ -42,8 +42,6 @@ with
             expected_field_name_score_category,
             expected_filter_group,
 
-            'foo' as bar,
-
         from scores
         where
             expected_filter_group in (
@@ -131,7 +129,7 @@ select
     a.score,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
-inner join expected_admins as ea on 'foo' = ea.bar
+inner join expected_admins as ea on e.grade_level = ea.expected_grade_level
 left join superscores_dedup as s on e.student_number = s.student_number
 left join
     scores as a
