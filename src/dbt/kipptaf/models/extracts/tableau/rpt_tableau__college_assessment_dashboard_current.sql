@@ -32,6 +32,7 @@ with
 
     expected_admin_metrics as (
         select
+            r.surrogate_key,
             r.expected_test_academic_year,
             r.expected_test_type,
             r.expected_test_date,
@@ -45,6 +46,8 @@ with
             expected_metric_name,
 
             expected_score_category,
+
+            'foo' as bar,
 
             case
                 expected_metric_name
@@ -85,6 +88,7 @@ with
     scores as (
         select
             academic_year,
+            surrogate_key,
             student_number,
             test_type,
             test_date,
@@ -161,13 +165,12 @@ select
     ) as running_met_min_score,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
-inner join expected_admin_metrics as ea on e.grade_level = ea.expected_grade_level
+inner join expected_admin_metrics as ea on 'foo' = ea.bar
 left join
     scores as s
     on e.student_number = s.student_number
-    and ea.expected_test_academic_year = s.academic_year
-    and ea.expected_score_type = s.score_type
-    and ea.expected_test_date = s.test_date
+    and ea.surrogate_key = s.surrogate_key
+    and ea.expected_score_category = s.score_category
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.school_level = 'HS'

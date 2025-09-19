@@ -191,6 +191,17 @@ select
     s.running_max_scale_score,
     s.running_superscore,
 
+    {{
+        dbt_utils.generate_surrogate_key(
+            [
+                "a.expected_grade_level",
+                "a.expected_test_type",
+                "a.expected_score_type",
+                "a.expected_test_date",
+            ]
+        )
+    }} as surrogate_key,
+
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     additional_fields as a

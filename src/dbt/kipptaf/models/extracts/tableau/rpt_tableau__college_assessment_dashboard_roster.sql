@@ -27,7 +27,7 @@ with
     expected_admins as (
         -- need a distinct list of possible tests to force rows on the main select
         select distinct
-            expected_test_academic_year,
+            surrogate_key,
             expected_test_type,
             expected_scope,
             expected_score_type,
@@ -41,6 +41,8 @@ with
             expected_score_category,
             expected_field_name_score_category,
             expected_filter_group,
+
+            'foo' as bar,
 
         from scores
         where
@@ -77,6 +79,7 @@ with
     superscores_dedup as (
         select
             student_number,
+
             avg(sat_combined_superscore) as sat_combined_superscore,
             avg(sat_ebrw_highest) as sat_ebrw_highest,
             avg(sat_math_highest) as sat_math_highest,
@@ -107,7 +110,6 @@ select
     e.college_match_gpa,
     e.college_match_gpa_bands,
 
-    ea.expected_test_academic_year,
     ea.expected_test_type,
     ea.expected_scope,
     ea.expected_score_type,
@@ -129,12 +131,13 @@ select
     a.score,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
-inner join expected_admins as ea on e.grade_level = ea.expected_grade_level
+inner join expected_admins as ea on 'foo' = ea.bar
 left join superscores_dedup as s on e.student_number = s.student_number
 left join
     scores as a
     on e.student_number = a.student_number
-    and ea.expected_field_name_score_category = a.expected_field_name_score_category
+    and ea.surrogate_key = a.surrogate_key
+    and ea.expected_score_category = a.expected_score_category
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.graduation_year = {{ var("current_academic_year") + 1 }}
