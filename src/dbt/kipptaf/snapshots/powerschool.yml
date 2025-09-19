@@ -16,6 +16,7 @@ snapshots:
       dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
+          group: powerschool
           asset_key:
             - kipptaf
             - powerschool
@@ -37,6 +38,7 @@ snapshots:
       dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
+          group: powerschool
           asset_key:
             - kipptaf
             - powerschool

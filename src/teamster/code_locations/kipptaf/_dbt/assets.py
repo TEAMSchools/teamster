@@ -62,17 +62,18 @@ adp_payroll_dbt_assets = build_dbt_assets(
 
 asset_specs = [
     AssetSpec(
-        key=exposure["meta"]["dagster"]["key"],
+        key=[CODE_LOCATION, "dbt", "exposures", exposure["label"]],
         deps=[
             get_asset_key_for_model(
                 dbt_assets=[core_dbt_assets], model_name=ref["name"]
             )
             for ref in exposure["refs"]
         ],
-        metadata={"url": exposure["url"]},
-        kinds={exposure["meta"]["dagster"]["kinds"]},
+        metadata={"url": exposure.get("url")},
+        kinds=set(exposure["meta"]["dagster"]["kinds"]),
     )
     for exposure in manifest["exposures"].values()
+    if "tableau" not in exposure["meta"]["dagster"]["kinds"]
 ]
 
 assets = [

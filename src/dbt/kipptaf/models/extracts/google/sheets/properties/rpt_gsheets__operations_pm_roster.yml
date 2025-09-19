@@ -1,0 +1,5 @@
+version: 2
+models:
+  - name: rpt_gsheets__operations_pm_roster
+    config:
+      enabled: true
