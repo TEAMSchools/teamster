@@ -18,8 +18,6 @@ models:
         data_type: string
       - name: column_value
         data_type: string
-      - name: active_title
-        data_type: boolean
       - name: metric_id
         data_type: string
       - name: region
@@ -29,8 +27,6 @@ models:
       - name: type
         data_type: string
       - name: fiscal_year
-        data_type: int64
-      - name: round_completion
         data_type: int64
       - name: preferred_name_lastfirst
         data_type: string
@@ -52,3 +48,9 @@ models:
         data_type: string
       - name: description
         data_type: string
+      - name: active
+        data_type: boolean
+      - name: round_completion_manager
+        data_type: int64
+      - name: round_completion_self
+        data_type: int64

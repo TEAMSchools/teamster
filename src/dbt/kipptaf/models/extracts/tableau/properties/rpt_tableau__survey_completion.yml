@@ -22,21 +22,7 @@ models:
         data_type: date
       - name: mail
         data_type: string
-      - name: google_email
-        data_type: string
-      - name: report_to_employee_number
-        data_type: int64
-      - name: report_to_preferred_name_lastfirst
-        data_type: string
-      - name: samaccountname
-        data_type: string
-      - name: username
-        data_type: string
       - name: survey
-        data_type: string
-      - name: link
-        data_type: string
-      - name: assignment
         data_type: string
       - name: academic_year
         data_type: int64
@@ -46,5 +32,3 @@ models:
         data_type: boolean
       - name: completion
         data_type: int64
-      - name: date_submitted
-        data_type: datetime
