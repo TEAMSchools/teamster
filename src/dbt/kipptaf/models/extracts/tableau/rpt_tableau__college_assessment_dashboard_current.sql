@@ -47,41 +47,14 @@ with
 
             'foo' as bar,
 
-            expected_metric_name,
-
             expected_score_category,
 
+            bg.expected_metric_name,
             bg.min_score as expected_metric_min_score,
             bg.pct_goal as expected_metric_pct_goal,
 
         from {{ ref("int_students__college_assessment_roster") }} as r
-        cross join
-            unnest(
-                [
-                    'HS-Ready',
-                    'College-Ready',
-                    'ACT Group 1',
-                    'ACT Group 2+',
-                    'SAT Group 1',
-                    'SAT Group 2+',
-                    'PSAT NMSQT Group 1',
-                    'PSAT NMSQT Group 2+',
-                    'PSAT10 Group 1',
-                    'PSAT10 Group 2+',
-                    'PSAT 8/9 Group 1',
-                    'PSAT 8/9 Group 2+'
-                ]
-            ) as expected_metric_name
-        cross join
-            unnest(
-                [
-                    'Scale Score',
-                    'Max Scale Score',
-                    'Superscore',
-                    'Running Max Scale Score',
-                    'Running Superscore'
-                ]
-            ) as expected_score_category
+        cross join unnest(['Max Scale Score']) as expected_score_category
         -- must be left join because not all score types have goals
         left join
             benchmark_goals as bg
@@ -107,15 +80,8 @@ with
             score,
 
         from
-            {{ ref("int_students__college_assessment_roster") }} unpivot (
-                score for score_category in (
-                    scale_score as 'Scale Score',
-                    max_scale_score as 'Max Scale Score',
-                    superscore as 'Superscore',
-                    running_max_scale_score as 'Running Max Scale Score',
-                    running_superscore as 'Running Superscore'
-                )
-            )
+            {{ ref("int_students__college_assessment_roster") }}
+            unpivot (score for score_category in (max_scale_score as 'Max Scale Score'))
     ),
 
     roster as (
