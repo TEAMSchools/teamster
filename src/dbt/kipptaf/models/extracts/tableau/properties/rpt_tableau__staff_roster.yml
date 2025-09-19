@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_tableau__staff_roster
+    config:
+      contract:
+        enforced: true
     columns:
       - name: df_employee_number
         data_type: int64

@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_tableau__kfwd_verification
+    config:
+      contract:
+        enforced: true
     columns:
       - name: contact_id
         data_type: string

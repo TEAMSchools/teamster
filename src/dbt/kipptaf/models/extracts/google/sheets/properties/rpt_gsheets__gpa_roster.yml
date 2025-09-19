@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_gsheets__gpa_roster
+    config:
+      contract:
+        enforced: true
     columns:
       - name: academic_year
         data_type: string

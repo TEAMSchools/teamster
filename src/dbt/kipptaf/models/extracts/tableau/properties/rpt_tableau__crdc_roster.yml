@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_tableau__crdc_roster
+    config:
+      contract:
+        enforced: true
     columns:
       - name: _dbt_source_relation
         data_type: string

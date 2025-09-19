@@ -3,3 +3,5 @@ models:
   - name: rpt_tableau__operations_ekg
     config:
       enabled: true
+      contract:
+        enforced: true

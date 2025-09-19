@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_tableau__schoolmint_grow_observation_details
+    config:
+      contract:
+        enforced: true
     columns:
       - name: employee_number
         data_type: int64

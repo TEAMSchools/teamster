@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_gsheets__kfwd_taf_contact_feed
+    config:
+      contract:
+        enforced: true
     columns:
       - name: ps_student_number
         data_type: int64

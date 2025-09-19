@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_appsheet__leadership_development_assignments
+    config:
+      contract:
+        enforced: true
     columns:
       - name: employee_number
         data_type: int64

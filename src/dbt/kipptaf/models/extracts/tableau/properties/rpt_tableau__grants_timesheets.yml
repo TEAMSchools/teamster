@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_tableau__grants_timesheets
+    config:
+      contract:
+        enforced: true
     columns:
       - name: survey_id
         data_type: int64

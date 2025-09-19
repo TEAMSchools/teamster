@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_tableau__attendance_dashboard
+    config:
+      contract:
+        enforced: true
     columns:
       - name: studentid
         data_type: int64

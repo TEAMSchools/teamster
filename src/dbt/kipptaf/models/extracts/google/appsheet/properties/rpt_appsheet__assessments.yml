@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_appsheet__assessments
+    config:
+      contract:
+        enforced: true
     columns:
       - name: assessment_id
         data_type: int64
