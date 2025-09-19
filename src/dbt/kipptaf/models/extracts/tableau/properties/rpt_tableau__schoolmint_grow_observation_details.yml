@@ -84,14 +84,6 @@ models:
         data_type: float64
       - name: observation_notes
         data_type: string
-      - name: measurement_dropdown_selection
-        data_type: string
-      - name: teacher_moves_track
-        data_type: string
-      - name: student_habits_track
-        data_type: string
-      - name: number_of_kids
-        data_type: string
       - name: current_assignment_status
         data_type: string
       - name: observer_name
@@ -108,3 +100,7 @@ models:
         data_type: string
       - name: pm_round_eligible
         data_type: boolean
+      - name: race_ethnicity_reporting
+        data_type: string
+      - name: work_assignment_actual_start_date
+        data_type: date

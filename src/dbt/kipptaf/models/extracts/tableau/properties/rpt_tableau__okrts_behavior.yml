@@ -66,3 +66,5 @@ models:
         data_type: int64
       - name: school_enrollment_by_week
         data_type: int64
+      - name: is_earned_progress_to_quarterly
+        data_type: int64

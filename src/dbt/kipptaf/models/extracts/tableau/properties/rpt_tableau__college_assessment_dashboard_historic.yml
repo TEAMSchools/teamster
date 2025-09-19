@@ -81,13 +81,13 @@ models:
       - name: response_type_description
         data_type: string
       - name: points
-        data_type: float64
+        data_type: numeric
       - name: percent_correct
-        data_type: float64
+        data_type: numeric
       - name: total_subjects_tested
         data_type: int64
       - name: raw_score
-        data_type: float64
+        data_type: numeric
       - name: scale_score
         data_type: float64
       - name: rn_highest

@@ -54,8 +54,6 @@ models:
         data_type: string
       - name: grade_level
         data_type: int64
-      - name: bgp
-        data_type: string
       - name: contact_expected_hs_graduation
         data_type: date
       - name: ccdm_complete
@@ -72,3 +70,31 @@ models:
         data_type: string
       - name: overgrad_counselor
         data_type: string
+      - name: as1_complete
+        data_type: int64
+      - name: best_guess_pathway
+        data_type: string
+      - name: bm_complete
+        data_type: int64
+      - name: dps_additional_future_plans
+        data_type: string
+      - name: dps_desired_pathway
+        data_type: string
+      - name: dps_dream_career
+        data_type: string
+      - name: dps_interested_career_industry
+        data_type: string
+      - name: dps_kfwd_support
+        data_type: string
+      - name: dps_secondary_pathway
+        data_type: string
+      - name: dps_submit_date_most_recent
+        data_type: date
+      - name: graduation_year
+        data_type: int64
+      - name: highest_sat_score
+        data_type: numeric
+      - name: is_dlm
+        data_type: boolean
+      - name: is_submitted_dps_int
+        data_type: int64

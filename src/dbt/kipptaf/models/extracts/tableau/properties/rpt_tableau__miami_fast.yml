@@ -69,13 +69,13 @@ models:
       - name: lessons_passed
         data_type: float64
       - name: qaf1
-        data_type: float64
+        data_type: numeric
       - name: qaf2
-        data_type: float64
+        data_type: numeric
       - name: qaf3
-        data_type: float64
+        data_type: numeric
       - name: qaf4
-        data_type: float64
+        data_type: numeric
       - name: diagnostic_scale
         data_type: int64
       - name: diagnostic_overall_relative_placement
@@ -91,7 +91,7 @@ models:
       - name: recent_overall_placement
         data_type: string
       - name: diagnostic_gain
-        data_type: float64
+        data_type: int64
       - name: lexile_recent
         data_type: string
       - name: lexile_range_recent

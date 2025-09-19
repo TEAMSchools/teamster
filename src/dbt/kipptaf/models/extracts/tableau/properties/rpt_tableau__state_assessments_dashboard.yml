@@ -67,17 +67,17 @@ models:
       - name: test_code
         data_type: string
       - name: test_grade
-        data_type: string
+        data_type: int64
       - name: admin
         data_type: string
       - name: season
         data_type: string
       - name: score
-        data_type: float64
+        data_type: numeric
       - name: performance_band
         data_type: string
       - name: performance_band_level
-        data_type: float64
+        data_type: int64
       - name: is_proficient
         data_type: boolean
       - name: proficiency_city
@@ -116,3 +116,15 @@ models:
         data_type: string
       - name: results_type
         data_type: string
+      - name: assessment_band_goal
+        data_type: float64
+      - name: proficiency_neighborhood_schools
+        data_type: float64
+      - name: school_level
+        data_type: string
+      - name: total_students_city
+        data_type: float64
+      - name: total_students_neighborhood_schools
+        data_type: float64
+      - name: total_students_state
+        data_type: float64
