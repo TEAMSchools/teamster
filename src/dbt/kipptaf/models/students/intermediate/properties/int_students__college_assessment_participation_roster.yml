@@ -24,45 +24,45 @@ models:
         data_type: int64
       - name: act_count
         data_type: int64
-      - name: act_group_1_score
+      - name: act_group_1_min_score
         data_type: float64
-      - name: act_group_1_goal
+      - name: act_group_1_pct_goal
         data_type: float64
-      - name: act_group_2_plus_score
+      - name: act_group_2_plus_min_score
         data_type: float64
-      - name: act_group_2_plus_goal
+      - name: act_group_2_plus_pct_goal
         data_type: float64
-      - name: sat_group_1_score
+      - name: sat_group_1_min_score
         data_type: float64
-      - name: sat_group_1_goal
+      - name: sat_group_1_pct_goal
         data_type: float64
-      - name: sat_group_2_plus_score
+      - name: sat_group_2_plus_min_score
         data_type: float64
-      - name: sat_group_2_plus_goal
+      - name: sat_group_2_plus_pct_goal
         data_type: float64
-      - name: psat89_group_1_score
+      - name: psat89_group_1_min_score
         data_type: float64
-      - name: psat89_group_1_goal
+      - name: psat89_group_1_pct_goal
         data_type: float64
-      - name: psat89_group_2_plus_score
+      - name: psat89_group_2_plus_min_score
         data_type: float64
-      - name: psat89_group_2_plus_goal
+      - name: psat89_group_2_plus_pct_goal
         data_type: float64
-      - name: psat10_group_1_score
+      - name: psat10_group_1_min_score
         data_type: float64
-      - name: psat10_group_1_goal
+      - name: psat10_group_1_pct_goal
         data_type: float64
-      - name: psat10_group_2_plus_score
+      - name: psat10_group_2_plus_min_score
         data_type: float64
-      - name: psat10_group_2_plus_goal
+      - name: psat10_group_2_plus_pct_goal
         data_type: float64
-      - name: psatnmsqt_group_1_score
+      - name: psatnmsqt_group_1_min_score
         data_type: float64
-      - name: psatnmsqt_group_1_goal
+      - name: psatnmsqt_group_1_pct_goal
         data_type: float64
-      - name: psatnmsqt_group_2_plus_score
+      - name: psatnmsqt_group_2_plus_min_score
         data_type: float64
-      - name: psatnmsqt_group_2_plus_goal
+      - name: psatnmsqt_group_2_plus_pct_goal
         data_type: float64
       - name: psat89_count_ytd
         data_type: int64
