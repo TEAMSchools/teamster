@@ -1,8 +1,3 @@
-{% set comparison_benchmarks = [
-    {"label": "College-Ready", "prefix": "college_ready"},
-    {"label": "HS-Ready", "prefix": "hs_ready"},
-] %}
-
 with
     benchmark_goals as (
         select
@@ -10,28 +5,35 @@ with
             expected_scope,
             expected_score_type,
             expected_subject_area,
+            goal_subtype,
+            min_score,
+            pct_goal,
 
-            {% for benchmark in comparison_benchmarks %}
-                avg(
-                    case when goal_subtype = '{{ benchmark.label }}' then min_score end
-                ) as {{ benchmark.prefix }}_min_score,
-                avg(
-                    case when goal_subtype = '{{ benchmark.label }}' then pct_goal end
-                ) as {{ benchmark.prefix }}_pct_goal
-                {% if not loop.last %},{% endif %}
-            {% endfor %}
+            goal_subtype as expected_metric_name,
 
         from {{ ref("stg_google_sheets__kippfwd_goals") }}
         where expected_test_type = 'Official' and goal_type = 'Benchmark'
-        group by
+
+        union all
+
+        select
             expected_test_type,
             expected_scope,
             expected_score_type,
-            expected_subject_area
+            expected_subject_area,
+            goal_category as goal_subtype,
+            min_score,
+            pct_goal,
+
+            concat(expected_scope, ' ', goal_category) as expected_metric_name,
+
+        from {{ ref("stg_google_sheets__kippfwd_goals") }}
+        where expected_test_type = 'Official' and goal_type = 'Attempts'
     ),
 
     expected_admin_metrics as (
-        select
+        -- need a distinct list of possible scores and their categories
+        select distinct
             r.surrogate_key,
             r.expected_test_academic_year,
             r.expected_test_type,
@@ -43,30 +45,33 @@ with
             r.expected_grade_level,
             r.expected_test_admin_for_over_time,
 
+            'foo' as bar,
+
             expected_metric_name,
 
             expected_score_category,
 
-            'foo' as bar,
-
-            case
-                expected_metric_name
-                when 'HS-Ready'
-                then bg.hs_ready_min_score
-                when 'College-Ready'
-                then bg.college_ready_min_score
-            end as expected_metric_min_score,
-
-            case
-                expected_metric_name
-                when 'HS-Ready'
-                then bg.hs_ready_pct_goal
-                when 'College-Ready'
-                then bg.college_ready_pct_goal
-            end as expected_metric_pct_goal,
+            bg.min_score as expected_metric_min_score,
+            bg.pct_goal as expected_metric_pct_goal,
 
         from {{ ref("int_students__college_assessment_roster") }} as r
-        cross join unnest(['HS-Ready', 'College-Ready']) as expected_metric_name
+        cross join
+            unnest(
+                [
+                    'HS-Ready',
+                    'College-Ready',
+                    'ACT Group 1',
+                    'ACT Group 2+',
+                    'SAT Group 1',
+                    'SAT Group 2+',
+                    'PSAT NMSQT Group 1',
+                    'PSAT NMSQT Group 2+',
+                    'PSAT10 Group 1',
+                    'PSAT10 Group 2+',
+                    'PSAT 8/9 Group 1',
+                    'PSAT 8/9 Group 2+'
+                ]
+            ) as expected_metric_name
         cross join
             unnest(
                 [
@@ -83,6 +88,7 @@ with
             on r.expected_test_type = bg.expected_test_type
             and r.expected_scope = bg.expected_scope
             and r.expected_score_type = bg.expected_score_type
+            and expected_metric_name = bg.expected_metric_name
     ),
 
     scores as (
