@@ -1,6 +1,8 @@
-version: 2
 models:
   - name: rpt_tableau__staff_roster
+    config:
+      contract:
+        enforced: true
     columns:
       - name: df_employee_number
         data_type: int64
@@ -135,4 +137,12 @@ models:
       - name: dso_mail
         data_type: string
       - name: dso_preferred_name_lastfirst
+        data_type: string
+      - name: is_leader_development_program
+        data_type: boolean
+      - name: is_teacher_development_program
+        data_type: boolean
+      - name: memberships
+        data_type: string
+      - name: nj_pension_plan_name
         data_type: string
