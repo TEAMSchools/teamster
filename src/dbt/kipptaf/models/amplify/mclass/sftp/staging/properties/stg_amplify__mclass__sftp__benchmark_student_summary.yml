@@ -289,3 +289,5 @@ models:
         data_type: string
       - name: additional_student_id_primarysisid
         data_type: string
+      - name: additional_student_id_sisid
+        data_type: string
