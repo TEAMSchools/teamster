@@ -1,6 +1,16 @@
-version: 2
 models:
   - name: rpt_clever__staff
+    config:
+      contract:
+        enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - school_id
+              - staff_id
+          config:
+            store_failures: true
     columns:
       - name: school_id
         data_type: string
