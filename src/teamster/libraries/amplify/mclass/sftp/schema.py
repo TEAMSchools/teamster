@@ -49,6 +49,7 @@ class PMStudentSummary(BaseModel):
     home_language: str | None = None
     secondary_student_id_stateid: str | None = None
     additional_student_id_primarysisid: str | None = None
+    additional_student_id_sisid: str | None = None
 
 
 class BenchmarkStudentSummary(BaseModel):
@@ -168,3 +169,4 @@ class BenchmarkStudentSummary(BaseModel):
     secondary_student_id_stateid: str | None = None
     additional_student_id: str | None = None
     additional_student_id_primarysisid: str | None = None
+    additional_student_id_sisid: str | None = None
