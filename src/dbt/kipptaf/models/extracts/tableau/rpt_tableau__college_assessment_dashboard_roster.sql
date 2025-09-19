@@ -1,59 +1,19 @@
 with
     scores as (
         select
-            student_number,
-            score_category,
-            score,
-            subject_area,
+            *,
 
             concat(
-                'G',
-                grade_level,
-                ' ',
-                test_month,
-                ' ',
-                scope,
-                ' ',
-                test_type,
-                ' ',
-                subject_area
-            ) as field_name,
+                expected_field_name, ' ', expected_score_category
+            ) as expected_field_name_score_category,
 
             concat(
-                'G',
-                grade_level,
-                ' ',
-                test_month,
-                ' ',
-                scope,
-                ' ',
-                test_type,
-                ' ',
-                subject_area,
-                ' ',
-                score_category
-            ) as expected_field_name,
-
-            concat(scope, ' ', subject_area, ' ', score_category) as filter_group,
-
-            lower(
-                concat(
-                    'g',
-                    grade_level,
-                    '_',
-                    month_order,
-                    '_',
-                    test_type,
-                    '_',
-                    scope_order,
-                    '_',
-                    subject_area_order
-                )
-            ) as filter_group_month,
+                expected_scope, ' ', expected_subject_area, ' ', expected_score_category
+            ) as expected_filter_group,
 
         from
             {{ ref("int_students__college_assessment_roster") }} unpivot (
-                score for score_category in (
+                score for expected_score_category in (
                     scale_score as 'Scale Score',
                     max_scale_score as 'Max Scale Score',
                     superscore as 'Superscore',
@@ -64,50 +24,29 @@ with
             graduation_year = {{ var("current_academic_year") + 1 }} and scope != 'ACT'
     ),
 
-    expected_fields as (
+    expected_admins as (
         -- need a distinct list of possible tests to force rows on the main select
         select distinct
-            'key' as fake_join,
-
+            expected_test_academic_year,
+            expected_test_type,
+            expected_scope,
+            expected_score_type,
+            expected_subject_area,
+            expected_grade_level,
+            expected_test_date,
+            expected_test_month,
             expected_field_name,
+            expected_admin_order,
+            expected_filter_group_month,
+            expected_score_category,
+            expected_field_name_score_category,
+            expected_filter_group,
 
-            case
-                when
-                    filter_group in (
-                        'SAT Combined Scale Score',
-                        'PSAT NMSQT Combined Scale Score',
-                        'PSAT10 Combined Scale Score'
-                    )
-                then concat(filter_group_month, '_1')
-
-                when
-                    filter_group in (
-                        'SAT Combined Previous Total Score Change',
-                        'PSAT NMSQT Combined Previous Total Score Change',
-                        'PSAT10 Combined Previous Total Score Change'
-                    )
-                then concat(filter_group_month, '_2')
-
-                when
-                    filter_group in (
-                        'SAT EBRW Scale Score',
-                        'PSAT NMSQT EBRW Scale Score',
-                        'PSAT10 EBRW Scale Score'
-                    )
-                then concat(filter_group_month, '_3')
-
-                when
-                    filter_group in (
-                        'SAT Math Scale Score',
-                        'PSAT NMSQT Math Scale Score',
-                        'PSAT10 Math Scale Score'
-                    )
-                then concat(filter_group_month, '_4')
-            end as expected_field_name_order,
+            'foo' as bar,
 
         from scores
         where
-            filter_group in (
+            expected_filter_group in (
                 'SAT Combined Scale Score',
                 'SAT Combined Previous Total Score Change',
                 'SAT EBRW Scale Score',
@@ -129,7 +68,7 @@ with
 
         from
             scores pivot (
-                avg(score) for filter_group in (
+                avg(score) for expected_filter_group in (
                     'SAT Combined Superscore' as sat_combined_superscore,
                     'SAT EBRW Max Scale Score' as sat_ebrw_highest,
                     'SAT Math Max Scale Score' as sat_math_highest
@@ -146,68 +85,6 @@ with
 
         from superscores
         group by student_number
-    ),
-
-    focus_scores as (
-        select
-            student_number,
-            field_name,
-            expected_field_name,
-            subject_area,
-            filter_group,
-            field_name
-            score_category,
-            score,
-
-        from scores
-        where
-            filter_group in (
-                'SAT Combined Scale Score',
-                'SAT Combined Previous Total Score Change',
-                'SAT EBRW Scale Score',
-                'SAT Math Scale Score',
-                'PSAT NMSQT Combined Scale Score',
-                'PSAT NMSQT Combined Previous Total Score Change',
-                'PSAT NMSQT EBRW Scale Score',
-                'PSAT NMSQT Math Scale Score',
-                'PSAT10 Combined Scale Score',
-                'PSAT10 Combined Previous Total Score Change',
-                'PSAT10 EBRW Scale Score',
-                'PSAT10 Math Scale Score'
-            )
-    ),
-
-    students as (
-        select
-            region,
-            schoolid,
-            school,
-            student_number,
-            salesforce_id,
-            student_name,
-            student_first_name,
-            student_last_name,
-            grade_level,
-            student_email,
-            enroll_status,
-            ktc_cohort,
-            graduation_year,
-            year_in_network,
-            iep_status,
-            grad_iep_exempt_status_overall,
-            cumulative_y1_gpa,
-            cumulative_y1_gpa_projected,
-            college_match_gpa,
-            college_match_gpa_bands,
-
-            'key' as fake_join,
-
-        from {{ ref("int_extracts__student_enrollments") }}
-        where
-            academic_year = {{ var("current_academic_year") }}
-            and graduation_year = {{ var("current_academic_year") + 1 }}
-            and school_level = 'HS'
-            and rn_year = 1
     )
 
 select
@@ -232,23 +109,36 @@ select
     e.college_match_gpa,
     e.college_match_gpa_bands,
 
-    ef.expected_field_name,
-    ef.expected_field_name_order,
+    ea.expected_test_academic_year,
+    ea.expected_test_type,
+    ea.expected_scope,
+    ea.expected_score_type,
+    ea.expected_subject_area,
+    ea.expected_grade_level,
+    ea.expected_test_date,
+    ea.expected_test_month,
+    ea.expected_field_name,
+    ea.expected_admin_order,
+    ea.expected_filter_group_month,
+    ea.expected_score_category,
+    ea.expected_field_name_score_category,
+    ea.expected_filter_group,
 
     s.sat_combined_superscore,
     s.sat_ebrw_highest,
     s.sat_math_highest,
 
-    f.field_name,
-    f.subject_area,
-    f.filter_group,
-    f.score_category,
-    f.score,
+    a.score,
 
-from students as e
-inner join expected_fields as ef on e.fake_join = ef.fake_join
+from {{ ref("int_extracts__student_enrollments") }} as e
+inner join expected_admins as ea on 'foo' = ea.bar
 left join superscores_dedup as s on e.student_number = s.student_number
 left join
-    focus_scores as f
-    on e.student_number = f.student_number
-    and ef.expected_field_name = f.expected_field_name
+    scores as a
+    on e.student_number = a.student_number
+    and ea.expected_field_name_score_category = a.expected_field_name_score_category
+where
+    e.academic_year = {{ var("current_academic_year") }}
+    and e.graduation_year = {{ var("current_academic_year") + 1 }}
+    and e.school_level = 'HS'
+    and e.rn_year = 1
