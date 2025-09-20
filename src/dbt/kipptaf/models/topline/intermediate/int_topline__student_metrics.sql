@@ -49,7 +49,7 @@ with
         union all
 
         select
-            'K-8 Reading and Math' as layer,
+            layer,
             'i-Ready Diagnostic' as indicator,
             student_number,
             academic_year,
@@ -60,6 +60,7 @@ with
             null as denominator,
             is_proficient as metric_value,
         from {{ ref("int_topline__iready_diagnostic_weekly") }}
+        cross join unnest(['GPA, ACT, SAT', 'K-8 Reading and Math']) as layer
 
         union all
 
@@ -233,7 +234,7 @@ with
         union all
 
         select
-            'GPA, ACT, SAT' as layer,
+            layer,
             'Weighted Y1 GPA' as indicator,
             student_number,
             academic_year,
@@ -244,6 +245,7 @@ with
             null as denominator,
             if(gpa_y1 >= 3.00, 1, 0) as metric_value,
         from {{ ref("int_topline__gpa_term_weekly") }}
+        cross join unnest(['GPA, ACT, SAT', 'K-8 Reading and Math']) as layer
 
         union all
 
