@@ -41,7 +41,7 @@ inner join
     on cw.state_studentnumber = fl.student_id
     and cw.academic_year = fl.academic_year
     and rt.name = fl.administration_window
-where cw.region = 'Miami' and cw.grade_level < 3
+where cw.region = 'Miami' and cw.grade_level >= 3
 
 union all
 
