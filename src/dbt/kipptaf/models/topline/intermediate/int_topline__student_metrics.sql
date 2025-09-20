@@ -126,6 +126,22 @@ with
 
         union all
 
+        select
+            'K-8 Reading and Math' as layer,
+            'FAST' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+            is_proficient_int as metric_value,
+        from {{ ref("int_topline__state_assessments_weekly") }}
+        where region = 'Miami'
+
+        union all
+
         /* Attendance & Enrollment */
         select
             'Attendance and Enrollment' as layer,
