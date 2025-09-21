@@ -5,7 +5,7 @@ with
             employee_number,
             school_id as schoolid,
             week_start_monday as term,
-            'Outstanding Teammates are Everything' as layer,
+            'Outstanding Teammates' as layer,
             'Microgoals' as indicator,
 
             null as numerator,
@@ -20,7 +20,7 @@ with
             employee_number,
             ps_school_id as schoolid,
             week_start_monday as term,
-            'Outstanding Teammates are Everything' as layer,
+            'Outstanding Teammates' as layer,
             'Staff Retention' as indicator,
 
             null as numerator,
