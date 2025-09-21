@@ -321,6 +321,20 @@ with
         from {{ ref("int_topline__suspension_weekly") }}
 
         union all
+        select
+            'Student and Family Experience' as layer,
+            'Quarterly Incentive' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            is_receiving_incentive as metric_value,
+        from {{ ref("int_topline__deanslist_incentives_weekly") }}
+
+        union all
 
         /* College Matriculation */
         select
