@@ -5,19 +5,21 @@ with
             school_specific_id as student_number,
             dbt_valid_from,
             dbt_valid_to,
+            test_type,
             score,
 
             cast(dbt_valid_from as date) as dbt_valid_from_date,
             cast(dbt_valid_to as date) as dbt_valid_to_date,
         from {{ ref("snapshot_kippadb__standardized_test_rollup") }}
-        where test_type = 'SAT' and test_subject = 'Total'
+        where
+            test_type in ('SAT', 'PSAT NMSQT', 'PSAT 8/9') and test_subject = 'Combined'
     ),
 
     deduplicate as (
         {{
             dbt_utils.deduplicate(
                 relation="sat_total",
-                partition_by="student_number, dbt_valid_from_date",
+                partition_by="student_number, test_type, dbt_valid_from_date",
                 order_by="dbt_valid_to desc",
             )
         }}
@@ -31,6 +33,7 @@ select
     co.week_end_sunday,
     co.week_number_academic_year,
 
+    sat.test_type,
     sat.score,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 left join
