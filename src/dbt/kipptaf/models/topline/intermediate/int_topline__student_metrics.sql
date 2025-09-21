@@ -321,6 +321,7 @@ with
         from {{ ref("int_topline__suspension_weekly") }}
 
         union all
+
         select
             'Student and Family Experience' as layer,
             'Quarterly Incentive' as indicator,
