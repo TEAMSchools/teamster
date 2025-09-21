@@ -380,6 +380,21 @@ with
             null as denominator,
             if(is_matriculated_ba, 1, 0) as metric_value,
         from {{ ref("int_topline__college_matriculation_weekly") }}
+
+        union all
+
+        select
+            'College Matriculation' as layer,
+            'BA Quality Bar' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            is_submitted_quality_bar_4yr_int as metric_value,
+        from {{ ref("int_topline__college_matriculation_weekly") }}
     )
 
 select
