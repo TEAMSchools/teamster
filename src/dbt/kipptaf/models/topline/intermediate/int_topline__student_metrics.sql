@@ -239,7 +239,7 @@ with
         /* GPA & ACT/SAT */
         select
             'GPA, ACT, SAT' as layer,
-            'Highest SAT' as indicator,
+            'Highest ' || test_type as indicator,
             student_number,
             academic_year,
             week_start_monday as term,
