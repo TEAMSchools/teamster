@@ -247,7 +247,15 @@ with
 
             null as numerator,
             null as denominator,
-            if(score >= 1010, 1, 0) as metric_value,
+            case
+                when test_type = 'SAT' and score >= 1010
+                then 1
+                when test_type = 'PSAT NMSQT' and score >= 910
+                then 1
+                when test_type = 'PSAT 8/9' and score >= 860
+                then 1
+                else 0
+            end as metric_value,
         from {{ ref("int_topline__college_entrance_exams_weekly") }}
 
         union all
