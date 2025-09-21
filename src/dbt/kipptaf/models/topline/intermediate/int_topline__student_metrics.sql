@@ -4,7 +4,7 @@ with
     metric_union as (
         /* K-8 Reading & Math */
         select
-            'K-8 Reading and Math' as layer,
+            layer,
             'Formative Assessments' as indicator,
             student_number,
             academic_year,
@@ -15,6 +15,7 @@ with
             null as denominator,
             is_mastery_running_int as metric_value,
         from {{ ref("int_topline__formative_assessment_weekly") }}
+        cross join unnest(['GPA, ACT, SAT', 'K-8 Reading and Math']) as layer
 
         union all
 
@@ -394,7 +395,6 @@ left join
     on co.student_number = mu.student_number
     and co.academic_year = mu.academic_year
     and co.week_start_monday = mu.term
-    and mu.indicator != 'Total Enrollment'
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
 
 union all
