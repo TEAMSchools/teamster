@@ -21,7 +21,7 @@ with
             ps_school_id as schoolid,
             week_start_monday as term,
             'Outstanding Teammates are Everything' as layer,
-            'Retention' as indicator,
+            'Staff Retention' as indicator,
 
             null as numerator,
             null as denominator,
