@@ -324,7 +324,7 @@ with
 
         select
             'Student and Family Experience' as layer,
-            'Quarterly Incentive' as indicator,
+            'Quarterly Incentives' as indicator,
             student_number,
             academic_year,
             week_start_monday as term,
