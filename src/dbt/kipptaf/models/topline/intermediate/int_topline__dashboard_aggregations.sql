@@ -341,6 +341,8 @@ with
     )
 
 select
+    'Staff Metrics' as metric_type,
+
     *,
 
     if(
@@ -373,6 +375,8 @@ where term <= current_date('America/New_York')
 union all
 
 select
+    'Staff Metrics' as metric_type,
+
     *,
 
     if(
