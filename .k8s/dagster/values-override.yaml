@@ -30,7 +30,7 @@ dagsterCloud:
 dagsterCloudAgent:
   resources:
     requests:
-      cpu: 500m
+      cpu: 250m
       memory: 1.5Gi
     limits:
       cpu: 750m
@@ -56,7 +56,7 @@ workspace:
       memory: 0.5Gi
     limits:
       cpu: 750m
-      memory: 1.0Gi
+      memory: 1.5Gi
 
     # securityContext:
     #   runAsNonRoot: true
@@ -74,7 +74,7 @@ workspace:
           memory: 0.5Gi
         limits:
           cpu: 750m
-          memory: 2.5Gi
+          memory: 1.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
@@ -89,10 +89,10 @@ workspace:
       resources:
         requests:
           cpu: 250m
-          memory: 1.0Gi
+          memory: 1.5Gi
         limits:
           cpu: 750m
-          memory: 1.5Gi
+          memory: 2.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
