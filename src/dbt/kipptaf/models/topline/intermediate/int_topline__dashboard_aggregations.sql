@@ -29,7 +29,7 @@ with
                 when 'Sum'
                 then round(sum(m.metric_value), 0)
                 when 'Comp'
-                then round(sum(m.metric_value), 0) / max(target_value)
+                then round(sum(m.metric_value), 0) / max(m.target_value)
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
@@ -90,7 +90,7 @@ with
                 when 'Sum'
                 then round(sum(m.metric_value), 0)
                 when 'Comp'
-                then round(sum(m.metric_value), 0) / max(target_value)
+                then round(sum(m.metric_value), 0) / max(m.target_value)
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
@@ -148,7 +148,7 @@ with
                 when 'Sum'
                 then round(sum(m.metric_value), 0)
                 when 'Comp'
-                then round(sum(m.metric_value), 0) / max(target_value)
+                then round(sum(m.metric_value), 0) / max(m.target_value)
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
