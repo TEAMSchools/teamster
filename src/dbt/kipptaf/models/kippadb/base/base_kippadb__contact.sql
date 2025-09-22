@@ -23,7 +23,7 @@ select
         )
     }},
 
-    psc.name as postsec_advisor_name,
+    psc.name as contact_postsec_advisor_name,
 
     c.last_name || ', ' || c.first_name as contact_lastfirst,
 
