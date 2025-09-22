@@ -233,7 +233,7 @@ select
     c.contact_graduation_year as graduation_year,
     c.exit_school_name,
     c.powerschool_enroll_status,
-    c.contact_postsec_advisor as postsec_advisor,
+    c.contact_postsec_advisor_name as postsec_advisor,
 
     ay.academic_year,
 
