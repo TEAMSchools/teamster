@@ -9,7 +9,6 @@ with
             scale_score as score,
         from {{ ref("int_assessments__college_assessment") }}
         where rn_highest = 1 and scope in ('SAT', 'ACT', 'PSAT 8/9', 'PSAT NMSQT')
-        where rn_highest = 1
     )
 
 select school_specific_id, test_type, test_subject, score,
