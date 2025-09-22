@@ -28,7 +28,7 @@ select
     if(dl.behavior is not null, 1, 0) as is_receiving_incentive,
 from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as cw
 left join
-    {{ ref("int_deanslist__behavior_incentive_by_term") }} dl
+    {{ ref("int_deanslist__behavior_incentive_by_term") }} as dl
     on cw.student_number = dl.student_school_id
     and cw.academic_year = dl.academic_year
     and cw.week_start_monday between dl.start_date and dl.end_date
