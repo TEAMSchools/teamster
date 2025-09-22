@@ -68,7 +68,7 @@ select
 
     if(
         current_date('{{ var("local_timezone") }}')
-        between week_start_monday and week_end_sunday,
+        between ds.week_start_monday and ds.week_end_sunday,
         true,
         false
     ) as is_current_week,
