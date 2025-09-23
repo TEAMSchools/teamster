@@ -4,55 +4,55 @@ with
             'Mid or Above Grade Level' as fall_diagnostic_placement_level,
             'Math' as subject,
             9 as typical_growth_measure,
-            19 as stretch_growth_measure
+            19 as stretch_growth_measure,
         union all
         select
             'Early On Grade Level' as fall_diagnostic_placement_level,
             'Math' as `subject`,
             9 as typical_growth_measure,
-            21 as stretch_growth_measure
+            21 as stretch_growth_measure,
         union all
         select
             '1 Grade Level Below' as fall_diagnostic_placement_level,
             'Math' as `subject`,
             9 as typical_growth_measure,
-            22 as stretch_growth_measure
+            22 as stretch_growth_measure,
         union all
         select
             '2 Grade Levels Below' as fall_diagnostic_placement_level,
             'Math' as `subject`,
             10 as typical_growth_measure,
-            23 as stretch_growth_measure
+            23 as stretch_growth_measure,
         union all
         select
             '3 or More Grade Levels Below' as fall_diagnostic_placement_level,
             'Math' as `subject`,
             12 as typical_growth_measure,
-            31 as stretch_growth_measure
+            31 as stretch_growth_measure,
         union all
         select
             'Mid or Above Grade Level' as fall_diagnostic_placement_level,
             'Reading' as `subject`,
             4 as typical_growth_measure,
-            13 as stretch_growth_measure
+            13 as stretch_growth_measure,
         union all
         select
             'Early On Grade Level' as fall_diagnostic_placement_level,
             'Reading' as `subject`,
             4 as typical_growth_measure,
-            22 as stretch_growth_measure
+            22 as stretch_growth_measure,
         union all
         select
             '1 Grade Level Below' as fall_diagnostic_placement_level,
             'Reading' as `subject`,
             9 as typical_growth_measure,
-            25 as stretch_growth_measure
+            25 as stretch_growth_measure,
         union all
         select
             '2 Grade Levels Below' as fall_diagnostic_placement_level,
             'Reading' as `subject`,
             12 as typical_growth_measure,
-            36 as stretch_growth_measure
+            36 as stretch_growth_measure,
         union all
         select
             '3 or More Grade Levels Below' as fall_diagnostic_placement_level,
