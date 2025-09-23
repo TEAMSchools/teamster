@@ -9,4 +9,5 @@ select
         when org_level = 'school'
         then cast(schoolid as string)
     end as join_clause,
-from {{ source("google_sheets", "src_google_sheets__topline_enrollment_targets") }}
+from {{ ref("int_topline__dashboard_aggregations") }}
+where indicator = 'Total Enrollment'
