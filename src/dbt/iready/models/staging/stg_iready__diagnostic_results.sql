@@ -1,4 +1,40 @@
 with
+    hs_growth_data as (
+        select
+            'Mid or Above Grade Level' as fall_diagnostic_placement_level,
+            'Math' as subject,
+            9 as typical_growth_measure,
+            19 as stretch_growth_measure
+        union all
+        select 'Early On Grade Level', 'Math', 9, 21
+        union all
+        select '1 Grade Level Below', 'Math', 9, 22
+        union all
+        select '2 Grade Levels Below', 'Math', 10, 23
+        union all
+        select '3 or More Grade Levels Below', 'Math', 12, 31
+        union all
+        select 'Mid or Above Grade Level', 'Reading', 4, 13
+        union all
+        select 'Early On Grade Level', 'Reading', 4, 22
+        union all
+        select '1 Grade Level Below', 'Reading', 9, 25
+        union all
+        select '2 Grade Levels Below', 'Reading', 12, 36
+        union all
+        select '3 or More Grade Levels Below', 'Reading', 18, 50
+    ),
+
+    hs_growth_measures as (
+        select
+            cast(grade_level as string) as grade_level,
+            fall_diagnostic_placement_level_int,
+            `subject`,
+            typical_growth_measure,
+            stretch_growth_measure,
+        from hs_growth_data
+        cross join unnest([9, 10, 11, 12]) as grade_level
+    ),
     transformations as (
         select
             * except (
@@ -112,11 +148,29 @@ with
 
     calculations as (
         select
-            *,
+            t.* (
+                except
+                t.annual_typical_growth_measure,
+                t.annual_stretch_growth_measure
+            ),
 
-            annual_typical_growth_measure - diagnostic_gain as typical_growth,
-            annual_stretch_growth_measure - diagnostic_gain as stretch_growth,
-        from transformations
+            coalesce(
+                t.annual_typical_growth_measure, hs.typical_growth_measure
+            ) as annual_typical_growth_measure,
+            coalesce(
+                t.annual_stretch_growth_measure, hs.stretch_growth_measure
+            ) as annual_stretch_growth_measure,
+
+            coalesce(t.annual_typical_growth_measure, hs.typical_growth_measure)
+            - t.diagnostic_gain as typical_growth,
+            coalesce(t.annual_stretch_growth_measure, hs.stretch_growth_measure)
+            - t.diagnostic_gain as stretch_growth,
+        from transformations as t
+        left join
+            hs_growth_measures as hs
+            on t.student_grade = hs.grade_level
+            and t.`subject` = hs.`subject`
+            and t.overall_relative_placement = hs.fall_diagnostic_placement_level
     )
 
 select
