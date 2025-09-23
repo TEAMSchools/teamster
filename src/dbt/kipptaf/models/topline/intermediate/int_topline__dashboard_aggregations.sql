@@ -376,7 +376,7 @@ select
             when goal_direction = 'baseball'
             then safe_divide(metric_aggregate_value, goal)
             when goal_direction = 'golf'
-            then 1 - safe_divide(metric_aggregate_value, goal)
+            then greatest(0, safe_divide(goal, metric_aggregate_value))
         end
         > 1,
         1,
@@ -386,7 +386,7 @@ select
             when goal_direction = 'baseball'
             then safe_divide(metric_aggregate_value, goal)
             when goal_direction = 'golf'
-            then 1 - safe_divide(metric_aggregate_value, goal)
+            then greatest(0, safe_divide(goal, metric_aggregate_value))
         end
     ) as progress_to_goal_pct,
 from agg_union_student
@@ -430,7 +430,7 @@ select
             when goal_direction = 'baseball'
             then safe_divide(metric_aggregate_value, goal)
             when goal_direction = 'golf'
-            then 1 - safe_divide(metric_aggregate_value, goal)
+            then greatest(0, safe_divide(goal, metric_aggregate_value))
         end
         > 1,
         1,
@@ -440,7 +440,7 @@ select
             when goal_direction = 'baseball'
             then safe_divide(metric_aggregate_value, goal)
             when goal_direction = 'golf'
-            then 1 - safe_divide(metric_aggregate_value, goal)
+            then greatest(0, safe_divide(goal, metric_aggregate_value))
         end
     ) as progress_to_goal_pct,
 from agg_union_staff
