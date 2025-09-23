@@ -57,7 +57,7 @@ with
         select
             '3 or More Grade Levels Below' as fall_diagnostic_placement_level,
             'Reading' as `subject`,
-            18,
+            18 as typical_growth_measure,
             50 as stretch_growth_measure,
     ),
 
