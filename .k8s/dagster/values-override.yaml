@@ -55,7 +55,7 @@ workspace:
       cpu: 250m
       memory: 0.5Gi
     limits:
-      cpu: 750m
+      cpu: 1250m
       memory: 1.5Gi
 
     # securityContext:
@@ -73,7 +73,7 @@ workspace:
           cpu: 250m
           memory: 0.5Gi
         limits:
-          cpu: 750m
+          cpu: 1250m
           memory: 1.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
@@ -91,7 +91,7 @@ workspace:
           cpu: 250m
           memory: 1.5Gi
         limits:
-          cpu: 750m
+          cpu: 1250m
           memory: 2.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
