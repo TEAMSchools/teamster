@@ -64,7 +64,7 @@ with
     hs_growth_measures as (
         select
             cast(grade_level as string) as grade_level,
-            fall_diagnostic_placement_level_int,
+            fall_diagnostic_placement_level,
             `subject`,
             typical_growth_measure,
             stretch_growth_measure,
