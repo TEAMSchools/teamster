@@ -1,79 +1,5 @@
 with
-    hs_growth_data as (
-        select
-            'Mid or Above Grade Level' as fall_diagnostic_placement_level,
-            'Math' as subject,
-            9 as typical_growth_measure,
-            19 as stretch_growth_measure,
-        union all
-        select
-            'Early On Grade Level' as fall_diagnostic_placement_level,
-            'Math' as `subject`,
-            9 as typical_growth_measure,
-            21 as stretch_growth_measure,
-        union all
-        select
-            '1 Grade Level Below' as fall_diagnostic_placement_level,
-            'Math' as `subject`,
-            9 as typical_growth_measure,
-            22 as stretch_growth_measure,
-        union all
-        select
-            '2 Grade Levels Below' as fall_diagnostic_placement_level,
-            'Math' as `subject`,
-            10 as typical_growth_measure,
-            23 as stretch_growth_measure,
-        union all
-        select
-            '3 or More Grade Levels Below' as fall_diagnostic_placement_level,
-            'Math' as `subject`,
-            12 as typical_growth_measure,
-            31 as stretch_growth_measure,
-        union all
-        select
-            'Mid or Above Grade Level' as fall_diagnostic_placement_level,
-            'Reading' as `subject`,
-            4 as typical_growth_measure,
-            13 as stretch_growth_measure,
-        union all
-        select
-            'Early On Grade Level' as fall_diagnostic_placement_level,
-            'Reading' as `subject`,
-            4 as typical_growth_measure,
-            22 as stretch_growth_measure,
-        union all
-        select
-            '1 Grade Level Below' as fall_diagnostic_placement_level,
-            'Reading' as `subject`,
-            9 as typical_growth_measure,
-            25 as stretch_growth_measure,
-        union all
-        select
-            '2 Grade Levels Below' as fall_diagnostic_placement_level,
-            'Reading' as `subject`,
-            12 as typical_growth_measure,
-            36 as stretch_growth_measure,
-        union all
-        select
-            '3 or More Grade Levels Below' as fall_diagnostic_placement_level,
-            'Reading' as `subject`,
-            18 as typical_growth_measure,
-            50 as stretch_growth_measure,
-    ),
-
-    hs_growth_measures as (
-        select
-            hs.fall_diagnostic_placement_level,
-            hs.`subject`,
-            hs.typical_growth_measure,
-            hs.stretch_growth_measure,
-
-            cast(grade_level as string) as grade_level,
-        from hs_growth_data as hs
-        cross join unnest([9, 10, 11, 12]) as grade_level
-    ),
-
-    transformations as (
+    diagnostic_results as (
         select
             * except (
                 `grouping`,
@@ -184,27 +110,109 @@ with
         from {{ source("iready", "src_iready__diagnostic_results") }}
     ),
 
-    calculations as (
+    hs_goals as (
         select
-            t.* except (annual_typical_growth_measure, annual_stretch_growth_measure),
+            * except (annual_typical_growth_measure, annual_stretch_growth_measure),
 
-            coalesce(
-                t.annual_typical_growth_measure, hs.typical_growth_measure
-            ) as annual_typical_growth_measure,
-            coalesce(
-                t.annual_stretch_growth_measure, hs.stretch_growth_measure
-            ) as annual_stretch_growth_measure,
+            case
+                when student_grade not in ('9', '10', '11', '12')
+                then annual_typical_growth_measure
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = 'Mid or Above Grade Level'
+                then 9
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = 'Early On Grade Level'
+                then 9
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = '1 Grade Level Below'
+                then 9
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = '2 Grade Levels Below'
+                then 10
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = '3 or More Grade Levels Below'
+                then 12
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = 'Mid or Above Grade Level'
+                then 4
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = 'Early On Grade Level'
+                then 4
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = '1 Grade Level Below'
+                then 9
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = '2 Grade Levels Below'
+                then 12
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = '3 or More Grade Levels Below'
+                then 18
+            end as annual_typical_growth_measure,
 
-            coalesce(t.annual_typical_growth_measure, hs.typical_growth_measure)
-            - t.diagnostic_gain as typical_growth,
-            coalesce(t.annual_stretch_growth_measure, hs.stretch_growth_measure)
-            - t.diagnostic_gain as stretch_growth,
-        from transformations as t
-        left join
-            hs_growth_measures as hs
-            on t.student_grade = hs.grade_level
-            and t.subject = hs.subject
-            and t.overall_relative_placement = hs.fall_diagnostic_placement_level
+            case
+                when student_grade not in ('9', '10', '11', '12')
+                then annual_stretch_growth_measure
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = 'Mid or Above Grade Level'
+                then 12
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = 'Early On Grade Level'
+                then 21
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = '1 Grade Level Below'
+                then 22
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = '2 Grade Levels Below'
+                then 23
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = '3 or More Grade Levels Below'
+                then 31
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = 'Mid or Above Grade Level'
+                then 13
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = 'Early On Grade Level'
+                then 22
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = '1 Grade Level Below'
+                then 25
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = '2 Grade Levels Below'
+                then 36
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = '3 or More Grade Levels Below'
+                then 50
+            end as annual_stretch_growth_measure,
+        from diagnostic_results
+    ),
+
+    growth_measures as (
+        select
+            *,
+
+            annual_typical_growth_measure - diagnostic_gain as typical_growth,
+            annual_stretch_growth_measure - diagnostic_gain as stretch_growth,
+        from hs_goals
     )
 
 select
@@ -250,4 +258,4 @@ select
             in ('2 Grade Levels Below', '3 or More Grade Levels Below')
         then 'Two or More Grade Levels Below'
     end as placement_3_level,
-from calculations
+from growth_measures
