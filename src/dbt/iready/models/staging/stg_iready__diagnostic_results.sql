@@ -71,6 +71,7 @@ with
         from hs_growth_data
         cross join unnest([9, 10, 11, 12]) as grade_level
     ),
+
     transformations as (
         select
             * except (
