@@ -63,11 +63,12 @@ with
 
     hs_growth_measures as (
         select
-            cast(grade_level as string) as grade_level,
             hs.fall_diagnostic_placement_level,
             hs.`subject`,
             hs.typical_growth_measure,
             hs.stretch_growth_measure,
+
+            cast(grade_level as string) as grade_level,
         from hs_growth_data as hs
         cross join unnest([9, 10, 11, 12]) as grade_level
     ),
@@ -185,11 +186,7 @@ with
 
     calculations as (
         select
-            t.* (
-                except
-                t.annual_typical_growth_measure,
-                t.annual_stretch_growth_measure
-            ),
+            t.* except (annual_typical_growth_measure, annual_stretch_growth_measure),
 
             coalesce(
                 t.annual_typical_growth_measure, hs.typical_growth_measure
@@ -206,7 +203,7 @@ with
         left join
             hs_growth_measures as hs
             on t.student_grade = hs.grade_level
-            and t.`subject` = hs.`subject`
+            and t.subject = hs.subject
             and t.overall_relative_placement = hs.fall_diagnostic_placement_level
     )
 
