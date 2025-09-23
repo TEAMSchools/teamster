@@ -64,11 +64,11 @@ with
     hs_growth_measures as (
         select
             cast(grade_level as string) as grade_level,
-            fall_diagnostic_placement_level,
-            `subject`,
-            typical_growth_measure,
-            stretch_growth_measure,
-        from hs_growth_data
+            hs.fall_diagnostic_placement_level,
+            hs.`subject`,
+            hs.typical_growth_measure,
+            hs.stretch_growth_measure,
+        from hs_growth_data as hs
         cross join unnest([9, 10, 11, 12]) as grade_level
     ),
 
