@@ -369,14 +369,26 @@ select
         when goal_direction = 'golf'
         then (metric_aggregate_value - goal) / goal
     end as goal_difference_percent,
-    case
-        when not has_goal
-        then null
-        when goal_direction = 'baseball'
-        then safe_divide(metric_aggregate_value, goal)
-        when goal_direction = 'golf'
-        then 1 - safe_divide(metric_aggregate_value, goal)
-    end as progress_to_goal_pct,
+    if(
+        case
+            when not has_goal
+            then null
+            when goal_direction = 'baseball'
+            then safe_divide(metric_aggregate_value, goal)
+            when goal_direction = 'golf'
+            then 1 - safe_divide(metric_aggregate_value, goal)
+        end,
+        > 1,
+        1,
+        case
+            when not has_goal
+            then null
+            when goal_direction = 'baseball'
+            then safe_divide(metric_aggregate_value, goal)
+            when goal_direction = 'golf'
+            then 1 - safe_divide(metric_aggregate_value, goal)
+        end
+    ) as progress_to_goal_pct,
 from agg_union_student
 where term <= current_date('America/New_York')
 
