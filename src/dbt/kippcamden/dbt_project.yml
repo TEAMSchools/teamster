@@ -66,8 +66,6 @@ models:
             +enabled: false
           stg_powerschool__testscore:
             +enabled: false
-          stg_powerschool__u_studentsuserfields:
-            +enabled: false
           stg_powerschool__gpprogresssubjectrequested:
             +enabled: false
           stg_powerschool__gpprogresssubjectwaived:
@@ -127,8 +125,6 @@ sources:
             src_powerschool__test:
               +enabled: false
             src_powerschool__testscore:
-              +enabled: false
-            src_powerschool__u_studentsuserfields:
               +enabled: false
             src_powerschool__gpprogresssubjectrequested:
               +enabled: false
