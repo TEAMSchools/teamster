@@ -2,7 +2,6 @@ with
     enrollment as (
         select
             *,
-
             case
                 when org_level = 'org'
                 then org_level
@@ -10,14 +9,56 @@ with
                 then region
                 when org_level = 'school'
                 then cast(schoolid as string)
-            end as join_clause,
+            end as join_clause
         from {{ ref("int_topline__dashboard_aggregations") }}
         where indicator = 'Total Enrollment'
+    ),
+
+    targets as (
+        select e.*, t.seat_target, t.budget_target
+        from enrollment as e
+        inner join
+            {{ ref("stg_google_sheets__topline_enrollment_targets") }} as t
+            on e.academic_year = t.academic_year
+            and e.join_clause = t.join_clause
+    ),
+
+    target_unpivot as (
+        select
+            academic_year,
+            region,
+            schoolid,
+            school,
+            layer,
+            discipline,
+            term,
+            is_current_week,
+            indicator_display,
+            org_level,
+            has_goal,
+            goal_direction,
+            aggregation_data_type,
+            aggregation_type,
+            aggregation_hash,
+            metric_aggregate_value,
+            join_clause,
+            if(
+                target_type = 'seat_target', 'Seat Target', 'Budget Target'
+            ) as indicator,
+            cast(target_value as int64) as goal,
+        from
+            targets
+            unpivot (target_value for target_type in (seat_target, budget_target))
+        where region != 'Paterson'
     )
 
-select e.*, t.seat_target, t.budget_target,
-from enrollment as e
-inner join
-    {{ ref("stg_google_sheets__topline_enrollment_targets") }} as t
-    on e.academic_year = t.academic_year
-    and e.join_clause = t.join_clause
+select
+    tu.*,
+    safe_divide(tu.metric_aggregate_value, tu.goal) as metric_aggregate_value,
+    tg.*,
+from target_unpivot as tu
+left join
+    {{ ref("stg_google_sheets__topline_aggregate_goals") }} as tg
+    on tu.indicator = tg.topline_indicator
+    and tu.layer = tg.layer
+    and tu.aggregation_hash = tg.aggregation_hash
