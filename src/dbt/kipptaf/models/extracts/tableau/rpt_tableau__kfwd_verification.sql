@@ -6,11 +6,12 @@ select
     ar.contact_currently_enrolled_school as currently_enrolled_school,
     ar.contact_owner_name,
 
-    enr.ugrad_account_type,
-    enr.ugrad_account_name,
-    enr.ugrad_date_last_verified,
-    enr.ugrad_anticipated_graduation,
-    enr.ugrad_status,
+    enr.account_type,
+    enr.date_last_verified,
+    enr.anticipated_graduation,
+    enr.status,
+
+    acc.name as account_name,
 
     t.term_season as semester,
     t.term_verification_status as verification_status_src,
@@ -35,11 +36,12 @@ select
     ) as rn_term,
 from {{ ref("int_kippadb__roster") }} as ar
 inner join
-    {{ ref("int_kippadb__enrollment_pivot") }} as enr
+    {{ ref("stg_kippadb__enrollment") }} as enr
     on ar.contact_id = enr.student
-    and enr.ugrad_account_name is not null
-    and enr.ugrad_status != 'Matriculated'
+    and enr.status = 'Attending'
+left join {{ ref("stg_kippadb__account") }} as acc on enr.account = acc.id
 inner join
     {{ ref("stg_kippadb__term") }} as t
-    on enr.ugrad_enrollment_id = t.enrollment
+    on enr.enrollment_id = t.enrollment
     and t.term_season != 'Summer'
+where ar.contact_postsecondary_status is not null
