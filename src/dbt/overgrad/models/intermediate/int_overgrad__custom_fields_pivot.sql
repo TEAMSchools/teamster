@@ -68,6 +68,7 @@ select
     teacher_lor_status,
     common_app_linked,
     ed_ea_scholarships_applied_to,
+    top_choice_schools,
 
     cast(student_aid_index as numeric) as student_aid_index,
 
@@ -75,8 +76,6 @@ select
     date(
         state_aid_application_submission_date
     ) as state_aid_application_submission_date,
-
-    coalesce(top_3_choices, top_choice) as top_choice_schools,
 
     regexp_extract(
         _dbt_source_relation, r'`(stg_overgrad__\w+)__custom_field_values`'
@@ -121,7 +120,6 @@ from
             'Wishlist Signed Off by Counselor' as `wishlist_signed_off_by_counselor`,
             'Common App Linked' as `common_app_linked`,
             'ED/EA Scholarships Applied To' as `ed_ea_scholarships_applied_to`,
-            'Top 3' as `top_3_choices`,
-            'Top Choice' as `top_choice`
+            'Top Choice' as `top_choice_schools`
         )
     )
