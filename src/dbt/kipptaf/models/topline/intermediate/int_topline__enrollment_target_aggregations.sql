@@ -40,8 +40,8 @@ with
             aggregation_data_type,
             aggregation_type,
             aggregation_hash,
-            metric_aggregate_value,
             join_clause,
+            metric_aggregate_value,
             if(
                 target_type = 'seat_target', 'Seat Target', 'Budget Target'
             ) as indicator,
@@ -53,9 +53,26 @@ with
     )
 
 select
-    tu.*,
+    tu.academic_year,
+    tu.region,
+    tu.schoolid,
+    tu.school,
+    tu.layer,
+    tu.indicator,
+    tu.discipline,
+    tu.term,
+    tu.is_current_week,
+
+    tg.indicator_display,
+    tg.org_level,
+    tg.has_goal,
+    tg.goal_direction,
+    tg.aggregation_data_type,
+    tg.aggregation_type,
+    tg.aggregation_hash,
+    tg.goal,
+
     safe_divide(tu.metric_aggregate_value, tu.goal) as metric_aggregate_value,
-    tg.*,
 from target_unpivot as tu
 left join
     {{ ref("stg_google_sheets__topline_aggregate_goals") }} as tg
