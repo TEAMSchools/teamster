@@ -37,7 +37,7 @@ locations:
               requests:
                 cpu: 500m
               limits:
-                cpu: 1000m
+                cpu: 1500m
             env:
               - name: ADP_SFTP_PASSWORD
                 valueFrom:
