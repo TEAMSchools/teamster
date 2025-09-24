@@ -72,10 +72,11 @@ select
     tg.aggregation_hash,
     tg.goal,
 
-    safe_divide(tu.metric_aggregate_value, tu.goal) as metric_aggregate_value,
+    round(safe_divide(tu.metric_aggregate_value, tu.goal), 3) as metric_aggregate_value,
 from target_unpivot as tu
 left join
     {{ ref("stg_google_sheets__topline_aggregate_goals") }} as tg
     on tu.indicator = tg.topline_indicator
     and tu.layer = tg.layer
     and tu.aggregation_hash = tg.aggregation_hash
+where tg.has_goal
