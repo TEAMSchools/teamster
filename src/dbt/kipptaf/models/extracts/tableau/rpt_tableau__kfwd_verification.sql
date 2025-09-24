@@ -16,6 +16,7 @@ select
     ar.ktc_status as `status`,
     ar.contact_currently_enrolled_school as currently_enrolled_school,
     ar.contact_owner_name,
+    ar.contact_postsec_advisor_name as postsec_advisor_name,
 
     enr.account_type,
     enr.date_last_verified,
@@ -32,6 +33,8 @@ select
     coalesce(t.verified_by_advisor, t.verified_by_nsc) as verification_date,
 
     concat(upper(left(t.term_season, 2)), ' ', right(left(t.year, 4), 2)) as term,
+
+    if(ar.contact_advising_provider = 'KIPP NYC', true, false) as is_collab,
 
     case
         when t.verified_by_advisor is not null
