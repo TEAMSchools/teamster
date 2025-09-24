@@ -29,11 +29,6 @@ select
         then 'Verified by NSC'
         else 'Unverified'
     end as verification_status,
-
-    row_number() over (
-        partition by ar.contact_id, t.term_season, t.year
-        order by t.term_verification_status desc
-    ) as rn_term,
 from {{ ref("int_kippadb__roster") }} as ar
 inner join
     {{ ref("stg_kippadb__enrollment") }} as enr
@@ -41,7 +36,11 @@ inner join
     and enr.status = 'Attending'
 left join {{ ref("stg_kippadb__account") }} as acc on enr.school = acc.id
 inner join
-    {{ ref("stg_kippadb__term") }} as t
-    on enr.id = t.enrollment
-    and t.term_season != 'Summer'
+    {{
+        dbt_utils.deduplicate(
+            relation=ref("stg_kippadb__term"),
+            partition_by="enrollment, term_season, year",
+            order_by="term_verification_status desc",
+        )
+    }}
 where ar.contact_postsecondary_status is not null
