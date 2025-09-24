@@ -1,3 +1,14 @@
+with
+    terms as (
+        {{
+            dbt_utils.deduplicate(
+                relation=ref("stg_kippadb__term"),
+                partition_by="enrollment, term_season, year",
+                order_by="term_verification_status desc",
+            )
+        }}
+    )
+
 select
     ar.contact_id,
     ar.contact_full_name as student_name,
@@ -35,12 +46,5 @@ inner join
     on ar.contact_id = enr.student
     and enr.status = 'Attending'
 left join {{ ref("stg_kippadb__account") }} as acc on enr.school = acc.id
-inner join
-    {{
-        dbt_utils.deduplicate(
-            relation=ref("stg_kippadb__term"),
-            partition_by="enrollment, term_season, year",
-            order_by="term_verification_status desc",
-        )
-    }}
+inner join terms as t on enr.id = t.enrollment and t.term_season != 'Summer'
 where ar.contact_postsecondary_status is not null
