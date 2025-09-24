@@ -9,7 +9,7 @@ select
     enr.account_type,
     enr.date_last_verified,
     enr.anticipated_graduation,
-    enr.status,
+    enr.status as enrollment_status,
 
     acc.name as account_name,
 
@@ -39,9 +39,9 @@ inner join
     {{ ref("stg_kippadb__enrollment") }} as enr
     on ar.contact_id = enr.student
     and enr.status = 'Attending'
-left join {{ ref("stg_kippadb__account") }} as acc on enr.account = acc.id
+left join {{ ref("stg_kippadb__account") }} as acc on enr.school = acc.id
 inner join
     {{ ref("stg_kippadb__term") }} as t
-    on enr.enrollment_id = t.enrollment
+    on enr.id = t.enrollment
     and t.term_season != 'Summer'
 where ar.contact_postsecondary_status is not null
