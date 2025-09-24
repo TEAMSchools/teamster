@@ -94,6 +94,10 @@ models:
       +schema: crdc
       staging:
         +materialized: table
+    csgf:
+      +schema: csgf
+      staging:
+        +materialized: table
     dayforce:
       +schema: dayforce
       +materialized: table
