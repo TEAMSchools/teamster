@@ -75,3 +75,11 @@ sources:
               - kippnewark
               - overgrad
               - int_overgrad__custom_fields_pivot
+      - name: int_overgrad__students
+        meta:
+          dagster:
+            group: overgrad
+            asset_key:
+              - kippnewark
+              - overgrad
+              - int_overgrad__students
