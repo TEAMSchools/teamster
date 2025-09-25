@@ -20,9 +20,17 @@ with
 
 select
     co.student_number,
+    co.state_studentnumber,
+    co.studentid,
     co.student_name,
+    co.week_start_monday,
+    co.week_end_sunday,
+    co.is_enrolled_week,
+    co.entrydate,
+    co.exitdate,
     co.academic_year,
     co.region,
+    co.schoolid,
     co.school_level,
     co.school,
     co.grade_level,
@@ -33,6 +41,10 @@ select
     co.enroll_status,
     co.absences_unexcused_year,
     co.unweighted_ada,
+    co.ethnicity,
+    co.is_504,
+    co.lep_status,
+    co.gifted_and_talented,
 
     att.calendardate,
     att.att_code,
