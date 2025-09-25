@@ -185,13 +185,13 @@ with
                 then region
                 when org_level = 'school'
                 then cast(schoolid as string)
-            end as join_clause
+            end as join_clause,
         from pre_agg_union_student
         where indicator = 'Total Enrollment'
     ),
 
     targets as (
-        select e.*, t.seat_target, t.budget_target
+        select e.*, t.seat_target, t.budget_target,
         from enrollment as e
         inner join
             {{ ref("stg_google_sheets__topline_enrollment_targets") }} as t
@@ -218,10 +218,12 @@ with
             aggregation_hash,
             join_clause,
             metric_aggregate_value,
+
+            cast(target_value as int) as goal,
+
             if(
                 target_type = 'seat_target', 'Seat Target', 'Budget Target'
             ) as indicator,
-            cast(target_value as int64) as goal,
         from
             targets
             unpivot (target_value for target_type in (seat_target, budget_target))
@@ -262,12 +264,12 @@ with
     ),
 
     agg_union_student as (
-        select *
+        select *,
         from pre_agg_union_student
 
         union all
 
-        select *
+        select *,
         from target_goals
     ),
 
