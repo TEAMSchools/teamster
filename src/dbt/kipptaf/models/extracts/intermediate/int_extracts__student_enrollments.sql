@@ -60,18 +60,11 @@ with
 
     overgrad_fafsa as (
         select
-            p._dbt_source_relation,
+            _dbt_source_relation,
+            external_student_id as salesforce_contact_id,
 
-            s.external_student_id as salesforce_contact_id,
-
-            if(p.fafsa_opt_out is null, 'No', 'Yes') as overgrad_fafsa_opt_out,
-
-        from {{ ref("int_overgrad__custom_fields_pivot") }} as p
-        inner join
-            {{ ref("stg_overgrad__students") }} as s
-            on p.id = s.id
-            and {{ union_dataset_join_clause(left_alias="p", right_alias="s") }}
-        where p._dbt_source_model = 'stg_overgrad__students'
+            if(fafsa_opt_out is null, 'No', 'Yes') as overgrad_fafsa_opt_out,
+        from {{ ref("int_overgrad__students") }}
     ),
 
     graduation_pathway_m as (

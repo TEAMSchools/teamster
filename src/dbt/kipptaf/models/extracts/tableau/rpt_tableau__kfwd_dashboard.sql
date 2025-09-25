@@ -433,18 +433,18 @@ select
 
     m.matriculation_type,
 
-    ocf.best_guess_pathway as bgp,
-    ocf.desired_pathway,
-    ocf.is_ed_ea,
-    ocf.personal_statement_status,
-    ocf.supplemental_essay_status,
-    ocf.recommendation_1_status,
-    ocf.recommendation_2_status,
-    ocf.created_fsa_id_student,
-    ocf.created_fsa_id_parent,
-    ocf.common_app_linked,
-    ocf.wishlist_signed_off_by_counselor,
-    ocf.wishlist_notes,
+    os.best_guess_pathway as bgp,
+    os.desired_pathway,
+    os.is_ed_ea,
+    os.personal_statement_status,
+    os.supplemental_essay_status,
+    os.recommendation_1_status,
+    os.recommendation_2_status,
+    os.created_fsa_id_student,
+    os.created_fsa_id_parent,
+    os.common_app_linked,
+    os.wishlist_signed_off_by_counselor,
+    os.wishlist_notes,
 
     al.n_award_letters_received,
 
@@ -514,7 +514,7 @@ select
 
     case
         when
-            ocf.best_guess_pathway = '4-year'
+            os.best_guess_pathway = '4-year'
             and round(c.contact_college_match_display_gpa, 2) >= 3.50
             and ar.n_wishlist >= 9
             and ar.n_68plus_ecc_wishlist >= 7
@@ -524,8 +524,8 @@ select
             and ar.n_68plus_ecc_ea_ed_wishlist >= 2
         then 1
         when
-            ocf.is_ed_ea != 'Yes'
-            and ocf.best_guess_pathway = '4-year'
+            os.is_ed_ea != 'Yes'
+            and os.best_guess_pathway = '4-year'
             and round(c.contact_college_match_display_gpa, 2) >= 3.00
             and ar.n_wishlist >= 9
             and ar.n_60plus_ecc_wishlist >= 7
@@ -533,8 +533,8 @@ select
             and ar.n_strong_oos_wishlist >= 2
         then 1
         when
-            ocf.is_ed_ea = 'Yes'
-            and ocf.best_guess_pathway = '4-year'
+            os.is_ed_ea = 'Yes'
+            and os.best_guess_pathway = '4-year'
             and round(c.contact_college_match_display_gpa, 2) >= 3.00
             and ar.n_wishlist >= 9
             and ar.n_60plus_ecc_wishlist >= 7
@@ -544,27 +544,27 @@ select
             and ar.n_meets_full_need_ea_ed_wishlist >= 1
         then 1
         when
-            ocf.best_guess_pathway = '4-year'
+            os.best_guess_pathway = '4-year'
             and round(c.contact_college_match_display_gpa, 2) >= 2.50
             and ar.n_wishlist >= 6
             and ar.n_nj_wishlist >= 6
             and ar.n_55plus_ecc_wishlist >= 4
         then 1
         when
-            ocf.best_guess_pathway = '4-year'
+            os.best_guess_pathway = '4-year'
             and round(c.contact_college_match_display_gpa, 2) >= 2.00
             and ar.n_wishlist >= 6
             and ar.n_nj_wishlist >= 6
         then 1
         when
-            ocf.best_guess_pathway = '4-year'
+            os.best_guess_pathway = '4-year'
             and round(c.contact_college_match_display_gpa, 2) < 2.00
             and ar.n_wishlist >= 3
             and ar.n_nj_wishlist >= 3
             and ar.n_aa_cte_wishlist >= 1
         then 1
         when
-            ocf.best_guess_pathway = '2-year'
+            os.best_guess_pathway = '2-year'
             and ar.n_wishlist >= 3
             and (
                 ar.n_aa_cte_wishlist >= 3
@@ -572,7 +572,7 @@ select
             )
         then 1
         when
-            ocf.best_guess_pathway in ('CTE', 'Workforce')
+            os.best_guess_pathway in ('CTE', 'Workforce')
             and ar.n_wishlist >= 3
             and ar.n_aa_cte_wishlist >= 3
         then 1
@@ -586,7 +586,7 @@ select
             and ar.n_68_plus_ecc_submitted >= 2
         then 1
         when
-            ocf.is_ed_ea = 'Yes'
+            os.is_ed_ea = 'Yes'
             and ar.n_68_plus_ecc_submitted >= 2
             and ar.n_meets_full_need_68plus_ecc_ea_ed_submitted >= 1
         then 1
@@ -653,11 +653,7 @@ left join
 left join persist_pivot as p on c.contact_id = p.sf_contact_id
 left join matriculation_type as m on apps.account_type = m.application_account_type
 left join
-    {{ ref("stg_overgrad__students") }} as os on c.contact_id = os.external_student_id
-left join
-    {{ ref("int_overgrad__custom_fields_pivot") }} as ocf
-    on os.id = ocf.id
-    and ocf._dbt_source_model = 'stg_overgrad__students'
+    {{ ref("int_overgrad__students") }} as os on c.contact_id = os.external_student_id
 left join award_letter_rollup as al on os.id = al.og_student_id
 left join test_attempts as ta on c.contact_id = ta.contact
 left join
