@@ -18,5 +18,5 @@ models:
         data_type: string
       - name: Org_Level
         data_type: string
-      - name: join_clause
+      - name: join_key
         data_type: string

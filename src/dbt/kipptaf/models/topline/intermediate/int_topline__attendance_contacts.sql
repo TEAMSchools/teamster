@@ -4,12 +4,12 @@ with
             student_school_id,
             academic_year,
             call_date,
-            educator_name as commlog_staff_name,
-            reason as commlog_reason,
-            response as commlog_notes,
-            topic as commlog_topic,
-            call_type as commlog_type,
-            call_status as commlog_status,
+            educator_name,
+            reason,
+            response,
+            topic,
+            call_type,
+            call_status,
 
             row_number() over (
                 partition by student_school_id, call_date order by call_date_time desc
