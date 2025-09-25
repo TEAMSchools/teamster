@@ -69,7 +69,7 @@ with
                 when `subject` like 'English%'
                 then 'Reading'
                 when
-                    `subject` like 'Algebra%'
+                    (`subject` like 'Algebra%' and assessmentgrade != '8')
                     or `subject` in ('Mathematics', 'Geometry')
                 then 'Math'
             end as `subject`,
