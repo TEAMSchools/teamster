@@ -10,8 +10,8 @@ with
     form_responses as (
         select *,
         from {{ ref("int_google_forms__form_responses") }}
-        -- filtering for Operations Teammate PM Form
         where
+            /* Operations Teammate PM Form */
             form_id = '1oPcgOeaNS7DNaG2wa9JnfkWfxfxp7eOuj3XnXJoe-vE'
             and text_value is not null
     ),
