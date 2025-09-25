@@ -23,7 +23,7 @@ with
             co.exitdate,
             co.enroll_status,
 
-            coalesce(sum(c.is_successful_int), 0) as successful_comms_sum,
+            sum(c.is_successful_int) as successful_comms_sum,
             count(c.is_successful_int) as required_comms_count,
         from {{ ref("int_extracts__student_enrollments_weeks") }} as co
         left join

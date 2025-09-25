@@ -1,20 +1,61 @@
 {{ config(materialized="table") }}
 
 with
-    metric_union as (
+    multilayer_metrics as (
         /* K-8 Reading & Math */
         select
-            layer,
-            'Formative Assessments' as indicator,
             student_number,
             academic_year,
             week_start_monday as term,
             discipline,
+            is_mastery_running_int as metric_value,
+
+            'Formative Assessments' as indicator,
+        from {{ ref("int_topline__formative_assessment_weekly") }}
+
+        union all
+
+        select
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            discipline,
+            is_proficient as metric_value,
+
+            'i-Ready Diagnostic' as indicator,
+        from {{ ref("int_topline__iready_diagnostic_weekly") }}
+
+        union all
+
+        select
+            student_number,
+            academic_year,
+            week_start_monday as term,
+
+            null as discipline,
+
+            if(gpa_y1 >= 3.00, 1, 0) as metric_value,
+
+            'Weighted Y1 GPA' as indicator,
+        from {{ ref("int_topline__gpa_term_weekly") }}
+    ),
+
+    metric_union as (
+        /* K-8 Reading & Math */
+        select
+            layer,
+
+            mlm.indicator,
+            mlm.student_number,
+            mlm.academic_year,
+            mlm.term,
+            mlm.discipline,
 
             null as numerator,
             null as denominator,
-            is_mastery_running_int as metric_value,
-        from {{ ref("int_topline__formative_assessment_weekly") }}
+
+            mlm.metric_value,
+        from multilayer_metrics as mlm
         cross join unnest(['GPA, ACT, SAT', 'K-8 Reading and Math']) as layer
 
         union all
@@ -46,22 +87,6 @@ with
             null as denominator,
             completed_test_round_int as metric_value,
         from {{ ref("int_topline__dibels_pm_weekly") }}
-
-        union all
-
-        select
-            layer,
-            'i-Ready Diagnostic' as indicator,
-            student_number,
-            academic_year,
-            week_start_monday as term,
-            discipline,
-
-            null as numerator,
-            null as denominator,
-            is_proficient as metric_value,
-        from {{ ref("int_topline__iready_diagnostic_weekly") }}
-        cross join unnest(['GPA, ACT, SAT', 'K-8 Reading and Math']) as layer
 
         union all
 
@@ -272,22 +297,6 @@ with
             null as denominator,
             if(cumulative_y1_gpa_projected_unweighted >= 3.00, 1, 0) as metric_value,
         from {{ ref("int_topline__gpa_cumulative_weekly") }}
-
-        union all
-
-        select
-            layer,
-            'Weighted Y1 GPA' as indicator,
-            student_number,
-            academic_year,
-            week_start_monday as term,
-            null as discipline,
-
-            null as numerator,
-            null as denominator,
-            if(gpa_y1 >= 3.00, 1, 0) as metric_value,
-        from {{ ref("int_topline__gpa_term_weekly") }}
-        cross join unnest(['GPA, ACT, SAT', 'K-8 Reading and Math']) as layer
 
         union all
 
