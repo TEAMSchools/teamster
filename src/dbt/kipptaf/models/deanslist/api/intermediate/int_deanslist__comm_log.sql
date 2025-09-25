@@ -11,10 +11,10 @@ with
         }}
     )
 
--- trunk-ignore(sqlfluff/AM04)
 select
     *,
 
+    {# TODO: move to deanslist package #}
     if(reason like 'Att:%', true, false) as is_attendance_call,
     if(reason like 'Chronic Absence:%', true, false) as is_truancy_call,
 from union_relations

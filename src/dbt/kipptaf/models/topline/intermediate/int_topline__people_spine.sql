@@ -1,18 +1,4 @@
 with
-    date_spine as (
-        select
-            week_start_monday,
-            week_end_sunday,
-            schoolid,
-            academic_year,
-
-            min(week_start_monday) over (
-                partition by academic_year, schoolid
-            ) as first_day_of_ay,
-        from {{ ref("int_powerschool__calendar_week") }}
-        where academic_year >= 2025  /* 1st year for topline */
-    ),
-
     staff_roster_history as (
         select
             employee_number,
@@ -65,19 +51,14 @@ select
     ds.academic_year,
     ds.week_start_monday,
     ds.week_end_sunday,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between ds.week_start_monday and ds.week_end_sunday,
-        true,
-        false
-    ) as is_current_week,
+    ds.is_current_week_mon_sun as is_current_week,
 from staff_roster_history as srh
 inner join
-    date_spine as ds
+    {{ ref("int_powerschool__calendar_week") }} as ds
     on srh.schoolid = ds.schoolid
     and ds.week_end_sunday between srh.effective_date_start and srh.effective_date_end
     and (
-        srh.worker_termination_date is null
-        or srh.worker_termination_date > ds.first_day_of_ay
+        srh.worker_termination_date > ds.first_day_school_year
+        or srh.worker_termination_date is null
     )
+    and ds.academic_year >= 2025  /* 1st year for topline */

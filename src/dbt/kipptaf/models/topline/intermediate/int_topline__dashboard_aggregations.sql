@@ -64,8 +64,10 @@ with
         select
             m.academic_year,
             m.region,
+
             null as schoolid,
             'All' as school,
+
             m.layer,
             m.indicator,
             m.discipline,
@@ -121,9 +123,11 @@ with
 
         select
             m.academic_year,
+
             'All' as region,
             null as schoolid,
             'All' as school,
+
             m.layer,
             m.indicator,
             m.discipline,
@@ -185,7 +189,7 @@ with
                 then region
                 when org_level = 'school'
                 then cast(schoolid as string)
-            end as join_clause,
+            end as join_key,
         from pre_agg_union_student
         where indicator = 'Total Enrollment'
     ),
@@ -196,7 +200,7 @@ with
         inner join
             {{ ref("stg_google_sheets__topline_enrollment_targets") }} as t
             on e.academic_year = t.academic_year
-            and e.join_clause = t.join_clause
+            and e.join_key = t.join_key
     ),
 
     target_unpivot as (
@@ -281,7 +285,9 @@ with
             m.home_work_location_name as school,
             m.layer,
             m.indicator,
+
             cast(null as string) as discipline,
+
             m.term,
             m.is_current_week,
 
@@ -335,10 +341,14 @@ with
             m.academic_year,
             m.home_business_unit_name as region,
             m.home_work_location_powerschool_school_id as schoolid,
+
             'All' as school,
+
             m.layer,
             m.indicator,
+
             cast(null as string) as discipline,
+
             m.term,
             m.is_current_week,
 
@@ -389,12 +399,16 @@ with
 
         select
             m.academic_year,
+
             'All' as region,
             null as schoolid,
             'All' as school,
+
             m.layer,
             m.indicator,
+
             cast(null as string) as discipline,
+
             m.term,
             m.is_current_week,
 
@@ -450,6 +464,7 @@ select
     if(
         aggregation_data_type = 'Integer', metric_aggregate_value, null
     ) as metric_aggregate_value_integer,
+
     case
         when not has_goal
         then null
@@ -468,6 +483,7 @@ select
         when goal_direction = 'golf'
         then (metric_aggregate_value - goal) / goal
     end as goal_difference_percent,
+
     if(
         case
             when not has_goal
@@ -489,7 +505,7 @@ select
         end
     ) as progress_to_goal_pct,
 from agg_union_student
-where term <= current_date('America/New_York')
+where term <= current_date('{{ var("local_timezone") }}')
 
 union all
 
@@ -543,4 +559,4 @@ select
         end
     ) as progress_to_goal_pct,
 from agg_union_staff
-where term <= current_date('America/New_York')
+where term <= current_date('{{ var("local_timezone") }}')
