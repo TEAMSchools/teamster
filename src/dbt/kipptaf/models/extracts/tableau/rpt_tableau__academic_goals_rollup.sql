@@ -69,12 +69,14 @@ with
                 when `subject` like 'English%'
                 then 'Reading'
                 when
-                    (`subject` like 'Algebra%' and assessmentgrade != '8')
+                    `subject` like 'Algebra%'
                     or `subject` in ('Mathematics', 'Geometry')
                 then 'Math'
             end as `subject`,
         from {{ ref("int_pearson__all_assessments") }}
-        where assessment_name = 'NJSLA'
+        where
+            assessment_name = 'NJSLA'
+            and not (assessmentgrade = '8' and `subject` like 'Algebra%')
 
         union all
 
