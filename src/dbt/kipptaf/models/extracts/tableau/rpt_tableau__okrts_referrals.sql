@@ -115,6 +115,7 @@ with
 
 select
     co.student_number,
+    co.state_studentnumber,
     co.student_name,
     co.academic_year,
     co.schoolid,
