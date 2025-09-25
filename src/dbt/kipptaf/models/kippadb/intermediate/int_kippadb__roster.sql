@@ -20,7 +20,7 @@ with
             on co.entry_schoolid = s.school_number
             and {{ union_dataset_join_clause(left_alias="co", right_alias="s") }}
         where co.rn_year = 1
-        group by co.student_number, s.abbreviation
+        group by co._dbt_source_relation, co.student_number, s.abbreviation
     ),
 
     dlm as (
