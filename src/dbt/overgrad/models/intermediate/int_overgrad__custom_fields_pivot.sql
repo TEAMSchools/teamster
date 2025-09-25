@@ -12,10 +12,13 @@ with
 
     translations as (
         select
-            ur._dbt_source_relation,
             ur.id,
 
             cf.name,
+
+            regexp_extract(
+                ur._dbt_source_relation, r'`stg_overgrad__(\w+)__custom_field_values`'
+            ) as source_object,
 
             case
                 when cf.field_type = 'date'
@@ -36,7 +39,9 @@ with
 
 select
     id,
+    source_object,
 
+    /* pivot cols */
     fafsa_verification_status,
     intended_degree_type,
     eof_status,
@@ -76,10 +81,6 @@ select
     date(
         state_aid_application_submission_date
     ) as state_aid_application_submission_date,
-
-    regexp_extract(
-        _dbt_source_relation, r'`(stg_overgrad__\w+)__custom_field_values`'
-    ) as _dbt_source_model,
 from
     translations pivot (
         max(`value`) for `name` in (
