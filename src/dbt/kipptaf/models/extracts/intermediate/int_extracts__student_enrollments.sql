@@ -63,7 +63,7 @@ with
             _dbt_source_relation,
             external_student_id as salesforce_contact_id,
 
-            if(p.fafsa_opt_out is null, 'No', 'Yes') as overgrad_fafsa_opt_out,
+            if(fafsa_opt_out is null, 'No', 'Yes') as overgrad_fafsa_opt_out,
         from {{ ref("int_overgrad__students") }}
     ),
 
