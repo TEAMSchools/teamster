@@ -220,7 +220,6 @@ with
             aggregation_data_type,
             aggregation_type,
             aggregation_hash,
-            join_clause,
             metric_aggregate_value,
 
             cast(target_value as int) as goal,
@@ -259,12 +258,12 @@ with
                 safe_divide(tu.metric_aggregate_value, tu.goal), 3
             ) as metric_aggregate_value,
         from target_unpivot as tu
-        left join
+        inner join
             {{ ref("stg_google_sheets__topline_aggregate_goals") }} as tg
             on tu.indicator = tg.topline_indicator
             and tu.layer = tg.layer
             and tu.aggregation_hash = tg.aggregation_hash
-        where tg.has_goal
+            and tg.has_goal
     ),
 
     agg_union_student as (
