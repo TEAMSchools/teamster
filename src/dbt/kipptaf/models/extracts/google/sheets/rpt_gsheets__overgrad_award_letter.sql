@@ -26,7 +26,7 @@ select
 
     os.last_name || ', ' || os.first_name as student,
 
-from {{ ref("stg_overgrad__students") }} as os
+from {{ ref("int_overgrad__students") }} as os
 inner join
     {{ ref("stg_overgrad__admissions") }} as oa
     on os.id = oa.student__id
