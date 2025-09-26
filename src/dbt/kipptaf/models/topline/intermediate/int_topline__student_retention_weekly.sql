@@ -157,7 +157,8 @@ select
     cw.week_end_sunday,
     cw.week_number_academic_year,
 
-    max(is_enrolled_day_int) as is_enrolled,
+    max(is_enrolled_day_int) as is_retained,
+    max(1 - is_enrolled_day_int) as is_attrition,
 from retention_daily as rd
 inner join
     {{ ref("int_extracts__student_enrollments_weeks") }} as cw
