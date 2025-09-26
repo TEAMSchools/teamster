@@ -188,13 +188,13 @@ with
             'Attendance and Enrollment' as layer,
             'Student Retention' as indicator,
             student_number,
-            attrition_year as academic_year,
+            academic_year,
             week_start_monday as term,
             null as discipline,
 
             null as numerator,
             null as denominator,
-            if(is_retained_int) as metric_value,
+            is_retained_int as metric_value,
         from {{ ref("int_topline__student_retention_weekly") }}
 
         union all
