@@ -121,25 +121,54 @@ with
             enrolled_days as ed
             on s.student_number = ed.student_number
             and s.attrition_day = ed.enrollment_day
+    ),
+
+    retention_daily as (
+        select
+            student_number,
+            attrition_year,
+            attrition_day,
+            next_year_schoolid,
+            student_name,
+            region,
+            school,
+            schoolid,
+            entrydate,
+            exitdate,
+
+            case
+                when attrition_day > exitdate and next_year_schoolid = 999999
+                then 1
+                when is_enrolled_day_int = 1
+                then 1
+                else 0
+            end as is_enrolled_day_int,
+        from scaffold_full
     )
 
 select
-    student_number,
-    attrition_year,
-    attrition_day,
-    next_year_schoolid,
-    student_name,
-    region,
-    school,
-    schoolid,
-    entrydate,
-    exitdate,
+    rd.student_number,
+    rd.attrition_year,
+    rd.schoolid,
+    rd.entrydate,
+    rd.exitdate,
 
-    case
-        when attrition_day > exitdate and next_year_schoolid = 999999
-        then 1
-        when is_enrolled_day_int = 1
-        then 1
-        else 0
-    end as is_enrolled_day_int,
-from scaffold_full
+    cw.week_start_monday,
+    cw.week_end_sunday,
+    cw.week_number_academic_year,
+
+    max(is_enrolled_day_int) as is_enrolled,
+from retention_daily as rd
+inner join
+    {{ ref("int_powerschool__calendar_week") }} as cw
+    on rd.schoolid = cw.schoolid
+    and rd.attrition_day between cw.week_start_monday and cw.week_end_sunday
+group by
+    rd.student_number,
+    rd.attrition_year,
+    rd.schoolid,
+    rd.entrydate,
+    rd.exitdate,
+    cw.week_start_monday,
+    cw.week_end_sunday,
+    cw.week_number_academic_year
