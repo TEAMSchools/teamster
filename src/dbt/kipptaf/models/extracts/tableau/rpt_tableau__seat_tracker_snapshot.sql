@@ -34,6 +34,7 @@ with
     final as (
         select
             date_spine.date_week,
+
             seats_snapshot.staffing_model_id,
             seats_snapshot.staffing_status,
             seats_snapshot.status_detail,

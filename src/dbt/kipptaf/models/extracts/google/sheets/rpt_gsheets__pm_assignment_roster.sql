@@ -63,7 +63,7 @@ from {{ ref("int_people__staff_roster") }} as sr
 /* manager information */
 left join
     {{ ref("int_people__staff_roster") }} as sr2
-    on sr2.employee_number = sr.reports_to_employee_number
+    on sr.reports_to_employee_number = sr2.employee_number
 left join
     {{ ref("stg_people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.location_name

@@ -35,10 +35,10 @@ def test_dbt_assets_kippnewark():
 
 
 def test_dbt_assets_kipptaf():
-    from teamster.code_locations.kipptaf._dbt.assets import dbt_assets
+    from teamster.code_locations.kipptaf._dbt.assets import assets
 
     _test_dbt_assets(
-        assets=[dbt_assets],
+        assets=assets,
         code_location="kipptaf",
         selection=[
             "kipptaf/edplan/qa_edplan__powerschool_mismatch",
