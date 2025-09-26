@@ -21,10 +21,10 @@ with
 
             {% for benchmark in comparison_benchmarks %}
                 avg(
-                    case when goal_subtype = '{{ benchmark.label }}' then score end
+                    case when goal_subtype = '{{ benchmark.label }}' then min_score end
                 ) as {{ benchmark.prefix }}_score,
                 avg(
-                    case when goal_subtype = '{{ benchmark.label }}' then goal end
+                    case when goal_subtype = '{{ benchmark.label }}' then pct_goal end
                 ) as {{ benchmark.prefix }}_goal
                 {% if not loop.last %},{% endif %}
             {% endfor %}
@@ -46,10 +46,12 @@ with
 
             {% for board_goal in comparison_board_goals %}
                 avg(
-                    case when goal_category = '{{ board_goal.label }}' then score end
+                    case
+                        when goal_category = '{{ board_goal.label }}' then min_score
+                    end
                 ) as {{ board_goal.prefix }}_score,
                 avg(
-                    case when goal_category = '{{ board_goal.label }}' then goal end
+                    case when goal_category = '{{ board_goal.label }}' then pct_goal end
                 ) as {{ board_goal.prefix }}_goal
                 {% if not loop.last %},{% endif %}
             {% endfor %}

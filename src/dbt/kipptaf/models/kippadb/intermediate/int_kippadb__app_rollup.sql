@@ -415,13 +415,13 @@ select
     aa.n_aa_cte_submitted,
     aa.max_ecc_accepted,
 
-    ocf.best_guess_pathway,
+    os.best_guess_pathway,
 
     r.student_number,
 
     case
         when
-            ocf.best_guess_pathway = '4-year'
+            os.best_guess_pathway = '4-year'
             and round(r.contact_college_match_display_gpa, 2) >= 3.50
             and aa.n_wishlist >= 9
             and aa.n_68plus_ecc_wishlist >= 7
@@ -431,8 +431,8 @@ select
             and aa.n_68plus_ecc_ea_ed_wishlist >= 2
         then 1
         when
-            ocf.is_ed_ea != 'Yes'
-            and ocf.best_guess_pathway = '4-year'
+            os.is_ed_ea != 'Yes'
+            and os.best_guess_pathway = '4-year'
             and round(r.contact_college_match_display_gpa, 2) >= 3.00
             and aa.n_wishlist >= 9
             and aa.n_60plus_ecc_wishlist >= 7
@@ -440,8 +440,8 @@ select
             and aa.n_strong_oos_wishlist >= 2
         then 1
         when
-            ocf.is_ed_ea = 'Yes'
-            and ocf.best_guess_pathway = '4-year'
+            os.is_ed_ea = 'Yes'
+            and os.best_guess_pathway = '4-year'
             and round(r.contact_college_match_display_gpa, 2) >= 3.00
             and aa.n_wishlist >= 9
             and aa.n_60plus_ecc_wishlist >= 7
@@ -451,27 +451,27 @@ select
             and aa.n_meets_full_need_ea_ed_wishlist >= 1
         then 1
         when
-            ocf.best_guess_pathway = '4-year'
+            os.best_guess_pathway = '4-year'
             and round(r.contact_college_match_display_gpa, 2) >= 2.50
             and aa.n_wishlist >= 6
             and aa.n_nj_wishlist >= 6
             and aa.n_55plus_ecc_wishlist >= 4
         then 1
         when
-            ocf.best_guess_pathway = '4-year'
+            os.best_guess_pathway = '4-year'
             and round(r.contact_college_match_display_gpa, 2) >= 2.00
             and aa.n_wishlist >= 6
             and aa.n_nj_wishlist >= 6
         then 1
         when
-            ocf.best_guess_pathway = '4-year'
+            os.best_guess_pathway = '4-year'
             and round(r.contact_college_match_display_gpa, 2) < 2.00
             and aa.n_wishlist >= 3
             and aa.n_nj_wishlist >= 3
             and aa.n_aa_cte_wishlist >= 1
         then 1
         when
-            ocf.best_guess_pathway = '2-year'
+            os.best_guess_pathway = '2-year'
             and aa.n_wishlist >= 3
             and (
                 aa.n_aa_cte_wishlist >= 3
@@ -479,7 +479,7 @@ select
             )
         then 1
         when
-            ocf.best_guess_pathway in ('CTE', 'Workforce')
+            os.best_guess_pathway in ('CTE', 'Workforce')
             and aa.n_wishlist >= 3
             and aa.n_aa_cte_wishlist >= 3
         then 1
@@ -493,7 +493,7 @@ select
             and aa.n_68_plus_ecc_submitted >= 2
         then 1
         when
-            ocf.is_ed_ea = 'Yes'
+            os.is_ed_ea = 'Yes'
             and aa.n_68_plus_ecc_submitted >= 2
             and aa.n_meets_full_need_68plus_ecc_ea_ed_submitted >= 1
         then 1
@@ -502,7 +502,7 @@ select
 
     case
         when
-            ocf.best_guess_pathway = '4-year'
+            os.best_guess_pathway = '4-year'
             and round(r.contact_college_match_display_gpa, 2) >= 3.50
             and aa.n_submitted >= 9
             and aa.n_68_plus_ecc_submitted >= 7
@@ -512,8 +512,8 @@ select
             and aa.n_68plus_ecc_ea_ed_submitted >= 2
         then 1
         when
-            ocf.is_ed_ea != 'Yes'
-            and ocf.best_guess_pathway = '4-year'
+            os.is_ed_ea != 'Yes'
+            and os.best_guess_pathway = '4-year'
             and round(r.contact_college_match_display_gpa, 2) >= 3.00
             and aa.n_submitted >= 9
             and aa.n_60plus_ecc_submitted >= 7
@@ -521,8 +521,8 @@ select
             and aa.n_strong_oos_submitted >= 2
         then 1
         when
-            ocf.is_ed_ea = 'Yes'
-            and ocf.best_guess_pathway = '4-year'
+            os.is_ed_ea = 'Yes'
+            and os.best_guess_pathway = '4-year'
             and round(r.contact_college_match_display_gpa, 2) >= 3.00
             and aa.n_submitted >= 9
             and aa.n_68_plus_ecc_submitted >= 7
@@ -532,20 +532,20 @@ select
             and aa.n_meets_full_need_ea_ed_submitted >= 1
         then 1
         when
-            ocf.best_guess_pathway = '4-year'
+            os.best_guess_pathway = '4-year'
             and round(r.contact_college_match_display_gpa, 2) >= 2.50
             and aa.n_submitted >= 6
             and aa.n_nj_submitted >= 6
             and aa.n_55_plus_ecc_submitted >= 4
         then 1
         when
-            ocf.best_guess_pathway = '4-year'
+            os.best_guess_pathway = '4-year'
             and round(r.contact_college_match_display_gpa, 2) >= 2.00
             and aa.n_submitted >= 6
             and aa.n_nj_submitted >= 6
         then 1
         when
-            ocf.best_guess_pathway = '4-year'
+            os.best_guess_pathway = '4-year'
             and round(r.contact_college_match_display_gpa, 2) < 2.00
             and aa.n_submitted >= 3
             and aa.n_nj_submitted >= 3
@@ -556,8 +556,4 @@ select
 from app_agg as aa
 inner join {{ ref("int_kippadb__roster") }} as r on aa.applicant = r.contact_id
 left join
-    {{ ref("stg_overgrad__students") }} as os on r.contact_id = os.external_student_id
-left join
-    {{ ref("int_overgrad__custom_fields_pivot") }} as ocf
-    on os.id = ocf.id
-    and ocf._dbt_source_model = 'stg_overgrad__students'
+    {{ ref("int_overgrad__students") }} as os on r.contact_id = os.external_student_id

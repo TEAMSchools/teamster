@@ -1,6 +1,16 @@
-version: 2
 models:
   - name: stg_overgrad__students__custom_field_values
+    config:
+      contract:
+        enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - id
+              - custom_field_id
+          config:
+            store_failures: true
     columns:
       - name: id
         data_type: int64
@@ -10,5 +20,5 @@ models:
         data_type: float64
       - name: date
         data_type: string
-      - name: select
+      - name: "`select`"
         data_type: int64

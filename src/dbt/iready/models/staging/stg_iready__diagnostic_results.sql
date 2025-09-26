@@ -1,5 +1,5 @@
 with
-    transformations as (
+    diagnostic_results as (
         select
             * except (
                 `grouping`,
@@ -38,7 +38,6 @@ with
 
             cast(overall_scale_score as int) as overall_scale_score,
             cast(duration_min as int) as duration_min,
-            cast(student_id as int) as student_id,
 
             cast(
                 percent_progress_to_annual_stretch_growth_percent as numeric
@@ -104,51 +103,116 @@ with
                 most_recent_diagnostic_y_n, most_recent_diagnostic_ytd_y_n
             ) as most_recent_diagnostic_ytd_y_n,
 
+            safe_cast(student_id as int) as student_id,
+
             parse_date('%m/%d/%Y', `start_date`) as `start_date`,
             parse_date('%m/%d/%Y', completion_date) as completion_date,
-
-            if(
-                _dagster_partition_subject = 'ela',
-                'Reading',
-                initcap(_dagster_partition_subject)
-            ) as `subject`,
-
-            case
-                overall_relative_placement
-                when '3 or More Grade Levels Below'
-                then 1
-                when '2 Grade Levels Below'
-                then 2
-                when '1 Grade Level Below'
-                then 3
-                when 'Early On Grade Level'
-                then 4
-                when 'Mid or Above Grade Level'
-                then 5
-            end as overall_relative_placement_int,
-
-            case
-                when
-                    overall_relative_placement
-                    in ('Early On Grade Level', 'Mid or Above Grade Level')
-                then 'On or Above Grade Level'
-                when overall_relative_placement = '1 Grade Level Below'
-                then overall_relative_placement
-                when
-                    overall_relative_placement
-                    in ('2 Grade Levels Below', '3 or More Grade Levels Below')
-                then 'Two or More Grade Levels Below'
-            end as placement_3_level,
         from {{ source("iready", "src_iready__diagnostic_results") }}
     ),
 
-    calculations as (
+    hs_goals as (
+        select
+            * except (annual_typical_growth_measure, annual_stretch_growth_measure),
+
+            case
+                when student_grade not in ('9', '10', '11', '12')
+                then annual_typical_growth_measure
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = 'Mid or Above Grade Level'
+                then 9
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = 'Early On Grade Level'
+                then 9
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = '1 Grade Level Below'
+                then 9
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = '2 Grade Levels Below'
+                then 10
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = '3 or More Grade Levels Below'
+                then 12
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = 'Mid or Above Grade Level'
+                then 4
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = 'Early On Grade Level'
+                then 4
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = '1 Grade Level Below'
+                then 9
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = '2 Grade Levels Below'
+                then 12
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = '3 or More Grade Levels Below'
+                then 18
+            end as annual_typical_growth_measure,
+
+            case
+                when student_grade not in ('9', '10', '11', '12')
+                then annual_stretch_growth_measure
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = 'Mid or Above Grade Level'
+                then 12
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = 'Early On Grade Level'
+                then 21
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = '1 Grade Level Below'
+                then 22
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = '2 Grade Levels Below'
+                then 23
+                when
+                    _dagster_partition_subject = 'math'
+                    and overall_relative_placement = '3 or More Grade Levels Below'
+                then 31
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = 'Mid or Above Grade Level'
+                then 13
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = 'Early On Grade Level'
+                then 22
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = '1 Grade Level Below'
+                then 25
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = '2 Grade Levels Below'
+                then 36
+                when
+                    _dagster_partition_subject = 'ela'
+                    and overall_relative_placement = '3 or More Grade Levels Below'
+                then 50
+            end as annual_stretch_growth_measure,
+        from diagnostic_results
+    ),
+
+    growth_measures as (
         select
             *,
 
             annual_typical_growth_measure - diagnostic_gain as typical_growth,
             annual_stretch_growth_measure - diagnostic_gain as stretch_growth,
-        from transformations
+        from hs_goals
     )
 
 select
@@ -161,4 +225,37 @@ select
     overall_scale_score + if(
         stretch_growth > 0, stretch_growth, 0
     ) as overall_scale_score_plus_stretch_growth,
-from calculations
+
+    if(
+        _dagster_partition_subject = 'ela',
+        'Reading',
+        initcap(_dagster_partition_subject)
+    ) as `subject`,
+
+    case
+        overall_relative_placement
+        when '3 or More Grade Levels Below'
+        then 1
+        when '2 Grade Levels Below'
+        then 2
+        when '1 Grade Level Below'
+        then 3
+        when 'Early On Grade Level'
+        then 4
+        when 'Mid or Above Grade Level'
+        then 5
+    end as overall_relative_placement_int,
+
+    case
+        when
+            overall_relative_placement
+            in ('Early On Grade Level', 'Mid or Above Grade Level')
+        then 'On or Above Grade Level'
+        when overall_relative_placement = '1 Grade Level Below'
+        then overall_relative_placement
+        when
+            overall_relative_placement
+            in ('2 Grade Levels Below', '3 or More Grade Levels Below')
+        then 'Two or More Grade Levels Below'
+    end as placement_3_level,
+from growth_measures

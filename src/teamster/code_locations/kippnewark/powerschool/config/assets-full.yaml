@@ -48,6 +48,8 @@ assets:
     partition_column: whenmodified
   - asset_name: users
     partition_column: whenmodified
+  - asset_name: userscorefields
+    partition_column: whenmodified
   - asset_name: u_clg_et_stu
     partition_column: whenmodified
   - asset_name: u_clg_et_stu_alt
@@ -65,44 +67,12 @@ assets:
       - rides_staff
   - asset_name: person
     partition_column: whenmodified
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              cpu: 250m
-            limits:
-              cpu: 750m
   - asset_name: personphonenumberassoc
     partition_column: whenmodified
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              cpu: 250m
-            limits:
-              cpu: 750m
   - asset_name: studentcontactdetail
     partition_column: whenmodified
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              cpu: 250m
-            limits:
-              cpu: 750m
   - asset_name: s_nj_stu_x
     partition_column: whenmodified
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              memory: 0.5Gi
-            limits:
-              memory: 2.5Gi
   - asset_name: cc
     partition_column: transaction_date
     select_columns:
@@ -120,19 +90,9 @@ assets:
       - teacherid
       - currentabsences
       - currenttardies
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              cpu: 250m
-            limits:
-              cpu: 750m
   # - asset_name: gpstudentwaiver
   #   partition_column: whenmodified
   # - asset_name: s_nj_usr_x
-  #   partition_column: whenmodified
-  # - asset_name: userscorefields
   #   partition_column: whenmodified
   # - asset_name: u_storedgrades_de
   #   partition_column: whenmodified

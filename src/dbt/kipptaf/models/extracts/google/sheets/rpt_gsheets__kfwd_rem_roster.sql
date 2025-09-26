@@ -163,6 +163,10 @@ select
     r.contact_most_recent_college_enrollment_status
     as most_recent_college_enrollment_status,
     r.contact_currently_enrolled_school as currently_enrolled_school,
+
+    r.lastfirst || ' - ' || r.contact_id as student_name_id_hash,
+    r.contact_postsec_advisor as postsec_advisor,
+    r.contact_postsec_advisor_name as postsec_advisor_name,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
 left join {{ ref("stg_kippadb__enrollment") }} as e on ei.cur_enrollment_id = e.id

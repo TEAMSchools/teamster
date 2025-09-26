@@ -1,16 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source(
-                    "schoolmint_grow", "src_schoolmint_grow__measurements"
-                ),
-                partition_by="_id",
-                order_by="_file_name desc",
-            )
-        }}
-    )
-
 select
     _id as measurement_id,
     district,
@@ -24,8 +11,8 @@ select
     textboxes as text_boxes,
     measurementoptions as measurement_options,
 
-    timestamp(created) as created,
-    timestamp(lastmodified) as last_modified,
-    timestamp(archivedat) as archived_at,
-from deduplicate
+    cast(created as timestamp) as created,
+    cast(lastmodified as timestamp) as last_modified,
+    cast(archivedat as timestamp) as archived_at,
+from {{ source("schoolmint_grow", "src_schoolmint_grow__measurements") }}
 where _dagster_partition_key = 'f'
