@@ -1,4 +1,4 @@
-import json
+"""import json
 from datetime import datetime, timezone
 
 from dagster import (
@@ -70,3 +70,4 @@ def airbyte_job_status_sensor(
 sensors = [
     airbyte_job_status_sensor,
 ]
+"""
