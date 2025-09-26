@@ -87,8 +87,11 @@ with
             s.attrition_year,
             s.attrition_day,
 
-            ed.next_year_schoolid,
             ed.is_enrolled_day_int,
+
+            last_value(ed.next_year_schoolid ignore nulls) over (
+                partition by s.student_number order by s.attrition_day
+            ) as next_year_schoolid,
 
             last_value(ed.student_name ignore nulls) over (
                 partition by s.student_number order by s.attrition_day
