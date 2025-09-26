@@ -33,9 +33,29 @@ with
 
 select
     f.academic_year,
-    f.entity,
+    f.entity as region,
     f.schoolid,
     f.week_start_monday,
+
+    g.indicator_display,
+    g.org_level,
+    g.has_goal,
+    g.goal_direction,
+    g.aggregation_data_type,
+    g.aggregation_type,
+    g.aggregation_hash,
+    g.goal,
+
+    null as school,
+    'Outstanding Teammates' as layer,
+    'Staffed' as indicator,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between f.week_start_monday and f.week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
 
     round(avg(f.is_staffed), 3) as metric_aggregate_value,
 from final as f
@@ -43,32 +63,79 @@ inner join
     {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
     on f.entity = g.entity
     and f.schoolid = g.schoolid
-group by f.academic_year, f.entity, f.schoolid, f.week_start_monday
+    and g.layer = 'Outstanding Teammates'
+    and g.topline_indicator = 'Staffed'
+group by all
 
 union all
 
 select
     f.academic_year,
-    f.entity,
+    f.entity as region,
     null as schoolid,
     f.week_start_monday,
+
+    g.indicator_display,
+    g.org_level,
+    g.has_goal,
+    g.goal_direction,
+    g.aggregation_data_type,
+    g.aggregation_type,
+    g.aggregation_hash,
+    g.goal,
+
+    null as school,
+    'Outstanding Teammates' as layer,
+    'Staffed' as indicator,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between f.week_start_monday and f.week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
 
     round(avg(f.is_staffed), 3) as metric_aggregate_value,
 from final as f
 inner join
-    {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g on f.entity = g.entity
-group by f.academic_year, f.entity, f.week_start_monday
+    {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+    on f.entity = g.entity
+    and g.layer = 'Outstanding Teammates'
+    and g.topline_indicator = 'Staffed'
+group by all
 
 union all
 
 select
     f.academic_year,
-    'All' as entity,
+    'All' as region,
     null as schoolid,
     f.week_start_monday,
+
+    g.indicator_display,
+    g.org_level,
+    g.has_goal,
+    g.goal_direction,
+    g.aggregation_data_type,
+    g.aggregation_type,
+    g.aggregation_hash,
+    g.goal,
+
+    null as school,
+    'Outstanding Teammates' as layer,
+    'Staffed' as indicator,
+
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between f.week_start_monday and f.week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
 
     round(avg(f.is_staffed), 3) as metric_aggregate_value,
 from final as f
 inner join
-    {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g on f.entity = g.entity
-group by f.academic_year, f.entity, f.week_start_monday
+    {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+    on g.layer = 'Outstanding Teammates'
+    and g.topline_indicator = 'Staffed'
+group by all
