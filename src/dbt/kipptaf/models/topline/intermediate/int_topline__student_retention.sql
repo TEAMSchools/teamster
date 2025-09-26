@@ -79,47 +79,56 @@ with
         select ayd.student_number, ayd.attrition_year, ac.attrition_day,
         from attrition_years_distinct as ayd
         inner join attrition_calendar as ac on ayd.attrition_year = ac.attrition_year
+    ),
+
+    scaffold_full as (
+        select
+            s.student_number,
+            s.attrition_year,
+            s.attrition_day,
+
+            ed.exitdate,
+            ed.next_year_schoolid,
+            ed.is_enrolled_day_int,
+
+            last_value(ed.student_name ignore nulls) over (
+                partition by s.student_number order by s.attrition_day
+            ) as student_name,
+
+            last_value(ed.region ignore nulls) over (
+                partition by s.student_number order by s.attrition_day
+            ) as region,
+
+            last_value(ed.school ignore nulls) over (
+                partition by s.student_number order by s.attrition_day
+            ) as school,
+
+            last_value(ed.schoolid ignore nulls) over (
+                partition by s.student_number order by s.attrition_day
+            ) as schoolid,
+
+            last_value(ed.entrydate ignore nulls) over (
+                partition by s.student_number order by s.attrition_day
+            ) as entrydate,
+
+            last_value(ed.exitdate ignore nulls) over (
+                partition by s.student_number order by s.attrition_day
+            ) as exitdate,
+        from attrition_scaffold as s
+        left join
+            enrolled_days as ed
+            on s.student_number = ed.student_number
+            and s.attrition_day = ed.enrollment_day
     )
 
 select
-    s.student_number,
-    s.attrition_year,
-    s.attrition_day,
+    *,
 
     case
-        when s.attrition_day > ed.exitdate and ed.next_year_schoolid = 999999
-        then null
-        when ed.is_enrolled_day_int = 1
+        when attrition_day > exitdate and next_year_schoolid = 999999
+        then 1
+        when is_enrolled_day_int = 1
         then 1
         else 0
     end as is_enrolled_day_int,
-
-    last_value(ed.student_name ignore nulls) over (
-        partition by s.student_number order by s.attrition_day
-    ) as student_name,
-
-    last_value(ed.region ignore nulls) over (
-        partition by s.student_number order by s.attrition_day
-    ) as region,
-
-    last_value(ed.school ignore nulls) over (
-        partition by s.student_number order by s.attrition_day
-    ) as school,
-
-    last_value(ed.schoolid ignore nulls) over (
-        partition by s.student_number order by s.attrition_day
-    ) as schoolid,
-
-    last_value(ed.entrydate ignore nulls) over (
-        partition by s.student_number order by s.attrition_day
-    ) as entrydate,
-
-    last_value(ed.exitdate ignore nulls) over (
-        partition by s.student_number order by s.attrition_day
-    ) as exitdate,
-from attrition_scaffold as s
-left join
-    enrolled_days as ed
-    on s.student_number = ed.student_number
-    and s.attrition_year = ed.attrition_year
-    and s.attrition_day = ed.enrollment_day
+from scaffold_full
