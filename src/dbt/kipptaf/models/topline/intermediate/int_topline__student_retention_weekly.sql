@@ -164,8 +164,8 @@ select
     week_start_monday,
     week_end_sunday,
 
-    max(is_enrolled_day_int) as is_retained,
-    max(1 - is_enrolled_day_int) as is_attrition,
+    max(is_enrolled_day_int) as is_retained_int,
+    max(1 - is_enrolled_day_int) as is_attrition_int,
 from retention_daily as rd
 group by
     student_number,
