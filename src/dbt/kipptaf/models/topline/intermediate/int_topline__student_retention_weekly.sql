@@ -154,7 +154,6 @@ with
 select
     student_number,
     attrition_year,
-    attrition_day,
     next_year_schoolid,
     student_name,
     region,
@@ -171,7 +170,6 @@ from retention_daily as rd
 group by
     student_number,
     attrition_year,
-    attrition_day,
     next_year_schoolid,
     student_name,
     region,
