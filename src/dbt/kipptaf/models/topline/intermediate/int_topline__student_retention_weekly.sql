@@ -136,6 +136,11 @@ with
             entrydate,
             exitdate,
 
+            date_trunc(attrition_day, week(monday)) as week_start_monday,
+            date_add(
+                date_trunc(attrition_day, week(monday)), interval 6 day
+            ) as week_end_sunday,
+
             case
                 when attrition_day > exitdate and next_year_schoolid = 999999
                 then 1
@@ -147,57 +152,32 @@ with
     )
 
 select
-    cw.academic_year,
-    cw.region,
-    cw.school_level,
-    cw.studentid,
-    cw.week_start_monday,
-    cw.week_end_sunday,
-    cw.week_number_academic_year,
-    cw.student_number,
-    cw.state_studentnumber,
-    cw.student_name,
-    cw.grade_level,
-    cw.gender,
-    cw.ethnicity,
-    cw.iep_status,
-    cw.is_504,
-    cw.lep_status,
-    cw.gifted_and_talented,
-    cw.entrydate,
-    cw.exitdate,
-    cw.enroll_status,
-
-    rd.schoolid,
-    rd.school,
+    student_number,
+    attrition_year,
+    attrition_day,
+    next_year_schoolid,
+    student_name,
+    region,
+    school,
+    schoolid,
+    entrydate,
+    exitdate,
+    week_start_monday,
+    week_end_sunday,
 
     max(is_enrolled_day_int) as is_retained,
     max(1 - is_enrolled_day_int) as is_attrition,
 from retention_daily as rd
-inner join
-    {{ ref("int_extracts__student_enrollments_weeks") }} as cw
-    on rd.student_number = cw.student_number
-    and rd.attrition_day between cw.week_start_monday and cw.week_end_sunday
 group by
-    cw.academic_year,
-    cw.region,
-    cw.school_level,
-    cw.studentid,
-    cw.week_start_monday,
-    cw.week_end_sunday,
-    cw.week_number_academic_year,
-    cw.student_number,
-    cw.state_studentnumber,
-    cw.student_name,
-    cw.grade_level,
-    cw.gender,
-    cw.ethnicity,
-    cw.iep_status,
-    cw.is_504,
-    cw.lep_status,
-    cw.gifted_and_talented,
-    cw.entrydate,
-    cw.exitdate,
-    cw.enroll_status,
-    rd.schoolid,
-    rd.school
+    student_number,
+    attrition_year,
+    attrition_day,
+    next_year_schoolid,
+    student_name,
+    region,
+    school,
+    schoolid,
+    entrydate,
+    exitdate,
+    week_start_monday,
+    week_end_sunday
