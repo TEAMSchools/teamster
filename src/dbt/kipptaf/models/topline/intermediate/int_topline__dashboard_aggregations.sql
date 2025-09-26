@@ -28,8 +28,6 @@ with
                 then round(safe_divide(sum(m.numerator), sum(m.denominator)), 3)
                 when 'Sum'
                 then round(sum(m.metric_value), 0)
-                when 'Comp'
-                then round(sum(m.metric_value), 0) / max(m.target_value)
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
@@ -91,8 +89,6 @@ with
                 then round(safe_divide(sum(m.numerator), sum(m.denominator)), 3)
                 when 'Sum'
                 then round(sum(m.metric_value), 0)
-                when 'Comp'
-                then round(sum(m.metric_value), 0) / max(m.target_value)
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
@@ -151,8 +147,6 @@ with
                 then round(safe_divide(sum(m.numerator), sum(m.denominator)), 3)
                 when 'Sum'
                 then round(sum(m.metric_value), 0)
-                when 'Comp'
-                then round(sum(m.metric_value), 0) / max(m.target_value)
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
@@ -450,6 +444,29 @@ with
             g.aggregation_type,
             g.aggregation_hash,
             g.goal
+
+        union all
+
+        select
+            academic_year,
+            region,
+            schoolid,
+            school,
+            layer,
+            indicator,
+            cast(null as string) as discipline,
+            term,
+            is_current_week,
+            indicator_display,
+            org_level,
+            has_goal,
+            goal_direction,
+            aggregation_data_type,
+            aggregation_type,
+            aggregation_hash,
+            goal,
+            metric_aggregate_value,
+        from {{ ref("int_topline__seats_staffed_weekly_aggregations") }}
     )
 
 select
