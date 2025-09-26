@@ -160,8 +160,8 @@ select
     max(is_enrolled_day_int) as is_enrolled,
 from retention_daily as rd
 inner join
-    {{ ref("int_powerschool__calendar_week") }} as cw
-    on rd.schoolid = cw.schoolid
+    {{ ref("int_extracts__student_enrollments_weeks") }} as cw
+    on rd.student_number = cw.student_number
     and rd.attrition_day between cw.week_start_monday and cw.week_end_sunday
 group by
     rd.student_number,
