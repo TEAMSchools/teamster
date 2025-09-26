@@ -89,6 +89,10 @@ with
 
             ed.is_enrolled_day_int,
 
+            last_value(ed.academic_year ignore nulls) over (
+                partition by s.student_number order by s.attrition_day
+            ) as academic_year,
+
             last_value(ed.next_year_schoolid ignore nulls) over (
                 partition by s.student_number order by s.attrition_day
             ) as next_year_schoolid,
@@ -127,6 +131,7 @@ with
         select
             student_number,
             attrition_year,
+            academic_year,
             attrition_day,
             next_year_schoolid,
             student_name,
@@ -154,6 +159,7 @@ with
 select
     student_number,
     attrition_year,
+    academic_year,
     next_year_schoolid,
     student_name,
     region,
@@ -170,6 +176,7 @@ from retention_daily as rd
 group by
     student_number,
     attrition_year,
+    academic_year,
     next_year_schoolid,
     student_name,
     region,
