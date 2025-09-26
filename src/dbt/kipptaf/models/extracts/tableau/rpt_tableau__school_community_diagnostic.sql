@@ -85,8 +85,8 @@ left join
     and sr.academic_year = se1.academic_year
 left join
     family_responses as fr
-    on fr.survey_id = sr.survey_id
-    and fr.survey_response_id = sr.survey_response_id
+    on sr.survey_id = fr.survey_id
+    and sr.survey_response_id = fr.survey_response_id
 left join
     {{ ref("base_powerschool__student_enrollments") }} as se2
     on fr.respondent_number = se2.student_number
