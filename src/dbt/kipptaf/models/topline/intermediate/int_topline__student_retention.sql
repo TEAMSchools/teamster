@@ -87,7 +87,6 @@ with
             s.attrition_year,
             s.attrition_day,
 
-            ed.exitdate,
             ed.next_year_schoolid,
             ed.is_enrolled_day_int,
 
@@ -122,7 +121,16 @@ with
     )
 
 select
-    *,
+    student_number,
+    attrition_year,
+    attrition_day,
+    next_year_schoolid,
+    student_name,
+    region,
+    school,
+    schoolid,
+    entrydate,
+    exitdate,
 
     case
         when attrition_day > exitdate and next_year_schoolid = 999999
