@@ -147,15 +147,29 @@ with
     )
 
 select
-    rd.student_number,
-    rd.attrition_year,
-    rd.schoolid,
-    rd.entrydate,
-    rd.exitdate,
-
+    cw.academic_year,
+    cw.region,
+    cw.school_level,
+    cw.studentid,
     cw.week_start_monday,
     cw.week_end_sunday,
     cw.week_number_academic_year,
+    cw.student_number,
+    cw.state_studentnumber,
+    cw.student_name,
+    cw.grade_level,
+    cw.gender,
+    cw.ethnicity,
+    cw.iep_status,
+    cw.is_504,
+    cw.lep_status,
+    cw.gifted_and_talented,
+    cw.entrydate,
+    cw.exitdate,
+    cw.enroll_status,
+
+    rd.schoolid,
+    rd.school,
 
     max(is_enrolled_day_int) as is_retained,
     max(1 - is_enrolled_day_int) as is_attrition,
@@ -165,11 +179,25 @@ inner join
     on rd.student_number = cw.student_number
     and rd.attrition_day between cw.week_start_monday and cw.week_end_sunday
 group by
-    rd.student_number,
-    rd.attrition_year,
-    rd.schoolid,
-    rd.entrydate,
-    rd.exitdate,
+    cw.academic_year,
+    cw.region,
+    cw.school_level,
+    cw.studentid,
     cw.week_start_monday,
     cw.week_end_sunday,
-    cw.week_number_academic_year
+    cw.week_number_academic_year,
+    cw.student_number,
+    cw.state_studentnumber,
+    cw.student_name,
+    cw.grade_level,
+    cw.gender,
+    cw.ethnicity,
+    cw.iep_status,
+    cw.is_504,
+    cw.lep_status,
+    cw.gifted_and_talented,
+    cw.entrydate,
+    cw.exitdate,
+    cw.enroll_status,
+    rd.schoolid,
+    rd.school
