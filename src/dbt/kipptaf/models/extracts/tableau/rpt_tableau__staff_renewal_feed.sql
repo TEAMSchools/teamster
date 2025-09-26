@@ -83,6 +83,7 @@ with
             s.ny_entity,
             s.ny_location,
             s.ny_dept,
+            s.ny_title,
             s.nonrenewal_reason,
             s.nonrenewal_notes,
             s.ny_salary,
@@ -119,8 +120,6 @@ with
             ap.hos_mdo_approval_date,
 
             rlm.renewal_doc,
-
-            trim(s.ny_title) as ny_title,
 
             concat(b.family_name_1, ', ', b.given_name) as preferred_name,
             concat(m.family_name_1, ', ', m.given_name) as manager_name,
@@ -178,9 +177,9 @@ with
             and b.employee_number = ap.subject_employee_number
         left join
             {{ ref("stg_people__renewal_letter_mapping") }} as rlm
-            on rlm.entity = s.ny_entity
-            and rlm.department = s.ny_dept
-            and rlm.jobs = trim(s.ny_title)
+            on s.ny_entity = rlm.entity
+            and s.ny_dept = rlm.department
+            and s.ny_title = rlm.jobs
     )
 
 select
@@ -211,13 +210,7 @@ select
                 '&entry.678233722=',
                 coalesce(
                     concat(
-                        ny_entity,
-                        ' - ',
-                        ny_location,
-                        ' - ',
-                        ny_dept,
-                        ' ',
-                        trim(ny_title)
+                        ny_entity, ' - ', ny_location, ' - ', ny_dept, ' ', ny_title
                     ),
                     ''
                 ),
