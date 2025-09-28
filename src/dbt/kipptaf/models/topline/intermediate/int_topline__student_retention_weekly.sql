@@ -170,6 +170,13 @@ select
     week_start_monday,
     week_end_sunday,
 
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between week_start_monday and week_end_sunday,
+        true,
+        false
+    ) as is_current_week,
+
     max(is_enrolled_day_int) as is_retained_int,
     max(1 - is_enrolled_day_int) as is_attrition_int,
 from retention_daily as rd
