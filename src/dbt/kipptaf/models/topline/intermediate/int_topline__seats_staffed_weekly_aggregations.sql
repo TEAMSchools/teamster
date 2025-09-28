@@ -16,6 +16,7 @@ with
             seat_tracker.entity,
 
             locations.location_powerschool_school_id as schoolid,
+            locations.location_name as school,
 
             calendar.week_start_monday,
             calendar.week_end_sunday,
@@ -35,6 +36,7 @@ select
     f.academic_year,
     f.entity as region,
     f.schoolid,
+    f.school,
     f.week_start_monday,
 
     g.indicator_display,
@@ -46,7 +48,6 @@ select
     g.aggregation_hash,
     g.goal,
 
-    null as school,
     'Outstanding Teammates' as layer,
     'Staffed' as indicator,
 
@@ -73,6 +74,7 @@ select
     f.academic_year,
     f.entity as region,
     null as schoolid,
+    'All' as school,
     f.week_start_monday,
 
     g.indicator_display,
@@ -84,7 +86,6 @@ select
     g.aggregation_hash,
     g.goal,
 
-    null as school,
     'Outstanding Teammates' as layer,
     'Staffed' as indicator,
 
@@ -110,6 +111,7 @@ select
     f.academic_year,
     'All' as region,
     null as schoolid,
+    'All' as school,
     f.week_start_monday,
 
     g.indicator_display,
@@ -121,7 +123,6 @@ select
     g.aggregation_hash,
     g.goal,
 
-    null as school,
     'Outstanding Teammates' as layer,
     'Staffed' as indicator,
 
