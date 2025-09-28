@@ -7,7 +7,7 @@ select
         then org_level
         when layer = 'Outstanding Teammates' and org_level = 'region'
         then entity
-        when layer = 'Outstanding Teammates' and org_level = 'region'
+        when layer = 'Outstanding Teammates' and org_level = 'school'
         then cast(schoolid as string)
         when org_level = 'org'
         then 'org_' || grade_low || '-' || grade_high
