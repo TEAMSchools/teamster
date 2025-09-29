@@ -24,6 +24,6 @@ select
     epm.is_teacher_development_program,
 from deduplicate as d
 left join
-    {{ ref("int_adp_workforce_now__employee_memberships_by_ay") }} as epm
+    {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as epm
     on d.worker_id = epm.associate_id
     and epm.academic_year = {{ var("current_academic_year") }}
