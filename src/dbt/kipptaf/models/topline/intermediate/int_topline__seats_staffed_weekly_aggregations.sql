@@ -68,7 +68,23 @@ inner join
     and f.schoolid = g.schoolid
     and g.layer = 'Outstanding Teammates'
     and g.topline_indicator = 'Staffed'
-group by all
+group by
+    f.academic_year,
+    f.entity,
+    f.schoolid,
+    f.school,
+    f.week_start_monday,
+    f.week_end_sunday,
+    g.indicator_display,
+    g.org_level,
+    g.has_goal,
+    g.goal_type,
+    g.goal_direction,
+    g.aggregation_data_type,
+    g.aggregation_type,
+    g.aggregation_hash,
+    g.aggregation_display,
+    g.goal
 
 union all
 
@@ -107,7 +123,21 @@ inner join
     on f.entity = g.entity
     and g.layer = 'Outstanding Teammates'
     and g.topline_indicator = 'Staffed'
-group by all
+group by
+    f.academic_year,
+    f.entity,
+    f.week_start_monday,
+    f.week_end_sunday,
+    g.indicator_display,
+    g.org_level,
+    g.has_goal,
+    g.goal_type,
+    g.goal_direction,
+    g.aggregation_data_type,
+    g.aggregation_type,
+    g.aggregation_hash,
+    g.aggregation_display,
+    g.goal
 
 union all
 
@@ -145,4 +175,17 @@ inner join
     {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
     on g.layer = 'Outstanding Teammates'
     and g.topline_indicator = 'Staffed'
-group by all
+group by
+    f.academic_year,
+    f.week_start_monday,
+    f.week_end_sunday,
+    g.indicator_display,
+    g.org_level,
+    g.has_goal,
+    g.goal_type,
+    g.goal_direction,
+    g.aggregation_data_type,
+    g.aggregation_type,
+    g.aggregation_hash,
+    g.aggregation_display,
+    g.goal
