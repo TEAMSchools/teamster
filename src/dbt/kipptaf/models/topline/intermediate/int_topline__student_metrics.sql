@@ -440,4 +440,5 @@ left join
     on co.student_number = mu.student_number
     and co.academic_year = mu.academic_year
     and co.week_start_monday = mu.term
-where co.academic_year >= {{ var("current_academic_year") - 1 }}
+where
+    co.academic_year >= {{ var("current_academic_year") - 1 }} and region != 'Paterson'
