@@ -231,7 +231,7 @@ with
             and srh.job_title != 'Intern'
             and srh.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
         left join
-            {{ ref("int_adp_workforce_now__employee_memberships_by_ay") }} as m
+            {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as m
             on srh.worker_id = m.associate_id
             and cat.academic_year = m.academic_year
     ),
@@ -321,7 +321,7 @@ with
             on cat.academic_year = srh.employee_number
             and cat.employee_number = lya.employee_number
         left join
-            {{ ref("int_adp_workforce_now__employee_memberships_by_ay") }} as m
+            {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as m
             on srh.worker_id = m.associate_id
             and cat.academic_year = m.academic_year
         where lya.employee_number is null
