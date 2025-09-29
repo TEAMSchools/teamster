@@ -33,7 +33,7 @@ with
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
-            {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+            {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
             on m.region = g.entity
             and m.schoolid = g.schoolid
             and m.grade_level between g.grade_low and g.grade_high
@@ -98,7 +98,7 @@ with
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
-            {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+            {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
             on m.region = g.entity
             and m.grade_level between g.grade_low and g.grade_high
             and m.layer = g.layer
@@ -160,7 +160,7 @@ with
             end as metric_aggregate_value,
         from {{ ref("int_topline__student_metrics") }} as m
         left join
-            {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+            {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
             on m.grade_level between g.grade_low and g.grade_high
             and m.layer = g.layer
             and m.indicator = g.topline_indicator
@@ -269,7 +269,7 @@ with
             ) as metric_aggregate_value,
         from target_unpivot as tu
         inner join
-            {{ ref("stg_google_sheets__topline_aggregate_goals") }} as tg
+            {{ ref("int_google_sheets__topline_aggregate_goals") }} as tg
             on tu.indicator = tg.topline_indicator
             and tu.layer = tg.layer
             and tu.aggregation_hash = tg.aggregation_hash
@@ -327,7 +327,7 @@ with
             end as metric_aggregate_value,
         from {{ ref("int_topline__staff_metrics") }} as m
         left join
-            {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+            {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
             on m.home_business_unit_name = g.entity
             and m.home_work_location_powerschool_school_id = g.schoolid
             and m.layer = g.layer
@@ -392,7 +392,7 @@ with
             end as metric_aggregate_value,
         from {{ ref("int_topline__staff_metrics") }} as m
         left join
-            {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+            {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
             on m.home_business_unit_name = g.entity
             and m.layer = g.layer
             and m.indicator = g.topline_indicator
@@ -456,7 +456,7 @@ with
             end as metric_aggregate_value,
         from {{ ref("int_topline__staff_metrics") }} as m
         left join
-            {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+            {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
             on m.layer = g.layer
             and m.indicator = g.topline_indicator
             and g.org_level = 'org'

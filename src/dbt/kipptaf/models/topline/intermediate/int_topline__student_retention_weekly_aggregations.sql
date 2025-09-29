@@ -25,7 +25,7 @@ with
             round(avg(s.is_retained_int), 3) as metric_aggregate_value,
         from {{ ref("int_students__retention_over_time") }} as s
         inner join
-            {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+            {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
             on s.region = g.entity
             and s.schoolid = g.schoolid
             and s.grade_level between g.grade_low and g.grade_high
@@ -76,7 +76,7 @@ with
             round(avg(s.is_retained_int), 3) as metric_aggregate_value,
         from {{ ref("int_students__retention_over_time") }} as s
         inner join
-            {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+            {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
             on s.region = g.entity
             and s.grade_level between g.grade_low and g.grade_high
             and g.topline_indicator = 'Student Retention'
@@ -124,7 +124,7 @@ with
             round(avg(s.is_retained_int), 3) as metric_aggregate_value,
         from {{ ref("int_students__retention_over_time") }} as s
         inner join
-            {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+            {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
             on s.grade_level between g.grade_low and g.grade_high
             and g.topline_indicator = 'Student Retention'
             and g.org_level = 'org'

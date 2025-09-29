@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: stg_google_sheets__topline_aggregate_goals
+  - name: int_google_sheets__topline_aggregate_goals
     config:
       contract:
         enforced: true
@@ -37,4 +37,6 @@ models:
       - name: Discipline
         data_type: string
       - name: Aggregation_Data_Type
+        data_type: string
+      - name: aggregation_display
         data_type: string
