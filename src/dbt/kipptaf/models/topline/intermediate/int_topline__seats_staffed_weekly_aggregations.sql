@@ -63,7 +63,7 @@ select
     round(avg(f.is_staffed), 3) as metric_aggregate_value,
 from final as f
 inner join
-    {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+    {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
     on f.entity = g.entity
     and f.schoolid = g.schoolid
     and g.layer = 'Outstanding Teammates'
@@ -103,7 +103,7 @@ select
     round(avg(f.is_staffed), 3) as metric_aggregate_value,
 from final as f
 inner join
-    {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+    {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
     on f.entity = g.entity
     and g.layer = 'Outstanding Teammates'
     and g.topline_indicator = 'Staffed'
@@ -142,7 +142,7 @@ select
     round(avg(f.is_staffed), 3) as metric_aggregate_value,
 from final as f
 inner join
-    {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
+    {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
     on g.layer = 'Outstanding Teammates'
     and g.topline_indicator = 'Staffed'
 group by all

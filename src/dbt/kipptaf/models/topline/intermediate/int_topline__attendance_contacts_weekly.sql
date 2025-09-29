@@ -26,7 +26,7 @@ with
             sum(is_successful_int) as successful_comms_sum,
             count(is_successful_int) as required_comms_count,
         from {{ ref("int_topline__attendance_contacts") }}
-        where is_enrolled_week and region = 'Camden' and academic_year = 2024
+        where is_enrolled_week
         group by
             academic_year,
             region,
