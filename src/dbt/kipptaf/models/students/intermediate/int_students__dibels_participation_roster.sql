@@ -55,8 +55,6 @@ with
             e.assessment_type,
             e.admin_season,
             e.round_number,
-            e.start_date,
-            e.end_date,
             e.expected_row_count,
 
             coalesce(a.actual_row_count, 0) as actual_row_count,
@@ -64,11 +62,11 @@ with
             case
                 when e.expected_row_count = a.actual_row_count
                 then true
-                when e.admin_season = 'BOY' and a.boy_composite != 'No Data'
+                when e.admin_season = 'BOY' and a.boy_composite != 'No data'
                 then true
-                when e.admin_season = 'MOY' and a.moy_composite != 'No Data'
+                when e.admin_season = 'MOY' and a.moy_composite != 'No data'
                 then true
-                when e.admin_season = 'EOY' and a.eoy_composite != 'No Data'
+                when e.admin_season = 'EOY' and a.eoy_composite != 'No data'
                 then true
                 else false
             end as completed_test_round,
@@ -115,8 +113,6 @@ with
             e.assessment_type,
             e.admin_season,
             e.round_number,
-            e.start_date,
-            e.end_date,
             e.expected_row_count,
 
             coalesce(a.actual_row_count, 0) as actual_row_count,
@@ -169,8 +165,6 @@ with
             e.assessment_type,
             e.admin_season,
             e.round_number,
-            e.start_date,
-            e.end_date,
             e.expected_row_count,
 
             coalesce(a.actual_row_count, 0) as actual_row_count,
@@ -221,8 +215,6 @@ select
     assessment_type,
     admin_season,
     round_number,
-    `start_date`,
-    end_date,
     expected_row_count,
     actual_row_count,
     completed_test_round,
@@ -230,3 +222,4 @@ select
 
 from roster_enrollment_dates
 where rn = 1
+>>>>>>> b81f94cb6f1d69f931063843ac3a0a759b5374f7
