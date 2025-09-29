@@ -186,21 +186,6 @@ with
 
         select
             'Attendance and Enrollment' as layer,
-            'Student Retention' as indicator,
-            student_number,
-            academic_year,
-            week_start_monday as term,
-            null as discipline,
-
-            null as numerator,
-            null as denominator,
-            is_retained_int as metric_value,
-        from {{ ref("int_topline__student_retention_weekly") }}
-
-        union all
-
-        select
-            'Attendance and Enrollment' as layer,
             'Successful Contacts' as indicator,
             student_number,
             academic_year,
