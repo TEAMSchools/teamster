@@ -284,6 +284,11 @@ with
 
         select *,
         from target_goals
+
+        union all
+
+        select *,
+        from {{ ref("int_topline__student_retention_weekly_aggregations") }}
     ),
 
     agg_union_staff as (
