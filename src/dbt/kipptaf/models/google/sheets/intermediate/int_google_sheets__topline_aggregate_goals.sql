@@ -2,29 +2,29 @@ select
     g.*,
 
     case
-        when layer = 'Outstanding Teammates' and org_level = 'org'
-        then org_level
-        when layer = 'Outstanding Teammates' and org_level = 'region'
-        then entity
-        when layer = 'Outstanding Teammates' and org_level = 'school'
+        when g.layer = 'Outstanding Teammates' and g.org_level = 'org'
+        then g.org_level
+        when g.layer = 'Outstanding Teammates' and g.org_level = 'region'
+        then g.entity
+        when g.layer = 'Outstanding Teammates' and g.org_level = 'school'
         then s.abbreviation
-        when org_level = 'org'
+        when g.org_level = 'org'
         then
             'Org ' || if(
                 g.grade_low = g.grade_high,
                 cast(g.grade_high as string),
                 if(g.grade_low = 0, 'K', g.grade_low || '-' || g.grade_high)
             )
-        when org_level = 'region'
+        when g.org_level = 'region'
         then
-            entity
+            g.entity
             || ' '
             || if(
                 g.grade_low = g.grade_high,
                 cast(g.grade_high as string),
                 if(g.grade_low = 0, 'K', g.grade_low || '-' || g.grade_high)
             )
-        when org_level = 'school'
+        when g.org_level = 'school'
         then
             s.abbreviation
             || ' '
