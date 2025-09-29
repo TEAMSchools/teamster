@@ -38,3 +38,5 @@ models:
         data_type: string
       - name: Aggregation_Data_Type
         data_type: string
+      - name: aggregation_display
+        data_type: string
