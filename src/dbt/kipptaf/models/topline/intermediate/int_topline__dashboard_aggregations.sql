@@ -14,10 +14,12 @@ with
             g.indicator_display,
             g.org_level,
             g.has_goal,
+            g.goal_type,
             g.goal_direction,
             g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
+            g.aggregation_display,
             g.goal,
 
             case
@@ -51,10 +53,12 @@ with
             g.indicator_display,
             g.org_level,
             g.has_goal,
+            g.goal_type,
             g.goal_direction,
             g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
+            g.aggregation_display,
             g.goal
 
         union all
@@ -75,10 +79,12 @@ with
             g.indicator_display,
             g.org_level,
             g.has_goal,
+            g.goal_type,
             g.goal_direction,
             g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
+            g.aggregation_display,
             g.goal,
 
             case
@@ -109,10 +115,12 @@ with
             g.indicator_display,
             g.org_level,
             g.has_goal,
+            g.goal_type,
             g.goal_direction,
             g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
+            g.aggregation_display,
             g.goal
 
         union all
@@ -133,10 +141,12 @@ with
             g.indicator_display,
             g.org_level,
             g.has_goal,
+            g.goal_type,
             g.goal_direction,
             g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
+            g.aggregation_display,
             g.goal,
 
             case
@@ -165,10 +175,12 @@ with
             g.indicator_display,
             g.org_level,
             g.has_goal,
+            g.goal_type,
             g.goal_direction,
             g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
+            g.aggregation_display,
             g.goal
     ),
 
@@ -210,10 +222,12 @@ with
             indicator_display,
             org_level,
             has_goal,
+            goal_type,
             goal_direction,
             aggregation_data_type,
             aggregation_type,
             aggregation_hash,
+            aggregation_display,
             metric_aggregate_value,
 
             cast(target_value as int) as goal,
@@ -242,10 +256,12 @@ with
             tg.indicator_display,
             tg.org_level,
             tg.has_goal,
+            tg.goal_type,
             tg.goal_direction,
             tg.aggregation_data_type,
             tg.aggregation_type,
             tg.aggregation_hash,
+            tg.aggregation_display,
             tg.goal,
 
             round(
@@ -287,10 +303,12 @@ with
             g.indicator_display,
             g.org_level,
             g.has_goal,
+            g.goal_type,
             g.goal_direction,
             g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
+            g.aggregation_display,
             g.goal,
 
             case
@@ -322,10 +340,12 @@ with
             g.indicator_display,
             g.org_level,
             g.has_goal,
+            g.goal_type,
             g.goal_direction,
             g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
+            g.aggregation_display,
             g.goal
 
         union all
@@ -348,10 +368,12 @@ with
             g.indicator_display,
             g.org_level,
             g.has_goal,
+            g.goal_type,
             g.goal_direction,
             g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
+            g.aggregation_display,
             g.goal,
 
             case
@@ -382,10 +404,12 @@ with
             g.indicator_display,
             g.org_level,
             g.has_goal,
+            g.goal_type,
             g.goal_direction,
             g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
+            g.aggregation_display,
             g.goal
 
         union all
@@ -408,10 +432,12 @@ with
             g.indicator_display,
             g.org_level,
             g.has_goal,
+            g.goal_type,
             g.goal_direction,
             g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
+            g.aggregation_display,
             g.goal,
 
             case
@@ -439,10 +465,12 @@ with
             g.indicator_display,
             g.org_level,
             g.has_goal,
+            g.goal_type,
             g.goal_direction,
             g.aggregation_data_type,
             g.aggregation_type,
             g.aggregation_hash,
+            g.aggregation_display,
             g.goal
 
         union all
@@ -460,10 +488,12 @@ with
             indicator_display,
             org_level,
             has_goal,
+            goal_type,
             goal_direction,
             aggregation_data_type,
             aggregation_type,
             aggregation_hash,
+            aggregation_display,
             goal,
             metric_aggregate_value,
         from {{ ref("int_topline__seats_staffed_weekly_aggregations") }}
