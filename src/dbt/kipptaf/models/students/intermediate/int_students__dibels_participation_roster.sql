@@ -62,11 +62,11 @@ with
             case
                 when e.expected_row_count = a.actual_row_count
                 then true
-                when e.admin_season = 'BOY' and a.boy_composite != 'No Data'
+                when e.admin_season = 'BOY' and a.boy_composite != 'No data'
                 then true
-                when e.admin_season = 'MOY' and a.moy_composite != 'No Data'
+                when e.admin_season = 'MOY' and a.moy_composite != 'No data'
                 then true
-                when e.admin_season = 'EOY' and a.eoy_composite != 'No Data'
+                when e.admin_season = 'EOY' and a.eoy_composite != 'No data'
                 then true
                 else false
             end as completed_test_round,
