@@ -9,6 +9,7 @@ select
     cw.school_week_end_date,
     cw.week_number_academic_year,
     cw.week_number_quarter,
+    cw.is_current_week_mon_sun,
 
     if(
         cw.week_start_monday between co.entrydate and co.exitdate, true, false
