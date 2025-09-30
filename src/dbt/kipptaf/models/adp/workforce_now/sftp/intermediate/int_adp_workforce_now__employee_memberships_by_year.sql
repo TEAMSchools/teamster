@@ -1,13 +1,10 @@
 with
     date_spine as (
         select
-            ay_start_date,
-            date_add(
-                date_add(ay_start_date, interval -3 day), interval 1 year
-            ) as ay_end_date,
+            date_day,
             {{
                 date_to_fiscal_year(
-                    date_field="ay_start_date",
+                    date_field="date_day",
                     start_month=7,
                     year_source="start",
                 )
@@ -16,13 +13,13 @@ with
             unnest(
                 generate_date_array(
                     /* first date of the membership snapshot*/
-                    '2002-07-02',
+                    '2002-07-01',
                     date_add(
                         current_date('{{ var("local_timezone") }}'), interval 1 year
                     ),
-                    interval 1 year
+                    interval 1 day
                 )
-            ) as ay_start_date
+            ) as date_day
     ),
 
     by_academic_year as (
@@ -35,10 +32,7 @@ with
         from {{ ref("stg_adp_workforce_now__employee_memberships") }} as em
         inner join
             date_spine as d
-            on (d.ay_start_date between em.effective_date and em.expiration_date)
-            or (d.ay_end_date between em.effective_date and em.expiration_date)
-            or (em.effective_date between d.ay_start_date and d.ay_end_date)
-            or (em.expiration_date between d.ay_start_date and d.ay_end_date)
+            on d.date_day between em.effective_date and em.expiration_date
     )
 
 select
@@ -46,6 +40,6 @@ select
     academic_year,
     max(is_leader_development_program) as is_leader_development_program,
     max(is_teacher_development_program) as is_teacher_development_program,
-    string_agg(membership_description, ', ') as memberships,
+    string_agg(distinct membership_description, ', ') as memberships,
 from by_academic_year
 group by associate_id, academic_year
