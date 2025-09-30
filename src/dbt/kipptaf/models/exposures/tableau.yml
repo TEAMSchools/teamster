@@ -630,3 +630,18 @@ exposures:
       dagster:
         kinds:
           - tableau
+  - name: topline_cascade_dashboard
+    label: Topline Cascade Dashboard
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__topline_cascade_dashboard")
+    meta:
+      dagster:
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: ecc7a45d-3ee8-4069-8f6a-d686caa04af5
+            # cron_schedule: * * * * *
