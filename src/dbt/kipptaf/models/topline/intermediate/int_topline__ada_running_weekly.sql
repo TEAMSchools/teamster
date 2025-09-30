@@ -8,6 +8,7 @@ with
             week_start_monday,
             week_end_sunday,
 
+            sum(is_absent) as absence_sum,
             sum(attendancevalue) as attendance_value_sum,
             sum(membershipvalue) as membership_value_sum,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
@@ -29,8 +30,14 @@ with
             academic_year,
             week_start_monday,
             week_end_sunday,
+            absence_sum,
             attendance_value_sum,
             membership_value_sum,
+
+            sum(absence_sum) over (
+                partition by studentid, academic_year, schoolid
+                order by week_start_monday asc
+            ) as absence_sum_running,
 
             sum(attendance_value_sum) over (
                 partition by studentid, academic_year, schoolid
@@ -69,6 +76,7 @@ select
     rc.week_end_sunday,
     rc.attendance_value_sum,
     rc.membership_value_sum,
+    rc.absence_sum_running,
     rc.attendance_value_sum_running,
     rc.membership_value_sum_running,
 
