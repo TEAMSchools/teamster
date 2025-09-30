@@ -44,6 +44,92 @@ fast = build_sftp_folder_asset(
             ),
         }
     ),
+    slugify_replacements=[
+        [
+            "1. Number Sense and Additive Reasoning Performance",
+            "number_sense_and_additive_reasoning_performance",
+        ],
+        [
+            "2. Number Sense and Multiplicative Reasoning Performance",
+            "number_sense_and_multiplicative_reasoning_performance",
+        ],
+        [
+            "3. Fractional Reasoning Performance",
+            "fractional_reasoning_performance",
+        ],
+        [
+            "4. Geometric Reasoning, Measurement, and Data Analysis and Probability Performance",
+            "geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
+        ],
+        [
+            "1. Reading Prose and Poetry Performance",
+            "reading_prose_and_poetry_performance",
+        ],
+        [
+            "2. Reading Informational Text Performance",
+            "reading_informational_text_performance",
+        ],
+        [
+            "3. Reading Across Genres & Vocabulary Performance",
+            "reading_across_genres_vocabulary_performance",
+        ],
+        [
+            "1. Number Sense and Operations with Whole Numbers Performance",
+            "number_sense_and_operations_with_whole_numbers_performance",
+        ],
+        [
+            "2. Number Sense and Operations with Fractions and Decimals Performance",
+            "number_sense_and_operations_with_fractions_and_decimals_performance",
+        ],
+        [
+            "3. Geometric Reasoning, Measurement, and Data Analysis and Probability Performance",
+            "geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
+        ],
+        [
+            "3. Algebraic Reasoning Performance",
+            "algebraic_reasoning_performance",
+        ],
+        [
+            "1. Number Sense and Operations Performance",
+            "number_sense_and_operations_performance",
+        ],
+        [
+            "2. Algebraic Reasoning Performance",
+            "algebraic_reasoning_performance",
+        ],
+        [
+            "3. Geometric Reasoning, Data Analysis, and Probability Performance",
+            "geometric_reasoning_data_analysis_and_probability_performance",
+        ],
+        [
+            "1. Number Sense and Operations and Algebraic Reasoning Performance",
+            "number_sense_and_operations_and_algebraic_reasoning_performance",
+        ],
+        [
+            "2. Proportional Reasoning and Relationships Performance",
+            "proportional_reasoning_and_relationships_performance",
+        ],
+        [
+            "3. Geometric Reasoning Performance",
+            "geometric_reasoning_performance",
+        ],
+        [
+            "4. Data Analysis and Probability Performance",
+            "data_analysis_and_probability_performance",
+        ],
+        [
+            "1. Number Sense and Operations and Probability Performance",
+            "number_sense_and_operations_and_probability_performance",
+        ],
+        [
+            "3. Linear Relationships, Data Analysis and Functions Performance",
+            "linear_relationships_data_analysis_and_functions_performance",
+        ],
+        [
+            "4. Geometric Reasoning Performance",
+            "geometric_reasoning_performance",
+        ],
+    ],
 )
 
 eoc = build_sftp_file_asset(
