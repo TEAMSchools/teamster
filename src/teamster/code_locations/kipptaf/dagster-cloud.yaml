@@ -33,11 +33,6 @@ locations:
                         path: id_rsa_egencia
         server_k8s_config:
           container_config:
-            resources:
-              requests:
-                cpu: 500m
-              limits:
-                cpu: 1500m
             env:
               - name: ADP_SFTP_PASSWORD
                 valueFrom:
