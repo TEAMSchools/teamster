@@ -1,6 +1,13 @@
 select
     * except (goal),
+
     cast(goal as numeric) as goal,
+
+    if(
+        grade_low = grade_high,
+        cast(grade_high as string),
+        if(grade_low = 0, 'K', grade_low || '-' || grade_high)
+    ) as grade_band,
 
     case
         when layer = 'Outstanding Teammates' and org_level = 'org'
