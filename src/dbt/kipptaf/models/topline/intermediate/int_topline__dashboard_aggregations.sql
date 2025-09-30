@@ -1,4 +1,10 @@
 with
+    student_metrics as (
+        select *,
+        from {{ ref("int_topline__student_metrics") }}
+        where region != 'Paterson'
+    ),
+
     pre_agg_union_student as (
         select
             m.academic_year,
@@ -31,7 +37,7 @@ with
                 when 'Sum'
                 then round(sum(m.metric_value), 0)
             end as metric_aggregate_value,
-        from {{ ref("int_topline__student_metrics") }} as m
+        from student_metrics as m
         left join
             {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
             on m.region = g.entity
@@ -96,7 +102,7 @@ with
                 when 'Sum'
                 then round(sum(m.metric_value), 0)
             end as metric_aggregate_value,
-        from {{ ref("int_topline__student_metrics") }} as m
+        from student_metrics as m
         left join
             {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
             on m.region = g.entity
@@ -158,7 +164,7 @@ with
                 when 'Sum'
                 then round(sum(m.metric_value), 0)
             end as metric_aggregate_value,
-        from {{ ref("int_topline__student_metrics") }} as m
+        from student_metrics as m
         left join
             {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
             on m.grade_level between g.grade_low and g.grade_high
@@ -238,7 +244,6 @@ with
         from
             targets
             unpivot (target_value for target_type in (seat_target, budget_target))
-        where region != 'Paterson'
     ),
 
     target_goals as (
@@ -279,7 +284,6 @@ with
     agg_union_student as (
         select *,
         from pre_agg_union_student
-        where region != 'Paterson'
 
         union all
 
