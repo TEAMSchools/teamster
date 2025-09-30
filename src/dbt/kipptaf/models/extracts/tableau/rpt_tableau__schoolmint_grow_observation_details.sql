@@ -82,6 +82,11 @@ with
             em.is_teacher_development_program,
             em.memberships,
 
+            emo.is_leader_development_program as is_leader_development_program_observer,
+            emo.is_teacher_development_program
+            as is_teacher_development_program_observer,
+            emo.memberships as memberships_observer,
+
             if(od.observation_id is not null, 1, 0) as is_observed,
 
             regexp_replace(
@@ -127,10 +132,12 @@ with
             )
             and t.type in ('PMS', 'PMC', 'TR')
             and t.academic_year = {{ var("current_academic_year") }}
+        /* Adding memberships for teachers*/
         left join
             {{ ref("int_performance_management__overall_scores") }} as os
             on srh.employee_number = os.employee_number
             and t.academic_year = os.academic_year
+        /* Adding memberships for observers*/
         left join
             {{ ref("int_performance_management__observation_details") }} as od
             on srh.employee_number = od.employee_number
@@ -153,9 +160,16 @@ with
             on srh.employee_number = r.employee_number
             and t.academic_year = r.academic_year
             and t.code = r.code
-        left join {{ ref("int_adp_workforce_now__employee_memberships_by_year")}} as em
+        /* Adding memberships for teachers*/
+        left join
+            {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as em
             on t.academic_year = em.academic_year
             and sr.worker_id = em.associate_id
+        /* Adding memberships for observers*/
+        left join
+            {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as emo
+            on t.academic_year = em.academic_year
+            and sro.worker_id = em.associate_id
         where
             (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
             and srh.assignment_status = 'Active'
@@ -224,6 +238,11 @@ with
             em.is_teacher_development_program,
             em.memberships,
 
+            emo.is_leader_development_program as is_leader_development_program_observer,
+            emo.is_teacher_development_program
+            as is_teacher_development_program_observer,
+            emo.memberships as memberships_observer,
+
             if(od.observation_id is not null, 1, 0) as is_observed,
 
             regexp_replace(
@@ -253,9 +272,14 @@ with
             on srh.powerschool_teacher_number = tgl.teachernumber
             and od.academic_year = tgl.academic_year
             and tgl.grade_level_rank = 1
-        left join {{ ref("int_adp_workforce_now__employee_memberships_by_year")}} as em
+        left join
+            {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as em
             on od.academic_year = em.academic_year
             and sr.worker_id = em.associate_id
+        left join
+            {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as emo
+            on od.academic_year = em.academic_year
+            and sro.worker_id = em.associate_id
     )
 
 select *
