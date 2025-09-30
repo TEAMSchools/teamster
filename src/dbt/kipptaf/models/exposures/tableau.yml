@@ -644,4 +644,4 @@ exposures:
         asset:
           metadata:
             id: ecc7a45d-3ee8-4069-8f6a-d686caa04af5
-            # cron_schedule: * * * * *
+            cron_schedule: 0 5 * * *
