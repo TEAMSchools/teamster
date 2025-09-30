@@ -7,6 +7,7 @@ select
     indicator,
     discipline,
     term,
+    term_end,
     is_current_week,
     indicator_display,
     org_level,
