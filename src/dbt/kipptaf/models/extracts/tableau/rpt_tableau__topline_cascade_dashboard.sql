@@ -1,7 +1,6 @@
 select
     metric_type,
     academic_year,
-    region,
     schoolid,
     school,
     layer,
@@ -25,4 +24,14 @@ select
     is_goal_met,
     goal_difference_percent,
     progress_to_goal_pct,
+
+    case
+        when region = 'TEAM Academy Charter School'
+        then 'Newark'
+        when region = 'KIPP Cooper Norcross Academy'
+        then 'Camden'
+        when region = 'KIPP Miami'
+        then 'Miami'
+        else region
+    end as region,
 from {{ ref("int_topline__dashboard_aggregations") }}
