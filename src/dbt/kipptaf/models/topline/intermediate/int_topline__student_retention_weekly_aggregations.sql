@@ -1,7 +1,7 @@
 with
     retention_over_time as (
         select
-            academic_year,
+            attrition_year as academic_year,
             region,
             schoolid,
             grade_level,
