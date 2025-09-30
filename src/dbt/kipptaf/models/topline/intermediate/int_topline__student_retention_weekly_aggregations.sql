@@ -19,7 +19,7 @@ select
     s.schoolid,
     s.school,
 
-    'Attendance and Enrollment' as layer,
+    'Student and Family Experience' as layer,
     'Student Retention' as indicator,
 
     cast(null as string) as discipline,
@@ -73,7 +73,7 @@ select
 
     null as schoolid,
     'All' as school,
-    'Attendance and Enrollment' as layer,
+    'Student and Family Experience' as layer,
     'Student Retention' as indicator,
 
     cast(null as string) as discipline,
@@ -124,7 +124,7 @@ select
     'All' as region,
     null as schoolid,
     'All' as school,
-    'Attendance and Enrollment' as layer,
+    'Student and Family Experience' as layer,
     'Student Retention' as indicator,
 
     cast(null as string) as discipline,
