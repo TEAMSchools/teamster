@@ -33,6 +33,9 @@ models:
       +materialized: table
   deanslist:
     +materialized: table
+    staging:
+      stg_deanslist__followups:
+        +enabled: false
   iready:
     +materialized: table
   powerschool:

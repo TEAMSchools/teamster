@@ -32,6 +32,9 @@ models:
       +schema: extracts
   deanslist:
     +materialized: table
+    staging:
+      stg_deanslist__followups:
+        +enabled: false
   edplan:
     +materialized: table
     staging:
