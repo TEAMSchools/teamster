@@ -18,9 +18,12 @@ select
     s.region,
     s.schoolid,
     s.school,
+
     'Attendance and Enrollment' as layer,
     'Student Retention' as indicator,
+
     cast(null as string) as discipline,
+
     s.week_start_monday as term,
     s.is_current_week,
 
@@ -67,11 +70,14 @@ union all
 select
     s.academic_year,
     s.region,
+
     null as schoolid,
     'All' as school,
     'Attendance and Enrollment' as layer,
     'Student Retention' as indicator,
+
     cast(null as string) as discipline,
+
     s.week_start_monday as term,
     s.is_current_week,
 
@@ -114,12 +120,15 @@ union all
 
 select
     s.academic_year,
+
     'All' as region,
     null as schoolid,
     'All' as school,
     'Attendance and Enrollment' as layer,
     'Student Retention' as indicator,
+
     cast(null as string) as discipline,
+
     s.week_start_monday as term,
     s.is_current_week,
 

@@ -484,10 +484,14 @@ with
             academic_year,
             region,
             schoolid,
+
             cast(school as string) as school,
+
             layer,
             indicator,
+
             cast(null as string) as discipline,
+
             week_start_monday as term,
             is_current_week,
             indicator_display,
