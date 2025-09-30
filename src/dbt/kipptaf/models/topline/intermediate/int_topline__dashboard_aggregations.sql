@@ -279,6 +279,7 @@ with
     agg_union_student as (
         select *,
         from pre_agg_union_student
+        where region != 'Paterson'
 
         union all
 
