@@ -15,6 +15,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            m.term_end,
             m.is_current_week,
 
             g.indicator_display,
@@ -55,6 +56,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            m.term_end,
             m.is_current_week,
             g.indicator_display,
             g.org_level,
@@ -80,6 +82,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            m.term_end,
             m.is_current_week,
 
             g.indicator_display,
@@ -117,6 +120,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            m.term_end,
             m.is_current_week,
             g.indicator_display,
             g.org_level,
@@ -142,6 +146,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            m.term_end,
             m.is_current_week,
 
             g.indicator_display,
@@ -177,6 +182,7 @@ with
             m.indicator,
             m.discipline,
             m.term,
+            m.term_end,
             m.is_current_week,
             g.indicator_display,
             g.org_level,
@@ -224,6 +230,7 @@ with
             layer,
             discipline,
             term,
+            term_end,
             is_current_week,
             indicator_display,
             org_level,
@@ -256,6 +263,7 @@ with
             tu.indicator,
             tu.discipline,
             tu.term,
+            tu.term_end,
             tu.is_current_week,
 
             tg.indicator_display,
@@ -308,6 +316,7 @@ with
             cast(null as string) as discipline,
 
             m.term,
+            m.week_end_sunday as term_end,
             m.is_current_week,
 
             g.indicator_display,
@@ -346,6 +355,7 @@ with
             m.layer,
             m.indicator,
             m.term,
+            m.week_end_sunday,
             m.is_current_week,
             g.indicator_display,
             g.org_level,
@@ -373,6 +383,7 @@ with
             cast(null as string) as discipline,
 
             m.term,
+            m.week_end_sunday as term_end,
             m.is_current_week,
 
             g.indicator_display,
@@ -410,6 +421,7 @@ with
             m.layer,
             m.indicator,
             m.term,
+            m.week_end_sunday,
             m.is_current_week,
             g.indicator_display,
             g.org_level,
@@ -437,6 +449,7 @@ with
             cast(null as string) as discipline,
 
             m.term,
+            m.week_end_sunday as term_end,
             m.is_current_week,
 
             g.indicator_display,
@@ -471,6 +484,7 @@ with
             m.layer,
             m.indicator,
             m.term,
+            m.week_end_sunday,
             m.is_current_week,
             g.indicator_display,
             g.org_level,
@@ -498,6 +512,7 @@ with
             cast(null as string) as discipline,
 
             week_start_monday as term,
+            week_end_sunday as term_end,
             is_current_week,
             indicator_display,
             org_level,
