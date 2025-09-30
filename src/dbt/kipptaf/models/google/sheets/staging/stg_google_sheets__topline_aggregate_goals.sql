@@ -6,7 +6,7 @@ select
     if(
         grade_low = grade_high,
         cast(grade_high as string),
-        if(grade_low = 0, 'K', grade_low || '-' || grade_high)
+        if(grade_low = 0, 'K', cast(grade_low as string)) || '-' || grade_high
     ) as grade_band,
 
     case
