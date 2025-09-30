@@ -9,47 +9,11 @@ models:
         data_type: string
       - name: local_id
         data_type: string
-      - name: reading_prose_and_poetry
-        data_type: string
-      - name: reading_informational_text
-        data_type: string
-      - name: reading_across_genres_vocabulary
-        data_type: string
-      - name: number_sense_and_additive_reasoning
-        data_type: string
-      - name: number_sense_and_operations_and_algebraic_reasoning
-        data_type: string
-      - name: number_sense_and_operations_and_probability
-        data_type: string
-      - name: number_sense_and_operations
-        data_type: string
-      - name: number_sense_and_operations_with_whole_numbers
-        data_type: string
-      - name: number_sense_and_multiplicative_reasoning
-        data_type: string
-      - name: number_sense_and_operations_with_fractions_and_decimals
-        data_type: string
-      - name: proportional_reasoning_and_relationships
-        data_type: string
-      - name: fractional_reasoning
-        data_type: string
-      - name: geometric_reasoning_data_analysis_and_probability
-        data_type: string
-      - name: linear_relationships_data_analysis_and_functions
-        data_type: string
-      - name: data_analysis_and_probability
-        data_type: string
       - name: date_taken
         data_type: date
       - name: test_completion_date
         data_type: date
       - name: achievement_level
-        data_type: string
-      - name: algebraic_reasoning
-        data_type: string
-      - name: geometric_reasoning
-        data_type: string
-      - name: geometric_reasoning_measurement_and_data_analysis_and_probability
         data_type: string
       - name: scale_score
         data_type: int64
@@ -75,3 +39,39 @@ models:
         data_type: int64
       - name: is_proficient
         data_type: boolean
+      - name: algebraic_reasoning_performance
+        data_type: string
+      - name: geometric_reasoning_performance
+        data_type: string
+      - name: geometric_reasoning_measurement_and_data_analysis_and_probability_performance
+        data_type: string
+      - name: reading_prose_and_poetry_performance
+        data_type: string
+      - name: reading_informational_text_performance
+        data_type: string
+      - name: reading_across_genres_vocabulary_performance
+        data_type: string
+      - name: number_sense_and_additive_reasoning_performance
+        data_type: string
+      - name: number_sense_and_operations_and_algebraic_reasoning_performance
+        data_type: string
+      - name: number_sense_and_operations_and_probability_performance
+        data_type: string
+      - name: number_sense_and_operations_performance
+        data_type: string
+      - name: number_sense_and_operations_with_whole_numbers_performance
+        data_type: string
+      - name: number_sense_and_multiplicative_reasoning_performance
+        data_type: string
+      - name: number_sense_and_operations_with_fractions_and_decimals_performance
+        data_type: string
+      - name: proportional_reasoning_and_relationships_performance
+        data_type: string
+      - name: fractional_reasoning_performance
+        data_type: string
+      - name: geometric_reasoning_data_analysis_and_probability_performance
+        data_type: string
+      - name: linear_relationships_data_analysis_and_functions_performance
+        data_type: string
+      - name: data_analysis_and_probability_performance
+        data_type: string
