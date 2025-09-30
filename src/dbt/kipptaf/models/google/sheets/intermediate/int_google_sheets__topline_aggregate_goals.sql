@@ -13,7 +13,9 @@ select
             'Org ' || if(
                 g.grade_low = g.grade_high,
                 cast(g.grade_high as string),
-                if(g.grade_low = 0, 'K', g.grade_low || '-' || g.grade_high)
+                if(g.grade_low = 0, 'K', cast(g.grade_low as string))
+                || '-'
+                || g.grade_high
             )
         when g.org_level = 'region'
         then
@@ -22,7 +24,9 @@ select
             || if(
                 g.grade_low = g.grade_high,
                 cast(g.grade_high as string),
-                if(g.grade_low = 0, 'K', g.grade_low || '-' || g.grade_high)
+                if(g.grade_low = 0, 'K', cast(g.grade_low as string))
+                || '-'
+                || g.grade_high
             )
         when g.org_level = 'school'
         then
@@ -31,7 +35,9 @@ select
             || if(
                 g.grade_low = g.grade_high,
                 cast(g.grade_high as string),
-                if(g.grade_low = 0, 'K', g.grade_low || '-' || g.grade_high)
+                if(g.grade_low = 0, 'K', cast(g.grade_low as string))
+                || '-'
+                || g.grade_high
             )
     end as aggregation_display,
 from {{ ref("stg_google_sheets__topline_aggregate_goals") }} as g
