@@ -78,6 +78,10 @@ with
             null as etr_score,
             null as so_score,
 
+            em.is_leader_development_program,
+            em.is_teacher_development_program,
+            em.memberships,
+
             if(od.observation_id is not null, 1, 0) as is_observed,
 
             regexp_replace(
@@ -149,6 +153,9 @@ with
             on srh.employee_number = r.employee_number
             and t.academic_year = r.academic_year
             and t.code = r.code
+        left join {{ ref("int_adp_workforce_now__employee_memberships_by_year")}} as em
+            on t.academic_year = em.academic_year
+            and sr.worker_id = em.associate_id
         where
             (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
             and srh.assignment_status = 'Active'
@@ -213,6 +220,10 @@ with
             od.etr_score,
             od.so_score,
 
+            em.is_leader_development_program,
+            em.is_teacher_development_program,
+            em.memberships,
+
             if(od.observation_id is not null, 1, 0) as is_observed,
 
             regexp_replace(
@@ -242,6 +253,9 @@ with
             on srh.powerschool_teacher_number = tgl.teachernumber
             and od.academic_year = tgl.academic_year
             and tgl.grade_level_rank = 1
+        left join {{ ref("int_adp_workforce_now__employee_memberships_by_year")}} as em
+            on od.academic_year = em.academic_year
+            and sr.worker_id = em.associate_id
     )
 
 select *
