@@ -1,11 +1,11 @@
 version: 2
 models:
-  - name: int_adp_workforce_now__employee_memberships_rollup
+  - name: int_adp_workforce_now__employee_memberships_by_year
     columns:
       - name: associate_id
         data_type: string
-      - name: is_current
-        data_type: boolean
+      - name: academic_year
+        data_type: int
       - name: is_leader_development_program
         data_type: boolean
       - name: is_teacher_development_program

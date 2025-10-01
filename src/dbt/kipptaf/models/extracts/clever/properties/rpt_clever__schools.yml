@@ -1,6 +1,8 @@
-version: 2
 models:
   - name: rpt_clever__schools
+    config:
+      contract:
+        enforced: true
     columns:
       - name: school_id
         data_type: string

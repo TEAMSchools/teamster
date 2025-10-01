@@ -19,16 +19,6 @@ core_dbt_assets = build_dbt_assets(
     dagster_dbt_translator=dagster_dbt_translator,
     name=f"{CODE_LOCATION}__dbt_assets",
     exclude="source:adp_payroll+ tag:google_sheet",
-    op_tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {
-                    "requests": {"cpu": "250m", "memory": "0.5Gi"},
-                    "limits": {"cpu": "1750m", "memory": "3.5Gi"},
-                }
-            }
-        }
-    },
 )
 
 google_sheet_dbt_assets = build_dbt_assets(
@@ -36,13 +26,6 @@ google_sheet_dbt_assets = build_dbt_assets(
     dagster_dbt_translator=dagster_dbt_translator,
     name=f"{CODE_LOCATION}__dbt_assets__google_sheets",
     select="tag:google_sheet",
-    op_tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {"requests": {"cpu": "250m"}, "limits": {"cpu": "1500m"}}
-            }
-        }
-    },
 )
 
 adp_payroll_dbt_assets = build_dbt_assets(
@@ -51,13 +34,6 @@ adp_payroll_dbt_assets = build_dbt_assets(
     name=f"{CODE_LOCATION}__dbt_assets__adp_payroll",
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
     select="source:adp_payroll+",
-    op_tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {"requests": {"cpu": "250m"}, "limits": {"cpu": "1250m"}}
-            }
-        }
-    },
 )
 
 asset_specs = [

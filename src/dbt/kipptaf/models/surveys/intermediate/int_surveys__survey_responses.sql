@@ -90,7 +90,7 @@ select
 from {{ source("alchemer", "base_alchemer__survey_results") }} as sr
 inner join
     {{ ref("stg_reporting__terms") }} as rt
-    on rt.name = sr.survey_title
+    on sr.survey_title = rt.name
     and sr.response_date_submitted_date between rt.start_date and rt.end_date
 left join
     {{ source("surveys", "int_surveys__response_identifiers") }} as ri

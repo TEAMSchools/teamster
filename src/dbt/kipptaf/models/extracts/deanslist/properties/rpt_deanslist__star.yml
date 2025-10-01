@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_deanslist__star
+    config:
+      contract:
+        enforced: true
     columns:
       - name: score_type
         data_type: string
@@ -15,7 +18,7 @@ models:
       - name: unified_score
         data_type: int64
       - name: state_benchmark_category_level
-        data_type: float64
+        data_type: int64
       - name: state_benchmark_category_name
         data_type: string
       - name: state_benchmark_proficient

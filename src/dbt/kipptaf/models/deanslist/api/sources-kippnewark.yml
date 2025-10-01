@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: kippnewark_deanslist
     schema: |
@@ -25,14 +23,6 @@ sources:
               - kippnewark
               - deanslist
               - int_deanslist__comm_log
-      - name: stg_deanslist__followups
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippnewark
-              - deanslist
-              - stg_deanslist__followups
       - name: stg_deanslist__incidents
         meta:
           dagster:
@@ -143,3 +133,13 @@ sources:
               - kippnewark
               - deanslist
               - stg_deanslist__rosters
+      - name: stg_deanslist__followups
+        config:
+          enabled: false
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippnewark
+              - deanslist
+              - stg_deanslist__followups

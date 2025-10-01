@@ -1,6 +1,17 @@
-version: 2
 models:
   - name: rpt_powerschool__autocomm_teachers
+    config:
+      contract:
+        enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - teachernumber
+              - home_work_location_dagster_code_location
+          config:
+            store_failures: true
+            severity: warn
     columns:
       - name: teachernumber
         data_type: string

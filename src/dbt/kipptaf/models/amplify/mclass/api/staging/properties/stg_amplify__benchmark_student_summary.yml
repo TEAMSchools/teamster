@@ -2,6 +2,7 @@ version: 2
 models:
   - name: stg_amplify__benchmark_student_summary
     config:
+      enabled: false
       contract:
         enforced: true
     columns:

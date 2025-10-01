@@ -1,34 +1,36 @@
-version: 2
 models:
   - name: rpt_illuminate__sites
+    config:
+      contract:
+        enforced: true
     columns:
-      - name: 01 site id
+      - name: "`01 Site ID`"
         data_type: int64
-      - name: 02 site name
+      - name: "`02 Site Name`"
         data_type: string
-      - name: 03 state site id
+      - name: "`03 State Site ID`"
         data_type: int64
-      - name: 04 start grade level id
+      - name: "`04 Start Grade Level ID`"
         data_type: int64
-      - name: 05 end grade level id
+      - name: "`05 End Grade Level ID`"
         data_type: int64
-      - name: 06 school type id
+      - name: "`06 School Type ID`"
         data_type: int64
-      - name: 07 address 1
+      - name: "`07 Address 1`"
         data_type: int64
-      - name: 08 address 2
+      - name: "`08 Address 2`"
         data_type: int64
-      - name: 09 city
+      - name: "`09 City`"
         data_type: string
-      - name: 10 state
+      - name: "`10 State`"
         data_type: string
-      - name: 11 zip code
+      - name: "`11 Zip Code`"
         data_type: string
-      - name: 12 local site code
+      - name: "`12 Local Site Code`"
         data_type: int64
-      - name: 13 annual hours of instruction
+      - name: "`13 Annual Hours Of Instruction`"
         data_type: int64
-      - name: 14 annual number of weeks of instruction
+      - name: "`14 Annual Number Of Weeks Of Instruction`"
         data_type: int64
-      - name: 15 parent site id
+      - name: "`15 Parent Site ID`"
         data_type: int64

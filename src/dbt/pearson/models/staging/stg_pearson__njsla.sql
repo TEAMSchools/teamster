@@ -96,7 +96,6 @@ with
                 homelessprimarynighttimeresidence as numeric
             ) as homelessprimarynighttimeresidence,
             cast(humanreaderorhumansigner as numeric) as humanreaderorhumansigner,
-            cast(localstudentidentifier as numeric) as localstudentidentifier,
             cast(
                 mathematics_scienceaccommodatedresponse as numeric
             ) as mathematics_scienceaccommodatedresponse,
@@ -146,6 +145,9 @@ with
             cast(unit3totaltestitems as numeric) as unit3totaltestitems,
             cast(voidscorereason as numeric) as voidscorereason,
 
+            cast(
+                cast(localstudentidentifier as numeric) as int
+            ) as localstudentidentifier,
             cast(cast(testperformancelevel as numeric) as int) as testperformancelevel,
 
             cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,

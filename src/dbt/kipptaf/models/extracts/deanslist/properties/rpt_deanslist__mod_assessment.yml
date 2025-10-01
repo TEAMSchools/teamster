@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_deanslist__mod_assessment
+    config:
+      contract:
+        enforced: true
     columns:
       - name: student_number
         data_type: int64
@@ -13,7 +16,7 @@ models:
       - name: module_num
         data_type: string
       - name: avg_pct_correct
-        data_type: float64
+        data_type: numeric
       - name: proficiency_label
         data_type: string
       - name: subject_area
