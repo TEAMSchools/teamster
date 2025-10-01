@@ -17,7 +17,9 @@ select
     o.observed_at_date_local,
     o.academic_year,
     o.is_published,
+
     mn.magic_notes_text,
+
     s.name as school_name,
 
     gt.name as observation_type_name,

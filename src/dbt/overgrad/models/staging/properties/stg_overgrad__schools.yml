@@ -1,6 +1,8 @@
-version: 2
 models:
   - name: stg_overgrad__schools
+    config:
+      contract:
+        enforced: true
     columns:
       - name: id
         data_type: int64

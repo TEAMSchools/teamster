@@ -1,132 +1,134 @@
-version: 2
 models:
   - name: rpt_illuminate__studemo
+    config:
+      contract:
+        enforced: true
     columns:
-      - name: 01 import student id
+      - name: "`01 Import Student ID`"
         data_type: int64
-      - name: 02 state student id
+      - name: "`02 State Student ID`"
         data_type: string
-      - name: 03 last name
+      - name: "`03 Last Name`"
         data_type: string
-      - name: 04 first name
+      - name: "`04 First Name`"
         data_type: string
-      - name: 05 middle name
+      - name: "`05 Middle Name`"
         data_type: string
-      - name: 06 birth date
+      - name: "`06 Birth Date`"
         data_type: date
-      - name: 07 gender
+      - name: "`07 Gender`"
         data_type: int64
-      - name: 08 primary ethnicity
+      - name: "`08 Primary Ethnicity`"
         data_type: int64
-      - name: 09 secondary ethnicity
+      - name: "`09 Secondary Ethnicity`"
         data_type: int64
-      - name: 10 tertiary ethnicity
+      - name: "`10 Tertiary Ethnicity`"
         data_type: int64
-      - name: 11 is hispanic
+      - name: "`11 Is Hispanic`"
         data_type: int64
-      - name: 12 primary language
+      - name: "`12 Primary Language`"
         data_type: int64
-      - name: 13 correspondence language
+      - name: "`13 Correspondence Language`"
         data_type: int64
-      - name: 14 english proficiency
+      - name: "`14 English Proficiency`"
         data_type: int64
-      - name: 15 redesignation date
+      - name: "`15 Redesignation Date`"
         data_type: int64
-      - name: 16 primary disability
+      - name: "`16 Primary Disability`"
         data_type: string
-      - name: 17 migrant ed student id
+      - name: "`17 Migrant Ed Student ID`"
         data_type: int64
-      - name: 18 lep date
+      - name: "`18 Lep Date`"
         data_type: int64
-      - name: 19 us entry date
+      - name: "`19 Us Entry Date`"
         data_type: int64
-      - name: 20 school enter date
+      - name: "`20 School Enter Date`"
         data_type: int64
-      - name: 21 district enter date
+      - name: "`21 District Enter Date`"
         data_type: int64
-      - name: 22 parent education level
+      - name: "`22 Parent Education Level`"
         data_type: int64
-      - name: 23 residential status
+      - name: "`23 Residential Status`"
         data_type: int64
-      - name: 24 special needs status
+      - name: "`24 Special Needs Status`"
         data_type: int64
-      - name: 25 sst date
+      - name: "`25 Sst Date`"
         data_type: int64
-      - name: 26 plan 504 accommodations
+      - name: "`26 Plan 504 Accommodations`"
         data_type: int64
-      - name: 27 plan 504 annual review date
+      - name: "`27 Plan 504 Annual Review Date`"
         data_type: int64
-      - name: 28 exit date
+      - name: "`28 Exit Date`"
         data_type: int64
-      - name: 29 birth city
+      - name: "`29 Birth City`"
         data_type: int64
-      - name: 30 birth state
+      - name: "`30 Birth State`"
         data_type: int64
-      - name: 31 birth country
+      - name: "`31 Birth Country`"
         data_type: int64
-      - name: 32 lunch id
+      - name: "`32 Lunch ID`"
         data_type: int64
-      - name: 33 academic year
+      - name: "`33 Academic Year`"
         data_type: string
-      - name: 34 name suffix
+      - name: "`34 Name Suffix`"
         data_type: int64
-      - name: 35 aka last name
+      - name: "`35 Aka Last Name`"
         data_type: int64
-      - name: 36 aka first name
+      - name: "`36 Aka First Name`"
         data_type: int64
-      - name: 37 aka middle name
+      - name: "`37 Aka Middle Name`"
         data_type: int64
-      - name: 38 aka name suffix
+      - name: "`38 Aka Name Suffix`"
         data_type: int64
-      - name: 39 lunch balance
+      - name: "`39 Lunch Balance`"
         data_type: int64
-      - name: 40 resident district site id
+      - name: "`40 Resident District Site ID`"
         data_type: int64
-      - name: 41 operating district site id
+      - name: "`41 Operating District Site ID`"
         data_type: int64
-      - name: 42 resident school site id
+      - name: "`42 Resident School Site ID`"
         data_type: int64
-      - name: 43 birthdate verification
+      - name: "`43 Birthdate Verification`"
         data_type: int64
-      - name: 44 homeless dwelling type
+      - name: "`44 Homeless Dwelling Type`"
         data_type: int64
-      - name: 45 photo release
+      - name: "`45 Photo Release`"
         data_type: int64
-      - name: 46 military recruitment
+      - name: "`46 Military Recruitment`"
         data_type: int64
-      - name: 47 internet release
+      - name: "`47 Internet Release`"
         data_type: int64
-      - name: 48 graduation date
+      - name: "`48 Graduation Date`"
         data_type: int64
-      - name: 49 graduation status
+      - name: "`49 Graduation Status`"
         data_type: int64
-      - name: 50 service learning hours
+      - name: "`50 Service Learning Hours`"
         data_type: int64
-      - name: 51 us abroad
+      - name: "`51 Us Abroad`"
         data_type: int64
-      - name: 52 military family
+      - name: "`52 Military Family`"
         data_type: int64
-      - name: 53 home address verification date
+      - name: "`53 Home Address Verification Date`"
         data_type: int64
-      - name: 54 entry date
+      - name: "`54 Entry Date`"
         data_type: int64
-      - name: 55 secondary disability
+      - name: "`55 Secondary Disability`"
         data_type: int64
-      - name: 56 state school entry date
+      - name: "`56 State School Entry Date`"
         data_type: int64
-      - name: 57 us school entry date
+      - name: "`57 Us School Entry Date`"
         data_type: int64
-      - name: 58 local student id
+      - name: "`58 Local Student ID`"
         data_type: int64
-      - name: 59 school student id
+      - name: "`59 School Student ID`"
         data_type: int64
-      - name: 60 other student id
+      - name: "`60 Other Student ID`"
         data_type: int64
-      - name: 61 graduation requirement year
+      - name: "`61 Graduation Requirement Year`"
         data_type: int64
-      - name: 62 next school site id
+      - name: "`62 Next School Site ID`"
         data_type: int64
-      - name: 63 prior district
+      - name: "`63 Prior District`"
         data_type: int64
-      - name: 64 prior school
+      - name: "`64 Prior School`"
         data_type: int64

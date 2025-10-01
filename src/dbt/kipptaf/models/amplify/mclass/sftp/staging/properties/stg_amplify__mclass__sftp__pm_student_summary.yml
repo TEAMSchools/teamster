@@ -5,6 +5,16 @@ models:
       contract:
         enforced: true
     columns:
+      - name: school_name
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_people__location_crosswalk")
+                field: name
+              config:
+                store_failures: true
+                severity: warn
       - name: school_year
         data_type: string
       - name: state
@@ -16,8 +26,6 @@ models:
       - name: district_name
         data_type: string
       - name: district_primary_id
-        data_type: string
-      - name: school_name
         data_type: string
       - name: school_primary_id
         data_type: int64
@@ -113,3 +121,5 @@ models:
         data_type: int64
       - name: enrollment_grade_int
         data_type: int64
+      - name: additional_student_id_sisid
+        data_type: string
