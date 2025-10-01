@@ -31,7 +31,7 @@ dagsterCloudAgent:
   resources:
     requests:
       cpu: 250m
-      memory: 0.5Gi
+      memory: 1.0Gi
     limits:
       cpu: 2500m
       memory: 5.0Gi
@@ -51,11 +51,11 @@ workspace:
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
   runK8sConfig:
-    # Autopilot clusters enforce higher minimum values for the resource requests of
-    # extended duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
     containerConfig:
       resources:
         requests:
+          # Autopilot clusters enforce higher minimum values for the resource requests
+          # of extended duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
           cpu: 500m
           memory: 2.0Gi
         limits:
@@ -75,7 +75,7 @@ workspace:
       resources:
         requests:
           cpu: 250m
-          memory: 0.5Gi
+          memory: 1.0Gi
         limits:
           cpu: 2500m
           memory: 5.0Gi
