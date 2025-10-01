@@ -23,6 +23,9 @@ with
                 partition by student, academic_year, semester
                 order by transcript_date desc
             ) as rn_semester,
+            row_number() over (
+                partition by student order by transcript_date desc
+            ) as rn_all,
         from {{ ref("stg_kippadb__gpa") }}
         where
             record_type_id in (
@@ -406,6 +409,10 @@ select
     gpa_spr.cumulative_gpa as spr_cumulative_gpa,
     gpa_spr.semester_credits_earned as spr_semester_credits_earned,
 
+    gpa_cur.transcript_date as recent_transcript_date,
+    gpa_cur.cumulative_gpa as recent_cumulative_gpa,
+    gpa_cur.cumulative_credits_earned as cur_cumulative_credits_earned,
+
     ln.comments as latest_as_comments,
     ln.next_steps as latest_as_next_steps,
 
@@ -633,6 +640,8 @@ left join
     and ay.academic_year = gpa_spr.academic_year
     and gpa_spr.semester = 'Spring'
     and gpa_spr.rn_semester = 1
+left join
+    gpa_by_semester as gpa_cur on c.contact_id = gpa_cur.student and gpa_cur.rn_all = 1
 left join
     latest_note as ln
     on c.contact_id = ln.contact
