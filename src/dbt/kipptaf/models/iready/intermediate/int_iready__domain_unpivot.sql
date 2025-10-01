@@ -10,7 +10,7 @@ with
             domain_name,
             relative_placement,
         from
-            {{ ref("stg_iready__diagnostic_results") }} unpivot (
+            {{ ref("int_iready__diagnostic_results") }} unpivot (
                 relative_placement for domain_name in (
                     phonics_relative_placement,
                     algebra_and_algebraic_thinking_relative_placement,
