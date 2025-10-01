@@ -17,11 +17,6 @@ with
             student_id,
             local_id,
 
-            reading_prose_and_poetry_performance as reading_prose_and_poetry,
-            reading_informational_text_performance as reading_informational_text,
-            reading_across_genres_vocabulary_performance
-            as reading_across_genres_vocabulary,
-
             algebraic_reasoning_performance,
             data_analysis_and_probability_performance,
             fractional_reasoning_performance,
@@ -38,6 +33,9 @@ with
             number_sense_and_operations_with_fractions_and_decimals_performance,
             number_sense_and_operations_with_whole_numbers_performance,
             proportional_reasoning_and_relationships_performance,
+            reading_across_genres_vocabulary_performance,
+            reading_informational_text_performance,
+            reading_prose_and_poetry_performance,
 
             parse_date('%m/%d/%Y', date_taken) as date_taken,
             parse_date('%m/%d/%Y', test_completion_date) as test_completion_date,

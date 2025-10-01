@@ -65,6 +65,11 @@ with
                 extract(year from attrition_day) - 1,
                 extract(year from attrition_day)
             ) as attrition_year,
+            if(
+                extract(month from attrition_day) >= 7,
+                extract(year from attrition_day),
+                extract(year from attrition_day) - 1
+            ) as academic_year,
         from
             unnest(
                 generate_date_array(
@@ -77,7 +82,8 @@ with
     ),
 
     attrition_scaffold as (
-        select ayd.student_number, ayd.attrition_year, ac.attrition_day,
+        select
+            ayd.student_number, ayd.attrition_year, ac.academic_year, ac.attrition_day,
         from attrition_years_distinct as ayd
         inner join attrition_calendar as ac on ayd.attrition_year = ac.attrition_year
     ),
@@ -87,16 +93,13 @@ with
             s.student_number,
             s.attrition_year,
             s.attrition_day,
+            s.academic_year,
 
             ed.is_enrolled_day_int,
 
             last_value(ed.grade_level ignore nulls) over (
                 partition by s.student_number order by s.attrition_day
             ) as grade_level,
-
-            last_value(ed.academic_year ignore nulls) over (
-                partition by s.student_number order by s.attrition_day
-            ) as academic_year,
 
             last_value(ed.next_year_schoolid ignore nulls) over (
                 partition by s.student_number order by s.attrition_day

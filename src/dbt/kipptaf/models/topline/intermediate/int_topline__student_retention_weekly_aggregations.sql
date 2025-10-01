@@ -7,6 +7,7 @@ with
             grade_level,
             school,
             week_start_monday,
+            week_end_sunday,
             is_current_week,
             is_retained_int,
         from {{ ref("int_students__retention_over_time") }}
@@ -25,6 +26,7 @@ select
     cast(null as string) as discipline,
 
     s.week_start_monday as term,
+    s.week_end_sunday as term_end,
     s.is_current_week,
 
     g.indicator_display,
@@ -53,6 +55,7 @@ group by
     s.school,
     s.schoolid,
     s.week_start_monday,
+    s.week_end_sunday,
     s.is_current_week,
     g.indicator_display,
     g.org_level,
@@ -79,6 +82,7 @@ select
     cast(null as string) as discipline,
 
     s.week_start_monday as term,
+    s.week_end_sunday as term_end,
     s.is_current_week,
 
     g.indicator_display,
@@ -104,6 +108,7 @@ group by
     s.academic_year,
     s.region,
     s.week_start_monday,
+    s.week_end_sunday,
     s.is_current_week,
     g.indicator_display,
     g.org_level,
@@ -130,6 +135,7 @@ select
     cast(null as string) as discipline,
 
     s.week_start_monday as term,
+    s.week_end_sunday as term_end,
     s.is_current_week,
 
     g.indicator_display,
@@ -153,6 +159,7 @@ inner join
 group by
     s.academic_year,
     s.week_start_monday,
+    s.week_end_sunday,
     s.is_current_week,
     g.indicator_display,
     g.org_level,
