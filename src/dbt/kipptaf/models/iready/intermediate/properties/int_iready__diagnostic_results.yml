@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: stg_iready__diagnostic_results
+  - name: int_iready__diagnostic_results
     columns:
       - name: school
         data_type: string

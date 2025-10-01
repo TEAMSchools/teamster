@@ -1,7 +1,17 @@
 version: 2
 models:
-  - name: stg_iready__instructional_usage_data
+  - name: int_iready__instructional_usage_data
     columns:
+      - name: school
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_people__location_crosswalk")
+                field: name
+              config:
+                store_failures: true
+                severity: warn
       - name: _dbt_source_relation
         data_type: string
       - name: academic_year
@@ -27,8 +37,6 @@ models:
       - name: race
         data_type: string
       - name: report_group_s
-        data_type: string
-      - name: school
         data_type: string
       - name: sex
         data_type: string
