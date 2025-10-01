@@ -5,7 +5,7 @@ with
         where
             srh.effective_date_start >= '{{ var("current_academic_year") - 1 }}-07-01'
             and srh.assignment_status = 'Active'
-            and srh.job_title = 'Teacher in Residence'
+            and srh.job_title in ('Teacher in Residence', 'Paraprofessional')
         group by employee_number
     ),
 
@@ -98,7 +98,7 @@ with
                         or srh.home_business_unit_name = 'KIPP Miami'
                         or srh.worker_hire_date_recent
                         between '{{ var("current_academic_year") }}-04-01' and date_sub(
-                            t.lockbox_date, interval 6 week
+                            t.lockbox_date, interval 3 week
                         )
                     )
                 then true
