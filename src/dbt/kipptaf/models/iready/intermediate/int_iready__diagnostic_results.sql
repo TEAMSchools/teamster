@@ -76,7 +76,16 @@ with
     )
 
 select
-    *,
+    * except (
+        most_recent_completion_date,
+        most_recent_diagnostic_gain,
+        most_recent_lexile_measure,
+        most_recent_lexile_range,
+        most_recent_overall_placement,
+        most_recent_overall_relative_placement,
+        most_recent_overall_scale_score,
+        most_recent_rush_flag
+    ),
 
     max(most_recent_overall_scale_score) over (
         partition by _dbt_source_relation, student_id, academic_year, subject
