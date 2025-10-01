@@ -7,6 +7,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             discipline,
             is_mastery_running_int as metric_value,
 
@@ -19,6 +20,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             discipline,
             is_proficient as metric_value,
 
@@ -31,6 +33,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
 
             null as discipline,
 
@@ -49,6 +52,7 @@ with
             mlm.student_number,
             mlm.academic_year,
             mlm.term,
+            mlm.term_end,
             mlm.discipline,
 
             null as numerator,
@@ -66,6 +70,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             'ELA' as discipline,
 
             null as numerator,
@@ -81,6 +86,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             'ELA' as discipline,
 
             null as numerator,
@@ -96,6 +102,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             discipline,
 
             null as numerator,
@@ -111,6 +118,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             discipline,
 
             null as numerator,
@@ -126,6 +134,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             discipline,
 
             null as numerator,
@@ -142,6 +151,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             discipline,
 
             null as numerator,
@@ -158,6 +168,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             discipline,
 
             null as numerator,
@@ -175,6 +186,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             null as numerator,
@@ -190,6 +202,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             successful_comms_sum_running as numerator,
@@ -207,6 +220,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             successful_call_count as numerator,
@@ -222,6 +236,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             attendance_value_sum_running as numerator,
@@ -237,6 +252,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             null as numerator,
@@ -252,6 +268,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             null as numerator,
@@ -268,6 +285,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             null as numerator,
@@ -291,6 +309,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             null as numerator,
@@ -307,6 +326,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             null as numerator,
@@ -322,6 +342,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             null as numerator,
@@ -337,6 +358,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             null as numerator,
@@ -353,6 +375,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             null as numerator,
@@ -368,6 +391,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             null as numerator,
@@ -383,6 +407,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             null as numerator,
@@ -398,6 +423,7 @@ with
             student_number,
             academic_year,
             week_start_monday as term,
+            week_end_sunday as term_end,
             null as discipline,
 
             null as numerator,
@@ -431,6 +457,7 @@ select
     mu.indicator,
     mu.discipline,
     mu.term,
+    mu.term_end,
     mu.numerator,
     mu.denominator,
     mu.metric_value,

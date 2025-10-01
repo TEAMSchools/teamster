@@ -45,6 +45,7 @@ select
     f.schoolid,
     f.school,
     f.week_start_monday,
+    f.week_end_sunday,
     f.is_current_week,
 
     g.indicator_display,
@@ -69,6 +70,7 @@ group by
     f.schoolid,
     f.school,
     f.week_start_monday,
+    f.week_end_sunday,
     f.is_current_week,
     g.indicator_display,
     g.org_level,
@@ -93,6 +95,7 @@ select
     'All' as school,
 
     f.week_start_monday,
+    f.week_end_sunday,
     f.is_current_week,
 
     g.indicator_display,
@@ -115,6 +118,7 @@ group by
     f.academic_year,
     f.entity,
     f.week_start_monday,
+    f.week_end_sunday,
     f.is_current_week,
     g.indicator_display,
     g.org_level,
@@ -139,6 +143,7 @@ select
     'All' as school,
 
     f.week_start_monday,
+    f.week_end_sunday,
     f.is_current_week,
 
     g.indicator_display,
@@ -160,6 +165,7 @@ cross join goals as g
 group by
     f.academic_year,
     f.week_start_monday,
+    f.week_end_sunday,
     f.is_current_week,
     g.indicator_display,
     g.org_level,
