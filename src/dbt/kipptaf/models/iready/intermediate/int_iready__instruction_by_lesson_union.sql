@@ -14,7 +14,7 @@ select
     passed_or_not_passed_numeric,
 
     'Traditional' as lesson_source,
-from {{ ref("stg_iready__instruction_by_lesson") }}
+from {{ ref("int_iready__instruction_by_lesson") }}
 
 union all
 
@@ -36,4 +36,4 @@ select
     passed_or_not_passed_numeric,
 
     'Pro' as lesson_source,
-from {{ ref("stg_iready__instruction_by_lesson_pro") }}
+from {{ ref("int_iready__instruction_by_lesson_pro") }}
