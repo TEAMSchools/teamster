@@ -473,7 +473,7 @@ exposures:
           - tableau
         asset:
           metadata:
-            id: 7f960a60-8ddd-4b66-92f0-20cad02a34f1
+            id: 01861d02-0674-4ddb-979e-f1e6bcbcf5c0
             cron_schedule: 0 6 * * *
   - name: leadership_development
     label: Leadership Development
