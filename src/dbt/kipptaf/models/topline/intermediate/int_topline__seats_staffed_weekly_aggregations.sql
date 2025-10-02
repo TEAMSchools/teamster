@@ -165,8 +165,7 @@ select
 
     round(avg(f.is_staffed), 3) as metric_aggregate_value,
 from final as f
-inner join goals as g
-    on g.org_level = 'org'
+inner join goals as g on g.org_level = 'org'
 group by
     f.academic_year,
     f.week_start_monday,
