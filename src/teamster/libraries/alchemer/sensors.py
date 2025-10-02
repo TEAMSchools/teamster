@@ -132,16 +132,6 @@
 
 #             if survey_cursor_timestamp == 0:
 #                 is_run_request = True
-#                 run_config = {
-#                     "execution": {
-#                         "config": {
-#                             "resources": {
-#                                 "requests": {"cpu": "250m", "memory": "0.5Gi"},
-#                                 "limits": {"cpu": "500m", "memory": "4.0Gi"},
-#                             }
-#                         }
-#                     }
-#                 }
 #             elif survey_metadata["status"] in ["Closed", "Archived"]:
 #                 continue
 #             else:

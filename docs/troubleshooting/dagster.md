@@ -5,7 +5,6 @@
 1.  Click on the link to the failed run.
 2.  Determine whether the failure is a framework error or a programming error.
     Typically, it's a famework error.
-
     - framework error: re-execute the run "From Failure"
     - programming error: examine the run logs and determine the cause. Fix via
       pull request
