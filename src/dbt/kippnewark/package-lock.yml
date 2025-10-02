@@ -1,0 +1,27 @@
+packages:
+  - local: ../deanslist
+    name: deanslist
+  - local: ../edplan
+    name: edplan
+  - local: ../iready
+    name: iready
+  - local: ../overgrad
+    name: overgrad
+  - local: ../pearson
+    name: pearson
+  - local: ../powerschool
+    name: powerschool
+  - local: ../renlearn
+    name: renlearn
+  - local: ../titan
+    name: titan
+  - name: dbt_external_tables
+    package: dbt-labs/dbt_external_tables
+    version: 0.11.1
+  - name: codegen
+    package: dbt-labs/codegen
+    version: 0.13.1
+  - name: dbt_utils
+    package: dbt-labs/dbt_utils
+    version: 1.3.1
+sha1_hash: f2133bdecc03d2589286ee10deb977c06a86cb35
