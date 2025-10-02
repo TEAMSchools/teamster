@@ -63,7 +63,11 @@ select
 
     round(avg(f.is_staffed), 3) as metric_aggregate_value,
 from final as f
-inner join goals as g on f.entity = g.entity and f.schoolid = g.schoolid
+inner join
+    goals as g
+    on f.entity = g.entity
+    and f.schoolid = g.schoolid
+    and g.org_level = 'school'
 group by
     f.academic_year,
     f.entity,
@@ -113,7 +117,7 @@ select
 
     round(avg(f.is_staffed), 3) as metric_aggregate_value,
 from final as f
-inner join goals as g on f.entity = g.entity
+inner join goals as g on f.entity = g.entity and g.org_level = 'region'
 group by
     f.academic_year,
     f.entity,
@@ -162,6 +166,7 @@ select
     round(avg(f.is_staffed), 3) as metric_aggregate_value,
 from final as f
 cross join goals as g
+where g.org_level = 'org'
 group by
     f.academic_year,
     f.week_start_monday,
