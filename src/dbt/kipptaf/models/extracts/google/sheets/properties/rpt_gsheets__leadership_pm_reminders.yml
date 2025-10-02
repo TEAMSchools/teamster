@@ -1,0 +1,24 @@
+models:
+  - name: rpt_gsheets__leadership_pm_reminders
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: preferred_name_lastfirst
+        data_type: string
+      - name: term
+        data_type: string
+      - name: mail
+        data_type: string
+      - name: manager
+        data_type: string
+      - name: manager_mail
+        data_type: string
+      - name: location
+        data_type: string
+      - name: entity
+        data_type: string
+      - name: round_completion_self
+        data_type: int64
+      - name: round_completion_manager
+        data_type: int64
