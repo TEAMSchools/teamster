@@ -104,3 +104,15 @@ models:
         data_type: string
       - name: work_assignment_actual_start_date
         data_type: date
+      - name: is_leader_development_program
+        data_type: boolean
+      - name: is_leader_development_program_observer
+        data_type: boolean
+      - name: is_teacher_development_program
+        data_type: boolean
+      - name: is_teacher_development_program_observer
+        data_type: boolean
+      - name: memberships
+        data_type: string
+      - name: memberships_observer
+        data_type: string

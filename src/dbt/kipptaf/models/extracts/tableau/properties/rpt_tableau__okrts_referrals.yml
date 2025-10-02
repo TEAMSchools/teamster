@@ -157,8 +157,10 @@ models:
       - name: hi_approver_name
         data_type: string
       - name: hi_end_date
-        data_type: string
+        data_type: date
       - name: hi_start_date
-        data_type: string
+        data_type: date
       - name: hours_per_week
+        data_type: string
+      - name: state_studentnumber
         data_type: string
