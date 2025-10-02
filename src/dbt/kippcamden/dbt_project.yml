@@ -30,6 +30,9 @@ models:
       +schema: extracts
   deanslist:
     +materialized: table
+    staging:
+      stg_deanslist__followups:
+        +enabled: false
   edplan:
     +materialized: table
     staging:
@@ -65,8 +68,6 @@ models:
           stg_powerschool__test:
             +enabled: false
           stg_powerschool__testscore:
-            +enabled: false
-          stg_powerschool__u_studentsuserfields:
             +enabled: false
           stg_powerschool__gpprogresssubjectrequested:
             +enabled: false
@@ -127,8 +128,6 @@ sources:
             src_powerschool__test:
               +enabled: false
             src_powerschool__testscore:
-              +enabled: false
-            src_powerschool__u_studentsuserfields:
               +enabled: false
             src_powerschool__gpprogresssubjectrequested:
               +enabled: false

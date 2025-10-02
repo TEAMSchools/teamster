@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: stg_google_sheets__kippfwd_goals
     config:
@@ -6,8 +5,6 @@ models:
         enforced: true
       tags: google_sheet
     columns:
-      - name: academic_year
-        data_type: int64
       - name: region
         data_type: string
       - name: grade_level
@@ -28,7 +25,9 @@ models:
         data_type: string
       - name: goal_subtype
         data_type: string
-      - name: score
+      - name: min_score
         data_type: int64
-      - name: goal
+      - name: pct_goal
         data_type: float64
+      - name: expected_score_type
+        data_type: string

@@ -22,7 +22,7 @@ with
 
             count(distinct lesson_id) as total_lessons,
             sum(passed_or_not_passed_numeric) as lessons_passed,
-        from {{ ref("stg_iready__instruction_by_lesson") }}
+        from {{ ref("int_iready__instruction_by_lesson") }}
         where
             completion_date in unnest(
                 generate_date_array(

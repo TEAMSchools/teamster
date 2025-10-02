@@ -1,16 +1,7 @@
 select
-    id,
-    created_at,
-    updated_at,
-    applied_on,
-    application_source,
-    `status`,
-    status_updated_at,
-    waitlisted,
-    deferred,
-    academic_fit,
-    probability_of_acceptance,
+    * except (custom_field_values, student, university, due_date, award_letter),
 
+    /* records */
     student.id as student__id,
     student.external_student_id as student__external_student_id,
 

@@ -50,6 +50,7 @@ select
     otherphone as other_phone,
     postsecondary_status__c as postsecondary_status,
     secondary_email__c as secondary_email,
+    postsec_advisor__c as postsec_advisor,
 
     safe_cast(kipp_hs_class__c as int) as kipp_hs_class,
     safe_cast(school_specific_id__c as int) as school_specific_id,
