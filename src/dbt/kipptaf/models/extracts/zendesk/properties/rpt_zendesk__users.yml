@@ -1,0 +1,44 @@
+models:
+  - name: rpt_zendesk__users
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: email
+        data_type: string
+      - name: external_id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: suspended
+        data_type: boolean
+      - name: organization_id
+        data_type: int64
+      - name: zendesk__external_id
+        data_type: string
+      - name: zendesk__name
+        data_type: string
+      - name: zendesk__suspended
+        data_type: boolean
+      - name: zendesk__organization_id
+        data_type: int64
+      - name: zendesk__secondary_location
+        data_type: string
+      - name: adp__home_business_unit_code
+        data_type: string
+      - name: adp__home_work_location_name
+        data_type: string
+      - name: mail_alias
+        data_type: string
+      - name: google_email
+        data_type: string
+      - name: personal_email
+        data_type: string
+      - name: role
+        data_type: string
+      - name: verified
+        data_type: boolean
+      - name: user_fields
+        data_type: record
+      - name: user_fields.secondary_location
+        data_type: string

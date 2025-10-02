@@ -1,0 +1,76 @@
+models:
+  - name: rpt_tableau__mtss_rti
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: school
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: advisory
+        data_type: string
+      - name: boy_status
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: is_504
+        data_type: boolean
+      - name: ada
+        data_type: float64
+      - name: gpa_y1_current
+        data_type: float64
+      - name: most_recent_iready_reading_current
+        data_type: string
+      - name: most_recent_iready_math_current
+        data_type: string
+      - name: iready_most_recent_scale_reading_current
+        data_type: int64
+      - name: iready_most_recent_scale_math_current
+        data_type: int64
+      - name: most_recent_dibels_composite_current
+        data_type: string
+      - name: most_recent_dibels_scale_current
+        data_type: float64
+      - name: days_suspended_oss_current
+        data_type: float64
+      - name: days_suspended_all_current
+        data_type: float64
+      - name: referral_count_current
+        data_type: int64
+      - name: enrollment_status
+        data_type: string
+      - name: ada_prev_year
+        data_type: float64
+      - name: most_recent_iready_reading_prev_year
+        data_type: string
+      - name: most_recent_iready_math_prev_year
+        data_type: string
+      - name: most_recent_dibels_composite_prev_year
+        data_type: string
+      - name: most_recent_dibels_scale_prev_year
+        data_type: float64
+      - name: gpa_y1_prev_year
+        data_type: float64
+      - name: days_suspended_oss_prev_year
+        data_type: float64
+      - name: days_suspended_all_prev_year
+        data_type: float64
+      - name: referral_count_prev_year
+        data_type: int64
+      - name: iready_reading_current_year_percentile
+        data_type: float64
+      - name: iready_math_current_year_percentile
+        data_type: float64
+      - name: dibels_scale_current_percentile
+        data_type: float64
