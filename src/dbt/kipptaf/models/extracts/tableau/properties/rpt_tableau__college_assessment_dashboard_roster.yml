@@ -88,9 +88,9 @@ models:
         data_type: numeric
       - name: feb_24_act_science_official_previous_total_score_change
         data_type: numeric
-      - name: none_scale_score
+      - name: None_scale_score
         data_type: numeric
-      - name: none_previous_total_score_change
+      - name: None_previous_total_score_change
         data_type: numeric
       - name: oct_23_psat_nmsqt_combined_official_scale_score
         data_type: numeric
@@ -148,10 +148,6 @@ models:
         data_type: numeric
       - name: dec_24_sat_combined_official_previous_total_score_change
         data_type: numeric
-      - name: mar_25_sat_combined_official_scale_score
-        data_type: numeric
-      - name: mar_25_sat_combined_official_previous_total_score_change
-        data_type: numeric
       - name: oct_24_act_composite_official_scale_score
         data_type: numeric
       - name: oct_24_act_composite_official_previous_total_score_change
@@ -175,10 +171,6 @@ models:
       - name: apr_24_act_english_official_scale_score
         data_type: numeric
       - name: apr_24_act_english_official_previous_total_score_change
-        data_type: numeric
-      - name: mar_25_sat_ebrw_official_scale_score
-        data_type: numeric
-      - name: mar_25_sat_ebrw_official_previous_total_score_change
         data_type: numeric
       - name: feb_23_psat10_ebrw_official_scale_score
         data_type: numeric
@@ -227,10 +219,6 @@ models:
       - name: dec_24_sat_math_official_scale_score
         data_type: numeric
       - name: dec_24_sat_math_official_previous_total_score_change
-        data_type: numeric
-      - name: mar_25_sat_math_official_scale_score
-        data_type: numeric
-      - name: mar_25_sat_math_official_previous_total_score_change
         data_type: numeric
       - name: dec_23_act_reading_official_scale_score
         data_type: numeric

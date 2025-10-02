@@ -4,35 +4,35 @@ models:
       contract:
         enforced: true
     columns:
-      - name: employee id
+      - name: "`Employee Id`"
         data_type: string
-      - name: position id
+      - name: "`Position Id`"
         data_type: string
-      - name: change effective on
+      - name: "`Change Effective On`"
         data_type: string
-      - name: work e-mail
+      - name: "`Work E-Mail`"
         data_type: string
-      - name: e-mail to use for notification
+      - name: "`E-Mail to Use For Notification`"
         data_type: string
-      - name: cdf category
+      - name: "`Cdf Category`"
         data_type: string
-      - name: cdf label
+      - name: "`Cdf Label`"
         data_type: string
-      - name: cdf value
+      - name: "`Cdf Value`"
         data_type: int64
-      - name: position uses time
+      - name: "`Position Uses Time`"
         data_type: string
-      - name: badge
+      - name: Badge
         data_type: string
-      - name: supervisorid
+      - name: Supervisorid
         data_type: string
-      - name: timezone
+      - name: TimeZone
         data_type: string
-      - name: transfertopayroll
+      - name: Transfertopayroll
         data_type: string
-      - name: payclass
+      - name: Payclass
         data_type: string
-      - name: supervisorflag
+      - name: Supervisorflag
         data_type: string
       - name: adp__badge
         data_type: string
