@@ -501,6 +501,13 @@ select
             and r.benchmark_assessment_type = 'i-Ready BOY'
         then 'Bucket 3'
         when
+            r.region in ('Camden')
+            and r.subject = 'Reading'
+            and r.grade_level < 3
+            and r.is_bucket2_eligible
+            and r.rank_scale_score > g.n_bubble_to_move
+        then 'Bucket 3'
+        when
             r.region = 'Newark'
             and r.subject = 'Reading'
             and r.grade_level between 4 and 9
