@@ -94,3 +94,9 @@ models:
         data_type: string
       - name: currently_enrolled_school
         data_type: string
+      - name: postsec_advisor
+        data_type: string
+      - name: postsec_advisor_name
+        data_type: string
+      - name: student_name_id_hash
+        data_type: string

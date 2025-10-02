@@ -68,3 +68,5 @@ models:
         data_type: int64
       - name: is_earned_progress_to_quarterly
         data_type: int64
+      - name: state_studentnumber
+        data_type: string
