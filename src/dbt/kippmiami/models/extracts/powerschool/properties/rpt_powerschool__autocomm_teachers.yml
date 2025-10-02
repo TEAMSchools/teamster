@@ -14,8 +14,6 @@ models:
         data_type: string
       - name: status
         data_type: int64
-      - name: home_work_location_dagster_code_location
-        data_type: string
       - name: dob
         data_type: string
       - name: schoolid
