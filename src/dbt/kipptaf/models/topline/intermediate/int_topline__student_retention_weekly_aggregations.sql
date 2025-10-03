@@ -1,4 +1,14 @@
 with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=ref("int_students__retention_over_time"),
+                partition_by="student_number, week_start_monday",
+                order_by="attrition_year desc",
+            )
+        }}
+    ),
+
     retention_over_time as (
         select
             academic_year,
@@ -10,7 +20,7 @@ with
             week_end_sunday,
             is_current_week,
             is_retained_int,
-        from {{ ref("int_students__retention_over_time") }}
+        from deduplicate
         where region != 'Paterson'
     )
 
