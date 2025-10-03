@@ -189,6 +189,8 @@ select
 
     max(is_enrolled_day_int) as is_retained_int,
     max(1 - is_enrolled_day_int) as is_attrition_int,
+    min(is_enrolled_day_int) as is_retained_min_int,
+    min(1 - is_enrolled_day_int) as is_attrition_min_int,
 from retention_daily as rd
 group by
     student_number,
