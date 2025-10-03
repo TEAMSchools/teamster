@@ -33,3 +33,4 @@ left join
     and cw.academic_year = dl.academic_year
     and cw.week_start_monday between dl.start_date and dl.end_date
     and dl.incentive_type = 'Weeks (Progress to Quarterly Incentive)'
+    and cw.is_enrolled_week
