@@ -27,7 +27,7 @@ with
             if(seats_detail.plan_status in ('Active', 'TRUE'), 1, 0) as active_seats,
             if(seats_detail.mid_year_hire, 1, 0) as mid_year_hires,
         from seats_detail
-        inner join
+        left join
             projections
             on seats_detail.adp_location = projections.primary_site
             and seats_detail.academic_year = projections.academic_year
