@@ -602,7 +602,7 @@ wheels = [
 
 [[package]]
 name = "dbt-adapters"
-version = "1.17.1"
+version = "1.17.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "agate" },
@@ -613,9 +613,9 @@ dependencies = [
     { name = "pytz" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/51/c0/9b13a4377fff53200bb18171058e13bf7de36c480b99f7c22d8cc47099fa/dbt_adapters-1.17.1.tar.gz", hash = "sha256:49e631dc4599d27891d7549aabd5eb155696e99b5b4b5e4c4b24afd4b17921f9", size = 132508, upload-time = "2025-10-01T19:48:35.182Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a5/bc/ffe2b5287e458ce4adb6f5eb594fff8092ea2d63e1b8f4e8d590d6715f8b/dbt_adapters-1.17.2.tar.gz", hash = "sha256:3b8069c837b9a32481b9b51cea5052a3f45245c6aff83d5a7ffce26b6915ab86", size = 132569, upload-time = "2025-10-02T21:33:18.545Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/20/88/5245477ab9dd6b584a5b170bce42b27c2f5cfe224c239d36f9336efc683a/dbt_adapters-1.17.1-py3-none-any.whl", hash = "sha256:2efb2c9e72a2d1d6bae15e58f37885bfa6d2f2ce0f8bfa4a1f711098f77335d1", size = 169904, upload-time = "2025-10-01T19:48:33.64Z" },
+    { url = "https://files.pythonhosted.org/packages/75/56/efa863a2c1e86985a29da7957e5d553cdfe907f045ba451d925bdb87c0f7/dbt_adapters-1.17.2-py3-none-any.whl", hash = "sha256:7f6d625c718bb6516debd9e9f5e7b06f121f782a61055a94198fae5b6577e865", size = 169908, upload-time = "2025-10-02T21:33:16.735Z" },
 ]
 
 [[package]]
@@ -923,7 +923,7 @@ wheels = [
 
 [[package]]
 name = "google-api-core"
-version = "2.25.1"
+version = "2.25.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "google-auth" },
@@ -932,9 +932,9 @@ dependencies = [
     { name = "protobuf" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/dc/21/e9d043e88222317afdbdb567165fdbc3b0aad90064c7e0c9eb0ad9955ad8/google_api_core-2.25.1.tar.gz", hash = "sha256:d2aaa0b13c78c61cb3f4282c464c046e45fbd75755683c9c525e6e8f7ed0a5e8", size = 165443, upload-time = "2025-06-12T20:52:20.439Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/09/cd/63f1557235c2440fe0577acdbc32577c5c002684c58c7f4d770a92366a24/google_api_core-2.25.2.tar.gz", hash = "sha256:1c63aa6af0d0d5e37966f157a77f9396d820fba59f9e43e9415bc3dc5baff300", size = 166266, upload-time = "2025-10-03T00:07:34.778Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/14/4b/ead00905132820b623732b175d66354e9d3e69fcf2a5dcdab780664e7896/google_api_core-2.25.1-py3-none-any.whl", hash = "sha256:8a2a56c1fef82987a524371f99f3bd0143702fecc670c72e600c1cda6bf8dbb7", size = 160807, upload-time = "2025-06-12T20:52:19.334Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/d8/894716a5423933f5c8d2d5f04b16f052a515f78e815dab0c2c6f1fd105dc/google_api_core-2.25.2-py3-none-any.whl", hash = "sha256:e9a8f62d363dc8424a8497f4c2a47d6bcda6c16514c935629c257ab5d10210e7", size = 162489, upload-time = "2025-10-03T00:07:32.924Z" },
 ]
 
 [package.optional-dependencies]
@@ -1001,7 +1001,7 @@ wheels = [
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.118.0"
+version = "1.119.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "docstring-parser" },
@@ -1018,9 +1018,9 @@ dependencies = [
     { name = "shapely" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6b/4f/2727c6e3d60e3aa9ab51a421bd94dc2df0b9738eec106846d15a8c3e659e/google_cloud_aiplatform-1.118.0.tar.gz", hash = "sha256:e10a6df4305c0bed7c41ad2a4cf26a365f41ffe7c1d658436e1ebbe0f0569ecb", size = 9668270, upload-time = "2025-09-30T20:02:07.739Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/87/ed/f1d2d784210d06eb786dc4e777c084a1bf48c649bb2adee19eb2c33b4500/google_cloud_aiplatform-1.119.0.tar.gz", hash = "sha256:4a85881d655a253a5da0e823e4b73572e5088794c154d3ce803a10af88a48650", size = 9664068, upload-time = "2025-10-03T17:35:50.994Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/b5/b3e63a348c0b974ddd86c495d621eefd8033d6246d073c85b67475dfe6e7/google_cloud_aiplatform-1.118.0-py2.py3-none-any.whl", hash = "sha256:f970513f8de0b43695232029730be6d0af79a46b801aa5876ee6888c6129fe02", size = 8043179, upload-time = "2025-09-30T20:02:04.57Z" },
+    { url = "https://files.pythonhosted.org/packages/af/73/0abd7e5ffc0857b481efcb8a8151a3490c5261c6683b7ca1b2c3a394f329/google_cloud_aiplatform-1.119.0-py2.py3-none-any.whl", hash = "sha256:a8662ffd33e1c4a345fc630a495aeb0c81865c0c40f831a3f4bf638a8b45a05b", size = 8037500, upload-time = "2025-10-03T17:35:47.794Z" },
 ]
 
 [[package]]
@@ -1129,7 +1129,7 @@ wheels = [
 
 [[package]]
 name = "google-genai"
-version = "1.40.0"
+version = "1.41.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1141,9 +1141,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1b/68/bbd94059cf56b1be06000ef52abc1981b0f6cd4160bf566680a7e04f8c8b/google_genai-1.40.0.tar.gz", hash = "sha256:7af5730c6f0166862309778fedb2d881ef34f3dc25e912eb891ca00c8481eb20", size = 245021, upload-time = "2025-10-01T23:39:02.304Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/8b/ee20bcf707769b3b0e1106c3b5c811507736af7e8a60f29a70af1750ba19/google_genai-1.41.0.tar.gz", hash = "sha256:134f861bb0ace4e34af0501ecb75ceee15f7662fd8120698cd185e8cb39f2800", size = 245812, upload-time = "2025-10-02T22:30:29.699Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/fb/404719f847a7a2339279c5aacb33575af6fbf8dc94e0c758d98bb2146e0c/google_genai-1.40.0-py3-none-any.whl", hash = "sha256:366806aac66751ed0698b51fd0fb81fe2e3fa68988458c53f90a2a887df8f656", size = 245087, upload-time = "2025-10-01T23:39:00.317Z" },
+    { url = "https://files.pythonhosted.org/packages/15/14/e5e8fbca8863fee718208566c4e927b8e9f45fd46ec5cf89e24759da545b/google_genai-1.41.0-py3-none-any.whl", hash = "sha256:111a3ee64c1a0927d3879faddb368234594432479a40c311e5fe4db338ca8778", size = 245931, upload-time = "2025-10-02T22:30:27.885Z" },
 ]
 
 [[package]]
@@ -2105,11 +2105,11 @@ wheels = [
 
 [[package]]
 name = "pex"
-version = "2.59.1"
+version = "2.59.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e3/4e/8fccb52cfe6fc83351af40d2c8c545336d8d008b68c17661b1fc0250041a/pex-2.59.1.tar.gz", hash = "sha256:b3708a32508b780da4d38527f3fed53ddc8ea1448d87a667a6d50bf235662328", size = 5130324, upload-time = "2025-09-27T03:46:05.075Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5c/2d/02a5e80648dc51dc71a0ca92f09ccacb1c19f1d135acae5bd51f09d9e690/pex-2.59.2.tar.gz", hash = "sha256:734aec29e9a2449d0061c083f326d835ad093d0b6b7e6ac07f986b4fe9668e2b", size = 5131343, upload-time = "2025-10-03T06:59:59.3Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/97/50/2da68b63b1be25ddad1a5b15f76feac80853e8b5565f6ad898d18953e245/pex-2.59.1-py2.py3-none-any.whl", hash = "sha256:ce32c6e088889386d85f3c429c5483cdc9da60da87273e0d88c14c93b010d2d1", size = 3869994, upload-time = "2025-09-27T03:46:02.434Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/d0/bdd4f3fdc23f7c3bc1c96d0eeb6195ac215b3e8f2c665963ddd2324b369c/pex-2.59.2-py2.py3-none-any.whl", hash = "sha256:2d1de7a2218cd44729f2c1d5433cf255c4f423f13e2d8f2134d3ebfa0adb1944", size = 3870157, upload-time = "2025-10-03T06:59:56.801Z" },
 ]
 
 [[package]]
@@ -3272,15 +3272,15 @@ wheels = [
 
 [[package]]
 name = "universal-pathlib"
-version = "0.3.0"
+version = "0.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fsspec" },
     { name = "pathlib-abc" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d4/d1/13a5104c7c58ace4f1fc09a4e7358deb9be4b67a9151475b51d877771a99/universal_pathlib-0.3.0.tar.gz", hash = "sha256:4f997ffc5210a4bfba1a7deeab40b836a2fa53b8e32fc7e6aef84592ee9ded59", size = 172486, upload-time = "2025-09-29T22:07:55.716Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d5/4c/bd1b8b91a78f786a8e8b5acc3b2fceb5766770234aea0f51468a1af9c1ed/universal_pathlib-0.3.1.tar.gz", hash = "sha256:b5db6ad8f23549b1071d58e87319d77c1a1ce592d46cefcb7ee49baa138ca9dc", size = 188920, upload-time = "2025-10-03T18:23:09.318Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/0d/0f991e576e886022e100fe6a0d6966c041fac5c8322bb34fea8dfd66399d/universal_pathlib-0.3.0-py3-none-any.whl", hash = "sha256:5643d62584254457473f30b4f02127a7d40d7a7d902cefd8838a7350c99e41a4", size = 56958, upload-time = "2025-09-29T22:07:53.962Z" },
+    { url = "https://files.pythonhosted.org/packages/29/24/3ea90d322d3316d843c368ca1834d8c4953188faca2d7012583dd19633e7/universal_pathlib-0.3.1-py3-none-any.whl", hash = "sha256:9c83f84bd8e81f738500bfa298b874ec5c0936ba2c3d563c39a1fdb1a3d860d4", size = 60578, upload-time = "2025-10-03T18:23:07.322Z" },
 ]
 
 [[package]]
