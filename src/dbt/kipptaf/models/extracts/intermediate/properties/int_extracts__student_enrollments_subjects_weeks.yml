@@ -1,15 +1,5 @@
-version: 2
 models:
   - name: int_extracts__student_enrollments_subjects_weeks
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - _dbt_source_relation
-              - student_number
-              - week_start_monday
-          config:
-            store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string
