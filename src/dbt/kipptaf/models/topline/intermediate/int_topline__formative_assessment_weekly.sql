@@ -45,6 +45,7 @@ with
             and sw.academic_year = rr.academic_year
             and sw.discipline = rr.discipline
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
+        where sw.is_enrolled_week
     )
 
 select
