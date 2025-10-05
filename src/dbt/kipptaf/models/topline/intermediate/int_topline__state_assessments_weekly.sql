@@ -41,6 +41,7 @@ inner join
     on cw.state_studentnumber = fl.student_id
     and cw.academic_year = fl.academic_year
     and rt.name = fl.administration_window
+    and cw.discipline = fl.discipline
 where cw.region = 'Miami' and cw.grade_level >= 3
 
 union all
@@ -81,4 +82,5 @@ inner join
     {{ ref("int_pearson__all_assessments") }} as p
     on cw.state_studentnumber = p.statestudentidentifier
     and cw.academic_year = p.academic_year
+    and cw.discipline = p.discipline
 where cw.region != 'Miami'
