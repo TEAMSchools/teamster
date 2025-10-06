@@ -150,6 +150,7 @@ from {{ ref("int_extracts__student_enrollments") }} as e
 left join
     {{ ref("int_powerschool__gpa_cumulative") }} as g
     on e.studentid = g.studentid
+    and e.schoolid = g.schoolid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="g") }}
 left join
     course_tags as c
