@@ -8,9 +8,20 @@ with
 
             gt2.name as tag_name,
 
-            regexp_extract(gt.name, r'^(\d[A-Z]\.\d+)') as goal_code,
-            regexp_extract(gt.name, r'^(\d[A-Z])\.\d+') as strand_code,
-            regexp_extract(gt.name, r'^(\d)[A-Z]\.\d+') as bucket_code,
+            coalesce(
+                regexp_extract(gt.name, r'^(\d[A-Z]\.\d+)'),
+                regexp_extract(gt.name, r'^([^-]+-[^-]+-\d+)')
+            ) as goal_code,
+
+            coalesce(
+                regexp_extract(gt.name, r'^(\d[A-Z]).\d+'),
+                regexp_extract(gt.name, r'^([^-]+-[^-]+)')
+            ) as strand_code,
+
+            coalesce(
+                regexp_extract(gt.name, r'^(\d)[A-Z].\d+'),
+                regexp_extract(gt.name, r'^([^-]+)')
+            ) as bucket_code,
         from {{ ref("stg_schoolmint_grow__generic_tags") }} as gt
         cross join unnest(gt.tags) as t
         left join
