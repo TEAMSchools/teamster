@@ -1,10 +1,6 @@
 version: 2
 models:
   - name: stg_google_sheets__dibels_measures
-    config:
-      contract:
-        enforced: true
-      tags: google_sheet
     columns:
       - name: grade_level
         data_type: string
