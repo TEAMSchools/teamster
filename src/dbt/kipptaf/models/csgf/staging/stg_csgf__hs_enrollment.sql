@@ -1,15 +1,14 @@
 with
     transfer_course_tags as (
         select
-            _dbt_source_relation,
             studentid,
             grade_level,
-            course_name,
-            grade,
 
             0 as is_dual_course,
 
             0 as is_cte_course,
+
+            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as region,
 
             if(grade like 'F%', 0, 1) as passed_algebra_i,
 
@@ -113,26 +112,19 @@ with
             )
     ),
 
-    course_tags as (
+    local_course_tags as (
         select
-            _dbt_source_relation,
-            cc_studentid,
+            cc_studentid as studentid,
 
-            if(
-                sum(if(is_ap_course, 1, 0)) = 0, 'N', 'Y'
-            ) as has_participated_in_ap_courses,
+            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as region,
 
-            if(
-                sum(if(courses_course_name like '%Honors%', 1, 0)) = 0, 'N', 'Y'
-            ) as has_participated_in_honors_courses,
+            if(is_ap_course, 1, 0) as is_ap_course,
 
-            if(
-                sum(if(courses_course_name like '%(DE)', 1, 0)) = 0, 'N', 'Y'
-            ) as has_participated_in_dual_enrollment_courses,
+            if(courses_course_name like '%Honors%', 1, 0) as is_honors_course,
 
-            if(
-                sum(if(cte_college_credits is null, 0, 1)) = 0, 'N', 'Y'
-            ) as has_participated_in_cte_courses,
+            if(courses_course_name like '%(DE)', 1, 0) as is_dual_course,
+
+            if(cte_college_credits is null, 0, 1) as is_cte_course,
 
         from {{ ref("base_powerschool__course_enrollments") }}
         where
@@ -141,12 +133,43 @@ with
             and rn_course_number_year = 1
             and not is_dropped_course
             and cc_academic_year < {{ var("current_academic_year") }}
-        group by _dbt_source_relation, cc_studentid
+    ),
+
+    course_tags_union as (
+        select
+            region,
+            studentid,
+
+            is_ap_course,
+
+            is_honors_course,
+
+            is_dual_course,
+
+            is_cte_course,
+
+        from local_course_tags
 
         union all
 
         select
-            _dbt_source_relation,
+            region,
+            studentid,
+
+            is_ap_course,
+
+            is_honors_course,
+
+            is_dual_course,
+
+            is_cte_course,
+
+        from transfer_course_tags
+    ),
+
+    course_tags as (
+        select
+            region,
             studentid,
 
             if(sum(is_ap_course) = 0, 'N', 'Y') as has_participated_in_ap_courses,
@@ -155,20 +178,23 @@ with
                 sum(is_honors_course) = 0, 'N', 'Y'
             ) as has_participated_in_honors_courses,
 
-            if(sum(is_dual_course) = 0, 'N', 'Y') as has_participated_in_dual_courses,
+            if(
+                sum(is_dual_course) = 0, 'N', 'Y'
+            ) as has_participated_in_dual_enrollment_courses,
 
-            if(sum(is_cte_course) = 0, 'N', 'Y') as has_participated_in_dual_courses,
+            if(sum(is_cte_course) = 0, 'N', 'Y') as has_participated_in_cte_courses,
 
-        from transfer_course_tags
-        group by _dbt_source_relation, studentid
+        from course_tags_union
+        group by region, studentid
     ),
 
     passed_courses_union as (
         select
-            c._dbt_source_relation,
-            c.cc_studentid,
+            c.cc_studentid as studentid,
 
             e.grade_level,
+
+            regexp_extract(c._dbt_source_relation, r'(kipp\w+)_') as region,
 
             max(if(g.grade like 'F%', 0, 1)) over (
                 partition by student_number
@@ -209,17 +235,18 @@ with
         union all
 
         select
-            _dbt_source_relation,
             studentid,
 
             grade_level,
 
+            region,
+
             max(passed_algebra_i) over (
-                partition by _dbt_source_relation, studentid
+                partition by region, studentid
             ) as passed_algebra_i,
 
             row_number() over (
-                partition by _dbt_source_relation, studentid order by grade_level
+                partition by region, studentid order by grade_level
             ) as rn,
 
         from transfer_course_tags
@@ -228,17 +255,16 @@ with
 
     passed_courses as (
         select
-            _dbt_source_relation,
-            cc_studentid,
-
+            region,
+            studentid,
             grade_level,
 
             max(passed_algebra_i) over (
-                partition by _dbt_source_relation, cc_studentid
+                partition by region, studentid
             ) as passed_algebra_i,
 
             row_number() over (
-                partition by _dbt_source_relation, cc_studentid order by grade_level
+                partition by region, studentid order by grade_level
             ) as rn,
 
         from passed_courses_union
@@ -322,14 +348,11 @@ left join
     on e.studentid = g.studentid
     and e.schoolid = g.schoolid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="g") }}
-left join
-    course_tags as c
-    on e.studentid = c.cc_studentid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="c") }}
+left join course_tags as c on e.studentid = c.studentid and e.region = c.region
 left join
     passed_courses as p
-    on e.studentid = p.cc_studentid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="p") }}
+    on e.studentid = p.studentid
+    and e.region = p.region
     and p.rn = 1
 where
     e.academic_year = {{ var("current_academic_year") - 1 }}
