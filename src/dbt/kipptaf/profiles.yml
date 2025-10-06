@@ -7,3 +7,9 @@ kipptaf:
       threads: 40
       method: oauth
       project: teamster-332318
+    staging:
+      type: bigquery
+      schema: z_dev_kipptaf
+      threads: 40
+      method: oauth
+      project: teamster-332318

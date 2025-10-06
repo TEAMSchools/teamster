@@ -80,15 +80,13 @@ models:
         data_type: {COLUMN TYPE N}
 ```
 
-### 6. Test your changes
-
-#### Update the external source definition
+### 6. Update the external source definition
 
 ```sh
 dbt run-operation stage_external_sources --vars "{'ext_full_refresh': 'true'}" --args select: [model name(s)]
 ```
 
-#### Build your staging model
+#### 7. Build your staging model
 
 ## Updating a Google Sheets source
 
@@ -107,4 +105,10 @@ Update the `sheet_range` attribute with the new named range.
 
 ### 5. If necessary, update the source column definitions
 
-### 6. Update the data contract for your staging file
+### 6. Update the external source definition
+
+```sh
+dbt run-operation stage_external_sources --vars "{'ext_full_refresh': 'true'}" --args "select: [model name(s)]"
+```
+
+### 7. Update the data contract for your staging file
