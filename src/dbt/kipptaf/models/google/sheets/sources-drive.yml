@@ -3,8 +3,11 @@ version: 2
 sources:
   - name: google_sheets
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ project_name }}_google_sheets
+      {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}
+      z_dev_
+      {%- elif env_var('GITHUB_USER', '') != '' -%}
+      zz_{{ env_var('GITHUB_USER', '') }}_
+      {%- endif -%}kipptaf_google_sheets
     tables:
       - name: src_google_sheets__zendesk_org_lookup
         external:
