@@ -8,7 +8,7 @@ with
 
             0 as is_cte_course,
 
-            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as region,
+            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
 
             if(grade like 'F%', 0, 1) as passed_algebra_i,
 
@@ -116,7 +116,7 @@ with
         select
             cc_studentid as studentid,
 
-            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as region,
+            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
 
             if(is_ap_course, 1, 0) as is_ap_course,
 
@@ -194,7 +194,7 @@ with
 
             e.grade_level,
 
-            regexp_extract(c._dbt_source_relation, r'(kipp\w+)_') as region,
+            initcap(regexp_extract(c._dbt_source_relation, r'kipp(\w+)_')) as region,
 
             max(if(g.grade like 'F%', 0, 1)) over (
                 partition by student_number
