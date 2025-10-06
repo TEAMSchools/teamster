@@ -60,18 +60,29 @@ with
 
     overgrad_fafsa as (
         select
-            p._dbt_source_relation,
+            _dbt_source_relation,
+            external_student_id as salesforce_contact_id,
 
-            s.external_student_id as salesforce_contact_id,
+            if(fafsa_opt_out is null, 'No', 'Yes') as overgrad_fafsa_opt_out,
+        from {{ ref("int_overgrad__students") }}
+    ),
 
-            if(p.fafsa_opt_out is null, 'No', 'Yes') as overgrad_fafsa_opt_out,
+    graduation_pathway_m as (
+        select
+            _dbt_source_relation,
+            studentsdcid,
 
-        from {{ ref("int_overgrad__custom_fields_pivot") }} as p
-        inner join
-            {{ ref("stg_overgrad__students") }} as s
-            on p.id = s.id
-            and {{ union_dataset_join_clause(left_alias="p", right_alias="s") }}
-        where p._dbt_source_model = 'stg_overgrad__students'
+            case
+                when graduation_pathway_math = 'M' and graduation_pathway_ela = 'M'
+                then 'Yes'
+                when graduation_pathway_math = 'M' and graduation_pathway_ela != 'M'
+                then 'Math only. No ELA match.'
+                when graduation_pathway_math != 'M' and graduation_pathway_ela = 'M'
+                then 'ELA only. No Math match.'
+            end as grad_iep_exempt_overall,
+
+        from {{ ref("stg_powerschool__s_nj_stu_x") }}
+        where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
     )
 
 select
@@ -147,6 +158,7 @@ select
     e.contact_2_phone_mobile,
     e.contact_2_email_current,
     e.is_fldoe_fte_2,
+    e.graduation_year,
 
     lc.region as region_official_name,
     lc.deanslist_school_id,
@@ -172,8 +184,21 @@ select
     adapy.ada_year as ada_unweighted_year_prev,
     adapy.ada_weighted_year as ada_weighted_year_prev,
 
+    gc.cumulative_y1_gpa,
+    gc.cumulative_y1_gpa_unweighted,
+    gc.cumulative_y1_gpa_projected,
+    gc.cumulative_y1_gpa_projected_s1,
+    gc.cumulative_y1_gpa_projected_s1_unweighted,
+    gc.core_cumulative_y1_gpa,
+
     ny.next_year_school,
     ny.next_year_schoolid,
+
+    if(
+        e.enroll_status = 0 and mc.grad_iep_exempt_overall is not null,
+        mc.grad_iep_exempt_overall,
+        'Not Grad IEP Exempt'
+    ) as grad_iep_exempt_status_overall,
 
     'KTAF' as district,
 
@@ -329,7 +354,15 @@ left join
     and e.academic_year = (adapy.academic_year + 1)
     and {{ union_dataset_join_clause(left_alias="e", right_alias="adapy") }}
 left join
+    {{ ref("int_powerschool__gpa_cumulative") }} as gc
+    on e.studentid = gc.studentid
+    and e.schoolid = gc.schoolid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="gc") }}
+left join
     next_year_school as ny
     on e.student_number = ny.student_number
     and e.academic_year = ny.academic_year
-where e.grade_level != 99
+left join
+    graduation_pathway_m as mc
+    on e.students_dcid = mc.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="mc") }}

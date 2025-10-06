@@ -286,6 +286,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__dibels_dashboard")
       - ref("rpt_tableau__sight_words_dashboard")
+      - ref("stg_google_sheets__dibels_pm_goals")
     meta:
       dagster:
         kinds:
@@ -310,8 +311,8 @@ exposures:
             id: 8977a813-36c8-48df-8a61-479f374ae78a
             cron_schedule:
               - 0 12 * * *
-              - 0 14 * * *
-              - 0 16 * * *
+              - 30 14 * * *
+              - 15 16 * * *
   - name: gradebook_and_gpa_dashboard
     label: Gradebook and GPA Dashboard
     type: dashboard
@@ -472,7 +473,7 @@ exposures:
           - tableau
         asset:
           metadata:
-            id: 7f960a60-8ddd-4b66-92f0-20cad02a34f1
+            id: 01861d02-0674-4ddb-979e-f1e6bcbcf5c0
             cron_schedule: 0 6 * * *
   - name: leadership_development
     label: Leadership Development
@@ -629,3 +630,18 @@ exposures:
       dagster:
         kinds:
           - tableau
+  - name: topline_cascade_dashboard
+    label: Topline Cascade Dashboard
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__topline_cascade_dashboard")
+    meta:
+      dagster:
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: ecc7a45d-3ee8-4069-8f6a-d686caa04af5
+            cron_schedule: 0 5 * * *

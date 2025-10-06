@@ -86,7 +86,7 @@ with
             e.end_date,
             e.matching_pm_season as matching_season,
 
-        from {{ ref("int_amplify__dibels_data_farming_unpivot") }} as df
+        from {{ source("amplify", "int_amplify__dibels_data_farming_unpivot") }} as df
         inner join
             {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
             on df.academic_year = e.academic_year
@@ -135,7 +135,7 @@ with
 
             if(p.pm_period = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
 
-        from {{ ref("stg_amplify__pm_student_summary") }} as p
+        from {{ ref("int_amplify__mclass__pm_student_summary") }} as p
         inner join
             {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
             on p.academic_year = e.academic_year
@@ -143,7 +143,7 @@ with
             and p.assessment_grade_int = e.grade
             and p.measure = e.expected_measure_standard
             and p.pm_period = e.admin_season
-            and p.client_date between e.start_date and e.end_date
+            and p.sync_date between e.start_date and e.end_date
             and e.assessment_include is null
             and e.pm_goal_include is null
         where p.enrollment_grade = p.assessment_grade and p.assessment_grade is not null

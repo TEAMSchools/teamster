@@ -41,6 +41,7 @@ with
             -- tag the manual entry for student numbers on the crdc student crosswalk
             -- g-sheet feed
             me.crdc_question_section,
+
             coalesce(r.is_retained_year, false) as is_retained_year,
 
             case

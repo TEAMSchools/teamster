@@ -39,6 +39,8 @@ def main() -> None:
     if args.select:
         run_args.extend(["--args", " ".join(["select:", *args.select])])
 
+    print(" ".join(run_args))
+
     # trunk-ignore(bandit/B603)
     subprocess.run(
         args=run_args,

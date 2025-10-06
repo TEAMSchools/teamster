@@ -1,4 +1,4 @@
-from dagster import EnvVar
+"""from dagster import EnvVar
 from dagster_shared import check
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
@@ -18,3 +18,4 @@ assets = [
         code_location=CODE_LOCATION,
     ),
 ]
+"""
