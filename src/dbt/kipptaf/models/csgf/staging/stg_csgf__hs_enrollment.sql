@@ -1,4 +1,118 @@
 with
+    transfer_course_tags as (
+        select
+            _dbt_source_relation,
+            studentid,
+            grade_level,
+            course_name,
+            grade,
+
+            0 as is_dual_course,
+
+            0 as is_cte_course,
+
+            if(grade like 'F%', 0, 1) as passed_algebra_i,
+
+            if(
+                course_name like '%Alg%'
+                or course_name like '%ALG%'
+                or course_name like '%Alb%',
+                1,
+                0
+            ) as is_alg_i_course,
+
+            if(course_name like 'AP%', 1, 0) as is_ap_course,
+
+            if(course_name like '%Honors%', 1, 0) as is_honors_course,
+
+        from {{ ref("stg_powerschool__storedgrades") }} as g
+        where
+            storecode = 'Y1'
+            and is_transfer_grade
+            and academic_year >= 2019
+            and course_name in (
+                'Academic Algebra I',
+                'Access Algebra I A',
+                'Albegra 1',
+                'ALG 1',
+                'Alg I',
+                'ALG I CP',
+                'Algebra',
+                'ALGEBRA 1',
+                'Algebra 1 (CR)',
+                'Algebra 1 (for HS credit)',
+                'Algebra 1 (SS)',
+                'Algebra 1 C. P.',
+                'Algebra 1 Concepts-Modify',
+                'Algebra 1 CP',
+                'Algebra 1 Honors (CR)',
+                'Algebra 1 Honors (H)',
+                'ALGEBRA I',
+                'Algebra I ',
+                'Algebra I (CR)',
+                'Algebra I (for HS credit)',
+                'Algebra I (S)',
+                'Algebra I Accelerated',
+                'Algebra I Advanced',
+                'Algebra I CC',
+                'Algebra I College Prep Freshmen',
+                'Algebra I HON',
+                'Algebra I Honors',
+                'Algebra I NG',
+                'Algebra I PSP',
+                'Algebra I Summer School (CR)',
+                'Algebra I-CP',
+                'Algebra1',
+                'Alglebra I',
+                'AP Biology',
+                'AP Biology I',
+                'AP Biology I (CR)',
+                'AP Chemistry',
+                'AP Computer Science Principles',
+                'AP Eng Lit',
+                'AP Literature',
+                'AP Modern World History',
+                'AP Music Theory',
+                'AP United States History',
+                'AP World History',
+                'AP World History I',
+                'AP World History II',
+                'AP World History: Modern',
+                'AP World History: Modern (CR)',
+                'AP: English Literature & Composition',
+                'Honors Algebra 1',
+                'Honors Algebra I',
+                'Honors Algebra I (H)',
+                'Honors Biology',
+                'Honors Biology I',
+                'Honors Biology with Lab',
+                'Honors Biology Wth Lab',
+                'Honors Chemistry',
+                'Honors Earth/Environmental Science',
+                'Honors Eng II (H)',
+                'Honors English I',
+                'Honors English II',
+                'Honors Forensic Science',
+                'Honors Geometry',
+                'Honors Global Studies',
+                'Honors Global Studies (H)',
+                'Honors Integrated Science (Lab)',
+                'Honors NC Math 2',
+                'Honors Physics',
+                'Honors Physics With Lab',
+                'Honors Psychology',
+                'Honors Spanish II',
+                'Honors United States History I',
+                'Honors United States History II',
+                'Honors United States Histroy I',
+                'Honors World History',
+                'Intensive Algerba I',
+                'Mathematics 9: Algebra I',
+                'Mathematics-Algebra I',
+                'MPD/Algebra I'
+            )
+    ),
+
     course_tags as (
         select
             _dbt_source_relation,
@@ -28,9 +142,28 @@ with
             and not is_dropped_course
             and cc_academic_year < {{ var("current_academic_year") }}
         group by _dbt_source_relation, cc_studentid
+
+        union all
+
+        select
+            _dbt_source_relation,
+            studentid,
+
+            if(sum(is_ap_course) = 0, 'N', 'Y') as has_participated_in_ap_courses,
+
+            if(
+                sum(is_honors_course) = 0, 'N', 'Y'
+            ) as has_participated_in_honors_courses,
+
+            if(sum(is_dual_course) = 0, 'N', 'Y') as has_participated_in_dual_courses,
+
+            if(sum(is_cte_course) = 0, 'N', 'Y') as has_participated_in_dual_courses,
+
+        from transfer_course_tags
+        group by _dbt_source_relation, studentid
     ),
 
-    passed_courses as (
+    passed_courses_union as (
         select
             c._dbt_source_relation,
             c.cc_studentid,
@@ -72,6 +205,43 @@ with
                 'Algebra I – Part 2'
             )
             or c.courses_course_name = 'Math I Algebra'
+
+        union all
+
+        select
+            _dbt_source_relation,
+            studentid,
+
+            grade_level,
+
+            max(passed_algebra_i) over (
+                partition by _dbt_source_relation, studentid
+            ) as passed_algebra_i,
+
+            row_number() over (
+                partition by _dbt_source_relation, studentid order by grade_level
+            ) as rn,
+
+        from transfer_course_tags
+        where is_alg_i_course = 1
+    ),
+
+    passed_courses as (
+        select
+            _dbt_source_relation,
+            cc_studentid,
+
+            grade_level,
+
+            max(passed_algebra_i) over (
+                partition by _dbt_source_relation, cc_studentid
+            ) as passed_algebra_i,
+
+            row_number() over (
+                partition by _dbt_source_relation, cc_studentid order by grade_level
+            ) as rn,
+
+        from passed_courses_union
     )
 
 select
