@@ -1,16 +1,25 @@
 version: 2
 models:
   - name: rpt_deanslist__iready_lessons
+    config:
+      contract:
+        enforced: true
     columns:
-      - name: student_id
+      - name: academic_year
         data_type: int64
-      - name: subject
-        data_type: string
-      - name: term
-        data_type: string
-      - name: lessons_passed
-        data_type: float64
-      - name: total_lessons
+      - name: dl_term_id
         data_type: int64
-      - name: pct_passed
+      - name: iready_subject
+        data_type: string
+      - name: kipp_week_end
+        data_type: date
+      - name: kipp_week_start
+        data_type: date
+      - name: n_lessons_completed_week
+        data_type: int64
+      - name: n_lessons_passed_week
         data_type: float64
+      - name: n_lessons_passed_y1
+        data_type: float64
+      - name: student_number
+        data_type: int64

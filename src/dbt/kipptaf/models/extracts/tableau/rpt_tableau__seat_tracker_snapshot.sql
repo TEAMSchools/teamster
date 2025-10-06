@@ -34,6 +34,7 @@ with
     final as (
         select
             date_spine.date_week,
+
             seats_snapshot.staffing_model_id,
             seats_snapshot.staffing_status,
             seats_snapshot.status_detail,
@@ -73,7 +74,7 @@ with
             seats_detail
             on seats_snapshot.staffing_model_id = seats_detail.staffing_model_id
             and seats_snapshot.academic_year = seats_detail.academic_year
-        inner join
+        left join
             projections
             on seats_detail.adp_location = projections.primary_site
             and seats_detail.academic_year = projections.academic_year

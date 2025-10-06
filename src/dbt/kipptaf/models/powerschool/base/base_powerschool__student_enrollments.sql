@@ -78,6 +78,7 @@ select
     adb.college_match_display_gpa as salesforce_contact_college_match_display_gpa,
     adb.kipp_hs_class as salesforce_contact_kipp_hs_class,
     adb.owner_id as salesforce_contact_owner_id,
+    adb.graduation_year,
 
     adbu.name as salesfoce_contact_owner_name,
 
@@ -177,6 +178,7 @@ select
         )
         + 1
     ) as salesforce_graduation_year,
+
 from with_region as ar
 left join
     {{ ref("stg_powerschool__u_studentsuserfields") }} as suf

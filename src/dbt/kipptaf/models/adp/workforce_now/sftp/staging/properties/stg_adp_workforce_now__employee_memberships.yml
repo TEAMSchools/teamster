@@ -19,3 +19,9 @@ models:
         data_type: date
       - name: expiration_date
         data_type: date
+      - name: is_current
+        data_type: boolean
+      - name: is_leader_development_program
+        data_type: boolean
+      - name: is_teacher_development_program
+        data_type: boolean

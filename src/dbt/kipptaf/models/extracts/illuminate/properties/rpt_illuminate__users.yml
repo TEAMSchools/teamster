@@ -1,6 +1,8 @@
-version: 2
 models:
   - name: rpt_illuminate__users
+    config:
+      contract:
+        enforced: true
     columns:
       - name: "`01 User ID`"
         data_type: string

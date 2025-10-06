@@ -40,7 +40,7 @@ def grow_static_partition_asset_job_schedule(context: ScheduleEvaluationContext)
 @schedule(
     name=f"{CODE_LOCATION}__grow__multi_partition_assets_schedule",
     target=grow_multi_partitions_assets,
-    cron_schedule=["0 2 * * *", "0 14 * * *", "45 15 * * *"],
+    cron_schedule=["0 5 * * *", "0 11 * * *", "0 14 * * *", "45 15 * * *"],
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 def grow_multi_partition_asset_job_schedule(context: ScheduleEvaluationContext):

@@ -6,7 +6,7 @@ with
                     "schoolmint_grow", "src_schoolmint_grow__observations"
                 ),
                 partition_by="_id",
-                order_by="_file_name desc",
+                order_by="_dagster_partition_date desc",
             )
         }}
     ),
@@ -39,31 +39,38 @@ with
             sharednotes3 as shared_notes_3,
             signed,
 
-            {# records #}
+            /* records */
             rubric._id as rubric_id,
             rubric.name as rubric_name,
+
             observer._id as observer_id,
             observer.email as observer_email,
             observer.name as observer_name,
+
             teacher._id as teacher_id,
             teacher.email as teacher_email,
             teacher.name as teacher_name,
+
             teachingassignment._id as teaching_assignment_id,
             teachingassignment.course as teaching_assignment_course,
             teachingassignment.grade as teaching_assignment_grade,
             teachingassignment.gradelevel as teaching_assignment_grade_level,
             teachingassignment.period as teaching_assignment_period,
             teachingassignment.school as teaching_assignment_school,
+
             tagnotes1.notes as tag_notes_1_notes,
             tagnotes1.tags as tag_notes_1_tags,
+
             tagnotes2.notes as tag_notes_2_notes,
             tagnotes2.tags as tag_notes_2_tags,
+
             tagnotes3.notes as tag_notes_3_notes,
             tagnotes3.tags as tag_notes_3_tags,
+
             tagnotes4.notes as tag_notes_4_notes,
             tagnotes4.tags as tag_notes_4_tags,
 
-            {# repeated #}
+            /* repeated */
             comments,
             eventlog as event_log,
             files,
@@ -74,25 +81,25 @@ with
             meetings,
             tags,
 
-            {# repeated records #}
+            /* repeated records */
             attachments,
             magicnotes as magic_notes,
             observationscores as observation_scores,
             videonotes as video_notes,
             videos,
 
-            timestamp(archivedat) as archived_at,
-            timestamp(created) as created,
-            timestamp(firstpublished) as first_published,
-            timestamp(lastmodified) as last_modified,
-            timestamp(lastpublished) as last_published,
-            timestamp(observedat) as observed_at,
-            timestamp(observeduntil) as observed_until,
-            timestamp(signedat) as signed_at,
-            timestamp(viewedbyteacher) as viewed_by_teacher,
+            cast(archivedat as timestamp) as archived_at,
+            cast(created as timestamp) as created,
+            cast(firstpublished as timestamp) as first_published,
+            cast(lastmodified as timestamp) as last_modified,
+            cast(lastpublished as timestamp) as last_published,
+            cast(observedat as timestamp) as observed_at,
+            cast(observeduntil as timestamp) as observed_until,
+            cast(signedat as timestamp) as signed_at,
+            cast(viewedbyteacher as timestamp) as viewed_by_teacher,
 
             date(
-                timestamp(observedat), '{{ var("local_timezone") }}'
+                cast(observedat as timestamp), '{{ var("local_timezone") }}'
             ) as observed_at_date_local,
 
             array_to_string(listtwocolumna, '|') as glows,

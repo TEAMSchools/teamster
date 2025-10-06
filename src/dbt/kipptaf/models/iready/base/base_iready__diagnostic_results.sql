@@ -1,98 +1,3 @@
-with
-    diagnostic_results as (
-        select
-            _dbt_source_relation,
-            student_id,
-            academic_year,
-            academic_year_int,
-            state_assessment_type,
-            school,
-            student_grade,
-            `subject`,
-            `start_date`,
-            completion_date,
-            baseline_diagnostic_y_n,
-            most_recent_diagnostic_ytd_y_n,
-            overall_scale_score,
-            overall_scale_score_plus_typical_growth,
-            overall_scale_score_plus_stretch_growth,
-            percentile,
-            overall_relative_placement,
-            overall_relative_placement_int,
-            placement_3_level,
-            rush_flag,
-            mid_on_grade_level_scale_score,
-            percent_progress_to_annual_typical_growth_percent,
-            percent_progress_to_annual_stretch_growth_percent,
-            diagnostic_gain,
-            annual_typical_growth_measure,
-            annual_stretch_growth_measure,
-            overall_placement,
-
-            if(overall_relative_placement_int >= 4, true, false) as is_proficient,
-
-            if(`subject` = 'Reading', 'ELA', 'Math') as discipline,
-
-            if(
-                percent_progress_to_annual_typical_growth_percent >= 100, true, false
-            ) as is_met_typical,
-            if(
-                percent_progress_to_annual_stretch_growth_percent >= 100, true, false
-            ) as is_met_stretch,
-
-            if(
-                student_grade = 'K', 0, safe_cast(student_grade as int)
-            ) as student_grade_int,
-
-            max(
-                if(most_recent_diagnostic_ytd_y_n = 'Y', overall_scale_score, null)
-            ) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_overall_scale_score,
-
-            max(
-                if(
-                    most_recent_diagnostic_ytd_y_n = 'Y',
-                    overall_relative_placement,
-                    null
-                )
-            ) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_overall_relative_placement,
-
-            max(
-                if(most_recent_diagnostic_ytd_y_n = 'Y', overall_placement, null)
-            ) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_overall_placement,
-
-            max(if(most_recent_diagnostic_ytd_y_n = 'Y', diagnostic_gain, null)) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_diagnostic_gain,
-
-            max(if(most_recent_diagnostic_ytd_y_n = 'Y', lexile_measure, null)) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_lexile_measure,
-
-            max(if(most_recent_diagnostic_ytd_y_n = 'Y', lexile_range, null)) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_lexile_range,
-
-            max(if(most_recent_diagnostic_ytd_y_n = 'Y', rush_flag, null)) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_rush_flag,
-
-            max(if(most_recent_diagnostic_ytd_y_n = 'Y', completion_date, null)) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_completion_date,
-
-            row_number() over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-                order by completion_date desc
-            ) as rn_subj_year,
-        from {{ ref("stg_iready__diagnostic_results") }}
-    )
-
 select
     dr._dbt_source_relation,
     dr.student_id,
@@ -131,10 +36,9 @@ select
     dr.most_recent_rush_flag,
     dr.most_recent_completion_date,
     dr.rn_subj_year,
-
-    lc.region,
-    lc.abbreviation as school_abbreviation,
-    lc.powerschool_school_id as schoolid,
+    dr.region,
+    dr.school_abbreviation,
+    dr.schoolid,
 
     cwo.sublevel_name as projected_sublevel,
     cwo.sublevel_number as projected_sublevel_number,
@@ -166,11 +70,13 @@ select
     round(
         dr.most_recent_diagnostic_gain / dr.annual_typical_growth_measure, 2
     ) as progress_to_typical,
+
     round(
         dr.most_recent_diagnostic_gain / dr.annual_stretch_growth_measure, 2
     ) as progress_to_stretch,
 
     right(rt.code, 1) as round_number,
+
     coalesce(rt.name, 'Outside Round') as test_round,
 
     if(
@@ -188,11 +94,10 @@ select
             rt.name
         order by dr.completion_date desc
     ) as rn_subj_round,
-from diagnostic_results as dr
-left join {{ ref("stg_people__location_crosswalk") }} as lc on dr.school = lc.name
+from {{ ref("int_iready__diagnostic_results") }} as dr
 left join
     {{ ref("stg_reporting__terms") }} as rt
-    on lc.region = rt.region
+    on dr.region = rt.region
     and dr.completion_date between rt.start_date and rt.end_date
     and rt.type = 'IR'
 left join

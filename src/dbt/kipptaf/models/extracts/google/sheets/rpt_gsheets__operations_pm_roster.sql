@@ -22,7 +22,7 @@ with
             and home_department_name = 'Operations'
             and not contains_substr(home_business_unit_code, 'KIPP_TAF')
             and not contains_substr(job_title, 'Director')
-            and not job_title in ('Aide - Non-Instructional', 'Intern')
+            and job_title != 'Intern'
     )
 
 select
