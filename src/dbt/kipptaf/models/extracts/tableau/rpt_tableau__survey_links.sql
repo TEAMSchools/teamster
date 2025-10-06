@@ -363,7 +363,7 @@ select
     rt.is_current,
 
     'School Community Diagnostic' as survey,
-    'Complete The School Community Diagnostic' as `assignment`,
+    'Complete the School Community Diagnostic' as `assignment`,
     -- trunk-ignore(sqlfluff/LT05)
     'https://docs.google.com/forms/d/e/1FAIpQLSfozw5B8DP9jKhf_mA5JhtwfLdziZwVsjDFCJtfs2nJnQlWXA/viewform?usp=sf_link'
     as link,
@@ -371,6 +371,7 @@ from eligible_roster as r
 inner join
     {{ ref("stg_reporting__terms") }} as rt
     on rt.name = 'School Community Diagnostic Staff Survey'
+where r.loc_type = 'School-based'
 
 union all
 
@@ -403,7 +404,7 @@ select
     'https://teamschools.zendesk.com/hc/en-us/articles/22601310814999-How-to-Access-the-TNTP-Insight-and-Gallup-Surveys'
     as link,
 from eligible_roster as r
-inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'TNTP Insight'
+inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'TNTP Insight Survey'
 
 union all
 
