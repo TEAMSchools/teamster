@@ -17,12 +17,16 @@ select
 
     /* cascading match on home_work_location_name/dept/job */
     coalesce(
-        tgx.traveler_group,
         tg.egencia_traveler_group,
         tg2.egencia_traveler_group,
         tg3.egencia_traveler_group,
         'General Traveler Group'
     ) as `Traveler Group`,
+
+    sr.home_business_unit_name,
+    sr.home_work_location_name,
+    sr.home_department_name,
+    sr.job_title,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__staff_roster") }} as sr
 left join
@@ -46,9 +50,6 @@ left join
 left join
     {{ ref("stg_google_sheets__egencia__travel_managers") }} as tm
     on sr.employee_number = tm.employee_number
-left join
-    {{ ref("stg_google_sheets__egencia__traveler_group_exceptions") }} as tgx
-    on sr.employee_number = tgx.employee_number
 where
     sr.mail is not null
     and coalesce(sr.worker_type_code, '') not in ('Intern', 'Part Time')
