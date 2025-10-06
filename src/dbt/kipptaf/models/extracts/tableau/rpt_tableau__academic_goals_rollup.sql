@@ -382,8 +382,13 @@ with
             g.grade_band_goal,
 
             round(
-                ((sum(r.is_tested_int) * g.grade_band_goal) - sum(r.is_proficient_int))
-                / sum(r.is_approaching_int),
+                safe_divide(
+                    (
+                        (sum(r.is_tested_int) * g.grade_band_goal)
+                        - sum(r.is_proficient_int)
+                    ),
+                    sum(r.is_approaching_int)
+                ),
                 2
             ) as bubble_parameter,
         from roster as r
@@ -437,7 +442,7 @@ with
             *,
 
             round(
-                (n_proficient + n_bubble_to_move) / n_tested, 2
+                safe_divide((n_proficient + n_bubble_to_move), n_tested), 2
             ) as percent_with_growth_met,
         from foo
     )
