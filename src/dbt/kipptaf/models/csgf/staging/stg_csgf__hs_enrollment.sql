@@ -16,16 +16,9 @@ with
                 course_name like '%Alg%'
                 or course_name like '%ALG%'
                 or course_name like '%Alb%'
-                or course_name = 'Mathematics 9'
-                or course_name = 'Mathematics'
-                or course_name = 'Math 9'
-                or course_name = 'Math'
-                or course_name = 'Algebra 1A Applied CP'
-                or course_name = 'Algebra I A'
-                or course_name = 'Pre-AP Algebra I'
+                or course_name like 'Math%'
                 or course_name = 'GSE Coord Alegbra'
-                or course_name = 'Int Algebra ACC'
-                or course_name = 'NC Math 1',
+                or course_name = 'NC Math 1'
                 1,
                 0
             ) as is_alg_i_course,
@@ -74,6 +67,7 @@ with
                 'Algebra I PSP',
                 'Algebra I Summer School (CR)',
                 'Algebra I-CP',
+                'Algebra I CP',
                 'Algebra1',
                 'Alglebra I',
                 'AP Biology',
@@ -131,7 +125,8 @@ with
                 'Mathematics',
                 'Int Algebra ACC',
                 'Math',
-                'NC Math 1'
+                'NC Math 1',
+                'MPD/Algebra I Lab'
             )
     ),
 
