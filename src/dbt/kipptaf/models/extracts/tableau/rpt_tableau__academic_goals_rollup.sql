@@ -351,7 +351,6 @@ with
             and co.enroll_status = 0
             and co.grade_level between 3 and 9
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
-            and co.region != 'Miami'
 
         union all
 
