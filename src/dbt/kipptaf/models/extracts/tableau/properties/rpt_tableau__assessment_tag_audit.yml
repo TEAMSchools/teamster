@@ -1,0 +1,6 @@
+models:
+  - name: rpt_tableau__assessment_tag_audit
+    config:
+      enabled: false
+      contract:
+        enforced: false
