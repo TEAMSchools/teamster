@@ -168,8 +168,8 @@ with
         /* Adding memberships for observers*/
         left join
             {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as emo
-            on t.academic_year = em.academic_year
-            and sro.worker_id = em.associate_id
+            on t.academic_year = emo.academic_year
+            and sro.worker_id = emo.associate_id
         where
             (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
             and srh.assignment_status = 'Active'
@@ -278,8 +278,8 @@ with
             and sr.worker_id = em.associate_id
         left join
             {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as emo
-            on od.academic_year = em.academic_year
-            and sro.worker_id = em.associate_id
+            on od.academic_year = emo.academic_year
+            and sro.worker_id = emo.associate_id
     )
 
 select *
