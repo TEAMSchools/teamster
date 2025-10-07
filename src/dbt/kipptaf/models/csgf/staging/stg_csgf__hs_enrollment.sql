@@ -19,7 +19,8 @@ with
                 or course_name = 'Mathematics 9'
                 or course_name = 'Math 9'
                 or course_name = 'Algebra 1A Applied CP'
-                or course_name = 'Algebra I A',
+                or course_name = 'Algebra I A'
+                or course_name = 'Pre-AP Algebra I',
                 1,
                 0
             ) as is_alg_i_course,
@@ -117,7 +118,8 @@ with
                 'Mathematics 9',
                 'Algebra 1A Applied CP',
                 'Math 9',
-                'Algebra I A'
+                'Algebra I A',
+                'Pre-AP Algebra I'
             )
     ),
 
