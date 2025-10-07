@@ -12,9 +12,7 @@ with
             sum(attendancevalue) as attendance_value_sum,
             sum(membershipvalue) as membership_value_sum,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
-        where
-            attendancevalue is not null
-            and calendardate < current_date('{{ var("local_timezone") }}')
+        where attendancevalue is not null
         group by
             _dbt_source_relation,
             studentid,
