@@ -163,6 +163,38 @@ with
 
         from students
         group by schoolid
+    ),
+
+    retention_counts as (
+        select
+            py.schoolid,
+
+            count(py.student_number) as retention_denominator,
+
+            sum(if(py.student_number = cy.student_number, 1, 0)) as retention_numerator,
+
+        from {{ ref("int_extracts__student_enrollments") }} as py
+        left join
+            {{ ref("int_extracts__student_enrollments") }} as cy
+            on py.student_number = cy.student_number
+            and cy.academic_year = {{ var("current_academic_year") }}
+            and (cy.is_enrolled_oct01 or cy.grade_level = 99)
+        where
+            py.academic_year = {{ var("current_academic_year") - 1 }}
+            and py.is_enrolled_oct01
+        group by schoolid
+    ),
+
+    grades_served as (
+        select
+            schoolid,
+
+            string_agg(
+                distinct grade_level, ',' order by grade_level
+            ) as grade_levels_served,
+
+        from students
+        group by schoolid
     )
 
 select
@@ -196,6 +228,11 @@ select
     dc.iep_count,
     dc.ell_count,
     dc.frl_count,
+
+    rsc.retention_numerator,
+    rsc.retention_denominator,
+
+    gs.grade_levels_served,
 
     coalesce(
         case
@@ -237,4 +274,6 @@ left join
 left join enrollment_counts as ec on s.school_number = ec.schoolid
 left join race_counts as rc on s.school_number = rc.schoolid
 left join demo_counts as dc on s.school_number = dc.schoolid
+left join retention_counts as rsc on s.school_number = rsc.schoolid
+left join grades_served as gs on s.school_number = gs.schoolid
 left join {{ ref("int_people__staff_roster") }} as r on s.principalemail = r.work_email
