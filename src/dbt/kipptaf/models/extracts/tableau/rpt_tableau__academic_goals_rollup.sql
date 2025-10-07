@@ -12,8 +12,9 @@ with
     grade_bands as (
         select 'K' as band, 0 as grade_level,
         union all
-        select '1-2' as band, grade_level,
-        from unnest([1, 2]) as grade_level
+        select '1' as band, grade_level, 1 as grade_level
+        union all
+        select '2' as band, grade_level, 2 as grade_level
         union all
         select '3' as band, 3 as grade_level,
         union all
@@ -51,7 +52,6 @@ with
 
     state_test_union as (
         select
-            _dbt_source_relation,
             localstudentidentifier as student_number,
             academic_year,
             testscalescore as scale_score,
@@ -81,14 +81,13 @@ with
         union all
 
         select
-            s._dbt_source_relation,
             s.student_number,
 
             f.academic_year,
             f.scale_score,
             f.achievement_level_int as `level`,
 
-            'FAST' as assessment_type,
+            'FAST PM3' as assessment_type,
 
             f.academic_year + 1 as academic_year_plus,
 
@@ -109,6 +108,30 @@ with
             on suf.studentsdcid = s.dcid
             and {{ union_dataset_join_clause(left_alias="suf", right_alias="s") }}
         where f.administration_window = 'PM3' and f.scale_score is not null
+
+        union all
+
+        select
+            student_display_id as student_number,
+
+            academic_year,
+            unified_score as scale_score,
+            district_benchmark_category_level as `level`,
+
+            'Star EOY' as assessment_type,
+
+            academic_year + 1 as academic_year_plus,
+
+            if(state_benchmark_category_level = 1, 1, 0) as is_proficient_int,
+            if(state_benchmark_category_level = 2, 1, 0) as is_approaching_int,
+            if(state_benchmark_category_level > 2, 1, 0) as is_below_int,
+
+            if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
+        from {{ ref("int_renlearn__star_rollup") }}
+        where
+            rn_subj_round = 1
+            and screening_period_window_name = 'Spring'
+            and grade_level between 1 and 2
     ),
 
     iready as (
@@ -167,6 +190,27 @@ with
             and rn_subj_round = 1
             and sublevel_number_with_typical is not null
             and student_grade_int in (0, 1, 2, 9)
+
+        union all
+
+        select
+            student_display_id as student_number,
+            academic_year,
+            if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
+            district_benchmark_category_level as `level`,
+
+            'Star BOY' as assessment_type,
+
+            unified_score as scale_score,
+
+            if(district_benchmark_category_level = 1, 1, 0) as is_proficient_int,
+            if(district_benchmark_category_level = 2, 1, 0) as is_approaching_int,
+            if(district_benchmark_category_level > 2, 1, 0) as is_below_int,
+        from {{ ref("int_renlearn__star_rollup") }}
+        where
+            rn_subj_round = 1
+            and screening_period_window_name = 'Fall'
+            and grade_level = 0
     ),
 
     roster as (
@@ -259,7 +303,6 @@ with
             state_test_union as st
             on co.student_number = st.student_number
             and co.academic_year = st.academic_year_plus
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
             and s.subject = st.subject
         left join
             iready as ir
