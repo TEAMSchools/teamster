@@ -1,5 +1,5 @@
 exposures:
-  - name: seat_tracker
+  - name: seat_tracker_app
     label: Seat Tracker
     type: application
     owner:
@@ -26,7 +26,7 @@ exposures:
       dagster:
         kinds:
           - google
-  - name: leadership_development
+  - name: leadership_development_app
     label: Leadership Development
     type: application
     owner:
