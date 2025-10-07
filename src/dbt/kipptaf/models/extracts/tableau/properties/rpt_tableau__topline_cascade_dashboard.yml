@@ -55,3 +55,7 @@ models:
         data_type: float64
       - name: region
         data_type: string
+      - name: hos_name
+        data_type: string
+      - name: mdso_name
+        data_type: string
