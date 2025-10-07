@@ -704,3 +704,50 @@ left join
     and r.school = g.school
     and r.grade_level = g.grade_level
     and r.subject = g.subject
+where r.region != 'Miami'
+
+union all
+
+select
+    r.*,
+
+    g.bubble_parameter,
+    g.grade_band_goal,
+    g.n_proficient,
+    g.pct_proficient,
+    g.pct_proficient_state,
+    g.n_approaching,
+    g.pct_approaching,
+    g.n_below,
+    g.pct_below,
+    g.n_tested,
+    g.pct_tested,
+    g.n_bubble_to_move,
+    g.percent_with_growth_met,
+
+    g.percent_with_growth_met - g.pct_proficient as pct_to_grow,
+
+    case
+        when r.is_bucket2_eligible and r.grade_level >= 4
+        then r.rank_scale_score_state
+        when r.is_bucket2_eligible and r.grade_level < 4
+        then r.rank_scale_score
+    end as scale_score_rank,
+
+    case
+        when r.is_proficient_int = 1
+        then 'Bucket 1'
+        when r.is_bucket2_eligible and g.n_bubble_to_move >= r.rank_scale_score_state
+        then 'Bucket 2'
+        when r.is_bucket2_eligible and r.rank_scale_score > g.n_bubble_to_move
+        then 'Bucket 3'
+        else 'Bucket 4'
+    end as student_tier_calculated,
+from roster_ranked as r
+left join
+    bar as g
+    on r.academic_year = g.academic_year
+    and r.school = g.school
+    and r.grade_level = g.grade_level
+    and r.subject = g.subject
+where r.region = 'Miami'
