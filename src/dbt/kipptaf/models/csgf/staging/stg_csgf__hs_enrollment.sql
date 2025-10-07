@@ -17,7 +17,8 @@ with
                 or course_name like '%ALG%'
                 or course_name like '%Alb%'
                 or course_name = 'Mathematics 9'
-                or course_name = 'Math 9',
+                or course_name = 'Math 9'
+                or course_name = 'Algebra I A',
                 1,
                 0
             ) as is_alg_i_course,
