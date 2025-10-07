@@ -47,7 +47,7 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      - ref("illuminate_assessments_extension")
+      - ref("stg_google_appsheet__illuminate_assessments_extension")
       - ref("rpt_appsheet__assessments")
     meta:
       dagster:
