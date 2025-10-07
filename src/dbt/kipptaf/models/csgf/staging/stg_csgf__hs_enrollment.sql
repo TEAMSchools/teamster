@@ -18,6 +18,7 @@ with
                 or course_name like '%Alb%'
                 or course_name = 'Mathematics 9'
                 or course_name = 'Math 9'
+                or course_name = 'Algebra 1A Applied CP'
                 or course_name = 'Algebra I A',
                 1,
                 0
@@ -115,7 +116,8 @@ with
                 'MPD/Algebra I',
                 'Mathematics 9',
                 'Algebra 1A Applied CP',
-                'Math 9'
+                'Math 9',
+                'Algebra I A'
             )
     ),
 
