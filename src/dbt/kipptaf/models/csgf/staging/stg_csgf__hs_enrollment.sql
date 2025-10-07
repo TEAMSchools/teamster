@@ -45,6 +45,7 @@ with
                 'Alg I',
                 'ALG I CP',
                 'Algebra',
+                'Algebra 1',
                 'ALGEBRA 1',
                 'Algebra 1 (CR)',
                 'Algebra 1 (for HS credit)',
