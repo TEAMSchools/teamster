@@ -34,7 +34,7 @@ with
                 else home_work_location_powerschool_school_id
             end as schoolid,
         from {{ ref("int_people__staff_roster_history") }}
-        where primary_indicator and assignment_status = 'Active'
+        where primary_indicator
     )
 
 select
