@@ -12,8 +12,9 @@ with
     grade_bands as (
         select 'K' as band, 0 as grade_level,
         union all
-        select '1-2' as band, grade_level,
-        from unnest([1, 2]) as grade_level
+        select '1' as band, 1 as grade_level
+        union all
+        select '2' as band, 2 as grade_level
         union all
         select '3' as band, 3 as grade_level,
         union all
@@ -51,7 +52,6 @@ with
 
     state_test_union as (
         select
-            _dbt_source_relation,
             localstudentidentifier as student_number,
             academic_year,
             testscalescore as scale_score,
@@ -81,14 +81,13 @@ with
         union all
 
         select
-            s._dbt_source_relation,
             s.student_number,
 
             f.academic_year,
             f.scale_score,
             f.achievement_level_int as `level`,
 
-            'FAST' as assessment_type,
+            'FAST PM3' as assessment_type,
 
             f.academic_year + 1 as academic_year_plus,
 
@@ -108,7 +107,68 @@ with
             {{ ref("stg_powerschool__students") }} as s
             on suf.studentsdcid = s.dcid
             and {{ union_dataset_join_clause(left_alias="suf", right_alias="s") }}
-        where f.administration_window = 'PM3' and f.scale_score is not null
+        where
+            f.administration_window = 'PM3'
+            and f.scale_score is not null
+            and s.grade_level > 3
+
+        union all
+
+        select
+            s.student_number,
+
+            f.academic_year,
+            f.scale_score,
+            f.achievement_level_int as `level`,
+
+            'FAST PM3' as assessment_type,
+
+            f.academic_year as academic_year_plus,
+
+            if(f.achievement_level_int >= 3, 1, 0) as is_proficient_int,
+            if(f.achievement_level_int = 2, 1, 0) as is_approaching_int,
+            if(f.achievement_level_int < 2, 1, 0) as is_below_int,
+
+            if(
+                f.assessment_subject = 'English Language Arts', 'Reading', 'Math'
+            ) as `subject`,
+        from {{ ref("stg_fldoe__fast") }} as f
+        left join
+            {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
+            on f.student_id = suf.fleid
+            and {{ union_dataset_join_clause(left_alias="f", right_alias="suf") }}
+        left join
+            {{ ref("stg_powerschool__students") }} as s
+            on suf.studentsdcid = s.dcid
+            and {{ union_dataset_join_clause(left_alias="suf", right_alias="s") }}
+        where
+            f.administration_window = 'PM1'
+            and f.scale_score is not null
+            and s.grade_level = 3
+
+        union all
+
+        select
+            student_display_id as student_number,
+
+            academic_year,
+            unified_score as scale_score,
+            state_benchmark_category_level as `level`,
+
+            'Star EOY' as assessment_type,
+
+            academic_year + 1 as academic_year_plus,
+
+            if(state_benchmark_category_level < 4, 1, 0) as is_proficient_int,
+            if(state_benchmark_category_level = 4, 1, 0) as is_approaching_int,
+            if(state_benchmark_category_level = 5, 1, 0) as is_below_int,
+
+            if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
+        from {{ ref("int_renlearn__star_rollup") }}
+        where
+            rn_subj_round = 1
+            and screening_period_window_name = 'Spring'
+            and grade_level between 1 and 2
     ),
 
     iready as (
@@ -167,6 +227,27 @@ with
             and rn_subj_round = 1
             and sublevel_number_with_typical is not null
             and student_grade_int in (0, 1, 2, 9)
+
+        union all
+
+        select
+            student_display_id as student_number,
+            academic_year,
+            if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
+            district_benchmark_category_level as `level`,
+
+            'Star BOY' as assessment_type,
+
+            unified_score as scale_score,
+
+            if(district_benchmark_category_level = 1, 1, 0) as is_proficient_int,
+            if(district_benchmark_category_level = 2, 1, 0) as is_approaching_int,
+            if(district_benchmark_category_level > 2, 1, 0) as is_below_int,
+        from {{ ref("int_renlearn__star_rollup") }}
+        where
+            rn_subj_round = 1
+            and screening_period_window_name = 'Fall'
+            and grade_level = 0
     ),
 
     roster as (
@@ -259,7 +340,6 @@ with
             state_test_union as st
             on co.student_number = st.student_number
             and co.academic_year = st.academic_year_plus
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
             and s.subject = st.subject
         left join
             iready as ir
@@ -271,6 +351,7 @@ with
             and co.enroll_status = 0
             and co.grade_level between 3 and 9
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
+            and co.region != 'Miami'
 
         union all
 
@@ -349,6 +430,89 @@ with
             and co.enroll_status = 0
             and co.grade_level between 0 and 2
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
+            and co.region != 'Miami'
+
+        union all
+        /* Miami kinder */
+        select
+            co.academic_year,
+            co.student_number,
+            co.lastfirst as student_name,
+            co.region,
+            co.grade_level,
+            co.grade_level_prev,
+            co.year_in_network,
+            co.school_abbreviation as school,
+
+            gb.band,
+
+            ir.subject,
+
+            cc.sections_section_number as course_section,
+            cc.teacher_lastfirst as course_teacher_name,
+
+            hr.sections_section_number as homeroom_section,
+            hr.teacher_lastfirst as homeroom_teacher_name,
+
+            null as scale_score_state,
+            null as is_proficient_int_state,
+
+            ir.scale_score as scale_score_iready,
+
+            if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+
+            coalesce(ir.assessment_type, 'Untested') as benchmark_assessment_type,
+            ir.level as performance_level,
+            ir.scale_score,
+            ir.is_proficient_int,
+            ir.is_approaching_int,
+            ir.is_below_int,
+
+            if(ir.scale_score is not null, 1, 0) as is_tested_int,
+
+            if(ir.is_approaching_int = 1, true, false) as is_bucket2_eligible,
+            if(ir.is_below_int = 1, true, false) as is_bucket3_eligible,
+        from {{ ref("base_powerschool__student_enrollments") }} as co
+        cross join subject_croswalk as s
+        inner join grade_bands as gb on co.grade_level = gb.grade_level
+        inner join
+            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
+            on co.academic_year = sf.academic_year
+            and co.student_number = sf.student_number
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="sf") }}
+            and s.subject = sf.iready_subject
+            and sf.rn_year = 1
+            and not sf.is_exempt_state_testing
+        left join
+            {{ ref("base_powerschool__course_enrollments") }} as cc
+            on co.studentid = cc.cc_studentid
+            and co.yearid = cc.cc_yearid
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
+            and s.illuminate_subject_area = cc.illuminate_subject_area
+            and not cc.is_dropped_section
+            and cc.rn_student_year_illuminate_subject_desc = 1
+        left join
+            {{ ref("base_powerschool__course_enrollments") }} as hr
+            on co.studentid = hr.cc_studentid
+            and co.yearid = hr.cc_yearid
+            and co.schoolid = hr.cc_schoolid
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
+            and hr.cc_course_number = 'HR'
+            and not hr.is_dropped_section
+            and hr.rn_course_number_year = 1
+        left join
+            iready as ir
+            on co.student_number = ir.student_number
+            and co.academic_year = ir.academic_year
+            and s.subject = ir.subject
+            and ir.assessment_type = 'Star BOY'
+        where
+            co.rn_year = 1
+            and co.enroll_status = 0
+            and co.grade_level = 0
+            and co.academic_year >= {{ var("current_academic_year") - 1 }}
+            and co.region = 'Miami'
+
     ),
 
     roster_ranked as (
@@ -540,3 +704,50 @@ left join
     and r.school = g.school
     and r.grade_level = g.grade_level
     and r.subject = g.subject
+where r.region != 'Miami'
+
+union all
+
+select
+    r.*,
+
+    g.bubble_parameter,
+    g.grade_band_goal,
+    g.n_proficient,
+    g.pct_proficient,
+    g.pct_proficient_state,
+    g.n_approaching,
+    g.pct_approaching,
+    g.n_below,
+    g.pct_below,
+    g.n_tested,
+    g.pct_tested,
+    g.n_bubble_to_move,
+    g.percent_with_growth_met,
+
+    g.percent_with_growth_met - g.pct_proficient as pct_to_grow,
+
+    case
+        when r.is_bucket2_eligible and r.grade_level >= 4
+        then r.rank_scale_score_state
+        when r.is_bucket2_eligible and r.grade_level < 4
+        then r.rank_scale_score
+    end as scale_score_rank,
+
+    case
+        when r.is_proficient_int = 1
+        then 'Bucket 1'
+        when r.is_bucket2_eligible and g.n_bubble_to_move >= r.rank_scale_score_state
+        then 'Bucket 2'
+        when r.is_bucket2_eligible and r.rank_scale_score > g.n_bubble_to_move
+        then 'Bucket 3'
+        else 'Bucket 4'
+    end as student_tier_calculated,
+from roster_ranked as r
+left join
+    bar as g
+    on r.academic_year = g.academic_year
+    and r.school = g.school
+    and r.grade_level = g.grade_level
+    and r.subject = g.subject
+where r.region = 'Miami'
