@@ -109,10 +109,11 @@ models:
       +schema: extracts
       +contract:
         enforced: true
+      intermediate:
+        +contract:
+          enforced: false
       tableau:
         +schema: tableau
-      disabled:
-        +enabled: false
     facebook:
       +enabled: false
     finance:
