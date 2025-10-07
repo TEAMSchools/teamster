@@ -19,16 +19,19 @@
 
       models:
         - name: [model name]
-          config:
-            contract:  # optional
-              enforced: true
-          columns:  # optional, unless using a contract
+          columns: # optional, required for contracted models
             - name: ...
               data_type: ...
               data_tests:  # column tests, optional
                 - ...
           data_tests:  # model tests, optional
             - ...
+            - dbt_utils.unique_combination_of_columns: # recommended for intermediate models
+                arguments:
+                  combination_of_columns:
+                    - ...
+                config:
+                  store_failures: true
 
 - [ ] Include (or update) an
       [exposure](https://docs.getdbt.com/reference/exposure-properties) for all
