@@ -11,7 +11,7 @@ with
             schoolid,
             student_number,
 
-            case when lunch_status in ('F', 'f', 'R') then 1 else 0 end as frl,
+            case when lunch_status in ('F', 'f', 'R', 'FDC') then 1 else 0 end as frl,
 
             case
                 race_ethnicity
@@ -45,10 +45,7 @@ with
             if(lep_status, 1, 0) as ell,
 
         from {{ ref("int_extracts__student_enrollments") }}
-        where
-            academic_year = {{ var("current_academic_year") }}
-            and enroll_status = 0
-            and rn_year = 1
+        where academic_year = {{ var("current_academic_year") }} and is_enrolled_oct01
     ),
 
     enrollment_counts_pivot as (
@@ -109,6 +106,51 @@ with
 
         from enrollment_counts_pivot
         group by schoolid
+    ),
+
+    race_counts_pivot as (
+        select
+            schoolid,
+
+            ai_an,
+            asian,
+            bl_aa,
+            hispanic_or_latino,
+            nh_opi,
+            twoplus_races,
+            white,
+            dts,
+
+        from
+            students pivot (
+                count(student_number) for race_ethnicity in (
+                    'AI/AN' as ai_an,
+                    'Asian' as asian,
+                    'BL/AA' as bl_aa,
+                    'Hispanic or Latino' as hispanic_or_latino,
+                    'NH/OPI' as nh_opi,
+                    '2+ races' as twoplus_races,
+                    'White' as white,
+                    'DTS' as dts
+                )
+            )
+    ),
+
+    race_counts as (
+        select
+            schoolid,
+
+            sum(ai_an) as ai_an,
+            sum(asian) as asian,
+            sum(bl_aa) as bl_aa,
+            sum(hispanic_or_latino) as hispanic_or_latino,
+            sum(nh_opi) as nh_opi,
+            sum(twoplus_races) as twoplus_races,
+            sum(white) as white,
+            sum(dts) as dts,
+
+        from race_counts_pivot
+        group by schoolid
     )
 
 select
@@ -129,6 +171,15 @@ select
     ec.enrollment_10th,
     ec.enrollment_11th,
     ec.enrollment_12th,
+
+    rc.ai_an,
+    rc.asian,
+    rc.bl_aa,
+    rc.hispanic_or_latino,
+    rc.nh_opi,
+    rc.twoplus_races,
+    rc.white,
+    rc.dts,
 
     coalesce(
         case
@@ -168,4 +219,5 @@ left join
     on s.school_number = et.schoolid
     and et.academic_year = {{ var("current_academic_year") }}
 left join enrollment_counts as ec on s.school_number = ec.schoolid
+left join race_counts as rc on s.school_number = rc.schoolid
 left join {{ ref("int_people__staff_roster") }} as r on s.principalemail = r.work_email
