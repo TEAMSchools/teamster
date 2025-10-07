@@ -48,6 +48,7 @@ with
                 'Algebra 1 Honors (H)',
                 'ALGEBRA I',
                 'Algebra I ',
+                'Algebra I',
                 'Algebra I (CR)',
                 'Algebra I (for HS credit)',
                 'Algebra I (S)',
