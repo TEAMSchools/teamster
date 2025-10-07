@@ -14,11 +14,23 @@ manifest = json.loads(s=DBT_PROJECT.manifest_path.read_text())
 
 dagster_dbt_translator = CustomDagsterDbtTranslator(code_location=CODE_LOCATION)
 
+all_dbt_assets = build_dbt_assets(
+    manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
+)
+
 core_dbt_assets = build_dbt_assets(
     manifest=manifest,
     dagster_dbt_translator=dagster_dbt_translator,
     name=f"{CODE_LOCATION}__dbt_assets",
-    exclude="source:adp_payroll+ tag:google_sheet",
+    exclude="source:adp_payroll+ tag:google_sheet extracts",
+)
+
+reporting_dbt_assets = build_dbt_assets(
+    manifest=manifest,
+    dagster_dbt_translator=dagster_dbt_translator,
+    name=f"{CODE_LOCATION}__dbt_assets__reporting",
+    select="extracts",
+    exclude="source:adp_payroll+",
 )
 
 google_sheet_dbt_assets = build_dbt_assets(
@@ -40,9 +52,7 @@ asset_specs = [
     AssetSpec(
         key=[CODE_LOCATION, "dbt", "exposures", exposure["label"]],
         deps=[
-            get_asset_key_for_model(
-                dbt_assets=[core_dbt_assets], model_name=ref["name"]
-            )
+            get_asset_key_for_model(dbt_assets=[all_dbt_assets], model_name=ref["name"])
             for ref in exposure["refs"]
         ],
         metadata={"url": exposure.get("url")},
@@ -56,4 +66,5 @@ assets = [
     adp_payroll_dbt_assets,
     core_dbt_assets,
     google_sheet_dbt_assets,
+    reporting_dbt_assets,
 ]
