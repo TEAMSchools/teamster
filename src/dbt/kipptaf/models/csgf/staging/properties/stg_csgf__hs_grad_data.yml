@@ -1,0 +1,7 @@
+version: 2
+models:
+  - name: stg_csgf__hs_grad_data
+    config:
+      contract:
+        enforced: true
+    columns:
