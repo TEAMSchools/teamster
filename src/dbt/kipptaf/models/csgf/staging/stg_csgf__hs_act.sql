@@ -15,3 +15,4 @@ where
     e.academic_year = {{ var("current_academic_year") - 1 }}
     and e.school_level = 'HS'
     and e.rn_year = 1
+    and e.is_enrolled_recent
