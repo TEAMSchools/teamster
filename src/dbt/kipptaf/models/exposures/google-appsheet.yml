@@ -7,7 +7,7 @@ exposures:
     depends_on:
       - ref("rpt_appsheet__seat_tracker_roster")
       - ref("stg_seat_tracker__seats")
-      - ref("stg_seat_tracker__seat_tracker_people")
+      - ref("stg_people__seat_tracker_people")
       - ref("stg_people__campus_crosswalk")
       - ref("stg_people__location_crosswalk")
     meta:
