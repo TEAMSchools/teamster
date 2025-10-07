@@ -6,8 +6,8 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_appsheet__seat_tracker_roster")
-      - ref("src_seat_tracker__seats")
-      - ref("src_seat_tracker__people")
+      - ref("stg_seat_tracker__seats")
+      - ref("stg_seat_tracker__people")
       - ref("stg_people__campus_crosswalk")
       - ref("stg_people__location_crosswalk")
     meta:
@@ -21,7 +21,7 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_appsheet__stipend_app_roster")
-      - ref("src_stipend_bonus_app__output")
+      - ref("stg_stipend_and_bonus__output")
     meta:
       dagster:
         kinds:
@@ -34,8 +34,8 @@ exposures:
     depends_on:
       - ref("rpt_appsheet__leadership_development_assignments")
       - ref("rpt_appsheet__leadership_development_roster")
-      - ref("src_leadership_development_active_users")
-      - ref("src_leadership_development_output")
+      - ref("stg_leadership_development__active_users")
+      - ref("stg_leadership_development__output")
       - ref("stg_performance_management__leadership_development_metrics")
     meta:
       dagster:
