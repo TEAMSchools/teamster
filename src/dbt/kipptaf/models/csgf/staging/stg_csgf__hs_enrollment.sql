@@ -10,7 +10,7 @@ with
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
 
-            if(grade like 'F%', 0, 1) as passed_algebra_i,
+            if(grade like 'F%', 0, 1) as passed_class,
 
             if(
                 course_name like '%Alg%'
@@ -200,10 +200,6 @@ with
                 partition by student_number
             ) as passed_algebra_i,
 
-            row_number() over (
-                partition by e.student_number order by e.grade_level
-            ) as rn,
-
         from {{ ref("base_powerschool__course_enrollments") }} as c
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
@@ -241,13 +237,7 @@ with
 
             region,
 
-            max(passed_algebra_i) over (
-                partition by region, studentid
-            ) as passed_algebra_i,
-
-            row_number() over (
-                partition by region, studentid order by grade_level
-            ) as rn,
+            max(passed_class) over (partition by region, studentid) as passed_algebra_i,
 
         from transfer_course_tags
         where is_alg_i_course = 1
