@@ -22,7 +22,8 @@ with
                 or course_name = 'Algebra I A'
                 or course_name = 'Pre-AP Algebra I'
                 or course_name = 'GSE Coord Alegbra'
-                or course_name = 'Mathematics',
+                or course_name = 'Mathematics'
+                or course_name = 'Int Algebra ACC',
                 1,
                 0
             ) as is_alg_i_course,
@@ -123,7 +124,8 @@ with
                 'Algebra I A',
                 'Pre-AP Algebra I',
                 'GSE Coord Alegbra',
-                'Mathematics'
+                'Mathematics',
+                'Int Algebra ACC'
             )
     ),
 
