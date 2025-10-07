@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__student_info_audit
-    config:
-      contract:
-        enforced: true
     columns:
       - name: db_name
         data_type: string

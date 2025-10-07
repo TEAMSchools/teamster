@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__knowbe4_training_enrollment_roster
-    config:
-      contract:
-        enforced: true
     columns:
       - name: employee_number
         data_type: int64

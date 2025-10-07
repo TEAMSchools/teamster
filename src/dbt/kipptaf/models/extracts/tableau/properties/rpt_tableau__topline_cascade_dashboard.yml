@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__topline_cascade_dashboard
-    config:
-      contract:
-        enforced: true
     columns:
       - name: metric_type
         data_type: string

@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__approved_home_instruction
-    config:
-      contract:
-        enforced: true
     columns:
       - name: school
         data_type: string

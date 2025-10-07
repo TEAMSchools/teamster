@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__operations_ekg
-    config:
-      contract:
-        enforced: true
     columns:
       - name: respondent
         data_type: string

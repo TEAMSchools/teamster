@@ -1,8 +1,5 @@
 models:
   - name: rpt_gsheets__laptop_assignments
-    config:
-      contract:
-        enforced: true
     columns:
       - name: region
         data_type: string

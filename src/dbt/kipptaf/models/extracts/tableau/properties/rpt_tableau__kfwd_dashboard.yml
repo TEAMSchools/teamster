@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__kfwd_dashboard
-    config:
-      contract:
-        enforced: true
     columns:
       - name: contact_id
         data_type: string

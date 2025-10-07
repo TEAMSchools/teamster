@@ -1,8 +1,5 @@
 models:
   - name: rpt_illuminate__studemo
-    config:
-      contract:
-        enforced: true
     columns:
       - name: "`01 Import Student ID`"
         data_type: int64

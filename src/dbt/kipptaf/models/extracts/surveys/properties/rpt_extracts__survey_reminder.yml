@@ -2,5 +2,5 @@ models:
   - name: rpt_extracts__survey_reminder
     config:
       enabled: false
-      # contract:
-      #   enforced: true
+      contract:
+        enforced: false

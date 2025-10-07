@@ -1,8 +1,5 @@
 models:
   - name: rpt_powerschool__autocomm_teachers
-    config:
-      contract:
-        enforced: true
     columns:
       - name: teachernumber
         data_type: string

@@ -1,8 +1,5 @@
 models:
   - name: rpt_gsheets__leadership_pm_reminders
-    config:
-      contract:
-        enforced: true
     columns:
       - name: preferred_name_lastfirst
         data_type: string

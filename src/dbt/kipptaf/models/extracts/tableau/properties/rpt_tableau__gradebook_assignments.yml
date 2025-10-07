@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__gradebook_assignments
-    config:
-      contract:
-        enforced: true
     columns:
       - name: sectionid
         data_type: int64

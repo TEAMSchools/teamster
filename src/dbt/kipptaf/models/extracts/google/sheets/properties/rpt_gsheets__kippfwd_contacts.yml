@@ -1,8 +1,5 @@
 models:
   - name: rpt_gsheets__kippfwd_contacts
-    config:
-      contract:
-        enforced: true
     columns:
       - name: "`Currently Enrolled School`"
         data_type: string

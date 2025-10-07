@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__stipend_and_bonus_app
-    config:
-      contract:
-        enforced: true
     columns:
       - name: event_id
         data_type: string

@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__school_community_diagnostic
-    config:
-      contract:
-        enforced: true
     columns:
       - name: survey_id
         data_type: string

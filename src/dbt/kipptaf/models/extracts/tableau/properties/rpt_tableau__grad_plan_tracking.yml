@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__grad_plan_tracking
-    config:
-      contract:
-        enforced: true
     columns:
       - name: _dbt_source_relation
         data_type: string

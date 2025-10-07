@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__staff_performance_compliance_history
-    config:
-      contract:
-        enforced: true
     columns:
       - name: asdf_employee_number
         data_type: int64

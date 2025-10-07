@@ -1,8 +1,5 @@
 models:
   - name: rpt_google_directory__users_import
-    config:
-      contract:
-        enforced: true
     columns:
       - name: primaryEmail
         data_type: string
