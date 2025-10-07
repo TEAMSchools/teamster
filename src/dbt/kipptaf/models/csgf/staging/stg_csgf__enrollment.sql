@@ -151,6 +151,18 @@ with
 
         from race_counts_pivot
         group by schoolid
+    ),
+
+    demo_counts as (
+        select
+            schoolid,
+
+            sum(iep) as iep_count,
+            sum(ell) as ell_count,
+            sum(frl) as frl_count,
+
+        from students
+        group by schoolid
     )
 
 select
@@ -180,6 +192,10 @@ select
     rc.twoplus_races,
     rc.white,
     rc.dts,
+
+    dc.iep_count,
+    dc.ell_count,
+    dc.frl_count,
 
     coalesce(
         case
@@ -220,4 +236,5 @@ left join
     and et.academic_year = {{ var("current_academic_year") }}
 left join enrollment_counts as ec on s.school_number = ec.schoolid
 left join race_counts as rc on s.school_number = rc.schoolid
+left join demo_counts as dc on s.school_number = dc.schoolid
 left join {{ ref("int_people__staff_roster") }} as r on s.principalemail = r.work_email
