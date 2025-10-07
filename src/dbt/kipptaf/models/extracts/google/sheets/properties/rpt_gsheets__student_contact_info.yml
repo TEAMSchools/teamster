@@ -1,8 +1,5 @@
 models:
   - name: rpt_gsheets__student_contact_info
-    config:
-      contract:
-        enforced: true
     columns:
       - name: student_number
         data_type: int64

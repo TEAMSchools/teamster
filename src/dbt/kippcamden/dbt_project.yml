@@ -28,6 +28,8 @@ models:
   kippcamden:
     extracts:
       +schema: extracts
+      +contract:
+        enforced: true
   deanslist:
     +materialized: table
     staging:

@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__pm_outlier_detection
-    config:
-      contract:
-        enforced: true
     columns:
       - name: observer_employee_number
         data_type: int64

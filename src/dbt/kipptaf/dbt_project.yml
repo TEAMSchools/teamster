@@ -107,6 +107,8 @@ models:
         +materialized: table
     extracts:
       +schema: extracts
+      +contract:
+        enforced: true
       tableau:
         +schema: tableau
       disabled:

@@ -1,8 +1,5 @@
 models:
   - name: rpt_adp_workforce_now__data_bridge
-    config:
-      contract:
-        enforced: true
     columns:
       - name: "`Employee ID`"
         data_type: string

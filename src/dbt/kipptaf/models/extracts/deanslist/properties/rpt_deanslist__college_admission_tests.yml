@@ -1,8 +1,5 @@
 models:
   - name: rpt_deanslist__college_admission_tests
-    config:
-      contract:
-        enforced: true
     columns:
       - name: student_number
         data_type: int64

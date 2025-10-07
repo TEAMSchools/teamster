@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__seat_tracker_snapshot
-    config:
-      contract:
-        enforced: true
     columns:
       - name: date_week
         data_type: date

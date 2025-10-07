@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__home_instruction_queue
-    config:
-      contract:
-        enforced: true
     columns:
       - name: student_number
         data_type: int64

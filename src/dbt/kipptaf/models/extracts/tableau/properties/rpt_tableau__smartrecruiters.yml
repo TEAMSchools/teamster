@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__smartrecruiters
-    config:
-      contract:
-        enforced: true
     columns:
       - name: application_id
         data_type: string

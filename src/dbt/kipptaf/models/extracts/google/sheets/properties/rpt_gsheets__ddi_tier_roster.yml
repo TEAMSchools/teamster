@@ -1,8 +1,5 @@
 models:
   - name: rpt_gsheets__ddi_tier_roster
-    config:
-      contract:
-        enforced: true
     columns:
       - name: region
         data_type: string

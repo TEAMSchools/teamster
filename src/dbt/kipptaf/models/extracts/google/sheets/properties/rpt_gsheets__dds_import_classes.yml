@@ -3,7 +3,7 @@ models:
     config:
       enabled: false
       contract:
-        enforced: true
+        enforced: false
     columns:
       - name: classname
         data_type: string

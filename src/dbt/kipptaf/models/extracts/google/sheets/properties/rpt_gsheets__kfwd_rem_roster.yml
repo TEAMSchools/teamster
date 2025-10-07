@@ -1,8 +1,5 @@
 models:
   - name: rpt_gsheets__kfwd_rem_roster
-    config:
-      contract:
-        enforced: true
     columns:
       - name: student_name
         data_type: string

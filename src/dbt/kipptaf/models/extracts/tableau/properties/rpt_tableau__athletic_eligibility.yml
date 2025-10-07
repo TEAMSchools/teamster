@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__athletic_eligibility
-    config:
-      contract:
-        enforced: true
     columns:
       - name: _dbt_source_relation
         data_type: string

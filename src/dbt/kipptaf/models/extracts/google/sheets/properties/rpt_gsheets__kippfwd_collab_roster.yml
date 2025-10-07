@@ -1,8 +1,5 @@
 models:
   - name: rpt_gsheets__kippfwd_collab_roster
-    config:
-      contract:
-        enforced: true
     columns:
       - name: "`Salesforce ID`"
         data_type: string

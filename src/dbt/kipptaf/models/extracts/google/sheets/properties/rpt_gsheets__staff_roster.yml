@@ -1,8 +1,5 @@
 models:
   - name: rpt_gsheets__staff_roster
-    config:
-      contract:
-        enforced: true
     columns:
       - name: associate_id
         data_type: string

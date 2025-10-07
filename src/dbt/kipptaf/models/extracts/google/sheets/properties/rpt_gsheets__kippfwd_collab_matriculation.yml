@@ -3,7 +3,7 @@ models:
     config:
       enabled: false
       contract:
-        enforced: true
+        enforced: false
     columns:
       - name: contact_id
         data_type: string

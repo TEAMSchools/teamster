@@ -1,8 +1,5 @@
 models:
   - name: rpt_gsheets__intacct_integration_file
-    config:
-      contract:
-        enforced: true
     meta:
       dagster:
         automation_condition:

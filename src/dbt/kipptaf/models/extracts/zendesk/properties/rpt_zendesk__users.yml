@@ -1,8 +1,5 @@
 models:
   - name: rpt_zendesk__users
-    config:
-      contract:
-        enforced: true
     columns:
       - name: email
         data_type: string
