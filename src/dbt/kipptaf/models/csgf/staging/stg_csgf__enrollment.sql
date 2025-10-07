@@ -10,8 +10,7 @@ with
         select
             schoolid,
             student_number,
-
-            case when lunch_status in ('F', 'f', 'R', 'FDC') then 1 else 0 end as frl,
+            cast(grade_level as string) as grade_level_str,
 
             case
                 race_ethnicity
@@ -37,6 +36,8 @@ with
                 then 'DTS'
                 else 'DTS'
             end race_ethnicity,
+
+            if(lunch_status in ('F', 'f', 'R', 'FDC'), 1, 0) as frl,
 
             if(grade_level = 0, 'K', cast(grade_level as string)) as grade_level,
 
@@ -190,7 +191,7 @@ with
             schoolid,
 
             string_agg(
-                distinct grade_level, ',' order by grade_level
+                distinct grade_level_str, ',' order by grade_level_str
             ) as grade_levels_served,
 
         from students
