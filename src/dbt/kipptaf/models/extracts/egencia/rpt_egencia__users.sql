@@ -22,11 +22,6 @@ select
         tg3.egencia_traveler_group,
         'General Traveler Group'
     ) as `Traveler Group`,
-
-    sr.home_business_unit_name,
-    sr.home_work_location_name,
-    sr.home_department_name,
-    sr.job_title,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__staff_roster") }} as sr
 left join

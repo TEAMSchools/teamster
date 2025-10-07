@@ -1,8 +1,8 @@
 models:
   - name: rpt_egencia__users
-    # config:
-    #   contract:
-    #     enforced: true
+    config:
+      contract:
+        enforced: true
     columns:
       - name: "`Username`"
         data_type: string
