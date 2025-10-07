@@ -196,6 +196,36 @@ with
 
         from students
         group by schoolid
+    ),
+
+    py_ada_att as (
+        attendance_dash as (
+            select
+                ad.studentid,
+                ad.calendardate,
+                ad.membershipvalue,
+                ad.attendancevalue as is_present,
+                ad.term,
+
+                co.student_number,
+                co.enroll_status,
+                co.academic_year,
+                co.school_level,
+                co.reporting_schoolid as schoolid,
+
+            from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ad
+            inner join
+                {{ ref("int_extracts__student_enrollments") }} as co
+                on ad.studentid = co.studentid
+                and ad.schoolid = co.schoolid
+                and ad.calendardate between co.entrydate and co.exitdate
+                and {{ union_dataset_join_clause(left_alias="ad", right_alias="co") }}
+            where
+                ad.membershipvalue = 1
+                and ad.attendancevalue is not null
+                and ad.calendardate
+                co.academic_year = {{ var("current_academic_year") - 1 }}
+        )
     )
 
 select
