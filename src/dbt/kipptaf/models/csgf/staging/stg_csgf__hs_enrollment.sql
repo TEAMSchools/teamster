@@ -15,7 +15,8 @@ with
             if(
                 course_name like '%Alg%'
                 or course_name like '%ALG%'
-                or course_name like '%Alb%',
+                or course_name like '%Alb%'
+                or course_name = 'Mathematics 9',
                 1,
                 0
             ) as is_alg_i_course,
@@ -110,8 +111,8 @@ with
                 'Mathematics 9: Algebra I',
                 'Mathematics-Algebra I',
                 'MPD/Algebra I',
-                'Mathematics 9	',
-                'Mathematics 9'
+                'Mathematics 9',
+                'Algebra 1A Applied CP'
             )
     ),
 
