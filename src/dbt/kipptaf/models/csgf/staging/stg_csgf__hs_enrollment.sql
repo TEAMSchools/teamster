@@ -18,7 +18,7 @@ with
                 or course_name like '%Alb%'
                 or course_name like 'Math%'
                 or course_name = 'GSE Coord Alegbra'
-                or course_name = 'NC Math 1'
+                or course_name = 'NC Math 1',
                 1,
                 0
             ) as is_alg_i_course,
