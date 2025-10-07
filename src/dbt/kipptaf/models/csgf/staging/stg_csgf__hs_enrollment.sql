@@ -126,7 +126,8 @@ with
                 'Int Algebra ACC',
                 'Math',
                 'NC Math 1',
-                'MPD/Algebra I Lab'
+                'MPD/Algebra I Lab',
+                'Algebra I Foundations (CR)'
             )
     ),
 
