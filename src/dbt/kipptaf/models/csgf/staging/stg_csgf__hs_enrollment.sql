@@ -109,7 +109,9 @@ with
                 'Intensive Algerba I',
                 'Mathematics 9: Algebra I',
                 'Mathematics-Algebra I',
-                'MPD/Algebra I'
+                'MPD/Algebra I',
+                'Mathematics 9	',
+                'Mathematics 9'
             )
     ),
 
