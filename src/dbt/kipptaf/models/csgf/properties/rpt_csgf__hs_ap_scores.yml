@@ -1,13 +1,17 @@
 version: 2
 models:
-  - name: stg_csgf__hs_sat
+  - name: rpt_csgf__hs_ap_scores
     config:
       contract:
         enforced: true
     columns:
       - name: studentid
         data_type: int64
-      - name: section
+      - name: test_year
         data_type: string
+      - name: aptest_name
+        data_type: string
+      - name: grade_level_when_taken
+        data_type: int64
       - name: score
         data_type: numeric

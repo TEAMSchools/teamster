@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: stg_csgf__enrollment
+  - name: rpt_csgf__enrollment
     config:
       contract:
         enforced: true
