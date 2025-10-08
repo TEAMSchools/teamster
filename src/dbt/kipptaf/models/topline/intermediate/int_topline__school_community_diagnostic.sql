@@ -17,4 +17,5 @@ left join
 where
     sr.survey_title = 'School Community Diagnostic Student Survey'
     and sr.question_shortname like '%scd%'
+    and sr.term_code = 'SCD'
 group by se.student_number, se.academic_year, se.schoolid
