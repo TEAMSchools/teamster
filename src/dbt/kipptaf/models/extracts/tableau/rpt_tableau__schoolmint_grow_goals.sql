@@ -22,8 +22,9 @@ select
 
     t.tag_id as goal_code,
     t.tag_name as goal_name,
-    null as strand_name,
-    null as bucket_name,
+
+    cast(null as string) as strand_name,
+    cast(null as string) as bucket_name,
 
     a.assignment_id,
     a.created as assignment_date,
