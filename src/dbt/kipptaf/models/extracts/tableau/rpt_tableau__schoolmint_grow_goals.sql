@@ -20,10 +20,10 @@ select
     rt.end_date,
     rt.is_current,
 
-    m.goal_code,
-    m.goal_name,
-    m.strand_name,
-    m.bucket_name,
+    t.tag_id as goal_code,
+    t.tag_name as goal_name,
+    null as strand_name,
+    null as bucket_name,
 
     a.assignment_id,
     a.created as assignment_date,
@@ -52,7 +52,6 @@ left join
 left join
     {{ ref("stg_schoolmint_grow__assignments__tags") }} as t
     on a.assignment_id = t.assignment_id
-left join {{ ref("stg_schoolmint_grow__microgoals") }} as m on t.tag_id = m.goal_tag_id
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber
