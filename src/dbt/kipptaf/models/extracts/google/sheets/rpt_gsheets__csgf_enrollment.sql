@@ -46,7 +46,10 @@ with
             if(lep_status, 1, 0) as ell,
 
         from {{ ref("int_extracts__student_enrollments") }}
-        where academic_year = {{ var("current_academic_year") }} and is_enrolled_oct01
+        where
+            academic_year = {{ var("current_academic_year") }}
+            and is_enrolled_oct01
+            and rn_year = 1
     ),
 
     enrollment_counts_pivot as (
