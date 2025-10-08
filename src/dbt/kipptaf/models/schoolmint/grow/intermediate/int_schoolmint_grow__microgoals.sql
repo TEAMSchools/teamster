@@ -24,4 +24,4 @@ with
 {# lookfors and not hierarchy tags #}
 select tag_id, tag_name, strand_name, bucket_name, goal_type_name,
 from hierarchy
-where goal_type_id is not null
+where goal_type_name is not null
