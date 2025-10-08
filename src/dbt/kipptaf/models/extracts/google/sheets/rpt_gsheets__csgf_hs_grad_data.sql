@@ -38,9 +38,7 @@ with
     ),
 
     grad_roster as (
-        /* distinct use: this cte needs to scan multiple years of enrollment for the
-           given cohort, but needs to return only one row per student */
-        select distinct
+        select
             co.school,
             co.cohort,
             co.student_number,
@@ -62,13 +60,16 @@ with
         from {{ ref("int_extracts__student_enrollments") }} as co
         left join
             entry_cohort as ec
-            on (co.student_number = ec.student_number and co.school = ec.school)
+            on co.student_number = ec.student_number
+            and co.school = ec.school
         left join
             transfer_in as ti
-            on (co.student_number = ti.student_number and co.school = ti.school)
+            on co.student_number = ti.student_number
+            and co.school = ti.school
         left join
             transfer_out as tr
-            on (co.student_number = tr.student_number and co.school = tr.school)
+            on co.student_number = tr.student_number
+            and co.school = tr.school
         where co.school_level = 'HS' and co.rn_year = 1 and co.rn_undergrad = 1
     ),
 
