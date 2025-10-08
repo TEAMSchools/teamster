@@ -19,14 +19,7 @@ with
             (
                 (co.grade_level between 10 and 12)
                 or (
-                    co.grade_level = 9
-                    and (
-                        extract(month from co.entrydate) > 10
-                        or (
-                            extract(month from co.entrydate) = 10
-                            and extract(day from co.entrydate) > 1
-                        )
-                    )
+                    co.grade_level = 9 and co.entrydate >= date(co.academic_year, 10, 1)
                 )
             )
             and co.rn_year = 1
@@ -45,6 +38,8 @@ with
     ),
 
     grad_roster as (
+        /* distinct use: this cte needs to scan multiple years of enrollment for the
+           given cohort, but needs to return only one row per student */
         select distinct
             co.school,
             co.cohort,
@@ -86,7 +81,7 @@ with
             and grade_level != 99
             and not is_out_of_district
             and enroll_status = 3
-        group by all
+        group by school_name
     )
 
 select
@@ -113,4 +108,3 @@ select
 
 from grad_roster as gr
 group by gr.cohort, gr.school
-order by gr.cohort asc, gr.school asc

@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: rpt_csgf__enrollment
+  - name: rpt_gsheets__csgf_enrollment
     config:
       contract:
         enforced: true
