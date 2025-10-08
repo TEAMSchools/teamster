@@ -39,11 +39,6 @@
                  - {SOURCE TABLE NAME}
    ```
 
-   !!! tip
-
-   If updating an existing `sources-drive.yml`, you will only need to add new
-   records under the `table` attribute.
-
 4. Create a staging model. Create a simple `select *` statement--this will help
    catch unexpected changes to the table schema--and add any calculated fields
    you require.
