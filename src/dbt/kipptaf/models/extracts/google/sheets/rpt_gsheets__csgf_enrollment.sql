@@ -272,7 +272,7 @@ select
 from {{ ref("stg_powerschool__schools") }} as s
 inner join calendar_days as c on s.school_number = c.schoolid
 left join
-    `kipptaf_google_sheets.stg_google_sheets__topline_enrollment_targets` as et
+    {{ ref("stg_google_sheets__topline_enrollment_targets") }} as et
     on s.school_number = et.schoolid
     and et.academic_year = {{ var("current_academic_year") }}
 left join enrollment_counts as ec on s.school_number = ec.schoolid

@@ -35,21 +35,21 @@ models:
         data_type: int64
       - name: enrollment_12th
         data_type: int64
-      - name: ai_an
+      - name: ai_an_count
         data_type: int64
-      - name: asian
+      - name: asian_count
         data_type: int64
-      - name: bl_aa
+      - name: bl_aa_count
         data_type: int64
-      - name: hispanic_or_latino
+      - name: hispanic_or_latino_count
         data_type: int64
-      - name: nh_opi
+      - name: nh_opi_count
         data_type: int64
-      - name: twoplus_races
+      - name: twoplus_races_count
         data_type: int64
-      - name: white
+      - name: white_count
         data_type: int64
-      - name: dts
+      - name: dts_count
         data_type: int64
       - name: iep_count
         data_type: int64
