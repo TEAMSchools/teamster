@@ -52,7 +52,9 @@ with
             and rn_year = 1
     ),
 
-    enrollment_counts_pivot as (
+    enrollment_fields as (select schoolid, student_number, grade_level from students),
+
+    enrollment_counts as (
         select
             schoolid,
 
@@ -71,7 +73,7 @@ with
             enrollment_12th,
 
         from
-            students pivot (
+            enrollment_fields pivot (
                 count(student_number) for grade_level in (
                     'K' as enrollment_k,
                     '1' as enrollment_1st,
@@ -90,71 +92,34 @@ with
             )
     ),
 
-    enrollment_counts as (
-        select
-            schoolid,
-
-            sum(enrollment_k) as enrollment_k,
-            sum(enrollment_1st) as enrollment_1st,
-            sum(enrollment_2nd) as enrollment_2nd,
-            sum(enrollment_3rd) as enrollment_3rd,
-            sum(enrollment_4th) as enrollment_4th,
-            sum(enrollment_5th) as enrollment_5th,
-            sum(enrollment_6th) as enrollment_6th,
-            sum(enrollment_7th) as enrollment_7th,
-            sum(enrollment_8th) as enrollment_8th,
-            sum(enrollment_9th) as enrollment_9th,
-            sum(enrollment_10th) as enrollment_10th,
-            sum(enrollment_11th) as enrollment_11th,
-            sum(enrollment_12th) as enrollment_12th,
-
-        from enrollment_counts_pivot
-        group by schoolid
-    ),
-
-    race_counts_pivot as (
-        select
-            schoolid,
-
-            ai_an,
-            asian,
-            bl_aa,
-            hispanic_or_latino,
-            nh_opi,
-            twoplus_races,
-            white,
-            dts,
-
-        from
-            students pivot (
-                count(student_number) for race_ethnicity in (
-                    'AI/AN' as ai_an,
-                    'Asian' as asian,
-                    'BL/AA' as bl_aa,
-                    'Hispanic or Latino' as hispanic_or_latino,
-                    'NH/OPI' as nh_opi,
-                    '2+ races' as twoplus_races,
-                    'White' as white,
-                    'DTS' as dts
-                )
-            )
-    ),
+    race_fields as (select schoolid, student_number, race_ethnicity, from students),
 
     race_counts as (
         select
             schoolid,
 
-            sum(ai_an) as ai_an_count,
-            sum(asian) as asian_count,
-            sum(bl_aa) as bl_aa_count,
-            sum(hispanic_or_latino) as hispanic_or_latino_count,
-            sum(nh_opi) as nh_opi_count,
-            sum(twoplus_races) as twoplus_races_count,
-            sum(white) as white_count,
-            sum(dts) as dts_count,
+            ai_an_count,
+            asian_count,
+            bl_aa_count,
+            hispanic_or_latino_count,
+            nh_opi_count,
+            twoplus_races_count,
+            white_count,
+            dts_count,
 
-        from race_counts_pivot
-        group by schoolid
+        from
+            race_fields pivot (
+                count(student_number) for race_ethnicity in (
+                    'AI/AN' as ai_an_count,
+                    'Asian' as asian_count,
+                    'BL/AA' as bl_aa_count,
+                    'Hispanic or Latino' as hispanic_or_latino_count,
+                    'NH/OPI' as nh_opi_count,
+                    '2+ races' as twoplus_races_count,
+                    'White' as white_count,
+                    'DTS' as dts_count
+                )
+            )
     ),
 
     demo_counts as (
