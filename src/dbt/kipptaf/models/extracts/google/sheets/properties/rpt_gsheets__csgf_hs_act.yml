@@ -1,0 +1,13 @@
+version: 2
+models:
+  - name: rpt_gsheets__csgf_hs_act
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: section
+        data_type: string
+      - name: score
+        data_type: numeric
