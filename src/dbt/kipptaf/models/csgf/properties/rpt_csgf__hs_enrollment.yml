@@ -1,6 +1,6 @@
 version: 2
 models:
-  - name: stg_csgf__hs_enrollment
+  - name: rpt_csgf__hs_enrollment
     config:
       contract:
         enforced: true
