@@ -30,7 +30,7 @@ with
     {# need to import to link assignment to microgoal name and categories #}
     tags as (select *, from {{ ref("stg_schoolmint_grow__assignments__tags") }}),
 
-    microgoals as (select *, from {{ ref("stg_schoolmint_grow__microgoals") }}),
+    microgoals as (select *, from {{ ref("int_schoolmint_grow__microgoals") }}),
 
     final as (
 
@@ -47,7 +47,7 @@ with
             assignments.assignment_id,
             assignments.created_date_local,
             assignments.creator_name,
-            microgoals.goal_name,
+            microgoals.tag_name as goal_name,
             microgoals.strand_name,
             microgoals.bucket_name,
         from teachers
@@ -65,7 +65,7 @@ with
             and assignments.created_date_local
             between calendar.week_start_monday and calendar.week_end_sunday
         left join tags on assignments.assignment_id = tags.assignment_id
-        left join microgoals on tags.tag_id = microgoals.goal_tag_id
+        left join microgoals on tags.tag_id = microgoals.tag_id
 
     )
 
