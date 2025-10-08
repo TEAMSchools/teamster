@@ -224,8 +224,8 @@ models:
         +schema: schoolmint_grow
         staging:
           +materialized: table
-        disabled:
-          +enabled: false
+          +contract:
+            enforced: true
     smartrecruiters:
       +schema: smartrecruiters
     students:
