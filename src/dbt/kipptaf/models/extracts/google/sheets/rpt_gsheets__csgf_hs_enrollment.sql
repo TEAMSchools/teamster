@@ -31,7 +31,7 @@ with
         where
             storecode = 'Y1'
             and is_transfer_grade
-            and academic_year >= 2019
+            and academic_year >= {{ var("current_academic_year") - 6 }}
             and course_name in (
                 'Academic Algebra I',
                 'Access Algebra I A',
@@ -160,11 +160,8 @@ with
             studentid,
 
             is_ap_course,
-
             is_honors_course,
-
             is_dual_course,
-
             is_cte_course,
 
         from local_course_tags
@@ -176,11 +173,8 @@ with
             studentid,
 
             is_ap_course,
-
             is_honors_course,
-
             is_dual_course,
-
             is_cte_course,
 
         from transfer_course_tags
@@ -210,10 +204,8 @@ with
     passed_courses_union as (
         select
             c.cc_studentid as studentid,
-
             e.grade_level,
-
-            initcap(regexp_extract(c._dbt_source_relation, r'kipp(\w+)_')) as region,
+            e.region,
 
             max(if(g.grade like 'F%', 0, 1)) over (
                 partition by student_number
@@ -251,9 +243,7 @@ with
 
         select
             studentid,
-
             grade_level,
-
             region,
 
             max(passed_class) over (partition by region, studentid) as passed_algebra_i,
