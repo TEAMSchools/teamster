@@ -560,6 +560,24 @@ exposures:
       dagster:
         kinds:
           - googlesheets
+  - name: csgf_data
+    label: CSGF Data
+    type: analysis
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1rbPI03qTMMv3NVC1_1rjodBq3Cd8mktd5Fwosy2AxuM
+    depends_on:
+      - ref("rpt_gsheets__csgf_enrollment")
+      - ref("rpt_gsheets__csgf_hs_act")
+      - ref("rpt_gsheets__csgf_hs_ap_offerings")
+      - ref("rpt_gsheets__csgf_hs_ap_scores")
+      - ref("rpt_gsheets__csgf_hs_enrollment")
+      - ref("rpt_gsheets__csgf_hs_grad_data")
+      - ref("rpt_gsheets__csgf_hs_sat")
+    meta:
+      dagster:
+        kinds:
+          - googlesheets
   # - name: hro_2425_renewal_workbook_data_team_workspace
   #   label: HRO 24-25 Renewal Workbook - Data Team Workspace
   #   type: application
