@@ -1,6 +1,9 @@
 version: 2
 models:
-  - name: stg_schoolmint_grow__microgoals
+  - name: int_schoolmint_grow__microgoals
+    description:
+      table to unnest generic tags using parent relationships to get goal,
+      strand, bucket, and type
     columns:
       - name: goal_tag_id
         data_type: string
