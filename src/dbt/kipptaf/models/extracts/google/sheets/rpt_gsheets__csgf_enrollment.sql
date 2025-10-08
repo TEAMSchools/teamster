@@ -70,7 +70,7 @@ with
         from
             students pivot (
                 count(student_number) for grade_level in (
-                    'k' as enrollment_k,
+                    'K' as enrollment_k,
                     '1' as enrollment_1st,
                     '2' as enrollment_2nd,
                     '3' as enrollment_3rd,
@@ -141,14 +141,14 @@ with
         select
             schoolid,
 
-            sum(ai_an) as ai_an,
-            sum(asian) as asian,
-            sum(bl_aa) as bl_aa,
-            sum(hispanic_or_latino) as hispanic_or_latino,
-            sum(nh_opi) as nh_opi,
-            sum(twoplus_races) as twoplus_races,
-            sum(white) as white,
-            sum(dts) as dts,
+            sum(ai_an) as ai_an_count,
+            sum(asian) as asian_count,
+            sum(bl_aa) as bl_aa_count,
+            sum(hispanic_or_latino) as hispanic_or_latino_count,
+            sum(nh_opi) as nh_opi_count,
+            sum(twoplus_races) as twoplus_races_count,
+            sum(white) as white_count,
+            sum(dts) as dts_count,
 
         from race_counts_pivot
         group by schoolid
@@ -183,7 +183,7 @@ with
         where
             py.academic_year = {{ var("current_academic_year") - 1 }}
             and py.is_enrolled_oct01
-        group by schoolid
+        group by py.schoolid
     ),
 
     grades_served as (
@@ -196,55 +196,8 @@ with
 
         from students
         group by schoolid
-    ),
-
-    py_ada_ca as (
-        select
-            ad.studentid,
-            ad.calendardate,
-            ad.membershipvalue,
-            ad.attendancevalue as is_present,
-            ad.term,
-
-            co.student_number,
-            co.enroll_status,
-            co.academic_year,
-            co.school_level,
-            co.reporting_schoolid as schoolid,
-
-            avg(ad.attendancevalue) over (
-                partition by ad.studentid, co.academic_year order by ad.calendardate
-            ) as ada_running,
-
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ad
-        inner join
-            {{ ref("int_extracts__student_enrollments") }} as co
-            on ad.studentid = co.studentid
-            and ad.schoolid = co.schoolid
-            and ad.calendardate between co.entrydate and co.exitdate
-            and {{ union_dataset_join_clause(left_alias="ad", right_alias="co") }}
-        where
-            ad.membershipvalue = 1
-            and ad.attendancevalue is not null
-            and co.academic_year = {{ var("current_academic_year") - 1 }}
     )
 
-{#     py_ada as (
-        select co.reporting_schoolid as schoolid, avg(ad.attendancevalue) as school_ada,
-
-        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ad
-        inner join
-            {{ ref("int_extracts__student_enrollments") }} as co
-            on ad.studentid = co.studentid
-            and ad.schoolid = co.schoolid
-            and ad.calendardate between co.entrydate and co.exitdate
-            and {{ union_dataset_join_clause(left_alias="ad", right_alias="co") }}
-        where
-            ad.membershipvalue = 1
-            and ad.attendancevalue is not null
-            and co.academic_year = {{ var("current_academic_year") - 1 }}
-        group by co.reporting_schoolid
-    ) #}
 select
     c.total_instructional_days,
 
@@ -264,14 +217,14 @@ select
     ec.enrollment_11th,
     ec.enrollment_12th,
 
-    rc.ai_an,
-    rc.asian,
-    rc.bl_aa,
-    rc.hispanic_or_latino,
-    rc.nh_opi,
-    rc.twoplus_races,
-    rc.white,
-    rc.dts,
+    rc.ai_an_count,
+    rc.asian_count,
+    rc.bl_aa_count,
+    rc.hispanic_or_latino_count,
+    rc.nh_opi_count,
+    rc.twoplus_races_count,
+    rc.white_count,
+    rc.dts_count,
 
     dc.iep_count,
     dc.ell_count,
@@ -296,7 +249,7 @@ select
         case
             r.gender_identity
             when 'Cis Woman'
-            then 'Woman'
+            then 'Female'
             when 'Cis Man'
             then 'Male'
             else r.gender_identity
