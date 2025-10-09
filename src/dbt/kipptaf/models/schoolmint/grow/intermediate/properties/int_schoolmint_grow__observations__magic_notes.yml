@@ -1,5 +1,7 @@
 models:
   - name: int_schoolmint_grow__observations__magic_notes
+    config:
+      enabled: false
     columns:
       - name: observation_id
         data_type: string
