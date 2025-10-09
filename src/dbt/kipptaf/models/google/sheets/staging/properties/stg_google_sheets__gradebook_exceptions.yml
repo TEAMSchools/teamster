@@ -1,10 +1,6 @@
 version: 2
 models:
   - name: stg_google_sheets__gradebook_exceptions
-    config:
-      contract:
-        enforced: true
-      tags: google_sheet
     columns:
       - name: academic_year
         data_type: int64
