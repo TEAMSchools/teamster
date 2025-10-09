@@ -6,7 +6,6 @@ select
     scalemax as scale_max,
     isprivate as is_private,
     ispublished as is_published,
-    `order`,
 
     /* records */
     settings,

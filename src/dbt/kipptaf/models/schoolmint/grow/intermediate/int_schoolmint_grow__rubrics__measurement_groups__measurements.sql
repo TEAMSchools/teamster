@@ -9,5 +9,5 @@ select
     m.isprivate as is_private,
     m.require,
     m.exclude,
-from {{ ref("stg_schoolmint_grow__rubrics__measurement_groups") }} as mg
+from {{ ref("int_schoolmint_grow__rubrics__measurement_groups") }} as mg
 cross join unnest(mg.measurements) as m

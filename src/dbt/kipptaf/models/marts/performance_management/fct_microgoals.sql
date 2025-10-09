@@ -14,7 +14,7 @@ with
         where primary_indicator and assignment_status = 'Active' and is_teacher
     ),
 
-    {# using as date scaffold to align with Topline #}
+    /* using as date scaffold to align with Topline */
     calendar as (
         select schoolid, week_start_monday, week_end_sunday,
         from {{ ref("int_powerschool__calendar_week") }}
@@ -27,13 +27,12 @@ with
         from {{ ref("stg_schoolmint_grow__assignments") }}
     ),
 
-    {# need to import to link assignment to microgoal name and categories #}
-    tags as (select *, from {{ ref("stg_schoolmint_grow__assignments__tags") }}),
+    /* need to import to link assignment to microgoal name and categories */
+    tags as (select *, from {{ ref("int_schoolmint_grow__assignments__tags") }}),
 
     microgoals as (select *, from {{ ref("int_schoolmint_grow__microgoals") }}),
 
     final as (
-
         select
             teachers.employee_number,
             teachers.formatted_name,
@@ -42,11 +41,14 @@ with
             teachers.home_work_location_name,
             teachers.home_business_unit_name,
             teachers.home_work_location_powerschool_school_id,
+
             calendar.week_start_monday,
             calendar.week_end_sunday,
+
             assignments.assignment_id,
             assignments.created_date_local,
             assignments.creator_name,
+
             microgoals.tag_name as goal_name,
             microgoals.strand_name,
             microgoals.bucket_name,
