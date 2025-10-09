@@ -111,6 +111,8 @@ models:
         data_type: string
       - name: academic_year
         data_type: int64
+      - name: magic_notes_text
+        data_type: string
       - name: tag_notes_1_tags
         data_type: array<string>
       - name: tag_notes_2_notes
@@ -143,9 +145,6 @@ models:
         data_type: array<string>
       - name: tags
         data_type: array<string>
-      - name: magic_notes
-        data_type: |
-          array<struct<column string, shared boolean, text string, created string, _id string>>
       - name: observation_scores
         data_type: |
           array<struct<measurement string, measurementGroup string, valueText string, percentage float64, valueScore int64, lastModified string, checkboxes array<struct<label string, value boolean>>, textBoxes array<struct<key string, label string, value string>>>>
