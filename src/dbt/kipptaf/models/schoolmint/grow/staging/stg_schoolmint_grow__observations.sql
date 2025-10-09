@@ -82,7 +82,6 @@ with
             dd.tags,
 
             /* repeated records */
-            dd.magicnotes as magic_notes,
             dd.observationscores as observation_scores,
 
             cast(dd.archivedat as timestamp) as archived_at,
