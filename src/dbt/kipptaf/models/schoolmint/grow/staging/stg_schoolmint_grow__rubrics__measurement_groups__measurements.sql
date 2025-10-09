@@ -24,6 +24,6 @@ select
     timestamp(r.created) as created,
     timestamp(r.lastmodified) as last_modified,
 from {{ source("schoolmint_grow", "src_schoolmint_grow__rubrics") }} as r
-cross join unnest(r.measurement_groups) as mg
+cross join unnest(r.measurementgroups) as mg
 cross join unnest(mg.measurements) as m
 where r._dagster_partition_key = 'f'
