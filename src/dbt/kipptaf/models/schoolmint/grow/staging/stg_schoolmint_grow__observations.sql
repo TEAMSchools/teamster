@@ -82,11 +82,8 @@ with
             tags,
 
             /* repeated records */
-            attachments,
             magicnotes as magic_notes,
             observationscores as observation_scores,
-            videonotes as video_notes,
-            videos,
 
             cast(archivedat as timestamp) as archived_at,
             cast(created as timestamp) as created,
@@ -102,8 +99,8 @@ with
                 cast(observedat as timestamp), '{{ var("local_timezone") }}'
             ) as observed_at_date_local,
 
-            array_to_string(listtwocolumna, '|') as glows,
-            array_to_string(listtwocolumnb, '|') as grows,
+            array_to_string(listtwocolumna, '|') as list_two_column_a_str,
+            array_to_string(listtwocolumnb, '|') as list_two_column_b_str,
         from deduplicate
         where _dagster_partition_archived = 'f'
     )

@@ -16,7 +16,6 @@ select
     `name`,
     coachingactivity as coaching_activity,
     excludefrombank as exclude_from_bank,
-    goaltype as goal_type,
     locked,
     `private`,
     `type`,
@@ -26,16 +25,21 @@ select
     user._id as user_id,
     user.name as user_name,
     user.email as user_email,
+
     creator._id as creator_id,
     creator.name as creator_name,
     creator.email as creator_email,
+
     parent._id as parent_id,
     parent.name as parent_name,
+
     progress._id as progress_id,
     progress.assigner as progress_assigner,
     progress.justification as progress_justification,
     progress.percent as progress_percent,
     progress.date as progress_date,
+
+    coalesce(goaltype.string_value, goaltype.ref_value.`name`) as goal_type,
 
     /* repeated records */
     tags,

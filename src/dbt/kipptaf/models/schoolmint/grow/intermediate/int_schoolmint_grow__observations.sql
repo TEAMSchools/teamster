@@ -10,8 +10,8 @@ select
     o.rubric_id,
     o.rubric_name,
     o.score,
-    o.glows,
-    o.grows,
+    o.list_two_column_a_str as glows,
+    o.list_two_column_b_str as grows,
     o.locked,
     o.observed_at,
     o.observed_at_date_local,
@@ -26,6 +26,7 @@ select
     gt.abbreviation as observation_type_abbreviation,
 
     gt2.name as observation_course,
+
     gt3.name as observation_grade,
 
     safe_cast(ut.internal_id as int) as teacher_internal_id,
