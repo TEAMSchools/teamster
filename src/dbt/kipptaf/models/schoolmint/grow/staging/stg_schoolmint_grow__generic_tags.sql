@@ -74,7 +74,6 @@ select
     `name`,
     parent,
     parents,
-    `rows`,
     showondash as show_on_dash,
     tags,
     `type`,
