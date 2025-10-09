@@ -28,7 +28,7 @@ select
 
     m.name as measurement_name,
 
-    mg.measurement_group_name as strand_name,
+    mgm.measurement_group_name as strand_name,
 
     tb.value_clean as measurement_comments,
 from {{ ref("int_performance_management__observations") }} as o
@@ -39,13 +39,9 @@ left join
     {{ ref("stg_schoolmint_grow__measurements") }} as m
     on os.measurement = m.measurement_id
 left join
-    {{ ref("int_schoolmint_grow__rubrics__measurement_groups__measurements") }} as mgm
+    {{ ref("stg_schoolmint_grow__rubrics__measurement_groups__measurements") }} as mgm
     on o.rubric_id = mgm.rubric_id
     and m.measurement_id = mgm.measurement_id
-left join
-    {{ ref("int_schoolmint_grow__rubrics__measurement_groups") }} as mg
-    on mgm.rubric_id = mg.rubric_id
-    and mgm.measurement_group_id = mg.measurement_group_id
 left join
     {{ ref("int_schoolmint_grow__observations__observation_scores__text_boxes") }} as tb
     on os.observation_id = tb.observation_id
