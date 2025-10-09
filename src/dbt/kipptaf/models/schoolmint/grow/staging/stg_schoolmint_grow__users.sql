@@ -5,6 +5,7 @@ select
     email,
     `name`,
     coach,
+    inactive,
 
     /* records */
     defaultinformation.course as default_information_course,

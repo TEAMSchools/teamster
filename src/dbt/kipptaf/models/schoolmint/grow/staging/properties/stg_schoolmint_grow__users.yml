@@ -13,6 +13,8 @@ models:
         data_type: string
       - name: name
         data_type: string
+      - name: inactive
+        data_type: boolean
       - name: internal_id_int
         data_type: int64
       - name: default_information_course
@@ -42,8 +44,6 @@ models:
       #   data_type: string
       # - name: google_id
       #   data_type: string
-      # - name: inactive
-      #   data_type: boolean
       # - name: is_practice_user
       #   data_type: string
       # - name: last
