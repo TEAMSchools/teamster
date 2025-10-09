@@ -1,13 +1,29 @@
 select
-    mg.rubric_id,
-    mg.measurement_group_id,
+    r._id as rubric_id,
+    r.name,
+    r.district,
+    r.scalemin as scale_min,
+    r.scalemax as scale_max,
+    r.isprivate as is_private,
+    r.ispublished as is_published,
 
-    m._id,  /* not documented anywhere - ID of shame */
+    mg._id as measurement_group_id,
+    mg.name as measurement_group_name,
+    mg.key as measurement_group_key,
+    mg.weight as measurement_group_weight,
+    mg.description as measurement_group_description,
+
     m.measurement as measurement_id,
-    m.key,
-    m.weight,
-    m.isprivate as is_private,
-    m.require,
-    m.exclude,
-from {{ ref("stg_schoolmint_grow__rubrics__measurement_groups") }} as mg
+    m.key as measurement_key,
+    m.weight as measurement_weight,
+    m.isprivate as is_private_measurement,
+    m.require as require_measurement,
+    m.exclude as exclude_measurement,
+
+    timestamp(r.archivedat) as archived_at,
+    timestamp(r.created) as created,
+    timestamp(r.lastmodified) as last_modified,
+from {{ source("schoolmint_grow", "src_schoolmint_grow__rubrics") }} as r
+cross join unnest(r.measurementgroups) as mg
 cross join unnest(mg.measurements) as m
+where r._dagster_partition_key = 'f'

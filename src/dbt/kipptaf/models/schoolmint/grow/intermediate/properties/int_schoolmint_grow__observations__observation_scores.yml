@@ -1,6 +1,5 @@
-version: 2
 models:
-  - name: stg_schoolmint_grow__observations__observation_scores
+  - name: int_schoolmint_grow__observations__observation_scores
     columns:
       - name: observation_id
         data_type: string

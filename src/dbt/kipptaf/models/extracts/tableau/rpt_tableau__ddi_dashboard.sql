@@ -197,21 +197,19 @@ with
         select
             u.internal_id_int as employee_number,
 
-            m.goal_name,
+            m.tag_name as goal_name,
 
             date_add(
                 date(timestamp_trunc(timestamp(a.created), week)), interval 1 day
             ) as week_start_monday,
         from {{ ref("stg_schoolmint_grow__users") }} as u
-        left join
+        inner join
             {{ ref("stg_schoolmint_grow__assignments") }} as a on u.user_id = a.user_id
-        left join
-            {{ ref("stg_schoolmint_grow__assignments__tags") }} as t
+        inner join
+            {{ ref("int_schoolmint_grow__assignments__tags") }} as t
             on a.assignment_id = t.assignment_id
-        left join
-            {{ ref("stg_schoolmint_grow__microgoals") }} as m
-            on t.tag_id = m.goal_tag_id
-        where m.goal_code is not null
+        inner join
+            {{ ref("int_schoolmint_grow__microgoals") }} as m on t.tag_id = m.tag_id
     ),
 
     microgoals as (
