@@ -7,10 +7,6 @@ select
     scalemax as scale_max,
     scalemin as scale_min,
 
-    /* repeated records */
-    textboxes as text_boxes,
-    measurementoptions as measurement_options,
-
     cast(created as timestamp) as created,
     cast(lastmodified as timestamp) as last_modified,
     cast(archivedat as timestamp) as archived_at,

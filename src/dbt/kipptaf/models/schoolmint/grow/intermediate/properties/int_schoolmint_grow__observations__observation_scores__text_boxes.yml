@@ -1,6 +1,7 @@
-version: 2
 models:
-  - name: stg_schoolmint_grow__observations__observation_scores__text_boxes
+  - name: int_schoolmint_grow__observations__observation_scores__text_boxes
+    config:
+      enabled: false
     columns:
       - name: observation_id
         data_type: string
