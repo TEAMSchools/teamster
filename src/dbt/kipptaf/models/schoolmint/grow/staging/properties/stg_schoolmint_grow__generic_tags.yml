@@ -21,21 +21,21 @@ models:
         data_type: string
       - name: name
         data_type: string
-      # - name: order
-      #   data_type: int64
       - name: parent
-        data_type: string
-      - name: parents
-        data_type: string
-      - name: rows
         data_type: string
       - name: show_on_dash
         data_type: boolean
-      - name: tags
-        data_type: string
       - name: type
         data_type: string
       - name: url
         data_type: string
       - name: tag_type
         data_type: string
+      - name: parents
+        data_type: array<string>
+      - name: tags
+        data_type: array<string>
+      # - name: order
+      #   data_type: int64
+      # - name: rows
+      #   data_type: string
