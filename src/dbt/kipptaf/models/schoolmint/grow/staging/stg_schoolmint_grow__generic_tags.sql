@@ -72,7 +72,6 @@ select
     district,
     lastmodified as last_modified,
     `name`,
-    `order`,
     parent,
     parents,
     `rows`,
