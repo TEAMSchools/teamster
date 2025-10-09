@@ -206,7 +206,7 @@ with
         left join
             {{ ref("stg_schoolmint_grow__assignments") }} as a on u.user_id = a.user_id
         left join
-            {{ ref("stg_schoolmint_grow__assignments__tags") }} as t
+            {{ ref("int_schoolmint_grow__assignments__tags") }} as t
             on a.assignment_id = t.assignment_id
         left join
             {{ ref("int_schoolmint_grow__microgoals") }} as m on t.tag_id = m.tag_id

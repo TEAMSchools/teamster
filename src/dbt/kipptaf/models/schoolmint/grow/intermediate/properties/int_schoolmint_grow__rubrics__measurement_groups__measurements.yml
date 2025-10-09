@@ -1,5 +1,5 @@
 models:
-  - name: stg_schoolmint_grow__rubrics__measurement_groups__measurements
+  - name: int_schoolmint_grow__rubrics__measurement_groups__measurements
     columns:
       - name: rubric_id
         data_type: string

@@ -1,7 +1,7 @@
 with
     magic_notes as (
-        select observation_id, string_agg(text, '; ') as magic_notes_text,
-        from {{ ref("stg_schoolmint_grow__observations__magic_notes") }}
+        select observation_id, string_agg(`text`, '; ') as magic_notes_text,
+        from {{ ref("int_schoolmint_grow__observations__magic_notes") }}
         group by observation_id
     )
 

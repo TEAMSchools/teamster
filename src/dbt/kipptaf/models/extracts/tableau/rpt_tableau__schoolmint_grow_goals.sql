@@ -51,7 +51,7 @@ left join
     on u.user_id = a.user_id
     and a.created_date_local between rt.start_date and rt.end_date
 left join
-    {{ ref("stg_schoolmint_grow__assignments__tags") }} as t
+    {{ ref("int_schoolmint_grow__assignments__tags") }} as t
     on a.assignment_id = t.assignment_id
 left join {{ ref("int_schoolmint_grow__microgoals") }} as m on t.tag_id = m.tag_id
 left join
@@ -60,7 +60,8 @@ left join
     and rt.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 where
-    srh.job_title in (
+    srh.assignment_status = 'Active'
+    and srh.job_title in (
         'Teacher',
         'Teacher in Residence',
         'ESE Teacher',
@@ -68,4 +69,3 @@ where
         'Teacher ESL',
         'Teacher in Residence ESL'
     )
-    and srh.assignment_status = 'Active'

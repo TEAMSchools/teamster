@@ -15,8 +15,8 @@ models:
         data_type: boolean
       - name: is_published
         data_type: boolean
-      - name: order
-        data_type: int64
+      # - name: order
+      #   data_type: int64
       - name: settings
         data_type: record
       - name: settings.actionstep
