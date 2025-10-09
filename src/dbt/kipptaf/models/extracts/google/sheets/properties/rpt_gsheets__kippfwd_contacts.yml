@@ -2,33 +2,17 @@ version: 2
 models:
   - name: rpt_gsheets__kippfwd_contacts
     columns:
-      - name: currently enrolled school
+      - name: contact__c
         data_type: string
-      - name: last name
+      - name: subject__c
         data_type: string
-      - name: first name
+      - name: comments__c
         data_type: string
-      - name: salesforce id
+      - name: next_steps__c
         data_type: string
-      - name: hs cohort
-        data_type: int64
-      - name: birthdate
+      - name: date__c
         data_type: string
-      - name: subject
+      - name: status__c
         data_type: string
-      - name: comments
+      - name: type__c
         data_type: string
-      - name: next steps
-        data_type: string
-      - name: dlcall_log_id
-        data_type: int64
-      - name: contact date
-        data_type: string
-      - name: status
-        data_type: string
-      - name: type
-        data_type: string
-      - name: category
-        data_type: int64
-      - name: current category ranking
-        data_type: int64
