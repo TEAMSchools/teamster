@@ -142,6 +142,29 @@ with
             end as is_proficient,
         from {{ ref("int_renlearn__star_rollup") }}
         where rn_subj_round = 1 and screening_period_window_name = 'Fall'
+
+        union all
+        /* SAT/PSAT */
+        select
+            student_number,
+
+            if(subject_area = 'EBRW', 'ELA', subject_area) as discipline,
+
+            'PSAT' as assessment_name,
+
+            academic_year + 1 as academic_year_join,
+            case
+                when subject_area = 'EBRW' and scale_score >= 430
+                then true
+                when subject_area = 'Math' and scale_score >= 480
+                then true
+                when subject_area = 'EBRW' and scale_score < 430
+                then false
+                when subject_area = 'Math' and scale_score < 480
+                then false
+            end as is_proficient,
+        from {{ ref("int_assessments__college_assessment") }}
+        where scope = 'PSAT NMSQT' and subject_area in ('EBRW', 'Math')
     ),
 
     assessment_pivot as (
@@ -156,6 +179,7 @@ with
             fast_pm1,
             fast_pm3,
             njsla,
+            psat,
         from
             assessment_union pivot (
                 max(is_proficient) for assessment_name in (
@@ -166,9 +190,22 @@ with
                     'i-Ready BOY Proficient With Typical' as iready_proficient_typical,
                     'FAST PM1' as fast_pm1,
                     'FAST PM3' as fast_pm3,
-                    'NJSLA' as njsla
+                    'NJSLA' as njsla,
+                    'PSAT' as psat
                 )
             )
+    ),
+
+    {# TODO: Date limiters#}
+    bucket_programs as (
+        select
+            _dbt_source_relation,
+            studentid,
+            academic_year,
+            trim(split(specprog_name, '-')[offset(0)]) as bucket,
+            trim(split(specprog_name, '-')[offset(1)]) as discipline,
+        from {{ ref("int_powerschool__spenrollments") }}
+        where specprog_name like 'Bucket%'
     )
 
 select
@@ -200,14 +237,27 @@ select
             and co.grade_level < 11
             and coalesce(njsla, iready_proficient_typical)
         then 'Bucket 1'
-    /* FL */
-    end as test_case,
+        when co.region in ('Camden', 'Newark') and co.grade_level = 11 and psat
+        then 'Bucket 1'
+        when bp.bucket = 'Bucket 2'
+        then bp.bucket
+        when bp.bucket = 'Bucket 3'
+        then bp.bucket
+        else 'Bucket 4'
+    end as bucket,
+/* FL */
 from {{ ref("int_extracts__student_enrollments_subjects") }} as co
 left join
     assessment_pivot as ap
     on co.academic_year = ap.academic_year_join
     and co.student_number = ap.student_number
     and co.discipline = ap.discipline
+left join
+    bucket_programs as bp
+    on co.studentid = bp.studentid
+    and co.academic_year = bp.academic_year
+    and co.discipline = bp.discipline
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="bp") }}
 where
     co.rn_year = 1
     and co.grade_level != 99
