@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: rpt_tableau__college_assessment_dashboard_roster
+    config:
+      contract:
+        enforced: true
     columns:
       - name: region
         data_type: string
