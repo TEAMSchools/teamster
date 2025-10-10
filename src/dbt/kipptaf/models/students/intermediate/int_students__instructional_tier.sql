@@ -260,5 +260,5 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="bp") }}
 where
     co.rn_year = 1
-    and co.grade_level != 99
+    and co.grade_level between 0 and 11
     and co.academic_year = {{ var("current_academic_year") }}
