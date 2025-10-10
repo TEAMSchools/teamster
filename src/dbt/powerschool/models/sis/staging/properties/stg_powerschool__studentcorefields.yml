@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__studentcorefields
-    config:
-      contract:
-        enforced: true
     columns:
       - name: act_composite
         data_type: string

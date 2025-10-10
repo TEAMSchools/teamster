@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__gradeschoolformulaassoc
-    config:
-      contract:
-        enforced: true
     columns:
       - name: whocreated
         data_type: string

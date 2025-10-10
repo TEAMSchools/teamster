@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__sectionteacher
-    config:
-      contract:
-        enforced: true
     columns:
       - name: start_date
         data_type: timestamp

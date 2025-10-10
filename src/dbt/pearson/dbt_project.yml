@@ -31,3 +31,6 @@ vars:
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
   +schema: pearson
+  staging:
+    +contract:
+      enforced: true
