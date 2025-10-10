@@ -127,6 +127,7 @@ with
         inner join
             {{ ref("int_students__college_assessment_roster") }} as r
             on e.student_number = r.student_number
+            and e.academic_year = r.academic_year
             and {{ union_dataset_join_clause(left_alias="e", right_alias="r") }}
             and r.test_type is not null
         left join
@@ -166,11 +167,17 @@ with
             r.scope,
             r.subject_area,
             r.score_type,
+            r.scale_score,
+            r.max_scale_score,
+            r.running_max_scale_score,
+            r.superscore,
+            r.running_superscore,
             bg.expected_metric_name,
             bg.min_score,
             bg.pct_goal
     )
 
-select *, if(score >= expected_metric_min_score, 1, 0) as met_min_score_int,
+select
+    *, if(max_comparison_score >= expected_metric_min_score, 1, 0) as met_min_score_int,
 
 from roster
