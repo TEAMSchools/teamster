@@ -1,10 +1,5 @@
-version: 2
 models:
   - name: stg_google_sheets__kippfwd_goals
-    config:
-      contract:
-        enforced: true
-      tags: google_sheet
     columns:
       - name: region
         data_type: string
@@ -32,3 +27,5 @@ models:
         data_type: int64
       - name: pct_goal
         data_type: float64
+      - name: expected_score_type
+        data_type: string

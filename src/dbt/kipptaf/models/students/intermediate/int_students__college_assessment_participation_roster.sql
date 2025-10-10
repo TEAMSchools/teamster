@@ -15,7 +15,6 @@ with
     completion_goals as (
         select
             expected_test_type,
-            'join' as fake_key,
 
             {% for completion in comparison_completion %}
                 avg(
@@ -103,7 +102,6 @@ with
             students_dcid,
             salesforce_id,
             grade_level,
-            'join' as fake_key,
 
             sum(psat89_count) as psat89_count,
             sum(psat10_count) as psat10_count,
@@ -122,7 +120,7 @@ with
     )
 
 select
-    y.* except (fake_key),
+    y.*,
 
     c.act_group_1_min_score,
     c.act_group_1_pct_goal,
@@ -166,4 +164,4 @@ select
     ) as act_count_ytd,
 
 from yearly_test_counts as y
-left join completion_goals as c on y.fake_key = c.fake_key
+cross join completion_goals as c

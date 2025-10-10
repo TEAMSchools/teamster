@@ -101,10 +101,6 @@ models:
       +schema: deanslist
     edplan:
       +schema: edplan
-    egencia:
-      +schema: egencia
-      staging:
-        +materialized: table
     extracts:
       +schema: extracts
       tableau:
@@ -149,6 +145,11 @@ models:
             group: google_sheets
         staging:
           +materialized: table
+          +contract:
+            enforced: true
+          +meta:
+            dagster:
+              tags: google_sheet
         intermediate:
           +materialized: table
         disabled:
@@ -224,8 +225,8 @@ models:
         +schema: schoolmint_grow
         staging:
           +materialized: table
-        disabled:
-          +enabled: false
+          +contract:
+            enforced: true
     smartrecruiters:
       +schema: smartrecruiters
     students:

@@ -1,0 +1,71 @@
+version: 2
+models:
+  - name: rpt_gsheets__csgf_enrollment
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: total_instructional_days
+        data_type: float64
+      - name: total_budgeted_enrollment
+        data_type: int64
+      - name: enrollment_k
+        data_type: int64
+      - name: enrollment_1st
+        data_type: int64
+      - name: enrollment_2nd
+        data_type: int64
+      - name: enrollment_3rd
+        data_type: int64
+      - name: enrollment_4th
+        data_type: int64
+      - name: enrollment_5th
+        data_type: int64
+      - name: enrollment_6th
+        data_type: int64
+      - name: enrollment_7th
+        data_type: int64
+      - name: enrollment_8th
+        data_type: int64
+      - name: enrollment_9th
+        data_type: int64
+      - name: enrollment_10th
+        data_type: int64
+      - name: enrollment_11th
+        data_type: int64
+      - name: enrollment_12th
+        data_type: int64
+      - name: ai_an_count
+        data_type: int64
+      - name: asian_count
+        data_type: int64
+      - name: bl_aa_count
+        data_type: int64
+      - name: hispanic_or_latino_count
+        data_type: int64
+      - name: nh_opi_count
+        data_type: int64
+      - name: twoplus_races_count
+        data_type: int64
+      - name: white_count
+        data_type: int64
+      - name: dts_count
+        data_type: int64
+      - name: iep_count
+        data_type: int64
+      - name: ell_count
+        data_type: int64
+      - name: frl_count
+        data_type: int64
+      - name: retention_numerator
+        data_type: int64
+      - name: retention_denominator
+        data_type: int64
+      - name: grade_levels_served
+        data_type: string
+      - name: race_ethnicity_of_primary_leader
+        data_type: string
+      - name: gender_of_primary_leader
+        data_type: string
+      - name: school
+        data_type: string

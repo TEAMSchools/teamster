@@ -398,12 +398,12 @@ exposures:
       dagster:
         kinds:
           - googlesheets
-  - name: deans_list_contact_notes_feed
-    label: DeansList Contact Notes Feed
+  - name: Unified KFWD Processes Document
+    label: unified_kfwd_processes_document
     type: application
     owner:
       name: Data Team
-    url: https://docs.google.com/spreadsheets/d/1yHIDXrE7p2H33YT2_tXaRcZh8E-hIaQSfP_metbAMBs
+    url: https://docs.google.com/spreadsheets/d/1mX5SnRvMXU-Gbm07raHA3UkEhvo0zhqffz0uah1GSHE
     depends_on:
       - ref("rpt_gsheets__kippfwd_contacts")
     meta:
@@ -556,6 +556,24 @@ exposures:
     url: https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs/
     depends_on:
       - ref("rpt_gsheets__dibels_bm_goals_calculations")
+    meta:
+      dagster:
+        kinds:
+          - googlesheets
+  - name: csgf_data
+    label: CSGF Data
+    type: analysis
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1rbPI03qTMMv3NVC1_1rjodBq3Cd8mktd5Fwosy2AxuM
+    depends_on:
+      - ref("rpt_gsheets__csgf_enrollment")
+      - ref("rpt_gsheets__csgf_hs_act")
+      - ref("rpt_gsheets__csgf_hs_ap_offerings")
+      - ref("rpt_gsheets__csgf_hs_ap_scores")
+      - ref("rpt_gsheets__csgf_hs_enrollment")
+      - ref("rpt_gsheets__csgf_hs_grad_data")
+      - ref("rpt_gsheets__csgf_hs_sat")
     meta:
       dagster:
         kinds:

@@ -10,9 +10,135 @@ with
             a.subject_area as expected_subject_area,
             a.score_type as expected_score_type,
 
+<<<<<<< HEAD
             e.grade_level as expected_grade_level,
 
         from {{ ref("int_assessments__college_assessment") }} as a
+=======
+            {% for benchmark in comparison_benchmarks %}
+                avg(
+                    case when goal_subtype = '{{ benchmark.label }}' then min_score end
+                ) as {{ benchmark.prefix }}_score,
+                avg(
+                    case when goal_subtype = '{{ benchmark.label }}' then pct_goal end
+                ) as {{ benchmark.prefix }}_goal
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
+
+        from {{ ref("stg_google_sheets__kippfwd_goals") }}
+        where
+            expected_test_type = 'Official'
+            and goal_type = 'Benchmark'
+            and expected_subject_area in ('Composite', 'Combined')
+        group by expected_test_type, expected_scope, expected_subject_area
+    ),
+
+    board_goals as (
+        select
+            expected_test_type,
+            expected_scope,
+            expected_subject_area,
+            grade_level,
+
+            {% for board_goal in comparison_board_goals %}
+                avg(
+                    case
+                        when goal_category = '{{ board_goal.label }}' then min_score
+                    end
+                ) as {{ board_goal.prefix }}_score,
+                avg(
+                    case when goal_category = '{{ board_goal.label }}' then pct_goal end
+                ) as {{ board_goal.prefix }}_goal
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
+
+        from {{ ref("stg_google_sheets__kippfwd_goals") }}
+        where
+            expected_test_type = 'Official'
+            and goal_type = 'Board'
+            and expected_subject_area in ('Composite', 'Combined')
+        group by expected_test_type, expected_scope, expected_subject_area, grade_level
+    ),
+
+    scores as (
+        select
+            e._dbt_source_relation,
+            e.academic_year,
+            e.student_number,
+            e.studentid,
+            e.students_dcid,
+            e.salesforce_id,
+            e.grade_level,
+
+            a.administration_round,
+            a.test_type,
+            a.test_date,
+            a.test_month,
+            a.scope,
+            a.subject_area,
+            a.course_discipline,
+            a.score_type,
+            a.scale_score,
+            a.previous_total_score_change,
+            a.rn_highest,
+            a.max_scale_score,
+            a.superscore,
+
+            bg.hs_ready_score as hs_ready_min_score,
+            bg.college_ready_score as college_ready_min_score,
+            bg.hs_ready_goal,
+            bg.college_ready_goal,
+
+            case
+                a.scope
+                when 'ACT'
+                then bd.pct_16_plus_score
+                when 'SAT'
+                then bd.pct_880_plus_score
+            end as pct_16_880_min_score,
+
+            case
+                a.scope
+                when 'ACT'
+                then bd.pct_17_plus_score
+                when 'SAT'
+                then bd.pct_890_plus_score
+            end as pct_17_890_min_score,
+
+            case
+                a.scope
+                when 'ACT'
+                then bd.pct_21_plus_score
+                when 'SAT'
+                then bd.pct_1010_plus_score
+            end as pct_21_1010_min_score,
+
+            case
+                a.scope
+                when 'ACT'
+                then bd.pct_16_plus_goal
+                when 'SAT'
+                then bd.pct_880_plus_goal
+            end as pct_16_880_goal,
+
+            case
+                a.scope
+                when 'ACT'
+                then bd.pct_17_plus_goal
+                when 'SAT'
+                then bd.pct_890_plus_goal
+            end as pct_17_890_goal,
+
+            case
+                a.scope
+                when 'ACT'
+                then bd.pct_21_plus_goal
+                when 'SAT'
+                then bd.pct_1010_plus_goal
+            end as pct_21_1010_goal,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+>>>>>>> 72ea9304abd0b3f263b80b4f49c76b580b7064dc
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
             on a.academic_year = e.academic_year

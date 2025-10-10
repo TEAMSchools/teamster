@@ -9,7 +9,7 @@ select
     ir.n_lessons_passed_y1,
 
     dt.term_id as dl_term_id,
-from {{ ref("int_topline__iready_lessons_weeks") }} as ir
+from {{ ref("int_topline__iready_lessons_weekly") }} as ir
 inner join
     {{ ref("stg_deanslist__terms") }} as dt
     on ir.deanslist_school_id = dt.school_id
