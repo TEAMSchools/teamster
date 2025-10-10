@@ -72,14 +72,13 @@ select
     district,
     lastmodified as last_modified,
     `name`,
-    `order`,
     parent,
     parents,
-    `rows`,
     showondash as show_on_dash,
     tags,
     `type`,
     `url`,
+
     regexp_extract(
         _dbt_source_relation, r'src_schoolmint_grow__generic_tags_(\w+)'
     ) as tag_type,

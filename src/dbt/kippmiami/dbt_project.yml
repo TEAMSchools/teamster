@@ -28,6 +28,8 @@ models:
   kippmiami:
     extracts:
       +schema: extracts
+      +contract:
+        enforced: true
     fldoe:
       +schema: fldoe
       +materialized: table

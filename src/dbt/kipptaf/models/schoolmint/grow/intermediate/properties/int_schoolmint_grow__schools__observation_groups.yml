@@ -1,0 +1,4 @@
+models:
+  - name: int_schoolmint_grow__schools__observation_groups
+    config:
+      enabled: false

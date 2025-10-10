@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__gradebook_gpa_cumulative
     columns:
@@ -18,10 +17,6 @@ models:
         data_type: string
       - name: ethnicity
         data_type: string
-      - name: academic_year
-        data_type: int64
-      - name: academic_year_display
-        data_type: string
       - name: yearid
         data_type: int64
       - name: region
@@ -32,8 +27,6 @@ models:
         data_type: int64
       - name: school
         data_type: string
-      - name: grade_level
-        data_type: int64
       - name: advisory
         data_type: string
       - name: year_in_school
@@ -74,8 +67,6 @@ models:
         data_type: string
       - name: cumulative_y1_gpa
         data_type: numeric
-      - name: gpa_cumulative_y1_gpa_unweighted
-        data_type: numeric
       - name: cumulative_y1_gpa_unweighted
         data_type: numeric
       - name: cumulative_y1_gpa_projected
@@ -84,5 +75,19 @@ models:
         data_type: numeric
       - name: cumulative_y1_gpa_projected_s1_unweighted
         data_type: numeric
-      - name: ada
-        data_type: numeric
+      - name: core_cumulative_y1_gpa
+        data_type: float64
+      - name: cumulative_y1_gpa
+        data_type: float64
+      - name: cumulative_y1_gpa_projected
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_s1
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_s1_unweighted
+        data_type: float64
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+      - name: most_recent_ada
+        data_type: float64
+      - name: most_recent_grade_level
+        data_type: int64
