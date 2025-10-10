@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: rpt_deanslist__mod_standards_domains
-    config:
-      contract:
-        enforced: true
     columns:
       - name: report_type
         data_type: string

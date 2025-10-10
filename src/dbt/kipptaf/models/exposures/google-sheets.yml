@@ -398,12 +398,12 @@ exposures:
       dagster:
         kinds:
           - googlesheets
-  - name: deans_list_contact_notes_feed
-    label: DeansList Contact Notes Feed
+  - name: unified_kfwd_processes_document
+    label: Unified KFWD Processes Document
     type: application
     owner:
       name: Data Team
-    url: https://docs.google.com/spreadsheets/d/1yHIDXrE7p2H33YT2_tXaRcZh8E-hIaQSfP_metbAMBs
+    url: https://docs.google.com/spreadsheets/d/1mX5SnRvMXU-Gbm07raHA3UkEhvo0zhqffz0uah1GSHE
     depends_on:
       - ref("rpt_gsheets__kippfwd_contacts")
     meta:

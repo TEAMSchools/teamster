@@ -1,0 +1,161 @@
+models:
+  - name: rpt_tableau__college_assessment_dashboard_v3
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: academic_year_display
+        data_type: string
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: student_first_name
+        data_type: string
+      - name: student_last_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: enroll_status
+        data_type: int64
+      - name: cohort
+        data_type: int64
+      - name: iep_status
+        data_type: string
+      - name: is_504
+        data_type: boolean
+      - name: grad_iep_exempt_status_overall
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: gifted_and_talented
+        data_type: string
+      - name: advisory
+        data_type: string
+      - name: student_email
+        data_type: string
+      - name: rn_undergrad
+        data_type: int64
+      - name: salesforce_id
+        data_type: string
+      - name: ktc_cohort
+        data_type: int64
+      - name: graduation_year
+        data_type: int64
+      - name: year_in_network
+        data_type: int64
+      - name: contact_owner_name
+        data_type: string
+      - name: college_match_gpa
+        data_type: numeric
+      - name: college_match_gpa_bands
+        data_type: string
+      - name: cumulative_y1_gpa
+        data_type: float64
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+      - name: cumulative_y1_gpa_projected
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_s1
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_s1_unweighted
+        data_type: float64
+      - name: core_cumulative_y1_gpa
+        data_type: float64
+      - name: administration_round
+        data_type: string
+      - name: test_type
+        data_type: string
+      - name: test_date
+        data_type: date
+      - name: test_month
+        data_type: string
+      - name: scope
+        data_type: string
+      - name: subject_area
+        data_type: string
+      - name: course_discipline
+        data_type: string
+      - name: score_type
+        data_type: string
+      - name: scale_score
+        data_type: numeric
+      - name: previous_total_score_change
+        data_type: numeric
+      - name: rn_highest
+        data_type: int64
+      - name: max_scale_score
+        data_type: numeric
+      - name: superscore
+        data_type: numeric
+      - name: running_max_scale_score
+        data_type: numeric
+      - name: running_superscore
+        data_type: numeric
+      - name: hs_ready_min_score
+        data_type: float64
+      - name: college_ready_min_score
+        data_type: float64
+      - name: pct_16_880_min_score
+        data_type: float64
+      - name: pct_17_890_min_score
+        data_type: float64
+      - name: pct_21_1010_min_score
+        data_type: float64
+      - name: hs_ready_goal
+        data_type: float64
+      - name: college_ready_goal
+        data_type: float64
+      - name: pct_16_880_goal
+        data_type: float64
+      - name: pct_17_890_goal
+        data_type: float64
+      - name: pct_21_1010_goal
+        data_type: float64
+      - name: act_count_ytd
+        data_type: int64
+      - name: act_count
+        data_type: int64
+      - name: act_group_1_goal
+        data_type: float64
+      - name: act_group_2_plus_goal
+        data_type: float64
+      - name: psat89_count_ytd
+        data_type: int64
+      - name: psat89_count
+        data_type: int64
+      - name: psat89_group_1_goal
+        data_type: float64
+      - name: psat89_group_2_plus_goal
+        data_type: float64
+      - name: psat10_count_ytd
+        data_type: int64
+      - name: psat10_count
+        data_type: int64
+      - name: psat10_group_1_goal
+        data_type: float64
+      - name: psat10_group_2_plus_goal
+        data_type: float64
+      - name: psatnmsqt_count_ytd
+        data_type: int64
+      - name: psatnmsqt_count
+        data_type: int64
+      - name: psatnmsqt_group_1_goal
+        data_type: float64
+      - name: psatnmsqt_group_2_plus_goal
+        data_type: float64
+      - name: sat_count_ytd
+        data_type: int64
+      - name: sat_count
+        data_type: int64
+      - name: sat_group_1_goal
+        data_type: float64
+      - name: sat_group_2_plus_goal
+        data_type: float64
+      - name: test_admin_for_roster
+        data_type: string

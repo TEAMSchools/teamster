@@ -1,8 +1,5 @@
 models:
   - name: rpt_clever__students
-    config:
-      contract:
-        enforced: true
     columns:
       - name: last_name
         data_type: string

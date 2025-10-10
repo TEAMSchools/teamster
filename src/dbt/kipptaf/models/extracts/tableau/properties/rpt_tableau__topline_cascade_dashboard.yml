@@ -1,0 +1,61 @@
+models:
+  - name: rpt_tableau__topline_cascade_dashboard
+    columns:
+      - name: metric_type
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: layer
+        data_type: string
+      - name: indicator
+        data_type: string
+      - name: discipline
+        data_type: string
+      - name: term
+        data_type: date
+      - name: term_end
+        data_type: date
+      - name: is_current_week
+        data_type: boolean
+      - name: indicator_display
+        data_type: string
+      - name: org_level
+        data_type: string
+      - name: has_goal
+        data_type: boolean
+      - name: goal_type
+        data_type: string
+      - name: goal_direction
+        data_type: string
+      - name: aggregation_data_type
+        data_type: string
+      - name: aggregation_type
+        data_type: string
+      - name: aggregation_hash
+        data_type: string
+      - name: aggregation_display
+        data_type: string
+      - name: goal
+        data_type: numeric
+      - name: metric_aggregate_value
+        data_type: float64
+      - name: metric_aggregate_value_numeric
+        data_type: float64
+      - name: metric_aggregate_value_integer
+        data_type: float64
+      - name: is_goal_met
+        data_type: boolean
+      - name: goal_difference_percent
+        data_type: float64
+      - name: progress_to_goal_pct
+        data_type: float64
+      - name: region
+        data_type: string
+      - name: hos_name
+        data_type: string
+      - name: mdso_name
+        data_type: string
