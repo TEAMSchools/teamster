@@ -5,3 +5,61 @@ models:
       contract:
         enforced: true
     columns:
+      - name: academic_year
+        data_type: int64
+      - name: academic_year_display
+        data_type: string
+      - name: state
+        data_type: string
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: grade_level
+        data_type: int64
+      - name: enroll_status
+        data_type: int64
+      - name: iep_status
+        data_type: string
+      - name: is_504
+        data_type: boolean
+      - name: grad_iep_exempt_status_overall
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: ktc_cohort
+        data_type: int64
+      - name: graduation_year
+        data_type: int64
+      - name: year_in_network
+        data_type: int64
+      - name: expected_test_type
+        data_type: string
+      - name: expected_scope
+        data_type: string
+      - name: expected_subject_area
+        data_type: string
+      - name: expected_score_type
+        data_type: string
+      - name: test_type
+        data_type: string
+      - name: scope
+        data_type: string
+      - name: subject_area
+        data_type: string
+      - name: score_type
+        data_type: string
+      - name: expected_metric_name
+        data_type: string
+      - name: expected_metric_min_score
+        data_type: int64
+      - name: expected_metric_pct_goal
+        data_type: float64
+      - name: score
+        data_type: numeric
+      - name: met_min_score_int
+        data_type: int64
