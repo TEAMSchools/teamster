@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__gradesectionconfig
-    # config:
-    #   contract:
-    #     enforced: true
     columns:
       - name: type
         data_type: string

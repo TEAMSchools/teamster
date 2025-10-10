@@ -1,10 +1,9 @@
-version: 2
 models:
   - name: stg_powerschool__gpversion
     config:
-      contract:
-        enforced: true
       enabled: false
+      contract:
+        enforced: false
     columns:
       - name: gpamethod
         data_type: string

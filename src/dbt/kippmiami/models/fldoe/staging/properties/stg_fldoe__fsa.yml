@@ -1,10 +1,9 @@
-version: 2
 models:
   - name: stg_fldoe__fsa
     config:
       enabled: false
       contract:
-        enforced: true
+        enforced: false
     columns:
       - name: district_id
         data_type: int64

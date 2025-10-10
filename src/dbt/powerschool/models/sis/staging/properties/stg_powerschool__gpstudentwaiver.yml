@@ -1,10 +1,9 @@
-version: 2
 models:
   - name: stg_powerschool__gpstudentwaiver
     config:
-      contract:
-        enforced: true
       enabled: false
+      contract:
+        enforced: false
     columns:
       - name: authorizedby
         data_type: string

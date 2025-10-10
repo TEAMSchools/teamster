@@ -115,7 +115,9 @@ with
         union all
 
         select
-            '{{ ref("int_dayforce__employee_history") }}' as _dbt_source_relation,
+            '{{ source("dayforce", "int_dayforce__employee_history") }}'
+            as _dbt_source_relation,
+
             null as associate_oid,
 
             effective_end_date as effective_date_end,
@@ -219,7 +221,7 @@ with
             manager_employee_number as reports_to_employee_number,
             effective_start_date as effective_date_start,
             effective_start_timestamp as effective_date_start_timestamp,
-        from {{ ref("int_dayforce__employee_history") }}
+        from {{ source("dayforce", "int_dayforce__employee_history") }}
     )
 
 select

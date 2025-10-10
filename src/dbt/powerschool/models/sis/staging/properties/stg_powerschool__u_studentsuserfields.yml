@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__u_studentsuserfields
-    # config:
-    #   contract:
-    #     enforced: true
     columns:
       - name: studentsdcid
         data_type: int64

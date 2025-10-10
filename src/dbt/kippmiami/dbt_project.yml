@@ -33,6 +33,9 @@ models:
     fldoe:
       +schema: fldoe
       +materialized: table
+      staging:
+        +contract:
+          enabled: true
   deanslist:
     +materialized: table
     staging:
