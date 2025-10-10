@@ -273,3 +273,15 @@ models:
         data_type: numeric
       - name: oct_24_psat_nmsqt_combined_official_previous_total_score_change
         data_type: numeric
+      - name: mar_25_sat_combined_official_previous_total_score_change
+        data_type: numeric
+      - name: mar_25_sat_combined_official_scale_score
+        data_type: numeric
+      - name: mar_25_sat_ebrw_official_previous_total_score_change
+        data_type: numeric
+      - name: mar_25_sat_ebrw_official_scale_score
+        data_type: numeric
+      - name: mar_25_sat_math_official_previous_total_score_change
+        data_type: numeric
+      - name: mar_25_sat_math_official_scale_score
+        data_type: numeric
