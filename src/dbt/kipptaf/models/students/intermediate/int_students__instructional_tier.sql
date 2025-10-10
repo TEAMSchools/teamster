@@ -142,6 +142,33 @@ with
             end as is_proficient,
         from {{ ref("int_renlearn__star_rollup") }}
         where rn_subj_round = 1 and screening_period_window_name = 'Fall'
+    ),
+
+    assessment_pivot as (
+        select
+            academic_year_join,
+            student_number,
+            discipline,
+            iready_projected_proficient_typical,
+            star_boy,
+            star_eoy,
+            iready_proficient_typical,
+            fast_pm1,
+            fast_pm3,
+            njsla,
+        from
+            assessment_union pivot (
+                max(is_proficient) for assessment_name in (
+                    'i-Ready BOY Projected Proficient With Typical'
+                    as iready_projected_proficient_typical,
+                    'Star BOY' as star_boy,
+                    'Star EOY' as star_eoy,
+                    'i-Ready BOY Proficient With Typical' as iready_proficient_typical,
+                    'FAST PM1' as fast_pm1,
+                    'FAST PM3' as fast_pm3,
+                    'NJSLA' as njsla
+                )
+            )
     )
 
 select
@@ -151,12 +178,37 @@ select
     co.region,
     co.discipline,
 
-    au.assessment_name,
-    au.is_proficient,
+    case
+        /* NJ */
+        when
+            co.region in ('Camden', 'Newark')
+            and co.grade_level < 3
+            and iready_proficient_typical
+        then 'Bucket 1'
+        when
+            co.region in ('Camden', 'Newark')
+            and co.grade_level = 3
+            and iready_projected_proficient_typical
+        then 'Bucket 1'
+        when
+            co.region in ('Camden', 'Newark')
+            and co.grade_level < 9
+            and coalesce(njsla, iready_projected_proficient_typical)
+        then 'Bucket 1'
+        when
+            co.region in ('Camden', 'Newark')
+            and co.grade_level < 11
+            and coalesce(njsla, iready_proficient_typical)
+        then 'Bucket 1'
+    /* FL */
+    end as test_case,
 from {{ ref("int_extracts__student_enrollments_subjects") }} as co
 left join
-    assessment_union as au
-    on co.academic_year = au.academic_year_join
-    and co.student_number = au.student_number
-    and co.discipline = au.discipline
-where co.rn_year = 1
+    assessment_pivot as ap
+    on co.academic_year = ap.academic_year_join
+    and co.student_number = ap.student_number
+    and co.discipline = ap.discipline
+where
+    co.rn_year = 1
+    and co.grade_level != 99
+    and co.academic_year = {{ var("current_academic_year") }}
