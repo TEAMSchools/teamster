@@ -13,7 +13,7 @@ ENV UV_COMPILE_BYTECODE=1
 # trunk-ignore(hadolint/DL3008)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        openssh-client sshpass \
+        openssh-client sshpass build-essential \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -g 1234 teamster \
