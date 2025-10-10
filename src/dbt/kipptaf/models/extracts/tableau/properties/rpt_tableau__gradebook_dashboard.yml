@@ -1,8 +1,9 @@
-version: 2
 models:
   - name: rpt_tableau__gradebook_dashboard
     config:
       enabled: false
+      contract:
+        enforced: false
     columns:
       - name: student_number
         data_type: int64

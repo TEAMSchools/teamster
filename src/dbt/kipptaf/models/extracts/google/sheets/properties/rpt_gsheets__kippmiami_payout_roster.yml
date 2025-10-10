@@ -1,8 +1,9 @@
-version: 2
 models:
   - name: rpt_gsheets__kippmiami_payout_roster
     config:
       enabled: false
+      contract:
+        enforced: false
     columns:
       - name: academic_year
         data_type: int64
