@@ -29,7 +29,7 @@ with
 
         from {{ ref("stg_google_sheets__kippfwd_goals") }}
         where expected_test_type = 'Official' and goal_type = 'Attempts'
-    ),,
+    ),
 
     attempts as (
         select
@@ -74,89 +74,6 @@ with
 
         from attempts
         group by _dbt_source_relation, student_number, scope
-    ),
-
-    expected_admin_metrics as (
-        -- create a list of all possible scores
-        select distinct
-            r.surrogate_key,
-            r.expected_test_academic_year,
-            r.expected_test_type,
-            r.expected_test_date,
-            r.expected_test_month,
-            r.expected_scope,
-            r.expected_subject_area,
-            r.expected_score_type,
-            r.expected_grade_level,
-            r.expected_test_admin_for_over_time,
-            r.expected_admin_order,
-
-            expected_metric_name,
-
-            expected_score_category,
-
-            case
-                expected_metric_name
-                when 'HS-Ready'
-                then bg.hs_ready_min_score
-                when 'College-Ready'
-                then bg.college_ready_min_score
-            end as expected_metric_min_score,
-
-            case
-                expected_metric_name
-                when 'HS-Ready'
-                then bg.hs_ready_pct_goal
-                when 'College-Ready'
-                then bg.college_ready_pct_goal
-            end as expected_metric_pct_goal,
-
-        from {{ ref("int_students__college_assessment_roster") }} as r
-        cross join unnest(['HS-Ready', 'College-Ready']) as expected_metric_name
-        cross join
-            unnest(
-                [
-                    'Scale Score',
-                    'Max Scale Score',
-                    'Superscore',
-                    'Running Max Scale Score',
-                    'Running Superscore'
-                ]
-            ) as expected_score_category
-        -- must be left join because not all score types have goals
-        left join
-            benchmark_goals as bg
-            on r.expected_test_type = bg.expected_test_type
-            and r.expected_scope = bg.expected_scope
-            and r.expected_score_type = bg.expected_score_type
-    ),
-
-    scores as (
-        select
-            academic_year,
-            surrogate_key,
-            student_number,
-            grade_level,
-            test_type,
-            test_date,
-            test_month,
-            scope,
-            subject_area,
-            score_type,
-
-            score_category,
-            score,
-
-        from
-            {{ ref("int_students__college_assessment_roster") }} unpivot (
-                score for score_category in (
-                    scale_score as 'Scale Score',
-                    max_scale_score as 'Max Scale Score',
-                    superscore as 'Superscore',
-                    running_max_scale_score as 'Running Max Scale Score',
-                    running_superscore as 'Running Superscore'
-                )
-            )
     ),
 
     roster as (
