@@ -1,8 +1,5 @@
 models:
   - name: rpt_illuminate__courses
-    config:
-      contract:
-        enforced: true
     columns:
       - name: "`01 Course ID`"
         data_type: string

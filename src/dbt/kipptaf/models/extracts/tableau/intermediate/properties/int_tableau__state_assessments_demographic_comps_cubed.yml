@@ -1,0 +1,55 @@
+models:
+  - name: int_tableau__state_assessments_demographic_comps_cubed
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: district_state
+        data_type: string
+      - name: region
+        data_type: string
+      - name: assessment_name
+        data_type: string
+      - name: test_code
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: aggregate_ethnicity
+        data_type: string
+      - name: lunch_status
+        data_type: string
+      - name: ml_status
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: total_proficient_students
+        data_type: float64
+      - name: total_students
+        data_type: int64
+      - name: percent_proficient
+        data_type: float64
+      - name: is_academic_year_total
+        data_type: int64
+      - name: is_district_state_total
+        data_type: int64
+      - name: is_region_total
+        data_type: int64
+      - name: is_assessment_name_total
+        data_type: int64
+      - name: is_test_code_total
+        data_type: int64
+      - name: is_gender_total
+        data_type: int64
+      - name: is_aggregate_ethnicity_total
+        data_type: int64
+      - name: is_lunch_status_total
+        data_type: int64
+      - name: is_ml_status_total
+        data_type: int64
+      - name: is_iep_status_total
+        data_type: int64
+      - name: grouping_level
+        data_type: float64
+      - name: focus_level
+        data_type: string
+      - name: total_type
+        data_type: string

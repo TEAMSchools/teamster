@@ -1,8 +1,5 @@
 models:
   - name: rpt_clever__teachers
-    config:
-      contract:
-        enforced: true
     columns:
       - name: teacher_id
         data_type: string
