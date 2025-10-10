@@ -1,0 +1,4 @@
+models:
+  - name: int_schoolmint_grow__observations_history__observation_scores
+    config:
+      enabled: false

@@ -36,6 +36,7 @@ snapshots:
   - name: snapshot_stipend_and_bonus__output
     relation: ref("stg_stipend_and_bonus__output")
     config:
+      enabled: false
       schema: google_appsheet
       strategy: timestamp
       unique_key: event_id
