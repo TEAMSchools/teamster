@@ -398,8 +398,8 @@ exposures:
       dagster:
         kinds:
           - googlesheets
-  - name: Unified KFWD Processes Document
-    label: unified_kfwd_processes_document
+  - name: unified_kfwd_processes_document
+    label: Unified KFWD Processes Document
     type: application
     owner:
       name: Data Team

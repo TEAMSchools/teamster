@@ -1,23 +1,20 @@
-version: 2
 models:
   - name: rpt_tableau__grad_plan_tracking
     columns:
       - name: _dbt_source_relation
         data_type: string
       - name: academic_year
-        data_type: integer
-      - name: studentsdcid
-        data_type: integer
+        data_type: int64
       - name: plan_id
-        data_type: integer
+        data_type: int64
       - name: plan_name
         data_type: string
       - name: discipline_id
-        data_type: integer
+        data_type: int64
       - name: discipline_name
         data_type: string
       - name: subject_id
-        data_type: integer
+        data_type: int64
       - name: subject_name
         data_type: string
       - name: teacher_name
@@ -27,7 +24,7 @@ models:
       - name: course_name
         data_type: string
       - name: sectionid
-        data_type: integer
+        data_type: int64
       - name: credit_type
         data_type: string
       - name: letter_grade
@@ -37,33 +34,33 @@ models:
       - name: credit_status
         data_type: string
       - name: earned_credits
-        data_type: float
+        data_type: float64
       - name: potential_credits
-        data_type: float
+        data_type: float64
       - name: region
         data_type: string
       - name: schoolid
-        data_type: integer
+        data_type: int64
       - name: school
         data_type: string
       - name: studentid
-        data_type: integer
+        data_type: int64
       - name: state_studentnumber
         data_type: string
       - name: salesforce_id
         data_type: string
       - name: student_number
-        data_type: integer
+        data_type: int64
       - name: student_name
         data_type: string
       - name: grade_level
-        data_type: integer
+        data_type: int64
       - name: student_email
         data_type: string
       - name: enroll_status
-        data_type: integer
+        data_type: int64
       - name: cohort
-        data_type: integer
+        data_type: int64
       - name: gender
         data_type: string
       - name: ethnicity
@@ -87,13 +84,13 @@ models:
       - name: is_self_contained
         data_type: boolean
       - name: is_counseling_services
-        data_type: integer
+        data_type: int64
       - name: is_student_athlete
-        data_type: integer
+        data_type: int64
       - name: is_tutoring
         data_type: boolean
       - name: year_in_network
-        data_type: integer
+        data_type: int64
       - name: has_fafsa
         data_type: string
       - name: college_match_gpa
@@ -103,52 +100,44 @@ models:
       - name: contact_owner_name
         data_type: string
       - name: ktc_cohort
-        data_type: integer
+        data_type: int64
       - name: ms_attended
         data_type: string
       - name: hos
         data_type: string
       - name: ada
-        data_type: float
+        data_type: float64
       - name: ada_above_or_at_80
         data_type: boolean
       - name: advisory
         data_type: string
       - name: plan_required_credits
-        data_type: float
+        data_type: float64
       - name: plan_enrolled_credits
-        data_type: float
+        data_type: float64
       - name: plan_requested_credits
-        data_type: float
+        data_type: float64
       - name: plan_earned_credits
-        data_type: float
+        data_type: float64
       - name: plan_waived_credits
-        data_type: float
+        data_type: float64
       - name: discipline_required_credits
-        data_type: float
+        data_type: float64
       - name: discipline_enrolled_credits
-        data_type: float
+        data_type: float64
       - name: discipline_requested_credits
-        data_type: float
+        data_type: float64
       - name: discipline_earned_credits
-        data_type: float
+        data_type: float64
       - name: discipline_waived_credits
-        data_type: float
+        data_type: float64
       - name: subject_required_credits
-        data_type: float
+        data_type: float64
       - name: subject_enrolled_credits
-        data_type: float
+        data_type: float64
       - name: subject_requested_credits
-        data_type: float
+        data_type: float64
       - name: subject_earned_credits
-        data_type: float
+        data_type: float64
       - name: subject_waived_credits
-        data_type: float
-      - name: q1_ae_status
-        data_type: string
-      - name: q2_ae_status
-        data_type: string
-      - name: q3_ae_status
-        data_type: string
-      - name: q4_ae_status
-        data_type: string
+        data_type: float64

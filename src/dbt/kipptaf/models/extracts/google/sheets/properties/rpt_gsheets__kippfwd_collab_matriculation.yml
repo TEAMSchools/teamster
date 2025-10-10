@@ -1,8 +1,9 @@
-version: 2
 models:
   - name: rpt_gsheets__kippfwd_collab_matriculation
     config:
       enabled: false
+      contract:
+        enforced: false
     columns:
       - name: contact_id
         data_type: string

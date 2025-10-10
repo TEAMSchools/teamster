@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__staff_attrition_details
     columns:
@@ -58,3 +57,11 @@ models:
         data_type: int64
       - name: overall_score
         data_type: float64
+      - name: ps_school_id
+        data_type: int64
+      - name: is_leader_development_program
+        data_type: boolean
+      - name: is_teacher_development_program
+        data_type: boolean
+      - name: memberships
+        data_type: string

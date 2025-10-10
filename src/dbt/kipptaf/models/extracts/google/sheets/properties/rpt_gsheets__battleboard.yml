@@ -1,8 +1,9 @@
-version: 2
 models:
   - name: rpt_gsheets__battleboard
     config:
       enabled: false
+      contract:
+        enforced: false
     columns:
       - name: df_employee_number
         data_type: int64
