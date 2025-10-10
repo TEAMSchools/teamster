@@ -105,6 +105,12 @@ with
             r.subject_area,
             r.score_type,
 
+            r.scale_score,
+            r.max_scale_score,
+            r.running_max_scale_score,
+            r.superscore,
+            r.running_superscore,
+
             bg.expected_metric_name,
             bg.min_score as expected_metric_min_score,
             bg.pct_goal as expected_metric_pct_goal,
@@ -115,7 +121,7 @@ with
                     r.max_scale_score,
                     p.attempt_count_ytd
                 )
-            ) as score,
+            ) as max_comparison_score,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join

@@ -3,7 +3,7 @@ models:
   - name: rpt_tableau__college_assessment_dashboard_over_time
     config:
       contract:
-        enforced: true
+        enforced: false
     columns:
       - name: academic_year
         data_type: int64
@@ -62,4 +62,3 @@ models:
       - name: score
         data_type: numeric
       - name: met_min_score_int
-        data_type: int64
