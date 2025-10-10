@@ -1,11 +1,8 @@
-version: 2
 models:
-  - name: stg_egencia__traveler_groups
-    config:
-      contract:
-        enforced: true
-      tags: google_sheet
+  - name: stg_google_sheets__egencia__traveler_groups
     columns:
+      - name: adp_home_business_unit_name
+        data_type: string
       - name: adp_home_work_location_name
         data_type: string
       - name: adp_department_home_name

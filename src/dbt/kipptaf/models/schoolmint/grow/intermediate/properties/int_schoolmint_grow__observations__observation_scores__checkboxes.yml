@@ -1,0 +1,4 @@
+models:
+  - name: int_schoolmint_grow__observations__observation_scores__checkboxes
+    config:
+      enabled: false
