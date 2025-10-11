@@ -35,8 +35,9 @@ with
         select
             _dbt_source_relation,
             student_number,
+            attempt_count_ytd as attempt_count,
 
-            attempt_count_ytd,
+            'YTD' as attempt_count_type,
 
             case
                 scope
@@ -62,6 +63,35 @@ with
                     act_count_ytd
                 )
             )
+
+        union all
+
+        select
+            _dbt_source_relation,
+            student_number,
+            attempt_count,
+
+            'Yearly' as attempt_count_type,
+
+            case
+                scope
+                when 'act_count'
+                then 'ACT'
+                when 'sat_count'
+                then 'SAT'
+                when 'psatnmsqt_count'
+                then 'PSAT NMSQT'
+                when 'psat10_count'
+                then 'PSAT10'
+                when 'psat89_count'
+                then 'PSAT 8/9'
+            end as scope,
+
+        from
+            {{ ref("int_students__college_assessment_participation_roster") }} unpivot (
+                attempt_count for scope
+                in (psat89_count, psat10_count, psatnmsqt_count, sat_count, act_count)
+            )
     ),
 
     attempts_dedup as (
@@ -69,11 +99,12 @@ with
             _dbt_source_relation,
             student_number,
             scope,
+            attempt_count_type,
 
-            max(attempt_count_ytd) as attempt_count_ytd,
+            max(attempt_count) as attempt_count,
 
         from attempts
-        group by _dbt_source_relation, student_number, scope
+        group by _dbt_source_relation, student_number, scope, attempt_count_type
     ),
 
     roster as (
@@ -147,17 +178,32 @@ with
             avg(
                 if(
                     bg.expected_metric_name in ('HS-Ready', 'College-Ready'),
+                    r.scale_score,
+                    p1.attempt_count
+                )
+            ) as comparison_score,
+
+            avg(
+                if(
+                    bg.expected_metric_name in ('HS-Ready', 'College-Ready'),
                     r.max_scale_score,
-                    p.attempt_count_ytd
+                    p2.attempt_count
                 )
             ) as max_comparison_score,
 
         from {{ ref("int_students__college_assessment_roster") }} as r
         left join
-            attempts_dedup as p
-            on r.student_number = p.student_number
-            and r.expected_scope = p.scope
-            and {{ union_dataset_join_clause(left_alias="r", right_alias="p") }}
+            attempts_dedup as p1
+            on r.student_number = p1.student_number
+            and r.expected_scope = p1.scope
+            and {{ union_dataset_join_clause(left_alias="r", right_alias="p1") }}
+            and p1.attempt_count_type = 'Yearly'
+        left join
+            attempts_dedup as p2
+            on r.student_number = p2.student_number
+            and r.expected_scope = p2.scope
+            and {{ union_dataset_join_clause(left_alias="r", right_alias="p2") }}
+            and p2.attempt_count_type = 'YTD'
         left join
             benchmark_goals as bg
             on r.expected_test_type = bg.expected_test_type
