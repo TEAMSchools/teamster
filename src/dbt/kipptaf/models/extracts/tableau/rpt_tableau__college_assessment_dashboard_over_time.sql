@@ -113,69 +113,119 @@ with
             _dbt_source_relation, student_number, scope, attempt_count_type, grade_level
     ),
 
+    max_scores as (
+        select
+            student_number,
+            expected_test_type,
+            expected_score_type,
+
+            avg(max_scale_score) as max_scale_score,
+            avg(superscore) as superscore,
+
+        from {{ ref("int_students__college_assessment_roster") }}
+        group by student_number, expected_test_type, expected_score_type
+    ),
+
+    running_scores as (
+        select
+            student_number,
+            expected_test_type,
+            expected_score_type,
+            expected_test_date,
+
+            avg(running_max_scale_score) as running_max_scale_score,
+            avg(running_superscore) as running_superscore,
+
+        from {{ ref("int_students__college_assessment_roster") }}
+        group by
+            student_number, expected_test_type, expected_score_type, expected_test_date
+    ),
+
+    fill_scores as (
+        select
+            student_number,
+            expected_test_type,
+            expected_score_type,
+            expected_test_date,
+
+            last_value(running_max_scale_score ignore nulls) over (
+                partition by student_number, expected_test_type, expected_score_type
+                order by expected_test_date
+            ) as running_max_scale_score,
+
+            last_value(running_superscore ignore nulls) over (
+                partition by student_number, expected_test_type, expected_score_type
+                order by expected_test_date
+            ) as running_superscore,
+
+        from running_scores
+    ),
+
     roster as (
         select
-            r._dbt_source_relation,
-            r.academic_year,
-            r.academic_year_display,
-            r.state,
-            r.region,
-            r.schoolid,
-            r.school,
-            r.student_number,
-            r.students_dcid,
-            r.studentid,
-            r.salesforce_id,
-            r.student_name,
-            r.student_first_name,
-            r.student_last_name,
-            r.grade_level,
-            r.student_email,
-            r.enroll_status,
-            r.iep_status,
-            r.rn_undergrad,
-            r.is_504,
-            r.lep_status,
-            r.ktc_cohort,
-            r.graduation_year,
-            r.year_in_network,
-            r.gifted_and_talented,
-            r.advisory,
-            r.grad_iep_exempt_status_overall,
-            r.contact_owner_name,
-            r.cumulative_y1_gpa,
-            r.cumulative_y1_gpa_projected,
-            r.college_match_gpa,
-            r.college_match_gpa_bands,
-            r.expected_test_academic_year,
-            r.expected_test_type,
-            r.expected_scope,
-            r.expected_score_type,
-            r.expected_subject_area,
-            r.expected_grade_level,
-            r.expected_test_date,
-            r.expected_test_month,
-            r.expected_test_admin_for_over_time,
-            r.expected_field_name,
-            r.expected_scope_order,
-            r.expected_subject_area_order,
-            r.expected_month_order,
-            r.expected_admin_order,
-            r.expected_filter_group_month,
-            r.test_type,
-            r.test_date,
-            r.test_month,
-            r.scope,
-            r.subject_area,
-            r.course_discipline,
-            r.score_type,
-            r.scale_score,
-            r.previous_total_score_change,
-            r.rn_highest,
-            r.max_scale_score,
-            r.superscore,
-            r.running_max_scale_score,
-            r.running_superscore,
+            r1._dbt_source_relation,
+            r1.academic_year,
+            r1.academic_year_display,
+            r1.state,
+            r1.region,
+            r1.schoolid,
+            r1.school,
+            r1.student_number,
+            r1.students_dcid,
+            r1.studentid,
+            r1.salesforce_id,
+            r1.student_name,
+            r1.student_first_name,
+            r1.student_last_name,
+            r1.grade_level,
+            r1.student_email,
+            r1.enroll_status,
+            r1.iep_status,
+            r1.rn_undergrad,
+            r1.is_504,
+            r1.lep_status,
+            r1.ktc_cohort,
+            r1.graduation_year,
+            r1.year_in_network,
+            r1.gifted_and_talented,
+            r1.advisory,
+            r1.grad_iep_exempt_status_overall,
+            r1.contact_owner_name,
+            r1.cumulative_y1_gpa,
+            r1.cumulative_y1_gpa_projected,
+            r1.college_match_gpa,
+            r1.college_match_gpa_bands,
+            r1.expected_test_academic_year,
+            r1.expected_test_type,
+            r1.expected_scope,
+            r1.expected_score_type,
+            r1.expected_subject_area,
+            r1.expected_grade_level,
+            r1.expected_test_date,
+            r1.expected_test_month,
+            r1.expected_test_admin_for_over_time,
+            r1.expected_field_name,
+            r1.expected_scope_order,
+            r1.expected_subject_area_order,
+            r1.expected_month_order,
+            r1.expected_admin_order,
+            r1.expected_filter_group_month,
+            r1.test_type,
+            r1.test_date,
+            r1.test_month,
+            r1.scope,
+            r1.subject_area,
+            r1.course_discipline,
+            r1.score_type,
+            r1.scale_score,
+            r1.previous_total_score_change,
+            r1.rn_highest,
+
+            r2.max_scale_score,
+            r2.superscore,
+
+            r3.running_max_scale_score,
+            r3.running_superscore,
 
             bg.expected_metric_name,
             bg.min_score as expected_metric_min_score,
@@ -184,7 +234,7 @@ with
             avg(
                 if(
                     bg.expected_metric_name in ('HS-Ready', 'College-Ready'),
-                    r.scale_score,
+                    r1.scale_score,
                     p1.attempt_count
                 )
             ) as comparison_score,
@@ -192,92 +242,103 @@ with
             avg(
                 if(
                     bg.expected_metric_name in ('HS-Ready', 'College-Ready'),
-                    r.max_scale_score,
+                    r2.max_scale_score,
                     p2.attempt_count
                 )
             ) as max_comparison_score,
 
-        from {{ ref("int_students__college_assessment_roster") }} as r
+        from {{ ref("int_students__college_assessment_roster") }} as r1
+        left join
+            max_scores as r2
+            on r1.student_number = r2.student_number
+            and r1.expected_test_type = r2.expected_test_type
+            and r1.expected_score_type = r2.expected_score_type
+        left join
+            fill_scores as r3
+            on r1.student_number = r3.student_number
+            and r1.expected_test_type = r3.expected_test_type
+            and r1.expected_score_type = r3.expected_score_type
+            and r1.expected_test_date = r3.expected_test_date
         left join
             attempts_dedup as p1
-            on r.student_number = p1.student_number
-            and r.grade_level = p1.grade_level
-            and r.expected_scope = p1.scope
-            and {{ union_dataset_join_clause(left_alias="r", right_alias="p1") }}
+            on r1.student_number = p1.student_number
+            and r1.grade_level = p1.grade_level
+            and r1.expected_scope = p1.scope
+            and {{ union_dataset_join_clause(left_alias="r1", right_alias="p1") }}
             and p1.attempt_count_type = 'Yearly'
         left join
             attempts_dedup as p2
-            on r.student_number = p2.student_number
-            and r.expected_scope = p2.scope
-            and {{ union_dataset_join_clause(left_alias="r", right_alias="p2") }}
+            on r1.student_number = p2.student_number
+            and r1.expected_scope = p2.scope
+            and {{ union_dataset_join_clause(left_alias="r1", right_alias="p2") }}
             and p2.attempt_count_type = 'YTD'
         left join
             benchmark_goals as bg
-            on r.expected_test_type = bg.expected_test_type
-            and r.expected_scope = bg.expected_scope
-            and r.expected_score_type = bg.expected_score_type
+            on r1.expected_test_type = bg.expected_test_type
+            and r1.expected_scope = bg.expected_scope
+            and r1.expected_score_type = bg.expected_score_type
         group by
-            r._dbt_source_relation,
-            r.academic_year,
-            r.academic_year_display,
-            r.state,
-            r.region,
-            r.schoolid,
-            r.school,
-            r.student_number,
-            r.students_dcid,
-            r.studentid,
-            r.salesforce_id,
-            r.student_name,
-            r.student_first_name,
-            r.student_last_name,
-            r.grade_level,
-            r.student_email,
-            r.enroll_status,
-            r.iep_status,
-            r.rn_undergrad,
-            r.is_504,
-            r.lep_status,
-            r.ktc_cohort,
-            r.graduation_year,
-            r.year_in_network,
-            r.gifted_and_talented,
-            r.advisory,
-            r.grad_iep_exempt_status_overall,
-            r.contact_owner_name,
-            r.cumulative_y1_gpa,
-            r.cumulative_y1_gpa_projected,
-            r.college_match_gpa,
-            r.college_match_gpa_bands,
-            r.expected_test_academic_year,
-            r.expected_test_type,
-            r.expected_scope,
-            r.expected_score_type,
-            r.expected_subject_area,
-            r.expected_grade_level,
-            r.expected_test_date,
-            r.expected_test_month,
-            r.expected_test_admin_for_over_time,
-            r.expected_field_name,
-            r.expected_scope_order,
-            r.expected_subject_area_order,
-            r.expected_month_order,
-            r.expected_admin_order,
-            r.expected_filter_group_month,
-            r.test_type,
-            r.test_date,
-            r.test_month,
-            r.scope,
-            r.subject_area,
-            r.course_discipline,
-            r.score_type,
-            r.scale_score,
-            r.previous_total_score_change,
-            r.rn_highest,
-            r.max_scale_score,
-            r.superscore,
-            r.running_max_scale_score,
-            r.running_superscore,
+            r1._dbt_source_relation,
+            r1.academic_year,
+            r1.academic_year_display,
+            r1.state,
+            r1.region,
+            r1.schoolid,
+            r1.school,
+            r1.student_number,
+            r1.students_dcid,
+            r1.studentid,
+            r1.salesforce_id,
+            r1.student_name,
+            r1.student_first_name,
+            r1.student_last_name,
+            r1.grade_level,
+            r1.student_email,
+            r1.enroll_status,
+            r1.iep_status,
+            r1.rn_undergrad,
+            r1.is_504,
+            r1.lep_status,
+            r1.ktc_cohort,
+            r1.graduation_year,
+            r1.year_in_network,
+            r1.gifted_and_talented,
+            r1.advisory,
+            r1.grad_iep_exempt_status_overall,
+            r1.contact_owner_name,
+            r1.cumulative_y1_gpa,
+            r1.cumulative_y1_gpa_projected,
+            r1.college_match_gpa,
+            r1.college_match_gpa_bands,
+            r1.expected_test_academic_year,
+            r1.expected_test_type,
+            r1.expected_scope,
+            r1.expected_score_type,
+            r1.expected_subject_area,
+            r1.expected_grade_level,
+            r1.expected_test_date,
+            r1.expected_test_month,
+            r1.expected_test_admin_for_over_time,
+            r1.expected_field_name,
+            r1.expected_scope_order,
+            r1.expected_subject_area_order,
+            r1.expected_month_order,
+            r1.expected_admin_order,
+            r1.expected_filter_group_month,
+            r1.test_type,
+            r1.test_date,
+            r1.test_month,
+            r1.scope,
+            r1.subject_area,
+            r1.course_discipline,
+            r1.score_type,
+            r1.scale_score,
+            r1.previous_total_score_change,
+            r1.rn_highest,
+            r2.max_scale_score,
+            r2.superscore,
+            r3.running_max_scale_score,
+            r3.running_superscore,
             bg.expected_metric_name,
             bg.min_score,
             bg.pct_goal
@@ -288,8 +349,13 @@ select
 
     if(comparison_score >= expected_metric_min_score, 1, 0) as met_min_score_int,
 
-    if(
-        max_comparison_score >= expected_metric_min_score, 1, 0
+    max(if(max_comparison_score >= expected_metric_min_score, 1, 0)) over (
+        partition by
+            student_number,
+            expected_test_type,
+            expected_score_type,
+            expected_metric_name
+        order by expected_test_date
     ) as met_min_score_int_overall,
 
 from roster
