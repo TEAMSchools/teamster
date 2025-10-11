@@ -1,10 +1,15 @@
 version: 2
 models:
-  - name: rpt_tableau__college_assessment_dashboard_roster
-    config:
-      contract:
-        enforced: true
+  - name: int_students__college_assessment_roster
     columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: academic_year_display
+        data_type: string
+      - name: state
+        data_type: string
       - name: region
         data_type: string
       - name: schoolid
@@ -12,6 +17,10 @@ models:
       - name: school
         data_type: string
       - name: student_number
+        data_type: int64
+      - name: students_dcid
+        data_type: int64
+      - name: studentid
         data_type: int64
       - name: salesforce_id
         data_type: string
@@ -27,15 +36,27 @@ models:
         data_type: string
       - name: enroll_status
         data_type: int64
+      - name: iep_status
+        data_type: string
+      - name: rn_undergrad
+        data_type: int64
+      - name: is_504
+        data_type: boolean
+      - name: lep_status
+        data_type: boolean
       - name: ktc_cohort
         data_type: int64
       - name: graduation_year
         data_type: int64
       - name: year_in_network
         data_type: int64
-      - name: iep_status
+      - name: gifted_and_talented
+        data_type: string
+      - name: advisory
         data_type: string
       - name: grad_iep_exempt_status_overall
+        data_type: string
+      - name: contact_owner_name
         data_type: string
       - name: cumulative_y1_gpa
         data_type: float64
@@ -45,6 +66,8 @@ models:
         data_type: numeric
       - name: college_match_gpa_bands
         data_type: string
+      - name: expected_test_academic_year
+        data_type: int64
       - name: expected_test_type
         data_type: string
       - name: expected_scope
@@ -59,23 +82,47 @@ models:
         data_type: date
       - name: expected_test_month
         data_type: string
+      - name: expected_test_admin_for_over_time
+        data_type: string
       - name: expected_field_name
         data_type: string
+      - name: expected_scope_order
+        data_type: int64
+      - name: expected_subject_area_order
+        data_type: int64
+      - name: expected_month_order
+        data_type: int64
       - name: expected_admin_order
         data_type: string
       - name: expected_filter_group_month
         data_type: string
-      - name: expected_score_category
+      - name: test_type
         data_type: string
-      - name: expected_field_name_score_category
+      - name: test_date
+        data_type: date
+      - name: test_month
         data_type: string
-      - name: expected_filter_group
+      - name: scope
         data_type: string
-      - name: sat_combined_superscore
+      - name: subject_area
+        data_type: string
+      - name: course_discipline
+        data_type: string
+      - name: score_type
+        data_type: string
+      - name: scale_score
         data_type: numeric
-      - name: sat_ebrw_highest
+      - name: previous_total_score_change
         data_type: numeric
-      - name: sat_math_highest
+      - name: rn_highest
+        data_type: int64
+      - name: max_scale_score
         data_type: numeric
-      - name: score
+      - name: superscore
         data_type: numeric
+      - name: running_max_scale_score
+        data_type: numeric
+      - name: running_superscore
+        data_type: numeric
+      - name: surrogate_key
+        data_type: string
