@@ -1,4 +1,33 @@
 with
+    strategy as (
+        -- need a distinct list of possible assessments throughout the years
+        select distinct
+            a.academic_year as expected_test_academic_year,
+            a.test_type as expected_test_type,
+            a.test_date as expected_test_date,
+            a.test_month as expected_test_month,
+            a.scope as expected_scope,
+            a.subject_area as expected_subject_area,
+            a.score_type as expected_score_type,
+
+            e.graduation_year as expected_graduation_year,
+
+        from {{ ref("int_assessments__college_assessment") }} as a
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on a.academic_year = e.academic_year
+            and a.student_number = e.student_number
+            and e.school_level = 'HS'
+            and e.rn_year = 1
+        where
+            a.score_type not in (
+                'psat10_reading',
+                'psat10_math_test',
+                'sat_math_test_score',
+                'sat_reading_test_score'
+            )
+    ),
+
     benchmark_goals as (
         select
             expected_test_type,
@@ -195,31 +224,26 @@ with
             r1.cumulative_y1_gpa_projected,
             r1.college_match_gpa,
             r1.college_match_gpa_bands,
-            r1.expected_test_academic_year,
-            r1.expected_test_type,
-            r1.expected_scope,
-            r1.expected_score_type,
-            r1.expected_subject_area,
-            r1.expected_grade_level,
-            r1.expected_test_date,
-            r1.expected_test_month,
-            r1.expected_test_admin_for_over_time,
-            r1.expected_field_name,
-            r1.expected_scope_order,
-            r1.expected_subject_area_order,
-            r1.expected_month_order,
-            r1.expected_admin_order,
-            r1.expected_filter_group_month,
-            r1.test_type,
-            r1.test_date,
-            r1.test_month,
-            r1.scope,
-            r1.subject_area,
-            r1.course_discipline,
-            r1.score_type,
-            r1.scale_score,
-            r1.previous_total_score_change,
-            r1.rn_highest,
+
+            s.expected_test_academic_year,
+            s.expected_test_type,
+            s.expected_scope,
+            s.expected_score_type,
+            s.expected_subject_area,
+            s.expected_test_date,
+            s.expected_test_month,
+            s.expected_graduation_year,
+
+            t.test_type,
+            t.test_date,
+            t.test_month,
+            t.scope,
+            t.subject_area,
+            t.course_discipline,
+            t.score_type,
+            t.scale_score,
+            t.previous_total_score_change,
+            t.rn_highest,
 
             r2.max_scale_score,
             r2.superscore,
@@ -248,6 +272,16 @@ with
             ) as running_max_comparison_score,
 
         from {{ ref("int_students__college_assessment_roster") }} as r1
+        inner join
+            strategy as s
+            on r1.academic_year = s.expected_test_academic_year
+            and r1.graduation_year = s.expected_graduation_year
+        left join
+            {{ ref("int_students__college_assessment_roster") }} as t
+            on r1.student_number = t.student_number
+            and s.expected_test_academic_year = t.academic_year
+            and s.expected_score_type = t.score_type
+            and s.expected_test_date = t.test_date
         left join
             max_scores as r2
             on r1.student_number = r2.student_number
@@ -310,31 +344,24 @@ with
             r1.cumulative_y1_gpa_projected,
             r1.college_match_gpa,
             r1.college_match_gpa_bands,
-            r1.expected_test_academic_year,
-            r1.expected_test_type,
-            r1.expected_scope,
-            r1.expected_score_type,
-            r1.expected_subject_area,
-            r1.expected_grade_level,
-            r1.expected_test_date,
-            r1.expected_test_month,
-            r1.expected_test_admin_for_over_time,
-            r1.expected_field_name,
-            r1.expected_scope_order,
-            r1.expected_subject_area_order,
-            r1.expected_month_order,
-            r1.expected_admin_order,
-            r1.expected_filter_group_month,
-            r1.test_type,
-            r1.test_date,
-            r1.test_month,
-            r1.scope,
-            r1.subject_area,
-            r1.course_discipline,
-            r1.score_type,
-            r1.scale_score,
-            r1.previous_total_score_change,
-            r1.rn_highest,
+            s.expected_test_academic_year,
+            s.expected_test_type,
+            s.expected_scope,
+            s.expected_score_type,
+            s.expected_subject_area,
+            s.expected_test_date,
+            s.expected_test_month,
+            s.expected_graduation_year,
+            t.test_type,
+            t.test_date,
+            t.test_month,
+            t.scope,
+            t.subject_area,
+            t.course_discipline,
+            t.score_type,
+            t.scale_score,
+            t.previous_total_score_change,
+            t.rn_highest,
             r2.max_scale_score,
             r2.superscore,
             r3.running_max_scale_score,
