@@ -242,10 +242,10 @@ with
             avg(
                 if(
                     bg.expected_metric_name in ('HS-Ready', 'College-Ready'),
-                    r2.max_scale_score,
+                    r3.running_max_scale_score,
                     p2.attempt_count
                 )
-            ) as max_comparison_score,
+            ) as running_max_comparison_score,
 
         from {{ ref("int_students__college_assessment_roster") }} as r1
         left join
@@ -347,9 +347,13 @@ with
 select
     *,
 
-    if(comparison_score >= expected_metric_min_score, 1, 0) as met_min_score_int,
+    if(comparison_score >= expected_metric_min_score, 1, 0) as met_min_score_int_yearly,
 
-    max(if(max_comparison_score >= expected_metric_min_score, 1, 0)) over (
+    if(
+        running_max_comparison_score >= expected_metric_min_score, 1, 0
+    ) as met_min_score_int_running,
+
+    max(if(max_scale_score >= expected_metric_min_score, 1, 0)) over (
         partition by
             student_number,
             expected_test_type,
