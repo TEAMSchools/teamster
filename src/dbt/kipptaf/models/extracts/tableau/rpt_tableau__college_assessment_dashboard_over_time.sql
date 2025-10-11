@@ -37,6 +37,8 @@ with
             student_number,
             attempt_count_ytd as attempt_count,
 
+            null as grade_level,
+
             'YTD' as attempt_count_type,
 
             case
@@ -71,6 +73,8 @@ with
             student_number,
             attempt_count,
 
+            grade_level,
+
             'Yearly' as attempt_count_type,
 
             case
@@ -100,11 +104,13 @@ with
             student_number,
             scope,
             attempt_count_type,
+            grade_level,
 
             max(attempt_count) as attempt_count,
 
         from attempts
-        group by _dbt_source_relation, student_number, scope, attempt_count_type
+        group by
+            _dbt_source_relation, student_number, scope, attempt_count_type, grade_level
     ),
 
     roster as (
@@ -195,6 +201,7 @@ with
         left join
             attempts_dedup as p1
             on r.student_number = p1.student_number
+            and r.grade_level = p1.grade_level
             and r.expected_scope = p1.scope
             and {{ union_dataset_join_clause(left_alias="r", right_alias="p1") }}
             and p1.attempt_count_type = 'Yearly'
@@ -277,6 +284,12 @@ with
     )
 
 select
-    *, if(max_comparison_score >= expected_metric_min_score, 1, 0) as met_min_score_int,
+    *,
+
+    if(comparison_score >= expected_metric_min_score, 1, 0) as met_min_score_int,
+
+    if(
+        max_comparison_score >= expected_metric_min_score, 1, 0
+    ) as met_min_score_int_overall,
 
 from roster
