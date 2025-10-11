@@ -122,7 +122,7 @@ with
             {{ ref("int_students__college_assessment_roster") }} as r
             on e.student_number = r.student_number
             and {{ union_dataset_join_clause(left_alias="e", right_alias="r") }}
-            and r.test_type is not null
+            and r.test_type = 'Official'
             and r.expected_subject_area in ('Composite', 'Combined')
         left join
             attempts_dedup as p
