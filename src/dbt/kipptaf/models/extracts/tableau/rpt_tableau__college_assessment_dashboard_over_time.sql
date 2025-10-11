@@ -278,10 +278,10 @@ with
             and r1.graduation_year = s.expected_graduation_year
         left join
             {{ ref("int_students__college_assessment_roster") }} as t
-            on r1.academic_year = t.academic_year
-            and r1.student_number = t.student_number
-            and r1.expected_score_type = t.score_type
-            and r1.expected_test_date = t.test_date
+            on r1.student_number = t.student_number
+            and s.expected_test_academic_year = t.academic_year
+            and s.expected_score_type = t.score_type
+            and s.expected_test_date = t.test_date
         left join
             max_scores as r2
             on r1.student_number = r2.student_number
