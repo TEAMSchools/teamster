@@ -338,6 +338,12 @@ with
             bg.min_score as expected_metric_min_score,
             bg.pct_goal as expected_metric_pct_goal,
 
+            if(
+                s.expected_subject_area in ('Composite', 'Combined'),
+                'Total',
+                s.expected_subject_area
+            ) as expected_aligned_subject_area,
+
             avg(
                 case
                     when bg.expected_metric_name in ('HS-Ready', 'College-Ready')
@@ -489,7 +495,7 @@ select
         partition by
             student_number,
             expected_test_type,
-            expected_subject_area,
+            expected_aligned_subject_area,
             expected_metric_name
         order by expected_test_date
     ) as met_min_score_int_act_or_sat_overall_running,
@@ -506,7 +512,7 @@ select
         partition by
             student_number,
             expected_test_type,
-            expected_subject_area,
+            expected_aligned_subject_area,
             expected_metric_name
     ) as met_min_score_int_act_or_sat_overall,
 
