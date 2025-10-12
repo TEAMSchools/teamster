@@ -497,7 +497,7 @@ select
             expected_test_type,
             expected_aligned_subject_area,
             expected_metric_name
-        order by expected_test_date
+        order by grade_level
     ) as met_min_score_int_act_or_sat_overall_running,
 
     max(
