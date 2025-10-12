@@ -60,7 +60,6 @@ with
 
     base_rows_attempts_ytd as (
         select
-            -- e._dbt_source_relation,
             e.academic_year,
             e.student_number,
             e.studentid,
@@ -81,6 +80,47 @@ with
                 partition by e.student_number, s.expected_test_type, s.expected_scope
                 order by s.expected_test_date
             ) as test_count_running,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            strategy_attempts_ytd as s
+            on e.academic_year = s.expected_test_academic_year
+            and e.graduation_year = s.expected_graduation_year
+        left join
+            {{ ref("int_students__college_assessment_roster") }} as t
+            on e.student_number = t.student_number
+            and s.expected_test_type = t.test_type
+            and s.expected_score_type = t.score_type
+            and s.expected_test_date = t.test_date
+        where e.school_level = 'HS' and e.rn_year = 1
+    ),
+
+    base_rows_attempts_yearly as (
+        select
+            e.academic_year,
+            e.student_number,
+            e.studentid,
+            e.students_dcid,
+            e.salesforce_id,
+            e.graduation_year,
+
+            s.expected_test_type,
+            s.expected_scope,
+            s.expected_score_type,
+            s.expected_test_date,
+
+            t.test_type,
+            t.scope,
+            t.score_type,
+
+            count(concat(t.test_type, t.scope)) over (
+                partition by
+                    e.academic_year,
+                    e.student_number,
+                    s.expected_test_type,
+                    s.expected_scope
+                order by s.expected_test_date
+            ) as test_count_yearly,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
@@ -121,31 +161,25 @@ with
 
     attempts_yearly as (
         select
-            _dbt_source_relation,
-            student_number,
-            attempt_count,
+            b.*,
 
-            grade_level,
+            goal_category,
 
-            case
-                scope
-                when 'act_count'
-                then 'ACT'
-                when 'sat_count'
-                then 'SAT'
-                when 'psatnmsqt_count'
-                then 'PSAT NMSQT'
-                when 'psat10_count'
-                then 'PSAT10'
-                when 'psat89_count'
-                then 'PSAT 8/9'
-            end as scope,
+            g.min_score,
+            g.pct_goal,
 
-        from
-            {{ ref("int_students__college_assessment_participation_roster") }} unpivot (
-                attempt_count for scope
-                in (psat89_count, psat10_count, psatnmsqt_count, sat_count, act_count)
-            )
+            concat(b.expected_scope, ' ', goal_category) as expected_metric_name,
+
+            if(b.test_count_yearly >= g.min_score, 1, 0) as met_min_yearly,
+
+        from base_rows_attempts_yearly as b
+        cross join unnest(['Group 1', 'Group 2+']) as goal_category
+        left join
+            {{ ref("stg_google_sheets__kippfwd_goals") }} as g
+            on b.expected_test_type = g.expected_test_type
+            and b.expected_scope = g.expected_scope
+            and b.expected_score_type = g.expected_score_type
+            and goal_category = g.goal_category
     ),
 
     benchmark_goals as (
@@ -309,7 +343,7 @@ with
                     when bg.expected_metric_name in ('HS-Ready', 'College-Ready')
                     then t.scale_score
                     when bg.expected_metric_name like '%Group%'
-                    then p1.attempt_count
+                    then p1.met_min_yearly
                 end
             ) as comparison_score,
 
@@ -350,10 +384,13 @@ with
             and s.expected_score_type = bg.expected_score_type
         left join
             attempts_yearly as p1
-            on r1.student_number = p1.student_number
-            and r1.grade_level = p1.grade_level
+            on r1.academic_year = p1.academic_year
+            and r1.student_number = p1.student_number
+            and s.expected_test_type = p1.expected_test_type
             and s.expected_scope = p1.scope
-            and {{ union_dataset_join_clause(left_alias="r1", right_alias="p1") }}
+            and s.expected_score_type = p1.expected_score_type
+            and s.expected_test_date = p1.expected_test_date
+            and bg.expected_metric_name = p1.expected_metric_name
         left join
             attempts_ytd as p2
             on r1.student_number = p2.student_number
