@@ -28,6 +28,126 @@ with
             )
     ),
 
+    strategy_attempts_ytd as (
+        -- need a distinct list of possible assessments throughout the years
+        select distinct
+            a.academic_year as expected_test_academic_year,
+            a.test_type as expected_test_type,
+            a.test_date as expected_test_date,
+            a.test_month as expected_test_month,
+            a.scope as expected_scope,
+            a.subject_area as expected_subject_area,
+            a.score_type as expected_score_type,
+
+            e.graduation_year as expected_graduation_year,
+
+        from {{ ref("int_assessments__college_assessment") }} as a
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on a.academic_year = e.academic_year
+            and a.student_number = e.student_number
+            and e.school_level = 'HS'
+            and e.rn_year = 1
+        where
+            a.score_type in (
+                'act_composite',
+                'sat_total_score',
+                'psat89_total',
+                'psatnmsqt_total',
+                'psat10_total'
+            )
+    ),
+
+    base_rows_attempts_ytd as (
+        select
+            -- e._dbt_source_relation,
+            e.academic_year,
+            e.student_number,
+            e.studentid,
+            e.students_dcid,
+            e.salesforce_id,
+            e.graduation_year,
+
+            s.expected_test_type,
+            s.expected_scope,
+            s.expected_score_type,
+            s.expected_test_date,
+
+            t.test_type,
+            t.scope,
+            t.score_type,
+
+            count(concat(t.test_type, t.scope)) over (
+                partition by e.student_number, s.expected_test_type, s.expected_scope
+                order by s.expected_test_date
+            ) as test_count_running,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            strategy_attempts_ytd as s
+            on e.academic_year = s.expected_test_academic_year
+            and e.graduation_year = s.expected_graduation_year
+        left join
+            {{ ref("int_students__college_assessment_roster") }} as t
+            on e.student_number = t.student_number
+            and s.expected_test_type = t.test_type
+            and s.expected_score_type = t.score_type
+            and s.expected_test_date = t.test_date
+        where e.school_level = 'HS' and e.rn_year = 1
+    ),
+
+    attempts_ytd as (
+        select
+            b.*,
+
+            goal_category,
+
+            g.min_score,
+            g.pct_goal,
+
+            concat(b.expected_scope, ' ', goal_category) as expected_metric_name,
+
+            if(b.test_count_running >= g.min_score, 1, 0) as met_min_running,
+
+        from base_rows_attempts_ytd as b
+        cross join unnest(['Group 1', 'Group 2+']) as goal_category
+        left join
+            {{ ref("stg_google_sheets__kippfwd_goals") }} as g
+            on b.expected_test_type = g.expected_test_type
+            and b.expected_scope = g.expected_scope
+            and b.expected_score_type = g.expected_score_type
+            and goal_category = g.goal_category
+    ),
+
+    attempts_yearly as (
+        select
+            _dbt_source_relation,
+            student_number,
+            attempt_count,
+
+            grade_level,
+
+            case
+                scope
+                when 'act_count'
+                then 'ACT'
+                when 'sat_count'
+                then 'SAT'
+                when 'psatnmsqt_count'
+                then 'PSAT NMSQT'
+                when 'psat10_count'
+                then 'PSAT10'
+                when 'psat89_count'
+                then 'PSAT 8/9'
+            end as scope,
+
+        from
+            {{ ref("int_students__college_assessment_participation_roster") }} unpivot (
+                attempt_count for scope
+                in (psat89_count, psat10_count, psatnmsqt_count, sat_count, act_count)
+            )
+    ),
+
     benchmark_goals as (
         select
             expected_test_type,
@@ -58,88 +178,6 @@ with
 
         from {{ ref("stg_google_sheets__kippfwd_goals") }}
         where expected_test_type = 'Official' and goal_type = 'Attempts'
-    ),
-
-    attempts as (
-        select
-            _dbt_source_relation,
-            student_number,
-            attempt_count_ytd as attempt_count,
-
-            null as grade_level,
-
-            'YTD' as attempt_count_type,
-
-            case
-                scope
-                when 'act_count_ytd'
-                then 'ACT'
-                when 'sat_count_ytd'
-                then 'SAT'
-                when 'psatnmsqt_count_ytd'
-                then 'PSAT NMSQT'
-                when 'psat10_count_ytd'
-                then 'PSAT10'
-                when 'psat89_count_ytd'
-                then 'PSAT 8/9'
-            end as scope,
-
-        from
-            {{ ref("int_students__college_assessment_participation_roster") }} unpivot (
-                attempt_count_ytd for scope in (
-                    psat89_count_ytd,
-                    psat10_count_ytd,
-                    psatnmsqt_count_ytd,
-                    sat_count_ytd,
-                    act_count_ytd
-                )
-            )
-
-        union all
-
-        select
-            _dbt_source_relation,
-            student_number,
-            attempt_count,
-
-            grade_level,
-
-            'Yearly' as attempt_count_type,
-
-            case
-                scope
-                when 'act_count'
-                then 'ACT'
-                when 'sat_count'
-                then 'SAT'
-                when 'psatnmsqt_count'
-                then 'PSAT NMSQT'
-                when 'psat10_count'
-                then 'PSAT10'
-                when 'psat89_count'
-                then 'PSAT 8/9'
-            end as scope,
-
-        from
-            {{ ref("int_students__college_assessment_participation_roster") }} unpivot (
-                attempt_count for scope
-                in (psat89_count, psat10_count, psatnmsqt_count, sat_count, act_count)
-            )
-    ),
-
-    attempts_dedup as (
-        select
-            _dbt_source_relation,
-            student_number,
-            scope,
-            attempt_count_type,
-            grade_level,
-
-            max(attempt_count) as attempt_count,
-
-        from attempts
-        group by
-            _dbt_source_relation, student_number, scope, attempt_count_type, grade_level
     ),
 
     max_scores as (
@@ -279,7 +317,7 @@ with
                 if(
                     bg.expected_metric_name in ('HS-Ready', 'College-Ready'),
                     r3.running_max_scale_score,
-                    p2.attempt_count
+                    p2.met_min_running
                 )
             ) as running_max_comparison_score,
 
@@ -311,18 +349,19 @@ with
             and s.expected_scope = bg.expected_scope
             and s.expected_score_type = bg.expected_score_type
         left join
-            attempts_dedup as p1
+            attempts_yearly as p1
             on r1.student_number = p1.student_number
             and r1.grade_level = p1.grade_level
             and s.expected_scope = p1.scope
             and {{ union_dataset_join_clause(left_alias="r1", right_alias="p1") }}
-            and p1.attempt_count_type = 'Yearly'
         left join
-            attempts_dedup as p2
+            attempts_ytd as p2
             on r1.student_number = p2.student_number
+            and s.expected_test_type = p2.expected_test_type
             and s.expected_scope = p2.scope
-            and {{ union_dataset_join_clause(left_alias="r1", right_alias="p2") }}
-            and p2.attempt_count_type = 'YTD'
+            and s.expected_score_type = p2.expected_score_type
+            and s.expected_test_date = p2.expected_test_date
+            and bg.expected_metric_name = p2.expected_metric_name
         group by
             r1._dbt_source_relation,
             r1.academic_year,
