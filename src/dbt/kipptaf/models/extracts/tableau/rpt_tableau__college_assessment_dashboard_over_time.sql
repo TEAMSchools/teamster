@@ -479,12 +479,35 @@ select
 
     max(
         if(
-            max_scale_score >= expected_metric_min_score
-            and expected_scope in ('ACT', 'SAT'),
+            running_max_comparison_score >= expected_metric_min_score
+            and expected_scope in ('ACT', 'SAT')
+            and expected_subject_area in ('Composite', 'Combined', 'Reading', 'Math'),
             1,
             0
         )
-    ) over (partition by student_number, expected_test_type, expected_metric_name)
-    as met_min_score_int_act_or_sat_overall,
+    ) over (
+        partition by
+            student_number,
+            expected_test_type,
+            expected_subject_area,
+            expected_metric_name
+        order by expected_test_date
+    ) as met_min_score_int_act_or_sat_overall_running,
+
+    max(
+        if(
+            max_scale_score >= expected_metric_min_score
+            and expected_scope in ('ACT', 'SAT')
+            and expected_subject_area in ('Composite', 'Combined', 'Reading', 'Math'),
+            1,
+            0
+        )
+    ) over (
+        partition by
+            student_number,
+            expected_test_type,
+            expected_subject_area,
+            expected_metric_name
+    ) as met_min_score_int_act_or_sat_overall,
 
 from roster
