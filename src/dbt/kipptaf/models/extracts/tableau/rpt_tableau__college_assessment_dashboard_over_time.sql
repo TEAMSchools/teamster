@@ -477,4 +477,14 @@ select
         order by expected_test_date
     ) as met_min_score_int_overall,
 
+    max(
+        if(
+            max_scale_score >= expected_metric_min_score
+            and expected_scope in ('ACT', 'SAT'),
+            1,
+            0
+        )
+    ) over (partition by student_number, expected_test_type, expected_metric_name)
+    as met_min_score_int_act_or_sat_overall,
+
 from roster
