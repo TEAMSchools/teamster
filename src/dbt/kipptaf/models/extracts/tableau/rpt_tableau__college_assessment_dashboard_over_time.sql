@@ -157,17 +157,28 @@ with
 
     running_scores as (
         select
-            student_number,
-            expected_test_type,
-            expected_score_type,
-            expected_test_date,
+            r1.student_number,
 
-            avg(running_max_scale_score) as running_max_scale_score,
-            avg(running_superscore) as running_superscore,
+            s.expected_test_type,
+            s.expected_score_type,
+            s.expected_test_date,
 
-        from {{ ref("int_students__college_assessment_roster") }}
+            avg(r2.running_max_scale_score) as running_max_scale_score,
+            avg(r2.running_superscore) as running_superscore,
+
+        from {{ ref("int_students__college_assessment_roster") }} as r1
+        inner join strategy as s on r1.graduation_year = s.expected_graduation_year
+        left join
+            {{ ref("int_students__college_assessment_roster") }} as r2
+            on r1.student_number = r2.student_number
+            and s.expected_test_type = r2.test_type
+            and s.expected_score_type = r2.score_type
+            and s.expected_test_date = r2.test_date
         group by
-            student_number, expected_test_type, expected_score_type, expected_test_date
+            r1.student_number,
+            s.expected_test_type,
+            s.expected_score_type,
+            s.expected_test_date
     ),
 
     fill_scores as (
@@ -256,11 +267,12 @@ with
             bg.pct_goal as expected_metric_pct_goal,
 
             avg(
-                if(
-                    bg.expected_metric_name in ('HS-Ready', 'College-Ready'),
-                    r1.scale_score,
-                    p1.attempt_count
-                )
+                case
+                    when bg.expected_metric_name in ('HS-Ready', 'College-Ready')
+                    then t.scale_score
+                    when bg.expected_metric_name like '%Group%'
+                    then p1.attempt_count
+                end
             ) as comparison_score,
 
             avg(
@@ -294,6 +306,11 @@ with
             and s.expected_score_type = r3.expected_score_type
             and s.expected_test_date = r3.expected_test_date
         left join
+            benchmark_goals as bg
+            on s.expected_test_type = bg.expected_test_type
+            and s.expected_scope = bg.expected_scope
+            and s.expected_score_type = bg.expected_score_type
+        left join
             attempts_dedup as p1
             on r1.student_number = p1.student_number
             and r1.grade_level = p1.grade_level
@@ -306,11 +323,6 @@ with
             and s.expected_scope = p2.scope
             and {{ union_dataset_join_clause(left_alias="r1", right_alias="p2") }}
             and p2.attempt_count_type = 'YTD'
-        left join
-            benchmark_goals as bg
-            on s.expected_test_type = bg.expected_test_type
-            and s.expected_scope = bg.expected_scope
-            and s.expected_score_type = bg.expected_score_type
         group by
             r1._dbt_source_relation,
             r1.academic_year,
