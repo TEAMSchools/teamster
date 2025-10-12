@@ -285,32 +285,32 @@ with
         left join
             max_scores as r2
             on r1.student_number = r2.student_number
-            and r1.expected_test_type = r2.expected_test_type
-            and r1.expected_score_type = r2.expected_score_type
+            and s.expected_test_type = r2.expected_test_type
+            and s.expected_score_type = r2.expected_score_type
         left join
             fill_scores as r3
             on r1.student_number = r3.student_number
-            and r1.expected_test_type = r3.expected_test_type
-            and r1.expected_score_type = r3.expected_score_type
-            and r1.expected_test_date = r3.expected_test_date
+            and s.expected_test_type = r3.expected_test_type
+            and s.expected_score_type = r3.expected_score_type
+            and s.expected_test_date = r3.expected_test_date
         left join
             attempts_dedup as p1
             on r1.student_number = p1.student_number
             and r1.grade_level = p1.grade_level
-            and r1.expected_scope = p1.scope
+            and s.expected_scope = p1.scope
             and {{ union_dataset_join_clause(left_alias="r1", right_alias="p1") }}
             and p1.attempt_count_type = 'Yearly'
         left join
             attempts_dedup as p2
             on r1.student_number = p2.student_number
-            and r1.expected_scope = p2.scope
+            and s.expected_scope = p2.scope
             and {{ union_dataset_join_clause(left_alias="r1", right_alias="p2") }}
             and p2.attempt_count_type = 'YTD'
         left join
             benchmark_goals as bg
-            on r1.expected_test_type = bg.expected_test_type
-            and r1.expected_scope = bg.expected_scope
-            and r1.expected_score_type = bg.expected_score_type
+            on s.expected_test_type = bg.expected_test_type
+            and s.expected_scope = bg.expected_scope
+            and s.expected_score_type = bg.expected_score_type
         group by
             r1._dbt_source_relation,
             r1.academic_year,
