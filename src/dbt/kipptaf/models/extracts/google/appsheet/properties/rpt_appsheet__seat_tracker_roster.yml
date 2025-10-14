@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_appsheet__seat_tracker_roster
     columns:

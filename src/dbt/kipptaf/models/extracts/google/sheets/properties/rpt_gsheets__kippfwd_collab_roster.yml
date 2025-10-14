@@ -1,40 +1,39 @@
-version: 2
 models:
   - name: rpt_gsheets__kippfwd_collab_roster
     columns:
-      - name: salesforce id
+      - name: "`Salesforce ID`"
         data_type: string
-      - name: sis id
+      - name: "`SIS ID`"
         data_type: int64
-      - name: college counselor
+      - name: "`College Counselor`"
         data_type: string
-      - name: first name
+      - name: "`First Name`"
         data_type: string
-      - name: last name
+      - name: "`Last Name`"
         data_type: string
-      - name: current enrolled high school
+      - name: "`Current Enrolled High School`"
         data_type: string
-      - name: student cell phone
+      - name: "`Student Cell Phone`"
         data_type: string
-      - name: personal email address
+      - name: "`Personal Email Address`"
         data_type: string
-      - name: primary parent name
+      - name: "`Primary Parent Name`"
         data_type: string
-      - name: primary parent cell phone
+      - name: "`Primary Parent Cell Phone`"
         data_type: string
-      - name: primary parent email
+      - name: "`Primary Parent Email`"
         data_type: string
-      - name: mailing address
+      - name: "`Mailing Address`"
         data_type: string
-      - name: iep
+      - name: "`IEP`"
         data_type: boolean
-      - name: 504 plan
+      - name: "`504 Plan`"
         data_type: boolean
-      - name: fafsa complete
+      - name: "`FAFSA Complete`"
         data_type: string
-      - name: hesaa complete
+      - name: "`HESAA Complete`"
         data_type: string
-      - name: efc actual
+      - name: "`EFC Actual`"
         data_type: numeric
       - name: expected_hs_grad_date
         data_type: date
@@ -48,7 +47,7 @@ models:
         data_type: string
       - name: matriculation_decision
         data_type: string
-      - name: ccdm complete
+      - name: "`CCDM Complete`"
         data_type: int64
       - name: application_account_name
         data_type: string
@@ -78,3 +77,13 @@ models:
         data_type: boolean
       - name: state_grant
         data_type: numeric
+      - name: ccr_period
+        data_type: string
+      - name: ccr_teacher
+        data_type: string
+      - name: powerschool_contact_1_email_current
+        data_type: string
+      - name: powerschool_contact_1_phone_mobile
+        data_type: string
+      - name: powerschool_contact_1_phone_primary
+        data_type: string

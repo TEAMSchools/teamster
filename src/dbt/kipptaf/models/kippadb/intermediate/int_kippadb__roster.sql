@@ -1,6 +1,7 @@
 with
     es_grad as (
         select
+            co._dbt_source_relation,
             co.student_number,
 
             s.abbreviation as entry_school,
@@ -19,14 +20,14 @@ with
             on co.entry_schoolid = s.school_number
             and {{ union_dataset_join_clause(left_alias="co", right_alias="s") }}
         where co.rn_year = 1
-        group by co.student_number, s.abbreviation
+        group by co._dbt_source_relation, co.student_number, s.abbreviation
     ),
 
     dlm as (
-        select student_number, max(pathway_option) as dlm,
+        select _dbt_source_relation, student_number, max(pathway_option) as dlm,
         from {{ ref("int_students__graduation_path_codes") }}
         where rn_discipline_distinct = 1 and final_grad_path_code = 'M'
-        group by student_number
+        group by _dbt_source_relation, student_number
     ),
 
     roster as (
@@ -58,9 +59,8 @@ with
             os.id as overgrad_students_id,
             os.graduation_year as overgrad_students_graduation_year,
             os.school__name as overgrad_students_school,
-
-            cf.is_ed_ea,
-            cf.best_guess_pathway,
+            os.is_ed_ea,
+            os.best_guess_pathway,
 
             e.entry_school,
             e.is_es_grad,
@@ -71,13 +71,9 @@ with
                 os.assigned_counselor__first_name
             ) as overgrad_students_assigned_counselor_lastfirst,
 
-            se.street
-            || ' '
-            || se.city
-            || ', '
-            || se.state
-            || ' '
-            || se.zip as powerschool_mailing_address,
+            concat(
+                se.street, ' ', se.city, ', ', se.state, ' ', se.zip
+            ) as powerschool_mailing_address,
 
             coalesce(
                 c.contact_current_kipp_student, 'Missing from Salesforce'
@@ -95,35 +91,6 @@ with
             ) as email,
 
             if(d.dlm is not null, true, false) as is_dlm,
-
-            if(
-                extract(
-                    month
-                    from
-                        coalesce(
-                            c.contact_actual_hs_graduation_date,
-                            c.contact_expected_hs_graduation
-                        )
-                )
-                < 10,
-                extract(
-                    year
-                    from
-                        coalesce(
-                            c.contact_actual_hs_graduation_date,
-                            c.contact_expected_hs_graduation
-                        )
-                ),
-                extract(
-                    year
-                    from
-                        coalesce(
-                            c.contact_actual_hs_graduation_date,
-                            c.contact_expected_hs_graduation
-                        )
-                )
-                + 1
-            ) as graduation_year,
 
             case
                 when se.enroll_status = 0
@@ -150,14 +117,17 @@ with
             {{ ref("base_kippadb__contact") }} as c
             on se.student_number = c.contact_school_specific_id
         left join
-            {{ ref("stg_overgrad__students") }} as os
-            on c.contact_id = os.external_student_id
+            {{ ref("int_overgrad__students") }} as os
+            on se.salesforce_contact_id = os.external_student_id
+            and {{ union_dataset_join_clause(left_alias="se", right_alias="os") }}
         left join
-            {{ ref("int_overgrad__custom_fields_pivot") }} as cf
-            on os.id = cf.id
-            and cf._dbt_source_model = 'stg_overgrad__students'
-        left join es_grad as e on se.student_number = e.student_number
-        left join dlm as d on e.student_number = d.student_number
+            es_grad as e
+            on se.student_number = e.student_number
+            and {{ union_dataset_join_clause(left_alias="se", right_alias="e") }}
+        left join
+            dlm as d
+            on se.student_number = d.student_number
+            and {{ union_dataset_join_clause(left_alias="se", right_alias="d") }}
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 

@@ -1,3 +1,14 @@
+with
+    staff_roster as (
+        select powerschool_teacher_number, google_email,
+        from {{ ref("int_people__staff_roster") }}
+
+        union all
+
+        select employee_id as powerschool_teacher_number, google_email,
+        from {{ ref("int_people__temp_staff") }}
+    )
+
 select
     sec.sections_schoolid as school_id,
     sec.sections_course_number as course_id,
@@ -28,9 +39,7 @@ inner join
     {{ ref("stg_powerschool__schools") }} as sch
     on sec.sections_schoolid = sch.school_number
     and {{ union_dataset_join_clause(left_alias="sec", right_alias="sch") }}
-inner join
-    {{ ref("int_people__staff_roster") }} as scw
-    on sec.teachernumber = scw.powerschool_teacher_number
+inner join staff_roster as scw on sec.teachernumber = scw.powerschool_teacher_number
 where
     sec.cc_academic_year = {{ var("current_academic_year") }}
     and not sec.is_dropped_section

@@ -2,6 +2,12 @@ version: 2
 
 sources:
   - name: kippnewark_overgrad
+    schema: |
+      {%- if env_var('GITHUB_USER', '') != '' -%}
+      zz_{{ env_var('GITHUB_USER', '') }}_
+      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}
+      z_dev_
+      {%- endif -%}kippnewark_overgrad
     tables:
       - name: stg_overgrad__admissions
         meta:
@@ -75,3 +81,11 @@ sources:
               - kippnewark
               - overgrad
               - int_overgrad__custom_fields_pivot
+      - name: int_overgrad__students
+        meta:
+          dagster:
+            group: overgrad
+            asset_key:
+              - kippnewark
+              - overgrad
+              - int_overgrad__students

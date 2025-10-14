@@ -1,34 +1,33 @@
-version: 2
 models:
   - name: rpt_illuminate__roster
     columns:
-      - name: 01 student id
+      - name: "`01 Student ID`"
         data_type: int64
-      - name: 02 ssid
+      - name: "`02 SSID`"
         data_type: int64
-      - name: 03 last name
+      - name: "`03 Last Name`"
         data_type: int64
-      - name: 04 first name
+      - name: "`04 First Name`"
         data_type: int64
-      - name: 05 middle name
+      - name: "`05 Middle Name`"
         data_type: int64
-      - name: 06 birth date
+      - name: "`06 Birth Date`"
         data_type: int64
-      - name: 07 section id
+      - name: "`07 Section ID`"
         data_type: string
-      - name: 08 site id
+      - name: "`08 Site ID`"
         data_type: int64
-      - name: 09 course id
+      - name: "`09 Course ID`"
         data_type: string
-      - name: 10 user id
+      - name: "`10 User ID`"
         data_type: string
-      - name: 11 entry date
+      - name: "`11 Entry Date`"
         data_type: date
-      - name: 12 leave date
+      - name: "`12 Leave Date`"
         data_type: date
-      - name: 13 grade level id
+      - name: "`13 Grade Level ID`"
         data_type: int64
-      - name: 14 academic year
+      - name: "`14 Academic Year`"
         data_type: string
-      - name: 15 session type id
+      - name: "`15 Session Type ID`"
         data_type: int64

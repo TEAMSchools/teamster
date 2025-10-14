@@ -1,0 +1,27 @@
+models:
+  - name: rpt_gsheets__laptop_assignments
+    columns:
+      - name: region
+        data_type: string
+      - name: school
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: advisory_name
+        data_type: string
+      - name: advisor_lastfirst
+        data_type: string
+      - name: username
+        data_type: string
+      - name: email
+        data_type: string
+      - name: dropdown_hash
+        data_type: string
+      - name: exitdate
+        data_type: date
+      - name: enroll_status
+        data_type: string

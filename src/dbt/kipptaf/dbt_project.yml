@@ -2,15 +2,11 @@ name: kipptaf
 version: 1.0.0
 config-version: 2
 
-# This setting configures which profile dbt uses for this project.
 profile: kipptaf
 
 dbt-cloud:
   project-id: 211862
 
-# These configurations specify where dbt should look for different types of files.
-# The `source-paths` config, for example, states that models in this project can be
-# found in the models/ directory. You probably won't need to change these!
 model-paths: [models]
 analysis-paths: [analyses]
 test-paths: [tests]
@@ -18,8 +14,8 @@ seed-paths: [seeds]
 macro-paths: [macros]
 snapshot-paths: [snapshots]
 
-target-path: target # directory which will store compiled SQL files
-clean-targets: # directories to be removed by `dbt clean`
+target-path: target
+clean-targets:
   - target
   - dbt_packages
 
@@ -30,8 +26,6 @@ vars:
   current_academic_year: 2025
   current_fiscal_year: 2026
 
-# Configuring models
-# Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
   kipptaf:
     act:
@@ -107,16 +101,15 @@ models:
       +schema: deanslist
     edplan:
       +schema: edplan
-    egencia:
-      +schema: egencia
-      staging:
-        +materialized: table
     extracts:
       +schema: extracts
+      +contract:
+        enforced: true
+      intermediate:
+        +contract:
+          enforced: false
       tableau:
         +schema: tableau
-      disabled:
-        +enabled: false
     facebook:
       +enabled: false
     finance:
@@ -155,6 +148,11 @@ models:
             group: google_sheets
         staging:
           +materialized: table
+          +contract:
+            enforced: true
+          +meta:
+            dagster:
+              tags: google_sheet
         intermediate:
           +materialized: table
         disabled:
@@ -230,8 +228,8 @@ models:
         +schema: schoolmint_grow
         staging:
           +materialized: table
-        disabled:
-          +enabled: false
+          +contract:
+            enforced: true
     smartrecruiters:
       +schema: smartrecruiters
     students:

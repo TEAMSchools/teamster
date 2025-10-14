@@ -1,6 +1,6 @@
-version: 2
-
 models:
   - name: rpt_extracts__survey_reminder
     config:
       enabled: false
+      contract:
+        enforced: false

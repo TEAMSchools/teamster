@@ -1,5 +1,5 @@
 select
-    localstudentidentifier,
+    localstudentidentifier as student_number,
     assessmentyear as academic_year,
     academic_year as academic_year_int,
     `period` as test_round,

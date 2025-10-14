@@ -1,0 +1,18 @@
+version: 2
+models:
+  - name: stg_google_sheets__topline_enrollment_targets
+    columns:
+      - name: Academic_Year
+        data_type: int64
+      - name: Schoolid
+        data_type: int64
+      - name: Seat_Target
+        data_type: int64
+      - name: Budget_Target
+        data_type: int64
+      - name: Region
+        data_type: string
+      - name: Org_Level
+        data_type: string
+      - name: join_key
+        data_type: string
