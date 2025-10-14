@@ -83,17 +83,21 @@ select
     dob as `06 Birth Date`,
 
     case
-        when discipline = 'ELA' and nj_student_tier = 'Bucket 1'
+        when discipline = 'ELA' and bucket = 'Bucket 1'
         then 'B1E'
-        when discipline = 'Math' and nj_student_tier = 'Bucket 1'
+        when discipline = 'Math' and bucket = 'Bucket 1'
         then 'B1M'
-        when discipline = 'ELA' and nj_student_tier = 'Bucket 2'
+        when discipline = 'ELA' and bucket = 'Bucket 2'
         then 'B2E'
-        when discipline = 'Math' and nj_student_tier = 'Bucket 2'
+        when discipline = 'Math' and bucket = 'Bucket 2'
         then 'B2M'
-        when discipline = 'ELA' and nj_student_tier is null
+        when discipline = 'ELA' and bucket = 'Bucket 3'
+        then 'B3E'
+        when discipline = 'Math' and bucket = 'Bucket 3'
+        then 'B3M'
+        when discipline = 'ELA' and bucket = 'Bucket 4'
         then 'BUE'
-        when discipline = 'Math' and nj_student_tier is null
+        when discipline = 'Math' and bucket = 'Bucket 4'
         then 'BUM'
     end as `07 Program ID`,
 
@@ -109,5 +113,5 @@ select
     null as `14 Program Exit Code`,
     null as `15 Site ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("int_extracts__student_enrollments_subjects") }}
-where academic_year = {{ current_school_year(var("local_timezone")) }} and rn_year = 1
+from {{ ref("int_students__instructional_tier") }}
+where academic_year = {{ current_school_year(var("local_timezone")) }}
