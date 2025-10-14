@@ -239,13 +239,14 @@ select
         then 'Bucket 1'
         when co.region in ('Camden', 'Newark') and co.grade_level = 11 and psat
         then 'Bucket 1'
+        /* FL */
+
         when bp.bucket = 'Bucket 2'
         then bp.bucket
         when bp.bucket = 'Bucket 3'
         then bp.bucket
         else 'Bucket 4'
     end as bucket,
-/* FL */
 from {{ ref("int_extracts__student_enrollments_subjects") }} as co
 left join
     assessment_pivot as ap
