@@ -1,4 +1,24 @@
 with
+    strategy as (
+        -- need a distinct strategy scaffold
+        select distinct
+            expected_test_type,
+            expected_scope,
+            expected_subject_area,
+            expected_score_type,
+            test_type,
+            scope,
+            subject_area,
+            score_type,
+
+            'foo' as bar,
+
+        from {{ ref("int_students__college_assessment_roster") }}
+        where
+            test_type = 'Official'
+            and expected_subject_area in ('Composite', 'Combined')
+    ),
+
     benchmark_goals as (
         select
             expected_test_type,
@@ -115,24 +135,25 @@ with
             avg(
                 if(
                     bg.expected_metric_name in ('HS-Ready', 'College-Ready'),
-                    r.max_scale_score,
+                    s.max_scale_score,
                     p.attempt_count_ytd
                 )
             ) as score,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
-        inner join
-            {{ ref("int_students__college_assessment_roster") }} as r
-            on e.student_number = r.student_number
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="r") }}
-            and r.test_type = 'Official'
-            and r.expected_subject_area in ('Composite', 'Combined')
+        inner join strategy as r on 'foo' = r.bar
+        left join
+            {{ ref("int_students__college_assessment_roster") }} as s
+            on e.student_number = s.student_number
+            and r.expected_scope = s.expected_scope
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
+            and s.test_type = 'Official'
+            and s.expected_subject_area in ('Composite', 'Combined')
         left join
             attempts as p
             on e.student_number = p.student_number
             and r.expected_scope = p.scope
             and {{ union_dataset_join_clause(left_alias="e", right_alias="p") }}
-            and {{ union_dataset_join_clause(left_alias="r", right_alias="p") }}
         left join
             benchmark_goals as bg
             on r.expected_test_type = bg.expected_test_type
