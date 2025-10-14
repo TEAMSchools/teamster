@@ -15,7 +15,9 @@ with
 
     roster_current as (select *, from {{ ref("int_people__staff_roster") }}),
 
-    reporting_terms as (select *, from {{ ref("stg_reporting__terms") }}),
+    reporting_terms as (
+        select *, from {{ ref("stg_google_sheets__reporting__terms") }}
+    ),
 
     observations as (
         select *,

@@ -20,7 +20,8 @@ with
             initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)')) as region,
         from union_relations as ur
         left join
-            {{ ref("stg_people__location_crosswalk") }} as x on ur.school_name = x.name
+            {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
+            on ur.school_name = x.name
     )
 
 select

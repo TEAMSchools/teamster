@@ -244,7 +244,7 @@ with
             x.ap_course_name,
 
             p as ps_ap_course_subject_code,
-        from {{ ref("stg_collegeboard__ap_course_crosswalk") }} as x
+        from {{ ref("stg_google_sheets__collegeboard__ap_course_crosswalk") }} as x
         cross join unnest(split(x.ps_ap_course_subject_code, ',')) as p
         where x.data_source = 'CB File'
     )

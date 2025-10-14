@@ -21,7 +21,8 @@ with
             ) as is_pass_4_lessons_int,
         from {{ ref("int_iready__instruction_by_lesson_union") }} as il
         inner join
-            {{ ref("stg_people__location_crosswalk") }} as cw on il.school = cw.name
+            {{ ref("stg_google_sheets__people__location_crosswalk") }} as cw
+            on il.school = cw.name
         inner join
             {{ ref("int_powerschool__calendar_week") }} as pw
             on il.academic_year_int = pw.academic_year
@@ -556,7 +557,7 @@ inner join
     on r.home_work_location_powerschool_school_id = w.schoolid
     and o.observed_at between w.week_start_monday and w.week_end_sunday
 left join
-    {{ ref("stg_people__location_crosswalk") }} as cw
+    {{ ref("stg_google_sheets__people__location_crosswalk") }} as cw
     on r.home_work_location_name = cw.name
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc

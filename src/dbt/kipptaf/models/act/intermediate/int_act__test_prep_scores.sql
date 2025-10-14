@@ -27,7 +27,7 @@ with
             {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
             on ais.assessment_id = agl.assessment_id
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on ais.administered_at between rt.start_date and rt.end_date
             and rt.type = 'ACT'
         inner join

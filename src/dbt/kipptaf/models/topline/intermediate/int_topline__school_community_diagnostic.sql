@@ -11,7 +11,7 @@ inner join
     and sr.academic_year = se.academic_year
     and se.is_enrolled_y1
 left join
-    {{ ref("stg_surveys__scd_answer_crosswalk") }} as ac
+    {{ ref("stg_google_sheets__surveys__scd_answer_crosswalk") }} as ac
     on sr.question_shortname = ac.question_code
     and sr.answer = ac.response
 where

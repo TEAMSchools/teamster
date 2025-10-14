@@ -44,7 +44,7 @@ select
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_people__staff_roster") }} as sr
 inner join
-    {{ ref("stg_people__campus_crosswalk") }} as cc
+    {{ ref("stg_google_sheets__people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.name
     and not cc.is_pathways
 where

@@ -44,7 +44,7 @@ inner join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
     and (dli.category = 'TX - HI Request (admin only)' or dli.hi_start_date is not null)
 inner join
-    {{ ref("stg_reporting__terms") }} as d
+    {{ ref("stg_google_sheets__reporting__terms") }} as d
     on co.schoolid = d.school_id
     and dli.create_ts_date between d.start_date and d.end_date
     and d.type = 'RT'

@@ -87,7 +87,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="dlp") }}
     and dlp.is_active
 left join
-    {{ ref("stg_reporting__terms") }} as d
+    {{ ref("stg_google_sheets__reporting__terms") }} as d
     on co.schoolid = d.school_id
     and dlp.create_ts_date between d.start_date and d.end_date
     and d.type = 'RT'

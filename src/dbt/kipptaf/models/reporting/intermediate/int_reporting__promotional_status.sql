@@ -42,7 +42,7 @@ with
             end as hs_off_track_absences,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as mem
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on mem.schoolid = rt.school_id
             and mem.yearid = rt.powerschool_year_id
             /* join to all terms after calendardate */
@@ -458,7 +458,7 @@ with
             end as academic_status,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on co.academic_year = rt.academic_year
             and co.schoolid = rt.school_id
             and rt.type = 'RT'

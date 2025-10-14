@@ -6,7 +6,7 @@ models:
         data_tests:
           - relationships:
               arguments:
-                to: ref("stg_people__location_crosswalk")
+                to: ref("stg_google_sheets__people__location_crosswalk")
                 field: name
               config:
                 where: name != '[Training School]'
