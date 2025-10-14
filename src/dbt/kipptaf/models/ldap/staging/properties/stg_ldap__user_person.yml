@@ -1,0 +1,57 @@
+version: 2
+models:
+  - name: stg_ldap__user_person
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: physical_delivery_office_name
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_people__location_crosswalk")
+                field: name
+              config:
+                where:
+                  # for temp staff not in ADP
+                  idauto_status = 'A' and uac_account_disable = 0 and
+                  employee_id like 'TMP%'
+                store_failures: true
+                # severity: warn
+      - name: distinguished_name
+        data_type: string
+      - name: user_principal_name
+        data_type: string
+      - name: mail
+        data_type: string
+      - name: sam_account_name
+        data_type: string
+      - name: employee_number
+        data_type: int64
+      - name: uac_account_disable
+        data_type: int64
+      - name: google_email
+        data_type: string
+      - name: company
+        data_type: string
+      - name: department
+        data_type: string
+      - name: display_name
+        data_type: string
+      - name: employee_id
+        data_type: string
+      - name: given_name
+        data_type: string
+      - name: idauto_person_alternate_id
+        data_type: string
+      - name: idauto_person_end_date
+        data_type: float64
+      - name: idauto_person_term_date
+        data_type: string
+      - name: idauto_status
+        data_type: string
+      - name: sn
+        data_type: string
+      - name: title
+        data_type: string

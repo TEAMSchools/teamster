@@ -167,7 +167,8 @@ select
     coalesce(cn.as1, 0) as as1_complete,
     coalesce(cn.bm, 0) as bm_complete,
 
-    kt.graduation_year,
+    kt.contact_graduation_year as graduation_year,
+
 from {{ ref("base_powerschool__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number

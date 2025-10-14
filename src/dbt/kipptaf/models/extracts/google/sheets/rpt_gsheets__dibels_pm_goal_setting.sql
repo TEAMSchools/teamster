@@ -13,7 +13,7 @@ with
 
         from {{ ref("int_amplify__all_assessments") }}
         where
-            academic_year = 2024  -- TODO: make academic year once BOY data is complete
+            academic_year = {{ var("current_academic_year") }}
             and measure_standard != 'Composite'
             and overall_probe_eligible = 'Yes'
             and period in ('BOY', 'MOY')

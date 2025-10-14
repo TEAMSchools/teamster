@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_tableau__gradebook_audit_assignments_student
     columns:
@@ -223,8 +222,6 @@ models:
       - name: assign_expected_to_be_scored
         data_type: boolean
       - name: assign_expected_with_score
-        data_type: boolean
-      - name: assign_exempt_with_score
         data_type: boolean
       - name: assign_null_score
         data_type: boolean

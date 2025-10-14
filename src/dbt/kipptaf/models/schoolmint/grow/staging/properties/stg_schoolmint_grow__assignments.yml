@@ -1,9 +1,12 @@
-version: 2
 models:
   - name: stg_schoolmint_grow__assignments
     columns:
       - name: assignment_id
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: name
         data_type: string
       - name: coaching_activity
@@ -46,14 +49,6 @@ models:
         data_type: int64
       - name: progress_date
         data_type: string
-      - name: tags
-        data_type: record
-      - name: tags.name
-        data_type: string
-      - name: tags._id
-        data_type: string
-      - name: tags.url
-        data_type: string
       - name: created
         data_type: timestamp
       - name: last_modified
@@ -62,3 +57,5 @@ models:
         data_type: timestamp
       - name: created_date_local
         data_type: date
+      - name: tags
+        data_type: array<struct<name string, _id string, url string>>

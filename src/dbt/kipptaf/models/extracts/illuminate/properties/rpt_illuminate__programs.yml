@@ -1,34 +1,33 @@
-version: 2
 models:
   - name: rpt_illuminate__programs
     columns:
-      - name: 01 import student id
+      - name: "`01 Import Student ID`"
         data_type: int64
-      - name: 02 state student id
+      - name: "`02 State Student ID`"
         data_type: int64
-      - name: 03 student last name
+      - name: "`03 Student Last Name`"
         data_type: string
-      - name: 04 student first name
+      - name: "`04 Student First Name`"
         data_type: string
-      - name: 05 student middle name
+      - name: "`05 Student Middle Name`"
         data_type: int64
-      - name: 06 birth date
+      - name: "`06 Birth Date`"
         data_type: date
-      - name: 07 program id
-        data_type: int64
-      - name: 08 eligibility start date
-        data_type: int64
-      - name: 09 eligibility end date
-        data_type: int64
-      - name: 10 program start date
-        data_type: date
-      - name: 11 program end date
-        data_type: date
-      - name: 12 academic year
+      - name: "`07 Program ID`"
         data_type: string
-      - name: 13 program eligibility code
+      - name: "`08 Eligibility Start Date`"
         data_type: int64
-      - name: 14 program exit code
+      - name: "`09 Eligibility End Date`"
         data_type: int64
-      - name: 15 site id
+      - name: "`10 Program Start Date`"
+        data_type: date
+      - name: "`11 Program End Date`"
+        data_type: date
+      - name: "`12 Academic Year`"
+        data_type: string
+      - name: "`13 Program Eligibility Code`"
+        data_type: int64
+      - name: "`14 Program Exit Code`"
+        data_type: int64
+      - name: "`15 Site ID`"
         data_type: int64

@@ -1,22 +1,21 @@
-version: 2
 models:
   - name: rpt_illuminate__terms
     columns:
-      - name: 01 site id
+      - name: "`01 Site ID`"
         data_type: int64
-      - name: 02 term name
+      - name: "`02 Term Name`"
         data_type: string
-      - name: 03 term num
+      - name: "`03 Term Num`"
         data_type: int64
-      - name: 04 start date
+      - name: "`04 Start Date`"
         data_type: date
-      - name: 05 end date
+      - name: "`05 End Date`"
         data_type: date
-      - name: 06 term type
+      - name: "`06 Term Type`"
         data_type: int64
-      - name: 07 session type id
+      - name: "`07 Session Type ID`"
         data_type: int64
-      - name: 08 academic year
+      - name: "`08 Academic Year`"
         data_type: string
-      - name: 09 local term id
+      - name: "`09 Local Term ID`"
         data_type: int64

@@ -50,6 +50,7 @@ select
     otherphone as other_phone,
     postsecondary_status__c as postsecondary_status,
     secondary_email__c as secondary_email,
+    postsec_advisor__c as postsec_advisor,
 
     safe_cast(kipp_hs_class__c as int) as kipp_hs_class,
     safe_cast(school_specific_id__c as int) as school_specific_id,
@@ -61,5 +62,20 @@ select
     || mailingstate
     || ' '
     || mailingpostalcode as mailing_address,
+
+    if(
+        extract(
+            month from coalesce(actual_hs_graduation_date__c, expected_hs_graduation__c)
+        )
+        < 10,
+        extract(
+            year from coalesce(actual_hs_graduation_date__c, expected_hs_graduation__c)
+        ),
+        extract(
+            year from coalesce(actual_hs_graduation_date__c, expected_hs_graduation__c)
+        )
+        + 1
+    ) as graduation_year,
+
 from {{ source("kippadb", "contact") }}
 where not isdeleted

@@ -25,6 +25,7 @@ with
             sw.academic_year,
             sw.week_start_monday,
             sw.week_end_sunday,
+            sw.week_number_academic_year,
             sw.discipline,
 
             rr.subject_area,
@@ -44,6 +45,7 @@ with
             and sw.academic_year = rr.academic_year
             and sw.discipline = rr.discipline
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
+        where sw.is_enrolled_week
     )
 
 select
@@ -56,6 +58,7 @@ select
     administered_at,
     week_start_monday,
     week_end_sunday,
+    week_number_academic_year,
     is_mastery_int,
 
     if(mastery_as_of_week = -1, null, mastery_as_of_week) as is_mastery_running_int,

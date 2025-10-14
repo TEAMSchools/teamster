@@ -2,9 +2,7 @@ version: 2
 models:
   - name: stg_google_sheets__kippfwd_seasons
     config:
-      contract:
-        enforced: true
-      tags: google_sheet
+      enabled: false
     columns:
       - name: scope
         data_type: string

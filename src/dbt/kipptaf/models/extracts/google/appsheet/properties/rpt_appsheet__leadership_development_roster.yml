@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_appsheet__leadership_development_roster
     columns:
@@ -26,9 +25,7 @@ models:
         data_type: string
       - name: active
         data_type: boolean
-      - name: route
-        data_type: string
-      - name: default_include
-        data_type: boolean
       - name: permission_level
+        data_type: int64
+      - name: reports_to_employee_number
         data_type: int64

@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: stg_deanslist__followups
+    config:
+      enabled: false
     columns:
       - name: _dbt_source_relation
         data_type: string

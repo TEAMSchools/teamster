@@ -10,14 +10,6 @@ def _test(schedule):
         context.log.info(o)
 
 
-def test_grow_observations_asset_job_schedule():
-    from teamster.code_locations.kipptaf.level_data.grow.schedules import (
-        grow_observations_asset_job_schedule,
-    )
-
-    _test(grow_observations_asset_job_schedule)
-
-
 def test_grow_static_partition_asset_job_schedule():
     from teamster.code_locations.kipptaf.level_data.grow.schedules import (
         grow_static_partition_asset_job_schedule,

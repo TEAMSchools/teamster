@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_deanslist__transcript_gpas
     columns:
@@ -6,7 +5,7 @@ models:
         data_type: int64
       - name: academic_year
         data_type: int64
-      - name: gpa_y1_weighted
+      - name: GPA_Y1_weighted
         data_type: float64
-      - name: gpa_y1_unweighted
+      - name: GPA_Y1_unweighted
         data_type: float64
