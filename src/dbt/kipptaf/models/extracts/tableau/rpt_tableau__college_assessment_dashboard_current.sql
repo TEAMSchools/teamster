@@ -117,6 +117,8 @@ with
             e.ktc_cohort,
             e.graduation_year,
             e.year_in_network,
+            e.college_match_gpa,
+            e.college_match_gpa_bands,
 
             r.expected_test_type,
             r.expected_scope,
@@ -180,6 +182,8 @@ with
             e.ktc_cohort,
             e.graduation_year,
             e.year_in_network,
+            e.college_match_gpa,
+            e.college_match_gpa_bands,
             r.expected_test_type,
             r.expected_scope,
             r.expected_subject_area,

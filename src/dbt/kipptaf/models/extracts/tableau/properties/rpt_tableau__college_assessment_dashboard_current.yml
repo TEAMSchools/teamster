@@ -37,6 +37,10 @@ models:
         data_type: int64
       - name: year_in_network
         data_type: int64
+      - name: college_match_gpa
+        data_type: numeric
+      - name: college_match_gpa_bands
+        data_type: string
       - name: expected_test_type
         data_type: string
       - name: expected_scope
