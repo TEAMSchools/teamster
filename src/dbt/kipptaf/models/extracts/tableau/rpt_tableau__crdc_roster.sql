@@ -87,7 +87,7 @@ with
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join retained as r on e.student_number = r.student_number
         left join
-            {{ ref("stg_crdc__student_numbers") }} as me
+            {{ ref("stg_google_sheets__crdc__student_numbers") }} as me
             on e.student_number = me.student_number
         left join
             {{ ref("stg_powerschool__s_nj_stu_x") }} as lep
@@ -178,7 +178,7 @@ with
             and {{ union_dataset_join_clause(left_alias="c", right_alias="g") }}
             and g.storecode = 'Y1'
         left join
-            {{ ref("stg_crdc__sced_code_crosswalk") }} as x
+            {{ ref("stg_google_sheets__crdc__sced_code_crosswalk") }} as x
             on concat(c.nces_subject_area, c.nces_course_id) = x.sced_code
         where
             -- submission is always for the previous school year

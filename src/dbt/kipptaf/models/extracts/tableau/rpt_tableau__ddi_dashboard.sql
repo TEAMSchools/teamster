@@ -157,7 +157,7 @@ with
             on sc.powerschool_student_number = r.powerschool_student_number
             and sc.assessment_id = r.assessment_id
         left join
-            {{ ref("stg_assessments__standard_domains") }} as sd
+            {{ ref("stg_google_sheets__assessments__standard_domains") }} as sd
             on r.response_type_code = sd.standard_code
         left join
             {{ ref("base_powerschool__course_enrollments") }} as cc
@@ -312,7 +312,7 @@ left join
     and co.subject_area = sf.illuminate_subject_area
     and sf.rn_year = 1
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as qbls
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
     on co.academic_year = qbls.academic_year
     and co.term = qbls.term_name
     and co.region = qbls.region
@@ -420,7 +420,7 @@ left join
     and co.course_credittype = sf.assessment_dashboard_join
     and sf.rn_year = 1
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as qbls
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
     on co.academic_year = qbls.academic_year
     and co.term = qbls.term_name
     and co.region = qbls.region

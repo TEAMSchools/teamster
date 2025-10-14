@@ -89,7 +89,12 @@ with
         select distinct
             m.metric_id, m.region, m.bucket, m.type, m.description, m.fiscal_year,
         from
-            {{ ref("stg_performance_management__leadership_development_metrics") }} as m
+            {{
+                ref(
+                    "stg_google_sheets__performance_management__leadership_development_metrics"
+                )
+            }}
+            as m
     )
 
 select
