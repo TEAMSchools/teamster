@@ -264,15 +264,15 @@ select
     x.data_source,
 from ap_data as a
 left join
-    {{ ref("stg_collegeboard__ap_codes") }} as c1
+    {{ ref("stg_google_sheets__collegeboard__ap_codes") }} as c1
     on a.exam_code = c1.code
     and c1.`domain` = 'Exam Codes'
 left join
-    {{ ref("stg_collegeboard__ap_codes") }} as c2
+    {{ ref("stg_google_sheets__collegeboard__ap_codes") }} as c2
     on a.irregularity_code_1 = c2.code
     and c2.`domain` = 'Irregularity Scores'
 left join
-    {{ ref("stg_collegeboard__ap_codes") }} as c3
+    {{ ref("stg_google_sheets__collegeboard__ap_codes") }} as c3
     on a.irregularity_code_2 = c3.code
     and c3.`domain` = 'Irregularity Scores'
 left join ap_course_crosswalk_long as x on c1.description = x.test_name

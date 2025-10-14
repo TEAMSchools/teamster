@@ -7,7 +7,12 @@ with
 
     metrics as (
         select *,
-        from {{ ref("stg_performance_management__leadership_development_metrics") }}
+        from
+            {{
+                ref(
+                    "stg_google_sheets__performance_management__leadership_development_metrics"
+                )
+            }}
         where academic_year = {{ var("current_academic_year") }} and not `disabled`
     ),
 

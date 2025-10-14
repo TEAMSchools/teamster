@@ -40,7 +40,7 @@ left join
     and rt.school_id = 0
     and rt.type = 'RT'
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as ps
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as ps
     on s.custom_code = ps.standard_code
     and rt.name = ps.term_name
     and a.subject_area = ps.illuminate_subject_area
@@ -93,7 +93,7 @@ left join
     and rt.school_id = 0
     and rt.type = 'RT'
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as ps
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as ps
     on s.custom_code = ps.standard_code
     and rt.name = ps.term_name
     and a.subject_area = ps.illuminate_subject_area

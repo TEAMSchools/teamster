@@ -60,7 +60,7 @@ with
             ssk.scale_score,
         from assessment_responses as ld
         left join
-            {{ ref("stg_assessments__act_scale_score_key") }} as ssk
+            {{ ref("stg_google_sheets__assessments__act_scale_score_key") }} as ssk
             on ld.academic_year = ssk.academic_year
             and ld.grade_level = ssk.grade_level
             and ld.term_code = ssk.administration_round

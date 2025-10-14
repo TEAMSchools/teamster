@@ -167,7 +167,7 @@ with
             x.powerschool_student_number,
         from {{ source("collegeboard", "src_collegeboard__ap") }} as a
         left join
-            {{ ref("stg_collegeboard__ap_id_crosswalk") }} as x
+            {{ ref("stg_google_sheets__collegeboard__ap_id_crosswalk") }} as x
             on a.ap_number_ap_id = x.college_board_id
     ),
 
