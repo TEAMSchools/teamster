@@ -29,6 +29,13 @@ select
     lc.mdso_preferred_name_lastfirst as mdso_name,
     lc.head_of_school_preferred_name_lastfirst as hos_name,
 
+    if(
+        date_sub(current_date('{{ var("local_timezone") }}'), interval 7 day)
+        between db.term and db.term_end,
+        true,
+        false
+    ) as is_most_recent_complete_week,
+
     case
         when db.region = 'TEAM Academy Charter School'
         then 'Newark'
