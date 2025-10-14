@@ -59,3 +59,5 @@ models:
         data_type: string
       - name: mdso_name
         data_type: string
+      - name: is_most_recent_complete_week
+        data_type: boolean
