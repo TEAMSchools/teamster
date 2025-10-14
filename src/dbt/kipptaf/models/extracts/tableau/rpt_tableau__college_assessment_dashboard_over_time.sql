@@ -487,7 +487,8 @@ select
         if(
             running_max_comparison_score >= expected_metric_min_score
             and expected_scope in ('ACT', 'SAT')
-            and expected_subject_area in ('Composite', 'Combined', 'Reading', 'Math'),
+            and expected_subject_area
+            in ('Composite', 'Combined', 'Reading', 'Math', 'EBRW'),
             1,
             0
         )
@@ -504,7 +505,8 @@ select
         if(
             max_scale_score >= expected_metric_min_score
             and expected_scope in ('ACT', 'SAT')
-            and expected_subject_area in ('Composite', 'Combined', 'Reading', 'Math'),
+            and expected_subject_area
+            in ('Composite', 'Combined', 'Reading', 'Math', 'EBRW'),
             1,
             0
         )
