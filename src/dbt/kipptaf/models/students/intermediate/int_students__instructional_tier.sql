@@ -228,6 +228,11 @@ with
 
 select
     co.student_number,
+    co.student_first_name,
+    co.student_last_name,
+    co.dob,
+    co.entrydate,
+    co.exitdate,
     co.academic_year,
     co.grade_level,
     co.region,
