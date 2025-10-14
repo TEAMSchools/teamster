@@ -21,7 +21,8 @@
       "extensions": [
         "innoverio.vscode-dbt-power-user",
         "trunk.io",
-        "ms-python.python"
+        "ms-python.python",
+        "redhat.vscode-yaml"
       ]
     }
   }
