@@ -96,7 +96,7 @@ select
     ) as rn_subj_round,
 from {{ ref("int_iready__diagnostic_results") }} as dr
 left join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on dr.region = rt.region
     and dr.completion_date between rt.start_date and rt.end_date
     and rt.type = 'IR'

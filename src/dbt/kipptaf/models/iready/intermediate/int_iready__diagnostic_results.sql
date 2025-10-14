@@ -72,7 +72,8 @@ with
             ) as most_recent_completion_date,
         from union_relations as dr
         left join
-            {{ ref("stg_people__location_crosswalk") }} as lc on dr.school = lc.name
+            {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
+            on dr.school = lc.name
     )
 
 select

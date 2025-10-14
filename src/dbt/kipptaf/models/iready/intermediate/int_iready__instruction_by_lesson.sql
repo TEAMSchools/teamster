@@ -17,4 +17,6 @@ select
         ur._dbt_source_relation, r'kipp[a-z]+_', lc.dagster_code_location || '_'
     ) as _dbt_source_relation,
 from union_relations as ur
-left join {{ ref("stg_people__location_crosswalk") }} as lc on ur.school = lc.name
+left join
+    {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
+    on ur.school = lc.name

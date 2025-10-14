@@ -65,5 +65,5 @@ left join
     on ur.courses_dcid = cx.coursesdcid
     and {{ union_dataset_join_clause(left_alias="ur", right_alias="cx") }}
 left join
-    {{ ref("stg_assessments__course_subject_crosswalk") }} as csc
+    {{ ref("stg_google_sheets__assessments__course_subject_crosswalk") }} as csc
     on ur.cc_course_number = csc.powerschool_course_number

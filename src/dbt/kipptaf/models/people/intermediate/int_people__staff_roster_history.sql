@@ -311,7 +311,7 @@ left join
     {{ ref("stg_ldap__user_person") }} as ldap
     on w.employee_number = ldap.employee_number
 left join
-    {{ ref("stg_people__powerschool_crosswalk") }} as idps
+    {{ ref("stg_google_sheets__people__powerschool_crosswalk") }} as idps
     on w.employee_number = idps.employee_number
     and idps.is_active
 left join

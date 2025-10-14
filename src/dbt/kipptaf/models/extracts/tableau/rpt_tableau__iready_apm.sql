@@ -81,7 +81,7 @@ select
 
 from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as co
 left join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on co.academic_year = rt.academic_year
     and co.region = rt.city
     and rt.type = 'IREX'

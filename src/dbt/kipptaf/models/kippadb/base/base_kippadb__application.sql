@@ -107,7 +107,7 @@ with
             and c.contact_kipp_hs_class = enr.start_date_year
             and enr.rn_stu_school_start = 1
         left join
-            {{ ref("stg_kippadb__nsc_crosswalk") }} as n
+            {{ ref("stg_google_sheets__kippadb__nsc_crosswalk") }} as n
             on acc.id = n.account_id
             and n.rn_account = 1
     )

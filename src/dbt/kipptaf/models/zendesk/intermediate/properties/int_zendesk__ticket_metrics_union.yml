@@ -1,0 +1,4 @@
+models:
+  - name: int_zendesk__ticket_metrics_union
+    config:
+      enabled: false
