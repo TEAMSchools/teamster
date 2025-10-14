@@ -31,6 +31,21 @@ with
         where expected_test_type = 'Official' and goal_type = 'Attempts'
     ),
 
+    max_attempts as (
+        select
+            _dbt_source_relation,
+            student_number,
+
+            max(psat89_count_ytd) as psat89_count_ytd,
+            max(psat10_count_ytd) as psat10_count_ytd,
+            max(psatnmsqt_count_ytd) as psatnmsqt_count_ytd,
+            max(sat_count_ytd) as sat_count_ytd,
+            max(act_count_ytd) as act_count_ytd,
+
+        from {{ ref("int_students__college_assessment_participation_roster") }}
+        group by _dbt_source_relation, student_number
+    ),
+
     attempts as (
         select
             _dbt_source_relation,
@@ -53,7 +68,7 @@ with
             end as scope,
 
         from
-            {{ ref("int_students__college_assessment_participation_roster") }} unpivot (
+            max_attempts unpivot (
                 attempt_count_ytd for scope in (
                     psat89_count_ytd,
                     psat10_count_ytd,
@@ -62,18 +77,6 @@ with
                     act_count_ytd
                 )
             )
-    ),
-
-    attempts_dedup as (
-        select
-            _dbt_source_relation,
-            student_number,
-            scope,
-
-            max(attempt_count_ytd) as attempt_count_ytd,
-
-        from attempts
-        group by _dbt_source_relation, student_number, scope
     ),
 
     roster as (
@@ -125,7 +128,7 @@ with
             and r.test_type = 'Official'
             and r.expected_subject_area in ('Composite', 'Combined')
         left join
-            attempts_dedup as p
+            attempts as p
             on e.student_number = p.student_number
             and r.expected_scope = p.scope
             and {{ union_dataset_join_clause(left_alias="e", right_alias="p") }}
