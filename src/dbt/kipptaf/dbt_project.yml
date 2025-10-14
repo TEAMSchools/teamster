@@ -67,10 +67,6 @@ models:
       +materialized: table
     assessments:
       +schema: assessments
-      staging:
-        +materialized: table
-      disabled:
-        +enabled: false
     collegeboard:
       +schema: collegeboard
       staging:
@@ -84,10 +80,6 @@ models:
         +enabled: false
         staging:
           +materialized: table
-    crdc:
-      +schema: crdc
-      staging:
-        +materialized: table
     dayforce:
       +schema: dayforce
       +materialized: table
@@ -108,8 +100,6 @@ models:
       +enabled: false
     finance:
       +schema: finance
-      staging:
-        +materialized: table
     fldoe:
       +schema: fldoe
     google:
@@ -180,10 +170,6 @@ models:
       +schema: marts
     metrics:
       +schema: metrics
-    njdoe:
-      +schema: njdoe
-      staging:
-        +materialized: table
     overgrad:
       +schema: overgrad
     pearson:
