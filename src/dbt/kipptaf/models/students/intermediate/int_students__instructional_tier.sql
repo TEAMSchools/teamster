@@ -98,6 +98,22 @@ with
 
         union all
 
+        select
+            student_id as student_number,
+            discipline,
+
+            'i-Ready BOY Proficient' as assessment_name,
+
+            academic_year_int as academic_year_join,
+            is_proficient,
+        from {{ ref("base_iready__diagnostic_results") }}
+        where
+            test_round = 'BOY'
+            and rn_subj_round = 1
+            and sublevel_number_with_typical is not null
+
+        union all
+
         /* Star */
         select
             student_display_id as student_number,
@@ -180,6 +196,7 @@ with
             fast_pm3,
             njsla,
             psat,
+            iready_proficient,
         from
             assessment_union pivot (
                 max(is_proficient) for assessment_name in (
@@ -191,7 +208,8 @@ with
                     'FAST PM1' as fast_pm1,
                     'FAST PM3' as fast_pm3,
                     'NJSLA' as njsla,
-                    'PSAT' as psat
+                    'PSAT' as psat,
+                    'i-Ready BOY Proficient' as iready_proficient
                 )
             )
     ),
@@ -220,27 +238,48 @@ select
         when
             co.region in ('Camden', 'Newark')
             and co.grade_level < 3
-            and iready_proficient_typical
+            and ap.iready_proficient_typical
         then 'Bucket 1'
         when
             co.region in ('Camden', 'Newark')
             and co.grade_level = 3
-            and iready_projected_proficient_typical
+            and ap.iready_projected_proficient_typical
         then 'Bucket 1'
         when
             co.region in ('Camden', 'Newark')
             and co.grade_level < 9
-            and coalesce(njsla, iready_projected_proficient_typical)
+            and coalesce(ap.njsla, ap.iready_projected_proficient_typical)
         then 'Bucket 1'
         when
             co.region in ('Camden', 'Newark')
-            and co.grade_level < 11
-            and coalesce(njsla, iready_proficient_typical)
+            and co.grade_level = 9
+            and coalesce(ap.njsla, ap.iready_proficient_typical)
+        then 'Bucket 1'
+        when co.region in ('Camden', 'Newark') and co.grade_level < 11 and psat
         then 'Bucket 1'
         when co.region in ('Camden', 'Newark') and co.grade_level = 11 and psat
         then 'Bucket 1'
-        /* FL */
 
+        /* FL */
+        when co.region = 'Miami' and co.grade_level = 0 and ap.star_boy
+        then 'Bucket 1'
+        when
+            co.region = 'Miami'
+            and co.grade_level < 3
+            and coalesce(ap.star_eoy, ap.iready_proficient_typical)
+        then 'Bucket 1'
+        when
+            co.region = 'Miami'
+            and co.grade_level = 3
+            and coalesce(ap.fast_pm1, ap.iready_projected_proficient_typical)
+        then 'Bucket 1'
+        when
+            co.region = 'Miami'
+            and co.grade_level <= 8
+            and coalesce(ap.fast_pm3, ap.iready_projected_proficient_typical)
+        then 'Bucket 1'
+
+        /* PowerSchool Student Programs */
         when bp.bucket = 'Bucket 2'
         then bp.bucket
         when bp.bucket = 'Bucket 3'
