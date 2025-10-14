@@ -1,60 +1,125 @@
 version: 2
+
 models:
   - name: int_students__athletic_eligibility
+    description: ""
     columns:
       - name: _dbt_source_relation
         data_type: string
+        description: ""
+
       - name: academic_year
         data_type: int64
+        description: ""
+
       - name: yearid
         data_type: int64
+        description: ""
+
       - name: schoolid
         data_type: int64
+        description: ""
+
       - name: student_number
         data_type: int64
+        description: ""
+
       - name: students_dcid
         data_type: int64
+        description: ""
+
       - name: studentid
         data_type: int64
+        description: ""
+
       - name: grade_level
         data_type: int64
+        description: ""
+
       - name: grade_level_prev
         data_type: int64
+        description: ""
+
       - name: dob
         data_type: date
+        description: ""
+
+      - name: ada
+        data_type: float64
+        description: ""
+
       - name: cy_unweighted_term_q1
         data_type: float64
+        description: ""
+
       - name: cy_weighted_term_q1
         data_type: float64
+        description: ""
+
       - name: cy_unweighted_s1_ada
         data_type: float64
+        description: ""
+
       - name: cy_weighted_s1_ada
         data_type: float64
+        description: ""
+
       - name: py_y1_unweighted_ada
         data_type: float64
+        description: ""
+
       - name: py_y1_weighted_ada
         data_type: float64
+        description: ""
+
       - name: cy_q1_gpa
         data_type: float64
+        description: ""
+
       - name: cy_s1_gpa
         data_type: float64
+        description: ""
+
+      - name: cy_y1_gpa
+        data_type: float64
+        description: ""
+
       - name: py_y1_gpa
         data_type: float64
+        description: ""
+
       - name: py_credits
         data_type: float64
+        description: ""
+
       - name: met_py_credits
         data_type: boolean
+        description: ""
+
       - name: met_cy_credits
         data_type: boolean
+        description: ""
+
       - name: is_first_time_ninth
         data_type: boolean
+        description: ""
+
       - name: is_age_eligible
         data_type: boolean
+        description: ""
+
       - name: q1_ae_status
         data_type: string
+        description: ""
+
       - name: q2_ae_status
         data_type: string
+        description: ""
+
       - name: q3_ae_status
         data_type: string
+        description: ""
+
       - name: q4_ae_status
         data_type: string
+        description: ""
