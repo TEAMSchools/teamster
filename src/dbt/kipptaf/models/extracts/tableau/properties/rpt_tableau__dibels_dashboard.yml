@@ -64,6 +64,14 @@ models:
         data_type: string
       - name: cohort
         data_type: int64
+      - name: hos
+        data_type: string
+      - name: nj_student_tier
+        data_type: string
+      - name: tutoring_nj
+        data_type: boolean
+      - name: is_sipps
+        data_type: boolean
       - name: assessment_type
         data_type: string
       - name: expected_test
@@ -194,17 +202,9 @@ models:
         data_type: int64
       - name: met_pm_round_overall_criteria
         data_type: int64
-      - name: hos
-        data_type: string
-      - name: nj_student_tier
-        data_type: string
-      - name: tutoring_nj
-        data_type: boolean
       - name: expected_round_number
         data_type: string
       - name: schedule_student_grade_level
         data_type: string
       - name: scheduled
         data_type: int64
-      - name: is_sipps
-        data_type: boolean
