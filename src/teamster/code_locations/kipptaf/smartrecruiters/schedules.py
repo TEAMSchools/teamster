@@ -6,7 +6,7 @@ from teamster.code_locations.kipptaf.smartrecruiters.assets import assets
 smartrecruiters_report_assets_schedule = ScheduleDefinition(
     name=f"{CODE_LOCATION}__smartrecruiters__assets_schedule",
     target=assets,
-    cron_schedule=["0 6 * * *", "0 1 * * *"],
+    cron_schedule=["0 6 * * *", "0 13 * * *"],
     execution_timezone=str(LOCAL_TIMEZONE),
     tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 10)},
 )
