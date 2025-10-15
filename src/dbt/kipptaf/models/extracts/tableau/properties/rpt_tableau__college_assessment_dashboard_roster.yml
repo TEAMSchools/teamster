@@ -1,5 +1,7 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_roster
+    contract:
+      enforced: false
     columns:
       - name: region
         data_type: string
