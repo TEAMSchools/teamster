@@ -15,5 +15,5 @@ select
         regexp_replace(ostb.value, r'<[^>]*>', ''), r'&nbsp;', ' '
     ) as text_box_value_clean,
 from {{ ref("stg_schoolmint_grow__observations") }} as o
-cross join unnest(o.observation_scores) as os
-cross join unnest(os.textboxes) as ostb
+left join unnest(o.observation_scores) as os
+left join unnest(os.textboxes) as ostb
