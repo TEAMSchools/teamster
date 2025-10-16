@@ -2,15 +2,24 @@ with
     strategy as (
         -- need a distinct strategy scaffold
         select distinct
-            test_type as expected_test_type,
-            scope as expected_scope,
-            subject_area as expected_subject_area,
-            score_type as expected_score_type,
+            s.test_type as expected_test_type,
+            s.scope as expected_scope,
+            s.subject_area as expected_subject_area,
+            s.score_type as expected_score_type,
+
+            g.expected_metric_name,
+            g.min_score as expected_metric_min_score,
+            g.pct_goal as expected_metric_pct_goal,
 
             'foo' as bar,
 
-        from {{ ref("int_assessments__college_assessment") }}
-        where test_type = 'Official' and subject_area in ('Composite', 'Combined')
+        from {{ ref("int_assessments__college_assessment") }} as s
+        inner join
+            {{ ref("stg_google_sheets__kippfwd_goals") }} as g
+            on s.scope = g.expected_scope
+            and s.score_type = g.expected_score_type
+            and g.expected_goal_type != 'Board'
+        where s.test_type = 'Official' and s.subject_area in ('Composite', 'Combined')
     ),
 
     max_attempts as (
@@ -84,19 +93,18 @@ with
             r.expected_scope,
             r.expected_subject_area,
             r.expected_score_type,
+            r.expected_metric_name,
+            r.expected_metric_min_score,
+            r.expected_metric_pct_goal,
 
             s.test_type,
             s.scope,
             s.subject_area,
             s.score_type,
 
-            bg.expected_metric_name,
-            bg.min_score as expected_metric_min_score,
-            bg.pct_goal as expected_metric_pct_goal,
-
             avg(
                 if(
-                    bg.expected_metric_name in ('HS-Ready', 'College-Ready'),
+                    r.expected_metric_name in ('HS-Ready', 'College-Ready'),
                     s.max_scale_score,
                     p.attempt_count_ytd
                 )
@@ -105,7 +113,7 @@ with
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join strategy as r on 'foo' = r.bar
         left join
-            {{ ref("int_students__college_assessment_roster") }} as s
+            {{ ref("int_assessments__college_assessment") }} as s
             on e.student_number = s.student_number
             and r.expected_scope = s.scope
             and s.test_type = 'Official'
@@ -114,12 +122,6 @@ with
             attempts as p
             on e.student_number = p.student_number
             and r.expected_scope = p.scope
-        left join
-            {{ ref("stg_google_sheets__kippfwd_goals") }} as bg
-            on s.test_type = bg.expected_test_type
-            and s.scope = bg.expected_scope
-            and s.score_type = bg.expected_score_type
-            and bg.expected_goal_type != 'Board'
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.school_level = 'HS'
@@ -147,13 +149,13 @@ with
             r.expected_scope,
             r.expected_subject_area,
             r.expected_score_type,
+            r.expected_metric_name,
+            r.expected_metric_min_score,
+            r.expected_metric_pct_goal,
             s.test_type,
             s.scope,
             s.subject_area,
-            s.score_type,
-            bg.expected_metric_name,
-            bg.min_score,
-            bg.pct_goal
+            s.score_type
     )
 
 select *, if(score >= expected_metric_min_score, 1, 0) as met_min_score_int,
