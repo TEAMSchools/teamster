@@ -42,6 +42,8 @@ models:
         data_type: int64
       - name: salesforce_id
         data_type: string
+      - name: field_name
+        data_type: string
       - name: aligned_subject_area
         data_type: string
       - name: surrogate_key

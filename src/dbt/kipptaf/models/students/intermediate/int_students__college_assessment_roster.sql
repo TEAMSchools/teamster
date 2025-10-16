@@ -23,6 +23,19 @@ with
             e.graduation_year,
             e.salesforce_id,
 
+            concat(
+                'G',
+                grade_level,
+                ' ',
+                test_month,
+                ' ',
+                scope,
+                ' ',
+                test_type,
+                ' ',
+                subject_area
+            ) as field_name,
+
             unix_date(s.test_date) as date_order,
 
             case
@@ -92,4 +105,5 @@ select
     * except (scope_order, date_order, subject_area_order),
 
     concat(scope_order, date_order, subject_area_order) as expected_admin_order,
+
 from roster

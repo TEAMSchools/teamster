@@ -4,24 +4,22 @@ with
             *,
 
             concat(
-                expected_field_name, ' ', expected_score_category
+                field_name, ' ', score_category
             ) as expected_field_name_score_category,
 
             concat(
-                expected_scope, ' ', expected_subject_area, ' ', expected_score_category
+                scope, ' ', subject_area, ' ', score_category
             ) as expected_filter_group,
 
         from
             {{ ref("int_students__college_assessment_roster") }} unpivot (
-                score for expected_score_category in (
+                score for score_category in (
                     scale_score as 'Scale Score',
                     max_scale_score as 'Max Scale Score',
                     superscore as 'Superscore',
                     previous_total_score_change as 'Previous Total Score Change'
                 )
             )
-        where
-            graduation_year = {{ var("current_academic_year") + 1 }} and scope != 'ACT'
     ),
 
     expected_admins as (
