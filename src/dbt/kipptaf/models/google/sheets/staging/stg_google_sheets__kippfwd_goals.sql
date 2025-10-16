@@ -7,6 +7,7 @@ with
             expected_test_type,
             expected_scope,
             expected_subject_area,
+            goal_type as expected_goal_type,
             min_score,
             pct_goal,
 

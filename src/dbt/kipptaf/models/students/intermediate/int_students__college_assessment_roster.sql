@@ -24,8 +24,8 @@ with
             e.salesforce_id,
 
             concat(
-                'G',
-                e.grade_level,
+                'SY',
+                right(cast(s.academic_year as string), 2),
                 ' ',
                 s.test_month,
                 ' ',
