@@ -5,7 +5,7 @@ with
 
             max(is_enrolled_oct01) as is_enrolled_oct01_prev,
             academic_year + 1 as academic_year,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_extracts__student_enrollments") }}
         group by student_number, academic_year
     )
 
@@ -37,7 +37,7 @@ select
     if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
     if(w.week_start_monday between co.entrydate and co.exitdate, 0, 1) as is_attrition,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     prev_year as py
     on co.student_number = py.student_number

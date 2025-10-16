@@ -80,7 +80,7 @@ left join
     and sr.date_submitted
     between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
 left join
-    {{ ref("base_powerschool__student_enrollments") }} as se1
+    {{ ref("int_extracts__student_enrollments") }} as se1
     on sr.respondent_email = se1.student_email_google
     and sr.academic_year = se1.academic_year
 left join
@@ -88,7 +88,7 @@ left join
     on sr.survey_id = fr.survey_id
     and sr.survey_response_id = fr.survey_response_id
 left join
-    {{ ref("base_powerschool__student_enrollments") }} as se2
+    {{ ref("int_extracts__student_enrollments") }} as se2
     on fr.respondent_number = se2.student_number
     and fr.academic_year = se2.academic_year
 left join
@@ -146,7 +146,7 @@ left join
     on rt.name = 'PowerSchool Family School Community Diagnostic'
     and sr.submitted between rt.start_date and rt.end_date
 left join
-    {{ ref("base_powerschool__student_enrollments") }} as se
+    {{ ref("int_extracts__student_enrollments") }} as se
     on sr.external_student_id = safe_cast(se.student_number as string)
     and rt.academic_year = se.academic_year
 left join

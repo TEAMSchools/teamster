@@ -22,7 +22,7 @@ select
     || p.family_name_1 as class_name,
 from {{ ref("base_powerschool__course_enrollments") }} as cc
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as s
+    {{ ref("int_extracts__student_enrollments") }} as s
     on cc.students_student_number = s.student_number
     and cc.cc_academic_year = s.academic_year
     and s.rn_year = 1

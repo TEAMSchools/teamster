@@ -38,7 +38,7 @@ with
                 then 'Not Met'
             end as composite_expectations,
 
-        from {{ ref("base_powerschool__student_enrollments") }} as s
+        from {{ ref("int_extracts__student_enrollments") }} as s
         inner join
             {{ ref("int_amplify__all_assessments") }} as c
             on s.academic_year = c.academic_year

@@ -72,7 +72,7 @@ select
     c.id as salesforce_contact_id,
 
     nj.home_language,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     {{ ref("stg_kippadb__contact") }} as c on co.student_number = c.school_specific_id
 left join

@@ -44,7 +44,7 @@ select
     coalesce(
         concat('Level ', p.fast_math_level_recent), '(No Data)'
     ) as fast_math_level_recent,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term
 left join
     {{ ref("int_powerschool__gpa_cumulative") }} as cum

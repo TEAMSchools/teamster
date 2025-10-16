@@ -54,7 +54,7 @@ select
         when sc.contact_type = 'daytime'
         then 'Work'
     end as contact_phone_type,
-from {{ ref("base_powerschool__student_enrollments") }} as sr
+from {{ ref("int_extracts__student_enrollments") }} as sr
 left join
     {{ ref("int_powerschool__student_contacts") }} as sc
     on sr.students_dcid = sc.studentdcid

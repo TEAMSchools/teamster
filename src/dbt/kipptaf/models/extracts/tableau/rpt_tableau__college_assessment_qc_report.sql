@@ -23,6 +23,6 @@ select
     concat(
         initcap(p.name_last), ', ', initcap(p.name_first), ' ', initcap(p.name_mi)
     ) as cb_student_name,
-from {{ ref("base_powerschool__student_enrollments") }} as e
+from {{ ref("int_extracts__student_enrollments") }} as e
 left join {{ ref("int_collegeboard__psat") }} as p on e.student_number = p.secondary_id
 where e.rn_undergrad = 1 and e.region != 'Miami'
