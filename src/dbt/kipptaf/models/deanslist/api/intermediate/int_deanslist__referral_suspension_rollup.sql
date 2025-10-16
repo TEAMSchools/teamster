@@ -2,7 +2,7 @@ with
     schoolid_crosswalk as (
         /* DL school ID not unique, need a better crosswalk */
         select distinct powerschool_school_id, deanslist_school_id,
-        from {{ ref("stg_people__location_crosswalk") }}
+        from {{ ref("stg_google_sheets__people__location_crosswalk") }}
         where deanslist_school_id is not null and powerschool_school_id is not null
     )
 
@@ -59,7 +59,7 @@ select
 from {{ ref("int_deanslist__incidents__penalties") }} as dlp
 inner join schoolid_crosswalk as lc on dlp.school_id = lc.deanslist_school_id
 inner join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on lc.powerschool_school_id = rt.school_id
     and dlp.create_ts_academic_year = rt.academic_year
     and dlp.start_date between rt.start_date and rt.end_date

@@ -21,7 +21,8 @@ with
             ) as is_pass_4_lessons_int,
         from {{ ref("int_iready__instruction_by_lesson_union") }} as il
         inner join
-            {{ ref("stg_people__location_crosswalk") }} as cw on il.school = cw.name
+            {{ ref("stg_google_sheets__people__location_crosswalk") }} as cw
+            on il.school = cw.name
         inner join
             {{ ref("int_powerschool__calendar_week") }} as pw
             on il.academic_year_int = pw.academic_year
@@ -156,7 +157,7 @@ with
             on sc.powerschool_student_number = r.powerschool_student_number
             and sc.assessment_id = r.assessment_id
         left join
-            {{ ref("stg_assessments__standard_domains") }} as sd
+            {{ ref("stg_google_sheets__assessments__standard_domains") }} as sd
             on r.response_type_code = sd.standard_code
         left join
             {{ ref("base_powerschool__course_enrollments") }} as cc
@@ -311,7 +312,7 @@ left join
     and co.subject_area = sf.illuminate_subject_area
     and sf.rn_year = 1
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as qbls
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
     on co.academic_year = qbls.academic_year
     and co.term = qbls.term_name
     and co.region = qbls.region
@@ -419,7 +420,7 @@ left join
     and co.course_credittype = sf.assessment_dashboard_join
     and sf.rn_year = 1
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as qbls
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
     on co.academic_year = qbls.academic_year
     and co.term = qbls.term_name
     and co.region = qbls.region
@@ -556,7 +557,7 @@ inner join
     on r.home_work_location_powerschool_school_id = w.schoolid
     and o.observed_at between w.week_start_monday and w.week_end_sunday
 left join
-    {{ ref("stg_people__location_crosswalk") }} as cw
+    {{ ref("stg_google_sheets__people__location_crosswalk") }} as cw
     on r.home_work_location_name = cw.name
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc

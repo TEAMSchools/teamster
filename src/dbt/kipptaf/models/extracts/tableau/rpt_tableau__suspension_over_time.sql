@@ -90,7 +90,7 @@ left join
     and date_day = sd.end_date
     and sd.is_suspension
 left join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on date_day between rt.start_date and rt.end_date
     and co.schoolid = rt.school_id
     and co.academic_year = rt.academic_year

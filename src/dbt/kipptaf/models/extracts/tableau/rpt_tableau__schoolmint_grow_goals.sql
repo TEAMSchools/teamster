@@ -35,7 +35,7 @@ select
     if(a.assignment_id is not null, 1, 0) as is_assigned,
 from {{ ref("int_people__staff_roster_history") }} as srh
 inner join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on srh.home_business_unit_name = rt.region
     and (
         rt.start_date between srh.effective_date_start and srh.effective_date_end
