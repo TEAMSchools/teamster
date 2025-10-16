@@ -225,7 +225,7 @@ with
             and {{ union_dataset_join_clause(left_alias="c", right_alias="g") }}
             and g.storecode = 'Y1'
         left join
-            {{ ref("stg_crdc__sced_code_crosswalk") }} as x
+            {{ ref("stg_google_sheets__crdc__sced_code_crosswalk") }} as x
             on concat(c.nces_subject_area, c.nces_course_id) = x.sced_code
         where
             c.cc_academic_year < {{ var("current_academic_year") }}

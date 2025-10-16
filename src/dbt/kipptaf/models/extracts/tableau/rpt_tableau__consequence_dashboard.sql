@@ -73,7 +73,7 @@ left join
     and co.academic_year = dli.create_ts_academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
 left join
-    {{ ref("stg_reporting__terms") }} as d
+    {{ ref("stg_google_sheets__reporting__terms") }} as d
     on co.schoolid = d.school_id
     and dli.create_ts_date between d.start_date and d.end_date
     and d.type = 'RT'

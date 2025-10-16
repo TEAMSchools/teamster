@@ -1,7 +1,8 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_roster
-    contract:
-      enforced: false
+    config:
+      contract:
+        enforced: false # TODO: enable when dynamic select removed
     columns:
       - name: region
         data_type: string

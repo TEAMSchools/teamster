@@ -72,7 +72,7 @@ select
 
 from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
-    {{ ref("stg_reporting__terms") }} as dt
+    {{ ref("stg_google_sheets__reporting__terms") }} as dt
     on co.academic_year = dt.academic_year
     and co.schoolid = dt.school_id
     and dt.type = 'RT'

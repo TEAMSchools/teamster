@@ -29,7 +29,7 @@ inner join
     and co.rn_year = 1
     and co.enroll_status = 0
 left join
-    {{ ref("stg_reporting__terms") }} as rta
+    {{ ref("stg_google_sheets__reporting__terms") }} as rta
     on s.administered_at between rta.start_date and rta.end_date
     and s.powerschool_school_id = rta.school_id
     and rta.type = 'RT'

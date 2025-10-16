@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: stg_google_sheets__dibels_pm_goals
     columns:

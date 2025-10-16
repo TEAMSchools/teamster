@@ -60,7 +60,7 @@ with
     schoolid_crosswalk as (
         /* DL school ID not unique, need a better crosswalk */
         select distinct powerschool_school_id, deanslist_school_id,
-        from {{ ref("stg_people__location_crosswalk") }}
+        from {{ ref("stg_google_sheets__people__location_crosswalk") }}
         where deanslist_school_id is not null and powerschool_school_id is not null
     )
 
