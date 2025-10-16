@@ -84,7 +84,7 @@ select
         salesforce_contact_df_has_fafsa,
         salesforce_contact_college_match_display_gpa,
         salesforce_contact_college_match_gpa_band,
-        salesfoce_contact_owner_name,
+        salesforce_contact_owner_name,
         state_studentnumber,
         `state`
     ),
@@ -99,7 +99,7 @@ select
     e.salesforce_contact_df_has_fafsa as has_fafsa,
     e.salesforce_contact_college_match_display_gpa as college_match_gpa,
     e.salesforce_contact_college_match_gpa_band as college_match_gpa_bands,
-    e.salesfoce_contact_owner_name as contact_owner_name,
+    e.salesforce_contact_owner_name as contact_owner_name,
 
     lc.region as region_official_name,
     lc.deanslist_school_id,
