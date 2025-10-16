@@ -26,6 +26,10 @@ with
                 lc.dagster_code_location
                 when 'kippnewark'
                 then 'NJSLA'
+                when 'kippcamden'
+                then 'NJSLA'
+                when 'kipppaterson'
+                then 'NJSLA'
                 when 'kippmiami'
                 then 'FL'
             end as state_assessment_type,
