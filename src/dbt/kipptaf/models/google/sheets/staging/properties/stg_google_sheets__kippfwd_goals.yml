@@ -16,7 +16,7 @@ models:
       - name: expected_goal_type
         data_type: string
       - name: min_score
-        data_type: int64
+        data_type: float64
       - name: pct_goal
         data_type: float64
       - name: expected_metric_name

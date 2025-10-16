@@ -2,8 +2,6 @@ version: 2
 models:
   - name: int_students__college_assessment_participation_roster
     columns:
-      - name: _dbt_source_relation
-        data_type: string
       - name: student_number
         data_type: int64
       - name: studentid
@@ -24,45 +22,45 @@ models:
         data_type: int64
       - name: act_count
         data_type: int64
-      - name: act_group_1_min_score
+      - name: act_1_attempt_min_score
         data_type: float64
-      - name: act_group_1_pct_goal
+      - name: act_1_attempt_pct_goal
         data_type: float64
-      - name: act_group_2_plus_min_score
+      - name: act_2_plus_attempts_min_score
         data_type: float64
-      - name: act_group_2_plus_pct_goal
+      - name: act_2_plus_attempts_pct_goal
         data_type: float64
-      - name: sat_group_1_min_score
+      - name: sat_1_attempt_min_score
         data_type: float64
-      - name: sat_group_1_pct_goal
+      - name: sat_1_attempt_pct_goal
         data_type: float64
-      - name: sat_group_2_plus_min_score
+      - name: sat_2_plus_attempts_min_score
         data_type: float64
-      - name: sat_group_2_plus_pct_goal
+      - name: sat_2_plus_attempts_pct_goal
         data_type: float64
-      - name: psat89_group_1_min_score
+      - name: psat89_1_attempt_min_score
         data_type: float64
-      - name: psat89_group_1_pct_goal
+      - name: psat89_1_attempt_pct_goal
         data_type: float64
-      - name: psat89_group_2_plus_min_score
+      - name: psat89_2_plus_attempts_min_score
         data_type: float64
-      - name: psat89_group_2_plus_pct_goal
+      - name: psat89_2_plus_attempts_pct_goal
         data_type: float64
-      - name: psat10_group_1_min_score
+      - name: psat10_1_attempt_min_score
         data_type: float64
-      - name: psat10_group_1_pct_goal
+      - name: psat10_1_attempt_pct_goal
         data_type: float64
-      - name: psat10_group_2_plus_min_score
+      - name: psat10_2_plus_attempts_min_score
         data_type: float64
-      - name: psat10_group_2_plus_pct_goal
+      - name: psat10_2_plus_attempts_pct_goal
         data_type: float64
-      - name: psatnmsqt_group_1_min_score
+      - name: psatnmsqt_1_attempt_min_score
         data_type: float64
-      - name: psatnmsqt_group_1_pct_goal
+      - name: psatnmsqt_1_attempt_pct_goal
         data_type: float64
-      - name: psatnmsqt_group_2_plus_min_score
+      - name: psatnmsqt_2_plus_attempts_min_score
         data_type: float64
-      - name: psatnmsqt_group_2_plus_pct_goal
+      - name: psatnmsqt_2_plus_attempts_pct_goal
         data_type: float64
       - name: psat89_count_ytd
         data_type: int64
