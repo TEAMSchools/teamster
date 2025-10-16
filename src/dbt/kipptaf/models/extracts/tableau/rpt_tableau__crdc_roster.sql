@@ -82,19 +82,15 @@ with
 
             if(e.iep_status = 'No IEP' and is_504, true, false) as c504_only,
 
-            if(lep.liep_parent_refusal_date is null, false, true) as lep_parent_refusal,
+            if(
+                e.lep_tf = 1 and e.liep_parent_refusal_date is not null, true, false
+            ) as lep_parent_refusal,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join retained as r on e.student_number = r.student_number
         left join
             {{ ref("stg_google_sheets__crdc__student_numbers") }} as me
             on e.student_number = me.student_number
-        left join
-            {{ ref("stg_powerschool__s_nj_stu_x") }} as lep
-            on e.students_dcid = lep.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="lep") }}
-            and lep.lep_tf = 1
-            and lep.liep_parent_refusal_date is not null
         where
             /* submission is always for the previous school year */
             e.academic_year = {{ var("current_academic_year") - 1 }}

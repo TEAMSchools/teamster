@@ -72,6 +72,9 @@ with
             enr.is_counseling_services,
             enr.is_student_athlete,
             enr.ada_above_or_at_80,
+            enr.hos,
+            enr.school_leader,
+            enr.school_leader_tableau_username,
 
             term.`quarter`,
             term.quarter_start_date,
@@ -79,10 +82,6 @@ with
             term.cal_quarter_end_date,
             term.is_current_quarter,
             term.semester,
-
-            leader.head_of_school_preferred_name_lastfirst as hos,
-            leader.school_leader_preferred_name_lastfirst as school_leader,
-            leader.school_leader_sam_account_name as school_leader_tableau_username,
 
             gc.cumulative_y1_gpa,
             gc.cumulative_y1_gpa_unweighted,
@@ -108,14 +107,6 @@ with
             on enr.schoolid = term.schoolid
             and enr.yearid = term.yearid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="term") }}
-        left join
-            {{ ref("int_people__leadership_crosswalk") }} as leader
-            on enr.schoolid = leader.home_work_location_powerschool_school_id
-        left join
-            {{ ref("int_powerschool__gpa_cumulative") }} as gc
-            on enr.studentid = gc.studentid
-            and enr.schoolid = gc.schoolid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gc") }}
         left join
             {{ ref("int_powerschool__gpa_term") }} as gtq
             on enr.studentid = gtq.studentid
@@ -159,6 +150,7 @@ with
             f.is_tutoring as tutoring_nj,
             f.nj_student_tier,
 
+            r.sam_account_name as teacher_tableau_username,
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
             {{ ref("int_extracts__student_enrollments_subjects") }} as f
@@ -167,6 +159,9 @@ with
             and m.courses_credittype = f.powerschool_credittype
             and {{ union_dataset_join_clause(left_alias="m", right_alias="f") }}
             and f.rn_year = 1
+        left join
+            {{ ref("int_people__staff_roster") }} as r
+            on m.teachernumber = r.powerschool_teacher_number
         where
             m.rn_course_number_year = 1
             and m.cc_sectionid > 0
@@ -403,8 +398,7 @@ select
     ce.teacher_name,
     ce.tutoring_nj,
     ce.nj_student_tier,
-
-    r.sam_account_name as teacher_tableau_username,
+    ce.teacher_tableau_username,
 
     y1h.y1_course_final_percent_grade_adjusted,
     y1h.y1_course_final_letter_grade_adjusted,
@@ -448,9 +442,6 @@ left join
     on s.studentid = ce.studentid
     and s.yearid = ce.yearid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
-left join
-    {{ ref("int_people__staff_roster") }} as r
-    on ce.teacher_number = r.powerschool_teacher_number
 left join
     y1_historical as y1h
     on s.studentid = y1h.studentid

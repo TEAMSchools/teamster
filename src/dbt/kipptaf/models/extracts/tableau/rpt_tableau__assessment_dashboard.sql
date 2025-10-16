@@ -16,6 +16,7 @@ with
             co.is_self_contained as is_pathways,
             co.school,
             co.school_level,
+            co.hos as head_of_school,
 
             asr.assessment_id,
             asr.title,
@@ -47,8 +48,6 @@ with
             enr.sections_section_number as section_number,
             enr.is_foundations,
 
-            lc.head_of_school_preferred_name_lastfirst as head_of_school,
-
             if(
                 co.grade_level >= 9, enr.courses_credittype, asr.subject_area
             ) as filter_join,
@@ -74,9 +73,6 @@ with
             and hr.cc_course_number = 'HR'
             and not hr.is_dropped_section
             and hr.rn_course_number_year = 1
-        left join
-            {{ ref("int_people__leadership_crosswalk") }} as lc
-            on co.schoolid = lc.home_work_location_powerschool_school_id
         where
             co.academic_year >= {{ var("current_academic_year") - 1 }}
             and co.rn_year = 1
