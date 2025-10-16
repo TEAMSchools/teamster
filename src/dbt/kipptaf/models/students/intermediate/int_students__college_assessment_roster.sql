@@ -25,15 +25,15 @@ with
 
             concat(
                 'G',
-                grade_level,
+                e.grade_level,
                 ' ',
-                test_month,
+                s.test_month,
                 ' ',
-                scope,
+                s.scope,
                 ' ',
-                test_type,
+                s.test_type,
                 ' ',
-                subject_area
+                s.subject_area
             ) as field_name,
 
             unix_date(s.test_date) as date_order,
