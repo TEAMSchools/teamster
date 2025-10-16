@@ -6,6 +6,7 @@ with
             cohort,
             expected_test_type,
             expected_scope,
+            expected_score_type,
             expected_subject_area,
             goal_type as expected_goal_type,
             pct_goal,
