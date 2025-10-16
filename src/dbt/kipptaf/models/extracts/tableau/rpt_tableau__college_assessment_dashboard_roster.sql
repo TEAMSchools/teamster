@@ -53,6 +53,8 @@ with
 
             'foo' as bar,
 
+            concat(subject_area, '_', score_category) as filter_group,
+
         from scores
         where scope != 'ACT'
     ),
@@ -129,6 +131,8 @@ inner join
     expected_admins as ea
     on 'foo' = ea.bar
     and ea.expected_score_category in ('Scale Score', 'Previous Total Score Change')
+    and ea.filter_group
+    not in ('Math_Previous Total Score Change', 'EBRW_Previous Total Score Change')
 left join superscores_dedup as s on e.student_number = s.student_number
 left join
     scores as a
