@@ -11,8 +11,8 @@ select
 
     sc.relationship_type as contact_relationship,
 
-    gpa.cumulative_y1_gpa as unweighted_gpa,
-    gpa.cumulative_y1_gpa_unweighted as weighted_gpa,
+    sr.cumulative_y1_gpa as unweighted_gpa,
+    sr.cumulative_y1_gpa_unweighted as weighted_gpa,
 
     null as hispanic_latino,
     null as home_language,
@@ -61,11 +61,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="sr", right_alias="sc") }}
     and sc.contact_category = 'Phone'
     and sc.person_type != 'self'
-left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gpa
-    on sr.studentid = gpa.studentid
-    and sr.schoolid = gpa.schoolid
-    and {{ union_dataset_join_clause(left_alias="sr", right_alias="gpa") }}
 where
     sr.academic_year = {{ var("current_academic_year") }}
     and sr.rn_year = 1

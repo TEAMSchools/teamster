@@ -1,12 +1,11 @@
 select
     co.student_number,
     co.academic_year,
+    co.cumulative_y1_gpa as gpa_cum,
+    co.cumulative_y1_gpa_projected as gpa_cum_projected,
+    co.earned_credits_cum as grades_y1_credits_projected,
 
     term,
-
-    cum.cumulative_y1_gpa as gpa_cum,
-    cum.cumulative_y1_gpa_projected as gpa_cum_projected,
-    cum.earned_credits_cum as grades_y1_credits_projected,
 
     gpa.gpa_term,
     gpa.gpa_y1,
@@ -32,25 +31,24 @@ select
     ) as dibels_composite_recent,
     coalesce(p.iready_reading_recent, '(No Data)') as iready_reading_recent,
     coalesce(p.iready_math_recent, '(No Data)') as iready_math_recent,
+
     coalesce(
         concat('Level ', p.star_reading_level_recent), '(No Data)'
     ) as star_reading_level_recent,
+
     coalesce(
         concat('Level ', p.star_math_level_recent), '(No Data)'
     ) as star_math_level_recent,
+
     coalesce(
         concat('Level ', p.fast_ela_level_recent), '(No Data)'
     ) as fast_ela_level_recent,
+
     coalesce(
         concat('Level ', p.fast_math_level_recent), '(No Data)'
     ) as fast_math_level_recent,
 from {{ ref("int_extracts__student_enrollments") }} as co
 cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term
-left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as cum
-    on co.studentid = cum.studentid
-    and co.schoolid = cum.schoolid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="cum") }}
 left join
     {{ ref("int_powerschool__gpa_term") }} as gpa
     on co.studentid = gpa.studentid

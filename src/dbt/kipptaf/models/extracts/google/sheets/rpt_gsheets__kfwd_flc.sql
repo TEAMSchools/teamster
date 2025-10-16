@@ -35,6 +35,7 @@ with
             item_abbreviation,
             text_value,
             last_submitted_date_local,
+
             max(last_submitted_date_local) over (
                 partition by respondent_email, item_abbreviation, text_value
             )
@@ -53,6 +54,7 @@ with
             additional_future_plans as dps_additional_future_plans,
             kfwd_support as dps_kfwd_support,
             dream_career as dps_dream_career,
+
             row_number() over (
                 partition by respondent_email order by last_submitted_date_local desc
             ) as rn_response,
@@ -141,7 +143,8 @@ select
         kt.ktc_status
     ) as taf_enroll_status,
 
-    gpa.cumulative_y1_gpa_unweighted,
+    co.cumulative_y1_gpa_unweighted,
+
     case
         when kt.contact_college_match_display_gpa >= 3.00
         then 'FLC Eligible'
@@ -149,6 +152,7 @@ select
     end as flc_eligibility,
 
     if(kt.overgrad_students_id is not null, 'Yes', 'No') as has_overgrad_account_yn,
+
     kt.overgrad_students_assigned_counselor_lastfirst as overgrad_counselor,
 
     dps.dps_submit_date_most_recent,
@@ -187,10 +191,5 @@ left join
     {{ ref("int_kippadb__contact_note_rollup") }} as cn
     on kt.contact_id = cn.contact_id
     and cn.academic_year = {{ var("current_academic_year") }}
-left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gpa
-    on co.studentid = gpa.studentid
-    and co.schoolid = gpa.schoolid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
 left join dps_pivot as dps on co.student_email = dps.respondent_email
 where co.rn_undergrad = 1 and co.grade_level != 99

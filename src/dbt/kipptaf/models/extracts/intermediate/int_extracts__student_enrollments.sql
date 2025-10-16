@@ -1,32 +1,17 @@
 {{ config(materialized="table") }}
 
 with
-    ms_grad_sub as (
+    esms_grad as (
         select
             _dbt_source_relation,
             student_number,
-            school_abbreviation as ms_attended,
+            school_level,
+            school_abbreviation,
 
             row_number() over (
-                partition by student_number order by exitdate desc
+                partition by student_number, school_level order by exitdate desc
             ) as rn,
-
         from {{ ref("base_powerschool__student_enrollments") }}
-        where school_level = 'MS'
-    ),
-
-    es_grad_sub as (
-        select
-            _dbt_source_relation,
-            student_number,
-            school_abbreviation as es_attended,
-
-            row_number() over (
-                partition by student_number order by exitdate desc
-            ) as rn,
-
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where school_level = 'ES'
     ),
 
     next_year_school as (
@@ -37,6 +22,7 @@ with
             lead(school_abbreviation, 1) over (
                 partition by student_number order by academic_year asc
             ) as next_year_school,
+
             lead(schoolid, 1) over (
                 partition by student_number order by academic_year asc
             ) as next_year_schoolid,
@@ -118,13 +104,15 @@ select
     lc.region as region_official_name,
     lc.deanslist_school_id,
 
-    m.ms_attended,
+    m.school_abbreviation as ms_attended,
 
-    es.es_attended,
+    es.school_abbreviation as es_attended,
 
     mt.territory,
 
     hos.head_of_school_preferred_name_lastfirst as hos,
+    hos.school_leader_preferred_name_lastfirst as school_leader,
+    hos.school_leader_sam_account_name as school_leader_tableau_username,
 
     ovg.overgrad_fafsa_opt_out,
 
@@ -145,6 +133,9 @@ select
     gc.cumulative_y1_gpa_projected_s1,
     gc.cumulative_y1_gpa_projected_s1_unweighted,
     gc.core_cumulative_y1_gpa,
+    gc.earned_credits_cum,
+    gc.earned_credits_cum_projected,
+    gc.potential_credits_cum,
 
     ny.next_year_school,
     ny.next_year_schoolid,
@@ -258,14 +249,16 @@ left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
     on e.school_name = lc.name
 left join
-    ms_grad_sub as m
+    esms_grad as m
     on e.student_number = m.student_number
     and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
+    and m.school_level = 'MS'
     and m.rn = 1
 left join
-    es_grad_sub as es
+    esms_grad as es
     on e.student_number = es.student_number
     and {{ union_dataset_join_clause(left_alias="e", right_alias="es") }}
+    and es.school_level = 'ES'
     and es.rn = 1
 left join
     mia_territory as mt

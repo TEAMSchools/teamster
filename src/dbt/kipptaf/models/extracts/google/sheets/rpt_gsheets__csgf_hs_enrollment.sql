@@ -342,11 +342,6 @@ select
     if(e.lunch_status in ('F', 'R'), 'Y', 'N') as student_is_frl,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
-left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as g
-    on e.studentid = g.studentid
-    and e.schoolid = g.schoolid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="g") }}
 left join course_tags as c on e.studentid = c.studentid and e.region = c.region
 left join
     passed_courses as p
@@ -356,6 +351,6 @@ left join
 where
     e.academic_year = {{ var("current_academic_year") - 1 }}
     and e.school_level = 'HS'
-    and e.enroll_status in (0, 3)
     and e.rn_year = 1
     and e.is_enrolled_recent
+    and e.enroll_status in (0, 3)
