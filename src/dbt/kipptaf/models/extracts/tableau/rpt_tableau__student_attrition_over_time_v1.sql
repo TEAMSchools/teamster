@@ -18,7 +18,7 @@ with
 
 select
     y1.student_number,
-    y1.lastfirst,
+    y1.student_name as lastfirst,
     y1.academic_year as `year`,
     y1.school_level,
     y1.reporting_schoolid,

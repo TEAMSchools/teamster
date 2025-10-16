@@ -254,12 +254,12 @@ with
         select
             co.academic_year,
             co.student_number,
-            co.lastfirst as student_name,
+            co.student_name as student_name,
             co.region,
             co.grade_level,
             co.grade_level_prev,
             co.year_in_network,
-            co.school_abbreviation as school,
+            co.school as school,
 
             gb.band,
 
@@ -357,12 +357,12 @@ with
         select
             co.academic_year,
             co.student_number,
-            co.lastfirst as student_name,
+            co.student_name as student_name,
             co.region,
             co.grade_level,
             co.grade_level_prev,
             co.year_in_network,
-            co.school_abbreviation as school,
+            co.school as school,
 
             gb.band,
 
@@ -436,12 +436,12 @@ with
         select
             co.academic_year,
             co.student_number,
-            co.lastfirst as student_name,
+            co.student_name as student_name,
             co.region,
             co.grade_level,
             co.grade_level_prev,
             co.year_in_network,
-            co.school_abbreviation as school,
+            co.school as school,
 
             gb.band,
 

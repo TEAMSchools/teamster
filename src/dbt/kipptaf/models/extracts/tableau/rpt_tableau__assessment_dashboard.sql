@@ -2,7 +2,7 @@ with
     dashboard as (
         select
             co.student_number,
-            co.lastfirst,
+            co.student_name,
             co.academic_year,
             co.reporting_schoolid as schoolid,
             co.region,
@@ -14,7 +14,7 @@ with
             co.lep_status,
             co.is_504 as c_504_status,
             co.is_self_contained as is_pathways,
-            co.school_abbreviation as school,
+            co.school as school,
             co.school_level,
 
             asr.assessment_id,
@@ -84,7 +84,7 @@ with
     )
 select
     d.student_number,
-    d.lastfirst,
+    d.student_name as lastfirst,
     d.academic_year,
     d.schoolid,
     d.region,

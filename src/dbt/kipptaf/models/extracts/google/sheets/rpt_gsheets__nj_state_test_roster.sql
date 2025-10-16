@@ -23,12 +23,12 @@ with
             co.region,
             co.is_self_contained,
             co.school_level,
-            co.school_abbreviation,
+            co.school,
             co.grade_level,
             co.advisory_name,
             co.student_number,
             co.state_studentnumber,
-            co.lastfirst as student_name,
+            co.student_name,
             co.special_education_code,
 
             subj as `subject`,
@@ -38,7 +38,7 @@ with
             if(co.lep_status, 'LEP', 'Not LEP') as lep_status,
             if(co.is_504, 'Has 504', 'No 504') as status_504,
 
-            concat(co.lastfirst, ' - ', co.student_number, ' - ', subj) as student,
+            concat(co.student_name, ' - ', co.student_number, ' - ', subj) as student,
 
             case
                 when subj = 'MATH' and nj.asmt_extended_time_math is not null
@@ -99,7 +99,7 @@ with
 
 select
     region,
-    school_abbreviation,
+    school,
     student,
     enroll_status,
     grade_level,
@@ -113,9 +113,7 @@ select
     has_extended_time,
 
     concat(student_number, '_', test_code) as sn_test_hash,
-    concat(
-        school_abbreviation, '-', test_code, if(has_extended_time, '-ET', '')
-    ) as session_name,
+    concat(school, '-', test_code, if(has_extended_time, '-ET', '')) as session_name,
 from roster
 where
     academic_year = {{ var("current_academic_year") }}

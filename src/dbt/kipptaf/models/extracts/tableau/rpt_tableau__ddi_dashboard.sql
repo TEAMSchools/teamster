@@ -60,10 +60,10 @@ with
     identifiers as (
         select
             co.student_number,
-            co.lastfirst as student_name,
+            co.student_name,
             co.academic_year,
             co.schoolid,
-            co.school_abbreviation as school,
+            co.school as school,
             co.region,
             co.grade_level,
             co.enroll_status,

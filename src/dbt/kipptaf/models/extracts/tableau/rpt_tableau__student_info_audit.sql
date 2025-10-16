@@ -22,7 +22,7 @@ with
             se._dbt_source_relation,
             se.student_number,
             se.state_studentnumber,
-            se.lastfirst,
+            se.student_name as lastfirst,
             se.enroll_status,
             se.gender,
             se.ethnicity,
@@ -31,7 +31,7 @@ with
             se.region,
             se.schoolid,
             se.school_name,
-            se.school_abbreviation,
+            se.school as school_abbreviation,
             se.grade_level,
             se.advisory_name,
             se.fteid,
@@ -48,7 +48,7 @@ with
             if(se.dob is null, 1, 0) as missing_dob_flag,
 
             if(
-                regexp_contains(se.lastfirst, r"\s{2,}|[^\w\s',-]"), 1, 0
+                regexp_contains(se.student_name, r"\s{2,}|[^\w\s',-]"), 1, 0
             ) as name_spelling_flag,
 
             if(cec.sectionid_count < 3, true, false) as underenrollment_flag,

@@ -1,7 +1,7 @@
 select
-    co.school_abbreviation as school,
+    co.school as school,
     co.student_number,
-    co.lastfirst as student,
+    co.student_name as student,
     co.academic_year,
     co.dob,
     co.is_504,

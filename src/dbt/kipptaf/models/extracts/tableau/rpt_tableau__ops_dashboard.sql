@@ -80,14 +80,14 @@ with
 
 select
     se.student_number,
-    se.lastfirst,
+    se.student_name as lastfirst,
     se.academic_year,
     se.region,
     se.school_level,
     se.schoolid,
     se.reporting_schoolid,
     se.school_name,
-    se.school_abbreviation,
+    se.school as school_abbreviation,
     se.grade_level,
     se.enroll_status,
     se.entrydate,
