@@ -58,7 +58,7 @@ with
 select
     co.student_number,
     co.state_studentnumber,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.academic_year,
     co.region,
     co.school_level,

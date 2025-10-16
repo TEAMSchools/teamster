@@ -1,7 +1,7 @@
 select
     co.student_number,
     co.state_studentnumber,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.enroll_status,
     co.cohort,
     co.academic_year,

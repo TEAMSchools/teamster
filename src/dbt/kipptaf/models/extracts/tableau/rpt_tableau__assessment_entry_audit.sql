@@ -9,7 +9,7 @@ select
     s.module_type,
     s.module_code as module_number,
 
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.enroll_status,
     co.region,
     co.reporting_schoolid,

@@ -26,7 +26,7 @@ select
     se.lunch_status as eligibility_name,
     se.lunch_balance as total_balance,
     se.advisor_lastfirst as home_room,
-    se.student_email_google as u_studentsuserfields__studentemail,
+    se.student_email as u_studentsuserfields__studentemail,
 
     g.s_nj_stu_x__graduation_pathway_math,
     g.s_nj_stu_x__graduation_pathway_ela,

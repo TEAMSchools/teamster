@@ -73,12 +73,12 @@ with
 -- trunk-ignore(sqlfluff/ST06)
 select
     co.student_number,
-    co.lastfirst as student_name,
-    co.school_abbreviation as school,
+    co.student_name,
+    co.school,
     co.region,
     co.advisor_lastfirst as advisor,
     co.gender,
-    co.student_email_google,
+    co.student_email as student_email_google,
 
     ce.teacher_lastfirst as ccr_teacher,
     ce.sections_external_expression as ccr_period,
@@ -101,7 +101,7 @@ select
         then 'graduated'
     end as enroll_status,
 
-    concat(co.lastfirst, ' - ', co.student_number) as student_identifier,
+    concat(co.student_name, ' - ', co.student_number) as student_identifier,
 
     act.act_count,
 
@@ -192,5 +192,5 @@ left join
     on co.studentid = gpa.studentid
     and co.schoolid = gpa.schoolid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
-left join dps_pivot as dps on co.student_email_google = dps.respondent_email
+left join dps_pivot as dps on co.student_email = dps.respondent_email
 where co.rn_undergrad = 1 and co.grade_level != 99

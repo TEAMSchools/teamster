@@ -7,7 +7,7 @@ select
     ) as newark_enrollment_number,
 
     co.state_studentnumber,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.schoolid,
     co.school_name,
 
@@ -48,8 +48,8 @@ select
     coalesce(co.contact_1_email_current, co.contact_2_email_current) as guardianemail,
     concat(co.street, ', ', co.city, ', ', co.`state`, ' ', co.zip) as `address`,
 
-    co.first_name,
-    co.last_name,
+    co.student_first_name as first_name,
+    co.student_last_name as last_name,
     co.student_web_id,
     co.student_web_password,
 
