@@ -11,6 +11,16 @@ with
                 scope, ' ', subject_area, ' ', score_category
             ) as expected_filter_group,
 
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "test_type",
+                        "score_type",
+                        "test_date",
+                    ]
+                )
+            }} as unique_test_admin_id,
+
         from
             {{ ref("int_students__college_assessment_roster") }} unpivot (
                 score for score_category in (
@@ -20,44 +30,29 @@ with
                     previous_total_score_change as 'Previous Total Score Change'
                 )
             )
+        where graduation_year >= {{ var("current_academic_year") + 1 }}
     ),
 
     expected_admins as (
-        -- need a distinct list of possible tests to force rows on the main select
-        select distinct
-            surrogate_key,
-            expected_test_type,
-            expected_scope,
-            expected_score_type,
-            expected_subject_area,
-            expected_grade_level,
-            expected_test_date,
-            expected_test_month,
-            expected_field_name,
+        select
+            test_type as expected_test_type,
+            scope as expected_scope,
+            score_type as expected_score_type,
+            subject_area as expected_subject_area,
+            grade_level as expected_grade_level,
+            test_date as expected_test_date,
+            test_month as expected_test_month,
+            field_name as expected_field_name,
+            unique_test_admin_id as expected_unique_test_admin_id,
+            score_category as expected_score_category,
+
             expected_admin_order,
-            expected_filter_group_month,
-            expected_score_category,
             expected_field_name_score_category,
             expected_filter_group,
 
             'foo' as bar,
 
         from scores
-        where
-            expected_filter_group in (
-                'SAT Combined Scale Score',
-                'SAT Combined Previous Total Score Change',
-                'SAT EBRW Scale Score',
-                'SAT Math Scale Score',
-                'PSAT NMSQT Combined Scale Score',
-                'PSAT NMSQT Combined Previous Total Score Change',
-                'PSAT NMSQT EBRW Scale Score',
-                'PSAT NMSQT Math Scale Score',
-                'PSAT10 Combined Scale Score',
-                'PSAT10 Combined Previous Total Score Change',
-                'PSAT10 EBRW Scale Score',
-                'PSAT10 Math Scale Score'
-            )
     ),
 
     superscores as (
@@ -116,11 +111,10 @@ select
     ea.expected_test_date,
     ea.expected_test_month,
     ea.expected_field_name,
-    ea.expected_admin_order,
-    ea.expected_filter_group_month,
     ea.expected_score_category,
     ea.expected_field_name_score_category,
     ea.expected_filter_group,
+    ea.expected_admin_order,
 
     s.sat_combined_superscore,
     s.sat_ebrw_highest,
@@ -134,10 +128,10 @@ left join superscores_dedup as s on e.student_number = s.student_number
 left join
     scores as a
     on e.student_number = a.student_number
-    and ea.surrogate_key = a.surrogate_key
-    and ea.expected_score_category = a.expected_score_category
+    and ea.expected_unique_test_admin_id = a.unique_test_admin_id
+    and ea.expected_score_category = a.score_category
 where
     e.academic_year = {{ var("current_academic_year") }}
-    and e.graduation_year = {{ var("current_academic_year") + 1 }}
+    and e.graduation_year >= {{ var("current_academic_year") + 1 }}
     and e.school_level = 'HS'
     and e.rn_year = 1
