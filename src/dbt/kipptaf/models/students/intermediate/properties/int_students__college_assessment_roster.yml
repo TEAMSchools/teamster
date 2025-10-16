@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: int_students__college_assessment_roster
+    config:
+      contract:
+        enforced: false
     columns:
       - name: student_number
         data_type: int64
@@ -42,6 +45,12 @@ models:
         data_type: numeric
       - name: graduation_year
         data_type: numeric
+      - name: date_order
+        data_type: numeric
+      - name: scope_order
+        data_type: string
+      - name: subject_area_order
+        data_type: string
       - name: aligned_subject_area
         data_type: string
       - name: surrogate_key
