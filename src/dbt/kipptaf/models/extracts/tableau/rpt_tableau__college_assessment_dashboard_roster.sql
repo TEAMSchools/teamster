@@ -54,6 +54,7 @@ with
             'foo' as bar,
 
         from scores
+        where scope != 'ACT'
     ),
 
     superscores as (
