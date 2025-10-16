@@ -3,8 +3,9 @@ with
         select
             student_number,
 
-            max(is_enrolled_oct01) as is_enrolled_oct01_prev,
             academic_year + 1 as academic_year,
+
+            max(is_enrolled_oct01) as is_enrolled_oct01_prev,
         from {{ ref("int_extracts__student_enrollments") }}
         group by student_number, academic_year
     )
@@ -12,9 +13,9 @@ with
 select
     co.academic_year,
     co.student_number,
-    co.student_name as student_name,
+    co.student_name,
     co.region,
-    co.school as school,
+    co.school,
     co.grade_level,
     co.ethnicity,
     co.gender,
