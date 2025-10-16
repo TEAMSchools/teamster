@@ -68,6 +68,10 @@ select
     njs.other_related_services_yn,
     njs.lepbegindate,
     njs.lependdate,
+    njs.lep_tf,
+    njs.liep_parent_refusal_date,
+    njs.programtypecode,
+    njs.home_language,
 
     sr.mail as advisor_email,
     sr.work_cell as advisor_phone,
@@ -80,7 +84,7 @@ select
     adb.owner_id as salesforce_contact_owner_id,
     adb.graduation_year,
 
-    adbu.name as salesfoce_contact_owner_name,
+    adbu.name as salesforce_contact_owner_name,
 
     ill.student_id as illuminate_student_id,
 

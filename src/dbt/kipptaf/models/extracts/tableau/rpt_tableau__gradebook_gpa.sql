@@ -75,31 +75,28 @@ with
             enr.hos,
             enr.school_leader,
             enr.school_leader_tableau_username,
+            enr.cumulative_y1_gpa,
+            enr.cumulative_y1_gpa_unweighted,
+            enr.cumulative_y1_gpa_projected,
+            enr.cumulative_y1_gpa_projected_s1,
+            enr.cumulative_y1_gpa_projected_s1_unweighted,
+            enr.core_cumulative_y1_gpa,
+            enr.ada,
 
-            term.`quarter`,
+            term.quarter,
             term.quarter_start_date,
             term.quarter_end_date,
             term.cal_quarter_end_date,
             term.is_current_quarter,
             term.semester,
 
-            gc.cumulative_y1_gpa,
-            gc.cumulative_y1_gpa_unweighted,
-            gc.cumulative_y1_gpa_projected,
-            gc.cumulative_y1_gpa_projected_s1,
-            gc.cumulative_y1_gpa_projected_s1_unweighted,
-            gc.core_cumulative_y1_gpa,
-
             gtq.gpa_semester,
             gtq.gpa_y1_unweighted,
             gtq.total_credit_hours_y1 as gpa_total_credit_hours,
             gtq.n_failing_y1 as gpa_n_failing_y1,
 
-            round(enr.ada, 3) as ada,
-
-            if(term.`quarter` = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_for_quarter,
-
-            if(term.`quarter` = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
+            if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_for_quarter,
+            if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
 
         from {{ ref("int_extracts__student_enrollments") }} as enr
         inner join
@@ -113,7 +110,7 @@ with
             and enr.yearid = gtq.yearid
             and enr.schoolid = gtq.schoolid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gtq") }}
-            and term.`quarter` = gtq.term_name
+            and term.quarter = gtq.term_name
             and {{ union_dataset_join_clause(left_alias="term", right_alias="gtq") }}
         left join
             {{ ref("int_powerschool__gpa_term") }} as gty

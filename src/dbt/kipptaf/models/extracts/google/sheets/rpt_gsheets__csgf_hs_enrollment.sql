@@ -272,9 +272,8 @@ with
 select
     e.student_number as studentid,
     e.grade_level as grade,
-
-    g.cumulative_y1_gpa_unweighted as unweighted_cumulative_gpa,
-    g.cumulative_y1_gpa as weighted_cumulative_gpa,
+    e.cumulative_y1_gpa_unweighted as unweighted_cumulative_gpa,
+    e.cumulative_y1_gpa as weighted_cumulative_gpa,
 
     c.has_participated_in_ap_courses,
     c.has_participated_in_honors_courses,
