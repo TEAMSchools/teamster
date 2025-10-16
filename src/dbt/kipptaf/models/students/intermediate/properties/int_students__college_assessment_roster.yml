@@ -1,18 +1,13 @@
 version: 2
 models:
   - name: int_students__college_assessment_roster
-    config:
-      contract:
-        enforced: false
     columns:
-      - name: student_number
-        data_type: int64
-      - name: administration_round
-        data_type: string
       - name: academic_year
         data_type: int64
-      - name: test_date
-        data_type: date
+      - name: student_number
+        data_type: int64
+      - name: test_type
+        data_type: string
       - name: scope
         data_type: string
       - name: subject_area
@@ -21,16 +16,16 @@ models:
         data_type: string
       - name: score_type
         data_type: string
+      - name: administration_round
+        data_type: string
+      - name: test_date
+        data_type: date
+      - name: test_month
+        data_type: string
       - name: scale_score
         data_type: numeric
       - name: rn_highest
         data_type: int64
-      - name: test_month
-        data_type: string
-      - name: test_type
-        data_type: string
-      - name: salesforce_id
-        data_type: string
       - name: max_scale_score
         data_type: numeric
       - name: running_max_scale_score
@@ -42,16 +37,14 @@ models:
       - name: running_superscore
         data_type: numeric
       - name: grade_level
-        data_type: numeric
+        data_type: int64
       - name: graduation_year
-        data_type: numeric
-      - name: date_order
-        data_type: numeric
-      - name: scope_order
-        data_type: string
-      - name: subject_area_order
+        data_type: int64
+      - name: salesforce_id
         data_type: string
       - name: aligned_subject_area
         data_type: string
       - name: surrogate_key
+        data_type: string
+      - name: expected_admin_order
         data_type: string
