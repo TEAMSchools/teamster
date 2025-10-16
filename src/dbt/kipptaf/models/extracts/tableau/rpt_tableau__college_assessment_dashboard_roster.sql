@@ -34,7 +34,8 @@ with
     ),
 
     expected_admins as (
-        select
+        -- need distinct list of expected tests
+        select distinct
             test_type as expected_test_type,
             scope as expected_scope,
             score_type as expected_score_type,
