@@ -92,7 +92,7 @@ left join
     and not enr.is_dropped_section
     and enr.rn_student_year_illuminate_subject_desc = 1
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as ps
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as ps
     on asr.subject_area = ps.illuminate_subject_area
     and asr.academic_year = ps.academic_year
     and co.grade_level = ps.grade_level
@@ -205,7 +205,7 @@ left join
     and not enr.is_dropped_section
     and enr.rn_student_year_illuminate_subject_desc = 1
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as ps
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as ps
     on asr.subject_area = ps.illuminate_subject_area
     and asr.academic_year = ps.academic_year
     and asr.term_administered = ps.term_name

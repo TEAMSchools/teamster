@@ -58,7 +58,8 @@ with
             end as category_type,
         from {{ ref("stg_deanslist__behavior") }} as b
         inner join
-            {{ ref("stg_people__location_crosswalk") }} as lc on b.school_name = lc.name
+            {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
+            on b.school_name = lc.name
         inner join
             {{ ref("int_powerschool__calendar_week") }} as w
             on b.behavior_date between w.week_start_monday and w.week_end_sunday

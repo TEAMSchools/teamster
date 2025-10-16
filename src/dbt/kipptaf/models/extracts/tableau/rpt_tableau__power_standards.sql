@@ -66,7 +66,7 @@ with
                 'CMA - End-of-Module'
             )
         inner join
-            {{ ref("stg_assessments__qbls_power_standards") }} as ps
+            {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as ps
             on co.grade_level = ps.grade_level
             and asr.subject_area = ps.illuminate_subject_area
             and asr.term_administered = ps.term_name
@@ -148,7 +148,7 @@ with
             and not enr.is_dropped_section
             and enr.rn_student_year_illuminate_subject_desc = 1
         inner join
-            {{ ref("stg_assessments__qbls_power_standards") }} as ps
+            {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as ps
             on asr.subject_area = ps.illuminate_subject_area
             and asr.term_administered = ps.term_name
             and asr.academic_year = ps.academic_year
@@ -215,7 +215,7 @@ with
             and asr.response_type = 'standard'
             and not asr.is_replacement
         inner join
-            {{ ref("stg_assessments__qbls_power_standards") }} as ps
+            {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as ps
             on co.grade_level = ps.grade_level
             and asr.subject_area = ps.illuminate_subject_area
             and asr.academic_year = ps.academic_year
@@ -292,7 +292,7 @@ with
             and asr.response_type = 'standard'
             and not asr.is_replacement
         inner join
-            {{ ref("stg_assessments__qbls_power_standards") }} as ps
+            {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as ps
             on asr.subject_area = ps.illuminate_subject_area
             and asr.academic_year = ps.academic_year
             and asr.response_type_code = ps.standard_code

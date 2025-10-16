@@ -3,7 +3,7 @@ with
         {# TODO: refactor lookup table #}
         /* powerschool_school_id not unique */
         select distinct powerschool_school_id, region, clean_name,
-        from {{ ref("stg_people__location_crosswalk") }}
+        from {{ ref("stg_google_sheets__people__location_crosswalk") }}
     )
 
 select cd.date_value, cd.insession, cd.schoolid, sc.region, sc.clean_name,
