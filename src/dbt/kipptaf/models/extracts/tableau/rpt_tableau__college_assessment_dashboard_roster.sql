@@ -124,7 +124,10 @@ select
     a.score,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
-inner join expected_admins as ea on 'foo' = ea.bar
+inner join
+    expected_admins as ea
+    on 'foo' = ea.bar
+    and ea.expected_score_category in ('Scale Score', 'Previous Total Score Change')
 left join superscores_dedup as s on e.student_number = s.student_number
 left join
     scores as a
