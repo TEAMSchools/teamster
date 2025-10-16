@@ -169,7 +169,7 @@ select
 
     kt.contact_graduation_year as graduation_year,
 
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
 left join

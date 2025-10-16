@@ -78,7 +78,7 @@ select
     ac.state_assessment_name,
     ac.accommodation,
     ac.accommodation_value,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     accommodations_unpivot as ac
     on co.students_dcid = ac.studentsdcid

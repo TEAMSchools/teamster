@@ -46,7 +46,7 @@ with
             null as sped_ratio,
 
             _dbt_source_relation,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_extracts__student_enrollments") }}
         where
             (is_self_contained or is_out_of_district)
             and rn_year = 1
@@ -173,7 +173,7 @@ select
     lead(se.is_enrolled_oct15, 1, false) over (
         partition by se.student_number order by se.academic_year
     ) as is_enrolled_oct15_next,
-from {{ ref("base_powerschool__student_enrollments") }} as se
+from {{ ref("int_extracts__student_enrollments") }} as se
 left join
     {{ ref("int_powerschool__calendar_rollup") }} as cal
     on se.schoolid = cal.schoolid
