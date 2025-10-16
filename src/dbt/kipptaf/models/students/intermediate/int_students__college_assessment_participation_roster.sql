@@ -3,11 +3,11 @@ with
         select
             expected_test_type,
 
+            `value`,
+
             concat(
                 expected_metric_label, '_', value_type
             ) as expected_metric_label_type,
-
-            `value`,
 
         from
             {{ ref("stg_google_sheets__kippfwd_goals") }}
