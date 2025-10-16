@@ -2,58 +2,19 @@ with
     strategy as (
         -- need a distinct strategy scaffold
         select distinct
-            expected_test_type,
-            expected_scope,
-            expected_subject_area,
-            expected_score_type,
-            test_type,
-            scope,
-            subject_area,
-            score_type,
+            test_type as expected_test_type,
+            scope as expected_scope,
+            subject_area as expected_subject_area,
+            score_type as expected_score_type,
 
             'foo' as bar,
 
-        from {{ ref("int_students__college_assessment_roster") }}
-        where
-            test_type = 'Official'
-            and expected_subject_area in ('Composite', 'Combined')
-    ),
-
-    benchmark_goals as (
-        select
-            expected_test_type,
-            expected_scope,
-            expected_score_type,
-            expected_subject_area,
-            goal_subtype,
-            min_score,
-            pct_goal,
-
-            goal_subtype as expected_metric_name,
-
-        from {{ ref("stg_google_sheets__kippfwd_goals") }}
-        where expected_test_type = 'Official' and goal_type = 'Benchmark'
-
-        union all
-
-        select
-            expected_test_type,
-            expected_scope,
-            expected_score_type,
-            expected_subject_area,
-            goal_category as goal_subtype,
-            min_score,
-            pct_goal,
-
-            concat(expected_scope, ' ', goal_category) as expected_metric_name,
-
-        from {{ ref("stg_google_sheets__kippfwd_goals") }}
-        where expected_test_type = 'Official' and goal_type = 'Attempts'
+        from {{ ref("int_assessments__college_assessment") }}
+        where test_type = 'Official' and subject_area in ('Composite', 'Combined')
     ),
 
     max_attempts as (
         select
-            _dbt_source_relation,
             student_number,
 
             max(psat89_count_ytd) as psat89_count_ytd,
@@ -63,12 +24,11 @@ with
             max(act_count_ytd) as act_count_ytd,
 
         from {{ ref("int_students__college_assessment_participation_roster") }}
-        group by _dbt_source_relation, student_number
+        group by student_number
     ),
 
     attempts as (
         select
-            _dbt_source_relation,
             student_number,
 
             attempt_count_ytd,
@@ -125,10 +85,10 @@ with
             r.expected_subject_area,
             r.expected_score_type,
 
-            r.test_type,
-            r.scope,
-            r.subject_area,
-            r.score_type,
+            s.test_type,
+            s.scope,
+            s.subject_area,
+            s.score_type,
 
             bg.expected_metric_name,
             bg.min_score as expected_metric_min_score,
@@ -147,20 +107,19 @@ with
         left join
             {{ ref("int_students__college_assessment_roster") }} as s
             on e.student_number = s.student_number
-            and r.expected_scope = s.expected_scope
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
+            and r.expected_scope = s.scope
             and s.test_type = 'Official'
-            and s.expected_subject_area in ('Composite', 'Combined')
+            and s.subject_area in ('Composite', 'Combined')
         left join
             attempts as p
             on e.student_number = p.student_number
             and r.expected_scope = p.scope
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="p") }}
         left join
-            benchmark_goals as bg
-            on r.expected_test_type = bg.expected_test_type
-            and r.expected_scope = bg.expected_scope
-            and r.expected_score_type = bg.expected_score_type
+            {{ ref("stg_google_sheets__kippfwd_goals") }} as bg
+            on s.test_type = bg.expected_test_type
+            and s.scope = bg.expected_scope
+            and s.score_type = bg.expected_score_type
+            and bg.expected_goal_type != 'Board'
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.school_level = 'HS'
@@ -188,10 +147,10 @@ with
             r.expected_scope,
             r.expected_subject_area,
             r.expected_score_type,
-            r.test_type,
-            r.scope,
-            r.subject_area,
-            r.score_type,
+            s.test_type,
+            s.scope,
+            s.subject_area,
+            s.score_type,
             bg.expected_metric_name,
             bg.min_score,
             bg.pct_goal
