@@ -311,6 +311,7 @@ select
         then 'Bucket 1'
         when nj.iready_subject is not null
         then 'Bucket 2'
+        else 'Unbucketed'
     end as nj_student_tier,
 
     case

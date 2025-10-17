@@ -95,6 +95,7 @@ select
     co.fast_subject as fsa_subject,
     co.iready_subject,
     co.territory,
+    co.nj_student_tier as student_tier,
 
     administration_window,
 
@@ -158,8 +159,6 @@ select
 
     null as is_present_fte2,
     null as is_present_fte3,
-
-    coalesce(co.nj_student_tier, 'Unbucketed') as student_tier,
 
     round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed,
 
