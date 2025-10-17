@@ -2,12 +2,11 @@ select
     *,
 
     case
-        expected_score_type
-        when 'sat_total_score'
+        when expected_score_type like '%total%'
         then 'Combined'
-        when 'sat_ebrw'
+        when expected_score_type like '%ebrw%'
         then 'EBRW'
-        when 'sat_math'
+        when expected_score_type like '%math%'
         then 'Math'
     end as expected_subject_area,
 
