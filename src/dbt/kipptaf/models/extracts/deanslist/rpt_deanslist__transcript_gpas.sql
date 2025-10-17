@@ -45,16 +45,11 @@ from points_rollup
 union all
 
 select
-    co.student_number,
+    student_number,
 
     null as academic_year,
 
-    sg.cumulative_y1_gpa as `GPA_Y1_weighted`,
-    sg.cumulative_y1_gpa_unweighted as `GPA_Y1_unweighted`,
-from {{ ref("base_powerschool__student_enrollments") }} as co
-inner join
-    {{ ref("int_powerschool__gpa_cumulative") }} as sg
-    on co.studentid = sg.studentid
-    and co.schoolid = sg.schoolid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="sg") }}
-where co.rn_undergrad = 1
+    cumulative_y1_gpa as `GPA_Y1_weighted`,
+    cumulative_y1_gpa_unweighted as `GPA_Y1_unweighted`,
+from {{ ref("int_extracts__student_enrollments") }}
+where rn_undergrad = 1

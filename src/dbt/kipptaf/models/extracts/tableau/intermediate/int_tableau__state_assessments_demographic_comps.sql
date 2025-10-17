@@ -199,7 +199,8 @@ select
         then 'Blank'
     end as aggregate_ethnicity,
 
-    if(e.lep_status, 'ML', 'Not ML') as ml_status,
+    e.ml_status,
+
     if(
         e.iep_status = 'Has IEP',
         'Students With Disabilities',
@@ -266,7 +267,8 @@ select
         then 'Blank'
     end as aggregate_ethnicity,
 
-    if(e.lep_status, 'ML', 'Not ML') as ml_status,
+    e.ml_status,
+    
     if(
         e.iep_status = 'Has IEP',
         'Students With Disabilities',

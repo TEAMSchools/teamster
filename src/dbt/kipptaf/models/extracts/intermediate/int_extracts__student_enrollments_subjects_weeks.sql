@@ -10,10 +10,15 @@ select
     cw.week_number_academic_year,
     cw.week_number_quarter,
     cw.is_current_week_mon_sun,
+    cw.date_count,
 
     if(
         cw.week_start_monday between co.entrydate and co.exitdate, true, false
     ) as is_enrolled_week,
+
+    if(
+        cw.week_end_sunday between co.entrydate and co.exitdate, true, false
+    ) as is_enrolled_week_end,
 from {{ ref("int_extracts__student_enrollments_subjects") }} as co
 inner join
     {{ ref("int_powerschool__calendar_week") }} as cw

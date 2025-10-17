@@ -100,7 +100,7 @@ left join
     and rt.name = dr.test_round
     and dr.rn_subj_round = 1
 left join
-    {{ ref("snapshot_iready__instructional_usage_data") }} as iu
+    {{ source("iready", "snapshot_iready__instructional_usage_data") }} as iu
     on co.student_number = iu.student_id
     and co.iready_subject = iu.subject
     and co.week_start_monday = iu.last_week_start_date

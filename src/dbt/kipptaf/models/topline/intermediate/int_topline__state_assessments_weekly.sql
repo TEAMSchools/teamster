@@ -24,7 +24,7 @@ select
 
     rt.name as test_round,
 
-    fl.assessment_subject as subject,
+    fl.assessment_subject as `subject`,
 
     case
         when fl.is_proficient then 1 when not fl.is_proficient then 0

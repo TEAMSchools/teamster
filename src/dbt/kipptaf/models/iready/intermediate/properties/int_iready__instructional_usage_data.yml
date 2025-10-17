@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: int_iready__instructional_usage_data
+    config:
+      enabled: false
     columns:
       - name: school
         data_type: string

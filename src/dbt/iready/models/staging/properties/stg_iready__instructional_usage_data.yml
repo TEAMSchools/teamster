@@ -1,9 +1,9 @@
-version: 2
 models:
   - name: stg_iready__instructional_usage_data
     config:
+      enabled: false
       contract:
-        enforced: true
+        enforced: false
     columns:
       - name: academic_year
         data_type: string
