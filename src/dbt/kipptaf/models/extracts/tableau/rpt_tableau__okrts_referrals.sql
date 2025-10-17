@@ -136,11 +136,14 @@ select
     co.advisor_lastfirst as homeroom_teacher_name,
     co.unweighted_ada as ada,
     co.absences_unexcused_year as days_absent_unexcused,
-
-    w.week_start_monday,
-    w.week_end_sunday,
-    w.date_count as days_in_session,
-    w.quarter as term,
+    co.iep_status,
+    co.ml_status,
+    co.status_504,
+    co.self_contained_status,
+    co.week_start_monday,
+    co.week_end_sunday,
+    co.date_count as days_in_session,
+    co.quarter as term,
 
     dli.incident_id,
     dli.create_ts_date,
@@ -181,12 +184,6 @@ select
 
     coalesce(s.ssds_period, 'Outside SSDS Period') as ssds_period,
 
-    if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
-    if(co.lep_status, 'ML', 'Not ML') as ml_status,
-    if(co.is_504, 'Has 504', 'No 504') as status_504,
-    if(
-        co.is_self_contained, 'Self-contained', 'Not self-contained'
-    ) as self_contained_status,
     if(co.unweighted_ada <= 0.90, true, false) as is_chronically_absent,
 
     if(sr.incident_id is not null, true, false) as is_discrepant_incident,
@@ -212,7 +209,7 @@ select
     end as referral_tier,
 
     count(distinct co.student_number) over (
-        partition by w.week_start_monday, co.schoolid
+        partition by co.week_start_monday, co.schoolid
     ) as school_enrollment_by_week,
 
     max(if(dli.is_suspension, 1, 0)) over (
@@ -229,7 +226,7 @@ select
 
     row_number() over (
         partition by co.academic_year, co.student_number
-        order by w.week_start_monday asc
+        order by co.week_start_monday asc
     ) as rn_student_year,
 
     if(
@@ -294,20 +291,14 @@ select
             order by dli.is_suspension desc
         )
     ) as rn_incident,
-from {{ ref("int_extracts__student_enrollments") }} as co
-inner join
-    {{ ref("int_powerschool__calendar_week") }} as w
-    on co.academic_year = w.academic_year
-    and co.schoolid = w.schoolid
-    and w.week_end_sunday between co.entrydate and co.exitdate
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="w") }}
+from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 left join
     {{ ref("int_deanslist__incidents__penalties") }} as dli
     on co.student_number = dli.student_school_id
     and co.academic_year = dli.create_ts_academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
     and extract(date from dli.create_ts_date)
-    between w.week_start_monday and w.week_end_sunday
+    between co.week_start_monday and co.week_end_sunday
     and {{ union_dataset_join_clause(left_alias="w", right_alias="dli") }}
 left join
     ssds_period as s
