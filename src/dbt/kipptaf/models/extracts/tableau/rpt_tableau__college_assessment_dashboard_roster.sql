@@ -1,4 +1,33 @@
 with
+    strategy as (
+        select
+            expected_academic_year,
+            expected_region,
+            expected_grade_level,
+            expected_test_type,
+            expected_scope,
+            expected_test_code,
+            expected_score_type,
+            expected_month_round,
+            expected_admin_season,
+            expected_field_name,
+
+            expected_score_category,
+
+            'foo' as bar,
+
+        from {{ ref("stg_google_sheets__kippfwd_expected_assessments") }}
+        cross join
+            unnest(
+                [
+                    'Scale Score',
+                    'Max Scale Score',
+                    'Superscore',
+                    'Previous Total Score Change'
+                ]
+            ) as expected_score_category
+    ),
+
     scores as (
         select
             *,
@@ -11,16 +40,6 @@ with
                 scope, ' ', subject_area, ' ', score_category
             ) as expected_filter_group,
 
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "test_type",
-                        "score_type",
-                        "test_date",
-                    ]
-                )
-            }} as unique_test_admin_id,
-
         from
             {{ ref("int_students__college_assessment_roster") }} unpivot (
                 score for score_category in (
@@ -31,32 +50,6 @@ with
                 )
             )
         where graduation_year >= {{ var("current_academic_year") + 1 }}
-    ),
-
-    expected_admins as (
-        -- need distinct list of expected tests
-        select distinct
-            test_type as expected_test_type,
-            scope as expected_scope,
-            score_type as expected_score_type,
-            subject_area as expected_subject_area,
-            grade_level as expected_grade_level,
-            test_date as expected_test_date,
-            test_month as expected_test_month,
-            field_name as expected_field_name,
-            unique_test_admin_id as expected_unique_test_admin_id,
-            score_category as expected_score_category,
-
-            expected_admin_order,
-            expected_field_name_score_category,
-            expected_filter_group,
-
-            'foo' as bar,
-
-            concat(subject_area, '_', score_category) as filter_group,
-
-        from scores
-        where scope != 'ACT'
     ),
 
     superscores as (
