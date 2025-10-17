@@ -73,7 +73,7 @@
 6. Update the external source definition
 
    ```sh
-   dbt run-operation stage_external_sources --vars "{'ext_full_refresh': 'true'}" --args select: [model name(s)]
+   dbt run-operation stage_external_sources --vars "{'ext_full_refresh': 'true'}" --args "select: [model name(s)]"
    ```
 
 7. Build your staging model
