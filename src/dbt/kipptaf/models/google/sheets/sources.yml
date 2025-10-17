@@ -3,6 +3,7 @@ sources:
     schema: |
       {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}
       z_dev_
+      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'prod' -%}
       {%- elif env_var('GITHUB_USER', '') != '' -%}
       zz_{{ env_var('GITHUB_USER', '') }}_
       {%- endif -%}kipptaf_google_sheets
