@@ -103,6 +103,11 @@ with
                     and resume_score is not null
                     and application_state != 'IN_REVIEW'
                 then 1
+                when
+                    time_in_application_state_lead <= 7
+                    and resume_score is not null
+                    and application_state not in ('NEW', 'IN_REVIEW')
+                then 1
                 else 0
             end as
 
