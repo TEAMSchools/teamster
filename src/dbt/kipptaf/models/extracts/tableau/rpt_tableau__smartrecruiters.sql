@@ -38,7 +38,7 @@ with
             applications.time_in_application_state_lead,
             recruiter,
             date_trunc(applications.date_new, week(monday)) as application_week_start,  -- noqa: LT01,LT05
-            trim(subject_preference_single) as subject_preference_single,
+            trim(subject_preference_single) as subject_preference,
             coalesce(
                 applications.application_field_school_shared_with_miami,
                 applications.application_field_school_shared_with_new_jersey
@@ -59,44 +59,11 @@ with
 
     ),
 
-    final as (
+    add_dimensions_and_metrics as (
         select
-            application_id,
-            application_state,
-            application_week_start,
-            application_url,
-            candidate_email,
-            candidate_first_name,
-            candidate_id,
-            candidate_last_name,
-            candidate_linkedin_profile_url,
-            date_demo,
-            date_hired,
-            date_last_update,
-            date_lead,
-            date_new,
-            date_offer,
-            date_phone_screen_complete,
-            date_phone_screen_requested,
-            date_rejected,
-            department_internal,
-            department_org_field_value,
-            job_city,
-            job_title,
-            phone_interview_score,
-            reason_for_rejection,
-            recruiters,
-            recruiter,
-            resume_score,
-            source,
-            source_subtype,
-            source_type,
-            subject_preference,
-            subject_preference_single,
-            school_shared_with,
-            time_in_application_state_new,
-            time_in_application_state_in_review,
-            time_in_application_state_lead,
+            *,
+            {# custom dimensions #}
+            if(resume_score >= 3, 1, 0) as high_quality_candidate,
             case
                 when
                     time_in_application_state_new <= 7
@@ -109,11 +76,29 @@ with
                     and application_state not in ('NEW', 'IN_REVIEW')
                 then 1
                 else 0
-            end as
-
-            within_week_initial_review,
+            end as within_week_initial_review,
+            {# calculated metrics #}
+            date_diff(date_hired, date_new, day) as days_to_hire,
+            date_diff(current_date(), date_last_update, day) as days_since_update,
         from applications_unnested
+    ),
 
+    final as (
+        select
+            *,
+            {# derived metrics #}
+            case
+                when
+                    days_since_update >= 7
+                    and application_state
+                    not in ('HIRED', 'REJECTED', 'TRANSFERRED', 'WITHDRAWN')
+                then 1
+                else 0
+            end as stalled_application,
+            case
+                when days_since_update >= 7 and high_quality_candidate = 1 then 1 else 0
+            end as stalled_application_high_quality,
+        from add_dimensions_and_metrics
     )
 
 select *,
