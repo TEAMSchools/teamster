@@ -75,27 +75,33 @@ with
                     and resume_score is not null
                     and application_state not in ('NEW', 'IN_REVIEW')
                 then 1
-                when date_diff(date_rejected,date_new,day) <= 7 
+                when
+                    date_diff(date_rejected, date_new, day) <= 7
                     and resume_score is not null
                     and application_state not in ('NEW', 'IN_REVIEW')
                 then 1
-                when date_diff(date_phone_screen_requested,date_new,day) <= 7 
+                when
+                    date_diff(date_phone_screen_requested, date_new, day) <= 7
                     and resume_score is not null
                     and application_state not in ('NEW', 'IN_REVIEW')
                 then 1
-                when date_diff(date_phone_screen_complete,date_new,day) <= 7 
+                when
+                    date_diff(date_phone_screen_complete, date_new, day) <= 7
                     and resume_score is not null
                     and application_state not in ('NEW', 'IN_REVIEW')
                 then 1
-                when date_diff(date_demo,date_new,day) <= 7 
+                when
+                    date_diff(date_demo, date_new, day) <= 7
                     and resume_score is not null
                     and application_state not in ('NEW', 'IN_REVIEW')
                 then 1
-                when date_diff(date_offer,date_new,day) <= 7 
+                when
+                    date_diff(date_offer, date_new, day) <= 7
                     and resume_score is not null
                     and application_state not in ('NEW', 'IN_REVIEW')
                 then 1
-                when date_diff(date_hired,date_new,day) <= 7 
+                when
+                    date_diff(date_hired, date_new, day) <= 7
                     and resume_score is not null
                     and application_state not in ('NEW', 'IN_REVIEW')
                 then 1
