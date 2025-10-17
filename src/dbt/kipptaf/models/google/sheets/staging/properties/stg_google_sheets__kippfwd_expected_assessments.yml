@@ -21,3 +21,5 @@ models:
         data_type: string
       - name: expected_field_name
         data_type: string
+      - name: expected_subject_area
+        data_type: string

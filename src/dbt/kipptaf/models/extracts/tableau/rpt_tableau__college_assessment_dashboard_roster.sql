@@ -11,10 +11,13 @@ with
             expected_month_round,
             expected_admin_season,
             expected_field_name,
+            expected_subject_area,
 
             expected_score_category,
 
             'foo' as bar,
+
+            concat(expected_subject_area, '_', expected_score_category) as filter_group,
 
         from {{ ref("stg_google_sheets__kippfwd_expected_assessments") }}
         cross join
