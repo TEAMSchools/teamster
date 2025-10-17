@@ -238,3 +238,5 @@ models:
                 store_failures: true
       - name: region_official_name
         data_type: string
+      - name: is_ms_grad
+        data_type: boolean
