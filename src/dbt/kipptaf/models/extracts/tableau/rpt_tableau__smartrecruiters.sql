@@ -126,7 +126,13 @@ with
                 else 0
             end as stalled_application,
             case
-                when days_since_update >= 7 and high_quality_candidate = 1 then 1 else 0
+                when
+                    days_since_update >= 7
+                    and high_quality_candidate = 1
+                    and application_state
+                    not in ('HIRED', 'REJECTED', 'TRANSFERRED', 'WITHDRAWN')
+                then 1
+                else 0
             end as stalled_application_high_quality,
         from add_dimensions_and_metrics
     )
