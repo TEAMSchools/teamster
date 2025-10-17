@@ -42,24 +42,36 @@ select
     r.powerschool_contact_2_phone_mobile as ps_contact_2_phone_mobile,
     r.powerschool_contact_2_phone_primary as ps_contact_2_phone_primary,
     r.powerschool_contact_2_phone_work as ps_contact_2_phone_work,
-    r.powerschool_emergency_1_name as ps_emergency_contact_1_name,
-    r.powerschool_emergency_1_relationship as ps_emergency_contact_1_relationship,
-    r.powerschool_emergency_1_phone_daytime as ps_emergency_contact_1_phone_daytime,
-    r.powerschool_emergency_1_phone_home as ps_emergency_contact_1_phone_home,
-    r.powerschool_emergency_1_phone_mobile as ps_emergency_contact_1_phone_mobile,
-    r.powerschool_emergency_1_phone_primary as ps_emergency_contact_1_phone_primary,
-    r.powerschool_emergency_2_name as ps_emergency_contact_2_name,
-    r.powerschool_emergency_2_relationship as ps_emergency_contact_2_relationship,
-    r.powerschool_emergency_2_phone_daytime as ps_emergency_contact_2_phone_daytime,
-    r.powerschool_emergency_2_phone_home as ps_emergency_contact_2_phone_home,
-    r.powerschool_emergency_2_phone_mobile as ps_emergency_contact_2_phone_mobile,
-    r.powerschool_emergency_2_phone_primary as ps_emergency_contact_2_phone_primary,
-    r.powerschool_emergency_3_name as ps_emergency_contact_3_name,
-    r.powerschool_emergency_3_relationship as ps_emergency_contact_3_relationship,
-    r.powerschool_emergency_3_phone_daytime as ps_emergency_contact_3_phone_daytime,
-    r.powerschool_emergency_3_phone_home as ps_emergency_contact_3_phone_home,
-    r.powerschool_emergency_3_phone_mobile as ps_emergency_contact_3_phone_mobile,
-    r.powerschool_emergency_3_phone_primary as ps_emergency_contact_3_phone_primary,
+    r.powerschool_emergency_contact_1_name as ps_emergency_contact_1_name,
+    r.powerschool_emergency_contact_1_relationship
+    as ps_emergency_contact_1_relationship,
+    r.powerschool_emergency_contact_1_phone_daytime
+    as ps_emergency_contact_1_phone_daytime,
+    r.powerschool_emergency_contact_1_phone_home as ps_emergency_contact_1_phone_home,
+    r.powerschool_emergency_contact_1_phone_mobile
+    as ps_emergency_contact_1_phone_mobile,
+    r.powerschool_emergency_contact_1_phone_primary
+    as ps_emergency_contact_1_phone_primary,
+    r.powerschool_emergency_contact_2_name as ps_emergency_contact_2_name,
+    r.powerschool_emergency_contact_2_relationship
+    as ps_emergency_contact_2_relationship,
+    r.powerschool_emergency_contact_2_phone_daytime
+    as ps_emergency_contact_2_phone_daytime,
+    r.powerschool_emergency_contact_2_phone_home as ps_emergency_contact_2_phone_home,
+    r.powerschool_emergency_contact_2_phone_mobile
+    as ps_emergency_contact_2_phone_mobile,
+    r.powerschool_emergency_contact_2_phone_primary
+    as ps_emergency_contact_2_phone_primary,
+    r.powerschool_emergency_contact_3_name as ps_emergency_contact_3_name,
+    r.powerschool_emergency_contact_3_relationship
+    as ps_emergency_contact_3_relationship,
+    r.powerschool_emergency_contact_3_phone_daytime
+    as ps_emergency_contact_3_phone_daytime,
+    r.powerschool_emergency_contact_3_phone_home as ps_emergency_contact_3_phone_home,
+    r.powerschool_emergency_contact_3_phone_mobile
+    as ps_emergency_contact_3_phone_mobile,
+    r.powerschool_emergency_contact_3_phone_primary
+    as ps_emergency_contact_3_phone_primary,
     r.region,
     r.powerschool_mailing_address as ps_home_address,
 from {{ ref("int_kippadb__roster") }} as r

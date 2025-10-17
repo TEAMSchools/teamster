@@ -1,20 +1,4 @@
 with
-    subjects as (
-        select
-            'Reading' as iready_subject,
-            'English Language Arts' as fast_subject,
-            'ENG' as ps_credittype,
-            'Text Study' as illuminate_subject,
-
-        union all
-
-        select
-            'Math' as iready_subject,
-            'Mathematics' as fast_subject,
-            'MATH' as ps_credittype,
-            'Mathematics' as illuminate_subject,
-    ),
-
     iready_lessons as (
         select
             student_id,
@@ -39,7 +23,11 @@ with
     pre_filter_qaf as (
         select powerschool_student_number, subject_area, module_code, percent_correct,
         from {{ ref("int_assessments__response_rollup") }}
-        where module_type = 'QAF' and academic_year = 2023 and response_type = 'overall'
+        where
+            module_type = 'QAF'
+            and response_type = 'overall'
+            {# TODO: document or use var #}
+            and academic_year = 2023
     ),
 
     qaf_pct_correct as (
@@ -107,9 +95,6 @@ select
     co.fast_subject as fsa_subject,
     co.iready_subject,
     co.territory,
-    {# TODO: are these needed? #}
-    null as is_present_fte2,
-    null as is_present_fte3,
 
     administration_window,
 
@@ -171,6 +156,9 @@ select
     fs.performance as mastery_indicator,
     fs.performance as mastery_number,
 
+    null as is_present_fte2,
+    null as is_present_fte3,
+
     coalesce(co.nj_student_tier, 'Unbucketed') as student_tier,
 
     round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed,
@@ -215,13 +203,13 @@ select
         partition by co.student_number, co.academic_year, co.fast_subject
         order by administration_window desc
     ) as rn_year_fast,
-from {{ ref("int_extracts__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments_subjects") }} as co
 cross join unnest(['PM1', 'PM2', 'PM3']) as administration_window
 left join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on co.student_number = ce.students_student_number
     and co.academic_year = ce.cc_academic_year
-    and co.ps_credittype = ce.courses_credittype
+    and co.powerschool_credittype = ce.courses_credittype
     and ce.rn_credittype_year = 1
     and not ce.is_dropped_section
 left join
@@ -231,7 +219,7 @@ left join
 left join
     qaf_pct_correct as ia
     on co.student_number = ia.powerschool_student_number
-    and co.illuminate_subject = ia.subject_area
+    and co.illuminate_subject_area = ia.subject_area
 left join
     {{ ref("base_iready__diagnostic_results") }} as dr
     on co.student_number = dr.student_id
