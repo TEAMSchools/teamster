@@ -79,11 +79,18 @@ with
             co.team as homeroom_section,
             co.advisor_teachernumber as homeroom_teachernumber,
             co.advisor_lastfirst as homeroom_teacher_name,
-
-            w.week_start_monday,
-            w.week_end_sunday,
-            w.date_count as days_in_session,
-            w.quarter as term,
+            co.hos as head_of_school,
+            co.iep_status,
+            co.ml_status,
+            co.status_504,
+            co.self_contained_status,
+            co.gifted_and_talented,
+            co.nj_student_tier,
+            co.week_start_monday,
+            co.week_end_sunday,
+            co.date_count as days_in_session,
+            co.quarter as term,
+            co.is_current_week_mon_sun as is_current_week,
 
             sc.title,
             sc.subject_area,
@@ -112,44 +119,20 @@ with
             cc.teacher_lastfirst as course_teacher_name,
             cc.is_foundations,
 
-            lc.head_of_school_preferred_name_lastfirst as head_of_school,
-
-            coalesce(co.nj_student_tier, 'Unbucketed') as nj_student_tier,
-
             cast(r.assessment_id as string) as assessment_id,
-
-            if(co.lep_status, 'ML', 'Not ML') as ml_status,
-            if(co.is_504, 'Has 504', 'No 504') as status_504,
-            if(
-                co.is_self_contained, 'Self-contained', 'Not self-contained'
-            ) as self_contained_status,
-            if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
-            coalesce(co.gifted_and_talented, 'N') as gifted_and_talented,
-
-            if(
-                current_date('{{ var("local_timezone") }}')
-                between w.week_start_monday and w.week_end_sunday,
-                true,
-                false
-            ) as is_current_week,
 
             if(r.date_taken is not null, 1, 0) as is_complete,
 
             case
                 when r.is_mastery then 1 when not r.is_mastery then 0
             end as is_mastery_int,
-        from {{ ref("int_extracts__student_enrollments_subjects") }} as co
-        inner join
-            {{ ref("int_powerschool__calendar_week") }} as w
-            on co.academic_year = w.academic_year
-            and co.schoolid = w.schoolid
-            and w.week_end_sunday between co.entrydate and co.exitdate
+        from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as co
         left join
             {{ ref("int_assessments__scaffold") }} as sc
             on co.student_number = sc.powerschool_student_number
             and co.academic_year = sc.academic_year
             and co.region = sc.region
-            and sc.administered_at between w.week_start_monday and w.week_end_sunday
+            and sc.administered_at between co.week_start_monday and co.week_end_sunday
         left join
             {{ ref("int_assessments__response_rollup") }} as r
             on sc.powerschool_student_number = r.powerschool_student_number
@@ -166,13 +149,11 @@ with
             and r.subject_area = cc.illuminate_subject_area
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
-        left join
-            {{ ref("int_people__leadership_crosswalk") }} as lc
-            on co.schoolid = lc.home_work_location_powerschool_school_id
         where
             co.enroll_status = 0
-            and co.academic_year >= {{ var("current_academic_year") - 2 }}
+            and co.is_enrolled_week_end
             and not co.is_out_of_district
+            and co.academic_year >= {{ var("current_academic_year") - 2 }}
             {# TODO: Remove SY26 #}
             /* Manual filter to avoid dashboard roll-up */
             and sc.module_type != 'WPP'
