@@ -10,6 +10,7 @@ select
     cw.week_number_academic_year,
     cw.week_number_quarter,
     cw.is_current_week_mon_sun,
+    cw.date_count,
 
     if(
         cw.week_start_monday between co.entrydate and co.exitdate, true, false
