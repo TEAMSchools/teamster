@@ -88,7 +88,9 @@ select
 
     ill.student_id as illuminate_student_id,
 
-    coalesce(njs.gifted_and_talented, suf.gifted_and_talented) as gifted_and_talented,
+    coalesce(
+        njs.gifted_and_talented, suf.gifted_and_talented, 'N'
+    ) as gifted_and_talented,
 
     coalesce(njr.pid_504_tf, suf.is_504, false) as is_504,
 

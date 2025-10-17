@@ -26,6 +26,7 @@ with
             co.schoolid,
             co.grade_level,
             co.spedlep as iep_status,
+            co.hos,
 
             enr.teacher_lastfirst,
             enr.sections_section_number as section_number,
@@ -104,6 +105,7 @@ with
             co.schoolid,
             co.grade_level,
             co.spedlep as iep_status,
+            co.hos,
 
             enr.teacher_lastfirst,
             enr.sections_section_number as section_number,
@@ -177,6 +179,7 @@ with
             co.schoolid,
             co.grade_level,
             co.spedlep as iep_status,
+            co.hos,
 
             enr.teacher_lastfirst,
             enr.sections_section_number as section_number,
@@ -254,6 +257,7 @@ with
             co.schoolid,
             co.grade_level,
             co.spedlep as iep_status,
+            co.hos,
 
             enr.teacher_lastfirst,
             enr.sections_section_number as section_number,
@@ -350,6 +354,7 @@ with
             performance_band_label_number,
             growth_band,
             is_mastery,
+            hos,
 
             row_number() over (
                 partition by
@@ -391,12 +396,11 @@ select
     p.is_mastery,
     p.rn_subj_term_asc,
     p.rn_subj_term_desc,
+    p.hos as head_of_school,
 
     sf.nj_student_tier,
     sf.state_test_proficiency,
     sf.is_tutoring as tutoring_nj,
-
-    lc.head_of_school_preferred_name_lastfirst as head_of_school,
 
     case
         when
@@ -485,6 +489,3 @@ left join
     on p.student_number = sf.student_number
     and p.academic_year = sf.academic_year
     and p.subject_area = sf.illuminate_subject_area
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as lc
-    on p.schoolid = lc.home_work_location_powerschool_school_id

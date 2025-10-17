@@ -41,8 +41,7 @@ select
     co.state_test_proficiency,
     co.is_tutoring as tutoring_nj,
     co.nj_student_tier,
-
-    lc.head_of_school_preferred_name_lastfirst as head_of_school,
+    co.hos as head_of_school,
 
     case
         when asr.is_mastery then 1 when not asr.is_mastery then 0
@@ -105,9 +104,6 @@ left join
     and co.schoolid = ag.school_id
     and co.grade_level = ag.grade_level
     and asr.subject_area = ag.illuminate_subject_area
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as lc
-    on co.schoolid = lc.home_work_location_powerschool_school_id
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
@@ -161,8 +157,7 @@ select
     co.state_test_proficiency,
     co.is_tutoring as tutoring_nj,
     co.nj_student_tier,
-
-    lc.head_of_school_preferred_name_lastfirst as head_of_school,
+    co.hos as head_of_school,
 
     case
         when asr.is_mastery then 1 when not asr.is_mastery then 0
@@ -216,9 +211,6 @@ left join
     on asr.academic_year = ag.academic_year
     and co.schoolid = ag.school_id
     and asr.subject_area = ag.illuminate_subject_area
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as lc
-    on co.schoolid = lc.home_work_location_powerschool_school_id
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
