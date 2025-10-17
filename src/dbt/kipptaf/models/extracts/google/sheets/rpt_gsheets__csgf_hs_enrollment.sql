@@ -208,7 +208,7 @@ with
             c.region,
 
             max(if(g.grade like 'F%', 0, 1)) over (
-                partition by student_number
+                partition by c.students_student_number
             ) as passed_algebra_i,
 
         from {{ ref("base_powerschool__course_enrollments") }} as c
@@ -223,16 +223,18 @@ with
             {{ ref("stg_google_sheets__crdc__sced_code_crosswalk") }} as x
             on concat(c.nces_subject_area, c.nces_course_id) = x.sced_code
         where
-            c.cc_academic_year < {{ var("current_academic_year") }}
-            and c.rn_course_number_year = 1
+            c.rn_course_number_year = 1
             and not c.is_dropped_course
-            and x.sced_course_name in (
-                'Integrated Mathematics I',
-                'Algebra I',
-                'Algebra I - Part 1',
-                'Algebra I - Part 2'
+            and (
+                x.sced_course_name in (
+                    'Integrated Mathematics I',
+                    'Algebra I',
+                    'Algebra I - Part 1',
+                    'Algebra I - Part 2'
+                )
+                or c.courses_course_name = 'Math I Algebra'
             )
-            or c.courses_course_name = 'Math I Algebra'
+            and c.cc_academic_year < {{ var("current_academic_year") }}
 
         union all
 
