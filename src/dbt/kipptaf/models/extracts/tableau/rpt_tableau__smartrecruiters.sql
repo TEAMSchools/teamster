@@ -28,7 +28,7 @@ with
             applications.department_org_field_value,
             applications.job_city,
             applications.job_title,
-            applications.recruiters as recruiter_all,
+            applications.recruiters,
             applications.source,
             applications.source_subtype,
             applications.source_type,
@@ -36,7 +36,8 @@ with
             applications.time_in_application_state_new,
             applications.time_in_application_state_in_review,
             applications.time_in_application_state_lead,
-            recruiter_single,
+            recruiter,
+            date_trunc(date_new, week(monday)) as application_week_start,  -- noqa: LT01
             trim(subject_preference_single) as subject_preference_single,
             coalesce(
                 applications.application_field_school_shared_with_miami,
@@ -54,7 +55,7 @@ with
             unnest(
                 split(applications.subject_preference, ',')
             ) as subject_preference_single
-        cross join unnest(split(applications.recruiters, ',')) as recruiter_single
+        cross join unnest(split(applications.recruiters, ',')) as recruiter
 
     ),
 
@@ -62,6 +63,7 @@ with
         select
             application_id,
             application_state,
+            application_week_start,
             application_url,
             candidate_email,
             candidate_first_name,

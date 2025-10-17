@@ -12,6 +12,9 @@ models:
         data_type: string
         description: ""
 
+      - name: application_week_start
+        data_type: date
+
       - name: application_url
         data_type: string
         description: ""
@@ -96,13 +99,13 @@ models:
         data_type: string
         description: ""
 
-      - name: recruiter_all
+      - name: recruiters
         data_type: string
-        description: ""
+        description: multi-select list of all recruiters
 
-      - name: recruiter_single
+      - name: recruiter
         data_type: string
-        description: ""
+        description: unnested list of single recruiter names
 
       - name: resume_score
         data_type: int64
