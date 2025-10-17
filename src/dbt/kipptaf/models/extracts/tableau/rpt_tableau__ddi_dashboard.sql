@@ -76,6 +76,9 @@ with
             co.dibels_most_recent_composite,
             co.state_test_proficiency,
             co.is_exempt_iready,
+            co.team as homeroom_section,
+            co.advisor_teachernumber as homeroom_teachernumber,
+            co.advisor_lastfirst as homeroom_teacher_name,
 
             w.week_start_monday,
             w.week_end_sunday,
@@ -108,10 +111,6 @@ with
             cc.teachernumber as course_teachernumber,
             cc.teacher_lastfirst as course_teacher_name,
             cc.is_foundations,
-
-            hr.sections_section_number as homeroom_section,
-            hr.teachernumber as homeroom_teachernumber,
-            hr.teacher_lastfirst as homeroom_teacher_name,
 
             lc.head_of_school_preferred_name_lastfirst as head_of_school,
 
@@ -167,15 +166,6 @@ with
             and r.subject_area = cc.illuminate_subject_area
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
-        left join
-            {{ ref("base_powerschool__course_enrollments") }} as hr
-            on co.studentid = hr.cc_studentid
-            and co.yearid = hr.cc_yearid
-            and co.schoolid = hr.cc_schoolid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
-            and hr.cc_course_number = 'HR'
-            and not hr.is_dropped_section
-            and hr.rn_course_number_year = 1
         left join
             {{ ref("int_people__leadership_crosswalk") }} as lc
             on co.schoolid = lc.home_work_location_powerschool_school_id
