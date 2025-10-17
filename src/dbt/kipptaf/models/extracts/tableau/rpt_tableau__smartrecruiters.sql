@@ -37,7 +37,7 @@ with
             applications.time_in_application_state_in_review,
             applications.time_in_application_state_lead,
             recruiter,
-            date_trunc(applications.date_new, week(monday)) as application_week_start,  -- noqa: LT01
+            date_trunc(applications.date_new, week(monday)) as application_week_start,  -- noqa: LT01,LT05
             trim(subject_preference_single) as subject_preference_single,
             coalesce(
                 applications.application_field_school_shared_with_miami,
