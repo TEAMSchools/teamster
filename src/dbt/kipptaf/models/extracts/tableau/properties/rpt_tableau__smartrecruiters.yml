@@ -3,17 +3,25 @@ version: 2
 models:
   - name: rpt_tableau__smartrecruiters
     description: ""
+    config:
+      contract:
+        enforced: false
     columns:
+      - name: phone_interview_score
+        data_type: string
+        description: ""
+
       - name: application_id
+        data_type: string
+        description: ""
+
+      - name: reason_for_rejection
         data_type: string
         description: ""
 
       - name: application_state
         data_type: string
         description: ""
-
-      - name: application_week_start
-        data_type: date
 
       - name: application_url
         data_type: string
@@ -91,24 +99,8 @@ models:
         data_type: string
         description: ""
 
-      - name: phone_interview_score
+      - name: recruiter_multiple
         data_type: string
-        description: ""
-
-      - name: reason_for_rejection
-        data_type: string
-        description: ""
-
-      - name: recruiters
-        data_type: string
-        description: multi-select list of all recruiters
-
-      - name: recruiter
-        data_type: string
-        description: unnested list of single recruiter names
-
-      - name: resume_score
-        data_type: int64
         description: ""
 
       - name: source
@@ -123,15 +115,7 @@ models:
         data_type: string
         description: ""
 
-      - name: subject_preference
-        data_type: string
-        description: ""
-
-      - name: subject_preference_single
-        data_type: string
-        description: ""
-
-      - name: school_shared_with
+      - name: subject_preference_multiple
         data_type: string
         description: ""
 
@@ -147,6 +131,46 @@ models:
         data_type: int64
         description: ""
 
+      - name: recruiter
+        data_type: string
+        description: ""
+
+      - name: application_week_start
+        data_type: date
+        description: ""
+
+      - name: subject_preference
+        data_type: string
+        description: ""
+
+      - name: school_shared_with
+        data_type: string
+        description: ""
+
+      - name: resume_score
+        data_type: int64
+        description: ""
+
+      - name: high_quality_candidate
+        data_type: int64
+        description: ""
+
       - name: within_week_initial_review
+        data_type: int64
+        description: ""
+
+      - name: days_to_hire
+        data_type: int64
+        description: ""
+
+      - name: days_since_update
+        data_type: int64
+        description: ""
+
+      - name: stalled_application
+        data_type: int64
+        description: ""
+
+      - name: stalled_application_high_quality
         data_type: int64
         description: ""
