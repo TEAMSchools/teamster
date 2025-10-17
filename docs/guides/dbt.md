@@ -80,8 +80,8 @@
 
 ## Updating a Google Sheets source
 
-1. Duplicate the tab you are updating. If you will only be adding columns to the
-   end of the sheet, you can skip this step.
+1. Duplicate the tab that you are modifying. If you will only be adding columns
+   to the end of the sheet, you can skip this step.
 
 2. Create a new named range. Use the same name but suffixed with something to
    make it unique (e.g. `_new`, `_v2`)
