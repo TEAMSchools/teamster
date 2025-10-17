@@ -21,8 +21,17 @@ select
     sr.is_retained_year,
     sr.is_retained_ever,
     sr.rn_undergrad,
-
-    ktc.id as salesforce_id,
+    sr.salesforce_contact_id as salesforce_id,
+    sr.cumulative_y1_gpa,
+    sr.cumulative_y1_gpa_unweighted,
+    sr.cumulative_y1_gpa_projected,
+    sr.cumulative_y1_gpa_projected_s1,
+    sr.earned_credits_cum,
+    sr.earned_credits_cum_projected,
+    sr.earned_credits_cum_projected_s1,
+    sr.potential_credits_cum,
+    sr.core_cumulative_y1_gpa,
+    sr.cumulative_y1_gpa_projected_s1_unweighted,
 
     gt.term_name,
     gt.semester,
@@ -44,31 +53,12 @@ select
     gt.grade_avg_y1,
     gt.n_failing_y1,
 
-    gc.cumulative_y1_gpa,
-    gc.cumulative_y1_gpa_unweighted,
-    gc.cumulative_y1_gpa_projected,
-    gc.cumulative_y1_gpa_projected_s1,
-    gc.earned_credits_cum,
-    gc.earned_credits_cum_projected,
-    gc.earned_credits_cum_projected_s1,
-    gc.potential_credits_cum,
-    gc.core_cumulative_y1_gpa,
-    gc.cumulative_y1_gpa_projected_s1_unweighted,
-
     null as reporting_term,
 from {{ ref("int_extracts__student_enrollments") }} as sr
-left join
-    {{ ref("stg_kippadb__contact") }} as ktc
-    on sr.student_number = ktc.school_specific_id
 left join
     {{ ref("int_powerschool__gpa_term") }} as gt
     on sr.studentid = gt.studentid
     and sr.yearid = gt.yearid
     and sr.schoolid = gt.schoolid
     and {{ union_dataset_join_clause(left_alias="sr", right_alias="gt") }}
-left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gc
-    on sr.studentid = gc.studentid
-    and sr.schoolid = gc.schoolid
-    and {{ union_dataset_join_clause(left_alias="sr", right_alias="gc") }}
 where sr.school_level in ('MS', 'HS') and sr.rn_year = 1

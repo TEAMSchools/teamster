@@ -12,6 +12,7 @@ select
     co.gender,
     co.is_retained_year,
     co.is_retained_ever,
+    co.iep_status,
 
     rt.name as term,
     rt.is_current,
@@ -35,8 +36,6 @@ select
     ps.exemption,
     ps.manual_retention,
     ps.overall_status as promo_status_overall,
-
-    if(co.spedlep like 'SPED%', 'Has IEP', co.spedlep) as iep_status,
 from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt

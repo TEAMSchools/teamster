@@ -92,7 +92,7 @@ select
 
     coalesce(kt.contact_id, 'not in salesforce') as sf_id,
 
-    if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+    co.iep_status,
 
     case
         when co.enroll_status = 0

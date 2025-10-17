@@ -110,6 +110,10 @@ select
 
     mt.territory,
 
+    hi.enter_date as home_instruction_enter_date,
+    hi.exit_date as home_instruction_exit_date,
+    hi.sp_comment as home_instruction_sp_comment,
+
     hos.head_of_school_preferred_name_lastfirst as hos,
     hos.school_leader_preferred_name_lastfirst as school_leader,
     hos.school_leader_sam_account_name as school_leader_tableau_username,
@@ -157,6 +161,11 @@ select
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+    if(e.lep_status, 'ML', 'Not ML') as ml_status,
+    if(e.is_504, 'Has 504', 'No 504') as status_504,
+    if(
+        e.is_self_contained, 'Self-contained', 'Not self-contained'
+    ) as self_contained_status,
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
 
@@ -243,7 +252,6 @@ select
         then 'Salesforce/Overgrad has FAFSA opt-out mismatch'
         else 'No issues'
     end as fafsa_status_mismatch_category,
-
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
@@ -286,6 +294,13 @@ left join
     and {{ union_dataset_join_clause(left_alias="e", right_alias="tut") }}
     and tut.specprog_name = 'Tutoring'
     and tut.rn_student_program_year_desc = 1
+inner join
+    {{ ref("int_powerschool__spenrollments") }} as hi
+    on e.studentid = hi.studentid
+    and e.academic_year = hi.academic_year
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="hi") }}
+    and hi.specprog_name = 'Home Instruction'
+    and hi.rn_student_program_year_desc = 1
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id
