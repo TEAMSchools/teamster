@@ -5,7 +5,7 @@ models:
     description: ""
     config:
       contract:
-        enforced: false
+        enforced: true
     columns:
       - name: phone_interview_score
         data_type: string
