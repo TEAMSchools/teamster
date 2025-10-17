@@ -308,17 +308,8 @@ with
                 else false
             end as is_bucket2_eligible,
             if(ir.is_below_int = 1, true, false) as is_bucket3_eligible,
-        from {{ ref("int_extracts__student_enrollments") }} as co
-        cross join subject_croswalk as s
+        from {{ ref("int_extracts__student_enrollments_subjects") }} as co
         inner join grade_bands as gb on co.grade_level = gb.grade_level
-        inner join
-            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-            on co.academic_year = sf.academic_year
-            and co.student_number = sf.student_number
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="sf") }}
-            and s.subject = sf.iready_subject
-            and sf.rn_year = 1
-            and not sf.is_exempt_state_testing
         left join
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
@@ -349,6 +340,7 @@ with
         where
             co.rn_year = 1
             and co.enroll_status = 0
+            and not co.is_exempt_state_testing
             and co.grade_level between 3 and 9
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
 
@@ -391,17 +383,8 @@ with
             if(ir.scale_score is not null, 1, 0) as is_tested_int,
             if(ir.is_approaching_int = 1, true, false) as is_bucket2_eligible,
             if(ir.is_below_int = 1, true, false) as is_bucket3_eligible,
-        from {{ ref("int_extracts__student_enrollments") }} as co
-        cross join subject_croswalk as s
+        from {{ ref("int_extracts__student_enrollments_subjects") }} as co
         inner join grade_bands as gb on co.grade_level = gb.grade_level
-        inner join
-            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-            on co.academic_year = sf.academic_year
-            and co.student_number = sf.student_number
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="sf") }}
-            and s.subject = sf.iready_subject
-            and sf.rn_year = 1
-            and not sf.is_exempt_state_testing
         left join
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
@@ -427,6 +410,7 @@ with
         where
             co.rn_year = 1
             and co.enroll_status = 0
+            and not co.is_exempt_state_testing
             and co.grade_level between 0 and 2
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
             and co.region != 'Miami'
@@ -472,16 +456,7 @@ with
             if(ir.is_approaching_int = 1, true, false) as is_bucket2_eligible,
             if(ir.is_below_int = 1, true, false) as is_bucket3_eligible,
         from {{ ref("int_extracts__student_enrollments") }} as co
-        cross join subject_croswalk as s
         inner join grade_bands as gb on co.grade_level = gb.grade_level
-        inner join
-            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-            on co.academic_year = sf.academic_year
-            and co.student_number = sf.student_number
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="sf") }}
-            and s.subject = sf.iready_subject
-            and sf.rn_year = 1
-            and not sf.is_exempt_state_testing
         left join
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
@@ -509,9 +484,9 @@ with
             co.rn_year = 1
             and co.enroll_status = 0
             and co.grade_level = 0
-            and co.academic_year >= {{ var("current_academic_year") - 1 }}
             and co.region = 'Miami'
-
+            and not co.is_exempt_state_testing
+            and co.academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
     roster_ranked as (

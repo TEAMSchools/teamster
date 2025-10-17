@@ -204,19 +204,14 @@ with
     passed_courses_union as (
         select
             c.cc_studentid as studentid,
-            e.grade_level,
-            e.region,
+            c.students_grade_level as grade_level,
+            c.region,
 
             max(if(g.grade like 'F%', 0, 1)) over (
                 partition by student_number
             ) as passed_algebra_i,
 
         from {{ ref("base_powerschool__course_enrollments") }} as c
-        inner join
-            {{ ref("int_extracts__student_enrollments") }} as e
-            on c.cc_academic_year = e.academic_year
-            and c.cc_studentid = e.studentid
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="e") }}
         inner join
             {{ ref("stg_powerschool__storedgrades") }} as g
             on c.cc_academic_year = g.academic_year
@@ -234,8 +229,8 @@ with
             and x.sced_course_name in (
                 'Integrated Mathematics I',
                 'Algebra I',
-                'Algebra I – Part 1',
-                'Algebra I – Part 2'
+                'Algebra I - Part 1',
+                'Algebra I - Part 2'
             )
             or c.courses_course_name = 'Math I Algebra'
 
