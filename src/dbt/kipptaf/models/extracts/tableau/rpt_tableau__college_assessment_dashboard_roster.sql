@@ -12,6 +12,7 @@ with
             expected_admin_season,
             expected_field_name,
             expected_subject_area,
+            expected_admin_season_order,
 
             expected_score_category,
 
@@ -33,20 +34,26 @@ with
             ) as expected_score_category
     ),
 
-    scores as (
+    scores_unpivot as (
         select
-            *,
+            student_number,
+            test_type,
+            scope,
+            score_type,
+            subject_area,
+            course_discipline,
+            test_month,
+            test_date,
 
-            concat(
-                field_name, ' ', score_category
-            ) as expected_field_name_score_category,
+            score_category,
+            score,
 
             concat(
                 scope, ' ', subject_area, ' ', score_category
             ) as expected_filter_group,
 
         from
-            {{ ref("int_students__college_assessment_roster") }} unpivot (
+            {{ ref("int_assessments__college_assessment") }} unpivot (
                 score for score_category in (
                     scale_score as 'Scale Score',
                     max_scale_score as 'Max Scale Score',
@@ -54,7 +61,29 @@ with
                     previous_total_score_change as 'Previous Total Score Change'
                 )
             )
-        where graduation_year >= {{ var("current_academic_year") + 1 }}
+        where scope = 'SAT'
+
+        union all
+
+        select
+            student_number,
+            test_type,
+            scope,
+            score_type,
+            subject_area,
+            course_discipline,
+            test_month,
+            test_date,
+
+            'Scale Score' as score_category,
+            scale_score as score,
+
+            concat(
+                scope, ' ', subject_area, ' ', 'Scale Score'
+            ) as expected_filter_group,
+
+        from {{ ref("int_assessments__college_assessment") }}
+        where scope in ('PSAT10', 'PSAT NMSQT', 'PSAT 8/9') and rn_highest = 1
     ),
 
     superscores as (
@@ -62,13 +91,14 @@ with
             student_number, sat_combined_superscore, sat_ebrw_highest, sat_math_highest,
 
         from
-            scores pivot (
+            scores_unpivot pivot (
                 avg(score) for expected_filter_group in (
                     'SAT Combined Superscore' as sat_combined_superscore,
                     'SAT EBRW Max Scale Score' as sat_ebrw_highest,
                     'SAT Math Max Scale Score' as sat_math_highest
                 )
             )
+        where scope = 'SAT'
     ),
 
     superscores_dedup as (
@@ -81,7 +111,7 @@ with
 
         from superscores
         group by student_number
-    )
+    ),
 
 select
     e.region,
