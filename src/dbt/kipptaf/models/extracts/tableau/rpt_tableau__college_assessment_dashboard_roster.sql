@@ -19,7 +19,7 @@ with
             'foo' as bar,
 
             concat(
-                expected_subject_area, '_', expected_score_category
+                expected_subject_area, ' ', expected_score_category
             ) as expected_filter_group,
 
         from {{ ref("stg_google_sheets__kippfwd_expected_assessments") }}
@@ -61,7 +61,9 @@ with
                     previous_total_score_change as 'Previous Total Score Change'
                 )
             )
-        where scope = 'SAT'
+        where
+            scope = 'SAT'
+            and score_type not in ('sat_math_test_score', 'sat_reading_test_score')
 
         union all
 
@@ -83,7 +85,10 @@ with
             ) as expected_filter_group,
 
         from {{ ref("int_assessments__college_assessment") }}
-        where scope in ('PSAT10', 'PSAT NMSQT', 'PSAT 8/9') and rn_highest = 1
+        where
+            scope in ('PSAT10', 'PSAT NMSQT', 'PSAT 8/9')
+            and rn_highest = 1
+            and score_type not in ('psat10_reading', 'psat10_math_test')
     ),
 
     superscores as (

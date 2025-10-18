@@ -339,7 +339,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
-            sheet_range: src_google_sheets__kippfwd_expected_assessments
+            sheet_range: src_google_sheets__kippfwd_expected_assessments_v2
             skip_leading_rows: 1
         meta:
           dagster:
