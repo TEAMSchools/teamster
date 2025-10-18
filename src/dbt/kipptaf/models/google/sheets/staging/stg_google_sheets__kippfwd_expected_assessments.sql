@@ -38,7 +38,6 @@ select
                 ' ',
                 expected_admin_season
             )
-        else null
     end as expected_field_name,
 
 from scores
