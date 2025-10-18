@@ -27,3 +27,5 @@ models:
         data_type: numeric
       - name: Rule_Group
         data_type: string
+      - name: Rule_Group_Grade
+        data_type: string
