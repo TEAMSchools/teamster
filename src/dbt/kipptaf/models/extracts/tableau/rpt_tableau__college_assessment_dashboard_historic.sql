@@ -63,6 +63,7 @@ with
             e.college_match_gpa,
             e.college_match_gpa_bands,
             e.ms_attended,
+            e.graduation_year,
 
             s.courses_course_name,
             s.teacher_lastfirst,
@@ -164,6 +165,7 @@ select
     e.contact_owner_name,
     e.college_match_gpa,
     e.college_match_gpa_bands,
+    e.graduation_year,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
@@ -224,6 +226,7 @@ select
     e.contact_owner_name,
     e.college_match_gpa,
     e.college_match_gpa_bands,
+    e.graduation_year,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
