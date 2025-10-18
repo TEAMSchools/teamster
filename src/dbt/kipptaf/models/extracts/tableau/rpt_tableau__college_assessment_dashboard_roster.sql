@@ -17,7 +17,7 @@ with
 
             'foo' as bar,
 
-            concat(expected_subject_area, '_', expected_score_category) as filter_group,
+            concat(expected_subject_area, '_', expected_score_category) as expected_filter_group,
 
         from {{ ref("stg_google_sheets__kippfwd_expected_assessments") }}
         cross join
