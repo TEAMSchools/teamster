@@ -9,6 +9,7 @@ with
             expected_test_code,
             expected_score_type,
             expected_month_round,
+            expectd_month,
             expected_admin_season,
             expected_field_name,
             expected_subject_area,

@@ -12,6 +12,8 @@ with
                 then 'Math'
             end as expected_subject_area,
 
+            regexp_extract(expected_month_round, r'^([^ ]+)') as expected_month,
+
         from
             {{
                 source(
