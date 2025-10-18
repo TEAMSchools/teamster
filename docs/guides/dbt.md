@@ -73,17 +73,18 @@
 6. Update the external source definition
 
    ```sh
-   dbt run-operation stage_external_sources --vars "{'ext_full_refresh': 'true'}" --args select: [model name(s)]
+   dbt run-operation stage_external_sources --vars "{'ext_full_refresh': 'true'}" --args "select: [model name(s)]"
    ```
 
 7. Build your staging model
 
 ## Updating a Google Sheets source
 
-1. Duplicate the tab you are updating
+1. Duplicate the tab that you are modifying. If you will only be adding columns
+   to the end of the sheet, you can skip this step.
 
-2. Create a new named range for the new tab. Use the same name as the old tab,
-   suffixed with something to make it unique (e.g. `new`, `_v2`)
+2. Create a new named range. Use the same name but suffixed with something to
+   make it unique (e.g. `_new`, `_v2`)
 
 3. Update `src/dbt/kipptaf/models/google/sheets/sources-drive.yml`. Update the
    `sheet_range` attribute with the new named range.
