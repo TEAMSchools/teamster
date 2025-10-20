@@ -578,6 +578,18 @@ exposures:
       dagster:
         kinds:
           - googlesheets
+  - name: rpt_gsheets__athletic_eligibility
+    label: rpt_gsheets__athletic_eligibility
+    type: analysis
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1ceT3bc0NCqyMXpVp_0m9bAE1P3Nve4iYwgds7Z0-xwU
+    depends_on:
+      - ref("rpt_gsheets__athletic_eligibility")
+    meta:
+      dagster:
+        kinds:
+          - googlesheets
   # - name: hro_2425_renewal_workbook_data_team_workspace
   #   label: HRO 24-25 Renewal Workbook - Data Team Workspace
   #   type: application
