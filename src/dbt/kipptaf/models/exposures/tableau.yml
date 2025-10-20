@@ -97,7 +97,6 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      - ref("rpt_tableau__athletic_eligibility")
       - ref("rpt_tableau__community_service")
       - ref("rpt_tableau__graduation_requirements")
       - ref("rpt_tableau__grad_plan_tracking")
