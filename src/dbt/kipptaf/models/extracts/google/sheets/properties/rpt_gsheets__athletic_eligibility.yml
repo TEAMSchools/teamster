@@ -1,5 +1,5 @@
 models:
-  - name: rpt_tableau__athletic_eligibility
+  - name: rpt_gsheets__athletic_eligibility
     columns:
       - name: _dbt_source_relation
         data_type: string
