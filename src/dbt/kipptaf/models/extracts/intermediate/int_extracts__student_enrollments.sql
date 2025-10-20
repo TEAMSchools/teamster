@@ -319,7 +319,7 @@ left join
     on e.student_number = m.student_number
     and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
     and m.rn = 1
-left join ms_grad_sub as ms on e.student_number = m.student_number
+left join ms_grad_sub as ms on e.student_number = ms.student_number
 left join
     es_grad_sub as es
     on e.student_number = es.student_number
