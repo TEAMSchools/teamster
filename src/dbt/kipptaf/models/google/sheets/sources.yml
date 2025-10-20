@@ -1,7 +1,7 @@
 sources:
   - name: google_sheets
     schema: |
-      {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}
+      {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['staging', 'dev'] -%}
       z_dev_
       {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'prod' -%}
       {%- elif env_var('GITHUB_USER', '') != '' -%}
