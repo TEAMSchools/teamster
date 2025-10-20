@@ -49,3 +49,4 @@ where
     and e.rn_year = 1
     and e.enroll_status = 0
     and not e.is_out_of_district
+    and e.region not in ('Miami', 'Paterson')
