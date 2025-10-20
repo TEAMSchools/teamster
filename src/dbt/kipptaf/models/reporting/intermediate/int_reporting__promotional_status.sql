@@ -217,6 +217,26 @@ with
         where co.rn_year = 1 and co.grade_level != 99
     ),
 
+    metric_string_pivot as (
+        select
+            -- student_number,
+            -- academic_year,
+            -- term,
+            -- discipline,
+            *
+        from
+            criteria_test_union pivot (
+                max(metric_string) for subdomain in (
+                    'i-Ready Diagnostic',
+                    'Projected Y1 Credits',
+                    'Unexcused Absences',
+                    'ADA',
+                    'Core Course Failures',
+                    'DIBELS Benchmark'
+                )
+            )
+    )
+
     rule_test as (
         select
             student_number,
