@@ -45,7 +45,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
 where
     e.academic_year = {{ var("current_academic_year") }}
-    and e.grade_level >= 9
+    and e.grade_level >= 5
     and e.rn_year = 1
     and e.enroll_status = 0
     and not e.is_out_of_district
