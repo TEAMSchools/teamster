@@ -8,6 +8,7 @@ from teamster.libraries.iready.schema import (
     InstructionalUsage,
     InstructionByLesson,
     PersonalizedInstruction,
+    PersonalizedInstructionSummary,
 )
 
 pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
@@ -31,4 +32,8 @@ PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA = json.loads(
 
 INSTRUCTION_BY_LESSON_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=InstructionByLesson, options=pas_options)
+)
+
+PERSONALIZED_INSTRUCTION_SUMMARY = json.loads(
+    py_avro_schema.generate(py_type=PersonalizedInstructionSummary, options=pas_options)
 )
