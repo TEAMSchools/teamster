@@ -30,24 +30,24 @@ with
             a.expected_grouping,
             a.expected_field_name,
 
-        -- s.test_type,
-        -- s.scope,
-        -- s.score_type,
-        -- s.test_date,
-        -- s.test_month,
-        -- s.scale_score,
+            s.test_type,
+            s.scope,
+            s.score_type,
+            s.test_date,
+            s.test_month,
+            s.scale_score,
+
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
             expected_admins as a
             on e.region = a.expected_region
             and e.grade_level = a.expected_grade_level
-        -- inner join
-        -- {{ ref("int_assessments__college_assessment") }} as s
-        -- on a.expected_academic_year = s.academic_year
-        -- and a.expected_score_type = s.score_type
-        -- and a.expected_month = s.test_month
-        -- and a.expected_region = e.region
-        -- and a.expected_grade_level = e.grade_level
+        left join
+            {{ ref("int_assessments__college_assessment") }} as s
+            and a.expected_score_type = s.score_type
+            and a.expected_month = s.test_month
+            and a.expected_region = e.region
+            and a.expected_grade_level = e.grade_level
         where
             e.school_level = 'HS'
             and e.rn_year = 1
