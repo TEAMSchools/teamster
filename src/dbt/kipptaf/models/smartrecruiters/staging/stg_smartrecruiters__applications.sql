@@ -11,8 +11,18 @@ with
                 application_status_interview_demo_date,
                 application_status_interview_phone_screen_complete_date,
                 application_status_interview_phone_screen_requested_date,
-                screening_question_answer_knjm_application_subject_preference
+                screening_question_answer_knjm_application_subject_preference,
+                time_in_application_state_in_review,
+                time_in_application_state_interview,
+                time_in_application_state_lead,
+                time_in_application_state_new,
+                time_in_application_state_offered,
+                time_in_application_status_in_review_resume_review,
+                time_in_application_status_interview_demo,
+                time_in_application_status_interview_phone_screen_complete,
+                time_in_application_status_interview_phone_screen_requested
             ),
+
             datetime(application_state_hired_date) as hired_datetime,
             datetime(application_state_new_date) as new_datetime,
             datetime(application_state_lead_date) as lead_datetime,
@@ -26,7 +36,33 @@ with
                 application_status_interview_phone_screen_requested_date
             ) as phone_screen_requested_datetime,
             datetime(application_last_update_date) as last_update_datetime,
-
+            safe_cast(
+                time_in_application_state_in_review as int
+            ) as time_in_application_state_in_review,
+            safe_cast(
+                time_in_application_state_interview as int
+            ) as time_in_application_state_interview,
+            safe_cast(
+                time_in_application_state_lead as int
+            ) as time_in_application_state_lead,
+            safe_cast(
+                time_in_application_state_new as int
+            ) as time_in_application_state_new,
+            safe_cast(
+                time_in_application_state_offered as int
+            ) as time_in_application_state_offered,
+            safe_cast(
+                time_in_application_status_in_review_resume_review as int
+            ) as time_in_application_status_in_review_resume_review,
+            safe_cast(
+                time_in_application_status_interview_demo as int
+            ) as time_in_application_status_interview_demo,
+            safe_cast(
+                time_in_application_status_interview_phone_screen_complete as int
+            ) as time_in_application_status_interview_phone_screen_complete,
+            safe_cast(
+                time_in_application_status_interview_phone_screen_requested as int
+            ) as time_in_application_status_interview_phone_screen_requested,
             if(
                 screening_question_answer_knjm_application_subject_preference is null,
                 'No Preference',

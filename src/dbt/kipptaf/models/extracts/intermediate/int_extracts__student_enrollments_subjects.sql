@@ -245,6 +245,29 @@ with
 
         from {{ ref("int_amplify__all_assessments") }}
         where measure_standard = 'Composite'
+    ),
+
+    bucket_programs as (
+        select
+            _dbt_source_relation,
+            studentid,
+            academic_year,
+            enter_date,
+
+            trim(split(specprog_name, '-')[offset(0)]) as bucket,
+            trim(split(specprog_name, '-')[offset(1)]) as discipline,
+        from {{ ref("int_powerschool__spenrollments") }}
+        where specprog_name like 'Bucket%'
+    ),
+
+    bucket_dedupe as (
+        {{
+            dbt_utils.deduplicate(
+                relation="bucket_programs",
+                partition_by="_dbt_source_relation, studentid, academic_year, bucket, discipline",
+                order_by="enter_date desc",
+            )
+        }}
     )
 
 select
@@ -289,29 +312,14 @@ select
         co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
     ) as assessment_dashboard_join,
 
-    /* years are hardcoded here because of changes on how buckets are calculated from
-    one sy to the next */
     case
-        when
-            co.academic_year = 2023
-            and co.grade_level <= 3
-            and pr.iready_proficiency = 'At/Above'
-        then 'Bucket 1'
-        when
-            co.academic_year = 2023
-            and co.grade_level >= 4
-            and py.njsla_proficiency = 'At/Above'
-        then 'Bucket 1'
-        when
-            co.academic_year >= 2024
-            and co.grade_level between 0 and 8
-            and coalesce(py.is_proficient, ci.is_proficient)
-        then 'Bucket 1'
-        when co.academic_year >= 2024 and co.grade_level = 11 and ps.max_score >= 420
-        then 'Bucket 1'
-        when nj.iready_subject is not null
-        then 'Bucket 2'
-        else 'Unbucketed'
+        when b.bucket = 'Bucket 1'
+        then b.bucket
+        when b.bucket = 'Bucket 2'
+        then b.bucket
+        when b.bucket = 'Bucket 3'
+        then b.bucket
+        else 'Bucket 4'
     end as nj_student_tier,
 
     case
@@ -392,3 +400,135 @@ left join
     and co.academic_year = sip.academic_year
     and sj.powerschool_credittype = sip.credit_type
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sip") }}
+    << <<
+    << < head
+    == ==
+    == =
+left join
+    bucket_dedupe as b
+    on co.studentid = b.studentid
+    and co.academic_year = b.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
+    and sj.discipline = b.discipline
+where co.academic_year >= {{ var("current_academic_year") - 1 }}
+
+union all
+
+/* academic year < current year - 1 */
+select
+    co.*,
+
+    sj.iready_subject,
+    sj.illuminate_subject_area,
+    sj.powerschool_credittype,
+    sj.grad_unpivot_subject,
+    sj.discipline,
+
+    null as is_sipps,
+
+    null as dibels_most_recent_composite_int,
+
+    a.values_column as ps_grad_path_code,
+
+    coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
+
+    coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
+
+    coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
+
+    coalesce(db.boy_composite, 'No Test') as dibels_boy_composite,
+    coalesce(db.moy_composite, 'No Test') as dibels_moy_composite,
+    coalesce(db.eoy_composite, 'No Test') as dibels_eoy_composite,
+
+    null as dibels_most_recent_composite,
+
+    if(ie.student_number is not null, true, false) as is_magoosh,
+
+    if(ie.student_number is not null, true, false) as is_exempt_iready,
+
+    if(nj.iready_subject is not null, true, false) as bucket_two,
+
+    if(co.grade_level < 4, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
+
+    if(
+        co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
+    ) as assessment_dashboard_join,
+
+    case
+        when b.bucket = 'Bucket 1'
+        then b.bucket
+        when b.bucket = 'Bucket 2'
+        then b.bucket
+        when b.bucket = 'Bucket 3'
+        then b.bucket
+        else 'Bucket 4'
+    end as nj_student_tier,
+
+    case
+        when
+            co.grade_level < 3
+            and co.is_self_contained
+            and co.special_education_code in ('CMI', 'CMO', 'CSE')
+        then true
+        when sj.discipline = 'ELA' and se.values_column in ('2', '3', '4')
+        then true
+        when sj.discipline = 'Math' and se.values_column = '3'
+        then true
+        else false
+    end as is_exempt_state_testing,
+from {{ ref("int_extracts__student_enrollments") }} as co
+cross join subjects as sj
+left join
+    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as a
+    on co.students_dcid = a.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
+    and sj.discipline = a.discipline
+    and a.value_type = 'Graduation Pathway'
+left join
+    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as se
+    on co.students_dcid = se.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="se") }}
+    and sj.discipline = se.discipline
+    and se.value_type = 'State Assessment Name'
+left join
+    prev_yr_state_test as py
+    /* TODO: find records that only match on SID */
+    on co.state_studentnumber = py.statestudentidentifier
+    and co.academic_year = py.academic_year_plus
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="py") }}
+    and sj.illuminate_subject_area = py.subject
+left join
+    prev_yr_iready as pr
+    on co.student_number = pr.student_id
+    and co.academic_year = pr.academic_year_plus
+    and sj.iready_subject = pr.subject
+left join
+    dibels as db
+    on co.student_number = db.student_number
+    and co.academic_year = db.academic_year
+    and sj.iready_subject = db.iready_subject
+    and db.rn_year = 1
+left join
+    magoosh_exempt as ie
+    on co.student_number = ie.student_number
+    and co.academic_year = ie.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="ie") }}
+    and sj.iready_subject = ie.iready_subject
+left join
+    intervention_nj as nj
+    on co.studentid = nj.studentid
+    and co.academic_year = nj.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
+    and sj.iready_subject = nj.iready_subject
+left join
+    cur_yr_iready as ci
+    on co.student_number = ci.student_number
+    and co.academic_year = ci.academic_year
+    and sj.iready_subject = ci.subject
+left join
+    bucket_dedupe as b
+    on co.studentid = b.studentid
+    and co.academic_year = b.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
+    and sj.discipline = b.discipline
+where co.academic_year < {{ var("current_academic_year") - 1 }} >> >> >> > main
