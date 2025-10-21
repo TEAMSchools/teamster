@@ -1,8 +1,5 @@
 models:
   - name: stg_iready__personalized_instruction_summary
-    config:
-      contract:
-        enforced: false
     columns:
       - name: academic_year
         data_type: string
