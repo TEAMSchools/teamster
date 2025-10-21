@@ -107,7 +107,6 @@ with
 
     psat_bucket1 as (
         select powerschool_student_number, discipline, max(score) as max_score,
-
         from {{ ref("int_collegeboard__psat_unpivot") }} as pt
         where test_subject in ('EBRW', 'Math') and test_type != 'PSAT 8/9'
         group by powerschool_student_number, discipline
@@ -246,6 +245,7 @@ with
             studentid,
             academic_year,
             enter_date,
+
             trim(split(specprog_name, '-')[offset(0)]) as bucket,
             trim(split(specprog_name, '-')[offset(1)]) as discipline,
         from {{ ref("int_powerschool__spenrollments") }}
@@ -256,7 +256,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="bucket_programs",
-                partition_by="_dbt_source_relation, studentid, academic_year, bucket, discipline",
+                partition_by="_dbt_source_relation, studentid, academic_year, discipline",
                 order_by="enter_date desc",
             )
         }}
