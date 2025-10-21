@@ -21,7 +21,7 @@ with
             and s.is_ap_course
             and not s.is_dropped_section
         inner join
-            {{ ref("stg_collegeboard__ap_course_crosswalk") }} as x
+            {{ ref("stg_google_sheets__collegeboard__ap_course_crosswalk") }} as x
             on s.ap_course_subject = x.ps_ap_course_subject_code
         where
             e.academic_year = {{ var("current_academic_year") - 1 }}

@@ -8,7 +8,9 @@ with
         from {{ ref("int_people__staff_roster") }}
     ),
 
-    schools as (select *, from {{ ref("stg_people__location_crosswalk") }}),
+    schools as (
+        select *, from {{ ref("stg_google_sheets__people__location_crosswalk") }}
+    ),
 
     form_responses as (
         select

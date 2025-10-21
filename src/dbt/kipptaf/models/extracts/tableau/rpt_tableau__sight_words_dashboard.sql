@@ -13,7 +13,7 @@ with
             g.grade_level,
         from {{ ref("int_illuminate__repositories") }} as r
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on r.date_administered between rt.start_date and rt.end_date
             and rt.type = 'RT'
             and rt.school_id = 0

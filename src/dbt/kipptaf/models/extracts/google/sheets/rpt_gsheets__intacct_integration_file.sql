@@ -44,7 +44,7 @@ select
 
 from {{ ref("stg_adp_payroll__general_ledger_file") }} as gl
 left join
-    {{ ref("stg_finance__payroll_code_mapping") }} as cm
+    {{ ref("stg_google_sheets__finance__payroll_code_mapping") }} as cm
     on gl.gl_entry_project_id = cm.old_project_id_alt_nj
 left join
     {{ ref("int_people__staff_roster_history") }} as srh

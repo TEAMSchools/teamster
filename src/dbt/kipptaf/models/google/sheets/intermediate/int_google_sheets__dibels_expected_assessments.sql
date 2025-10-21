@@ -16,7 +16,7 @@ select
 
 from {{ ref("stg_google_sheets__dibels_expected_assessments") }} as m
 left join
-    {{ ref("stg_reporting__terms") }} as t
+    {{ ref("stg_google_sheets__reporting__terms") }} as t
     on m.academic_year = t.academic_year
     and m.region = t.region
     and m.admin_season = t.name

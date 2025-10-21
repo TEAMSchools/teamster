@@ -67,33 +67,19 @@ models:
       +materialized: table
     assessments:
       +schema: assessments
-      staging:
-        +materialized: table
-      disabled:
-        +enabled: false
     collegeboard:
       +schema: collegeboard
       staging:
         +materialized: table
-      drive:
-        staging:
-          +materialized: table
     coupa:
       +schema: coupa
       api:
-        staging:
-          +materialized: table
-      drive:
         staging:
           +materialized: table
       fivetran:
         +enabled: false
         staging:
           +materialized: table
-    crdc:
-      +schema: crdc
-      staging:
-        +materialized: table
     dayforce:
       +schema: dayforce
       +materialized: table
@@ -114,8 +100,6 @@ models:
       +enabled: false
     finance:
       +schema: finance
-      staging:
-        +materialized: table
     fldoe:
       +schema: fldoe
     google:
@@ -138,9 +122,6 @@ models:
             group: google_forms
         staging:
           +materialized: table
-        drive:
-          staging:
-            +materialized: table
       sheets:
         +schema: google_sheets
         +meta:
@@ -153,10 +134,9 @@ models:
           +meta:
             dagster:
               tags: google_sheet
+          +tags: google_sheet
         intermediate:
           +materialized: table
-        disabled:
-          +enabled: false
     illuminate:
       +schema: illuminate
       dlt:
@@ -178,9 +158,6 @@ models:
       +schema: kippadb
       staging:
         +materialized: table
-      drive:
-        staging:
-          +materialized: table
     knowbe4:
       +schema: knowbe4
       staging:
@@ -193,29 +170,18 @@ models:
       +schema: marts
     metrics:
       +schema: metrics
-    njdoe:
-      +schema: njdoe
-      staging:
-        +materialized: table
     overgrad:
       +schema: overgrad
     pearson:
       +schema: pearson
-      drive:
-        staging:
-          +materialized: table
     people:
       +schema: people
       +materialized: table
-      disabled:
-        +enabled: false
     performance_management:
       +schema: performance_management
       +materialized: table
     powerschool:
       +schema: powerschool
-      disabled:
-        +enabled: false
     powerschool_enrollment:
       +schema: powerschool_enrollment
     renlearn:
@@ -234,28 +200,18 @@ models:
       +schema: smartrecruiters
     students:
       +schema: students
-      disabled:
-        +enabled: false
     surveys:
       +schema: surveys
       +materialized: table
-      disabled:
-        +enabled: false
     tableau:
       +schema: tableau
       staging:
         +materialized: table
-      disabled:
-        +enabled: false
     titan:
       +schema: titan
-      disabled:
-        +enabled: false
     topline:
       +schema: topline
     zendesk:
       +schema: zendesk
       staging:
         +materialized: table
-      disabled:
-        +enabled: false
