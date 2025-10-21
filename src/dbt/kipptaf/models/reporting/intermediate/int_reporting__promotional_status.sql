@@ -235,7 +235,7 @@ with
                     'DIBELS Benchmark'
                 )
             )
-    )
+    ),
 
     rule_test as (
         select
