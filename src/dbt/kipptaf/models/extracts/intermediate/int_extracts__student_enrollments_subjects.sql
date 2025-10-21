@@ -264,7 +264,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="bucket_programs",
-                partition_by="_dbt_source_relation, studentid, academic_year, bucket, discipline",
+                partition_by="_dbt_source_relation, studentid, academic_year, discipline",
                 order_by="enter_date desc",
             )
         }}
