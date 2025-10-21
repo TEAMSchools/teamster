@@ -105,14 +105,6 @@ with
             and administration_window = 'PM3'
     ),
 
-    psat_bucket1 as (
-        select powerschool_student_number, discipline, max(score) as max_score,
-
-        from {{ ref("int_collegeboard__psat_unpivot") }} as pt
-        where test_subject in ('EBRW', 'Math') and test_type != 'PSAT 8/9'
-        group by powerschool_student_number, discipline
-    ),
-
     prev_yr_iready as (
         select
             student_id,
@@ -131,37 +123,6 @@ with
 
         from {{ ref("base_iready__diagnostic_results") }}
         where rn_subj_round = 1 and test_round = 'EOY'
-    ),
-
-    cur_yr_iready as (
-        select
-            student_id as student_number,
-            academic_year_int as academic_year,
-            `subject`,
-            projected_is_proficient_typical as is_proficient,
-
-        from {{ ref("base_iready__diagnostic_results") }}
-        where
-            test_round = 'BOY'
-            and rn_subj_round = 1
-            and projected_sublevel_number_typical is not null
-            and student_grade_int between 3 and 8
-
-        union all
-
-        select
-            student_id as student_number,
-            academic_year_int as academic_year,
-            `subject`,
-
-            if(level_number_with_typical >= 4, true, false) as is_proficient,
-
-        from {{ ref("base_iready__diagnostic_results") }}
-        where
-            test_round = 'BOY'
-            and rn_subj_round = 1
-            and sublevel_number_with_typical is not null
-            and student_grade_int between 0 and 2
     ),
 
     magoosh_exempt as (
@@ -238,6 +199,29 @@ with
 
         from {{ ref("int_amplify__all_assessments") }}
         where measure_standard = 'Composite'
+    ),
+
+    bucket_programs as (
+        select
+            _dbt_source_relation,
+            studentid,
+            academic_year,
+            enter_date,
+
+            trim(split(specprog_name, '-')[offset(0)]) as bucket,
+            trim(split(specprog_name, '-')[offset(1)]) as discipline,
+        from {{ ref("int_powerschool__spenrollments") }}
+        where specprog_name like 'Bucket%'
+    ),
+
+    bucket_dedupe as (
+        {{
+            dbt_utils.deduplicate(
+                relation="bucket_programs",
+                partition_by="_dbt_source_relation, studentid, academic_year, discipline",
+                order_by="enter_date desc",
+            )
+        }}
     )
 
 /* current year and current year - 1 only to honor bucket calcs */
@@ -282,28 +266,14 @@ select
         co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
     ) as assessment_dashboard_join,
 
-    /* years are hardcoded here because of changes on how buckets are calculated from 
-    one sy to the next */
     case
-        when
-            co.academic_year = 2023
-            and co.grade_level < 4
-            and pr.iready_proficiency = 'At/Above'
-        then 'Bucket 1'
-        when
-            co.academic_year = 2023
-            and co.grade_level >= 4
-            and py.njsla_proficiency = 'At/Above'
-        then 'Bucket 1'
-        when
-            co.academic_year >= 2024
-            and co.grade_level between 0 and 8
-            and coalesce(py.is_proficient, ci.is_proficient)
-        then 'Bucket 1'
-        when co.academic_year >= 2024 and co.grade_level = 11 and ps.max_score >= 420
-        then 'Bucket 1'
-        when nj.iready_subject is not null
-        then 'Bucket 2'
+        when b.bucket = 'Bucket 1'
+        then b.bucket
+        when b.bucket = 'Bucket 2'
+        then b.bucket
+        when b.bucket = 'Bucket 3'
+        then b.bucket
+        else 'Bucket 4'
     end as nj_student_tier,
 
     case
@@ -370,20 +340,17 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
     and sj.iready_subject = nj.iready_subject
 left join
-    cur_yr_iready as ci
-    on co.student_number = ci.student_number
-    and co.academic_year = ci.academic_year
-    and sj.iready_subject = ci.subject
-left join
-    psat_bucket1 as ps
-    on co.student_number = ps.powerschool_student_number
-    and sj.discipline = ps.discipline
-left join
     sipps_exempt as sip
     on co.student_number = sip.student_number
     and co.academic_year = sip.academic_year
     and sj.powerschool_credittype = sip.credit_type
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sip") }}
+left join
+    bucket_dedupe as b
+    on co.studentid = b.studentid
+    and co.academic_year = b.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
+    and sj.discipline = b.discipline
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
 
 union all
@@ -428,7 +395,15 @@ select
         co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
     ) as assessment_dashboard_join,
 
-    null as nj_student_tier,
+    case
+        when b.bucket = 'Bucket 1'
+        then b.bucket
+        when b.bucket = 'Bucket 2'
+        then b.bucket
+        when b.bucket = 'Bucket 3'
+        then b.bucket
+        else 'Bucket 4'
+    end as nj_student_tier,
 
     case
         when
@@ -442,7 +417,6 @@ select
         then true
         else false
     end as is_exempt_state_testing,
-
 from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as sj
 left join
@@ -488,8 +462,9 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
     and sj.iready_subject = nj.iready_subject
 left join
-    cur_yr_iready as ci
-    on co.student_number = ci.student_number
-    and co.academic_year = ci.academic_year
-    and sj.iready_subject = ci.subject
+    bucket_dedupe as b
+    on co.studentid = b.studentid
+    and co.academic_year = b.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
+    and sj.discipline = b.discipline
 where co.academic_year < {{ var("current_academic_year") - 1 }}
