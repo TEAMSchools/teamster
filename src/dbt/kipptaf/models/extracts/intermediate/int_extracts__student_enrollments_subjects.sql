@@ -105,13 +105,6 @@ with
             and administration_window = 'PM3'
     ),
 
-    psat_bucket1 as (
-        select powerschool_student_number, discipline, max(score) as max_score,
-        from {{ ref("int_collegeboard__psat_unpivot") }} as pt
-        where test_subject in ('EBRW', 'Math') and test_type != 'PSAT 8/9'
-        group by powerschool_student_number, discipline
-    ),
-
     prev_yr_iready as (
         select
             student_id,
@@ -130,37 +123,6 @@ with
 
         from {{ ref("base_iready__diagnostic_results") }}
         where rn_subj_round = 1 and test_round = 'EOY'
-    ),
-
-    cur_yr_iready as (
-        select
-            student_id as student_number,
-            academic_year_int as academic_year,
-            `subject`,
-            projected_is_proficient_typical as is_proficient,
-
-        from {{ ref("base_iready__diagnostic_results") }}
-        where
-            test_round = 'BOY'
-            and rn_subj_round = 1
-            and projected_sublevel_number_typical is not null
-            and student_grade_int between 3 and 8
-
-        union all
-
-        select
-            student_id as student_number,
-            academic_year_int as academic_year,
-            `subject`,
-
-            if(level_number_with_typical >= 4, true, false) as is_proficient,
-
-        from {{ ref("base_iready__diagnostic_results") }}
-        where
-            test_round = 'BOY'
-            and rn_subj_round = 1
-            and sublevel_number_with_typical is not null
-            and student_grade_int between 0 and 2
     ),
 
     magoosh_exempt as (
@@ -378,15 +340,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
     and sj.iready_subject = nj.iready_subject
 left join
-    cur_yr_iready as ci
-    on co.student_number = ci.student_number
-    and co.academic_year = ci.academic_year
-    and sj.iready_subject = ci.subject
-left join
-    psat_bucket1 as ps
-    on co.student_number = ps.powerschool_student_number
-    and sj.discipline = ps.discipline
-left join
     sipps_exempt as sip
     on co.student_number = sip.student_number
     and co.academic_year = sip.academic_year
@@ -508,11 +461,6 @@ left join
     and co.academic_year = nj.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
     and sj.iready_subject = nj.iready_subject
-left join
-    cur_yr_iready as ci
-    on co.student_number = ci.student_number
-    and co.academic_year = ci.academic_year
-    and sj.iready_subject = ci.subject
 left join
     bucket_dedupe as b
     on co.studentid = b.studentid
