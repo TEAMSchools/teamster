@@ -124,7 +124,7 @@ def test_iready_personalized_instruction_summary_kippnewark():
         personalized_instruction_summary,
     )
 
-    _test_asset(asset=personalized_instruction_summary)
+    _test_asset(asset=personalized_instruction_summary, partition_key="2025|ela")
 
 
 def test_iready_personalized_instruction_summary_kippmiami():
@@ -132,4 +132,4 @@ def test_iready_personalized_instruction_summary_kippmiami():
         personalized_instruction_summary,
     )
 
-    _test_asset(asset=personalized_instruction_summary)
+    _test_asset(asset=personalized_instruction_summary, partition_key="2025|math")
