@@ -48,6 +48,7 @@ with
             and a.expected_month = s.test_month
             and a.expected_region = e.region
             and a.expected_grade_level = e.grade_level
+            and e.student_number = s.student_number
         where
             e.school_level = 'HS'
             and e.rn_year = 1
