@@ -245,10 +245,21 @@ with
             _dbt_source_relation,
             studentid,
             academic_year,
+            enter_date,
             trim(split(specprog_name, '-')[offset(0)]) as bucket,
             trim(split(specprog_name, '-')[offset(1)]) as discipline,
         from {{ ref("int_powerschool__spenrollments") }}
         where specprog_name like 'Bucket%'
+    ),
+
+    bucket_dedupe as (
+        {{
+            dbt_utils.deduplicate(
+                relation="bucket_programs",
+                partition_by="_dbt_source_relation, studentid, academic_year, bucket, discipline",
+                order_by="enter_date desc",
+            )
+        }}
     )
 
 /* current year and current year - 1 only to honor bucket calcs */
@@ -382,7 +393,7 @@ left join
     and sj.powerschool_credittype = sip.credit_type
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sip") }}
 left join
-    bucket_programs as b
+    bucket_dedupe as b
     on co.studentid = b.studentid
     and co.academic_year = b.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
@@ -503,7 +514,7 @@ left join
     and co.academic_year = ci.academic_year
     and sj.iready_subject = ci.subject
 left join
-    bucket_programs as b
+    bucket_dedupe as b
     on co.studentid = b.studentid
     and co.academic_year = b.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
