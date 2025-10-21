@@ -117,3 +117,19 @@ def test_iready_instruction_by_lesson_pro_kippmiami():
     )
 
     _test_asset(asset=instruction_by_lesson_pro)
+
+
+def test_iready_personalized_instruction_summary_kippnewark():
+    from teamster.code_locations.kippnewark.iready.assets import (
+        personalized_instruction_summary,
+    )
+
+    _test_asset(asset=personalized_instruction_summary)
+
+
+def test_iready_personalized_instruction_summary_kippmiami():
+    from teamster.code_locations.kippmiami.iready.assets import (
+        personalized_instruction_summary,
+    )
+
+    _test_asset(asset=personalized_instruction_summary)

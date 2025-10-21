@@ -5,11 +5,21 @@ from teamster.code_locations.kippnewark.iready.schema import (
     INSTRUCTION_BY_LESSON_SCHEMA,
     INSTRUCTIONAL_USAGE_DATA_SCHEMA,
     PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
+    PERSONALIZED_INSTRUCTION_SUMMARY,
 )
 from teamster.libraries.iready.assets import build_iready_sftp_asset
 
 region_subfolder = "nj-kipp_nj"
 key_prefix = [CODE_LOCATION, "iready"]
+
+personalized_instruction_summary = build_iready_sftp_asset(
+    asset_key=[*key_prefix, "personalized_instruction_summary"],
+    region_subfolder=region_subfolder,
+    remote_file_regex=r"diagnostic_results_(?P<subject>ela|math)_CONFIDENTIAL\.csv",
+    avro_schema=PERSONALIZED_INSTRUCTION_SUMMARY,
+    start_fiscal_year=2026,
+    end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+)
 
 diagnostic_results = build_iready_sftp_asset(
     asset_key=[*key_prefix, "diagnostic_results"],
@@ -71,4 +81,5 @@ assets = [
     instruction_by_lesson,
     instruction_by_lesson_pro,
     instructional_usage_data,
+    personalized_instruction_summary,
 ]

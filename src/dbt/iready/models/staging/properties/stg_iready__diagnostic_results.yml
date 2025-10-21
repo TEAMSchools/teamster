@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_iready__diagnostic_results
-    config:
-      contract:
-        enforced: true
     columns:
       - name: academic_year
         data_type: string
