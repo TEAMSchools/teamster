@@ -58,15 +58,6 @@ with
         where school_id = 472 and roster_type = 'House' and active = 'Y'
     ),
 
-    overgrad_fafsa as (
-        select
-            _dbt_source_relation,
-            external_student_id as salesforce_contact_id,
-
-            if(fafsa_opt_out is null, 'No', 'Yes') as overgrad_fafsa_opt_out,
-        from {{ ref("int_overgrad__students") }}
-    ),
-
     graduation_pathway_m as (
         select
             _dbt_source_relation,
@@ -171,7 +162,7 @@ select
 
     hos.head_of_school_preferred_name_lastfirst as hos,
 
-    ovg.overgrad_fafsa_opt_out,
+    ovg.best_guess_pathway,
 
     ada.ada_term_q1 as ada_unweighted_term_q1,
     ada.ada_semester_s1 as ada_unweighted_semester_s1,
@@ -194,12 +185,6 @@ select
     ny.next_year_school,
     ny.next_year_schoolid,
 
-    if(
-        e.enroll_status = 0 and mc.grad_iep_exempt_overall is not null,
-        mc.grad_iep_exempt_overall,
-        'Not Grad IEP Exempt'
-    ) as grad_iep_exempt_status_overall,
-
     'KTAF' as district,
 
     concat(e.region, e.school_level) as region_school_level,
@@ -209,6 +194,14 @@ select
     cast(e.academic_year as string)
     || '-'
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
+
+    if(ovg.fafsa_opt_out is not null, 'Yes', 'No') as overgrad_fafsa_opt_out,
+
+    if(
+        e.enroll_status = 0 and mc.grad_iep_exempt_overall is not null,
+        mc.grad_iep_exempt_overall,
+        'Not Grad IEP Exempt'
+    ) as grad_iep_exempt_status_overall,
 
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
 
@@ -222,7 +215,7 @@ select
     ) as `ada`,
 
     if(
-        e.salesforce_contact_df_has_fafsa = 'Yes' or ovg.overgrad_fafsa_opt_out = 'Yes',
+        e.salesforce_contact_df_has_fafsa = 'Yes' or ovg.fafsa_opt_out is not null,
         true,
         false
     ) as met_fafsa_requirement,
@@ -293,7 +286,7 @@ select
             e.academic_year >= 2024  /* 1st year tracking this */
             and e.grade_level = 12
             and e.salesforce_contact_df_has_fafsa = 'Yes'
-            and ovg.overgrad_fafsa_opt_out = 'Yes'
+            and ovg.fafsa_opt_out is not null
         then 'Salesforce/Overgrad has FAFSA opt-out mismatch'
         else 'No issues'
     end as fafsa_status_mismatch_category,
@@ -342,8 +335,8 @@ left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id
 left join
-    overgrad_fafsa as ovg
-    on e.salesforce_contact_id = ovg.salesforce_contact_id
+    {{ ref("int_overgrad__students") }} as ovg
+    on e.salesforce_contact_id = ovg.external_student_id
     and {{ union_dataset_join_clause(left_alias="e", right_alias="ovg") }}
 left join
     {{ ref("int_powerschool__ada_term_pivot") }} as ada
