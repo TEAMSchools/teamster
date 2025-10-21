@@ -1,7 +1,7 @@
 {{ config(materialized="table") }}
 
 with
-    ms_attended_sub as (
+    ms_grad_sub as (
         select
             _dbt_source_relation,
             student_number,
@@ -13,16 +13,6 @@ with
 
         from {{ ref("base_powerschool__student_enrollments") }}
         where school_level = 'MS'
-    ),
-
-    ms_grad_sub as (
-        select
-            student_number,
-
-            if(extract(month from max(exitdate)) >= 6, true, false) as is_ms_grad,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where grade_level = 8
-        group by student_number
     ),
 
     es_grad_sub as (
@@ -195,14 +185,6 @@ select
     ny.next_year_school,
     ny.next_year_schoolid,
 
-    coalesce(ms.is_ms_grad, false) as is_ms_grad,
-
-    if(
-        e.enroll_status = 0 and mc.grad_iep_exempt_overall is not null,
-        mc.grad_iep_exempt_overall,
-        'Not Grad IEP Exempt'
-    ) as grad_iep_exempt_status_overall,
-
     'KTAF' as district,
 
     concat(e.region, e.school_level) as region_school_level,
@@ -314,11 +296,10 @@ left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
     on e.school_name = lc.name
 left join
-    ms_attended_sub as m
+    ms_grad_sub as m
     on e.student_number = m.student_number
     and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
     and m.rn = 1
-left join ms_grad_sub as ms on e.student_number = ms.student_number
 left join
     es_grad_sub as es
     on e.student_number = es.student_number
