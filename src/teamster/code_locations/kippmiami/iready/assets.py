@@ -15,7 +15,9 @@ key_prefix = [CODE_LOCATION, "iready"]
 personalized_instruction_summary = build_iready_sftp_asset(
     asset_key=[*key_prefix, "personalized_instruction_summary"],
     region_subfolder=region_subfolder,
-    remote_file_regex=r"diagnostic_results_(?P<subject>ela|math)_CONFIDENTIAL\.csv",
+    remote_file_regex=(
+        r"personalized_instruction_summary_(?P<subject>ela|math)_CONFIDENTIAL\.csv"
+    ),
     avro_schema=PERSONALIZED_INSTRUCTION_SUMMARY,
     start_fiscal_year=2026,
     end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
