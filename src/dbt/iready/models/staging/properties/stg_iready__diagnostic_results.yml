@@ -1,6 +1,12 @@
 models:
   - name: stg_iready__diagnostic_results
     columns:
+      - name: student_id
+        data_type: int64
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
       - name: academic_year
         data_type: string
       - name: class_es
@@ -31,8 +37,6 @@ models:
         data_type: string
       - name: special_education
         data_type: string
-      - name: student_id
-        data_type: int64
       - name: user_name
         data_type: string
       - name: algebra_and_algebraic_thinking_placement
