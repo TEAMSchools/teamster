@@ -21,7 +21,7 @@ models:
         data_type: string
       - name: expected_admin_season_order
         data_type: int64
-      - name: expected_subject_area
+      - name: expected_grouping
         data_type: string
       - name: expected_month
         data_type: string

@@ -1,60 +1,41 @@
 with
-    strategy as (
-        select
-            expected_academic_year,
-            expected_region,
-            expected_grade_level,
-            expected_test_type,
-            expected_scope,
-            expected_test_code,
-            expected_score_type,
-            expected_month_round,
-            expectd_month,
-            expected_admin_season,
-            expected_field_name,
-            expected_subject_area,
-            expected_admin_season_order,
-
-            expected_score_category,
-
-            'foo' as bar,
-
-            concat(
-                expected_subject_area, ' ', expected_score_category
-            ) as expected_filter_group,
+    expected_admins as (
+        -- need distinct list of expected tests
+        select distinct *, 'foo' as bar,
 
         from {{ ref("stg_google_sheets__kippfwd_expected_assessments") }}
-        cross join
-            unnest(
-                [
-                    'Scale Score',
-                    'Max Scale Score',
-                    'Superscore',
-                    'Previous Total Score Change'
-                ]
-            ) as expected_score_category
-    ),
+    )
 
-    scores_unpivot as (
+select *,
+from
+    expected_admins
+    {# ,
+
+
+    scores as (
         select
-            student_number,
-            test_type,
-            scope,
-            score_type,
-            subject_area,
-            course_discipline,
-            test_month,
-            test_date,
+            *,
 
-            score_category,
-            score,
+            concat(
+                field_name, ' ', score_category
+            ) as expected_field_name_score_category,
 
             concat(
                 scope, ' ', subject_area, ' ', score_category
             ) as expected_filter_group,
 
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "test_type",
+                        "score_type",
+                        "test_date",
+                    ]
+                )
+            }} as unique_test_admin_id,
+
         from
-            {{ ref("int_assessments__college_assessment") }} unpivot (
+            {{ ref("int_students__college_assessment_roster") }} unpivot (
                 score for score_category in (
                     scale_score as 'Scale Score',
                     max_scale_score as 'Max Scale Score',
@@ -62,49 +43,23 @@ with
                     previous_total_score_change as 'Previous Total Score Change'
                 )
             )
-        where
-            scope = 'SAT'
-            and score_type not in ('sat_math_test_score', 'sat_reading_test_score')
-
-        union all
-
-        select
-            student_number,
-            test_type,
-            scope,
-            score_type,
-            subject_area,
-            course_discipline,
-            test_month,
-            test_date,
-
-            'Scale Score' as score_category,
-            scale_score as score,
-
-            concat(
-                scope, ' ', subject_area, ' ', 'Scale Score'
-            ) as expected_filter_group,
-
-        from {{ ref("int_assessments__college_assessment") }}
-        where
-            scope in ('PSAT10', 'PSAT NMSQT', 'PSAT 8/9')
-            and rn_highest = 1
-            and score_type not in ('psat10_reading', 'psat10_math_test')
+        where graduation_year >= {{ var("current_academic_year") + 1 }}
     ),
+
+
 
     superscores as (
         select
             student_number, sat_combined_superscore, sat_ebrw_highest, sat_math_highest,
 
         from
-            scores_unpivot pivot (
+            scores pivot (
                 avg(score) for expected_filter_group in (
                     'SAT Combined Superscore' as sat_combined_superscore,
                     'SAT EBRW Max Scale Score' as sat_ebrw_highest,
                     'SAT Math Max Scale Score' as sat_math_highest
                 )
             )
-        where scope = 'SAT'
     ),
 
     superscores_dedup as (
@@ -117,7 +72,7 @@ with
 
         from superscores
         group by student_number
-    ),
+    )
 
 select
     e.region,
@@ -178,3 +133,5 @@ where
     and e.graduation_year >= {{ var("current_academic_year") + 1 }}
     and e.school_level = 'HS'
     and e.rn_year = 1
+ #}
+    
