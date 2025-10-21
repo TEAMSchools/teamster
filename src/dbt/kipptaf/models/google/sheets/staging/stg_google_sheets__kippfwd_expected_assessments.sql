@@ -27,22 +27,18 @@ with
 select
     *,
 
-    case
-        when expected_scope = 'SAT'
-        then
-            concat(
-                'G',
-                cast(expected_grade_level as string),
-                ' ',
-                expected_admin_season,
-                ' ',
-                expected_test_type,
-                ' ',
-                expected_scope,
-                ' ',
-                expected_grouping
-            )
-    end as expected_field_name,
+    concat(
+        'G',
+        cast(expected_grade_level as string),
+        ' ',
+        expected_admin_season,
+        ' ',
+        expected_test_type,
+        ' ',
+        expected_scope,
+        ' ',
+        expected_grouping
+    ) as expected_field_name,
 
 from scores
 where expected_admin_season != 'Not Official'
