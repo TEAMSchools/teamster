@@ -44,7 +44,7 @@ with
             and e.grade_level = a.expected_grade_level
         left join
             {{ ref("int_assessments__college_assessment") }} as s
-            and a.expected_score_type = s.score_type
+            on a.expected_score_type = s.score_type
             and a.expected_month = s.test_month
             and a.expected_region = e.region
             and a.expected_grade_level = e.grade_level
