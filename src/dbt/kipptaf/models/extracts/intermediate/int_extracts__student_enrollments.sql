@@ -195,7 +195,7 @@ select
     ny.next_year_school,
     ny.next_year_schoolid,
 
-<<<<<<< HEAD
+    << << << < head
     coalesce(ms.is_ms_grad, false) as is_ms_grad,
 
     if(
@@ -204,8 +204,7 @@ select
         'Not Grad IEP Exempt'
     ) as grad_iep_exempt_status_overall,
 
-=======
->>>>>>> fdafe2c49d795a8dee28ec7c6d0bf02034050e80
+    == == == = >> >> >> > fdafe2c49d795a8dee28ec7c6d0bf02034050e80
     'KTAF' as district,
 
     concat(e.region, e.school_level) as region_school_level,
