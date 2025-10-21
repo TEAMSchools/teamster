@@ -286,7 +286,7 @@ select
             e.academic_year >= 2024  /* 1st year tracking this */
             and e.grade_level = 12
             and e.salesforce_contact_df_has_fafsa = 'Yes'
-            and ovg.overgrad_fafsa_opt_out = 'Yes'
+            and ovg.fafsa_opt_out is not null
         then 'Salesforce/Overgrad has FAFSA opt-out mismatch'
         else 'No issues'
     end as fafsa_status_mismatch_category,
