@@ -1,15 +1,3 @@
-with
-    bucket_programs as (
-        select
-            _dbt_source_relation,
-            studentid,
-            academic_year,
-            trim(split(specprog_name, '-')[offset(0)]) as bucket,
-            trim(split(specprog_name, '-')[offset(1)]) as discipline,
-        from {{ ref("int_powerschool__spenrollments") }}
-        where specprog_name like 'Bucket%'
-    )
-
 /* Gifted & Talented */
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
