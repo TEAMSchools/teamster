@@ -1,4 +1,34 @@
 with
+    months as (
+        select
+            expected_region,
+            expected_grade_level,
+            expected_test_type,
+            expected_scope,
+            expected_admin_season,
+
+            string_agg(
+                regexp_extract(expected_month_round, r'^([^ ]+)'), ', '
+            ) as expected_months_included,
+
+        from
+            {{
+                source(
+                    "google_sheets", "src_google_sheets__kippfwd_expected_assessments"
+                )
+            }}
+        where
+            expected_admin_season != 'Not Official'
+            and expected_score_type like '%total%'
+            and expected_score_type not like '%growth%'
+        group by
+            expected_region,
+            expected_grade_level,
+            expected_test_type,
+            expected_scope,
+            expected_admin_season
+    ),
+
     scores as (
         select
             *,
@@ -25,20 +55,29 @@ with
     )
 
 select
-    *,
+    s.*,
+
+    m.expected_months_included,
 
     concat(
         'G',
-        cast(expected_grade_level as string),
+        cast(s.expected_grade_level as string),
         ' ',
-        expected_admin_season,
+        s.expected_admin_season,
         ' ',
-        expected_test_type,
+        s.expected_test_type,
         ' ',
-        expected_scope,
+        s.expected_scope,
         ' ',
-        expected_grouping
+        s.expected_grouping
     ) as expected_field_name,
 
-from scores
-where expected_admin_season != 'Not Official'
+from scores as s
+left join
+    months as m
+    on s.expected_region = m.expected_region
+    and s.expected_grade_level = m.expected_grade_level
+    and s.expected_test_type = m.expected_test_type
+    and s.expected_scope = m.expected_scope
+    and s.expected_admin_season = m.expected_admin_season
+where s.expected_admin_season != 'Not Official'

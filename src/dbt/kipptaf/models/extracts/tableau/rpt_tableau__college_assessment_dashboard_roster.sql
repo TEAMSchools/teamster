@@ -18,7 +18,6 @@ with
 
     focus_scores as (
         select
-            e.region,
             e.student_number,
             e.grade_level,
 
@@ -57,9 +56,7 @@ with
 
 select *
 from
-    focus_scores as s
-    -- left join
-    -- expected_admins as e on 'foo' = s.bar
+    focus_scores
     {# ,
 
 

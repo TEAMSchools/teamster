@@ -1,0 +1,6 @@
+version: 2
+models:
+  - name: int_tableau__college_assessment_roster_scores
+    config:
+      contract:
+        enforced: false
