@@ -22,14 +22,17 @@
 
       models:
         - name: [model name]
-          columns: # required for contracted models
+          config:
+            contract:
+              enforced: false  # required while creating a contracted model, delete before merging
+          columns:  # required for contracted models
             - name: ...
               data_type: ...
               data_tests:  # column tests, optional
                 - ...
           data_tests:  # model tests, optional
             - ...
-            - dbt_utils.unique_combination_of_columns: # recommended for intermediate models
+            - dbt_utils.unique_combination_of_columns:  # recommended for intermediate models
                 arguments:
                   combination_of_columns:
                     - ...

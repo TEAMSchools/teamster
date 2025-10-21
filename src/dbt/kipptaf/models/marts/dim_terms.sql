@@ -1,1 +1,1 @@
-select *, from {{ ref("stg_reporting__terms") }}
+select *, from {{ ref("stg_google_sheets__reporting__terms") }}

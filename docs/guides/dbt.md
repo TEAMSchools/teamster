@@ -39,7 +39,13 @@
                  - {SOURCE TABLE NAME}
    ```
 
-4. Create a staging model. Create a simple `select *` statement--this will help
+4. Update the external source definition
+
+   ```sh
+   dbt run-operation stage_external_sources --vars "{'ext_full_refresh': 'true'}" --args "select: [model name(s)]"
+   ```
+
+5. Create a staging model. Create a simple `select *` statement--this will help
    catch unexpected changes to the table schema--and add any calculated fields
    you require.
 
@@ -47,7 +53,7 @@
    select *, spam + 1 as eggs, from {{ source("{SOURCE NAME}", "{SOURCE TABLE NAME}") }}
    ```
 
-5. Create a corresponding properties file for the staging model
+6. Create a corresponding properties file for the staging model
 
    File name: `../properties/STAGING_MODEL_NAME.yml`
 
@@ -70,27 +76,22 @@
            data_type: {COLUMN TYPE N}
    ```
 
-6. Update the external source definition
-
-   ```sh
-   dbt run-operation stage_external_sources --vars "{'ext_full_refresh': 'true'}" --args select: [model name(s)]
-   ```
-
 7. Build your staging model
 
 ## Updating a Google Sheets source
 
-1. Duplicate the tab you are updating
+1. Duplicate the tab that you are modifying. If you will only be adding columns
+   to the end of the sheet, you can skip this step.
 
-2. Create a new named range for the new tab. Use the same name as the old tab,
-   suffixed with something to make it unique (e.g. `new`, `_v2`)
+2. Create a new named range. Use the same name but suffixed with something to
+   make it unique (e.g. `_new`, `_v2`)
 
 3. Update `src/dbt/kipptaf/models/google/sheets/sources-drive.yml`. Update the
    `sheet_range` attribute with the new named range.
 
-4. Make your changes to the sheet
+4. Make your changes to the sheet.
 
-5. If necessary, update the source column definitions
+5. If necessary, update column definitions on the source YAML.
 
 6. Update the external source definition
 

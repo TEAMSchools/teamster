@@ -52,7 +52,7 @@ with
             count(*) as att_discrepancy_count,
         from {{ ref("stg_deanslist__reconcile_attendance") }} as ra
         inner join
-            {{ ref("stg_people__location_crosswalk") }} as lc
+            {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
             on ra.school_name = lc.name
         left join
             ssds_period as s
@@ -74,7 +74,7 @@ with
             ) as rn_incident,
         from {{ ref("stg_deanslist__reconcile_suspensions") }} as rs
         inner join
-            {{ ref("stg_people__location_crosswalk") }} as lc
+            {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
             on rs.school_name = lc.name
     ),
 

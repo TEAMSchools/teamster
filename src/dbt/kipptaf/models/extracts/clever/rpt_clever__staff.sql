@@ -55,7 +55,7 @@ with
             ) as school_id,
         from staff_roster as sr
         left join
-            {{ ref("stg_people__campus_crosswalk") }} as ccw
+            {{ ref("stg_google_sheets__people__campus_crosswalk") }} as ccw
             on sr.home_work_location_name = ccw.name
             and not ccw.is_pathways
         where

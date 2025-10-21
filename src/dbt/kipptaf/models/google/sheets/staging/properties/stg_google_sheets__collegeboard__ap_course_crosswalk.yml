@@ -1,0 +1,11 @@
+models:
+  - name: stg_google_sheets__collegeboard__ap_course_crosswalk
+    columns:
+      - name: Data_Source
+        data_type: string
+      - name: Test_Name
+        data_type: string
+      - name: AP_Course_Name
+        data_type: string
+      - name: PS_AP_Course_Subject_Code
+        data_type: string

@@ -92,11 +92,11 @@ left join
     on fr.respondent_number = se2.student_number
     and fr.academic_year = se2.academic_year
 left join
-    {{ ref("stg_surveys__scd_answer_crosswalk") }} as ac
+    {{ ref("stg_google_sheets__surveys__scd_answer_crosswalk") }} as ac
     on sr.question_shortname = ac.question_code
     and sr.answer = ac.response
 left join
-    {{ ref("stg_surveys__scd_question_crosswalk") }} as qc
+    {{ ref("stg_google_sheets__surveys__scd_question_crosswalk") }} as qc
     on sr.question_shortname = qc.question_code
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
@@ -142,7 +142,7 @@ select
     'Family' as survey_audience,
 from {{ ref("stg_powerschool_enrollment__submission_records") }} as sr
 left join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on rt.name = 'PowerSchool Family School Community Diagnostic'
     and sr.submitted between rt.start_date and rt.end_date
 left join
@@ -150,11 +150,11 @@ left join
     on sr.external_student_id = safe_cast(se.student_number as string)
     and rt.academic_year = se.academic_year
 left join
-    {{ ref("stg_surveys__scd_answer_crosswalk") }} as ac
+    {{ ref("stg_google_sheets__surveys__scd_answer_crosswalk") }} as ac
     on sr.data_item_key = ac.question_code
     and sr.data_item_value = ac.response
 left join
-    {{ ref("stg_surveys__scd_question_crosswalk") }} as qc
+    {{ ref("stg_google_sheets__surveys__scd_question_crosswalk") }} as qc
     on sr.data_item_key = qc.question_code
 where
     sr.data_item_key in (

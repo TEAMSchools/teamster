@@ -146,10 +146,10 @@ select
     end as permission_level,
 from {{ ref("int_people__staff_roster") }} as sr
 inner join
-    {{ ref("stg_people__location_crosswalk") }} as lc
+    {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
     on sr.home_work_location_name = lc.name
 left join
-    {{ ref("stg_people__campus_crosswalk") }} as cc
+    {{ ref("stg_google_sheets__people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.location_name
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl

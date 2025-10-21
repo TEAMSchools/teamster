@@ -17,7 +17,7 @@ with
             and c.insession = 1
             and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
         inner join
-            {{ ref("stg_reporting__terms") }} as t
+            {{ ref("stg_google_sheets__reporting__terms") }} as t
             on s.schoolcity = t.region
             and c.date_value between t.start_date and t.end_date
             and t.type = 'LIT'
@@ -65,7 +65,7 @@ select
 
 from {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
 inner join
-    {{ ref("stg_reporting__terms") }} as t
+    {{ ref("stg_google_sheets__reporting__terms") }} as t
     on e.academic_year = t.academic_year
     and e.region = t.region
     and e.admin_season = t.name

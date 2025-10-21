@@ -1,81 +1,176 @@
+version: 2
+
 models:
   - name: rpt_tableau__smartrecruiters
+    description: ""
+    config:
+      contract:
+        enforced: true
     columns:
-      - name: application_id
-        data_type: string
-      - name: application_state
-        data_type: string
-      - name: application_url
-        data_type: string
-      - name: candidate_email
-        data_type: string
-      - name: candidate_first_name
-        data_type: string
-      - name: candidate_id
-        data_type: string
-      - name: candidate_last_name
-        data_type: string
-      - name: candidate_linkedin_profile_url
-        data_type: string
-      - name: date_demo
-        data_type: date
-      - name: date_hired
-        data_type: date
-      - name: date_last_update
-        data_type: date
-      - name: date_lead
-        data_type: date
-      - name: date_new
-        data_type: date
-      - name: date_offer
-        data_type: date
-      - name: date_phone_screen_complete
-        data_type: date
-      - name: date_phone_screen_requested
-        data_type: date
-      - name: date_rejected
-        data_type: date
-      - name: department_internal
-        data_type: string
-      - name: department_org_field_value
-        data_type: string
-      - name: job_city
-        data_type: string
-      - name: job_title
-        data_type: string
       - name: phone_interview_score
         data_type: string
+        description: ""
+
+      - name: application_id
+        data_type: string
+        description: ""
+
       - name: reason_for_rejection
         data_type: string
-      - name: recruiters
+        description: ""
+
+      - name: application_state
         data_type: string
-      - name: recruiter_single
+        description: ""
+
+      - name: application_url
         data_type: string
+        description: ""
+
+      - name: candidate_email
+        data_type: string
+        description: ""
+
+      - name: candidate_first_name
+        data_type: string
+        description: ""
+
+      - name: candidate_id
+        data_type: string
+        description: ""
+
+      - name: candidate_last_name
+        data_type: string
+        description: ""
+
+      - name: candidate_linkedin_profile_url
+        data_type: string
+        description: ""
+
+      - name: date_demo
+        data_type: date
+        description: ""
+
+      - name: date_hired
+        data_type: date
+        description: ""
+
+      - name: date_last_update
+        data_type: date
+        description: ""
+
+      - name: date_lead
+        data_type: date
+        description: ""
+
+      - name: date_new
+        data_type: date
+        description: ""
+
+      - name: date_offer
+        data_type: date
+        description: ""
+
+      - name: date_phone_screen_complete
+        data_type: date
+        description: ""
+
+      - name: date_phone_screen_requested
+        data_type: date
+        description: ""
+
+      - name: date_rejected
+        data_type: date
+        description: ""
+
+      - name: department_internal
+        data_type: string
+        description: ""
+
+      - name: department_org_field_value
+        data_type: string
+        description: ""
+
+      - name: job_city
+        data_type: string
+        description: ""
+
+      - name: job_title
+        data_type: string
+        description: ""
+
+      - name: recruiter_multiple
+        data_type: string
+        description: ""
+
       - name: source
         data_type: string
+        description: ""
+
       - name: source_subtype
         data_type: string
+        description: ""
+
       - name: source_type
         data_type: string
-      - name: subject_preference
+        description: ""
+
+      - name: subject_preference_multiple
         data_type: string
-      - name: subject_preference_single
-        data_type: string
-      - name: school_shared_with
-        data_type: string
-      - name: resume_score
+        description: ""
+
+      - name: time_in_application_state_new
         data_type: int64
-      - name: date_next_status_new
-        data_type: date
-      - name: date_next_status_lead
-        data_type: date
+        description: ""
+
+      - name: time_in_application_state_in_review
+        data_type: int64
+        description: ""
+
+      - name: time_in_application_state_lead
+        data_type: int64
+        description: ""
+
+      - name: recruiter
+        data_type: string
+        description: ""
+
       - name: application_week_start
         data_type: date
+        description: ""
+
+      - name: subject_preference
+        data_type: string
+        description: ""
+
+      - name: school_shared_with
+        data_type: string
+        description: ""
+
+      - name: resume_score
+        data_type: int64
+        description: ""
+
+      - name: high_quality_candidate
+        data_type: int64
+        description: ""
+
+      - name: within_week_initial_review
+        data_type: int64
+        description: ""
+
       - name: days_to_hire
         data_type: int64
-      - name: days_new_to_other
+        description: ""
+
+      - name: days_since_update
         data_type: int64
-      - name: days_lead_to_other
+        description: ""
+
+      - name: stalled_application
         data_type: int64
-      - name: within_week_initial_review
-        data_type: boolean
+        description: ""
+
+      - name: stalled_application_high_quality
+        data_type: int64
+        description: ""
