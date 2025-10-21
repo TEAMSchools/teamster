@@ -7,83 +7,69 @@ with
             expected_scope,
             expected_score_type,
             expected_admin_season,
+            expected_admin_season_order,
             expected_month,
             expected_grouping,
             expected_field_name,
 
+            expected_score_category,
+
             'foo' as bar,
 
+            concat(
+                expected_field_name, ' ', expected_score_category
+            ) as expected_field_name_score_category,
+
+            concat(
+                expected_scope, ' ', expected_grouping, ' ', expected_score_category
+            ) as expected_filter_group,
+
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "expected_test_type",
+                        "expected_score_type",
+                        "expected_admin_season",
+                    ]
+                )
+            }} as expected_unique_test_admin_id,
+
         from {{ ref("stg_google_sheets__kippfwd_expected_assessments") }}
+        cross join
+            unnest(
+                [
+                    'Scale Score',
+                    'Max Scale Score',
+                    'Superscore',
+                    'Previous Total Score Change'
+                ]
+            ) as expected_score_category
     ),
-
-    focus_scores as (
-        select
-            e.student_number,
-            e.grade_level,
-
-            a.expected_test_type,
-            a.expected_scope,
-            a.expected_score_type,
-            a.expected_admin_season,
-            a.expected_month,
-            a.expected_grouping,
-            a.expected_field_name,
-
-            s.test_type,
-            s.scope,
-            s.score_type,
-            s.test_date,
-            s.test_month,
-            s.scale_score,
-
-        from {{ ref("int_extracts__student_enrollments") }} as e
-        inner join
-            expected_admins as a
-            on e.region = a.expected_region
-            and e.grade_level = a.expected_grade_level
-        left join
-            {{ ref("int_assessments__college_assessment") }} as s
-            on a.expected_score_type = s.score_type
-            and a.expected_month = s.test_month
-            and a.expected_region = e.region
-            and a.expected_grade_level = e.grade_level
-            and e.student_number = s.student_number
-        where
-            e.school_level = 'HS'
-            and e.rn_year = 1
-            and e.graduation_year >= {{ var("current_academic_year") + 1 }}
-    )
-
-select *
-from
-    focus_scores
-    {# ,
-
 
     scores as (
         select
             *,
 
             concat(
-                field_name, ' ', score_category
+                expected_field_name, ' ', score_category
             ) as expected_field_name_score_category,
 
             concat(
-                scope, ' ', subject_area, ' ', score_category
+                expected_scope, ' ', expected_grouping, ' ', score_category
             ) as expected_filter_group,
 
             {{
                 dbt_utils.generate_surrogate_key(
                     [
-                        "test_type",
-                        "score_type",
-                        "test_date",
+                        "expected_test_type",
+                        "expected_score_type",
+                        "expected_admin_season",
                     ]
                 )
             }} as unique_test_admin_id,
 
         from
-            {{ ref("int_students__college_assessment_roster") }} unpivot (
+            {{ ref("int_tableau__college_assessment_roster_scores") }} unpivot (
                 score for score_category in (
                     scale_score as 'Scale Score',
                     max_scale_score as 'Max Scale Score',
@@ -91,10 +77,7 @@ from
                     previous_total_score_change as 'Previous Total Score Change'
                 )
             )
-        where graduation_year >= {{ var("current_academic_year") + 1 }}
     ),
-
-
 
     superscores as (
         select
@@ -147,15 +130,15 @@ select
     ea.expected_test_type,
     ea.expected_scope,
     ea.expected_score_type,
-    ea.expected_subject_area,
+    ea.expected_grouping,
     ea.expected_grade_level,
-    ea.expected_test_date,
-    ea.expected_test_month,
+    ea.expected_admin_season,
+    ea.expected_month,
     ea.expected_field_name,
     ea.expected_score_category,
     ea.expected_field_name_score_category,
     ea.expected_filter_group,
-    ea.expected_admin_order,
+    ea.expected_admin_season_order,
 
     s.sat_combined_superscore,
     s.sat_ebrw_highest,
@@ -168,7 +151,7 @@ inner join
     expected_admins as ea
     on 'foo' = ea.bar
     and ea.expected_score_category in ('Scale Score', 'Previous Total Score Change')
-    and ea.filter_group
+    and ea.expected_filter_group
     not in ('Math_Previous Total Score Change', 'EBRW_Previous Total Score Change')
 left join superscores_dedup as s on e.student_number = s.student_number
 left join
@@ -181,5 +164,3 @@ where
     and e.graduation_year >= {{ var("current_academic_year") + 1 }}
     and e.school_level = 'HS'
     and e.rn_year = 1
-#}
-    

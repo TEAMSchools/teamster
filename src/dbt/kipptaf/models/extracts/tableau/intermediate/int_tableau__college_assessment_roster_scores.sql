@@ -14,7 +14,6 @@ with
 
             format_date('%B', latest_psat_date) as test_month,
             'Official' as test_type,
-            null as salesforce_id,
 
         from {{ ref("int_collegeboard__psat_unpivot") }}
         where score_type not in ('psat10_reading', 'psat10_math_test')
@@ -35,7 +34,6 @@ with
 
             format_date('%B', `date`) as test_month,
             'Official' as test_type,
-            contact as salesforce_id,
 
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
@@ -44,6 +42,7 @@ with
     ),
 
     focus_scores as (
+        -- SAT, as they are month-bound
         select
             e.student_number,
             e.grade_level,
@@ -69,10 +68,51 @@ with
             {{ ref("stg_google_sheets__kippfwd_expected_assessments") }} as a
             on e.region = a.expected_region
             and e.grade_level = a.expected_grade_level
+            and a.expected_scope = 'SAT'
         inner join
             scores as s
             on a.expected_score_type = s.score_type
             and a.expected_month = s.test_month
+            and a.expected_region = e.region
+            and a.expected_grade_level = e.grade_level
+            and e.student_number = s.student_number
+        where
+            e.school_level = 'HS'
+            and e.rn_year = 1
+            and e.graduation_year >= {{ var("current_academic_year") + 1 }}
+
+        union all
+
+        -- PSAT et all, not month-bound
+        select
+            e.student_number,
+            e.grade_level,
+
+            a.expected_test_type,
+            a.expected_scope,
+            a.expected_score_type,
+            a.expected_admin_season,
+            a.expected_admin_season_order,
+            a.expected_month,
+            a.expected_grouping,
+            a.expected_field_name,
+
+            s.test_type,
+            s.scope,
+            s.score_type,
+            s.test_date,
+            s.test_month,
+            s.scale_score,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            {{ ref("stg_google_sheets__kippfwd_expected_assessments") }} as a
+            on e.region = a.expected_region
+            and e.grade_level = a.expected_grade_level
+            and a.expected_scope != 'SAT'
+        inner join
+            scores as s
+            on a.expected_score_type = s.score_type
             and a.expected_region = e.region
             and a.expected_grade_level = e.grade_level
             and e.student_number = s.student_number
