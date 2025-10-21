@@ -336,7 +336,7 @@ left join
     on e.schoolid = hos.home_work_location_powerschool_school_id
 left join
     {{ ref("int_overgrad__students") }} as ovg
-    on e.salesforce_contact_id = ovg.salesforce_contact_id
+    on e.salesforce_contact_id = ovg.external_student_id
     and {{ union_dataset_join_clause(left_alias="e", right_alias="ovg") }}
 left join
     {{ ref("int_powerschool__ada_term_pivot") }} as ada
