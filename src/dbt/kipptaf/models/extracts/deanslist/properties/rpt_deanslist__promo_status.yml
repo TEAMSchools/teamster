@@ -55,3 +55,5 @@ models:
         data_type: string
       - name: athletic_eligibility
         data_type: string
+      - name: promo_status_math
+        data_type: string
