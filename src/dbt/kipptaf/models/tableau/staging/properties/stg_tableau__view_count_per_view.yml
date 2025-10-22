@@ -2,8 +2,6 @@ models:
   - name: stg_tableau__view_count_per_view
     config:
       enabled: false
-      contract:
-        enforced: true
     columns:
       - name: user_name
         data_type: string
