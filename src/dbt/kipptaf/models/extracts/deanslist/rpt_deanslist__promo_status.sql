@@ -3,7 +3,7 @@ with
         select academic_year, student_number, `quarter`, athletic_eligibility,
         from
             {{ ref("int_students__athletic_eligibility") }} unpivot (
-                athletic_eligibility for quarter in (
+                athletic_eligibility for `quarter` in (
                     q1_ae_status as 'Q1',
                     q2_ae_status as 'Q2',
                     q3_ae_status as 'Q3',
@@ -36,7 +36,7 @@ select
     ae.athletic_eligibility,
 
     null as promo_status_lit,
-    null as promo_status_math,
+    cast(null as string) as promo_status_math,
     null as promo_status_qa_math,
     null as grades_y1_credits_enrolled,
 
