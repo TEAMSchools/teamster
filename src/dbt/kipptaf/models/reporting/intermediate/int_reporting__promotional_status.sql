@@ -20,7 +20,8 @@ with
                     )
                 ),
                 0
-            ) as n_absences_y1_running_non_susp,
+            )
+            + floor(sum(is_tardy) / 3) as n_absences_y1_running_non_susp,
 
             case
                 regexp_extract(mem._dbt_source_relation, r'(kipp\w+)_')
@@ -288,26 +289,36 @@ with
                 then 'Off-Track'
                 /* NJ Gr K */
                 when
-                    co.region in ('Camden', 'Newark')
+                    co.region = 'Newark'
                     and co.grade_level = 0
-                    and att.ada_term_running < 0.80
+                    and att.ada_term_running < 0.85
+                then 'Off-Track'
+                when
+                    co.region = 'Camden'
+                    and co.grade_level = 0
+                    and att.ada_term_running < 0.82
                 then 'Off-Track'
                 /* NJ Gr 1-2 */
                 when
-                    co.region in ('Camden', 'Newark')
+                    co.region = 'Newark'
                     and co.grade_level between 1 and 2
-                    and att.ada_term_running < 0.85
+                    and att.ada_term_running < 0.87
+                then 'Off-Track'
+                when
+                    co.region = 'Newark'
+                    and co.grade_level between 1 and 2
+                    and att.ada_term_running < 0.86
                 then 'Off-Track'
                 /* NJ Gr3-8 */
                 when
                     co.grade_level between 3 and 8
                     and co.region = 'Camden'
-                    and att.ada_term_running < 0.86
+                    and att.ada_term_running < 0.87
                 then 'Off-Track'
                 when
                     co.grade_level between 3 and 8
                     and co.region = 'Newark'
-                    and att.ada_term_running < 0.87
+                    and att.ada_term_running < 0.9
                 then 'Off-Track'
                 /* Miami K */
                 when
@@ -340,34 +351,44 @@ with
             end as attendance_status,
 
             case
-                /* Gr K-8 */
+                /* NJ Gr K-8 */
                 when
                     co.region in ('Camden', 'Newark')
                     and co.grade_level <= 8
                     and att.ada_term_running is null
                 then 'Off-Track'
-                /* Gr K */
+                /* NJ Gr K */
                 when
-                    co.region in ('Camden', 'Newark')
+                    co.region = 'Newark'
                     and co.grade_level = 0
-                    and att.ada_term_running < 0.80
-                then 'Off-Track'
-                /* Gr 1-2 */
-                when
-                    co.region in ('Camden', 'Newark')
-                    and co.grade_level between 1 and 2
                     and att.ada_term_running < 0.85
                 then 'Off-Track'
-                /* Gr3-8 */
+                when
+                    co.region = 'Camden'
+                    and co.grade_level = 0
+                    and att.ada_term_running < 0.82
+                then 'Off-Track'
+                /* NJ Gr 1-2 */
+                when
+                    co.region = 'Newark'
+                    and co.grade_level between 1 and 2
+                    and att.ada_term_running < 0.87
+                then 'Off-Track'
+                when
+                    co.region = 'Newark'
+                    and co.grade_level between 1 and 2
+                    and att.ada_term_running < 0.86
+                then 'Off-Track'
+                /* NJ Gr3-8 */
                 when
                     co.grade_level between 3 and 8
                     and co.region = 'Camden'
-                    and att.ada_term_running < 0.86
+                    and att.ada_term_running < 0.87
                 then 'Off-Track'
                 when
                     co.grade_level between 3 and 8
                     and co.region = 'Newark'
-                    and att.ada_term_running < 0.87
+                    and att.ada_term_running < 0.9
                 then 'Off-Track'
                 /* Miami K */
                 when
