@@ -35,6 +35,9 @@ select
 
     ae.athletic_eligibility,
 
+    null as promo_status_qa_math,
+    null as grades_y1_credits_enrolled,
+
     if(
         p.iready_reading_recent
         in ('2 Grade Levels Below', '3 or More Grade Levels Below')
@@ -48,8 +51,6 @@ select
         'Off-Track',
         'On-Track'
     ) as promo_status_math,
-    null as promo_status_qa_math,
-    null as grades_y1_credits_enrolled,
 
     case
         co.grade_level when 9 then 25 when 10 then 50 when 11 then 85 when 12 then 120
