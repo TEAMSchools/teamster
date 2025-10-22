@@ -2,7 +2,7 @@ with
     dashboard as (
         select
             co.student_number,
-            co.lastfirst,
+            co.student_name,
             co.academic_year,
             co.reporting_schoolid as schoolid,
             co.region,
@@ -14,8 +14,10 @@ with
             co.lep_status,
             co.is_504 as c_504_status,
             co.is_self_contained as is_pathways,
-            co.school_abbreviation as school,
+            co.school,
             co.school_level,
+            co.hos as head_of_school,
+            co.advisor_teachernumber as hr_teachernumber,
 
             asr.assessment_id,
             asr.title,
@@ -38,8 +40,6 @@ with
             asr.is_replacement,
             asr.is_internal_assessment as is_normed_scope,
 
-            hr.teachernumber as hr_teachernumber,
-
             enr.teachernumber as enr_teachernumber,
             enr.teacher_lastfirst as teacher_name,
             enr.courses_course_name as course_name,
@@ -47,12 +47,10 @@ with
             enr.sections_section_number as section_number,
             enr.is_foundations,
 
-            lc.head_of_school_preferred_name_lastfirst as head_of_school,
-
             if(
                 co.grade_level >= 9, enr.courses_credittype, asr.subject_area
             ) as filter_join,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
             {{ ref("int_assessments__response_rollup") }} as asr
             on co.student_number = asr.powerschool_student_number
@@ -65,26 +63,15 @@ with
             and asr.subject_area = enr.illuminate_subject_area
             and not enr.is_dropped_section
             and enr.rn_student_year_illuminate_subject_desc = 1
-        left join
-            {{ ref("base_powerschool__course_enrollments") }} as hr
-            on co.student_number = hr.cc_studentid
-            and co.yearid = hr.cc_yearid
-            and co.schoolid = hr.cc_schoolid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
-            and hr.cc_course_number = 'HR'
-            and not hr.is_dropped_section
-            and hr.rn_course_number_year = 1
-        left join
-            {{ ref("int_people__leadership_crosswalk") }} as lc
-            on co.schoolid = lc.home_work_location_powerschool_school_id
         where
-            co.academic_year >= {{ var("current_academic_year") - 1 }}
-            and co.rn_year = 1
+            co.rn_year = 1
+            and co.academic_year >= {{ var("current_academic_year") - 1 }}
             and co.grade_level != 99
     )
+
 select
     d.student_number,
-    d.lastfirst,
+    d.student_name as lastfirst,
     d.academic_year,
     d.schoolid,
     d.region,
@@ -127,16 +114,16 @@ select
     d.is_foundations,
     d.head_of_school,
 
-    /* retired fields kept for tableau compatibility */
-    null as power_standard_goal,
-    null as is_power_standard,
-    null as standard_domain,
-
     sf.nj_student_tier,
     sf.is_tutoring as tutoring_nj,
     sf.territory,
     sf.is_sipps,
     sf.is_low_25_fl,
+
+    /* retired fields kept for tableau compatibility */
+    null as power_standard_goal,
+    null as is_power_standard,
+    null as standard_domain,
 from dashboard as d
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf
