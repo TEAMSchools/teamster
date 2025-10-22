@@ -151,3 +151,15 @@ models:
         data_type: int64
       - name: update_lastfirst
         data_type: string
+      - name: actions
+        data_type: |
+          array<struct<ActionID string, ActionName string, PointValue string, SAID string, SourceID string>>
+      - name: attachments
+        data_type: |
+          array<struct<AttachmentID string, AttachmentType string, Bytes string, ContentType string, EntityID string, EntityName string, EntityType string, InternalFilename string, InternalFolder string, MinUserLevel string, MinUserLevelGroupName string, PublicFilename string, ReportDate string, ReportType string, SchoolID string, SourceID string, SourceType string, StudentID string, TermID string, URL string, FilePostedAt struct<date string, timezone string, timezone_type int64>>>
+      - name: custom_fields
+        data_type: |
+          array<struct<CustomFieldID string, FieldCategory string, FieldKey string, FieldName string, FieldType string, InputHTML string, InputName string, IsFrontEnd string, IsRequired string, LabelHTML string, MinUserLevel string, Options string, SourceID string, SourceType string, StringValue string, Value string, SelectedOptions array<string>, NumValue struct<double_value float64, long_value int64>>>
+      - name: penalties
+        data_type: |
+          array<struct<EndDate string, IncidentID string, IncidentPenaltyID string, IsReportable boolean, IsSuspension boolean, NumPeriods string, PenaltyID string, PenaltyName string, Print boolean, SAID string, SchoolID string, StartDate string, StudentID string, NumDays struct<double_value float64, long_value int64>>>
