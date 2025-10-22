@@ -218,43 +218,12 @@ select
         s.subject_area in ('Composite', 'Combined'), 'Total', s.subject_area
     ) as aligned_subject_area,
 
-    case
-        s.scope
-        when 'SAT'
-        then 5
-        when 'ACT'
-        then 4
-        when 'PSAT NMSQT'
-        then 3
-        when 'PSAT10'
-        then 2
-        when 'PSAT 8/9'
-        then 1
-    end as scope_order,
-
-    case
-        when s.subject_area = 'Combined'
-        then 3
-        when s.subject_area = 'Composite'
-        then 5
-        when s.subject_area = 'EBRW'
-        then 2
-        when s.subject_area = 'Science'
-        then 1
-        when s.subject_area = 'English'
-        then 2
-        when s.subject_area = 'Reading'
-        then 4
-        when concat(s.scope, s.subject_area) = 'ACTMath'
-        then 3
-        else 1
-    end as subject_area_order,
-
     {{
         dbt_utils.generate_surrogate_key(
             ["s.student_number", "s.test_type", "s.score_type", "s.test_date"]
         )
     }} as surrogate_key,
+
 from scores as s
 left join
     max_score as m
