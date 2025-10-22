@@ -21,7 +21,7 @@ with
             ) as expected_field_name_score_category,
 
             concat(
-                expected_scope, ' ', expected_grouping, ' ', expected_score_category
+                expected_grouping, ' ', expected_score_category
             ) as expected_filter_group,
 
             {{
@@ -41,7 +41,8 @@ with
                     'Scale Score',
                     'Max Scale Score',
                     'Superscore',
-                    'Previous Total Score Change'
+                    'Previous Total Score Change',
+                    'Previous Total Score Change GL'
                 ]
             ) as expected_score_category
     ),
@@ -74,19 +75,19 @@ with
                     scale_score as 'Scale Score',
                     max_scale_score as 'Max Scale Score',
                     superscore as 'Superscore',
-                    previous_total_score_change as 'Previous Total Score Change'
+                    previous_total_score_change as 'Previous Total Score Change',
+                    previous_total_score_change_gl as 'Previous Total Score Change GL'
                 )
             )
     ),
 
     superscores as (
-        select
-            student_number, sat_combined_superscore, sat_ebrw_highest, sat_math_highest,
+        select student_number, sat_total_superscore, sat_ebrw_highest, sat_math_highest,
 
         from
             scores pivot (
                 avg(score) for expected_filter_group in (
-                    'SAT Combined Superscore' as sat_combined_superscore,
+                    'SAT Total Superscore' as sat_total_superscore,
                     'SAT EBRW Max Scale Score' as sat_ebrw_highest,
                     'SAT Math Max Scale Score' as sat_math_highest
                 )
@@ -97,7 +98,7 @@ with
         select
             student_number,
 
-            avg(sat_combined_superscore) as sat_combined_superscore,
+            avg(sat_total_superscore) as sat_total_superscore,
             avg(sat_ebrw_highest) as sat_ebrw_highest,
             avg(sat_math_highest) as sat_math_highest,
 
@@ -140,25 +141,49 @@ select
     ea.expected_filter_group,
     ea.expected_admin_season_order,
 
-    s.sat_combined_superscore,
+    s.sat_total_superscore,
     s.sat_ebrw_highest,
     s.sat_math_highest,
 
     a.score,
 
+    coalesce(c.courses_course_name, 'No Data') as ccr_course,
+    coalesce(c.teacher_lastfirst, 'No Data') as ccr_teacher_name,
+    coalesce(c.sections_external_expression, 'No Data') as ccr_section,
+
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     expected_admins as ea
     on 'foo' = ea.bar
-    and ea.expected_score_category in ('Scale Score', 'Previous Total Score Change')
-    and ea.expected_filter_group
-    not in ('Math_Previous Total Score Change', 'EBRW_Previous Total Score Change')
+    and ea.expected_score_category
+    in ('Scale Score', 'Previous Total Score Change', 'Previous Total Score Change GL')
+    and ea.expected_filter_group not in (
+        'Math Previous Total Score Change',
+        'EBRW Previous Total Score Change',
+        'Math Previous Total Score Change GL',
+        'EBRW Previous Total Score Change GL',
+        'Total Growth Previous Total Score Change',
+        'Total Growth Previous Total Score Change GL',
+        'Total Growth Scale Score'
+    )
 left join superscores_dedup as s on e.student_number = s.student_number
 left join
     scores as a
     on e.student_number = a.student_number
     and ea.expected_unique_test_admin_id = a.unique_test_admin_id
     and ea.expected_score_category = a.score_category
+left join
+    {{ ref("base_powerschool__course_enrollments") }} as c
+    on e.student_number = c.students_student_number
+    and e.academic_year = c.cc_academic_year
+    and c.rn_course_number_year = 1
+    and not c.is_dropped_section
+    and c.courses_course_name in (
+        'College and Career IV',
+        'College and Career I',
+        'College and Career III',
+        'College and Career II'
+    )
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.graduation_year >= {{ var("current_academic_year") + 1 }}
