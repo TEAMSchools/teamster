@@ -22,9 +22,9 @@ with
         }}
     ),
 
-    union_year_pre as (
+    union_year as (
         select
-            'Academics' as domain,
+            'Academics' as `domain`,
             'DIBELS Benchmark' as subdomain,
 
             academic_year,
@@ -38,7 +38,7 @@ with
         union all
 
         select
-            'Academics' as domain,
+            'Academics' as `domain`,
             'i-Ready Diagnostic' as subdomain,
 
             academic_year_int as academic_year,
@@ -63,7 +63,7 @@ with
 
     union_quarter as (
         select
-            'Attendance' as domain,
+            'Attendance' as `domain`,
             'ADA' as subdomain,
 
             academic_year,
@@ -79,7 +79,7 @@ with
         union all
 
         select
-            'Academics' as domain,
+            'Academics' as `domain`,
             'Core Course Failures' as subdomain,
 
             academic_year,
@@ -95,7 +95,7 @@ with
         union all
 
         select
-            'Academics' as domain,
+            'Academics' as `domain`,
             'Projected Y1 Credits' as subdomain,
 
             fg.academic_year,
@@ -120,31 +120,33 @@ with
 
     union_final as (
         select
+            _dbt_source_relation,
             domain,
             subdomain,
             academic_year,
             region,
-            term,
-            _dbt_source_relation,
             studentid,
             discipline,
             metric,
             metric_string,
+
+            term,
         from union_quarter
 
         union all
 
         select
+            uy._dbt_source_relation,
             uy.domain,
             uy.subdomain,
             uy.academic_year,
             uy.region,
-            term,
-            uy._dbt_source_relation,
             uy.studentid,
             uy.discipline,
             uy.metric,
             uy.metric_string,
+
+            term,
         from union_year as uy
         cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term
     ),
@@ -208,7 +210,7 @@ with
         where co.rn_year = 1 and co.grade_level != 99
     ),
 
-    metric_string_pivot as (
+    {# metric_string_pivot as (
         select
             student_number,
             academic_year,
@@ -231,8 +233,7 @@ with
                     'DIBELS Benchmark' as dibels_benchmark_recent
                 )
             )
-    ),
-
+    ), #}
     rule_test as (
         select
             student_number,
