@@ -22,17 +22,16 @@ with
         select
             expected_test_type,
 
-            psatnmsqt_1_attempt_min_score,
+            act_1_attempt_min_score,
             psat10_1_attempt_min_score,
             psat89_1_attempt_min_score,
-            act_1_attempt_min_score,
+            psatnmsqt_1_attempt_min_score,
             sat_1_attempt_min_score,
-            psat89_2_plus_attempts_min_score,
-            sat_2_plus_attempts_min_score,
-            psatnmsqt_2_plus_attempts_min_score,
-            psat10_2_plus_attempts_min_score,
             act_2_plus_attempts_min_score,
-
+            psat10_2_plus_attempts_min_score,
+            psat89_2_plus_attempts_min_score,
+            psatnmsqt_2_plus_attempts_min_score,
+            sat_2_plus_attempts_min_score,
             sat_1_attempt_pct_goal,
             sat_2_plus_attempts_pct_goal,
 
@@ -56,11 +55,23 @@ with
     ),
 
     base_rows as (
-        select student_number, salesforce_id, grade_level, test_type, scope, score_type,
+        select
+            s.student_number,
+            s.test_type,
+            s.scope,
+            s.score_type,
 
-        from {{ ref("int_students__college_assessment_roster") }}
+            e.salesforce_id,
+            e.grade_level,
+        from {{ ref("int_assessments__college_assessment") }} as s
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on s.academic_year = e.academic_year
+            and s.student_number = e.student_number
+            and e.school_level = 'HS'
+            and e.rn_year = 1
         where
-            score_type in (
+            s.score_type in (
                 'act_composite',
                 'sat_total_score',
                 'psat89_total',
