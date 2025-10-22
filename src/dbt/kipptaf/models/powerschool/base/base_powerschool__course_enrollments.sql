@@ -52,6 +52,8 @@ select
     csc.exclude_from_gradebook,
     csc.discipline,
 
+    initcap(regexp_extract(ur._dbt_source_relation, r'kipp(\w+)_')) as region,
+
     if(cx.ap_course_subject is not null, true, false) as is_ap_course,
 
     row_number() over (
