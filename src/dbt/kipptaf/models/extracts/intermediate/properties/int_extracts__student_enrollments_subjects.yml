@@ -233,3 +233,5 @@ models:
         data_type: string
       - name: is_exempt_state_testing
         data_type: boolean
+      - name: is_low_25_fl
+        data_type: boolean      

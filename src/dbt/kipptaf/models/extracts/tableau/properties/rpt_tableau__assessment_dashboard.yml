@@ -99,3 +99,7 @@ models:
         data_type: boolean
       - name: territory
         data_type: string
+      - name: is_sipps
+        data_type: boolean
+      - name: is_low_25_fl
+        data_type: boolean

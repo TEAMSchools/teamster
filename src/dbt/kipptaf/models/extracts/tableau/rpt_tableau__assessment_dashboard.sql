@@ -135,6 +135,8 @@ select
     sf.nj_student_tier,
     sf.is_tutoring as tutoring_nj,
     sf.territory,
+    sf.is_sipps,
+    sf.is_low_25_fl,
 from dashboard as d
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf

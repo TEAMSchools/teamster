@@ -289,6 +289,7 @@ select
         else false
     end as is_exempt_state_testing,
 
+    if(fp.fldoe_percentile_rank < .255, true, false) as is_low_25_fl,
 from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as sj
 left join
@@ -351,6 +352,11 @@ left join
     and co.academic_year = b.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
     and sj.discipline = b.discipline
+left join
+    {{ ref("int_assessments__fast_previous_year") }} as fp
+    on co.academic_year = fp.academic_year
+    and co.student_number = fp.student_number
+    and sj.discipline = fp.discipline
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
 
 union all
@@ -417,6 +423,8 @@ select
         then true
         else false
     end as is_exempt_state_testing,
+
+    if(fp.fldoe_percentile_rank < .255, true, false) as is_low_25_fl,
 from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as sj
 left join
@@ -467,4 +475,9 @@ left join
     and co.academic_year = b.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
     and sj.discipline = b.discipline
+left join
+    {{ ref("int_assessments__fast_previous_year") }} as fp
+    on co.academic_year = fp.academic_year
+    and co.student_number = fp.student_number
+    and sj.discipline = fp.discipline
 where co.academic_year < {{ var("current_academic_year") - 1 }}

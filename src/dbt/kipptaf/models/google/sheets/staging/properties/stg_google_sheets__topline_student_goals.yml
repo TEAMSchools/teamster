@@ -29,3 +29,7 @@ models:
         data_type: string
       - name: Rule_Group_Grade
         data_type: string
+      - name: Rule_Group_Logic
+        data_type: string
+      - name: Rule_Group_Grade_Logic
+        data_type: string

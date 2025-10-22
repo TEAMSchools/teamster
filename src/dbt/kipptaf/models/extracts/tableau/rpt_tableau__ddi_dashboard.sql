@@ -284,6 +284,9 @@ select
     co.is_exempt_iready,
     co.nj_student_tier,
 
+    sf.is_sipps,
+    sf.is_low_25_fl,
+
     qbls.qbl,
 
     g.grade_goal,
@@ -395,6 +398,9 @@ select
     co.state_test_proficiency,
     co.is_exempt_iready,
     co.nj_student_tier,
+
+    sf.is_sipps,
+    sf.is_low_25_fl,
 
     qbls.qbl,
 
@@ -531,6 +537,8 @@ select
     null as state_test_proficiency,
     null as is_exempt_iready,
     null as nj_student_tier,
+    null as is_sipps,
+    null as is_low_25_fl,
     null as qbl,
     null as grade_goal,
     null as school_goal,
