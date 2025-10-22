@@ -77,7 +77,7 @@ left join
     {{ ref("int_reporting__promotional_status") }} as p
     on co.student_number = p.student_number
     and co.academic_year = p.academic_year
-    and term = p.term
+    and term = p.term_name
 left join
     athletic_eligibility as ae
     on co.student_number = ae.student_number
