@@ -22,6 +22,7 @@ with
                     "google_sheets", "src_google_sheets__kippfwd_expected_assessments"
                 )
             }}
+        where expected_admin_season != 'Not Official'
     )
 
 select
@@ -35,7 +36,7 @@ select
             -- trunk-ignore(sqlfluff/LT05)
             'The previous month is based on the individual testing history for a student.'
         else
-            string_agg(regexp_extract(expected_month_round, r'^([^ ]+)'), ', ') over (
+            string_agg(expected_month, ', ') over (
                 partition by
                     expected_region,
                     expected_grade_level,
@@ -47,7 +48,7 @@ select
 
     concat(
         'G',
-        cast(expected_grade_level as string),
+        expected_grade_level,
         ' ',
         expected_admin_season,
         ' ',
@@ -59,4 +60,3 @@ select
     ) as expected_field_name,
 
 from scores
-where expected_admin_season != 'Not Official'
