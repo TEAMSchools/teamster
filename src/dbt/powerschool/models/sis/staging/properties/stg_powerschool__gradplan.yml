@@ -2,8 +2,6 @@ models:
   - name: stg_powerschool__gradplan
     config:
       enabled: false
-      contract:
-        enforced: false
     columns:
       - name: name
         data_type: string

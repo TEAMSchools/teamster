@@ -31,6 +31,7 @@ vars:
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
   +schema: renlearn
-  staging:
-    +contract:
-      enforced: true
+  renlearn:
+    staging:
+      +contract:
+        enforced: true

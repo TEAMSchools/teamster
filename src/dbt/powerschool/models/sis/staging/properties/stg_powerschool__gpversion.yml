@@ -2,8 +2,6 @@ models:
   - name: stg_powerschool__gpversion
     config:
       enabled: false
-      contract:
-        enforced: false
     columns:
       - name: gpamethod
         data_type: string

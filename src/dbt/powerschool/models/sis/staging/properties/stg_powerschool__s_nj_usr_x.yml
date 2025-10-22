@@ -2,8 +2,6 @@ models:
   - name: stg_powerschool__s_nj_usr_x
     config:
       enabled: false
-      contract:
-        enforced: false
     columns:
       - name: local_teacher_id
         data_type: string
