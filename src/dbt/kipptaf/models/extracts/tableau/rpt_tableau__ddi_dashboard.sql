@@ -86,6 +86,8 @@ with
             co.self_contained_status,
             co.gifted_and_talented,
             co.nj_student_tier,
+            co.is_sipps,
+            co.is_low_25_fl,
             co.week_start_monday,
             co.week_end_sunday,
             co.date_count as days_in_session,
