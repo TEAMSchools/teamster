@@ -32,6 +32,7 @@ select
         then expected_month_round
         when expected_grouping = 'Growth'
         then
+            -- trunk-ignore(sqlfluff/LT05)
             'The previous month is based on the individual testing history for a student.'
         else
             string_agg(regexp_extract(expected_month_round, r'^([^ ]+)'), ', ') over (
