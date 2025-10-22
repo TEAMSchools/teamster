@@ -12,8 +12,9 @@ with
             score as scale_score,
             rn_highest,
 
-            format_date('%B', latest_psat_date) as test_month,
             'Official' as test_type,
+
+            format_date('%B', latest_psat_date) as test_month,
 
         from {{ ref("int_collegeboard__psat_unpivot") }}
         where score_type not in ('psat10_reading', 'psat10_math_test')
@@ -32,8 +33,9 @@ with
             score as scale_score,
             rn_highest,
 
-            format_date('%B', `date`) as test_month,
             'Official' as test_type,
+
+            format_date('%B', `date`) as test_month,
 
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
@@ -71,12 +73,10 @@ with
             and a.expected_scope = 'SAT'
         inner join
             scores as s
-            on a.expected_score_type = s.score_type
-            and a.expected_month = s.test_month
-            and a.expected_region = e.region
-            and a.expected_grade_level = e.grade_level
-            and e.student_number = s.student_number
+            on e.student_number = s.student_number
             and e.academic_year = s.academic_year
+            and a.expected_score_type = s.score_type
+            and a.expected_month = s.test_month
         where
             e.school_level = 'HS'
             and e.rn_year = 1
@@ -113,10 +113,8 @@ with
             and a.expected_scope != 'SAT'
         inner join
             scores as s
-            on a.expected_score_type = s.score_type
-            and a.expected_region = e.region
-            and a.expected_grade_level = e.grade_level
-            and e.student_number = s.student_number
+            on e.student_number = s.student_number
+            and a.expected_score_type = s.score_type
         where
             e.school_level = 'HS'
             and e.rn_year = 1
