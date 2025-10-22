@@ -287,7 +287,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="e", right_alias="tut") }}
     and tut.specprog_name = 'Tutoring'
     and tut.rn_student_program_year_desc = 1
-inner join
+left join
     {{ ref("int_powerschool__spenrollments") }} as hi
     on e.studentid = hi.studentid
     and e.academic_year = hi.academic_year
