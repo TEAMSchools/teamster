@@ -4,3 +4,30 @@ models:
     config:
       contract:
         enforced: false
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: grade_level
+        data_type: int64
+      - name: expected_test_type
+        data_type: string
+      - name: expected_grouping
+        data_type: string
+      - name: expected_scope
+        data_type: string
+      - name: expected_score_type
+        data_type: string
+      - name: expected_admin_season
+        data_type: string
+      - name: expected_admin_season_order
+        data_type: int64
+      - name: expected_field_name
+        data_type: string
+      - name: scale_score
+        data_type: numeric
+      - name: max_scale_score
+        data_type: numeric
+      - name: previous_total_score_change
+        data_type: numeric
+      - name: superscore
+        data_type: numeric
