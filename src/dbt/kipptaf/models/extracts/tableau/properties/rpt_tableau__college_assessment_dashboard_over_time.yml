@@ -58,3 +58,4 @@ models:
       - name: score
         data_type: numeric
       - name: met_min_score_int
+        data_type: int64
