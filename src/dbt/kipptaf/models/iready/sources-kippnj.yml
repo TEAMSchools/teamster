@@ -1,8 +1,12 @@
-version: 2
-
 sources:
   - name: kippnj_iready
-    schema: kippnewark_iready
+    schema: |
+      {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['staging', 'dev'] -%}
+      z_dev_
+      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'prod' -%}
+      {%- elif env_var('GITHUB_USER', '') != '' -%}
+      zz_{{ env_var('GITHUB_USER', '') }}_
+      {%- endif -%}kippnewark_iready
     tables:
       - name: stg_iready__diagnostic_results
         meta:
@@ -36,3 +40,11 @@ sources:
               - kippnewark
               - iready
               - stg_iready__instruction_by_lesson_pro
+      - name: stg_iready__personalized_instruction_summary
+        meta:
+          dagster:
+            group: iready
+            asset_key:
+              - kippnewark
+              - iready
+              - stg_iready__personalized_instruction_summary

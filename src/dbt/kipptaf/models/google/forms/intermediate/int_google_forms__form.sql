@@ -1,6 +1,8 @@
 {%- set ref_form = ref("stg_google_forms__form") -%}
 {%- set ref_form_items = ref("stg_google_forms__form__items") -%}
-{%- set ref_form_items_ext = ref("stg_google_forms__form_items_extension") -%}
+{%- set ref_form_items_ext = ref(
+    "stg_google_sheets__google_forms__form_items_extension"
+) -%}
 
 select
     {{ dbt_utils.star(from=ref_form, relation_alias="f") }},

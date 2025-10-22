@@ -38,7 +38,7 @@ with
             ) as is_failing_0_classes_y1,
         from student_enrollments as co
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on co.academic_year = rt.academic_year
             and co.schoolid = rt.school_id
             and rt.type = 'RT'

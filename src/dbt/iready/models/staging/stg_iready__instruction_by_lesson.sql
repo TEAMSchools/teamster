@@ -14,10 +14,10 @@ select
     passed_or_not_passed,
     teacher_assigned_lesson,
 
-    cast(student_id as int) as student_id,
-
     cast(cast(score as numeric) as int) as score,
     cast(cast(total_time_on_lesson_min as numeric) as int) as total_time_on_lesson_min,
+
+    safe_cast(student_id as int) as student_id,
 
     parse_date('%m/%d/%Y', completion_date) as completion_date,
 

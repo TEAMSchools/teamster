@@ -204,19 +204,14 @@ with
     passed_courses_union as (
         select
             c.cc_studentid as studentid,
-            e.grade_level,
-            e.region,
+            c.students_grade_level as grade_level,
+            c.region,
 
             max(if(g.grade like 'F%', 0, 1)) over (
-                partition by student_number
+                partition by c.students_student_number
             ) as passed_algebra_i,
 
         from {{ ref("base_powerschool__course_enrollments") }} as c
-        inner join
-            {{ ref("int_extracts__student_enrollments") }} as e
-            on c.cc_academic_year = e.academic_year
-            and c.cc_studentid = e.studentid
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="e") }}
         inner join
             {{ ref("stg_powerschool__storedgrades") }} as g
             on c.cc_academic_year = g.academic_year
@@ -225,19 +220,21 @@ with
             and {{ union_dataset_join_clause(left_alias="c", right_alias="g") }}
             and g.storecode = 'Y1'
         left join
-            {{ ref("stg_crdc__sced_code_crosswalk") }} as x
+            {{ ref("stg_google_sheets__crdc__sced_code_crosswalk") }} as x
             on concat(c.nces_subject_area, c.nces_course_id) = x.sced_code
         where
-            c.cc_academic_year < {{ var("current_academic_year") }}
-            and c.rn_course_number_year = 1
+            c.rn_course_number_year = 1
             and not c.is_dropped_course
-            and x.sced_course_name in (
-                'Integrated Mathematics I',
-                'Algebra I',
-                'Algebra I – Part 1',
-                'Algebra I – Part 2'
+            and (
+                x.sced_course_name in (
+                    'Integrated Mathematics I',
+                    'Algebra I',
+                    'Algebra I - Part 1',
+                    'Algebra I - Part 2'
+                )
+                or c.courses_course_name = 'Math I Algebra'
             )
-            or c.courses_course_name = 'Math I Algebra'
+            and c.cc_academic_year < {{ var("current_academic_year") }}
 
         union all
 
@@ -272,9 +269,8 @@ with
 select
     e.student_number as studentid,
     e.grade_level as grade,
-
-    g.cumulative_y1_gpa_unweighted as unweighted_cumulative_gpa,
-    g.cumulative_y1_gpa as weighted_cumulative_gpa,
+    e.cumulative_y1_gpa_unweighted as unweighted_cumulative_gpa,
+    e.cumulative_y1_gpa as weighted_cumulative_gpa,
 
     c.has_participated_in_ap_courses,
     c.has_participated_in_honors_courses,
@@ -342,11 +338,6 @@ select
     if(e.lunch_status in ('F', 'R'), 'Y', 'N') as student_is_frl,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
-left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as g
-    on e.studentid = g.studentid
-    and e.schoolid = g.schoolid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="g") }}
 left join course_tags as c on e.studentid = c.studentid and e.region = c.region
 left join
     passed_courses as p
@@ -356,6 +347,6 @@ left join
 where
     e.academic_year = {{ var("current_academic_year") - 1 }}
     and e.school_level = 'HS'
-    and e.enroll_status in (0, 3)
     and e.rn_year = 1
     and e.is_enrolled_recent
+    and e.enroll_status in (0, 3)

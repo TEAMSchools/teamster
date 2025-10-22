@@ -91,9 +91,13 @@ select
         then 'B2E'
         when discipline = 'Math' and nj_student_tier = 'Bucket 2'
         then 'B2M'
-        when discipline = 'ELA' and nj_student_tier is null
+        when discipline = 'ELA' and nj_student_tier = 'Bucket 3'
+        then 'B3E'
+        when discipline = 'Math' and nj_student_tier = 'Bucket 3'
+        then 'B3M'
+        when discipline = 'ELA' and nj_student_tier = 'Bucket 4'
         then 'BUE'
-        when discipline = 'Math' and nj_student_tier is null
+        when discipline = 'Math' and nj_student_tier = 'Bucket 4'
         then 'BUM'
     end as `07 Program ID`,
 

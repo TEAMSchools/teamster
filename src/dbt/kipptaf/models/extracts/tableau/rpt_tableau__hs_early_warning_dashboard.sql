@@ -38,6 +38,11 @@ select
     co.code_location as `db_name`,
     co.boy_status,
     co.`ada`,
+    co.cumulative_y1_gpa,
+    co.cumulative_y1_gpa_projected,
+    co.earned_credits_cum,
+    co.earned_credits_cum_projected,
+    co.potential_credits_cum,
 
     dt.name as term_name,
     dt.code as reporting_term,
@@ -61,18 +66,12 @@ select
     gpa.gpa_y1_unweighted,
     gpa.gpa_term,
 
-    gpc.cumulative_y1_gpa,
-    gpc.cumulative_y1_gpa_projected,
-    gpc.earned_credits_cum,
-    gpc.earned_credits_cum_projected,
-    gpc.potential_credits_cum,
-
     sus.suspension_count,
     sus.suspension_days,
 
 from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
-    {{ ref("stg_reporting__terms") }} as dt
+    {{ ref("stg_google_sheets__reporting__terms") }} as dt
     on co.academic_year = dt.academic_year
     and co.schoolid = dt.school_id
     and dt.type = 'RT'
@@ -95,11 +94,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
     and dt.name = gpa.term_name
 left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gpc
-    on co.studentid = gpc.studentid
-    and co.schoolid = gpc.schoolid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpc") }}
-left join
     suspension as sus
     on co.student_number = sus.student_school_id
     and co.academic_year = sus.create_ts_academic_year
@@ -107,5 +101,5 @@ left join
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
-    and co.is_enrolled_recent
     and co.school_level = 'HS'
+    and co.is_enrolled_recent

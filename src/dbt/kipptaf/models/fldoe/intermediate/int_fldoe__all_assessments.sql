@@ -70,7 +70,7 @@ left join
     and fl.administration_window = sc.administration_window
 /* gets FL sublevels & scale for growth */
 left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cw1
+    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cw1
     on sc.source_system = cw1.source_system
     and sc.destination_system = cw1.destination_system
     and fl.assessment_subject = cw1.test_name
@@ -78,7 +78,7 @@ left join
     and fl.scale_score between cw1.scale_low and cw1.scale_high
 /* gets proficient scale score for current-year scores */
 left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cw2
+    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cw2
     on sc.source_system = cw2.source_system
     and sc.destination_system = cw2.destination_system
     and fl.assessment_subject = cw2.test_name

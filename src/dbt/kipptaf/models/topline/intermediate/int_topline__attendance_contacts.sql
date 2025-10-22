@@ -77,7 +77,7 @@ inner join
     and att.is_suspended = 0
     and att.membershipvalue = 1
 left join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on att.schoolid = rt.school_id
     and att.calendardate between rt.start_date and rt.end_date
     and rt.type = 'RT'

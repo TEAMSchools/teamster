@@ -263,12 +263,12 @@ left join
     on ru.performance_band_set_id = pbl.performance_band_set_id
     and ru.percent_correct between pbl.minimum_value and pbl.maximum_value
 left join
-    {{ ref("stg_reporting__terms") }} as rta
+    {{ ref("stg_google_sheets__reporting__terms") }} as rta
     on ru.administered_at between rta.start_date and rta.end_date
     and ru.powerschool_school_id = rta.school_id
     and rta.type = 'RT'
 left join
-    {{ ref("stg_reporting__terms") }} as rtt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rtt
     on ru.date_taken between rtt.start_date and rtt.end_date
     and ru.powerschool_school_id = rtt.school_id
     and rtt.type = 'RT'

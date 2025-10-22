@@ -37,6 +37,7 @@ select
     co.ethnicity,
     co.is_out_of_district,
     co.is_self_contained,
+    co.iep_status,
 
     date_day,
 
@@ -47,8 +48,6 @@ select
     rt.name as term,
 
     if(date_day = rt.end_date, true, false) as is_last_day_of_term,
-
-    if(co.spedlep like 'SPED%', 'IEP', 'No IEP') as iep_status,
 
     if(date_day >= s.first_suspension_date, 1, 0) as is_susp_running,
     if(date_day >= s.first_suspension_date_iss, 1, 0) as is_iss_running,
@@ -90,7 +89,7 @@ left join
     and date_day = sd.end_date
     and sd.is_suspension
 left join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on date_day between rt.start_date and rt.end_date
     and co.schoolid = rt.school_id
     and co.academic_year = rt.academic_year

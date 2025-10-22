@@ -21,7 +21,8 @@ with
             ) as is_pass_4_lessons_int,
         from {{ ref("int_iready__instruction_by_lesson_union") }} as il
         inner join
-            {{ ref("stg_people__location_crosswalk") }} as cw on il.school = cw.name
+            {{ ref("stg_google_sheets__people__location_crosswalk") }} as cw
+            on il.school = cw.name
         inner join
             {{ ref("int_powerschool__calendar_week") }} as pw
             on il.academic_year_int = pw.academic_year
@@ -59,10 +60,10 @@ with
     identifiers as (
         select
             co.student_number,
-            co.lastfirst as student_name,
+            co.student_name,
             co.academic_year,
             co.schoolid,
-            co.school_abbreviation as school,
+            co.school,
             co.region,
             co.grade_level,
             co.enroll_status,
@@ -72,11 +73,24 @@ with
             co.ethnicity,
             co.year_in_network,
             co.is_self_contained,
-
-            w.week_start_monday,
-            w.week_end_sunday,
-            w.date_count as days_in_session,
-            w.quarter as term,
+            co.dibels_most_recent_composite,
+            co.state_test_proficiency,
+            co.is_exempt_iready,
+            co.team as homeroom_section,
+            co.advisor_teachernumber as homeroom_teachernumber,
+            co.advisor_lastfirst as homeroom_teacher_name,
+            co.hos as head_of_school,
+            co.iep_status,
+            co.ml_status,
+            co.status_504,
+            co.self_contained_status,
+            co.gifted_and_talented,
+            co.nj_student_tier,
+            co.week_start_monday,
+            co.week_end_sunday,
+            co.date_count as days_in_session,
+            co.quarter as term,
+            co.is_current_week_mon_sun as is_current_week,
 
             sc.title,
             sc.subject_area,
@@ -105,89 +119,41 @@ with
             cc.teacher_lastfirst as course_teacher_name,
             cc.is_foundations,
 
-            sf.dibels_most_recent_composite,
-            sf.state_test_proficiency,
-            sf.is_exempt_iready,
-
-            hr.sections_section_number as homeroom_section,
-            hr.teachernumber as homeroom_teachernumber,
-            hr.teacher_lastfirst as homeroom_teacher_name,
-
-            lc.head_of_school_preferred_name_lastfirst as head_of_school,
-
-            coalesce(sf.nj_student_tier, 'Unbucketed') as nj_student_tier,
-
             cast(r.assessment_id as string) as assessment_id,
-
-            if(co.lep_status, 'ML', 'Not ML') as ml_status,
-            if(co.is_504, 'Has 504', 'No 504') as status_504,
-            if(
-                co.is_self_contained, 'Self-contained', 'Not self-contained'
-            ) as self_contained_status,
-            if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
-            coalesce(co.gifted_and_talented, 'N') as gifted_and_talented,
-
-            if(
-                current_date('{{ var("local_timezone") }}')
-                between w.week_start_monday and w.week_end_sunday,
-                true,
-                false
-            ) as is_current_week,
 
             if(r.date_taken is not null, 1, 0) as is_complete,
 
             case
                 when r.is_mastery then 1 when not r.is_mastery then 0
             end as is_mastery_int,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
-        inner join
-            {{ ref("int_powerschool__calendar_week") }} as w
-            on co.academic_year = w.academic_year
-            and co.schoolid = w.schoolid
-            and w.week_end_sunday between co.entrydate and co.exitdate
+        from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as co
         left join
             {{ ref("int_assessments__scaffold") }} as sc
             on co.student_number = sc.powerschool_student_number
             and co.academic_year = sc.academic_year
             and co.region = sc.region
-            and sc.administered_at between w.week_start_monday and w.week_end_sunday
+            and sc.administered_at between co.week_start_monday and co.week_end_sunday
         left join
             {{ ref("int_assessments__response_rollup") }} as r
             on sc.powerschool_student_number = r.powerschool_student_number
             and sc.assessment_id = r.assessment_id
         left join
-            {{ ref("stg_assessments__standard_domains") }} as sd
+            {{ ref("stg_google_sheets__assessments__standard_domains") }} as sd
             on r.response_type_code = sd.standard_code
         left join
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
             and co.yearid = cc.cc_yearid
+            and co.powerschool_credittype = cc.courses_credittype
             and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
             and r.subject_area = cc.illuminate_subject_area
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
-        left join
-            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-            on co.student_number = sf.student_number
-            and co.academic_year = sf.academic_year
-            and cc.courses_credittype = sf.powerschool_credittype
-            and sf.rn_year = 1
-        left join
-            {{ ref("base_powerschool__course_enrollments") }} as hr
-            on co.studentid = hr.cc_studentid
-            and co.yearid = hr.cc_yearid
-            and co.schoolid = hr.cc_schoolid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="hr") }}
-            and hr.cc_course_number = 'HR'
-            and not hr.is_dropped_section
-            and hr.rn_course_number_year = 1
-        left join
-            {{ ref("int_people__leadership_crosswalk") }} as lc
-            on co.schoolid = lc.home_work_location_powerschool_school_id
         where
             co.enroll_status = 0
-            and co.academic_year >= {{ var("current_academic_year") - 2 }}
+            and co.is_enrolled_week_end
             and not co.is_out_of_district
+            and co.academic_year >= {{ var("current_academic_year") - 2 }}
             {# TODO: Remove SY26 #}
             /* Manual filter to avoid dashboard roll-up */
             and sc.module_type != 'WPP'
@@ -305,13 +271,7 @@ select
     coalesce(ip.is_pass_4_lessons_int_math, 0) as is_passed_iready_4plus_math_int,
 from identifiers as co
 left join
-    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-    on co.student_number = sf.student_number
-    and co.academic_year = sf.academic_year
-    and co.subject_area = sf.illuminate_subject_area
-    and sf.rn_year = 1
-left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as qbls
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
     on co.academic_year = qbls.academic_year
     and co.term = qbls.term_name
     and co.region = qbls.region
@@ -413,13 +373,7 @@ select
     null as is_passed_iready_4plus_math_int,
 from identifiers as co
 left join
-    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-    on co.student_number = sf.student_number
-    and co.academic_year = sf.academic_year
-    and co.course_credittype = sf.assessment_dashboard_join
-    and sf.rn_year = 1
-left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as qbls
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
     on co.academic_year = qbls.academic_year
     and co.term = qbls.term_name
     and co.region = qbls.region
@@ -556,7 +510,7 @@ inner join
     on r.home_work_location_powerschool_school_id = w.schoolid
     and o.observed_at between w.week_start_monday and w.week_end_sunday
 left join
-    {{ ref("stg_people__location_crosswalk") }} as cw
+    {{ ref("stg_google_sheets__people__location_crosswalk") }} as cw
     on r.home_work_location_name = cw.name
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc

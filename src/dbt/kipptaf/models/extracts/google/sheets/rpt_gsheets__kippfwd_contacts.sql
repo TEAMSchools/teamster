@@ -3,12 +3,19 @@ with
         select
             ktc.contact_id as contact__c,
 
-            c.topic as comments__c,
-            c.response as next_steps__c,
             c.call_date as date__c,
+
+            trim(
+                regexp_replace(regexp_replace(c.topic, r'\r|\n', ' '), r'\s+', ' ')
+            ) as comments__c,
+
+            trim(
+                regexp_replace(regexp_replace(c.response, r'\r|\n', ' '), r'\s+', ' ')
+            ) as next_steps__c,
 
             if(c.call_status = 'Completed', 'Successful', 'Outreach') as status__c,
 
+            -- do not use this for years prior to 2025
             case
                 concat(cast(extract(month from c.call_date) as string), c.reason)
                 when '8KF: AS'
@@ -101,4 +108,4 @@ left join
     and d.date__c = s.date__c
     and d.status__c = s.status__c
     and d.type__c = s.type__c
-where d.academic_year = {{ var("current_academic_year") }} and s.contact__c is null
+where d.academic_year = {{ var("current_academic_year") }} and s.subject__c is null

@@ -1,0 +1,11 @@
+models:
+  - name: stg_google_sheets__coupa__user_exceptions
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: coupa_school_name
+        data_type: string
+      - name: home_work_location_name
+        data_type: string
+      - name: sage_intacct_department
+        data_type: int64

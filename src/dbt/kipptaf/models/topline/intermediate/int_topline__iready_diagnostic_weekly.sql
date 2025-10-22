@@ -32,7 +32,7 @@ select
     end as is_proficient,
 from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as cw
 inner join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on cw.academic_year = rt.academic_year
     and cw.region = rt.city
     and cw.week_start_monday between rt.start_date and rt.end_date

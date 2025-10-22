@@ -37,7 +37,7 @@ models:
         staging:
           +materialized: table
           +contract:
-            enabled: true
+            enforced: true
       workforce_manager:
         +schema: adp_workforce_manager
         +meta:
@@ -53,12 +53,12 @@ models:
           staging:
             +materialized: table
             +contract:
-              enabled: true
+              enforced: true
         sftp:
           staging:
             +materialized: table
             +contract:
-              enabled: true
+              enforced: true
         fivetran:
           +enabled: false
     alchemer:
@@ -74,13 +74,13 @@ models:
           +enabled: false
         sftp:
           +contract:
-            enabled: true
+            enforced: true
     assessments:
       +schema: assessments
       staging:
         +materialized: table
         +contract:
-          enabled: true
+          enforced: true
       disabled:
         +enabled: false
     collegeboard:
@@ -88,24 +88,24 @@ models:
       staging:
         +materialized: table
         +contract:
-          enabled: true
+          enforced: true
       drive:
         staging:
           +materialized: table
           +contract:
-            enabled: true
+            enforced: true
     coupa:
       +schema: coupa
       api:
         staging:
           +materialized: table
           +contract:
-            enabled: true
+            enforced: true
       drive:
         staging:
           +materialized: table
           +contract:
-            enabled: true
+            enforced: true
       fivetran:
         +enabled: false
     crdc:
@@ -113,7 +113,7 @@ models:
       staging:
         +materialized: table
         +contract:
-          enabled: true
+          enforced: true
     dayforce:
       +schema: dayforce
       +enabled: false
@@ -122,7 +122,7 @@ models:
       sftp:
         staging:
           +contract:
-            enabled: true
+            enforced: true
     edplan:
       +schema: edplan
     extracts:
@@ -141,7 +141,7 @@ models:
       staging:
         +materialized: table
         +contract:
-          enabled: true
+          enforced: true
     fldoe:
       +schema: fldoe
     google:
@@ -152,7 +152,7 @@ models:
             group: google_appsheet
         staging:
           +contract:
-            enabled: true
+            enforced: true
       directory:
         +schema: google_directory
         +meta:
@@ -161,7 +161,7 @@ models:
         staging:
           +materialized: table
           +contract:
-            enabled: true
+            enforced: true
       forms:
         +schema: google_forms
         +meta:
@@ -170,12 +170,12 @@ models:
         staging:
           +materialized: table
           +contract:
-            enabled: true
+            enforced: true
         drive:
           staging:
             +materialized: table
             +contract:
-              enabled: true
+              enforced: true
       sheets:
         +schema: google_sheets
         +meta:
@@ -188,17 +188,16 @@ models:
           +meta:
             dagster:
               tags: google_sheet
+          +tags: google_sheet
         intermediate:
           +materialized: table
-        disabled:
-          +enabled: false
     illuminate:
       +schema: illuminate
       dlt:
         +materialized: table
         staging:
           +contract:
-            enabled: true
+            enforced: true
       fivetran:
         +enabled: false
     instagram:
@@ -212,24 +211,24 @@ models:
       staging:
         +materialized: table
         +contract:
-          enabled: true
+          enforced: true
       drive:
         staging:
           +materialized: table
           +contract:
-            enabled: true
+            enforced: true
     knowbe4:
       +schema: knowbe4
       staging:
         +materialized: table
         +contract:
-          enabled: true
+          enforced: true
     ldap:
       +schema: ldap
       staging:
         +materialized: table
         +contract:
-          enabled: true
+          enforced: true
     marts:
       +schema: marts
     metrics:
@@ -239,7 +238,7 @@ models:
       staging:
         +materialized: table
         +contract:
-          enabled: true
+          enforced: true
     overgrad:
       +schema: overgrad
     pearson:
@@ -248,19 +247,15 @@ models:
         staging:
           +materialized: table
           +contract:
-            enabled: true
+            enforced: true
     people:
       +schema: people
       +materialized: table
-      disabled:
-        +enabled: false
     performance_management:
       +schema: performance_management
       +materialized: table
     powerschool:
       +schema: powerschool
-      disabled:
-        +enabled: false
     powerschool_enrollment:
       +schema: powerschool_enrollment
     renlearn:
@@ -279,25 +274,19 @@ models:
       +schema: smartrecruiters
     students:
       +schema: students
-      disabled:
-        +enabled: false
     surveys:
       +schema: surveys
       +materialized: table
-      disabled:
-        +enabled: false
     tableau:
       +schema: tableau
       staging:
         +materialized: table
         +contract:
-          enabled: true
+          enforced: true
       disabled:
         +enabled: false
     titan:
       +schema: titan
-      disabled:
-        +enabled: false
     topline:
       +schema: topline
     zendesk:
@@ -305,6 +294,6 @@ models:
       staging:
         +materialized: table
         +contract:
-          enabled: true
+          enforced: true
       disabled:
         +enabled: false

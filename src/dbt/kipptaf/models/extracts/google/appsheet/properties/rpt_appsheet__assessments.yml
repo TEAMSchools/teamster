@@ -1,5 +1,7 @@
 models:
   - name: rpt_appsheet__assessments
+    config:
+      materialized: view
     columns:
       - name: assessment_id
         data_type: int64

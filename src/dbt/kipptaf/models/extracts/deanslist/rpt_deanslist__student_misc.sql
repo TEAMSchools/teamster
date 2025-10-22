@@ -1,7 +1,7 @@
 with
     ug_school as (
         select studentid, schoolid, _dbt_source_relation,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_extracts__student_enrollments") }}
         where rn_undergrad = 1 and grade_level != 99
     ),
 
@@ -12,7 +12,7 @@ with
             _dbt_source_relation,
             min(entrydate) as school_entrydate,
             max(exitdate) as school_exitdate,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_extracts__student_enrollments") }}
         group by studentid, schoolid, _dbt_source_relation
     ),
 
@@ -69,7 +69,7 @@ with
             end as enroll_status,
 
             if(co.schoolid = 999999, ug.schoolid, co.schoolid) as schoolid,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
             {{ ref("stg_powerschool__students") }} as s
             on co.studentid = s.id
