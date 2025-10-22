@@ -11,19 +11,19 @@ models:
         data_type: string
       - name: expected_scope
         data_type: string
+      - name: expected_score_type
+        data_type: string
       - name: expected_subject_area
         data_type: string
-      - name: aligned_goal_category
-        data_type: string
-      - name: goal_category
-        data_type: string
-      - name: goal_type
-        data_type: string
-      - name: goal_subtype
+      - name: expected_goal_type
         data_type: string
       - name: min_score
-        data_type: int64
+        data_type: float64
       - name: pct_goal
         data_type: float64
-      - name: expected_score_type
+      - name: expected_metric_name
+        data_type: string
+      - name: expected_goal_subtype
+        data_type: string
+      - name: expected_metric_label
         data_type: string
