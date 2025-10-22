@@ -39,17 +39,7 @@ with
         from {{ ref("stg_google_sheets__kippfwd_expected_assessments") }}
         cross join
             unnest(
-<<<<<<< HEAD
-                [
-                    'Scale Score',
-                    'Max Scale Score',
-                    'Superscore',
-                    'Growth Score Change',
-                    'Growth Score Change GL'
-                ]
-=======
                 ['Scale Score', 'Max Scale Score', 'Superscore', 'Growth Score Change']
->>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1
             ) as expected_score_category
     ),
 
@@ -80,12 +70,7 @@ with
                     scale_score as 'Scale Score',
                     max_scale_score as 'Max Scale Score',
                     superscore as 'Superscore',
-<<<<<<< HEAD
-                    total_growth_score_change as 'Growth Score Change',
-                    total_growth_score_change_gl as 'Growth Score Change GL'
-=======
                     total_growth_score_change as 'Growth Score Change'
->>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1
                 )
             )
     ),
@@ -166,23 +151,11 @@ inner join
     expected_admins as ea
     on 'foo' = ea.bar
     and e.region = ea.expected_region
-<<<<<<< HEAD
-    and ea.expected_score_category
-    in ('Scale Score', 'Total Growth Score Change', 'Total Growth Score Change GL')
-    and ea.expected_filter_group not in (
-        'Math Previous Total Score Change',
-        'EBRW Previous Total Score Change',
-        'Math Previous Total Score Change GL',
-        'EBRW Previous Total Score Change GL',
-        'Total Previous Total Score Change',
-        'Total Previous Total Score Change GL',
-=======
     and ea.expected_score_category in ('Scale Score', 'Total Growth Score Change')
     and ea.expected_filter_group not in (
         'Math Previous Total Score Change',
         'EBRW Previous Total Score Change',
         'Total Previous Total Score Change',
->>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1
         'Total Previous Scale Score',
         'Total Growth Scale Score'
     )
