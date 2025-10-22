@@ -25,7 +25,7 @@ with
     )
 
 select
-    s.*,
+    *,
 
     case
         when expected_month_round = 'Year'
@@ -46,16 +46,16 @@ select
 
     concat(
         'G',
-        cast(s.expected_grade_level as string),
+        cast(expected_grade_level as string),
         ' ',
-        s.expected_admin_season,
+        expected_admin_season,
         ' ',
-        s.expected_test_type,
+        expected_test_type,
         ' ',
-        s.expected_scope,
+        expected_scope,
         ' ',
-        s.expected_grouping
+        expected_grouping
     ) as expected_field_name,
 
-from scores as s
-where s.expected_admin_season != 'Not Official'
+from scores
+where expected_admin_season != 'Not Official'
