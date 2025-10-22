@@ -21,7 +21,7 @@ with
         }}
     ),
 
-    union_year as (
+    union_year_pre as (
         select
             'Academics' as domain,
             'DIBELS Benchmark' as subdomain,
@@ -117,6 +117,37 @@ with
             and {{ union_dataset_join_clause(left_alias="fg", right_alias="gc") }}
     ),
 
+    union_final as (
+        select
+            domain,
+            subdomain,
+            academic_year,
+            region,
+            term,
+            _dbt_source_relation,
+            studentid,
+            discipline,
+            metric,
+            metric_string,
+        from union_quarter
+
+        union all
+
+        select
+            uy.domain,
+            uy.subdomain,
+            uy.academic_year,
+            uy.region,
+            term,
+            uy._dbt_source_relation,
+            uy.studentid,
+            uy.discipline,
+            uy.metric,
+            uy.metric_string,
+        from union_year as uy
+        cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term
+    )
+
     criteria_test_union as (
         select
             co.student_number,
@@ -165,69 +196,10 @@ with
             and rt.name = g.term
             and g.goal_type = 'Promo'
         left join
-            union_year as u
+            union_final as u
             on co.academic_year = u.academic_year
             and co.student_number = u.student_number
-            and g.region = u.region
-            and g.subject = u.discipline
-            and g.domain = u.domain
-            and g.subdomain = u.subdomain
-        where co.rn_year = 1 and co.grade_level != 99
-
-        union all
-
-        select
-            co.student_number,
-            co.academic_year,
-            co.grade_level,
-            co.iep_status,
-            co.region,
-
-            rt.name as term,
-            rt.is_current as is_current_term,
-
-            g.domain,
-            g.subdomain,
-            g.subject as discipline,
-            g.goal_direction,
-            g.cutoff,
-            g.rule_group,
-            g.rule_group_grade,
-
-            u.metric,
-            cast(u.metric_string as string) as metric_string,
-
-            case
-                when g.goal_direction = '<' and u.metric < g.cutoff
-                then true
-                when g.goal_direction = '<=' and u.metric <= g.cutoff
-                then true
-                when g.goal_direction = '>' and u.metric > g.cutoff
-                then true
-                when g.goal_direction = '>=' and u.metric >= g.cutoff
-                then true
-                else false
-            end as is_met_criteria,
-        from {{ ref("int_extracts__student_enrollments") }} as co
-        inner join
-            {{ ref("stg_google_sheets__reporting__terms") }} as rt
-            on co.academic_year = rt.academic_year
-            and co.schoolid = rt.school_id
-            and rt.type = 'RT'
-        inner join
-            {{ ref("stg_google_sheets__topline_student_goals") }} as g
-            on co.academic_year = g.academic_year
-            and co.region = g.region
-            and co.iep_status = g.iep_status
-            and co.grade_level = g.grade_level
-            and rt.name = g.term
-            and g.goal_type = 'Promo'
-        left join
-            union_quarter as u
-            on co.academic_year = u.academic_year
-            and co.studentid = u.studentid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="u") }}
-            and rt.name = g.term
+            and rt.name = u.term
             and g.region = u.region
             and g.subject = u.discipline
             and g.domain = u.domain
