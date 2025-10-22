@@ -214,8 +214,6 @@ select
 
     round(coalesce(dr.runnning_superscore, a.superscore), 0) as running_superscore,
 
-<<<<<<< HEAD
-=======
     if(
         s.subject_area in ('Composite', 'Combined'), 'Total', s.subject_area
     ) as aligned_subject_area,
@@ -257,7 +255,6 @@ select
             ["s.student_number", "s.test_type", "s.score_type", "s.test_date"]
         )
     }} as surrogate_key,
->>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1
 from scores as s
 left join
     max_score as m
