@@ -42,8 +42,8 @@ with
                     'Scale Score',
                     'Max Scale Score',
                     'Superscore',
-                    'Total Growth Score Change',
-                    'Total Growth Score Change GL'
+                    'Growth Score Change',
+                    'Growth Score Change GL'
                 ]
             ) as expected_score_category
     ),
@@ -75,8 +75,8 @@ with
                     scale_score as 'Scale Score',
                     max_scale_score as 'Max Scale Score',
                     superscore as 'Superscore',
-                    total_growth_score_change as 'Total Growth Score Change',
-                    total_growth_score_change_gl as 'Total Growth Score Change GL'
+                    total_growth_score_change as 'Growth Score Change',
+                    total_growth_score_change_gl as 'Growth Score Change GL'
                 )
             )
     ),
@@ -157,7 +157,7 @@ inner join
     expected_admins as ea
     on 'foo' = ea.bar
     and ea.expected_score_category
-    in ('Scale Score', 'Previous Total Score Change', 'Previous Total Score Change GL')
+    in ('Scale Score', 'Total Growth Score Change', 'Total Growth Score Change GL')
     and ea.expected_filter_group not in (
         'Math Previous Total Score Change',
         'EBRW Previous Total Score Change',
