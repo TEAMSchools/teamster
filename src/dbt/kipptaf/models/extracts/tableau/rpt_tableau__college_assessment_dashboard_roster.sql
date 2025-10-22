@@ -1,14 +1,24 @@
 with
     scores as (
-        select *,
+        select
+            student_number,
+            unique_test_admin_id,
+            scale_score as score,
 
-        from
-            {{ ref("int_tableau__college_assessment_roster_scores") }} unpivot (
-                score for score_category in (
-                    scale_score as 'Scale Score',
-                    total_growth_score_change as 'Growth Score Change'
-                )
-            )
+            'Scale Score' as score_category,
+
+        from {{ ref("int_tableau__college_assessment_roster_scores") }}
+
+        union all
+
+        select
+            student_number,
+            unique_test_admin_id,
+            total_growth_score_change as score,
+
+            'Growth Score Change' as score_category,
+
+        from {{ ref("int_tableau__college_assessment_roster_scores") }}
     )
 
 select
