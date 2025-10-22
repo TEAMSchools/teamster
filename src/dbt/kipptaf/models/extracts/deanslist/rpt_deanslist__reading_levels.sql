@@ -6,9 +6,9 @@ with
             s.region,
             s.schoolid as school_id,
             s.student_number,
-            s.lastfirst as student_name,
-            s.first_name as student_first_name,
-            s.last_name as student_last_name,
+            s.student_name,
+            s.student_first_name,
+            s.student_last_name,
 
             c.period,
             c.measure_standard_level as composite_level,
@@ -38,7 +38,7 @@ with
                 then 'Not Met'
             end as composite_expectations,
 
-        from {{ ref("base_powerschool__student_enrollments") }} as s
+        from {{ ref("int_extracts__student_enrollments") }} as s
         inner join
             {{ ref("int_amplify__all_assessments") }} as c
             on s.academic_year = c.academic_year
@@ -66,7 +66,7 @@ with
 select
     academic_year,
     student_number,
-    period,
+    `period`,
     composite_level,
     composite_expectations,
     literacy_key_concept,
@@ -78,14 +78,14 @@ select
     'Not applicable' as growth_level,
     'Q1' as `quarter`,
 from dibels
-where period = 'BOY'
+where `period` = 'BOY'
 
 union all
 
 select
     academic_year,
     student_number,
-    period,
+    `period`,
     composite_level,
     composite_expectations,
     literacy_key_concept,
@@ -97,7 +97,7 @@ select
 
     'Q2' as `quarter`,
 from dibels
-where period = 'MOY'
+where `period` = 'MOY'
 
 union all
 
@@ -105,7 +105,7 @@ select
 
     academic_year,
     student_number,
-    period,
+    `period`,
     composite_level,
     composite_expectations,
     literacy_key_concept,
@@ -117,14 +117,14 @@ select
 
     'Q3' as `quarter`,
 from dibels
-where period = 'MOY'
+where `period` = 'MOY'
 
 union all
 
 select
     academic_year,
     student_number,
-    period,
+    `period`,
     composite_level,
     composite_expectations,
     literacy_key_concept,
@@ -136,4 +136,4 @@ select
 
     'Q4' as `quarter`,
 from dibels
-where period = 'EOY'
+where `period` = 'EOY'

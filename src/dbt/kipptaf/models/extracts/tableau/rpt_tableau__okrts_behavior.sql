@@ -132,11 +132,14 @@ select
     co.rn_year,
     co.team as homeroom_section,
     co.advisor_lastfirst as homeroom_teacher_name,
-
-    cw.quarter as term,
-    cw.week_start_monday,
-    cw.week_end_sunday,
-    cw.date_count as days_in_session,
+    co.iep_status,
+    co.ml_status,
+    co.status_504,
+    co.self_contained_status,
+    co.quarter as term,
+    co.week_start_monday,
+    co.week_end_sunday,
+    co.date_count as days_in_session,
 
     b.category_type,
     b.behavior,
@@ -146,36 +149,23 @@ select
 
     if(bi.behavior is not null, 1, 0) as is_earned_progress_to_quarterly,
 
-    extract(month from cw.week_start_monday) as behavior_month,
-
-    if(co.lep_status, 'ML', 'Not ML') as ml_status,
-    if(co.is_504, 'Has 504', 'No 504') as status_504,
-    if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
-    if(
-        co.is_self_contained, 'Self-contained', 'Not self-contained'
-    ) as self_contained_status,
+    extract(month from co.week_start_monday) as behavior_month,
 
     count(distinct co.student_number) over (
-        partition by co.schoolid, cw.week_start_monday
+        partition by co.schoolid, co.week_start_monday
     ) as school_enrollment_by_week,
-from {{ ref("int_extracts__student_enrollments") }} as co
-inner join
-    {{ ref("int_powerschool__calendar_week") }} as cw
-    on co.schoolid = cw.schoolid
-    and co.academic_year = cw.academic_year
-    and cw.week_start_monday between co.entrydate and co.exitdate
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="cw") }}
+from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 left join
     behavior_aggregation as b
     on co.student_number = b.student_school_id
     and co.academic_year = b.academic_year
-    and cw.week_start_monday = b.week_start_monday
+    and co.week_start_monday = b.week_start_monday
     and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
 left join
     {{ ref("int_deanslist__behavior_incentive_by_term") }} as bi
     on co.student_number = bi.student_school_id
     and co.deanslist_school_id = bi.school_id
     and co.academic_year = bi.academic_year
-    and bi.end_date between cw.week_start_monday and cw.week_end_sunday
+    and bi.end_date between co.week_start_monday and co.week_end_sunday
     and bi.incentive_type = 'Weeks (Progress to Quarterly Incentive)'
-where co.academic_year >= {{ var("current_academic_year") - 1 }}
+where co.is_enrolled_week and co.academic_year >= {{ var("current_academic_year") - 1 }}
