@@ -282,6 +282,8 @@ select
         b.bucket in ('Bucket 1', 'Bucket 2', 'Bucket 3'), b.bucket, 'Bucket 4'
     ) as nj_student_tier,
 
+    if(fp.fldoe_percentile_rank < .255, true, false) as is_low_25_fl,
+
     case
         when
             co.grade_level <= 2
@@ -309,6 +311,11 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="se") }}
     and sj.discipline = se.discipline
     and se.value_type = 'State Assessment Name'
+left join
+    {{ ref("int_assessments__fast_previous_year") }} as fp
+    on co.academic_year = fp.academic_year
+    and co.student_number = fp.student_number
+    and sj.discipline = fp.discipline
 left join
     prev_yr_state_test as py
     /* TODO: find records that only match on SID */

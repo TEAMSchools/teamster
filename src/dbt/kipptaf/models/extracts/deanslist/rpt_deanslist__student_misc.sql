@@ -10,6 +10,7 @@ with
             studentid,
             schoolid,
             _dbt_source_relation,
+
             min(entrydate) as school_entrydate,
             max(exitdate) as school_exitdate,
         from {{ ref("int_extracts__student_enrollments") }}
@@ -18,6 +19,7 @@ with
 
     students as (
         select
+            co._dbt_source_relation,
             co.studentid,
             co.student_number,
             co.state_studentnumber as `SID`,
@@ -33,13 +35,11 @@ with
             co.advisor_email,
             co.lunch_balance,
             co.dob,
-            co._dbt_source_relation,
-
-            s.sched_nextyeargrade,
-
-            ktc.contact_owner_name as ktc_counselor_name,
-            ktc.contact_owner_phone as ktc_counselor_phone,
-            ktc.contact_owner_email as ktc_counselor_email,
+            co.sched_nextyeargrade,
+            co.contact_owner_name as ktc_counselor_name,
+            co.salesforce_contact_owner_phone as ktc_counselor_phone,
+            co.salesforce_contact_owner_email as ktc_counselor_email,
+            co.student_email,
 
             gpa.`GPA_Y1`,
             gpa.gpa_term,
@@ -48,12 +48,14 @@ with
             sch.schoolphone,
             sch.asstprincipal as culture_lead,
 
-            co.student_web_id || '.fam' as family_access_id,
-            co.student_web_id || '@teamstudents.org' as student_email,
+            concat(co.student_web_id, '.fam') as family_access_id,
             concat(co.student_web_password, 'kipp') as student_web_password,
             concat(
                 co.street, ', ', co.city, ', ', co.state, ' ', co.zip
             ) as home_address,
+
+            if(co.schoolid = 999999, ug.schoolid, co.schoolid) as schoolid,
+
             case
                 co.enroll_status
                 when -1
@@ -68,19 +70,24 @@ with
                 then 'Graduated'
             end as enroll_status,
 
-            if(co.schoolid = 999999, ug.schoolid, co.schoolid) as schoolid,
+            case
+                when co.region = 'Camden'
+                then 'kippcamden@kippnj.org'
+                when co.region = 'Newark'
+                then 'kippnewark@kippnj.org'
+            end as regional_email,
+
+            case
+                when co.region = 'Camden'
+                then '973-622-0905 ext. 31003'
+                when co.region = 'Newark'
+                then '973-622-0905 ex 11200'
+            end as regional_phone,
         from {{ ref("int_extracts__student_enrollments") }} as co
-        inner join
-            {{ ref("stg_powerschool__students") }} as s
-            on co.studentid = s.id
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="s") }}
         inner join
             ug_school as ug
             on co.studentid = ug.studentid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="ug") }}
-        left join
-            {{ ref("int_kippadb__roster") }} as ktc
-            on co.student_number = ktc.student_number
         left join
             {{ ref("int_powerschool__gpa_term") }} as gpa
             on co.studentid = gpa.studentid

@@ -7,6 +7,7 @@ with
 
             pp.student_id,
             pp.assessment_subject,
+            pp.discipline,
             pp.scale_score as prev_pm3_scale,
             pp.achievement_level as prev_pm3_achievement_level,
             pp.achievement_level_int as prev_pm3_level_int,
@@ -47,6 +48,7 @@ select
     py.grade_level,
     py.student_id,
     py.assessment_subject,
+    py.discipline,
     py.prev_pm3_scale,
     py.prev_pm3_achievement_level,
     py.prev_pm3_level_int,
@@ -60,6 +62,10 @@ select
 
     cw2.scale_low as scale_for_proficiency,
 
+    if(
+        cw2.scale_low - py.prev_pm3_scale <= 0, null, cw2.scale_low - py.prev_pm3_scale
+    ) as scale_points_to_proficiency_pm3,
+
     case
         when py.prev_pm3_level_int = 5 and cw4.sublevel_number = 8
         then null
@@ -70,9 +76,6 @@ select
         else cw1.scale_low - py.prev_pm3_scale
     end as scale_points_to_growth_pm3,
 
-    if(
-        cw2.scale_low - py.prev_pm3_scale <= 0, null, cw2.scale_low - py.prev_pm3_scale
-    ) as scale_points_to_proficiency_pm3,
 from prev_year as py
 /* gets FL sublevels & scale for growth */
 left join
