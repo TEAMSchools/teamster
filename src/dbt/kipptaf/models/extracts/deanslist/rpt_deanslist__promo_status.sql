@@ -35,8 +35,19 @@ select
 
     ae.athletic_eligibility,
 
-    null as promo_status_lit,
-    cast(null as string) as promo_status_math,
+    if(
+        p.iready_reading_recent
+        in ('2 Grade Levels Below', '3 or More Grade Levels Below')
+        or p.iready_reading_recent is null,
+        'Off-Track',
+        'On-Track'
+    ) as promo_status_lit,
+    if(
+        p.iready_math_recent in ('2 Grade Levels Below', '3 or More Grade Levels Below')
+        or p.iready_reading_recent is null,
+        'Off-Track',
+        'On-Track'
+    ) as promo_status_math,
     null as promo_status_qa_math,
     null as grades_y1_credits_enrolled,
 
