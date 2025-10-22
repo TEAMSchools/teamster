@@ -22,6 +22,7 @@ vars:
 
 models:
   +schema: deanslist
-  staging:
-    +contract:
-      enforced: true
+  deanslist:
+    staging:
+      +contract:
+        enforced: true

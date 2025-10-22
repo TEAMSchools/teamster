@@ -31,6 +31,7 @@ vars:
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
   +schema: titan
-  staging:
-    +contract:
-      enforced: true
+  titan:
+    staging:
+      +contract:
+        enforced: true

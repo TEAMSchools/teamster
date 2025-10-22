@@ -198,6 +198,9 @@ models:
         staging:
           +contract:
             enforced: true
+          repositories:
+            +contract:
+              enforced: false
       fivetran:
         +enabled: false
     instagram:

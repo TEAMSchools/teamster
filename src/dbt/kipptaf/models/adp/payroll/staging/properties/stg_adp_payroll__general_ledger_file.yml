@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: stg_adp_payroll__general_ledger_file
     config:

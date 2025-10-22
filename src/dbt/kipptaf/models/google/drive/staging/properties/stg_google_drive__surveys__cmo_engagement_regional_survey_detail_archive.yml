@@ -2,8 +2,6 @@ models:
   - name: stg_google_drive__surveys__cmo_engagement_regional_survey_detail_archive
     config:
       enabled: false
-      contract:
-        enforced: true
     columns:
       - name: respondent_legal_entity_name
         data_type: string

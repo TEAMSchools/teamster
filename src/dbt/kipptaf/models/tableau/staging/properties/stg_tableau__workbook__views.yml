@@ -2,3 +2,5 @@ models:
   - name: stg_tableau__workbook__views
     config:
       enabled: false
+      +contract:
+        enforced: false
