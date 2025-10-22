@@ -85,11 +85,12 @@ with
         from
             scores pivot (
                 avg(score) for expected_filter_group in (
-                    'SAT Total Superscore' as sat_total_superscore,
-                    'SAT EBRW Max Scale Score' as sat_ebrw_highest,
-                    'SAT Math Max Scale Score' as sat_math_highest
+                    'Total Superscore' as sat_total_superscore,
+                    'EBRW Max Scale Score' as sat_ebrw_highest,
+                    'Math Max Scale Score' as sat_math_highest
                 )
             )
+        where expected_scope = 'SAT'
     ),
 
     superscores_dedup as (
