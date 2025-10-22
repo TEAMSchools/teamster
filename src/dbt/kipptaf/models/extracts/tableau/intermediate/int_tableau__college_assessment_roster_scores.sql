@@ -42,7 +42,7 @@ with
     ),
 
     focus_scores as (
-        -- SAT, as they are month-bound
+        -- SAT, as they are month-bound (12th grade only 12th grade)
         select
             e.student_number,
             e.grade_level,
@@ -76,6 +76,7 @@ with
             and a.expected_region = e.region
             and a.expected_grade_level = e.grade_level
             and e.student_number = s.student_number
+            and e.academic_year = s.academic_year
         where
             e.school_level = 'HS'
             and e.rn_year = 1
