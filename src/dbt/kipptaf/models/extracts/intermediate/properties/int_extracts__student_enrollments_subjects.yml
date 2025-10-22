@@ -10,7 +10,7 @@ models:
               - iready_subject
           config:
             enabled: false
-            severity: warn
+            # severity: warn
             store_failures: true
     columns:
       - name: _dbt_source_relation
@@ -234,4 +234,4 @@ models:
       - name: is_exempt_state_testing
         data_type: boolean
       - name: is_low_25_fl
-        data_type: boolean      
+        data_type: boolean
