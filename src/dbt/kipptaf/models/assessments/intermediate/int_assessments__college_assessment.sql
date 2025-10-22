@@ -197,28 +197,9 @@ select
 
     g.previous_total_score_change,
 
-    unix_date(s.test_date) as date_order,
-
-    concat(
-        'SY',
-        right(cast(s.academic_year as string), 2),
-        ' ',
-        s.test_month,
-        ' ',
-        s.scope,
-        ' ',
-        s.test_type,
-        ' ',
-        s.subject_area
-    ) as field_name,
-
     round(coalesce(d.superscore, a.superscore), 0) as superscore,
 
     round(coalesce(dr.runnning_superscore, a.superscore), 0) as running_superscore,
-
-    if(
-        s.subject_area in ('Composite', 'Combined'), 'Total', s.subject_area
-    ) as aligned_subject_area,
 
     {{
         dbt_utils.generate_surrogate_key(
