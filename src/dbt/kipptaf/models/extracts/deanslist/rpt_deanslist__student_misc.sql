@@ -69,6 +69,19 @@ with
             end as enroll_status,
 
             if(co.schoolid = 999999, ug.schoolid, co.schoolid) as schoolid,
+
+            case
+                when co.region = 'Camden'
+                then 'kippcamden@kippnj.org'
+                when co.region = 'Newark'
+                then ''
+            end as regional_email,
+            case
+                when co.region = 'Camden'
+                then '973-622-0905 ext. 31003'
+                when co.region = 'Newark'
+                then ''
+            end as regional_phone,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
             {{ ref("stg_powerschool__students") }} as s

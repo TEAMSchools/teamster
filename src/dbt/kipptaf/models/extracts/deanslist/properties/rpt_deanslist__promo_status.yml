@@ -53,3 +53,5 @@ models:
         data_type: string
       - name: fast_math_level_recent
         data_type: string
+      - name: athletic_eligibility
+        data_type: string
