@@ -10,7 +10,7 @@ models:
               - entrydate
           config:
             store_failures: true
-            # severity: warn
+            severity: warn
     columns:
       - name: _dbt_source_relation
         data_type: string
