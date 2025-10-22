@@ -60,6 +60,8 @@ select
 
     cw2.scale_low as scale_for_proficiency,
 
+    if(py.assessment_subject = 'Mathematics', 'Math', 'ELA') as discipline,
+
     case
         when py.prev_pm3_level_int = 5 and cw4.sublevel_number = 8
         then null
