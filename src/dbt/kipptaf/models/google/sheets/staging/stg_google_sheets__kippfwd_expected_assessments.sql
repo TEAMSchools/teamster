@@ -14,6 +14,12 @@ with
                 then 'Math'
             end as expected_grouping,
 
+            if(
+                expected_score_type = 'sat_total_score_growth',
+                'sat_total_score',
+                expected_score_type
+            ) as expected_score_type_aligned,
+
             regexp_extract(expected_month_round, r'^([^ ]+)') as expected_month,
 
         from
@@ -81,7 +87,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "s.expected_test_type",
-                "s.expected_score_type",
+                "s.expected_score_type_aligned",
                 "s.expected_grade_level",
                 "s.expected_admin_season",
             ]
