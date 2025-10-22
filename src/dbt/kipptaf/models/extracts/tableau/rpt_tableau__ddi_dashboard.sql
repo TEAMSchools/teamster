@@ -248,9 +248,8 @@ select
     co.state_test_proficiency,
     co.is_exempt_iready,
     co.nj_student_tier,
-
-    sf.is_sipps,
-    sf.is_low_25_fl,
+    co.is_sipps,
+    co.is_low_25_fl,
 
     qbls.qbl,
 
@@ -357,9 +356,8 @@ select
     co.state_test_proficiency,
     co.is_exempt_iready,
     co.nj_student_tier,
-
-    sf.is_sipps,
-    sf.is_low_25_fl,
+    co.is_sipps,
+    co.is_low_25_fl,
 
     qbls.qbl,
 
