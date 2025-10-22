@@ -55,9 +55,7 @@ with
                 expected_field_name, ' ', score_category
             ) as expected_field_name_score_category,
 
-            concat(
-                expected_scope, ' ', expected_grouping, ' ', score_category
-            ) as expected_filter_group,
+            concat(expected_grouping, ' ', score_category) as expected_filter_group,
 
             {{
                 dbt_utils.generate_surrogate_key(
