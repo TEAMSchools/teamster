@@ -42,9 +42,11 @@ select
         then date(o.academic_year + 1, 3, 1)
     end as eval_date,
 from {{ ref("int_schoolmint_grow__observations") }} as o
-inner join {{ ref("stg_people__location_crosswalk") }} as lc on o.school_name = lc.name
+inner join
+    {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
+    on o.school_name = lc.name
 left join
-    {{ ref("stg_reporting__terms") }} as t
+    {{ ref("stg_google_sheets__reporting__terms") }} as t
     on o.observation_type_abbreviation = t.type
     and o.observed_at_date_local between t.start_date and t.end_date
     and lc.region = t.region
@@ -82,7 +84,7 @@ select
     null as eval_date,
 from {{ ref("int_schoolmint_grow__observations") }} as o
 left join
-    {{ ref("stg_reporting__terms") }} as t
+    {{ ref("stg_google_sheets__reporting__terms") }} as t
     on o.observed_at_date_local between t.start_date and t.end_date
     and t.type = 'WT'
 where

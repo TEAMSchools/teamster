@@ -1,6 +1,7 @@
 -- depends_on: {{ ref("stg_powerschool__students") }}
 -- depends_on: {{ source("people", "src_people__student_logins") }}
--- depends_on: {{ source("people", "src_people__student_logins_archive") }}
+-- trunk-ignore(sqlfluff/LT05)
+-- depends_on: {{ source("google_sheets", "src_google_sheets__people__student_logins_archive") }}
 {{
     config(
         materialized="incremental",
@@ -177,5 +178,10 @@
         default_password,
 
         username || '@teamstudents.org' as google_email,
-    from {{ source("people", "src_people__student_logins_archive") }}
+    from
+        {{
+            source(
+                "google_sheets", "src_google_sheets__people__student_logins_archive"
+            )
+        }}
 {% endif %}

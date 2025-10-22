@@ -26,7 +26,7 @@ with
             abs(enr.courses_sched_do_not_print - 1) as include_grades_display,
         from {{ ref("base_powerschool__course_enrollments") }} as enr
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on enr.cc_schoolid = rt.school_id
             and enr.cc_academic_year = rt.academic_year
             and rt.type = 'RT'

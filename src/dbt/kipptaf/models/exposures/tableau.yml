@@ -97,7 +97,6 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      - ref("rpt_tableau__athletic_eligibility")
       - ref("rpt_tableau__community_service")
       - ref("rpt_tableau__graduation_requirements")
       - ref("rpt_tableau__grad_plan_tracking")
@@ -541,7 +540,9 @@ exposures:
         asset:
           metadata:
             id: 970826ab-8d1c-4468-9b84-62f6432a9642
-            cron_schedule: 0 7 * * *
+            cron_schedule:
+              - 0 7 * * *
+              - 0 14 * * *
   - name: survey_dashboard
     label: Survey Dashboard
     type: dashboard

@@ -1,0 +1,213 @@
+models:
+  - name: stg_iready__personalized_instruction_summary
+    columns:
+      - name: student_id
+        data_type: int64
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: academic_year
+        data_type: string
+      - name: all_lessons_completed
+        data_type: int64
+      - name: all_lessons_passed
+        data_type: int64
+      - name: class_es
+        data_type: string
+      - name: class_teacher_s
+        data_type: string
+      - name: date_range_end
+        data_type: date
+      - name: date_range_start
+        data_type: date
+      - name: date_range
+        data_type: string
+      - name: economically_disadvantaged
+        data_type: string
+      - name: english_language_learner
+        data_type: string
+      - name: enrolled
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: hispanic_or_latino
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: migrant
+        data_type: string
+      - name: percent_all_lessons_passed
+        data_type: int64
+      - name: race
+        data_type: string
+      - name: report_group_s
+        data_type: string
+      - name: school
+        data_type: string
+      - name: sex
+        data_type: string
+      - name: special_education
+        data_type: string
+      - name: student_grade
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: total_lesson_time_on_task_min
+        data_type: int64
+      - name: user_name
+        data_type: string
+      - name: comprehension_close_reading_lessons_completed
+        data_type: int64
+      - name: comprehension_close_reading_lessons_passed
+        data_type: int64
+      - name: comprehension_close_reading_percent_lessons_passed
+        data_type: int64
+      - name: comprehension_lessons_completed
+        data_type: int64
+      - name: comprehension_lessons_passed
+        data_type: int64
+      - name: comprehension_percent_lessons_passed
+        data_type: int64
+      - name: high_frequency_words_lessons_completed
+        data_type: int64
+      - name: high_frequency_words_lessons_passed
+        data_type: int64
+      - name: high_frequency_words_percent_lessons_passed
+        data_type: int64
+      - name: phonics_lessons_completed
+        data_type: int64
+      - name: phonics_lessons_passed
+        data_type: int64
+      - name: phonics_percent_lessons_passed
+        data_type: int64
+      - name: phonological_awareness_lessons_completed
+        data_type: int64
+      - name: phonological_awareness_lessons_passed
+        data_type: int64
+      - name: phonological_awareness_percent_lessons_passed
+        data_type: int64
+      - name: vocabulary_lessons_completed
+        data_type: int64
+      - name: vocabulary_lessons_passed
+        data_type: int64
+      - name: vocabulary_percent_lessons_passed
+        data_type: int64
+      - name: comprehension_lessons_completed
+        data_type: int64
+      - name: comprehension_lessons_passed
+        data_type: int64
+      - name: comprehension_percent_lessons_passed
+        data_type: int64
+      - name: endings_affixes_percent_skills_successful
+        data_type: int64
+      - name: endings_affixes_skills_completed
+        data_type: int64
+      - name: endings_affixes_skills_successful
+        data_type: int64
+      - name: high_frequency_words_percent_skills_successful
+        data_type: int64
+      - name: high_frequency_words_skills_completed
+        data_type: int64
+      - name: high_frequency_words_skills_successful
+        data_type: int64
+      - name: language_structures_lessons_completed
+        data_type: int64
+      - name: language_structures_lessons_passed
+        data_type: int64
+      - name: language_structures_percent_lessons_passed
+        data_type: int64
+      - name: multi_syllable_percent_skills_successful
+        data_type: int64
+      - name: multi_syllable_skills_completed
+        data_type: int64
+      - name: multi_syllable_skills_successful
+        data_type: int64
+      - name: single_syllable_percent_skills_successful
+        data_type: int64
+      - name: single_syllable_skills_completed
+        data_type: int64
+      - name: single_syllable_skills_successful
+        data_type: int64
+      - name: vocabulary_lessons_completed
+        data_type: int64
+      - name: vocabulary_lessons_passed
+        data_type: int64
+      - name: vocabulary_percent_lessons_passed
+        data_type: int64
+      - name: algebra_and_algebraic_thinking_lessons_completed
+        data_type: int64
+      - name: algebra_and_algebraic_thinking_lessons_passed
+        data_type: int64
+      - name: algebra_and_algebraic_thinking_percent_lessons_passed
+        data_type: int64
+      - name: geometry_lessons_completed
+        data_type: int64
+      - name: geometry_lessons_passed
+        data_type: int64
+      - name: geometry_percent_lessons_passed
+        data_type: int64
+      - name: measurement_and_data_lessons_completed
+        data_type: int64
+      - name: measurement_and_data_lessons_passed
+        data_type: int64
+      - name: measurement_and_data_percent_lessons_passed
+        data_type: int64
+      - name: number_and_operations_lessons_completed
+        data_type: int64
+      - name: number_and_operations_lessons_passed
+        data_type: int64
+      - name: number_and_operations_percent_lessons_passed
+        data_type: int64
+      - name: data_statistics_and_probability_percent_skills_successful
+        data_type: int64
+      - name: data_statistics_and_probability_skills_completed
+        data_type: int64
+      - name: data_statistics_and_probability_skills_successful
+        data_type: int64
+      - name: decimals_and_operations_percent_skills_successful
+        data_type: int64
+      - name: decimals_and_operations_skills_completed
+        data_type: int64
+      - name: decimals_and_operations_skills_successful
+        data_type: int64
+      - name: equations_and_functions_percent_skills_successful
+        data_type: int64
+      - name: equations_and_functions_skills_completed
+        data_type: int64
+      - name: equations_and_functions_skills_successful
+        data_type: int64
+      - name: fractions_and_operations_percent_skills_successful
+        data_type: int64
+      - name: fractions_and_operations_skills_completed
+        data_type: int64
+      - name: fractions_and_operations_skills_successful
+        data_type: int64
+      - name: geometric_measurement_and_figures_percent_skills_successful
+        data_type: int64
+      - name: geometric_measurement_and_figures_skills_completed
+        data_type: int64
+      - name: geometric_measurement_and_figures_skills_successful
+        data_type: int64
+      - name: rational_numbers_and_operations_percent_skills_successful
+        data_type: int64
+      - name: rational_numbers_and_operations_skills_completed
+        data_type: int64
+      - name: rational_numbers_and_operations_skills_successful
+        data_type: int64
+      - name: ratios_and_proportions_percent_skills_successful
+        data_type: int64
+      - name: ratios_and_proportions_skills_completed
+        data_type: int64
+      - name: ratios_and_proportions_skills_successful
+        data_type: int64
+      - name: whole_numbers_and_operations_percent_skills_successful
+        data_type: int64
+      - name: whole_numbers_and_operations_skills_completed
+        data_type: int64
+      - name: whole_numbers_and_operations_skills_successful
+        data_type: int64
+      - name: academic_year_int
+        data_type: integer
+      - name: _dagster_partition_subject
+        data_type: string

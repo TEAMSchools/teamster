@@ -24,6 +24,8 @@ select
     timestamp(r.created) as created,
     timestamp(r.lastmodified) as last_modified,
 from {{ source("schoolmint_grow", "src_schoolmint_grow__rubrics") }} as r
-cross join unnest(r.measurementgroups) as mg
-cross join unnest(mg.measurements) as m
+-- trunk-ignore-begin(sqlfluff/CV12)
+left join unnest(r.measurementgroups) as mg
+left join unnest(mg.measurements) as m
+-- trunk-ignore-end(sqlfluff/CV12)
 where r._dagster_partition_key = 'f'

@@ -35,12 +35,12 @@ left join
     {{ ref("stg_illuminate__standards__standards") }} as s
     on st.standard_id = s.standard_id
 left join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on a.administered_at between rt.start_date and rt.end_date
     and rt.school_id = 0
     and rt.type = 'RT'
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as ps
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as ps
     on s.custom_code = ps.standard_code
     and rt.name = ps.term_name
     and a.subject_area = ps.illuminate_subject_area
@@ -88,12 +88,12 @@ left join
     {{ ref("stg_illuminate__standards__standards") }} as s
     on st.standard_id = s.standard_id
 left join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on a.administered_at between rt.start_date and rt.end_date
     and rt.school_id = 0
     and rt.type = 'RT'
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as ps
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as ps
     on s.custom_code = ps.standard_code
     and rt.name = ps.term_name
     and a.subject_area = ps.illuminate_subject_area

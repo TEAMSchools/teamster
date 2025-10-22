@@ -21,7 +21,8 @@ with
             ) as _dbt_source_relation,
         from union_relations as ur
         left join
-            {{ ref("stg_people__location_crosswalk") }} as lc on ur.school = lc.name
+            {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
+            on ur.school = lc.name
     )
 
 select

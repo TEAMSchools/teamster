@@ -81,7 +81,7 @@ select
 
 from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as co
 left join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on co.academic_year = rt.academic_year
     and co.region = rt.city
     and rt.type = 'IREX'
@@ -100,7 +100,7 @@ left join
     and rt.name = dr.test_round
     and dr.rn_subj_round = 1
 left join
-    {{ ref("snapshot_iready__instructional_usage_data") }} as iu
+    {{ source("iready", "snapshot_iready__instructional_usage_data") }} as iu
     on co.student_number = iu.student_id
     and co.iready_subject = iu.subject
     and co.week_start_monday = iu.last_week_start_date

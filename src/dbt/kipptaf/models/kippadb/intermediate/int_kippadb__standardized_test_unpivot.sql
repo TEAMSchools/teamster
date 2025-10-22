@@ -129,6 +129,6 @@ select
 
 from unpivoted as u
 left join
-    {{ ref("stg_collegeboard__ap_course_crosswalk") }} as acc
+    {{ ref("stg_google_sheets__collegeboard__ap_course_crosswalk") }} as acc
     on u.test_subject = acc.test_name
     and acc.data_source = 'ADB'

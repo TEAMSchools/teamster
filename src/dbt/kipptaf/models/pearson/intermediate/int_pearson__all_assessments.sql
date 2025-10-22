@@ -100,5 +100,5 @@ select
 
 from union_relations as u
 left join
-    {{ ref("stg_pearson__student_crosswalk") }} as x
+    {{ ref("stg_google_sheets__pearson__student_crosswalk") }} as x
     on u.studenttestuuid = x.student_test_uuid

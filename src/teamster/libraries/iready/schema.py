@@ -325,3 +325,117 @@ class InstructionByLesson(IReadyBaseModel):
     skills_successful: str | None = None
     teacher_assigned_lesson: str | None = None
     topic: str | None = None
+
+
+class PersonalizedInstructionSummary(BaseModel):
+    academic_year: str | None = None
+    all_lessons_completed: str | None = None
+    all_lessons_passed: str | None = None
+    class_es: str | None = None
+    class_teacher_s: str | None = None
+    date_range_end: str | None = None
+    date_range_start: str | None = None
+    date_range: str | None = None
+    economically_disadvantaged: str | None = None
+    english_language_learner: str | None = None
+    enrolled: str | None = None
+    first_name: str | None = None
+    hispanic_or_latino: str | None = None
+    last_name: str | None = None
+    migrant: str | None = None
+    percent_all_lessons_passed: str | None = None
+    race: str | None = None
+    report_group_s: str | None = None
+    school: str | None = None
+    sex: str | None = None
+    special_education: str | None = None
+    student_grade: str | None = None
+    student_id: str | None = None
+    subject: str | None = None
+    total_lesson_time_on_task_min: str | None = None
+    user_name: str | None = None
+    # ela
+    i_ready_comprehension_close_reading_lessons_completed: str | None = None
+    i_ready_comprehension_close_reading_lessons_passed: str | None = None
+    i_ready_comprehension_close_reading_percent_lessons_passed: str | None = None
+    i_ready_comprehension_lessons_completed: str | None = None
+    i_ready_comprehension_lessons_passed: str | None = None
+    i_ready_comprehension_percent_lessons_passed: str | None = None
+    i_ready_high_frequency_words_lessons_completed: str | None = None
+    i_ready_high_frequency_words_lessons_passed: str | None = None
+    i_ready_high_frequency_words_percent_lessons_passed: str | None = None
+    i_ready_phonics_lessons_completed: str | None = None
+    i_ready_phonics_lessons_passed: str | None = None
+    i_ready_phonics_percent_lessons_passed: str | None = None
+    i_ready_phonological_awareness_lessons_completed: str | None = None
+    i_ready_phonological_awareness_lessons_passed: str | None = None
+    i_ready_phonological_awareness_percent_lessons_passed: str | None = None
+    i_ready_vocabulary_lessons_completed: str | None = None
+    i_ready_vocabulary_lessons_passed: str | None = None
+    i_ready_vocabulary_percent_lessons_passed: str | None = None
+    i_ready_pro_comprehension_lessons_completed: str | None = None
+    i_ready_pro_comprehension_lessons_passed: str | None = None
+    i_ready_pro_comprehension_percent_lessons_passed: str | None = None
+    i_ready_pro_endings_affixes_percent_skills_successful: str | None = None
+    i_ready_pro_endings_affixes_skills_completed: str | None = None
+    i_ready_pro_endings_affixes_skills_successful: str | None = None
+    i_ready_pro_high_frequency_words_percent_skills_successful: str | None = None
+    i_ready_pro_high_frequency_words_skills_completed: str | None = None
+    i_ready_pro_high_frequency_words_skills_successful: str | None = None
+    i_ready_pro_language_structures_lessons_completed: str | None = None
+    i_ready_pro_language_structures_lessons_passed: str | None = None
+    i_ready_pro_language_structures_percent_lessons_passed: str | None = None
+    i_ready_pro_multi_syllable_percent_skills_successful: str | None = None
+    i_ready_pro_multi_syllable_skills_completed: str | None = None
+    i_ready_pro_multi_syllable_skills_successful: str | None = None
+    i_ready_pro_single_syllable_percent_skills_successful: str | None = None
+    i_ready_pro_single_syllable_skills_completed: str | None = None
+    i_ready_pro_single_syllable_skills_successful: str | None = None
+    i_ready_pro_vocabulary_lessons_completed: str | None = None
+    i_ready_pro_vocabulary_lessons_passed: str | None = None
+    i_ready_pro_vocabulary_percent_lessons_passed: str | None = None
+    # math
+    i_ready_algebra_and_algebraic_thinking_lessons_completed: str | None = None
+    i_ready_algebra_and_algebraic_thinking_lessons_passed: str | None = None
+    i_ready_algebra_and_algebraic_thinking_percent_lessons_passed: str | None = None
+    i_ready_geometry_lessons_completed: str | None = None
+    i_ready_geometry_lessons_passed: str | None = None
+    i_ready_geometry_percent_lessons_passed: str | None = None
+    i_ready_measurement_and_data_lessons_completed: str | None = None
+    i_ready_measurement_and_data_lessons_passed: str | None = None
+    i_ready_measurement_and_data_percent_lessons_passed: str | None = None
+    i_ready_number_and_operations_lessons_completed: str | None = None
+    i_ready_number_and_operations_lessons_passed: str | None = None
+    i_ready_number_and_operations_percent_lessons_passed: str | None = None
+    i_ready_pro_data_statistics_and_probability_percent_skills_successful: (
+        str | None
+    ) = None
+    i_ready_pro_data_statistics_and_probability_skills_completed: str | None = None
+    i_ready_pro_data_statistics_and_probability_skills_successful: str | None = None
+    i_ready_pro_decimals_and_operations_percent_skills_successful: str | None = None
+    i_ready_pro_decimals_and_operations_skills_completed: str | None = None
+    i_ready_pro_decimals_and_operations_skills_successful: str | None = None
+    i_ready_pro_equations_and_functions_percent_skills_successful: str | None = None
+    i_ready_pro_equations_and_functions_skills_completed: str | None = None
+    i_ready_pro_equations_and_functions_skills_successful: str | None = None
+    i_ready_pro_fractions_and_operations_percent_skills_successful: str | None = None
+    i_ready_pro_fractions_and_operations_skills_completed: str | None = None
+    i_ready_pro_fractions_and_operations_skills_successful: str | None = None
+    i_ready_pro_geometric_measurement_and_figures_percent_skills_successful: (
+        str | None
+    ) = None
+    i_ready_pro_geometric_measurement_and_figures_skills_completed: str | None = None
+    i_ready_pro_geometric_measurement_and_figures_skills_successful: str | None = None
+    i_ready_pro_rational_numbers_and_operations_percent_skills_successful: (
+        str | None
+    ) = None
+    i_ready_pro_rational_numbers_and_operations_skills_completed: str | None = None
+    i_ready_pro_rational_numbers_and_operations_skills_successful: str | None = None
+    i_ready_pro_ratios_and_proportions_percent_skills_successful: str | None = None
+    i_ready_pro_ratios_and_proportions_skills_completed: str | None = None
+    i_ready_pro_ratios_and_proportions_skills_successful: str | None = None
+    i_ready_pro_whole_numbers_and_operations_percent_skills_successful: str | None = (
+        None
+    )
+    i_ready_pro_whole_numbers_and_operations_skills_completed: str | None = None
+    i_ready_pro_whole_numbers_and_operations_skills_successful: str | None = None

@@ -3,9 +3,11 @@ with
 
     ops_pm_roster as (select *, from {{ ref("rpt_gsheets__operations_pm_roster") }}),
 
-    schools as (select *, from {{ ref("stg_people__location_crosswalk") }}),
+    schools as (
+        select *, from {{ ref("stg_google_sheets__people__location_crosswalk") }}
+    ),
 
-    terms as (select *, from {{ ref("stg_reporting__terms") }}),
+    terms as (select *, from {{ ref("stg_google_sheets__reporting__terms") }}),
 
     form_responses as (
         select *,

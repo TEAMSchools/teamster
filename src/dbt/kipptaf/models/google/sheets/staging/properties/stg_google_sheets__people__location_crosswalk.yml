@@ -1,0 +1,31 @@
+models:
+  - name: stg_google_sheets__people__location_crosswalk
+    columns:
+      - name: Name
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: Clean_Name
+        data_type: string
+      - name: Abbreviation
+        data_type: string
+      - name: Grade_Band
+        data_type: string
+      - name: Region
+        data_type: string
+      - name: PowerSchool_School_ID
+        data_type: int64
+      - name: Deanslist_School_ID
+        data_type: int64
+      - name: Reporting_School_ID
+        data_type: int64
+      - name: Is_Campus
+        data_type: boolean
+      - name: Is_Pathways
+        data_type: boolean
+      - name: Dagster_Code_Location
+        data_type: string
+      - name: Head_of_Schools_Employee_Number
+        data_type: int64

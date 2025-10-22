@@ -1,13 +1,14 @@
-version: 2
 models:
   - name: int_iready__instructional_usage_data
+    config:
+      enabled: false
     columns:
       - name: school
         data_type: string
         data_tests:
           - relationships:
               arguments:
-                to: ref("stg_people__location_crosswalk")
+                to: ref("stg_google_sheets__people__location_crosswalk")
                 field: name
               config:
                 store_failures: true

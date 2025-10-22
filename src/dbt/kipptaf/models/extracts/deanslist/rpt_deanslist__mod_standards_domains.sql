@@ -43,7 +43,7 @@ select
     end as performance_level,
 from {{ ref("int_assessments__response_rollup") }} as ar
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as co
+    {{ ref("int_extracts__student_enrollments") }} as co
     on ar.academic_year = co.academic_year
     and ar.powerschool_student_number = co.student_number
     and co.rn_year = 1
@@ -93,10 +93,10 @@ select
     end as performance_level,
 from {{ ref("int_assessments__response_rollup") }} as ar
 inner join
-    {{ ref("stg_assessments__standard_domains") }} as sd
+    {{ ref("stg_google_sheets__assessments__standard_domains") }} as sd
     on ar.response_type_code = sd.standard_code
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as co
+    {{ ref("int_extracts__student_enrollments") }} as co
     on ar.academic_year = co.academic_year
     and ar.powerschool_student_number = co.student_number
     and co.rn_year = 1

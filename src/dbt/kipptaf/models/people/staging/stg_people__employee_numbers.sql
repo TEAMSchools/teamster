@@ -1,6 +1,7 @@
 -- depends_on: {{ ref('stg_adp_workforce_now__workers') }}
 -- depends_on: {{ source("people", "src_people__employee_numbers") }}
--- depends_on: {{ source("people", "src_people__employee_numbers_archive") }}
+-- trunk-ignore(sqlfluff/LT05)
+-- depends_on: {{ source("google_sheets", "src_google_sheets__people__employee_numbers_archive") }}
 {{
     config(
         materialized="incremental",
@@ -55,5 +56,10 @@
     cross join men
 {% else %}
     select employee_number, adp_associate_id, adp_associate_id_legacy, is_active,
-    from {{ source("people", "src_people__employee_numbers_archive") }}
+    from
+        {{
+            source(
+                "google_sheets", "src_google_sheets__people__employee_numbers_archive"
+            )
+        }}
 {% endif %}
