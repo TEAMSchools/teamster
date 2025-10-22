@@ -29,6 +29,7 @@ with
                     [
                         "expected_test_type",
                         "expected_score_type",
+                        "expected_grade_level",
                         "expected_admin_season",
                     ]
                 )
@@ -62,6 +63,7 @@ with
                     [
                         "expected_test_type",
                         "expected_score_type",
+                        "grade_level",
                         "expected_admin_season",
                     ]
                 )
