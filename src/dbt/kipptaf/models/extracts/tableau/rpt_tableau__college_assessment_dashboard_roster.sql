@@ -75,8 +75,8 @@ with
                     scale_score as 'Scale Score',
                     max_scale_score as 'Max Scale Score',
                     superscore as 'Superscore',
-                    previous_total_score_change as 'Total Growth Score Change',
-                    previous_total_score_change_gl as 'Total Growth Score Change GL'
+                    total_growth_score_change as 'Total Growth Score Change',
+                    total_growth_score_change_gl as 'Total Growth Score Change GL'
                 )
             )
     ),

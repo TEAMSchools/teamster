@@ -232,11 +232,11 @@ left join
     on s.student_number = g.student_number
     and s.expected_scope = g.expected_scope
     and s.expected_admin_season = g.expected_admin_season
-    and g.previous_total_score_change is not null
+    and g.total_growth_score_change is not null
 left join
     growth as h
     on s.student_number = h.student_number
     and s.expected_scope = h.expected_scope
     and s.grade_level = h.grade_level
     and s.expected_admin_season = h.expected_admin_season
-    and h.previous_total_score_change is not null
+    and h.total_growth_score_change_gl is not null
