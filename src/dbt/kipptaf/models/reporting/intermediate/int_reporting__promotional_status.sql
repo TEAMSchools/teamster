@@ -2,6 +2,7 @@ with
     dibels_benchmark as (
         select
             academic_year,
+            region,
             student_number,
             measure_standard_level,
             measure_standard_level_int,
@@ -26,6 +27,7 @@ with
             'DIBELS Benchmark' as subdomain,
 
             academic_year,
+            region,
             student_number,
             'ELA' as discipline,
             measure_standard_level_int as metric,
@@ -39,6 +41,17 @@ with
             'i-Ready Diagnostic' as subdomain,
 
             academic_year_int as academic_year,
+            case
+                region
+                when 'KIPP Cooper Norcross Academy'
+                then 'Camden'
+                when 'KIPP Miami'
+                then 'Miami'
+                when 'TEAM Academy Charter School'
+                then 'Newark'
+                when 'KIPP Paterson'
+                then 'Paterson'
+            end as region,
             student_id as student_number,
             discipline,
             overall_relative_placement_int as metric,
@@ -53,6 +66,7 @@ with
             'ADA' as subdomain,
 
             academic_year,
+            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
             term,
             _dbt_source_relation,
             studentid,
@@ -68,6 +82,7 @@ with
             'Core Course Failures' as subdomain,
 
             academic_year,
+            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
             storecode as term,
             _dbt_source_relation,
             studentid,
@@ -83,6 +98,7 @@ with
             'Projected Y1 Credits' as subdomain,
 
             fg.academic_year,
+            initcap(regexp_extract(fg._dbt_source_relation, r'kipp(\w+)_')) as region,
             fg.storecode as term,
             fg._dbt_source_relation,
             fg.studentid,
@@ -152,6 +168,7 @@ with
             union_year as u
             on co.academic_year = u.academic_year
             and co.student_number = u.student_number
+            and g.region = u.region
             and g.subject = u.discipline
             and g.domain = u.domain
             and g.subdomain = u.subdomain
@@ -211,6 +228,7 @@ with
             and co.studentid = u.studentid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="u") }}
             and rt.name = g.term
+            and g.region = u.region
             and g.subject = u.discipline
             and g.domain = u.domain
             and g.subdomain = u.subdomain
@@ -219,20 +237,25 @@ with
 
     metric_string_pivot as (
         select
-            -- student_number,
-            -- academic_year,
-            -- term,
-            -- discipline,
-            *
+            student_number,
+            academic_year,
+            term,
+            discipline,
+            iready_diagnostic_recent,
+            projected_credits_y1_term,
+            unexcused_absences_term,
+            ada_term_running,
+            core_course_failures_term,
+            dibels_benchmark_recent,
         from
             criteria_test_union pivot (
                 max(metric_string) for subdomain in (
-                    'i-Ready Diagnostic',
-                    'Projected Y1 Credits',
-                    'Unexcused Absences',
-                    'ADA',
-                    'Core Course Failures',
-                    'DIBELS Benchmark'
+                    'i-Ready Diagnostic' as iready_diagnostic_recent,
+                    'Projected Y1 Credits' as projected_credits_y1_term,
+                    'Unexcused Absences' as unexcused_absences_term,
+                    'ADA' as ada_term_running,
+                    'Core Course Failures' as core_course_failures_term,
+                    'DIBELS Benchmark' as dibels_benchmark_recent
                 )
             )
     ),
