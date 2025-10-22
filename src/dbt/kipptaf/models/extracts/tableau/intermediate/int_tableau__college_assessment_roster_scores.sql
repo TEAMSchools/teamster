@@ -163,12 +163,12 @@ with
             scale_score - lag(scale_score) over (
                 partition by student_number, grade_level, expected_scope
                 order by expected_admin_season_order desc
-            ) as previous_total_score_change_gl,
+            ) as total_growth_score_change_gl,
 
             scale_score - lag(scale_score) over (
                 partition by student_number, expected_scope
                 order by expected_admin_season_order desc
-            ) as previous_total_score_change,
+            ) as total_growth_score_change,
 
         from final_scores
         where expected_grouping = 'Total' and expected_scope = 'SAT'
@@ -208,9 +208,9 @@ select
 
     m.max_scale_score,
 
-    g.previous_total_score_change,
+    g.total_growth_score_change,
 
-    h.previous_total_score_change_gl,
+    h.total_growth_score_change_gl,
 
     round(coalesce(d.superscore, a.superscore), 0) as superscore,
 

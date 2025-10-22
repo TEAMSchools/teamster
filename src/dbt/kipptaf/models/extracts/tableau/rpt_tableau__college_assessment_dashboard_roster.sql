@@ -42,8 +42,8 @@ with
                     'Scale Score',
                     'Max Scale Score',
                     'Superscore',
-                    'Previous Total Score Change',
-                    'Previous Total Score Change GL'
+                    'Total Growth Score Change',
+                    'Total Growth Score Change GL'
                 ]
             ) as expected_score_category
     ),
@@ -75,8 +75,8 @@ with
                     scale_score as 'Scale Score',
                     max_scale_score as 'Max Scale Score',
                     superscore as 'Superscore',
-                    previous_total_score_change as 'Previous Total Score Change',
-                    previous_total_score_change_gl as 'Previous Total Score Change GL'
+                    previous_total_score_change as 'Total Growth Score Change',
+                    previous_total_score_change_gl as 'Total Growth Score Change GL'
                 )
             )
     ),
