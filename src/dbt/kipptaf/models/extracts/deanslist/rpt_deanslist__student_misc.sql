@@ -74,14 +74,14 @@ with
                 when co.region = 'Camden'
                 then 'kippcamden@kippnj.org'
                 when co.region = 'Newark'
-                then ''
+                then 'kippnewark@kippnj.org'
             end as regional_email,
 
             case
                 when co.region = 'Camden'
                 then '973-622-0905 ext. 31003'
                 when co.region = 'Newark'
-                then ''
+                then '973-622-0905 ex 11200'
             end as regional_phone,
         from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
