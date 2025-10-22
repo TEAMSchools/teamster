@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_roster
-    config:
-      contract:
-        enforced: false # TODO: enable when dynamic select removed
     columns:
       - name: region
         data_type: string
@@ -28,6 +25,8 @@ models:
         data_type: int64
       - name: ktc_cohort
         data_type: int64
+      - name: graduation_year
+        data_type: int64
       - name: year_in_network
         data_type: int64
       - name: iep_status
@@ -42,249 +41,41 @@ models:
         data_type: numeric
       - name: college_match_gpa_bands
         data_type: string
-      - name: psat89_combined_superscore
-        data_type: numeric
-      - name: psat10_combined_superscore
-        data_type: numeric
-      - name: psatnmsqt_combined_superscore
-        data_type: numeric
-      - name: sat_combined_superscore
-        data_type: numeric
-      - name: act_composite_superscore
-        data_type: numeric
-      - name: psat89_ebrw_max_score
-        data_type: numeric
-      - name: psat89_math_section_max_score
-        data_type: numeric
-      - name: psat10_ebrw_max_score
-        data_type: numeric
-      - name: psat10_math_section_max_score
-        data_type: numeric
-      - name: psatnmsqt_ebrw_max_score
-        data_type: numeric
-      - name: psatnmsqt_math_section_max_score
-        data_type: numeric
-      - name: sat_ebrw_max_score
-        data_type: numeric
-      - name: sat_math_max_score
-        data_type: numeric
-      - name: act_math_max_score
-        data_type: numeric
-      - name: act_reading_max_score
-        data_type: numeric
-      - name: act_english_max_score
-        data_type: numeric
-      - name: act_science_max_score
-        data_type: numeric
-      - name: oct_24_act_reading_official_scale_score
-        data_type: numeric
-      - name: oct_24_act_reading_official_previous_total_score_change
-        data_type: numeric
-      - name: mar_24_psat10_math_official_scale_score
-        data_type: numeric
-      - name: mar_24_psat10_math_official_previous_total_score_change
-        data_type: numeric
-      - name: feb_24_act_science_official_scale_score
-        data_type: numeric
-      - name: feb_24_act_science_official_previous_total_score_change
-        data_type: numeric
-      - name: None_scale_score
-        data_type: numeric
-      - name: None_previous_total_score_change
-        data_type: numeric
-      - name: oct_23_psat_nmsqt_combined_official_scale_score
-        data_type: numeric
-      - name: oct_23_psat_nmsqt_combined_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_24_psat_nmsqt_math_official_scale_score
-        data_type: numeric
-      - name: oct_24_psat_nmsqt_math_official_previous_total_score_change
-        data_type: numeric
-      - name: dec_23_act_science_official_scale_score
-        data_type: numeric
-      - name: dec_23_act_science_official_previous_total_score_change
-        data_type: numeric
-      - name: apr_24_act_math_official_scale_score
-        data_type: numeric
-      - name: apr_24_act_math_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_24_act_math_official_scale_score
-        data_type: numeric
-      - name: oct_24_act_math_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_23_act_science_official_scale_score
-        data_type: numeric
-      - name: oct_23_act_science_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_23_psat_nmsqt_ebrw_official_scale_score
-        data_type: numeric
-      - name: oct_23_psat_nmsqt_ebrw_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_24_psat89_combined_official_scale_score
-        data_type: numeric
-      - name: oct_24_psat89_combined_official_previous_total_score_change
-        data_type: numeric
-      - name: dec_23_act_english_official_scale_score
-        data_type: numeric
-      - name: dec_23_act_english_official_previous_total_score_change
-        data_type: numeric
-      - name: feb_24_act_reading_official_scale_score
-        data_type: numeric
-      - name: feb_24_act_reading_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_23_act_composite_official_scale_score
-        data_type: numeric
-      - name: oct_23_act_composite_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_24_psat89_math_official_scale_score
-        data_type: numeric
-      - name: oct_24_psat89_math_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_24_psat89_ebrw_official_scale_score
-        data_type: numeric
-      - name: oct_24_psat89_ebrw_official_previous_total_score_change
-        data_type: numeric
-      - name: dec_24_sat_combined_official_scale_score
-        data_type: numeric
-      - name: dec_24_sat_combined_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_24_act_composite_official_scale_score
-        data_type: numeric
-      - name: oct_24_act_composite_official_previous_total_score_change
-        data_type: numeric
-      - name: feb_23_psat10_math_official_scale_score
-        data_type: numeric
-      - name: feb_23_psat10_math_official_previous_total_score_change
-        data_type: numeric
-      - name: nov_24_sat_math_official_scale_score
-        data_type: numeric
-      - name: nov_24_sat_math_official_previous_total_score_change
-        data_type: numeric
-      - name: apr_25_sat_combined_official_scale_score
-        data_type: numeric
-      - name: apr_25_sat_combined_official_previous_total_score_change
-        data_type: numeric
-      - name: dec_23_act_math_official_scale_score
-        data_type: numeric
-      - name: dec_23_act_math_official_previous_total_score_change
-        data_type: numeric
-      - name: apr_24_act_english_official_scale_score
-        data_type: numeric
-      - name: apr_24_act_english_official_previous_total_score_change
-        data_type: numeric
-      - name: feb_23_psat10_ebrw_official_scale_score
-        data_type: numeric
-      - name: feb_23_psat10_ebrw_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_23_psat_nmsqt_math_official_scale_score
-        data_type: numeric
-      - name: oct_23_psat_nmsqt_math_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_24_psat_nmsqt_ebrw_official_scale_score
-        data_type: numeric
-      - name: oct_24_psat_nmsqt_ebrw_official_previous_total_score_change
-        data_type: numeric
-      - name: feb_24_act_english_official_scale_score
-        data_type: numeric
-      - name: feb_24_act_english_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_23_act_english_official_scale_score
-        data_type: numeric
-      - name: oct_23_act_english_official_previous_total_score_change
-        data_type: numeric
-      - name: mar_24_psat10_combined_official_scale_score
-        data_type: numeric
-      - name: mar_24_psat10_combined_official_previous_total_score_change
-        data_type: numeric
-      - name: feb_24_act_composite_official_scale_score
-        data_type: numeric
-      - name: feb_24_act_composite_official_previous_total_score_change
-        data_type: numeric
-      - name: feb_24_act_math_official_scale_score
-        data_type: numeric
-      - name: feb_24_act_math_official_previous_total_score_change
-        data_type: numeric
-      - name: apr_25_sat_ebrw_official_scale_score
-        data_type: numeric
-      - name: apr_25_sat_ebrw_official_previous_total_score_change
-        data_type: numeric
-      - name: apr_24_act_reading_official_scale_score
-        data_type: numeric
-      - name: apr_24_act_reading_official_previous_total_score_change
-        data_type: numeric
-      - name: apr_24_act_science_official_scale_score
-        data_type: numeric
-      - name: apr_24_act_science_official_previous_total_score_change
-        data_type: numeric
-      - name: dec_24_sat_math_official_scale_score
-        data_type: numeric
-      - name: dec_24_sat_math_official_previous_total_score_change
-        data_type: numeric
-      - name: dec_23_act_reading_official_scale_score
-        data_type: numeric
-      - name: dec_23_act_reading_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_24_act_english_official_scale_score
-        data_type: numeric
-      - name: oct_24_act_english_official_previous_total_score_change
-        data_type: numeric
-      - name: dec_23_act_composite_official_scale_score
-        data_type: numeric
-      - name: dec_23_act_composite_official_previous_total_score_change
-        data_type: numeric
-      - name: dec_24_sat_ebrw_official_scale_score
-        data_type: numeric
-      - name: dec_24_sat_ebrw_official_previous_total_score_change
-        data_type: numeric
-      - name: nov_24_sat_ebrw_official_scale_score
-        data_type: numeric
-      - name: nov_24_sat_ebrw_official_previous_total_score_change
-        data_type: numeric
-      - name: nov_24_sat_combined_official_scale_score
-        data_type: numeric
-      - name: nov_24_sat_combined_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_23_act_math_official_scale_score
-        data_type: numeric
-      - name: oct_23_act_math_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_24_act_science_official_scale_score
-        data_type: numeric
-      - name: oct_24_act_science_official_previous_total_score_change
-        data_type: numeric
-      - name: feb_23_psat10_combined_official_scale_score
-        data_type: numeric
-      - name: feb_23_psat10_combined_official_previous_total_score_change
-        data_type: numeric
-      - name: apr_25_sat_math_official_scale_score
-        data_type: numeric
-      - name: apr_25_sat_math_official_previous_total_score_change
-        data_type: numeric
-      - name: mar_24_psat10_ebrw_official_scale_score
-        data_type: numeric
-      - name: mar_24_psat10_ebrw_official_previous_total_score_change
-        data_type: numeric
-      - name: apr_24_act_composite_official_scale_score
-        data_type: numeric
-      - name: apr_24_act_composite_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_23_act_reading_official_scale_score
-        data_type: numeric
-      - name: oct_23_act_reading_official_previous_total_score_change
-        data_type: numeric
-      - name: oct_24_psat_nmsqt_combined_official_scale_score
-        data_type: numeric
-      - name: oct_24_psat_nmsqt_combined_official_previous_total_score_change
-        data_type: numeric
-      - name: mar_25_sat_combined_official_previous_total_score_change
-        data_type: numeric
-      - name: mar_25_sat_combined_official_scale_score
-        data_type: numeric
-      - name: mar_25_sat_ebrw_official_previous_total_score_change
-        data_type: numeric
-      - name: mar_25_sat_ebrw_official_scale_score
-        data_type: numeric
-      - name: mar_25_sat_math_official_previous_total_score_change
-        data_type: numeric
-      - name: mar_25_sat_math_official_scale_score
-        data_type: numeric
+      - name: expected_test_type
+        data_type: string
+      - name: expected_scope
+        data_type: string
+      - name: expected_score_type
+        data_type: string
+      - name: expected_grouping
+        data_type: string
+      - name: expected_grade_level
+        data_type: int64
+      - name: expected_admin_season
+        data_type: string
+      - name: expected_months_included
+        data_type: string
+      - name: expected_field_name
+        data_type: string
+      - name: expected_score_category
+        data_type: string
+      - name: expected_field_name_score_category
+        data_type: string
+      - name: expected_filter_group
+        data_type: string
+      - name: expected_admin_season_order
+        data_type: int64
+      - name: sat_total_superscore
+        data_type: numeric
+      - name: sat_ebrw_highest
+        data_type: numeric
+      - name: sat_math_highest
+        data_type: numeric
+      - name: score
+        data_type: numeric
+      - name: ccr_course
+        data_type: string
+      - name: ccr_teacher_name
+        data_type: string
+      - name: ccr_section
+        data_type: string

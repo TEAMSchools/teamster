@@ -1,64 +1,77 @@
-{% set comparison_completion = [
-    {"label": "ACT Group 1", "prefix": "act_group_1"},
-    {"label": "ACT Group 2+", "prefix": "act_group_2_plus"},
-    {"label": "SAT Group 1", "prefix": "sat_group_1"},
-    {"label": "SAT Group 2+", "prefix": "sat_group_2_plus"},
-    {"label": "PSAT 8/9 Group 1", "prefix": "psat89_group_1"},
-    {"label": "PSAT 8/9 Group 2+", "prefix": "psat89_group_2_plus"},
-    {"label": "PSAT10 Group 1", "prefix": "psat10_group_1"},
-    {"label": "PSAT10 Group 2+", "prefix": "psat10_group_2_plus"},
-    {"label": "PSAT NMSQT Group 1", "prefix": "psatnmsqt_group_1"},
-    {"label": "PSAT NMSQT Group 2+", "prefix": "psatnmsqt_group_2_plus"},
-] %}
-
 with
+    completion_goals_unpivot as (
+        select
+            expected_test_type,
+
+            `value`,
+
+            concat(
+                expected_metric_label, '_', value_type
+            ) as expected_metric_label_type,
+
+        from
+            {{ ref("stg_google_sheets__kippfwd_goals") }}
+            unpivot (`value` for value_type in (min_score, pct_goal))
+        where
+            expected_test_type = 'Official'
+            and expected_goal_type = 'Attempts'
+            and expected_subject_area in ('Composite', 'Combined')
+    ),
+
     completion_goals as (
         select
             expected_test_type,
 
-            {% for completion in comparison_completion %}
-                avg(
-                    case
-                        when
-                            concat(expected_scope, ' ', goal_category)
-                            = '{{ completion.label }}'
-                        then min_score
-                    end
-                ) as {{ completion.prefix }}_score,
-                avg(
-                    case
-                        when
-                            concat(expected_scope, ' ', goal_category)
-                            = '{{ completion.label }}'
-                        then pct_goal
-                    end
-                ) as {{ completion.prefix }}_goal
-                {% if not loop.last %},{% endif %}
-            {% endfor %}
+            act_1_attempt_min_score,
+            psat10_1_attempt_min_score,
+            psat89_1_attempt_min_score,
+            psatnmsqt_1_attempt_min_score,
+            sat_1_attempt_min_score,
+            act_2_plus_attempts_min_score,
+            psat10_2_plus_attempts_min_score,
+            psat89_2_plus_attempts_min_score,
+            psatnmsqt_2_plus_attempts_min_score,
+            sat_2_plus_attempts_min_score,
+            sat_1_attempt_pct_goal,
+            sat_2_plus_attempts_pct_goal,
 
-        from {{ ref("stg_google_sheets__kippfwd_goals") }}
-        where
-            expected_test_type = 'Official'
-            and goal_type = 'Attempts'
-            and expected_subject_area in ('Composite', 'Combined')
-        group by expected_test_type
+        from
+            completion_goals_unpivot pivot (
+                avg(`value`) for expected_metric_label_type in (
+                    'psatnmsqt_1_attempt_min_score',
+                    'psat89_1_attempt_min_score',
+                    'act_1_attempt_min_score',
+                    'sat_1_attempt_min_score',
+                    'sat_1_attempt_pct_goal',
+                    'psat10_1_attempt_min_score',
+                    'psat89_2_plus_attempts_min_score',
+                    'sat_2_plus_attempts_min_score',
+                    'sat_2_plus_attempts_pct_goal',
+                    'psatnmsqt_2_plus_attempts_min_score',
+                    'psat10_2_plus_attempts_min_score',
+                    'act_2_plus_attempts_min_score'
+                )
+            )
     ),
 
     base_rows as (
         select
-            _dbt_source_relation,
-            student_number,
-            studentid,
-            students_dcid,
-            salesforce_id,
-            grade_level,
-            test_type,
-            scope,
-            score_type,
+            s.student_number,
+            s.test_type,
+            s.scope,
+            s.score_type,
 
-        from {{ ref("int_students__college_assessment_roster") }}
+            e.salesforce_id,
+            e.grade_level,
+        from {{ ref("int_assessments__college_assessment") }} as s
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on s.academic_year = e.academic_year
+            and s.student_number = e.student_number
+            and e.school_level = 'HS'
+            and e.rn_year = 1
         where
-            score_type in (
+            s.score_type in (
                 'act_composite',
                 'sat_total_score',
                 'psat89_total',
@@ -69,10 +82,7 @@ with
 
     yearly_tests as (
         select
-            _dbt_source_relation,
             student_number,
-            studentid,
-            students_dcid,
             salesforce_id,
             grade_level,
 
@@ -96,10 +106,7 @@ with
 
     yearly_test_counts as (
         select
-            _dbt_source_relation,
             student_number,
-            studentid,
-            students_dcid,
             salesforce_id,
             grade_level,
 
@@ -110,38 +117,24 @@ with
             sum(act_count) as act_count,
 
         from yearly_tests
-        group by
-            _dbt_source_relation,
-            student_number,
-            studentid,
-            students_dcid,
-            salesforce_id,
-            grade_level
+        group by student_number, salesforce_id, grade_level
     )
 
 select
     y.*,
 
-    c.act_group_1_score,
-    c.act_group_1_goal,
-    c.act_group_2_plus_score,
-    c.act_group_2_plus_goal,
-    c.sat_group_1_score,
-    c.sat_group_1_goal,
-    c.sat_group_2_plus_score,
-    c.sat_group_2_plus_goal,
-    c.psat89_group_1_score,
-    c.psat89_group_1_goal,
-    c.psat89_group_2_plus_score,
-    c.psat89_group_2_plus_goal,
-    c.psat10_group_1_score,
-    c.psat10_group_1_goal,
-    c.psat10_group_2_plus_score,
-    c.psat10_group_2_plus_goal,
-    c.psatnmsqt_group_1_score,
-    c.psatnmsqt_group_1_goal,
-    c.psatnmsqt_group_2_plus_score,
-    c.psatnmsqt_group_2_plus_goal,
+    c.act_1_attempt_min_score,
+    c.act_2_plus_attempts_min_score,
+    c.sat_1_attempt_min_score,
+    c.sat_1_attempt_pct_goal,
+    c.sat_2_plus_attempts_min_score,
+    c.sat_2_plus_attempts_pct_goal,
+    c.psat89_1_attempt_min_score,
+    c.psat89_2_plus_attempts_min_score,
+    c.psat10_1_attempt_min_score,
+    c.psat10_2_plus_attempts_min_score,
+    c.psatnmsqt_1_attempt_min_score,
+    c.psatnmsqt_2_plus_attempts_min_score,
 
     sum(y.psat89_count) over (
         partition by y.student_number order by y.grade_level
