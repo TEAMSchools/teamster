@@ -2,8 +2,6 @@ models:
   - name: rpt_tableau__consequence_dashboard
     config:
       enabled: false
-      contract:
-        enforced: false
     columns:
       - name: student_number
         data_type: int64
