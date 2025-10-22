@@ -31,13 +31,11 @@ select
     dli.approver_name,
     dli.create_lastfirst as referring_staff_name,
     dli.update_lastfirst as reviewing_staff_name,
-
-{# sp.dcid, #}
 from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_deanslist__incidents__penalties") }} as dli
     on co.academic_year = dli.create_ts_academic_year
     and co.student_number = dli.student_school_id
     and co.deanslist_school_id = dli.school_id
-    -- TODO: Add home_instruction_reason to JOIN
+    /* TODO: Add home_instruction_reason to JOIN */
     and (dli.category = 'TX - HI Request (admin only)' or dli.hi_start_date is not null)
