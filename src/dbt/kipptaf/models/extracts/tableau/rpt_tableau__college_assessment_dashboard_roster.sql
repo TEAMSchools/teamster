@@ -1,6 +1,7 @@
 with
     expected_admins as (
-        select
+        -- need distinct rows with no individual months
+        select distinct
             expected_region,
             expected_grade_level,
             expected_test_type,
@@ -8,7 +9,7 @@ with
             expected_score_type,
             expected_admin_season,
             expected_admin_season_order,
-            expected_month,
+            expected_months_included,
             expected_grouping,
             expected_field_name,
 
@@ -135,7 +136,7 @@ select
     ea.expected_grouping,
     ea.expected_grade_level,
     ea.expected_admin_season,
-    ea.expected_month,
+    expected_months_included,
     ea.expected_field_name,
     ea.expected_score_category,
     ea.expected_field_name_score_category,
@@ -156,6 +157,7 @@ from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     expected_admins as ea
     on 'foo' = ea.bar
+    and e.region = ea.expected_region
     and ea.expected_score_category
     in ('Scale Score', 'Total Growth Score Change', 'Total Growth Score Change GL')
     and ea.expected_filter_group not in (
