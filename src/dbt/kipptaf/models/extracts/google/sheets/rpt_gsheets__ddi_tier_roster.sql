@@ -14,4 +14,4 @@ from {{ ref("int_extracts__student_enrollments_subjects") }}
 where
     academic_year = {{ var("current_academic_year") }}
     and rn_year = 1
-    and nj_student_tier != 'Unbucketed'
+    and nj_student_tier != 'Bucket 4'
