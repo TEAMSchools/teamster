@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
     dibels_benchmark as (
         select
             academic_year,
@@ -146,7 +147,7 @@ with
             uy.metric_string,
         from union_year as uy
         cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term
-    )
+    ),
 
     criteria_test_union as (
         select
