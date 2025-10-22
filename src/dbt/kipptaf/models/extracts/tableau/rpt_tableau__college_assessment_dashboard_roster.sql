@@ -163,7 +163,8 @@ inner join
         'EBRW Previous Total Score Change GL',
         'Total Previous Total Score Change',
         'Total Previous Total Score Change GL',
-        'Total Previous Scale Score'
+        'Total Previous Scale Score',
+        'Total Growth Scale Score'
     )
 left join superscores_dedup as s on e.student_number = s.student_number
 left join
