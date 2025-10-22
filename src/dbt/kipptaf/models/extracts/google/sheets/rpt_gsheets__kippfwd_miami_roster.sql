@@ -45,20 +45,14 @@ select
     fp.fast_ela,
     fp.fast_math,
 
-    gpa.cumulative_y1_gpa_unweighted as gpa,
-
-    round(co.ada_unweighted_year_prev, 2) as previous_year_ada,
+    co.cumulative_y1_gpa_unweighted as gpa,
+    co.ada_unweighted_year_prev as previous_year_ada,
 from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     fast_pivot as fp
     on co.state_studentnumber = fp.student_id
     and co.academic_year = fp.academic_year_next
     and {{ union_dataset_join_clause(left_alias="co", right_alias="fp") }}
-left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gpa
-    on co.studentid = gpa.studentid
-    and co.schoolid = gpa.schoolid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
 where
     co.rn_year = 1
     and co.region = 'Miami'

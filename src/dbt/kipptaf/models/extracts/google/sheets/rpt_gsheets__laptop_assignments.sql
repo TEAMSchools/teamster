@@ -1,16 +1,18 @@
 select
     region,
-    school_abbreviation as school,
+    school,
     student_number,
-    lastfirst as student_name,
+    student_name,
     grade_level,
     advisory_name,
     advisor_lastfirst,
     student_web_id as username,
-    student_email_google as email,
+    student_email as email,
 
-    lastfirst || ' (' || student_number || ')' as dropdown_hash,
+    student_name || ' (' || student_number || ')' as dropdown_hash,
+
     if(enroll_status = 2, exitdate, null) as exitdate,
+
     case
         when enroll_status = 0
         then 'Currently Enrolled'
@@ -19,10 +21,10 @@ select
         when enroll_status = -1
         then 'Pre-Registered'
     end as enroll_status,
-from {{ ref("base_powerschool__student_enrollments") }}
+from {{ ref("int_extracts__student_enrollments") }}
 where
     is_enrolled_y1
     and rn_year = 1
     and academic_year = {{ var("current_academic_year") }}
     and exitdate >= date({{ var("current_academic_year") }}, 8, 15)
-order by lastfirst asc
+order by student_name asc

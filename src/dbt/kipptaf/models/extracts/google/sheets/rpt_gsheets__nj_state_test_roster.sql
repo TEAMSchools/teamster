@@ -23,37 +23,36 @@ with
             co.region,
             co.is_self_contained,
             co.school_level,
-            co.school_abbreviation,
+            co.school,
             co.grade_level,
             co.advisory_name,
             co.student_number,
             co.state_studentnumber,
-            co.lastfirst as student_name,
+            co.student_name,
             co.special_education_code,
+            co.iep_status,
+            co.enroll_status,
+            co.lep_status,
+            co.status_504,
 
             subj as `subject`,
 
-            if(co.enroll_status = 0, 'Enrolled', 'Transferred Out') as enroll_status,
-            if(co.spedlep like 'SPED%', 'IEP', 'No IEP') as iep_status,
-            if(co.lep_status, 'LEP', 'Not LEP') as lep_status,
-            if(co.is_504, 'Has 504', 'No 504') as status_504,
-
-            concat(co.lastfirst, ' - ', co.student_number, ' - ', subj) as student,
+            concat(co.student_name, ' - ', co.student_number, ' - ', subj) as student,
 
             case
-                when subj = 'MATH' and nj.asmt_extended_time_math is not null
+                when subj = 'MATH' and co.asmt_extended_time_math is not null
                 then true
-                when subj = 'ENG' and nj.asmt_extended_time is not null
+                when subj = 'ENG' and co.asmt_extended_time is not null
                 then true
-                when subj = 'SCI' and nj.asmt_extended_time_math is not null
+                when subj = 'SCI' and co.asmt_extended_time_math is not null
                 then true
                 else false
             end as has_extended_time,
 
             case
-                when subj = 'MATH' and nj.graduation_pathway_math = 'M'
+                when subj = 'MATH' and co.graduation_pathway_math = 'M'
                 then null
-                when subj = 'MATH' and nj.math_state_assessment_name = '3'
+                when subj = 'MATH' and co.math_state_assessment_name = '3'
                 then null
                 when subj = 'MATH' and co.grade_level = 11
                 then 'MATGP'
@@ -66,9 +65,9 @@ with
                 then c.math_course
                 when subj = 'MATH' and c.math_course is null
                 then concat('MAT', '0', co.grade_level)
-                when subj = 'ENG' and nj.graduation_pathway_ela = 'M'
+                when subj = 'ENG' and co.graduation_pathway_ela = 'M'
                 then null
-                when subj = 'ENG' and nj.state_assessment_name in ('2', '3', '4')
+                when subj = 'ENG' and co.state_assessment_name in ('2', '3', '4')
                 then null
                 when subj = 'ENG' and co.grade_level = 11
                 then 'ELAGP'
@@ -77,29 +76,25 @@ with
                 when
                     subj = 'SCI'
                     and co.grade_level in (5, 8, 11)
-                    and nj.math_state_assessment_name = '3'
+                    and co.math_state_assessment_name = '3'
                 then null
                 when subj = 'SCI' and co.grade_level in (5, 8)
                 then concat('SC', '0', co.grade_level)
                 when subj = 'SCI' and co.grade_level = 11
                 then 'SC11'
             end as test_code,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         cross join unnest(['ENG', 'MATH', 'SCI']) as subj
         left join
             courses as c
             on co.academic_year = c.academic_year
             and co.student_number = c.student_number
             and subj = c.credittype
-        left join
-            {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
-            on co.students_dcid = nj.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
     )
 
 select
     region,
-    school_abbreviation,
+    school,
     student,
     enroll_status,
     grade_level,
@@ -113,9 +108,7 @@ select
     has_extended_time,
 
     concat(student_number, '_', test_code) as sn_test_hash,
-    concat(
-        school_abbreviation, '-', test_code, if(has_extended_time, '-ET', '')
-    ) as session_name,
+    concat(school, '-', test_code, if(has_extended_time, '-ET', '')) as session_name,
 from roster
 where
     academic_year = {{ var("current_academic_year") }}
