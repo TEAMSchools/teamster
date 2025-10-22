@@ -14,6 +14,14 @@ with
             end as illuminate_subject_area,
 
             case
+                iready_subject
+                when 'Reading'
+                then 'English Language Arts'
+                when 'Math'
+                then 'Mathematics'
+            end as fast_subject,
+
+            case
                 iready_subject when 'Reading' then 'ENG' when 'Math' then 'MATH'
             end as powerschool_credittype,
 
@@ -46,10 +54,11 @@ with
         select
             _dbt_source_relation,
             localstudentidentifier,
-
-            cast(statestudentidentifier as string) as statestudentidentifier,
+            is_proficient,
 
             academic_year + 1 as academic_year_plus,
+
+            cast(statestudentidentifier as string) as statestudentidentifier,
 
             case
                 when `subject` like 'English Language Arts%'
@@ -60,24 +69,28 @@ with
             end as `subject`,
 
             case
-                when testperformancelevel < 3
+                when testperformancelevel <= 2
                 then 'Below/Far Below'
                 when testperformancelevel = 3
                 then 'Approaching'
-                when testperformancelevel > 3
+                when testperformancelevel >= 4
                 then 'At/Above'
             end as njsla_proficiency,
-            is_proficient,
+
         from {{ ref("int_pearson__all_assessments") }}
 
         union all
 
         select
             _dbt_source_relation,
+
             null as localstudentidentifier,
-            student_id as statestudentidentifier,
+
+            is_proficient,
 
             academic_year + 1 as academic_year_plus,
+
+            student_id as statestudentidentifier,
 
             case
                 when assessment_subject like 'English Language Arts%'
@@ -96,8 +109,6 @@ with
                 then 'At/Above'
             end as proficiency,
 
-            is_proficient,
-
         from {{ ref("int_fldoe__all_assessments") }}
         where
             scale_score is not null
@@ -113,11 +124,11 @@ with
             academic_year_int + 1 as academic_year_plus,
 
             case
-                when overall_relative_placement_int < 3
+                when overall_relative_placement_int <= 2
                 then 'Below/Far Below'
                 when overall_relative_placement_int = 3
                 then 'Approaching'
-                when overall_relative_placement_int > 3
+                when overall_relative_placement_int >= 4
                 then 'At/Above'
             end as iready_proficiency,
 
@@ -201,6 +212,7 @@ with
         where measure_standard = 'Composite'
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     bucket_programs as (
         select
             _dbt_source_relation,
@@ -224,7 +236,6 @@ with
         }}
     )
 
-/* current year and current year - 1 only to honor bucket calcs */
 select
     co.*,
 
@@ -233,6 +244,7 @@ select
     sj.powerschool_credittype,
     sj.grad_unpivot_subject,
     sj.discipline,
+    sj.fast_subject,
 
     sip.is_sipps,
 
@@ -260,25 +272,19 @@ select
 
     if(nj.iready_subject is not null, true, false) as bucket_two,
 
-    if(co.grade_level < 4, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
+    if(co.grade_level <= 3, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
 
     if(
         co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
     ) as assessment_dashboard_join,
 
-    case
-        when b.bucket = 'Bucket 1'
-        then b.bucket
-        when b.bucket = 'Bucket 2'
-        then b.bucket
-        when b.bucket = 'Bucket 3'
-        then b.bucket
-        else 'Bucket 4'
-    end as nj_student_tier,
+    if(
+        b.bucket in ('Bucket 1', 'Bucket 2', 'Bucket 3'), b.bucket, 'Bucket 4'
+    ) as nj_student_tier,
 
     case
         when
-            co.grade_level < 3
+            co.grade_level <= 2
             and co.is_self_contained
             and co.special_education_code in ('CMI', 'CMO', 'CSE')
         then true
@@ -351,120 +357,3 @@ left join
     and co.academic_year = b.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
     and sj.discipline = b.discipline
-where co.academic_year >= {{ var("current_academic_year") - 1 }}
-
-union all
-
-/* academic year < current year - 1 */
-select
-    co.*,
-
-    sj.iready_subject,
-    sj.illuminate_subject_area,
-    sj.powerschool_credittype,
-    sj.grad_unpivot_subject,
-    sj.discipline,
-
-    null as is_sipps,
-
-    null as dibels_most_recent_composite_int,
-
-    a.values_column as ps_grad_path_code,
-
-    coalesce(a.is_iep_eligible, false) as is_grad_iep_exempt,
-
-    coalesce(py.njsla_proficiency, 'No Test') as state_test_proficiency,
-
-    coalesce(pr.iready_proficiency, 'No Test') as iready_proficiency_eoy,
-
-    coalesce(db.boy_composite, 'No Test') as dibels_boy_composite,
-    coalesce(db.moy_composite, 'No Test') as dibels_moy_composite,
-    coalesce(db.eoy_composite, 'No Test') as dibels_eoy_composite,
-
-    null as dibels_most_recent_composite,
-
-    if(ie.student_number is not null, true, false) as is_magoosh,
-
-    if(ie.student_number is not null, true, false) as is_exempt_iready,
-
-    if(nj.iready_subject is not null, true, false) as bucket_two,
-
-    if(co.grade_level < 4, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
-
-    if(
-        co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
-    ) as assessment_dashboard_join,
-
-    case
-        when b.bucket = 'Bucket 1'
-        then b.bucket
-        when b.bucket = 'Bucket 2'
-        then b.bucket
-        when b.bucket = 'Bucket 3'
-        then b.bucket
-        else 'Bucket 4'
-    end as nj_student_tier,
-
-    case
-        when
-            co.grade_level < 3
-            and co.is_self_contained
-            and co.special_education_code in ('CMI', 'CMO', 'CSE')
-        then true
-        when sj.discipline = 'ELA' and se.values_column in ('2', '3', '4')
-        then true
-        when sj.discipline = 'Math' and se.values_column = '3'
-        then true
-        else false
-    end as is_exempt_state_testing,
-from {{ ref("int_extracts__student_enrollments") }} as co
-cross join subjects as sj
-left join
-    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as a
-    on co.students_dcid = a.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
-    and sj.discipline = a.discipline
-    and a.value_type = 'Graduation Pathway'
-left join
-    {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as se
-    on co.students_dcid = se.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="se") }}
-    and sj.discipline = se.discipline
-    and se.value_type = 'State Assessment Name'
-left join
-    prev_yr_state_test as py
-    /* TODO: find records that only match on SID */
-    on co.state_studentnumber = py.statestudentidentifier
-    and co.academic_year = py.academic_year_plus
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="py") }}
-    and sj.illuminate_subject_area = py.subject
-left join
-    prev_yr_iready as pr
-    on co.student_number = pr.student_id
-    and co.academic_year = pr.academic_year_plus
-    and sj.iready_subject = pr.subject
-left join
-    dibels as db
-    on co.student_number = db.student_number
-    and co.academic_year = db.academic_year
-    and sj.iready_subject = db.iready_subject
-    and db.rn_year = 1
-left join
-    magoosh_exempt as ie
-    on co.student_number = ie.student_number
-    and co.academic_year = ie.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ie") }}
-    and sj.iready_subject = ie.iready_subject
-left join
-    intervention_nj as nj
-    on co.studentid = nj.studentid
-    and co.academic_year = nj.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
-    and sj.iready_subject = nj.iready_subject
-left join
-    bucket_dedupe as b
-    on co.studentid = b.studentid
-    and co.academic_year = b.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
-    and sj.discipline = b.discipline
-where co.academic_year < {{ var("current_academic_year") - 1 }}

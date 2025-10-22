@@ -9,9 +9,9 @@ with
 
 select
     co.student_number,
-    co.lastfirst as student_name,
+    co.student_name,
     co.grade_level,
-    co.school_abbreviation as school,
+    co.school,
     co.lep_status,
     co.gender,
     co.ethnicity as race_ethnicity,
@@ -42,7 +42,7 @@ select
     regexp_replace(
         left(up.domain_name, length(up.domain_name) - 19), '_', ' '
     ) as domain_name,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['BOY', 'MOY', 'EOY']) as ar
 left join
