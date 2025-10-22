@@ -35,7 +35,7 @@ with
 
             case
                 when expected_score_type like '%growth%'
-                then 'Total Growth'
+                then 'Growth'
                 when expected_score_type like '%total%'
                 then 'Total'
                 when expected_score_type like '%ebrw%'
