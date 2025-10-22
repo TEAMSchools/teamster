@@ -278,15 +278,9 @@ select
         co.grade_level >= 9, sj.powerschool_credittype, sj.illuminate_subject_area
     ) as assessment_dashboard_join,
 
-    case
-        when b.bucket = 'Bucket 1'
-        then b.bucket
-        when b.bucket = 'Bucket 2'
-        then b.bucket
-        when b.bucket = 'Bucket 3'
-        then b.bucket
-        else 'Bucket 4'
-    end as nj_student_tier,
+    if(
+        b.bucket in ('Bucket 1', 'Bucket 2', 'Bucket 3'), b.bucket, 'Bucket 4'
+    ) as nj_student_tier,
 
     case
         when
