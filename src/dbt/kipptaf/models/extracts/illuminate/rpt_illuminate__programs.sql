@@ -99,9 +99,6 @@ select
         then 'BUE'
         when discipline = 'Math' and nj_student_tier = 'Bucket 4'
         then 'BUM'
-        when discipline = 'ELA' and nj_student_tier = 'Unbucketed'
-        then 'BUE'
-        when discipline = 'Math' and nj_student_tier = 'Unbucketed'
     end as `07 Program ID`,
 
     null as `08 Eligibility Start Date`,
