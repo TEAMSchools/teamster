@@ -21,6 +21,8 @@ models:
         data_type: string
       - name: expected_month
         data_type: string
+      - name: expected_score_type_aligned
+        data_type: string
       - name: expected_field_name
         data_type: string
       - name: expected_months_included

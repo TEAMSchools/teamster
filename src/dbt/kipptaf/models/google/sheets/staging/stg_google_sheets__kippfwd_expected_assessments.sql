@@ -16,6 +16,12 @@ with
 
             regexp_extract(expected_month_round, r'^([^ ]+)') as expected_month,
 
+            if(
+                expected_score_type like '%growth%',
+                'sat_total_score',
+                expected_score_type
+            ) as expected_score_type_aligned,
+
         from
             {{
                 source(
