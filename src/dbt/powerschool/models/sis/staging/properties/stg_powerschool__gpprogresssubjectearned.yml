@@ -16,6 +16,6 @@ models:
       - name: storedgradesdcid
         data_type: int64
       - name: earnedcredits
-        data_type: numeric
+        data_type: float64
       - name: percentgrade
-        data_type: numeric
+        data_type: float64
