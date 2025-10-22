@@ -197,6 +197,10 @@ select
 
     g.previous_total_score_change,
 
+    if(
+        s.subject_area in ('Composite', 'Combined'), 'Total', s.subject_area
+    ) as aligned_subject_area,
+
     round(coalesce(d.superscore, a.superscore), 0) as superscore,
 
     round(coalesce(dr.runnning_superscore, a.superscore), 0) as running_superscore,
