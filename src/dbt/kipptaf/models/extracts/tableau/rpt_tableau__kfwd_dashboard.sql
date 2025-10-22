@@ -23,6 +23,7 @@ with
                 partition by student, academic_year, semester
                 order by transcript_date desc
             ) as rn_semester,
+
             row_number() over (
                 partition by student order by transcript_date desc
             ) as rn_all,
@@ -41,6 +42,7 @@ with
             academic_year,
             comments,
             next_steps,
+
             row_number() over (
                 partition by contact, academic_year order by `date` desc
             ) as rn_contact_year_desc,
@@ -53,17 +55,19 @@ with
             contact,
             academic_year,
             `subject` as tier,
+
             row_number() over (
                 partition by contact, academic_year order by `date` desc
             ) as rn_contact_year_desc,
         from {{ ref("stg_kippadb__contact_note") }}
-        where regexp_contains(subject, r'Tier\s\d$')
+        where regexp_contains(`subject`, r'Tier\s\d$')
     ),
 
     grad_plan as (
         select
             contact,
             `subject` as grad_plan_year,
+
             row_number() over (
                 partition by contact order by `date` desc
             ) as rn_contact_desc,
@@ -114,33 +118,38 @@ with
             academic_color as benchmark_academic_color,
             financial_color as benchmark_financial_color,
             passion_purpose_plan_score as benchmark_ppp_color,
+
             row_number() over (
                 partition by contact, academic_year order by benchmark_date desc
             ) as rn_benchmark,
         from {{ ref("stg_kippadb__college_persistence") }}
     ),
 
+    persistence as (
+        select
+            sf_contact_id,
+            is_persisting_int,
+
+            cast(persistence_year as string) as persistence_year,
+        from {{ ref("int_kippadb__persistence") }}
+        where
+            is_ecc
+            and rn_enrollment_year = 1
+            and semester = 'Fall'
+            and persistence_year between 1 and 6
+    ),
+
     persist_pivot as (
         select
             sf_contact_id,
+
             `1` as is_persist_yr1_int,
             `2` as is_persist_yr2_int,
             `3` as is_persist_yr3_int,
             `4` as is_persist_yr4_int,
             `5` as is_persist_yr5_int,
         from
-            (
-                select
-                    sf_contact_id,
-                    cast(persistence_year as string) as persistence_year,
-                    is_persisting_int,
-                from {{ ref("int_kippadb__persistence") }}
-                where
-                    rn_enrollment_year = 1
-                    and semester = 'Fall'
-                    and is_ecc
-                    and persistence_year between 1 and 6
-            ) pivot (
+            persistence pivot (
                 max(is_persisting_int) for persistence_year in ('1', '2', '3', '4', '5')
             )
     ),
@@ -148,7 +157,9 @@ with
     matriculation_type as (
         select 'BA' as matriculation_type, application_account_type,
         from unnest(['Public 4 yr', 'Private 4 yr']) as application_account_type
+
         union all
+
         select 'CTE' as matriculation_type, application_account_type,
         from
             unnest(
@@ -169,6 +180,7 @@ with
     test_attempts as (
         select
             contact,
+
             sum(if(score_type = 'act_composite', 1, 0)) as n_act_attempts,
             sum(if(score_type = 'sat_total_score', 1, 0)) as n_sat_attempts,
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
@@ -178,18 +190,19 @@ with
     award_letter_rollup as (
         select
             student__id as og_student_id,
+
             sum(
                 if(award_letter__status != 'not_received', 1, 0)
             ) as n_award_letters_received,
         from {{ ref("stg_overgrad__admissions") }}
-        group by all
+        group by student__id
     ),
 
     school_visit as (
         select contact, academic_year, count(*) as school_visit_count
         from {{ ref("stg_kippadb__contact_note") }}
-        where type = 'School Visit' and status = 'Successful'
-        group by all
+        where `type` = 'School Visit' and `status` = 'Successful'
+        group by contact, academic_year
     )
 
 select
@@ -237,6 +250,18 @@ select
     c.exit_school_name,
     c.powerschool_enroll_status,
     c.contact_postsec_advisor_name as postsec_advisor,
+    c.best_guess_pathway as bgp,
+    c.desired_pathway,
+    c.is_ed_ea,
+    c.personal_statement_status,
+    c.supplemental_essay_status,
+    c.recommendation_1_status,
+    c.recommendation_2_status,
+    c.created_fsa_id_student,
+    c.created_fsa_id_parent,
+    c.common_app_linked,
+    c.wishlist_signed_off_by_counselor,
+    c.wishlist_notes,
 
     ay.academic_year,
 
@@ -440,19 +465,6 @@ select
 
     m.matriculation_type,
 
-    os.best_guess_pathway as bgp,
-    os.desired_pathway,
-    os.is_ed_ea,
-    os.personal_statement_status,
-    os.supplemental_essay_status,
-    os.recommendation_1_status,
-    os.recommendation_2_status,
-    os.created_fsa_id_student,
-    os.created_fsa_id_parent,
-    os.common_app_linked,
-    os.wishlist_signed_off_by_counselor,
-    os.wishlist_notes,
-
     al.n_award_letters_received,
 
     ta.n_act_attempts,
@@ -521,7 +533,7 @@ select
 
     case
         when
-            os.best_guess_pathway = '4-year'
+            c.best_guess_pathway = '4-year'
             and round(c.contact_college_match_display_gpa, 2) >= 3.50
             and ar.n_wishlist >= 9
             and ar.n_68plus_ecc_wishlist >= 7
@@ -531,8 +543,8 @@ select
             and ar.n_68plus_ecc_ea_ed_wishlist >= 2
         then 1
         when
-            os.is_ed_ea != 'Yes'
-            and os.best_guess_pathway = '4-year'
+            c.is_ed_ea != 'Yes'
+            and c.best_guess_pathway = '4-year'
             and round(c.contact_college_match_display_gpa, 2) >= 3.00
             and ar.n_wishlist >= 9
             and ar.n_60plus_ecc_wishlist >= 7
@@ -540,8 +552,8 @@ select
             and ar.n_strong_oos_wishlist >= 2
         then 1
         when
-            os.is_ed_ea = 'Yes'
-            and os.best_guess_pathway = '4-year'
+            c.is_ed_ea = 'Yes'
+            and c.best_guess_pathway = '4-year'
             and round(c.contact_college_match_display_gpa, 2) >= 3.00
             and ar.n_wishlist >= 9
             and ar.n_60plus_ecc_wishlist >= 7
@@ -551,27 +563,27 @@ select
             and ar.n_meets_full_need_ea_ed_wishlist >= 1
         then 1
         when
-            os.best_guess_pathway = '4-year'
+            c.best_guess_pathway = '4-year'
             and round(c.contact_college_match_display_gpa, 2) >= 2.50
             and ar.n_wishlist >= 6
             and ar.n_nj_wishlist >= 6
             and ar.n_55plus_ecc_wishlist >= 4
         then 1
         when
-            os.best_guess_pathway = '4-year'
+            c.best_guess_pathway = '4-year'
             and round(c.contact_college_match_display_gpa, 2) >= 2.00
             and ar.n_wishlist >= 6
             and ar.n_nj_wishlist >= 6
         then 1
         when
-            os.best_guess_pathway = '4-year'
+            c.best_guess_pathway = '4-year'
             and round(c.contact_college_match_display_gpa, 2) < 2.00
             and ar.n_wishlist >= 3
             and ar.n_nj_wishlist >= 3
             and ar.n_aa_cte_wishlist >= 1
         then 1
         when
-            os.best_guess_pathway = '2-year'
+            c.best_guess_pathway = '2-year'
             and ar.n_wishlist >= 3
             and (
                 ar.n_aa_cte_wishlist >= 3
@@ -579,7 +591,7 @@ select
             )
         then 1
         when
-            os.best_guess_pathway in ('CTE', 'Workforce')
+            c.best_guess_pathway in ('CTE', 'Workforce')
             and ar.n_wishlist >= 3
             and ar.n_aa_cte_wishlist >= 3
         then 1
@@ -593,7 +605,7 @@ select
             and ar.n_68_plus_ecc_submitted >= 2
         then 1
         when
-            os.is_ed_ea = 'Yes'
+            c.is_ed_ea = 'Yes'
             and ar.n_68_plus_ecc_submitted >= 2
             and ar.n_meets_full_need_68plus_ecc_ea_ed_submitted >= 1
         then 1
@@ -661,9 +673,7 @@ left join
     and b.rn_benchmark = 1
 left join persist_pivot as p on c.contact_id = p.sf_contact_id
 left join matriculation_type as m on apps.account_type = m.application_account_type
-left join
-    {{ ref("int_overgrad__students") }} as os on c.contact_id = os.external_student_id
-left join award_letter_rollup as al on os.id = al.og_student_id
+left join award_letter_rollup as al on c.overgrad_students_id = al.og_student_id
 left join test_attempts as ta on c.contact_id = ta.contact
 left join
     school_visit as sv

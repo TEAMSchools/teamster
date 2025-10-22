@@ -1,32 +1,17 @@
 {{ config(materialized="table") }}
 
 with
-    ms_grad_sub as (
+    esms_grad as (
         select
             _dbt_source_relation,
             student_number,
-            school_abbreviation as ms_attended,
+            school_level,
+            school_abbreviation,
 
             row_number() over (
-                partition by student_number order by exitdate desc
+                partition by student_number, school_level order by exitdate desc
             ) as rn,
-
         from {{ ref("base_powerschool__student_enrollments") }}
-        where school_level = 'MS'
-    ),
-
-    es_grad_sub as (
-        select
-            _dbt_source_relation,
-            student_number,
-            school_abbreviation as es_attended,
-
-            row_number() over (
-                partition by student_number order by exitdate desc
-            ) as rn,
-
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where school_level = 'ES'
     ),
 
     next_year_school as (
@@ -37,6 +22,7 @@ with
             lead(school_abbreviation, 1) over (
                 partition by student_number order by academic_year asc
             ) as next_year_school,
+
             lead(schoolid, 1) over (
                 partition by student_number order by academic_year asc
             ) as next_year_schoolid,
@@ -77,90 +63,51 @@ with
     )
 
 select
-    e._dbt_source_relation,
-    e.studentid,
-    e.students_dcid,
-    e.student_number,
+    e.* except (
+        lastfirst,
+        last_name,
+        first_name,
+        middle_name,
+        school_abbreviation,
+        advisory_section_number,
+        student_email_google,
+        salesforce_contact_id,
+        salesforce_contact_df_has_fafsa,
+        salesforce_contact_college_match_display_gpa,
+        salesforce_contact_college_match_gpa_band,
+        salesforce_contact_owner_name,
+        state_studentnumber,
+        `state`
+    ),
     e.lastfirst as student_name,
     e.last_name as student_last_name,
     e.first_name as student_first_name,
     e.middle_name as student_middle_name,
-    e.enroll_status,
-    e.cohort,
-    e.yearid,
-    e.academic_year,
-    e.entrydate,
-    e.exitdate,
-    e.exitcode,
-    e.exitcomment,
-    e.region,
-    e.school_level,
-    e.schoolid,
-    e.reporting_schoolid,
-    e.school_name,
     e.school_abbreviation as school,
-    e.grade_level,
-    e.grade_level_prev,
-    e.advisory_name,
     e.advisory_section_number as team,
-    e.advisor_lastfirst,
     e.student_email_google as student_email,
-    e.student_web_id,
-    e.student_web_password,
-    e.gender,
-    e.ethnicity,
-    e.fedethnicity,
-    e.dob,
-    e.lunch_status,
-    e.spedlep,
-    e.special_education_code,
-    e.lep_status,
-    e.gifted_and_talented,
-    e.is_504,
-    e.is_homeless,
-    e.is_out_of_district,
-    e.is_self_contained,
-    e.is_enrolled_oct01,
-    e.is_enrolled_recent,
-    e.is_enrolled_y1,
-    e.is_retained_year,
-    e.is_retained_ever,
-    e.is_fldoe_fte_all,
-    e.year_in_school,
-    e.year_in_network,
-    e.boy_status,
-    e.rn_year,
-    e.rn_undergrad,
-    e.rn_all,
-    e.code_location,
     e.salesforce_contact_id as salesforce_id,
     e.salesforce_contact_df_has_fafsa as has_fafsa,
     e.salesforce_contact_college_match_display_gpa as college_match_gpa,
     e.salesforce_contact_college_match_gpa_band as college_match_gpa_bands,
-    e.salesfoce_contact_owner_name as contact_owner_name,
-    e.ktc_cohort,
-    e.illuminate_student_id,
-    e.contact_1_name,
-    e.contact_1_phone_home,
-    e.contact_1_phone_mobile,
-    e.contact_1_email_current,
-    e.contact_2_name,
-    e.contact_2_phone_home,
-    e.contact_2_phone_mobile,
-    e.contact_2_email_current,
-    e.is_fldoe_fte_2,
-    e.graduation_year,
+    e.salesforce_contact_owner_name as contact_owner_name,
 
     lc.region as region_official_name,
     lc.deanslist_school_id,
 
-    m.ms_attended,
+    m.school_abbreviation as ms_attended,
 
-    es.es_attended,
+    es.school_abbreviation as es_attended,
 
     mt.territory,
 
+    hi.enter_date as home_instruction_enter_date,
+    hi.exit_date as home_instruction_exit_date,
+    hi.sp_comment as home_instruction_sp_comment,
+
     hos.head_of_school_preferred_name_lastfirst as hos,
+    hos.school_leader_preferred_name_lastfirst as school_leader,
+    hos.school_leader_sam_account_name as school_leader_tableau_username,
 
     ovg.best_guess_pathway,
 
@@ -181,6 +128,9 @@ select
     gc.cumulative_y1_gpa_projected_s1,
     gc.cumulative_y1_gpa_projected_s1_unweighted,
     gc.core_cumulative_y1_gpa,
+    gc.earned_credits_cum,
+    gc.earned_credits_cum_projected,
+    gc.potential_credits_cum,
 
     ny.next_year_school,
     ny.next_year_schoolid,
@@ -204,6 +154,11 @@ select
     ) as grad_iep_exempt_status_overall,
 
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+    if(e.lep_status, 'ML', 'Not ML') as ml_status,
+    if(e.is_504, 'Has 504', 'No 504') as status_504,
+    if(
+        e.is_self_contained, 'Self-contained', 'Not self-contained'
+    ) as self_contained_status,
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
 
@@ -290,20 +245,21 @@ select
         then 'Salesforce/Overgrad has FAFSA opt-out mismatch'
         else 'No issues'
     end as fafsa_status_mismatch_category,
-
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
     on e.school_name = lc.name
 left join
-    ms_grad_sub as m
+    esms_grad as m
     on e.student_number = m.student_number
     and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
+    and m.school_level = 'MS'
     and m.rn = 1
 left join
-    es_grad_sub as es
+    esms_grad as es
     on e.student_number = es.student_number
     and {{ union_dataset_join_clause(left_alias="e", right_alias="es") }}
+    and es.school_level = 'ES'
     and es.rn = 1
 left join
     mia_territory as mt
@@ -331,6 +287,13 @@ left join
     and {{ union_dataset_join_clause(left_alias="e", right_alias="tut") }}
     and tut.specprog_name = 'Tutoring'
     and tut.rn_student_program_year_desc = 1
+inner join
+    {{ ref("int_powerschool__spenrollments") }} as hi
+    on e.studentid = hi.studentid
+    and e.academic_year = hi.academic_year
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="hi") }}
+    and hi.specprog_name = 'Home Instruction'
+    and hi.rn_student_program_year_desc = 1
 left join
     {{ ref("int_people__leadership_crosswalk") }} as hos
     on e.schoolid = hos.home_work_location_powerschool_school_id
