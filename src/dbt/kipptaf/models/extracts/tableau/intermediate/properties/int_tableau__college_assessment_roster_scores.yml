@@ -29,5 +29,7 @@ models:
         data_type: numeric
       - name: previous_total_score_change
         data_type: numeric
+      - name: previous_total_score_change_gl
+        data_type: numeric
       - name: superscore
         data_type: numeric

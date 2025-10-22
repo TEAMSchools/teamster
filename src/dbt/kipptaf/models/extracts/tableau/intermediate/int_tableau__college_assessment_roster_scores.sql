@@ -153,11 +153,17 @@ with
     growth as (
         select
             student_number,
+            grade_level,
 
             expected_scope,
             expected_admin_season,
             expected_admin_season_order,
             scale_score,
+
+            scale_score - lag(scale_score) over (
+                partition by student_number, grade_level, expected_scope
+                order by expected_admin_season_order desc
+            ) as previous_total_score_change_gl,
 
             scale_score - lag(scale_score) over (
                 partition by student_number, expected_scope
@@ -204,6 +210,8 @@ select
 
     g.previous_total_score_change,
 
+    h.previous_total_score_change_gl,
+
     round(coalesce(d.superscore, a.superscore), 0) as superscore,
 
 from final_scores as s
@@ -225,3 +233,10 @@ left join
     and s.expected_scope = g.expected_scope
     and s.expected_admin_season = g.expected_admin_season
     and g.previous_total_score_change is not null
+left join
+    growth as h
+    on s.student_number = h.student_number
+    and s.expected_scope = h.expected_scope
+    and s.grade_level = h.grade_level
+    and s.expected_admin_season = h.expected_admin_season
+    and h.previous_total_score_change is not null
