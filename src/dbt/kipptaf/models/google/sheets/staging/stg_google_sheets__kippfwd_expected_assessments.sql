@@ -1,4 +1,5 @@
 with
+<<<<<<< HEAD
     months as (
         select
             expected_region,
@@ -29,6 +30,8 @@ with
             expected_admin_season
     ),
 
+=======
+>>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1
     scores as (
         select
             *,
@@ -52,6 +55,7 @@ with
                     "google_sheets", "src_google_sheets__kippfwd_expected_assessments"
                 )
             }}
+<<<<<<< HEAD
     )
 
 select
@@ -81,3 +85,43 @@ left join
     and s.expected_scope = m.expected_scope
     and s.expected_admin_season = m.expected_admin_season
 where s.expected_admin_season != 'Not Official'
+=======
+        where expected_admin_season != 'Not Official'
+    )
+
+select
+    *,
+
+    case
+        when expected_month_round = 'Year'
+        then expected_month_round
+        when expected_grouping = 'Growth'
+        then
+            -- trunk-ignore(sqlfluff/LT05)
+            'The previous month is based on the individual testing history for a student.'
+        else
+            string_agg(expected_month, ', ') over (
+                partition by
+                    expected_region,
+                    expected_grade_level,
+                    expected_test_type,
+                    expected_scope,
+                    expected_admin_season
+            )
+    end as expected_months_included,
+
+    concat(
+        'G',
+        expected_grade_level,
+        ' ',
+        expected_admin_season,
+        ' ',
+        expected_test_type,
+        ' ',
+        expected_scope,
+        ' ',
+        expected_grouping
+    ) as expected_field_name,
+
+from scores
+>>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1

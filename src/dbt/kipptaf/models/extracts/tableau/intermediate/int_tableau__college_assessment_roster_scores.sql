@@ -12,9 +12,16 @@ with
             score as scale_score,
             rn_highest,
 
+<<<<<<< HEAD
             format_date('%B', latest_psat_date) as test_month,
             'Official' as test_type,
 
+=======
+            'Official' as test_type,
+
+            format_date('%B', latest_psat_date) as test_month,
+
+>>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1
         from {{ ref("int_collegeboard__psat_unpivot") }}
         where score_type not in ('psat10_reading', 'psat10_math_test')
 
@@ -32,9 +39,16 @@ with
             score as scale_score,
             rn_highest,
 
+<<<<<<< HEAD
             format_date('%B', `date`) as test_month,
             'Official' as test_type,
 
+=======
+            'Official' as test_type,
+
+            format_date('%B', `date`) as test_month,
+
+>>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
             `date` is not null
@@ -42,7 +56,11 @@ with
     ),
 
     focus_scores as (
+<<<<<<< HEAD
         -- SAT, as they are month-bound (12th grade only 12th grade)
+=======
+        -- SAT (year/month-bound)
+>>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1
         select
             e.student_number,
             e.grade_level,
@@ -71,12 +89,19 @@ with
             and a.expected_scope = 'SAT'
         inner join
             scores as s
+<<<<<<< HEAD
             on a.expected_score_type = s.score_type
             and a.expected_month = s.test_month
             and a.expected_region = e.region
             and a.expected_grade_level = e.grade_level
             and e.student_number = s.student_number
             and e.academic_year = s.academic_year
+=======
+            on e.student_number = s.student_number
+            and e.academic_year = s.academic_year
+            and a.expected_score_type = s.score_type
+            and a.expected_month = s.test_month
+>>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1
         where
             e.school_level = 'HS'
             and e.rn_year = 1
@@ -113,10 +138,15 @@ with
             and a.expected_scope != 'SAT'
         inner join
             scores as s
+<<<<<<< HEAD
             on a.expected_score_type = s.score_type
             and a.expected_region = e.region
             and a.expected_grade_level = e.grade_level
             and e.student_number = s.student_number
+=======
+            on e.student_number = s.student_number
+            and a.expected_score_type = s.score_type
+>>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1
         where
             e.school_level = 'HS'
             and e.rn_year = 1
@@ -161,11 +191,14 @@ with
             scale_score,
 
             scale_score - lag(scale_score) over (
+<<<<<<< HEAD
                 partition by student_number, grade_level, expected_scope
                 order by expected_admin_season_order desc
             ) as total_growth_score_change_gl,
 
             scale_score - lag(scale_score) over (
+=======
+>>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1
                 partition by student_number, expected_scope
                 order by expected_admin_season_order desc
             ) as total_growth_score_change,
@@ -210,8 +243,11 @@ select
 
     g.total_growth_score_change,
 
+<<<<<<< HEAD
     h.total_growth_score_change_gl,
 
+=======
+>>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1
     round(coalesce(d.superscore, a.superscore), 0) as superscore,
 
 from final_scores as s
@@ -233,6 +269,7 @@ left join
     and s.expected_scope = g.expected_scope
     and s.expected_admin_season = g.expected_admin_season
     and g.total_growth_score_change is not null
+<<<<<<< HEAD
 left join
     growth as h
     on s.student_number = h.student_number
@@ -240,3 +277,5 @@ left join
     and s.grade_level = h.grade_level
     and s.expected_admin_season = h.expected_admin_season
     and h.total_growth_score_change_gl is not null
+=======
+>>>>>>> 8dde1473ce2fbf4a5dd1607b8759272f5fe823b1
