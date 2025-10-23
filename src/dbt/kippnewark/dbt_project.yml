@@ -44,6 +44,9 @@ models:
         +enabled: false
   iready:
     +materialized: table
+    staging:
+      stg_iready__instructional_usage_data:
+        +enabled: false
   overgrad:
     +materialized: table
     staging:

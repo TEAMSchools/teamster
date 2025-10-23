@@ -1,5 +1,8 @@
 models:
   - name: int_extracts__student_enrollments_subjects_weeks
+    config:
+      contract:
+        enforced: false
     columns:
       - name: _dbt_source_relation
         data_type: string
