@@ -3,8 +3,11 @@ semantic_models:
     model: ref('dim_teammates')
     description:
       Staff roster dimension with job titles, departments, demographics, and
-      employment status. Includes key fields for HR reporting, DEI analytics,
-      and workforce tracking.
+      employment status. Includes key fields for HR reporting and workforce
+      tracking.
+
+    defaults:
+      agg_time_dimension: effective_date_start
 
     entities:
       - name: teammates
