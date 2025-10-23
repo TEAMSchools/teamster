@@ -25,7 +25,7 @@ select
     e.salesforce_id,
 
     concat(s.scope_order, s.date_order, s.subject_area_order) as expected_admin_order,
-    
+
 from {{ ref("int_assessments__college_assessment") }} as s
 inner join
     {{ ref("int_extracts__student_enrollments") }} as e
