@@ -196,6 +196,8 @@ select
         false
     ) as is_tutoring,
 
+    if(sip.students_student_number is not null, true, false) as is_sipps,
+
     case
         e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
     end as race_ethnicity,
@@ -324,3 +326,11 @@ left join
     graduation_pathway_m as mc
     on e.students_dcid = mc.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="mc") }}
+left join
+    {{ ref("base_powerschool__course_enrollments") }} as sip
+    on e.student_number = sip.students_student_number
+    and e.academic_year = sip.cc_academic_year
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="sip") }}
+    and sip.courses_course_number = 'SEM01099G1'
+    and sip.rn_course_number_year = 1
+    and not sip.is_dropped_section

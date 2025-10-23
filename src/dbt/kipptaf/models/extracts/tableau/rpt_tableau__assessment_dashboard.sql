@@ -64,10 +64,11 @@ with
             and not enr.is_dropped_section
             and enr.rn_student_year_illuminate_subject_desc = 1
         where
-            co.academic_year >= {{ var("current_academic_year") - 1 }}
-            and co.rn_year = 1
+            co.rn_year = 1
+            and co.academic_year >= {{ var("current_academic_year") - 1 }}
             and co.grade_level != 99
     )
+
 select
     d.student_number,
     d.student_name as lastfirst,
@@ -116,6 +117,9 @@ select
     sf.nj_student_tier,
     sf.is_tutoring as tutoring_nj,
     sf.territory,
+    sf.is_sipps,
+    sf.is_low_25_fl,
+    sf.dibels_most_recent_composite,
 
     /* retired fields kept for tableau compatibility */
     null as power_standard_goal,
