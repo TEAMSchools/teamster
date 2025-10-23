@@ -245,7 +245,7 @@ select
     sj.discipline,
     sj.fast_subject,
 
-    sip.is_sipps,
+    coalesce(sip.is_sipps, false) as is_sipps,
 
     dr.measure_standard_level_int as dibels_most_recent_composite_int,
 
