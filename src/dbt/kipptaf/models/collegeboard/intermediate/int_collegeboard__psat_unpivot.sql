@@ -50,28 +50,43 @@ with
                     latest_psat_math_test
                 )
             )
+    ),
+
+    calcs as (
+        select
+            cb_id,
+            powerschool_student_number,
+            academic_year,
+            administration_round,
+            latest_psat_date,
+            test_type,
+            test_subject,
+            course_discipline,
+            score_type,
+            score,
+
+            case
+                course_discipline when 'MATH' then 'Math' when 'ENG' then 'ELA'
+            end as discipline,
+
+            /* highest of the flavor of PSAT */
+            row_number() over (
+                partition by powerschool_student_number, test_type, score_type
+                order by score desc
+            ) as rn_highest,
+
+            count(*) over (
+                partition by powerschool_student_number, test_type, latest_psat_date
+            ) as row_count_by_test_date,
+
+        from psat
     )
 
 select
-    cb_id,
-    powerschool_student_number,
-    academic_year,
-    administration_round,
-    latest_psat_date,
-    test_type,
-    test_subject,
-    course_discipline,
-    score_type,
-    score,
+    *,
 
-    case
-        course_discipline when 'MATH' then 'Math' when 'ENG' then 'ELA'
-    end as discipline,
+    avg(row_count_by_test_date) over (
+        partition by powerschool_student_number, test_type
+    ) as average_rows,
 
-    /* highest of the flavor of PSAT */
-    row_number() over (
-        partition by powerschool_student_number, test_type, score_type
-        order by score desc
-    ) as rn_highest,
-
-from psat
+from calcs
