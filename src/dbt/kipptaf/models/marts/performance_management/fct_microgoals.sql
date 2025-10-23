@@ -1,23 +1,15 @@
 with
     teachers as (
         select
-            employee_number,
-            formatted_name,
-            job_title,
-            home_department_name,
-            home_work_location_name,
-            home_business_unit_name,
-            home_work_location_powerschool_school_id,
-            effective_date_start,
-            effective_date_end,
+            *,
         from {{ ref("dim_teammates") }}
         where primary_indicator and assignment_status = 'Active' and is_teacher
     ),
 
     /* using as date scaffold to align with Topline */
-    calendar as (
-        select schoolid, week_start_monday, week_end_sunday,
-        from {{ ref("int_powerschool__calendar_week") }}
+    reporting_terms as (
+        select *,
+        from {{ ref("stg_google_sheets__reporting__terms") }}
     ),
 
     grow_users as (select *, from {{ ref("stg_schoolmint_grow__users") }}),
