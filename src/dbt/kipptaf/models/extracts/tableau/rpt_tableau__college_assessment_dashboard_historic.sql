@@ -63,6 +63,7 @@ with
             e.college_match_gpa,
             e.college_match_gpa_bands,
             e.ms_attended,
+            e.graduation_year,
             e.is_exempt_state_testing as dlm,
 
             s.courses_course_name,
@@ -155,6 +156,7 @@ select
     e.contact_owner_name,
     e.college_match_gpa,
     e.college_match_gpa_bands,
+    e.graduation_year,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
@@ -183,6 +185,7 @@ select
 
     o.scale_score,
     o.rn_highest,
+
 from roster as e
 left join
     college_assessments_official as o
@@ -215,6 +218,7 @@ select
     e.contact_owner_name,
     e.college_match_gpa,
     e.college_match_gpa_bands,
+    e.graduation_year,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
@@ -242,6 +246,7 @@ select
         partition by e.student_number, p.scope, p.subject_area
         order by p.scale_score desc
     ) as rn_highest,
+
 from roster as e
 left join
     {{ ref("int_assessments__college_assessment_practice") }} as p
