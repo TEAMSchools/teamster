@@ -171,7 +171,6 @@ with
         from {{ ref("base_powerschool__course_enrollments") }}
         where
             courses_course_number = 'SEM01099G1'
-            and courses_credittype = 'ENG'
             and rn_course_number_year = 1
             and not is_dropped_section
     ),
