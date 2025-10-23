@@ -24,3 +24,5 @@ models:
         data_type: int64
       - name: rn_highest
         data_type: int64
+      - name: row_count_by_test_date,
+        data_type: int64

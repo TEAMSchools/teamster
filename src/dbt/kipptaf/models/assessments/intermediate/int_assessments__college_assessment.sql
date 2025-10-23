@@ -17,6 +17,8 @@ with
 
             format_date('%B', latest_psat_date) as test_month,
 
+            if(average_rows = 1, false, true) as is_multi_row,
+
         from {{ ref("int_collegeboard__psat_unpivot") }}
 
         union all
@@ -37,6 +39,8 @@ with
             contact as salesforce_id,
 
             format_date('%B', `date`) as test_month,
+
+            if(average_rows = 1, false, true) as is_multi_row,
 
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
@@ -73,7 +77,13 @@ with
     ),
 
     max_score as (
-        select student_number, scope, score_type, avg(scale_score) as max_scale_score,
+        select
+            student_number,
+            scope,
+            score_type,
+            is_multi_row,
+
+            avg(scale_score) as max_scale_score,
 
         from scores
         where
@@ -84,7 +94,7 @@ with
                 'sat_reading_test_score'
             )
             and rn_highest = 1
-        group by student_number, scope, score_type
+        group by student_number, scope, score_type, is_multi_row
     ),
 
     max_total_score as (
@@ -118,6 +128,7 @@ with
                 'psat10_total',
                 'psatnmsqt_total'
             )
+            and not is_multi_row
         group by student_number, scope
     ),
 

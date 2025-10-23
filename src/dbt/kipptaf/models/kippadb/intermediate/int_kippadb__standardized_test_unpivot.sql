@@ -101,34 +101,49 @@ with
         where
             test_type in ('ACT', 'Advanced Placement', 'PSAT', 'SAT')
             and not scoring_irregularity
+    ),
+
+    calcs as (
+        select
+            u.*,
+
+            acc.ap_course_name,
+            acc.ps_ap_course_subject_code,
+
+            case
+                u.score_type
+                when 'sat_total_score'
+                then 'Combined'
+                when 'psat_total_score'
+                then 'Combined'
+                when 'sat_reading_test_score'
+                then 'Reading Test'
+                when 'sat_math_test_score'
+                then 'Math Test'
+                else u.test_subject
+            end as subject_area,
+
+            row_number() over (
+                partition by u.contact, u.test_type, u.score_type, acc.ap_course_name
+                order by u.score desc
+            ) as rn_highest,
+
+            count(*) over (
+                partition by school_specific_id, test_type, `date`
+            ) as row_count_by_test_date,
+
+        from unpivoted as u
+        left join
+            {{ ref("stg_google_sheets__collegeboard__ap_course_crosswalk") }} as acc
+            on u.test_subject = acc.test_name
+            and acc.data_source = 'ADB'
     )
 
 select
-    u.*,
+    *,
 
-    acc.ap_course_name,
-    acc.ps_ap_course_subject_code,
+    avg(row_count_by_test_date) over (
+        partition by school_specific_id, test_type
+    ) as average_rows,
 
-    case
-        u.score_type
-        when 'sat_total_score'
-        then 'Combined'
-        when 'psat_total_score'
-        then 'Combined'
-        when 'sat_reading_test_score'
-        then 'Reading Test'
-        when 'sat_math_test_score'
-        then 'Math Test'
-        else u.test_subject
-    end as subject_area,
-
-    row_number() over (
-        partition by u.contact, u.test_type, u.score_type, acc.ap_course_name
-        order by u.score desc
-    ) as rn_highest,
-
-from unpivoted as u
-left join
-    {{ ref("stg_google_sheets__collegeboard__ap_course_crosswalk") }} as acc
-    on u.test_subject = acc.test_name
-    and acc.data_source = 'ADB'
+from calcs
