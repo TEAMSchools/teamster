@@ -355,7 +355,6 @@ left join
     sipps_exempt as sip
     on co.student_number = sip.student_number
     and co.academic_year = sip.academic_year
-    and sj.powerschool_credittype = sip.credit_type
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sip") }}
 left join
     bucket_dedupe as b
