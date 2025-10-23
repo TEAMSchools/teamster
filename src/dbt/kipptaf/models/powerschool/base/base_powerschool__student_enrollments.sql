@@ -85,6 +85,8 @@ select
     adb.graduation_year,
 
     adbu.name as salesforce_contact_owner_name,
+    adbu.phone as salesforce_contact_owner_phone,
+    adbu.email as salesforce_contact_owner_email,
 
     ill.student_id as illuminate_student_id,
 

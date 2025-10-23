@@ -86,6 +86,8 @@ with
             co.self_contained_status,
             co.gifted_and_talented,
             co.nj_student_tier,
+            co.is_sipps,
+            co.is_low_25_fl,
             co.week_start_monday,
             co.week_end_sunday,
             co.date_count as days_in_session,
@@ -248,6 +250,8 @@ select
     co.state_test_proficiency,
     co.is_exempt_iready,
     co.nj_student_tier,
+    co.is_sipps,
+    co.is_low_25_fl,
 
     qbls.qbl,
 
@@ -354,6 +358,8 @@ select
     co.state_test_proficiency,
     co.is_exempt_iready,
     co.nj_student_tier,
+    co.is_sipps,
+    co.is_low_25_fl,
 
     qbls.qbl,
 
@@ -484,6 +490,8 @@ select
     null as state_test_proficiency,
     null as is_exempt_iready,
     null as nj_student_tier,
+    null as is_sipps,
+    null as is_low_25_fl,
     null as qbl,
     null as grade_goal,
     null as school_goal,

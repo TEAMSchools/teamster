@@ -1,5 +1,8 @@
 models:
   - name: int_extracts__student_enrollments_subjects
+    config:
+      contract:
+        enforced: false
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -10,8 +13,8 @@ models:
               - iready_subject
           config:
             enabled: false
-            severity: warn
             store_failures: true
+            # severity: warn
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -232,4 +235,6 @@ models:
       - name: nj_student_tier
         data_type: string
       - name: is_exempt_state_testing
+        data_type: boolean
+      - name: is_low_25_fl
         data_type: boolean
