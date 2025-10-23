@@ -559,6 +559,21 @@ exposures:
           metadata:
             id: b11542a2-6780-4feb-a1dd-534ffe724faf
             cron_schedule: 0 * * * *
+  - name: personalized_survey_links
+    label: Personalized Survey Links
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__survey_completion")
+    meta:
+      dagster:
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 95584fbd-e5d7-425b-a1fc-9953bc2a7df9
+            cron_schedule: 0 * * * *
   - name: compliance_dashboard
     label: Compliance Dashboard
     type: dashboard

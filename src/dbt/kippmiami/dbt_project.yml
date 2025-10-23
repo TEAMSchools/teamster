@@ -43,6 +43,9 @@ models:
         +enabled: false
   iready:
     +materialized: table
+    staging:
+      stg_iready__instructional_usage_data:
+        +enabled: false
   powerschool:
     +materialized: table
     sis:

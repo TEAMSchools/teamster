@@ -158,24 +158,6 @@ with
             and not is_dropped_section
     ),
 
-    sipps_exempt as (
-        select
-            _dbt_source_relation,
-            students_student_number as student_number,
-            cc_academic_year as academic_year,
-
-            courses_credittype as credit_type,
-
-            true as is_sipps,
-
-        from {{ ref("base_powerschool__course_enrollments") }}
-        where
-            courses_course_number = 'SEM01099G1'
-            and courses_credittype = 'ENG'
-            and rn_course_number_year = 1
-            and not is_dropped_section
-    ),
-
     dibels as (
         select
             student_number,
@@ -246,8 +228,6 @@ select
     sj.discipline,
     sj.fast_subject,
 
-    sip.is_sipps,
-
     dr.measure_standard_level_int as dibels_most_recent_composite_int,
 
     a.values_column as ps_grad_path_code,
@@ -268,9 +248,9 @@ select
 
     if(ie.student_number is not null, true, false) as is_magoosh,
 
-    if(ie.student_number is not null or sip.is_sipps, true, false) as is_exempt_iready,
-
     if(nj.iready_subject is not null, true, false) as bucket_two,
+
+    if(ie.student_number is not null or co.is_sipps, true, false) as is_exempt_iready,
 
     if(co.grade_level <= 3, pr.iready_proficiency, py.njsla_proficiency) as bucket_one,
 
@@ -281,6 +261,8 @@ select
     if(
         b.bucket in ('Bucket 1', 'Bucket 2', 'Bucket 3'), b.bucket, 'Bucket 4'
     ) as nj_student_tier,
+
+    if(fp.fldoe_percentile_rank < .255, true, false) as is_low_25_fl,
 
     case
         when
@@ -309,6 +291,11 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="se") }}
     and sj.discipline = se.discipline
     and se.value_type = 'State Assessment Name'
+left join
+    {{ ref("int_assessments__fast_previous_year") }} as fp
+    on co.academic_year = fp.academic_year
+    and co.student_number = fp.student_number
+    and sj.discipline = fp.discipline
 left join
     prev_yr_state_test as py
     /* TODO: find records that only match on SID */
@@ -345,12 +332,6 @@ left join
     and co.academic_year = nj.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
     and sj.iready_subject = nj.iready_subject
-left join
-    sipps_exempt as sip
-    on co.student_number = sip.student_number
-    and co.academic_year = sip.academic_year
-    and sj.powerschool_credittype = sip.credit_type
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="sip") }}
 left join
     bucket_dedupe as b
     on co.studentid = b.studentid
