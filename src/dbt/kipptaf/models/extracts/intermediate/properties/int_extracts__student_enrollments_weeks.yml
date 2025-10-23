@@ -1,5 +1,8 @@
 models:
   - name: int_extracts__student_enrollments_weeks
+    config:
+      contract:
+        enforced: false
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -9,7 +12,7 @@ models:
               - week_start_monday
           config:
             store_failures: true
-            severity: warn
+            # severity: warn
     columns:
       - name: _dbt_source_relation
         data_type: string

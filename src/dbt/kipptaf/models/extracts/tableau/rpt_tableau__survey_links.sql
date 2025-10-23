@@ -50,7 +50,7 @@ with
         where
             sr.assignment_status = 'Active'
             and sr.primary_indicator
-            and sr.work_assignment_actual_start_date
+            and coalesce(sr.worker_rehire_date, sr.worker_original_hire_date)
             <= date_sub(current_date(), interval 3 week)
     )
 /* Staff Info and Cert */
