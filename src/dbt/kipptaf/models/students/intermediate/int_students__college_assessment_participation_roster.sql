@@ -63,6 +63,7 @@ with
 
             e.salesforce_id,
             e.grade_level,
+            
         from {{ ref("int_assessments__college_assessment") }} as s
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
