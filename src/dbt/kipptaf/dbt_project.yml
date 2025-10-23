@@ -91,9 +91,6 @@ models:
       +schema: extracts
       +contract:
         enforced: true
-      intermediate:
-        +contract:
-          enforced: false
       tableau:
         +schema: tableau
     facebook:
