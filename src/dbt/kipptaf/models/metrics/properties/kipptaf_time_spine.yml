@@ -1,8 +1,9 @@
 models:
   - name: kipptaf_time_spine
     description:
-      A time spine with one row per day, ranging from 7/1/2002 (first ever day
-      at TEAM) to 6/30 of the current school year, and columns linking dates to academic years and week starts.
+      A date spine with one row per day from the beginning of TEAM to the end of
+      the current academic year, with business logic for week starts, ends, and
+      academic years.
     config:
       materialized: table
     time_spine:
@@ -10,3 +11,17 @@ models:
     columns:
       - name: date_day
         granularity: day
+        description: Primary date dimension.
+        tests:
+          - not_null
+          - unique
+      - name: week_start_monday
+        description:
+          The Monday of the Monday - Sunday week this date falls within,
+          beginning date for week over week reporting.
+      - name: week_end_sunday
+        description:
+          The Sunday of the Monday - Sunday week this date falls within, end
+          date for week over week reporting.
+      - name: academic_year
+        description: The academic year this date falls within.
