@@ -1,9 +1,7 @@
 from teamster.code_locations.kippmiami import CODE_LOCATION, CURRENT_FISCAL_YEAR
 from teamster.code_locations.kippmiami.iready.schema import (
-    DIAGNOSTIC_AND_INSTRUCTION_SCHEMA,
     DIAGNOSTIC_RESULTS_SCHEMA,
     INSTRUCTION_BY_LESSON_SCHEMA,
-    INSTRUCTIONAL_USAGE_DATA_SCHEMA,
     PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
     PERSONALIZED_INSTRUCTION_SUMMARY,
 )
@@ -32,17 +30,6 @@ diagnostic_results = build_iready_sftp_asset(
     end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
 )
 
-instructional_usage_data = build_iready_sftp_asset(
-    asset_key=[*key_prefix, "instructional_usage_data"],
-    region_subfolder=region_subfolder,
-    remote_file_regex=(
-        r"instructional_usage_data_(?P<subject>ela|math)(_CONFIDENTIAL)?\.csv"
-    ),
-    avro_schema=INSTRUCTIONAL_USAGE_DATA_SCHEMA,
-    start_fiscal_year=2023,
-    end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
-)
-
 instruction_by_lesson = build_iready_sftp_asset(
     asset_key=[*key_prefix, "personalized_instruction_by_lesson"],
     region_subfolder=region_subfolder,
@@ -66,21 +53,9 @@ instruction_by_lesson_pro = build_iready_sftp_asset(
     end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
 )
 
-diagnostic_and_instruction = build_iready_sftp_asset(
-    asset_key=[*key_prefix, "diagnostic_and_instruction"],
-    region_subfolder=region_subfolder,
-    remote_file_regex=(
-        r"diagnostic_and_instruction_(?P<subject>ela|math)_ytd_window\.csv"
-    ),
-    avro_schema=DIAGNOSTIC_AND_INSTRUCTION_SCHEMA,
-    start_fiscal_year=2022,
-    end_fiscal_year=2024,
-)
-
 assets = [
     diagnostic_results,
     instruction_by_lesson,
     instruction_by_lesson_pro,
-    instructional_usage_data,
     personalized_instruction_summary,
 ]
