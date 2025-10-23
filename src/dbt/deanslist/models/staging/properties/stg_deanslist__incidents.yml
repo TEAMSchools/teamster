@@ -153,13 +153,13 @@ models:
         data_type: string
       - name: actions
         data_type: |
-          array<struct<ActionID string, ActionName string, PointValue string, SAID string, SourceID string>>
+          ARRAY<STRUCT<ActionID STRING, ActionName STRING, PointValue STRING, SAID STRING, SourceID STRING>>
       - name: attachments
         data_type: |
-          array<struct<AttachmentID string, AttachmentType string, Bytes string, ContentType string, EntityID string, EntityName string, EntityType string, InternalFilename string, InternalFolder string, MinUserLevel string, MinUserLevelGroupName string, PublicFilename string, ReportDate string, ReportType string, SchoolID string, SourceID string, SourceType string, StudentID string, TermID string, URL string, FilePostedAt struct<date string, timezone string, timezone_type int64>>>
+          ARRAY<STRUCT<AttachmentID STRING, AttachmentType STRING, Bytes STRING, ContentType STRING, EntityID STRING, EntityName STRING, EntityType STRING, InternalFilename STRING, InternalFolder STRING, MinUserLevel STRING, MinUserLevelGroupName STRING, PublicFilename STRING, ReportDate STRING, ReportType STRING, SchoolID STRING, SourceID STRING, SourceType STRING, StudentID STRING, TermID STRING, URL STRING, FilePostedAt STRUCT<date STRING, timezone_type INT64, timezone STRING>>>
       - name: custom_fields
         data_type: |
-          array<struct<CustomFieldID string, FieldCategory string, FieldKey string, FieldName string, FieldType string, InputHTML string, InputName string, IsFrontEnd string, IsRequired string, LabelHTML string, MinUserLevel string, Options string, SourceID string, SourceType string, StringValue string, Value string, SelectedOptions array<string>, NumValue struct<double_value float64, long_value int64>>>
+          ARRAY<STRUCT<CustomFieldID STRING, FieldCategory STRING, FieldKey STRING, FieldName STRING, FieldType STRING, InputHTML STRING, InputName STRING, IsFrontEnd STRING, IsRequired STRING, LabelHTML STRING, MinUserLevel STRING, Options STRING, SourceID STRING, SourceType STRING, StringValue STRING, Value STRING, NumValue STRUCT<long_value INT64, double_value FLOAT64>, SelectedOptions ARRAY<STRING>>>
       - name: penalties
         data_type: |
-          array<struct<EndDate string, IncidentID string, IncidentPenaltyID string, IsReportable boolean, IsSuspension boolean, NumPeriods string, PenaltyID string, PenaltyName string, Print boolean, SAID string, SchoolID string, StartDate string, StudentID string, NumDays struct<double_value float64, long_value int64>>>
+          ARRAY<STRUCT<IncidentID STRING, IncidentPenaltyID STRING, SchoolID STRING, PenaltyID STRING, PenaltyName STRING, StartDate STRING, EndDate STRING, NumPeriods STRING, IsSuspension BOOL, IsReportable BOOL, SAID STRING, Print BOOL, StudentID STRING, NumDays STRUCT<long_value INT64, double_value FLOAT64>>>
