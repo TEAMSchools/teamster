@@ -185,6 +185,7 @@ select
 
     o.scale_score,
     o.rn_highest,
+
 from roster as e
 left join
     college_assessments_official as o
@@ -245,6 +246,7 @@ select
         partition by e.student_number, p.scope, p.subject_area
         order by p.scale_score desc
     ) as rn_highest,
+
 from roster as e
 left join
     {{ ref("int_assessments__college_assessment_practice") }} as p
