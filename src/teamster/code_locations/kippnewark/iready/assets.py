@@ -19,7 +19,7 @@ personalized_instruction_summary = build_iready_sftp_asset(
         r"personalized_instruction_summary_(?P<subject>ela|math)_CONFIDENTIAL\.csv"
     ),
     avro_schema=PERSONALIZED_INSTRUCTION_SUMMARY,
-    start_fiscal_year=2026,
+    start_fiscal_year=2025,
     end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
 )
 
