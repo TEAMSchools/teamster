@@ -1,25 +1,14 @@
 select
-    * except (
-        defaultdecimalcount,
-        gradeformulasetid,
-        gradesectionconfigid,
-        iscalcformulaeditable,
-        iscalcprecisioneditable,
-        iscalcsectionfromstndedit,
-        isdropscoreeditable,
-        isgradescaleteachereditable,
-        ishigherlvlstndeditable,
-        ishigherstndautocalc,
-        ishigherstndcalceditable,
-        {# ismulticategoryallowed, #}
-        {# ismulticategoryeditable, #}
-        issectstndweighteditable,
-        isstndcalcmeteditable,
-        isstndrcntscoreeditable,
-        isusingpercentforstndautocalc,
-        minimumassignmentvalue,
-        sectionsdcid
-    ),
+    calcmetricsectionfromstnd,
+    defaultroundingrule,
+    higherlevelstndmetric,
+    recentscoreweightlist,
+    stndcalculationmetric,
+    `type`,
+    whencreated,
+    whenmodified,
+    whocreated,
+    whomodified,
 
     /* column transformations */
     defaultdecimalcount.int_value as defaultdecimalcount,
@@ -33,8 +22,6 @@ select
     ishigherlvlstndeditable.int_value as ishigherlvlstndeditable,
     ishigherstndautocalc.int_value as ishigherstndautocalc,
     ishigherstndcalceditable.int_value as ishigherstndcalceditable,
-    {# ismulticategoryallowed.int_value as ismulticategoryallowed, #}
-    {# ismulticategoryeditable.int_value as ismulticategoryeditable, #}
     issectstndweighteditable.int_value as issectstndweighteditable,
     isstndcalcmeteditable.int_value as isstndcalcmeteditable,
     isstndrcntscoreeditable.int_value as isstndrcntscoreeditable,
