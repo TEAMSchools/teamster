@@ -103,3 +103,5 @@ models:
         data_type: boolean
       - name: is_low_25_fl
         data_type: boolean
+      - name: dibels_most_recent_composite
+        data_type: string
