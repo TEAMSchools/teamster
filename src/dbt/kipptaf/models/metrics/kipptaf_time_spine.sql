@@ -1,8 +1,3 @@
--- select date_day,
--- from
--- unnest(
--- generate_date_array('2002-07-01', '{{ var("current_fiscal_year" ) }}-06-30')
--- ) as date_day
 with
     date_spine as (
         select
@@ -26,13 +21,11 @@ with
             date_trunc('quarter', date_day) as financial_quarter  -- Or more complex logic
 
         from
-            {{
-                dbt_utils.date_spine(
-                    "2002-07-01",
-                    '{{ var("current_fiscal_year" ) }}-06-30',
-                    'date_day'
+            unnest(
+                generate_date_array(
+                    '2002-07-01', '{{ var("current_fiscal_year" ) }}-06-30'
                 )
-            }}
+            ) as date_day
     )
 
 select *
