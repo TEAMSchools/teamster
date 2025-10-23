@@ -572,7 +572,7 @@ exposures:
           - tableau
         asset:
           metadata:
-            id:
+            id: 95584fbd-e5d7-425b-a1fc-9953bc2a7df9
             cron_schedule: 0 * * * *
   - name: compliance_dashboard
     label: Compliance Dashboard
