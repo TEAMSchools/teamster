@@ -1,5 +1,5 @@
 with
-    scores as (
+    score_prep as (
         select
             powerschool_student_number as student_number,
             administration_round,
@@ -13,11 +13,13 @@ with
             rn_highest,
 
             'Official' as test_type,
-            null as salesforce_id,
+            'NA' as salesforce_id,
 
             format_date('%B', latest_psat_date) as test_month,
 
-            if(average_rows = 1, false, true) as is_multi_row,
+            count(*) over (
+                partition by powerschool_student_number, test_type, latest_psat_date
+            ) as row_count_by_test_date,
 
         from {{ ref("int_collegeboard__psat_unpivot") }}
 
@@ -40,7 +42,9 @@ with
 
             format_date('%B', `date`) as test_month,
 
-            if(average_rows = 1, false, true) as is_multi_row,
+            count(*) over (
+                partition by school_specific_id, test_type, `date`
+            ) as row_count_by_test_date,
 
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
@@ -58,6 +62,24 @@ with
                 'sat_math',
                 'sat_ebrw'
             )
+    ),
+
+    scores as (
+        select
+            *,
+
+            mod(
+                cast(
+                    avg(row_count_by_test_date) over (
+                        partition by student_number, scope
+                    ) as numeric
+                ),
+                1
+            )
+
+            != 0 as is_multirow,
+
+        from score_prep
     ),
 
     growth as (
@@ -81,7 +103,7 @@ with
             student_number,
             scope,
             score_type,
-            is_multi_row,
+            is_multirow,
 
             avg(scale_score) as max_scale_score,
 
@@ -94,7 +116,7 @@ with
                 'sat_reading_test_score'
             )
             and rn_highest = 1
-        group by student_number, scope, score_type, is_multi_row
+        group by student_number, scope, score_type, is_multirow
     ),
 
     max_total_score as (
@@ -128,7 +150,7 @@ with
                 'psat10_total',
                 'psatnmsqt_total'
             )
-            and not is_multi_row
+            and not is_multirow
         group by student_number, scope
     ),
 
@@ -302,4 +324,5 @@ select
         end,
         0
     ) as runnning_superscore,
+
 from running_max_superscores
