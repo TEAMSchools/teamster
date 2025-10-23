@@ -67,3 +67,7 @@ models:
         data_type: date
       - name: school_exitdate
         data_type: date
+      - name: regional_email
+        data_type: string
+      - name: regional_phone
+        data_type: string

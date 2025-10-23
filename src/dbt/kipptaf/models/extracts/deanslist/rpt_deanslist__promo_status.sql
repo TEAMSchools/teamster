@@ -1,3 +1,18 @@
+with
+    athletic_eligibility as (
+        select academic_year, student_number, `quarter`, athletic_eligibility,
+        from
+            {{ ref("int_students__athletic_eligibility") }} unpivot (
+                athletic_eligibility for `quarter` in (
+                    q1_ae_status as 'Q1',
+                    q2_ae_status as 'Q2',
+                    q3_ae_status as 'Q3',
+                    q4_ae_status as 'Q4'
+                )
+            )
+
+    )
+
 select
     co.student_number,
     co.academic_year,
@@ -18,9 +33,24 @@ select
     p.ada_term_running,
     p.projected_credits_y1_term,
 
-    null as promo_status_lit,
+    ae.athletic_eligibility,
+
     null as promo_status_qa_math,
     null as grades_y1_credits_enrolled,
+
+    if(
+        p.iready_reading_recent
+        in ('2 Grade Levels Below', '3 or More Grade Levels Below')
+        or p.iready_reading_recent is null,
+        'Off-Track',
+        'On-Track'
+    ) as promo_status_lit,
+    if(
+        p.iready_math_recent in ('2 Grade Levels Below', '3 or More Grade Levels Below')
+        or p.iready_reading_recent is null,
+        'Off-Track',
+        'On-Track'
+    ) as promo_status_math,
 
     case
         co.grade_level when 9 then 25 when 10 then 50 when 11 then 85 when 12 then 120
@@ -60,4 +90,9 @@ left join
     on co.student_number = p.student_number
     and co.academic_year = p.academic_year
     and term = p.term_name
+left join
+    athletic_eligibility as ae
+    on co.student_number = ae.student_number
+    and co.academic_year = ae.academic_year
+    and term = ae.quarter
 where co.academic_year = {{ var("current_academic_year") }} and co.rn_year = 1

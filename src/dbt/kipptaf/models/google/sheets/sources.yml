@@ -279,7 +279,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0
-            sheet_range: src_google_sheets__topline_student_goals
+            sheet_range: src_google_sheets__topline_student_goals_v2
             skip_leading_rows: 1
         meta:
           dagster:
