@@ -17,7 +17,7 @@ models:
         data_type: string
       - name: topic
         data_type: string
-      - name: lesson
+      - name: lesson_title
         data_type: string
       - name: lesson_status
         data_type: string
