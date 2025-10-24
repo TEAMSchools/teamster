@@ -15,5 +15,11 @@ select
     'TDT' as observation_type_abbreviation,
 
     trim(split(observer, '-')[0]) as observer_name,
-from {{ source("google_appsheet", "src_teacher_development__observation_archive") }}
+from
+    {{
+        source(
+            "google_appsheet",
+            "src_google_appsheet__teacher_development__observation_archive",
+        )
+    }}
 where observation_id is not null

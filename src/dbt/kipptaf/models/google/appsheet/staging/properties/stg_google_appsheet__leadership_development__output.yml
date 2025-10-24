@@ -1,5 +1,5 @@
 models:
-  - name: stg_leadership_development__output
+  - name: stg_google_appsheet__leadership_development__output
     columns:
       - name: employee_number
         data_type: int64

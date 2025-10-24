@@ -1,5 +1,5 @@
 models:
-  - name: stg_seat_tracker__log_archive
+  - name: stg_google_appsheet__seat_tracker__log_archive
     columns:
       - name: log_id
         data_type: string

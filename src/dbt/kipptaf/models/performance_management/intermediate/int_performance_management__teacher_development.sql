@@ -37,7 +37,13 @@ select
     'Teacher Development' as observation_type,
 
     concat('Teacher Development: ', o.observation_type) as rubric_name,
-from {{ ref("stg_performance_management__teacher_development_observations") }} as o
+from
+    {{
+        ref(
+            "stg_google_appsheet__performance_management__teacher_development_observations"
+        )
+    }}
+    as o
 left join
     {{ ref("stg_performance_management__teacher_development_observation_details") }}
     as od

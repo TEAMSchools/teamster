@@ -1,5 +1,5 @@
 models:
-  - name: stg_seat_tracker__seats
+  - name: stg_google_appsheet__seat_tracker__seats
     columns:
       - name: adp_location
         data_type: string
