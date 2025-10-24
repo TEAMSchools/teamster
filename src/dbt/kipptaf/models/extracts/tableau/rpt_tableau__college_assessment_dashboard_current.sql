@@ -1,9 +1,34 @@
+{% set metrics = [
+    "sat_combined_pct_890_plus_g11",
+    "sat_combined_pct_1010_plus_g11",
+    "sat_combined_pct_890_plus_g12",
+    "sat_combined_pct_1010_plus_g12",
+] %}
+
 with
     board_goals as (
-        select grade_level, expected_scope, expected_metric_label, pct_goal, min_score,
+        select
+            grade_level,
+            expected_scope,
+            expected_score_type,
+
+            {% for m in metrics %}
+                max(
+                    if(expected_metric_label = '{{ m }}', pct_goal, null)
+                ) as {{ m }}_board_pct_goal
+                {% if not loop.last %},{% endif %}
+            {% endfor %},
+
+            {% for m in metrics %}
+                max(
+                    if(expected_metric_label = '{{ m }}', min_score, null)
+                ) as {{ m }}_board_min_score
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
 
         from {{ ref("stg_google_sheets__kippfwd_goals") }}
         where expected_goal_type = 'Board' and expected_scope = 'SAT'
+        group by grade_level, expected_scope, expected_score_type
     ),
 
     strategy as (
@@ -21,23 +46,30 @@ with
             g.min_score as expected_metric_min_score,
             g.pct_goal as expected_metric_pct_goal,
 
-            b1.min_score as expected_board_min_score_g11_890,
-            b1.pct_goal as expected_board_pct_goal_g11_890,
+            b.sat_combined_pct_890_plus_g11_board_min_score
+            as expected_sat_combined_pct_890_plus_g11_board_min_score,
+            b.sat_combined_pct_890_plus_g11_board_pct_goal
+            as expected_sat_combined_pct_890_plus_g11_board_pct_goal,
+            b.sat_combined_pct_890_plus_g12_board_min_score
+            as expected_sat_combined_pct_890_plus_g12_board_min_score,
+            b.sat_combined_pct_890_plus_g12_board_pct_goal
+            as expected_sat_combined_pct_890_plus_g12_board_pct_goal,
 
-            b1.min_score as expected_board_min_score_g11_1010,
-            b1.pct_goal as expected_board_pct_goal_g11_1010,
-
-            b2.min_score as expected_board_min_score_g12,
-            b2.pct_goal as expected_board_pct_goal_g12,
+            b.sat_combined_pct_1010_plus_g11_board_min_score
+            as expected_sat_combined_pct_1010_plus_g11_board_min_score,
+            b.sat_combined_pct_1010_plus_g11_board_pct_goal
+            as expected_sat_combined_pct_1010_plus_g11_board_pct_goal,
+            b.sat_combined_pct_1010_plus_g12_board_min_score
+            as expected_sat_combined_pct_1010_plus_g12_board_min_score,
+            b.sat_combined_pct_1010_plus_g12_board_pct_goal
+            as expected_sat_combined_pct_1010_plus_g12_board_pct_goal,
 
         from {{ ref("int_assessments__college_assessment") }} as s
         inner join
             {{ ref("stg_google_sheets__kippfwd_goals") }} as g
             on s.score_type = g.expected_score_type
             and g.expected_goal_type != 'Board'
-        left join
-            {{ ref("stg_google_sheets__kippfwd_goals") }} as b
-            on s.score_type = b.expected_score_type
+        left join board_goals as b on s.score_type = b.expected_score_type
         where s.subject_area = 'Combined'
     ),
 
@@ -112,21 +144,41 @@ with
                 case
                     e.grade_level
                     when 11
-                    then r.expected_board_min_score_g11
+                    then r.expected_sat_combined_pct_890_plus_g11_board_min_score
                     when 12
-                    then r.expected_board_min_score_g12
+                    then r.expected_sat_combined_pct_890_plus_g12_board_min_score
                 end
-            ) as expected_board_min_score,
+            ) as expected_board_890_plus_min_score,
 
             min(
                 case
                     e.grade_level
                     when 11
-                    then r.expected_board_pct_goal_g11
+                    then r.expected_sat_combined_pct_1010_plus_g11_board_min_score
                     when 12
-                    then r.expected_board_pct_goal_g12
+                    then r.expected_sat_combined_pct_1010_plus_g12_board_min_score
                 end
-            ) as expected_board_min_pct_goal,
+            ) as expected_board_1010_plus_min_score,
+
+            min(
+                case
+                    e.grade_level
+                    when 11
+                    then r.expected_sat_combined_pct_890_plus_g11_board_pct_goal
+                    when 12
+                    then r.expected_sat_combined_pct_890_plus_g12_board_pct_goal
+                end
+            ) as expected_board_890_plus_pct_goal,
+
+            min(
+                case
+                    e.grade_level
+                    when 11
+                    then r.expected_sat_combined_pct_1010_plus_g11_board_pct_goal
+                    when 12
+                    then r.expected_sat_combined_pct_1010_plus_g12_board_pct_goal
+                end
+            ) as expected_board_1010_plus_pct_goal,
 
             avg(
                 if(
@@ -187,6 +239,12 @@ select
     *,
 
     if(score >= expected_metric_min_score, 1, 0) as met_min_score_int,
-    if(score >= expected_board_min_score, 1, 0) as met_min_board_score_int,
+
+    if(
+        score >= expected_board_890_plus_min_score, 1, 0
+    ) as met_min_board_890_plus_score_int,
+    if(
+        score >= expected_board_1010_plus_min_score, 1, 0
+    ) as met_min_board_1010_plus_score_int,
 
 from roster
