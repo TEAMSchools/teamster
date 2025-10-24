@@ -1,20 +1,15 @@
 with
     transformations as (
         select
-            * except (
-                studentsdcid,
-                c_504_status
-                {% if project_name == "kippmiami" %}, is_gifted{% endif %}
-            ),
+            * except (studentsdcid, c_504_status, is_gifted),
 
             /* column transformations */
             studentsdcid.int_value as studentsdcid,
 
             safe_cast(c_504_status as int) as c_504_status,
 
-            {% if project_name == "kippmiami" %}
-                if(is_gifted.int_value = 1, 'Y', 'N') as gifted_and_talented,
-            {% endif %}
+            if(is_gifted.int_value = 1, 'Y', 'N') as gifted_and_talented,
+
         from {{ source("powerschool_odbc", "src_powerschool__u_studentsuserfields") }}
     )
 

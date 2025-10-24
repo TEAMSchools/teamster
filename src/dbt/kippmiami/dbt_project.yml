@@ -36,6 +36,13 @@ models:
       staging:
         +contract:
           enforced: true
+    powerschool:
+      +materialized: table
+      +schema: powerschool
+      sis:
+        staging:
+          +contract:
+            enforced: true
   deanslist:
     +materialized: table
     staging:
