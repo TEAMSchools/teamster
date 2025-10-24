@@ -1,31 +1,6 @@
 with
     score_union as (
         select
-            powerschool_student_number as student_number,
-            administration_round,
-            academic_year,
-            latest_psat_date as test_date,
-            test_type as scope,
-            test_subject as subject_area,
-            course_discipline,
-            score_type,
-            score as scale_score,
-            rn_highest,
-
-            'Official' as test_type,
-            'NA' as salesforce_id,
-
-            format_date('%B', latest_psat_date) as test_month,
-
-            count(*) over (
-                partition by powerschool_student_number, test_type, latest_psat_date
-            ) as row_count_by_test_date,
-
-        from {{ ref("int_collegeboard__psat_unpivot") }}
-
-        union all
-
-        select
             school_specific_id as student_number,
             administration_round,
             academic_year,
@@ -36,12 +11,7 @@ with
             score_type,
             score as scale_score,
             rn_highest,
-
-            'Official' as test_type,
-
             contact as salesforce_id,
-
-            format_date('%B', `date`) as test_month,
 
             count(*) over (
                 partition by school_specific_id, test_type, `date`
@@ -63,6 +33,28 @@ with
                 'sat_math',
                 'sat_ebrw'
             )
+
+        union all
+
+        select
+            powerschool_student_number as student_number,
+            administration_round,
+            academic_year,
+            latest_psat_date as test_date,
+            test_type as scope,
+            test_subject as subject_area,
+            course_discipline,
+            score_type,
+            score as scale_score,
+            rn_highest,
+
+            cast(null as string) as salesforce_id,
+
+            count(*) over (
+                partition by powerschool_student_number, test_type, latest_psat_date
+            ) as row_count_by_test_date,
+
+        from {{ ref("int_collegeboard__psat_unpivot") }}
     ),
 
     scores as (
@@ -89,7 +81,7 @@ with
 
             {{
                 dbt_utils.generate_surrogate_key(
-                    ["student_number", "test_type", "score_type", "test_date"]
+                    ["student_number", "score_type", "test_date"]
                 )
             }} as surrogate_key,
 
@@ -238,6 +230,10 @@ with
 
 select
     *,
+
+    'Official' as test_type,
+
+    format_date('%B', test_date) as test_month,
 
     round(
         case
