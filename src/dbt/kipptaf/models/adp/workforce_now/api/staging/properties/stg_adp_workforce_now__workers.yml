@@ -295,7 +295,7 @@ models:
           ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, codes ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>
       - name: custom_field_group__number_fields
         data_type: |
-          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, numberValue FLOAT64>>rd
+          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, numberValue FLOAT64>>
       - name: custom_field_group__string_fields
         data_type: |
           ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, stringValue STRING>>
