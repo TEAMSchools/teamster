@@ -1,5 +1,5 @@
 models:
-  - name: stg_people__seat_tracker_people
+  - name: stg_google_appsheet__people__seat_tracker_people
     columns:
       - name: people_id
         data_type: int64

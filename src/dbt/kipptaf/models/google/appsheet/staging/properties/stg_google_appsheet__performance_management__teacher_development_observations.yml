@@ -1,5 +1,5 @@
 models:
-  - name: stg_performance_management__teacher_development_observations
+  - name: stg_google_appsheet__performance_management__teacher_development_observations
     columns:
       - name: observation_id
         data_type: string

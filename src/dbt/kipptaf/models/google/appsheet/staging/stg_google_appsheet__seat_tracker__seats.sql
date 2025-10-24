@@ -7,4 +7,4 @@ select
     coalesce(edited_at, timestamp_seconds(0)) as edited_at,
 
     concat(academic_year, '_', staffing_model_id) as surrogate_key,
-from {{ source("google_appsheet", "src_seat_tracker__seats") }}
+from {{ source("google_appsheet", "src_google_appsheet__seat_tracker__seats") }}
