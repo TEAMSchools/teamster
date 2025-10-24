@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_fldoe__science
-    config:
-      contract:
-        enforced: true
     columns:
       - name: student_id
         data_type: string

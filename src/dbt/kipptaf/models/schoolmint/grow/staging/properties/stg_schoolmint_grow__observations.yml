@@ -149,38 +149,8 @@ models:
         data_type: |
           array<struct<measurement string, measurementGroup string, valueText string, percentage float64, valueScore int64, lastModified string, checkboxes array<struct<label string, value boolean>>, textBoxes array<struct<key string, label string, value string>>>>
       # - name: attachments
-      #   data_type: record
-      # - name: attachments.creator
-      #   data_type: string
-      # - name: attachments.file
-      #   data_type: string
-      # - name: attachments.id
-      #   data_type: string
-      # - name: attachments.private
-      #   data_type: boolean
-      # - name: attachments.resource
-      #   data_type: string
-      # - name: attachments.created
-      #   data_type: string
-      # - name: attachments._id
-      #   data_type: string
+      #   data_type: array
       # - name: video_notes
-      #   data_type: record
-      # - name: video_notes.text
-      #   data_type: string
-      # - name: video_notes.createdonmillisecond
-      #   data_type: int64
-      # - name: video_notes.creator
-      #   data_type: string
-      # - name: video_notes.shared
-      #   data_type: boolean
-      # - name: video_notes.timestamp
-      #   data_type: string
-      # - name: video_notes._id
-      #   data_type: string
+      #   data_type: array
       # - name: videos
-      #   data_type: record
-      # - name: videos.video
-      #   data_type: string
-      # - name: videos.includevideotimestamps
-      #   data_type: boolean
+      #   data_type: array

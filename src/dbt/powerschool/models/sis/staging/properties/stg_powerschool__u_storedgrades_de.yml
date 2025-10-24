@@ -1,5 +1,6 @@
-version: 2
 models:
   - name: stg_powerschool__u_storedgrades_de
     config:
       enabled: false
+      contract:
+        enforced: false

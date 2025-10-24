@@ -2,3 +2,5 @@ models:
   - name: stg_zendesk__ticket_metrics_archive
     config:
       enabled: false
+      contract:
+        enforced: false

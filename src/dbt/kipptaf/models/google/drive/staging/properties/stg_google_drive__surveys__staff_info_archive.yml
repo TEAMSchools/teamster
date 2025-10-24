@@ -2,8 +2,6 @@ models:
   - name: stg_google_drive__surveys__staff_info_archive
     config:
       enabled: false
-      contract:
-        enforced: true
     columns:
       - name: respondent_email
         data_type: string

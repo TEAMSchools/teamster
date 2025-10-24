@@ -1,0 +1,7 @@
+models:
+  - name: stg_zendesk__organizations
+    columns:
+      - name: id
+        data_type: int64
+      - name: name
+        data_type: string

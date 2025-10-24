@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_deanslist__behavior
-    config:
-      contract:
-        enforced: true
     columns:
       - name: dl_said
         data_type: int64

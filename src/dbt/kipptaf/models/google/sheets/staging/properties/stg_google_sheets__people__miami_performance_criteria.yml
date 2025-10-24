@@ -2,8 +2,6 @@ models:
   - name: stg_google_sheets__people__miami_performance_criteria
     config:
       enabled: false
-      contract:
-        enforced: false
     columns:
       - name: Academic_Year
         data_type: int64

@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_deanslist__students__custom_fields__pivot
     columns:

@@ -1,17 +1,7 @@
--- depends_on: {{ ref("stg_powerschool__students") }}
--- depends_on: {{ source("people", "src_people__student_logins") }}
+/* depends_on: {{ ref("stg_powerschool__students") }} */
+/* depends_on: {{ source("people", "src_people__student_logins") }} */
 -- trunk-ignore(sqlfluff/LT05)
--- depends_on: {{ source("google_sheets", "src_google_sheets__people__student_logins_archive") }}
-{{
-    config(
-        materialized="incremental",
-        incremental_strategy="merge",
-        unique_key="student_number",
-        merge_update_columns=["default_password"],
-        full_refresh=false,
-    )
-}}
-
+/* depends_on: {{ source("google_sheets", "src_google_sheets__people__student_logins_archive") }} */
 {% if env_var("DBT_CLOUD_ENVIRONMENT_TYPE", "") in ["dev", "staging"] %}
     select student_number, username, default_password, google_email,
     from {{ source("people", "src_people__student_logins") }}

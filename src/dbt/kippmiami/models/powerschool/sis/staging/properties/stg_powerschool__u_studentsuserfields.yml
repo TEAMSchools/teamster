@@ -1,0 +1,23 @@
+models:
+  - name: stg_powerschool__u_studentsuserfields
+    columns:
+      - name: studentsdcid
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: cr_prevschoolname
+        data_type: string
+      - name: infosnap_id
+        data_type: string
+      - name: media_release
+        data_type: string
+      - name: c_504_status
+        data_type: int64
+      - name: is_504
+        data_type: boolean
+      - name: fleid
+        data_type: string
+      - name: gifted_and_talented
+        data_type: string

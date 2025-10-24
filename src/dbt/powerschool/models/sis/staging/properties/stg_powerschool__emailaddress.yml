@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__emailaddress
-    config:
-      contract:
-        enforced: true
     columns:
       - name: emailaddress
         data_type: string

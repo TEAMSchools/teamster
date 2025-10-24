@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_renlearn__star_skill_area
-    config:
-      contract:
-        enforced: true
     columns:
       - name: assessment_id
         data_type: string

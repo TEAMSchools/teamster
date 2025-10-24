@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__personaddress
-    config:
-      contract:
-        enforced: true
     columns:
       - name: street
         data_type: string

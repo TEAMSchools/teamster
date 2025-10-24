@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__s_nj_ren_x
-    config:
-      contract:
-        enforced: true
     columns:
       - name: lepbegindate
         data_type: date

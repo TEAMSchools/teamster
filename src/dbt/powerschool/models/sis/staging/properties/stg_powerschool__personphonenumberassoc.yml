@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__personphonenumberassoc
-    config:
-      contract:
-        enforced: true
     columns:
       - name: phonenumberasentered
         data_type: string

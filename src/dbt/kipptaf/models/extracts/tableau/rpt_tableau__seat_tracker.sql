@@ -1,6 +1,8 @@
 with
 
-    seats_detail as (select *, from {{ ref("stg_seat_tracker__seats") }}),
+    seats_detail as (
+        select *, from {{ ref("stg_google_appsheet__seat_tracker__seats") }}
+    ),
 
     projections as (
         select *, from {{ ref("stg_google_sheets__recruitment__school_projections") }}

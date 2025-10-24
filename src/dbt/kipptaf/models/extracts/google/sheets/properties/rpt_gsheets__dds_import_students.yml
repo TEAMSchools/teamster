@@ -2,8 +2,6 @@ models:
   - name: rpt_gsheets__dds_import_students
     config:
       enabled: false
-      contract:
-        enforced: false
     columns:
       - name: last
         data_type: string

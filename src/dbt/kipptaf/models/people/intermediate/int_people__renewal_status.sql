@@ -85,13 +85,13 @@ left join
     on c.employee_number = sp.employee_number
     and y.academic_year = sp.academic_year
 left join
-    {{ ref("stg_seat_tracker__seats") }} as s
+    {{ ref("stg_google_appsheet__seat_tracker__seats") }} as s
     on c.employee_number = s.teammate
     and y.fiscal_year = s.academic_year
 left join
     {{ ref("int_people__location_crosswalk") }} as nyl
     on s.adp_location = nyl.location_name
 left join
-    {{ ref("stg_people__seat_tracker_people") }} as stp
+    {{ ref("stg_google_appsheet__people__seat_tracker_people") }} as stp
     on c.employee_number = stp.employee_number
     and y.academic_year = stp.academic_year

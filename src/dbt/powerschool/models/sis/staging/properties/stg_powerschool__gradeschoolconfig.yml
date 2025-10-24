@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__gradeschoolconfig
-    config:
-      contract:
-        enforced: true
     columns:
       - name: gradecalcpreferenceorder
         data_type: string

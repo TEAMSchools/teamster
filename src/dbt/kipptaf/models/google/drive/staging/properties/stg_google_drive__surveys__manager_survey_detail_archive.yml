@@ -2,8 +2,6 @@ models:
   - name: stg_google_drive__surveys__manager_survey_detail_archive
     config:
       enabled: false
-      contract:
-        enforced: true
     columns:
       - name: campaign_reporting_term
         data_type: string

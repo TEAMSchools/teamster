@@ -2,8 +2,6 @@ models:
   - name: stg_google_sheets__reporting__promo_status_cutoffs
     config:
       enabled: false
-      contract:
-        enforced: false
     columns:
       - name: Region
         data_type: string
