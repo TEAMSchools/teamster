@@ -5,7 +5,6 @@ select
     `subject`,
     `level`,
     topic,
-    lesson_title as lesson,
     lesson_status,
     lesson_result,
     lesson_language,
