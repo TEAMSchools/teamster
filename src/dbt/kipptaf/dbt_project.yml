@@ -73,8 +73,9 @@ models:
         api:
           +enabled: false
         sftp:
-          +contract:
-            enforced: true
+          staging:
+            +contract:
+              enforced: true
     assessments:
       +schema: assessments
     collegeboard:
@@ -110,6 +111,7 @@ models:
       tableau:
         +schema: tableau
     facebook:
+      +schema: facebook
       +enabled: false
     finance:
       +schema: finance
@@ -204,13 +206,24 @@ models:
     people:
       +schema: people
       +materialized: table
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     performance_management:
       +schema: performance_management
       +materialized: table
+      staging:
+        +contract:
+          enforced: true
     powerschool:
       +schema: powerschool
     powerschool_enrollment:
       +schema: powerschool_enrollment
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     renlearn:
       +schema: renlearn
     reporting:
@@ -225,6 +238,10 @@ models:
             enforced: true
     smartrecruiters:
       +schema: smartrecruiters
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     students:
       +schema: students
     surveys:
@@ -232,10 +249,10 @@ models:
       +materialized: table
     tableau:
       +schema: tableau
+      +config:
+        enabled: false
       staging:
         +materialized: table
-        +contract:
-          enforced: true
     titan:
       +schema: titan
     topline:

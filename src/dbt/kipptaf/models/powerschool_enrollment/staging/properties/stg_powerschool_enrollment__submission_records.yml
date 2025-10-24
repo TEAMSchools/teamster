@@ -13,8 +13,6 @@ models:
         data_type: string
       - name: grade
         data_type: string
-      - name: tags
-        data_type: string
       - name: data_item_key
         data_type: string
       - name: published_action_id
@@ -39,3 +37,5 @@ models:
         data_type: int64
       - name: data_item_value
         data_type: string
+      - name: tags
+        data_type: array<string>
