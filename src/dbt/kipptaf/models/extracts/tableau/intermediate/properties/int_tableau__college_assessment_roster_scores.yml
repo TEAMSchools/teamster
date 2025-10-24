@@ -22,9 +22,7 @@ models:
         data_type: string
       - name: scale_score
         data_type: numeric
-      - name: max_scale_score
-        data_type: numeric
       - name: total_growth_score_change
         data_type: numeric
-      - name: superscore
-        data_type: numeric
+      - name: unique_test_admin_id
+        data_type: string

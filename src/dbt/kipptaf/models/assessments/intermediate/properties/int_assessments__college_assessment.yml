@@ -22,19 +22,31 @@ models:
         data_type: numeric
       - name: rn_highest
         data_type: int64
-      - name: test_month
-        data_type: string
       - name: test_type
         data_type: string
       - name: salesforce_id
         data_type: string
+      - name: test_month
+        data_type: string
+      - name: row_count_by_test_date
+        data_type: int64
+      - name: is_multirow
+        data_type: boolean
       - name: max_scale_score
         data_type: numeric
       - name: running_max_scale_score
         data_type: numeric
       - name: previous_total_score_change
         data_type: numeric
+      - name: aligned_subject_area
+        data_type: string
       - name: superscore
         data_type: numeric
-      - name: running_superscore
+      - name: surrogate_key
+        data_type: string
+      - name: avg_running_max_superscore
+        data_type: numeric
+      - name: sum_running_max_superscore
+        data_type: numeric
+      - name: runnning_superscore
         data_type: numeric
