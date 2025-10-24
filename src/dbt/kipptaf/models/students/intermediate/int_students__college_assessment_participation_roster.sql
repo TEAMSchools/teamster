@@ -161,7 +161,7 @@ with
         from yearly_test_counts as y
         cross join completion_goals as c
     )
-    
+
 select
     *,
 
