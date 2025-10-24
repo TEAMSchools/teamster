@@ -1,104 +1,24 @@
 with
-    expected_admins as (
-        -- need distinct rows with no individual months
-        select distinct
-            expected_region,
-            expected_grade_level,
-            expected_test_type,
-            expected_scope,
-            expected_score_type,
-            expected_admin_season,
-            expected_admin_season_order,
-            expected_months_included,
-            expected_grouping,
-            expected_field_name,
-
-            expected_score_category,
-
-            'foo' as bar,
-
-            concat(
-                expected_field_name, ' ', expected_score_category
-            ) as expected_field_name_score_category,
-
-            concat(
-                expected_grouping, ' ', expected_score_category
-            ) as expected_filter_group,
-
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "expected_test_type",
-                        "expected_score_type",
-                        "expected_grade_level",
-                        "expected_admin_season",
-                    ]
-                )
-            }} as expected_unique_test_admin_id,
-
-        from {{ ref("stg_google_sheets__kippfwd_expected_assessments") }}
-        cross join
-            unnest(
-                ['Scale Score', 'Max Scale Score', 'Superscore', 'Growth Score Change']
-            ) as expected_score_category
-    ),
-
     scores as (
         select
-            *,
+            student_number,
+            unique_test_admin_id,
+            scale_score as score,
 
-            concat(
-                expected_field_name, ' ', score_category
-            ) as expected_field_name_score_category,
+            'Scale Score' as score_category,
 
-            concat(expected_grouping, ' ', score_category) as expected_filter_group,
+        from {{ ref("int_tableau__college_assessment_roster_scores") }}
 
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "expected_test_type",
-                        "expected_score_type",
-                        "grade_level",
-                        "expected_admin_season",
-                    ]
-                )
-            }} as unique_test_admin_id,
+        union all
 
-        from
-            {{ ref("int_tableau__college_assessment_roster_scores") }} unpivot (
-                score for score_category in (
-                    scale_score as 'Scale Score',
-                    max_scale_score as 'Max Scale Score',
-                    superscore as 'Superscore',
-                    total_growth_score_change as 'Growth Score Change'
-                )
-            )
-    ),
-
-    superscores as (
-        select student_number, sat_total_superscore, sat_ebrw_highest, sat_math_highest,
-
-        from
-            scores pivot (
-                avg(score) for expected_filter_group in (
-                    'Total Superscore' as sat_total_superscore,
-                    'EBRW Max Scale Score' as sat_ebrw_highest,
-                    'Math Max Scale Score' as sat_math_highest
-                )
-            )
-        where expected_scope = 'SAT'
-    ),
-
-    superscores_dedup as (
         select
             student_number,
+            unique_test_admin_id,
+            total_growth_score_change as score,
 
-            avg(sat_total_superscore) as sat_total_superscore,
-            avg(sat_ebrw_highest) as sat_ebrw_highest,
-            avg(sat_math_highest) as sat_math_highest,
+            'Growth Score Change' as score_category,
 
-        from superscores
-        group by student_number
+        from {{ ref("int_tableau__college_assessment_roster_scores") }}
     )
 
 select
@@ -129,18 +49,22 @@ select
     ea.expected_grouping,
     ea.expected_grade_level,
     ea.expected_admin_season,
-    expected_months_included,
+    ea.expected_months_included,
     ea.expected_field_name,
     ea.expected_score_category,
-    ea.expected_field_name_score_category,
-    ea.expected_filter_group,
     ea.expected_admin_season_order,
 
-    s.sat_total_superscore,
-    s.sat_ebrw_highest,
-    s.sat_math_highest,
-
     a.score,
+
+    ss.superscore as sat_total_superscore,
+
+    he.max_scale_score as sat_ebrw_highest,
+
+    hm.max_scale_score as sat_math_highest,
+
+    concat(
+        ea.expected_field_name, ' ', ea.expected_score_category
+    ) as expected_field_name_score_category,
 
     coalesce(c.courses_course_name, 'No Data') as ccr_course,
     coalesce(c.teacher_lastfirst, 'No Data') as ccr_teacher_name,
@@ -148,23 +72,32 @@ select
 
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
-    expected_admins as ea
-    on 'foo' = ea.bar
-    and e.region = ea.expected_region
-    and ea.expected_score_category in ('Scale Score', 'Total Growth Score Change')
-    and ea.expected_filter_group not in (
-        'Math Previous Total Score Change',
-        'EBRW Previous Total Score Change',
-        'Total Previous Total Score Change',
-        'Total Previous Scale Score',
-        'Total Growth Scale Score'
-    )
-left join superscores_dedup as s on e.student_number = s.student_number
+    {{ ref("stg_google_sheets__kippfwd_expected_assessments") }} as ea
+    on e.region = ea.expected_region
+    and ea.rn = 1
 left join
     scores as a
     on e.student_number = a.student_number
     and ea.expected_unique_test_admin_id = a.unique_test_admin_id
     and ea.expected_score_category = a.score_category
+left join
+    {{ ref("int_assessments__college_assessment") }} as ss
+    on e.student_number = ss.student_number
+    and ss.scope = 'SAT'
+    and ss.aligned_subject_area = 'Total'
+    and ss.rn_highest = 1
+left join
+    {{ ref("int_assessments__college_assessment") }} as he
+    on e.student_number = he.student_number
+    and he.scope = 'SAT'
+    and he.aligned_subject_area = 'EBRW'
+    and he.rn_highest = 1
+left join
+    {{ ref("int_assessments__college_assessment") }} as hm
+    on e.student_number = hm.student_number
+    and hm.scope = 'SAT'
+    and hm.aligned_subject_area = 'Math'
+    and hm.rn_highest = 1
 left join
     {{ ref("base_powerschool__course_enrollments") }} as c
     on e.student_number = c.students_student_number
