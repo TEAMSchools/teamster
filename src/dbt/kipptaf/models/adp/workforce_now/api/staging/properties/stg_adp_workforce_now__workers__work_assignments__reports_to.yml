@@ -47,10 +47,6 @@ models:
         data_type: string
       - name: reports_to_worker_name__qualification_affix_code__short_name
         data_type: string
-      - name: reports_to_worker_name__preferred_salutations
-        data_type: record
-      - name: reports_to_worker_name__preferred_salutations.salutationcode
-        data_type: record
       - name: reports_to_worker_name__preferred_salutations.salutationcode.codevalue
         data_type: string
       - name: reports_to_worker_name__preferred_salutations.salutationcode.longname

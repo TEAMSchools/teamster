@@ -77,23 +77,12 @@ models:
             enforced: true
     assessments:
       +schema: assessments
-      staging:
-        +materialized: table
-        +contract:
-          enforced: true
-      disabled:
-        +enabled: false
     collegeboard:
       +schema: collegeboard
       staging:
         +materialized: table
         +contract:
           enforced: true
-      drive:
-        staging:
-          +materialized: table
-          +contract:
-            enforced: true
     coupa:
       +schema: coupa
       api:
@@ -101,19 +90,8 @@ models:
           +materialized: table
           +contract:
             enforced: true
-      drive:
-        staging:
-          +materialized: table
-          +contract:
-            enforced: true
       fivetran:
         +enabled: false
-    crdc:
-      +schema: crdc
-      staging:
-        +materialized: table
-        +contract:
-          enforced: true
     dayforce:
       +schema: dayforce
       +enabled: false
@@ -135,10 +113,6 @@ models:
       +enabled: false
     finance:
       +schema: finance
-      staging:
-        +materialized: table
-        +contract:
-          enforced: true
     fldoe:
       +schema: fldoe
     google:
@@ -168,11 +142,6 @@ models:
           +materialized: table
           +contract:
             enforced: true
-        drive:
-          staging:
-            +materialized: table
-            +contract:
-              enforced: true
       sheets:
         +schema: google_sheets
         +meta:
@@ -212,11 +181,6 @@ models:
         +materialized: table
         +contract:
           enforced: true
-      drive:
-        staging:
-          +materialized: table
-          +contract:
-            enforced: true
     knowbe4:
       +schema: knowbe4
       staging:
@@ -233,21 +197,10 @@ models:
       +schema: marts
     metrics:
       +schema: metrics
-    njdoe:
-      +schema: njdoe
-      staging:
-        +materialized: table
-        +contract:
-          enforced: true
     overgrad:
       +schema: overgrad
     pearson:
       +schema: pearson
-      drive:
-        staging:
-          +materialized: table
-          +contract:
-            enforced: true
     people:
       +schema: people
       +materialized: table
@@ -283,8 +236,6 @@ models:
         +materialized: table
         +contract:
           enforced: true
-      disabled:
-        +enabled: false
     titan:
       +schema: titan
     topline:
@@ -295,5 +246,3 @@ models:
         +materialized: table
         +contract:
           enforced: true
-      disabled:
-        +enabled: false
