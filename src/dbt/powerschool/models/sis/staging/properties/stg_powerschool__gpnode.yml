@@ -13,14 +13,10 @@ models:
         data_type: string
       - name: gpamethod
         data_type: string
-      - name: minimumgpa
-        data_type: string
-      - name: minimumgradepercentage
-        data_type: string
       - name: requirementcount
-        data_type: string
+        data_type: int64
       - name: verifyminimumgradefirst
-        data_type: string
+        data_type: int64
       - name: allowanyof
         data_type: int64
       - name: allowwaiver
@@ -41,7 +37,11 @@ models:
         data_type: int64
       - name: sortorder
         data_type: int64
-      - name: creditcapacity
-        data_type: float64
       - name: parentid
         data_type: int64
+      - name: creditcapacity
+        data_type: float64
+      - name: minimumgpa
+        data_type: float64
+      - name: minimumgradepercentage
+        data_type: float64
