@@ -63,6 +63,7 @@ with
 
             e.salesforce_id,
             e.grade_level,
+
         from {{ ref("int_assessments__college_assessment") }} as s
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
@@ -118,43 +119,60 @@ with
 
         from yearly_tests
         group by student_number, salesforce_id, grade_level
+    ),
+
+    ytd_counts as (
+        select
+            y.*,
+
+            c.act_1_attempt_min_score,
+            c.act_2_plus_attempts_min_score,
+            c.sat_1_attempt_min_score,
+            c.sat_1_attempt_pct_goal,
+            c.sat_2_plus_attempts_min_score,
+            c.sat_2_plus_attempts_pct_goal,
+            c.psat89_1_attempt_min_score,
+            c.psat89_2_plus_attempts_min_score,
+            c.psat10_1_attempt_min_score,
+            c.psat10_2_plus_attempts_min_score,
+            c.psatnmsqt_1_attempt_min_score,
+            c.psatnmsqt_2_plus_attempts_min_score,
+
+            sum(y.psat89_count) over (
+                partition by y.student_number order by y.grade_level
+            ) as psat89_count_ytd,
+
+            sum(y.psat10_count) over (
+                partition by y.student_number order by y.grade_level
+            ) as psat10_count_ytd,
+
+            sum(y.psatnmsqt_count) over (
+                partition by y.student_number order by y.grade_level
+            ) as psatnmsqt_count_ytd,
+
+            sum(y.sat_count) over (
+                partition by y.student_number order by y.grade_level
+            ) as sat_count_ytd,
+
+            sum(y.act_count) over (
+                partition by y.student_number order by y.grade_level
+            ) as act_count_ytd,
+
+        from yearly_test_counts as y
+        cross join completion_goals as c
     )
 
 select
-    y.*,
+    *,
 
-    c.act_1_attempt_min_score,
-    c.act_2_plus_attempts_min_score,
-    c.sat_1_attempt_min_score,
-    c.sat_1_attempt_pct_goal,
-    c.sat_2_plus_attempts_min_score,
-    c.sat_2_plus_attempts_pct_goal,
-    c.psat89_1_attempt_min_score,
-    c.psat89_2_plus_attempts_min_score,
-    c.psat10_1_attempt_min_score,
-    c.psat10_2_plus_attempts_min_score,
-    c.psatnmsqt_1_attempt_min_score,
-    c.psatnmsqt_2_plus_attempts_min_score,
+    max(psat89_count_ytd) over (partition by student_number) as psat89_count_lifetime,
+    max(psat10_count_ytd) over (partition by student_number) as psat10_count_lifetime,
+    max(psatnmsqt_count_ytd) over (
+        partition by student_number
+    ) as psatnmsqt_count_lifetime,
+    max(sat_count_ytd) over (partition by student_number) as sat_count_lifetime,
+    max(act_count_ytd) over (partition by student_number) as act_count_lifetime,
 
-    sum(y.psat89_count) over (
-        partition by y.student_number order by y.grade_level
-    ) as psat89_count_ytd,
+    row_number() over (partition by student_number) as rn_lifetime,
 
-    sum(y.psat10_count) over (
-        partition by y.student_number order by y.grade_level
-    ) as psat10_count_ytd,
-
-    sum(y.psatnmsqt_count) over (
-        partition by y.student_number order by y.grade_level
-    ) as psatnmsqt_count_ytd,
-
-    sum(y.sat_count) over (
-        partition by y.student_number order by y.grade_level
-    ) as sat_count_ytd,
-
-    sum(y.act_count) over (
-        partition by y.student_number order by y.grade_level
-    ) as act_count_ytd,
-
-from yearly_test_counts as y
-cross join completion_goals as c
+from ytd_counts
