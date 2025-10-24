@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_edplan__njsmart_powerschool_union
     columns:
