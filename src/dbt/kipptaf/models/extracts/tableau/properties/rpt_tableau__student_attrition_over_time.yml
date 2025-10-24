@@ -2,4 +2,4 @@ models:
   - name: rpt_tableau__student_attrition_over_time
     config:
       contract:
-        enabled: false
+        enforced: false
