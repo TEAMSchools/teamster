@@ -57,9 +57,9 @@ select
     dr.overall_scale_score,
 
     iu.total_lesson_time_on_task_min as total_lesson_time_on_task_min_week,
-    iu.all_lessons_completed as all_lessons_passed_week,
+    iu.all_lessons_completed as all_lessons_completed_week,
     iu.all_lessons_passed as all_lessons_passed_week,
-    iu.percent_all_lessons_passed as percent_all_lessons_passed_week,
+    cast(iu.percent_all_lessons_passed as numeric) as percent_all_lessons_passed_week,
 
     cr.teacher_lastfirst as subject_teacher,
     cr.sections_section_number as subject_section,
