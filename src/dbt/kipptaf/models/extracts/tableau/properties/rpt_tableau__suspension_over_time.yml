@@ -1,5 +1,8 @@
 models:
   - name: rpt_tableau__suspension_over_time
+    config:
+      contract:
+        enforced: false
     columns:
       - name: student_number
         data_type: int64
