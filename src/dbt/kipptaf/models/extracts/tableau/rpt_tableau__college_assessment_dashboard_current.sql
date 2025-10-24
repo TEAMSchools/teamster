@@ -6,6 +6,7 @@ with
             s.scope as expected_scope,
             s.subject_area as expected_subject_area,
             s.score_type as expected_score_type,
+            s.test_date as expected_test_date,
 
             g.expected_goal_type,
             g.expected_goal_subtype,
@@ -35,10 +36,7 @@ with
             on s.score_type = b2.expected_score_type
             and b2.expected_goal_type = 'Board'
             and b2.grade_level = 12
-        where
-            s.test_type = 'Official'
-            and s.subject_area in ('Composite', 'Combined')
-            and s.scope != 'ACT'
+        where s.subject_area = 'Combined'
     ),
 
     attempts as (
@@ -49,8 +47,6 @@ with
 
             case
                 scope
-                when 'act_count_lifetime'
-                then 'ACT'
                 when 'sat_count_lifetime'
                 then 'SAT'
                 when 'psatnmsqt_count_lifetime'
@@ -67,8 +63,7 @@ with
                     psat89_count_lifetime,
                     psat10_count_lifetime,
                     psatnmsqt_count_lifetime,
-                    sat_count_lifetime,
-                    act_count_lifetime
+                    sat_count_lifetime
                 )
             )
         where rn_lifetime = 1
@@ -97,6 +92,7 @@ with
 
             r.expected_test_type,
             r.expected_scope,
+            r.expected_test_date,
             r.expected_subject_area,
             r.expected_score_type,
             r.expected_goal_type,
@@ -108,6 +104,7 @@ with
 
             s.test_type,
             s.scope,
+            s.test_date,
             s.subject_area,
             s.score_type,
 
@@ -172,6 +169,7 @@ with
             e.college_match_gpa_bands,
             r.expected_test_type,
             r.expected_scope,
+            r.expected_test_date,
             r.expected_subject_area,
             r.expected_score_type,
             r.expected_goal_type,
@@ -182,6 +180,7 @@ with
             r.expected_metric_pct_goal,
             s.test_type,
             s.scope,
+            s.test_date,
             s.subject_area,
             s.score_type
     )
@@ -190,6 +189,24 @@ select
     *,
 
     if(score >= expected_metric_min_score, 1, 0) as met_min_score_int,
-    if(score >= roster.expected_board_min_score, 1, 0) as met_min_board_score_int,
+    if(score >= expected_board_min_score, 1, 0) as met_min_board_score_int,
+
+    max(if(score >= expected_metric_min_score, 1, 0)) over (
+        partition by
+            student_number,
+            expected_test_type,
+            expected_score_type,
+            expected_metric_name
+        order by expected_test_date
+    ) as met_min_score_int_overall,
+
+    max(if(score >= expected_board_min_score, 1, 0)) over (
+        partition by
+            student_number,
+            expected_test_type,
+            expected_score_type,
+            expected_metric_name
+        order by expected_test_date
+    ) as met_min_board_score_int_overall,
 
 from roster
