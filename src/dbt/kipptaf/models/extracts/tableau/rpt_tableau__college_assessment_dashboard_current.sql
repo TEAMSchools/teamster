@@ -219,9 +219,8 @@ with
 
     -- current redo
     strategy as (
-        select
-            -- need distinct strategy for expected tests
-            distinct
+        -- need distinct strategy for expected tests
+        select distinct
             s.test_type as expected_test_type,
             s.scope as expected_scope,
             s.subject_area as expected_subject_area,
