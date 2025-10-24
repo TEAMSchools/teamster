@@ -199,10 +199,4 @@ models:
       - name: sched_maxpreps
         data_type: int64
       - name: prefixcodesetid
-        data_type: record
-      - name: prefixcodesetid.int_value
         data_type: int64
-      - name: prefixcodesetid.double_value
-        data_type: float64
-      - name: prefixcodesetid.bytes_decimal_value
-        data_type: numeric

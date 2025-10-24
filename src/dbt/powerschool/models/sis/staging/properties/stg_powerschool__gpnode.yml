@@ -1,6 +1,12 @@
 models:
   - name: stg_powerschool__gpnode
     columns:
+      - name: id
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: name
         data_type: string
       - name: minimumgrade
@@ -8,37 +14,13 @@ models:
       - name: gpamethod
         data_type: string
       - name: minimumgpa
-        data_type: record
-      - name: minimumgpa.int_value
-        data_type: int64
-      - name: minimumgpa.double_value
-        data_type: float64
-      - name: minimumgpa.bytes_decimal_value
-        data_type: numeric
+        data_type: string
       - name: minimumgradepercentage
-        data_type: record
-      - name: minimumgradepercentage.int_value
-        data_type: int64
-      - name: minimumgradepercentage.double_value
-        data_type: float64
-      - name: minimumgradepercentage.bytes_decimal_value
-        data_type: numeric
+        data_type: string
       - name: requirementcount
-        data_type: record
-      - name: requirementcount.int_value
-        data_type: int64
-      - name: requirementcount.double_value
-        data_type: float64
-      - name: requirementcount.bytes_decimal_value
-        data_type: numeric
+        data_type: string
       - name: verifyminimumgradefirst
-        data_type: record
-      - name: verifyminimumgradefirst.int_value
-        data_type: int64
-      - name: verifyminimumgradefirst.double_value
-        data_type: float64
-      - name: verifyminimumgradefirst.bytes_decimal_value
-        data_type: numeric
+        data_type: string
       - name: allowanyof
         data_type: int64
       - name: allowwaiver
@@ -49,12 +31,6 @@ models:
         data_type: int64
       - name: gpversionid
         data_type: int64
-      - name: id
-        data_type: int64
-        data_tests:
-          - unique:
-              config:
-                store_failures: true
       - name: ishidden
         data_type: int64
       - name: issinglesitting
