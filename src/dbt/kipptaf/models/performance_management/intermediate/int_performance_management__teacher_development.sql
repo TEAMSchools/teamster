@@ -4,7 +4,7 @@ with
         from
             {{
                 ref(
-                    "stg_performance_management__teacher_development_observation_details"
+                    "stg_google_appsheet__performance_management__teacher_development_observation_details"
                 )
             }}
         group by observation_id
@@ -45,7 +45,11 @@ from
     }}
     as o
 left join
-    {{ ref("stg_performance_management__teacher_development_observation_details") }}
+    {{
+        ref(
+            "stg_google_appsheet__performance_management__teacher_development_observation_details"
+        )
+    }}
     as od
     on o.observation_id = od.observation_id
 left join archive_average_scores as av on o.observation_id = av.observation_id

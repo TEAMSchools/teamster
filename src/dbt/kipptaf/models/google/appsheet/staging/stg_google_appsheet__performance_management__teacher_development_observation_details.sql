@@ -10,7 +10,8 @@ select
 from
     {{
         source(
-            "google_appsheet", "src_teacher_development__observation_details_archive"
+            "google_appsheet",
+            "src_google_appsheet__teacher_development__observation_details_archive",
         )
     }}
 where esog is not null
