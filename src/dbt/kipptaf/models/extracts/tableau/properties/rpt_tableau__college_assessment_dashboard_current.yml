@@ -1,5 +1,0 @@
-models:
-  - name: rpt_tableau__college_assessment_dashboard_current
-    config:
-      contract:
-        enforced: false
