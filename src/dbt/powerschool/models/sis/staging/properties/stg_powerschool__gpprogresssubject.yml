@@ -7,22 +7,6 @@ models:
           - unique:
               config:
                 store_failures: true
-      - name: isgroupsatisfied
-        data_type: string
-      - name: istestgroupwaived
-        data_type: string
-      - name: mingpamet
-        data_type: string
-      - name: nodegpa
-        data_type: string
-      - name: testnodepassed
-        data_type: string
-      - name: appliedwaivedcredits
-        data_type: float64
-      - name: earnedcredits
-        data_type: float64
-      - name: enrolledcredits
-        data_type: float64
       - name: gpnodeid
         data_type: int64
       - name: isadvancedplan
@@ -33,11 +17,27 @@ models:
         data_type: int64
       - name: nodetype
         data_type: int64
+      - name: isgroupsatisfied
+        data_type: int64
+      - name: istestgroupwaived
+        data_type: int64
+      - name: mingpamet
+        data_type: int64
+      - name: testnodepassed
+        data_type: int64
+      - name: studentsdcid
+        data_type: int64
+      - name: appliedwaivedcredits
+        data_type: float64
+      - name: earnedcredits
+        data_type: float64
+      - name: enrolledcredits
+        data_type: float64
       - name: requestedcredits
         data_type: float64
       - name: requiredcredits
         data_type: float64
-      - name: studentsdcid
-        data_type: int64
       - name: waivedcredits
+        data_type: float64
+      - name: nodegpa
         data_type: float64
