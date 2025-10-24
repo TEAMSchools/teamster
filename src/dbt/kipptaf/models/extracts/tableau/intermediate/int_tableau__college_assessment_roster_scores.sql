@@ -165,59 +165,25 @@ with
 
         from final_scores
         where expected_grouping = 'Total' and expected_scope = 'SAT'
-    ),
-
-    max_score as (
-        select student_number, scope, score_type, avg(scale_score) as max_scale_score,
-
-        from scores
-        where rn_highest = 1
-        group by student_number, scope, score_type
-    ),
-
-    max_total_score as (
-        select student_number, scope, sum(max_scale_score) as superscore,
-
-        from max_score
-        where
-            score_type not in (
-                'sat_total_score', 'psat89_total', 'psat10_total', 'psatnmsqt_total'
-            )
-        group by student_number, scope
-    ),
-
-    alt_superscore as (
-        select student_number, scope, avg(max_scale_score) as superscore,
-
-        from max_score
-        where
-            score_type
-            in ('sat_total_score', 'psat89_total', 'psat10_total', 'psatnmsqt_total')
-        group by student_number, scope
     )
 
 select
     s.*,
 
-    m.max_scale_score,
-
     g.total_growth_score_change,
 
-    round(coalesce(d.superscore, a.superscore), 0) as superscore,
+    {{
+        dbt_utils.generate_surrogate_key(
+            [
+                "s.expected_test_type",
+                "s.expected_score_type",
+                "s.grade_level",
+                "s.expected_admin_season",
+            ]
+        )
+    }} as unique_test_admin_id,
 
 from final_scores as s
-left join
-    max_score as m
-    on s.student_number = m.student_number
-    and s.expected_score_type = m.score_type
-left join
-    max_total_score as d
-    on s.student_number = d.student_number
-    and s.expected_scope = d.scope
-left join
-    alt_superscore as a
-    on s.student_number = a.student_number
-    and s.expected_scope = a.scope
 left join
     growth as g
     on s.student_number = g.student_number
