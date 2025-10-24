@@ -59,20 +59,18 @@ models:
         data_type: string
       - name: expected_score_category
         data_type: string
-      - name: expected_field_name_score_category
-        data_type: string
-      - name: expected_filter_group
-        data_type: string
       - name: expected_admin_season_order
         data_type: int64
+      - name: score
+        data_type: numeric
       - name: sat_total_superscore
         data_type: numeric
       - name: sat_ebrw_highest
         data_type: numeric
       - name: sat_math_highest
         data_type: numeric
-      - name: score
-        data_type: numeric
+      - name: expected_field_name_score_category
+        data_type: string
       - name: ccr_course
         data_type: string
       - name: ccr_teacher_name
