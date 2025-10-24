@@ -14,18 +14,7 @@ models:
       - name: grade__feedback__text
         data_type: string
       - name: text_answers
-        data_type: record
-      - name: text_answers.answers
-        data_type: record
-      - name: text_answers.answers.value
-        data_type: string
+        data_type: STRUCT<answers ARRAY<STRUCT<value STRING>>>
       - name: file_upload_answers
-        data_type: record
-      - name: file_upload_answers.answers
-        data_type: record
-      - name: file_upload_answers.answers.fileid
-        data_type: string
-      - name: file_upload_answers.answers.filename
-        data_type: string
-      - name: file_upload_answers.answers.mimetype
-        data_type: string
+        data_type: |
+          STRUCT<answers ARRAY<STRUCT<fileId STRING, fileName STRING, mimeType STRING>>>
