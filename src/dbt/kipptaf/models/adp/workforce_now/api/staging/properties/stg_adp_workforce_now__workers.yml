@@ -269,6 +269,8 @@ models:
         data_type: boolean
       - name: is_current_record
         data_type: boolean
+      - name: worker_hire_date_recent
+        data_type: date
       - name: photos
         data_type: |
           ARRAY<STRUCT<links ARRAY<STRUCT<href STRING, mediaType STRING, method STRING>>>>
