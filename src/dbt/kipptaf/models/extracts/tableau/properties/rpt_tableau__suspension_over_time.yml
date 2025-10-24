@@ -35,6 +35,8 @@ models:
         data_type: boolean
       - name: is_self_contained
         data_type: boolean
+      - name: iep_status
+        data_type: string
       - name: date_day
         data_type: date
       - name: first_suspension_date
@@ -43,8 +45,10 @@ models:
         data_type: date
       - name: first_suspension_date_oss
         data_type: date
-      - name: iep_status
+      - name: term
         data_type: string
+      - name: is_last_day_of_term
+        data_type: boolean
       - name: is_susp_running
         data_type: int64
       - name: is_iss_running
@@ -59,7 +63,3 @@ models:
         data_type: float64
       - name: total_suspension_incidents_running
         data_type: int64
-      - name: is_last_day_of_term
-        data_type: boolean
-      - name: term
-        data_type: string
