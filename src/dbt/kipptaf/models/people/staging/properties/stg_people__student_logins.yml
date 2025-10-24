@@ -1,5 +1,13 @@
 models:
   - name: stg_people__student_logins
+    config:
+      materialized: incremental
+      incremental_strategy: merge
+      full_refresh: false
+      on_schema_change: fail
+      unique_key: student_number
+      merge_update_columns:
+        - default_password
     columns:
       - name: student_number
         data_type: int64
