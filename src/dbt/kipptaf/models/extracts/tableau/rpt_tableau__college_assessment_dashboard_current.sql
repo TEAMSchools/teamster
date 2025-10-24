@@ -1,4 +1,11 @@
 with
+    board_goals as (
+        select grade_level, expected_scope, expected_metric_label, pct_goal, min_score,
+
+        from {{ ref("stg_google_sheets__kippfwd_goals") }}
+        where expected_goal_type = 'Board' and expected_scope = 'SAT'
+    ),
+
     strategy as (
         -- need distinct strategy for expected tests
         select distinct
@@ -6,7 +13,6 @@ with
             s.scope as expected_scope,
             s.subject_area as expected_subject_area,
             s.score_type as expected_score_type,
-            s.test_date as expected_test_date,
 
             g.expected_goal_type,
             g.expected_goal_subtype,
@@ -15,8 +21,11 @@ with
             g.min_score as expected_metric_min_score,
             g.pct_goal as expected_metric_pct_goal,
 
-            b1.min_score as expected_board_min_score_g11,
-            b1.pct_goal as expected_board_pct_goal_g11,
+            b1.min_score as expected_board_min_score_g11_890,
+            b1.pct_goal as expected_board_pct_goal_g11_890,
+
+            b1.min_score as expected_board_min_score_g11_1010,
+            b1.pct_goal as expected_board_pct_goal_g11_1010,
 
             b2.min_score as expected_board_min_score_g12,
             b2.pct_goal as expected_board_pct_goal_g12,
@@ -27,15 +36,8 @@ with
             on s.score_type = g.expected_score_type
             and g.expected_goal_type != 'Board'
         left join
-            {{ ref("stg_google_sheets__kippfwd_goals") }} as b1
-            on s.score_type = b1.expected_score_type
-            and b1.expected_goal_type = 'Board'
-            and b1.grade_level = 11
-        left join
-            {{ ref("stg_google_sheets__kippfwd_goals") }} as b2
-            on s.score_type = b2.expected_score_type
-            and b2.expected_goal_type = 'Board'
-            and b2.grade_level = 12
+            {{ ref("stg_google_sheets__kippfwd_goals") }} as b
+            on s.score_type = b.expected_score_type
         where s.subject_area = 'Combined'
     ),
 
@@ -92,7 +94,6 @@ with
 
             r.expected_test_type,
             r.expected_scope,
-            r.expected_test_date,
             r.expected_subject_area,
             r.expected_score_type,
             r.expected_goal_type,
@@ -104,7 +105,6 @@ with
 
             s.test_type,
             s.scope,
-            s.test_date,
             s.subject_area,
             s.score_type,
 
@@ -169,7 +169,6 @@ with
             e.college_match_gpa_bands,
             r.expected_test_type,
             r.expected_scope,
-            r.expected_test_date,
             r.expected_subject_area,
             r.expected_score_type,
             r.expected_goal_type,
@@ -180,7 +179,6 @@ with
             r.expected_metric_pct_goal,
             s.test_type,
             s.scope,
-            s.test_date,
             s.subject_area,
             s.score_type
     )
@@ -190,23 +188,5 @@ select
 
     if(score >= expected_metric_min_score, 1, 0) as met_min_score_int,
     if(score >= expected_board_min_score, 1, 0) as met_min_board_score_int,
-
-    max(if(score >= expected_metric_min_score, 1, 0)) over (
-        partition by
-            student_number,
-            expected_test_type,
-            expected_score_type,
-            expected_metric_name
-        order by expected_test_date
-    ) as met_min_score_int_overall,
-
-    max(if(score >= expected_board_min_score, 1, 0)) over (
-        partition by
-            student_number,
-            expected_test_type,
-            expected_score_type,
-            expected_metric_name
-        order by expected_test_date
-    ) as met_min_board_score_int_overall,
 
 from roster
