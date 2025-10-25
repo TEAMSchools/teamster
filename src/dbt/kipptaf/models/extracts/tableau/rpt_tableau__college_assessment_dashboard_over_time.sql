@@ -103,7 +103,7 @@ with
                     when
                         g.expected_goal_type = 'Attempts'
                         and a.attempt_count_lifetime != b.alt_attempt_count_lifetime
-                    then alt_attempt_count_lifetime
+                    then b.alt_attempt_count_lifetime
                     else a.attempt_count_lifetime
                 end
             ) as score,
