@@ -23,8 +23,8 @@ select
     cast(_dagster_partition_academic_year as int) as academic_year_int,
     cast(all_lessons_completed as int) as all_lessons_completed,
     cast(all_lessons_passed as int) as all_lessons_passed,
-    cast(percent_all_lessons_passed as int) as percent_all_lessons_passed,
     cast(total_lesson_time_on_task_min as int) as total_lesson_time_on_task_min,
+    cast(percent_all_lessons_passed as numeric) as percent_all_lessons_passed,
 
     /* math */
     cast(

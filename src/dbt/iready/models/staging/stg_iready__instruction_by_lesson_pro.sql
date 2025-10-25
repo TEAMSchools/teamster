@@ -5,10 +5,10 @@ select
     `subject`,
     `level`,
     topic,
-    lesson,
     lesson_status,
     lesson_result,
     lesson_language,
+    lesson_title,
 
     cast(lesson_time_on_task_min as int) as lesson_time_on_task_min,
     cast(skills_completed as int) as skills_completed,

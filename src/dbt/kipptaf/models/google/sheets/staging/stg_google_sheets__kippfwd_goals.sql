@@ -13,6 +13,7 @@ with
 
             safe_cast(min_score as float64) as min_score,
 
+<<<<<<< HEAD
             if(
                 goal_type = 'Attempts',
                 concat(expected_scope, ' ', goal_category),
@@ -22,6 +23,37 @@ with
             if(
                 goal_type = 'Attempts', goal_category, goal_subtype
             ) as expected_goal_subtype,
+=======
+            case
+                when goal_type = 'Attempts'
+                then concat(expected_scope, ' ', goal_category)
+                when goal_type = 'Board'
+                then
+                    concat(
+                        goal_category,
+                        ' ',
+                        expected_scope,
+                        ' Combined Grade ',
+                        grade_level
+                    )
+                else goal_subtype
+            end as expected_metric_name,
+
+            case
+                when goal_type = 'Attempts'
+                then goal_category
+                when goal_type = 'Board'
+                then
+                    concat(
+                        goal_category,
+                        ' ',
+                        expected_scope,
+                        ' Combined Grade ',
+                        grade_level
+                    )
+                else goal_subtype
+            end as expected_goal_subtype,
+>>>>>>> 57fb86f66a23a507ac0a8e05615cb5535363961f
 
         from {{ source("google_sheets", "src_google_sheets__kippfwd_goals") }}
     )
@@ -51,6 +83,7 @@ select
         then 'psatnmsqt_1_attempt'
         when 'PSAT NMSQT 2+ Attempts'
         then 'psatnmsqt_2_plus_attempts'
+<<<<<<< HEAD
         else
             regexp_replace(
                 lower(
@@ -65,6 +98,17 @@ select
                 '-',
                 '_'
             )
+=======
+        when '% 890+ SAT Combined Grade 11'
+        then 'sat_combined_pct_890_plus_g11'
+        when '% 890+ SAT Combined Grade 12'
+        then 'sat_combined_pct_890_plus_g12'
+        when '% 1010+ SAT Combined Grade 11'
+        then 'sat_combined_pct_1010_plus_g11'
+        when '% 1010+ SAT Combined Grade 12'
+        then 'sat_combined_pct_1010_plus_g12'
+
+>>>>>>> 57fb86f66a23a507ac0a8e05615cb5535363961f
     end as expected_metric_label,
 
 from calcs
