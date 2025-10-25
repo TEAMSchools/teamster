@@ -7,7 +7,7 @@ with
             case
                 scope
                 when 'act_count_lifetime'
-                then 'SAT'
+                then 'ACT'
                 when 'sat_count_lifetime'
                 then 'SAT'
                 when 'psatnmsqt_count_lifetime'
