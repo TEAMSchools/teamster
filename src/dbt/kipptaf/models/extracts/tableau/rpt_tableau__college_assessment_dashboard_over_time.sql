@@ -83,7 +83,7 @@ select
         )
     ) as score,
 
-from {{ ref("int_assessments__college_assessment") }} s
+from {{ ref("int_assessments__college_assessment") }} as s
 inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on s.student_number = e.student_number
