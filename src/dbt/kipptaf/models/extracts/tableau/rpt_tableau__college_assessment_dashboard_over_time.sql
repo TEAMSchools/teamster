@@ -170,14 +170,8 @@ select
 
     if(score >= min_score, 1, 0) as met_min_score_int,
 
-    max(if(score >= min_score and scope in ('ACT', 'SAT'), 1, 0)) over (
-        partition by
-            student_number, test_type, aligned_subject_area, expected_metric_name
-    ) as met_min_score_int_act_or_sat_overall_aligned_subject_area,
-
-    max(if(score >= min_score and scope in ('ACT', 'SAT'), 1, 0)) over (
-        partition by
-            student_number, test_type, aligned_subject_area, expected_metric_name
-    ) as met_min_score_int_act_or_sat_overall_aligned_subject,
+    max(if(score >= min_score, 1, 0)) over (
+        partition by student_number, test_type, aligned_subject, expected_metric_name
+    ) as met_min_score_int_overall_aligned_subject,
 
 from roster
