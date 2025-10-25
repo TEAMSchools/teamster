@@ -199,7 +199,10 @@ with
             attempts as p
             on e.student_number = p.student_number
             and r.expected_scope = p.scope
-        where e.academic_year = 2025 and e.school_level = 'HS' and e.rn_year = 1
+        where
+            e.academic_year = {{ var("current_academic_year") }}
+            and e.school_level = 'HS'
+            and e.rn_year = 1
         group by
             e.academic_year,
             e.academic_year_display,

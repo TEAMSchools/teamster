@@ -16,7 +16,7 @@ with
             unique_test_admin_id,
             total_growth_score_change as score,
 
-            'Growth Score Change' as score_category,
+            'Score Change' as score_category,
 
         from {{ ref("int_tableau__college_assessment_roster_scores") }}
     )
