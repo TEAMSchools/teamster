@@ -39,19 +39,10 @@ with
             expected_scope,
             expected_admin_season,
 
-<<<<<<< HEAD
-            string_agg(expected_month, ', ') as expected_months_included,
-
-        from scores
-        where
-            expected_score_type like '%total%'
-            and expected_score_type not like '%growth%'
-=======
             string_agg(expected_month_round, ', ') as expected_months_included,
 
         from scores
         where expected_grouping = 'Total'
->>>>>>> 57fb86f66a23a507ac0a8e05615cb5535363961f
         group by
             expected_region,
             expected_grade_level,
@@ -78,8 +69,6 @@ select
         s.expected_grouping
     ) as expected_field_name,
 
-<<<<<<< HEAD
-=======
     if(
         s.expected_grouping = 'Growth', 'Growth Score Change', 'Scale Score'
     ) as expected_score_category,
@@ -105,7 +94,6 @@ select
         )
     }} as expected_unique_test_admin_id,
 
->>>>>>> 57fb86f66a23a507ac0a8e05615cb5535363961f
 from scores as s
 left join
     months as m
