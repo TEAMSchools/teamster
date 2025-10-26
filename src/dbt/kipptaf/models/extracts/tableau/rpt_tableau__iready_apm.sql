@@ -80,6 +80,11 @@ select
     dr.mid_on_grade_level_scale_score
     - dr.overall_scale_score as scale_pts_to_mid_on_grade_level,
 
+    row_number() over (
+        partition by
+            co.academic_year, co.student_number, co.iready_subject, co.week_start_monday
+        order by il.completion_date desc
+    ) as rn_subject_week,
 from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as co
 left join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
