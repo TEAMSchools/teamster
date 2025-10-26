@@ -1,0 +1,13 @@
+models:
+  - name: stg_iready__personalized_instruction_summary
+    columns:
+      - name: school
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_google_sheets__people__location_crosswalk")
+                field: name
+              config:
+                store_failures: true
+                severity: warn

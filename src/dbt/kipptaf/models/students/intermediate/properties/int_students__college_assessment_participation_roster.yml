@@ -4,10 +4,6 @@ models:
     columns:
       - name: student_number
         data_type: int64
-      - name: studentid
-        data_type: int64
-      - name: students_dcid
-        data_type: int64
       - name: salesforce_id
         data_type: string
       - name: grade_level
@@ -24,11 +20,7 @@ models:
         data_type: int64
       - name: act_1_attempt_min_score
         data_type: float64
-      - name: act_1_attempt_pct_goal
-        data_type: float64
       - name: act_2_plus_attempts_min_score
-        data_type: float64
-      - name: act_2_plus_attempts_pct_goal
         data_type: float64
       - name: sat_1_attempt_min_score
         data_type: float64
@@ -40,27 +32,15 @@ models:
         data_type: float64
       - name: psat89_1_attempt_min_score
         data_type: float64
-      - name: psat89_1_attempt_pct_goal
-        data_type: float64
       - name: psat89_2_plus_attempts_min_score
-        data_type: float64
-      - name: psat89_2_plus_attempts_pct_goal
         data_type: float64
       - name: psat10_1_attempt_min_score
         data_type: float64
-      - name: psat10_1_attempt_pct_goal
-        data_type: float64
       - name: psat10_2_plus_attempts_min_score
-        data_type: float64
-      - name: psat10_2_plus_attempts_pct_goal
         data_type: float64
       - name: psatnmsqt_1_attempt_min_score
         data_type: float64
-      - name: psatnmsqt_1_attempt_pct_goal
-        data_type: float64
       - name: psatnmsqt_2_plus_attempts_min_score
-        data_type: float64
-      - name: psatnmsqt_2_plus_attempts_pct_goal
         data_type: float64
       - name: psat89_count_ytd
         data_type: int64
@@ -71,4 +51,16 @@ models:
       - name: sat_count_ytd
         data_type: int64
       - name: act_count_ytd
+        data_type: int64
+      - name: psat89_count_lifetime
+        data_type: int64
+      - name: psat10_count_lifetime
+        data_type: int64
+      - name: psatnmsqt_count_lifetime
+        data_type: int64
+      - name: sat_count_lifetime
+        data_type: int64
+      - name: act_count_lifetime
+        data_type: int64
+      - name: rn_lifetime
         data_type: int64
