@@ -43,6 +43,12 @@ with
                 else goal_subtype
             end as expected_goal_subtype,
 
+            if(
+                expected_subject_area in ('Composite', 'Combined'),
+                'Total',
+                expected_subject_area
+            ) as expected_aligned_subject_area,
+
         from {{ source("google_sheets", "src_google_sheets__kippfwd_goals") }}
     )
 
@@ -81,5 +87,20 @@ select
         then 'sat_combined_pct_1010_plus_g12'
 
     end as expected_metric_label,
+
+    case
+        when
+            expected_score_type in (
+                'act_reading',
+                'sat_ebrw',
+                'psat10_ebrw',
+                'psatnmsqt_ebrw',
+                'psat89_ebrw'
+            )
+        then 'EBRW/Reading'
+        when expected_aligned_subject_area = 'Total'
+        then 'Total'
+        else expected_subject_area
+    end as expected_aligned_subject,
 
 from calcs
