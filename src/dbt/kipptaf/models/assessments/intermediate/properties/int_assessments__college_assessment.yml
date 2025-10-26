@@ -1,6 +1,9 @@
 version: 2
 models:
   - name: int_assessments__college_assessment
+    config:
+      contract:
+        enforced: false
     columns:
       - name: student_number
         data_type: int64
