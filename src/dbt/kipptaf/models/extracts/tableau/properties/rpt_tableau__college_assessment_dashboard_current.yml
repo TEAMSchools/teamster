@@ -77,6 +77,8 @@ models:
         data_type: numeric
       - name: met_min_score_int
         data_type: int64
+      - name: alt_met_min_score_int
+        data_type: int64
       - name: met_min_board_890_plus_score_int
         data_type: int64
       - name: met_min_board_1010_plus_score_int
