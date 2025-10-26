@@ -46,17 +46,7 @@ with
 
     roster as (
         select
-            s.student_number,
-            s.test_type,
-            s.scope,
-            s.score_type,
-            s.subject_area,
-            s.aligned_subject_area,
-            s.test_date,
-            s.scale_score,
-            s.rn_highest,
-            s.max_scale_score,
-
+            e.student_number,
             e.iep_status,
             e.is_504,
             e.grad_iep_exempt_status_overall,
@@ -67,25 +57,25 @@ with
             e.college_match_gpa,
             e.college_match_gpa_bands,
 
-            g.expected_metric_name,
+            g.expected_test_type,
+            g.expected_scope,
+            g.expected_score_type,
+            g.expected_subject_area,
+            g.expected_aligned_subject_area,
+            g.expected_aligned_subject,
+            g.expected_goal_type,
             g.expected_goal_subtype,
+            g.expected_metric_name,
             g.min_score,
             g.pct_goal,
 
-            case
-                when
-                    s.score_type in (
-                        'act_reading',
-                        'sat_ebrw',
-                        'psat10_ebrw',
-                        'psatnmsqt_ebrw',
-                        'psat89_ebrw'
-                    )
-                then 'EBRW/Reading'
-                when s.aligned_subject_area = 'Total'
-                then 'Total'
-                else s.subject_area
-            end as aligned_subject,
+            s.test_type,
+            s.scope,
+            s.score_type,
+            s.subject_area,
+            s.aligned_subject_area,
+            s.aligned_subject,
+            s.max_scale_score,
 
             avg(
                 case
@@ -108,18 +98,13 @@ with
                 end
             ) as score,
 
-        from {{ ref("int_assessments__college_assessment") }} as s
-        inner join
-            {{ ref("int_extracts__student_enrollments") }} as e
-            on s.student_number = e.student_number
-            and e.school_level = 'HS'
-            and e.rn_undergrad = 1
-            and e.rn_year = 1
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        cross join {{ ref("stg_google_sheets__kippfwd_goals") }} as g
         left join
-            {{ ref("stg_google_sheets__kippfwd_goals") }} as g
-            on s.test_type = g.expected_test_type
-            and s.score_type = g.expected_score_type
-            and g.expected_goal_type != 'Board'
+            {{ ref("int_assessments__college_assessment") }} as s
+            on e.student_number = s.student_number
+            and g.expected_score_type = s.score_type
+            and s.rn_highest = 1
         left join
             attempts as a on s.student_number = a.student_number and s.scope = a.scope
         left join
@@ -131,25 +116,12 @@ with
             on s.student_number = c.student_number
             and s.score_type = c.score_type
         where
-            s.score_type not in (
-                'act_english',
-                'act_science',
-                'psat10_math_test',
-                'psat10_reading',
-                'sat_math_test_score',
-                'sat_reading_test_score'
-            )
+            e.school_level = 'HS'
+            and e.rn_undergrad = 1
+            and e.rn_year = 1
+            and g.expected_goal_type != 'Board'
         group by
-            s.student_number,
-            s.test_type,
-            s.scope,
-            s.score_type,
-            s.subject_area,
-            s.aligned_subject_area,
-            s.test_date,
-            s.scale_score,
-            s.rn_highest,
-            s.max_scale_score,
+            e.student_number,
             e.iep_status,
             e.is_504,
             e.grad_iep_exempt_status_overall,
@@ -159,10 +131,24 @@ with
             e.year_in_network,
             e.college_match_gpa,
             e.college_match_gpa_bands,
-            g.expected_metric_name,
+            g.expected_test_type,
+            g.expected_scope,
+            g.expected_score_type,
+            g.expected_subject_area,
+            g.expected_aligned_subject_area,
+            g.expected_aligned_subject,
+            g.expected_goal_type,
             g.expected_goal_subtype,
+            g.expected_metric_name,
             g.min_score,
-            g.pct_goal
+            g.pct_goal,
+            s.test_type,
+            s.scope,
+            s.score_type,
+            s.subject_area,
+            s.aligned_subject_area,
+            s.aligned_subject,
+            s.max_scale_score
     )
 
 select
@@ -171,7 +157,11 @@ select
     if(score >= min_score, 1, 0) as met_min_score_int,
 
     max(if(score >= min_score, 1, 0)) over (
-        partition by student_number, test_type, aligned_subject, expected_metric_name
+        partition by
+            student_number,
+            expected_test_type,
+            expected_aligned_subject,
+            expected_metric_name
     ) as met_min_score_int_overall_aligned_subject,
 
 from roster

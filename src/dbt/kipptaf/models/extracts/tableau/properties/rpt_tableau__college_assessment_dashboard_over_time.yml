@@ -1,5 +1,65 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_over_time
-    config:
-      contract:
-        enforced: false
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: iep_status
+        data_type: string
+      - name: is_504
+        data_type: boolean
+      - name: grad_iep_exempt_status_overall
+        data_type: string
+      - name: lep_status
+        data_type: boolean
+      - name: ktc_cohort
+        data_type: int64
+      - name: graduation_year
+        data_type: int64
+      - name: year_in_network
+        data_type: int64
+      - name: college_match_gpa
+        data_type: numeric
+      - name: college_match_gpa_bands
+        data_type: string
+      - name: expected_test_type
+        data_type: string
+      - name: expected_scope
+        data_type: string
+      - name: expected_score_type
+        data_type: string
+      - name: expected_subject_area
+        data_type: string
+      - name: expected_aligned_subject_area
+        data_type: string
+      - name: expected_aligned_subject
+        data_type: string
+      - name: expected_goal_type
+        data_type: string
+      - name: expected_goal_subtype
+        data_type: string
+      - name: expected_metric_name
+        data_type: string
+      - name: min_score
+        data_type: float64
+      - name: pct_goal
+        data_type: float64
+      - name: test_type
+        data_type: string
+      - name: scope
+        data_type: string
+      - name: score_type
+        data_type: string
+      - name: subject_area
+        data_type: string
+      - name: aligned_subject_area
+        data_type: string
+      - name: aligned_subject
+        data_type: string
+      - name: max_scale_score
+        data_type: numeric
+      - name: score
+        data_type: numeric
+      - name: met_min_score_int
+        data_type: int64
+      - name: met_min_score_int_overall_aligned_subject
+        data_type: int64
