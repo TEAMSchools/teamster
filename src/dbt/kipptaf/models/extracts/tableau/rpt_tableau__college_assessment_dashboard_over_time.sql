@@ -1,4 +1,6 @@
 with
+    strategy as (select * from {{ ref("stg_google_sheets__kippfwd_goals") }}),
+
     attempts as (
         select
             student_number,

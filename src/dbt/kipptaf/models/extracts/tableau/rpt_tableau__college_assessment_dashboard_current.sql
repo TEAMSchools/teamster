@@ -244,6 +244,15 @@ select
     if(score >= expected_metric_min_score, 1, 0) as met_min_score_int,
 
     if(
+        (expected_goal_subtype = '1 Attempt' and score = expected_metric_min_score)
+        or (
+            expected_goal_subtype != '1 Attempt' and score >= expected_metric_min_score
+        ),
+        1,
+        0
+    ) as alt_met_min_score_int,
+
+    if(
         score >= expected_board_890_plus_min_score, 1, 0
     ) as met_min_board_890_plus_score_int,
     if(
