@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_students__graduation_path_codes
     data_tests:

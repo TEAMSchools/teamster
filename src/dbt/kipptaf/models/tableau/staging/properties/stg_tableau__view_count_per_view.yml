@@ -2,3 +2,5 @@ models:
   - name: stg_tableau__view_count_per_view
     config:
       enabled: false
+      contract:
+        enforced: false

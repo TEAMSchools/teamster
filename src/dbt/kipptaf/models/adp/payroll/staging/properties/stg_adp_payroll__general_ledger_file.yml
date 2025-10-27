@@ -1,8 +1,5 @@
 models:
   - name: stg_adp_payroll__general_ledger_file
-    config:
-      contract:
-        enforced: true
     meta:
       dagster:
         group: adp_payroll

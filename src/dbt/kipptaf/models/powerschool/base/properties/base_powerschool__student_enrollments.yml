@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: base_powerschool__student_enrollments
     description: |

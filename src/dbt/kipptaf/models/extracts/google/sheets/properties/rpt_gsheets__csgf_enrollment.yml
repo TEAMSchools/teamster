@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: rpt_gsheets__csgf_enrollment
-    config:
-      contract:
-        enforced: true
     columns:
       - name: total_instructional_days
         data_type: float64

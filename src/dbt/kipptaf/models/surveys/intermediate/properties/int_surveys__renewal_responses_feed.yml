@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_surveys__renewal_responses_feed
     columns:
