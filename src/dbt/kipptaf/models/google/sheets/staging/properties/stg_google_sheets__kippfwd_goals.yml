@@ -17,13 +17,17 @@ models:
         data_type: string
       - name: expected_goal_type
         data_type: string
-      - name: min_score
-        data_type: float64
       - name: pct_goal
+        data_type: float64
+      - name: min_score
         data_type: float64
       - name: expected_metric_name
         data_type: string
       - name: expected_goal_subtype
         data_type: string
+      - name: expected_aligned_subject_area
+        data_type: string
       - name: expected_metric_label
+        data_type: string
+      - name: expected_aligned_subject
         data_type: string

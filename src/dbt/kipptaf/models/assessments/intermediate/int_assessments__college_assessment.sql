@@ -207,6 +207,7 @@ with
                 )
             ) over (partition by s.student_number, s.scope, s.test_date)
             as sum_running_max_superscore,
+
         from scores as s
         left join
             max_score as m
@@ -232,6 +233,21 @@ select
     *,
 
     'Official' as test_type,
+
+    case
+        when
+            score_type in (
+                'act_reading',
+                'sat_ebrw',
+                'psat10_ebrw',
+                'psatnmsqt_ebrw',
+                'psat89_ebrw'
+            )
+        then 'EBRW/Reading'
+        when aligned_subject_area = 'Total'
+        then 'Total'
+        else subject_area
+    end as aligned_subject,
 
     format_date('%B', test_date) as test_month,
 
