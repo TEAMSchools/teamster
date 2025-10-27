@@ -1,9 +1,6 @@
-version: 2
 models:
   - name: stg_deanslist__dff_stats
     config:
-      contract:
-        enforced: true
       enabled: false
     columns:
       - name: school_id

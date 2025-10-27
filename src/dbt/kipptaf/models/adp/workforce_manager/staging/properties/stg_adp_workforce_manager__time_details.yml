@@ -1,10 +1,7 @@
-version: 2
 models:
   - name: stg_adp_workforce_manager__time_details
     config:
       enabled: false
-      contract:
-        enforced: true
     columns:
       - name: symbolic_period_begin
         data_type: date

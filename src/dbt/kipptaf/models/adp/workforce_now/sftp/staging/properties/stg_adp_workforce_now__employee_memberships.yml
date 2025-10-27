@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_adp_workforce_now__employee_memberships
-    config:
-      contract:
-        enforced: true
     columns:
       - name: associate_id
         data_type: string

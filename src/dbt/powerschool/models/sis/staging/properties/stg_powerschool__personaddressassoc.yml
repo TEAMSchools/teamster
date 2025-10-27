@@ -1,11 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__personaddressassoc
-    config:
-      contract:
-        enforced: true
-      #
-      #   "src_powerschool__personaddressassoc") }}'
     columns:
       - name: startdate
         data_type: date

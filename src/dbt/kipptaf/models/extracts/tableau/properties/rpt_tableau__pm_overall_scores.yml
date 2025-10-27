@@ -2,8 +2,6 @@ models:
   - name: rpt_tableau__pm_overall_scores
     config:
       enabled: false
-      contract:
-        enforced: false
     columns:
       - name: employee_number
         data_type: int64

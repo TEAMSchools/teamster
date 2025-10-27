@@ -50,6 +50,9 @@ select
 
     cast(call_date_time as date) as call_date,
 
+    if(reason like 'Att:%', true, false) as is_attendance_call,
+    if(reason like 'Chronic Absence:%', true, false) as is_truancy_call,
+
     {{
         date_to_fiscal_year(
             date_field="call_date_time", start_month=7, year_source="start"

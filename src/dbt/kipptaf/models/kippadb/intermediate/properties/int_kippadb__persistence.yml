@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_kippadb__persistence
     columns:

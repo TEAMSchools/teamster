@@ -40,5 +40,20 @@ with
         from {{ source("powerschool_odbc", "src_powerschool__termbins") }}
     )
 
-select *, left(storecode, 1) as storecode_type, right(storecode, 1) as storecode_order,
+select
+    *,
+
+    left(storecode, 1) as storecode_type,
+    right(storecode, 1) as storecode_order,
+
+    if(
+        current_date('{{ var("local_timezone") }}') between date1 and date2, true, false
+    ) as is_current_term,
+
+    case
+        when storecode in ('Q1', 'Q2')
+        then 'S1'
+        when storecode in ('Q3', 'Q4')
+        then 'S2'
+    end as semester,
 from staging

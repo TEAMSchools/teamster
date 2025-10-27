@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_fldoe__eoc
-    config:
-      contract:
-        enforced: true
     columns:
       - name: test_name
         data_type: string

@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_deanslist__roster_assignments
-    config:
-      contract:
-        enforced: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

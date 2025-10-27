@@ -16,18 +16,4 @@ models:
       - name: measurement_group_description
         data_type: string
       - name: measurements
-        data_type: record
-      - name: measurements._id
-        data_type: string
-      - name: measurements.key
-        data_type: string
-      - name: measurements.isprivate
-        data_type: boolean
-      - name: measurements.require
-        data_type: boolean
-      - name: measurements.weight
-        data_type: float64
-      - name: measurements.measurement
-        data_type: string
-      - name: measurements.exclude
-        data_type: boolean
+        data_type: array

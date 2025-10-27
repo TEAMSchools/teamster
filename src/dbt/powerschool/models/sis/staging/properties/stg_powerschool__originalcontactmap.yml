@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__originalcontactmap
-    config:
-      contract:
-        enforced: true
     columns:
       - name: originalcontacttype
         data_type: string

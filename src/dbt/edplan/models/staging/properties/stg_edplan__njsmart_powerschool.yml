@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_edplan__njsmart_powerschool
-    config:
-      contract:
-        enforced: true
     columns:
       - name: student_number
         data_type: int64

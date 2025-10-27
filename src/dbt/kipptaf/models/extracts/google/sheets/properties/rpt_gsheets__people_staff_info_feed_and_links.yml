@@ -2,8 +2,6 @@ models:
   - name: rpt_gsheets__people_staff_info_feed_and_links
     config:
       enabled: false
-      contract:
-        enforced: false
     columns:
       - name: employee_number
         data_type: int64

@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: stg_google_directory__users
     columns:
@@ -62,55 +61,23 @@ models:
         data_type: string
       - name: custom_schemas__student_attributes__student_number
         data_type: int64
+      - name: surrogate_key_target
+        data_type: string
       - name: aliases
-        data_type: string
+        data_type: array<string>
       - name: non_editable_aliases
-        data_type: string
+        data_type: array<string>
       - name: emails
-        data_type: record
-      - name: emails.address
-        data_type: string
-      - name: emails.primary
-        data_type: boolean
-      - name: emails.type
-        data_type: string
-      - name: emails.customtype
-        data_type: string
+        data_type: |
+          ARRAY<STRUCT<address STRING, primary BOOL, type STRING, customType STRING>>
       - name: external_ids
-        data_type: record
-      - name: external_ids.value
-        data_type: string
-      - name: external_ids.type
-        data_type: string
+        data_type: ARRAY<STRUCT<value STRING, type STRING>>
       - name: languages
-        data_type: record
-      - name: languages.languagecode
-        data_type: string
-      - name: languages.preference
-        data_type: string
+        data_type: ARRAY<STRUCT<languageCode STRING, preference STRING>>
       - name: organizations
-        data_type: record
-      - name: organizations.primary
-        data_type: boolean
-      - name: organizations.customtype
-        data_type: string
-      - name: organizations.title
-        data_type: string
-      - name: organizations.department
-        data_type: string
-      - name: organizations.description
-        data_type: string
-      - name: organizations.costcenter
-        data_type: string
+        data_type: |
+          ARRAY<STRUCT<primary BOOL, customType STRING, title STRING, department STRING, description STRING, costCenter STRING>>
       - name: phones
-        data_type: record
-      - name: phones.value
-        data_type: string
-      - name: phones.type
-        data_type: string
+        data_type: ARRAY<STRUCT<value STRING, type STRING>>
       - name: relations
-        data_type: record
-      - name: relations.value
-        data_type: string
-      - name: relations.type
-        data_type: string
+        data_type: ARRAY<STRUCT<value STRING, type STRING>>

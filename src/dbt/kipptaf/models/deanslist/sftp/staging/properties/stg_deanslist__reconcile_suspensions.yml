@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_deanslist__reconcile_suspensions
-    config:
-      contract:
-        enforced: true
     columns:
       - name: school_name
         data_type: string

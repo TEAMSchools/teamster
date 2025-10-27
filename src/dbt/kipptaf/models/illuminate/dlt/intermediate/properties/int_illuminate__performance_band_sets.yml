@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_illuminate__performance_band_sets
     columns:
