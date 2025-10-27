@@ -90,13 +90,14 @@ select
     f.item_url_id,
 
     r.response_id,
-    r.create_time,
-    r.last_submitted_time,
     r.respondent_email,
     r.total_score,
     r.answers,
-    r.last_submitted_timestamp,
+    r.create_time,
     r.create_timestamp,
+    r.last_submitted_time,
+    r.last_submitted_timestamp,
+    r.last_submitted_date_local,
     r.rn_form_respondent_submitted_desc,
 
     rata.value as text_value,
