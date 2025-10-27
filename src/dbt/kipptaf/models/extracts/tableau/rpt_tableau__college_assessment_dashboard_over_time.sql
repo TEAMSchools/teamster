@@ -164,6 +164,14 @@ select
         partition by
             student_number,
             expected_test_type,
+            expected_score_type,
+            expected_metric_name
+    ) as met_min_score_int_overall_score_type,
+
+    max(if(score >= min_score, 1, 0)) over (
+        partition by
+            student_number,
+            expected_test_type,
             expected_aligned_subject,
             expected_metric_name
     ) as met_min_score_int_overall_aligned_subject,
