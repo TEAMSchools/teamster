@@ -91,7 +91,6 @@ select
     e.salesforce_contact_college_match_display_gpa as college_match_gpa,
     e.salesforce_contact_college_match_gpa_band as college_match_gpa_bands,
     e.salesforce_contact_owner_name as contact_owner_name,
-    e.state_studentnumber as secondary_state_studentnumber,
 
     lc.region as region_official_name,
     lc.deanslist_school_id,
@@ -162,6 +161,10 @@ select
     ) as self_contained_status,
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
+    -- added this temporarily because we dont have alignment on ids
+    if(
+        e.region = 'Miami', e.state_studentnumber, null
+    ) as secondary_state_studentnumber,
 
     /* starting SY26, HS uses weighted ADA */
     if(

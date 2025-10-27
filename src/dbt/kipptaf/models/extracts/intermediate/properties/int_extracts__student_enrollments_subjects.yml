@@ -132,8 +132,6 @@ models:
         data_type: string
       - name: contact_owner_name
         data_type: string
-      - name: secondary_state_studentnumber
-        data_type: string
       - name: ktc_cohort
         data_type: int64
       - name: illuminate_student_id
@@ -179,6 +177,8 @@ models:
       - name: iep_status
         data_type: string
       - name: state_studentnumber
+        data_type: string
+      - name: secondary_state_studentnumber
         data_type: string
       - name: met_fafsa_requirement
         data_type: boolean
