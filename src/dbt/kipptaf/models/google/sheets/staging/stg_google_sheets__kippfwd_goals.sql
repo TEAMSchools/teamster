@@ -22,7 +22,9 @@ with
                         goal_category,
                         ' ',
                         expected_scope,
-                        ' Combined Grade ',
+                        ' ',
+                        expected_subject_area,
+                        ' Grade ',
                         grade_level
                     )
                 else goal_subtype
@@ -37,7 +39,9 @@ with
                         goal_category,
                         ' ',
                         expected_scope,
-                        ' Combined Grade ',
+                        ' ',
+                        expected_subject_area,
+                        ' Grade ',
                         grade_level
                     )
                 else goal_subtype
