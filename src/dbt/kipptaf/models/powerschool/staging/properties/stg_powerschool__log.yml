@@ -1,9 +1,11 @@
-version: 2
 models:
   - name: stg_powerschool__log
+    config:
+      contract:
+        enforced: true
     columns:
-      - name: _dbt_source_relation
-        data_type: string
+      - name: dcid
+        data_type: int64
       - name: studentid
         data_type: int64
       - name: logtypeid
@@ -11,6 +13,8 @@ models:
       - name: entry_date
         data_type: date
       - name: entry
+        data_type: string
+      - name: _dbt_source_relation
         data_type: string
       - name: academic_year
         data_type: int64

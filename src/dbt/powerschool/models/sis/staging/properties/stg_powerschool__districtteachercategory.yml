@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__districtteachercategory
-    config:
-      contract:
-        enforced: true
     columns:
       - name: name
         data_type: string

@@ -47,7 +47,7 @@ with
             is_staffed,
             is_active,
             is_new_hire,
-        from {{ ref("stg_seat_tracker__log_archive") }}
+        from {{ ref("stg_google_appsheet__seat_tracker__log_archive") }}
     ),
 
     ordered_snapshot as (

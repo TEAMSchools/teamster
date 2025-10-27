@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_fldoe__fte
-    config:
-      contract:
-        enforced: true
     columns:
       - name: school_number
         data_type: string

@@ -1,10 +1,7 @@
-version: 2
 models:
   - name: stg_amplify__pm_student_summary
     config:
       enabled: false
-      contract:
-        enforced: true
     columns:
       - name: surrogate_key
         data_type: string

@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_powerschool__district_entry_date
     columns:

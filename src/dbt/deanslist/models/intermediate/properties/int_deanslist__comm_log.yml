@@ -1,5 +1,3 @@
-version: 2
-
 models:
   - name: int_deanslist__comm_log
     columns:

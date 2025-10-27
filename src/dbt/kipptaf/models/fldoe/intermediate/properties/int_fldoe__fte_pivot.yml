@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_fldoe__fte_pivot
     columns:

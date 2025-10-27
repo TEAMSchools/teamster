@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_deanslist__roster_assignments
     columns:

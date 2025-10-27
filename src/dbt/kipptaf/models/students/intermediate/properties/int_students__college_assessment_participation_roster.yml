@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_students__college_assessment_participation_roster
     columns:

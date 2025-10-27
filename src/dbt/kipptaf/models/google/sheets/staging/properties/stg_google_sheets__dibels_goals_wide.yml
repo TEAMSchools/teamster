@@ -2,8 +2,6 @@ models:
   - name: stg_google_sheets__dibels_goals_wide
     config:
       enabled: false
-      contract:
-        enforced: false
     columns:
       - name: Lookup
         data_type: string

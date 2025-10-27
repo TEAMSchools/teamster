@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: adp_payroll
     schema: |

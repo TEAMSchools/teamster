@@ -1,10 +1,5 @@
-version: 2
-
 models:
   - name: stg_adp_workforce_now__pension_and_benefits_enrollments
-    config:
-      contract:
-        enforced: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

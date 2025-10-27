@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: qa_powerschool__course_enrollment_overlap
     config:

@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__termbins
-    config:
-      contract:
-        enforced: true
     columns:
       - name: dcid
         data_type: int64
@@ -66,6 +62,10 @@ models:
       - name: storecode_type
         data_type: string
       - name: storecode_order
+        data_type: string
+      - name: is_current_term
+        data_type: boolean
+      - name: semester
         data_type: string
       # - name: aregradeslocked
       #   data_type: int64

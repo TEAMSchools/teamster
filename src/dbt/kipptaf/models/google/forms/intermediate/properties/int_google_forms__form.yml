@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_google_forms__form
     columns:

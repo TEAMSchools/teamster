@@ -33,47 +33,6 @@ with
                 when 'kippmiami'
                 then 'FL'
             end as state_assessment_type,
-
-            {# TODO: refactor calcs to iready package #}
-            if(
-                dr.student_grade = 'K', 0, cast(dr.student_grade as int)
-            ) as student_grade_int,
-            if(dr.subject = 'Reading', 'ELA', 'Math') as discipline,
-
-            if(dr.overall_relative_placement_int >= 4, true, false) as is_proficient,
-            if(
-                dr.percent_progress_to_annual_typical_growth_percent >= 100, true, false
-            ) as is_met_typical,
-            if(
-                dr.percent_progress_to_annual_stretch_growth_percent >= 100, true, false
-            ) as is_met_stretch,
-
-            if(
-                dr.most_recent_diagnostic_ytd_y_n = 'Y', dr.overall_scale_score, null
-            ) as most_recent_overall_scale_score,
-            if(
-                dr.most_recent_diagnostic_ytd_y_n = 'Y',
-                dr.overall_relative_placement,
-                null
-            ) as most_recent_overall_relative_placement,
-            if(
-                dr.most_recent_diagnostic_ytd_y_n = 'Y', dr.overall_placement, null
-            ) as most_recent_overall_placement,
-            if(
-                dr.most_recent_diagnostic_ytd_y_n = 'Y', dr.diagnostic_gain, null
-            ) as most_recent_diagnostic_gain,
-            if(
-                dr.most_recent_diagnostic_ytd_y_n = 'Y', dr.lexile_measure, null
-            ) as most_recent_lexile_measure,
-            if(
-                dr.most_recent_diagnostic_ytd_y_n = 'Y', dr.lexile_range, null
-            ) as most_recent_lexile_range,
-            if(
-                dr.most_recent_diagnostic_ytd_y_n = 'Y', dr.rush_flag, null
-            ) as most_recent_rush_flag,
-            if(
-                dr.most_recent_diagnostic_ytd_y_n = 'Y', dr.completion_date, null
-            ) as most_recent_completion_date,
         from union_relations as dr
         left join
             {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc

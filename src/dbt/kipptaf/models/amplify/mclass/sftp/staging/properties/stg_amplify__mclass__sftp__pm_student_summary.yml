@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_amplify__mclass__sftp__pm_student_summary
-    config:
-      contract:
-        enforced: true
     columns:
       - name: school_name
         data_type: string

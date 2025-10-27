@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: stg_google_forms__responses
     columns:
@@ -15,52 +14,13 @@ models:
       - name: total_score
         data_type: float64
       - name: answers
-        data_type: record
-      - name: answers.key
-        data_type: string
-      - name: answers.value
-        data_type: record
-      - name: answers.value.questionid
-        data_type: string
-      - name: answers.value.grade
-        data_type: record
-      - name: answers.value.grade.score
-        data_type: float64
-      - name: answers.value.grade.correct
-        data_type: boolean
-      - name: answers.value.grade.feedback
-        data_type: record
-      - name: answers.value.grade.feedback.text
-        data_type: string
-      - name: answers.value.grade.feedback.material
-        data_type: record
-      - name: answers.value.grade.feedback.material.link
-        data_type: record
-      - name: answers.value.grade.feedback.material.link.uri
-        data_type: string
-      - name: answers.value.grade.feedback.material.link.displaytext
-        data_type: string
-      - name: answers.value.grade.feedback.material.video
-        data_type: record
-      - name: answers.value.grade.feedback.material.video.displaytext
-        data_type: string
-      - name: answers.value.grade.feedback.material.video.youtubeuri
-        data_type: string
-      - name: answers.value.textanswers
-        data_type: record
-      - name: answers.value.textanswers.answers
-        data_type: record
-      - name: answers.value.textanswers.answers.value
-        data_type: string
-      - name: answers.value.fileuploadanswers
-        data_type: record
-      - name: answers.value.fileuploadanswers.answers
-        data_type: record
-      - name: answers.value.fileuploadanswers.answers.fileid
-        data_type: string
-      - name: answers.value.fileuploadanswers.answers.filename
-        data_type: string
-      - name: answers.value.fileuploadanswers.answers.mimetype
-        data_type: string
+        data_type:
+          ARRAY<STRUCT<key STRING, value STRUCT<questionId STRING, grade
+          STRUCT<score FLOAT64, correct BOOL, feedback STRUCT<text STRING,
+          material ARRAY<STRUCT<link STRUCT<uri STRING, displayText STRING>,
+          video STRUCT<displayText STRING, youtubeUri STRING>>>>>, textAnswers
+          STRUCT<answers ARRAY<STRUCT<value STRING>>>, fileUploadAnswers
+          STRUCT<answers ARRAY<STRUCT<fileId STRING, fileName STRING, mimeType
+          STRING>>>>>>
       - name: rn_form_respondent_submitted_desc
         data_type: int64

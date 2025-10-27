@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: int_deanslist__incidents__custom_fields
-    config:
-      contract:
-        enforced: true
     columns:
       - name: incident_id
         data_type: int64
