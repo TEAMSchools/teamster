@@ -3,6 +3,10 @@
     "sat_combined_pct_1010_plus_g11",
     "sat_combined_pct_890_plus_g12",
     "sat_combined_pct_1010_plus_g12",
+    "sat_ebrw_pct_450_plus_g11",
+    "sat_ebrw_pct_450_plus_g12",
+    "sat_math_pct_440_plus_g11",
+    "sat_math_pct_440_plus_g12",
 ] %}
 
 with
