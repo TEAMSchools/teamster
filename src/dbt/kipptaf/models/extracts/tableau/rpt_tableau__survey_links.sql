@@ -272,7 +272,7 @@ select
         r.report_to_preferred_name_lastfirst,
         ' - ',
         r.manager_work_location,
-        ' ( ',
+        ' (',
         safe_cast(r.report_to_employee_number as string),
         ')'
     ) as `assignment`,
