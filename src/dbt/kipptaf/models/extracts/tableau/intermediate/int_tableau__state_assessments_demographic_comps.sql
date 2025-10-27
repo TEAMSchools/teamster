@@ -199,7 +199,8 @@ select
         then 'Blank'
     end as aggregate_ethnicity,
 
-    if(e.lep_status, 'ML', 'Not ML') as ml_status,
+    e.ml_status,
+
     if(
         e.iep_status = 'Has IEP',
         'Students With Disabilities',
@@ -236,9 +237,9 @@ where
     and e.academic_year >= {{ var("current_academic_year") - 7 }}
     and e.grade_level > 2
 
-union all
-
-/* NJ prelim scores */
+    -- union all
+    /* NJ prelim scores */
+    /* disabled until december
 select
     e.academic_year,
     e.region,
@@ -266,7 +267,8 @@ select
         then 'Blank'
     end as aggregate_ethnicity,
 
-    if(e.lep_status, 'ML', 'Not ML') as ml_status,
+    e.ml_status,
+    
     if(
         e.iep_status = 'Has IEP',
         'Students With Disabilities',
@@ -302,3 +304,5 @@ where
     and e.rn_year = 1
     and e.grade_level > 2
     and e.school_level != 'OD'
+*/
+    

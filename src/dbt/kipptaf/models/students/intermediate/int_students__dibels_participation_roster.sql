@@ -40,7 +40,7 @@ with
                 partition by academic_year, region, grade, admin_season, round_number
             ) as expected_row_count,
 
-        from {{ ref("stg_google_sheets__dibels_expected_assessments") }}
+        from {{ ref("int_google_sheets__dibels_expected_assessments") }}
         where assessment_include is null and pm_goal_include is null
     ),
 
@@ -62,11 +62,11 @@ with
             case
                 when e.expected_row_count = a.actual_row_count
                 then true
-                when e.admin_season = 'BOY' and a.boy_composite != 'No Data'
+                when e.admin_season = 'BOY' and a.boy_composite != 'No data'
                 then true
-                when e.admin_season = 'MOY' and a.moy_composite != 'No Data'
+                when e.admin_season = 'MOY' and a.moy_composite != 'No data'
                 then true
-                when e.admin_season = 'EOY' and a.eoy_composite != 'No Data'
+                when e.admin_season = 'EOY' and a.eoy_composite != 'No data'
                 then true
                 else false
             end as completed_test_round,

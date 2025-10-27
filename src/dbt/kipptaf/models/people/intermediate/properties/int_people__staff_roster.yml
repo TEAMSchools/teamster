@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_people__staff_roster
     data_tests:
@@ -120,8 +119,20 @@ models:
         data_type: string
       - name: assigned_business_unit_name
         data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+                where: worker_status_code != 'Terminated'
       - name: assigned_department_name
         data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+                where: worker_status_code != 'Terminated'
       - name: home_business_unit_code
         data_type: string
       - name: home_business_unit_name

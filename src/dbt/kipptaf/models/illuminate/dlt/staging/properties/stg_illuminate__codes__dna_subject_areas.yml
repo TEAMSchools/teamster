@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: stg_illuminate__codes__dna_subject_areas
     columns:

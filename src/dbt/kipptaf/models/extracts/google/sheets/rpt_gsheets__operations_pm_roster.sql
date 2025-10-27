@@ -7,6 +7,7 @@ with
             home_work_location_name,
             home_work_location_abbreviation,
             reports_to_formatted_name,
+
             concat(
                 formatted_name,
                 ' - ',
@@ -21,7 +22,7 @@ with
             and home_department_name = 'Operations'
             and not contains_substr(home_business_unit_code, 'KIPP_TAF')
             and not contains_substr(job_title, 'Director')
-            and not job_title in ('Aide - Non-Instructional', 'Intern')
+            and job_title != 'Intern'
     )
 
 select
@@ -32,7 +33,6 @@ select
     roster.home_work_location_abbreviation,
     roster.reports_to_formatted_name,
 
-    -- has to match question title on form
-    roster.name_dropdown as `Ops Teammate Name`,  -- noqa: RF05 
+    -- trunk-ignore(sqlfluff/RF05)
+    roster.name_dropdown as `Ops Teammate Name`,
 from roster
-order by roster.home_work_location_name, roster.formatted_name

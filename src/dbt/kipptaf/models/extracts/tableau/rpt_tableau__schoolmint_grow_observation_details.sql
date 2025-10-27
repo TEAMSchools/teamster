@@ -5,7 +5,7 @@ with
         where
             srh.effective_date_start >= '{{ var("current_academic_year") - 1 }}-07-01'
             and srh.assignment_status = 'Active'
-            and srh.job_title = 'Teacher in Residence'
+            and srh.job_title in ('Teacher in Residence', 'Paraprofessional')
         group by employee_number
     ),
 
@@ -14,7 +14,7 @@ with
             srh.employee_number, t.academic_year, t.code, true as recent_leave,
         from {{ ref("int_people__staff_roster_history") }} as srh
         inner join
-            {{ ref("stg_reporting__terms") }} as t
+            {{ ref("stg_google_sheets__reporting__terms") }} as t
             on assignment_status_effective_date
             between date_sub(t.lockbox_date, interval 6 week) and t.lockbox_date
             and t.type = 'PMS'
@@ -78,6 +78,15 @@ with
             null as etr_score,
             null as so_score,
 
+            em.is_leader_development_program,
+            em.is_teacher_development_program,
+            em.memberships,
+
+            emo.is_leader_development_program as is_leader_development_program_observer,
+            emo.is_teacher_development_program
+            as is_teacher_development_program_observer,
+            emo.memberships as memberships_observer,
+
             if(od.observation_id is not null, 1, 0) as is_observed,
 
             regexp_replace(
@@ -96,9 +105,9 @@ with
                         srh.job_title = 'Teacher in Residence'
                         or tir.prior_year_tir
                         or srh.home_business_unit_name = 'KIPP Miami'
-                        or srh.worker_original_hire_date
+                        or srh.worker_hire_date_recent
                         between '{{ var("current_academic_year") }}-04-01' and date_sub(
-                            t.lockbox_date, interval 6 week
+                            t.lockbox_date, interval 3 week
                         )
                     )
                 then true
@@ -113,7 +122,7 @@ with
             end as pm_round_eligible,
         from {{ ref("int_people__staff_roster_history") }} as srh
         inner join
-            {{ ref("stg_reporting__terms") }} as t
+            {{ ref("stg_google_sheets__reporting__terms") }} as t
             on srh.home_business_unit_name = t.region
             and (
                 t.start_date
@@ -123,10 +132,12 @@ with
             )
             and t.type in ('PMS', 'PMC', 'TR')
             and t.academic_year = {{ var("current_academic_year") }}
+        /* Adding memberships for teachers*/
         left join
             {{ ref("int_performance_management__overall_scores") }} as os
             on srh.employee_number = os.employee_number
             and t.academic_year = os.academic_year
+        /* Adding memberships for observers*/
         left join
             {{ ref("int_performance_management__observation_details") }} as od
             on srh.employee_number = od.employee_number
@@ -149,6 +160,16 @@ with
             on srh.employee_number = r.employee_number
             and t.academic_year = r.academic_year
             and t.code = r.code
+        /* Adding memberships for teachers*/
+        left join
+            {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as em
+            on t.academic_year = em.academic_year
+            and sr.worker_id = em.associate_id
+        /* Adding memberships for observers*/
+        left join
+            {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as emo
+            on t.academic_year = emo.academic_year
+            and sro.worker_id = emo.associate_id
         where
             (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
             and srh.assignment_status = 'Active'
@@ -213,6 +234,15 @@ with
             od.etr_score,
             od.so_score,
 
+            em.is_leader_development_program,
+            em.is_teacher_development_program,
+            em.memberships,
+
+            emo.is_leader_development_program as is_leader_development_program_observer,
+            emo.is_teacher_development_program
+            as is_teacher_development_program_observer,
+            emo.memberships as memberships_observer,
+
             if(od.observation_id is not null, 1, 0) as is_observed,
 
             regexp_replace(
@@ -242,6 +272,14 @@ with
             on srh.powerschool_teacher_number = tgl.teachernumber
             and od.academic_year = tgl.academic_year
             and tgl.grade_level_rank = 1
+        left join
+            {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as em
+            on od.academic_year = em.academic_year
+            and sr.worker_id = em.associate_id
+        left join
+            {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as emo
+            on od.academic_year = emo.academic_year
+            and sro.worker_id = emo.associate_id
     )
 
 select *

@@ -23,6 +23,7 @@ select
     co.nj_student_tier,
     co.is_exempt_iready,
     co.is_sipps,
+    co.is_magoosh,
     co.territory,
     co.hos as head_of_school,
     co.week_start_monday,
@@ -55,9 +56,10 @@ select
     dr.mid_on_grade_level_scale_score,
     dr.overall_scale_score,
 
-    iu.last_week_start_date,
-    iu.last_week_end_date,
-    iu.last_week_time_on_task_min,
+    iu.total_lesson_time_on_task_min as total_lesson_time_on_task_min_week,
+    iu.all_lessons_completed as all_lessons_completed_week,
+    iu.all_lessons_passed as all_lessons_passed_week,
+    iu.percent_all_lessons_passed as percent_all_lessons_passed_week,
 
     cr.teacher_lastfirst as subject_teacher,
     cr.sections_section_number as subject_section,
@@ -78,13 +80,24 @@ select
     dr.mid_on_grade_level_scale_score
     - dr.overall_scale_score as scale_pts_to_mid_on_grade_level,
 
+    row_number() over (
+        partition by
+            co.academic_year, co.student_number, co.iready_subject, co.week_start_monday
+        order by il.completion_date desc
+    ) as rn_subject_week,
 from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as co
 left join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on co.academic_year = rt.academic_year
     and co.region = rt.city
     and rt.type = 'IREX'
     and co.week_start_monday between rt.start_date and rt.end_date
+left join
+    {{ ref("stg_iready__personalized_instruction_summary") }} as iu
+    on co.student_number = iu.student_id
+    and co.iready_subject = iu.subject
+    and co.week_start_monday = iu.date_range_start
+    and co.academic_year = iu.academic_year_int
 left join
     {{ ref("int_iready__instruction_by_lesson_union") }} as il
     on co.student_number = il.student_id
@@ -98,12 +111,6 @@ left join
     and co.iready_subject = dr.subject
     and rt.name = dr.test_round
     and dr.rn_subj_round = 1
-left join
-    {{ ref("snapshot_iready__instructional_usage_data") }} as iu
-    on co.student_number = iu.student_id
-    and co.iready_subject = iu.subject
-    and co.week_start_monday = iu.last_week_start_date
-    and iu.academic_year_int = {{ var("current_academic_year") }}
 left join
     {{ ref("base_powerschool__course_enrollments") }} as cr
     on co.student_number = cr.students_student_number

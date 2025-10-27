@@ -27,6 +27,7 @@ select
     s.hos,
     s.nj_student_tier,
     s.is_tutoring as tutoring_nj,
+    s.is_sipps,
 
     'Benchmark' as assessment_type,
 
@@ -111,7 +112,7 @@ select
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
-    {{ ref("stg_google_sheets__dibels_expected_assessments") }} as a
+    {{ ref("int_google_sheets__dibels_expected_assessments") }} as a
     on s.academic_year = a.academic_year
     and s.region = a.region
     and s.grade_level = a.grade
@@ -122,7 +123,7 @@ inner join
     and a.assessment_type = 'Benchmark'
     and a.assessment_include is null
 left join
-    {{ ref("rpt_gsheets__dibels_bm_goals_calculations") }} as g
+    {{ ref("stg_google_sheets__dibels_bm_goals") }} as g
     on a.academic_year = g.academic_year
     and a.region = g.region
     and a.grade = g.assessment_grade_int
@@ -198,6 +199,7 @@ select
     s.hos,
     s.nj_student_tier,
     s.is_tutoring as tutoring_nj,
+    s.is_sipps,
 
     'PM' as assessment_type,
 

@@ -74,7 +74,7 @@ def test_adp_payroll_general_ledger_file_kipptaf():
 def test_fldoe_fast_kippmiami():
     from teamster.code_locations.kippmiami.fldoe.assets import fast
 
-    _test_asset(asset=fast)
+    _test_asset(asset=fast, partition_key="Grade8FASTMathematics|SY26/PM1")
 
 
 def test_fldoe_eoc_kippmiami():

@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_gsheets__dibels_pm_goal_setting
     columns:

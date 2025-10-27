@@ -1,98 +1,3 @@
-with
-    diagnostic_results as (
-        select
-            _dbt_source_relation,
-            student_id,
-            academic_year,
-            academic_year_int,
-            state_assessment_type,
-            school,
-            student_grade,
-            `subject`,
-            `start_date`,
-            completion_date,
-            baseline_diagnostic_y_n,
-            most_recent_diagnostic_ytd_y_n,
-            overall_scale_score,
-            overall_scale_score_plus_typical_growth,
-            overall_scale_score_plus_stretch_growth,
-            percentile,
-            overall_relative_placement,
-            overall_relative_placement_int,
-            placement_3_level,
-            rush_flag,
-            mid_on_grade_level_scale_score,
-            percent_progress_to_annual_typical_growth_percent,
-            percent_progress_to_annual_stretch_growth_percent,
-            diagnostic_gain,
-            annual_typical_growth_measure,
-            annual_stretch_growth_measure,
-            overall_placement,
-
-            if(overall_relative_placement_int >= 4, true, false) as is_proficient,
-
-            if(`subject` = 'Reading', 'ELA', 'Math') as discipline,
-
-            if(
-                percent_progress_to_annual_typical_growth_percent >= 100, true, false
-            ) as is_met_typical,
-            if(
-                percent_progress_to_annual_stretch_growth_percent >= 100, true, false
-            ) as is_met_stretch,
-
-            if(
-                student_grade = 'K', 0, safe_cast(student_grade as int)
-            ) as student_grade_int,
-
-            max(
-                if(most_recent_diagnostic_ytd_y_n = 'Y', overall_scale_score, null)
-            ) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_overall_scale_score,
-
-            max(
-                if(
-                    most_recent_diagnostic_ytd_y_n = 'Y',
-                    overall_relative_placement,
-                    null
-                )
-            ) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_overall_relative_placement,
-
-            max(
-                if(most_recent_diagnostic_ytd_y_n = 'Y', overall_placement, null)
-            ) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_overall_placement,
-
-            max(if(most_recent_diagnostic_ytd_y_n = 'Y', diagnostic_gain, null)) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_diagnostic_gain,
-
-            max(if(most_recent_diagnostic_ytd_y_n = 'Y', lexile_measure, null)) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_lexile_measure,
-
-            max(if(most_recent_diagnostic_ytd_y_n = 'Y', lexile_range, null)) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_lexile_range,
-
-            max(if(most_recent_diagnostic_ytd_y_n = 'Y', rush_flag, null)) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_rush_flag,
-
-            max(if(most_recent_diagnostic_ytd_y_n = 'Y', completion_date, null)) over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-            ) as most_recent_completion_date,
-
-            row_number() over (
-                partition by _dbt_source_relation, student_id, academic_year, `subject`
-                order by completion_date desc
-            ) as rn_subj_year,
-        from {{ ref("stg_iready__diagnostic_results") }}
-    )
-
 select
     dr._dbt_source_relation,
     dr.student_id,
@@ -131,10 +36,9 @@ select
     dr.most_recent_rush_flag,
     dr.most_recent_completion_date,
     dr.rn_subj_year,
-
-    lc.region,
-    lc.abbreviation as school_abbreviation,
-    lc.powerschool_school_id as schoolid,
+    dr.region,
+    dr.school_abbreviation,
+    dr.schoolid,
 
     cwo.sublevel_name as projected_sublevel,
     cwo.sublevel_number as projected_sublevel_number,
@@ -166,11 +70,13 @@ select
     round(
         dr.most_recent_diagnostic_gain / dr.annual_typical_growth_measure, 2
     ) as progress_to_typical,
+
     round(
         dr.most_recent_diagnostic_gain / dr.annual_stretch_growth_measure, 2
     ) as progress_to_stretch,
 
     right(rt.code, 1) as round_number,
+
     coalesce(rt.name, 'Outside Round') as test_round,
 
     if(
@@ -188,29 +94,28 @@ select
             rt.name
         order by dr.completion_date desc
     ) as rn_subj_round,
-from diagnostic_results as dr
-left join {{ ref("stg_people__location_crosswalk") }} as lc on dr.school = lc.name
+from {{ ref("int_iready__diagnostic_results") }} as dr
 left join
-    {{ ref("stg_reporting__terms") }} as rt
-    on lc.region = rt.region
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
+    on dr.region = rt.region
     and dr.completion_date between rt.start_date and rt.end_date
     and rt.type = 'IR'
 left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cwo
+    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cwo
     on dr.subject = cwo.test_name
     and dr.student_grade = cwo.grade_level_string
     and dr.state_assessment_type = cwo.destination_system
     and dr.overall_scale_score between cwo.scale_low and cwo.scale_high
     and cwo.source_system = 'i-Ready'
 left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cwr
+    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cwr
     on dr.subject = cwr.test_name
     and dr.student_grade = cwr.grade_level_string
     and dr.state_assessment_type = cwr.destination_system
     and dr.most_recent_overall_scale_score between cwr.scale_low and cwr.scale_high
     and cwr.source_system = 'i-Ready'
 left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cwt
+    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cwt
     on dr.subject = cwt.test_name
     and dr.student_grade = cwt.grade_level_string
     and dr.state_assessment_type = cwt.destination_system
@@ -218,7 +123,7 @@ left join
     between cwt.scale_low and cwt.scale_high
     and cwt.source_system = 'i-Ready'
 left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cws
+    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cws
     on dr.subject = cws.test_name
     and dr.student_grade = cws.grade_level_string
     and dr.state_assessment_type = cws.destination_system
@@ -226,14 +131,14 @@ left join
     between cws.scale_low and cws.scale_high
     and cws.source_system = 'i-Ready'
 left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cwi
+    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cwi
     on dr.subject = cwi.test_name
     and dr.student_grade_int = cwi.grade_level
     and dr.overall_scale_score_plus_typical_growth
     between cwi.scale_low and cwi.scale_high
     and cwi.destination_system = 'i-Ready'
 left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cwp
+    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cwp
     on dr.subject = cwp.test_name
     and dr.student_grade = cwp.grade_level_string
     and dr.state_assessment_type = cwp.destination_system

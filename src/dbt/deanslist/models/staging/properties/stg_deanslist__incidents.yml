@@ -1,12 +1,5 @@
-version: 2
 models:
   - name: stg_deanslist__incidents
-    config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
-        "src_deanslist__incidents") | replace("`", "") }}')
-      # contract:
-      #   enforced: true
     columns:
       - name: incident_id
         data_type: int64
@@ -158,3 +151,15 @@ models:
         data_type: int64
       - name: update_lastfirst
         data_type: string
+      - name: actions
+        data_type: |
+          ARRAY<STRUCT<ActionID STRING, ActionName STRING, PointValue STRING, SAID STRING, SourceID STRING>>
+      - name: attachments
+        data_type: |
+          ARRAY<STRUCT<AttachmentID STRING, AttachmentType STRING, Bytes STRING, ContentType STRING, EntityID STRING, EntityName STRING, EntityType STRING, InternalFilename STRING, InternalFolder STRING, MinUserLevel STRING, MinUserLevelGroupName STRING, PublicFilename STRING, ReportDate STRING, ReportType STRING, SchoolID STRING, SourceID STRING, SourceType STRING, StudentID STRING, TermID STRING, URL STRING, FilePostedAt STRUCT<date STRING, timezone_type INT64, timezone STRING>>>
+      - name: custom_fields
+        data_type: |
+          ARRAY<STRUCT<CustomFieldID STRING, FieldCategory STRING, FieldKey STRING, FieldName STRING, FieldType STRING, InputHTML STRING, InputName STRING, IsFrontEnd STRING, IsRequired STRING, LabelHTML STRING, MinUserLevel STRING, Options STRING, SourceID STRING, SourceType STRING, StringValue STRING, Value STRING, NumValue STRUCT<long_value INT64, double_value FLOAT64>, SelectedOptions ARRAY<STRING>>>
+      - name: penalties
+        data_type: |
+          ARRAY<STRUCT<IncidentID STRING, IncidentPenaltyID STRING, SchoolID STRING, PenaltyID STRING, PenaltyName STRING, StartDate STRING, EndDate STRING, NumPeriods STRING, IsSuspension BOOL, IsReportable BOOL, SAID STRING, Print BOOL, StudentID STRING, NumDays STRUCT<long_value INT64, double_value FLOAT64>>>

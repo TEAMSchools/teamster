@@ -13,16 +13,14 @@ with
             g.grade_level,
         from {{ ref("int_illuminate__repositories") }} as r
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on r.date_administered between rt.start_date and rt.end_date
             and rt.type = 'RT'
             and rt.school_id = 0
         inner join
-            {# {{ ref("stg_illuminate__repository_fields") }} as f #}
             {{ ref("stg_illuminate__dna_repositories__repository_fields") }} as f
             on r.repository_id = f.repository_id
         inner join
-            {# {{ ref("stg_illuminate__repository_grade_levels") }} as g #}
             {{ ref("stg_illuminate__dna_repositories__repository_grade_levels") }} as g
             on r.repository_id = g.repository_id
         where r.scope = 'Sight Words Quiz'
@@ -67,6 +65,7 @@ left join
     on swq.repository_id = sw.repository_id
     and swq.label = sw.field_label
     and co.student_number = sw.local_student_id
+where co.region != 'Paterson'
 
 union all
 
@@ -110,3 +109,4 @@ inner join
     and co.is_enrolled_recent
     and co.iready_subject = 'Reading'
     and co.rn_year = 1
+where co.region != 'Paterson'

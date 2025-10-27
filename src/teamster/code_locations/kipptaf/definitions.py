@@ -53,6 +53,7 @@ from teamster.core.resources import (
 defs = Definitions(
     executor=k8s_job_executor,
     assets=[
+        *_dbt.asset_specs,
         *_google.asset_specs,
         *airbyte.asset_specs,
         *load_assets_from_modules(
@@ -99,6 +100,7 @@ defs = Definitions(
         *adp.sensors,
         *couchdrop.sensors,
         *deanslist.sensors,
+        *amplify.sensors,
         build_sensor_for_freshness_checks(
             freshness_checks=asset_checks.freshness_checks
         ),

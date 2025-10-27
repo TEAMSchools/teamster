@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: illuminate
     schema: illuminate_public

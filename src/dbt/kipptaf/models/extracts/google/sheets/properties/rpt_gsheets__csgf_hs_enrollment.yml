@@ -1,0 +1,37 @@
+models:
+  - name: rpt_gsheets__csgf_hs_enrollment
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: grade
+        data_type: int64
+      - name: unweighted_cumulative_gpa
+        data_type: float64
+      - name: weighted_cumulative_gpa
+        data_type: float64
+      - name: has_participated_in_ap_courses
+        data_type: string
+      - name: has_participated_in_honors_courses
+        data_type: string
+      - name: has_participated_in_dual_enrollment_courses
+        data_type: string
+      - name: has_participated_in_cte_courses
+        data_type: string
+      - name: has_participated_in_ib_courses
+        data_type: string
+      - name: passed_integrated_math_1
+        data_type: string
+      - name: race_ethnicity
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: passed_algebra_i
+        data_type: string
+      - name: school
+        data_type: string
+      - name: student_has_iep
+        data_type: string
+      - name: student_is_el
+        data_type: string
+      - name: student_is_frl
+        data_type: string

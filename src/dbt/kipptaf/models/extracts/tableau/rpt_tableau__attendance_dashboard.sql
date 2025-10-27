@@ -51,9 +51,7 @@ with
             coalesce(co.is_counseling_services, 0) as is_counseling_services,
             coalesce(co.is_student_athlete, 0) as is_student_athlete,
 
-            coalesce(
-                f.nj_overall_student_tier, 'Unbucketed'
-            ) as nj_overall_student_tier,
+            f.nj_overall_student_tier,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ad
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
@@ -80,6 +78,9 @@ select
     attendancevalue as is_present,
     is_absent,
     is_present_weighted as is_present_hs_alt,
+    is_iss,
+    is_oss,
+    is_tardy,
     student_number,
     student_name as lastfirst,
     enroll_status,

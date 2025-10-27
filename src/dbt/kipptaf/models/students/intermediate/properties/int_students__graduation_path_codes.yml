@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_students__graduation_path_codes
     data_tests:
@@ -89,15 +88,16 @@ models:
         data_type: string
         data_tests:
           - accepted_values:
-              values:
-                - Grad Eligible
-                - ELA Only
-                - Not Grad Eligible
-                - Math Only
-                - No FAFSA
-                - FAFSA Only
-                - ELA Only / No FAFSA
-                - Math Only / No FAFSA
+              arguments:
+                values:
+                  - Grad Eligible
+                  - ELA Only
+                  - Not Grad Eligible
+                  - Math Only
+                  - No FAFSA
+                  - FAFSA Only
+                  - ELA Only / No FAFSA
+                  - Math Only / No FAFSA
               config:
                 severity: warn
                 store_failures: true

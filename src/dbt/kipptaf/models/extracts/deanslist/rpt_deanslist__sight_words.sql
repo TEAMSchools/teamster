@@ -20,7 +20,7 @@ select
     end as is_mastery,
 from {{ ref("int_illuminate__repository_data") }} as swd
 inner join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on swd.date_administered between rt.start_date and rt.end_date
     and rt.type = 'RT'
     and rt.school_id = 0

@@ -1,0 +1,139 @@
+models:
+  - name: stg_smartrecruiters__applications
+    columns:
+      - name: application_custom_step
+        data_type: string
+      - name: application_field_application_review_score
+        data_type: string
+      - name: application_field_job_title
+        data_type: string
+      - name: application_field_phone_interview_score
+        data_type: string
+      - name: application_field_resume_score
+        data_type: string
+      - name: application_field_school_shared_with_miami
+        data_type: string
+      - name: application_field_school_shared_with_new_jersey
+        data_type: string
+      - name: application_id
+        data_type: string
+      - name: application_reason_for_rejection
+        data_type: string
+      - name: application_reason_for_withdrawal
+        data_type: string
+      - name: application_state_in_review_date
+        data_type: string
+      - name: application_state_interview_date
+        data_type: string
+      - name: application_state_transferred_date
+        data_type: string
+      - name: application_state_withdrawn_date
+        data_type: string
+      - name: application_state
+        data_type: string
+      - name: application_status_before_rejection
+        data_type: string
+      - name: application_status_before_withdrawal
+        data_type: string
+      - name: application_status_in_review_performance_task_date
+        data_type: string
+      - name: application_status_in_review_resume_review_date
+        data_type: string
+      - name: application_status_interview_performance_task_date
+        data_type: string
+      - name: application_status
+        data_type: string
+      - name: application_url
+        data_type: string
+      - name: average_rating
+        data_type: string
+      - name: candidate_email
+        data_type: string
+      - name: candidate_first_and_last_name
+        data_type: string
+      - name: candidate_first_name
+        data_type: string
+      - name: candidate_id
+        data_type: string
+      - name: candidate_last_name
+        data_type: string
+      - name: candidate_linkedin_profile_url
+        data_type: string
+      - name: candidate_source_subtype
+        data_type: string
+      - name: candidate_source_type
+        data_type: string
+      - name: candidate_source
+        data_type: string
+      - name: department_internal
+        data_type: string
+      - name: department_org_field_value
+        data_type: string
+      - name: job_city
+        data_type: string
+      - name: job_title
+        data_type: string
+      - name: recruiters
+        data_type: string
+      - name: source_subtype
+        data_type: string
+      - name: source_type
+        data_type: string
+      - name: source
+        data_type: string
+      - name: hired_datetime
+        data_type: datetime
+      - name: new_datetime
+        data_type: datetime
+      - name: lead_datetime
+        data_type: datetime
+      - name: offer_datetime
+        data_type: datetime
+      - name: rejected_datetime
+        data_type: datetime
+      - name: demo_datetime
+        data_type: datetime
+      - name: phone_screen_complete_datetime
+        data_type: datetime
+      - name: phone_screen_requested_datetime
+        data_type: datetime
+      - name: last_update_datetime
+        data_type: datetime
+      - name: time_in_application_state_in_review
+        data_type: int64
+      - name: time_in_application_state_interview
+        data_type: int64
+      - name: time_in_application_state_lead
+        data_type: int64
+      - name: time_in_application_state_new
+        data_type: int64
+      - name: time_in_application_state_offered
+        data_type: int64
+      - name: time_in_application_status_in_review_resume_review
+        data_type: int64
+      - name: time_in_application_status_interview_demo
+        data_type: int64
+      - name: time_in_application_status_interview_phone_screen_complete
+        data_type: int64
+      - name: time_in_application_status_interview_phone_screen_requested
+        data_type: int64
+      - name: subject_preference
+        data_type: string
+      - name: date_new
+        data_type: date
+      - name: date_phone_screen_complete
+        data_type: date
+      - name: date_phone_screen_requested
+        data_type: date
+      - name: date_demo
+        data_type: date
+      - name: date_offer
+        data_type: date
+      - name: date_hired
+        data_type: date
+      - name: date_rejected
+        data_type: date
+      - name: date_last_update
+        data_type: date
+      - name: date_lead
+        data_type: date

@@ -1,10 +1,11 @@
-version: 2
-
 sources:
   - name: kippcamden_deanslist
     schema: |
-      {% if env_var('GITHUB_USER', 'dev') != 'dev' -%}
-      zz_{{ env_var('GITHUB_USER', 'dev') }}_{%- endif -%}kippcamden_deanslist
+      {%- if env_var('GITHUB_USER', '') != '' -%}
+      zz_{{ env_var('GITHUB_USER', '') }}_
+      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}
+      z_dev_
+      {%- endif -%}kippcamden_deanslist
     tables:
       - name: stg_deanslist__behavior
         meta:
@@ -22,22 +23,6 @@ sources:
               - kippcamden
               - deanslist
               - int_deanslist__comm_log
-      - name: stg_deanslist__followups
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - stg_deanslist__followups
-      - name: stg_deanslist__homework
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - stg_deanslist__homework
       - name: stg_deanslist__incidents
         meta:
           dagster:
@@ -46,14 +31,6 @@ sources:
               - kippcamden
               - deanslist
               - stg_deanslist__incidents
-      - name: stg_deanslist__lists
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - stg_deanslist__lists
       - name: stg_deanslist__terms
         meta:
           dagster:
@@ -72,14 +49,6 @@ sources:
               - kippcamden
               - deanslist
               - stg_deanslist__users
-      - name: stg_deanslist__dff_stats
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - stg_deanslist__dff_stats
       - name: int_deanslist__incidents__penalties
         meta:
           dagster:
@@ -88,14 +57,6 @@ sources:
               - kippcamden
               - deanslist
               - int_deanslist__incidents__penalties
-      - name: int_deanslist__incidents__actions
-        meta:
-          dagster:
-            group: deanslist
-            asset_key:
-              - kippcamden
-              - deanslist
-              - int_deanslist__incidents__actions
       - name: int_deanslist__incidents__custom_fields
         meta:
           dagster:
@@ -172,3 +133,13 @@ sources:
               - kippcamden
               - deanslist
               - stg_deanslist__rosters
+      - name: stg_deanslist__followups
+        config:
+          enabled: false
+        meta:
+          dagster:
+            group: deanslist
+            asset_key:
+              - kippcamden
+              - deanslist
+              - stg_deanslist__followups

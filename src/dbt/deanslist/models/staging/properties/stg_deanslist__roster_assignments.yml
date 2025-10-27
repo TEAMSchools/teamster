@@ -1,12 +1,5 @@
-version: 2
 models:
   - name: stg_deanslist__roster_assignments
-    config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
-        "src_deanslist__roster_assignments") | replace("`", "") }}')
-      contract:
-        enforced: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

@@ -17,34 +17,25 @@ with
             student_id,
             local_id,
 
-            field_1_reading_prose_and_poetry_performance as reading_prose_and_poetry,
-            field_2_reading_informational_text_performance
-            as reading_informational_text,
-            field_3_reading_across_genres_vocabulary_performance
-            as reading_across_genres_vocabulary,
-            field_1_number_sense_and_additive_reasoning_performance
-            as number_sense_and_additive_reasoning,
-            field_1_number_sense_and_operations_and_algebraic_reasoning_performance
-            as number_sense_and_operations_and_algebraic_reasoning,
-            field_1_number_sense_and_operations_and_probability_performance
-            as number_sense_and_operations_and_probability,
-            field_1_number_sense_and_operations_performance
-            as number_sense_and_operations,
-            field_1_number_sense_and_operations_with_whole_numbers_performance
-            as number_sense_and_operations_with_whole_numbers,
-            field_2_number_sense_and_multiplicative_reasoning_performance
-            as number_sense_and_multiplicative_reasoning,
-            field_2_number_sense_and_operations_with_fractions_and_decimals_performance
-            as number_sense_and_operations_with_fractions_and_decimals,
-            field_2_proportional_reasoning_and_relationships_performance
-            as proportional_reasoning_and_relationships,
-            field_3_fractional_reasoning_performance as fractional_reasoning,
-            field_3_geometric_reasoning_data_analysis_and_probability_performance
-            as geometric_reasoning_data_analysis_and_probability,
-            field_3_linear_relationships_data_analysis_and_functions_performance
-            as linear_relationships_data_analysis_and_functions,
-            field_4_data_analysis_and_probability_performance
-            as data_analysis_and_probability,
+            algebraic_reasoning_performance,
+            data_analysis_and_probability_performance,
+            fractional_reasoning_performance,
+            geometric_reasoning_data_analysis_and_probability_performance,
+            -- trunk-ignore(sqlfluff/LT05)
+            geometric_reasoning_measurement_and_data_analysis_and_probability_performance,
+            geometric_reasoning_performance,
+            linear_relationships_data_analysis_and_functions_performance,
+            number_sense_and_additive_reasoning_performance,
+            number_sense_and_multiplicative_reasoning_performance,
+            number_sense_and_operations_and_algebraic_reasoning_performance,
+            number_sense_and_operations_and_probability_performance,
+            number_sense_and_operations_performance,
+            number_sense_and_operations_with_fractions_and_decimals_performance,
+            number_sense_and_operations_with_whole_numbers_performance,
+            proportional_reasoning_and_relationships_performance,
+            reading_across_genres_vocabulary_performance,
+            reading_informational_text_performance,
+            reading_prose_and_poetry_performance,
 
             parse_date('%m/%d/%Y', date_taken) as date_taken,
             parse_date('%m/%d/%Y', test_completion_date) as test_completion_date,
@@ -77,23 +68,6 @@ with
             ) as achievement_level,
 
             coalesce(
-                field_2_algebraic_reasoning_performance,
-                field_3_algebraic_reasoning_performance
-            ) as algebraic_reasoning,
-
-            coalesce(
-                field_3_geometric_reasoning_performance,
-                field_4_geometric_reasoning_performance
-            ) as geometric_reasoning,
-
-            coalesce(
-                -- trunk-ignore(sqlfluff/LT05)
-                field_3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance,
-                -- trunk-ignore(sqlfluff/LT05)
-                field_4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance
-            ) as geometric_reasoning_measurement_and_data_analysis_and_probability,
-
-            coalesce(
                 fast_grade_3_ela_reading_percentile_rank,
                 fast_grade_3_mathematics_percentile_rank,
                 fast_grade_4_ela_reading_percentile_rank,
@@ -120,33 +94,31 @@ with
                 grade_8_fast_mathematics_percentile_rank
             ) as percentile_rank,
 
-            cast(
-                coalesce(
-                    fast_grade_3_ela_reading_scale_score,
-                    fast_grade_3_mathematics_scale_score,
-                    fast_grade_4_ela_reading_scale_score,
-                    fast_grade_4_mathematics_scale_score,
-                    fast_grade_5_ela_reading_scale_score,
-                    fast_grade_5_mathematics_scale_score,
-                    fast_grade_6_ela_reading_scale_score,
-                    fast_grade_6_mathematics_scale_score,
-                    fast_grade_7_ela_reading_scale_score,
-                    fast_grade_7_mathematics_scale_score,
-                    fast_grade_8_ela_reading_scale_score,
-                    fast_grade_8_mathematics_scale_score,
-                    grade_3_fast_ela_reading_scale_score,
-                    grade_3_fast_mathematics_scale_score,
-                    grade_4_fast_ela_reading_scale_score,
-                    grade_4_fast_mathematics_scale_score,
-                    grade_5_fast_ela_reading_scale_score,
-                    grade_5_fast_mathematics_scale_score,
-                    grade_6_fast_ela_reading_scale_score,
-                    grade_6_fast_mathematics_scale_score,
-                    grade_7_fast_ela_reading_scale_score,
-                    grade_7_fast_mathematics_scale_score,
-                    grade_8_fast_ela_reading_scale_score,
-                    grade_8_fast_mathematics_scale_score
-                ) as int
+            coalesce(
+                fast_grade_3_ela_reading_scale_score,
+                fast_grade_3_mathematics_scale_score,
+                fast_grade_4_ela_reading_scale_score,
+                fast_grade_4_mathematics_scale_score,
+                fast_grade_5_ela_reading_scale_score,
+                fast_grade_5_mathematics_scale_score,
+                fast_grade_6_ela_reading_scale_score,
+                fast_grade_6_mathematics_scale_score,
+                fast_grade_7_ela_reading_scale_score,
+                fast_grade_7_mathematics_scale_score,
+                fast_grade_8_ela_reading_scale_score,
+                fast_grade_8_mathematics_scale_score,
+                grade_3_fast_ela_reading_scale_score,
+                grade_3_fast_mathematics_scale_score,
+                grade_4_fast_ela_reading_scale_score,
+                grade_4_fast_mathematics_scale_score,
+                grade_5_fast_ela_reading_scale_score,
+                grade_5_fast_mathematics_scale_score,
+                grade_6_fast_ela_reading_scale_score,
+                grade_6_fast_mathematics_scale_score,
+                grade_7_fast_ela_reading_scale_score,
+                grade_7_fast_mathematics_scale_score,
+                grade_8_fast_ela_reading_scale_score,
+                grade_8_fast_mathematics_scale_score
             ) as scale_score,
 
             regexp_extract(test_reason, r'\w+\d') as administration_window,
@@ -170,7 +142,9 @@ with
 
     with_calcs as (
         select
-            * except (percentile_rank, assessment_subject),
+            * except (percentile_rank, scale_score, assessment_subject),
+
+            cast(scale_score as int) as scale_score,
 
             cast(regexp_extract(percentile_rank, r'\d+') as numeric) as percentile_rank,
             cast(
@@ -182,6 +156,7 @@ with
                 concat('ELA0', assessment_grade),
                 concat('MAT0', assessment_grade)
             ) as test_code,
+
             if(
                 assessment_subject = 'ELAReading',
                 'English Language Arts',
@@ -197,6 +172,7 @@ with
                 when 'PM3'
                 then 'Spring'
             end as season,
+
             case
                 assessment_subject
                 when 'ELAReading'
@@ -204,13 +180,13 @@ with
                 when 'Mathematics'
                 then 'Math'
             end as discipline,
-
-            lag(scale_score, 1) over (
-                partition by student_id, academic_year, assessment_subject
-                order by administration_window asc
-            ) as scale_score_prev,
         from fast_data
-        where achievement_level not in ('Insufficient to score', 'Invalidated')
+        where
+            achievement_level not in (
+                'Insufficient to score',
+                'Invalidated',
+                'Insufficient to Score/No Response'
+            )
     )
 
 select
@@ -222,4 +198,9 @@ select
         when achievement_level_int < 3
         then false
     end as is_proficient,
+
+    lag(scale_score, 1) over (
+        partition by student_id, academic_year, assessment_subject
+        order by administration_window asc
+    ) as scale_score_prev,
 from with_calcs

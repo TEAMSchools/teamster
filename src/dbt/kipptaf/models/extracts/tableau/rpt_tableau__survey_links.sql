@@ -50,7 +50,7 @@ with
         where
             sr.assignment_status = 'Active'
             and sr.primary_indicator
-            and sr.work_assignment_actual_start_date
+            and coalesce(sr.worker_rehire_date, sr.worker_original_hire_date)
             <= date_sub(current_date(), interval 3 week)
     )
 /* Staff Info and Cert */
@@ -153,7 +153,7 @@ select
     ) as link,
 from eligible_roster as r
 inner join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on rt.name = 'Staff Info & Certification Update'
 
 union all
@@ -188,7 +188,8 @@ select
 
 from eligible_roster as r
 inner join
-    {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Intent to Return Survey'
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
+    on rt.name = 'Intent to Return Survey'
 where r.business_unit <> 'KIPP TEAM and Family Schools Inc.'
 
 union all
@@ -221,7 +222,9 @@ select
     'https://docs.google.com/forms/d/e/1FAIpQLSfMM4t9aoSZomoYWZfghSDNnmHTtFIV5cUf_yvTZaUlz5Kz2A/viewform?usp=sf_link'
     as link,
 from eligible_roster as r
-inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'KTAF Support Survey'
+inner join
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
+    on rt.name = 'KTAF Support Survey'
 where
     (
         r.job_title in ('Executive Director', 'Managing Director of Operations')
@@ -269,7 +272,7 @@ select
         r.report_to_preferred_name_lastfirst,
         ' - ',
         r.manager_work_location,
-        ' ( ',
+        ' (',
         safe_cast(r.report_to_employee_number as string),
         ')'
     ) as `assignment`,
@@ -296,7 +299,8 @@ select
         'https://docs.google.com/forms/d/e/1FAIpQLSe9thH3gWfdPLWVtI7gTimKqFO4xjcSr8-Htq-pPhzccxf6dw/viewform?usp=pp_url'
     ) as link,
 from eligible_roster as r
-inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Manager Survey'
+inner join
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt on rt.name = 'Manager Survey'
 
 union all
 
@@ -337,7 +341,8 @@ select
         r.loc_type
     ) as link,
 from eligible_roster as r
-inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'Support Survey'
+inner join
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt on rt.name = 'Support Survey'
 
 union all
 
@@ -363,14 +368,15 @@ select
     rt.is_current,
 
     'School Community Diagnostic' as survey,
-    'Complete The School Community Diagnostic' as `assignment`,
+    'Complete the School Community Diagnostic' as `assignment`,
     -- trunk-ignore(sqlfluff/LT05)
     'https://docs.google.com/forms/d/e/1FAIpQLSfozw5B8DP9jKhf_mA5JhtwfLdziZwVsjDFCJtfs2nJnQlWXA/viewform?usp=sf_link'
     as link,
 from eligible_roster as r
 inner join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on rt.name = 'School Community Diagnostic Staff Survey'
+where r.loc_type = 'School-based'
 
 union all
 
@@ -403,7 +409,9 @@ select
     'https://teamschools.zendesk.com/hc/en-us/articles/22601310814999-How-to-Access-the-TNTP-Insight-and-Gallup-Surveys'
     as link,
 from eligible_roster as r
-inner join {{ ref("stg_reporting__terms") }} as rt on rt.name = 'TNTP Insight'
+inner join
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
+    on rt.name = 'TNTP Insight Survey'
 
 union all
 
@@ -436,6 +444,6 @@ select
     as link,
 from eligible_roster as r
 inner join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Gallup Q12 Survey'

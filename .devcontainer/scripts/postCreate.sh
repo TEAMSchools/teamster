@@ -42,6 +42,10 @@ op inject -f --in-file=.devcontainer/tpl/powerschool_ssh_password.txt.tpl \
   --out-file=env/powerschool_ssh_password.txt &&
   sudo mv -f env/powerschool_ssh_password.txt /etc/secret-volume/powerschool_ssh_password.txt
 
+# set up trunk
+chmod +x trunk
+trunk install
+
 # install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh || true
 

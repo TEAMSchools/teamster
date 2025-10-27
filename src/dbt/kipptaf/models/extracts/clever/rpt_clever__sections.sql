@@ -8,7 +8,7 @@ with
             ) as school_id,
         from {{ ref("int_people__staff_roster") }} as sr
         left join
-            {{ ref("stg_people__campus_crosswalk") }} as ccw
+            {{ ref("stg_google_sheets__people__campus_crosswalk") }} as ccw
             on sr.home_work_location_name = ccw.name
             and not ccw.is_pathways
         where
@@ -87,10 +87,13 @@ with
             on st.teacherid = t.id
             and sec.sections_schoolid = t.schoolid
             and {{ union_dataset_join_clause(left_alias="st", right_alias="t") }}
-        where sec.terms_yearid = ({{ var("current_academic_year") - 1990 }})
+        where
+            sec.terms_yearid = ({{ var("current_academic_year") - 1990 }})
+            and sec._dbt_source_relation not like '%kipppaterson%'
 
         union all
 
+        /* auto-generate ENR course with DSO "teacher" */
         select
             dsos.school_id as sections_schoolid,
 

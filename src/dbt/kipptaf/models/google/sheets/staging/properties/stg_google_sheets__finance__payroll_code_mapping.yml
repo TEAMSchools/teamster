@@ -1,0 +1,9 @@
+models:
+  - name: stg_google_sheets__finance__payroll_code_mapping
+    columns:
+      - name: old_project_id_alt_nj
+        data_type: string
+      - name: project_id
+        data_type: string
+      - name: project_name
+        data_type: string

@@ -13,7 +13,6 @@ with
                 [
                     'Chronic Absence: 3',
                     'Chronic Absence: 5',
-                    'Chronic Absence: 6',
                     'Chronic Absence: 8',
                     'Chronic Absence: 10',
                     'Chronic Absence: 15+',
@@ -56,6 +55,13 @@ with
                 order_by="call_date desc",
             )
         }}
+    ),
+
+    schoolid_crosswalk as (
+        /* DL school ID not unique, need a better crosswalk */
+        select distinct powerschool_school_id, deanslist_school_id,
+        from {{ ref("stg_google_sheets__people__location_crosswalk") }}
+        where deanslist_school_id is not null and powerschool_school_id is not null
     )
 
 select
@@ -87,9 +93,8 @@ left join
     comm_log as c
     on ada.student_number = c.student_school_id
     and ada.academic_year = c.academic_year
+    and (c.call_status = 'Completed' or c.call_type = 'IP')
     and {{ union_dataset_join_clause(left_alias="ada", right_alias="c") }}
     and sc.commlog_reason = c.reason
     and {{ union_dataset_join_clause(left_alias="sc", right_alias="c") }}
-left join
-    {{ ref("stg_people__location_crosswalk") }} as lc
-    on c.dl_school_id = lc.deanslist_school_id
+left join schoolid_crosswalk as lc on c.dl_school_id = lc.deanslist_school_id

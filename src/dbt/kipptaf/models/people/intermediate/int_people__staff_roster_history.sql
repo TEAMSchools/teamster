@@ -115,7 +115,9 @@ with
         union all
 
         select
-            '{{ ref("int_dayforce__employee_history") }}' as _dbt_source_relation,
+            '{{ source("dayforce", "int_dayforce__employee_history") }}'
+            as _dbt_source_relation,
+
             null as associate_oid,
 
             effective_end_date as effective_date_end,
@@ -219,7 +221,7 @@ with
             manager_employee_number as reports_to_employee_number,
             effective_start_date as effective_date_start,
             effective_start_timestamp as effective_date_start_timestamp,
-        from {{ ref("int_dayforce__employee_history") }}
+        from {{ source("dayforce", "int_dayforce__employee_history") }}
     )
 
 select
@@ -259,6 +261,8 @@ select
     sis.years_teaching_outside_njfl,
 
     rtldap.google_email as reports_to_google_email,
+
+    pbe.plan_name as nj_pension_plan_name,
 
     coalesce(lc.location_grade_band, 'N/A') as home_work_location_grade_band,
 
@@ -309,7 +313,7 @@ left join
     {{ ref("stg_ldap__user_person") }} as ldap
     on w.employee_number = ldap.employee_number
 left join
-    {{ ref("stg_people__powerschool_crosswalk") }} as idps
+    {{ ref("stg_google_sheets__people__powerschool_crosswalk") }} as idps
     on w.employee_number = idps.employee_number
     and idps.is_active
 left join
@@ -319,3 +323,12 @@ left join
     {{ ref("stg_ldap__user_person") }} as rtldap
     on coalesce(w.reports_to_employee_number, rten.employee_number)
     = rtldap.employee_number
+left join
+    {{ ref("stg_adp_workforce_now__pension_and_benefits_enrollments") }} as pbe
+    on w.position_id = pbe.position_id
+    and pbe.enrollment_status = 'Active'
+    and pbe.plan_name in (
+        'NJ Pension - DCRP:Eligible Employees(Prudential Financial)',
+        'NJ Pension - PERS:Eligible Employees(NJ Pension)',
+        'NJ Pension - TPAF:Eligible Employees(NJ Pension)'
+    )

@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_powerschool__s_nj_stu_x_unpivot
     columns:

@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: iready
     schema: |
@@ -114,5 +112,27 @@ sources:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/iready/instruction_by_lesson/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_iready__personalized_instruction_summary
+        meta:
+          dagster:
+            asset_key:
+              - "{{ project_name }}"
+              - iready
+              - personalized_instruction_summary
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/iready/personalized_instruction_summary/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/iready/personalized_instruction_summary/"
             format: AVRO
             enable_logical_types: true

@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: rpt_gsheets__dds_import_users
+    config:
+      enabled: false
     columns:
       - name: username
         data_type: string

@@ -50,7 +50,7 @@ with
             enr.academic_year_display,
             enr.yearid,
             enr.region,
-            enr.school_level,
+            enr.school_level_alt as school_level,
             enr.schoolid,
             enr.school,
             enr.grade_level,
@@ -72,35 +72,31 @@ with
             enr.is_counseling_services,
             enr.is_student_athlete,
             enr.ada_above_or_at_80,
+            enr.hos,
+            enr.school_leader,
+            enr.school_leader_tableau_username,
+            enr.cumulative_y1_gpa,
+            enr.cumulative_y1_gpa_unweighted,
+            enr.cumulative_y1_gpa_projected,
+            enr.cumulative_y1_gpa_projected_s1,
+            enr.cumulative_y1_gpa_projected_s1_unweighted,
+            enr.core_cumulative_y1_gpa,
+            enr.ada,
 
-            term.`quarter`,
+            term.quarter,
             term.quarter_start_date,
             term.quarter_end_date,
             term.cal_quarter_end_date,
             term.is_current_quarter,
             term.semester,
 
-            leader.head_of_school_preferred_name_lastfirst as hos,
-            leader.school_leader_preferred_name_lastfirst as school_leader,
-            leader.school_leader_sam_account_name as school_leader_tableau_username,
-
-            gc.cumulative_y1_gpa,
-            gc.cumulative_y1_gpa_unweighted,
-            gc.cumulative_y1_gpa_projected,
-            gc.cumulative_y1_gpa_projected_s1,
-            gc.cumulative_y1_gpa_projected_s1_unweighted,
-            gc.core_cumulative_y1_gpa,
-
             gtq.gpa_semester,
             gtq.gpa_y1_unweighted,
             gtq.total_credit_hours_y1 as gpa_total_credit_hours,
             gtq.n_failing_y1 as gpa_n_failing_y1,
 
-            round(enr.ada, 3) as ada,
-
-            if(term.`quarter` = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_for_quarter,
-
-            if(term.`quarter` = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
+            if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_for_quarter,
+            if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
 
         from {{ ref("int_extracts__student_enrollments") }} as enr
         inner join
@@ -109,20 +105,12 @@ with
             and enr.yearid = term.yearid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="term") }}
         left join
-            {{ ref("int_people__leadership_crosswalk") }} as leader
-            on enr.schoolid = leader.home_work_location_powerschool_school_id
-        left join
-            {{ ref("int_powerschool__gpa_cumulative") }} as gc
-            on enr.studentid = gc.studentid
-            and enr.schoolid = gc.schoolid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gc") }}
-        left join
             {{ ref("int_powerschool__gpa_term") }} as gtq
             on enr.studentid = gtq.studentid
             and enr.yearid = gtq.yearid
             and enr.schoolid = gtq.schoolid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gtq") }}
-            and term.`quarter` = gtq.term_name
+            and term.quarter = gtq.term_name
             and {{ union_dataset_join_clause(left_alias="term", right_alias="gtq") }}
         left join
             {{ ref("int_powerschool__gpa_term") }} as gty
@@ -131,7 +119,11 @@ with
             and enr.schoolid = gty.schoolid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
             and gty.is_current
-        where enr.rn_year = 1 and not enr.is_out_of_district and enr.enroll_status != -1
+        where
+            enr.rn_year = 1
+            and not enr.is_out_of_district
+            and enr.enroll_status != -1
+            and enr.region != 'Paterson'
     ),
 
     course_enrollments as (
@@ -155,6 +147,7 @@ with
             f.is_tutoring as tutoring_nj,
             f.nj_student_tier,
 
+            r.sam_account_name as teacher_tableau_username,
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
             {{ ref("int_extracts__student_enrollments_subjects") }} as f
@@ -163,6 +156,9 @@ with
             and m.courses_credittype = f.powerschool_credittype
             and {{ union_dataset_join_clause(left_alias="m", right_alias="f") }}
             and f.rn_year = 1
+        left join
+            {{ ref("int_people__staff_roster") }} as r
+            on m.teachernumber = r.powerschool_teacher_number
         where
             m.rn_course_number_year = 1
             and m.cc_sectionid > 0
@@ -399,8 +395,7 @@ select
     ce.teacher_name,
     ce.tutoring_nj,
     ce.nj_student_tier,
-
-    r.sam_account_name as teacher_tableau_username,
+    ce.teacher_tableau_username,
 
     y1h.y1_course_final_percent_grade_adjusted,
     y1h.y1_course_final_letter_grade_adjusted,
@@ -444,9 +439,6 @@ left join
     on s.studentid = ce.studentid
     and s.yearid = ce.yearid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
-left join
-    {{ ref("int_people__staff_roster") }} as r
-    on ce.teacher_number = r.powerschool_teacher_number
 left join
     y1_historical as y1h
     on s.studentid = y1h.studentid

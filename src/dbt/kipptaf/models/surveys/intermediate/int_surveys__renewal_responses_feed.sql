@@ -25,7 +25,7 @@ with
             ) as subject_employee_number,
         from {{ ref("int_surveys__survey_responses") }} as fr
         left join
-            {{ ref("stg_people__renewal_approvers") }} as ra
+            {{ ref("stg_google_sheets__people__renewal_approvers") }} as ra
             on fr.respondent_email = ra.approver_email
             and fr.academic_year = ra.academic_year
         where fr.survey_title = 'Renewal Approval Tool Processing'

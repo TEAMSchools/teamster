@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: adp_workforce_now
     schema: |
@@ -60,6 +58,24 @@ sources:
               - adp
               - workforce_now
               - time_and_attendance
+      - name: src_adp_workforce_now__employee_memberships
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/adp/workforce_now/employee_memberships/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - adp
+              - workforce_now
+              - employee_memberships
       - name: src_adp_workforce_now__comprehensive_benefits_report
         config:
           enabled: false
@@ -75,7 +91,7 @@ sources:
             enable_logical_types: true
         meta:
           dagster:
-            parent_asset_key_path:
+            asset_key:
               - kipptaf
               - adp
               - workforce_now

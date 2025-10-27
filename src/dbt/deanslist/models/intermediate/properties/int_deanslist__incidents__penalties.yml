@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: int_deanslist__incidents__penalties
-    config:
-      contract:
-        enforced: true
     columns:
       - name: hearing_flag
         data_type: boolean
@@ -180,8 +176,10 @@ models:
       - name: final_approval
         data_type: string
       - name: hi_end_date
-        data_type: string
+        data_type: date
       - name: hi_start_date
+        data_type: date
+      - name: home_instruction_reason
         data_type: string
       - name: hourly_rate
         data_type: string

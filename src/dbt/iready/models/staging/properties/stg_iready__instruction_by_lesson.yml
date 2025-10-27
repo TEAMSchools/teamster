@@ -1,16 +1,13 @@
-version: 2
 models:
   - name: stg_iready__instruction_by_lesson
-    config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("iready",
-        "src_iready__instruction_by_lesson") | replace("`", "") }}')
-      contract:
-        enforced: true
     columns:
-      - name: academic_year_int
-        data_type: int64
       - name: student_id
+        data_type: int64
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: academic_year_int
         data_type: int64
       - name: academic_year
         data_type: string

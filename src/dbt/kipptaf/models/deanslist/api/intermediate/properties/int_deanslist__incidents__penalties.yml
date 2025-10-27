@@ -1,0 +1,12 @@
+models:
+  - name: int_deanslist__incidents__penalties
+    columns:
+      - name: school_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_google_sheets__people__location_crosswalk")
+                field: deanslist_school_id
+              config:
+                store_failures: true
+                severity: warn

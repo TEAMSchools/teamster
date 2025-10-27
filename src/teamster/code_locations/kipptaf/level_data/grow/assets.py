@@ -5,6 +5,7 @@ from dagster import (
     AssetCheckSeverity,
     AssetCheckSpec,
     AssetExecutionContext,
+    AssetKey,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     Output,
@@ -63,9 +64,15 @@ observations = build_grow_asset(
     schema=OBSERVATION_SCHEMA,
 )
 
+grow_multi_partitions_assets = [
+    assignments,
+    observations,
+]
+
 
 @asset(
     key=[*key_prefix, "user_sync"],
+    deps=[AssetKey(["kipptaf", "extracts", "rpt_schoolmint_grow__users"])],
     check_specs=[
         AssetCheckSpec(name="zero_api_errors", asset=[*key_prefix, "user_sync"])
     ],
@@ -255,11 +262,6 @@ def grow_user_sync(
         severity=AssetCheckSeverity.WARN,
     )
 
-
-grow_multi_partitions_assets = [
-    assignments,
-    observations,
-]
 
 assets = [
     *grow_multi_partitions_assets,

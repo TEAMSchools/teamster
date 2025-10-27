@@ -223,9 +223,7 @@ select
     (etr.pm2 * .8 + so.pm2 * .2) as tir_pm2,
     (etr.pm3 * .8 + so.pm3 * .2) as tir_pm3,
 
-    if(
-        sr.home_department_name = 'New Teacher Development', 'TDT', 'NTNC'
-    ) as observer_team,
+    if(sr.home_department_name = 'Teacher Development', 'TDT', 'NTNC') as observer_team,
     -- trunk-ignore(sqlfluff/LT01) 
     date_trunc(td.observed_at, week(monday)) as week_start,
 from observations_td_union as td

@@ -41,7 +41,7 @@ left join
     on fr.respondent_email = ldap.google_email
     and ldap.uac_account_disable = 0
 left join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on fr.info_title = rt.name
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
     and rt.type = 'SURVEY'
@@ -89,8 +89,8 @@ select
     1 as rn_round,
 from {{ source("alchemer", "base_alchemer__survey_results") }} as sr
 inner join
-    {{ ref("stg_reporting__terms") }} as rt
-    on rt.name = sr.survey_title
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
+    on sr.survey_title = rt.name
     and sr.response_date_submitted_date between rt.start_date and rt.end_date
 left join
     {{ source("surveys", "int_surveys__response_identifiers") }} as ri

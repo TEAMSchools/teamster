@@ -12,14 +12,14 @@ class PMStudentSummary(BaseModel):
     school_primary_id: str | None = None
     student_last_name: str | None = None
     student_first_name: str | None = None
-    student_primary_id: str | None = None
+    student_primary_id_studentnumber: str | None = None
     enrollment_teacher_name: str | None = None
-    enrollment_teacher_staff_id: str | None = None
+    enrollment_teacher_staff_id_teachernumber: str | None = None
     enrollment_class_name: str | None = None
     enrollment_class_id: str | None = None
     enrollment_grade: str | None = None
     assessing_teacher_name: str | None = None
-    assessing_teacher_staff_id: str | None = None
+    assessing_teacher_staff_id_teachernumber: str | None = None
     assessment_class_name: str | None = None
     assessment_class_id: str | None = None
     assessment: str | None = None
@@ -47,8 +47,9 @@ class PMStudentSummary(BaseModel):
     migrant: str | None = None
     ell_status: str | None = None
     home_language: str | None = None
-    secondary_student_id: str | None = None
-    additional_student_id: str | None = None
+    secondary_student_id_stateid: str | None = None
+    additional_student_id_primarysisid: str | None = None
+    additional_student_id_sisid: str | None = None
 
 
 class BenchmarkStudentSummary(BaseModel):
@@ -63,13 +64,16 @@ class BenchmarkStudentSummary(BaseModel):
     student_last_name: str | None = None
     student_first_name: str | None = None
     student_primary_id: str | None = None
+    student_primary_id_studentnumber: str | None = None
     enrollment_teacher_name: str | None = None
     enrollment_teacher_staff_id: str | None = None
+    enrollment_teacher_staff_id_teachernumber: str | None = None
     enrollment_class_name: str | None = None
     enrollment_class_id: str | None = None
     enrollment_grade: str | None = None
     assessing_teacher_name: str | None = None
     assessing_teacher_staff_id: str | None = None
+    assessing_teacher_staff_id_teachernumber: str | None = None
     assessment_class_name: str | None = None
     assessment_class_id: str | None = None
     assessment: str | None = None
@@ -162,4 +166,7 @@ class BenchmarkStudentSummary(BaseModel):
     ell_status: str | None = None
     home_language: str | None = None
     secondary_student_id: str | None = None
+    secondary_student_id_stateid: str | None = None
     additional_student_id: str | None = None
+    additional_student_id_primarysisid: str | None = None
+    additional_student_id_sisid: str | None = None

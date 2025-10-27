@@ -58,6 +58,7 @@ with
                     ' '
                 )
             ) as test_subject,
+
         from
             {{ ref("int_kippadb__standardized_test") }} unpivot (
                 score for score_type in (
@@ -125,8 +126,9 @@ select
         partition by u.contact, u.test_type, u.score_type, acc.ap_course_name
         order by u.score desc
     ) as rn_highest,
+
 from unpivoted as u
 left join
-    {{ ref("stg_collegeboard__ap_course_crosswalk") }} as acc
+    {{ ref("stg_google_sheets__collegeboard__ap_course_crosswalk") }} as acc
     on u.test_subject = acc.test_name
     and acc.data_source = 'ADB'

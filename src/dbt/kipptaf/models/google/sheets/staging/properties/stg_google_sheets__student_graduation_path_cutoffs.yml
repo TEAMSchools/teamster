@@ -1,10 +1,5 @@
-version: 2
 models:
   - name: stg_google_sheets__student_graduation_path_cutoffs
-    config:
-      contract:
-        enforced: true
-      tags: google_sheet
     columns:
       - name: Cohort
         data_type: int64

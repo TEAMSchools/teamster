@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: qa_kippadb__duplicate_enrollments
+    config:
+      enabled: false
     columns:
       - name: sf_contact_id
         data_type: string

@@ -1,8 +1,43 @@
 with
-    staff_union as (
-        /*
-            School staff assigned to primary school only
-            Campus staff assigned to all schools at campus
+    staff_roster as (
+        select
+            employee_number,
+            given_name,
+            family_name_1,
+            powerschool_teacher_number,
+            user_principal_name,
+            sam_account_name,
+            home_business_unit_name,
+            home_work_location_name,
+            home_work_location_powerschool_school_id,
+            home_work_location_dagster_code_location,
+            home_department_name,
+            job_title,
+        from {{ ref("int_people__staff_roster") }}
+        where not is_prestart and worker_status_code != 'Terminated'
+
+        union all
+
+        select
+            null as employee_number,
+
+            given_name,
+            sn as family_name_1,
+            employee_id as powerschool_teacher_number,
+            user_principal_name,
+            sam_account_name,
+            company as home_business_unit_name,
+            physical_delivery_office_name as home_work_location_name,
+            powerschool_school_id as home_work_location_powerschool_school_id,
+            dagster_code_location as home_work_location_dagster_code_location,
+            department as home_department_name,
+            title as job_title,
+        from {{ ref("int_people__temp_staff") }}
+    ),
+
+    assignments as (
+        /*  - School staff assigned to primary school only
+            - Campus staff assigned to all schools at campus
         */
         select
             sr.powerschool_teacher_number,
@@ -18,15 +53,13 @@ with
                     sr.home_work_location_powerschool_school_id
                 ) as string
             ) as school_id,
-        from {{ ref("int_people__staff_roster") }} as sr
+        from staff_roster as sr
         left join
-            {{ ref("stg_people__campus_crosswalk") }} as ccw
+            {{ ref("stg_google_sheets__people__campus_crosswalk") }} as ccw
             on sr.home_work_location_name = ccw.name
             and not ccw.is_pathways
         where
-            not sr.is_prestart
-            and sr.assignment_status not in ('Terminated', 'Deceased')
-            and sr.home_department_name not in ('Data', 'Teaching and Learning')
+            sr.home_department_name not in ('Data', 'Teaching and Learning')
             and coalesce(
                 ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
             )
@@ -44,14 +77,12 @@ with
             sr.sam_account_name,
 
             cast(sch.school_number as string) as school_id,
-        from {{ ref("int_people__staff_roster") }} as sr
+        from staff_roster as sr
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
-            on (sch.state_excludefromreporting = 0)
+            on sch.state_excludefromreporting = 0
         where
-            not sr.is_prestart
-            and sr.assignment_status not in ('Terminated', 'Deceased')
-            and sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
+            sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
             and (
                 sr.home_department_name
                 in ('Data', 'Teaching and Learning', 'Executive')
@@ -71,16 +102,13 @@ with
             sr.sam_account_name,
 
             cast(sch.school_number as string) as school_id,
-        from {{ ref("int_people__staff_roster") }} as sr
+        from staff_roster as sr
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
             on sr.home_work_location_dagster_code_location
             = regexp_extract(sch._dbt_source_relation, r'(kipp\w+)_')
             and sch.state_excludefromreporting = 0
-        where
-            not sr.is_prestart
-            and sr.assignment_status not in ('Terminated', 'Deceased')
-            and sr.home_work_location_powerschool_school_id = 0
+        where sr.home_work_location_powerschool_school_id = 0
 
         union all
 
@@ -99,11 +127,7 @@ with
         inner join
             {{ ref("stg_ldap__user_person") }} as up
             on group_member_distinguished_name = up.distinguished_name
-        inner join
-            {{ ref("int_people__staff_roster") }} as sr
-            on up.employee_number = sr.employee_number
-            and not sr.is_prestart
-            and sr.assignment_status not in ('Terminated', 'Deceased')
+        inner join staff_roster as sr on up.employee_number = sr.employee_number
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
             on sch.schoolstate = 'NJ'
@@ -111,7 +135,7 @@ with
         where g.cn = 'Group Staff NJ Regional'
     )
 
-select
+select distinct  /* some staff are in multiple assignment groups */
     school_id,
     powerschool_teacher_number as staff_id,
     user_principal_name as staff_email,
@@ -126,4 +150,4 @@ select
     null as `password`,
 
     if(home_department_name = 'Operations', 'School Tech Lead', null) as `role`,
-from staff_union
+from assignments
