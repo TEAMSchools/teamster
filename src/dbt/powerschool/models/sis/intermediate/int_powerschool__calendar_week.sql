@@ -9,22 +9,15 @@ with
 
             t.yearid,
             t.academic_year,
+            t.semester,
             t.abbreviation as `quarter`,
 
-            if(t.abbreviation in ('Q1', 'Q2'), 'S1', 'S2') as semester,
+            date_add(cd.week_start_date, interval 1 day) as week_start_monday,
+            date_add(cd.week_end_date, interval 1 day) as week_end_sunday,
 
             min(cd.date_value) as school_week_start_date,
             max(cd.date_value) as school_week_end_date,
             count(cd.date_value) as date_count,
-
-            row_number() over (
-                partition by cd.schoolid, t.yearid order by cd.week_start_date asc
-            ) as week_number_academic_year,
-
-            row_number() over (
-                partition by cd.schoolid, t.yearid, t.abbreviation
-                order by cd.week_start_date asc
-            ) as week_number_quarter,
         from {{ ref("stg_powerschool__calendar_day") }} as cd
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
@@ -48,16 +41,45 @@ with
             sch.school_level,
             t.yearid,
             t.academic_year,
+            t.semester,
             t.abbreviation
+    ),
+
+    window_calcs as (
+        select
+            *,
+
+            min(week_start_monday) over (
+                partition by schoolid, yearid
+            ) as first_day_school_year,
+            max(week_start_monday) over (
+                partition by schoolid, yearid
+            ) as last_week_start_school_year,
+
+            lead(school_week_start_date) over (
+                partition by schoolid, yearid order by week_start_date asc
+            ) as school_week_start_date_lead,
+
+            row_number() over (
+                partition by schoolid, yearid order by week_start_date asc
+            ) as week_number_academic_year,
+            row_number() over (
+                partition by schoolid, yearid, `quarter` order by week_start_date asc
+            ) as week_number_quarter,
+        from week_rollup
     )
 
 select
     *,
 
-    date_add(week_start_date, interval 1 day) as week_start_monday,
-    date_add(week_end_date, interval 1 day) as week_end_sunday,
-
-    lead(school_week_start_date) over (
-        partition by schoolid, yearid order by week_start_date asc
-    ) as school_week_start_date_lead,
-from week_rollup
+    case
+        when
+            academic_year = {{ var("current_academic_year") }}
+            and current_date('{{ var("local_timezone") }}')
+            between week_start_monday and week_end_sunday
+        then true
+        when week_start_monday = last_week_start_school_year
+        then true
+        else false
+    end as is_current_week_mon_sun,
+from window_calcs
