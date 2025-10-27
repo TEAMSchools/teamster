@@ -65,6 +65,10 @@ models:
         data_type: numeric
       - name: met_min_score_int
         data_type: int64
+      - name: alt_met_min_score_int_overall_score_type
+        data_type: int64
+      - name: alt_met_min_score_int_overall_aligned_subject
+        data_type: int64
       - name: met_min_score_int_overall_score_type
         data_type: int64
       - name: met_min_score_int_overall_aligned_subject
