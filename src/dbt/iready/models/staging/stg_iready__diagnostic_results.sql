@@ -114,6 +114,79 @@ with
         select
             * except (annual_typical_growth_measure, annual_stretch_growth_measure),
 
+            if(
+                most_recent_diagnostic_ytd_y_n = 'Y', overall_scale_score, null
+            ) as most_recent_overall_scale_score,
+            if(
+                most_recent_diagnostic_ytd_y_n = 'Y', overall_relative_placement, null
+            ) as most_recent_overall_relative_placement,
+            if(
+                most_recent_diagnostic_ytd_y_n = 'Y', overall_placement, null
+            ) as most_recent_overall_placement,
+            if(
+                most_recent_diagnostic_ytd_y_n = 'Y', diagnostic_gain, null
+            ) as most_recent_diagnostic_gain,
+            if(
+                most_recent_diagnostic_ytd_y_n = 'Y', lexile_measure, null
+            ) as most_recent_lexile_measure,
+            if(
+                most_recent_diagnostic_ytd_y_n = 'Y', lexile_range, null
+            ) as most_recent_lexile_range,
+            if(
+                most_recent_diagnostic_ytd_y_n = 'Y', rush_flag, null
+            ) as most_recent_rush_flag,
+            if(
+                most_recent_diagnostic_ytd_y_n = 'Y', completion_date, null
+            ) as most_recent_completion_date,
+
+            if(
+                percent_progress_to_annual_typical_growth_percent >= 100, true, false
+            ) as is_met_typical,
+            if(
+                percent_progress_to_annual_stretch_growth_percent >= 100, true, false
+            ) as is_met_stretch,
+
+            if(student_grade = 'K', 0, cast(student_grade as int)) as student_grade_int,
+
+            case
+                _dagster_partition_subject when 'ela' then 'ELA' when 'math' then 'Math'
+            end as discipline,
+
+            case
+                _dagster_partition_subject
+                when 'ela'
+                then 'Reading'
+                when 'math'
+                then 'Math'
+            end as `subject`,
+
+            case
+                overall_relative_placement
+                when '3 or More Grade Levels Below'
+                then 1
+                when '2 Grade Levels Below'
+                then 2
+                when '1 Grade Level Below'
+                then 3
+                when 'Early On Grade Level'
+                then 4
+                when 'Mid or Above Grade Level'
+                then 5
+            end as overall_relative_placement_int,
+
+            case
+                when
+                    overall_relative_placement
+                    in ('Early On Grade Level', 'Mid or Above Grade Level')
+                then 'On or Above Grade Level'
+                when overall_relative_placement = '1 Grade Level Below'
+                then overall_relative_placement
+                when
+                    overall_relative_placement
+                    in ('2 Grade Levels Below', '3 or More Grade Levels Below')
+                then 'Two or More Grade Levels Below'
+            end as placement_3_level,
+
             case
                 when student_grade not in ('9', '10', '11', '12')
                 then annual_typical_growth_measure
@@ -212,50 +285,23 @@ with
 
             annual_typical_growth_measure - diagnostic_gain as typical_growth,
             annual_stretch_growth_measure - diagnostic_gain as stretch_growth,
+
+            if(overall_relative_placement_int >= 4, true, false) as is_proficient,
         from hs_goals
+    ),
+
+    calcs as (
+        select
+            * except (typical_growth, stretch_growth),
+
+            if(typical_growth > 0, typical_growth, 0) as typical_growth,
+            if(stretch_growth > 0, stretch_growth, 0) as stretch_growth,
+        from growth_measures
     )
 
 select
     *,
 
-    overall_scale_score + if(
-        typical_growth > 0, typical_growth, 0
-    ) as overall_scale_score_plus_typical_growth,
-
-    overall_scale_score + if(
-        stretch_growth > 0, stretch_growth, 0
-    ) as overall_scale_score_plus_stretch_growth,
-
-    if(
-        _dagster_partition_subject = 'ela',
-        'Reading',
-        initcap(_dagster_partition_subject)
-    ) as `subject`,
-
-    case
-        overall_relative_placement
-        when '3 or More Grade Levels Below'
-        then 1
-        when '2 Grade Levels Below'
-        then 2
-        when '1 Grade Level Below'
-        then 3
-        when 'Early On Grade Level'
-        then 4
-        when 'Mid or Above Grade Level'
-        then 5
-    end as overall_relative_placement_int,
-
-    case
-        when
-            overall_relative_placement
-            in ('Early On Grade Level', 'Mid or Above Grade Level')
-        then 'On or Above Grade Level'
-        when overall_relative_placement = '1 Grade Level Below'
-        then overall_relative_placement
-        when
-            overall_relative_placement
-            in ('2 Grade Levels Below', '3 or More Grade Levels Below')
-        then 'Two or More Grade Levels Below'
-    end as placement_3_level,
-from growth_measures
+    overall_scale_score + typical_growth as overall_scale_score_plus_typical_growth,
+    overall_scale_score + stretch_growth as overall_scale_score_plus_stretch_growth,
+from calcs

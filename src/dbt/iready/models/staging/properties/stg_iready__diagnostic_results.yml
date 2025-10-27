@@ -193,3 +193,29 @@ models:
         data_type: int64
       - name: overall_scale_score_plus_stretch_growth
         data_type: int64
+      - name: discipline
+        data_type: string
+      - name: is_met_stretch
+        data_type: boolean
+      - name: is_met_typical
+        data_type: boolean
+      - name: is_proficient
+        data_type: boolean
+      - name: most_recent_completion_date
+        data_type: date
+      - name: most_recent_diagnostic_gain
+        data_type: int64
+      - name: most_recent_lexile_measure
+        data_type: string
+      - name: most_recent_lexile_range
+        data_type: string
+      - name: most_recent_overall_placement
+        data_type: string
+      - name: most_recent_overall_relative_placement
+        data_type: string
+      - name: most_recent_overall_scale_score
+        data_type: int64
+      - name: most_recent_rush_flag
+        data_type: string
+      - name: student_grade_int
+        data_type: int64
