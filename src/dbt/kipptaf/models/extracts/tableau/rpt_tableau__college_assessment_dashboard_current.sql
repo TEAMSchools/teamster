@@ -3,6 +3,10 @@
     "sat_combined_pct_1010_plus_g11",
     "sat_combined_pct_890_plus_g12",
     "sat_combined_pct_1010_plus_g12",
+    "sat_ebrw_pct_450_plus_g11",
+    "sat_ebrw_pct_450_plus_g12",
+    "sat_math_pct_440_plus_g11",
+    "sat_math_pct_440_plus_g12",
 ] %}
 
 with
@@ -38,6 +42,7 @@ with
             s.scope as expected_scope,
             s.subject_area as expected_subject_area,
             s.score_type as expected_score_type,
+            s.aligned_subject_area as expected_aligned_subject_area,
 
             g.expected_goal_type,
             g.expected_goal_subtype,
@@ -64,13 +69,31 @@ with
             b.sat_combined_pct_1010_plus_g12_board_pct_goal
             as expected_sat_combined_pct_1010_plus_g12_board_pct_goal,
 
+            b.sat_ebrw_pct_450_plus_g11_board_min_score
+            as expected_sat_ebrw_pct_450_plus_g11_board_min_score,
+            b.sat_ebrw_pct_450_plus_g11_board_pct_goal
+            as expected_sat_ebrw_pct_450_plus_g11_board_pct_goal,
+            b.sat_ebrw_pct_450_plus_g12_board_min_score
+            as expected_sat_ebrw_pct_450_plus_g12_board_min_score,
+            b.sat_ebrw_pct_450_plus_g12_board_pct_goal
+            as expected_sat_ebrw_pct_450_plus_g12_board_pct_goal,
+
+            b.sat_math_pct_440_plus_g11_board_min_score
+            as expected_sat_math_pct_440_plus_g11_board_min_score,
+            b.sat_math_pct_440_plus_g11_board_pct_goal
+            as expected_sat_math_pct_440_plus_g11_board_pct_goal,
+            b.sat_math_pct_440_plus_g12_board_min_score
+            as expected_sat_math_pct_440_plus_g12_board_min_score,
+            b.sat_math_pct_440_plus_g12_board_pct_goal
+            as expected_sat_math_pct_440_plus_g12_board_pct_goal,
+
         from {{ ref("int_assessments__college_assessment") }} as s
         inner join
             {{ ref("stg_google_sheets__kippfwd_goals") }} as g
             on s.score_type = g.expected_score_type
             and g.expected_goal_type != 'Board'
         left join board_goals as b on s.score_type = b.expected_score_type
-        where s.subject_area = 'Combined'
+        where s.scope != 'ACT'
     ),
 
     attempts as (
@@ -127,6 +150,7 @@ with
             r.expected_test_type,
             r.expected_scope,
             r.expected_subject_area,
+            r.expected_aligned_subject_area,
             r.expected_score_type,
             r.expected_goal_type,
             r.expected_goal_subtype,
@@ -142,47 +166,57 @@ with
 
             min(
                 case
-                    e.grade_level
-                    when 11
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
                     then r.expected_sat_combined_pct_890_plus_g11_board_min_score
-                    when 12
+                    when 'Total12'
                     then r.expected_sat_combined_pct_890_plus_g12_board_min_score
                 end
             ) as expected_board_890_plus_min_score,
 
             min(
                 case
-                    e.grade_level
-                    when 11
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
                     then r.expected_sat_combined_pct_1010_plus_g11_board_min_score
-                    when 12
+                    when 'Total12'
                     then r.expected_sat_combined_pct_1010_plus_g12_board_min_score
                 end
             ) as expected_board_1010_plus_min_score,
 
             min(
                 case
-                    e.grade_level
-                    when 11
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
                     then r.expected_sat_combined_pct_890_plus_g11_board_pct_goal
-                    when 12
+                    when 'Total12'
                     then r.expected_sat_combined_pct_890_plus_g12_board_pct_goal
                 end
             ) as expected_board_890_plus_pct_goal,
 
             min(
                 case
-                    e.grade_level
-                    when 11
-                    then r.expected_sat_combined_pct_1010_plus_g11_board_pct_goal
-                    when 12
-                    then r.expected_sat_combined_pct_1010_plus_g12_board_pct_goal
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'EBRW11'
+                    then r.expected_sat_ebrw_pct_450_plus_g11_board_min_score
+                    when 'EBRW12'
+                    then r.expected_sat_ebrw_pct_450_plus_g12_board_min_score
                 end
-            ) as expected_board_1010_plus_pct_goal,
+            ) as expected_board_450_plus_min_score,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Math11'
+                    then r.expected_sat_math_pct_440_plus_g11_board_min_score
+                    when 'Math12'
+                    then r.expected_sat_math_pct_440_plus_g12_board_min_score
+                end
+            ) as expected_board_440_plus_min_score,
 
             avg(
                 if(
-                    r.expected_metric_name in ('HS-Ready', 'College-Ready'),
+                    r.expected_goal_type = 'Benchmark',
                     s.max_scale_score,
                     p.attempt_count_lifetime
                 )
@@ -193,8 +227,7 @@ with
         left join
             {{ ref("int_assessments__college_assessment") }} as s
             on e.student_number = s.student_number
-            and r.expected_scope = s.scope
-            and s.subject_area = 'Combined'
+            and r.expected_score_type = s.score_type
         left join
             attempts as p
             on e.student_number = p.student_number
@@ -225,6 +258,7 @@ with
             r.expected_test_type,
             r.expected_scope,
             r.expected_subject_area,
+            r.expected_aligned_subject_area,
             r.expected_score_type,
             r.expected_goal_type,
             r.expected_goal_subtype,
@@ -253,10 +287,31 @@ select
     ) as alt_met_min_score_int,
 
     if(
-        score >= expected_board_890_plus_min_score, 1, 0
+        expected_aligned_subject_area = 'Total'
+        and score >= expected_board_890_plus_min_score,
+        1,
+        0
     ) as met_min_board_890_plus_score_int,
+
     if(
-        score >= expected_board_1010_plus_min_score, 1, 0
+        expected_aligned_subject_area = 'Total'
+        and score >= expected_board_1010_plus_min_score,
+        1,
+        0
     ) as met_min_board_1010_plus_score_int,
+
+    if(
+        expected_aligned_subject_area = 'EBRW'
+        and score >= expected_board_450_plus_min_score,
+        1,
+        0
+    ) as met_min_board_450_plus_min_score,
+
+    if(
+        expected_aligned_subject_area = 'Math'
+        and score >= expected_board_440_plus_min_score,
+        1,
+        0
+    ) as met_min_board_440_plus_min_score,
 
 from roster
