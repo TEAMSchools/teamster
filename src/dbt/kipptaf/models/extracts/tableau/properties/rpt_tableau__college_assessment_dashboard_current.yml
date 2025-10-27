@@ -76,7 +76,9 @@ models:
         data_type: float64
       - name: expected_board_890_plus_pct_goal
         data_type: float64
-      - name: expected_board_1010_plus_pct_goal
+      - name: expected_board_450_plus_min_score
+        data_type: float64
+      - name: expected_board_440_plus_min_score
         data_type: float64
       - name: score
         data_type: numeric
@@ -88,7 +90,7 @@ models:
         data_type: int64
       - name: met_min_board_1010_plus_score_int
         data_type: int64
-      - name: expected_board_450_plus_min_score
+      - name: met_min_board_450_plus_min_score
         data_type: int64
-      - name: expected_board_440_plus_min_score
+      - name: met_min_board_440_plus_min_score
         data_type: int64
