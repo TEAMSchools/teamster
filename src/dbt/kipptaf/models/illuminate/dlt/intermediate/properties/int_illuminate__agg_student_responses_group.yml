@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_illuminate__agg_student_responses_group
     columns:

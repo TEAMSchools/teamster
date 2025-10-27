@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_surveys__manager_survey_details
     config:

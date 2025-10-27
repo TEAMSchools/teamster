@@ -39,11 +39,12 @@ models:
           +contract:
             enforced: true
       workforce_manager:
+        +enabled: false
         +schema: adp_workforce_manager
+        +materialized: table
         +meta:
           dagster:
             group: adp_workforce_manager
-        +materialized: table
       workforce_now:
         +schema: adp_workforce_now
         +meta:
@@ -62,8 +63,8 @@ models:
         fivetran:
           +enabled: false
     alchemer:
-      +schema: alchemer
       +enabled: false
+      +schema: alchemer
     amplify:
       +schema: amplify
       +materialized: table
@@ -94,8 +95,8 @@ models:
       fivetran:
         +enabled: false
     dayforce:
-      +schema: dayforce
       +enabled: false
+      +schema: dayforce
     deanslist:
       +schema: deanslist
       sftp:
@@ -111,8 +112,8 @@ models:
       tableau:
         +schema: tableau
     facebook:
-      +schema: facebook
       +enabled: false
+      +schema: facebook
     finance:
       +schema: finance
     fldoe:
@@ -146,19 +147,17 @@ models:
             enforced: true
       sheets:
         +schema: google_sheets
+        +materialized: table
         +meta:
           dagster:
             group: google_sheets
         staging:
-          +materialized: table
+          +tags: google_sheet
           +contract:
             enforced: true
           +meta:
             dagster:
               tags: google_sheet
-          +tags: google_sheet
-        intermediate:
-          +materialized: table
     illuminate:
       +schema: illuminate
       dlt:
@@ -201,13 +200,16 @@ models:
       +schema: metrics
     overgrad:
       +schema: overgrad
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     pearson:
       +schema: pearson
     people:
       +schema: people
       +materialized: table
       staging:
-        +materialized: table
         +contract:
           enforced: true
     performance_management:
@@ -248,11 +250,12 @@ models:
       +schema: surveys
       +materialized: table
     tableau:
+      +enabled: false
       +schema: tableau
-      +config:
-        enabled: false
       staging:
         +materialized: table
+        +contract:
+          enforced: true
     titan:
       +schema: titan
     topline:

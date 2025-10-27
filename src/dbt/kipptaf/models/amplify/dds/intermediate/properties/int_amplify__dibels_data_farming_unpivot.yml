@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_amplify__dibels_data_farming_unpivot
     config:

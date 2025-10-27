@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: base_zendesk__tickets__custom_fields
     columns:

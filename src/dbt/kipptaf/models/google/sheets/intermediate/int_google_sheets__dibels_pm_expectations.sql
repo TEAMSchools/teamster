@@ -23,7 +23,6 @@ with
             and t.type = 'LIT'
             and t.name in ('BOY->MOY', 'MOY->EOY')
         where s.state_excludefromreporting = 0
-        -- trunk-ignore(sqlfluff/RF01)
         group by s.schoolcity, t.academic_year, t.name, round_number
     ),
 
@@ -83,4 +82,5 @@ left join
     on e.expected_measure_standard = g.measure_standard
     and e.grade = g.grade_level
     and e.admin_season = g.matching_pm_season
-where e.academic_year >= 2024  /* TODO: update to current_school_year var */
+{# TODO: update to current_school_year var #}
+where e.academic_year >= 2024

@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_performance_management__overall_scores_archive
     config:

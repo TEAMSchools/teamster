@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_amplify__pm_met_criteria
     columns:

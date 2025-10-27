@@ -1,8 +1,5 @@
 models:
   - name: stg_collegeboard__psat
-    config:
-      contract:
-        enforced: true
     columns:
       - name: cb_id
         data_type: int64

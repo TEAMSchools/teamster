@@ -1,8 +1,6 @@
 models:
   - name: int_deanslist__incidents__actions
     config:
-      contract:
-        enforced: true
       enabled: false
     columns:
       - name: incident_id

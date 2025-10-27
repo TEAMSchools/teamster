@@ -1,5 +1,3 @@
-version: 2
-
 models:
   - name: int_students__athletic_eligibility
     description: ""

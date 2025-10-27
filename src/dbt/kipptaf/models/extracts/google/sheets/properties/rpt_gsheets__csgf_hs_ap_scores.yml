@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: rpt_gsheets__csgf_hs_ap_scores
-    config:
-      contract:
-        enforced: true
     columns:
       - name: studentid
         data_type: int64
