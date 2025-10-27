@@ -41,3 +41,11 @@ sources:
               - kippcamden
               - pearson
               - stg_pearson__student_list_report
+      - name: stg_pearson__student_test_update
+        meta:
+          dagster:
+            group: pearson
+            asset_key:
+              - kippcamden
+              - pearson
+              - stg_pearson__student_test_update
