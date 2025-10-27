@@ -1,5 +1,5 @@
 models:
-  - name: int_google_forms__form
+  - name: int_google_forms__form__items
     columns:
       - name: form_id
         data_type: string
