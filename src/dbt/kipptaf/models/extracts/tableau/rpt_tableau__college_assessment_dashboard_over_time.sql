@@ -46,6 +46,8 @@ with
 
     roster as (
         select
+            e.region,
+            e.school,
             e.student_number,
             e.iep_status,
             e.is_504,
@@ -121,6 +123,8 @@ with
             and e.rn_year = 1
             and g.expected_goal_type != 'Board'
         group by
+            e.region,
+            e.school,
             e.student_number,
             e.iep_status,
             e.is_504,
