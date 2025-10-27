@@ -33,5 +33,3 @@ models:
           +enabled: true
         sftp:
           +enabled: false
-      disabled:
-        +enabled: false
