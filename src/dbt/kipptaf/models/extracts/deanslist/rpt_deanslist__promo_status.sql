@@ -25,9 +25,6 @@ select
     gpa.gpa_term,
     gpa.gpa_y1,
 
-    p.overall_status as promo_status_overall,
-    p.attendance_status as promo_status_attendance,
-    p.academic_status as promo_status_grades,
     p.n_failing as grades_y1_failing_projected,
     p.n_failing_core,
     p.ada_term_running,
@@ -37,6 +34,20 @@ select
 
     null as promo_status_qa_math,
     null as grades_y1_credits_enrolled,
+
+    if(
+        p.attendance_status = 'Off-Track',
+        'Off-track - excessive absences',
+        p.attendance_status
+    ) as promo_status_attendance,
+    if(
+        co.grade_level between 5 and 8 and p.academic_status = 'Off-Track',
+        'Off-Track - 2+ grade levels below',
+        p.academic_status
+    ) as promo_status_grades,
+    if(
+        p.overall_status = 'Off-Track', 'At-Risk for Retention', p.overall_status
+    ) as promo_status_overall,
 
     if(
         p.iready_reading_recent
