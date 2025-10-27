@@ -4,7 +4,10 @@ select
 
     if(region = 'Miami', fleid, newark_enrollment_number) as newark_enrollment_number,
 
-    state_studentnumber,
+    if(
+        region = 'Miami', secondary_state_studentnumber, state_studentnumber
+    ) as state_studentnumber,
+
     student_name as lastfirst,
     schoolid,
     school_name,
