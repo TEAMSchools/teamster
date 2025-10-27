@@ -7,7 +7,6 @@
 
 with
     board_goals as (
-        3056
         select
             grade_level,
             expected_scope,
