@@ -70,7 +70,7 @@ select
     ) as expected_field_name,
 
     if(
-        s.expected_grouping = 'Growth', 'Growth Score Change', 'Scale Score'
+        s.expected_grouping = 'Growth', 'Score Change', 'Scale Score'
     ) as expected_score_category,
 
     row_number() over (
