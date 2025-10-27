@@ -91,6 +91,7 @@ select
     e.salesforce_contact_college_match_display_gpa as college_match_gpa,
     e.salesforce_contact_college_match_gpa_band as college_match_gpa_bands,
     e.salesforce_contact_owner_name as contact_owner_name,
+    e.state_studentnumber as secondary_state_studentnumber,
 
     lc.region as region_official_name,
     lc.deanslist_school_id,
