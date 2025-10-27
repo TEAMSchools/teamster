@@ -28,7 +28,7 @@ select
     co.student_name as lastfirst,
     co.advisor_lastfirst,
     co.student_number as ps_id,
-    co.state_studentnumber as mdcps_id,
+    co.secondary_state_studentnumber as mdcps_id,
     co.gender,
     co.spedlep as iep_status,
     co.contact_1_name,
@@ -47,6 +47,7 @@ select
 
     co.cumulative_y1_gpa_unweighted as gpa,
     co.ada_unweighted_year_prev as previous_year_ada,
+    co.state_studentnumber as fleid,
 from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     fast_pivot as fp
