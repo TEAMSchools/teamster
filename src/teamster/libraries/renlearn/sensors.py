@@ -100,7 +100,7 @@ def build_renlearn_sftp_sensor(
                             }
                         )
 
-                cursor[asset_identifier] = now_timestamp
+                    cursor[asset_identifier] = now_timestamp
 
         item_getter_key = itemgetter("job_name", "partition_key")
 
@@ -108,13 +108,12 @@ def build_renlearn_sftp_sensor(
             iterable=sorted(run_request_kwargs, key=item_getter_key),
             key=item_getter_key,
         ):
-            foo = [g["asset_key"] for g in group]
             run_requests.append(
                 RunRequest(
                     run_key=f"{job_name}_{partition_key}_{now_timestamp}",
                     job_name=job_name,
                     partition_key=partition_key,
-                    asset_selection=foo,
+                    asset_selection=[g["asset_key"] for g in group],
                 )
             )
 
