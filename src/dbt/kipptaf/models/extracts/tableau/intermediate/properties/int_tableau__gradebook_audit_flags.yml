@@ -1,5 +1,7 @@
 models:
   - name: int_tableau__gradebook_audit_flags
+    config:
+      materialized: view
     columns:
       - name: _dbt_source_relation
         data_type: string

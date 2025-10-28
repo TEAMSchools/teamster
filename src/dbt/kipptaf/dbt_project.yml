@@ -230,7 +230,6 @@ models:
       +schema: renlearn
     reporting:
       +schema: reporting
-      +materialized: table
     schoolmint:
       grow:
         +schema: schoolmint_grow
@@ -248,7 +247,6 @@ models:
       +schema: students
     surveys:
       +schema: surveys
-      +materialized: table
     tableau:
       +enabled: false
       +schema: tableau
