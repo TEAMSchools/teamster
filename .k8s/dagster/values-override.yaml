@@ -34,7 +34,7 @@ dagsterCloudAgent:
       memory: 1.0Gi
     limits:
       cpu: 2500m
-      memory: 5.0Gi
+      memory: 10.0Gi
   nodeSelector:
     cloud.google.com/compute-class: Balanced
     cloud.google.com/gke-spot: "true"
@@ -78,7 +78,7 @@ workspace:
           memory: 1.0Gi
         limits:
           cpu: 2500m
-          memory: 5.0Gi
+          memory: 10.0Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
