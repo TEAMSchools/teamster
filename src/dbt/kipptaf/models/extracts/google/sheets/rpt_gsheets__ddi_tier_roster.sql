@@ -11,7 +11,4 @@ select
     state_test_proficiency as njsla_previous_year,
     iready_proficiency_eoy as iready_eoy_previous_year,
 from {{ ref("int_extracts__student_enrollments_subjects") }}
-where
-    academic_year = {{ var("current_academic_year") }}
-    and rn_year = 1
-    and nj_student_tier != 'Bucket 4'
+where academic_year = {{ var("current_academic_year") }} and rn_year = 1
