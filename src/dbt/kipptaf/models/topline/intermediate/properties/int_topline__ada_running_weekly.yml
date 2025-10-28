@@ -1,0 +1,4 @@
+models:
+  - name: int_topline__ada_running_weekly
+    config:
+      materialized: table

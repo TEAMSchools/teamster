@@ -1,5 +1,3 @@
-{{ config(materialized="table") }}
-
 with
     multilayer_metrics as (
         /* K-8 Reading & Math */
