@@ -89,12 +89,11 @@ with
             co.quarter as term,
             co.is_current_week_mon_sun as is_current_week,
 
-            sc.title,
-            sc.subject_area,
-            sc.administered_at,
-            sc.module_type,
-            sc.module_code,
-
+            r.title,
+            r.subject_area,
+            r.administered_at,
+            r.module_type,
+            r.module_code,
             r.date_taken,
             r.response_type,
             r.response_type_code,
@@ -131,15 +130,11 @@ with
             end as is_mastery_int,
         from {{ ref("int_extracts__student_enrollments_weeks") }} as co
         left join
-            {{ ref("int_assessments__scaffold") }} as sc
-            on co.student_number = sc.powerschool_student_number
-            and co.academic_year = sc.academic_year
-            and co.region = sc.region
-            and sc.administered_at between co.week_start_monday and co.week_end_sunday
-        left join
             {{ ref("int_assessments__response_rollup") }} as r
-            on sc.powerschool_student_number = r.powerschool_student_number
-            and sc.assessment_id = r.assessment_id
+            on co.student_number = r.powerschool_student_number
+            and co.academic_year = r.academic_year
+            and co.region = r.region
+            and r.administered_at between co.week_start_monday and co.week_end_sunday
         left join
             {{ ref("stg_google_sheets__assessments__standard_domains") }} as sd
             on r.response_type_code = sd.standard_code
@@ -147,6 +142,7 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
             and co.yearid = cc.cc_yearid
+            and r.subject_area = cc.illuminate_subject_area
             and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
@@ -163,7 +159,7 @@ with
             and co.academic_year >= {{ var("current_academic_year") - 1 }}
             {# TODO: Remove SY26 #}
             /* Manual filter to avoid dashboard roll-up */
-            and sc.module_type != 'WPP'
+            and r.module_type != 'WPP'
     ),
 
     microgoals_long as (
