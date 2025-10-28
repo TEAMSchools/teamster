@@ -160,7 +160,7 @@ with
             co.enroll_status = 0
             and co.is_enrolled_week_end
             and not co.is_out_of_district
-            and co.academic_year >= {{ var("current_academic_year") - 2 }}
+            and co.academic_year >= {{ var("current_academic_year") - 1 }}
             {# TODO: Remove SY26 #}
             /* Manual filter to avoid dashboard roll-up */
             and sc.module_type != 'WPP'
