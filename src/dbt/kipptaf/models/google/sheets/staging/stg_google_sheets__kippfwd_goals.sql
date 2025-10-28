@@ -22,7 +22,9 @@ with
                         goal_category,
                         ' ',
                         expected_scope,
-                        ' Combined Grade ',
+                        ' ',
+                        expected_subject_area,
+                        ' Grade ',
                         grade_level
                     )
                 else goal_subtype
@@ -37,7 +39,9 @@ with
                         goal_category,
                         ' ',
                         expected_scope,
-                        ' Combined Grade ',
+                        ' ',
+                        expected_subject_area,
+                        ' Grade ',
                         grade_level
                     )
                 else goal_subtype
@@ -85,7 +89,14 @@ select
         then 'sat_combined_pct_1010_plus_g11'
         when '% 1010+ SAT Combined Grade 12'
         then 'sat_combined_pct_1010_plus_g12'
-
+        when '% 450+ SAT EBRW Grade 11'
+        then 'sat_ebrw_pct_450_plus_g11'
+        when '% 450+ SAT EBRW Grade 12'
+        then 'sat_ebrw_pct_450_plus_g12'
+        when '% 440+ SAT Math Grade 11'
+        then 'sat_math_pct_440_plus_g11'
+        when '% 440+ SAT Math Grade 12'
+        then 'sat_math_pct_440_plus_g12'
     end as expected_metric_label,
 
     case

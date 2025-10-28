@@ -1,5 +1,7 @@
 models:
-  - name: stg_google_forms__responses__answers__file_upload_answers
+  - name: int_google_forms__responses__answers__file_upload_answers
+    config:
+      enabled: false
     columns:
       - name: form_id
         data_type: string

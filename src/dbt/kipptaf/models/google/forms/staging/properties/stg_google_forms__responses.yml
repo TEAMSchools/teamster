@@ -13,6 +13,14 @@ models:
         data_type: string
       - name: total_score
         data_type: float64
+      - name: rn_form_respondent_submitted_desc
+        data_type: int64
+      - name: create_timestamp
+        data_type: timestamp
+      - name: last_submitted_date_local
+        data_type: date
+      - name: last_submitted_timestamp
+        data_type: timestamp
       - name: answers
         data_type:
           ARRAY<STRUCT<key STRING, value STRUCT<questionId STRING, grade
@@ -22,5 +30,3 @@ models:
           STRUCT<answers ARRAY<STRUCT<value STRING>>>, fileUploadAnswers
           STRUCT<answers ARRAY<STRUCT<fileId STRING, fileName STRING, mimeType
           STRING>>>>>>
-      - name: rn_form_respondent_submitted_desc
-        data_type: int64

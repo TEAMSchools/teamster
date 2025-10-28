@@ -1,5 +1,8 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_current
+    config:
+      contract:
+        enforced: false
     columns:
       - name: academic_year
         data_type: int64
@@ -43,6 +46,8 @@ models:
         data_type: string
       - name: expected_subject_area
         data_type: string
+      - name: expected_aligned_subject_area
+        data_type: string
       - name: expected_score_type
         data_type: string
       - name: expected_goal_type
@@ -71,7 +76,9 @@ models:
         data_type: float64
       - name: expected_board_890_plus_pct_goal
         data_type: float64
-      - name: expected_board_1010_plus_pct_goal
+      - name: expected_board_450_plus_min_score
+        data_type: float64
+      - name: expected_board_440_plus_min_score
         data_type: float64
       - name: score
         data_type: numeric
@@ -82,4 +89,8 @@ models:
       - name: met_min_board_890_plus_score_int
         data_type: int64
       - name: met_min_board_1010_plus_score_int
+        data_type: int64
+      - name: met_min_board_450_plus_min_score
+        data_type: int64
+      - name: met_min_board_440_plus_min_score
         data_type: int64
