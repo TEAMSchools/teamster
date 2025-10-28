@@ -1,0 +1,4 @@
+models:
+  - name: int_topline__star_assessment_weekly
+    config:
+      materialized: table
