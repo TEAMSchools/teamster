@@ -1,0 +1,4 @@
+models:
+  - name: int_topline__iready_lessons_weekly
+    config:
+      materialized: table
