@@ -17,6 +17,14 @@ with
                 partition by school_specific_id, test_type, `date`
             ) as row_count_by_test_date,
 
+            count(*) over (
+                partition by school_specific_id, `date`, score_type
+            ) as row_count_by_score_type,
+
+            count(*) over (
+                partition by school_specific_id, `date`, test_type
+            ) as row_count_by_scope,
+
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
             `date` is not null
@@ -54,6 +62,14 @@ with
                 partition by powerschool_student_number, test_type, latest_psat_date
             ) as row_count_by_test_date,
 
+            count(*) over (
+                partition by powerschool_student_number, latest_psat_date, score_type
+            ) as row_count_by_score_type,
+
+            count(*) over (
+                partition by powerschool_student_number, latest_psat_date, test_type
+            ) as row_count_by_scope,
+
         from {{ ref("int_collegeboard__psat_unpivot") }}
     ),
 
@@ -65,15 +81,36 @@ with
                 subject_area in ('Composite', 'Combined'), 'Total', subject_area
             ) as aligned_subject_area,
 
-            mod(
-                cast(
-                    avg(row_count_by_test_date) over (
+            case
+                when
+                    avg(row_count_by_score_type) over (
                         partition by student_number, scope
-                    ) as numeric
-                ),
-                1
-            )
-            != 0 as is_multirow,
+                    )
+                    = avg(row_count_by_scope) over (partition by student_number, scope)
+                then 'Case 1'
+                when
+                    mod(
+                        cast(
+                            avg(row_count_by_test_date) over (
+                                partition by student_number, scope
+                            ) as numeric
+                        ),
+                        1
+                    )
+                    != 0
+                then 'Case 3'
+                when
+                    mod(
+                        cast(
+                            avg(row_count_by_test_date) over (
+                                partition by student_number, scope
+                            ) as numeric
+                        ),
+                        1
+                    )
+                    = 0
+                then 'Case 2'
+            end as strategy_case,
 
             max(scale_score) over (
                 partition by student_number, score_type order by test_date asc
@@ -109,8 +146,7 @@ with
             student_number,
             scope,
             score_type,
-            is_multirow,
-
+            strategy_case,
             avg(scale_score) as max_scale_score,
 
         from scores
@@ -122,13 +158,14 @@ with
                 'sat_reading_test_score'
             )
             and rn_highest = 1
-        group by student_number, scope, score_type, is_multirow
+        group by student_number, scope, score_type, strategy_case
     ),
 
     max_total_score as (
         select
             student_number,
             scope,
+            strategy_case,
 
             if(scope = 'ACT', avg(max_scale_score), sum(max_scale_score)) as superscore,
 
@@ -141,7 +178,7 @@ with
                 'psat10_total',
                 'psatnmsqt_total'
             )
-        group by student_number, scope
+        group by student_number, scope, strategy_case
     ),
 
     alt_superscore as (
@@ -156,7 +193,7 @@ with
                 'psat10_total',
                 'psatnmsqt_total'
             )
-            and not is_multirow
+            and strategy_case = 'Case 1'
         group by student_number, scope
     ),
 
