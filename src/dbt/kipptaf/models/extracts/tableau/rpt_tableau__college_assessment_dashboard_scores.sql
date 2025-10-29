@@ -1,6 +1,4 @@
 select
-    s.region,
-    s.school,
     s.student_number,
     s.test_type,
     s.scope,
@@ -11,6 +9,8 @@ select
     s.scale_score,
     s.max_scale_score,
 
+    e.region,
+    e.school,
     e.graduation_year,
     e.ktc_cohort,
 
