@@ -1,5 +1,5 @@
 models:
-  - name: int_amplify__dibels_data_farming_unpivot
+  - name: int_amplify__dds__data_farming_unpivot
     config:
       enabled: false
     columns:

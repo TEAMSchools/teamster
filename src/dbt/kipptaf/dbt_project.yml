@@ -67,16 +67,13 @@ models:
       +schema: alchemer
     amplify:
       +schema: amplify
-      +materialized: table
+      intermediate:
+        +materialized: table
       dds:
         +enabled: false
       mclass:
         api:
           +enabled: false
-        sftp:
-          staging:
-            +contract:
-              enforced: true
     assessments:
       +schema: assessments
     collegeboard:
