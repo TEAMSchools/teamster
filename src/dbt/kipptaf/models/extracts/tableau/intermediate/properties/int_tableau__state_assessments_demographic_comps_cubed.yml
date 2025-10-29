@@ -1,5 +1,7 @@
 models:
   - name: int_tableau__state_assessments_demographic_comps_cubed
+    config:
+      materialized: table
     columns:
       - name: academic_year
         data_type: int64
