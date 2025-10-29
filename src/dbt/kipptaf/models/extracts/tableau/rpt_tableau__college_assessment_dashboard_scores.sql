@@ -1,4 +1,6 @@
 select
+    s.region,
+    s.school,
     s.student_number,
     s.test_type,
     s.scope,
