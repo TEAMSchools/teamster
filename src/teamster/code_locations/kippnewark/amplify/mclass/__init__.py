@@ -1,4 +1,4 @@
-from teamster.code_locations.kipptaf.amplify.mclass import sftp
+from teamster.code_locations.kippnewark.amplify.mclass import sftp
 
 assets = [
     *sftp.assets,

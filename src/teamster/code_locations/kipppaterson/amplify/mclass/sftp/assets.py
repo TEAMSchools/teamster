@@ -1,7 +1,7 @@
 from dagster import StaticPartitionsDefinition
 
-from teamster.code_locations.kipptaf import CODE_LOCATION, CURRENT_FISCAL_YEAR
-from teamster.code_locations.kipptaf.amplify.mclass.sftp.schema import (
+from teamster.code_locations.kipppaterson import CODE_LOCATION, CURRENT_FISCAL_YEAR
+from teamster.code_locations.kipppaterson.amplify.mclass.sftp.schema import (
     BENCHMARK_STUDENT_SUMMARY_SCHEMA,
     PM_STUDENT_SUMMARY_SCHEMA,
 )
