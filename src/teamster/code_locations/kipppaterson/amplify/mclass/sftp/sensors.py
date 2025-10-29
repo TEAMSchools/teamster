@@ -1,5 +1,5 @@
-from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.amplify.mclass.sftp.assets import assets
+from teamster.code_locations.kipppaterson import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipppaterson.amplify.mclass.sftp.assets import assets
 from teamster.libraries.amplify.mclass.sftp.sensors import (
     build_amplify_mclass_sftp_sensor,
 )

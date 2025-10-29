@@ -26,6 +26,21 @@ locations:
                   secretKeyRef:
                     name: op-couchdrop-sftp
                     key: URL
+              - name: AMPLIFY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipppaterson
+                    key: URL
+              - name: AMPLIFY_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipppaterson
+                    key: password
+              - name: AMPLIFY_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipppaterson
+                    key: username
         run_k8s_config:
           container_config:
             env:
@@ -44,3 +59,18 @@ locations:
                   secretKeyRef:
                     name: op-couchdrop-sftp
                     key: URL
+              - name: AMPLIFY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipppaterson
+                    key: URL
+              - name: AMPLIFY_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipppaterson
+                    key: password
+              - name: AMPLIFY_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipppaterson
+                    key: username

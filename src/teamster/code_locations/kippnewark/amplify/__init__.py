@@ -1,4 +1,4 @@
-from teamster.code_locations.kipptaf.amplify import mclass
+from teamster.code_locations.kippnewark.amplify import mclass
 
 assets = [
     *mclass.assets,

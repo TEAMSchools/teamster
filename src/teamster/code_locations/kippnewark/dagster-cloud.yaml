@@ -159,6 +159,21 @@ locations:
                   secretKeyRef:
                     name: op-overgrad-api-kippnewark
                     key: credential
+              - name: AMPLIFY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipptaf
+                    key: URL
+              - name: AMPLIFY_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipptaf
+                    key: password
+              - name: AMPLIFY_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipptaf
+                    key: username
         run_k8s_config:
           container_config:
             env:
@@ -297,3 +312,18 @@ locations:
                   secretKeyRef:
                     name: op-overgrad-api-kippnewark
                     key: credential
+              - name: AMPLIFY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipptaf
+                    key: URL
+              - name: AMPLIFY_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipptaf
+                    key: password
+              - name: AMPLIFY_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipptaf
+                    key: username
