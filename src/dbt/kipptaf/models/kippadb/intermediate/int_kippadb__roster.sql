@@ -163,7 +163,7 @@ with
             ) as current_grade_level_projection,
         from {{ ref("base_powerschool__student_enrollments") }} as se
         left join
-            {{ ref("base_kippadb__contact") }} as c
+            {{ ref("int_kippadb__contact") }} as c
             on se.student_number = c.contact_school_specific_id
         left join
             {{ ref("int_overgrad__students") }} as os

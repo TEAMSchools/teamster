@@ -1,5 +1,5 @@
 models:
-  - name: base_kippadb__contact
+  - name: int_kippadb__contact
     columns:
       - name: contact_id
         data_type: string

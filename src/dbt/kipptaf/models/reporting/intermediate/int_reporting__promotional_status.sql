@@ -477,7 +477,7 @@ with
                 then 'Off-Track'
                 else 'On-Track'
             end as academic_status,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on co.academic_year = rt.academic_year

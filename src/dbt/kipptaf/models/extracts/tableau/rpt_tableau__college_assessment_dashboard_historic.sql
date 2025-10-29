@@ -63,7 +63,7 @@ with
             e.college_match_gpa,
             e.college_match_gpa_bands,
             e.ms_attended,
-            e.graduation_year,
+            e.salesforce_contact_graduation_year as graduation_year,
             e.is_exempt_state_testing as dlm,
 
             s.courses_course_name,
