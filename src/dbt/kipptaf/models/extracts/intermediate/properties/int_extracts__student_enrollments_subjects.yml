@@ -1,7 +1,7 @@
 models:
   - name: int_extracts__student_enrollments_subjects
     config:
-      materialized: table
+      # materialized: table
       contract:
         enforced: false
     data_tests:
