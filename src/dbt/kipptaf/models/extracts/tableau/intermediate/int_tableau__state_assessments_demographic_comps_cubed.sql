@@ -1,5 +1,3 @@
-{{ config(materialized="table") }}
-
 {% set dims = [
     "academic_year",
     "district_state",

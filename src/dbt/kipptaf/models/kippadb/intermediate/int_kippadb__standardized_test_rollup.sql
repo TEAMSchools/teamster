@@ -1,5 +1,3 @@
-{{ config(materialized="ephemeral") }}
-
 with
     tests as (
         select
