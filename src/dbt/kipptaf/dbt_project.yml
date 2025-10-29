@@ -41,7 +41,6 @@ models:
       workforce_manager:
         +enabled: false
         +schema: adp_workforce_manager
-        +materialized: table
         +meta:
           dagster:
             group: adp_workforce_manager
@@ -67,7 +66,6 @@ models:
       +schema: alchemer
     amplify:
       +schema: amplify
-      +materialized: table
       dds:
         +enabled: false
       mclass:
@@ -147,11 +145,11 @@ models:
             enforced: true
       sheets:
         +schema: google_sheets
-        +materialized: table
         +meta:
           dagster:
             group: google_sheets
         staging:
+          +materialized: table
           +tags: google_sheet
           +contract:
             enforced: true
@@ -161,8 +159,8 @@ models:
     illuminate:
       +schema: illuminate
       dlt:
-        +materialized: table
         staging:
+          +materialized: table
           +contract:
             enforced: true
           repositories:
@@ -208,14 +206,14 @@ models:
       +schema: pearson
     people:
       +schema: people
-      +materialized: table
       staging:
+        +materialized: table
         +contract:
           enforced: true
     performance_management:
       +schema: performance_management
-      +materialized: table
       staging:
+        +materialized: table
         +contract:
           enforced: true
     powerschool:
