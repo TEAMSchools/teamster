@@ -1,5 +1,5 @@
 models:
-  - name: base_kippadb__application
+  - name: int_kippadb__application
     columns:
       - name: id
         data_type: string
