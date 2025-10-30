@@ -72,21 +72,34 @@ with
             {{ ref("int_deanslist__comm_log") }} as c
             on ktc.student_number = c.student_school_id
             and regexp_contains(c.reason, r'^KF:')
+        -- this record is not accesible to fix on SF neither by UI nor via data loader
+        where c.record_id != 14846967
     ),
 
     salesforce_notes as (
         select
+            id,
             contact as contact__c,
             `subject` as subject__c,
-            comments as comments__c,
-            next_steps as next_steps__c,
             `date` as date__c,
             `status` as status__c,
             `type` as type__c,
             academic_year,
 
+            trim(
+                regexp_replace(regexp_replace(comments, r'\r|\n', ' '), r'\s+', ' ')
+            ) as comments__c,
+
+            trim(
+                regexp_replace(regexp_replace(next_steps, r'\r|\n', ' '), r'\s+', ' ')
+            ) as next_steps__c,
+
         from {{ ref("stg_kippadb__contact_note") }}
-        where academic_year = {{ var("current_academic_year") }}
+        where
+            academic_year = {{ var("current_academic_year") }}
+            -- this record is not accesible to fix on SF neither by UI nor via data
+            -- loader
+            and id != 'a0LQg00000SOadzMAD'
     )
 
 select
