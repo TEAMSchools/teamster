@@ -73,7 +73,7 @@ with
             on ktc.student_number = c.student_school_id
             and regexp_contains(c.reason, r'^KF:')
         -- this record is not accesible to fix on SF neither by UI nor via data loader
-        where record_id != 14846967
+        where c.record_id != 14846967
     ),
 
     salesforce_notes as (
