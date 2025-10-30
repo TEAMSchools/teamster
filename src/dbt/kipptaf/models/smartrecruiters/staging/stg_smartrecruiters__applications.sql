@@ -4,9 +4,11 @@ with
             * except (
                 application_state_hired_date,
                 application_state_new_date,
+                
                 application_state_offer_date,
                 application_state_rejected_date,
                 application_state_lead_date,
+                application_state_in_review_date,
                 application_last_update_date,
                 application_status_interview_demo_date,
                 application_status_interview_phone_screen_complete_date,
@@ -26,6 +28,7 @@ with
             datetime(application_state_hired_date) as hired_datetime,
             datetime(application_state_new_date) as new_datetime,
             datetime(application_state_lead_date) as lead_datetime,
+            datetime(application_state_lead_date) as in_review_datetime,
             datetime(application_state_offer_date) as offer_datetime,
             datetime(application_state_rejected_date) as rejected_datetime,
             datetime(application_status_interview_demo_date) as demo_datetime,
@@ -83,4 +86,5 @@ select
     date(rejected_datetime) as date_rejected,
     date(last_update_datetime) as date_last_update,
     date(lead_datetime) as date_lead,
+    date(in_review_datetime) as date_in_review,
 from applications
