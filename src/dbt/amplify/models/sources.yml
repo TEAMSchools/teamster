@@ -1,8 +1,8 @@
 sources:
   - name: amplify_mclass_sftp
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ var('amplify_schema', project_name + '_amplify') }}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_
+      {%- endif -%}{{ var('amplify_schema', project_name + '_amplify') }}
     tables:
       - name: benchmark_student_summary
         external:

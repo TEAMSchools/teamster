@@ -71,9 +71,6 @@ models:
         +materialized: table
       dds:
         +enabled: false
-      mclass:
-        api:
-          +enabled: false
     assessments:
       +schema: assessments
     collegeboard:
