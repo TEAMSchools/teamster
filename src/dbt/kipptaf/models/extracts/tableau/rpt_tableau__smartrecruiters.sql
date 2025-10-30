@@ -91,17 +91,20 @@ with
                         time_in_application_state_lead <= 7
                         or time_in_application_state_in_review <= 7
                         or date_diff(date_rejected, date_in_review, day) <= 7
-                        or date_diff(date_phone_screen_requested, date_in_review, day) <= 7
-                        or date_diff(date_phone_screen_complete, date_in_review, day) <= 7
+                        or date_diff(date_phone_screen_requested, date_in_review, day)
+                        <= 7
+                        or date_diff(date_phone_screen_complete, date_in_review, day)
+                        <= 7
                         or date_diff(date_demo, date_in_review, day) <= 7
                         or date_diff(date_offer, date_in_review, day) <= 7
                         or date_diff(date_hired, date_in_review, day) <= 7
                     )
                     and resume_score is not null
-                    and department_org_field_value not in ('Teaching', 'Teaching Fellow')
+                    and department_org_field_value
+                    not in ('Teaching', 'Teaching Fellow')
                 then 1
                 else 0
-                end as within_week_initial_review,
+            end as within_week_initial_review,
             {# calculated metrics #}
             date_diff(date_hired, date_new, day) as days_to_hire,
             date_diff(current_date(), date_last_update, day) as days_since_update,
