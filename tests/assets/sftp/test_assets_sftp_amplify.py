@@ -63,7 +63,7 @@ def test_amplify_mclass_pm_student_summary_kipptaf():
 
 
 def test_amplify_mclass_benchmark_student_summary_kipppaterson():
-    from teamster.code_locations.kippnewark.amplify.mclass.sftp.assets import (
+    from teamster.code_locations.kipppaterson.amplify.mclass.sftp.assets import (
         benchmark_student_summary,
     )
 
@@ -71,7 +71,7 @@ def test_amplify_mclass_benchmark_student_summary_kipppaterson():
 
 
 def test_amplify_mclass_pm_student_summary_kipppaterson():
-    from teamster.code_locations.kippnewark.amplify.mclass.sftp.assets import (
+    from teamster.code_locations.kipppaterson.amplify.mclass.sftp.assets import (
         pm_student_summary,
     )
 
