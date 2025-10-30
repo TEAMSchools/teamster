@@ -4,7 +4,7 @@ with
             * except (
                 application_state_hired_date,
                 application_state_new_date,
-                
+
                 application_state_offer_date,
                 application_state_rejected_date,
                 application_state_lead_date,
