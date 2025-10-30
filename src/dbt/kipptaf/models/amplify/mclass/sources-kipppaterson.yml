@@ -11,8 +11,6 @@ sources:
             asset_key:
               - kipppaterson
               - amplify
-              - mclass
-              - sftp
               - stg_amplify__mclass__sftp__benchmark_student_summary
       - name: stg_amplify__mclass__sftp__pm_student_summary
         meta:
@@ -21,6 +19,4 @@ sources:
             asset_key:
               - kipppaterson
               - amplify
-              - mclass
-              - sftp
               - stg_amplify__mclass__sftp__pm_student_summary
