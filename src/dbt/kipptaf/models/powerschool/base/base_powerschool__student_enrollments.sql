@@ -26,16 +26,6 @@ with
         }}
     ),
 
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation="union_relations",
-                partition_by="_dbt_source_relation, student_number, academic_year, entrydate",
-                order_by="student_number desc",
-            )
-        }}
-    ),
-
     with_region as (
         -- trunk-ignore(sqlfluff/AM04)
         select
@@ -43,7 +33,7 @@ with
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-        from deduplicate
+        from union_relations
     )
 
 select
