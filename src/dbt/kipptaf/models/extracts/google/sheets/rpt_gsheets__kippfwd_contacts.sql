@@ -72,6 +72,8 @@ with
             {{ ref("int_deanslist__comm_log") }} as c
             on ktc.student_number = c.student_school_id
             and regexp_contains(c.reason, r'^KF:')
+        -- this record is not accesible to fix on SF neither by UI nor via data loader
+        where record_id != 14846967
     ),
 
     salesforce_notes as (
@@ -86,7 +88,11 @@ with
             academic_year,
 
         from {{ ref("stg_kippadb__contact_note") }}
-        where academic_year = {{ var("current_academic_year") }}
+        where
+            academic_year = {{ var("current_academic_year") }}
+            -- this record is not accesible to fix on SF neither by UI nor via data
+            -- loader
+            and id != 'a0LQg00000SOadzMAD'
     )
 
 select
