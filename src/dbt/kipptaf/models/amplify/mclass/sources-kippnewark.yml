@@ -1,22 +1,26 @@
 sources:
-  - name: kipppaterson_amplify
+  - name: kippnewark_amplify
     schema: |
       {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_
-      {%- endif -%}kipppaterson_amplify
+      {%- endif -%}kippnewark_amplify
     tables:
       - name: stg_amplify__mclass__sftp__benchmark_student_summary
         meta:
           dagster:
             group: amplify
             asset_key:
-              - kipppaterson
+              - kippnewark
               - amplify
+              - mclass
+              - sftp
               - stg_amplify__mclass__sftp__benchmark_student_summary
       - name: stg_amplify__mclass__sftp__pm_student_summary
         meta:
           dagster:
             group: amplify
             asset_key:
-              - kipppaterson
+              - kippnewark
               - amplify
+              - mclass
+              - sftp
               - stg_amplify__mclass__sftp__pm_student_summary
