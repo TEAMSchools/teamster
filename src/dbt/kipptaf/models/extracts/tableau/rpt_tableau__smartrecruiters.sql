@@ -161,4 +161,3 @@ with
 
 select *,
 from final
-
