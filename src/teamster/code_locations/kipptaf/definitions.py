@@ -15,7 +15,6 @@ from teamster.code_locations.kipptaf import (
     _google,
     adp,
     airbyte,
-    amplify,
     asset_checks,
     collegeboard,
     couchdrop,
@@ -62,7 +61,6 @@ defs = Definitions(
                 _dlt,
                 _google,
                 adp,
-                amplify,
                 collegeboard,
                 coupa,
                 deanslist,
@@ -100,7 +98,6 @@ defs = Definitions(
         *adp.sensors,
         *couchdrop.sensors,
         *deanslist.sensors,
-        *amplify.sensors,
         build_sensor_for_freshness_checks(
             freshness_checks=asset_checks.freshness_checks
         ),
@@ -132,7 +129,6 @@ defs = Definitions(
         "ps_enrollment": resources.POWERSCHOOL_ENROLLMENT_RESOURCE,
         "smartrecruiters": resources.SMARTRECRUITERS_RESOURCE,
         "ssh_adp_workforce_now": resources.SSH_RESOURCE_ADP_WORKFORCE_NOW,
-        "ssh_amplify": resources.SSH_RESOURCE_AMPLIFY,
         "ssh_clever": resources.SSH_RESOURCE_CLEVER,
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_coupa": resources.SSH_RESOURCE_COUPA,
