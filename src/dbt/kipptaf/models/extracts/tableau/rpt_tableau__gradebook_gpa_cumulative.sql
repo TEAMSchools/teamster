@@ -26,7 +26,7 @@ select
     gifted_and_talented,
     iep_status,
     is_504,
-    salesforce_id,
+    salesforce_contact_id as salesforce_id,
     ktc_cohort,
     is_counseling_services,
     is_student_athlete,

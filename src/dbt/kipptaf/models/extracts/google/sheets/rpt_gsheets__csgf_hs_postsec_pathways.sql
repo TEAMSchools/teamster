@@ -24,6 +24,6 @@ select
 from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__application") }} as app
-    on co.salesforce_id = app.applicant
+    on co.salesforce_contact_id = app.applicant
     and app.matriculation_decision = 'Matriculated (Intent to Enroll)'
 where co.rn_year = 1 and co.grade_level = 12

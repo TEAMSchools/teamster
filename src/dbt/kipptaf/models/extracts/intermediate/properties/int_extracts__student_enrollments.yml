@@ -12,7 +12,6 @@ models:
               - entrydate
           config:
             store_failures: true
-            # severity: warn
     columns:
       - name: fafsa_status_mismatch_category
         data_type: string
@@ -425,13 +424,13 @@ models:
         data_type: string
       - name: student_email
         data_type: string
-      - name: salesforce_id
+      - name: salesforce_contact_id
         data_type: string
       - name: has_fafsa
         data_type: string
-      - name: salesforce_college_match_gpa
+      - name: salesforce_contact_college_match_gpa
         data_type: numeric
-      - name: college_match_gpa_bands
+      - name: salesforce_contact_college_match_gpa_band
         data_type: string
       - name: salesforce_contact_owner_name
         data_type: string

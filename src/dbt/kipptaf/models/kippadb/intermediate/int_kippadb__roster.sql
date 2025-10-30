@@ -129,13 +129,13 @@ with
             ) as contact_current_kipp_student,
 
             coalesce(c.contact_kipp_hs_class, se.cohort) as ktc_cohort,
-            coalesce(c.contact_first_name, se.first_name) as first_name,
-            coalesce(c.contact_last_name, se.last_name) as last_name,
-            coalesce(c.contact_lastfirst, se.lastfirst) as lastfirst,
+            coalesce(c.contact_first_name, se.student_first_name) as first_name,
+            coalesce(c.contact_last_name, se.student_last_name) as last_name,
+            coalesce(c.contact_lastfirst, se.student_name) as lastfirst,
 
             if(
                 se.enroll_status = 0,
-                coalesce(c.contact_email, se.student_email_google),
+                coalesce(c.contact_email, se.student_email),
                 c.contact_email
             ) as email,
 
@@ -161,7 +161,7 @@ with
             (
                 {{ var("current_academic_year") }} - se.academic_year + se.grade_level
             ) as current_grade_level_projection,
-        from {{ ref("base_powerschool__student_enrollments") }} as se
+        from {{ ref("int_extracts__student_enrollments") }} as se
         left join
             {{ ref("int_kippadb__contact") }} as c
             on se.student_number = c.contact_school_specific_id
