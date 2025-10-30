@@ -242,7 +242,6 @@ models:
     surveys:
       +schema: surveys
     tableau:
-      +enabled: false
       +schema: tableau
       staging:
         +materialized: table
