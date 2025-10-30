@@ -75,12 +75,12 @@ with
                 when
                     (
                         time_in_application_state_lead <= 7
-                        or date_diff(date_rejected, date_lead, day) <= 7
-                        or date_diff(date_phone_screen_requested, date_lead, day) <= 7
-                        or date_diff(date_phone_screen_complete, date_lead, day) <= 7
-                        or date_diff(date_demo, date_lead, day) <= 7
-                        or date_diff(date_offer, date_lead, day) <= 7
-                        or date_diff(date_hired, date_lead, day) <= 7
+                        or date_diff(date_rejected, date_new, day) <= 7
+                        or date_diff(date_phone_screen_requested, date_new, day) <= 7
+                        or date_diff(date_phone_screen_complete, date_new, day) <= 7
+                        or date_diff(date_demo, date_new, day) <= 7
+                        or date_diff(date_offer, date_new, day) <= 7
+                        or date_diff(date_hired, date_new, day) <= 7
                     )
                     and resume_score is not null
                     and department_org_field_value in ('Teacher', 'Teaching Fellow')
