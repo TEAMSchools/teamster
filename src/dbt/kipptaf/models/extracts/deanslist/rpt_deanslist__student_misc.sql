@@ -36,7 +36,7 @@ with
             co.lunch_balance,
             co.dob,
             co.sched_nextyeargrade,
-            co.contact_owner_name as ktc_counselor_name,
+            co.salesforce_contact_owner_name as ktc_counselor_name,
             co.salesforce_contact_owner_phone as ktc_counselor_phone,
             co.salesforce_contact_owner_email as ktc_counselor_email,
             co.student_email,

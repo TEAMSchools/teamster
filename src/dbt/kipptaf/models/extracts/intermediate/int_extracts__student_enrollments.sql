@@ -37,10 +37,10 @@ select
     e.school_abbreviation as school,
     e.advisory_section_number as team,
 
-    adb.contact_id as salesforce_id,
+    adb.contact_id as salesforce_contact_id,
     adb.contact_kipp_hs_class as salesforce_contact_kipp_hs_class,
     adb.contact_graduation_year as salesforce_contact_graduation_year,
-    adb.contact_college_match_display_gpa as salesforce_college_match_gpa,
+    adb.contact_college_match_display_gpa as salesforce_contact_college_match_gpa,
     adb.contact_owner_id as salesforce_contact_owner_id,
     adb.contact_owner_phone as salesforce_contact_owner_phone,
     adb.contact_owner_email as salesforce_contact_owner_email,
@@ -74,7 +74,9 @@ select
     coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,
     coalesce(if(e.region = 'Miami', e.spedlep, sped.spedlep), 'No IEP') as spedlep,
 
-    coalesce(adb.contact_college_match_gpa_band, 'No GPA') as college_match_gpa_bands,
+    coalesce(
+        adb.contact_college_match_gpa_band, 'No GPA'
+    ) as salesforce_contact_college_match_gpa_band,
 
     coalesce(adb.contact_kipp_hs_class, e.cohort) as ktc_cohort,
 

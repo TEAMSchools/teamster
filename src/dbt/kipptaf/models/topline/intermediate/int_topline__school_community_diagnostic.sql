@@ -7,7 +7,7 @@ select
 from {{ ref("int_surveys__survey_responses") }} as sr
 inner join
     {{ ref("int_extracts__student_enrollments") }} as se
-    on sr.respondent_email = se.student_email_google
+    on sr.respondent_email = se.student_email
     and sr.academic_year = se.academic_year
     and se.is_enrolled_y1
 left join
