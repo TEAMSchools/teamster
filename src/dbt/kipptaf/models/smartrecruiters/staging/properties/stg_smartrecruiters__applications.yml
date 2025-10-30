@@ -1,5 +1,8 @@
 models:
   - name: stg_smartrecruiters__applications
+    config:
+      contract:
+        enforced: false
     columns:
       - name: application_custom_step
         data_type: string

@@ -107,28 +107,28 @@ with
                 then 1
                 else 0
             end as within_week_initial_review,
-            -- case
-            --     when
-            --         time_in_application_state_new <= 7
-            --         and resume_score is not null
-            --         and application_state != 'IN_REVIEW'
-            --     then 1
-            --     when
-            --         (
-            --             time_in_application_state_lead <= 7
-            --             or date_diff(date_rejected, date_new, day) <= 7
-            --             or date_diff(date_phone_screen_requested, date_new, day) <= 7
-            --             or date_diff(date_phone_screen_complete, date_new, day) <= 7
-            --             or date_diff(date_demo, date_new, day) <= 7
-            --             or date_diff(date_offer, date_new, day) <= 7
-            --             or date_diff(date_hired, date_new, day) <= 7
-            --         )
-            --         and resume_score is not null
-            --         and department_org_field_value in ('Teaching', 'Teaching Fellow')
-            --         and application_state not in ('NEW', 'IN_REVIEW')
-            --     then 1
-            --     else 0
-            -- end as within_week_initial_review,
+            case
+                when
+                    time_in_application_state_new <= 7
+                    and resume_score is not null
+                    and application_state != 'IN_REVIEW'
+                then 1
+                when
+                    (
+                        time_in_application_state_lead <= 7
+                        or date_diff(date_rejected, date_new, day) <= 7
+                        or date_diff(date_phone_screen_requested, date_new, day) <= 7
+                        or date_diff(date_phone_screen_complete, date_new, day) <= 7
+                        or date_diff(date_demo, date_new, day) <= 7
+                        or date_diff(date_offer, date_new, day) <= 7
+                        or date_diff(date_hired, date_new, day) <= 7
+                    )
+                    and resume_score is not null
+                    and department_org_field_value in ('Teaching', 'Teaching Fellow')
+                    and application_state not in ('NEW', 'IN_REVIEW')
+                then 1
+                else 0
+            end as within_week_initial_review_new,
             {# calculated metrics #}
             date_diff(date_hired, date_new, day) as days_to_hire,
             date_diff(current_date(), date_last_update, day) as days_since_update,
@@ -161,3 +161,4 @@ with
 
 select *,
 from final
+
