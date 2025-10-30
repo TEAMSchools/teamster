@@ -8,7 +8,8 @@ with
                         "amplify",
                         "stg_amplify__mclass__api__benchmark_student_summary",
                     ),
-                ]
+                ],
+                source_column_name="_dbt_source_relation_2",
             )
         }}
     ),
