@@ -33,7 +33,8 @@ select
     a.irregularity_code_2,
     a.data_source,
     a.ps_ap_course_subject_code,
-    a.ap_course_name,
+
+    coalesce(a.ap_course_name, 'Not an AP course') as ap_course_name,
 
     coalesce(s.courses_course_name, 'Not an AP course') as course_name,
 
