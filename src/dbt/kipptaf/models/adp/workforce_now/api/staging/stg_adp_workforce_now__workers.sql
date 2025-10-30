@@ -344,12 +344,8 @@ with
             /* year can be masked as 0000 */
             safe_cast(person.birthdate as date) as person__birth_date,
 
-            timestamp_sub(
-                timestamp_add(
-                    timestamp(effective_date_start, '{{ var("local_timezone") }}'),
-                    interval 1 day
-                ),
-                interval 1 millisecond
+            timestamp(
+                effective_date_start, '{{ var("local_timezone") }}'
             ) as effective_date_start_timestamp,
 
             lag(worker_status.statuscode.codevalue, 1) over (
