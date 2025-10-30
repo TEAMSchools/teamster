@@ -78,14 +78,21 @@ with
 
     salesforce_notes as (
         select
+            id,
             contact as contact__c,
             `subject` as subject__c,
-            comments as comments__c,
-            next_steps as next_steps__c,
             `date` as date__c,
             `status` as status__c,
             `type` as type__c,
             academic_year,
+
+            trim(
+                regexp_replace(regexp_replace(comments, r'\r|\n', ' '), r'\s+', ' ')
+            ) as comments__c,
+
+            trim(
+                regexp_replace(regexp_replace(next_steps, r'\r|\n', ' '), r'\s+', ' ')
+            ) as next_steps__c,
 
         from {{ ref("stg_kippadb__contact_note") }}
         where
