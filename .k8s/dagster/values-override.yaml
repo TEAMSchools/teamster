@@ -30,8 +30,8 @@ dagsterCloud:
 dagsterCloudAgent:
   resources:
     requests:
-      cpu: 250m
-      memory: 1.0Gi
+      cpu: 500m
+      memory: 1.5Gi
     limits:
       cpu: 2500m
       memory: 10.0Gi
@@ -74,8 +74,8 @@ workspace:
     containerConfig:
       resources:
         requests:
-          cpu: 250m
-          memory: 1.0Gi
+          cpu: 500m
+          memory: 1.5Gi
         limits:
           cpu: 2500m
           memory: 10.0Gi
