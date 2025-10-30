@@ -44,8 +44,8 @@ from {{ ref("int_surveys__survey_responses") }} as sr
 left join
     {{ ref("int_people__staff_roster_history") }} as eh
     on sr.respondent_email = eh.google_email
-    and sr.date_submitted
-    between eh.effective_date_start_timestamp and eh.effective_date_end_timestamp
+    and cast(sr.date_submitted as date)
+    between eh.effective_date_start and eh.effective_date_end
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on eh.powerschool_teacher_number = tgl.teachernumber
