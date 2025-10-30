@@ -11,9 +11,7 @@ sources:
             asset_key:
               - kipptaf
               - amplify
-              - mclass
-              - api
-              - benchmark_student_summary
+              - stg_amplify__mclass__api__benchmark_student_summary
       - name: stg_amplify__mclass__api__pm_student_summary
         identifier: stg_amplify__pm_student_summary
         meta:
@@ -21,6 +19,4 @@ sources:
             asset_key:
               - kipptaf
               - amplify
-              - mclass
-              - api
-              - pm_student_summary
+              - stg_amplify__mclass__api__pm_student_summary
