@@ -68,5 +68,6 @@ left join
     and s.ap_course_subject = a.ps_ap_course_subject_code
     and a.test_subject != 'Calculus BC: AB Subscore'
 where
-    e.school_level = 'HS'
+    e.rn_year = 1
+    and e.school_level = 'HS'
     and date(e.academic_year + 1, 05, 15) between e.entrydate and e.exitdate
