@@ -18,10 +18,9 @@ select
     sec.sections_external_expression as `period`,
     sec.sections_room as room,
     sec.students_student_number as student_id,
+    sec.school_name,
 
     sas.google_email as student_gsuite_email,
-
-    sch.name as school_name,
 
     scw.google_email as teacher_gsuite_email,
 
@@ -35,10 +34,6 @@ from {{ ref("base_powerschool__course_enrollments") }} as sec
 inner join
     {{ ref("stg_people__student_logins") }} as sas
     on sec.students_student_number = sas.student_number
-inner join
-    {{ ref("stg_powerschool__schools") }} as sch
-    on sec.sections_schoolid = sch.school_number
-    and {{ union_dataset_join_clause(left_alias="sec", right_alias="sch") }}
 inner join staff_roster as scw on sec.teachernumber = scw.powerschool_teacher_number
 where
     sec.cc_academic_year = {{ var("current_academic_year") }}

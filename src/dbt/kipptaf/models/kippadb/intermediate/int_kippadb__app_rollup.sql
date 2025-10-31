@@ -361,7 +361,7 @@ with
                     null
                 )
             ) as max_ecc_accepted,
-        from {{ ref("base_kippadb__application") }}
+        from {{ ref("int_kippadb__application") }}
         group by applicant
     )
 

@@ -41,7 +41,7 @@ with
                 and e.cc_schoolid = 179905
                 and e.sections_grade_level = 5,
                 'MS',
-                d.school_level
+                e.school_level
             ) as school_level,
 
             if(
@@ -68,10 +68,6 @@ with
             and a.duedate >= e.cc_dateenrolled
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
             and not e.is_dropped_section
-        left join
-            {{ ref("stg_powerschool__schools") }} as d
-            on e.cc_schoolid = d.school_number
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="d") }}
         left join
             {{ ref("stg_powerschool__assignmentscore") }} as s
             on a.assignmentsectionid = s.assignmentsectionid

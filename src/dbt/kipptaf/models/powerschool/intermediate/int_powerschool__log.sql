@@ -12,11 +12,15 @@ with
     )
 
 select
-    *,
+    lg.*,
+
+    g.name as logtype_name,
 
     {{
         date_to_fiscal_year(
-            date_field="entry_date", start_month=7, year_source="start"
+            date_field="lg.entry_date", start_month=7, year_source="start"
         )
     }} as academic_year,
-from union_relations
+from union_relations as lg
+left join
+    {{ ref("stg_powerschool__gen") }} as g on lg.logtypeid = g.id and g.cat = 'logtype'

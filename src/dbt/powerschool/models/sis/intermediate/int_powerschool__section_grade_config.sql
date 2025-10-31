@@ -50,31 +50,22 @@ with
             sec.sections_dcid,
             sec.sections_schoolid,
             sec.sections_termid,
-
-            sch.dcid as schools_dcid,
-
-            t.yearid,
-            t.abbreviation as term_abbreviation,
+            sec.schools_dcid,
+            sec.terms_yearid as yearid,
+            sec.terms_abbreviation as term_abbreviation,
 
             coalesce(
                 gsec.gradeformulasetid, gsfa.gradeformulasetid, 0
             ) as grade_formula_set_id,
         from {{ ref("base_powerschool__sections") }} as sec
-        inner join
-            {{ ref("stg_powerschool__schools") }} as sch
-            on sec.sections_schoolid = sch.school_number
-        inner join
-            {{ ref("stg_powerschool__terms") }} as t
-            on sec.sections_termid = t.id
-            and sec.sections_schoolid = t.schoolid
         left join
             {{ ref("stg_powerschool__gradesectionconfig") }} as gsec
             on sec.sections_dcid = gsec.sectionsdcid
             and gsec.type = 'Admin'
         left join
             school_config as gsfa
-            on sch.dcid = gsfa.schoolsdcid
-            and t.yearid = gsfa.yearid
+            on sec.schools_dcid = gsfa.schoolsdcid
+            and sec.terms_yearid = gsfa.yearid
         where
             /* PTP */
             sec.sections_gradebooktype = 2
