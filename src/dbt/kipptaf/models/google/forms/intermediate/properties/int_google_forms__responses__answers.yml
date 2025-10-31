@@ -1,0 +1,22 @@
+models:
+  - name: int_google_forms__responses__answers
+    config:
+      enabled: false
+    columns:
+      - name: form_id
+        data_type: string
+      - name: response_id
+        data_type: string
+      - name: question_id
+        data_type: string
+      - name: grade__score
+        data_type: float64
+      - name: grade__correct
+        data_type: boolean
+      - name: grade__feedback__text
+        data_type: string
+      - name: text_answers
+        data_type: STRUCT<answers ARRAY<STRUCT<value STRING>>>
+      - name: file_upload_answers
+        data_type: |
+          STRUCT<answers ARRAY<STRUCT<fileId STRING, fileName STRING, mimeType STRING>>>

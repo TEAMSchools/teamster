@@ -1,6 +1,7 @@
 models:
   - name: int_extracts__student_enrollments_subjects
     config:
+      materialized: table
       contract:
         enforced: false
     data_tests:
@@ -177,6 +178,8 @@ models:
       - name: iep_status
         data_type: string
       - name: state_studentnumber
+        data_type: string
+      - name: secondary_state_studentnumber
         data_type: string
       - name: met_fafsa_requirement
         data_type: boolean

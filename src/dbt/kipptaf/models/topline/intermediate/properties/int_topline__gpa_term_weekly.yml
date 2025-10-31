@@ -1,0 +1,4 @@
+models:
+  - name: int_topline__gpa_term_weekly
+    config:
+      materialized: table

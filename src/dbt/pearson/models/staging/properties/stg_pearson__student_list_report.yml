@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_pearson__student_list_report
-    config:
-      contract:
-        enforced: true
     columns:
       - name: state_student_identifier
         data_type: int64

@@ -48,5 +48,11 @@ with
         from {{ source("powerschool_sftp", "src_powerschool__terms") }}
     )
 
-select *, yearid + 1990 as academic_year, yearid + 1991 as fiscal_year,
+select
+    *,
+
+    yearid + 1990 as academic_year,
+    yearid + 1991 as fiscal_year,
+
+    if(abbreviation in ('Q1', 'Q2'), 'S1', 'S2') as semester,
 from terms

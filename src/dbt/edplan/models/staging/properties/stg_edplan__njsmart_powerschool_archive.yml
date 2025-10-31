@@ -1,10 +1,7 @@
-version: 2
 models:
   - name: stg_edplan__njsmart_powerschool_archive
     config:
       enabled: false
-      contract:
-        enforced: true
     columns:
       - name: academic_year
         data_type: int64

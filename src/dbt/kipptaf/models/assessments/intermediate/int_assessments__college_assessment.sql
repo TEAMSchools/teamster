@@ -1,25 +1,5 @@
 with
-    scores as (
-        select
-            powerschool_student_number as student_number,
-            administration_round,
-            academic_year,
-            latest_psat_date as test_date,
-            test_type as scope,
-            test_subject as subject_area,
-            course_discipline,
-            score_type,
-            score as scale_score,
-            rn_highest,
-
-            format_date('%B', latest_psat_date) as test_month,
-            'Official' as test_type,
-            null as salesforce_id,
-
-        from {{ ref("int_collegeboard__psat_unpivot") }}
-
-        union all
-
+    score_union as (
         select
             school_specific_id as student_number,
             administration_round,
@@ -31,10 +11,11 @@ with
             score_type,
             score as scale_score,
             rn_highest,
-
-            format_date('%B', `date`) as test_month,
-            'Official' as test_type,
             contact as salesforce_id,
+
+            count(*) over (
+                partition by school_specific_id, test_type, `date`
+            ) as row_count_by_test_date,
 
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
@@ -52,6 +33,59 @@ with
                 'sat_math',
                 'sat_ebrw'
             )
+
+        union all
+
+        select
+            powerschool_student_number as student_number,
+            administration_round,
+            academic_year,
+            latest_psat_date as test_date,
+            test_type as scope,
+            test_subject as subject_area,
+            course_discipline,
+            score_type,
+            score as scale_score,
+            rn_highest,
+
+            cast(null as string) as salesforce_id,
+
+            count(*) over (
+                partition by powerschool_student_number, test_type, latest_psat_date
+            ) as row_count_by_test_date,
+
+        from {{ ref("int_collegeboard__psat_unpivot") }}
+    ),
+
+    scores as (
+        select
+            *,
+
+            if(
+                subject_area in ('Composite', 'Combined'), 'Total', subject_area
+            ) as aligned_subject_area,
+
+            mod(
+                cast(
+                    avg(row_count_by_test_date) over (
+                        partition by student_number, scope
+                    ) as numeric
+                ),
+                1
+            )
+            != 0 as is_multirow,
+
+            max(scale_score) over (
+                partition by student_number, score_type order by test_date asc
+            ) as running_max_scale_score,
+
+            {{
+                dbt_utils.generate_surrogate_key(
+                    ["student_number", "score_type", "test_date"]
+                )
+            }} as surrogate_key,
+
+        from score_union
     ),
 
     growth as (
@@ -63,7 +97,7 @@ with
             scale_score,
 
             scale_score - lag(scale_score) over (
-                partition by student_number, scope order by test_date
+                partition by student_number, scope order by test_date asc
             ) as previous_total_score_change,
 
         from scores
@@ -71,7 +105,13 @@ with
     ),
 
     max_score as (
-        select student_number, scope, score_type, avg(scale_score) as max_scale_score,
+        select
+            student_number,
+            scope,
+            score_type,
+            is_multirow,
+
+            avg(scale_score) as max_scale_score,
 
         from scores
         where
@@ -82,7 +122,7 @@ with
                 'sat_reading_test_score'
             )
             and rn_highest = 1
-        group by student_number, scope, score_type
+        group by student_number, scope, score_type, is_multirow
     ),
 
     max_total_score as (
@@ -116,167 +156,109 @@ with
                 'psat10_total',
                 'psatnmsqt_total'
             )
+            and not is_multirow
         group by student_number, scope
     ),
 
-    running_max_score as (
+    score_calcs as (
         select
-            student_number,
-            academic_year,
-            scope,
-            score_type,
-            test_date,
+            s.*,
 
-            max(scale_score) over (
-                partition by student_number, score_type order by test_date
-            ) as running_max_scale_score,
+            m.max_scale_score,
 
-        from scores
-        where test_date is not null
-    ),
+            g.previous_total_score_change,
 
-    dedup_running_max_score as (
-        {{
-            dbt_utils.deduplicate(
-                relation="running_max_score",
-                partition_by="student_number,score_type,test_date",
-                order_by="student_number",
-            )
-        }}
-    ),
+            round(coalesce(d.superscore, a.superscore), 0) as superscore,
 
-    -- trunk-ignore(sqlfluff/ST03)
-    running_superscore as (
-        select
-            student_number,
-            scope,
-            test_date,
-
-            round(
+            avg(
                 if(
-                    scope = 'ACT',
-                    avg(running_max_scale_score) over (
-                        partition by student_number, test_date
+                    s.score_type in (
+                        'act_composite',
+                        'sat_total_score',
+                        'psat89_total',
+                        'psat10_total',
+                        'psatnmsqt_total',
+                        'sat_reading_test_score',
+                        'sat_math_test_score',
+                        'psat10_reading',
+                        'psat10_math_test'
                     ),
-                    sum(running_max_scale_score) over (
-                        partition by student_number, test_date
-                    )
-                ),
-                0
-            ) as runnning_superscore,
+                    null,
+                    s.running_max_scale_score
+                )
+            ) over (partition by s.student_number, s.scope, s.test_date)
+            as avg_running_max_superscore,
 
-        from running_max_score
-        where
-            score_type not in (
-                'act_composite',
-                'sat_total_score',
-                'psat89_total',
-                'psat10_total',
-                'psatnmsqt_total'
-            )
-    ),
+            sum(
+                if(
+                    s.score_type in (
+                        'act_composite',
+                        'sat_total_score',
+                        'psat89_total',
+                        'psat10_total',
+                        'psatnmsqt_total',
+                        'sat_reading_test_score',
+                        'sat_math_test_score',
+                        'psat10_reading',
+                        'psat10_math_test'
+                    ),
+                    null,
+                    s.running_max_scale_score
+                )
+            ) over (partition by s.student_number, s.scope, s.test_date)
+            as sum_running_max_superscore,
 
-    dedup_runnning_superscore as (
-        {{
-            dbt_utils.deduplicate(
-                relation="running_superscore",
-                partition_by="student_number,scope,test_date",
-                order_by="student_number",
-            )
-        }}
+        from scores as s
+        left join
+            max_score as m
+            on s.student_number = m.student_number
+            and s.score_type = m.score_type
+        left join
+            max_total_score as d
+            on s.student_number = d.student_number
+            and s.scope = d.scope
+        left join
+            alt_superscore as a
+            on s.student_number = a.student_number
+            and s.scope = a.scope
+        left join
+            growth as g
+            on s.student_number = g.student_number
+            and s.scope = g.scope
+            and s.test_date = g.test_date
+            and g.previous_total_score_change is not null
     )
 
 select
-    s.*,
+    *,
 
-    m.max_scale_score,
-
-    dm.running_max_scale_score,
-
-    g.previous_total_score_change,
-
-    unix_date(s.test_date) as date_order,
-
-    concat(
-        'SY',
-        right(cast(s.academic_year as string), 2),
-        ' ',
-        s.test_month,
-        ' ',
-        s.scope,
-        ' ',
-        s.test_type,
-        ' ',
-        s.subject_area
-    ) as field_name,
-
-    round(coalesce(d.superscore, a.superscore), 0) as superscore,
-
-    round(coalesce(dr.runnning_superscore, a.superscore), 0) as running_superscore,
-
-    if(
-        s.subject_area in ('Composite', 'Combined'), 'Total', s.subject_area
-    ) as aligned_subject_area,
+    'Official' as test_type,
 
     case
-        s.scope
-        when 'SAT'
-        then 5
-        when 'ACT'
-        then 4
-        when 'PSAT NMSQT'
-        then 3
-        when 'PSAT10'
-        then 2
-        when 'PSAT 8/9'
-        then 1
-    end as scope_order,
+        when
+            score_type in (
+                'act_reading',
+                'sat_ebrw',
+                'psat10_ebrw',
+                'psatnmsqt_ebrw',
+                'psat89_ebrw'
+            )
+        then 'EBRW/Reading'
+        when aligned_subject_area = 'Total'
+        then 'Total'
+        else subject_area
+    end as aligned_subject,
 
-    case
-        when s.subject_area = 'Combined'
-        then 3
-        when s.subject_area = 'Composite'
-        then 5
-        when s.subject_area = 'EBRW'
-        then 2
-        when s.subject_area = 'Science'
-        then 1
-        when s.subject_area = 'English'
-        then 2
-        when s.subject_area = 'Reading'
-        then 4
-        when concat(s.scope, s.subject_area) = 'ACTMath'
-        then 3
-        else 1
-    end as subject_area_order,
+    format_date('%B', test_date) as test_month,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            ["s.student_number", "s.test_type", "s.score_type", "s.test_date"]
-        )
-    }} as surrogate_key,
-from scores as s
-left join
-    max_score as m
-    on s.student_number = m.student_number
-    and s.score_type = m.score_type
-left join
-    dedup_running_max_score as dm
-    on s.student_number = dm.student_number
-    and s.test_date = dm.test_date
-    and s.score_type = dm.score_type
-left join
-    max_total_score as d on s.student_number = d.student_number and s.scope = d.scope
-left join
-    dedup_runnning_superscore as dr
-    on s.student_number = dr.student_number
-    and s.scope = dr.scope
-    and s.test_date = dr.test_date
-left join
-    alt_superscore as a on s.student_number = a.student_number and s.scope = a.scope
-left join
-    growth as g
-    on s.student_number = g.student_number
-    and s.scope = g.scope
-    and s.test_date = g.test_date
-    and g.previous_total_score_change is not null
+    round(
+        case
+            when scope = 'ACT'
+            then avg_running_max_superscore
+            when scope = 'SAT'
+            then sum_running_max_superscore
+        end,
+        0
+    ) as runnning_superscore,
+
+from score_calcs

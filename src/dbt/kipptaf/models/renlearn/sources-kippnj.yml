@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: kippnj_renlearn
     schema: kippnewark_renlearn

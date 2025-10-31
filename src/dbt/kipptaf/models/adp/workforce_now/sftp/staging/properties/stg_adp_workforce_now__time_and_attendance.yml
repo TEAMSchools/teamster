@@ -1,10 +1,5 @@
-version: 2
-
 models:
   - name: stg_adp_workforce_now__time_and_attendance
-    config:
-      contract:
-        enforced: true
     columns:
       - name: position_id
         data_type: string

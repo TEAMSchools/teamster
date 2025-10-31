@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: int_deanslist__incidents__penalties
-    config:
-      contract:
-        enforced: true
     columns:
       - name: hearing_flag
         data_type: boolean

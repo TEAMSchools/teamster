@@ -1,0 +1,4 @@
+models:
+  - name: int_students__attendance_interventions_rollup
+    config:
+      materialized: ephemeral

@@ -1,10 +1,9 @@
-version: 2
-
 sources:
   - name: google_appsheet
     schema: "{{ project_name }}_appsheet"
     tables:
-      - name: illuminate_assessments_extension
+      - name: src_google_appsheet__illuminate_assessments_extension
+        identifier: illuminate_assessments_extension
         meta:
           dagster:
             asset_key:
@@ -12,7 +11,7 @@ sources:
               - google
               - appsheet
               - illuminate_assessments_extension
-      - name: src_leadership_development__active_users
+      - name: src_google_appsheet__leadership_development__active_users
         identifier: src_leadership_development_active_users
         meta:
           dagster:
@@ -21,7 +20,7 @@ sources:
               - google
               - appsheet
               - src_leadership_development__active_users
-      - name: src_leadership_development__output
+      - name: src_google_appsheet__leadership_development__output
         identifier: src_leadership_development_output
         meta:
           dagster:
@@ -30,7 +29,8 @@ sources:
               - google
               - appsheet
               - src_leadership_development__output
-      - name: src_seat_tracker__log_archive
+      - name: src_google_appsheet__seat_tracker__log_archive
+        identifier: src_seat_tracker__log_archive
         meta:
           dagster:
             asset_key:
@@ -38,7 +38,8 @@ sources:
               - google
               - appsheet
               - src_seat_tracker__log_archive
-      - name: src_seat_tracker__seats
+      - name: src_google_appsheet__seat_tracker__seats
+        identifier: src_seat_tracker__seats
         meta:
           dagster:
             asset_key:
@@ -46,7 +47,8 @@ sources:
               - google
               - appsheet
               - src_seat_tracker__seats
-      - name: src_teacher_development__observation_archive
+      - name: src_google_appsheet__teacher_development__observation_archive
+        identifier: src_teacher_development__observation_archive
         meta:
           dagster:
             asset_key:
@@ -54,7 +56,8 @@ sources:
               - google
               - appsheet
               - src_teacher_development__observation_archive
-      - name: src_teacher_development__observation_details_archive
+      - name: src_google_appsheet__teacher_development__observation_details_archive
+        identifier: src_teacher_development__observation_details_archive
         meta:
           dagster:
             asset_key:
@@ -62,7 +65,8 @@ sources:
               - google
               - appsheet
               - src_teacher_development__observation_details_archive
-      - name: src_stipend_bonus_app__output
+      - name: src_google_appsheet__stipend_bonus_app__output
+        identifier: src_stipend_bonus_app__output
         meta:
           dagster:
             asset_key:
@@ -70,7 +74,8 @@ sources:
               - google
               - appsheet
               - src_stipend_bonus_app__output
-      - name: src_seat_tracker__people
+      - name: src_google_appsheet__seat_tracker__people
+        identifier: src_seat_tracker__people
         meta:
           dagster:
             asset_key:

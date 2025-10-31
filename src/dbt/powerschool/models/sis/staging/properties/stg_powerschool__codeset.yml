@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__codeset
-    config:
-      contract:
-        enforced: true
     columns:
       - name: codesetid
         data_type: int64

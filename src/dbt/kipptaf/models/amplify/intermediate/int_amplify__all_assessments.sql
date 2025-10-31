@@ -35,7 +35,7 @@ with
 
         from {{ ref("int_amplify__mclass__benchmark_student_summary") }} as bss
         inner join
-            {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
+            {{ ref("int_amplify__mclass__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
         inner join
             {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
@@ -86,7 +86,7 @@ with
             e.end_date,
             e.matching_pm_season as matching_season,
 
-        from {{ source("amplify", "int_amplify__dibels_data_farming_unpivot") }} as df
+        from {{ source("amplify", "int_amplify__dds__data_farming_unpivot") }} as df
         inner join
             {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
             on df.academic_year = e.academic_year

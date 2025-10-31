@@ -73,9 +73,6 @@ with
             co.ethnicity,
             co.year_in_network,
             co.is_self_contained,
-            co.dibels_most_recent_composite,
-            co.state_test_proficiency,
-            co.is_exempt_iready,
             co.team as homeroom_section,
             co.advisor_teachernumber as homeroom_teachernumber,
             co.advisor_lastfirst as homeroom_teacher_name,
@@ -85,21 +82,18 @@ with
             co.status_504,
             co.self_contained_status,
             co.gifted_and_talented,
-            co.nj_student_tier,
             co.is_sipps,
-            co.is_low_25_fl,
             co.week_start_monday,
             co.week_end_sunday,
             co.date_count as days_in_session,
             co.quarter as term,
             co.is_current_week_mon_sun as is_current_week,
 
-            sc.title,
-            sc.subject_area,
-            sc.administered_at,
-            sc.module_type,
-            sc.module_code,
-
+            r.title,
+            r.subject_area,
+            r.administered_at,
+            r.module_type,
+            r.module_code,
             r.date_taken,
             r.response_type,
             r.response_type_code,
@@ -121,6 +115,12 @@ with
             cc.teacher_lastfirst as course_teacher_name,
             cc.is_foundations,
 
+            sf.dibels_most_recent_composite,
+            sf.state_test_proficiency,
+            sf.is_exempt_iready,
+            sf.nj_student_tier,
+            sf.is_low_25_fl,
+
             cast(r.assessment_id as string) as assessment_id,
 
             if(r.date_taken is not null, 1, 0) as is_complete,
@@ -128,17 +128,13 @@ with
             case
                 when r.is_mastery then 1 when not r.is_mastery then 0
             end as is_mastery_int,
-        from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as co
-        left join
-            {{ ref("int_assessments__scaffold") }} as sc
-            on co.student_number = sc.powerschool_student_number
-            and co.academic_year = sc.academic_year
-            and co.region = sc.region
-            and sc.administered_at between co.week_start_monday and co.week_end_sunday
+        from {{ ref("int_extracts__student_enrollments_weeks") }} as co
         left join
             {{ ref("int_assessments__response_rollup") }} as r
-            on sc.powerschool_student_number = r.powerschool_student_number
-            and sc.assessment_id = r.assessment_id
+            on co.student_number = r.powerschool_student_number
+            and co.academic_year = r.academic_year
+            and co.region = r.region
+            and r.administered_at between co.week_start_monday and co.week_end_sunday
         left join
             {{ ref("stg_google_sheets__assessments__standard_domains") }} as sd
             on r.response_type_code = sd.standard_code
@@ -146,19 +142,24 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
             and co.yearid = cc.cc_yearid
-            and co.powerschool_credittype = cc.courses_credittype
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
             and r.subject_area = cc.illuminate_subject_area
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
+        left join
+            {{ ref("int_extracts__student_enrollments_subjects") }} as sf
+            on co.student_number = sf.student_number
+            and co.academic_year = sf.academic_year
+            and cc.courses_credittype = sf.powerschool_credittype
+            and sf.rn_year = 1
         where
             co.enroll_status = 0
             and co.is_enrolled_week_end
             and not co.is_out_of_district
-            and co.academic_year >= {{ var("current_academic_year") - 2 }}
+            and co.academic_year >= {{ var("current_academic_year") - 1 }}
             {# TODO: Remove SY26 #}
             /* Manual filter to avoid dashboard roll-up */
-            and sc.module_type != 'WPP'
+            and r.module_type != 'WPP'
     ),
 
     microgoals_long as (

@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_pearson__student_test_update
-    config:
-      contract:
-        enforced: true
     columns:
       - name: accountable_district_code
         data_type: string

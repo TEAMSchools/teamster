@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: stg_powerschool__gpprogresssubjectearned
     columns:
@@ -17,6 +16,6 @@ models:
       - name: storedgradesdcid
         data_type: int64
       - name: earnedcredits
-        data_type: numeric
+        data_type: float64
       - name: percentgrade
-        data_type: numeric
+        data_type: float64

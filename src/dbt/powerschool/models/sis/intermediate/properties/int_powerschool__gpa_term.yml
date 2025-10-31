@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_powerschool__gpa_term
     columns:

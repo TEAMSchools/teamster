@@ -1,5 +1,3 @@
-{{ config(materialized="table") }}
-
 with
     esms_grad as (
         select
@@ -161,6 +159,10 @@ select
     ) as self_contained_status,
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
+    -- added this temporarily because we dont have alignment on ids
+    if(
+        e.region = 'Miami', e.state_studentnumber, null
+    ) as secondary_state_studentnumber,
 
     /* starting SY26, HS uses weighted ADA */
     if(

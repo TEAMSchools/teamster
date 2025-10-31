@@ -1,5 +1,3 @@
-{{ config(materialized="view") }}
-
 {% set relations = dbt_utils.get_relations_by_prefix(
     schema=generate_schema_name("illuminate"),
     prefix="stg_illuminate__dna_repositories__repository_",
@@ -88,4 +86,3 @@ inner join
     -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_429") }}
     -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_427") }}
     -- depends_on: {{ ref("stg_illuminate__dna_repositories__repository_426") -}}
-    

@@ -1,5 +1,3 @@
-{{ config(materialized="ephemeral") }}
-
 select
     student_number,
     academic_year,

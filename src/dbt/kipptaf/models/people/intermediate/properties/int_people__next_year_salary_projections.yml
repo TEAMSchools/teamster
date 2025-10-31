@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_people__next_year_salary_projections
     columns:

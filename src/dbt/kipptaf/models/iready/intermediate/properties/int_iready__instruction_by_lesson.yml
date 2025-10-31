@@ -1,6 +1,8 @@
-version: 2
 models:
   - name: int_iready__instruction_by_lesson
+    config:
+      contract:
+        enforced: true
     columns:
       - name: school
         data_type: string

@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_surveys__staff_info_archive_unpivot
     config:

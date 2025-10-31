@@ -3,7 +3,8 @@ with
     roster as (select *, from {{ ref("rpt_appsheet__leadership_development_roster") }}),
 
     active_users as (
-        select *, from {{ ref("stg_leadership_development__active_users") }}
+        select *,
+        from {{ ref("stg_google_appsheet__leadership_development__active_users") }}
     ),
 
     leader_pm_participants as (
@@ -32,7 +33,7 @@ with
                 when column_name like '%eoy%'
                 then 'EOY'
             end as term
-        from {{ ref("stg_leadership_development__output") }} as o
+        from {{ ref("stg_google_appsheet__leadership_development__output") }} as o
         cross join
             unnest(
                 [
