@@ -87,6 +87,7 @@ class UserPerson(BaseModel):
     msExchArchiveStatus: int | None = None
     msExchBlockedSendersHash: bytes | None = None
     msExchCoManagedObjectsBL: str | None = None
+    msExchDisabledArchiveGUID: bytes | None = None
     msExchHideFromAddressLists: bool | None = None
     msExchHomeServerName: str | None = None
     msExchMailboxGuid: bytes | None = None
@@ -107,6 +108,7 @@ class UserPerson(BaseModel):
     msExchRemoteRecipientType: int | None = None
     msExchSafeRecipientsHash: bytes | None = None
     msExchSafeSendersHash: bytes | None = None
+    msExchTransportRecipientSettingsFlags: int | None = None
     msExchUMDtmfMap: str | None = None
     msExchUserAccountControl: int | None = None
     msExchUserCulture: str | None = None
