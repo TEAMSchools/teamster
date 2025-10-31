@@ -10,6 +10,7 @@ from teamster.code_locations.kippnewark import (
     CODE_LOCATION,
     DBT_PROJECT,
     _dbt,
+    amplify,
     couchdrop,
     deanslist,
     edplan,
@@ -32,6 +33,7 @@ from teamster.core.resources import (
     SSH_EDPLAN,
     SSH_IREADY,
     SSH_RENLEARN,
+    SSH_RESOURCE_AMPLIFY,
     SSH_TITAN,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,
@@ -45,6 +47,7 @@ defs = Definitions(
     assets=load_assets_from_modules(
         modules=[
             _dbt,
+            amplify,
             extracts,
             deanslist,
             edplan,
@@ -63,6 +66,7 @@ defs = Definitions(
         *powerschool.schedules,
     ],
     sensors=[
+        *amplify.sensors,
         *couchdrop.sensors,
         *edplan.sensors,
         *iready.sensors,
@@ -85,6 +89,7 @@ defs = Definitions(
         "io_manager_gcs_file": get_io_manager_gcs_file(CODE_LOCATION),
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "overgrad": OVERGRAD_RESOURCE,
+        "ssh_amplify": SSH_RESOURCE_AMPLIFY,
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_edplan": SSH_EDPLAN,
         "ssh_iready": SSH_IREADY,
