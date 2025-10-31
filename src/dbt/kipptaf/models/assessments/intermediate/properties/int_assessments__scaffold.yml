@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: int_assessments__scaffold
+    config:
+      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

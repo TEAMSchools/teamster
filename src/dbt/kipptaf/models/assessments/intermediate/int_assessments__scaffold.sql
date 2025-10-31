@@ -1,5 +1,3 @@
-{{ config(materialized="table") }}
-
 with
     assessment_region_scaffold as (
         select

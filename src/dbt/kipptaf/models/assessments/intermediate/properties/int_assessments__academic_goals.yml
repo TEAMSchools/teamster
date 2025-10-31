@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_assessments__academic_goals
     columns:

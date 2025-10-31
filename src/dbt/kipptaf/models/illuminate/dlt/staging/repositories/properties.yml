@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: stg_illuminate__dna_repositories__repository_472
   - name: stg_illuminate__dna_repositories__repository_471

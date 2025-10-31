@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: illuminate_codes
     schema: dagster_kipptaf_dlt_illuminate_codes

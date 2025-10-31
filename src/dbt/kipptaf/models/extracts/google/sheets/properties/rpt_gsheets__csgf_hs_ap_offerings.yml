@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: rpt_gsheets__csgf_hs_ap_offerings
-    config:
-      contract:
-        enforced: true
     columns:
       - name: school_name
         data_type: string

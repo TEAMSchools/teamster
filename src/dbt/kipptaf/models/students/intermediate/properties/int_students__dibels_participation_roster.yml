@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_students__dibels_participation_roster
     data_tests:

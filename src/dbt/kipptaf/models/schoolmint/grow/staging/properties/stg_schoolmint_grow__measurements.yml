@@ -26,26 +26,6 @@ models:
       - name: archived_at
         data_type: timestamp
       # - name: text_boxes
-      #   data_type: record
-      # - name: text_boxes.key
-      #   data_type: string
-      # - name: text_boxes.label
-      #   data_type: string
-      # - name: text_boxes.value
-      #   data_type: string
+      #   data_type: array
       # - name: measurement_options
-      #   data_type: record
-      # - name: measurement_options.label
-      #   data_type: string
-      # - name: measurement_options.description
-      #   data_type: string
-      # - name: measurement_options.value
-      #   data_type: int64
-      # - name: measurement_options.booleanvalue
-      #   data_type: boolean
-      # - name: measurement_options.created
-      #   data_type: string
-      # - name: measurement_options.percentage
-      #   data_type: float64
-      # - name: measurement_options._id
-      #   data_type: string
+      #   data_type: array

@@ -5,7 +5,8 @@ with
                 relations=[
                     ref("stg_amplify__mclass__sftp__pm_student_summary"),
                     source("amplify", "stg_amplify__mclass__api__pm_student_summary"),
-                ]
+                ],
+                source_column_name="_dbt_source_relation_2",
             )
         }}
     ),

@@ -16,16 +16,6 @@ models:
       - name: value_text
         data_type: string
       - name: text_boxes
-        data_type: record
-      - name: text_boxes.key
-        data_type: string
-      - name: text_boxes.label
-        data_type: string
-      - name: text_boxes.value
-        data_type: string
+        data_type: array
       - name: checkboxes
-        data_type: record
-      - name: checkboxes.label
-        data_type: string
-      - name: checkboxes.value
-        data_type: boolean
+        data_type: array

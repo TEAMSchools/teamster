@@ -15,10 +15,12 @@ on:
       - .github/workflows/deploy-prod-kipppaterson.yaml
       - Dockerfile
       - uv.lock
+      - src/dbt/amplify/**
       - src/dbt/kipppaterson/**
       - src/dbt/powerschool/**
       - src/teamster/code_locations/kipppaterson/**
       - src/teamster/core/**
+      - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/powerschool/sis/sftp/**
@@ -32,6 +34,7 @@ on:
       - uv.lock
       - src/teamster/code_locations/kipppaterson/**
       - src/teamster/core/**
+      - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/powerschool/sis/sftp/**

@@ -20,7 +20,6 @@ on:
       - src/teamster/core/**
       - src/teamster/libraries/adp/**
       - src/teamster/libraries/airbyte/**
-      - src/teamster/libraries/amplify/**
       - src/teamster/libraries/collegeboard/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/coupa/**
@@ -50,7 +49,6 @@ on:
       - src/teamster/core/**
       - src/teamster/libraries/adp/**
       - src/teamster/libraries/airbyte/**
-      - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/coupa/**
       - src/teamster/libraries/dbt/**

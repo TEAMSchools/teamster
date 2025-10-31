@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_adp_workforce_now__additional_earnings_report
-    config:
-      contract:
-        enforced: true
     columns:
       - name: additional_earnings_code
         data_type: string

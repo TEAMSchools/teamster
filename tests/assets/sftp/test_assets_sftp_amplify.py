@@ -1,13 +1,23 @@
 import random
 
-from dagster import AssetsDefinition, materialize
+from dagster import AssetsDefinition, EnvVar, materialize
 
 
 def _test_asset(
-    asset: AssetsDefinition, partition_key: str | None = None, instance=None
+    code_location: str,
+    asset: AssetsDefinition,
+    partition_key: str | None = None,
+    instance=None,
 ):
-    from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_AMPLIFY
     from teamster.core.resources import get_io_manager_gcs_avro
+    from teamster.libraries.ssh.resources import SSHResource
+
+    SSH_RESOURCE_AMPLIFY = SSHResource(
+        remote_host=EnvVar("AMPLIFY_SFTP_HOST"),
+        remote_port=22,
+        username=EnvVar(f"AMPLIFY_SFTP_USERNAME_{code_location.upper()}"),
+        password=EnvVar(f"AMPLIFY_SFTP_PASSWORD_{code_location.upper()}"),
+    )
 
     if partition_key is None and asset.partitions_def is not None:
         partition_keys = asset.partitions_def.get_partition_keys()
@@ -37,16 +47,32 @@ def _test_asset(
 
 
 def test_amplify_mclass_benchmark_student_summary_kipptaf():
-    from teamster.code_locations.kipptaf.amplify.mclass.sftp.assets import (
+    from teamster.code_locations.kippnewark.amplify.mclass.sftp.assets import (
         benchmark_student_summary,
     )
 
-    _test_asset(asset=benchmark_student_summary)
+    _test_asset(code_location="kipptaf", asset=benchmark_student_summary)
 
 
 def test_amplify_mclass_pm_student_summary_kipptaf():
-    from teamster.code_locations.kipptaf.amplify.mclass.sftp.assets import (
+    from teamster.code_locations.kippnewark.amplify.mclass.sftp.assets import (
         pm_student_summary,
     )
 
-    _test_asset(asset=pm_student_summary)
+    _test_asset(code_location="kipptaf", asset=pm_student_summary)
+
+
+def test_amplify_mclass_benchmark_student_summary_kipppaterson():
+    from teamster.code_locations.kipppaterson.amplify.mclass.sftp.assets import (
+        benchmark_student_summary,
+    )
+
+    _test_asset(code_location="kipppaterson", asset=benchmark_student_summary)
+
+
+def test_amplify_mclass_pm_student_summary_kipppaterson():
+    from teamster.code_locations.kipppaterson.amplify.mclass.sftp.assets import (
+        pm_student_summary,
+    )
+
+    _test_asset(code_location="kipppaterson", asset=pm_student_summary)
