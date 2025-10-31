@@ -179,23 +179,6 @@ with
             )
     ),
 
-    ps_log as (
-        select
-            lg._dbt_source_relation,
-            lg.studentid,
-            lg.academic_year,
-            lg.entry_date,
-            lg.entry,
-
-            g.name,
-        from {{ ref("stg_powerschool__log") }} as lg
-        inner join
-            {{ ref("stg_powerschool__gen") }} as g
-            on lg.logtypeid = g.id
-            and g.cat = 'logtype'
-            and g.name in ('Exempt from retention', 'Retain without criteria')
-    ),
-
     exempt_override as (
         select
             _dbt_source_relation,
@@ -208,8 +191,8 @@ with
                 partition by _dbt_source_relation, studentid, academic_year
                 order by entry_date desc
             ) as rn_log,
-        from ps_log
-        where name = 'Exempt from retention'
+        from {{ ref("int_powerschool__log") }}
+        where logtype_name = 'Exempt from retention'
     ),
 
     force_retention as (
@@ -224,8 +207,8 @@ with
                 partition by _dbt_source_relation, studentid, academic_year
                 order by entry_date desc
             ) as rn_log,
-        from ps_log
-        where name = 'Retain without criteria'
+        from {{ ref("int_powerschool__log") }}
+        where logtype_name = 'Retain without criteria'
     ),
 
     promo as (
