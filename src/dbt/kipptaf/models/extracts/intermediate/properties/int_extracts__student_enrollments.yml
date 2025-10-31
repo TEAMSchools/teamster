@@ -426,7 +426,7 @@ models:
         data_type: string
       - name: salesforce_contact_id
         data_type: string
-      - name: has_fafsa
+      - name: salesforce_contact_has_fafsa
         data_type: string
       - name: salesforce_contact_college_match_gpa
         data_type: numeric
@@ -542,3 +542,25 @@ models:
         data_type: string
       - name: ada_above_or_at_80
         data_type: boolean
+      - name: district_entry_date
+        data_type: date
+      - name: ela_state_assessment_name
+        data_type: string
+      - name: entry_school_abbreviation
+        data_type: string
+      - name: fafsa
+        data_type: string
+      - name: math_state_assessment_name
+        data_type: string
+      - name: racecd_agg
+        data_type: string
+      - name: school_calendar_days_remaining
+        data_type: int64
+      - name: school_calendar_days_total
+        data_type: int64
+      - name: school_assistant_principal
+        data_type: string
+      - name: school_phone
+        data_type: string
+      - name: school_principal
+        data_type: string

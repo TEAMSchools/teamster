@@ -42,9 +42,9 @@ select
     adb.contact_graduation_year as salesforce_contact_graduation_year,
     adb.contact_college_match_display_gpa as salesforce_contact_college_match_gpa,
     adb.contact_owner_id as salesforce_contact_owner_id,
-    adb.contact_owner_phone as salesforce_contact_owner_phone,
-    adb.contact_owner_email as salesforce_contact_owner_email,
     adb.contact_owner_name as salesforce_contact_owner_name,
+    adb.contact_owner_email as salesforce_contact_owner_email,
+    adb.contact_owner_phone as salesforce_contact_owner_phone,
 
     ovg.best_guess_pathway,
 
@@ -101,7 +101,10 @@ select
         e.region = 'Miami', e.spedlep, sped.special_education_code
     ) as special_education_code,
 
-    if(adb.contact_latest_fafsa_date is not null, 'Yes', 'No') as has_fafsa,
+    if(
+        adb.contact_latest_fafsa_date is not null, 'Yes', 'No'
+    ) as salesforce_contact_has_fafsa,
+
     if(
         adb.contact_latest_fafsa_date is not null or ovg.fafsa_opt_out is not null,
         true,
