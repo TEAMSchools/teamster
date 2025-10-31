@@ -98,37 +98,22 @@ with
             and se.rn_year = 1
     ),
 
-    cc_lag as (
-        select
-            _dbt_source_relation,
-            studyear,
-            course_number,
-            dateleft,
-
-            lag(dateleft) over (
-                partition by _dbt_source_relation, studyear, course_number
-                order by dateleft asc
-            ) as dateleft_prev,
-        from {{ ref("stg_powerschool__cc") }}
-        where course_number != 'LOG300'
-    ),
-
     enr_dupes as (
         select
-            cc._dbt_source_relation,
-            cc.cc_academic_year,
-            cc.cc_course_number,
-            cc.cc_dateenrolled,
-            cc.cc_dateleft,
-            cc.sections_section_number,
-            cc.students_student_number,
-        from {{ ref("base_powerschool__course_enrollments") }} as cc
-        inner join
-            cc_lag as cco
-            on cc.cc_studyear = cco.studyear
-            and cc.cc_course_number = cco.course_number
-            and {{ union_dataset_join_clause(left_alias="cc", right_alias="cco") }}
-            and cco.dateleft <= cco.dateleft_prev
+            _dbt_source_relation,
+            cc_academic_year,
+            cc_course_number,
+            cc_dateenrolled,
+            cc_dateleft,
+            sections_section_number,
+            students_student_number,
+
+            lag(cc_dateleft) over (
+                partition by _dbt_source_relation, cc_studyear, cc_course_number
+                order by cc_dateleft asc
+            ) as dateleft_prev,
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where cc_course_number != 'LOG300'
     )
 
 select
@@ -316,4 +301,5 @@ inner join
     on se.student_number = ceo.students_student_number
     and se.academic_year = ceo.cc_academic_year
     and {{ union_dataset_join_clause(left_alias="se", right_alias="ceo") }}
+    and ceo.cc_dateleft <= ceo.dateleft_prev
 where se.enroll_status = 0
