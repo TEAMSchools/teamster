@@ -24,6 +24,12 @@ with
         }}
     ),
 
+    studentrace_agg as (
+        select _dbt_source_relation, studentid, string_agg(racecd) as racecd_agg,
+        from {{ ref("stg_powerschool__studentrace") }}
+        group by studentid, _dbt_source_relation
+    ),
+
     esms_grad as (
         select
             _dbt_source_relation,
@@ -60,41 +66,15 @@ with
 select
     ar.* except (lep_status),
 
-    /* regional differences */
-    suf.fleid,
-    suf.newark_enrollment_number,
-    suf.infosnap_id,
-    suf.infosnap_opt_in,
-    suf.media_release,
-    suf.rides_staff,
-
-    njs.districtcoderesident,
-    njs.referral_date,
-    njs.parental_consent_eval_date,
-    njs.eligibility_determ_date,
-    njs.initial_iep_meeting_date,
-    njs.parent_consent_intial_iep_date,
-    njs.annual_iep_review_meeting_date,
-    njs.reevaluation_date,
-    njs.parent_consent_obtain_code,
-    njs.initial_process_delay_reason,
-    njs.special_education_placement,
-    njs.time_in_regular_program,
-    njs.early_intervention_yn,
-    njs.determined_ineligible_yn,
-    njs.counseling_services_yn,
-    njs.occupational_therapy_serv_yn,
-    njs.physical_therapy_services_yn,
-    njs.speech_lang_theapy_services_yn,
-    njs.other_related_services_yn,
-    njs.lepbegindate,
-    njs.lependdate,
-    njs.lep_tf,
-    njs.liep_parent_refusal_date,
-    njs.programtypecode,
-    njs.home_language,
+    ns.abbreviation as entry_school_abbreviation,
 
     se.email,
+
+    pfs.fafsa,
+
+    de.district_entry_date,
+
+    r.racecd_agg,
 
     m.school_abbreviation as ms_attended,
 
@@ -127,6 +107,45 @@ select
     gc.earned_credits_cum,
     gc.earned_credits_cum_projected,
     gc.potential_credits_cum,
+
+    cr.days_remaining as school_calendar_days_remaining,
+    cr.days_total as school_calendar_days_total,
+
+    /* regional differences */
+    njs.districtcoderesident,
+    njs.referral_date,
+    njs.parental_consent_eval_date,
+    njs.eligibility_determ_date,
+    njs.initial_iep_meeting_date,
+    njs.parent_consent_intial_iep_date,
+    njs.annual_iep_review_meeting_date,
+    njs.reevaluation_date,
+    njs.parent_consent_obtain_code,
+    njs.initial_process_delay_reason,
+    njs.special_education_placement,
+    njs.time_in_regular_program,
+    njs.early_intervention_yn,
+    njs.determined_ineligible_yn,
+    njs.counseling_services_yn,
+    njs.occupational_therapy_serv_yn,
+    njs.physical_therapy_services_yn,
+    njs.speech_lang_theapy_services_yn,
+    njs.other_related_services_yn,
+    njs.lepbegindate,
+    njs.lependdate,
+    njs.lep_tf,
+    njs.liep_parent_refusal_date,
+    njs.programtypecode,
+    njs.home_language,
+    njs.state_assessment_name as ela_state_assessment_name,
+    njs.math_state_assessment_name,
+
+    suf.fleid,
+    suf.newark_enrollment_number,
+    suf.infosnap_id,
+    suf.infosnap_opt_in,
+    suf.media_release,
+    suf.rides_staff,
 
     coalesce(
         njs.gifted_and_talented, suf.gifted_and_talented, 'N'
@@ -204,9 +223,17 @@ select
     end as ada_above_or_at_80,
 from union_relations as ar
 left join
-    {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-    on ar.students_dcid = suf.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="suf") }}
+    {{ ref("stg_powerschool__schools") }} as ns
+    on ar.entry_schoolid = ns.school_number
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="ns") }}
+left join
+    {{ ref("stg_powerschool__student_email") }} as se
+    on ar.student_number = se.student_number
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="se") }}
+left join
+    {{ ref("stg_powerschool__s_stu_x") }} as pfs
+    on ar.students_dcid = pfs.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="pfs") }}
 left join
     {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
     on ar.students_dcid = njs.studentsdcid
@@ -216,8 +243,14 @@ left join
     on ar.reenrollments_dcid = njr.reenrollmentsdcid
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="njr") }}
 left join
-    {{ ref("stg_powerschool__student_email") }} as se
-    on ar.student_number = se.student_number
+    {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
+    on ar.students_dcid = suf.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="suf") }}
+left join
+    {{ ref("int_powerschool__district_entry_date") }} as de
+    on ar.studentid = de.studentid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="de") }}
+    and de.rn_entry = 1
 left join
     {{ ref("int_powerschool__spenrollments") }} as cs
     on ar.studentid = cs.studentid
@@ -262,6 +295,12 @@ left join
     and ar.schoolid = gc.schoolid
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="gc") }}
 left join
+    {{ ref("int_powerschool__calendar_rollup") }} as cr
+    on ar.schoolid = cr.schoolid
+    and ar.yearid = cr.yearid
+    and ar.track = cr.track
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="cr") }}
+left join
     {{ ref("base_powerschool__course_enrollments") }} as sip
     on ar.student_number = sip.students_student_number
     and ar.academic_year = sip.cc_academic_year
@@ -269,6 +308,10 @@ left join
     and sip.courses_course_number = 'SEM01099G1'
     and sip.rn_course_number_year = 1
     and not sip.is_dropped_section
+left join
+    studentrace_agg as r
+    on ar.studentid = r.studentid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="r") }}
 left join
     esms_grad as m
     on ar.student_number = m.student_number

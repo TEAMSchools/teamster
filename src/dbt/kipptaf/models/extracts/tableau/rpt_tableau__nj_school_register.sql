@@ -33,9 +33,8 @@ select
     co.track,
     co.special_education_placement,
     co.programtypecode,
-
-    d.days_total as n_days_school,
-    d.days_remaining as n_days_remaining,
+    co.school_calendar_days_total as n_days_school,
+    co.school_calendar_days_remaining as n_days_remaining,
 
     sub.n_mem,
     sub.n_att,
@@ -49,10 +48,4 @@ inner join
     on co.studentid = sub.studentid
     and co.yearid = sub.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sub") }}
-left join
-    {{ ref("int_powerschool__calendar_rollup") }} as d
-    on co.schoolid = d.schoolid
-    and co.yearid = d.yearid
-    and co.track = d.track
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="d") }}
 where co.rn_year = 1 and co.region != 'Miami' and co.grade_level != 99

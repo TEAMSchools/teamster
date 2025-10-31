@@ -1,10 +1,4 @@
 with
-    studentrace_agg as (
-        select _dbt_source_relation, studentid, string_agg(racecd) as racecd,
-        from {{ ref("stg_powerschool__studentrace") }}
-        group by studentid, _dbt_source_relation
-    ),
-
     course_enrollment_count as (
         select
             _dbt_source_relation,
@@ -35,8 +29,7 @@ with
             se.grade_level,
             se.advisory_name,
             se.fteid,
-
-            r.racecd,
+            se.racecd_agg as racecd,
 
             cast(se.dob as string) as dob,
 
@@ -53,7 +46,7 @@ with
 
             if(cec.sectionid_count < 3, true, false) as underenrollment_flag,
 
-            if(se.region = 'KMS', se.ethnicity, r.racecd) as race_eth_detail,
+            if(se.region = 'KMS', se.ethnicity, se.racecd_agg) as race_eth_detail,
 
             case
                 when se.fteid != fte.id
@@ -83,7 +76,7 @@ with
                 when
                     se.region != 'Miami'
                     and se.fedethnicity is null
-                    and r.racecd is null
+                    and se.racecd_agg is null
                 then 1
                 else 0
             end as race_eth_flag,
@@ -94,10 +87,6 @@ with
             and se.yearid = fte.yearid
             and {{ union_dataset_join_clause(left_alias="se", right_alias="fte") }}
             and fte.name like 'Full Time Student%'
-        left join
-            studentrace_agg as r
-            on se.studentid = r.studentid
-            and {{ union_dataset_join_clause(left_alias="se", right_alias="r") }}
         left join
             course_enrollment_count as cec
             on se.student_number = cec.students_student_number

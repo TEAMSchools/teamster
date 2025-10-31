@@ -270,8 +270,8 @@ with
                 when
                     co.grade_level between 3 and 8
                     and (
-                        nj.state_assessment_name = '3'
-                        or nj.math_state_assessment_name in ('3', '4')
+                        co.ela_state_assessment_name = '3'
+                        or co.math_state_assessment_name in ('3', '4')
                     )
                 then 'Exempt - Special Education'
                 when lg.entry_date is not null
@@ -510,10 +510,6 @@ with
             and co.academic_year = s.academic_year
         left join
             fast as f on co.fleid = f.student_id and co.academic_year = f.academic_year
-        left join
-            {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
-            on co.students_dcid = nj.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
         left join
             exempt_override as lg
             on co.studentid = lg.studentid

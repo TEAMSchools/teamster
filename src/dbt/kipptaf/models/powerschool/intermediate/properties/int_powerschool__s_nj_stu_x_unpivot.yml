@@ -1,5 +1,14 @@
 models:
   - name: int_powerschool__s_nj_stu_x_unpivot
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - studentsdcid
+              - name_column
+          config:
+            store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string
