@@ -167,6 +167,8 @@ with
             s.subject_area,
             s.score_type,
 
+            'Org' as granularity_level,
+
             min(
                 case
                     concat(r.expected_aligned_subject_area, e.grade_level)
@@ -307,6 +309,8 @@ with
             s.scope,
             s.subject_area,
             s.score_type,
+
+            'Org' as granularity_level,
 
             min(
                 case
@@ -451,6 +455,8 @@ with
             s.scope,
             s.subject_area,
             s.score_type,
+
+            'Org/Grade_Level' as granularity_level,
 
             min(
                 case
@@ -597,6 +603,8 @@ with
             s.subject_area,
             s.score_type,
 
+            'Region/Grade Level' as granularity_level,
+
             min(
                 case
                     concat(r.expected_aligned_subject_area, e.grade_level)
@@ -740,6 +748,8 @@ with
             s.scope,
             s.subject_area,
             s.score_type,
+
+            'School/Grade Level' as granularity_level,
 
             min(
                 case
