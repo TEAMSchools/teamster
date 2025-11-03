@@ -36,7 +36,7 @@ with
             e.iep_status,
 
             -- need this to join to act/sat scores
-            e.salesforce_id,
+            e.salesforce_contact_id as salesforce_id,
 
             -- tag the manual entry for student numbers on the crdc student crosswalk
             -- g-sheet feed

@@ -132,7 +132,7 @@ models:
         data_type: string
       - name: college_match_gpa
         data_type: numeric
-      - name: college_match_gpa_bands
+      - name: salesforce_contact_college_match_gpa_band
         data_type: string
       - name: contact_owner_name
         data_type: string

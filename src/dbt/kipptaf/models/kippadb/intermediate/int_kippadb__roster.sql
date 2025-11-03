@@ -1,26 +1,20 @@
 with
     es_grad as (
         select
-            co._dbt_source_relation,
-            co.student_number,
-
-            s.abbreviation as entry_school,
+            _dbt_source_relation,
+            student_number,
+            entry_school_abbreviation as entry_school,
 
             max(
                 if(
-                    co.grade_level = 4
-                    and co.exitdate >= date(co.academic_year + 1, 6, 1),
+                    grade_level = 4 and exitdate >= date(academic_year + 1, 6, 1),
                     true,
                     false
                 )
             ) as is_es_grad,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
-        inner join
-            {{ ref("stg_powerschool__schools") }} as s
-            on co.entry_schoolid = s.school_number
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="s") }}
-        where co.rn_year = 1
-        group by co._dbt_source_relation, co.student_number, s.abbreviation
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where rn_year = 1
+        group by _dbt_source_relation, student_number, entry_school_abbreviation
     ),
 
     dlm as (
@@ -129,13 +123,13 @@ with
             ) as contact_current_kipp_student,
 
             coalesce(c.contact_kipp_hs_class, se.cohort) as ktc_cohort,
-            coalesce(c.contact_first_name, se.first_name) as first_name,
-            coalesce(c.contact_last_name, se.last_name) as last_name,
-            coalesce(c.contact_lastfirst, se.lastfirst) as lastfirst,
+            coalesce(c.contact_first_name, se.student_first_name) as first_name,
+            coalesce(c.contact_last_name, se.student_last_name) as last_name,
+            coalesce(c.contact_lastfirst, se.student_name) as lastfirst,
 
             if(
                 se.enroll_status = 0,
-                coalesce(c.contact_email, se.student_email_google),
+                coalesce(c.contact_email, se.student_email),
                 c.contact_email
             ) as email,
 
@@ -161,9 +155,9 @@ with
             (
                 {{ var("current_academic_year") }} - se.academic_year + se.grade_level
             ) as current_grade_level_projection,
-        from {{ ref("base_powerschool__student_enrollments") }} as se
+        from {{ ref("int_extracts__student_enrollments") }} as se
         left join
-            {{ ref("base_kippadb__contact") }} as c
+            {{ ref("int_kippadb__contact") }} as c
             on se.student_number = c.contact_school_specific_id
         left join
             {{ ref("int_overgrad__students") }} as os

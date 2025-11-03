@@ -11,7 +11,7 @@ with
             adjusted_6_year_minority_graduation_rate,
 
             row_number() over (partition by applicant order by id asc) as rn_applicant,
-        from {{ ref("base_kippadb__application") }}
+        from {{ ref("int_kippadb__application") }}
         where matriculation_decision = 'Matriculated (Intent to Enroll)'
     ),
 

@@ -53,7 +53,7 @@ with
                 0
             ) as is_ecc_dated,
         from {{ ref("stg_kippadb__enrollment") }} as e
-        inner join {{ ref("base_kippadb__contact") }} as c on e.student = c.contact_id
+        inner join {{ ref("int_kippadb__contact") }} as c on e.student = c.contact_id
         where e.status != 'Did Not Enroll'
 
         union all

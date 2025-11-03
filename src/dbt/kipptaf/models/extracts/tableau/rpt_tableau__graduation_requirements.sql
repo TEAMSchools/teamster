@@ -23,7 +23,7 @@ select
     e.is_retained_year,
     e.is_retained_ever,
     e.student_email as student_email_google,
-    e.salesforce_id as kippadb_contact_id,
+    e.salesforce_contact_id as kippadb_contact_id,
     e.ktc_cohort,
     e.discipline,
 

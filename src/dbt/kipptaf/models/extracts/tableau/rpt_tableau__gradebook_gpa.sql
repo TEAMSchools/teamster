@@ -67,7 +67,7 @@ with
             enr.gifted_and_talented,
             enr.iep_status,
             enr.is_504,
-            enr.salesforce_id,
+            enr.salesforce_contact_id as salesforce_id,
             enr.ktc_cohort,
             enr.is_counseling_services,
             enr.is_student_athlete,
