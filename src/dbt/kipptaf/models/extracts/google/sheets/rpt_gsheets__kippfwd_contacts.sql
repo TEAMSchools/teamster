@@ -5,13 +5,10 @@ with
 
             c.call_date as date__c,
 
-            trim(
-                regexp_replace(regexp_replace(c.topic, r'\r|\n', ' '), r'\s+', ' ')
-            ) as comments__c,
+            -- calls macro to clean up html tags
+            {{ parse_html("c.topic") }} as comments__c,
 
-            trim(
-                regexp_replace(regexp_replace(c.response, r'\r|\n', ' '), r'\s+', ' ')
-            ) as next_steps__c,
+            {{ parse_html("c.response") }} as next_steps__c,
 
             if(c.call_status = 'Completed', 'Successful', 'Outreach') as status__c,
 
@@ -86,13 +83,10 @@ with
             `type` as type__c,
             academic_year,
 
-            trim(
-                regexp_replace(regexp_replace(comments, r'\r|\n', ' '), r'\s+', ' ')
-            ) as comments__c,
+            -- calls macro to clean up html tags
+            {{ parse_html("comments") }} as comments__c,
 
-            trim(
-                regexp_replace(regexp_replace(next_steps, r'\r|\n', ' '), r'\s+', ' ')
-            ) as next_steps__c,
+            {{ parse_html("next_steps") }} as next_steps__c,
 
         from {{ ref("stg_kippadb__contact_note") }}
         where
