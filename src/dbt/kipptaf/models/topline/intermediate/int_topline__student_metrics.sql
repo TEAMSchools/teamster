@@ -196,6 +196,23 @@ with
 
         select
             'Attendance and Enrollment' as layer,
+            'Total Enrollment (Without SC OOD)' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            week_end_sunday as term_end,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            if(is_enrolled_week, 1, 0) as metric_value,
+        from {{ ref("int_extracts__student_enrollments_weeks") }}
+        where not is_self_contained and not is_out_of_district
+
+        union all
+
+        select
+            'Attendance and Enrollment' as layer,
             'Successful Contacts' as indicator,
             student_number,
             academic_year,
