@@ -1,7 +1,6 @@
 with
     teachers as (
-        select
-            *,
+        select *,
         from {{ ref("dim_teammates") }}
         where primary_indicator and assignment_status = 'Active' and is_teacher
     ),
