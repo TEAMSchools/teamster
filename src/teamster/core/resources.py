@@ -138,3 +138,10 @@ SSH_TITAN = SSHResource(
     username=EnvVar("TITAN_SFTP_USERNAME"),
     password=EnvVar("TITAN_SFTP_PASSWORD"),
 )
+
+SSH_RESOURCE_AMPLIFY = SSHResource(
+    remote_host=EnvVar("AMPLIFY_SFTP_HOST"),
+    remote_port=22,
+    username=EnvVar("AMPLIFY_SFTP_USERNAME"),
+    password=EnvVar("AMPLIFY_SFTP_PASSWORD"),
+)

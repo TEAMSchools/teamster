@@ -67,16 +67,10 @@ models:
       +schema: alchemer
     amplify:
       +schema: amplify
-      +materialized: table
+      intermediate:
+        +materialized: table
       dds:
         +enabled: false
-      mclass:
-        api:
-          +enabled: false
-        sftp:
-          staging:
-            +contract:
-              enforced: true
     assessments:
       +schema: assessments
     collegeboard:
@@ -230,7 +224,6 @@ models:
       +schema: renlearn
     reporting:
       +schema: reporting
-      +materialized: table
     schoolmint:
       grow:
         +schema: schoolmint_grow
@@ -248,9 +241,7 @@ models:
       +schema: students
     surveys:
       +schema: surveys
-      +materialized: table
     tableau:
-      +enabled: false
       +schema: tableau
       staging:
         +materialized: table

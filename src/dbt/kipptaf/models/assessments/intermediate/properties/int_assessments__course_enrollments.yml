@@ -1,5 +1,7 @@
 models:
   - name: int_assessments__course_enrollments
+    config:
+      materialized: table
     columns:
       - name: powerschool_student_number
         data_type: int64
