@@ -99,11 +99,9 @@ semantic_models:
     primary_entity: headcount_event_key
 
     defaults:
-      # The primary time dimension is the single event_date
       agg_time_dimension: event_date
 
     entities:
-      # This joins to your teammates dimension
       - name: employee_number
         type: foreign
 
@@ -114,20 +112,17 @@ semantic_models:
           time_granularity: day
 
     measures:
-      # This measure represents the raw +1 or -1 values
       - name: net_change_in_headcount
         description: The net change in the number of employees on a given day.
         agg: sum
         expr: headcount_value
 
 metrics:
-  # This is the final, queryable metric that provides the point-in-time count
   - name: point_in_time_headcount
     description: Total number of active employees on any given day.
     type: cumulative
     label: Point-in-Time Headcount
     type_params:
-      # It calculates the running sum of our measure
       measure:
         name: net_change_in_headcount
         join_to_timespine: True
