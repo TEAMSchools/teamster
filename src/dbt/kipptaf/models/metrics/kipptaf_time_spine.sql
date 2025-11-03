@@ -14,7 +14,7 @@ with
             date_spine.date_day,
             date_trunc(date_spine.date_day, week(monday)) as week_start_monday,  -- noqa: LT01,LT05
             date_add(
-                date_trunc(date_spine.date_day, week(monday)), interval 6 day  -- noqa: LT01
+                date_trunc(date_spine.date_day, week(monday)), interval 6 day  -- noqa: LT01,LT05
             ) as week_end_sunday,
             {{
                 date_to_fiscal_year(
