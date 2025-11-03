@@ -28,9 +28,6 @@ with
             teachers.home_business_unit_name,
             teachers.home_work_location_powerschool_school_id,
 
-            calendar.week_start_monday,
-            calendar.week_end_sunday,
-
             assignments.assignment_id,
             assignments.created_date_local,
             assignments.creator_name,
