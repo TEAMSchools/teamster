@@ -2,6 +2,7 @@ with
     calcs as (
         select
             region,
+            schoolid,
             grade_level,
             cohort,
             expected_test_type,
