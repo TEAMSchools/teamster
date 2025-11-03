@@ -6,12 +6,6 @@ with
         where primary_indicator and assignment_status = 'Active' and is_teacher
     ),
 
-    /* using as date scaffold to align with Topline */
-    reporting_terms as (
-        select *,
-        from {{ ref("stg_google_sheets__reporting__terms") }}
-    ),
-
     grow_users as (select *, from {{ ref("stg_schoolmint_grow__users") }}),
 
     assignments as (

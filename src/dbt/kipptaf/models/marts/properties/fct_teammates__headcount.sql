@@ -10,7 +10,8 @@ with
     ),
 
     headcount_events as (
-        select employee_number, effective_date_start as event_date, 1 as headcount_value
+        select
+            employee_number, effective_date_start as event_date, 1 as headcount_value,
         from teammate_history
 
         union all
@@ -18,7 +19,7 @@ with
         select
             employee_number,
             date_add(effective_date_end, interval 1 day) as event_date,
-            -1 as headcount_value
+            -1 as headcount_value,
         from teammate_history
         where effective_date_end < '9999-12-31'
     )
@@ -28,5 +29,5 @@ select
     as headcount_event_key,
     employee_number,
     event_date,
-    headcount_value
+    headcount_value,
 from headcount_events

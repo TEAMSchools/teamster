@@ -12,10 +12,10 @@ with
     kipptaf_date_spine as (
         select
             date_spine.date_day,
-            date_trunc(date_spine.date_day, week(monday)) as week_start_monday,
+            date_trunc(date_spine.date_day, week(monday)) as week_start_monday,  -- noqa: LT01
             date_add(
                 date_trunc(date_spine.date_day, week(monday)), interval 6 day
-            ) as week_end_sunday,
+            ) as week_end_sunday,  -- noqa: LT01
             {{
                 date_to_fiscal_year(
                     date_field="date_day", start_month=7, year_source="start"
