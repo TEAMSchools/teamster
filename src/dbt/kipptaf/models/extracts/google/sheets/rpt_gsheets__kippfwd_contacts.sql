@@ -99,11 +99,13 @@ with
 select
     d.contact__c,
     d.subject__c,
-    d.comments__c,
-    d.next_steps__c,
+
     d.date__c,
     d.status__c,
     d.type__c,
+
+    if(d.comments__c = 'Blank', null, d.comments__c) as comments__c,
+    if(d.next_steps__c = 'Blank', null, d.next_steps__c) as next_steps__c,
 
 from deanslist_notes as d
 left join
