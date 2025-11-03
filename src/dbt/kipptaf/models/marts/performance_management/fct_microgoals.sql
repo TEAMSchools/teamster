@@ -36,11 +36,7 @@ with
             microgoals.bucket_name,
         from teachers
         inner join grow_users on teachers.employee_number = grow_users.internal_id_int
-        left join
-            assignments
-            on grow_users.user_id = assignments.user_id
-            and assignments.created_date_local
-            between calendar.week_start_monday and calendar.week_end_sunday
+        left join assignments on grow_users.user_id = assignments.user_id
         left join tags on assignments.assignment_id = tags.assignment_id
         left join microgoals on tags.tag_id = microgoals.tag_id
 
