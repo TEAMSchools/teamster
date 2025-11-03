@@ -1,0 +1,39 @@
+name: amplify
+version: 1.0.0
+
+profile: amplify
+
+model-paths: [models]
+analysis-paths: [analyses]
+test-paths: [tests]
+seed-paths: [seeds]
+macro-paths: [macros]
+snapshot-paths: [snapshots]
+
+clean-targets:
+  - target
+  - dbt_packages
+
+models:
+  +schema: amplify
+  amplify:
+    dds:
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
+    mclass:
+      api:
+        staging:
+          +materialized: table
+          +contract:
+            enforced: true
+      sftp:
+        staging:
+          +materialized: table
+          +contract:
+            enforced: true
+
+vars:
+  cloud_storage_uri_base: null
+  bigquery_external_connection_name: null

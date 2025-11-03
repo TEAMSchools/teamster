@@ -1,4 +1,5 @@
 packages:
+  - local: ../amplify
   - local: ../deanslist
   - local: ../edplan
   - local: ../iready
