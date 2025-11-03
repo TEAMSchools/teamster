@@ -35,13 +35,6 @@ with
             microgoals.strand_name,
             microgoals.bucket_name,
         from teachers
-        inner join
-            calendar
-            on teachers.home_work_location_powerschool_school_id = calendar.schoolid
-            /* if a teacher switches schools mid-week, they will be counted in the
-            receiving school only for that week */
-            and calendar.week_end_sunday
-            between teachers.effective_date_start and teachers.effective_date_end
         inner join grow_users on teachers.employee_number = grow_users.internal_id_int
         left join
             assignments

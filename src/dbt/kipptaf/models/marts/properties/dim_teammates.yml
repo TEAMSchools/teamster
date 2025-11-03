@@ -67,7 +67,9 @@ semantic_models:
 
       - name: current_roster
         type: categorical
-        description: The record is the current (latest) record for that employee (one row per number)
+        description:
+          The record is the current (latest) record for that employee (one row
+          per number)
 
       - name: primary_indicator
         type: categorical
@@ -95,7 +97,9 @@ semantic_models:
 
   - name: headcount
     model: ref('fct_teammates__headcount')
-    description: A fact model representing employee hire and termination events for headcount analysis.
+    description:
+      A fact model representing employee hire and termination events for
+      headcount analysis.
     primary_entity: headcount_event_key
 
     defaults:
