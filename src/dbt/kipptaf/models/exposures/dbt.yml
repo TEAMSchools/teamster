@@ -19,9 +19,12 @@ exposures:
     owner:
       name: Data Team
     depends_on:
+      - ref("dim_observers")
+      - ref("dim_staff")
+      - ref("dim_terms")
       - ref("fct_microgoals")
-      - ref("dim_teammates")
-      - ref("kipptaf_time_spine")
+      - ref("fct_observations")
+      - ref("metricflow_time_spine")
     meta:
       dagster:
         kinds:
