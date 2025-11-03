@@ -44,6 +44,9 @@ with
             s.score_type as expected_score_type,
             s.aligned_subject_area as expected_aligned_subject_area,
 
+            g.region as expected_region,
+            g.schoolid as expected_schoolid,
+            g.grade_level as expected_grade_level,
             g.expected_goal_type,
             g.expected_goal_subtype,
             g.expected_metric_name,
@@ -214,13 +217,7 @@ with
                 end
             ) as expected_board_440_plus_min_score,
 
-            avg(
-                if(
-                    r.expected_goal_type = 'Benchmark',
-                    s.max_scale_score,
-                    p.attempt_count_lifetime
-                )
-            ) as score,
+            avg(p.attempt_count_lifetime) as score,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         cross join strategy as r
@@ -236,6 +233,584 @@ with
             e.academic_year = {{ var("current_academic_year") }}
             and e.school_level = 'HS'
             and e.rn_year = 1
+            and r.expected_goal_type = 'Attempts'
+        group by
+            e.academic_year,
+            e.academic_year_display,
+            e.state,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.student_number,
+            e.grade_level,
+            e.enroll_status,
+            e.iep_status,
+            e.is_504,
+            e.grad_iep_exempt_status_overall,
+            e.lep_status,
+            e.ktc_cohort,
+            e.graduation_year,
+            e.year_in_network,
+            e.college_match_gpa,
+            e.college_match_gpa_bands,
+            r.expected_test_type,
+            r.expected_scope,
+            r.expected_subject_area,
+            r.expected_aligned_subject_area,
+            r.expected_score_type,
+            r.expected_goal_type,
+            r.expected_goal_subtype,
+            r.expected_metric_name,
+            r.expected_metric_label,
+            r.expected_metric_min_score,
+            r.expected_metric_pct_goal,
+            s.test_type,
+            s.scope,
+            s.subject_area,
+            s.score_type
+
+        union all
+
+        select
+            e.academic_year,
+            e.academic_year_display,
+            e.state,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.student_number,
+            e.grade_level,
+            e.enroll_status,
+            e.iep_status,
+            e.is_504,
+            e.grad_iep_exempt_status_overall,
+            e.lep_status,
+            e.ktc_cohort,
+            e.graduation_year,
+            e.year_in_network,
+            e.college_match_gpa,
+            e.college_match_gpa_bands,
+
+            r.expected_test_type,
+            r.expected_scope,
+            r.expected_subject_area,
+            r.expected_aligned_subject_area,
+            r.expected_score_type,
+            r.expected_goal_type,
+            r.expected_goal_subtype,
+            r.expected_metric_name,
+            r.expected_metric_label,
+            r.expected_metric_min_score,
+            r.expected_metric_pct_goal,
+
+            s.test_type,
+            s.scope,
+            s.subject_area,
+            s.score_type,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
+                    then r.expected_sat_combined_pct_890_plus_g11_board_min_score
+                    when 'Total12'
+                    then r.expected_sat_combined_pct_890_plus_g12_board_min_score
+                end
+            ) as expected_board_890_plus_min_score,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
+                    then r.expected_sat_combined_pct_1010_plus_g11_board_min_score
+                    when 'Total12'
+                    then r.expected_sat_combined_pct_1010_plus_g12_board_min_score
+                end
+            ) as expected_board_1010_plus_min_score,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
+                    then r.expected_sat_combined_pct_890_plus_g11_board_pct_goal
+                    when 'Total12'
+                    then r.expected_sat_combined_pct_890_plus_g12_board_pct_goal
+                end
+            ) as expected_board_890_plus_pct_goal,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'EBRW11'
+                    then r.expected_sat_ebrw_pct_450_plus_g11_board_min_score
+                    when 'EBRW12'
+                    then r.expected_sat_ebrw_pct_450_plus_g12_board_min_score
+                end
+            ) as expected_board_450_plus_min_score,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Math11'
+                    then r.expected_sat_math_pct_440_plus_g11_board_min_score
+                    when 'Math12'
+                    then r.expected_sat_math_pct_440_plus_g12_board_min_score
+                end
+            ) as expected_board_440_plus_min_score,
+
+            avg(s.max_scale_score) as score,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        cross join strategy as r
+        left join
+            {{ ref("int_assessments__college_assessment") }} as s
+            on e.student_number = s.student_number
+            and r.expected_score_type = s.score_type
+        left join
+            attempts as p
+            on e.student_number = p.student_number
+            and r.expected_scope = p.scope
+        where
+            e.academic_year = 2025
+            and e.school_level = 'HS'
+            and e.rn_year = 1
+            and r.expected_goal_type = 'Benchmark'
+            and r.expected_region is null
+            and r.expected_schoolid is null
+            and r.expected_grade_level is null
+        group by
+            e.academic_year,
+            e.academic_year_display,
+            e.state,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.student_number,
+            e.grade_level,
+            e.enroll_status,
+            e.iep_status,
+            e.is_504,
+            e.grad_iep_exempt_status_overall,
+            e.lep_status,
+            e.ktc_cohort,
+            e.graduation_year,
+            e.year_in_network,
+            e.college_match_gpa,
+            e.college_match_gpa_bands,
+            r.expected_test_type,
+            r.expected_scope,
+            r.expected_subject_area,
+            r.expected_aligned_subject_area,
+            r.expected_score_type,
+            r.expected_goal_type,
+            r.expected_goal_subtype,
+            r.expected_metric_name,
+            r.expected_metric_label,
+            r.expected_metric_min_score,
+            r.expected_metric_pct_goal,
+            s.test_type,
+            s.scope,
+            s.subject_area,
+            s.score_type
+
+        union all
+
+        select
+            e.academic_year,
+            e.academic_year_display,
+            e.state,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.student_number,
+            e.grade_level,
+            e.enroll_status,
+            e.iep_status,
+            e.is_504,
+            e.grad_iep_exempt_status_overall,
+            e.lep_status,
+            e.ktc_cohort,
+            e.graduation_year,
+            e.year_in_network,
+            e.college_match_gpa,
+            e.college_match_gpa_bands,
+
+            r.expected_test_type,
+            r.expected_scope,
+            r.expected_subject_area,
+            r.expected_aligned_subject_area,
+            r.expected_score_type,
+            r.expected_goal_type,
+            r.expected_goal_subtype,
+            r.expected_metric_name,
+            r.expected_metric_label,
+            r.expected_metric_min_score,
+            r.expected_metric_pct_goal,
+
+            s.test_type,
+            s.scope,
+            s.subject_area,
+            s.score_type,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
+                    then r.expected_sat_combined_pct_890_plus_g11_board_min_score
+                    when 'Total12'
+                    then r.expected_sat_combined_pct_890_plus_g12_board_min_score
+                end
+            ) as expected_board_890_plus_min_score,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
+                    then r.expected_sat_combined_pct_1010_plus_g11_board_min_score
+                    when 'Total12'
+                    then r.expected_sat_combined_pct_1010_plus_g12_board_min_score
+                end
+            ) as expected_board_1010_plus_min_score,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
+                    then r.expected_sat_combined_pct_890_plus_g11_board_pct_goal
+                    when 'Total12'
+                    then r.expected_sat_combined_pct_890_plus_g12_board_pct_goal
+                end
+            ) as expected_board_890_plus_pct_goal,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'EBRW11'
+                    then r.expected_sat_ebrw_pct_450_plus_g11_board_min_score
+                    when 'EBRW12'
+                    then r.expected_sat_ebrw_pct_450_plus_g12_board_min_score
+                end
+            ) as expected_board_450_plus_min_score,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Math11'
+                    then r.expected_sat_math_pct_440_plus_g11_board_min_score
+                    when 'Math12'
+                    then r.expected_sat_math_pct_440_plus_g12_board_min_score
+                end
+            ) as expected_board_440_plus_min_score,
+
+            avg(s.max_scale_score) as score,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        cross join strategy as r
+        left join
+            {{ ref("int_assessments__college_assessment") }} as s
+            on e.student_number = s.student_number
+            and r.expected_score_type = s.score_type
+        left join
+            attempts as p
+            on e.student_number = p.student_number
+            and r.expected_scope = p.scope
+        where
+            e.academic_year = 2025
+            and e.school_level = 'HS'
+            and e.rn_year = 1
+            and e.grade_level = r.expected_grade_level
+            and r.expected_goal_type = 'Benchmark'
+            and r.expected_region is null
+            and r.expected_schoolid is null
+            and r.expected_grade_level is not null
+        group by
+            e.academic_year,
+            e.academic_year_display,
+            e.state,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.student_number,
+            e.grade_level,
+            e.enroll_status,
+            e.iep_status,
+            e.is_504,
+            e.grad_iep_exempt_status_overall,
+            e.lep_status,
+            e.ktc_cohort,
+            e.graduation_year,
+            e.year_in_network,
+            e.college_match_gpa,
+            e.college_match_gpa_bands,
+            r.expected_test_type,
+            r.expected_scope,
+            r.expected_subject_area,
+            r.expected_aligned_subject_area,
+            r.expected_score_type,
+            r.expected_goal_type,
+            r.expected_goal_subtype,
+            r.expected_metric_name,
+            r.expected_metric_label,
+            r.expected_metric_min_score,
+            r.expected_metric_pct_goal,
+            s.test_type,
+            s.scope,
+            s.subject_area,
+            s.score_type
+
+        union all
+
+        select
+            e.academic_year,
+            e.academic_year_display,
+            e.state,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.student_number,
+            e.grade_level,
+            e.enroll_status,
+            e.iep_status,
+            e.is_504,
+            e.grad_iep_exempt_status_overall,
+            e.lep_status,
+            e.ktc_cohort,
+            e.graduation_year,
+            e.year_in_network,
+            e.college_match_gpa,
+            e.college_match_gpa_bands,
+
+            r.expected_test_type,
+            r.expected_scope,
+            r.expected_subject_area,
+            r.expected_aligned_subject_area,
+            r.expected_score_type,
+            r.expected_goal_type,
+            r.expected_goal_subtype,
+            r.expected_metric_name,
+            r.expected_metric_label,
+            r.expected_metric_min_score,
+            r.expected_metric_pct_goal,
+
+            s.test_type,
+            s.scope,
+            s.subject_area,
+            s.score_type,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
+                    then r.expected_sat_combined_pct_890_plus_g11_board_min_score
+                    when 'Total12'
+                    then r.expected_sat_combined_pct_890_plus_g12_board_min_score
+                end
+            ) as expected_board_890_plus_min_score,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
+                    then r.expected_sat_combined_pct_1010_plus_g11_board_min_score
+                    when 'Total12'
+                    then r.expected_sat_combined_pct_1010_plus_g12_board_min_score
+                end
+            ) as expected_board_1010_plus_min_score,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
+                    then r.expected_sat_combined_pct_890_plus_g11_board_pct_goal
+                    when 'Total12'
+                    then r.expected_sat_combined_pct_890_plus_g12_board_pct_goal
+                end
+            ) as expected_board_890_plus_pct_goal,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'EBRW11'
+                    then r.expected_sat_ebrw_pct_450_plus_g11_board_min_score
+                    when 'EBRW12'
+                    then r.expected_sat_ebrw_pct_450_plus_g12_board_min_score
+                end
+            ) as expected_board_450_plus_min_score,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Math11'
+                    then r.expected_sat_math_pct_440_plus_g11_board_min_score
+                    when 'Math12'
+                    then r.expected_sat_math_pct_440_plus_g12_board_min_score
+                end
+            ) as expected_board_440_plus_min_score,
+
+            avg(s.max_scale_score) as score,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        cross join strategy as r
+        left join
+            {{ ref("int_assessments__college_assessment") }} as s
+            on e.student_number = s.student_number
+            and r.expected_score_type = s.score_type
+        left join
+            attempts as p
+            on e.student_number = p.student_number
+            and r.expected_scope = p.scope
+        where
+            e.academic_year = 2025
+            and e.school_level = 'HS'
+            and e.rn_year = 1
+            and e.region = r.expected_region
+            and e.grade_level = r.expected_grade_level
+            and r.expected_goal_type = 'Benchmark'
+            and r.expected_region is not null
+        group by
+            e.academic_year,
+            e.academic_year_display,
+            e.state,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.student_number,
+            e.grade_level,
+            e.enroll_status,
+            e.iep_status,
+            e.is_504,
+            e.grad_iep_exempt_status_overall,
+            e.lep_status,
+            e.ktc_cohort,
+            e.graduation_year,
+            e.year_in_network,
+            e.college_match_gpa,
+            e.college_match_gpa_bands,
+            r.expected_test_type,
+            r.expected_scope,
+            r.expected_subject_area,
+            r.expected_aligned_subject_area,
+            r.expected_score_type,
+            r.expected_goal_type,
+            r.expected_goal_subtype,
+            r.expected_metric_name,
+            r.expected_metric_label,
+            r.expected_metric_min_score,
+            r.expected_metric_pct_goal,
+            s.test_type,
+            s.scope,
+            s.subject_area,
+            s.score_type
+
+        union all
+
+        select
+            e.academic_year,
+            e.academic_year_display,
+            e.state,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.student_number,
+            e.grade_level,
+            e.enroll_status,
+            e.iep_status,
+            e.is_504,
+            e.grad_iep_exempt_status_overall,
+            e.lep_status,
+            e.ktc_cohort,
+            e.graduation_year,
+            e.year_in_network,
+            e.college_match_gpa,
+            e.college_match_gpa_bands,
+
+            r.expected_test_type,
+            r.expected_scope,
+            r.expected_subject_area,
+            r.expected_aligned_subject_area,
+            r.expected_score_type,
+            r.expected_goal_type,
+            r.expected_goal_subtype,
+            r.expected_metric_name,
+            r.expected_metric_label,
+            r.expected_metric_min_score,
+            r.expected_metric_pct_goal,
+
+            s.test_type,
+            s.scope,
+            s.subject_area,
+            s.score_type,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
+                    then r.expected_sat_combined_pct_890_plus_g11_board_min_score
+                    when 'Total12'
+                    then r.expected_sat_combined_pct_890_plus_g12_board_min_score
+                end
+            ) as expected_board_890_plus_min_score,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
+                    then r.expected_sat_combined_pct_1010_plus_g11_board_min_score
+                    when 'Total12'
+                    then r.expected_sat_combined_pct_1010_plus_g12_board_min_score
+                end
+            ) as expected_board_1010_plus_min_score,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Total11'
+                    then r.expected_sat_combined_pct_890_plus_g11_board_pct_goal
+                    when 'Total12'
+                    then r.expected_sat_combined_pct_890_plus_g12_board_pct_goal
+                end
+            ) as expected_board_890_plus_pct_goal,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'EBRW11'
+                    then r.expected_sat_ebrw_pct_450_plus_g11_board_min_score
+                    when 'EBRW12'
+                    then r.expected_sat_ebrw_pct_450_plus_g12_board_min_score
+                end
+            ) as expected_board_450_plus_min_score,
+
+            min(
+                case
+                    concat(r.expected_aligned_subject_area, e.grade_level)
+                    when 'Math11'
+                    then r.expected_sat_math_pct_440_plus_g11_board_min_score
+                    when 'Math12'
+                    then r.expected_sat_math_pct_440_plus_g12_board_min_score
+                end
+            ) as expected_board_440_plus_min_score,
+
+            avg(s.max_scale_score) as score,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        cross join strategy as r
+        left join
+            {{ ref("int_assessments__college_assessment") }} as s
+            on e.student_number = s.student_number
+            and r.expected_score_type = s.score_type
+        left join
+            attempts as p
+            on e.student_number = p.student_number
+            and r.expected_scope = p.scope
+        where
+            e.academic_year = 2025
+            and e.school_level = 'HS'
+            and e.rn_year = 1
+            and e.schoolid = r.expected_schoolid
+            and e.grade_level = r.expected_grade_level
+            and r.expected_goal_type = 'Benchmark'
+            and r.expected_schoolid is not null
         group by
             e.academic_year,
             e.academic_year_display,
