@@ -5,13 +5,14 @@ semantic_models:
       Staff roster dimension with job titles, departments, demographics, and
       employment status. Includes key fields for HR reporting and workforce
       tracking.
+    primary_entity: teammate_event_key
 
     defaults:
       agg_time_dimension: effective_date_start
 
     entities:
-      - name: teammates
-        type: primary
+      - name: employee_number
+        type: natural
         expr: employee_number
 
     dimensions:
@@ -60,12 +61,28 @@ semantic_models:
         type: categorical
         description: '{{doc("teammates_is_teacher")}}'
 
+      - name: grade_taught
+        type: categorical
+        description: Grade taught based on number of students in PowerSchool
+
+      - name: current_roster
+        type: categorical
+        description: The record is the current (latest) record for that employee (one row per number)
+
+      - name: primary_indicator
+        type: categorical
+
+      - name: is_current_record
+        type: categorical
+
       - name: effective_date_start
         type: time
         expr: effective_date_start
         description: start date of a unique row in the roster history
         type_params:
           time_granularity: day
+          validity_params:
+            is_start: True
 
       - name: effective_date_end
         type: time
@@ -73,23 +90,44 @@ semantic_models:
         description: end date of a unique row in the roster history
         type_params:
           time_granularity: day
+          validity_params:
+            is_end: True
+
+  - name: headcount
+    model: ref('fct_teammates__headcount')
+    description: A fact model representing employee hire and termination events for headcount analysis.
+    primary_entity: headcount_event_key
+
+    defaults:
+      # The primary time dimension is the single event_date
+      agg_time_dimension: event_date
+
+    entities:
+      # This joins to your teammates dimension
+      - name: employee_number
+        type: foreign
+
+    dimensions:
+      - name: event_date
+        type: time
+        type_params:
+          time_granularity: day
 
     measures:
-      - name: teammates_count
-        description: Distinct count of employee numbers.
-        agg: count_distinct
-        expr: employee_number
-        agg_time_dimension: effective_date_start
+      # This measure represents the raw +1 or -1 values
+      - name: net_change_in_headcount
+        description: The net change in the number of employees on a given day.
+        agg: sum
+        expr: headcount_value
 
 metrics:
-  - name: teammates_count
-    description:
-      A simple metric that counts employees based on their current record and
-      not including historical records.
-    type: simple
-    label: teammates_count
+  # This is the final, queryable metric that provides the point-in-time count
+  - name: point_in_time_headcount
+    description: Total number of active employees on any given day.
+    type: cumulative
+    label: Point-in-Time Headcount
     type_params:
+      # It calculates the running sum of our measure
       measure:
-        name: teammates_count
-    filter: |
-      {{ Dimension('teammates__current_roster') }} = 'true'
+        name: net_change_in_headcount
+        join_to_timespine: True
