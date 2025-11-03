@@ -3,7 +3,9 @@ select
 
     t.term_type as incentive_type,
     t.academic_year,
-    t.term_name,
+
+    concat('Q', right(t.term_name, 1)) as term_name,
+
     t.start_date_date as `start_date`,
     t.end_date_date as end_date,
     t.school_id,
