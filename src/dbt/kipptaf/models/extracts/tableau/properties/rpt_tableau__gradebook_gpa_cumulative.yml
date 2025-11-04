@@ -87,3 +87,11 @@ models:
         data_type: boolean
       - name: is_null_cum_gpa_flag
         data_type: boolean
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - false
+              config:
+                severity: warn
+                store_failures: true

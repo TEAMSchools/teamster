@@ -2,7 +2,7 @@ models:
   - name: int_students__graduation_path_codes
     config:
       materialized: table
-    data_tests:
+    tests:
       - distinct_count:
           arguments:
             group_by: student_number
@@ -88,7 +88,7 @@ models:
         data_type: string
       - name: grad_eligibility
         data_type: string
-        data_tests:
+        tests:
           - accepted_values:
               arguments:
                 values:
