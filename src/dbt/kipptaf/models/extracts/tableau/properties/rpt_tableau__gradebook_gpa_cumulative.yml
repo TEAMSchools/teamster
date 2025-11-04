@@ -91,6 +91,6 @@ models:
           - accepted_values:
               values: [false]
               quote: false
-            config:
-              severity: warn
-              store_failures: true
+              config:
+                severity: warn
+                store_failures: true
