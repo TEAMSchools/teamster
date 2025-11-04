@@ -1,8 +1,5 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_current
-    config:
-      contract:
-        enforced: false
     columns:
       - name: academic_year
         data_type: int64
@@ -70,6 +67,8 @@ models:
         data_type: string
       - name: score_type
         data_type: string
+      - name: granularity_level
+        data_type: string
       - name: expected_board_890_plus_min_score
         data_type: float64
       - name: expected_board_1010_plus_min_score
@@ -81,7 +80,7 @@ models:
       - name: expected_board_440_plus_min_score
         data_type: float64
       - name: score
-        data_type: numeric
+        data_type: float64
       - name: met_min_score_int
         data_type: int64
       - name: alt_met_min_score_int

@@ -456,7 +456,7 @@ with
             s.subject_area,
             s.score_type,
 
-            'Org/Grade_Level' as granularity_level,
+            'Org/Grade Level' as granularity_level,
 
             min(
                 case
