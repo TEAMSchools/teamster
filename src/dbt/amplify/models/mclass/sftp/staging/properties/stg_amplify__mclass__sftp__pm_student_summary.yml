@@ -1,0 +1,113 @@
+models:
+  - name: stg_amplify__mclass__sftp__pm_student_summary
+    columns:
+      - name: school_name
+        data_type: string
+      - name: school_year
+        data_type: string
+      - name: state
+        data_type: string
+      - name: multi_district_organization_name
+        data_type: string
+      - name: reporting_group_name
+        data_type: string
+      - name: district_name
+        data_type: string
+      - name: district_primary_id
+        data_type: string
+      - name: school_primary_id
+        data_type: int64
+      - name: student_last_name
+        data_type: string
+      - name: student_first_name
+        data_type: string
+      - name: enrollment_teacher_name
+        data_type: string
+      - name: enrollment_class_name
+        data_type: string
+      - name: enrollment_class_id
+        data_type: string
+      - name: enrollment_grade
+        data_type: string
+      - name: assessing_teacher_name
+        data_type: string
+      - name: assessment_class_name
+        data_type: string
+      - name: assessment_class_id
+        data_type: string
+      - name: assessment
+        data_type: string
+      - name: assessment_edition
+        data_type: string
+      - name: assessment_grade
+        data_type: string
+      - name: pm_period
+        data_type: string
+      - name: device_date
+        data_type: date
+      - name: sync_date
+        data_type: date
+      - name: measure
+        data_type: string
+      - name: probe_number
+        data_type: int64
+      - name: total_number_of_probes
+        data_type: int64
+      - name: measure_standard_score
+        data_type: numeric
+      - name: date_of_birth
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: race
+        data_type: string
+      - name: hispanic_or_latino_ethnicity
+        data_type: string
+      - name: special_education
+        data_type: string
+      - name: disability
+        data_type: string
+      - name: specific_disability
+        data_type: string
+      - name: section_504
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: economically_disadvantaged
+        data_type: string
+      - name: meal_status
+        data_type: string
+      - name: title_i
+        data_type: string
+      - name: migrant
+        data_type: string
+      - name: ell_status
+        data_type: string
+      - name: home_language
+        data_type: string
+      - name: _dagster_partition_key
+        data_type: string
+      - name: additional_student_id_primarysisid
+        data_type: int64
+      - name: assessing_teacher_staff_id_teachernumber
+        data_type: string
+      - name: enrollment_teacher_staff_id_teachernumber
+        data_type: string
+      - name: secondary_student_id_stateid
+        data_type: string
+      - name: student_primary_id_studentnumber
+        data_type: int64
+      - name: surrogate_key
+        data_type: string
+      - name: measure_name_code
+        data_type: string
+      - name: measure_name
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: assessment_grade_int
+        data_type: int64
+      - name: enrollment_grade_int
+        data_type: int64
+      - name: additional_student_id_sisid
+        data_type: string

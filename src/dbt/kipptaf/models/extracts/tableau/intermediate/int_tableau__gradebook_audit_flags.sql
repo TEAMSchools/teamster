@@ -1,5 +1,3 @@
-{{ config(materialized="table", cluster_by="cte_grouping") }}
-
 with
     student_unpivot as (
         select u.*, f.cte_grouping, f.audit_category, f.code_type,

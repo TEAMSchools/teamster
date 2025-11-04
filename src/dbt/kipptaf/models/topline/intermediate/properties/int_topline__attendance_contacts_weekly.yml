@@ -1,4 +1,2 @@
 models:
   - name: int_topline__attendance_contacts_weekly
-    config:
-      materialized: table

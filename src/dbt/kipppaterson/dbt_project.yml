@@ -25,6 +25,12 @@ vars:
   powerschool_external_location_root: gs://teamster-kipppaterson/dagster/kipppaterson/powerschool/sis/sftp
 
 models:
+  amplify:
+    dds:
+      +enabled: false
+    mclass:
+      api:
+        +enabled: false
   powerschool:
     +materialized: table
     sis:
