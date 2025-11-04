@@ -123,6 +123,9 @@ with
             and e.rn_undergrad = 1
             and e.rn_year = 1
             and g.expected_goal_type != 'Board'
+            and g.region is null
+            and g.schoolid is null
+            and (g.grade_level is null or g.grade_level = 12)
         group by
             e.region,
             e.school,
