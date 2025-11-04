@@ -44,6 +44,16 @@ with
         group by student_number, score_type
     ),
 
+    goals as (
+        select *,
+        from {{ ref("stg_google_sheets__kippfwd_goals") }}
+        where
+            region is null
+            and schoolid is null
+            and (grade_level is null or grade_level = 12)
+            and expected_goal_type != 'Board'
+    ),
+
     roster as (
         select
             e.region,
@@ -102,7 +112,7 @@ with
             ) as score,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
-        cross join {{ ref("stg_google_sheets__kippfwd_goals") }} as g
+        cross join goals as g
         left join
             {{ ref("int_assessments__college_assessment") }} as s
             on e.student_number = s.student_number
@@ -118,11 +128,7 @@ with
             alt_max_scale_score as c
             on s.student_number = c.student_number
             and s.score_type = c.score_type
-        where
-            e.school_level = 'HS'
-            and e.rn_undergrad = 1
-            and e.rn_year = 1
-            and g.expected_goal_type != 'Board'
+        where e.school_level = 'HS' and e.rn_undergrad = 1 and e.rn_year = 1
         group by
             e.region,
             e.school,

@@ -21,10 +21,6 @@ with
                 partition by school_specific_id, `date`, score_type
             ) as row_count_by_score_type,
 
-            count(*) over (
-                partition by school_specific_id, `date`, test_type
-            ) as row_count_by_scope,
-
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
             `date` is not null
@@ -66,10 +62,6 @@ with
                 partition by powerschool_student_number, latest_psat_date, score_type
             ) as row_count_by_score_type,
 
-            count(*) over (
-                partition by powerschool_student_number, latest_psat_date, test_type
-            ) as row_count_by_scope,
-
         from {{ ref("int_collegeboard__psat_unpivot") }}
     ),
 
@@ -85,8 +77,9 @@ with
                 when
                     avg(row_count_by_score_type) over (
                         partition by student_number, scope
+                    ) = avg(row_count_by_test_date) over (
+                        partition by student_number, scope
                     )
-                    = avg(row_count_by_scope) over (partition by student_number, scope)
                 then 'Case 1'
                 when
                     mod(
