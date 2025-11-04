@@ -242,6 +242,7 @@ with
             total_anticipated_calls as denominator,
             pct_interventions_complete as metric_value,
         from {{ ref("int_topline__attendance_interventions_weekly") }}
+        where total_anticipated_calls is not null
 
         union all
 
