@@ -89,9 +89,8 @@ models:
         data_type: boolean
         tests:
           - accepted_values:
-              arguments:
-                values:
-                  - false
-              config:
-                severity: warn
-                store_failures: true
+              values: [false]
+              quote: false
+            config:
+              severity: warn
+              store_failures: true
