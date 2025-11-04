@@ -1,4 +1,2 @@
 models:
   - name: int_topline__deanslist_incentives_weekly
-    config:
-      materialized: table
