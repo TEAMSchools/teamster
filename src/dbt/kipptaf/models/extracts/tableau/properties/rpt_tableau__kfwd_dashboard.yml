@@ -537,3 +537,7 @@ models:
         data_type: numeric
       - name: recent_transcript_date
         data_type: date
+      - name: ktc_status
+        data_type: string
+      - name: ktc_status_detail
+        data_type: string
