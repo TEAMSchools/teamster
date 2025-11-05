@@ -221,7 +221,7 @@ select
     end as advisory,
 
     case
-        when e.region in ('Camden', 'Newark')
+        when e.region in ('Camden', 'Newark', 'Paterson')
         then 'NJ'
         when e.region = 'Miami'
         then 'FL'
