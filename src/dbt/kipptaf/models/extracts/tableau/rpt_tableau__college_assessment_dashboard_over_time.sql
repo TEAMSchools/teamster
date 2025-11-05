@@ -161,7 +161,7 @@ with
             s.subject_area,
             s.aligned_subject_area,
             s.aligned_subject,
-            s.max_scale_score
+            s.max_scale_score,
             s.strategy_case
     )
 
