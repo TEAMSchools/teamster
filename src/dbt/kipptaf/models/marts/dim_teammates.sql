@@ -18,21 +18,12 @@ with
 
     final as (
         select
-            roster.employee_number,
-            roster.formatted_name,
-            roster.assignment_status,
-            roster.race_ethnicity_reporting,
-            roster.home_business_unit_name,
-            roster.home_work_location_name,
-            roster.home_work_location_powerschool_school_id,
-            roster.home_work_location_grade_band,
-            roster.home_department_name,
-            roster.job_title,
-            roster.reports_to_formatted_name,
-            roster.effective_date_start,
-            roster.effective_date_end,
-            roster.primary_indicator,
-            roster.is_current_record,
+            {{
+                dbt_utils.generate_surrogate_key(
+                    ["employee_number", "effective_date_start"]
+                )
+            }} as teammate_history_key,
+            roster.*,
             grade_levels.grade_level as grade_taught,
             if(
                 roster.primary_indicator
@@ -52,11 +43,7 @@ with
                 true,
                 false
             ) as is_teacher,
-            {{
-                dbt_utils.generate_surrogate_key(
-                    ["employee_number", "effective_date_start"]
-                )
-            }} as teammate_event_key,
+
         from roster
         left join
             grade_levels
