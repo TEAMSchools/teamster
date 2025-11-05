@@ -221,7 +221,7 @@ select
     end as advisory,
 
     case
-        when e.region in ('Camden', 'Newark')
+        when e.region in ('Camden', 'Newark', 'Paterson')
         then 'NJ'
         when e.region = 'Miami'
         then 'FL'
@@ -249,6 +249,7 @@ select
         then 'Salesforce/Overgrad has FAFSA opt-out mismatch'
         else 'No issues'
     end as fafsa_status_mismatch_category,
+
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
