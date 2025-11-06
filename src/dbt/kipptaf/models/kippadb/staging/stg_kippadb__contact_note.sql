@@ -35,5 +35,6 @@ select
 
     {{ date_to_fiscal_year(date_field="date__c", start_month=7, year_source="start") }}
     as academic_year,
+    
 from {{ source("kippadb", "contact_note") }}
 where not isdeleted
