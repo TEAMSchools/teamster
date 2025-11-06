@@ -1,5 +1,16 @@
 models:
   - name: stg_kippadb__contact_note
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - contact
+              - subject
+              - comments,
+              - next_steps,
+              - date,
+              - status,
+              - type,
     columns:
       - name: id
         data_type: string
