@@ -33,8 +33,10 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__ap_assessment_dashboard")
-      - ref("rpt_tableau__college_assessment_dashboard")
-      - ref("rpt_tableau__college_assessment_dashboard_historic")
+      - ref("rpt_tableau__college_assessment_dashboard_current")
+      - ref("rpt_tableau__college_assessment_dashboard_over_time")
+      - ref("rpt_tableau__college_assessment_dashboard_roster")
+      - ref("rpt_tableau__college_assessment_dashboard_scores")
     meta:
       dagster:
         kinds:
@@ -430,7 +432,7 @@ exposures:
         asset:
           metadata:
             id: 5698ccc2-b952-4123-878b-48166b686b16
-            cron_schedule: 0 7 * * *
+            cron_schedule: 0 5 * * *
   - name: stipend_and_bonus_dashboard
     label: Stipend and Bonus Dashboard
     type: dashboard
@@ -489,7 +491,6 @@ exposures:
         asset:
           metadata:
             id: 8f8b058f-2408-470d-95b0-681d6c8b65f4
-            cron_schedule: 0 * * * *
   - name: kipp_miami_fast_iready_analysis
     label: KIPP Miami FAST & i-Ready Analysis
     type: dashboard

@@ -13,10 +13,6 @@ with
             rn_highest,
             contact as salesforce_id,
 
-            count(*) over (
-                partition by school_specific_id, test_type, `date`
-            ) as row_count_by_test_date,
-
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where
             `date` is not null
@@ -50,30 +46,15 @@ with
 
             cast(null as string) as salesforce_id,
 
-            count(*) over (
-                partition by powerschool_student_number, test_type, latest_psat_date
-            ) as row_count_by_test_date,
-
         from {{ ref("int_collegeboard__psat_unpivot") }}
     ),
 
-    scores as (
+    score_counts as (
         select
             *,
 
-            if(
-                subject_area in ('Composite', 'Combined'), 'Total', subject_area
-            ) as aligned_subject_area,
-
-            mod(
-                cast(
-                    avg(row_count_by_test_date) over (
-                        partition by student_number, scope
-                    ) as numeric
-                ),
-                1
-            )
-            != 0 as is_multirow,
+            if(subject_area in ('Combined', 'Composite'), 1, 0) as is_overall_score,
+            if(subject_area not in ('Combined', 'Composite'), 1, 0) as is_subject_score,
 
             max(scale_score) over (
                 partition by student_number, score_type order by test_date asc
@@ -88,6 +69,36 @@ with
         from score_union
     ),
 
+    scores as (
+        select
+            *,
+
+            sum(is_overall_score) over (
+                partition by student_number, scope, test_date
+            ) as n_overall_scores,
+
+            sum(is_subject_score) over (
+                partition by student_number, scope, test_date
+            ) as n_subject_scores,
+        from score_counts
+    ),
+
+    case_calcs as (
+        select
+            *,
+
+            case
+                when n_overall_scores >= 1 and n_subject_scores = 0
+                then 'Case 1'
+                when n_overall_scores = 0 and n_subject_scores >= 1
+                then 'Case 2'
+                when n_overall_scores >= 1 and n_subject_scores >= 1
+                then 'Case 3'
+            end as strategy_case,
+
+        from scores
+    ),
+
     growth as (
         select
             academic_year,
@@ -100,7 +111,7 @@ with
                 partition by student_number, scope order by test_date asc
             ) as previous_total_score_change,
 
-        from scores
+        from case_calcs
         where subject_area in ('Composite', 'Combined') and test_date is not null
     ),
 
@@ -109,26 +120,27 @@ with
             student_number,
             scope,
             score_type,
-            is_multirow,
+            strategy_case,
 
             avg(scale_score) as max_scale_score,
 
-        from scores
+        from case_calcs
         where
-            score_type not in (
+            rn_highest = 1
+            and score_type not in (
                 'psat10_reading',
                 'psat10_math_test',
                 'sat_math_test_score',
                 'sat_reading_test_score'
             )
-            and rn_highest = 1
-        group by student_number, scope, score_type, is_multirow
+        group by student_number, scope, score_type, strategy_case
     ),
 
     max_total_score as (
         select
             student_number,
             scope,
+            strategy_case,
 
             if(scope = 'ACT', avg(max_scale_score), sum(max_scale_score)) as superscore,
 
@@ -141,7 +153,7 @@ with
                 'psat10_total',
                 'psatnmsqt_total'
             )
-        group by student_number, scope
+        group by student_number, scope, strategy_case
     ),
 
     alt_superscore as (
@@ -156,7 +168,7 @@ with
                 'psat10_total',
                 'psatnmsqt_total'
             )
-            and not is_multirow
+            and strategy_case = 'Case 1'
         group by student_number, scope
     ),
 
@@ -208,7 +220,7 @@ with
             ) over (partition by s.student_number, s.scope, s.test_date)
             as sum_running_max_superscore,
 
-        from scores as s
+        from case_calcs as s
         left join
             max_score as m
             on s.student_number = m.student_number
@@ -234,6 +246,12 @@ select
 
     'Official' as test_type,
 
+    format_date('%B', test_date) as test_month,
+
+    if(
+        subject_area in ('Composite', 'Combined'), 'Total', subject_area
+    ) as aligned_subject_area,
+
     case
         when
             score_type in (
@@ -244,12 +262,10 @@ select
                 'psat89_ebrw'
             )
         then 'EBRW/Reading'
-        when aligned_subject_area = 'Total'
+        when subject_area in ('Composite', 'Combined')
         then 'Total'
         else subject_area
     end as aligned_subject,
-
-    format_date('%B', test_date) as test_month,
 
     round(
         case
