@@ -6,11 +6,11 @@ models:
             combination_of_columns:
               - contact
               - subject
-              - comments,
-              - next_steps,
-              - date,
-              - status,
-              - type,
+              - comments
+              - next_steps
+              - date
+              - status
+              - type
     columns:
       - name: id
         data_type: string
