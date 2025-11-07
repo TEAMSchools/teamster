@@ -112,6 +112,22 @@ with
 
         select
             'K-8 Reading and Math' as layer,
+            'i-Ready Time on Task' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            week_end_sunday as term_end,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+            time_on_task_min_week as metric_value,
+        from {{ ref("int_topline__iready_lessons_weekly") }}
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
             'Star Diagnostic' as indicator,
             student_number,
             academic_year,
