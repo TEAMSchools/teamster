@@ -50,7 +50,34 @@ with
         from {{ ref("stg_collegeboard__sat") }}
     )
 
-select *,
+select
+    * except (sat_grade),
+
+    case
+        sat_grade
+        when '1'
+        then 'Not yet in 8th grade'
+        when '2'
+        then '8th grade'
+        when '4'
+        then '9th grade'
+        when '5'
+        then '10th grade'
+        when '6'
+        then '11th grade'
+        when '7'
+        then '12th grade'
+        when '8'
+        then 'No longer in high school'
+        when '10'
+        then 'No response'
+        when '11'
+        then 'Unknown'
+        when '12'
+        then '1st year of college'
+        when '13'
+        then '2nd year of college'
+    end as sat_grade,
 from
     sat unpivot (
         (
