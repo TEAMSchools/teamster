@@ -1,6 +1,58 @@
+with
+    sat as (
+        select
+            *,
+
+            null as admin1_sat_adv_math,
+            null as admin1_sat_comm_evidence,
+            null as admin1_sat_critical_reading,
+            null as admin1_sat_eng_convent,
+            null as admin1_sat_essay_mc,
+            null as admin1_sat_essay,
+            null as admin1_sat_expr_ideas,
+            null as admin1_sat_heart_algebra,
+            null as admin1_sat_hist_socst_cross,
+            null as admin1_sat_math,
+            null as admin1_sat_probslv_data,
+            null as admin1_sat_reading,
+            null as admin1_sat_sci_cross,
+            null as admin1_sat_words_context,
+            null as admin1_sat_writ_lang,
+            null as admin1_sat_writing,
+
+            cast(null as numeric) as admin1_sat_math_test,
+
+            {% for admin in [2, 3, 4, 5, 6] %}
+                null as `admin{{ admin }}_percentile_country_math`,
+                null as `admin{{ admin }}_percentile_country_rw`,
+                null as `admin{{ admin }}_percentile_country_total`,
+                null as `admin{{ admin }}_percentile_natrep_sat_ebrw`,
+                null as `admin{{ admin }}_percentile_natrep_sat_math_section`,
+                null as `admin{{ admin }}_percentile_natrep_sat_total`,
+                null as `admin{{ admin }}_percentile_natuser_sat_ebrw`,
+                null as `admin{{ admin }}_percentile_natuser_sat_math_section`,
+                null as `admin{{ admin }}_percentile_natuser_sat_total`,
+                null as `admin{{ admin }}_percentile_state_math`,
+                null as `admin{{ admin }}_percentile_state_rw`,
+                null as `admin{{ admin }}_percentile_state_total`,
+
+                cast(null as string) as `admin{{ admin }}_sat_ks_math_advanced`,
+                cast(null as string) as `admin{{ admin }}_sat_ks_math_algebra`,
+                cast(null as string) as `admin{{ admin }}_sat_ks_math_geometry`,
+                cast(null as string) as `admin{{ admin }}_sat_ks_math_problemsolving`,
+                cast(null as string) as `admin{{ admin }}_sat_ks_math_section`,
+                cast(null as string) as `admin{{ admin }}_sat_ks_reading_craft`,
+                cast(null as string) as `admin{{ admin }}_sat_ks_reading_expression`,
+                cast(null as string) as `admin{{ admin }}_sat_ks_reading_information`,
+                cast(null as string) as `admin{{ admin }}_sat_ks_reading_section`,
+                cast(null as string) as `admin{{ admin }}_sat_ks_reading_standard`,
+            {% endfor %}
+        from {{ ref("stg_collegeboard__sat") }}
+    )
+
 select *,
 from
-    {{ ref("stg_collegeboard__sat") }} unpivot (
+    sat unpivot (
         (
             college_reportable,
             make_up,
