@@ -6,6 +6,7 @@ with
 
     final as (
         select
+            _dbt_source_relation,
             student_number,
             studentid,
             schoolid,
