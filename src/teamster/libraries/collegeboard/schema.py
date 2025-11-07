@@ -2,7 +2,7 @@ from pydantic import AliasChoices, BaseModel, Field
 
 FILLER_FIELD = Field(
     default=None,
-    alias=AliasChoices(
+    validation_alias=AliasChoices(
         "filler_1",
         "filler_10",
         "filler_11",
