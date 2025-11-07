@@ -62,6 +62,12 @@ select
 
     hm.max_scale_score as sat_math_highest,
 
+    p.psat89_count_lifetime,
+    p.psat10_count_lifetime,
+    p.psatnmsqt_count_lifetime,
+    p.sat_count_lifetime,
+    p.act_count_lifetime,
+
     concat(
         ea.expected_field_name, ' ', ea.expected_score_category
     ) as expected_field_name_score_category,
@@ -110,6 +116,10 @@ left join
         'College and Career III',
         'College and Career II'
     )
+left join
+    {{ ref("int_students__college_assessment_participation_roster") }} as p
+    on e.student_number = p.student_number
+    and p.rn_lifetime = 1
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.graduation_year >= {{ var("current_academic_year") + 1 }}
