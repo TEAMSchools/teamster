@@ -257,3 +257,5 @@ models:
         data_type: boolean
       - name: is_sipps
         data_type: boolean
+      - name: es_graduated
+        data_type: string
