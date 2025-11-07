@@ -24,7 +24,7 @@ exposures:
       - ref("dim_terms")
       - ref("fct_microgoals")
       - ref("fct_observations")
-      - ref("metricflow_time_spine")
+      - ref("dim_dates")
     meta:
       dagster:
         kinds:
