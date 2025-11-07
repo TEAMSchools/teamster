@@ -8,19 +8,23 @@ with
                 )
             ) as date_day
     ),
-final as (
-select
-    date_day,
-    date_trunc(date_day, week(monday)) as week_start_monday,
-    date_add(date_trunc(date_day, week(monday)), interval 6 day) as week_end_sunday,
-    {{
-        date_to_fiscal_year(
-            date_field="date_day",
-            start_month=7,
-            year_source="start",
-        )
-    }} as academic_year,
-from date_spine
-)
 
-select * from final where date_day = '2025-10-29'
+    final as (
+        select
+            date_day,
+            date_trunc(date_day, week(monday)) as week_start_monday,
+            date_add(
+                date_trunc(date_day, week(monday)), interval 6 day
+            ) as week_end_sunday,
+            {{
+                date_to_fiscal_year(
+                    date_field="date_day",
+                    start_month=7,
+                    year_source="start",
+                )
+            }} as academic_year,
+        from date_spine
+    )
+
+select *
+from final
