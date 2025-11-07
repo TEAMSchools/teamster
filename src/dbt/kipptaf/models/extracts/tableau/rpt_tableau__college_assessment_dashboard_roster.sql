@@ -62,15 +62,15 @@ select
 
     hm.max_scale_score as sat_math_highest,
 
-    p.psat89_count_lifetime,
-    p.psat10_count_lifetime,
-    p.psatnmsqt_count_lifetime,
-    p.sat_count_lifetime,
-    p.act_count_lifetime,
-
     concat(
         ea.expected_field_name, ' ', ea.expected_score_category
     ) as expected_field_name_score_category,
+
+    coalesce(p.psat89_count_lifetime, 0) as psat89_count_lifetime,
+    coalesce(p.psat10_count_lifetime, 0) as psat10_count_lifetime,
+    coalesce(p.psatnmsqt_count_lifetime, 0) as psatnmsqt_count_lifetime,
+    coalesce(p.sat_count_lifetime, 0) as sat_count_lifetime,
+    coalesce(p.act_count_lifetime, 0) as act_count_lifetime,
 
     coalesce(c.courses_course_name, 'No Data') as ccr_course,
     coalesce(c.teacher_lastfirst, 'No Data') as ccr_teacher_name,
