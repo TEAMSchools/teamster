@@ -18,19 +18,22 @@ with
 
     final as (
         select
-            {{
-                dbt_utils.generate_surrogate_key(
-                    ["employee_number", "effective_date_start"]
-                )
-            }} as teammate_history_key,
-            roster.*,
+            roster.employee_number,
+            roster.effective_date_start,
+            roster.effective_date_end,
+            roster.formatted_name,
+            roster.assignment_status,
+            roster.race_ethnicity_reporting,
+            roster.gender_identity,
+            roster.home_business_unit_name,
+            roster.home_department_name,
+            roster.home_work_location_name,
+            roster.home_work_location_grade_band,
+            roster.job_title,
+            roster.reports_to_formatted_name,
+            roster.primary_indicator,
+            roster.academic_year,
             grade_levels.grade_level as grade_taught,
-            if(
-                roster.primary_indicator
-                and (roster.is_current_record or roster.is_prestart),
-                true,
-                false
-            ) as current_roster,
             if(
                 roster.job_title in (
                     'Teacher',
@@ -43,7 +46,6 @@ with
                 true,
                 false
             ) as is_teacher,
-
         from roster
         left join
             grade_levels
