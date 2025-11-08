@@ -143,3 +143,5 @@ models:
         data_type: boolean
       - name: rn_respondent
         data_type: int64
+      - name: es_graduated
+        data_type: string

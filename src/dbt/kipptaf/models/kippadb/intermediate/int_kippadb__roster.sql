@@ -51,6 +51,7 @@ with
             se.exitcode as exit_code,
             se.is_504 as powerschool_is_504,
             se.lep_status,
+            se.es_graduated,
 
             se.contact_1_email_current as powerschool_contact_1_email_current,
             se.contact_1_name as powerschool_contact_1_name,
@@ -113,7 +114,6 @@ with
 
             e.entry_school,
             e.is_es_grad,
-            e.es_graduated,
 
             concat(
                 os.assigned_counselor__last_name,
