@@ -72,7 +72,7 @@ observations = build_grow_asset(
         AssetCheckSpec(name="zero_api_errors", asset=[*key_prefix, "user_sync"])
     ],
     group_name="grow",
-    kinds={"python"},
+    kinds={"python", "task"},
 )
 def grow_user_sync(
     context: AssetExecutionContext, db_bigquery: BigQueryResource, grow: GrowResource
