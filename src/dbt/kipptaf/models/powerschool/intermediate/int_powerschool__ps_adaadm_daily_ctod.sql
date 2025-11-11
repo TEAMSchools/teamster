@@ -44,6 +44,8 @@ select
     if(
         mem.att_code in ('OS', 'OSS', 'OSSP', 'S', 'ISS', 'SHI'), 1.0, 0.0
     ) as is_suspended,
+
+    initcap(regexp_extract(mem._dbt_source_relation, r'kipp(\w+)_')) as region,
 from union_relations as mem
 inner join
     {{ ref("int_powerschool__terms") }} as t
