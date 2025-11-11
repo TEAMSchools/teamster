@@ -262,6 +262,8 @@ select
     c.common_app_linked,
     c.wishlist_signed_off_by_counselor,
     c.wishlist_notes,
+    c.ktc_status,
+    c.es_graduated,
 
     ay.academic_year,
 
@@ -475,6 +477,12 @@ select
     c.contact_opt_out_national_contact,
     c.contact_opt_out_regional_contact,
     c.entry_school,
+
+    if(
+        c.contact_kipp_region_name = 'KIPP Miami' and c.ktc_status like 'TAF%',
+        'Miami TAF',
+        c.ktc_status
+    ) as ktc_status_detail,
 
     coalesce(ar.max_ecc_accepted, 0) as max_ecc_accepted,
 

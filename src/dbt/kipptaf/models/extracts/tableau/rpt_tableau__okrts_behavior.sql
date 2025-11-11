@@ -149,6 +149,8 @@ select
 
     if(bi.behavior is not null, 1, 0) as is_earned_progress_to_quarterly,
 
+    if(bq.behavior is not null, 1, 0) as is_earned_quarterly_incentive,
+
     extract(month from co.week_start_monday) as behavior_month,
 
     count(distinct co.student_number) over (
@@ -168,4 +170,11 @@ left join
     and co.academic_year = bi.academic_year
     and bi.end_date between co.week_start_monday and co.week_end_sunday
     and bi.incentive_type = 'Weeks (Progress to Quarterly Incentive)'
+left join
+    {{ ref("int_deanslist__behavior_incentive_by_term") }} as bq
+    on co.student_number = bq.student_school_id
+    and co.deanslist_school_id = bq.school_id
+    and co.academic_year = bq.academic_year
+    and co.quarter = bq.term_name
+    and bq.incentive_type = 'Quarters'
 where co.is_enrolled_week and co.academic_year >= {{ var("current_academic_year") - 1 }}

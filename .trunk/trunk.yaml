@@ -11,7 +11,7 @@ lint:
     - bandit@1.8.6
     - actionlint@1.7.8
     - git-diff-check
-    - gitleaks@8.28.0
+    - gitleaks@8.29.0
     - hadolint@2.14.0
     - isort@7.0.0
     - markdownlint@0.45.0
@@ -19,7 +19,7 @@ lint:
     - oxipng@9.1.5
     - prettier@3.6.2
     - pyright@1.1.407
-    - ruff@0.14.3
+    - ruff@0.14.4
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - sqlfluff@3.5.0

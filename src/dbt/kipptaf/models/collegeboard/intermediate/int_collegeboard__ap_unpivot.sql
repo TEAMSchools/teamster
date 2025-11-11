@@ -1,4 +1,23 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
+    ps_xw as (
+        select a.*, x.powerschool_student_number,
+        from {{ ref("stg_collegeboard__ap") }} as a
+        left join
+            {{ ref("stg_google_sheets__collegeboard__ap_id_crosswalk") }} as x
+            on a.ap_number_ap_id = x.college_board_id
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="ps_xw",
+                partition_by="powerschool_student_number",
+                order_by="enrollment_school_year desc",
+            )
+        }}
+    ),
+
     ap_data as (
         select
             ap_number_ap_id,
@@ -15,7 +34,7 @@ with
             extract(year from parse_date('%y', admin_year)) as admin_year,
             extract(year from parse_date('%y', admin_year)) - 1 as academic_year,
         from
-            {{ ref("stg_collegeboard__ap") }} unpivot (
+            deduplicate unpivot (
                 (
                     admin_year,
                     exam_code,

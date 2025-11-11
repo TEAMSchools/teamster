@@ -101,7 +101,6 @@ student_test_update = build_sftp_folder_asset(
         r"Student\sTest\sUpdate\sExport\s\d+-\d+-\d+T\d+_\d+_\d+\.\d+\+\d+"
     ),
     avro_schema=STUDENT_TEST_UPDATE_SCHEMA,
-    file_dtype=str,
     ssh_resource_key=ssh_resource_key,
 )
 
