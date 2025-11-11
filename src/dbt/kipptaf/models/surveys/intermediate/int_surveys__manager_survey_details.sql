@@ -15,7 +15,7 @@ with
             rt.code as campaign_reporting_term,
 
             safe_cast(
-                regexp_extract(fr.text_value, r'\((\d{6})\)') as integer
+                regexp_extract(fr.text_value, r'\((\d{6})\)') as int
             ) as subject_df_employee_number,
         from {{ ref("int_google_forms__form_responses") }} as fr
         inner join
@@ -76,7 +76,7 @@ select
 
     safe_cast(fr.text_value as numeric) as answer_value,
 
-    if(safe_cast(fr.text_value as integer) is null, 1, 0) as is_open_ended,
+    if(safe_cast(fr.text_value as int) is null, 1, 0) as is_open_ended,
 
     reh.formatted_name as respondent_preferred_name,
     reh.race_ethnicity_reporting as respondent_race_ethnicity_reporting,
@@ -103,7 +103,6 @@ inner join
     and ri.survey_response_id = fr.response_id
     and fr.item_abbreviation
     not in ('respondent_employee_number', 'subject_employee_number')
-    and ri.rn_cur = 1
 inner join
     {{ ref("int_people__staff_roster_history") }} as reh
     on ri.respondent_df_employee_number = reh.employee_number
@@ -113,6 +112,7 @@ inner join
 inner join
     {{ ref("int_people__staff_roster") }} as sr
     on ri.subject_df_employee_number = sr.employee_number
+where ri.rn_cur = 1
 
 union all
 
