@@ -1,36 +1,33 @@
 {% macro parse_html(column_name) %}
-    coalesce(
-        trim(
+    trim(
+        regexp_replace(
             regexp_replace(
                 regexp_replace(
-                    regexp_replace(
+                    replace(
                         replace(
                             replace(
                                 replace(
-                                    replace(
-                                        replace({{ column_name }}, '&#39;', "'"),
-                                        '&quot;',
-                                        '"'
-                                    ),
-                                    '&lt;',
-                                    '<'
+                                    replace({{ column_name }}, '&#39;', "'"),
+                                    '&quot;',
+                                    '"'
                                 ),
-                                '&gt;',
-                                '>'
+                                '&lt;',
+                                '<'
                             ),
-                            '&amp;',
-                            '&'
+                            '&gt;',
+                            '>'
                         ),
-                        r'<[^>]+>',
-                        ''
+                        '&amp;',
+                        '&'
                     ),
-                    r'\r|\n',
-                    ' '
+                    r'<[^>]+>',
+                    ''
                 ),
-                r'\s+',
+                r'\r|\n',
                 ' '
-            )
-        ),
-        'Blank'
+            ),
+            r'\s+',
+            ' '
+        )
     )
 {% endmacro %}
