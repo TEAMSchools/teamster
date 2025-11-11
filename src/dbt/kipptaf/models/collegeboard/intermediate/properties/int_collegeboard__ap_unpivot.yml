@@ -1,0 +1,10 @@
+models:
+  - name: int_collegeboard__ap_unpivot
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - powerschool_student_number
+              - rn_exam_number
+          config:
+            store_failures: true

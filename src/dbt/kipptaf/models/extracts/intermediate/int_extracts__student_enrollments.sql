@@ -1,5 +1,5 @@
 with
-    esms_grad as (
+    esms_attend as (
         select
             _dbt_source_relation,
             student_number,
@@ -10,6 +10,21 @@ with
                 partition by student_number, school_level order by exitdate desc
             ) as rn,
         from {{ ref("base_powerschool__student_enrollments") }}
+    ),
+
+    es_grad as (
+        select
+            student_number,
+            school_abbreviation,
+
+            row_number() over (
+                partition by student_number order by exitdate desc
+            ) as rn,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where
+            grade_level = 4
+            and extract(month from exitdate) = 6
+            and exitdate < current_date('{{ var("local_timezone") }}')
     ),
 
     next_year_school as (
@@ -96,6 +111,8 @@ select
     m.school_abbreviation as ms_attended,
 
     es.school_abbreviation as es_attended,
+
+    eg.school_abbreviation as es_graduated,
 
     mt.territory,
 
@@ -221,7 +238,7 @@ select
     end as advisory,
 
     case
-        when e.region in ('Camden', 'Newark')
+        when e.region in ('Camden', 'Newark', 'Paterson')
         then 'NJ'
         when e.region = 'Miami'
         then 'FL'
@@ -254,13 +271,13 @@ left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
     on e.school_name = lc.name
 left join
-    esms_grad as m
+    esms_attend as m
     on e.student_number = m.student_number
     and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
     and m.school_level = 'MS'
     and m.rn = 1
 left join
-    esms_grad as es
+    esms_attend as es
     on e.student_number = es.student_number
     and {{ union_dataset_join_clause(left_alias="e", right_alias="es") }}
     and es.school_level = 'ES'
@@ -336,3 +353,4 @@ left join
     and sip.courses_course_number = 'SEM01099G1'
     and sip.rn_course_number_year = 1
     and not sip.is_dropped_section
+left join es_grad as eg on e.student_number = eg.student_number and eg.rn = 1
