@@ -318,6 +318,7 @@ select
     p.student_number,
     p.sf_contact_id,
     p.ktc_cohort,
+    p.es_graduated,
     p.academic_year,
     p.persistence_year,
     p.enrollment_id,
