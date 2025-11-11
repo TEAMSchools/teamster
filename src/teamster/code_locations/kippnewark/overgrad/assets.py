@@ -3,14 +3,13 @@ from teamster.code_locations.kippnewark.overgrad.schema import (
     ADMISSION_SCHEMA,
     CUSTOM_FIELD_SCHEMA,
     FOLLOWING_SCHEMA,
-    SCHOOL_SCHEMA,
     STUDENT_SCHEMA,
 )
 from teamster.libraries.overgrad.assets import build_overgrad_asset
 
-schools = build_overgrad_asset(
-    code_location=CODE_LOCATION, name="schools", schema=SCHOOL_SCHEMA
-)
+# schools = build_overgrad_asset(
+#     code_location=CODE_LOCATION, name="schools", schema=SCHOOL_SCHEMA
+# )
 
 students = build_overgrad_asset(
     code_location=CODE_LOCATION, name="students", schema=STUDENT_SCHEMA
@@ -32,6 +31,5 @@ assets = [
     admissions,
     custom_fields,
     followings,
-    schools,
     students,
 ]
