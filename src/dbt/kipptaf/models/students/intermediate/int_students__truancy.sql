@@ -26,6 +26,8 @@ with
     )
 
 select
+    'Florida' as calc_type,
+
     att.academic_year,
     att.student_number,
 
@@ -37,4 +39,32 @@ from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as att
 inner join
     truancy_lookback as tl
     on att.calendardate between tl.truancy_lookback and tl.date_day
+where att.region = 'Miami'
 group by att.academic_year, att.student_number, tl.date_day, tl.truancy_lookback
+
+union all
+
+select
+    'New Jersey' as calc_type,
+
+    academic_year,
+    student_number,
+
+    calendardate as date_day,
+    cast(null as date) as truancy_lookback,
+
+    if(
+        (
+            avg(is_absent) over (
+                partition by academic_year, student_number
+                order by calendardate
+            ) * sum(membershipvalue) over (
+                partition by academic_year, student_number order by calendardate
+            )
+        )
+        >= 50,
+        true,
+        false
+    ) as is_truant
+from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
+where region in ('Newark', 'Paterson', 'Camden')
