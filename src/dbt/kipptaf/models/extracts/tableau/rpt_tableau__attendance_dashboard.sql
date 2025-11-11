@@ -63,6 +63,11 @@ with
             overall_filters as f
             on co.academic_year = f.academic_year
             and co.student_number = f.student_number
+        left join
+            {{ ref("int_students__truancy") }} as t
+            on co.academic_year = t.academic_year
+            and co.student_number = t.student_number
+            and ad.calendardate = t.calendardate
         where
             ad.membershipvalue = 1
             and ad.attendancevalue is not null
