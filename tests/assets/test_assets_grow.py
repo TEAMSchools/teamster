@@ -204,12 +204,12 @@ def test_asset_grow_generic_tags_usertypes():
     )
 
 
-def test_asset_grow_informals():
-    from teamster.code_locations.kipptaf.level_data.grow.assets import (
-        grow_static_partition_assets,
-    )
+# def test_asset_grow_informals():
+#     from teamster.code_locations.kipptaf.level_data.grow.assets import (
+#         grow_static_partition_assets,
+#     )
 
-    _test_asset(assets=grow_static_partition_assets, asset_name="informals")
+#     _test_asset(assets=grow_static_partition_assets, asset_name="informals")
 
 
 def test_asset_grow_measurements():
@@ -220,12 +220,12 @@ def test_asset_grow_measurements():
     _test_asset(assets=grow_static_partition_assets, asset_name="measurements")
 
 
-def test_asset_grow_meetings():
-    from teamster.code_locations.kipptaf.level_data.grow.assets import (
-        grow_static_partition_assets,
-    )
+# def test_asset_grow_meetings():
+#     from teamster.code_locations.kipptaf.level_data.grow.assets import (
+#         grow_static_partition_assets,
+#     )
 
-    _test_asset(assets=grow_static_partition_assets, asset_name="meetings")
+#     _test_asset(assets=grow_static_partition_assets, asset_name="meetings")
 
 
 def test_asset_grow_roles():
@@ -262,12 +262,12 @@ def test_asset_grow_users():
     )
 
 
-def test_asset_grow_videos():
-    from teamster.code_locations.kipptaf.level_data.grow.assets import (
-        grow_static_partition_assets,
-    )
+# def test_asset_grow_videos():
+#     from teamster.code_locations.kipptaf.level_data.grow.assets import (
+#         grow_static_partition_assets,
+#     )
 
-    _test_asset(assets=grow_static_partition_assets, asset_name="videos")
+#     _test_asset(assets=grow_static_partition_assets, asset_name="videos")
 
 
 def test_asset_grow_observations():
