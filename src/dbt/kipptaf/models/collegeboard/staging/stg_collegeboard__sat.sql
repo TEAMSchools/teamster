@@ -1,14 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("collegeboard", "src_collegeboard__sat"),
-                partition_by="cb_id",
-                order_by="report_date desc",
-            )
-        }}
-    )
-
 select
     ai_code,
     ai_name,
@@ -257,4 +246,4 @@ select
     case
         math_ccr_benchmark when 'Y' then true when 'N' then false
     end as math_ccr_benchmark,
-from deduplicate
+from {{ source("collegeboard", "src_collegeboard__sat") }}

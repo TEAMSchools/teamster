@@ -1,4 +1,12 @@
 with
+    ps_xw as (
+        select psat.*, xw.powerschool_student_number,
+        from {{ ref("stg_collegeboard__psat") }} as psat
+        left join
+            {{ ref("stg_google_sheets__collegeboard__sat_id_crosswalk") }} as xw
+            on psat.cb_id = xw.college_board_id
+    ),
+
     psat as (
         select
             cb_id,
@@ -41,7 +49,7 @@ with
             end as course_discipline,
 
         from
-            {{ ref("int_collegeboard__psat") }} unpivot (
+            ps_xw unpivot (
                 score for score_type in (
                     latest_psat_total,
                     latest_psat_math_section,
