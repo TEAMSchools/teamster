@@ -1,16 +1,11 @@
 with
     deanslist_notes as (
         select
-            ktc.contact_id as contact__c,
+            ktc.contact_id,
 
-            c.call_date as date__c,
+            c.call_date,
 
-            -- calls macro to clean up html tags
-            {{ parse_html("c.topic") }} as comments__c,
-
-            {{ parse_html("c.response") }} as next_steps__c,
-
-            if(c.call_status = 'Completed', 'Successful', 'Outreach') as status__c,
+            if(c.call_status = 'Completed', 'Successful', 'Outreach') as `status`,
 
             -- do not use this for years prior to 2025
             case
@@ -40,7 +35,7 @@ with
                 when '7KF: AS'
                 then 'AS11'
                 else c.reason
-            end as subject__c,
+            end as `subject`,
 
             case
                 c.call_type
@@ -56,7 +51,10 @@ with
                 then 'Email'
                 when 'L'
                 then 'Mail (Letter/Postcard)'
-            end as type__c,
+            end as `type`,
+
+            {{ parse_html("c.topic") }} as topic,
+            {{ parse_html("c.response") }} as response,
 
             {{
                 date_to_fiscal_year(
@@ -69,52 +67,45 @@ with
             {{ ref("int_deanslist__comm_log") }} as c
             on ktc.student_number = c.student_school_id
             and regexp_contains(c.reason, r'^KF:')
-        -- this record is not accesible to fix on SF neither by UI nor via data loader
+        /* record not fixable on SF by either UI or data loader */
         where c.record_id != 14846967
     ),
 
     salesforce_notes as (
         select
             id,
-            contact as contact__c,
-            `subject` as subject__c,
-            `date` as date__c,
-            `status` as status__c,
-            `type` as type__c,
-            academic_year,
+            contact,
+            `subject`,
+            `date`,
+            `status`,
+            `type`,
 
-            -- calls macro to clean up html tags
-            {{ parse_html("comments") }} as comments__c,
-
-            {{ parse_html("next_steps") }} as next_steps__c,
+            {{ parse_html("comments") }} as comments,
+            {{ parse_html("next_steps") }} as next_steps,
 
         from {{ ref("stg_kippadb__contact_note") }}
         where
             academic_year = {{ var("current_academic_year") }}
-            -- this record is not accesible to fix on SF neither by UI nor via data
-            -- loader
+            /* record not fixable on SF by either UI or data loader */
             and id != 'a0LQg00000SOadzMAD'
     )
 
 select
-    d.contact__c,
-    d.subject__c,
-
-    d.date__c,
-    d.status__c,
-    d.type__c,
-
-    if(d.comments__c = 'Blank', null, d.comments__c) as comments__c,
-    if(d.next_steps__c = 'Blank', null, d.next_steps__c) as next_steps__c,
-
+    d.contact_id as contact__c,
+    d.subject as subject__c,
+    d.call_date as date__c,
+    d.status as status__c,
+    d.type as type__c,
+    d.topic as comments__c,
+    d.response as next_steps__c,
 from deanslist_notes as d
 left join
     salesforce_notes as s
-    on d.contact__c = s.contact__c
-    and d.subject__c = s.subject__c
-    and d.comments__c = s.comments__c
-    and d.next_steps__c = s.next_steps__c
-    and d.date__c = s.date__c
-    and d.status__c = s.status__c
-    and d.type__c = s.type__c
-where d.academic_year = {{ var("current_academic_year") }} and s.subject__c is null
+    on d.contact_id = s.contact
+    and d.subject = s.subject
+    and d.topic = s.comments
+    and d.response = s.next_steps
+    and d.call_date = s.date
+    and d.status = s.status
+    and d.type = s.type
+where d.academic_year = {{ var("current_academic_year") }} and s.subject is null
