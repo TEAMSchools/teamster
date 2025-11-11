@@ -176,7 +176,7 @@ def build_bigquery_query_sftp_asset(
         partitions_def=partitions_def,
         op_tags=op_tags,
         group_name="extracts",
-        kinds={"python"},
+        kinds={"python", "task"},
     )
     def _asset(context: AssetExecutionContext):
         now = datetime.now(timezone)
