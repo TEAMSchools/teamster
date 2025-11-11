@@ -263,6 +263,7 @@ select
     c.wishlist_signed_off_by_counselor,
     c.wishlist_notes,
     c.ktc_status,
+    c.es_graduated,
 
     ay.academic_year,
 
