@@ -1,14 +1,3 @@
-with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=source("collegeboard", "src_collegeboard__sat"),
-                partition_by="cb_id",
-                order_by="report_date desc",
-            )
-        }}
-    )
-
 select
     ai_code,
     ai_name,
@@ -231,24 +220,98 @@ select
         coalesce(admin6_record_locator, admin6_registration_num) as int
     ) as admin6_record_locator,
 
-    if(college_reportable = 'N', false, true) as admin1_college_reportable,
-    if(admin_2_college_reportable = 'N', false, true) as admin2_college_reportable,
-    if(admin_3_college_reportable = 'N', false, true) as admin3_college_reportable,
-    if(admin_4_college_reportable = 'N', false, true) as admin4_college_reportable,
-    if(admin_5_college_reportable = 'N', false, true) as admin5_college_reportable,
-    if(admin_6_college_reportable = 'N', false, true) as admin6_college_reportable,
-    if(latest_make_up = 'Y', true, false) as admin1_make_up,
-    if(admin2_make_up = 'Y', true, false) as admin2_make_up,
-    if(admin3_make_up = 'Y', true, false) as admin3_make_up,
-    if(admin4_make_up = 'Y', true, false) as admin4_make_up,
-    if(admin5_make_up = 'Y', true, false) as admin5_make_up,
-    if(admin6_make_up = 'Y', true, false) as admin6_make_up,
-    if(latest_sat_revised = 'Z', true, false) as admin1_sat_revised,
-    if(admin2_sat_revised = 'Z', true, false) as admin2_sat_revised,
-    if(admin3_sat_revised = 'Z', true, false) as admin3_sat_revised,
-    if(admin4_sat_revised = 'Z', true, false) as admin4_sat_revised,
-    if(admin5_sat_revised = 'Z', true, false) as admin5_sat_revised,
-    if(admin6_sat_revised = 'Z', true, false) as admin6_sat_revised,
+    case
+        when college_reportable = 'N'
+        then false
+        when latest_sat_date is not null
+        then true
+    end as admin1_college_reportable,
+    case
+        when admin_2_college_reportable = 'N'
+        then false
+        when admin2_sat_date is not null
+        then true
+    end as admin2_college_reportable,
+    case
+        when admin_3_college_reportable = 'N'
+        then false
+        when admin3_sat_date is not null
+        then true
+    end as admin3_college_reportable,
+    case
+        when admin_4_college_reportable = 'N'
+        then false
+        when admin4_sat_date is not null
+        then true
+    end as admin4_college_reportable,
+    case
+        when admin_5_college_reportable = 'N'
+        then false
+        when admin5_sat_date is not null
+        then true
+    end as admin5_college_reportable,
+    case
+        when admin_6_college_reportable = 'N'
+        then false
+        when admin6_sat_date is not null
+        then true
+    end as admin6_college_reportable,
+
+    case
+        when latest_make_up = 'Y' then true when latest_sat_date is not null then false
+    end as admin1_make_up,
+    case
+        when admin2_make_up = 'Y' then true when admin2_sat_date is not null then false
+    end as admin2_make_up,
+    case
+        when admin3_make_up = 'Y' then true when admin3_sat_date is not null then false
+    end as admin3_make_up,
+    case
+        when admin4_make_up = 'Y' then true when admin4_sat_date is not null then false
+    end as admin4_make_up,
+    case
+        when admin5_make_up = 'Y' then true when admin5_sat_date is not null then false
+    end as admin5_make_up,
+    case
+        when admin6_make_up = 'Y' then true when admin6_sat_date is not null then false
+    end as admin6_make_up,
+
+    case
+        when latest_sat_revised = 'Z'
+        then true
+        when latest_sat_date is not null
+        then false
+    end as admin1_sat_revised,
+    case
+        when admin2_sat_revised = 'Z'
+        then true
+        when admin2_sat_date is not null
+        then false
+    end as admin2_sat_revised,
+    case
+        when admin3_sat_revised = 'Z'
+        then true
+        when admin3_sat_date is not null
+        then false
+    end as admin3_sat_revised,
+    case
+        when admin4_sat_revised = 'Z'
+        then true
+        when admin4_sat_date is not null
+        then false
+    end as admin4_sat_revised,
+    case
+        when admin5_sat_revised = 'Z'
+        then true
+        when admin5_sat_date is not null
+        then false
+    end as admin5_sat_revised,
+    case
+        when admin6_sat_revised = 'Z'
+        then true
+        when admin6_sat_date is not null
+        then false
+    end as admin6_sat_revised,
 
     case
         ebrw_ccr_benchmark when 'Y' then true when 'N' then false
@@ -257,4 +320,4 @@ select
     case
         math_ccr_benchmark when 'Y' then true when 'N' then false
     end as math_ccr_benchmark,
-from deduplicate
+from {{ source("collegeboard", "src_collegeboard__sat") }}

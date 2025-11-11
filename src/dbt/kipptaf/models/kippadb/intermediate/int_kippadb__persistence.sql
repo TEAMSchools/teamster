@@ -4,6 +4,7 @@ with
             r.student_number,
             r.contact_id,
             r.ktc_cohort,
+            r.es_graduated,
 
             n as persistence_year,
 
@@ -59,6 +60,7 @@ with
             r.ktc_cohort,
             r.academic_year,
             r.persistence_year,
+            r.es_graduated,
 
             e.id as enrollment_id,
             e.pursuing_degree_type as pursuing_degree_type,
@@ -189,6 +191,7 @@ with
             r.ktc_cohort,
             r.academic_year,
             r.persistence_year,
+            r.es_graduated,
 
             e.id as enrollment_id,
             e.pursuing_degree_type as pursuing_degree_type,

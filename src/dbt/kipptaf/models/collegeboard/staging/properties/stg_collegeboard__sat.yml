@@ -1,5 +1,13 @@
 models:
   - name: stg_collegeboard__sat
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cb_id
+              - report_date
+          config:
+            store_failures: true
     columns:
       - name: ai_code
         data_type: string

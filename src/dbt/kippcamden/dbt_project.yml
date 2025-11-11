@@ -64,20 +64,6 @@ models:
           +enabled: false
         odbc:
           +enabled: true
-          stg_powerschool__log:
-            +enabled: false
-          stg_powerschool__s_stu_x:
-            +enabled: false
-          stg_powerschool__studentrace:
-            +enabled: false
-          stg_powerschool__studenttest:
-            +enabled: false
-          stg_powerschool__studenttestscore:
-            +enabled: false
-          stg_powerschool__test:
-            +enabled: false
-          stg_powerschool__testscore:
-            +enabled: false
           stg_powerschool__gpprogresssubjectrequested:
             +enabled: false
           stg_powerschool__gpprogresssubjectwaived:
@@ -124,20 +110,6 @@ sources:
           +enabled: false
         odbc:
           powerschool_odbc:
-            src_powerschool__log:
-              +enabled: false
-            src_powerschool__s_stu_x:
-              +enabled: false
-            src_powerschool__studentrace:
-              +enabled: false
-            src_powerschool__studenttest:
-              +enabled: false
-            src_powerschool__studenttestscore:
-              +enabled: false
-            src_powerschool__test:
-              +enabled: false
-            src_powerschool__testscore:
-              +enabled: false
             src_powerschool__gpprogresssubjectrequested:
               +enabled: false
             src_powerschool__gpprogresssubjectwaived:
