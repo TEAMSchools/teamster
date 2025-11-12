@@ -360,6 +360,21 @@ sources:
               - kipptaf
               - google_sheets
               - kippfwd_expected_assessments_archive
+
+      - name: src_google_sheets__kippfwd_act_scale_score_key
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
+            sheet_range: src_google_sheets__kippfwd_act_scale_score_key
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google_sheets
+              - kippfwd_act_scale_score_key
       - name: src_google_sheets__recruitment__school_projections
         external:
           options:
@@ -824,20 +839,6 @@ sources:
               - kipptaf
               - assessments
               - academic_goals
-      - name: src_google_sheets__assessments__act_scale_score_key
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
-            sheet_range: src_assessments__act_scale_score_key
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - assessments
-              - act_scale_score_key
       - name: src_google_sheets__assessments__qbls_power_standards
         external:
           options:
