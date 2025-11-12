@@ -127,3 +127,5 @@ models:
         data_type: boolean
       - name: hs_gpa_bands
         data_type: string
+      - name: es_graduated
+        data_type: string
