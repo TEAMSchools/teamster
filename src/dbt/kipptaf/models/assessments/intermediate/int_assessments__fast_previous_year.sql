@@ -33,7 +33,7 @@ with
             and (co.academic_year - 1) = pp.academic_year
             and pp.administration_window = 'PM3'
         left join
-            {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cw
+            {{ ref("stg_google_sheets__iready_crosswalk") }} as cw
             on pp.assessment_subject = cw.test_name
             and pp.assessment_grade = cw.grade_level
             and pp.scale_score between cw.scale_low and cw.scale_high
@@ -79,7 +79,7 @@ select
 from prev_year as py
 /* gets FL sublevels & scale for growth */
 left join
-    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cw1
+    {{ ref("stg_google_sheets__iready_crosswalk") }} as cw1
     on py.assessment_subject = cw1.test_name
     and py.grade_level = cw1.grade_level
     and (py.prev_pm3_sublevel_number + 1) = cw1.sublevel_number
@@ -87,7 +87,7 @@ left join
     and cw1.destination_system = 'FL'
 /* gets proficient scale score */
 left join
-    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cw2
+    {{ ref("stg_google_sheets__iready_crosswalk") }} as cw2
     on py.assessment_subject = cw2.test_name
     and py.grade_level = cw2.grade_level
     and cw2.source_system = 'FAST_NEW'
@@ -95,7 +95,7 @@ left join
     and cw2.sublevel_number = 6
 /* gets growth scale for students scoring 3 or 4 */
 left join
-    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cw3
+    {{ ref("stg_google_sheets__iready_crosswalk") }} as cw3
     on py.assessment_subject = cw3.test_name
     and py.grade_level = cw3.grade_level
     and py.prev_pm3_sublevel_number = cw3.sublevel_number
@@ -103,7 +103,7 @@ left join
     and cw3.destination_system = 'FL'
 /* gets current year level for past year test */
 left join
-    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cw4
+    {{ ref("stg_google_sheets__iready_crosswalk") }} as cw4
     on py.assessment_subject = cw4.test_name
     and py.grade_level = cw4.grade_level
     and py.prev_pm3_scale between cw4.scale_low and cw4.scale_high

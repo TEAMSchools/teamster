@@ -1,5 +1,5 @@
 models:
-  - name: stg_google_sheets__assessments__assessment_expectations
+  - name: stg_google_sheets__iready_expected_assessments
     columns:
       - name: Academic_Year
         data_type: int64
@@ -30,8 +30,4 @@ models:
       - name: iReady_Subject
         data_type: string
       - name: PS_Credit_Type
-        data_type: string
-      - name: Strategy
-        data_type: boolean
-      - name: Actual_Month_Round
         data_type: string
