@@ -33,10 +33,10 @@ inner join
     and cw.week_start_monday between rt.start_date and rt.end_date
     and rt.type = 'ST'
 inner join
-    {{ ref("int_renlearn__star_rollup") }} as s
+    {{ ref("stg_renlearn__star") }} as s
     on cw.student_number = s.student_display_id
     and cw.academic_year = s.academic_year
     and cw.discipline = s.star_discipline
     and rt.name = s.screening_period_window_name
-    and s.rn_subj_round = 1
+    and s.rn_subject_round = 1
 where cw.region = 'Miami' and cw.grade_level < 3

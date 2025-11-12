@@ -9,12 +9,17 @@ select
     unified_score,
     screening_period_window_name,
 
+    safe_cast(left(school_year, 4) as int) as academic_year,
+
+    safe_cast(if(grade = 'K', '0', grade) as int) as grade_level,
+
     case
         when state_benchmark_proficient = 'Yes'
         then 1
         when state_benchmark_proficient = 'No'
         then 0
     end as is_state_benchmark_proficient_int,
+
     case
         when district_benchmark_proficient = 'Yes'
         then 1
@@ -22,8 +27,6 @@ select
         then 0
     end as is_district_benchmark_proficient_int,
 
-    safe_cast(left(school_year, 4) as int) as academic_year,
-    safe_cast(if(grade = 'K', '0', grade) as int) as grade_level,
     case
         when _dagster_partition_subject = 'SM'
         then 'Math'
@@ -32,6 +35,7 @@ select
         when _dagster_partition_subject = 'SEL'
         then 'Early Literacy'
     end as star_subject,
+
     case
         when _dagster_partition_subject = 'SM'
         then 'Math'
@@ -40,6 +44,7 @@ select
         when _dagster_partition_subject = 'SR'
         then 'ELA'
     end as star_discipline,
+
     row_number() over (
         partition by
             student_display_id,
@@ -48,6 +53,7 @@ select
             screening_period_window_name
         order by completed_date desc
     ) as rn_subj_round,
+
     row_number() over (
         partition by
             student_display_id,
