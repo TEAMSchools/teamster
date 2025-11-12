@@ -9,8 +9,11 @@ with
 
     star as (
         select
+            sub.student_identifier as student_number,
             sub.academic_year,
-            sub.student_number,
+            sub.administration_window,
+            sub.subject,
+            sub._dagster_partition_subject as star_subject,
             sub.state_benchmark_category_level,
             sub.state_benchmark_category_name,
             sub.state_benchmark_proficient,
@@ -21,9 +24,6 @@ with
             sub.assessment_id,
             sub.assessment_number,
             sub.assessment_status,
-            sub.subject,
-            sub.star_subject,
-            sub.administration_window,
 
             d.domain_name,
             d.domain_mastery_level,
@@ -35,7 +35,7 @@ with
 
             row_number() over (
                 partition by
-                    sub.student_number,
+                    sub.student_identifier,
                     sub.subject,
                     sub.administration_window,
                     sub.academic_year
