@@ -74,7 +74,7 @@ select
         partition by
             _dbt_source_relation,
             _dagster_partition_subject,
-            _dagster_partition_fiscal_year
+            _dagster_partition_fiscal_year,
             student_identifier,
             screening_period_window_name
         order by completed_date desc
