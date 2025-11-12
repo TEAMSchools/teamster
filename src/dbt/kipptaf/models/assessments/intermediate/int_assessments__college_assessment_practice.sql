@@ -64,7 +64,7 @@ with
 
         from {{ ref("int_assessments__response_rollup") }} as a
         inner join
-            {{ ref("stg_google_sheets__assessments__act_scale_score_key") }} as ssk
+            {{ ref("stg_google_sheets__kippfwd_act_scale_score_key") }} as ssk
             on a.assessment_id = ssk.assessment_id
             and a.points between ssk.raw_score_low and ssk.raw_score_high
         where a.scope in ('ACT', 'SAT') and a.response_type in ('group', 'overall')
@@ -88,7 +88,7 @@ with
 
         from responses as r
         inner join
-            {{ ref("stg_google_sheets__assessments__act_scale_score_key") }} as ssk
+            {{ ref("stg_google_sheets__kippfwd_act_scale_score_key") }} as ssk
             on r.assessment_id = ssk.assessment_id
             and r.points between ssk.raw_score_low and ssk.raw_score_high
         where r.response_type = 'overall'
