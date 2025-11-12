@@ -8,7 +8,6 @@ with
         from {{ ref("int_extracts__student_enrollments_subjects") }}
         where rn_year = 1 and academic_year >= {{ var("current_academic_year") - 1 }}
         group by academic_year, student_number
-
     ),
 
     attendance_dash as (
@@ -26,6 +25,7 @@ with
             ad.is_iss,
             ad.is_suspended,
             ad.term,
+            ad.is_truant,
 
             co.student_number,
             co.student_name,
@@ -48,12 +48,10 @@ with
             co.year_in_network,
             co.ms_attended,
 
-            t.is_truant,
+            f.nj_overall_student_tier,
 
             coalesce(co.is_counseling_services, 0) as is_counseling_services,
             coalesce(co.is_student_athlete, 0) as is_student_athlete,
-
-            f.nj_overall_student_tier,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ad
         inner join
             {{ ref("int_extracts__student_enrollments") }} as co
@@ -65,17 +63,13 @@ with
             overall_filters as f
             on co.academic_year = f.academic_year
             and co.student_number = f.student_number
-        left join
-            {{ ref("int_students__truancy") }} as t
-            on co.academic_year = t.academic_year
-            and co.student_number = t.student_number
-            and ad.calendardate = t.date_day
         where
             ad.membershipvalue = 1
             and ad.attendancevalue is not null
-            and ad.calendardate between date(
-                ({{ var("current_academic_year") - 1 }}), 7, 1
-            ) and current_date('{{ var("local_timezone") }}')
+            and ad.calendardate
+            between '{{ var("current_academic_year") - 1 }}-07-01' and current_date(
+                '{{ var("local_timezone") }}'
+            )
     )
 
 select
