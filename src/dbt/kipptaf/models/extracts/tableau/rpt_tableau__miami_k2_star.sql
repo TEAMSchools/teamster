@@ -7,59 +7,13 @@ with
         select 'Math' as iready_subject, 'MATH' as ps_credittype,
     ),
 
-    sub as (
-        select
-            student_identifier as student_number,
-            _dagster_partition_subject as star_subject,
-            state_benchmark_category_level,
-            state_benchmark_category_name,
-            state_benchmark_proficient,
-            scaled_score,
-            unified_score,
-            current_sgp,
-            completed_date,
-            assessment_id,
-            assessment_number,
-            assessment_status,
-
-            _dagster_partition_fiscal_year - 1 as academic_year,
-
-            case
-                _dagster_partition_subject
-                when 'SR'
-                then 'Reading'
-                when 'SM'
-                then 'Math'
-                when 'SEL'
-                then 'Reading'
-            end as `subject`,
-
-            case
-                screening_period_window_name
-                when 'Fall'
-                then 'BOY'
-                when 'Winter'
-                then 'MOY'
-                when 'Spring'
-                then 'EOY'
-            end as administration_window,
-
-            row_number() over (
-                partition by
-                    student_identifier,
-                    _dagster_partition_subject,
-                    screening_period_window_name,
-                    _dagster_partition_fiscal_year
-                order by completed_date desc
-            ) as rn_subject_round,
-        from {{ ref("stg_renlearn__star") }}
-        where deactivation_reason is null
-    ),
-
     star as (
         select
+            sub.student_identifier as student_number,
             sub.academic_year,
-            sub.student_number,
+            sub.administration_window,
+            sub.subject,
+            sub._dagster_partition_subject as star_subject,
             sub.state_benchmark_category_level,
             sub.state_benchmark_category_name,
             sub.state_benchmark_proficient,
@@ -70,9 +24,6 @@ with
             sub.assessment_id,
             sub.assessment_number,
             sub.assessment_status,
-            sub.subject,
-            sub.star_subject,
-            sub.administration_window,
 
             d.domain_name,
             d.domain_mastery_level,
@@ -84,13 +35,13 @@ with
 
             row_number() over (
                 partition by
-                    sub.student_number,
+                    sub.student_identifier,
                     sub.subject,
                     sub.administration_window,
                     sub.academic_year
                 order by d.standard_name desc
             ) as rn_subject_round_star,
-        from sub
+        from {{ ref("stg_renlearn__star") }} as sub
         left join
             {{ ref("stg_renlearn__star_dashboard_standards") }} as d
             on sub.assessment_id = d.assessment_id
