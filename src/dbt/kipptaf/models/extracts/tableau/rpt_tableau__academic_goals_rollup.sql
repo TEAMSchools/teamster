@@ -142,7 +142,7 @@ with
             if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
         from {{ ref("stg_renlearn__star") }}
         where
-            rn_subj_round = 1
+            rn_subject_round = 1
             and screening_period_window_name = 'Spring'
             and grade_level between 1 and 2
     ),
@@ -209,7 +209,9 @@ with
         select
             student_display_id as student_number,
             academic_year,
+
             if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
+
             district_benchmark_category_level as `level`,
 
             'Star BOY' as assessment_type,
@@ -221,7 +223,7 @@ with
             if(district_benchmark_category_level >= 3, 1, 0) as is_below_int,
         from {{ ref("stg_renlearn__star") }}
         where
-            rn_subj_round = 1
+            rn_subject_round = 1
             and screening_period_window_name = 'Fall'
             and grade_level = 0
     ),
