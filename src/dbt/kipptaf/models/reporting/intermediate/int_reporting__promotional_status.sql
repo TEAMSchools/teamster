@@ -133,7 +133,7 @@ with
                 cast(right(state_benchmark_category_name, 1) as int64),
                 5 - district_benchmark_category_level
             ) as star_achievement_level,
-        from {{ ref("int_renlearn__star_rollup") }}
+        from {{ ref("stg_renlearn__star") }}
         where rn_subj_year = 1
     ),
 

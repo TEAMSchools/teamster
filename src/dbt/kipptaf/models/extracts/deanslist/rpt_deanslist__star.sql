@@ -28,5 +28,5 @@ select
         unified_score,
         ')'
     ) as score_display,
-from {{ ref("int_renlearn__star_rollup") }}
+from {{ ref("stg_renlearn__star") }}
 where rn_subj_round = 1

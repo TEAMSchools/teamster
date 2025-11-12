@@ -140,7 +140,7 @@ with
             if(state_benchmark_category_level = 5, 1, 0) as is_below_int,
 
             if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
-        from {{ ref("int_renlearn__star_rollup") }}
+        from {{ ref("stg_renlearn__star") }}
         where
             rn_subj_round = 1
             and screening_period_window_name = 'Spring'
@@ -219,7 +219,7 @@ with
             if(district_benchmark_category_level = 1, 1, 0) as is_proficient_int,
             if(district_benchmark_category_level = 2, 1, 0) as is_approaching_int,
             if(district_benchmark_category_level >= 3, 1, 0) as is_below_int,
-        from {{ ref("int_renlearn__star_rollup") }}
+        from {{ ref("stg_renlearn__star") }}
         where
             rn_subj_round = 1
             and screening_period_window_name = 'Fall'
