@@ -51,12 +51,12 @@ select
         when
             co.region in ('Newark', 'Camden')
             and p.academic_status = 'Off-Track'
-            and co.grade_level between 5 and 8
+            and co.grade_level < 9
         then 'Off-Track: 2+ Grade Levels Below'
         when
             co.region in ('Newark', 'Camden')
             and p.attendance_status = 'Off-Track'
-            and co.grade_level between 5 and 8
+            and co.grade_level < 9
         then 'Off-Track: Excessive Absences'
         else p.overall_status
     end as promo_status_overall,
