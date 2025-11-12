@@ -75,6 +75,7 @@ with
             null as denominator,
             met_pm_round_overall_criteria as metric_value,
         from {{ ref("int_topline__dibels_pm_weekly") }}
+        where overall_probe_eligible = 'Yes'
 
         union all
 
