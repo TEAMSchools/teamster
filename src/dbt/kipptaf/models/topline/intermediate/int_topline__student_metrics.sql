@@ -289,8 +289,8 @@ with
 
             null as numerator,
             null as denominator,
-            if(absence_sum_running >= 50, 1, 0) as metric_value,
-        from {{ ref("int_topline__ada_running_weekly") }}
+            is_truant_int as metric_value,
+        from {{ ref("int_topline__truancy_weekly") }}
 
         union all
 
