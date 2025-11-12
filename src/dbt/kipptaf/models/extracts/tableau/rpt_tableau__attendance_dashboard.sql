@@ -48,6 +48,8 @@ with
             co.year_in_network,
             co.ms_attended,
 
+            t.is_truant,
+
             coalesce(co.is_counseling_services, 0) as is_counseling_services,
             coalesce(co.is_student_athlete, 0) as is_student_athlete,
 
@@ -67,7 +69,7 @@ with
             {{ ref("int_students__truancy") }} as t
             on co.academic_year = t.academic_year
             and co.student_number = t.student_number
-            and ad.calendardate = t.calendardate
+            and ad.calendardate = t.date_day
         where
             ad.membershipvalue = 1
             and ad.attendancevalue is not null
@@ -109,6 +111,7 @@ select
     is_student_athlete as is_studentathlete,
     term,
     ms_attended,
+    is_truant,
     nj_overall_student_tier,
 
     avg(attendancevalue) over (
