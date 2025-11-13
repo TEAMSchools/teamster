@@ -1,4 +1,23 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
+    ps_xw as (
+        select sat.*, xw.powerschool_student_number,
+        from {{ ref("stg_collegeboard__sat") }} as sat
+        left join
+            {{ ref("stg_google_sheets__collegeboard__sat_id_crosswalk") }} as xw
+            on sat.cb_id = xw.college_board_id
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="ps_xw",
+                partition_by="powerschool_student_number",
+                order_by="report_date desc",
+            )
+        }}
+    ),
+
     sat as (
         select
             *,
@@ -47,11 +66,15 @@ with
                 cast(null as string) as `admin{{ admin }}_sat_ks_reading_section`,
                 cast(null as string) as `admin{{ admin }}_sat_ks_reading_standard`,
             {% endfor %}
-        from {{ ref("stg_collegeboard__sat") }}
+
+        from deduplicate
     )
 
 select
     * except (sat_grade),
+
+    'sat' as test_name,
+    'SAT' as test_type,
 
     case
         sat_grade
@@ -78,6 +101,7 @@ select
         when '13'
         then '2nd year of college'
     end as sat_grade,
+
 from
     sat unpivot (
         (
