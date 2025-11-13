@@ -1,19 +1,29 @@
 models:
-  - name: int_extracts__student_enrollments_weeks
+  - name: int_extracts__student_enrollments
     config:
-      contract:
-        enforced: false
+      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - _dbt_source_relation
               - student_number
-              - week_start_monday
+              - academic_year
+              - entrydate
           config:
             store_failures: true
             # severity: warn
     columns:
+      - name: fafsa_status_mismatch_category
+        data_type: string
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - No issues
+              config:
+                severity: warn
+                store_failures: true
       - name: _dbt_source_relation
         data_type: string
       - name: studentid
@@ -239,15 +249,11 @@ models:
         data_type: string
       - name: ada_above_or_at_80
         data_type: boolean
-      - name: fafsa_status_mismatch_category
-        data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - No issues
-              config:
-                severity: warn
-                store_failures: true
       - name: region_official_name
+        data_type: string
+      - name: is_ms_grad
+        data_type: boolean
+      - name: is_sipps
+        data_type: boolean
+      - name: es_graduated
         data_type: string

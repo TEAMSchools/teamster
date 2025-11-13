@@ -2,8 +2,6 @@ models:
   - name: int_extracts__student_enrollments_subjects
     config:
       materialized: table
-      contract:
-        enforced: false
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
