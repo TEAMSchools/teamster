@@ -18,7 +18,6 @@ select
     co.academic_year,
     co.cumulative_y1_gpa as gpa_cum,
     co.cumulative_y1_gpa_projected as gpa_cum_projected,
-    co.earned_credits_cum as grades_y1_credits_projected,
 
     term,
 
@@ -29,6 +28,7 @@ select
     p.n_failing_core,
     p.ada_term_running,
     p.projected_credits_y1_term,
+    p.projected_credits_cum as grades_y1_credits_projected,
 
     ae.athletic_eligibility,
 
