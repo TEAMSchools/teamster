@@ -19,10 +19,10 @@ with
     -- calendar_date,
     -- if (fct_attendance.ada_running <=.90,1,0) as is_chronic_absenteeism,
     -- if (fct_attendance.pct_ontime_running) <=.795,1,0) as is_chronic_tardiness,
-    -- if (fct_attendance.is_suspended > 2,1,0) as is_suspended_greater_than_2, {the max value for all records here is 1}
+    -- if (fct_attendance.is_suspended > 2,1,0) as is_suspended_greater_than_2, {the
+    -- max value for all records here is 1}
     -- from {{ ref("fct_attendance") }}
     -- ),
-
     final as (
         select
             student_enrollments.student_number,

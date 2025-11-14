@@ -26,5 +26,5 @@ with
         from date_spine
     )
 
-select *
+select *,
 from final
