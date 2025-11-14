@@ -19,10 +19,15 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      - ref("dim_staff")
-      - ref("dim_terms")
-      - ref("fct_microgoals")
       - ref("dim_dates")
+      - ref("dim_schools")
+      - ref("dim_seats")
+      - ref("dim_staff")
+      - ref("dim_students")
+      - ref("dim_teammates")
+      - ref("dim_terms")
+      - ref("fct_attendance")
+      - ref("fct_microgoals")
     meta:
       dagster:
         kinds:
