@@ -1,5 +1,5 @@
 with
-    seats as (select * from {{ ref("snapshot_seat_tracker__seats") }}),
+    seats as (select *, from {{ ref("snapshot_seat_tracker__seats") }}),
 
     final as (
         select
@@ -22,5 +22,6 @@ with
             dbt_valid_to,
         from seats
     )
-select *
+
+select *,
 from final
