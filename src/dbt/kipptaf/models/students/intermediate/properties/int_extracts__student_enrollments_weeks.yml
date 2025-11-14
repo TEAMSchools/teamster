@@ -1,5 +1,7 @@
 models:
   - name: int_extracts__student_enrollments_weeks
+    config:
+      schema: extracts
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

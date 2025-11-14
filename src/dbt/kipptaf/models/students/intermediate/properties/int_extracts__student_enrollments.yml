@@ -2,6 +2,7 @@ models:
   - name: int_extracts__student_enrollments
     config:
       materialized: table
+      schema: extracts
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
