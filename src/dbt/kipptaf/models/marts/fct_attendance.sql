@@ -17,7 +17,7 @@ with
             semester,
             term,
         from daily_attendance
+    ),
 
-    )
-select *
+select *,
 from final
