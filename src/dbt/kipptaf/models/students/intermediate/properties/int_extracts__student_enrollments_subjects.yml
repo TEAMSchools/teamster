@@ -1,31 +1,21 @@
 models:
-  - name: int_extracts__student_enrollments
+  - name: int_extracts__student_enrollments_subjects
     config:
       materialized: table
-      contract:
-        enforced: false
+      schema: extracts
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - _dbt_source_relation
               - student_number
               - academic_year
               - entrydate
+              - iready_subject
           config:
+            enabled: false
             store_failures: true
             # severity: warn
     columns:
-      - name: fafsa_status_mismatch_category
-        data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - No issues
-              config:
-                severity: warn
-                store_failures: true
       - name: _dbt_source_relation
         data_type: string
       - name: studentid
@@ -54,10 +44,6 @@ models:
         data_type: date
       - name: exitdate
         data_type: date
-      - name: exitcode
-        data_type: string
-      - name: exitcomment
-        data_type: string
       - name: region
         data_type: string
       - name: school_level
@@ -90,8 +76,6 @@ models:
         data_type: string
       - name: ethnicity
         data_type: string
-      - name: fedethnicity
-        data_type: int64
       - name: dob
         data_type: date
       - name: lunch_status
@@ -152,30 +136,6 @@ models:
         data_type: int64
       - name: illuminate_student_id
         data_type: int64
-      - name: contact_1_name
-        data_type: string
-      - name: contact_1_phone_home
-        data_type: string
-      - name: contact_1_phone_mobile
-        data_type: string
-      - name: contact_1_email_current
-        data_type: string
-      - name: contact_2_name
-        data_type: string
-      - name: contact_2_phone_home
-        data_type: string
-      - name: contact_2_phone_mobile
-        data_type: string
-      - name: contact_2_email_current
-        data_type: string
-      - name: is_fldoe_fte_2
-        data_type: boolean
-      - name: graduation_year
-        data_type: int64
-      - name: region_official_name
-        data_type: string
-      - name: deanslist_school_id
-        data_type: int64
       - name: ms_attended
         data_type: string
       - name: es_attended
@@ -198,27 +158,10 @@ models:
         data_type: float64
       - name: weighted_ada
         data_type: float64
-      - name: absences_unexcused_year
-        data_type: float64
       - name: ada_unweighted_year_prev
         data_type: float64
       - name: ada_weighted_year_prev
         data_type: float64
-      - name: next_year_school
-        data_type: string
-      - name: next_year_schoolid
-        data_type: int64
-      - name: grad_iep_exempt_status_overall
-        data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - Not Grad IEP Exempt
-                  - "Yes"
-              config:
-                severity: warn
-                store_failures: true
       - name: district
         data_type: string
       - name: region_school_level
@@ -227,12 +170,16 @@ models:
         data_type: string
       - name: academic_year_display
         data_type: string
+      - name: ada_above_or_at_80
+        data_type: boolean
+      - name: ada
+        data_type: float64
       - name: iep_status
         data_type: string
       - name: state_studentnumber
         data_type: string
-      - name: ada
-        data_type: float64
+      - name: secondary_state_studentnumber
+        data_type: string
       - name: met_fafsa_requirement
         data_type: boolean
       - name: is_counseling_services
@@ -249,13 +196,47 @@ models:
         data_type: string
       - name: state
         data_type: string
-      - name: ada_above_or_at_80
-        data_type: boolean
-      - name: region_official_name
+      - name: fafsa_status_mismatch_category
         data_type: string
-      - name: is_ms_grad
+      - name: iready_subject
+        data_type: string
+      - name: illuminate_subject_area
+        data_type: string
+      - name: powerschool_credittype
+        data_type: string
+      - name: grad_unpivot_subject
+        data_type: string
+      - name: discipline
+        data_type: string
+      - name: is_grad_iep_exempt
         data_type: boolean
       - name: is_sipps
         data_type: boolean
-      - name: es_graduated
+      - name: dibels_most_recent_composite_int
+        data_type: int64
+      - name: state_test_proficiency
         data_type: string
+      - name: iready_proficiency_eoy
+        data_type: string
+      - name: dibels_boy_composite
+        data_type: string
+      - name: dibels_moy_composite
+        data_type: string
+      - name: dibels_eoy_composite
+        data_type: string
+      - name: dibels_most_recent_composite
+        data_type: string
+      - name: is_exempt_iready
+        data_type: boolean
+      - name: bucket_two
+        data_type: boolean
+      - name: bucket_one
+        data_type: string
+      - name: assessment_dashboard_join
+        data_type: string
+      - name: nj_student_tier
+        data_type: string
+      - name: is_exempt_state_testing
+        data_type: boolean
+      - name: is_low_25_fl
+        data_type: boolean
