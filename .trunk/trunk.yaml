@@ -4,7 +4,7 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v1.7.3
+      ref: v1.7.4
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
@@ -19,7 +19,7 @@ lint:
     - oxipng@9.1.5
     - prettier@3.6.2
     - pyright@1.1.407
-    - ruff@0.14.4
+    - ruff@0.14.5
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - sqlfluff@3.5.0
