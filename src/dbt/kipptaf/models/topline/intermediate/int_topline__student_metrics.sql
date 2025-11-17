@@ -11,6 +11,7 @@ with
 
             'Formative Assessments' as indicator,
         from {{ ref("int_topline__formative_assessment_weekly") }}
+        where formative_strategy = 'All'
 
         union all
 
@@ -59,6 +60,25 @@ with
             mlm.metric_value,
         from multilayer_metrics as mlm
         cross join unnest(['GPA, ACT, SAT', 'K-8 Reading and Math']) as layer
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
+            'Miami CRQ Mastery' as indicator,
+
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            week_end_sunday as term_end,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+
+            is_mastery_running_int as metric_value,
+        from {{ ref("int_topline__formative_assessment_weekly") }}
+        where formative_strategy = 'Miami'
 
         union all
 
