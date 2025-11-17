@@ -82,6 +82,7 @@ with
     )
 
 select
+    formative_strategy,
     student_number,
     academic_year,
     subject_area,
