@@ -1,5 +1,4 @@
 with
-
     responses_discipline as (
         select
             powerschool_student_number,
