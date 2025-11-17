@@ -1,3 +1,5 @@
+with baseline_diagnostic as (select * from {{ ref("base_iready__diagnostic_results") }})
+
 select
     cw.student_number,
     cw.state_studentnumber,
