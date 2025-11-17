@@ -1,8 +1,3 @@
-with
-    baseline_diagnostic as (
-        select * from 
-    )
-
 select
     cw.student_number,
     cw.state_studentnumber,
