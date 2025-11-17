@@ -67,9 +67,10 @@ with
         select
             contact,
             `subject` as grad_plan_year,
+            academic_year,
 
             row_number() over (
-                partition by contact order by `date` desc
+                partition by contact, academic_year order by `date` desc
             ) as rn_contact_desc,
         from {{ ref("stg_kippadb__contact_note") }}
         where `subject` like 'Grad Plan FY%'
@@ -683,7 +684,11 @@ left join
     on c.contact_id = tier.contact
     and ay.academic_year = tier.academic_year
     and tier.rn_contact_year_desc = 1
-left join grad_plan as gp on c.contact_id = gp.contact and gp.rn_contact_desc = 1
+left join
+    grad_plan as gp
+    on c.contact_id = gp.contact
+    and ay.academic_year = gp.academic_year
+    and gp.rn_contact_desc = 1
 left join finaid as fa on c.contact_id = fa.student and fa.rn_finaid = 1
 left join
     benchmark as b
