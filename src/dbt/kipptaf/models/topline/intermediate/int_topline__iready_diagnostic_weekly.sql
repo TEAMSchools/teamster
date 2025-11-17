@@ -1,3 +1,8 @@
+with
+    baseline_diagnostic as (
+        select * from 
+    )
+
 select
     cw.student_number,
     cw.state_studentnumber,
@@ -26,6 +31,11 @@ select
     rt.name as test_round,
 
     ir.subject,
+
+    ir.percent_progress_to_annual_typical_growth_percent
+    / 100 as percent_progress_to_annual_typical_growth_percent,
+    ir.percent_progress_to_annual_stretch_growth_percent
+    / 100 as percent_progress_to_annual_stretch_growth_percent,
 
     case
         when ir.is_proficient then 1 when not ir.is_proficient then 0
