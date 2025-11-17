@@ -677,3 +677,17 @@ exposures:
         asset:
           metadata:
             id: 4c9f089a-86e6-4c75-a5ac-22da73e28e22
+  - name: manager_survey_reports
+    label: Manager Survey Reports
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("int_surveys__manager_survey_details")
+    meta:
+      dagster:
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 61c1e07d-778e-40a8-81ad-327f3951c8e2

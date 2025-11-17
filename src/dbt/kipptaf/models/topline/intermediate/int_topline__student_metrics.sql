@@ -112,6 +112,22 @@ with
 
         select
             'K-8 Reading and Math' as layer,
+            'i-Ready Time on Task' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            week_end_sunday as term_end,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+            time_on_task_min_week as metric_value,
+        from {{ ref("int_topline__iready_lessons_weekly") }}
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
             'Star Diagnostic' as indicator,
             student_number,
             academic_year,
@@ -196,6 +212,23 @@ with
 
         select
             'Attendance and Enrollment' as layer,
+            'Total Enrollment (Without SC OOD)' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            week_end_sunday as term_end,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            if(is_enrolled_week, 1, 0) as metric_value,
+        from {{ ref("int_extracts__student_enrollments_weeks") }}
+        where not is_self_contained and not is_out_of_district
+
+        union all
+
+        select
+            'Attendance and Enrollment' as layer,
             'Successful Contacts' as indicator,
             student_number,
             academic_year,
@@ -225,6 +258,7 @@ with
             total_anticipated_calls as denominator,
             pct_interventions_complete as metric_value,
         from {{ ref("int_topline__attendance_interventions_weekly") }}
+        where total_anticipated_calls is not null
 
         union all
 
@@ -255,8 +289,8 @@ with
 
             null as numerator,
             null as denominator,
-            if(absence_sum_running >= 50, 1, 0) as metric_value,
-        from {{ ref("int_topline__ada_running_weekly") }}
+            is_truant_int as metric_value,
+        from {{ ref("int_topline__truancy_weekly") }}
 
         union all
 

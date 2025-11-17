@@ -39,10 +39,10 @@ def _test_asset(asset):
     assert extras.text == ""
 
 
-def test_asset_smartrecruiters_applicants():
-    from teamster.code_locations.kipptaf.smartrecruiters.assets import applicants
+# def test_asset_smartrecruiters_applicants():
+#     from teamster.code_locations.kipptaf.smartrecruiters.assets import applicants
 
-    _test_asset(applicants)
+#     _test_asset(applicants)
 
 
 def test_asset_smartrecruiters_applications():

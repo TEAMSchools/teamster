@@ -64,11 +64,6 @@ observations = build_grow_asset(
     schema=OBSERVATION_SCHEMA,
 )
 
-grow_multi_partitions_assets = [
-    assignments,
-    observations,
-]
-
 
 @asset(
     key=[*key_prefix, "user_sync"],
@@ -77,7 +72,7 @@ grow_multi_partitions_assets = [
         AssetCheckSpec(name="zero_api_errors", asset=[*key_prefix, "user_sync"])
     ],
     group_name="grow",
-    kinds={"python"},
+    kinds={"python", "task"},
 )
 def grow_user_sync(
     context: AssetExecutionContext, db_bigquery: BigQueryResource, grow: GrowResource
@@ -262,6 +257,11 @@ def grow_user_sync(
         severity=AssetCheckSeverity.WARN,
     )
 
+
+grow_multi_partitions_assets = [
+    assignments,
+    observations,
+]
 
 assets = [
     *grow_multi_partitions_assets,

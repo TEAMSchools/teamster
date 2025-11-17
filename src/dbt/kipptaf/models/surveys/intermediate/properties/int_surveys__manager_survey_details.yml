@@ -1,7 +1,5 @@
 models:
   - name: int_surveys__manager_survey_details
-    config:
-      enabled: false
     columns:
       - name: survey_id
         data_type: string

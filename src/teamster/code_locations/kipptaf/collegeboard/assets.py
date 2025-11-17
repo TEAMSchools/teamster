@@ -1,10 +1,22 @@
 from dagster import MultiPartitionsDefinition, StaticPartitionsDefinition
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, CURRENT_FISCAL_YEAR
-from teamster.code_locations.kipptaf.collegeboard.schema import AP_SCHEMA, PSAT_SCHEMA
+from teamster.code_locations.kipptaf.collegeboard.schema import (
+    AP_SCHEMA,
+    PSAT_SCHEMA,
+    SAT_SCHEMA,
+)
 from teamster.libraries.sftp.assets import (
     build_sftp_file_asset,
     build_sftp_folder_asset,
+)
+
+sat = build_sftp_folder_asset(
+    asset_key=[CODE_LOCATION, "collegeboard", "sat"],
+    remote_dir_regex=r"/data-team/kipptaf/collegeboard/sat",
+    remote_file_regex=r"\d+_SAT_\d+_\d+\.csv",
+    ssh_resource_key="ssh_couchdrop",
+    avro_schema=SAT_SCHEMA,
 )
 
 psat = build_sftp_folder_asset(
@@ -37,4 +49,5 @@ ap = build_sftp_file_asset(
 assets = [
     ap,
     psat,
+    sat,
 ]

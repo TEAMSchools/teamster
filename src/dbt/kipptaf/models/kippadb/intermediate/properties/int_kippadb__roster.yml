@@ -661,3 +661,5 @@ models:
         data_type: string
       - name: ktc_status
         data_type: string
+      - name: es_graduated
+        data_type: string

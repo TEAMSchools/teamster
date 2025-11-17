@@ -20,16 +20,14 @@ from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowRe
 from teamster.libraries.adp.workforce_now.api.utils import get_event_payload
 
 key_prefix = [CODE_LOCATION, "adp", "workforce_now"]
-asset_kwargs = {
-    "group_name": "adp_workforce_now",
-    "kinds": {"python"},
-    "pool": "adp_wfn_api",
-}
 
 
 @asset(
     key=[*key_prefix, "workers"],
     io_manager_key="io_manager_gcs_avro",
+    group_name="adp_workforce_now",
+    pool="adp_wfn_api",
+    kinds={"python"},
     check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "workers"])],
     partitions_def=DailyPartitionsDefinition(
         start_date="01/01/2021",
@@ -37,7 +35,6 @@ asset_kwargs = {
         timezone=str(LOCAL_TIMEZONE),
         end_offset=14,
     ),
-    **asset_kwargs,
 )
 def adp_workforce_now_workers(
     context: AssetExecutionContext, adp_wfn: AdpWorkforceNowResource
@@ -86,10 +83,12 @@ def adp_workforce_now_workers(
 @asset(
     key=[*key_prefix, "workers_sync"],
     deps=[AssetKey(["kipptaf", "extracts", "rpt_adp_workforce_now__worker_update"])],
+    group_name="adp_workforce_now",
+    pool="adp_wfn_api",
+    kinds={"python", "task"},
     check_specs=[
         AssetCheckSpec(name="zero_api_errors", asset=[*key_prefix, "workers_sync"])
     ],
-    **asset_kwargs,
 )
 def adp_workforce_now_workers_update(
     context: AssetExecutionContext,
