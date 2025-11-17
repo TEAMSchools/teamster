@@ -21,7 +21,7 @@ with
 
     assessment_weeks_union as (
         select
-            'New Jersey' as formative_strategy,
+            'All' as formative_strategy,
             sw.student_number,
             sw.academic_year,
             sw.week_start_monday,
@@ -47,7 +47,7 @@ with
             and sw.discipline = rr.discipline
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
             and rr.module_type in ('QA', 'MQQ')
-        where sw.is_enrolled_week and sw.region != 'Miami'
+        where sw.is_enrolled_week
 
         union all
 
