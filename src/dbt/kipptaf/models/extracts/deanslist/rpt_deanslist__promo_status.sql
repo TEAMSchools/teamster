@@ -61,13 +61,20 @@ select
         else p.overall_status
     end as promo_status_overall,
 
-    if(
-        p.iready_reading_recent
-        in ('2 Grade Levels Below', '3 or More Grade Levels Below')
-        or p.iready_reading_recent is null,
-        'Off-Track',
-        'On-Track'
-    ) as promo_status_lit,
+    case
+        when co.grade_level < 2
+        then p.academic_status
+        when
+            co.grade_level > 1
+            and (
+                p.iready_reading_recent
+                in ('2 Grade Levels Below', '3 or More Grade Levels Below')
+                or p.iready_reading_recent is null
+            )
+        then 'Off-Track'
+        else 'On-Track'
+    end as promo_status_lit,
+
     if(
         p.iready_math_recent in ('2 Grade Levels Below', '3 or More Grade Levels Below')
         or p.iready_reading_recent is null,
