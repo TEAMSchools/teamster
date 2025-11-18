@@ -158,10 +158,13 @@ with
                 order by measure_standard_level_int desc
             ) as rn_highest,
 
+<<<<<<< HEAD
             row_number() over (
                 partition by academic_year, student_number order by sync_date
             ) as rn_distinct,
 
+=======
+>>>>>>> 76bc392bf109c0397d60bd3d4e3b13dbeeaea2af
         from assessments_scores
     ),
 
@@ -186,7 +189,8 @@ with
     ),
 
     probe_eligible_tag as (
-        select
+        -- TODO: rn_distinct calc wasnt working - will review later
+        select distinct
             s.academic_year,
             s.student_number,
 
@@ -209,7 +213,7 @@ with
             overall_composite_by_window as c
             on s.academic_year = c.academic_year
             and s.student_number = c.student_number
-        where s.rn_distinct = 1 and s.assessment_type = 'Benchmark'
+        where s.assessment_type = 'Benchmark'
     )
 
 select
