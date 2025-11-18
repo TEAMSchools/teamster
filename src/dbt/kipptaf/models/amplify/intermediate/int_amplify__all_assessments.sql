@@ -159,7 +159,7 @@ with
             ) as rn_highest,
 
             row_number() over (
-                partition by academic_year, student_number order by client_date
+                partition by academic_year, student_number order by sync_date
             ) as rn_distinct,
 
         from assessments_scores

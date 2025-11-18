@@ -113,10 +113,10 @@ with
             student_number,
             measure_standard_level,
             measure_standard_level_int,
-            client_date,
+            sync_date,
 
             row_number() over (
-                partition by academic_year, student_number order by client_date desc
+                partition by academic_year, student_number order by sync_date desc
             ) as rn_composite,
         from {{ ref("int_amplify__all_assessments") }}
         where assessment_type = 'Benchmark' and measure_name_code = 'Composite'
