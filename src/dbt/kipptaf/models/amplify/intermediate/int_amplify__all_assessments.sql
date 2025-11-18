@@ -182,7 +182,7 @@ with
     ),
 
     probe_eligible_tag as (
-        -- rn_distinct calc wasnt working - will review later
+        -- TODO: rn_distinct calc wasnt working - will review later
         select distinct
             s.academic_year,
             s.student_number,
@@ -366,3 +366,4 @@ left join
     on s.academic_year = p.academic_year
     and s.student_number = p.student_number
 where s.assessment_type = 'PM' and s.rn_highest = 1
+
