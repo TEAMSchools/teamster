@@ -366,4 +366,3 @@ left join
     on s.academic_year = p.academic_year
     and s.student_number = p.student_number
 where s.assessment_type = 'PM' and s.rn_highest = 1
-
