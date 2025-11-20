@@ -14,17 +14,17 @@ with
 
     final as (
         select
-            grow_users.internal_id_int as employee_number,
-            assignments.assignment_id,
-            assignments.created_date_local as assignment_date,
-            assignments.creator_name,
-            microgoals.tag_name as goal_name,
-            microgoals.strand_name,
-            microgoals.bucket_name,
-        from grow_users
-        left join assignments on grow_users.user_id = assignments.user_id
-        left join tags on assignments.assignment_id = tags.assignment_id
-        left join microgoals on tags.tag_id = microgoals.tag_id
+            gu.internal_id_int as employee_number,
+            a.assignment_id,
+            a.created_date_local as assignment_date,
+            a.creator_name,
+            m.tag_name as goal_name,
+            m.strand_name,
+            m.bucket_name,
+        from grow_users as gu
+        left join assignments as a on gu.user_id = a.user_id
+        left join tags as t on a.assignment_id = t.assignment_id
+        left join microgoals as m on t.tag_id = m.tag_id
 
     )
 
