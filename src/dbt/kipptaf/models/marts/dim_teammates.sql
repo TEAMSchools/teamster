@@ -18,24 +18,24 @@ with
 
     final as (
         select
-            roster.employee_number,
-            roster.effective_date_start,
-            roster.effective_date_end,
-            roster.formatted_name,
-            roster.assignment_status,
-            roster.race_ethnicity_reporting,
-            roster.gender_identity,
-            roster.home_business_unit_name,
-            roster.home_department_name,
-            roster.home_work_location_name,
-            roster.home_work_location_grade_band,
-            roster.job_title,
-            roster.reports_to_formatted_name,
-            roster.primary_indicator,
-            roster.academic_year,
-            grade_levels.grade_level as grade_taught,
+            r.employee_number,
+            r.effective_date_start,
+            r.effective_date_end,
+            r.formatted_name,
+            r.assignment_status,
+            r.race_ethnicity_reporting,
+            r.gender_identity,
+            r.home_business_unit_name,
+            r.home_department_name,
+            r.home_work_location_name,
+            r.home_work_location_grade_band,
+            r.job_title,
+            r.reports_to_formatted_name,
+            r.primary_indicator,
+            r.academic_year,
+            gl.grade_level as grade_taught,
             if(
-                roster.job_title in (
+                r.job_title in (
                     'Teacher',
                     'Teacher in Residence',
                     'ESE Teacher',
@@ -46,12 +46,12 @@ with
                 true,
                 false
             ) as is_teacher,
-        from roster
+        from roster as r
         left join
-            grade_levels
-            on roster.powerschool_teacher_number = grade_levels.teachernumber
-            and roster.academic_year = grade_levels.academic_year
-            and grade_levels.grade_level_rank = 1
+            grade_levels as gl
+            on r.powerschool_teacher_number = gl.teachernumber
+            and r.academic_year = gl.academic_year
+            and gl.grade_level_rank = 1
     )
 
 select *,
