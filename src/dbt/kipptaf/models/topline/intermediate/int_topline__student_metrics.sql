@@ -65,6 +65,24 @@ with
 
         select
             'K-8 Reading and Math' as layer,
+            'i-Ready B/FB Meeting Stretch Growth' as indicator,
+
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            week_end_sunday as term_end,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+
+            is_bfb_stretch_growth_int as metric_value,
+        from {{ ref("int_topline__iready_diagnostic_weekly") }}
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
             'Miami CRQ Mastery' as indicator,
 
             student_number,
