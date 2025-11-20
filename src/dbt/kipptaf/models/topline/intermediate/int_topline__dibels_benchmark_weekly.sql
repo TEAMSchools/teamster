@@ -25,11 +25,6 @@ select
 
     'ELA' as discipline,
 
-    ir.percent_progress_to_annual_typical_growth_percent
-    / 100 as percent_progress_to_annual_typical_growth_percent,
-    ir.percent_progress_to_annual_stretch_growth_percent
-    / 100 as percent_progress_to_annual_stretch_growth_percent,
-
     case
         when ir.is_proficient then 1 when not ir.is_proficient then 0
     end as is_proficient,
@@ -51,8 +46,8 @@ left join
 --     and rt.region = ir.region
 --     and rt.name = ir.test_round
 --     and ir.rn_subj_round = 1
-left join
-    deduplicate as d
-    on cw.student_number = d.student_id
-    and cw.academic_year = d.academic_year_int
-    and cw.iready_subject = d.subject
+-- left join
+--     deduplicate as d
+--     on cw.student_number = d.student_id
+--     and cw.academic_year = d.academic_year_int
+--     and cw.iready_subject = d.subject
