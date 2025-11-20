@@ -41,7 +41,7 @@ with
             measure_standard_score,
 
             row_number() over (
-                partition by academic_year, student_number order by client_date desc
+                partition by academic_year, student_number order by sync_date desc
             ) as rn_benchmark,
         from {{ ref("int_amplify__all_assessments") }}
         where measure_standard = 'Composite'
