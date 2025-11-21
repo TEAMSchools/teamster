@@ -1,5 +1,5 @@
--- noqa: disable=ST03
 with
+    -- trunk-ignore(sqlfluff/ST03)
     baseline_diagnostic as (
         select
             student_id,
@@ -10,12 +10,11 @@ with
         from {{ ref("base_iready__diagnostic_results") }}
         where baseline_diagnostic_y_n = 'Y'
     ),
-    -- noqa: enable=ST03
-    
+
     deduplicate as (
         {{
             dbt_utils.deduplicate(
-                relation="baseline_Diagnostic",
+                relation="baseline_diagnostic",
                 partition_by="student_id, academic_year_int, subject",
                 order_by="completion_date desc",
             )
