@@ -453,8 +453,7 @@ with
             'Gallup Q12 Survey' as survey,
             'Complete Gallup Q12 Survey (Note: link is only accessible via your email)'
             as `assignment`,
-            -- trunk-ignore(sqlfluff/LT05)
-            'https://teamschools.zendesk.com/hc/en-us/articles/22601310814999-How-to-Access-the-TNTP-Insight-and-Gallup-Surveys'
+            'https://teamschools.zendesk.com/hc/en-us/articles/22601310814999-How-to-Access-the-TNTP-Insight-and-Gallup-Surveys' -- trunk-ignore(sqlfluff/LT05)
             as link,
         from eligible_roster as r
         inner join
