@@ -10,8 +10,8 @@ with
         from {{ ref("base_iready__diagnostic_results") }}
         where baseline_diagnostic_y_n = 'Y'
     ),
+
     -- noqa: enable=ST03
-    
     deduplicate as (
         {{
             dbt_utils.deduplicate(
