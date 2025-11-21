@@ -31,7 +31,7 @@ select
         then 1
         when amp.aggregated_measure_standard_level = 'Below/Well Below'
         then 0
-    end as is_proficient,
+    end as is_proficient_int,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as cw
 inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt

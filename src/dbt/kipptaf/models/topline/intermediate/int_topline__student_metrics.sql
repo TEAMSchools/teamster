@@ -134,6 +134,22 @@ with
 
         select
             'K-8 Reading and Math' as layer,
+            'DIBELS Benchmark Proficiency' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            week_end_sunday as term_end,
+            'ELA' as discipline,
+
+            null as numerator,
+            null as denominator,
+            is_proficient_int as metric_value,
+        from {{ ref("int_topline__dibels_benchmark_weekly") }}
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
             'i-Ready Lessons' as indicator,
             student_number,
             academic_year,
