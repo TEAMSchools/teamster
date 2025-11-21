@@ -11,6 +11,7 @@ with
         where baseline_diagnostic_y_n = 'Y'
     ),
     -- noqa: enable=ST03
+    
     deduplicate as (
         {{
             dbt_utils.deduplicate(
