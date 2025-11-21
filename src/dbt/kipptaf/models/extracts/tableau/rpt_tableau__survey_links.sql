@@ -34,10 +34,7 @@ with
             replace(
                 lower(regexp_extract(sr.user_principal_name, r'[^@]+')), '-', ''
             ) as username,
-            replace(
-                lower(regexp_extract(sr.sam_account_name, r'[^@]+')), '-', ''
-            ) as samaccountname,
-
+            sr.sam_account_name as samaccountname,
             if(
                 sr.home_work_location_grade_band in ('ES', 'MS', 'HS'),
                 'School-based',
@@ -52,7 +49,9 @@ with
             and sr.primary_indicator
             and coalesce(sr.worker_rehire_date, sr.worker_original_hire_date)
             <= date_sub(current_date(), interval 3 week)
-    )
+    ),
+
+final as (
 /* Staff Info and Cert */
 select
     r.employee_number,
@@ -447,3 +446,6 @@ inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on current_date('America/New_York') between rt.start_date and rt.end_date
     and rt.name = 'Gallup Q12 Survey'
+)
+
+select *, from final
