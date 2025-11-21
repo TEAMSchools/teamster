@@ -1,4 +1,4 @@
--- trunk-ignore(sqlfluff/ST03)
+-- noqa: disable=ST03
 with
     baseline_diagnostic as (
         select
@@ -10,7 +10,7 @@ with
         from {{ ref("base_iready__diagnostic_results") }}
         where baseline_diagnostic_y_n = 'Y'
     ),
-
+    -- noqa: enable=ST03
     deduplicate as (
         {{
             dbt_utils.deduplicate(
