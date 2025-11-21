@@ -1,3 +1,4 @@
+-- trunk-ignore(sqlfluff/ST03)
 with
     baseline_diagnostic as (
         select
