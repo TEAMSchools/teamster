@@ -1,26 +1,3 @@
-with
-    benchmarks as (
-        select
-            student_number,
-            academic_year,
-            `period`,
-            sync_date,
-            measure_standard_level,
-            measure_standard_level_int,
-        from {{ ref("int_amplify__all_assessments") }}
-        where measure_name = 'Composite'
-    ),
-
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation="benchmarks",
-                partition_by="student_number, academic_year, period",
-                order_by="sync_date desc",
-            )
-        }}
-    )
-
 select
     cw.student_number,
     cw.state_studentnumber,
@@ -50,9 +27,9 @@ select
     'ELA' as discipline,
 
     case
-        when amp.measure_standard_level_int > 2
+        when amp.aggregated_measure_standard_level = 'At/Above'
         then 1
-        when amp.measure_standard_level_int <= 2
+        when amp.aggregated_measure_standard_level = 'Below/Well Below'
         then 0
     end as is_proficient,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as cw
@@ -63,7 +40,9 @@ inner join
     and cw.week_start_monday between rt.start_date and rt.end_date
     and rt.type = 'LITEX'
 left join
-    deduplicate as amp
+    {{ ref("int_amplify__all_assessments") }} as amp
     on cw.student_number = amp.student_number
     and cw.academic_year = amp.academic_year
     and rt.name = amp.`period`
+    and amp.measure_name = 'Composite'
+where cw.grade_level < 9
