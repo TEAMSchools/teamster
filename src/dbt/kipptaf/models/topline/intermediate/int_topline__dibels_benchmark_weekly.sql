@@ -1,3 +1,26 @@
+with
+    benchmarks as (
+        select
+            student_number,
+            academic_year,
+            `period`,
+            sync_date,
+            measure_standard_level,
+            measure_standard_level_int,
+        from {{ ref("int_amplify__all_assessments") }}
+        where measure_name = 'Composite'
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="benchmarks",
+                partition_by="student_number, academic_year, period",
+                order_by="sync_date desc",
+            )
+        }}
+    )
+
 select
     cw.student_number,
     cw.state_studentnumber,
@@ -20,13 +43,17 @@ select
     cw.entrydate,
     cw.exitdate,
     cw.enroll_status,
+    cw.is_enrolled_week,
 
     rt.name as test_round,
 
     'ELA' as discipline,
 
     case
-        when ir.is_proficient then 1 when not ir.is_proficient then 0
+        when amp.measure_standard_level_int > 2
+        then 1
+        when amp.measure_standard_level_int <= 2
+        then 0
     end as is_proficient,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as cw
 inner join
@@ -36,18 +63,7 @@ inner join
     and cw.week_start_monday between rt.start_date and rt.end_date
     and rt.type = 'LITEX'
 left join
-    
--- left join
---     {{ ref("base_iready__diagnostic_results") }} as ir
---     on cw.student_number = ir.student_id
---     and cw.academic_year = ir.academic_year_int
---     and cw.iready_subject = ir.subject
---     and {{ union_dataset_join_clause(left_alias="cw", right_alias="ir") }}
---     and rt.region = ir.region
---     and rt.name = ir.test_round
---     and ir.rn_subj_round = 1
--- left join
---     deduplicate as d
---     on cw.student_number = d.student_id
---     and cw.academic_year = d.academic_year_int
---     and cw.iready_subject = d.subject
+    deduplicate as amp
+    on cw.student_number = amp.student_number
+    and cw.academic_year = amp.academic_year
+    and rt.name = amp.`period`
