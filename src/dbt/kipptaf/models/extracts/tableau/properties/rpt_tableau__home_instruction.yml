@@ -91,3 +91,5 @@ models:
         data_type: int64
       - name: n_days_ps
         data_type: int64
+      - name: academic_year_display
+        data_type: string
