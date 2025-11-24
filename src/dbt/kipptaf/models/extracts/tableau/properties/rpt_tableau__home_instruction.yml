@@ -58,7 +58,7 @@ models:
       - name: hourly_rate
         data_type: numeric
       - name: board_approval_date
-        data_type: date
+        data_type: string
       - name: hi_start_date
         data_type: date
       - name: hi_end_date

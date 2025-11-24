@@ -28,7 +28,7 @@ select
     dl.instructor_name,
     cast(dl.hours_per_week as numeric) as hours_per_week,
     cast(dl.hourly_rate as numeric) as hourly_rate,
-    cast(dl.board_approval_date as date) as board_approval_date,
+    dl.board_approval_date,
     dl.hi_start_date,
     dl.hi_end_date,
     dl.approver_name,
@@ -50,7 +50,7 @@ select
         dl.hi_start_date = sp.enter_date and dl.hi_end_date = sp.exit_date, true, false
     ) as is_date_aligned,
     (
-        select countif(x is null)
+        select countif(x is null),
         from
             unnest(
                 [
@@ -68,7 +68,7 @@ select
     )
     = 0 as is_complete_dl,
     (
-        select countif(x is null)
+        select countif(x is null),
         from
             unnest(
                 [
@@ -94,15 +94,13 @@ select
         concat(
             case
                 when co.region = 'Newark'
-                then
-                    'https://psteam.kippnj.org/admin/students/specialprograms.html?frn=00'
+                then 'https://psteam.kippnj.org/'
                 when co.region = 'Camden'
-                then
-                    'https://pskcna.kippnj.org/admin/students/specialprograms.html?frn=00'
+                then 'https://pskcna.kippnj.org/'
                 when co.region = 'Miami'
-                then
-                    'https://ps.kippmiami.org/admin/students/specialprograms.html?frn=00'
+                then 'https://ps.kippmiami.org/'
             end,
+            'admin/students/specialprograms.html?frn=00',
             co.students_dcid
         )
     ) as ps_url,
@@ -114,9 +112,9 @@ inner join
     and co.academic_year = dl.create_ts_academic_year
     and (
         dl.home_instruction_reason is not null
-        or dl.category = "TX - HI Request (admin only)"
+        or dl.category = 'TX - HI Request (admin only)'
     )
-    and dl.home_instruction_reason != "[Please select a reason]"
+    and dl.home_instruction_reason != '[Please select a reason]'
 left join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on co.studentid = sp.studentid
