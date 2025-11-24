@@ -31,12 +31,13 @@ select
     dl.board_approval_date,
     dl.hi_start_date,
     dl.hi_end_date,
-    dl.approver_name,
     dl.create_lastfirst as referring_staff_name,
     dl.update_lastfirst as reviewing_staff_name,
 
     sp.enter_date,
     sp.exit_date,
+
+    u.lastfirst as approver_name,
 
     if(sp.enter_date is not null, true, false) as is_logged_powerschool,
     if(
@@ -117,6 +118,7 @@ inner join
         or dl.category = 'TX - HI Request (admin only)'
     )
     and dl.home_instruction_reason != '[Please select a reason]'
+left join {{ ref("stg_deanslist__users") }} as u on dl.approver_name = u.dl_user_id
 left join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on co.studentid = sp.studentid
