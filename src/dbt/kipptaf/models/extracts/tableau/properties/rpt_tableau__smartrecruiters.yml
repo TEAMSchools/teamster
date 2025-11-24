@@ -72,7 +72,7 @@ models:
       - name: school_shared_with
         data_type: string
       - name: resume_score
-        data_type: int64
+        data_type: numeric
       - name: high_quality_candidate
         data_type: int64
       - name: within_week_initial_review

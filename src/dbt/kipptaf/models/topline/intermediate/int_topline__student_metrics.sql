@@ -11,6 +11,7 @@ with
 
             'Formative Assessments' as indicator,
         from {{ ref("int_topline__formative_assessment_weekly") }}
+        where formative_strategy = 'All'
 
         union all
 
@@ -64,6 +65,43 @@ with
 
         select
             'K-8 Reading and Math' as layer,
+            'i-Ready B/FB Meeting Stretch Growth' as indicator,
+
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            week_end_sunday as term_end,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+
+            is_bfb_stretch_growth_int as metric_value,
+        from {{ ref("int_topline__iready_diagnostic_weekly") }}
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
+            'Miami CRQ Mastery' as indicator,
+
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            week_end_sunday as term_end,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+
+            is_mastery_running_int as metric_value,
+        from {{ ref("int_topline__formative_assessment_weekly") }}
+        where formative_strategy = 'Miami'
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
             'DIBELS PM Mastery' as indicator,
             student_number,
             academic_year,
@@ -96,6 +134,22 @@ with
 
         select
             'K-8 Reading and Math' as layer,
+            'DIBELS Benchmark Proficiency' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            week_end_sunday as term_end,
+            'ELA' as discipline,
+
+            null as numerator,
+            null as denominator,
+            is_proficient_int as metric_value,
+        from {{ ref("int_topline__dibels_benchmark_weekly") }}
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
             'i-Ready Lessons' as indicator,
             student_number,
             academic_year,
@@ -106,6 +160,22 @@ with
             null as numerator,
             null as denominator,
             if(n_lessons_passed_week >= 2, 1, 0) as metric_value,
+        from {{ ref("int_topline__iready_lessons_weekly") }}
+
+        union all
+
+        select
+            'K-8 Reading and Math' as layer,
+            'i-Ready Time on Task' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            week_end_sunday as term_end,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+            time_on_task_min_week as metric_value,
         from {{ ref("int_topline__iready_lessons_weekly") }}
 
         union all
@@ -196,6 +266,23 @@ with
 
         select
             'Attendance and Enrollment' as layer,
+            'Total Enrollment (Without SC OOD)' as indicator,
+            student_number,
+            academic_year,
+            week_start_monday as term,
+            week_end_sunday as term_end,
+            null as discipline,
+
+            null as numerator,
+            null as denominator,
+            if(is_enrolled_week, 1, 0) as metric_value,
+        from {{ ref("int_extracts__student_enrollments_weeks") }}
+        where not is_self_contained and not is_out_of_district
+
+        union all
+
+        select
+            'Attendance and Enrollment' as layer,
             'Successful Contacts' as indicator,
             student_number,
             academic_year,
@@ -225,6 +312,7 @@ with
             total_anticipated_calls as denominator,
             pct_interventions_complete as metric_value,
         from {{ ref("int_topline__attendance_interventions_weekly") }}
+        where total_anticipated_calls is not null
 
         union all
 
@@ -255,8 +343,8 @@ with
 
             null as numerator,
             null as denominator,
-            if(absence_sum_running >= 50, 1, 0) as metric_value,
-        from {{ ref("int_topline__ada_running_weekly") }}
+            is_truant_int as metric_value,
+        from {{ ref("int_topline__truancy_weekly") }}
 
         union all
 

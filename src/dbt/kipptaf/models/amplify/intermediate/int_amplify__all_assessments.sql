@@ -86,7 +86,7 @@ with
             e.end_date,
             e.matching_pm_season as matching_season,
 
-        from {{ source("amplify", "int_amplify__dibels_data_farming_unpivot") }} as df
+        from {{ source("amplify", "int_amplify__dds__data_farming_unpivot") }} as df
         inner join
             {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
             on df.academic_year = e.academic_year
@@ -158,10 +158,6 @@ with
                 order by measure_standard_level_int desc
             ) as rn_highest,
 
-            row_number() over (
-                partition by academic_year, student_number order by client_date
-            ) as rn_distinct,
-
         from assessments_scores
     ),
 
@@ -186,7 +182,8 @@ with
     ),
 
     probe_eligible_tag as (
-        select
+        -- TODO: rn_distinct calc wasnt working - will review later
+        select distinct
             s.academic_year,
             s.student_number,
 
@@ -209,7 +206,7 @@ with
             overall_composite_by_window as c
             on s.academic_year = c.academic_year
             and s.student_number = c.student_number
-        where s.rn_distinct = 1 and s.assessment_type = 'Benchmark'
+        where s.assessment_type = 'Benchmark'
     )
 
 select

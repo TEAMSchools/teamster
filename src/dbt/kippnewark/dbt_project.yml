@@ -39,6 +39,12 @@ models:
         staging:
           +contract:
             enforced: true
+  amplify:
+    dds:
+      +enabled: false
+    mclass:
+      api:
+        +enabled: false
   deanslist:
     +materialized: table
     staging:

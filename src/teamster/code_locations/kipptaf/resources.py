@@ -87,13 +87,6 @@ TABLEAU_SERVER_RESOURCE = TableauServerResource(
 SSH resources
 """
 
-SSH_RESOURCE_AMPLIFY = SSHResource(
-    remote_host=EnvVar("AMPLIFY_SFTP_HOST"),
-    remote_port=22,
-    username=EnvVar("AMPLIFY_SFTP_USERNAME"),
-    password=EnvVar("AMPLIFY_SFTP_PASSWORD"),
-)
-
 SSH_RESOURCE_ADP_WORKFORCE_NOW = SSHResource(
     remote_host=EnvVar("ADP_SFTP_HOST_IP"),
     remote_port=22,

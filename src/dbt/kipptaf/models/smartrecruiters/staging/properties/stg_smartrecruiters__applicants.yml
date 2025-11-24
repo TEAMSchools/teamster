@@ -1,5 +1,7 @@
 models:
   - name: stg_smartrecruiters__applicants
+    config:
+      enabled: false
     columns:
       - name: candidate_email
         data_type: string

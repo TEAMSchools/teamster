@@ -209,7 +209,7 @@ with
                 then cast(schoolid as string)
             end as join_key,
         from pre_agg_union_student
-        where indicator = 'Total Enrollment'
+        where indicator = 'Total Enrollment (Without SC OOD)'
     ),
 
     targets as (
