@@ -2,6 +2,7 @@ models:
   - name: int_tableau__gradebook_audit_flags
     config:
       cluster_by: cte_grouping
+      # materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string
