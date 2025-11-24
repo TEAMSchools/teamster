@@ -192,7 +192,7 @@ with
             dlm as d
             on se.student_number = d.student_number
             and {{ union_dataset_join_clause(left_alias="se", right_alias="d") }}
-        left join tier as t on se.salesforce_id = t.contact
+        left join tier as t on se.salesforce_id = t.contact and t.rn_tier_recent = 1
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 
