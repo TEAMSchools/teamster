@@ -3,6 +3,7 @@ select
     co.state_studentnumber,
     co.student_name,
     co.academic_year,
+    co.academic_year_display,
     co.school,
     co.region,
     co.grade_level,
