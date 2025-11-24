@@ -105,6 +105,8 @@ select
         )
     ) as ps_url,
     concat('https://kippnj.deanslistsoftware.com/incidents/', dl.incident_id) as dl_url,
+    date_diff(dl.hi_end_date, dl.hi_start_date, day) as n_days_dl,
+    date_diff(sp.exit_date, sp.enter_date, day) as n_days_ps,
 from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_deanslist__incidents") }} as dl
