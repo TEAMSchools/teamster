@@ -187,8 +187,6 @@ models:
           enforced: true
     marts:
       +schema: marts
-    metrics:
-      +schema: metrics
     overgrad:
       +schema: overgrad
       staging:

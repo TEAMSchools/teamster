@@ -1,5 +1,7 @@
 models:
   - name: int_kippadb__contact_note_rollup
+    config:
+      materialized: table
     columns:
       - name: contact_id
         data_type: string

@@ -1,5 +1,7 @@
 models:
   - name: int_surveys__renewal_responses_feed
+    config:
+      materialized: table
     columns:
       - name: survey_id
         data_type: string

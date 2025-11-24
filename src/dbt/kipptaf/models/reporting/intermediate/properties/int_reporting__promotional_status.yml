@@ -1,5 +1,7 @@
 models:
   - name: int_reporting__promotional_status
+    config:
+      materialized: table
     columns:
       - name: student_number
         data_type: int64
