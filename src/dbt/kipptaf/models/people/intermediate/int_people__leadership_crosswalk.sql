@@ -1,8 +1,11 @@
 with
     school_leadership as (
         select
-            home_work_location_powerschool_school_id,
             home_work_location_name,
+            home_work_location_region,
+            home_work_location_powerschool_school_id,
+            home_work_location_abbreviation,
+            home_work_location_campus_name,
 
             coalesce(
                 max(
@@ -24,27 +27,29 @@ with
                 'School Leader in Residence'
             )
             and assignment_status != 'Terminated'
-        group by home_work_location_powerschool_school_id, home_work_location_name
+            and home_work_location_powerschool_school_id != 0
+        group by
+            home_work_location_name,
+            home_work_location_region,
+            home_work_location_powerschool_school_id,
+            home_work_location_abbreviation,
+            home_work_location_campus_name
     ),
 
     mdo as (
-        /*
-            distinct: MDO location is at regional office.
-            we need to identify MDO for each region but join on location
-        */
-        select distinct
-            home_work_location_name,
-
-            max(
-                if(job_title = 'Managing Director of Operations', employee_number, null)
-            ) over (partition by home_work_location_region) as mdo_employee_number,
+        select home_work_location_region, max(employee_number) as mdo_employee_number,
         from {{ ref("int_people__staff_roster") }}
-        where assignment_status in ('Active', 'Leave')
+        where
+            job_title = 'Managing Director of Operations'
+            and assignment_status in ('Active', 'Leave')
+        group by home_work_location_region
     )
 
 select
     l.home_work_location_powerschool_school_id,
     l.home_work_location_name,
+    l.home_work_location_abbreviation,
+    l.home_work_location_campus_name,
     l.dso_employee_number,
     l.sl_employee_number,
 
@@ -95,7 +100,7 @@ left join
 left join
     {{ ref("int_people__staff_roster") }} as mdso
     on dso.reports_to_employee_number = mdso.employee_number
-left join mdo as m on l.home_work_location_name = m.home_work_location_name
+left join mdo as m on l.home_work_location_region = m.home_work_location_region
 left join
     {{ ref("int_people__staff_roster") }} as mdo
     on m.mdo_employee_number = mdo.employee_number
