@@ -41,11 +41,7 @@ select
 
     if(sp.enter_date is not null, true, false) as is_logged_powerschool,
     if(
-        dl.board_approval_date is not null
-        and dl.approver_name is not null
-        and dl.final_approval = 'Y',
-        true,
-        false
+        dl.approver_name is not null and dl.final_approval = 'Y', true, false
     ) as is_approved,
     if(
         dl.hi_start_date = sp.enter_date and dl.hi_end_date = sp.exit_date, true, false
