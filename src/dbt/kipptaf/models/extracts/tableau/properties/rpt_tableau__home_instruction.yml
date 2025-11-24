@@ -3,31 +3,33 @@ models:
     columns:
       - name: student_number
         data_type: int64
+      - name: state_studentnumber
+        data_type: string
       - name: student_name
         data_type: string
       - name: academic_year
         data_type: int64
-      - name: grade_level
-        data_type: int64
+      - name: school
+        data_type: string
       - name: region
         data_type: string
-      - name: school
+      - name: grade_level
+        data_type: int64
+      - name: enroll_status
+        data_type: int64
+      - name: school_level
+        data_type: string
+      - name: homeroom_section
+        data_type: string
+      - name: homeroom_teacher_name
         data_type: string
       - name: iep_status
         data_type: string
-      - name: gender
+      - name: ml_status
         data_type: string
-      - name: ethnicity
+      - name: status_504
         data_type: string
-      - name: lep_status
-        data_type: boolean
-      - name: is_504
-        data_type: boolean
-      - name: enroll_status
-        data_type: int64
-      - name: team
-        data_type: string
-      - name: advisor
+      - name: self_contained_status
         data_type: string
       - name: incident_id
         data_type: int64
@@ -41,6 +43,10 @@ models:
         data_type: string
       - name: infraction
         data_type: string
+      - name: category
+        data_type: string
+      - name: home_instruction_reason
+        data_type: string
       - name: final_approval
         data_type: string
       - name: instructor_source
@@ -48,9 +54,9 @@ models:
       - name: instructor_name
         data_type: string
       - name: hours_per_week
-        data_type: string
+        data_type: numeric
       - name: hourly_rate
-        data_type: string
+        data_type: numeric
       - name: board_approval_date
         data_type: string
       - name: hi_start_date
@@ -62,4 +68,22 @@ models:
       - name: referring_staff_name
         data_type: string
       - name: reviewing_staff_name
+        data_type: string
+      - name: enter_date
+        data_type: date
+      - name: exit_date
+        data_type: date
+      - name: is_logged_powerschool
+        data_type: boolean
+      - name: is_approved
+        data_type: boolean
+      - name: is_date_aligned
+        data_type: boolean
+      - name: is_complete_dl
+        data_type: boolean
+      - name: is_complete_all
+        data_type: boolean
+      - name: ps_url
+        data_type: string
+      - name: dl_url
         data_type: string
