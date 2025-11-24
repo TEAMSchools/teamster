@@ -40,8 +40,6 @@ sources:
               - deanslist
               - stg_deanslist__terms
       - name: stg_deanslist__users
-        config:
-          enabled: false
         meta:
           dagster:
             group: deanslist
