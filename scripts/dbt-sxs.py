@@ -13,9 +13,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(add_help=False)
 
     parser.add_argument("project")
+    parser.add_argument("--target", default="dev")
     parser.add_argument("--select", "-s", nargs="*")
-    parser.add_argument("--prod", action="store_true")
-    parser.add_argument("--staging", action="store_true")
     parser.add_argument("--test", action="store_true")
 
     args = parser.parse_args()
@@ -40,12 +39,6 @@ def main() -> None:
     if args.select:
         run_args.extend(["--args", " ".join(["select:", *args.select])])
 
-    dbt_cloud_environment_type = "dev"
-    if args.prod:
-        dbt_cloud_environment_type = "prod"
-    elif args.staging:
-        dbt_cloud_environment_type = "staging"
-
     print(" ".join(run_args))
 
     # trunk-ignore(bandit/B603)
@@ -53,8 +46,8 @@ def main() -> None:
         args=run_args,
         env={
             **os.environ,
-            "DBT_CLOUD_ENVIRONMENT_TYPE": dbt_cloud_environment_type,
             "PATH": os.environ["PATH"] + ":/workspaces/teamster/.venv/bin",
+            "DBT_CLOUD_ENVIRONMENT_TYPE": args.target,
         },
     )
 

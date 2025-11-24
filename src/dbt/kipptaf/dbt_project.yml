@@ -68,13 +68,6 @@ models:
       +schema: amplify
       dds:
         +enabled: false
-      mclass:
-        api:
-          +enabled: false
-        sftp:
-          staging:
-            +contract:
-              enforced: true
     assessments:
       +schema: assessments
     collegeboard:
@@ -246,7 +239,6 @@ models:
     surveys:
       +schema: surveys
     tableau:
-      +enabled: false
       +schema: tableau
       staging:
         +materialized: table

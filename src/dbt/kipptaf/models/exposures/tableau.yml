@@ -33,8 +33,10 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__ap_assessment_dashboard")
-      - ref("rpt_tableau__college_assessment_dashboard")
-      - ref("rpt_tableau__college_assessment_dashboard_historic")
+      - ref("rpt_tableau__college_assessment_dashboard_current")
+      - ref("rpt_tableau__college_assessment_dashboard_over_time")
+      - ref("rpt_tableau__college_assessment_dashboard_roster")
+      - ref("rpt_tableau__college_assessment_dashboard_scores")
     meta:
       dagster:
         kinds:
@@ -422,6 +424,7 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__promo_status")
+      - ref("rpt_tableau__mtss_rti")
     meta:
       dagster:
         kinds:
@@ -429,7 +432,7 @@ exposures:
         asset:
           metadata:
             id: 5698ccc2-b952-4123-878b-48166b686b16
-            cron_schedule: 0 1 * * *
+            cron_schedule: 0 5 * * *
   - name: stipend_and_bonus_dashboard
     label: Stipend and Bonus Dashboard
     type: dashboard
@@ -488,7 +491,6 @@ exposures:
         asset:
           metadata:
             id: 8f8b058f-2408-470d-95b0-681d6c8b65f4
-            cron_schedule: 0 * * * *
   - name: kipp_miami_fast_iready_analysis
     label: KIPP Miami FAST & i-Ready Analysis
     type: dashboard
@@ -661,3 +663,31 @@ exposures:
           metadata:
             id: ecc7a45d-3ee8-4069-8f6a-d686caa04af5
             cron_schedule: 0 5 * * *
+  - name: tableau_usage
+    label: Tableau Usage
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__tableau_usage")
+    meta:
+      dagster:
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 4c9f089a-86e6-4c75-a5ac-22da73e28e22
+  - name: manager_survey_reports
+    label: Manager Survey Reports
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("int_surveys__manager_survey_details")
+    meta:
+      dagster:
+        kinds:
+          - tableau
+        asset:
+          metadata:
+            id: 61c1e07d-778e-40a8-81ad-327f3951c8e2

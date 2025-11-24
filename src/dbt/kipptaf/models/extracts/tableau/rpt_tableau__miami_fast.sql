@@ -103,6 +103,7 @@ select
     ce.courses_course_name as course_name,
     ce.sections_section_number as section_number,
     ce.teacher_lastfirst as teacher_name,
+    ce.teachernumber,
 
     ir.total_lessons,
     ir.lessons_passed,

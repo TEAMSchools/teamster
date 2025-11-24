@@ -51,7 +51,7 @@ with
             concat('STAR ', star_discipline, ' proficiency') as measure,
             cast(grade_level as string) as grade_level,
             round(avg(is_district_benchmark_proficient_int), 2) as criteria,
-        from {{ ref("int_renlearn__star_rollup") }}
+        from {{ ref("stg_renlearn__star") }}
         where screening_period_window_name = 'Spring' and rn_subj_round = 1
         group by academic_year, star_discipline, grade_level
 
@@ -62,7 +62,7 @@ with
             concat('STAR ', star_discipline, ' proficiency') as measure,
             'Royalty' as grade_level,
             round(avg(is_district_benchmark_proficient_int), 2) as criteria,
-        from {{ ref("int_renlearn__star_rollup") }}
+        from {{ ref("stg_renlearn__star") }}
         where screening_period_window_name = 'Spring' and rn_subj_round = 1
         group by academic_year, star_discipline
 
