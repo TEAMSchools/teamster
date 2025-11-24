@@ -14,4 +14,4 @@ select
         then true
         else false
     end as is_proficient,
-from {{ source("google_sheets", "src_google_sheets__assessments__iready_crosswalk") }}
+from {{ source("google_sheets", "src_google_sheets__iready_crosswalk") }}
