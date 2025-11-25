@@ -735,3 +735,11 @@ sources:
               - kippmiami
               - powerschool
               - stg_powerschool__userscorefields
+      - name: int_powerschool__terms
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kippmiami
+              - powerschool
+              - int_powerschool__terms
