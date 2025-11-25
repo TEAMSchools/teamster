@@ -1,7 +1,7 @@
 models:
   - name: int_tableau__gradebook_audit_teacher_scaffold
-    # config:
-    #   materialized: table
+    config:
+      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string
