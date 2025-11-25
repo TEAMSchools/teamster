@@ -1,5 +1,7 @@
 models:
   - name: int_adp_workforce_now__workers
+    config:
+      materialized: table
     columns:
       - name: associate_oid
         data_type: string

@@ -1,5 +1,7 @@
 models:
   - name: int_amplify__mclass__benchmark_student_summary_unpivot
+    config:
+      materialized: table
     columns:
       - name: surrogate_key
         data_type: string

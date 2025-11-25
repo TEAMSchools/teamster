@@ -1,7 +1,5 @@
 models:
   - name: int_illuminate__agg_student_responses_standard
-    config:
-      materialized: view
     columns:
       - name: student_assessment_id
         data_type: int64

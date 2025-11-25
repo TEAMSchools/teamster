@@ -1,5 +1,7 @@
 models:
   - name: int_powerschool__s_nj_stu_x_unpivot
+    config:
+      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string

@@ -28,7 +28,9 @@ select
     l.memberships,
     l.is_teacher_development_program,
     l.is_leader_development_program,
+
     tgl.grade_level as primary_grade_level_taught,
+
     pm.final_tier as overall_tier,
     pm.final_score as overall_score,
 from {{ ref("int_people__staff_attrition_details") }} as l

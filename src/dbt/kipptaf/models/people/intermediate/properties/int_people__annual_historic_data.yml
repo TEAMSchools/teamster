@@ -1,7 +1,5 @@
 models:
   - name: int_people__annual_historic_data
-    config:
-      materialized: view
     columns:
       - name: employee_number
         data_type: int64

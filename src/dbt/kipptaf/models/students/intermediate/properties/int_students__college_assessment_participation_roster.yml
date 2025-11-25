@@ -1,5 +1,7 @@
 models:
   - name: int_students__college_assessment_participation_roster
+    config:
+      materialized: table
     columns:
       - name: student_number
         data_type: int64

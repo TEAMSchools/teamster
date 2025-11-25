@@ -1,8 +1,8 @@
 models:
   - name: int_tableau__gradebook_audit_flags
     config:
-      materialized: table
       cluster_by: cte_grouping
+      # materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string
