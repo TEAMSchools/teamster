@@ -150,7 +150,7 @@ with
 
         select
             'K-8 Reading and Math' as layer,
-            'i-Ready Lessons' as indicator,
+            'i-Ready Lessons Passed' as indicator,
             student_number,
             academic_year,
             week_start_monday as term,
