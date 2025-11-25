@@ -3,6 +3,7 @@ select
     co.state_studentnumber,
     co.student_name,
     co.academic_year,
+    co.academic_year_display,
     co.school,
     co.region,
     co.grade_level,
@@ -31,20 +32,17 @@ select
     dl.board_approval_date,
     dl.hi_start_date,
     dl.hi_end_date,
-    dl.approver_name,
     dl.create_lastfirst as referring_staff_name,
     dl.update_lastfirst as reviewing_staff_name,
 
     sp.enter_date,
     sp.exit_date,
 
+    u.lastfirst as approver_name,
+
     if(sp.enter_date is not null, true, false) as is_logged_powerschool,
     if(
-        dl.board_approval_date is not null
-        and dl.approver_name is not null
-        and dl.final_approval = 'Y',
-        true,
-        false
+        dl.approver_name is not null and dl.final_approval = 'Y', true, false
     ) as is_approved,
     if(
         dl.hi_start_date = sp.enter_date and dl.hi_end_date = sp.exit_date, true, false
@@ -107,6 +105,12 @@ select
     concat('https://kippnj.deanslistsoftware.com/incidents/', dl.incident_id) as dl_url,
     date_diff(dl.hi_end_date, dl.hi_start_date, day) as n_days_dl,
     date_diff(sp.exit_date, sp.enter_date, day) as n_days_ps,
+    if(
+        current_date('{{ var("local_timezone") }}')
+        between sp.enter_date and sp.exit_date,
+        true,
+        false
+    ) as is_current,
 from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_deanslist__incidents") }} as dl
@@ -117,10 +121,12 @@ inner join
         or dl.category = 'TX - HI Request (admin only)'
     )
     and dl.home_instruction_reason != '[Please select a reason]'
+left join {{ ref("stg_deanslist__users") }} as u on dl.approver_name = u.dl_user_id
 left join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on co.studentid = sp.studentid
     and co.academic_year = sp.academic_year
     and dl.hi_start_date between sp.enter_date and sp.exit_date
+    and sp.specprog_name = 'Home Instruction'
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
 where co.grade_level != 99
