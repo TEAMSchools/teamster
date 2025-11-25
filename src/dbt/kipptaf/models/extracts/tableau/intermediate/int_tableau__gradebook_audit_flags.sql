@@ -393,6 +393,7 @@ left join
     and r.assignmentid = t.assignmentid
 
 union all
+
 /* this captures all student_course_category: qt_effort_grade_missing,
 qt_formative_grade_missing, qt_summative_grade_missing, and
 w_grade_inflation */
@@ -522,6 +523,7 @@ select
 from student_course_category
 
 union all
+
 -- this captures all eoq items except conduct_code
 select
     _dbt_source_relation,

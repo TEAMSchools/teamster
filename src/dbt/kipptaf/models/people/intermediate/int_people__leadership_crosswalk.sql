@@ -1,4 +1,31 @@
 with
+    staff_roster as (
+        select
+            employee_number,
+            formatted_name,
+            mail,
+            sam_account_name,
+            google_email,
+            job_title,
+            home_work_location_name,
+            home_work_location_region,
+            home_work_location_powerschool_school_id,
+            home_work_location_abbreviation,
+            home_work_location_campus_name,
+            reports_to_employee_number,
+        from {{ ref("int_people__staff_roster") }}
+        where
+            job_title in (
+                'Director School Operations',
+                'Director Campus Operations',
+                'Managing Director of Operations',
+                'School Leader',
+                'School Leader in Residence'
+            )
+            and assignment_status != 'Terminated'
+            and home_work_location_powerschool_school_id != 0
+    ),
+
     school_leadership as (
         select
             home_work_location_name,
@@ -18,16 +45,7 @@ with
                 max(if(job_title = 'School Leader', employee_number, null)),
                 max(if(job_title = 'School Leader in Residence', employee_number, null))
             ) as sl_employee_number,
-        from {{ ref("int_people__staff_roster") }}
-        where
-            job_title in (
-                'Director School Operations',
-                'Director Campus Operations',
-                'School Leader',
-                'School Leader in Residence'
-            )
-            and assignment_status != 'Terminated'
-            and home_work_location_powerschool_school_id != 0
+        from staff_roster
         group by
             home_work_location_name,
             home_work_location_region,
@@ -37,11 +55,13 @@ with
     ),
 
     mdo as (
-        select home_work_location_region, max(employee_number) as mdo_employee_number,
-        from {{ ref("int_people__staff_roster") }}
-        where
-            job_title = 'Managing Director of Operations'
-            and assignment_status in ('Active', 'Leave')
+        select
+            home_work_location_region,
+
+            max(
+                if(job_title = 'Managing Director of Operations', employee_number, null)
+            ) as mdo_employee_number,
+        from staff_roster
         group by home_work_location_region
     )
 
@@ -88,19 +108,9 @@ select
     mdo.job_title as mdo_job_title,
     mdo.sam_account_name as mdo_sam_account_name,
 from school_leadership as l
-left join
-    {{ ref("int_people__staff_roster") }} as sl
-    on l.sl_employee_number = sl.employee_number
-left join
-    {{ ref("int_people__staff_roster") }} as hos
-    on sl.reports_to_employee_number = hos.employee_number
-left join
-    {{ ref("int_people__staff_roster") }} as dso
-    on l.dso_employee_number = dso.employee_number
-left join
-    {{ ref("int_people__staff_roster") }} as mdso
-    on dso.reports_to_employee_number = mdso.employee_number
+left join staff_roster as sl on l.sl_employee_number = sl.employee_number
+left join staff_roster as hos on sl.reports_to_employee_number = hos.employee_number
+left join staff_roster as dso on l.dso_employee_number = dso.employee_number
+left join staff_roster as mdso on dso.reports_to_employee_number = mdso.employee_number
 left join mdo as m on l.home_work_location_region = m.home_work_location_region
-left join
-    {{ ref("int_people__staff_roster") }} as mdo
-    on m.mdo_employee_number = mdo.employee_number
+left join staff_roster as mdo on m.mdo_employee_number = mdo.employee_number
