@@ -190,8 +190,12 @@ models:
           enforced: true
     marts:
       +schema: marts
-    metrics:
-      +schema: metrics
+    nsc:
+      +schema: nsc
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     overgrad:
       +schema: overgrad
       staging:
