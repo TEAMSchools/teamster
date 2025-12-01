@@ -11,7 +11,7 @@ models:
         data_type: float64
       - name: sat_math
         data_type: float64
-      - name: test_type
+      - name: test_type__c
         data_type: string
       - name: recordtypeid
         data_type: string

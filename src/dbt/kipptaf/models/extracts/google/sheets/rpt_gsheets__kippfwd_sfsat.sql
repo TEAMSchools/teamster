@@ -53,7 +53,7 @@ select
     sat_ebrw,
     sat_math,
 
-    test_type,
+    test_type as test_type__c,
 
     '01280000000BQ2ZAAW' as recordtypeid,
 
