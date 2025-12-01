@@ -41,7 +41,7 @@ with
             lead(schoolid, 1) over (
                 partition by student_number order by academic_year asc
             ) as next_year_schoolid,
-            
+
         from {{ ref("base_powerschool__student_enrollments") }}
         where rn_year = 1
     ),
