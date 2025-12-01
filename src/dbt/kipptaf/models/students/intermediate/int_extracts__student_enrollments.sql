@@ -9,6 +9,7 @@ with
             row_number() over (
                 partition by student_number, school_level order by exitdate desc
             ) as rn,
+
         from {{ ref("base_powerschool__student_enrollments") }}
     ),
 
@@ -20,6 +21,7 @@ with
             row_number() over (
                 partition by student_number order by exitdate desc
             ) as rn,
+
         from {{ ref("base_powerschool__student_enrollments") }}
         where
             grade_level = 4
@@ -39,6 +41,7 @@ with
             lead(schoolid, 1) over (
                 partition by student_number order by academic_year asc
             ) as next_year_schoolid,
+            
         from {{ ref("base_powerschool__student_enrollments") }}
         where rn_year = 1
     ),

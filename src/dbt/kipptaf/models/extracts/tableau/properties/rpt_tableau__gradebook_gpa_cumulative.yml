@@ -81,16 +81,3 @@ models:
         data_type: float64
       - name: most_recent_ada
         data_type: float64
-      - name: flag_check_date_range
-        data_type: boolean
-      - name: is_cum_gpa_flag
-        data_type: boolean
-      - name: is_null_cum_gpa_flag
-        data_type: boolean
-        tests:
-          - accepted_values:
-              values: [false]
-              quote: false
-              config:
-                severity: warn
-                store_failures: true
