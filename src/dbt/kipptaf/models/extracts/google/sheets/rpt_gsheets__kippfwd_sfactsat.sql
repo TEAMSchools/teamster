@@ -15,7 +15,7 @@ with
         where test_type in ('ACT', 'SAT') and date is not null
     ),
 
-    current_scores as (select * from {{ ref("int_assessments__college_assessment") }})
+    current_scores as (select *, from {{ ref("int_assessments__college_assessment") }})
 
-select *
+select *,
 from current_scores
