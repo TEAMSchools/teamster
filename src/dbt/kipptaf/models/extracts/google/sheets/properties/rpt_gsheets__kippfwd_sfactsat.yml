@@ -1,0 +1,5 @@
+models:
+  - name: rpt_gsheets__kippfwd_sfactsat
+    config:
+      contract:
+        enforced: false
