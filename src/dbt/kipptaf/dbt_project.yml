@@ -187,6 +187,12 @@ models:
           enforced: true
     marts:
       +schema: marts
+    nsc:
+      +schema: nsc
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     overgrad:
       +schema: overgrad
       staging:
