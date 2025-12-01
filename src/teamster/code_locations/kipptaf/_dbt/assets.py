@@ -38,6 +38,13 @@ reporting_dbt_assets = build_dbt_assets(
     name=f"{CODE_LOCATION}__dbt_assets__reporting",
     select="extracts",
     exclude="source:adp_payroll+",
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1250m"}}
+            }
+        }
+    },
 )
 
 google_sheet_dbt_assets = build_dbt_assets(
