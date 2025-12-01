@@ -5,7 +5,6 @@ from teamster.code_locations.kippmiami.renlearn.schema import (
     FAST_STAR_SCHEMA,
     STAR_DASHBOARD_STANDARDS_SCHEMA,
     STAR_SCHEMA,
-    STAR_SKILL_AREA_SCHEMA,
 )
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.sftp.assets import build_sftp_archive_asset
@@ -26,19 +25,6 @@ star = build_sftp_archive_asset(
     asset_key=[*asset_key_prefix, "star"],
     archive_file_regex=r"(?P<subject>)\.csv",
     avro_schema=STAR_SCHEMA,
-    partitions_def=MultiPartitionsDefinition(
-        {
-            "subject": StaticPartitionsDefinition(["SM", "SR", "SEL"]),
-            "start_date": start_date_partition,
-        }
-    ),
-    **asset_kwargs,
-)
-
-star_skill_area = build_sftp_archive_asset(
-    asset_key=[*asset_key_prefix, "star_skill_area"],
-    archive_file_regex=r"(?P<subject>)_SkillArea_v1\.csv",
-    avro_schema=STAR_SKILL_AREA_SCHEMA,
     partitions_def=MultiPartitionsDefinition(
         {
             "subject": StaticPartitionsDefinition(["SM", "SR", "SEL"]),
@@ -74,9 +60,21 @@ fast_star = build_sftp_archive_asset(
     **asset_kwargs,
 )
 
+# star_skill_area = build_sftp_archive_asset(
+#     asset_key=[*asset_key_prefix, "star_skill_area"],
+#     archive_file_regex=r"(?P<subject>)_SkillArea_v1\.csv",
+#     avro_schema=STAR_SKILL_AREA_SCHEMA,
+#     partitions_def=MultiPartitionsDefinition(
+#         {
+#             "subject": StaticPartitionsDefinition(["SM", "SR", "SEL"]),
+#             "start_date": start_date_partition,
+#         }
+#     ),
+#     **asset_kwargs,
+# )
+
 assets = [
     fast_star,
     star_dashboard_standards,
-    star_skill_area,
     star,
 ]

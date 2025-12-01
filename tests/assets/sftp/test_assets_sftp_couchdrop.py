@@ -188,4 +188,16 @@ def test_collegeboard_psat_kipptaf_psat10():
 def test_collegeboard_ap_kipptaf():
     from teamster.code_locations.kipptaf.collegeboard.assets import ap
 
-    _test_asset(asset=ap)
+    _test_asset(asset=ap, partition_key="NCA|2024")
+
+
+def test_collegeboard_sat_kipptaf():
+    from teamster.code_locations.kipptaf.collegeboard.assets import sat
+
+    _test_asset(asset=sat)
+
+
+def test_nsc_student_tracker_kipptaf():
+    from teamster.code_locations.kipptaf.nsc.assets import student_tracker
+
+    _test_asset(asset=student_tracker)

@@ -1,6 +1,12 @@
 models:
   - name: stg_smartrecruiters__applications
     columns:
+      - name: application_id
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: application_custom_step
         data_type: string
       - name: application_field_application_review_score
@@ -10,12 +16,6 @@ models:
       - name: application_field_phone_interview_score
         data_type: string
       - name: application_field_resume_score
-        data_type: string
-      - name: application_field_school_shared_with_miami
-        data_type: string
-      - name: application_field_school_shared_with_new_jersey
-        data_type: string
-      - name: application_id
         data_type: string
       - name: application_reason_for_rejection
         data_type: string
@@ -46,7 +46,7 @@ models:
       - name: application_url
         data_type: string
       - name: average_rating
-        data_type: string
+        data_type: numeric
       - name: candidate_email
         data_type: string
       - name: candidate_first_and_last_name
@@ -119,21 +119,33 @@ models:
         data_type: int64
       - name: subject_preference
         data_type: string
-      - name: date_new
+      - name: demo_date
         data_type: date
-      - name: date_phone_screen_complete
+      - name: hired_date
         data_type: date
-      - name: date_phone_screen_requested
+      - name: last_update_date
         data_type: date
-      - name: date_demo
+      - name: lead_date
         data_type: date
-      - name: date_offer
+      - name: new_date
         data_type: date
-      - name: date_hired
+      - name: offer_date
         data_type: date
-      - name: date_rejected
+      - name: phone_screen_complete_date
         data_type: date
-      - name: date_last_update
+      - name: phone_screen_requested_date
         data_type: date
-      - name: date_lead
+      - name: rejected_date
         data_type: date
+      - name: invited_to_selection_day_date
+        data_type: date
+      - name: invited_to_selection_day_datetime
+        data_type: datetime
+      - name: selection_day_date
+        data_type: date
+      - name: selection_day_datetime
+        data_type: datetime
+      - name: resume_score
+        data_type: int64
+      - name: school_shared_with
+        data_type: string

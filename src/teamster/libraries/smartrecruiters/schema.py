@@ -28,9 +28,11 @@ class Application(BaseModel):
     application_status_in_review_performance_task_date: str | None = None
     application_status_in_review_resume_review_date: str | None = None
     application_status_interview_demo_date: str | None = None
+    application_status_interview_invited_to_selection_day_date: str | None = None
     application_status_interview_performance_task_date: str | None = None
     application_status_interview_phone_screen_complete_date: str | None = None
     application_status_interview_phone_screen_requested_date: str | None = None
+    application_status_interview_selection_day_date: str | None = None
     application_status: str | None = None
     application_url: str | None = None
     average_rating: str | None = None

@@ -90,6 +90,8 @@ with
             s.aligned_subject,
             s.max_scale_score,
 
+            coalesce(s.strategy_case, 'No testing history') as strategy_case,
+
             avg(
                 case
                     when
@@ -160,7 +162,8 @@ with
             s.subject_area,
             s.aligned_subject_area,
             s.aligned_subject,
-            s.max_scale_score
+            s.max_scale_score,
+            s.strategy_case
     )
 
 select

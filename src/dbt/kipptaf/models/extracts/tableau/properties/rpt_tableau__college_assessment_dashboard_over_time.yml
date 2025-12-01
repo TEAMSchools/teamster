@@ -63,6 +63,8 @@ models:
         data_type: string
       - name: max_scale_score
         data_type: numeric
+      - name: strategy_case
+        data_type: string
       - name: score
         data_type: numeric
       - name: met_min_score_int
