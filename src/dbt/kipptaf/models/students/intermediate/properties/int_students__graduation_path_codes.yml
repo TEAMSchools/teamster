@@ -2,7 +2,7 @@ models:
   - name: int_students__graduation_path_codes
     config:
       materialized: table
-    tests:
+    data_tests:
       - distinct_count:
           arguments:
             group_by: student_number
