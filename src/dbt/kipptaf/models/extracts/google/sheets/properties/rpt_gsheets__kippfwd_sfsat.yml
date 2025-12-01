@@ -1,5 +1,5 @@
 models:
-  - name: rpt_gsheets__kippfwd_sfactsat
+  - name: rpt_gsheets__kippfwd_sfsat
     config:
       contract:
         enforced: false
