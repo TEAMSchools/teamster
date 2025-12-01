@@ -5,6 +5,8 @@ with
             sat_date,
             test_type,
 
+            score,
+
             case
                 score_type
                 when 'sat_total'
@@ -13,7 +15,6 @@ with
                 then 'sat_math'
                 else score_type
             end as score_type,
-            score,
 
         from
             {{ ref("int_collegeboard__sat_unpivot") }}
