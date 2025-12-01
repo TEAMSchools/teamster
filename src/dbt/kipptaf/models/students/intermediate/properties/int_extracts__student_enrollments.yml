@@ -469,6 +469,15 @@ models:
         data_type: float64
       - name: cumulative_y1_gpa
         data_type: float64
+        data_tests:
+          - not_null:
+              config:
+                where:
+                  (current_date( '{{ var("local_timezone") }}' ) between date({{
+                  var("current_academic_year") }}, 10, 15) and date( {{
+                  var("current_academic_year") + 1 }}, 06, 15 )) and
+                  enroll_status = 0 and ((grade_level = 9 and year_in_network >
+                  1) or grade_level >= 10)
       - name: cumulative_y1_gpa_unweighted
         data_type: float64
       - name: cumulative_y1_gpa_projected
