@@ -21,6 +21,7 @@ with
     assessment_weeks_union as (
         select
             'All' as formative_strategy,
+
             sw.student_number,
             sw.academic_year,
             sw.week_start_monday,
@@ -52,6 +53,7 @@ with
 
         select
             'Florida' as formative_strategy,
+
             sw.student_number,
             sw.academic_year,
             sw.week_start_monday,
@@ -81,18 +83,12 @@ with
     )
 
 select
-    formative_strategy,
     student_number,
     academic_year,
-    subject_area,
-    discipline,
-    module_type,
-    title,
-    administered_at,
     week_start_monday,
     week_end_sunday,
-    week_number_academic_year,
-    is_mastery_int,
+    discipline,
+    formative_strategy,
 
     if(mastery_as_of_week = -1, null, mastery_as_of_week) as is_mastery_running_int,
 from assessment_weeks_union

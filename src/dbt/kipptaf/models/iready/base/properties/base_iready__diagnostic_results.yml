@@ -1,5 +1,7 @@
 models:
   - name: base_iready__diagnostic_results
+    config:
+      materialized: table
     columns:
       - name: student_id
         data_type: int64

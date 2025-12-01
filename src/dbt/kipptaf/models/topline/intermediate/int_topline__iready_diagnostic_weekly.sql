@@ -23,37 +23,10 @@ with
 
 select
     cw.student_number,
-    cw.state_studentnumber,
-    cw.student_name,
     cw.academic_year,
-    cw.iready_subject,
-    cw.discipline,
     cw.week_start_monday,
     cw.week_end_sunday,
-    cw.week_number_academic_year,
-    cw.region,
-    cw.school_level,
-    cw.schoolid,
-    cw.school,
-    cw.grade_level,
-    cw.gender,
-    cw.ethnicity,
-    cw.iep_status,
-    cw.is_504,
-    cw.lep_status,
-    cw.gifted_and_talented,
-    cw.entrydate,
-    cw.exitdate,
-    cw.enroll_status,
-
-    rt.name as test_round,
-
-    ir.subject,
-
-    ir.percent_progress_to_annual_typical_growth_percent
-    / 100 as percent_progress_to_annual_typical_growth_percent,
-    ir.percent_progress_to_annual_stretch_growth_percent
-    / 100 as percent_progress_to_annual_stretch_growth_percent,
+    cw.discipline,
 
     case
         when ir.is_proficient then 1 when not ir.is_proficient then 0

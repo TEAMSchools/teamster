@@ -4,7 +4,6 @@ with
         select
             student_number,
             academic_year,
-            dbt_valid_from,
             dbt_valid_to,
             successful_call_count,
             total_anticipated_calls,
@@ -27,11 +26,9 @@ with
 
 select
     co.student_number,
-    co.schoolid,
     co.academic_year,
     co.week_start_monday,
     co.week_end_sunday,
-    co.week_number_academic_year,
 
     ca.successful_call_count,
     ca.total_anticipated_calls,

@@ -31,6 +31,7 @@ select
     ) as survey_response_link,
 
     if(safe_cast(fr.text_value as int) is null, 1, 0) as is_open_ended,
+
     dense_rank() over (
         partition by fr.respondent_email, rt.academic_year, rt.code, fr.form_id
         order by fr.last_submitted_time desc
@@ -86,6 +87,7 @@ select
     ) as survey_response_link,
 
     if(safe_cast(sr.response_value as int) is null, 1, 0) as is_open_ended,
+
     1 as rn_round,
 from {{ source("alchemer", "base_alchemer__survey_results") }} as sr
 inner join

@@ -1,8 +1,21 @@
 with
     student_metrics as (
-        select *,
+        select
+            academic_year,
+            region,
+            schoolid,
+            school,
+            grade_level,
+            layer,
+            indicator,
+            discipline,
+            term,
+            term_end,
+            is_current_week,
+            numerator,
+            denominator,
+            metric_value,
         from {{ ref("int_topline__student_metrics") }}
-        where region != 'Paterson'
     ),
 
     pre_agg_union_student as (

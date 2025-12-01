@@ -1,27 +1,8 @@
 select
     cw.student_number,
-    cw.state_studentnumber,
-    cw.student_name,
     cw.academic_year,
     cw.week_start_monday,
     cw.week_end_sunday,
-    cw.week_number_academic_year,
-    cw.region,
-    cw.school_level,
-    cw.schoolid,
-    cw.school,
-    cw.grade_level,
-    cw.gender,
-    cw.ethnicity,
-    cw.iep_status,
-    cw.is_504,
-    cw.lep_status,
-    cw.gifted_and_talented,
-    cw.entrydate,
-    cw.exitdate,
-    cw.enroll_status,
-
-    'Weeks (Progress to Quarterly Incentive)' as incentive_type,
 
     if(dl.behavior is not null, 1, 0) as is_receiving_incentive,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as cw

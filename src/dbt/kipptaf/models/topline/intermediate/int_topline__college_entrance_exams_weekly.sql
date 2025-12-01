@@ -3,7 +3,6 @@ with
     sat_total as (
         select
             school_specific_id as student_number,
-            dbt_valid_from,
             dbt_valid_to,
             test_type,
             score,
@@ -27,11 +26,10 @@ with
 
 select
     co.student_number,
-    co.schoolid,
     co.academic_year,
+    co.schoolid,
     co.week_start_monday,
     co.week_end_sunday,
-    co.week_number_academic_year,
 
     sat.test_type,
     sat.score,

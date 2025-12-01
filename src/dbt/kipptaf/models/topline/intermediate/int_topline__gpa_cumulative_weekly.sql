@@ -26,11 +26,9 @@ with
 
 select
     co.student_number,
-    co.schoolid,
     co.academic_year,
     co.week_start_monday,
     co.week_end_sunday,
-    co.week_number_academic_year,
 
     gpa.cumulative_y1_gpa_projected_unweighted,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co
