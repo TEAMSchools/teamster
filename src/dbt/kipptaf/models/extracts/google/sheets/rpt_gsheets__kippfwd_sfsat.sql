@@ -18,20 +18,44 @@ with
         from
             {{ ref("int_collegeboard__sat_unpivot") }}
             unpivot (score for score_type in (sat_ebrw, sat_math_section, sat_total))
+    ),
+
+    final as (
+        select
+            b.powerschool_student_number,
+            b.sat_date,
+            b.test_type,
+            b.score_type,
+            b.score,
+
+            e.salesforce_id,
+
+        from base_scores as b
+        left join
+            {{ ref("int_kippadb__standardized_test_unpivot") }} as sf
+            on b.powerschool_student_number = sf.school_specific_id
+            and b.score_type = sf.score_type
+            and b.sat_date = sf.`date`
+        left join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on b.powerschool_student_number = e.student_number
+            and e.rn_year = 1
+            and e.rn_undergrad = 1
+        where sf.`date` is null and e.salesforce_id is not null
     )
 
 select
-    b.powerschool_student_number,
-    b.sat_date,
-    b.test_type,
-    b.score_type,
-    b.score,
+    salesforce_id as contact__c,
+    sat_date as test_date__c,
 
-    sf.`date`,
+    sat_total_score as sat_total,
+    sat_ebrw,
+    sat_math,
 
-from base_scores as b
-left join
-    {{ ref("int_kippadb__standardized_test_unpivot") }} as sf
-    on b.powerschool_student_number = sf.school_specific_id
-    and b.score_type = sf.score_type
-where sf.`date` is null
+    test_type,
+
+    '01280000000BQ2ZAAW' as recordtypeid,
+
+from
+    final
+    pivot (avg(score) for score_type in ('sat_total_score', 'sat_ebrw', 'sat_math'))
