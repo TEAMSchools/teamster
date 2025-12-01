@@ -406,6 +406,7 @@ exposures:
     url: https://docs.google.com/spreadsheets/d/1mX5SnRvMXU-Gbm07raHA3UkEhvo0zhqffz0uah1GSHE
     depends_on:
       - ref("rpt_gsheets__kippfwd_contacts")
+      - ref("rpt_gsheets__kippfwd_sfsat")
     meta:
       dagster:
         kinds:
