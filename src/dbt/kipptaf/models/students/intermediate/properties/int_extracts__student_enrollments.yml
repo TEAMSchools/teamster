@@ -479,6 +479,8 @@ models:
                   academic_year = var("current_academic_year") }} and
                   enroll_status = 0 and ((grade_level = 9 and year_in_network >
                   1) or grade_level >= 10)
+                severity: warn
+                store_failures: true
       - name: cumulative_y1_gpa_unweighted
         data_type: float64
       - name: cumulative_y1_gpa_projected
