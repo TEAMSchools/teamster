@@ -1,30 +1,12 @@
 select
     cw.student_number,
-    cw.state_studentnumber,
-    cw.student_name,
     cw.academic_year,
-    cw.discipline,
+    cw.region,
     cw.week_start_monday,
     cw.week_end_sunday,
-    cw.week_number_academic_year,
-    cw.region,
-    cw.school_level,
-    cw.schoolid,
-    cw.school,
-    cw.grade_level,
-    cw.gender,
-    cw.ethnicity,
-    cw.iep_status,
-    cw.is_504,
-    cw.lep_status,
-    cw.gifted_and_talented,
-    cw.entrydate,
-    cw.exitdate,
-    cw.enroll_status,
+    cw.discipline,
 
     rt.name as test_round,
-
-    fl.assessment_subject as `subject`,
 
     case
         when fl.is_proficient then 1 when not fl.is_proficient then 0
@@ -48,31 +30,13 @@ union all
 
 select
     cw.student_number,
-    cw.state_studentnumber,
-    cw.student_name,
     cw.academic_year,
-    cw.discipline,
+    cw.region,
     cw.week_start_monday,
     cw.week_end_sunday,
-    cw.week_number_academic_year,
-    cw.region,
-    cw.school_level,
-    cw.schoolid,
-    cw.school,
-    cw.grade_level,
-    cw.gender,
-    cw.ethnicity,
-    cw.iep_status,
-    cw.is_504,
-    cw.lep_status,
-    cw.gifted_and_talented,
-    cw.entrydate,
-    cw.exitdate,
-    cw.enroll_status,
+    cw.discipline,
 
     'Spring' as test_round,
-
-    p.subject,
 
     case
         when p.is_proficient then 1 when not p.is_proficient then 0

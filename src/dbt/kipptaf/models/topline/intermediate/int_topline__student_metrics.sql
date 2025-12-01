@@ -98,14 +98,16 @@ with
         select
             'K-8 Reading and Math' as layer,
             'DIBELS PM Mastery' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            'ELA' as discipline,
 
+            'ELA' as discipline,
             null as numerator,
             null as denominator,
+
             met_pm_round_overall_criteria as metric_value,
         from {{ ref("int_topline__dibels_pm_weekly") }}
 
@@ -114,14 +116,16 @@ with
         select
             'K-8 Reading and Math' as layer,
             'DIBELS PM Fidelity' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            'ELA' as discipline,
 
+            'ELA' as discipline,
             null as numerator,
             null as denominator,
+
             completed_test_round_int as metric_value,
         from {{ ref("int_topline__dibels_pm_weekly") }}
 
@@ -130,14 +134,16 @@ with
         select
             'K-8 Reading and Math' as layer,
             'DIBELS Benchmark Proficiency' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            'ELA' as discipline,
 
+            'ELA' as discipline,
             null as numerator,
             null as denominator,
+
             is_proficient_int as metric_value,
         from {{ ref("int_topline__dibels_benchmark_weekly") }}
 
@@ -146,6 +152,7 @@ with
         select
             'K-8 Reading and Math' as layer,
             'i-Ready Lessons Passed' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
@@ -154,6 +161,7 @@ with
 
             null as numerator,
             null as denominator,
+
             if(n_lessons_passed_week >= 2, 1, 0) as metric_value,
         from {{ ref("int_topline__iready_lessons_weekly") }}
 
@@ -162,6 +170,7 @@ with
         select
             'K-8 Reading and Math' as layer,
             'i-Ready Time on Task' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
@@ -170,6 +179,7 @@ with
 
             null as numerator,
             null as denominator,
+
             time_on_task_min_week as metric_value,
         from {{ ref("int_topline__iready_lessons_weekly") }}
 
@@ -178,6 +188,7 @@ with
         select
             'K-8 Reading and Math' as layer,
             'Star Diagnostic' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
@@ -186,6 +197,7 @@ with
 
             null as numerator,
             null as denominator,
+
             is_state_benchmark_proficient_int as metric_value,
         from {{ ref("int_topline__star_assessment_weekly") }}
 
@@ -194,6 +206,7 @@ with
         select
             'K-8 Reading and Math' as layer,
             'State Assessments' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
@@ -202,6 +215,7 @@ with
 
             null as numerator,
             null as denominator,
+
             is_proficient_int as metric_value,
         from {{ ref("int_topline__state_assessments_weekly") }}
         where region != 'Miami'
@@ -211,6 +225,7 @@ with
         select
             'K-8 Reading and Math' as layer,
             'State Assessments' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
@@ -219,6 +234,7 @@ with
 
             null as numerator,
             null as denominator,
+
             is_proficient_int as metric_value,
         from {{ ref("int_topline__state_assessments_weekly") }}
         where region = 'Miami' and test_round = 'PM3'
@@ -228,6 +244,7 @@ with
         select
             'K-8 Reading and Math' as layer,
             'FAST' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
@@ -236,6 +253,7 @@ with
 
             null as numerator,
             null as denominator,
+
             is_proficient_int as metric_value,
         from {{ ref("int_topline__state_assessments_weekly") }}
         where region = 'Miami'
@@ -246,14 +264,16 @@ with
         select
             'Attendance and Enrollment' as layer,
             'Total Enrollment' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            null as discipline,
 
+            null as discipline,
             null as numerator,
             null as denominator,
+
             if(is_enrolled_week, 1, 0) as metric_value,
         from {{ ref("int_extracts__student_enrollments_weeks") }}
 
@@ -262,14 +282,16 @@ with
         select
             'Attendance and Enrollment' as layer,
             'Total Enrollment (Without SC OOD)' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            null as discipline,
 
+            null as discipline,
             null as numerator,
             null as denominator,
+
             if(is_enrolled_week, 1, 0) as metric_value,
         from {{ ref("int_extracts__student_enrollments_weeks") }}
         where not is_self_contained and not is_out_of_district
@@ -279,14 +301,17 @@ with
         select
             'Attendance and Enrollment' as layer,
             'Successful Contacts' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
+
             null as discipline,
 
             successful_comms_sum_running as numerator,
             required_comms_count_running as denominator,
+
             safe_divide(
                 successful_comms_sum_running, required_comms_count_running
             ) as metric_value,
@@ -297,10 +322,12 @@ with
         select
             'Attendance and Enrollment' as layer,
             'Chronic Absenteeism Interventions' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
+
             null as discipline,
 
             successful_call_count as numerator,
@@ -314,10 +341,12 @@ with
         select
             'Attendance and Enrollment' as layer,
             'ADA' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
+
             null as discipline,
 
             attendance_value_sum_running as numerator,
@@ -330,14 +359,16 @@ with
         select
             'Attendance and Enrollment' as layer,
             'Truancy' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            null as discipline,
 
+            null as discipline,
             null as numerator,
             null as denominator,
+
             is_truant_int as metric_value,
         from {{ ref("int_topline__truancy_weekly") }}
 
@@ -346,14 +377,16 @@ with
         select
             'Attendance and Enrollment' as layer,
             'Chronic Absenteeism' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            null as discipline,
 
+            null as discipline,
             null as numerator,
             null as denominator,
+
             if(ada_running <= 0.90, 1, 0) as metric_value,
         from {{ ref("int_topline__ada_running_weekly") }}
 
@@ -362,15 +395,18 @@ with
         /* GPA & ACT/SAT */
         select
             'GPA, ACT, SAT' as layer,
+
             'Highest ' || test_type as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            null as discipline,
 
+            null as discipline,
             null as numerator,
             null as denominator,
+
             case
                 when test_type = 'SAT' and score >= 1010
                 then 1
@@ -387,14 +423,16 @@ with
         select
             'GPA, ACT, SAT' as layer,
             'Projected Unweighted Cumulative GPA' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            null as discipline,
 
+            null as discipline,
             null as numerator,
             null as denominator,
+
             if(cumulative_y1_gpa_projected_unweighted >= 3.00, 1, 0) as metric_value,
         from {{ ref("int_topline__gpa_cumulative_weekly") }}
 
@@ -404,14 +442,16 @@ with
         select
             'Student and Family Experience' as layer,
             'School Community Diagnostic' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            null as discipline,
 
+            null as discipline,
             null as numerator,
             null as denominator,
+
             average_rating as metric_value,
         from {{ ref("int_topline__school_community_diagnostic_weekly") }}
 
@@ -420,14 +460,16 @@ with
         select
             'Student and Family Experience' as layer,
             'Suspensions' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            null as discipline,
 
+            null as discipline,
             null as numerator,
             null as denominator,
+
             is_suspended_y1_all_running as metric_value,
         from {{ ref("int_topline__suspension_weekly") }}
 
@@ -436,14 +478,16 @@ with
         select
             'Student and Family Experience' as layer,
             'Quarterly Incentives' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            null as discipline,
 
+            null as discipline,
             null as numerator,
             null as denominator,
+
             is_receiving_incentive as metric_value,
         from {{ ref("int_topline__deanslist_incentives_weekly") }}
 
@@ -453,14 +497,16 @@ with
         select
             'College Matriculation' as layer,
             'BA Applied' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            null as discipline,
 
+            null as discipline,
             null as numerator,
             null as denominator,
+
             if(is_submitted_ba, 1, 0) as metric_value,
         from {{ ref("int_topline__college_matriculation_weekly") }}
 
@@ -469,14 +515,16 @@ with
         select
             'College Matriculation' as layer,
             'BA Accepted' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            null as discipline,
 
+            null as discipline,
             null as numerator,
             null as denominator,
+
             if(is_accepted_ba, 1, 0) as metric_value,
         from {{ ref("int_topline__college_matriculation_weekly") }}
 
@@ -485,14 +533,16 @@ with
         select
             'College Matriculation' as layer,
             'BA Matriculated' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            null as discipline,
 
+            null as discipline,
             null as numerator,
             null as denominator,
+
             if(is_matriculated_ba, 1, 0) as metric_value,
         from {{ ref("int_topline__college_matriculation_weekly") }}
 
@@ -501,37 +551,27 @@ with
         select
             'College Matriculation' as layer,
             'BA Quality Bar' as indicator,
+
             student_number,
             academic_year,
             week_start_monday as term,
             week_end_sunday as term_end,
-            null as discipline,
 
+            null as discipline,
             null as numerator,
             null as denominator,
+
             is_submitted_quality_bar_4yr_int as metric_value,
         from {{ ref("int_topline__college_matriculation_weekly") }}
     )
 
 select
-    co.academic_year,
     co.student_number,
-    co.studentid,
-    co.student_name,
-    co.grade_level,
+    co.academic_year,
     co.region,
     co.schoolid,
     co.school,
-    co.iep_status,
-    co.lep_status,
-    co.is_504,
-    co.year_in_network,
-    co.is_retained_year,
-    co.gender,
-    co.ethnicity,
-    co.entrydate,
-    co.exitdate,
-    co.is_enrolled_week,
+    co.grade_level,
     co.is_current_week_mon_sun as is_current_week,
 
     mu.layer,

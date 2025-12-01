@@ -20,6 +20,7 @@ with
             cw.week_end_sunday,
             cw.schoolid,
             cw.academic_year,
+
             case
                 when aed.date_day > cw.week_end_sunday
                 then cw.academic_year - 1
@@ -35,9 +36,11 @@ with
 select
     sad.employee_number,
     sad.ps_school_id,
+
     ds.academic_year,
     ds.week_start_monday,
     ds.week_end_sunday,
+
     case
         when sad.termination_date is null
         then 1 - sad.is_attrition
@@ -51,6 +54,6 @@ inner join
     on sad.academic_year = ds.attrition_year
     and (
         (sad.ps_school_id = ds.schoolid)
-        or if(sad.ps_school_id = 0, 133570965, sad.ps_school_id) = ds.schoolid
-        or coalesce(sad.ps_school_id, 133570965) = ds.schoolid
+        or (if(sad.ps_school_id = 0, 133570965, sad.ps_school_id) = ds.schoolid)
+        or (coalesce(sad.ps_school_id, 133570965) = ds.schoolid)
     )
