@@ -1,0 +1,69 @@
+models:
+  - name: stg_nsc__student_tracker
+    columns:
+      - name: class_level
+        data_type: string
+      - name: college_code_branch
+        data_type: string
+      - name: college_name
+        data_type: string
+      - name: college_sequence
+        data_type: int64
+      - name: college_state
+        data_type: string
+      - name: degree_cip_1
+        data_type: int64
+      - name: degree_cip_2
+        data_type: int64
+      - name: degree_cip_3
+        data_type: int64
+      - name: degree_cip_4
+        data_type: int64
+      - name: degree_major_1
+        data_type: string
+      - name: degree_major_2
+        data_type: string
+      - name: degree_major_3
+        data_type: string
+      - name: degree_major_4
+        data_type: string
+      - name: degree_title
+        data_type: string
+      - name: enrollment_begin
+        data_type: date
+      - name: enrollment_cip_1
+        data_type: int64
+      - name: enrollment_cip_2
+        data_type: int64
+      - name: enrollment_end
+        data_type: date
+      - name: enrollment_major_1
+        data_type: string
+      - name: enrollment_major_2
+        data_type: string
+      - name: enrollment_status
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: graduated
+        data_type: string
+      - name: graduation_date
+        data_type: date
+      - name: last_name
+        data_type: string
+      - name: middle_initial
+        data_type: string
+      - name: name_suffix
+        data_type: string
+      - name: public_private
+        data_type: string
+      - name: record_found_y_n
+        data_type: string
+      - name: requester_return_field
+        data_type: string
+      - name: search_date
+        data_type: date
+      - name: two_year_four_year
+        data_type: string
+      - name: your_unique_identifier
+        data_type: string
