@@ -67,6 +67,13 @@ adp_payroll_dbt_assets = build_dbt_assets(
     name=f"{CODE_LOCATION}__dbt_assets__adp_payroll",
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
     select="source:adp_payroll+",
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1000m"}}
+            }
+        }
+    },
 )
 
 asset_specs = [
