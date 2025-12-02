@@ -407,6 +407,7 @@ exposures:
     depends_on:
       - ref("rpt_gsheets__kippfwd_contacts")
       - ref("rpt_gsheets__kippfwd_sfsat")
+      - ref("rpt_gsheets__kippfwd_ogsat")
     meta:
       dagster:
         kinds:
