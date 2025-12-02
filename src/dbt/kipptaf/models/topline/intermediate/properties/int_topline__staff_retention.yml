@@ -1,4 +1,4 @@
 models:
   - name: int_topline__staff_retention
-    config:
-      materialized: table
+    # config:
+    #   materialized: table

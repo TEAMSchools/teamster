@@ -1,7 +1,5 @@
 models:
   - name: int_powerschool__calendar_week
-    config:
-      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string

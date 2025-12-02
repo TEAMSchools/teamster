@@ -1,7 +1,5 @@
 models:
   - name: int_pearson__all_assessments
-    config:
-      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string
