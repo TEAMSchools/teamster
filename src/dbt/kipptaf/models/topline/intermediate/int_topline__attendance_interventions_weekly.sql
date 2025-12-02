@@ -1,5 +1,4 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
     interventions as (
         select
             student_number,
@@ -38,4 +37,4 @@ left join
     deduplicate as ca
     on co.student_number = ca.student_number
     and co.week_start_monday between ca.dbt_valid_from_date and ca.dbt_valid_to_date
-where co.is_enrolled_week
+where co.is_enrolled_week and co.academic_year >= {{ var("current_academic_year") - 1 }}

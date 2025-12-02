@@ -1,7 +1,7 @@
 models:
   - name: int_illuminate__performance_band_sets
-    config:
-      materialized: table
+    # config:
+    #   materialized: table
     columns:
       - name: performance_band_set_id
         data_type: int64

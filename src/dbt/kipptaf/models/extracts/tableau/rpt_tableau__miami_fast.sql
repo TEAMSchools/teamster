@@ -221,7 +221,7 @@ left join
     on co.student_number = ia.powerschool_student_number
     and co.illuminate_subject_area = ia.subject_area
 left join
-    {{ ref("base_iready__diagnostic_results") }} as dr
+    {{ ref("int_iready__diagnostic_results") }} as dr
     on co.student_number = dr.student_id
     and co.academic_year = dr.academic_year_int
     and co.iready_subject = dr.subject

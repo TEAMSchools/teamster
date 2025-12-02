@@ -11,3 +11,4 @@ inner join
     on co.student_number = sc.student_number
     and co.academic_year = sc.academic_year
     and co.schoolid = sc.schoolid
+where co.academic_year >= {{ var("current_academic_year") - 1 }}

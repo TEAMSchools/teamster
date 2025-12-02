@@ -47,4 +47,5 @@ inner join
     on cw.state_studentnumber = p.statestudentidentifier
     and cw.academic_year = p.academic_year
     and cw.discipline = p.discipline
-where cw.region != 'Miami'
+where
+    cw.region != 'Miami' and cw.academic_year >= {{ var("current_academic_year") - 1 }}

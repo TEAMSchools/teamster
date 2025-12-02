@@ -65,6 +65,7 @@ with
                 extract(year from attrition_day) - 1,
                 extract(year from attrition_day)
             ) as attrition_year,
+
             if(
                 extract(month from attrition_day) >= 7,
                 extract(year from attrition_day),
@@ -73,9 +74,8 @@ with
         from
             unnest(
                 generate_date_array(
-
-                    date({{ var("current_academic_year") - 3 }}, 10, 1),
-                    current_date('America/New_York'),
+                    '{{ var("current_academic_year") - 3 }}-10-01',
+                    current_date('{{ var("local_timezone") }}'),
                     interval 1 day
                 )
             ) as attrition_day
@@ -151,6 +151,7 @@ with
             exitdate,
 
             date_trunc(attrition_day, week(monday)) as week_start_monday,
+
             date_add(
                 date_trunc(attrition_day, week(monday)), interval 6 day
             ) as week_end_sunday,
@@ -180,17 +181,18 @@ select
     week_start_monday,
     week_end_sunday,
 
+    max(is_enrolled_day_int) as is_retained_int,
+    max(1 - is_enrolled_day_int) as is_attrition_int,
+
+    min(is_enrolled_day_int) as is_retained_min_int,
+    min(1 - is_enrolled_day_int) as is_attrition_min_int,
+
     if(
         current_date('{{ var("local_timezone") }}')
         between week_start_monday and week_end_sunday,
         true,
         false
     ) as is_current_week,
-
-    max(is_enrolled_day_int) as is_retained_int,
-    max(1 - is_enrolled_day_int) as is_attrition_int,
-    min(is_enrolled_day_int) as is_retained_min_int,
-    min(1 - is_enrolled_day_int) as is_attrition_min_int,
 from retention_daily as rd
 group by
     student_number,

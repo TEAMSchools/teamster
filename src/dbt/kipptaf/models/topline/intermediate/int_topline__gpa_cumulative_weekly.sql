@@ -1,5 +1,4 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
     gpa_cumulative as (
         select
             _dbt_source_relation,
@@ -38,4 +37,7 @@ left join
     and co.schoolid = gpa.schoolid
     and co.week_start_monday between gpa.dbt_valid_from_date and gpa.dbt_valid_to_date
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
-where co.is_enrolled_week and co.school_level in ('MS', 'HS')
+where
+    co.is_enrolled_week
+    and co.school_level in ('MS', 'HS')
+    and co.academic_year >= {{ var("current_academic_year") - 1 }}

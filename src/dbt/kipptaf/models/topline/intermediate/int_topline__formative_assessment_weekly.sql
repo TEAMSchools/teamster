@@ -15,7 +15,10 @@ with
                 when is_mastery then 1 when not is_mastery then 0 else -1
             end as is_mastery_int,
         from {{ ref("int_assessments__response_rollup") }}
-        where response_type = 'overall' and module_type in ('QA', 'MQQ', 'CRQ')
+        where
+            response_type = 'overall'
+            and module_type in ('QA', 'MQQ', 'CRQ')
+            and academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
     assessment_weeks_union as (
@@ -47,7 +50,9 @@ with
             and sw.discipline = rr.discipline
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
             and rr.module_type in ('QA', 'MQQ')
-        where sw.is_enrolled_week
+        where
+            sw.is_enrolled_week
+            and sw.academic_year >= {{ var("current_academic_year") - 1 }}
 
         union all
 
@@ -79,7 +84,10 @@ with
             and sw.discipline = rr.discipline
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
             and rr.module_type = 'CRQ'
-        where sw.is_enrolled_week and sw.region = 'Miami'
+        where
+            sw.is_enrolled_week
+            and sw.region = 'Miami'
+            and sw.academic_year >= {{ var("current_academic_year") - 1 }}
     )
 
 select

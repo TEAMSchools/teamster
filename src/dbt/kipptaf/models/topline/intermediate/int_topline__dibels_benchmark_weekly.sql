@@ -23,4 +23,4 @@ left join
     and cw.academic_year = amp.academic_year
     and rt.name = amp.period
     and amp.measure_name = 'Composite'
-where cw.grade_level <= 8
+where cw.academic_year >= {{ var("current_academic_year") - 1 }} and cw.grade_level <= 8

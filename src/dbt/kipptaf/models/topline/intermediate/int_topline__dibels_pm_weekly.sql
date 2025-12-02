@@ -12,3 +12,4 @@ inner join
     on cw.student_number = dp.student_number
     and cw.academic_year = dp.academic_year
     and cw.week_start_monday between dp.start_date and dp.end_date
+where cw.academic_year >= {{ var("current_academic_year") - 1 }}

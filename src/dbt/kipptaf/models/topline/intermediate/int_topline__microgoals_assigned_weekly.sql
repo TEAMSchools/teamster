@@ -31,45 +31,33 @@ with
     calendar as (
         select schoolid, academic_year, week_start_monday, week_end_sunday,
         from {{ ref("int_powerschool__calendar_week") }}
-    ),
-
-    final as (
-        select
-            teachers.employee_number,
-            teachers.school_id,
-
-            calendar.academic_year,
-            calendar.week_start_monday,
-            calendar.week_end_sunday,
-
-            count(distinct microgoals.assignment_id) as microgoals_assigned,
-        from teachers
-        inner join
-            calendar
-            on teachers.school_id = calendar.schoolid
-            /* if a teacher switches schools mid-week, they will be counted in the
-            receiving school only for that week */
-            and calendar.week_end_sunday
-            between teachers.effective_date_start and teachers.effective_date_end
-        inner join grow_users on teachers.employee_number = grow_users.internal_id_int
-        left join
-            microgoals
-            on grow_users.user_id = microgoals.user_id
-            and microgoals.created_date_local
-            between calendar.week_start_monday and calendar.week_end_sunday
-        group by
-            teachers.employee_number,
-            teachers.school_id,
-            calendar.academic_year,
-            calendar.week_start_monday,
-            calendar.week_end_sunday
+        where academic_year >= {{ var("current_academic_year") - 1 }}
     )
 
 select
-    employee_number,
-    school_id,
-    week_start_monday,
-    week_end_sunday,
-    academic_year,
-    microgoals_assigned,
-from final
+    t.employee_number,
+    t.school_id,
+
+    cal.academic_year,
+    cal.week_start_monday,
+    cal.week_end_sunday,
+
+    count(distinct m.assignment_id) as microgoals_assigned,
+from teachers as t
+inner join
+    calendar as cal
+    on t.school_id = cal.schoolid
+    /* if a teacher switches schools mid-week, they will be counted in the receiving
+    school only for that week */
+    and cal.week_end_sunday between t.effective_date_start and t.effective_date_end
+inner join grow_users as u on t.employee_number = u.internal_id_int
+left join
+    microgoals as m
+    on u.user_id = m.user_id
+    and m.created_date_local between cal.week_start_monday and cal.week_end_sunday
+group by
+    t.employee_number,
+    t.school_id,
+    cal.academic_year,
+    cal.week_start_monday,
+    cal.week_end_sunday
