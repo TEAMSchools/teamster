@@ -5,11 +5,7 @@
         store_failures_as="view",
         meta={
             "dagster": {
-                "asset_key": [
-                    "kipptaf",
-                    "pearson",
-                    "test_incorrect_student_number_pearson",
-                ]
+                "ref": {"name": "int_pearson__all_assessments"},
             },
         },
     )
