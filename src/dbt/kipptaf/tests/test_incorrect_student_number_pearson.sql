@@ -1,4 +1,15 @@
-{{ config(severity="warn", store_failures=true, store_failures_as="view") }}
+{{
+    config(
+        severity="warn",
+        store_failures=true,
+        store_failures_as="view",
+        meta={
+            "dagster": {
+                "asset_key": ["kipptaf", "pearson", "int_pearson__all_assessments"]
+            },
+        },
+    )
+}}
 
 select
     a.studenttestuuid,
