@@ -20,4 +20,7 @@ inner join
     and cw.discipline = s.star_discipline
     and rt.name = s.screening_period_window_name
     and s.rn_subject_round = 1
-where cw.region = 'Miami' and cw.grade_level <= 2
+where
+    cw.region = 'Miami'
+    and cw.grade_level <= 2
+    and cw.academic_year >= {{ var("current_academic_year") - 1 }}

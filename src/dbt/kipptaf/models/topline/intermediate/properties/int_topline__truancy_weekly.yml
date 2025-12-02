@@ -1,4 +1,4 @@
 models:
-  - name: int_topline__star_assessment_weekly
+  - name: int_topline__truancy_weekly
     config:
       materialized: table

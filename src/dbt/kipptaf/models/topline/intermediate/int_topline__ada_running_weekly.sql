@@ -13,6 +13,7 @@ with
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
         where
             attendancevalue is not null
+            and calendardate >= '{{ var("current_academic_year") - 1 }}-07-01'
             and calendardate < current_date('{{ var("local_timezone") }}')
         group by
             _dbt_source_relation,

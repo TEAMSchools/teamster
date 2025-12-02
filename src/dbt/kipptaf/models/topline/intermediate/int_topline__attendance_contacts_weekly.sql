@@ -9,7 +9,8 @@ with
             sum(is_successful_int) as successful_comms_sum,
             count(is_successful_int) as required_comms_count,
         from {{ ref("int_topline__attendance_contacts") }}
-        where is_enrolled_week
+        where
+            is_enrolled_week and academic_year >= {{ var("current_academic_year") - 1 }}
         group by student_number, academic_year, week_start_monday, week_end_sunday
     )
 

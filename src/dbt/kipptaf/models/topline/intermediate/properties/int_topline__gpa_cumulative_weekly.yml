@@ -1,4 +1,4 @@
 models:
   - name: int_topline__gpa_cumulative_weekly
-    # config:
-    #   materialized: table
+    config:
+      materialized: table

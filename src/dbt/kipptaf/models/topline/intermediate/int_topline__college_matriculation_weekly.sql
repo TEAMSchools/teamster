@@ -1,5 +1,4 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
     matriculation_metrics as (
         select
             applicant,
@@ -40,4 +39,7 @@ left join
     deduplicate as m
     on co.salesforce_id = m.applicant
     and co.week_start_monday between m.dbt_valid_from_date and m.dbt_valid_to_date
-where co.is_enrolled_week and co.grade_level = 12
+where
+    co.is_enrolled_week
+    and co.grade_level = 12
+    and co.academic_year >= {{ var("current_academic_year") - 1 }}

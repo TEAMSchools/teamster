@@ -18,6 +18,7 @@ with
             and co.deanslist_school_id = ip.school_id
             and ip.start_date between co.week_start_monday and co.week_end_sunday
             and ip.referral_tier not in ('Non-Behavioral', 'Social Work')
+        where co.academic_year >= {{ var("current_academic_year") - 1 }}
         group by
             co.student_number,
             co.academic_year,

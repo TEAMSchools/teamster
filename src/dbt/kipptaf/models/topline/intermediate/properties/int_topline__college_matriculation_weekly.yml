@@ -1,4 +1,4 @@
 models:
   - name: int_topline__college_matriculation_weekly
-    # config:
-    #   materialized: table
+    config:
+      materialized: table
