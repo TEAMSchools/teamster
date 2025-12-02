@@ -41,7 +41,7 @@ reporting_dbt_assets = build_dbt_assets(
     op_tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1250m"}}
+                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1500m"}}
             }
         }
     },
@@ -52,6 +52,13 @@ google_sheet_dbt_assets = build_dbt_assets(
     dagster_dbt_translator=dagster_dbt_translator,
     name=f"{CODE_LOCATION}__dbt_assets__google_sheets",
     select="tag:google_sheet",
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1250m"}}
+            }
+        }
+    },
 )
 
 adp_payroll_dbt_assets = build_dbt_assets(
