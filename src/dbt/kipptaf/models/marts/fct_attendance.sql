@@ -33,7 +33,7 @@ with
     ),
 
     student_max_date as (
-        select *, if(date_day = student_max_date, true, false), as is_student_max_date
+        select *, if(date_day = student_max_date, true, false) as is_student_max_date,
         from running_calculations
     ),
 
