@@ -1,7 +1,5 @@
 models:
   - name: int_amplify__all_assessments
-    config:
-      materialized: table
     columns:
       - name: academic_year
         data_type: int64

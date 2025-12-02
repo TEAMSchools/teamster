@@ -1,4 +1,4 @@
 models:
   - name: int_topline__seats_staffed_weekly_aggregations
-    config:
-      materialized: table
+    # config:
+    #   materialized: table
