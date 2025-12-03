@@ -1,59 +1,4 @@
 with
-    completion_goals_unpivot as (
-        select
-            expected_test_type,
-
-            `value`,
-
-            concat(
-                expected_metric_label, '_', value_type
-            ) as expected_metric_label_type,
-
-        from
-            {{ ref("stg_google_sheets__kippfwd_goals") }}
-            unpivot (`value` for value_type in (min_score, pct_goal))
-        where
-            expected_test_type = 'Official'
-            and expected_goal_type = 'Attempts'
-            and expected_subject_area in ('Composite', 'Combined')
-    ),
-
-    completion_goals as (
-        select
-            expected_test_type,
-
-            act_1_attempt_min_score,
-            psat10_1_attempt_min_score,
-            psat89_1_attempt_min_score,
-            psatnmsqt_1_attempt_min_score,
-            sat_1_attempt_min_score,
-            act_2_plus_attempts_min_score,
-            psat10_2_plus_attempts_min_score,
-            psat89_2_plus_attempts_min_score,
-            psatnmsqt_2_plus_attempts_min_score,
-            sat_2_plus_attempts_min_score,
-            sat_1_attempt_pct_goal,
-            sat_2_plus_attempts_pct_goal,
-
-        from
-            completion_goals_unpivot pivot (
-                avg(`value`) for expected_metric_label_type in (
-                    'psatnmsqt_1_attempt_min_score',
-                    'psat89_1_attempt_min_score',
-                    'act_1_attempt_min_score',
-                    'sat_1_attempt_min_score',
-                    'sat_1_attempt_pct_goal',
-                    'psat10_1_attempt_min_score',
-                    'psat89_2_plus_attempts_min_score',
-                    'sat_2_plus_attempts_min_score',
-                    'sat_2_plus_attempts_pct_goal',
-                    'psatnmsqt_2_plus_attempts_min_score',
-                    'psat10_2_plus_attempts_min_score',
-                    'act_2_plus_attempts_min_score'
-                )
-            )
-    ),
-
     base_rows as (
         select
             s.student_number,
@@ -159,7 +104,7 @@ with
             ) as act_count_ytd,
 
         from yearly_test_counts as y
-        cross join completion_goals as c
+        cross join {{ ref("int_google_sheets__kippfwd_goals") }} as c
     )
 
 select
