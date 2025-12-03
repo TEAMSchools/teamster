@@ -3,3 +3,44 @@ models:
     config:
       contract:
         enforced: false
+    columns:
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: benchmark_period
+        data_type: string
+      - name: district_code
+        data_type: string
+      - name: school_code
+        data_type: string
+      - name: sid
+        data_type: string
+      - name: assessment_name
+        data_type: string
+      - name: phonics_and_decoding_score
+        data_type: string
+      - name: letter_naming_score
+        data_type: string
+      - name: phonemic_awareness_score
+        data_type: string
+      - name: comprehension_score
+        data_type: string
+      - name: oral_reading_fluency_score
+        data_type: string
+      - name: composite_score
+        data_type: string
+      - name: phonics_and_decoding_level
+        data_type: string
+      - name: letter_naming_level
+        data_type: string
+      - name: phonemic_awareness_level
+        data_type: string
+      - name: comprehension_level
+        data_type: string
+      - name: oral_reading_fluency_level
+        data_type: string
+      - name: composite_level
+        data_type: string
