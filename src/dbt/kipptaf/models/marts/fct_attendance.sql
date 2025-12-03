@@ -18,6 +18,7 @@ with
             is_suspended,
             semester,
             term,
+            att_code,
 
             avg(attendancevalue) over (
                 partition by studentid, academic_year order by calendardate
@@ -54,6 +55,7 @@ with
             is_suspended,
             semester,
             term,
+            att_code,
             ada_running,
             pct_ontime_running,
             if(is_student_max_date, ada_running, null) as ada_running_student_max,
