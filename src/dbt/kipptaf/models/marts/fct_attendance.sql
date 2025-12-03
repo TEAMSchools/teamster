@@ -39,7 +39,7 @@ with
             *,
             if(running_calculations.ada_running <= .90, 1, 0) as is_chronic_absentee,
             if(
-                running_calculations.pct_ontime_running <= .90, 1, 0
+                running_calculations.pct_ontime_running < .795, 1, 0
             ) as is_chronic_tardy,
         from running_calculations
     )
