@@ -592,6 +592,18 @@ exposures:
       dagster:
         kinds:
           - googlesheets
+  - name: rpt_gsheets__njdoe_universal_screener_data
+    label: NJDOE Universal Screener Data
+    type: analysis
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1EdsbhchfyGoRcabyofeHVohKLIKezAXXn5BXSYwL_wo
+    depends_on:
+      - ref("rpt_gsheets__njdoe_universal_screener_data")
+    meta:
+      dagster:
+        kinds:
+          - googlesheets
   # - name: hro_2425_renewal_workbook_data_team_workspace
   #   label: HRO 24-25 Renewal Workbook - Data Team Workspace
   #   type: application
