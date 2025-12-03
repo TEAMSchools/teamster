@@ -1,9 +1,7 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
     sat_total as (
         select
             school_specific_id as student_number,
-            dbt_valid_from,
             dbt_valid_to,
             test_type,
             score,
@@ -27,11 +25,10 @@ with
 
 select
     co.student_number,
-    co.schoolid,
     co.academic_year,
+    co.schoolid,
     co.week_start_monday,
     co.week_end_sunday,
-    co.week_number_academic_year,
 
     sat.test_type,
     sat.score,
@@ -40,4 +37,8 @@ left join
     deduplicate as sat
     on co.student_number = sat.student_number
     and co.week_start_monday between sat.dbt_valid_from_date and sat.dbt_valid_to_date
-where co.is_enrolled_week and co.school_level = 'HS' and sat.score is not null
+where
+    co.is_enrolled_week
+    and co.school_level = 'HS'
+    and sat.score is not null
+    and co.academic_year >= {{ var("current_academic_year") - 1 }}

@@ -15,12 +15,16 @@ with
                 when is_mastery then 1 when not is_mastery then 0 else -1
             end as is_mastery_int,
         from {{ ref("int_assessments__response_rollup") }}
-        where response_type = 'overall' and module_type in ('QA', 'MQQ', 'CRQ')
+        where
+            response_type = 'overall'
+            and module_type in ('QA', 'MQQ', 'CRQ')
+            and academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
     assessment_weeks_union as (
         select
             'All' as formative_strategy,
+
             sw.student_number,
             sw.academic_year,
             sw.week_start_monday,
@@ -46,12 +50,15 @@ with
             and sw.discipline = rr.discipline
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
             and rr.module_type in ('QA', 'MQQ')
-        where sw.is_enrolled_week
+        where
+            sw.is_enrolled_week
+            and sw.academic_year >= {{ var("current_academic_year") - 1 }}
 
         union all
 
         select
             'Florida' as formative_strategy,
+
             sw.student_number,
             sw.academic_year,
             sw.week_start_monday,
@@ -77,22 +84,19 @@ with
             and sw.discipline = rr.discipline
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
             and rr.module_type = 'CRQ'
-        where sw.is_enrolled_week and sw.region = 'Miami'
+        where
+            sw.is_enrolled_week
+            and sw.region = 'Miami'
+            and sw.academic_year >= {{ var("current_academic_year") - 1 }}
     )
 
 select
-    formative_strategy,
     student_number,
     academic_year,
-    subject_area,
-    discipline,
-    module_type,
-    title,
-    administered_at,
     week_start_monday,
     week_end_sunday,
-    week_number_academic_year,
-    is_mastery_int,
+    discipline,
+    formative_strategy,
 
     if(mastery_as_of_week = -1, null, mastery_as_of_week) as is_mastery_running_int,
 from assessment_weeks_union

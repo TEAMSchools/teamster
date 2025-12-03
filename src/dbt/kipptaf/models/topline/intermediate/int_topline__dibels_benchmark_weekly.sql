@@ -1,30 +1,8 @@
 select
     cw.student_number,
-    cw.state_studentnumber,
-    cw.student_name,
     cw.academic_year,
     cw.week_start_monday,
     cw.week_end_sunday,
-    cw.week_number_academic_year,
-    cw.region,
-    cw.school_level,
-    cw.schoolid,
-    cw.school,
-    cw.grade_level,
-    cw.gender,
-    cw.ethnicity,
-    cw.iep_status,
-    cw.is_504,
-    cw.lep_status,
-    cw.gifted_and_talented,
-    cw.entrydate,
-    cw.exitdate,
-    cw.enroll_status,
-    cw.is_enrolled_week,
-
-    rt.name as test_round,
-
-    'ELA' as discipline,
 
     case
         when amp.aggregated_measure_standard_level = 'At/Above'
@@ -43,6 +21,6 @@ left join
     {{ ref("int_amplify__all_assessments") }} as amp
     on cw.student_number = amp.student_number
     and cw.academic_year = amp.academic_year
-    and rt.name = amp.`period`
+    and rt.name = amp.period
     and amp.measure_name = 'Composite'
-where cw.grade_level < 9
+where cw.academic_year >= {{ var("current_academic_year") - 1 }} and cw.grade_level <= 8

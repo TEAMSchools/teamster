@@ -903,3 +903,11 @@ sources:
               - kipppaterson
               - powerschool
               - stg_powerschool__student_email
+      - name: int_powerschool__terms
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kipppaterson
+              - powerschool
+              - int_powerschool__terms

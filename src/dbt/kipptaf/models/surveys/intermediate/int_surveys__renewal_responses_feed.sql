@@ -21,7 +21,7 @@ with
             ra.approval_level,
 
             safe_cast(
-                regexp_extract(fr.answer, r'\((\d{6})\)') as integer
+                regexp_extract(fr.answer, r'\((\d{6})\)') as int
             ) as subject_employee_number,
         from {{ ref("int_surveys__survey_responses") }} as fr
         left join
@@ -185,6 +185,7 @@ with
 
 select
     *,
+
     case
         when rn_approval = 1
         then 'Valid Approval'

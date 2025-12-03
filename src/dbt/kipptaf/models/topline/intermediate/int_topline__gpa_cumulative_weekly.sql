@@ -1,5 +1,4 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
     gpa_cumulative as (
         select
             _dbt_source_relation,
@@ -26,11 +25,9 @@ with
 
 select
     co.student_number,
-    co.schoolid,
     co.academic_year,
     co.week_start_monday,
     co.week_end_sunday,
-    co.week_number_academic_year,
 
     gpa.cumulative_y1_gpa_projected_unweighted,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co
@@ -40,4 +37,7 @@ left join
     and co.schoolid = gpa.schoolid
     and co.week_start_monday between gpa.dbt_valid_from_date and gpa.dbt_valid_to_date
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
-where co.is_enrolled_week and co.school_level in ('MS', 'HS')
+where
+    co.is_enrolled_week
+    and co.school_level in ('MS', 'HS')
+    and co.academic_year >= {{ var("current_academic_year") - 1 }}
