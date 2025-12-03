@@ -8,6 +8,7 @@ with
             student_number,
             schoolid as school_id,
             calendardate as date_day,
+            academic_year,
             membershipvalue as membership_value,
             attendancevalue as is_present,
             is_absent,
@@ -17,6 +18,7 @@ with
             is_suspended,
             semester,
             term,
+
             avg(attendancevalue) over (
                 partition by studentid, academic_year order by calendardate
             ) as ada_running,
@@ -42,6 +44,7 @@ with
             student_number,
             school_id,
             date_day,
+            academic_year,
             membership_value,
             is_present,
             is_absent,
