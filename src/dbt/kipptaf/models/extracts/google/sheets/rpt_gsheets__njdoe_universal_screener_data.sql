@@ -123,6 +123,7 @@ with
             ) as level_mod,
 
         from
+            -- trunk-ignore(sqlfluff/LT01)
             scores unpivot include nulls(
                 (`level`, score, percentile) for measure in (
                     (
@@ -251,7 +252,7 @@ select
 
 from score_pivot as s
 left join
-    level_pivot l
+    level_pivot as l
     on s.region = l.region
     and s.schoolid = l.schoolid
     and s.school = l.school
