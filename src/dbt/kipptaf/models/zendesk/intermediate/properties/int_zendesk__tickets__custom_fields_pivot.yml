@@ -1,7 +1,5 @@
 models:
   - name: int_zendesk__tickets__custom_fields_pivot
-    config:
-      materialized: table
     columns:
       - name: ticket_id
         data_type: int64
