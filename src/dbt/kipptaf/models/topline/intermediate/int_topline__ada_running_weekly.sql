@@ -73,23 +73,42 @@ select
     co.entrydate,
     co.exitdate,
     co.enroll_status,
+    co.week_start_monday,
+    co.week_end_sunday,
 
-    rc.week_start_monday,
-    rc.week_end_sunday,
-    rc.attendance_value_sum,
-    rc.membership_value_sum,
-    rc.absence_sum_running,
-    rc.attendance_value_sum_running,
-    rc.membership_value_sum_running,
+    sum(agg.absence_sum) over (
+        partition by co.studentid, co.academic_year, co.schoolid
+        order by co.week_start_monday asc
+    ) as absence_sum_running,
+
+    sum(agg.attendance_value_sum) over (
+        partition by co.studentid, co.academic_year, co.schoolid
+        order by co.week_start_monday asc
+    ) as attendance_value_sum_running,
+
+    sum(agg.membership_value_sum) over (
+        partition by co.studentid, co.academic_year, co.schoolid
+        order by co.week_start_monday asc
+    ) as membership_value_sum_running,
 
     round(
-        safe_divide(attendance_value_sum_running, membership_value_sum_running), 3
+        safe_divide(
+            sum(agg.attendance_value_sum) over (
+                partition by co.studentid, co.academic_year, co.schoolid
+                order by co.week_start_monday asc
+            ),
+            sum(agg.membership_value_sum) over (
+                partition by co.studentid, co.academic_year, co.schoolid
+                order by co.week_start_monday asc
+            )
+        ),
+        3
     ) as ada_running,
-from {{ ref("int_extracts__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 left join
-    running_calcs as rc
-    on co.studentid = rc.studentid
-    and co.schoolid = rc.schoolid
-    and co.academic_year = rc.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="rc") }}
+    agg_weeks as agg
+    on co.studentid = agg.studentid
+    and co.schoolid = agg.schoolid
+    and co.academic_year = agg.academic_year
+    and co.week_start_monday = agg.week_start_monday
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
