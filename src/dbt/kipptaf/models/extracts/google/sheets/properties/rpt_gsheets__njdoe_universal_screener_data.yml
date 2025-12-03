@@ -1,0 +1,5 @@
+models:
+  - name: rpt_gsheets__njdoe_universal_screener_data
+    config:
+      contract:
+        enforced: false
