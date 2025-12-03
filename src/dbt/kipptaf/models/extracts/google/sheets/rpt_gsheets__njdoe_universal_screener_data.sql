@@ -177,8 +177,6 @@ with
             level_mod,
 
             case
-                when level_mod is null
-                then null
                 when level_mod = 'Tested Out'
                 then 'TO'
                 when level_mod = 'Discontinued'
@@ -234,7 +232,7 @@ select
     s.benchmark_period,
     s.district_code,
     s.school_code,
-    s.state_studentnumber,
+    s.state_studentnumber as sid,
     s.assessment_edition as assessment_name,
 
     max(s.score_phonics_and_decoding) as phonics_and_decoding_score,
@@ -252,17 +250,16 @@ select
     max(l.level_mod_coded_composite) as composite_level,
 
 from score_pivot as s
-join
-    level_pivot l using (
-        region,
-        schoolid,
-        school,
-        benchmark_period,
-        district_code,
-        school_code,
-        state_studentnumber,
-        assessment_edition
-    )
+left join
+    level_pivot l
+    on s.region = l.region
+    and s.schoolid = l.schoolid
+    and s.school = l.school
+    and s.benchmark_period = l.benchmark_period
+    and s.district_code = l.district_code
+    and s.school_code = l.school_code
+    and s.state_studentnumber = l.state_studentnumber
+    and s.assessment_edition = l.assessment_edition
 group by
     s.region,
     s.schoolid,
