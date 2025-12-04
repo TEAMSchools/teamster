@@ -1,5 +1,7 @@
 models:
   - name: base_powerschool__student_enrollments
+    # config:
+    #   materialized: table
     description: |
       This view is a complete enrollment history of all students with enrollments in
       PowerSchool.
