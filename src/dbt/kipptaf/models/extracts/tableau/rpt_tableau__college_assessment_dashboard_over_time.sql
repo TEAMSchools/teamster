@@ -47,11 +47,7 @@ with
     goals as (
         select *,
         from {{ ref("stg_google_sheets__kippfwd_goals") }}
-        where
-            region is null
-            and schoolid is null
-            and (grade_level is null or grade_level = 12)
-            and expected_goal_type != 'Board'
+        where region is null and schoolid is null and expected_goal_type != 'Board'
     ),
 
     roster as (
