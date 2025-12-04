@@ -1,5 +1,7 @@
 models:
   - name: stg_deanslist__terms
+    config:
+      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string

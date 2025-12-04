@@ -3,3 +3,4 @@ models:
     config:
       contract:
         enforced: false
+      materialized: table
