@@ -68,6 +68,7 @@ with
 
             g.expected_test_type,
             g.expected_scope,
+            g.expected_aligned_scope,
             g.expected_score_type,
             g.expected_subject_area,
             g.expected_aligned_subject_area,
@@ -143,6 +144,7 @@ with
             e.college_match_gpa_bands,
             g.expected_test_type,
             g.expected_scope,
+            g.expected_aligned_scope,
             g.expected_score_type,
             g.expected_subject_area,
             g.expected_aligned_subject_area,
@@ -212,5 +214,14 @@ select
             expected_aligned_subject,
             expected_metric_name
     ) as met_min_score_int_overall_aligned_subject,
+
+    max(if(score >= min_score, 1, 0)) over (
+        partition by
+            student_number,
+            expected_test_type,
+            expected_aligned_scope,
+            expected_aligned_subject,
+            expected_metric_name
+    ) as met_min_score_int_overall_aligned_scope_subject,
 
 from roster
