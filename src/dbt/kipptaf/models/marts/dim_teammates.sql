@@ -28,10 +28,13 @@ with
 
     ),
 
-    years_experience as (
+        teammate_aggregations as (
         select
             employee_number,
             academic_year,
+            min(effective_date_start) over (
+                partition by academic_year, employee_number
+            ) as min_effective_date_start,
             sum(1) over (
                 partition by employee_number order by academic_year
             ) as years_at_kipp,
@@ -39,8 +42,30 @@ with
                 partition by employee_number order by academic_year
             ) as years_teaching_at_kipp,
         from roster
-        group by employee_number, academic_year, is_teacher
-    ),
+        ),
+--figure out dupes
+ attrition as (
+ select
+            roster.employee_number,
+            roster.academic_year,
+            max(
+                case
+                    when
+                        date(roster.academic_year, 9, 1)
+                        between (teammate_aggregations.min_effective_date_start)
+                        and date(roster.academic_year + 1, 4, 30)
+                        and worker_termination_date
+                        between date(roster.academic_year, 9, 1) 
+                        and date(roster.academic_year + 1, 8, 31)
+                    then 1
+                    else 0
+                end
+            ) as is_attrition
+        from roster
+        inner join teammate_aggregations on roster.employee_number = teammate_aggregations.employee_number and roster.academic_year = teammate_aggregations.academic_year
+        group by employee_number, academic_year
+        order by employee_number, academic_year
+ )
 
     grade_levels as (select *, from {{ ref("int_powerschool__teacher_grade_levels") }}),
 
@@ -76,7 +101,7 @@ with
             y.years_at_kipp,
             y.years_teaching_at_kipp,
 
-            coalesce(r.years_exp_outside_kipp,0)
+            coalesce(r.years_exp_outside_kipp, 0)
             + y.years_teaching_at_kipp as total_years_teaching,
 
             if(
@@ -103,4 +128,3 @@ with
 
 select *,
 from final
-
