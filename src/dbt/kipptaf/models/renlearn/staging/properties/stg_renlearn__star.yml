@@ -1,5 +1,7 @@
 models:
   - name: stg_renlearn__star
+    config:
+      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string

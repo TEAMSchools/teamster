@@ -1,2 +1,4 @@
 models:
   - name: int_overgrad__students
+    config:
+      materialized: table

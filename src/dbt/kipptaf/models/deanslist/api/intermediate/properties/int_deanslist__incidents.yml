@@ -1,4 +1,4 @@
 models:
-  - name: stg_pearson__parcc
+  - name: int_deanslist__incidents
     config:
       materialized: table

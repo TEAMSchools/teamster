@@ -3,6 +3,7 @@ models:
     config:
       contract:
         enforced: true
+      materialized: table
     columns:
       - name: school
         data_type: string
