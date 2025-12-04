@@ -53,7 +53,7 @@ with
                 then 'ACT/SAT'
                 when expected_scope in ('PSAT10', 'PSAT NMSQT')
                 then 'PSAT10/NMSQT'
-                else expected_subject_area
+                else expected_scope
             end as expected_aligned_scope,
 
             if(
