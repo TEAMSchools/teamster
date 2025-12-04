@@ -1,4 +1,4 @@
 models:
   - name: int_topline__formative_assessment_weekly
-    config:
-      materialized: table
+    # config:
+    #   materialized: table
