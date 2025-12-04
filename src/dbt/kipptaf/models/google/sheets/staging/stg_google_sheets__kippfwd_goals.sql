@@ -48,6 +48,14 @@ with
                 else goal_subtype
             end as expected_goal_subtype,
 
+            case
+                when expected_scope in ('ACT', 'SAT')
+                then 'ACT/SAT'
+                when expected_scope in ('PSAT10', 'PSAT NMSQT')
+                then 'PSAT10/NMSQT'
+                else expected_subject_area
+            end as expected_aligned_scope,
+
             if(
                 expected_subject_area in ('Composite', 'Combined'),
                 'Total',
