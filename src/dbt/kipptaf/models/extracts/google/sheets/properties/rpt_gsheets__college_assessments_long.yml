@@ -1,5 +1,0 @@
-models:
-  - name: rpt_gsheets__college_assessments_long
-    config:
-      contract:
-        enforced: false
