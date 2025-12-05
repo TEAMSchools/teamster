@@ -1,5 +1,21 @@
 models:
   - name: rpt_gsheets__kippfwd_sf_dup_notes
-    config:
-      contract:
-        enforced: false
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: contact__c
+        data_type: string
+      - name: subject__c
+        data_type: string
+      - name: comments__c
+        data_type: string
+      - name: next_steps__c
+        data_type: string
+      - name: date__c
+        data_type: date
+      - name: status__c
+        data_type: string
+      - name: type__c
+        data_type: string
