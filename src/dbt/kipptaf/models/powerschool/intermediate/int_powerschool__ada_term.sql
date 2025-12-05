@@ -14,6 +14,7 @@ with
             count(attendancevalue) as count_attendance_value_term,
 
             avg(attendancevalue) as ada_term,
+            avg(is_present_weighted) as ada_weighted_term,
 
             sum(abs(attendancevalue - 1)) as sum_absences_term,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
@@ -75,7 +76,9 @@ select
         3
     ) as ada_year_running,
 
-    round(sum_attendance_value_weighted_term, 3) as ada_weighted_term,
+    round(sum_attendance_value_weighted_term, 3) as ada_weighted_present,
+
+    round(ada_weighted_term, 3) as ada_weighted_term,
 
     round(
         safe_divide(
