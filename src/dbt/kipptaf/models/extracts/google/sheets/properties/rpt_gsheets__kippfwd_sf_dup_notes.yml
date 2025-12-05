@@ -1,0 +1,5 @@
+models:
+  - name: rpt_gsheets__kippfwd_sf_dup_notes
+    config:
+      contract:
+        enforced: false
