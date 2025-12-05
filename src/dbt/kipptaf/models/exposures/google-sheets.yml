@@ -408,6 +408,7 @@ exposures:
       - ref("rpt_gsheets__kippfwd_contacts")
       - ref("rpt_gsheets__kippfwd_sfsat")
       - ref("rpt_gsheets__kippfwd_ogsat")
+      - ref("rpt_gsheets__kippfwd_sf_dup_notes")
     meta:
       dagster:
         kinds:
@@ -600,6 +601,18 @@ exposures:
     url: https://docs.google.com/spreadsheets/d/1EdsbhchfyGoRcabyofeHVohKLIKezAXXn5BXSYwL_wo
     depends_on:
       - ref("rpt_gsheets__njdoe_universal_screener_data")
+    meta:
+      dagster:
+        kinds:
+          - googlesheets
+  - name: rpt_gsheets__college_assessments_long
+    label: College Assessments Long
+    type: analysis
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1ij4Ik1xXep73cput3cyR7jnVk9MGRh45L88qTlzN10A
+    depends_on:
+      - ref("rpt_gsheets__college_assessments_long")
     meta:
       dagster:
         kinds:
