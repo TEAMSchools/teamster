@@ -152,6 +152,20 @@ select
 
     'KTAF' as district,
 
+    case
+        e.enroll_status
+        when 0
+        then 'Currently Enrolled'
+        when -1
+        then 'Pre-Registered'
+        when 1
+        then 'Inactive'
+        when 2
+        then 'Transferred Out'
+        when 3
+        then 'Graduated'
+    end as enroll_status_string,
+
     concat(e.region, e.school_level) as region_school_level,
 
     coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,

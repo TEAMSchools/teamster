@@ -258,3 +258,5 @@ models:
         data_type: boolean
       - name: es_graduated
         data_type: string
+      - name: enroll_status_string
+        data_type: string
