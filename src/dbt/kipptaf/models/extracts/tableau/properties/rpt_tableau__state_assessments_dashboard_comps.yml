@@ -33,3 +33,4 @@ models:
         data_type: boolean
       - name: region_matched_or_outperformed
         data_type: boolean
+
