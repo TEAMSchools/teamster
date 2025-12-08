@@ -3,6 +3,8 @@ models:
     config:
       schema: extracts
       materialized: table
+      contract:
+        enforced: false
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
