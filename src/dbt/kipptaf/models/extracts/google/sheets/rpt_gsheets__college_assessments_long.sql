@@ -24,7 +24,7 @@ with
             e.student_last_name,
             e.grade_level,
             e.student_email,
-            e.enroll_status,
+            e.enroll_status_string as enroll_status,
             e.ktc_cohort,
             e.graduation_year,
             e.year_in_network,
