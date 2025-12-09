@@ -201,3 +201,9 @@ def test_nsc_student_tracker_kipptaf():
     from teamster.code_locations.kipptaf.nsc.assets import student_tracker
 
     _test_asset(asset=student_tracker)
+
+
+def test_finalsite_status_report_kippmiami():
+    from teamster.code_locations.kippmiami.finalsite.assets import status_report
+
+    _test_asset(asset=status_report)
