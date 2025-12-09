@@ -99,19 +99,19 @@ select
     end as race_ethnicity,
 
     case
-        when `subject` like 'English Language Arts%'
+        when u.`subject` like 'English Language Arts%'
         then 'Text Study'
-        when `subject` in ('Algebra I', 'Algebra II', 'Geometry')
+        when u.`subject` in ('Algebra I', 'Algebra II', 'Geometry')
         then 'Mathematics'
         else `subject`
     end as illuminate_subject,
 
     case
-        when assessment_name = 'NJSLA' and testperformancelevel <= 2
+        when u.assessment_name = 'NJSLA' and u.testperformancelevel <= 2
         then 'Below/Far Below'
-        when assessment_name = 'NJSLA' and testperformancelevel = 3
+        when u.assessment_name = 'NJSLA' and u.testperformancelevel = 3
         then 'Approaching'
-        when assessment_name = 'NJSLA' and testperformancelevel >= 4
+        when u.assessment_name = 'NJSLA' and u.testperformancelevel >= 4
         then 'At/Above'
     end as njsla_aggregated_proficiency,
 

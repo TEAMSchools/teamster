@@ -59,7 +59,7 @@ select
         comparison_demographic_subgroup
     ) as comparison_demographic_subgroup_aligned,
 
-    round(percent_proficient * total_students, 0) as total_proficient_students
+    round(percent_proficient * total_students, 0) as total_proficient_students,
 
 from
     {{
