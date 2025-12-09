@@ -63,3 +63,7 @@ models:
         data_type: string
       - name: race_ethnicity
         data_type: string
+      - name: illuminate_subject
+        data_type: string
+      - name: njsla_aggregated_proficiency
+        data_type: string
