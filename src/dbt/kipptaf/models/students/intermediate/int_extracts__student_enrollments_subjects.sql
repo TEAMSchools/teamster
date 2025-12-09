@@ -54,26 +54,12 @@ with
             localstudentidentifier,
             is_proficient,
 
+            illuminate_subject as `subject`,
+            njsla_aggregated_proficiency as njsla_proficiency,
+
             academic_year + 1 as academic_year_plus,
 
             cast(statestudentidentifier as string) as statestudentidentifier,
-
-            case
-                when `subject` like 'English Language Arts%'
-                then 'Text Study'
-                when `subject` in ('Algebra I', 'Algebra II', 'Geometry')
-                then 'Mathematics'
-                else `subject`
-            end as `subject`,
-
-            case
-                when testperformancelevel <= 2
-                then 'Below/Far Below'
-                when testperformancelevel = 3
-                then 'Approaching'
-                when testperformancelevel >= 4
-                then 'At/Above'
-            end as njsla_proficiency,
 
         from {{ ref("int_pearson__all_assessments") }}
 
@@ -86,26 +72,12 @@ with
 
             is_proficient,
 
+            illuminate_subject as `subject`,
+            fast_aggregated_proficiency as proficiency,
+
             academic_year + 1 as academic_year_plus,
 
             student_id as statestudentidentifier,
-
-            case
-                when assessment_subject like 'English Language Arts%'
-                then 'Text Study'
-                when assessment_subject in ('Algebra I', 'Algebra II', 'Geometry')
-                then 'Mathematics'
-                else assessment_subject
-            end as `subject`,
-
-            case
-                when achievement_level_int = 1
-                then 'Below/Far Below'
-                when achievement_level_int = 2
-                then 'Approaching'
-                when achievement_level_int >= 3
-                then 'At/Above'
-            end as proficiency,
 
         from {{ ref("int_fldoe__all_assessments") }}
         where
@@ -118,17 +90,9 @@ with
         select
             student_id,
             `subject`,
+            iready_proficiency,
 
             academic_year_int + 1 as academic_year_plus,
-
-            case
-                when overall_relative_placement_int <= 2
-                then 'Below/Far Below'
-                when overall_relative_placement_int = 3
-                then 'Approaching'
-                when overall_relative_placement_int >= 4
-                then 'At/Above'
-            end as iready_proficiency,
 
         from {{ ref("int_iready__diagnostic_results") }}
         where rn_subj_round = 1 and test_round = 'EOY'
@@ -202,6 +166,7 @@ with
 
             trim(split(specprog_name, '-')[offset(0)]) as bucket,
             trim(split(specprog_name, '-')[offset(1)]) as discipline,
+            
         from {{ ref("int_powerschool__spenrollments") }}
         where specprog_name like 'Bucket%'
     ),
