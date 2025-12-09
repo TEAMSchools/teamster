@@ -63,8 +63,6 @@ models:
         data_type: numeric
       - name: highest_score_by_test
         data_type: string
-      - name: min_score
-        data_type: float64
       - name: hs_grad_ready
         data_type: string
       - name: college_ready
