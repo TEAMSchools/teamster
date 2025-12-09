@@ -58,6 +58,7 @@ uv sync
 uv run dbt deps --project-dir=src/dbt/amplify
 uv run dbt deps --project-dir=src/dbt/deanslist
 uv run dbt deps --project-dir=src/dbt/edplan
+uv run dbt deps --project-dir=src/dbt/finalsite
 uv run dbt deps --project-dir=src/dbt/iready
 uv run dbt deps --project-dir=src/dbt/overgrad
 uv run dbt deps --project-dir=src/dbt/pearson
