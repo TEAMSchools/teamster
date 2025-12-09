@@ -103,7 +103,7 @@ select
         then 'Text Study'
         when u.`subject` in ('Algebra I', 'Algebra II', 'Geometry')
         then 'Mathematics'
-        else `subject`
+        else u.`subject`
     end as illuminate_subject,
 
     case
