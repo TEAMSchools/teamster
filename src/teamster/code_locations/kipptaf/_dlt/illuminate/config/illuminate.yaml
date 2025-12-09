@@ -15,6 +15,13 @@ assets:
       - table_name: agg_student_responses_standard
         op_tags:
           dagster/priority: "1"
+          dagster-k8s/config:
+            container_config:
+              resources:
+                requests:
+                  cpu: 500m
+                limits:
+                  cpu: 1000m
       - table_name: assessment_grade_levels
       - table_name: assessment_standards
       - table_name: assessments
