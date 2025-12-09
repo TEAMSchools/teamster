@@ -166,7 +166,7 @@ with
 
             trim(split(specprog_name, '-')[offset(0)]) as bucket,
             trim(split(specprog_name, '-')[offset(1)]) as discipline,
-            
+
         from {{ ref("int_powerschool__spenrollments") }}
         where specprog_name like 'Bucket%'
     ),
