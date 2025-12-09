@@ -27,3 +27,7 @@ models:
         data_type: string
       - name: assessment_name
         data_type: string
+      - name: illuminate_subject
+        data_type: string
+      - name: fast_aggregated_proficiency
+        data_type: string
