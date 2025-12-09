@@ -41,7 +41,6 @@ with
             sc.score_type,
             sc.scale_score,
 
-            g.min_score,
             g.expected_metric_name,
 
             ss.superscore as sat_total_superscore,
@@ -136,7 +135,6 @@ select
     subject_area as test_subject,
     scale_score,
     highest_score_by_test,
-    min_score,
 
     coalesce(hs_grad_ready, 'NA') as hs_grad_ready,
     coalesce(college_ready, 'NA') as college_ready,
