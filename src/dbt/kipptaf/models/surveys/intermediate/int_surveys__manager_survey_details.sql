@@ -48,7 +48,6 @@ with
             row_number() over (
                 partition by
                     survey_id,
-                    survey_response_id,
                     campaign_academic_year,
                     campaign_reporting_term,
                     respondent_df_employee_number,

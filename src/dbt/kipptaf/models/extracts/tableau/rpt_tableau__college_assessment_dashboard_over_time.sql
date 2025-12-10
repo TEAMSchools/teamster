@@ -47,11 +47,7 @@ with
     goals as (
         select *,
         from {{ ref("stg_google_sheets__kippfwd_goals") }}
-        where
-            region is null
-            and schoolid is null
-            and (grade_level is null or grade_level = 12)
-            and expected_goal_type != 'Board'
+        where region is null and schoolid is null and expected_goal_type != 'Board'
     ),
 
     roster as (
@@ -72,6 +68,7 @@ with
 
             g.expected_test_type,
             g.expected_scope,
+            g.expected_aligned_scope,
             g.expected_score_type,
             g.expected_subject_area,
             g.expected_aligned_subject_area,
@@ -89,7 +86,8 @@ with
             s.aligned_subject_area,
             s.aligned_subject,
             s.max_scale_score,
-            s.strategy_case,
+
+            coalesce(s.strategy_case, 'No testing history') as strategy_case,
 
             avg(
                 case
@@ -129,7 +127,11 @@ with
             alt_max_scale_score as c
             on s.student_number = c.student_number
             and s.score_type = c.score_type
-        where e.school_level = 'HS' and e.rn_undergrad = 1 and e.rn_year = 1
+        where
+            e.school_level = 'HS'
+            and e.rn_undergrad = 1
+            and e.rn_year = 1
+            and not e.is_out_of_district
         group by
             e.region,
             e.school,
@@ -146,6 +148,7 @@ with
             e.college_match_gpa_bands,
             g.expected_test_type,
             g.expected_scope,
+            g.expected_aligned_scope,
             g.expected_score_type,
             g.expected_subject_area,
             g.expected_aligned_subject_area,
@@ -215,5 +218,14 @@ select
             expected_aligned_subject,
             expected_metric_name
     ) as met_min_score_int_overall_aligned_subject,
+
+    max(if(score >= min_score, 1, 0)) over (
+        partition by
+            student_number,
+            expected_test_type,
+            expected_aligned_scope,
+            expected_aligned_subject,
+            expected_metric_name
+    ) as met_min_score_int_overall_aligned_scope_subject,
 
 from roster

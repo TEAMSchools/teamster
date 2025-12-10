@@ -95,7 +95,7 @@ with
             academic_year_int,
             `subject`,
             most_recent_overall_relative_placement,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
     ),
 
     iready as (
@@ -130,11 +130,11 @@ with
 
             if(
                 grade_level > 0,
-                cast(right(state_benchmark_category_name, 1) as int64),
+                cast(right(state_benchmark_category_name, 1) as int),
                 5 - district_benchmark_category_level
             ) as star_achievement_level,
-        from {{ ref("int_renlearn__star_rollup") }}
-        where rn_subj_year = 1
+        from {{ ref("stg_renlearn__star") }}
+        where rn_subject_year = 1
     ),
 
     star as (

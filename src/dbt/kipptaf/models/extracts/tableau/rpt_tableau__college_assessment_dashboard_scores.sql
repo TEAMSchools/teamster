@@ -21,6 +21,7 @@ inner join
     and e.school_level = 'HS'
     and e.rn_undergrad = 1
     and e.rn_year = 1
+    and not e.is_out_of_district
 where
     s.score_type not in (
         'act_english',
