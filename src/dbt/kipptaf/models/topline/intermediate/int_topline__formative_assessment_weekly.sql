@@ -1,5 +1,4 @@
 with
-
     responses_discipline as (
         select
             powerschool_student_number,
@@ -16,10 +15,13 @@ with
                 when is_mastery then 1 when not is_mastery then 0 else -1
             end as is_mastery_int,
         from {{ ref("int_assessments__response_rollup") }}
-        where response_type = 'overall' and module_type in ('QA', 'MQQ')
+        where
+            response_type = 'overall'
+            and module_type in ('QA', 'MQQ', 'CRQ')
+            and academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
-    assessment_weeks as (
+    assessment_weeks_union as (
         select
             sw.student_number,
             sw.academic_year,
@@ -34,6 +36,13 @@ with
             rr.administered_at,
             rr.is_mastery_int,
 
+            case
+                when rr.module_type in ('QA', 'MQQ')
+                then 'All'
+                when rr.module_type = 'CRQ' and sw.region = 'Miami'
+                then 'Florida'
+            end as formative_strategy,
+
             last_value(rr.is_mastery_int ignore nulls) over (
                 partition by sw.student_number, sw.discipline, sw.academic_year
                 order by sw.week_start_monday asc
@@ -45,21 +54,20 @@ with
             and sw.academic_year = rr.academic_year
             and sw.discipline = rr.discipline
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
-        where sw.is_enrolled_week
+            and rr.module_type in ('QA', 'MQQ', 'CRQ')
+        where
+            sw.is_enrolled_week
+            and sw.academic_year >= {{ var("current_academic_year") - 1 }}
     )
 
 select
     student_number,
     academic_year,
-    subject_area,
-    discipline,
-    module_type,
-    title,
-    administered_at,
     week_start_monday,
     week_end_sunday,
-    week_number_academic_year,
-    is_mastery_int,
+    discipline,
+    formative_strategy,
 
     if(mastery_as_of_week = -1, null, mastery_as_of_week) as is_mastery_running_int,
-from assessment_weeks
+from assessment_weeks_union
+where formative_strategy is not null

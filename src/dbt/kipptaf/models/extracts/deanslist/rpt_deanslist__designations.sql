@@ -71,7 +71,9 @@ inner join
         'Out of District',
         'Self-Contained Special Education',
         'Student Athlete',
-        'Tutoring'
+        'Tutoring',
+        'High School Honors Program',
+        'High School Tech Academy'
     )
 
 union all

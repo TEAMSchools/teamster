@@ -53,8 +53,8 @@ with
                 then 'Mail (Letter/Postcard)'
             end as `type`,
 
-            {{ parse_html("c.topic") }} as topic,
-            {{ parse_html("c.response") }} as response,
+            coalesce({{ parse_html("c.topic") }}, 'Blank') as topic,
+            coalesce({{ parse_html("c.response") }}, 'Blank') as response,
 
             {{
                 date_to_fiscal_year(
@@ -80,8 +80,8 @@ with
             `status`,
             `type`,
 
-            {{ parse_html("comments") }} as comments,
-            {{ parse_html("next_steps") }} as next_steps,
+            coalesce({{ parse_html("comments") }}, 'Blank') as comments,
+            coalesce({{ parse_html("next_steps") }}, 'Blank') as next_steps,
 
         from {{ ref("stg_kippadb__contact_note") }}
         where
@@ -96,8 +96,10 @@ select
     d.call_date as date__c,
     d.status as status__c,
     d.type as type__c,
-    d.topic as comments__c,
-    d.response as next_steps__c,
+
+    if(d.topic = 'Blank', null, d.topic) as comments__c,
+    if(d.response = 'Blank', null, d.response) as next_steps__c,
+
 from deanslist_notes as d
 left join
     salesforce_notes as s

@@ -568,6 +568,7 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__survey_completion")
+      - ref("rpt_tableau__survey_responses")
     meta:
       dagster:
         kinds:

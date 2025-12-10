@@ -239,7 +239,6 @@ select
     lc.location_head_of_schools_employee_number
     as home_work_location_head_of_schools_employee_number,
     lc.campus_name as home_work_location_campus_name,
-    lc.head_of_schools_sam_account_name,
 
     ldap.physical_delivery_office_name,
     ldap.uac_account_disable,

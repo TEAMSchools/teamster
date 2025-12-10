@@ -35,9 +35,24 @@ with
         from {{ ref("int_people__temp_staff") }}
     ),
 
+    schools as (
+        select
+            schoolstate,
+
+            cast(school_number as string) as school_id,
+
+            regexp_extract(
+                _dbt_source_relation, r'(kipp\w+)_'
+            ) as dagster_code_location,
+        from {{ ref("stg_powerschool__schools") }}
+        where
+            state_excludefromreporting = 0
+            and _dbt_source_relation not like '%kipppaterson%'
+    ),
+
     assignments as (
-        /*  - School staff assigned to primary school only
-            - Campus staff assigned to all schools at campus
+        /* - School staff assigned to primary school only
+           - Campus staff assigned to all schools at campus
         */
         select
             sr.powerschool_teacher_number,
@@ -76,11 +91,9 @@ with
             sr.home_department_name,
             sr.sam_account_name,
 
-            cast(sch.school_number as string) as school_id,
+            sch.school_id,
         from staff_roster as sr
-        inner join
-            {{ ref("stg_powerschool__schools") }} as sch
-            on sch.state_excludefromreporting = 0
+        cross join schools as sch
         where
             sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
             and (
@@ -101,13 +114,11 @@ with
             sr.home_department_name,
             sr.sam_account_name,
 
-            cast(sch.school_number as string) as school_id,
+            sch.school_id,
         from staff_roster as sr
         inner join
-            {{ ref("stg_powerschool__schools") }} as sch
-            on sr.home_work_location_dagster_code_location
-            = regexp_extract(sch._dbt_source_relation, r'(kipp\w+)_')
-            and sch.state_excludefromreporting = 0
+            schools as sch
+            on sr.home_work_location_dagster_code_location = sch.dagster_code_location
         where sr.home_work_location_powerschool_school_id = 0
 
         union all
@@ -121,17 +132,14 @@ with
             sr.home_department_name,
             sr.sam_account_name,
 
-            cast(sch.school_number as string) as school_id,
+            sch.school_id,
         from {{ ref("stg_ldap__group") }} as g
         cross join unnest(g.member) as group_member_distinguished_name
         inner join
             {{ ref("stg_ldap__user_person") }} as up
             on group_member_distinguished_name = up.distinguished_name
         inner join staff_roster as sr on up.employee_number = sr.employee_number
-        inner join
-            {{ ref("stg_powerschool__schools") }} as sch
-            on sch.schoolstate = 'NJ'
-            and sch.state_excludefromreporting = 0
+        inner join schools as sch on sch.schoolstate = 'NJ'
         where g.cn = 'Group Staff NJ Regional'
     )
 

@@ -31,6 +31,8 @@ select
 
     'Benchmark' as assessment_type,
 
+    a.start_date as expected_start_date,
+    a.end_date as expected_end_date,
     a.admin_season as expected_test,
     a.month_round as expected_month_round,
     a.grade as expected_grade_level_int,
@@ -210,6 +212,8 @@ select
 
     'PM' as assessment_type,
 
+    e.start_date as expected_start_date,
+    e.end_date as expected_end_date,
     e.admin_season as expected_test,
     e.month_round as expected_month_round,
     e.grade as expected_grade_level_int,

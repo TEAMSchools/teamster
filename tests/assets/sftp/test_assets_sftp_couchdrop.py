@@ -195,3 +195,9 @@ def test_collegeboard_sat_kipptaf():
     from teamster.code_locations.kipptaf.collegeboard.assets import sat
 
     _test_asset(asset=sat)
+
+
+def test_nsc_student_tracker_kipptaf():
+    from teamster.code_locations.kipptaf.nsc.assets import student_tracker
+
+    _test_asset(asset=student_tracker)
