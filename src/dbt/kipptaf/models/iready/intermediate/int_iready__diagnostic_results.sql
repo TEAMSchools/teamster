@@ -155,21 +155,21 @@ left join
     and wc.completion_date between rt.start_date and rt.end_date
     and rt.type = 'IR'
 left join
-    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cwo
+    {{ ref("stg_google_sheets__iready__crosswalk") }} as cwo
     on wc.subject = cwo.test_name
     and wc.student_grade = cwo.grade_level_string
     and wc.state_assessment_type = cwo.destination_system
     and wc.overall_scale_score between cwo.scale_low and cwo.scale_high
     and cwo.source_system = 'i-Ready'
 left join
-    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cwr
+    {{ ref("stg_google_sheets__iready__crosswalk") }} as cwr
     on wc.subject = cwr.test_name
     and wc.student_grade = cwr.grade_level_string
     and wc.state_assessment_type = cwr.destination_system
     and wc.most_recent_overall_scale_score between cwr.scale_low and cwr.scale_high
     and cwr.source_system = 'i-Ready'
 left join
-    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cwt
+    {{ ref("stg_google_sheets__iready__crosswalk") }} as cwt
     on wc.subject = cwt.test_name
     and wc.student_grade = cwt.grade_level_string
     and wc.state_assessment_type = cwt.destination_system
@@ -177,7 +177,7 @@ left join
     between cwt.scale_low and cwt.scale_high
     and cwt.source_system = 'i-Ready'
 left join
-    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cws
+    {{ ref("stg_google_sheets__iready__crosswalk") }} as cws
     on wc.subject = cws.test_name
     and wc.student_grade = cws.grade_level_string
     and wc.state_assessment_type = cws.destination_system
@@ -185,14 +185,14 @@ left join
     between cws.scale_low and cws.scale_high
     and cws.source_system = 'i-Ready'
 left join
-    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cwi
+    {{ ref("stg_google_sheets__iready__crosswalk") }} as cwi
     on wc.subject = cwi.test_name
     and wc.student_grade_int = cwi.grade_level
     and wc.overall_scale_score_plus_typical_growth
     between cwi.scale_low and cwi.scale_high
     and cwi.destination_system = 'i-Ready'
 left join
-    {{ ref("stg_google_sheets__assessments__iready_crosswalk") }} as cwp
+    {{ ref("stg_google_sheets__iready__crosswalk") }} as cwp
     on wc.subject = cwp.test_name
     and wc.student_grade = cwp.grade_level_string
     and wc.state_assessment_type = cwp.destination_system
