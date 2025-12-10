@@ -365,7 +365,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
-            sheet_range: src_google_sheets__kippfwd__expected_assessments_archive
+            sheet_range: src_google_sheets__kippfwd_expected_assessments_archive
             skip_leading_rows: 1
         meta:
           dagster:
@@ -929,7 +929,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1r6i----UdAbpvDtUB982ignbCMxiDnM60MYwik11MkI
-            sheet_range: src_google_sheets__iready__crosswalk
+            sheet_range: src_google_sheets__iready_crosswalk
             skip_leading_rows: 1
         meta:
           dagster:
@@ -945,7 +945,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1r6i----UdAbpvDtUB982ignbCMxiDnM60MYwik11MkI
-            sheet_range: src_google_sheets__iready__expected_assessments
+            sheet_range: src_google_sheets__iready_expected_assessments
             skip_leading_rows: 1
         columns:
           - name: Academic_Year
