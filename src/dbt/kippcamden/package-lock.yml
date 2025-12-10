@@ -1,20 +1,14 @@
 packages:
-  - local: ../amplify
-    name: amplify
   - local: ../deanslist
     name: deanslist
   - local: ../edplan
     name: edplan
-  - local: ../iready
-    name: iready
   - local: ../overgrad
     name: overgrad
   - local: ../pearson
     name: pearson
   - local: ../powerschool
     name: powerschool
-  - local: ../renlearn
-    name: renlearn
   - local: ../titan
     name: titan
   - name: dbt_external_tables
@@ -26,4 +20,4 @@ packages:
   - name: dbt_utils
     package: dbt-labs/dbt_utils
     version: 1.3.2
-sha1_hash: aeec6fab57904cc79b1827f07540c719a803828d
+sha1_hash: 1fd62449e44c641e242696bb9ff732cee33551c1
