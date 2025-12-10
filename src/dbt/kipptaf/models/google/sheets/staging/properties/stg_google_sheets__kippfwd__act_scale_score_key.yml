@@ -1,5 +1,5 @@
 models:
-  - name: stg_google_sheets__kippfwd_act_scale_score_key
+  - name: stg_google_sheets__kippfwd__act_scale_score_key
     columns:
       - name: Assessment_ID
         data_type: int64
