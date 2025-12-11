@@ -66,12 +66,9 @@ uv run dbt deps --project-dir=src/dbt/powerschool
 uv run dbt deps --project-dir=src/dbt/renlearn
 uv run dbt deps --project-dir=src/dbt/titan
 
-# prepare dbt projects
-uv run dagster-dbt project prepare-and-package \
-  --file src/teamster/code_locations/kippcamden/__init__.py
-uv run dagster-dbt project prepare-and-package \
-  --file src/teamster/code_locations/kippmiami/__init__.py
-uv run dagster-dbt project prepare-and-package \
-  --file src/teamster/code_locations/kippnewark/__init__.py
-uv run dagster-dbt project prepare-and-package \
-  --file src/teamster/code_locations/kipptaf/__init__.py
+# install dbt deps for projects
+uv run dbt deps --project-dir=src/dbt/kippcamden
+uv run dbt deps --project-dir=src/dbt/kippmiami
+uv run dbt deps --project-dir=src/dbt/kippnewark
+uv run dbt deps --project-dir=src/dbt/kipppaterson
+uv run dbt deps --project-dir=src/dbt/kipptaf
