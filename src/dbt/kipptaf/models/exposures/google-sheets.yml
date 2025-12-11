@@ -576,6 +576,7 @@ exposures:
       - ref("rpt_gsheets__csgf_hs_ap_scores")
       - ref("rpt_gsheets__csgf_hs_enrollment")
       - ref("rpt_gsheets__csgf_hs_grad_data")
+      - ref("rpt_gsheets__csgf_hs_postsec_pathways")
       - ref("rpt_gsheets__csgf_hs_sat")
     meta:
       dagster:

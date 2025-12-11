@@ -1,0 +1,27 @@
+name: finalsite
+version: 1.0.0
+
+profile: finalsite
+
+model-paths: [models]
+analysis-paths: [analyses]
+test-paths: [tests]
+seed-paths: [seeds]
+macro-paths: [macros]
+snapshot-paths: [snapshots]
+
+clean-targets:
+  - target
+  - dbt_packages
+
+models:
+  +schema: finalsite
+  finalsite:
+    staging:
+      +materialized: table
+      +contract:
+        enforced: true
+
+vars:
+  cloud_storage_uri_base: null
+  bigquery_external_connection_name: null

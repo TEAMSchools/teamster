@@ -62,7 +62,7 @@ with
                 expected_subject_area
             ) as expected_aligned_subject_area,
 
-        from {{ source("google_sheets", "src_google_sheets__kippfwd_goals") }}
+        from {{ source("google_sheets", "src_google_sheets__kippfwd__goals") }}
     )
 
 select

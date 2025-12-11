@@ -2,6 +2,7 @@ packages:
   - local: ../amplify
   - local: ../deanslist
   - local: ../edplan
+  - local: ../finalsite
   - local: ../iready
   - local: ../overgrad
   - local: ../pearson

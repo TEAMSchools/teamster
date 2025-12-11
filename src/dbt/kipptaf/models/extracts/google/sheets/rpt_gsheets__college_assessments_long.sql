@@ -7,7 +7,7 @@ with
 
             avg(min_score) as min_score,
 
-        from {{ ref("stg_google_sheets__kippfwd_goals") }}
+        from {{ ref("stg_google_sheets__kippfwd__goals") }}
         where expected_goal_type = 'Benchmark' and region is null and schoolid is null
         group by expected_test_type, expected_score_type, expected_metric_name
     ),
