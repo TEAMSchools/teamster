@@ -25,7 +25,8 @@ with
         from
             {{
                 source(
-                    "google_sheets", "src_google_sheets__kippfwd_expected_assessments"
+                    "google_sheets",
+                    "src_google_sheets__kippfwd__expected_assessments",
                 )
             }}
         where expected_admin_season != 'Not Official'

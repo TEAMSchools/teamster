@@ -78,7 +78,7 @@ select
 
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
-    {{ ref("stg_google_sheets__kippfwd_expected_assessments") }} as ea
+    {{ ref("stg_google_sheets__kippfwd__expected_assessments") }} as ea
     on e.region = ea.expected_region
     and ea.rn = 1
 left join

@@ -9,7 +9,7 @@ with
                 expected_metric_label, '_', value_type
             ) as expected_metric_label_type,
         from
-            {{ ref("stg_google_sheets__kippfwd_goals") }}
+            {{ ref("stg_google_sheets__kippfwd__goals") }}
             unpivot (`value` for value_type in (min_score, pct_goal))
         where
             expected_test_type = 'Official'
