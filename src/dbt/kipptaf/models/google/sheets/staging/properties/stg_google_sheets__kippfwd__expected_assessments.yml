@@ -1,5 +1,5 @@
 models:
-  - name: stg_google_sheets__kippfwd_expected_assessments
+  - name: stg_google_sheets__kippfwd__expected_assessments
     columns:
       - name: expected_region
         data_type: string
