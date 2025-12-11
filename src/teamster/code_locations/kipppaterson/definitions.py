@@ -12,6 +12,7 @@ from teamster.code_locations.kipppaterson import (
     _dbt,
     amplify,
     couchdrop,
+    finalsite,
     powerschool,
 )
 from teamster.core.resources import (
@@ -30,6 +31,7 @@ defs = Definitions(
         modules=[
             _dbt,
             amplify,
+            finalsite,
             powerschool,
         ]
     ),
