@@ -1,0 +1,17 @@
+models:
+  - name: rpt_gsheets__kippfwd_sfsat
+    columns:
+      - name: contact__c
+        data_type: string
+      - name: test_date__c
+        data_type: date
+      - name: sat_total
+        data_type: float64
+      - name: sat_ebrw
+        data_type: float64
+      - name: sat_math
+        data_type: float64
+      - name: test_type__c
+        data_type: string
+      - name: recordtypeid
+        data_type: string

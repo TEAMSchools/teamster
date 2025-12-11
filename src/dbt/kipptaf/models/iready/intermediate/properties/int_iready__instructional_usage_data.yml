@@ -2,6 +2,7 @@ models:
   - name: int_iready__instructional_usage_data
     config:
       enabled: false
+      materialized: table
     columns:
       - name: school
         data_type: string

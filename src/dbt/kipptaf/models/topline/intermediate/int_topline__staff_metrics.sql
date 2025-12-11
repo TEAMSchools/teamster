@@ -15,9 +15,12 @@ select
 
     'Outstanding Teammates' as layer,
     "Microgoals" as indicator,
+
     ma.week_start_monday as term,
+
     null as numerator,
     null as denominator,
+
     if(ma.microgoals_assigned >= 1, 1, 0) as metric_value,
 from {{ ref("int_topline__people_spine") }} as ss
 left join
@@ -49,9 +52,12 @@ select
 
     'Outstanding Teammates' as layer,
     "Staff Retention" as indicator,
+
     sr.week_start_monday as term,
+
     null as numerator,
     null as denominator,
+
     sr.is_retention as metric_value,
 from {{ ref("int_topline__people_spine") }} as ss
 left join

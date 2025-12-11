@@ -3,4 +3,4 @@ endpoints:
     params:
       IncludeSentReports: "yes"
       IncludeTwoWayTexts: "yes"
-  - endpoint: followups
+  # - endpoint: followups

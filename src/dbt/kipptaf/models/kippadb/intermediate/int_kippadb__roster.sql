@@ -24,6 +24,18 @@ with
         group by _dbt_source_relation, student_number
     ),
 
+    tier as (
+        select
+            contact,
+            `subject` as tier,
+
+            row_number() over (
+                partition by contact order by `date` desc
+            ) as rn_tier_recent,
+        from {{ ref("stg_kippadb__contact_note") }}
+        where regexp_contains(`subject`, r'Tier\s\d$')
+    ),
+
     roster as (
         select
             se._dbt_source_relation as exit_db_name,
@@ -45,6 +57,7 @@ with
             se.exitcode as exit_code,
             se.is_504 as powerschool_is_504,
             se.lep_status,
+            se.es_graduated,
 
             se.contact_1_email_current as powerschool_contact_1_email_current,
             se.contact_1_name as powerschool_contact_1_name,
@@ -108,6 +121,8 @@ with
             e.entry_school,
             e.is_es_grad,
 
+            t.tier,
+
             concat(
                 os.assigned_counselor__last_name,
                 ', ',
@@ -161,7 +176,7 @@ with
             on se.student_number = c.contact_school_specific_id
         left join
             {{ ref("int_overgrad__students") }} as os
-            on se.salesforce_contact_id = os.external_student_id
+            on se.salesforce_id = os.external_student_id
             and {{ union_dataset_join_clause(left_alias="se", right_alias="os") }}
         left join
             es_grad as e
@@ -171,6 +186,7 @@ with
             dlm as d
             on se.student_number = d.student_number
             and {{ union_dataset_join_clause(left_alias="se", right_alias="d") }}
+        left join tier as t on se.salesforce_id = t.contact and t.rn_tier_recent = 1
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 

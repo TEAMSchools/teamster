@@ -31,6 +31,8 @@ select
 
     'Benchmark' as assessment_type,
 
+    a.start_date as expected_start_date,
+    a.end_date as expected_end_date,
     a.admin_season as expected_test,
     a.month_round as expected_month_round,
     a.grade as expected_grade_level_int,
@@ -148,7 +150,14 @@ left join
         'ELA Gr5',
         'ELA Gr6',
         'ELA Gr7',
-        'ELA Gr8'
+        'ELA Gr8',
+        'English Language Arts Kindergarten',
+        'English Language Arts 1st',
+        'English Language Arts 2nd',
+        'English Language Arts 3rd',
+        'English Language Arts 5th',
+        'English Language Arts 6th ',
+        'English Language Arts 7th'
     )
 left join
     {{ ref("int_amplify__all_assessments") }} as b
@@ -203,6 +212,8 @@ select
 
     'PM' as assessment_type,
 
+    e.start_date as expected_start_date,
+    e.end_date as expected_end_date,
     e.admin_season as expected_test,
     e.month_round as expected_month_round,
     e.grade as expected_grade_level_int,
@@ -331,7 +342,14 @@ left join
         'ELA Gr5',
         'ELA Gr6',
         'ELA Gr7',
-        'ELA Gr8'
+        'ELA Gr8',
+        'English Language Arts Kindergarten',
+        'English Language Arts 1st',
+        'English Language Arts 2nd',
+        'English Language Arts 3rd',
+        'English Language Arts 5th',
+        'English Language Arts 6th ',
+        'English Language Arts 7th'
     )
 left join
     {{ ref("int_amplify__all_assessments") }} as a

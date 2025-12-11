@@ -2,6 +2,7 @@ packages:
   - local: ../amplify
   - local: ../deanslist
   - local: ../edplan
+  - local: ../finalsite
   - local: ../iready
   - local: ../overgrad
   - local: ../pearson
@@ -10,7 +11,7 @@ packages:
   - local: ../titan
   # https://github.com/dbt-labs/dbt-external-tables
   - package: dbt-labs/dbt_external_tables
-    version: 0.11.1
+    version: 0.12.0
   # https://github.com/dbt-labs/dbt-codegen
   - package: dbt-labs/codegen
-    version: 0.13.1
+    version: 0.14.0

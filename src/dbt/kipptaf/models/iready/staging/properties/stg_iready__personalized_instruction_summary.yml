@@ -1,5 +1,7 @@
 models:
   - name: stg_iready__personalized_instruction_summary
+    config:
+      materialized: table
     columns:
       - name: school
         data_type: string

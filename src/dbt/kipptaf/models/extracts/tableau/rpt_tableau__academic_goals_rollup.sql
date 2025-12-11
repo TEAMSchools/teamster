@@ -140,9 +140,9 @@ with
             if(state_benchmark_category_level = 5, 1, 0) as is_below_int,
 
             if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
-        from {{ ref("int_renlearn__star_rollup") }}
+        from {{ ref("stg_renlearn__star") }}
         where
-            rn_subj_round = 1
+            rn_subject_round = 1
             and screening_period_window_name = 'Spring'
             and grade_level between 1 and 2
     ),
@@ -175,7 +175,7 @@ with
                 then 1
                 else 0
             end as is_below_int,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where
             test_round = 'BOY'
             and rn_subj_round = 1
@@ -197,7 +197,7 @@ with
             if(level_number_with_typical >= 4, 1, 0) as is_proficient_int,
             if(level_number_with_typical = 3, 1, 0) as is_approaching_int,
             if(level_number_with_typical < 3, 1, 0) as is_below_int,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where
             test_round = 'BOY'
             and rn_subj_round = 1
@@ -209,7 +209,9 @@ with
         select
             student_display_id as student_number,
             academic_year,
+
             if(star_discipline = 'ELA', 'Reading', star_discipline) as `subject`,
+
             district_benchmark_category_level as `level`,
 
             'Star BOY' as assessment_type,
@@ -219,9 +221,9 @@ with
             if(district_benchmark_category_level = 1, 1, 0) as is_proficient_int,
             if(district_benchmark_category_level = 2, 1, 0) as is_approaching_int,
             if(district_benchmark_category_level >= 3, 1, 0) as is_below_int,
-        from {{ ref("int_renlearn__star_rollup") }}
+        from {{ ref("stg_renlearn__star") }}
         where
-            rn_subj_round = 1
+            rn_subject_round = 1
             and screening_period_window_name = 'Fall'
             and grade_level = 0
     ),

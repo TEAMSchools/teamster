@@ -1,5 +1,7 @@
 models:
   - name: int_renlearn__star_rollup
+    config:
+      enabled: false
     columns:
       - name: student_display_id
         data_type: int64

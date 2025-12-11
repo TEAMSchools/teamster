@@ -2,3 +2,4 @@ models:
   - name: stg_titan__income_form_data
     config:
       enabled: false
+      materialized: table

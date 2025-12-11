@@ -1,0 +1,37 @@
+models:
+  - name: int_extracts__student_enrollments
+    config:
+      schema: extracts
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - student_number
+              - academic_year
+              - entrydate
+          config:
+            store_failures: true
+    columns:
+      - name: fafsa_status_mismatch_category
+        data_type: string
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - No issues
+              config:
+                severity: warn
+                store_failures: true
+      - name: grad_iep_exempt_status_overall
+        data_type: string
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - Not Grad IEP Exempt
+                  - "Yes"
+              config:
+                severity: warn
+                store_failures: true

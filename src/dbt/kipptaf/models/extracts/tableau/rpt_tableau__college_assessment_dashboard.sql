@@ -51,7 +51,7 @@ with
                 'College and Career II'
             )
         left join
-            {{ ref("stg_google_sheets__assessments__assessment_expectations") }} as t
+            {{ ref("stg_google_sheets__kippfwd__expected_assessments_archive") }} as t
             on e.academic_year = t.academic_year
             and e.grade_level = t.grade
             and e.region = t.region
@@ -126,7 +126,7 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            {{ ref("stg_google_sheets__assessments__assessment_expectations") }} as t
+            {{ ref("stg_google_sheets__kippfwd__expected_assessments_archive") }} as t
             on e.academic_year = t.academic_year
             and e.region = t.region
             and e.grade_level = t.grade
