@@ -18,7 +18,7 @@ with
             e.schoolid,
             e.school,
             e.student_number,
-            e.salesforce_id,
+            e.salesforce_contact_id as salesforce_id,
             e.student_name,
             e.student_first_name,
             e.student_last_name,
@@ -26,14 +26,14 @@ with
             e.student_email,
             e.enroll_status_string as enroll_status,
             e.ktc_cohort,
-            e.graduation_year,
+            e.salesforce_contact_graduation_year as graduation_year,
             e.year_in_network,
             e.iep_status,
             e.grad_iep_exempt_status_overall,
             e.cumulative_y1_gpa,
             e.cumulative_y1_gpa_projected,
-            e.college_match_gpa,
-            e.college_match_gpa_bands,
+            e.salesforce_contact_college_match_gpa as college_match_gpa,
+            e.salesforce_contact_college_match_gpa_band as college_match_gpa_bands,
 
             sc.scope,
             sc.subject_area,
@@ -96,9 +96,10 @@ with
             )
         where
             e.academic_year = {{ var("current_academic_year") }}
-            and e.graduation_year >= {{ var("current_academic_year") + 1 }}
             and e.school_level = 'HS'
             and e.rn_year = 1
+            and e.salesforce_contact_graduation_year
+            >= {{ var("current_academic_year") + 1 }}
     )
 
 select

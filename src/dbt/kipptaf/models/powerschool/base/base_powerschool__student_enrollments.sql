@@ -44,6 +44,21 @@ with
         from union_relations
     ),
 
+    es_grad as (
+        select
+            student_number,
+            school_abbreviation,
+
+            row_number() over (
+                partition by student_number order by exitdate desc
+            ) as rn,
+        from union_relations
+        where
+            grade_level = 4
+            and extract(month from exitdate) = 6
+            and exitdate < current_date('{{ var("local_timezone") }}')
+    ),
+
     next_year_school as (
         select
             _dbt_source_relation,
@@ -79,6 +94,8 @@ select
     m.school_abbreviation as ms_attended,
 
     es.school_abbreviation as es_attended,
+
+    eg.school_abbreviation as es_graduated,
 
     ny.next_year_school,
     ny.next_year_schoolid,
@@ -180,8 +197,8 @@ select
 
     if(sip.students_student_number is not null, true, false) as is_sipps,
 
-    /* starting SY26, HS uses weighted ADA */
     if(
+        /* starting SY26, HS uses weighted ADA */
         ar.school_level = 'HS' and ar.academic_year >= 2025,
         ada.ada_weighted_year,
         ada.ada_year
@@ -209,8 +226,7 @@ select
     end as grad_iep_exempt_overall,
 
     case
-        /* starting SY26, HS uses weighted ADA */
-        when
+        when  -- starting SY26, HS uses weighted ADA
             ar.school_level = 'HS'
             and ar.academic_year >= 2025
             and ada.ada_weighted_year >= 0.80
@@ -324,6 +340,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="es") }}
     and es.school_level = 'ES'
     and es.rn = 1
+left join es_grad as eg on ar.student_number = eg.student_number and eg.rn = 1
 left join
     next_year_school as ny
     on ar.student_number = ny.student_number
