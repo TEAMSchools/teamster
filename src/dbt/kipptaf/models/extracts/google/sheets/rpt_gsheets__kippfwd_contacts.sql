@@ -68,8 +68,7 @@ with
             on ktc.student_number = c.student_school_id
             and regexp_contains(c.reason, r'^KF:')
         /* record not fixable on SF by either UI or data loader */
-        where c.record_id != 14846967
-        and ktc.contact_advising_provider is null
+        where c.record_id != 14846967 and ktc.contact_advising_provider is null
     ),
 
     salesforce_notes as (
