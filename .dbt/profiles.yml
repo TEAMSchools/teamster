@@ -179,6 +179,28 @@ amplify:
       method: oauth
       project: teamster-332318
 
+finalsite:
+  target: finalsite
+  outputs:
+    finalsite:
+      type: bigquery
+      schema: zz_dev
+      threads: 40
+      method: oauth
+      project: teamster-332318
+    kippnewark:
+      type: bigquery
+      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kippnewark
+      threads: 40
+      method: oauth
+      project: teamster-332318
+    kipppaterson:
+      type: bigquery
+      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kipppaterson
+      threads: 40
+      method: oauth
+      project: teamster-332318
+
 integration_tests:
   target: integration_tests
   outputs:
