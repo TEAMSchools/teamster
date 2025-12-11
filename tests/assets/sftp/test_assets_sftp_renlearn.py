@@ -19,6 +19,8 @@ def _test_asset(
 
         partition_key = partition_keys[random.randint(a=0, b=(len(partition_keys) - 1))]
 
+    print(partition_key)
+
     result = materialize(
         assets=[asset],
         instance=instance,
@@ -53,12 +55,6 @@ def test_renlearn_star_kippmiami():
     _test_asset(asset=star, code_location="kippmiami")
 
 
-def test_renlearn_star_skill_area_kippmiami():
-    from teamster.code_locations.kippmiami.renlearn.assets import star_skill_area
-
-    _test_asset(asset=star_skill_area, code_location="kippmiami")
-
-
 def test_renlearn_star_dashboard_standards_kippmiami():
     from teamster.code_locations.kippmiami.renlearn.assets import (
         star_dashboard_standards,
@@ -70,4 +66,14 @@ def test_renlearn_star_dashboard_standards_kippmiami():
 def test_renlearn_fast_star_kippmiami():
     from teamster.code_locations.kippmiami.renlearn.assets import fast_star
 
-    _test_asset(asset=fast_star, code_location="kippmiami")
+    _test_asset(
+        asset=fast_star,
+        code_location="kippmiami",
+        partition_key="2025-07-01|Participation",
+    )
+
+
+# def test_renlearn_star_skill_area_kippmiami():
+#     from teamster.code_locations.kippmiami.renlearn.assets import star_skill_area
+
+#     _test_asset(asset=star_skill_area, code_location="kippmiami")

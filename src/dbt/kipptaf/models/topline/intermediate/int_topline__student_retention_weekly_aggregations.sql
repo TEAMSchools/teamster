@@ -1,17 +1,9 @@
 with
-    deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("int_students__retention_over_time"),
-                partition_by="student_number, week_start_monday",
-                order_by="attrition_year desc",
-            )
-        }}
-    ),
-
     retention_over_time as (
         select
+            student_number,
             academic_year,
+            attrition_year,
             region,
             schoolid,
             grade_level,
@@ -20,8 +12,20 @@ with
             week_end_sunday,
             is_current_week,
             is_retained_int,
-        from deduplicate
-        where region != 'Paterson'
+        from {{ ref("int_students__retention_over_time") }}
+        where
+            academic_year >= {{ var("current_academic_year") - 1 }}
+            and region != 'Paterson'
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="retention_over_time",
+                partition_by="student_number, week_start_monday",
+                order_by="attrition_year desc",
+            )
+        }}
     )
 
 select
@@ -29,12 +33,6 @@ select
     s.region,
     s.schoolid,
     s.school,
-
-    'Student and Family Experience' as layer,
-    'Student Retention' as indicator,
-
-    cast(null as string) as discipline,
-
     s.week_start_monday as term,
     s.week_end_sunday as term_end,
     s.is_current_week,
@@ -50,8 +48,11 @@ select
     g.aggregation_display,
     g.goal,
 
+    'Student and Family Experience' as layer,
+    'Student Retention' as indicator,
+
     round(avg(s.is_retained_int), 3) as metric_aggregate_value,
-from retention_over_time as s
+from deduplicate as s
 inner join
     {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
     on s.region = g.entity
@@ -86,10 +87,6 @@ select
 
     null as schoolid,
     'All' as school,
-    'Student and Family Experience' as layer,
-    'Student Retention' as indicator,
-
-    cast(null as string) as discipline,
 
     s.week_start_monday as term,
     s.week_end_sunday as term_end,
@@ -106,8 +103,11 @@ select
     g.aggregation_display,
     g.goal,
 
+    'Student and Family Experience' as layer,
+    'Student Retention' as indicator,
+
     round(avg(s.is_retained_int), 3) as metric_aggregate_value,
-from retention_over_time as s
+from deduplicate as s
 inner join
     {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
     on s.region = g.entity
@@ -139,10 +139,6 @@ select
     'All' as region,
     null as schoolid,
     'All' as school,
-    'Student and Family Experience' as layer,
-    'Student Retention' as indicator,
-
-    cast(null as string) as discipline,
 
     s.week_start_monday as term,
     s.week_end_sunday as term_end,
@@ -159,8 +155,11 @@ select
     g.aggregation_display,
     g.goal,
 
+    'Student and Family Experience' as layer,
+    'Student Retention' as indicator,
+
     round(avg(s.is_retained_int), 3) as metric_aggregate_value,
-from retention_over_time as s
+from deduplicate as s
 inner join
     {{ ref("int_google_sheets__topline_aggregate_goals") }} as g
     on s.grade_level between g.grade_low and g.grade_high

@@ -1,5 +1,7 @@
 models:
   - name: int_deanslist__comm_log
+    config:
+      materialized: table
     columns:
       - name: dl_school_id
         data_tests:

@@ -1,5 +1,7 @@
 models:
   - name: int_kippadb__standardized_test_unpivot
+    config:
+      materialized: table
     columns:
       - name: id
         data_type: string

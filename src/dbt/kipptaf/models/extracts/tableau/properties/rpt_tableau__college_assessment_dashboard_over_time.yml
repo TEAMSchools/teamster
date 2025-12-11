@@ -31,6 +31,8 @@ models:
         data_type: string
       - name: expected_scope
         data_type: string
+      - name: expected_aligned_scope
+        data_type: string
       - name: expected_score_type
         data_type: string
       - name: expected_subject_area
@@ -63,6 +65,8 @@ models:
         data_type: string
       - name: max_scale_score
         data_type: numeric
+      - name: strategy_case
+        data_type: string
       - name: score
         data_type: numeric
       - name: met_min_score_int
@@ -74,4 +78,6 @@ models:
       - name: met_min_score_int_overall_score_type
         data_type: int64
       - name: met_min_score_int_overall_aligned_subject
+        data_type: int64
+      - name: met_min_score_int_overall_aligned_scope_subject
         data_type: int64

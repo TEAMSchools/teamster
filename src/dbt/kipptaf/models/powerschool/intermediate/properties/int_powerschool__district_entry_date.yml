@@ -1,5 +1,7 @@
 models:
   - name: int_powerschool__district_entry_date
+    config:
+      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string

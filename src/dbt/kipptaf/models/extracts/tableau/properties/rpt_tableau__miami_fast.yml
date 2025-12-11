@@ -173,3 +173,5 @@ models:
         data_type: int64
       - name: rn_year_fast
         data_type: int64
+      - name: teachernumber
+        data_type: string

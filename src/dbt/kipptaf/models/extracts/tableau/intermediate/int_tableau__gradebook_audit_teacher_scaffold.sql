@@ -156,7 +156,16 @@ with
 
             case
                 when
-                    current_date(
+                    tw.region = 'Miami'
+                    and current_date(
+                        '{{ var("local_timezone") }}'
+                    ) between (tw.quarter_end_date_insession - interval 9 day) and (
+                        tw.quarter_end_date_insession + interval 28 day
+                    )
+                then true
+                when
+                    tw.region != 'Miami'
+                    and current_date(
                         '{{ var("local_timezone") }}'
                     ) between (tw.quarter_end_date_insession - interval 9 day) and (
                         tw.quarter_end_date_insession + interval 14 day

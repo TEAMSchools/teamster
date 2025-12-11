@@ -66,13 +66,19 @@ select
         ea.expected_field_name, ' ', ea.expected_score_category
     ) as expected_field_name_score_category,
 
+    coalesce(p.psat89_count_lifetime, 0) as psat89_count_lifetime,
+    coalesce(p.psat10_count_lifetime, 0) as psat10_count_lifetime,
+    coalesce(p.psatnmsqt_count_lifetime, 0) as psatnmsqt_count_lifetime,
+    coalesce(p.sat_count_lifetime, 0) as sat_count_lifetime,
+    coalesce(p.act_count_lifetime, 0) as act_count_lifetime,
+
     coalesce(c.courses_course_name, 'No Data') as ccr_course,
     coalesce(c.teacher_lastfirst, 'No Data') as ccr_teacher_name,
     coalesce(c.sections_external_expression, 'No Data') as ccr_section,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
-    {{ ref("stg_google_sheets__kippfwd_expected_assessments") }} as ea
+    {{ ref("stg_google_sheets__kippfwd__expected_assessments") }} as ea
     on e.region = ea.expected_region
     and ea.rn = 1
 left join
@@ -110,8 +116,12 @@ left join
         'College and Career III',
         'College and Career II'
     )
+left join
+    {{ ref("int_students__college_assessment_participation_roster") }} as p
+    on e.student_number = p.student_number
+    and p.rn_lifetime = 1
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.school_level = 'HS'
     and e.rn_year = 1
-    and e.salesforce_contact_graduation_year >= {{ var("current_academic_year") + 1 }}
+    and not e.is_out_of_district

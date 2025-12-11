@@ -1,5 +1,7 @@
 models:
   - name: base_powerschool__final_grades
+    config:
+      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string

@@ -1,2 +1,4 @@
 models:
   - name: stg_pearson__njsla
+    config:
+      materialized: table

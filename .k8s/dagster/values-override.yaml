@@ -30,11 +30,11 @@ dagsterCloud:
 dagsterCloudAgent:
   resources:
     requests:
+      cpu: 250m
+      memory: 1.0Gi
+    limits:
       cpu: 500m
       memory: 1.5Gi
-    limits:
-      cpu: 1000m
-      memory: 3.0Gi
   nodeSelector:
     cloud.google.com/compute-class: Balanced
     cloud.google.com/gke-spot: "true"
@@ -52,15 +52,15 @@ workspace:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
   runK8sConfig:
     containerConfig:
+      # Autopilot enforces special minimum values for resource requests on extended
+      # duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
       resources:
         requests:
-          # Autopilot clusters enforce higher minimum values for the resource requests
-          # of extended duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
           cpu: 500m
           memory: 2.0Gi
         limits:
-          cpu: 2000m
-          memory: 4.0Gi
+          cpu: 750m
+          memory: 2.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
@@ -74,11 +74,11 @@ workspace:
     containerConfig:
       resources:
         requests:
+          cpu: 250m
+          memory: 1.0Gi
+        limits:
           cpu: 500m
           memory: 1.5Gi
-        limits:
-          cpu: 1000m
-          memory: 3.0Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"

@@ -105,7 +105,7 @@ left join
     and il.completion_date between co.week_start_monday and co.week_end_sunday
     and il.academic_year_int = {{ var("current_academic_year") }}
 left join
-    {{ ref("base_iready__diagnostic_results") }} as dr
+    {{ ref("int_iready__diagnostic_results") }} as dr
     on co.student_number = dr.student_id
     and co.academic_year = dr.academic_year_int
     and co.iready_subject = dr.subject

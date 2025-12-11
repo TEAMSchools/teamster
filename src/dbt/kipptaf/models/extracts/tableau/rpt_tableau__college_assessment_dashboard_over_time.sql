@@ -44,6 +44,12 @@ with
         group by student_number, score_type
     ),
 
+    goals as (
+        select *,
+        from {{ ref("stg_google_sheets__kippfwd__goals") }}
+        where region is null and schoolid is null and expected_goal_type != 'Board'
+    ),
+
     roster as (
         select
             e.region,
@@ -62,6 +68,7 @@ with
 
             g.expected_test_type,
             g.expected_scope,
+            g.expected_aligned_scope,
             g.expected_score_type,
             g.expected_subject_area,
             g.expected_aligned_subject_area,
@@ -79,6 +86,8 @@ with
             s.aligned_subject_area,
             s.aligned_subject,
             s.max_scale_score,
+
+            coalesce(s.strategy_case, 'No testing history') as strategy_case,
 
             avg(
                 case
@@ -102,7 +111,7 @@ with
             ) as score,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
-        cross join {{ ref("stg_google_sheets__kippfwd_goals") }} as g
+        cross join goals as g
         left join
             {{ ref("int_assessments__college_assessment") }} as s
             on e.student_number = s.student_number
@@ -122,7 +131,7 @@ with
             e.school_level = 'HS'
             and e.rn_undergrad = 1
             and e.rn_year = 1
-            and g.expected_goal_type != 'Board'
+            and not e.is_out_of_district
         group by
             e.region,
             e.school,
@@ -139,6 +148,7 @@ with
             e.salesforce_contact_college_match_gpa_band,
             g.expected_test_type,
             g.expected_scope,
+            g.expected_aligned_scope,
             g.expected_score_type,
             g.expected_subject_area,
             g.expected_aligned_subject_area,
@@ -154,7 +164,8 @@ with
             s.subject_area,
             s.aligned_subject_area,
             s.aligned_subject,
-            s.max_scale_score
+            s.max_scale_score,
+            s.strategy_case
     )
 
 select
@@ -207,5 +218,14 @@ select
             expected_aligned_subject,
             expected_metric_name
     ) as met_min_score_int_overall_aligned_subject,
+
+    max(if(score >= min_score, 1, 0)) over (
+        partition by
+            student_number,
+            expected_test_type,
+            expected_aligned_scope,
+            expected_aligned_subject,
+            expected_metric_name
+    ) as met_min_score_int_overall_aligned_scope_subject,
 
 from roster

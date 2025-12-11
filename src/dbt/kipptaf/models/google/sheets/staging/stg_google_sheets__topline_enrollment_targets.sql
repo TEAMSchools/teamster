@@ -9,4 +9,4 @@ select
         when org_level = 'school'
         then cast(schoolid as string)
     end as join_key,
-from {{ source("google_sheets", "src_google_sheets__topline_enrollment_targets") }}
+from {{ source("google_sheets", "src_google_sheets__topline__enrollment_targets") }}
