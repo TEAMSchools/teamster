@@ -11,7 +11,7 @@ select
 
     e.region,
     e.school,
-    e.graduation_year,
+    e.salesforce_contact_graduation_year as graduation_year,
     e.ktc_cohort,
 
 from {{ ref("int_assessments__college_assessment") }} as s

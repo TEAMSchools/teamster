@@ -6,7 +6,7 @@ with
             e.studentid,
             e.student_number,
             e.state_studentnumber,
-            e.salesforce_id,
+            e.salesforce_contact_id as salesforce_id,
             e.grade_level,
             e.enroll_status,
             e.cohort,

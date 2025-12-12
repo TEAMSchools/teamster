@@ -29,24 +29,24 @@ with
             b.score_type,
             b.score,
 
-            e.salesforce_id,
+            e.salesforce_contact_id,
 
         from base_scores as b
         left join
             {{ ref("int_kippadb__standardized_test_unpivot") }} as sf
             on b.powerschool_student_number = sf.school_specific_id
             and b.score_type = sf.score_type
-            and b.sat_date = sf.`date`
+            and b.sat_date = sf.date
         left join
             {{ ref("int_extracts__student_enrollments") }} as e
             on b.powerschool_student_number = e.student_number
             and e.rn_year = 1
             and e.rn_undergrad = 1
-        where sf.`date` is null and e.salesforce_id is not null
+        where sf.date is null and e.salesforce_contact_id is not null
     )
 
 select
-    salesforce_id as contact__c,
+    salesforce_contact_id as contact__c,
     sat_date as test_date__c,
 
     sat_total_score as sat_total,

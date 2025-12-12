@@ -1,11 +1,9 @@
-{%- set ref_application = ref("stg_kippadb__application") -%}
-
 with
     app_acct as (
         select
             {{
                 dbt_utils.star(
-                    from=ref_application,
+                    from=ref("stg_kippadb__application"),
                     relation_alias="app",
                     except=["starting_application_status"],
                 )
@@ -96,10 +94,10 @@ with
 
             coalesce(n.meets_full_need, false) as meets_full_need,
             coalesce(n.is_strong_oos_option, false) as is_strong_oos_option,
-        from {{ ref_application }} as app
+        from {{ ref("stg_kippadb__application") }} as app
         inner join {{ ref("stg_kippadb__account") }} as acc on app.school = acc.id
         inner join
-            {{ ref("base_kippadb__contact") }} as c on app.applicant = c.contact_id
+            {{ ref("int_kippadb__contact") }} as c on app.applicant = c.contact_id
         left join
             {{ ref("stg_kippadb__enrollment") }} as enr
             on app.applicant = enr.student

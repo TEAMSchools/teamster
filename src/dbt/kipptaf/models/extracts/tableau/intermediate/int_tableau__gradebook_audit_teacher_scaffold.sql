@@ -18,6 +18,7 @@ with
             s.is_ap_course,
             s.teachernumber as teacher_number,
             s.teacher_lastfirst as teacher_name,
+            s.school_abbreviation,
 
             r.sam_account_name as teacher_tableau_username,
 
@@ -69,8 +70,6 @@ with
             t.term_end_date as quarter_end_date,
             t.is_current_term,
 
-            sch.abbreviation as school,
-
             cw.region,
             cw.school_level,
             cw.week_start_date,
@@ -94,10 +93,6 @@ with
             ) as quarter_end_date_insession,
 
         from {{ ref("int_powerschool__terms") }} as t
-        inner join
-            {{ ref("stg_powerschool__schools") }} as sch
-            on t.schoolid = sch.school_number
-            and {{ union_dataset_join_clause(left_alias="t", right_alias="sch") }}
         inner join
             {{ ref("int_powerschool__calendar_week") }} as cw
             on t.yearid = cw.yearid
@@ -124,7 +119,6 @@ with
             tw.quarter_start_date,
             tw.quarter_end_date,
             tw.is_current_term,
-            tw.school,
             tw.region,
             tw.week_start_date,
             tw.week_end_date,
@@ -149,6 +143,7 @@ with
             sec.teacher_number,
             sec.teacher_name,
             sec.teacher_tableau_username,
+            sec.school_abbreviation as school,
 
             concat(
                 tw.region, coalesce(sec.school_level_alt, tw.school_level)

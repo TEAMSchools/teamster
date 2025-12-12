@@ -649,7 +649,7 @@ from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
 left join
-    {{ ref("base_kippadb__application") }} as apps
+    {{ ref("int_kippadb__application") }} as apps
     on c.contact_id = apps.applicant
     and apps.matriculation_decision = 'Matriculated (Intent to Enroll)'
     and not apps.transfer_application

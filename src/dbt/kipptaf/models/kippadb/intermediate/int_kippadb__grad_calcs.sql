@@ -178,4 +178,4 @@ select
         else 0
     end as is_6yr_grad_any_int,
 from {{ ref("int_kippadb__enrollment_pivot") }} as e
-inner join {{ ref("base_kippadb__contact") }} as c on e.student = c.contact_id
+inner join {{ ref("int_kippadb__contact") }} as c on e.student = c.contact_id

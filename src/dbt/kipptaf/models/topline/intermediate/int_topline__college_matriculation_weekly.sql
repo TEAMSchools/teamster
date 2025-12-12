@@ -37,7 +37,7 @@ select
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 left join
     deduplicate as m
-    on co.salesforce_id = m.applicant
+    on co.salesforce_contact_id = m.applicant
     and co.week_start_monday between m.dbt_valid_from_date and m.dbt_valid_to_date
 where
     co.is_enrolled_week
