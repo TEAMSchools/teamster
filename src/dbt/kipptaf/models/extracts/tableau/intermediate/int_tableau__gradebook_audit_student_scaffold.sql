@@ -255,6 +255,7 @@ inner join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on s.studentid = ce.cc_studentid
     and s.yearid = ce.terms_yearid
+    and s.sections_no_of_students != 0
     and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
     and not ce.is_dropped_section
 inner join
@@ -426,6 +427,7 @@ inner join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on s.studentid = ce.cc_studentid
     and s.yearid = ce.terms_yearid
+    and s.sections_no_of_students != 0
     and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
     and not ce.is_dropped_section
 inner join
