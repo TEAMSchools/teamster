@@ -23,4 +23,7 @@ select
     }} as academic_year,
 from union_relations as lg
 left join
-    {{ ref("stg_powerschool__gen") }} as g on lg.logtypeid = g.id and g.cat = 'logtype'
+    {{ ref("stg_powerschool__gen") }} as g
+    on lg.logtypeid = g.id
+    and {{ union_dataset_join_clause(left_alias="lg", right_alias="g") }}
+    and g.cat = 'logtype'
