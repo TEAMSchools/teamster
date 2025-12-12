@@ -1,0 +1,5 @@
+models:
+  - name: int_finalsite__status_report
+    config:
+      contract:
+        enabled: false
