@@ -43,4 +43,22 @@ select
     if(
         assessment_name = 'science', 'Science', upper(assessment_name)
     ) as assessment_name,
+
+    case
+        when assessment_subject like 'English Language Arts%'
+        then 'Text Study'
+        when assessment_subject in ('Algebra I', 'Algebra II', 'Geometry')
+        then 'Mathematics'
+        else assessment_subject
+    end as illuminate_subject,
+
+    case
+        when achievement_level_int = 1
+        then 'Below/Far Below'
+        when achievement_level_int = 2
+        then 'Approaching'
+        when achievement_level_int >= 3
+        then 'At/Above'
+    end as fast_aggregated_proficiency,
+
 from transformed

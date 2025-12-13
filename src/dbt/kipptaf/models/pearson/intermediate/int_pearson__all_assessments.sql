@@ -61,7 +61,7 @@ select
     u.period,
     u.firstname,
     u.lastorsurname,
-    u.subject,
+    u.`subject`,
     u.testcode,
     u.studenttestuuid,
     u.test_grade,
@@ -97,6 +97,23 @@ select
         when u.white = 'Y'
         then 'W'
     end as race_ethnicity,
+
+    case
+        when u.`subject` like 'English Language Arts%'
+        then 'Text Study'
+        when u.`subject` in ('Algebra I', 'Algebra II', 'Geometry')
+        then 'Mathematics'
+        else u.`subject`
+    end as illuminate_subject,
+
+    case
+        when u.assessment_name = 'NJSLA' and u.testperformancelevel <= 2
+        then 'Below/Far Below'
+        when u.assessment_name = 'NJSLA' and u.testperformancelevel = 3
+        then 'Approaching'
+        when u.assessment_name = 'NJSLA' and u.testperformancelevel >= 4
+        then 'At/Above'
+    end as njsla_aggregated_proficiency,
 
 from union_relations as u
 left join
