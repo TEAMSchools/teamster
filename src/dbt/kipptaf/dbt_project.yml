@@ -105,6 +105,8 @@ models:
     facebook:
       +enabled: false
       +schema: facebook
+    finalsite:
+      +schema: finalsite
     finance:
       +schema: finance
     fldoe:

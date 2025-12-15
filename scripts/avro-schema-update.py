@@ -228,15 +228,15 @@ def kippnewark_iready_instruction_by_lesson_pro():
     )
 
 
-def kippnewark_iready_instructional_usage_data():
-    from teamster.code_locations.kippnewark.iready.schema import (
-        INSTRUCTIONAL_USAGE_DATA_SCHEMA,
-    )
+# def kippnewark_iready_instructional_usage_data():
+#     from teamster.code_locations.kippnewark.iready.schema import (
+#         INSTRUCTIONAL_USAGE_DATA_SCHEMA,
+#     )
 
-    rewrite_blobs(
-        asset_key=["kippnewark", "iready", "instructional_usage_data"],
-        schema=parse_schema(INSTRUCTIONAL_USAGE_DATA_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippnewark", "iready", "instructional_usage_data"],
+#         schema=parse_schema(INSTRUCTIONAL_USAGE_DATA_SCHEMA),
+#     )
 
 
 def kippcamden_edplan_njsmart_powerschool():
@@ -387,15 +387,15 @@ def kippmiami_iready_instruction_by_lesson_pro():
     )
 
 
-def kippmiami_iready_instructional_usage_data():
-    from teamster.code_locations.kippmiami.iready.schema import (
-        INSTRUCTIONAL_USAGE_DATA_SCHEMA,
-    )
+# def kippmiami_iready_instructional_usage_data():
+#     from teamster.code_locations.kippmiami.iready.schema import (
+#         INSTRUCTIONAL_USAGE_DATA_SCHEMA,
+#     )
 
-    rewrite_blobs(
-        asset_key=["kippmiami", "iready", "instructional_usage_data"],
-        schema=parse_schema(INSTRUCTIONAL_USAGE_DATA_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippmiami", "iready", "instructional_usage_data"],
+#         schema=parse_schema(INSTRUCTIONAL_USAGE_DATA_SCHEMA),
+#     )
 
 
 # def kippmiami_renlearn_accelerated_reader():
@@ -437,13 +437,13 @@ def kippmiami_renlearn_star_dashboard_standards():
     )
 
 
-def kippmiami_renlearn_star_skill_area():
-    from teamster.code_locations.kippmiami.renlearn.schema import STAR_SKILL_AREA_SCHEMA
+# def kippmiami_renlearn_star_skill_area():
+#     from teamster.code_locations.kippmiami.renlearn.schema import STAR_SKILL_AREA_SCHEMA
 
-    rewrite_blobs(
-        asset_key=["kippmiami", "renlearn", "star_skill_area"],
-        schema=parse_schema(STAR_SKILL_AREA_SCHEMA),
-    )
+#     rewrite_blobs(
+#         asset_key=["kippmiami", "renlearn", "star_skill_area"],
+#         schema=parse_schema(STAR_SKILL_AREA_SCHEMA),
+#     )
 
 
 def kipptaf_adp_payroll_general_ledger_file():

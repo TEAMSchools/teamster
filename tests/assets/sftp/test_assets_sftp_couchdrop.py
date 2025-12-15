@@ -45,7 +45,7 @@ def _test_asset(
 def test_adp_payroll_general_ledger_file_kipptaf():
     from teamster.code_locations.kipptaf.adp.payroll.assets import general_ledger_file
 
-    date_key = "20241130"
+    date_key = "20251215"
     group_code_key = "47S"
 
     partitions_def = check.inst(
@@ -201,3 +201,9 @@ def test_nsc_student_tracker_kipptaf():
     from teamster.code_locations.kipptaf.nsc.assets import student_tracker
 
     _test_asset(asset=student_tracker)
+
+
+def test_finalsite_status_report_kippmiami():
+    from teamster.code_locations.kippmiami.finalsite.assets import status_report
+
+    _test_asset(asset=status_report)

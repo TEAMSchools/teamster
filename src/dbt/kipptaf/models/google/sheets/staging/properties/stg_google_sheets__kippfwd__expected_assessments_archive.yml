@@ -1,5 +1,5 @@
 models:
-  - name: stg_google_sheets__assessments__assessment_expectations
+  - name: stg_google_sheets__kippfwd__expected_assessments_archive
     columns:
       - name: Academic_Year
         data_type: int64
