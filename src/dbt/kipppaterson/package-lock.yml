@@ -3,6 +3,8 @@ packages:
     name: amplify
   - local: ../finalsite
     name: finalsite
+  - local: ../pearson
+    name: pearson
   - local: ../powerschool
     name: powerschool
   - name: dbt_external_tables
@@ -14,4 +16,4 @@ packages:
   - name: dbt_utils
     package: dbt-labs/dbt_utils
     version: 1.3.3
-sha1_hash: d1c1747023ac19569c2acd381f01a9d8ce3ffab2
+sha1_hash: 21f5a2002574f3e45b111341313a2769ddfabca8
