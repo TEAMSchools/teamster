@@ -52,6 +52,7 @@ with
             and e2.school_id is not null
         where
             s.terms_academic_year = {{ var("current_academic_year") }}
+            and s.sections_no_of_students != 0
             and e1.include_row is null
             and e2.include_row is null
     ),
