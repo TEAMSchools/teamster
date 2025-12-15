@@ -1,15 +1,15 @@
 sources:
-  - name: kippnewark_pearson
+  - name: kipppaterson_pearson
     schema: |
       {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}
-      z_dev_{%- endif -%}kippnewark_pearson
+      z_dev_{%- endif -%}kipppaterson_pearson
     tables:
       - name: stg_pearson__njgpa
         meta:
           dagster:
             group: pearson
             asset_key:
-              - kippnewark
+              - kipppaterson
               - pearson
               - stg_pearson__njgpa
       - name: stg_pearson__njsla
@@ -17,7 +17,7 @@ sources:
           dagster:
             group: pearson
             asset_key:
-              - kippnewark
+              - kipppaterson
               - pearson
               - stg_pearson__njsla
       - name: stg_pearson__njsla_science
@@ -25,7 +25,7 @@ sources:
           dagster:
             group: pearson
             asset_key:
-              - kippnewark
+              - kipppaterson
               - pearson
               - stg_pearson__njsla_science
       - name: stg_pearson__parcc
@@ -33,7 +33,7 @@ sources:
           dagster:
             group: pearson
             asset_key:
-              - kippnewark
+              - kipppaterson
               - pearson
               - stg_pearson__parcc
       - name: stg_pearson__student_list_report
@@ -41,7 +41,7 @@ sources:
           dagster:
             group: pearson
             asset_key:
-              - kippnewark
+              - kipppaterson
               - pearson
               - stg_pearson__student_list_report
       - name: stg_pearson__student_test_update
@@ -49,6 +49,6 @@ sources:
           dagster:
             group: pearson
             asset_key:
-              - kippnewark
+              - kipppaterson
               - pearson
               - stg_pearson__student_test_update

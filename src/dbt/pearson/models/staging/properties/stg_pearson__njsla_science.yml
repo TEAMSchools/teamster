@@ -403,3 +403,9 @@ models:
         data_type: string
       - name: testperformancelevel_text
         data_type: string
+      - name: homeless_primary_nighttime_residence
+        data_type: string
+      - name: multilinguallearneraccommodatedresponse
+        data_type: string
+      - name: requiredhighschoolmathassessment
+        data_type: string
