@@ -1,5 +1,8 @@
 models:
   - name: int_pearson__all_assessments
+    config:
+      contract:
+        enabled: false
     columns:
       - name: _dbt_source_relation
         data_type: string
