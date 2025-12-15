@@ -24,11 +24,11 @@ student_list_report = build_sftp_file_asset(
     ssh_resource_key=ssh_resource_key,
     partitions_def=MultiPartitionsDefinition(
         {
-            "test_type": StaticPartitionsDefinition(["njsla", "njgpa"]),
+            "test_type": StaticPartitionsDefinition(["njsla"]),
             "administration_fiscal_year": StaticPartitionsDefinition(
                 [
                     f"Spring{year}"
-                    for year in range(2024, CURRENT_FISCAL_YEAR.fiscal_year + 1)
+                    for year in range(2025, CURRENT_FISCAL_YEAR.fiscal_year + 1)
                 ]
             ),
         }
