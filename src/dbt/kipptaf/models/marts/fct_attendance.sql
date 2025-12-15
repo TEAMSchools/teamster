@@ -22,7 +22,7 @@ with
             term,
             att_code as attendance_code,
         from daily_attendance
-    ),
+    )
 
 select *,
 from final
