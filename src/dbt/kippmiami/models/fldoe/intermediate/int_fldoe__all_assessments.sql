@@ -34,11 +34,15 @@ with
             regexp_extract(
                 _dbt_source_relation, r'stg_fldoe__(\w+)'
             ) as assessment_name,
+
         from union_relations
     )
 
 select
     * except (assessment_name),
+
+    'Actual' as results_type,
+    'KTAF FL' as district_state,
 
     if(
         assessment_name = 'science', 'Science', upper(assessment_name)
