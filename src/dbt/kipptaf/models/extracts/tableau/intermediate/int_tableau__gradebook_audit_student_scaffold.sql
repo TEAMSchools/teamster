@@ -257,6 +257,7 @@ inner join
     and s.yearid = ce.terms_yearid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
     and not ce.is_dropped_section
+    and ce.sections_no_of_students != 0
 inner join
     {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
     on ce.terms_yearid = sec.yearid
@@ -428,6 +429,7 @@ inner join
     and s.yearid = ce.terms_yearid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
     and not ce.is_dropped_section
+    and ce.sections_no_of_students != 0
 inner join
     {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
     on ce.terms_yearid = sec.yearid

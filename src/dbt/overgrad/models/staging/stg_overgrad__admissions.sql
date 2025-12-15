@@ -1,3 +1,15 @@
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("overgrad", "src_overgrad__admissions"),
+                partition_by="id",
+                order_by="updated_at desc",
+            )
+        }}
+    )
+
+-- trunk-ignore(sqlfluff/AM04)
 select
     * except (custom_field_values, student, university, due_date, award_letter),
 
@@ -41,4 +53,4 @@ select
     award_letter.unmet_need_with_max_family_contribution
     as award_letter__unmet_need_with_max_family_contribution,
     award_letter.seog as award_letter__seog,
-from {{ source("overgrad", "src_overgrad__admissions") }}
+from deduplicate

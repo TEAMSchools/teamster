@@ -30,7 +30,7 @@ with
                 {% if not loop.last %},{% endif %}
             {% endfor %}
 
-        from {{ ref("stg_google_sheets__kippfwd_goals") }}
+        from {{ ref("stg_google_sheets__kippfwd__goals") }}
         where expected_goal_type = 'Board' and expected_scope = 'SAT'
         group by grade_level, expected_scope, expected_score_type
     ),
@@ -92,7 +92,7 @@ with
 
         from {{ ref("int_assessments__college_assessment") }} as s
         inner join
-            {{ ref("stg_google_sheets__kippfwd_goals") }} as g
+            {{ ref("stg_google_sheets__kippfwd__goals") }} as g
             on s.score_type = g.expected_score_type
             and g.expected_goal_type != 'Board'
         left join board_goals as b on s.score_type = b.expected_score_type

@@ -1,5 +1,5 @@
 models:
-  - name: stg_google_sheets__assessments__iready_crosswalk
+  - name: stg_google_sheets__iready__crosswalk
     columns:
       - name: Source_System
         data_type: string

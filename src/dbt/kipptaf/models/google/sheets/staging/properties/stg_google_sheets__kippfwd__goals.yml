@@ -1,5 +1,5 @@
 models:
-  - name: stg_google_sheets__kippfwd_goals
+  - name: stg_google_sheets__kippfwd__goals
     columns:
       - name: region
         data_type: string

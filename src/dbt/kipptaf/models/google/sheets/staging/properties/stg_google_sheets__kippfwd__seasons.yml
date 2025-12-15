@@ -1,5 +1,5 @@
 models:
-  - name: stg_google_sheets__kippfwd_seasons
+  - name: stg_google_sheets__kippfwd__seasons
     config:
       enabled: false
     columns:
