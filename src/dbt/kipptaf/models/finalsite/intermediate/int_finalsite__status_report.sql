@@ -1,9 +1,10 @@
 select
-    f.* except (grade_level, school, `status`),
+    f.* except (grade_level, `status`),
 
+    f.school,
     f.grade_level as grade_level_name,
 
-    x.location_abbreviation as school,
+    x.location_abbreviation as school_abbreviation,
     x.location_powerschool_school_id as schoolid,
 
     initcap(regexp_extract(x.location_dagster_code_location, r'kipp(\w+)_')) as region,
@@ -11,9 +12,7 @@ select
     initcap(replace(f.`status`, '_', ' ')) as `status`,
 
     if(
-        f.grade_level = 'Kindergarten',
-        'K',
-        regexp_extract(f.grade_level, r'^(.*?)\s*(?:st|nd|rd|th)')
+        f.grade_level = 'Kindergarten', 'K', regexp_extract(f.grade_level, r'\d+')
     ) as grade_level_string,
 
     if(
