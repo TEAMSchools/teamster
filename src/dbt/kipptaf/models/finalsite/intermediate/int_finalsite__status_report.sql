@@ -1,13 +1,12 @@
 select
     f.* except (grade_level, `status`),
 
-    f.school,
     f.grade_level as grade_level_name,
 
-    x.location_abbreviation as school_abbreviation,
-    x.location_powerschool_school_id as schoolid,
+    x.abbreviation as school_abbreviation,
+    x.powerschool_school_id as schoolid,
 
-    initcap(regexp_extract(x.location_dagster_code_location, r'kipp(\w+)_')) as region,
+    initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)_')) as region,
 
     initcap(replace(f.`status`, '_', ' ')) as `status`,
 
@@ -22,4 +21,5 @@ select
     ) as grade_level,
 
 from {{ ref("stg_finalsite__status_report") }} as f
-left join {{ ref("int_people__location_crosswalk") }} as x on f.school = x.location_name
+left join
+    {{ ref("stg_google_sheets__people__location_crosswalk") }} as x on f.school = x.name
