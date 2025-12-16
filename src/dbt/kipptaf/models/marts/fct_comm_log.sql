@@ -28,7 +28,7 @@ with
         from {{ ref("int_deanslist__comm_log") }}
     ),
 
-    final as (select *, from comm_log where rn_date = 1)
+    final as (select *, from comm_log)
 
 select *,
 from final
