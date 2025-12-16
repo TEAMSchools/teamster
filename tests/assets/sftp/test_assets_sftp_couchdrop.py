@@ -45,7 +45,7 @@ def _test_asset(
 def test_adp_payroll_general_ledger_file_kipptaf():
     from teamster.code_locations.kipptaf.adp.payroll.assets import general_ledger_file
 
-    date_key = "20241130"
+    date_key = "20251215"
     group_code_key = "47S"
 
     partitions_def = check.inst(
@@ -95,78 +95,6 @@ def test_fldoe_fte_kippmiami():
     _test_asset(asset=fte)
 
 
-def test_pearson_njgpa_kippcamden():
-    from teamster.code_locations.kippcamden.pearson.assets import njgpa
-
-    _test_asset(asset=njgpa)
-
-
-def test_pearson_njgpa_kippnewark():
-    from teamster.code_locations.kippnewark.pearson.assets import njgpa
-
-    _test_asset(asset=njgpa)
-
-
-def test_pearson_njsla_kippnewark():
-    from teamster.code_locations.kippnewark.pearson.assets import njsla
-
-    _test_asset(asset=njsla)
-
-
-def test_pearson_njsla_kippcamden():
-    from teamster.code_locations.kippcamden.pearson.assets import njsla
-
-    _test_asset(asset=njsla)
-
-
-def test_pearson_njsla_science_kippnewark():
-    from teamster.code_locations.kippnewark.pearson.assets import njsla_science
-
-    _test_asset(asset=njsla_science)
-
-
-def test_pearson_njsla_science_kippcamden():
-    from teamster.code_locations.kippcamden.pearson.assets import njsla_science
-
-    _test_asset(asset=njsla_science)
-
-
-def test_pearson_parcc_kippnewark():
-    from teamster.code_locations.kippnewark.pearson.assets import parcc
-
-    _test_asset(asset=parcc)
-
-
-def test_pearson_parcc_kippcamden():
-    from teamster.code_locations.kippcamden.pearson.assets import parcc
-
-    _test_asset(asset=parcc)
-
-
-def test_pearson_student_list_report_kippcamden():
-    from teamster.code_locations.kippcamden.pearson.assets import student_list_report
-
-    _test_asset(asset=student_list_report)
-
-
-def test_pearson_student_list_report_kippnewark():
-    from teamster.code_locations.kippnewark.pearson.assets import student_list_report
-
-    _test_asset(asset=student_list_report)
-
-
-def test_pearson_student_test_update_kippnewark():
-    from teamster.code_locations.kippnewark.pearson.assets import student_test_update
-
-    _test_asset(asset=student_test_update)
-
-
-def test_pearson_student_test_update_kippcamden():
-    from teamster.code_locations.kippcamden.pearson.assets import student_test_update
-
-    _test_asset(asset=student_test_update)
-
-
 def test_tableau_view_count_per_view_kipptaf():
     from teamster.code_locations.kipptaf.tableau.assets import view_count_per_view
 
@@ -207,3 +135,93 @@ def test_finalsite_status_report_kippmiami():
     from teamster.code_locations.kippmiami.finalsite.assets import status_report
 
     _test_asset(asset=status_report)
+
+
+def test_pearson_njgpa_kippnewark():
+    from teamster.code_locations.kippnewark.pearson.assets import njgpa
+
+    _test_asset(asset=njgpa)
+
+
+def test_pearson_njsla_kippnewark():
+    from teamster.code_locations.kippnewark.pearson.assets import njsla
+
+    _test_asset(asset=njsla)
+
+
+def test_pearson_njsla_science_kippnewark():
+    from teamster.code_locations.kippnewark.pearson.assets import njsla_science
+
+    _test_asset(asset=njsla_science)
+
+
+def test_pearson_parcc_kippnewark():
+    from teamster.code_locations.kippnewark.pearson.assets import parcc
+
+    _test_asset(asset=parcc)
+
+
+def test_pearson_student_list_report_kippnewark():
+    from teamster.code_locations.kippnewark.pearson.assets import student_list_report
+
+    _test_asset(asset=student_list_report)
+
+
+def test_pearson_student_test_update_kippnewark():
+    from teamster.code_locations.kippnewark.pearson.assets import student_test_update
+
+    _test_asset(asset=student_test_update)
+
+
+def test_pearson_njgpa_kippcamden():
+    from teamster.code_locations.kippcamden.pearson.assets import njgpa
+
+    _test_asset(asset=njgpa)
+
+
+def test_pearson_njsla_kippcamden():
+    from teamster.code_locations.kippcamden.pearson.assets import njsla
+
+    _test_asset(asset=njsla)
+
+
+def test_pearson_njsla_science_kippcamden():
+    from teamster.code_locations.kippcamden.pearson.assets import njsla_science
+
+    _test_asset(asset=njsla_science)
+
+
+def test_pearson_parcc_kippcamden():
+    from teamster.code_locations.kippcamden.pearson.assets import parcc
+
+    _test_asset(asset=parcc)
+
+
+def test_pearson_student_list_report_kippcamden():
+    from teamster.code_locations.kippcamden.pearson.assets import student_list_report
+
+    _test_asset(asset=student_list_report)
+
+
+def test_pearson_student_test_update_kippcamden():
+    from teamster.code_locations.kippcamden.pearson.assets import student_test_update
+
+    _test_asset(asset=student_test_update)
+
+
+def test_pearson_njsla_kipppaterson():
+    from teamster.code_locations.kipppaterson.pearson.assets import njsla
+
+    _test_asset(asset=njsla)
+
+
+def test_pearson_njsla_science_kipppaterson():
+    from teamster.code_locations.kipppaterson.pearson.assets import njsla_science
+
+    _test_asset(asset=njsla_science)
+
+
+def test_pearson_student_list_report_kipppaterson():
+    from teamster.code_locations.kipppaterson.pearson.assets import student_list_report
+
+    _test_asset(asset=student_list_report)

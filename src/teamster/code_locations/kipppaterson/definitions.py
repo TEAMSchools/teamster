@@ -13,6 +13,7 @@ from teamster.code_locations.kipppaterson import (
     amplify,
     couchdrop,
     finalsite,
+    pearson,
     powerschool,
 )
 from teamster.core.resources import (
@@ -32,6 +33,7 @@ defs = Definitions(
             _dbt,
             amplify,
             finalsite,
+            pearson,
             powerschool,
         ]
     ),
