@@ -1,0 +1,13 @@
+models:
+  - name: int_powerschool__spenrollments_pivot
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - studentid
+              - academic_year
+          config:
+            store_failures: true

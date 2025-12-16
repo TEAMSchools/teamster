@@ -100,10 +100,6 @@ select
     ny.next_year_school,
     ny.next_year_schoolid,
 
-    hi.enter_date as home_instruction_enter_date,
-    hi.exit_date as home_instruction_exit_date,
-    hi.sp_comment as home_instruction_sp_comment,
-
     ada.ada_term_q1 as ada_unweighted_term_q1,
     ada.ada_semester_s1 as ada_unweighted_semester_s1,
     ada.ada_year as unweighted_ada,
@@ -127,6 +123,13 @@ select
 
     cr.days_remaining as school_calendar_days_remaining,
     cr.days_total as school_calendar_days_total,
+
+    sp.enter_date_home_instruction as home_instruction_enter_date,
+    sp.exit_date_home_instruction as home_instruction_exit_date,
+    sp.sp_comment_home_instruction as home_instruction_sp_comment,
+    sp.is_counseling_services,
+    sp.is_student_athlete,
+    sp.is_tutoring,
 
     /* regional differences */
     njs.districtcoderesident,
@@ -173,27 +176,6 @@ select
     regexp_extract(ar._dbt_source_relation, r'(kipp\w+)_') as code_location,
 
     initcap(regexp_extract(ar._dbt_source_relation, r'kipp(\w+)_')) as region,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between cs.enter_date and cs.exit_date,
-        1,
-        null
-    ) as is_counseling_services,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between ath.enter_date and ath.exit_date,
-        1,
-        null
-    ) as is_student_athlete,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between tut.enter_date and tut.exit_date,
-        true,
-        false
-    ) as is_tutoring,
 
     if(sip.students_student_number is not null, true, false) as is_sipps,
 
@@ -247,54 +229,10 @@ left join
     on ar.student_number = se.student_number
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="se") }}
 left join
-    {{ ref("stg_powerschool__s_stu_x") }} as pfs
-    on ar.students_dcid = pfs.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="pfs") }}
-left join
-    {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
-    on ar.students_dcid = njs.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="njs") }}
-left join
-    {{ ref("stg_powerschool__s_nj_ren_x") }} as njr
-    on ar.reenrollments_dcid = njr.reenrollmentsdcid
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="njr") }}
-left join
-    {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-    on ar.students_dcid = suf.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="suf") }}
-left join
     {{ ref("int_powerschool__district_entry_date") }} as de
     on ar.studentid = de.studentid
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="de") }}
     and de.rn_entry = 1
-left join
-    {{ ref("int_powerschool__spenrollments") }} as cs
-    on ar.studentid = cs.studentid
-    and ar.academic_year = cs.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="cs") }}
-    and cs.specprog_name = 'Counseling Services'
-    and cs.rn_student_program_year_desc = 1
-left join
-    {{ ref("int_powerschool__spenrollments") }} as ath
-    on ar.studentid = ath.studentid
-    and ar.academic_year = ath.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="ath") }}
-    and ath.specprog_name = 'Student Athlete'
-    and ath.rn_student_program_year_desc = 1
-left join
-    {{ ref("int_powerschool__spenrollments") }} as tut
-    on ar.studentid = tut.studentid
-    and ar.academic_year = tut.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="tut") }}
-    and tut.specprog_name = 'Tutoring'
-    and tut.rn_student_program_year_desc = 1
-left join
-    {{ ref("int_powerschool__spenrollments") }} as hi
-    on ar.studentid = hi.studentid
-    and ar.academic_year = hi.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="hi") }}
-    and hi.specprog_name = 'Home Instruction'
-    and hi.rn_student_program_year_desc = 1
 left join
     {{ ref("int_powerschool__ada_term_pivot") }} as ada
     on ar.studentid = ada.studentid
@@ -316,6 +254,27 @@ left join
     and ar.yearid = cr.yearid
     and ar.track = cr.track
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="cr") }}
+left join
+    {{ ref("int_powerschool__spenrollments_pivot") }} as sp
+    on ar.studentid = sp.studentid
+    and ar.academic_year = sp.academic_year
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="sp") }}
+left join
+    {{ ref("stg_powerschool__s_stu_x") }} as pfs
+    on ar.students_dcid = pfs.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="pfs") }}
+left join
+    {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
+    on ar.students_dcid = njs.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="njs") }}
+left join
+    {{ ref("stg_powerschool__s_nj_ren_x") }} as njr
+    on ar.reenrollments_dcid = njr.reenrollmentsdcid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="njr") }}
+left join
+    {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
+    on ar.students_dcid = suf.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="suf") }}
 left join
     {{ ref("base_powerschool__course_enrollments") }} as sip
     on ar.student_number = sip.students_student_number
