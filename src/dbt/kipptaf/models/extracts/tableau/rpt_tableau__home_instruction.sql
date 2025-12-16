@@ -27,26 +27,61 @@ select
     dl.final_approval,
     dl.instructor_source,
     dl.instructor_name,
-    cast(dl.hours_per_week as numeric) as hours_per_week,
-    cast(dl.hourly_rate as numeric) as hourly_rate,
     dl.board_approval_date,
     dl.hi_start_date,
     dl.hi_end_date,
     dl.create_lastfirst as referring_staff_name,
     dl.update_lastfirst as reviewing_staff_name,
 
-    sp.enter_date,
-    sp.exit_date,
+    sp.enter_date_home_instruction as enter_date,
+    sp.exit_date_home_instruction as exit_date,
 
     u.lastfirst as approver_name,
 
-    if(sp.enter_date is not null, true, false) as is_logged_powerschool,
+    cast(dl.hours_per_week as numeric) as hours_per_week,
+    cast(dl.hourly_rate as numeric) as hourly_rate,
+
+    concat('https://kippnj.deanslistsoftware.com/incidents/', dl.incident_id) as dl_url,
+
+    date_diff(dl.hi_end_date, dl.hi_start_date, day) as n_days_dl,
+    date_diff(
+        sp.exit_date_home_instruction, sp.enter_date_home_instruction, day
+    ) as n_days_ps,
+
+    if(
+        sp.enter_date_home_instruction is not null, true, false
+    ) as is_logged_powerschool,
+
+    if(sp.is_home_instruction = 1, true, false) as is_current,
+
     if(
         dl.approver_name is not null and dl.final_approval = 'Y', true, false
     ) as is_approved,
+
     if(
-        dl.hi_start_date = sp.enter_date and dl.hi_end_date = sp.exit_date, true, false
+        dl.hi_start_date = sp.enter_date_home_instruction
+        and dl.hi_end_date = sp.exit_date_home_instruction,
+        true,
+        false
     ) as is_date_aligned,
+
+    if(
+        sp.enter_date_home_instruction is null,
+        null,
+        concat(
+            case
+                when co.region = 'Newark'
+                then 'https://psteam.kippnj.org/'
+                when co.region = 'Camden'
+                then 'https://pskcna.kippnj.org/'
+                when co.region = 'Miami'
+                then 'https://ps.kippmiami.org/'
+            end,
+            'admin/students/specialprograms.html?frn=00',
+            co.students_dcid
+        )
+    ) as ps_url,
+
     (
         select countif(x is null),
         from
@@ -65,6 +100,7 @@ select
             ) as x
     )
     = 0 as is_complete_dl,
+
     (
         select countif(x is null),
         from
@@ -79,38 +115,12 @@ select
                     cast(dl.hi_start_date as string),
                     cast(dl.hi_end_date as string),
                     cast(dl.approver_name as string),
-                    cast(sp.enter_date as string),
-                    cast(sp.exit_date as string)
+                    cast(sp.enter_date_home_instruction as string),
+                    cast(sp.exit_date_home_instruction as string)
                 ]
             ) as x
     )
     = 0 as is_complete_all,
-
-    if(
-        sp.enter_date is null,
-        null,
-        concat(
-            case
-                when co.region = 'Newark'
-                then 'https://psteam.kippnj.org/'
-                when co.region = 'Camden'
-                then 'https://pskcna.kippnj.org/'
-                when co.region = 'Miami'
-                then 'https://ps.kippmiami.org/'
-            end,
-            'admin/students/specialprograms.html?frn=00',
-            co.students_dcid
-        )
-    ) as ps_url,
-    concat('https://kippnj.deanslistsoftware.com/incidents/', dl.incident_id) as dl_url,
-    date_diff(dl.hi_end_date, dl.hi_start_date, day) as n_days_dl,
-    date_diff(sp.exit_date, sp.enter_date, day) as n_days_ps,
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between sp.enter_date and sp.exit_date,
-        true,
-        false
-    ) as is_current,
 from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_deanslist__incidents") }} as dl
@@ -123,10 +133,11 @@ inner join
     and dl.home_instruction_reason != '[Please select a reason]'
 left join {{ ref("stg_deanslist__users") }} as u on dl.approver_name = u.dl_user_id
 left join
-    {{ ref("int_powerschool__spenrollments") }} as sp
+    {{ ref("int_powerschool__spenrollments_pivot") }} as sp
     on co.studentid = sp.studentid
     and co.academic_year = sp.academic_year
-    and dl.hi_start_date between sp.enter_date and sp.exit_date
-    and sp.specprog_name = 'Home Instruction'
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
+    and dl.hi_start_date
+    between sp.enter_date_home_instruction and sp.exit_date_home_instruction
+    and {{ union_dataset_join_clause(left_alias="dl", right_alias="sp") }}
 where co.grade_level != 99

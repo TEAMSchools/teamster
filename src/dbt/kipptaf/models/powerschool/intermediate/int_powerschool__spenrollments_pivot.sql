@@ -8,6 +8,7 @@ with
             enter_date,
             exit_date,
             sp_comment,
+            is_current,
         from {{ ref("int_powerschool__spenrollments") }}
         where rn_student_program_year_desc = 1
     )
@@ -16,7 +17,6 @@ select
     _dbt_source_relation,
     studentid,
     academic_year,
-
     enter_date_student_athlete,
     exit_date_student_athlete,
     sp_comment_student_athlete,
@@ -29,53 +29,19 @@ select
     enter_date_tutoring,
     exit_date_tutoring,
     sp_comment_tutoring,
+    is_current_tutoring as is_tutoring,
 
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between enter_date_student_athlete and exit_date_student_athlete,
-        1,
-        null
-    ) as is_student_athlete,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between enter_date_counseling_services and exit_date_counseling_services,
-        1,
-        null
-    ) as is_counseling_services,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between enter_date_home_instruction and exit_date_home_instruction,
-        1,
-        null
-    ) as is_home_instruction,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between enter_date_tutoring and exit_date_tutoring,
-        true,
-        false
-    ) as is_tutoring,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between enter_date_bucket_2_ela and exit_date_bucket_2_ela,
-        1,
-        null
-    ) as bucket_2_ela,
-
-    if(
-        current_date('{{ var("local_timezone") }}')
-        between enter_date_bucket_2_math and exit_date_bucket_2_math,
-        1,
-        null
-    ) as bucket_2_math,
+    if(is_current_student_athlete, 1, null) as is_student_athlete,
+    if(is_current_counseling_services, 1, null) as is_counseling_services,
+    if(is_current_home_instruction, 1, null) as is_home_instruction,
+    if(is_current_bucket_2_ela, 1, null) as is_bucket_2_ela,
+    if(is_current_bucket_2_math, 1, null) as is_bucket_2_math,
 from
     filtered pivot (
         max(enter_date) as enter_date,
         max(exit_date) as exit_date,
-        max(sp_comment) as sp_comment
+        max(sp_comment) as sp_comment,
+        max(is_current) as is_current
         for specprog_name in (
             'Student Athlete' as `student_athlete`,
             'Counseling Services' as `counseling_services`,
