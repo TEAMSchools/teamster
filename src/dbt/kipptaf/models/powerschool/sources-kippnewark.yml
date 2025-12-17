@@ -1,10 +1,9 @@
 sources:
   - name: kippnewark_powerschool
     schema: |
-      {%- if env_var('GITHUB_USER', '') != '' -%}
-      zz_{{ env_var('GITHUB_USER', '') }}_
-      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}
-      z_dev_
+      {%- if target.name == 'staging' -%}z_dev_
+      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}z_dev_
+      {%- elif env_var('GITHUB_USER', '') != '' -%}zz_{{ env_var('GITHUB_USER') }}_
       {%- endif -%}kippnewark_powerschool
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
