@@ -35,3 +35,5 @@ models:
         data_type: string
       - name: team
         data_type: string
+      - name: is_chronic_absence
+        data_type: boolean
