@@ -187,7 +187,13 @@ select
         )
         + 1
     ) as salesforce_graduation_year,
-    if(ar.region = 'Paterson', ar.prevstudentid, ar.student_number) as prevstudentid,
+
+    if(
+        ar.region = 'Paterson' and ar.academic_year <= 2024,
+        ar.prevstudentid,
+        ar.student_number
+    ) as pearson_local_student_identifier,
+
 from with_region as ar
 left join
     {{ ref("stg_powerschool__u_studentsuserfields") }} as suf

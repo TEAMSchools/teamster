@@ -196,13 +196,6 @@ select
     ) as met_fafsa_requirement,
 
     if(
-        -- hardcode year because PAT wasnt incorporated until SY2025-26
-        e.region = 'Paterson' and e.academic_year <= 2024,
-        e.prevstudentid,
-        e.student_number
-    ) as student_number_historic,
-
-    if(
         current_date('{{ var("local_timezone") }}')
         between cs.enter_date and cs.exit_date,
         1,
