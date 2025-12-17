@@ -32,12 +32,13 @@ with
             *,
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
+
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
         from union_relations
     )
 
 select
-    ar.* except (lep_status, lunchstatus, spedlep),
+    ar.* except (lep_status, lunchstatus, spedlep, prevstudentid),
 
     /* regional differences */
     suf.fleid,
@@ -186,7 +187,7 @@ select
         )
         + 1
     ) as salesforce_graduation_year,
-
+    if(ar.region = 'Paterson', ar.prevstudentid, ar.student_number) as prevstudentid,
 from with_region as ar
 left join
     {{ ref("stg_powerschool__u_studentsuserfields") }} as suf

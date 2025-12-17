@@ -1,7 +1,8 @@
 select
-    * except (lep_status, studentsdcid, whencreated, whenmodified),
+    * except (lep_status, studentsdcid, prevstudentid, whencreated, whenmodified),
 
     cast(studentsdcid as int) as studentsdcid,
+    cast(prevstudentid as int) as prevstudentid,
 
     parse_timestamp('%m/%d/%Y', whencreated) as whencreated,
     parse_timestamp('%m/%d/%Y', whenmodified) as whenmodified,
