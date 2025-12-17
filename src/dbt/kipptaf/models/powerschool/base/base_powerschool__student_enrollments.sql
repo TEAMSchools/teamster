@@ -187,6 +187,7 @@ select
         + 1
     ) as salesforce_graduation_year,
 
+    if(ar.region = 'Paterson', scf.prevstudentid, null) as prevstudentid,
 from with_region as ar
 left join
     {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
@@ -232,3 +233,7 @@ left join {{ ref("stg_kippadb__user") }} as adbu on adb.owner_id = adbu.id
 left join
     {{ ref("stg_illuminate__public__students") }} as ill
     on ar.student_number = ill.local_student_id
+left join
+    {{ ref("stg_powerschool__studentcorefields") }} as scf
+    on ar.students_dcid = scf.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="scf") }}
