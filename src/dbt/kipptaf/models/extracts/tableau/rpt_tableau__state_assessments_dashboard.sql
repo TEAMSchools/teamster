@@ -7,19 +7,18 @@
 with
     schedules_current as (
         select
-            c._dbt_source_relation,
-            c.cc_academic_year,
-            c.students_student_number,
-            c.courses_credittype,
-            c.teachernumber,
-            c.teacher_lastfirst as teacher_name,
-            c.courses_course_name as course_name,
-            c.cc_course_number as course_number,
-
-            s.abbreviation as school,
+            _dbt_source_relation,
+            cc_academic_year,
+            students_student_number,
+            courses_credittype,
+            teachernumber,
+            teacher_lastfirst as teacher_name,
+            courses_course_name as course_name,
+            cc_course_number as course_number,
+            school_abbreviation as school,
 
             case
-                c.courses_credittype
+                courses_credittype
                 when 'ENG'
                 then 'ELA'
                 when 'MATH'
@@ -30,15 +29,12 @@ with
                 then 'Civics'
             end as discipline,
 
-        from {{ ref("base_powerschool__course_enrollments") }} as c
-        left join
-            {{ ref("stg_powerschool__schools") }} as s
-            on c.cc_schoolid = s.school_number
+        from {{ ref("base_powerschool__course_enrollments") }}
         where
-            c.cc_academic_year = {{ var("current_academic_year") }}
-            and c.rn_credittype_year = 1
-            and not c.is_dropped_section
-            and c.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
+            cc_academic_year = {{ var("current_academic_year") }}
+            and rn_credittype_year = 1
+            and not is_dropped_section
+            and courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
     ),
 
     schedules as (
@@ -73,10 +69,10 @@ with
             on e.students_student_number = c.students_student_number
             and e.courses_credittype = c.courses_credittype
         where
-            e.cc_academic_year >= {{ var("current_academic_year") - 7 }}
-            and e.rn_credittype_year = 1
+            e.rn_credittype_year = 1
             and not e.is_dropped_section
             and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
+            and e.cc_academic_year >= {{ var("current_academic_year") - 7 }}
     ),
 
     state_comps as (

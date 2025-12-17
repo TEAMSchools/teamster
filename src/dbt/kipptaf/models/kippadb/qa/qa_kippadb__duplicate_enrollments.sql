@@ -36,5 +36,5 @@ inner join
         between e1.start_date and coalesce(e1.actual_end_date, date('9999-12-31'))
     )
     and e2.status != 'Did Not Enroll'
-inner join {{ ref("base_kippadb__contact") }} as r on e1.student = r.contact_id
+inner join {{ ref("int_kippadb__contact") }} as r on e1.student = r.contact_id
 where e1.status != 'Did Not Enroll'

@@ -6,7 +6,7 @@ with
             s.scope,
             s.score_type,
 
-            e.salesforce_id,
+            e.salesforce_contact_id as salesforce_id,
             e.grade_level,
 
         from {{ ref("int_assessments__college_assessment") }} as s

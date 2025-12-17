@@ -131,9 +131,8 @@ select
     se.other_related_services_yn,
     se.is_retained_year,
     se.is_retained_ever,
-
-    cal.days_remaining,
-    cal.days_total,
+    se.school_calendar_days_remaining as days_remaining,
+    se.school_calendar_days_total as days_total,
 
     t.target_enrollment,
     t.target_enrollment_finance,
@@ -174,12 +173,6 @@ select
         partition by se.student_number order by se.academic_year
     ) as is_enrolled_oct15_next,
 from {{ ref("int_extracts__student_enrollments") }} as se
-left join
-    {{ ref("int_powerschool__calendar_rollup") }} as cal
-    on se.schoolid = cal.schoolid
-    and se.yearid = cal.yearid
-    and se.track = cal.track
-    and {{ union_dataset_join_clause(left_alias="se", right_alias="cal") }}
 left join
     att_mem
     on se.studentid = att_mem.studentid

@@ -1,5 +1,3 @@
-{% set invalid_lunch_status = ["", "NoD", "1", "2"] %}
-
 with
     union_relations as (
         {{
@@ -26,27 +24,114 @@ with
         }}
     ),
 
-    with_region as (
-        -- trunk-ignore(sqlfluff/AM04)
-        select
-            *,
+    studentrace_agg as (
+        select _dbt_source_relation, studentid, string_agg(racecd) as racecd_agg,
+        from {{ ref("stg_powerschool__studentrace") }}
+        group by studentid, _dbt_source_relation
+    ),
 
-            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
-            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
+    esms_grad as (
+        select
+            _dbt_source_relation,
+            student_number,
+            school_level,
+            school_abbreviation,
+
+            row_number() over (
+                partition by _dbt_source_relation, student_number, school_level
+                order by exitdate desc
+            ) as rn,
         from union_relations
+    ),
+
+    es_grad as (
+        select
+            student_number,
+            school_abbreviation,
+
+            row_number() over (
+                partition by student_number order by exitdate desc
+            ) as rn,
+        from union_relations
+        where
+            grade_level = 4
+            and extract(month from exitdate) = 6
+            and exitdate < current_date('{{ var("local_timezone") }}')
+    ),
+
+    next_year_school as (
+        select
+            _dbt_source_relation,
+            student_number,
+            academic_year,
+
+            lead(school_abbreviation, 1) over (
+                partition by _dbt_source_relation, student_number
+                order by academic_year asc
+            ) as next_year_school,
+
+            lead(schoolid, 1) over (
+                partition by _dbt_source_relation, student_number
+                order by academic_year asc
+            ) as next_year_schoolid,
+        from union_relations
+        where rn_year = 1
     )
 
 select
-    ar.* except (lep_status, lunchstatus, spedlep),
+    ar.* except (lep_status),
+
+    ns.abbreviation as entry_school_abbreviation,
+
+    se.email,
+
+    pfs.fafsa,
+
+    de.district_entry_date,
+
+    r.racecd_agg,
+
+    m.school_abbreviation as ms_attended,
+
+    es.school_abbreviation as es_attended,
+
+    eg.school_abbreviation as es_graduated,
+
+    ny.next_year_school,
+    ny.next_year_schoolid,
+
+    ada.ada_term_q1 as ada_unweighted_term_q1,
+    ada.ada_semester_s1 as ada_unweighted_semester_s1,
+    ada.ada_year as unweighted_ada,
+    ada.ada_weighted_term_q1,
+    ada.ada_weighted_semester_s1,
+    ada.ada_weighted_year as weighted_ada,
+    ada.sum_absences_year as absences_unexcused_year,
+
+    adapy.ada_year as ada_unweighted_year_prev,
+    adapy.ada_weighted_year as ada_weighted_year_prev,
+
+    gc.cumulative_y1_gpa,
+    gc.cumulative_y1_gpa_unweighted,
+    gc.cumulative_y1_gpa_projected,
+    gc.cumulative_y1_gpa_projected_s1,
+    gc.cumulative_y1_gpa_projected_s1_unweighted,
+    gc.core_cumulative_y1_gpa,
+    gc.earned_credits_cum,
+    gc.earned_credits_cum_projected,
+    gc.potential_credits_cum,
+
+    cr.days_remaining as school_calendar_days_remaining,
+    cr.days_total as school_calendar_days_total,
+
+    sp.enter_date_home_instruction as home_instruction_enter_date,
+    sp.exit_date_home_instruction as home_instruction_exit_date,
+    sp.sp_comment_home_instruction as home_instruction_sp_comment,
+    sp.is_counseling_services,
+    sp.is_student_athlete,
+    sp.is_tutoring,
 
     /* regional differences */
-    suf.fleid,
-    suf.newark_enrollment_number,
-    suf.infosnap_id,
-    suf.infosnap_opt_in,
-    suf.media_release,
-    suf.rides_staff,
-
     njs.districtcoderesident,
     njs.referral_date,
     njs.parental_consent_eval_date,
@@ -72,23 +157,15 @@ select
     njs.liep_parent_refusal_date,
     njs.programtypecode,
     njs.home_language,
+    njs.state_assessment_name as ela_state_assessment_name,
+    njs.math_state_assessment_name,
 
-    sr.mail as advisor_email,
-    sr.work_cell as advisor_phone,
-
-    tpd.total_balance as lunch_balance,
-
-    adb.id as salesforce_contact_id,
-    adb.college_match_display_gpa as salesforce_contact_college_match_display_gpa,
-    adb.kipp_hs_class as salesforce_contact_kipp_hs_class,
-    adb.owner_id as salesforce_contact_owner_id,
-    adb.graduation_year,
-
-    adbu.name as salesforce_contact_owner_name,
-    adbu.phone as salesforce_contact_owner_phone,
-    adbu.email as salesforce_contact_owner_email,
-
-    ill.student_id as illuminate_student_id,
+    suf.fleid,
+    suf.newark_enrollment_number,
+    suf.infosnap_id,
+    suf.infosnap_opt_in,
+    suf.media_release,
+    suf.rides_staff,
 
     coalesce(
         njs.gifted_and_talented, suf.gifted_and_talented, 'N'
@@ -96,30 +173,21 @@ select
 
     coalesce(njr.pid_504_tf, suf.is_504, false) as is_504,
 
-    coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,
+    regexp_extract(ar._dbt_source_relation, r'(kipp\w+)_') as code_location,
 
-    if(ar.region = 'Paterson', se.email, sl.google_email) as student_email_google,
-    if(ar.region = 'Paterson', null, sl.username) as student_web_id,
-    if(ar.region = 'Paterson', null, sl.default_password) as student_web_password,
+    initcap(regexp_extract(ar._dbt_source_relation, r'kipp(\w+)_')) as region,
 
-    if(ar.region = 'Miami' and fte.survey_2 is not null, true, false) as is_fldoe_fte_2,
-    if(ar.region = 'Miami' and fte.survey_3 is not null, true, false) as is_fldoe_fte_3,
-    if(
-        ar.region = 'Miami' and fte.survey_2 is not null and fte.survey_3 is not null,
-        true,
-        false
-    ) as is_fldoe_fte_all,
+    if(sip.students_student_number is not null, true, false) as is_sipps,
 
     if(
-        ar.region = 'Miami', ar.spedlep, sped.special_education_code
-    ) as special_education_code,
-
-    if(adb.latest_fafsa_date is null, 'No', 'Yes') as salesforce_contact_df_has_fafsa,
-
-    coalesce(if(ar.region = 'Miami', ar.spedlep, sped.spedlep), 'No IEP') as spedlep,
+        /* starting SY26, HS uses weighted ADA */
+        ar.school_level = 'HS' and ar.academic_year >= 2025,
+        ada.ada_weighted_year,
+        ada.ada_year
+    ) as `ada`,
 
     case
-        when ar.region = 'Miami'
+        when ar._dbt_source_relation like '%kippmiami%'
         then ar.lep_status
         when njs.lepbegindate is null
         then false
@@ -131,67 +199,70 @@ select
     end as lep_status,
 
     case
-        when ar.lunchstatus in unnest({{ invalid_lunch_status }})
-        then null
-        when ar.academic_year < {{ var("current_academic_year") }}
-        then ar.lunchstatus
-        when ar.region = 'Miami'
-        then ar.lunchstatus
-        when ar.rn_year = 1
-        then coalesce(if(tpd.is_directly_certified, 'F', null), tpd.eligibility_name)
-    end as lunch_status,
+        when njs.graduation_pathway_math = 'M' and njs.graduation_pathway_ela = 'M'
+        then 'Yes'
+        when njs.graduation_pathway_math = 'M' and njs.graduation_pathway_ela != 'M'
+        then 'Math only. No ELA match.'
+        when njs.graduation_pathway_math != 'M' and njs.graduation_pathway_ela = 'M'
+        then 'ELA only. No Math match.'
+    end as grad_iep_exempt_overall,
 
     case
-        when ar.academic_year < {{ var("current_academic_year") }}
-        then ar.lunchstatus
-        when ar.region = 'Miami'
-        then ar.lunchstatus
-        when ar.rn_year = 1
-        then
-            case
-                when tpd.is_directly_certified
-                then 'Direct Certification'
-                when tpd.eligibility_determination_reason is null
-                then 'No Application'
-                else tpd.eligibility || ' - ' || tpd.eligibility_determination_reason
-            end
-    end as lunch_application_status,
-
-    case
-        when adb.college_match_display_gpa >= 3.50
-        then '3.50+'
-        when adb.college_match_display_gpa >= 3.00
-        then '3.00-3.49'
-        when adb.college_match_display_gpa >= 2.50
-        then '2.50-2.99'
-        when adb.college_match_display_gpa >= 2.00
-        then '2.00-2.49'
-        when adb.college_match_display_gpa < 2.00
-        then '<2.00'
-        else 'No GPA'
-    end as salesforce_contact_college_match_gpa_band,
-    if(
-        extract(
-            month
-            from coalesce(adb.actual_hs_graduation_date, adb.expected_hs_graduation)
-        )
-        < 10,
-        extract(
-            year
-            from coalesce(adb.actual_hs_graduation_date, adb.expected_hs_graduation)
-        ),
-        extract(
-            year
-            from coalesce(adb.actual_hs_graduation_date, adb.expected_hs_graduation)
-        )
-        + 1
-    ) as salesforce_graduation_year,
-
-from with_region as ar
+        when  -- starting SY26, HS uses weighted ADA
+            ar.school_level = 'HS'
+            and ar.academic_year >= 2025
+            and ada.ada_weighted_year >= 0.80
+        then true
+        when
+            ar.school_level = 'HS' and ar.academic_year <= 2024 and ada.ada_year >= 0.80
+        then true
+        when ada.ada_year >= 0.80
+        then true
+    end as ada_above_or_at_80,
+from union_relations as ar
 left join
-    {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-    on ar.students_dcid = suf.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="suf") }}
+    {{ ref("stg_powerschool__schools") }} as ns
+    on ar.entry_schoolid = ns.school_number
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="ns") }}
+left join
+    {{ ref("stg_powerschool__student_email") }} as se
+    on ar.student_number = se.student_number
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="se") }}
+left join
+    {{ ref("int_powerschool__district_entry_date") }} as de
+    on ar.studentid = de.studentid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="de") }}
+    and de.rn_entry = 1
+left join
+    {{ ref("int_powerschool__ada_term_pivot") }} as ada
+    on ar.studentid = ada.studentid
+    and ar.academic_year = ada.academic_year
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="ada") }}
+left join
+    {{ ref("int_powerschool__ada_term_pivot") }} as adapy
+    on ar.studentid = adapy.studentid
+    and ar.academic_year = (adapy.academic_year + 1)
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="adapy") }}
+left join
+    {{ ref("int_powerschool__gpa_cumulative") }} as gc
+    on ar.studentid = gc.studentid
+    and ar.schoolid = gc.schoolid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="gc") }}
+left join
+    {{ ref("int_powerschool__calendar_rollup") }} as cr
+    on ar.schoolid = cr.schoolid
+    and ar.yearid = cr.yearid
+    and ar.track = cr.track
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="cr") }}
+left join
+    {{ ref("int_powerschool__spenrollments_pivot") }} as sp
+    on ar.studentid = sp.studentid
+    and ar.academic_year = sp.academic_year
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="sp") }}
+left join
+    {{ ref("stg_powerschool__s_stu_x") }} as pfs
+    on ar.students_dcid = pfs.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="pfs") }}
 left join
     {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
     on ar.students_dcid = njs.studentsdcid
@@ -201,34 +272,36 @@ left join
     on ar.reenrollments_dcid = njr.reenrollmentsdcid
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="njr") }}
 left join
-    {{ ref("stg_powerschool__student_email") }} as se
-    on ar.student_number = se.student_number
+    {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
+    on ar.students_dcid = suf.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="suf") }}
 left join
-    {{ ref("stg_people__student_logins") }} as sl
-    on ar.student_number = sl.student_number
+    {{ ref("base_powerschool__course_enrollments") }} as sip
+    on ar.student_number = sip.students_student_number
+    and ar.academic_year = sip.cc_academic_year
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="sip") }}
+    and sip.courses_course_number = 'SEM01099G1'
+    and sip.rn_course_number_year = 1
+    and not sip.is_dropped_section
 left join
-    {{ ref("int_people__staff_roster") }} as sr
-    on ar.advisor_teachernumber = sr.powerschool_teacher_number
+    studentrace_agg as r
+    on ar.studentid = r.studentid
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="r") }}
 left join
-    {{ ref("int_edplan__njsmart_powerschool_union") }} as sped
-    on ar.student_number = sped.student_number
-    and ar.academic_year = sped.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="sped") }}
-    and sped.rn_student_year_desc = 1
+    esms_grad as m
+    on ar.student_number = m.student_number
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="m") }}
+    and m.school_level = 'MS'
+    and m.rn = 1
 left join
-    {{ ref("stg_titan__person_data") }} as tpd
-    on ar.student_number = tpd.person_identifier
-    and ar.academic_year = tpd.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="tpd") }}
+    esms_grad as es
+    on ar.student_number = es.student_number
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="es") }}
+    and es.school_level = 'ES'
+    and es.rn = 1
+left join es_grad as eg on ar.student_number = eg.student_number and eg.rn = 1
 left join
-    {{ ref("int_fldoe__fte_pivot") }} as fte
-    on ar.state_studentnumber = fte.student_id
-    and ar.academic_year = fte.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="fte") }}
-left join
-    {{ ref("stg_kippadb__contact") }} as adb
-    on ar.student_number = adb.school_specific_id
-left join {{ ref("stg_kippadb__user") }} as adbu on adb.owner_id = adbu.id
-left join
-    {{ ref("stg_illuminate__public__students") }} as ill
-    on ar.student_number = ill.local_student_id
+    next_year_school as ny
+    on ar.student_number = ny.student_number
+    and ar.academic_year = ny.academic_year
+    and {{ union_dataset_join_clause(left_alias="ar", right_alias="ny") }}

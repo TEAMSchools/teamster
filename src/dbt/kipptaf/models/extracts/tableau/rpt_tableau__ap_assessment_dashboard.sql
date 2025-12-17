@@ -17,7 +17,7 @@ select
     e.is_504 as c_504_status,
     e.lep_status,
     e.gifted_and_talented,
-    e.salesforce_id as contact_id,
+    e.salesforce_contact_id as contact_id,
     e.ktc_cohort,
 
     s.cc_dateenrolled as ap_date_enrolled,

@@ -11,6 +11,6 @@ inner join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on s.id = sp.studentid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="sp") }}
-    and sp.specprog_name like 'High School%'
     and sp.rn_student_program_year_desc = 1
-where s.grade_level >= 9  /* needs to include grade_level = 99 */
+    and sp.specprog_name like 'High School%'
+where s.grade_level >= 9  -- needs to include grade_level = 99

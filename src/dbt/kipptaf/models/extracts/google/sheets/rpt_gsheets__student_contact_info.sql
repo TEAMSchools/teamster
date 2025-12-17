@@ -69,7 +69,7 @@ select
     infosnap_id,
     rides_staff,
     gifted_and_talented,
-    salesforce_id as salesforce_contact_id,
+    salesforce_contact_id,
     home_language,
 from {{ ref("int_extracts__student_enrollments") }}
 where enroll_status in (0, -1) and rn_all = 1

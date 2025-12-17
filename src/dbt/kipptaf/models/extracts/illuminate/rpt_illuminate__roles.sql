@@ -19,9 +19,9 @@ from {{ ref("int_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on sch.state_excludefromreporting = 0
 where
-    sr.worker_status_code != 'Terminated'
+    sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
     and sr.home_department_name in ('Teaching and Learning', 'Data', 'Executive')
-    and sr.home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
+    and sr.worker_status_code != 'Terminated'
 
 union all
 

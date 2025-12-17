@@ -24,7 +24,7 @@ with
 select
     b.sat_date as test_date,
     b.score,
-    e.salesforce_id as contact_id,
+    e.salesforce_contact_id as contact_id,
     e.region,
 
     case
@@ -42,10 +42,10 @@ left join
     {{ ref("int_kippadb__standardized_test_unpivot") }} as sf
     on b.powerschool_student_number = sf.school_specific_id
     and b.score_type = sf.score_type
-    and b.sat_date = sf.`date`
+    and b.sat_date = sf.date
 left join
     {{ ref("int_extracts__student_enrollments") }} as e
     on b.powerschool_student_number = e.student_number
-    and e.rn_year = 1
     and e.rn_undergrad = 1
-where sf.`date` is null and e.salesforce_id is not null
+    and e.rn_year = 1
+where sf.date is null and e.salesforce_contact_id is not null

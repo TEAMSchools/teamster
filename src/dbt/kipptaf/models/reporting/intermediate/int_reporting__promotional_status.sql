@@ -179,23 +179,6 @@ with
             )
     ),
 
-    ps_log as (
-        select
-            lg._dbt_source_relation,
-            lg.studentid,
-            lg.academic_year,
-            lg.entry_date,
-            lg.entry,
-
-            g.name,
-        from {{ ref("stg_powerschool__log") }} as lg
-        inner join
-            {{ ref("stg_powerschool__gen") }} as g
-            on lg.logtypeid = g.id
-            and g.cat = 'logtype'
-            and g.name in ('Exempt from retention', 'Retain without criteria')
-    ),
-
     exempt_override as (
         select
             _dbt_source_relation,
@@ -208,8 +191,8 @@ with
                 partition by _dbt_source_relation, studentid, academic_year
                 order by entry_date desc
             ) as rn_log,
-        from ps_log
-        where name = 'Exempt from retention'
+        from {{ ref("int_powerschool__log") }}
+        where logtype_name = 'Exempt from retention'
     ),
 
     force_retention as (
@@ -224,8 +207,8 @@ with
                 partition by _dbt_source_relation, studentid, academic_year
                 order by entry_date desc
             ) as rn_log,
-        from ps_log
-        where name = 'Retain without criteria'
+        from {{ ref("int_powerschool__log") }}
+        where logtype_name = 'Retain without criteria'
     ),
 
     promo as (
@@ -270,8 +253,8 @@ with
                 when
                     co.grade_level between 3 and 8
                     and (
-                        nj.state_assessment_name = '3'
-                        or nj.math_state_assessment_name in ('3', '4')
+                        co.ela_state_assessment_name = '3'
+                        or co.math_state_assessment_name in ('3', '4')
                     )
                 then 'Exempt - Special Education'
                 when lg.entry_date is not null
@@ -477,7 +460,7 @@ with
                 then 'Off-Track'
                 else 'On-Track'
             end as academic_status,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
+        from {{ ref("int_extracts__student_enrollments") }} as co
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on co.academic_year = rt.academic_year
@@ -510,10 +493,6 @@ with
             and co.academic_year = s.academic_year
         left join
             fast as f on co.fleid = f.student_id and co.academic_year = f.academic_year
-        left join
-            {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
-            on co.students_dcid = nj.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
         left join
             exempt_override as lg
             on co.studentid = lg.studentid
