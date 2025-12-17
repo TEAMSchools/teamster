@@ -350,7 +350,7 @@ from assessment_scores as a
 inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
-    and a.localstudentidentifier = e.student_number
+    and a.localstudentidentifier = e.student_number_historic
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
     and e.rn_year = 1
     and a.results_type = 'Actual'
