@@ -32,6 +32,7 @@ with
             *,
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
+
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
         from union_relations
     )
