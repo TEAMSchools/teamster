@@ -12,6 +12,7 @@ select
     psen.ccdcid as grade_dcid,
 
     'Enrolled' as credit_status,
+
 from {{ ref("stg_powerschool__gpprogresssubject") }} as ps
 left join
     {{ ref("stg_powerschool__gpprogresssubjectenrolled") }} as psen
@@ -34,6 +35,7 @@ select
     psea.storedgradesdcid as grade_dcid,
 
     'Earned' as credit_status,
+
 from {{ ref("stg_powerschool__gpprogresssubject") }} as ps
 left join
     {{ ref("stg_powerschool__gpprogresssubjectearned") }} as psea
