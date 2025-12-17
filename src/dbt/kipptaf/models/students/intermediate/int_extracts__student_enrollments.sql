@@ -196,7 +196,7 @@ select
     ) as met_fafsa_requirement,
 
     if(
-        -- hardcode year because PAT wasnt incorporated until SY2024-25
+        -- hardcode year because PAT wasnt incorporated until SY2025-26
         e.region = 'Paterson' and e.academic_year <= 2024,
         e.prevstudentid,
         e.student_number
