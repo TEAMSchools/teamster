@@ -37,7 +37,7 @@ with
     )
 
 select
-    ar.* except (lep_status, lunchstatus, spedlep),
+    ar.* except (lep_status, lunchstatus, spedlep, prevstudentid),
 
     /* regional differences */
     suf.fleid,
