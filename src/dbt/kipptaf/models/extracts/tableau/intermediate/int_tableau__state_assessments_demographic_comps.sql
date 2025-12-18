@@ -206,6 +206,7 @@ select
         'Students With Disabilities',
         'Students Without Disabilities'
     ) as iep_status,
+
     if(
         e.lunch_status in ('F', 'R'),
         'Economically Disadvantaged',
@@ -274,6 +275,7 @@ select
         'Students With Disabilities',
         'Students Without Disabilities'
     ) as iep_status,
+    
     if(
         e.lunch_status in ('F', 'R'),
         'Economically Disadvantaged',
@@ -305,4 +307,3 @@ where
     and e.grade_level > 2
     and e.school_level != 'OD'
 */
-    
