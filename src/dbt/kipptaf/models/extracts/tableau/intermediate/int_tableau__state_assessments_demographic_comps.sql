@@ -160,7 +160,7 @@ from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     assessment_scores as a
     on e.academic_year = a.academic_year
-    and e.pearson_local_student_idenfifier = a.localstudentidentifier
+    and e.pearson_local_student_identifier = a.localstudentidentifier
     and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
     and a.results_type = 'Actual'
 where
