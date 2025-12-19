@@ -10,7 +10,7 @@ with
 
             initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)_')) as region,
 
-            initcap(replace(f.`status`, '_', ' ')) as `detailed status`,
+            initcap(replace(f.`status`, '_', ' ')) as detailed_status,
 
             if(
                 f.grade_level = 'Kindergarten',
