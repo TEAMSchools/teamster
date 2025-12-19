@@ -1,5 +1,5 @@
 # https://hub.docker.com/_/python
-FROM python:3.14-slim
+FROM python:3.13-slim
 ARG CODE_LOCATION
 
 # set container envs
