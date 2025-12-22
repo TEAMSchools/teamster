@@ -1,5 +1,6 @@
 select
     student_number,
+    academic_year,
     commlog_reason,
     absence_threshold,
     commlog_notes,
