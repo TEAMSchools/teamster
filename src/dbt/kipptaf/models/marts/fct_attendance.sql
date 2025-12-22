@@ -18,6 +18,7 @@ with
             is_oss,
             is_iss,
             is_suspended,
+            is_truant,
             semester,
             term,
             att_code as attendance_code,
