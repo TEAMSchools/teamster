@@ -4,9 +4,7 @@ with
     {# assigning row number and success status just to completed attendance calls #}
     row_number as (
         select
-            student_school_id,
-            student_id,
-            dl_school_id,
+            student_school_id as student_number,
             call_date as commlog_date,
             educator_name as commlog_staff_name,
             reason as commlog_reason,
