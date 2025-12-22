@@ -1,5 +1,5 @@
 with
-    comm_log as (select * from {{ ref("int_deanslist__comm_log") }}),
+    comm_log as (select *, from {{ ref("int_deanslist__comm_log") }}),
 
     row_number as (
         select
@@ -33,7 +33,7 @@ with
         where is_attendance_call and call_status = 'Completed'
     ),
 
-    final as (select *, from comm_log where rn_date = 1)
+    final as (select *, from row_number where rn_date = 1)
 
 select *,
 from final
