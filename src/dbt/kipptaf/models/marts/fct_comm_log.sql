@@ -1,7 +1,11 @@
 with
-    comm_log as (
+    comm_log as (select * from {{ ref("int_deanslist__comm_log") }}),
+
+    row_number as (
         select
-            student_school_id as student_number,
+            student_school_id,
+            student_id,
+            dl_school_id,
             call_date as commlog_date,
             educator_name as commlog_staff_name,
             reason as commlog_reason,
@@ -26,6 +30,7 @@ with
                 partition by student_school_id, call_date order by call_date_time desc
             ) as rn_date,
         from {{ ref("int_deanslist__comm_log") }}
+        where is_attendance_call and call_status = 'Completed'
     ),
 
     final as (select *, from comm_log where rn_date = 1)
