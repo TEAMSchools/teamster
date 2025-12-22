@@ -1,6 +1,7 @@
 with
     comm_log as (select *, from {{ ref("int_deanslist__comm_log") }}),
 
+    {# assigning row number and success status just to completed attendance calls #}
     row_number as (
         select
             student_school_id,
@@ -29,10 +30,10 @@ with
             row_number() over (
                 partition by student_school_id, call_date order by call_date_time desc
             ) as rn_date,
-        from {{ ref("int_deanslist__comm_log") }}
+        from comm_log
         where is_attendance_call and call_status = 'Completed'
     ),
-
+    {# selecting only latest completed attendance call #}
     final as (select *, from row_number where rn_date = 1)
 
 select *,
