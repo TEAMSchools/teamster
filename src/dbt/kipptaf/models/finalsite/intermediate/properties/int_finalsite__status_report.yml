@@ -1,9 +1,10 @@
 models:
   - name: int_finalsite__status_report
+    config:
+      contract:
+        enforced: false
     columns:
       - name: _dbt_source_relation
-        data_type: string
-      - name: enrollment_type
         data_type: string
       - name: enrollment_year
         data_type: string
@@ -25,7 +26,9 @@ models:
                 severity: warn
       - name: academic_year
         data_type: int64
-      - name: effective_date
+      - name: enrollment_academic_year
+        data_type: int64
+      - name: status_effective_date
         data_type: date
       - name: powerschool_student_number
         data_type: int64

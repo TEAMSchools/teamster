@@ -1,7 +1,7 @@
 with
     transformations as (
         select
-            f.* except (grade_level, `status`),
+            f.* except (enrollment_type, grade_level, `status`),
 
             f.grade_level as grade_level_name,
 
@@ -11,6 +11,8 @@ with
             initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)_')) as region,
 
             initcap(replace(f.`status`, '_', ' ')) as detailed_status,
+
+            initcap(replace(f.enrollment_type, '_', ' ')) as enrollment_type,
 
             if(
                 f.grade_level = 'Kindergarten',
