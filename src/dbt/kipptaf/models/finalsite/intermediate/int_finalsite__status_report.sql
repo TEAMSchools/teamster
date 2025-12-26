@@ -1,7 +1,7 @@
 with
     transformations as (
         select
-            f.* except (enrollment_type, grade_level, `status`),
+            f.* except (enrollment_type, enrollment_year, grade_level, `status`),
 
             f.grade_level as grade_level_name,
 
@@ -38,7 +38,7 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "enrollment_year",
+                "enrollment_academic_year",
                 "last_name",
                 "first_name",
                 "grade_level",
