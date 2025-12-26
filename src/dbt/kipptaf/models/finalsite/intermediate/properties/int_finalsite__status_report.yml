@@ -19,6 +19,8 @@ models:
               config:
                 store_failures: true
                 severity: warn
+      - name: enrollment_academic_year
+        data_type: int64
       - name: academic_year
         data_type: int64
       - name: status_effective_date
