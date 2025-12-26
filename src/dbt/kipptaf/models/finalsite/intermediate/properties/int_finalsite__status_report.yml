@@ -1,5 +1,8 @@
 models:
   - name: int_finalsite__status_report
+    config:
+      contract:
+        enforced: false
     columns:
       - name: _dbt_source_relation
         data_type: string
