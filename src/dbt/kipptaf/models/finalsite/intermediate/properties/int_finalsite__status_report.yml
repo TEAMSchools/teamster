@@ -38,6 +38,8 @@ models:
         data_type: string
       - name: detailed_status
         data_type: string
+      - name: academic_year_display
+        data_type: string
       - name: enrollment_type
         data_type: string
       - name: grade_level_string
