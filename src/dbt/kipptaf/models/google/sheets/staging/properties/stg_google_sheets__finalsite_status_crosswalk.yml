@@ -1,5 +1,27 @@
 models:
   - name: stg_google_sheets__finalsite_status_crosswalk
-    config:
-      contract:
-        enforced: false
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: enrollment_academic_year
+        data_type: int64
+      - name: enrollment_type
+        data_type: string
+      - name: overall_status
+        data_type: string
+      - name: funnel_status
+        data_type: string
+      - name: status
+        data_type: string
+      - name: detailed_status_ranking
+        data_type: int64
+      - name: detailed_status
+        data_type: string
+      - name: offered
+        data_type: int64
+      - name: conversion
+        data_type: int64
+      - name: offered_ops
+        data_type: int64
+      - name: conversion_ops
+        data_type: int64
