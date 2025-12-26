@@ -38,7 +38,7 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "enrollment_academic_year",
+                "academic_year",
                 "last_name",
                 "first_name",
                 "grade_level",
