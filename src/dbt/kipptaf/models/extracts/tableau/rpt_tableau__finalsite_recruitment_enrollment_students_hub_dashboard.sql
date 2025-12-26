@@ -40,7 +40,6 @@ with
 select *,
 from
     powerschool_roster
-
     {# select
     s.*,
 
