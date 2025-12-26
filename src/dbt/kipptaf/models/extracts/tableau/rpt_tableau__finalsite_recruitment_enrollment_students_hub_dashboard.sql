@@ -17,6 +17,7 @@ with
             school_level,
             school_level_alt,
             schoolid,
+            school_name,
             school,
             student_number,
             student_name,
@@ -36,7 +37,7 @@ with
         where grade_level != 99
     )
 
-select *
+select *,
 from
     powerschool_roster
 
