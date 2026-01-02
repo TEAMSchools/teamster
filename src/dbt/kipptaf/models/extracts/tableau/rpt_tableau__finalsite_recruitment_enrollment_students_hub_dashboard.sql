@@ -28,7 +28,9 @@ with
             row_number() over (partition by student_number order by entrydate) as rn,
 
         from {{ ref("int_extracts__student_enrollments") }}
-        where academic_year >= {{ var("academic_year") - 1 }} and grade_level != 99
+        where
+            academic_year >= {{ var("current_academic_year") - 1 }}
+            and grade_level != 99
         qualify enrollment_type_check != 0
     ),
 
@@ -47,7 +49,8 @@ with
             enrollment_type_checks as c
             on e.student_number = c.student_number
             and c.rn = 1
-        where e.academic_year = {{ var("academic_year") }} and e.grade_level != 99
+        where
+            e.academic_year = {{ var("current_academic_year") }} and e.grade_level != 99
     )
 
 select
