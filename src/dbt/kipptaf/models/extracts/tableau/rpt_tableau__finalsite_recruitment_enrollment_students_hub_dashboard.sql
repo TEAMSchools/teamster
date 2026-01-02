@@ -66,8 +66,13 @@ with
 select
     d.* except (enrollment_type),
 
-    if(
-        d.powerschool_student_number is not null, j1.enrollment_type, j2.enrollment_type
+    coalesce(
+        if(
+            d.powerschool_student_number is not null,
+            j1.enrollment_type,
+            j2.enrollment_type
+        ),
+        'New'
     ) as enrollment_type,
 
 from temp_deduplicate as d
