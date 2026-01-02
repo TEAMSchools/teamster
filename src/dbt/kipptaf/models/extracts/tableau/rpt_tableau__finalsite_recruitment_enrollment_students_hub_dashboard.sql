@@ -9,68 +9,73 @@ with
         }}
     ),
 
-    enrollment_type_checks as (
+    enrollment_history_calc as (
         select
             academic_year,
             student_number,
             student_first_name,
             student_last_name,
 
-            entrydate,
-            exitdate,
-
-            'Returner' as enrollment_type,
-
-            sum(if(date_diff(exitdate, entrydate, day) >= 7, 1, 0)) over (
-                partition by student_number
-            ) as enrollment_type_check,
-
-            row_number() over (partition by student_number order by entrydate) as rn,
+            sum(
+                if(date_diff(exitdate, entrydate, day) >= 7, 1, 0)
+            ) as enroll_type_check,
 
         from {{ ref("int_extracts__student_enrollments") }}
-        where
-            academic_year >= {{ var("current_academic_year") - 1 }}
-            and grade_level != 99
-        qualify enrollment_type_check != 0
+        where grade_level != 99
+        group by academic_year, student_number, student_first_name, student_last_name
     ),
 
-    ps_match_academic_year as (
+    enrollment_type_calc as (
         select
-            e.academic_year,
-            e.school,
-            e.student_number,
-            e.student_first_name,
-            e.student_last_name,
-            e.grade_level,
-            e.enroll_status,
+            * except (enroll_type_check),
 
-        from {{ ref("int_extracts__student_enrollments") }} as e
-        left join
-            enrollment_type_checks as c
-            on e.student_number = c.student_number
-            and c.rn = 1
-        where
-            e.academic_year = {{ var("current_academic_year") }} and e.grade_level != 99
+            concat(student_first_name, student_last_name) as name_join,
+
+            case
+                when
+                    coalesce(
+                        lag(enroll_type_check) over (
+                            partition by student_number order by academic_year
+                        ),
+                        0
+                    )
+                    = 0
+                then 'New'
+                when
+                    coalesce(
+                        lag(enroll_type_check) over (
+                            partition by student_number order by academic_year
+                        ),
+                        0
+                    )
+                    = 1
+                    and academic_year - coalesce(
+                        lag(academic_year) over (
+                            partition by student_number order by academic_year
+                        ),
+                        0
+                    )
+                    > 1
+                then 'New'
+                else 'Returner'
+            end as enrollment_type,
+
+        from enrollment_history_calc
     )
 
 select
-    t.*,
+    d.* except (enrollment_type),
 
-    x.overall_status,
-    x.funnel_status,
-    x.status_category,
-    x.detailed_status_ranking,
-    x.powerschool_enroll_status,
-    x.valid_detailed_status,
-    x.offered,
-    x.conversion,
-    x.offered_ops,
-    x.conversion_ops,
+    if(
+        d.powerschool_student_number is not null, j1.enrollment_type, j2.enrollment_type
+    ) as enrollment_type,
 
-from temp_deduplicate as t
+from temp_deduplicate as d
 left join
-    {{ ref("stg_google_sheets__finalsite_status_crosswalk") }} as x
-    -- fix this later when int view is fixed
-    on t.academic_year = x.enrollment_academic_year
-    and t.enrollment_type = x.enrollment_type
-    and t.detailed_status = x.detailed_status
+    enrollment_type_calc as j1
+    on d.powerschool_student_number = j1.student_number
+    and d.powerschool_student_number is not null
+left join
+    enrollment_type_calc as j2
+    on d.name_join = j2.name_join
+    and d.powerschool_student_number is null
