@@ -67,6 +67,8 @@ with
 select
     d.* except (enrollment_type),
 
+    j1.student_number as ps_student_number,
+
     coalesce(
         if(
             d.powerschool_student_number is not null,
