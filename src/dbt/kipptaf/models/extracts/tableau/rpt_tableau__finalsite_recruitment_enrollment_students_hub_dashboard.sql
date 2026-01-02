@@ -29,7 +29,7 @@ with
         select
             * except (enroll_type_check),
 
-            concat(student_first_name, student_last_name, grade_level) as name_join,
+            concat(student_first_name, student_last_name) as name_join,
 
             case
                 when
@@ -79,8 +79,12 @@ from temp_deduplicate as d
 left join
     enrollment_type_calc as j1
     on d.powerschool_student_number = j1.student_number
+    -- remove -1 once the upstream table updates
+    and d.academic_year - 1 = j1.academic_year
     and d.powerschool_student_number is not null
 left join
     enrollment_type_calc as j2
     on d.name_join = j2.name_join
+    -- remove -1 once the upstream table updates
+    and d.academic_year - 1 = j1.academic_year
     and d.powerschool_student_number is null
