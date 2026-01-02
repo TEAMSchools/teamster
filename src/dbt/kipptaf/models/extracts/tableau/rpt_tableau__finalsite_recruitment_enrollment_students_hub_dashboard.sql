@@ -7,6 +7,47 @@ with
                 order_by="effective_date",
             )
         }}
+    ),
+
+    enrollment_type_checks as (
+        select
+            academic_year,
+            student_number,
+            student_first_name,
+            student_last_name,
+
+            entrydate,
+            exitdate,
+
+            'Returner' as enrollment_type,
+
+            sum(if(date_diff(exitdate, entrydate, day) >= 7, 1, 0)) over (
+                partition by student_number
+            ) as enrollment_type_check,
+
+            row_number() over (partition by student_number order by entrydate) as rn,
+
+        from {{ ref("int_extracts__student_enrollments") }}
+        where academic_year >= {{ var("academic_year") - 1 }} and grade_level != 99
+        qualify enrollment_type_check != 0
+    ),
+
+    ps_match_academic_year as (
+        select
+            e.academic_year,
+            e.school,
+            e.student_number,
+            e.student_first_name,
+            e.student_last_name,
+            e.grade_level,
+            e.enroll_status,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        left join
+            enrollment_type_checks as c
+            on e.student_number = c.student_number
+            and c.rn = 1
+        where e.academic_year = {{ var("academic_year") }} and e.grade_level != 99
     )
 
 select
