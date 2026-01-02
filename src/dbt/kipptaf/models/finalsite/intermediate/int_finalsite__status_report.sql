@@ -39,6 +39,8 @@ with
 select
     *,
 
+    concat(first_name, last_name, grade_level) as name_join,
+
     {{
         dbt_utils.generate_surrogate_key(
             [
