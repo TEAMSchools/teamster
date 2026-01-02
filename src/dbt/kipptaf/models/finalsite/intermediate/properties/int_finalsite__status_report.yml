@@ -48,5 +48,7 @@ models:
         data_type: int64
       - name: name_join
         data_type: string
+      - name: name_grade_level_join
+        data_type: string
       - name: surrogate_key
         data_type: string
