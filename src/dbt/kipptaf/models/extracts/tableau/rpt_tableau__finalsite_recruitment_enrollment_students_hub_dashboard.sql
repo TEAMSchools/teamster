@@ -29,7 +29,7 @@ with
         select
             * except (enroll_type_check),
 
-            concat(student_first_name, student_last_name) as name_join,
+            concat(student_first_name, student_last_name, grade_level) as name_join,
 
             case
                 when
