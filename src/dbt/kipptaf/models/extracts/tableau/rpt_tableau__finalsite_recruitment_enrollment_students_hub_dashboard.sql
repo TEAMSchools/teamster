@@ -63,6 +63,7 @@ with
         from enrollment_history_calc
     )
 
+-- trunk-ignore(sqlfluff/AM04)
 select
     d.* except (enrollment_type),
 
