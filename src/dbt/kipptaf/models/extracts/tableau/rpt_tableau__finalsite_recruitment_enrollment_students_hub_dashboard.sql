@@ -65,7 +65,7 @@ with
 
 -- trunk-ignore(sqlfluff/AM04)
 select
-    d.* except (enrollment_type),
+    d.*,
 
     j1.student_number as ps_student_number,
 
