@@ -12,8 +12,6 @@ with
 
             initcap(replace(f.`status`, '_', ' ')) as detailed_status,
 
-            initcap(replace(f.enrollment_type, '_', ' ')) as enrollment_type,
-
             cast(f.academic_year as string)
             || '-'
             || right(cast(f.academic_year + 1 as string), 2) as academic_year_display,
