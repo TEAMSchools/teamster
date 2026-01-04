@@ -73,6 +73,23 @@ with
 
         from {{ ref("stg_powerschool__s_nj_stu_x") }}
         where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
+    ),
+
+    finalsite_id as (
+        -- will remove distinct once we dedup the view
+        select distinct
+            finalsite_student_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
+
+            if(
+                grade_level = 'Kindergarten',
+                0,
+                safe_cast(regexp_extract(grade_level, r'\d+') as int64)
+            ) as grade_level,
+
+        from {{ ref("stg_finalsite__status_report") }}
     )
 
 select
@@ -156,6 +173,10 @@ select
     concat(e.region, e.school_level) as region_school_level,
 
     coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,
+
+    coalesce(
+        fid1.finalsite_student_id, fid2.finalsite_student_id
+    ) as finalsite_student_id,
 
     cast(e.academic_year as string)
     || '-'
@@ -374,3 +395,13 @@ left join
     and sip.rn_course_number_year = 1
     and not sip.is_dropped_section
 left join es_grad as eg on e.student_number = eg.student_number and eg.rn = 1
+left join
+    finalsite_id as fid1
+    on e.student_number = fid1.powerschool_student_number
+    and fid1.powerschool_student_number is not null
+left join
+    finalsite_id as fid2
+    on e.first_name = fid2.first_name
+    and e.last_name = fid2.last_name
+    and e.grade_level = fid2.grade_level
+    and fid2.powerschool_student_number is null

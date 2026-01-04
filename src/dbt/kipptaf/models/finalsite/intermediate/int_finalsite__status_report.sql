@@ -1,9 +1,12 @@
 with
     transformations as (
         select
-            f.* except (enrollment_type, enrollment_year, grade_level, `status`),
+            f.* except (
+                enrollment_type, enrollment_year, grade_level, effective_date, `status`
+            ),
 
             f.grade_level as grade_level_name,
+            f.effective_date as status_start_date,
 
             x.abbreviation as school_abbreviation,
             x.powerschool_school_id as schoolid,
