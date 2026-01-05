@@ -13,15 +13,21 @@ models:
         data_type: string
       - name: first_name
         data_type: string
-      - name: grade_level
+      - name: grade_level_name
         data_type: string
       - name: school
         data_type: string
       - name: powerschool_student_number
         data_type: int64
-      - name: status_effective_date
+      - name: status_start_date
         data_type: date
       - name: enrollment_academic_year
         data_type: int64
       - name: academic_year
         data_type: int64
+      - name: grade_level_string
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: surrogate_key
+        data_type: string

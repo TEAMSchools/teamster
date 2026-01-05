@@ -83,13 +83,13 @@ with
         left join
             enrollment_type_calc as j1
             on d.powerschool_student_number = j1.student_number
-            -- remove -1 once the upstream table updates
+            -- TODO: remove -1 once the upstream table updates
             and d.academic_year - 1 = j1.academic_year
             and d.powerschool_student_number is not null
         left join
             enrollment_type_calc as j2
             on d.name_join = j2.name_join
-            -- remove -1 once the upstream table updates
+            -- TODO:  remove -1 once the upstream table updates
             and d.academic_year - 1 = j1.academic_year
             and d.powerschool_student_number is null
     )
@@ -150,8 +150,8 @@ select
 
 from mod_enrollment_type as m
 left join
-    {{ ref("stg_google_sheets__finalsite_status_crosswalk") }} as x
-    -- fix this later when int view is fixed
+    {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
+    -- TODO: fix this later when int view is fixed
     on m.academic_year = x.enrollment_academic_year
     and m.enrollment_type = x.enrollment_type
     and m.detailed_status = x.detailed_status
