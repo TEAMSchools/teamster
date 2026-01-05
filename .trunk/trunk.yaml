@@ -9,7 +9,7 @@ plugins:
 lint:
   enabled:
     - bandit@1.9.2
-    - actionlint@1.7.9
+    - actionlint@1.7.10
     - git-diff-check
     - gitleaks@8.30.0
     - hadolint@2.14.0
