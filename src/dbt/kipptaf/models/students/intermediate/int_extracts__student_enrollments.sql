@@ -390,10 +390,7 @@ left join
     and sip.rn_course_number_year = 1
     and not sip.is_dropped_section
 left join es_grad as eg on e.student_number = eg.student_number and eg.rn = 1
-left join
-    finalsite_id as fid1
-    on e.student_number = fid1.powerschool_student_number
-    and fid1.powerschool_student_number is not null
+left join finalsite_id as fid1 on e.student_number = fid1.powerschool_student_number
 left join
     finalsite_id as fid2
     on e.first_name = fid2.first_name
