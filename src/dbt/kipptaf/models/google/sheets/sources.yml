@@ -1241,6 +1241,22 @@ sources:
               - sheets
               - pearson
               - student_crosswalk
+      - name: src_google_sheets__finalsite__status_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1TMkujoNxxAQw4B1hRWoIllpWZht1BAT5Wx006gXkVXU
+            sheet_range: src_google_sheets__finalsite__status_crosswalk
+            skip_leading_rows: 1
+        meta:
+          dagster:
+            asset_key:
+              - kipptaf
+              - google
+              - sheets
+              - finalsite
+              - status_crosswalk
       - name: src_google_sheets__reporting__gradebook_expectations
         config:
           enabled: false
