@@ -326,6 +326,7 @@ left join
     {{ ref("stg_adp_workforce_now__pension_and_benefits_enrollments") }} as pbe
     on w.position_id = pbe.position_id
     and pbe.enrollment_status = 'Active'
+    and pbe.rn_enrollment_recent = 1
     and pbe.plan_name in (
         'NJ Pension - DCRP:Eligible Employees(Prudential Financial)',
         'NJ Pension - PERS:Eligible Employees(NJ Pension)',
