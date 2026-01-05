@@ -169,10 +169,9 @@ select
 
     coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,
 
-    coalesce(
-        fid1.finalsite_student_id, fid2.finalsite_student_id
-    ) as finalsite_student_id,
-
+    -- coalesce(
+    -- fid1.finalsite_student_id, fid2.finalsite_student_id
+    -- ) as finalsite_student_id,
     cast(e.academic_year as string)
     || '-'
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
@@ -389,11 +388,14 @@ left join
     and sip.courses_course_number = 'SEM01099G1'
     and sip.rn_course_number_year = 1
     and not sip.is_dropped_section
-left join es_grad as eg on e.student_number = eg.student_number and eg.rn = 1
-left join finalsite_id as fid1 on e.student_number = fid1.powerschool_student_number
 left join
-    finalsite_id as fid2
-    on e.first_name = fid2.first_name
-    and e.last_name = fid2.last_name
-    and e.grade_level = fid2.grade_level
-    and fid2.powerschool_student_number is null
+    es_grad as eg on e.student_number = eg.student_number and eg.rn = 1
+    -- left join finalsite_id as fid1 on e.student_number =
+    -- fid1.powerschool_student_number
+    -- left join
+    -- finalsite_id as fid2
+    -- on e.first_name = fid2.first_name
+    -- and e.last_name = fid2.last_name
+    -- and e.grade_level = fid2.grade_level
+    -- and fid2.powerschool_student_number is null
+    
