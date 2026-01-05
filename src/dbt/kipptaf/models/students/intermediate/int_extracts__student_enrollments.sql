@@ -73,18 +73,6 @@ with
 
         from {{ ref("stg_powerschool__s_nj_stu_x") }}
         where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
-    ),
-
-    finalsite_id as (
-        -- will remove distinct once we dedup the view
-        select distinct
-            finalsite_student_id,
-            powerschool_student_number,
-            first_name,
-            last_name,
-            grade_level,
-
-        from {{ ref("stg_finalsite__status_report") }}
     )
 
 select
