@@ -82,12 +82,7 @@ with
             powerschool_student_number,
             first_name,
             last_name,
-
-            if(
-                grade_level = 'Kindergarten',
-                0,
-                safe_cast(regexp_extract(grade_level, r'\d+') as int64)
-            ) as grade_level,
+            grade_level,
 
         from {{ ref("stg_finalsite__status_report") }}
     )

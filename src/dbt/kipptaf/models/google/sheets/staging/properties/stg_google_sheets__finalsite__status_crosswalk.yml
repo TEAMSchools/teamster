@@ -1,5 +1,5 @@
 models:
-  - name: stg_google_sheets__finalsite_status_crosswalk
+  - name: stg_google_sheets__finalsite__status_crosswalk
     columns:
       - name: academic_year
         data_type: int64
