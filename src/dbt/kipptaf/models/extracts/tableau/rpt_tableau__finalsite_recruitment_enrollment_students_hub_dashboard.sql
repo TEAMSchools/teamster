@@ -1,20 +1,31 @@
 with
-    temp_deduplicate as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("int_finalsite__status_report"),
-                partition_by="surrogate_key",
-                order_by="status_start_date",
-            )
-        }}
+    finalsite_report as (
+        select
+            f.*,
+
+            x.region,
+            x.powerschool_school_id,
+            x.abbreviation as school_abbreviation,
+
+            concat(f.first_name, f.last_name) as name_join,
+            concat(f.first_name, f.last_name, f.grade_level) as name_grade_level_join,
+        from {{ ref("stg_finalsite__status_report") }} as f
+        left join
+            {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
+            on f.school = x.name
+
     ),
 
     enrollment_history_calc as (
         select
-            academic_year,
             student_number,
             student_first_name,
             student_last_name,
+            academic_year,
+
+            academic_year + 1 as academic_year_next,
+
+            concat(student_first_name, student_last_name) as name_join,
 
             sum(
                 if(date_diff(exitdate, entrydate, day) >= 7, 1, 0)
@@ -22,14 +33,12 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }}
         where grade_level != 99
-        group by academic_year, student_number, student_first_name, student_last_name
+        group by student_number, student_first_name, student_last_name, academic_year
     ),
 
     enrollment_type_calc as (
         select
             * except (enroll_type_check),
-
-            concat(student_first_name, student_last_name) as name_join,
 
             case
                 when
@@ -64,9 +73,8 @@ with
     ),
 
     mod_enrollment_type as (
-        -- trunk-ignore(sqlfluff/AM04)
         select
-            d.*,
+            d.* except (enrollment_type),
 
             j1.student_number as ps_student_number,
 
@@ -79,23 +87,39 @@ with
                 'New'
             ) as enrollment_type,
 
-        from temp_deduplicate as d
+        from finalsite_report as d
         left join
             enrollment_type_calc as j1
             on d.powerschool_student_number = j1.student_number
-            -- TODO: remove -1 once the upstream table updates
-            and d.academic_year - 1 = j1.academic_year
+            and d.academic_year = j1.academic_year_next
             and d.powerschool_student_number is not null
         left join
             enrollment_type_calc as j2
             on d.name_join = j2.name_join
-            -- TODO:  remove -1 once the upstream table updates
-            and d.academic_year - 1 = j1.academic_year
+            and d.academic_year = j1.academic_year_next
             and d.powerschool_student_number is null
     )
 
 select
-    m.*,
+    m.academic_year,
+    m.detailed_status,
+    m.enrollment_year,
+    m.finalsite_student_id,
+    m.first_name,
+    m.grade_level,
+    m.grade_level_name,
+    m.last_name,
+    m.powerschool_student_number,
+    m.school,
+    m.status,
+    m.status_start_date,
+    m.region,
+    m.powerschool_school_id,
+    m.school_abbreviation,
+    m.name_join,
+    m.name_grade_level_join,
+    m.ps_student_number,
+    m.enrollment_type,
 
     x.overall_status,
     x.funnel_status,
