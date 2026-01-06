@@ -101,7 +101,25 @@ with
     )
 
 select
-    m.*,
+    m.academic_year,
+    m.detailed_status,
+    m.enrollment_year,
+    m.finalsite_student_id,
+    m.first_name,
+    m.grade_level,
+    m.grade_level_name,
+    m.last_name,
+    m.powerschool_student_number,
+    m.school,
+    m.status,
+    m.status_start_date,
+    m.region,
+    m.powerschool_school_id,
+    m.school_abbreviation,
+    m.name_join,
+    m.name_grade_level_join,
+    m.ps_student_number,
+    m.enrollment_type,
 
     x.overall_status,
     x.funnel_status,
