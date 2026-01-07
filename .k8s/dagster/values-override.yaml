@@ -36,8 +36,10 @@ dagsterCloudAgent:
       cpu: 500m
       memory: 1.5Gi
   nodeSelector:
-    cloud.google.com/compute-class: Balanced
+    # cloud.google.com/compute-class: Balanced
+    cloud.google.com/compute-class: Scale-Out
     cloud.google.com/gke-spot: "true"
+    kubernetes.io/arch: arm64
   podSecurityContext:
     runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
   # securityContext:
@@ -84,8 +86,10 @@ workspace:
         operator.1password.io/auto-restart: "true"
     podSpecConfig:
       nodeSelector:
+        cloud.google.com/compute-class: Scale-Out
         cloud.google.com/gke-spot: "true"
-        cloud.google.com/compute-class: Balanced
+        kubernetes.io/arch: arm64
+        # cloud.google.com/compute-class: Balanced
 
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.
