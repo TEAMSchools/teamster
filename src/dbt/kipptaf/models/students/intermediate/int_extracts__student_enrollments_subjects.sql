@@ -130,7 +130,7 @@ with
                 then 'At/Above'
             end as iready_proficiency,
 
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where rn_subj_round = 1 and test_round = 'EOY'
     ),
 

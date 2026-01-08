@@ -95,6 +95,7 @@ select
         state_studentnumber,
         `state`
     ),
+
     e.lastfirst as student_name,
     e.last_name as student_last_name,
     e.first_name as student_first_name,
@@ -221,6 +222,24 @@ select
     if(sip.students_student_number is not null, true, false) as is_sipps,
 
     case
+        e.enroll_status
+        when -2
+        then 'Inactive'
+        when -1
+        then 'Pre-registered'
+        when 0
+        then 'Currently Enrolled'
+        when 1
+        then 'Inactive'
+        when 2
+        then 'Transferred Out'
+        when 3
+        then 'Graduated'
+        when 4
+        then 'Imported as Historical'
+    end as enroll_status_string,
+
+    case
         e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
     end as race_ethnicity,
 
@@ -269,6 +288,7 @@ select
         then 'Salesforce/Overgrad has FAFSA opt-out mismatch'
         else 'No issues'
     end as fafsa_status_mismatch_category,
+
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc

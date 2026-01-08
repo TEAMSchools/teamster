@@ -1,5 +1,4 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
     baseline_diagnostic as (
         select
             student_id,
@@ -7,7 +6,7 @@ with
             `subject`,
             overall_relative_placement_int,
             completion_date,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where baseline_diagnostic_y_n = 'Y'
     ),
 
@@ -23,37 +22,10 @@ with
 
 select
     cw.student_number,
-    cw.state_studentnumber,
-    cw.student_name,
     cw.academic_year,
-    cw.iready_subject,
-    cw.discipline,
     cw.week_start_monday,
     cw.week_end_sunday,
-    cw.week_number_academic_year,
-    cw.region,
-    cw.school_level,
-    cw.schoolid,
-    cw.school,
-    cw.grade_level,
-    cw.gender,
-    cw.ethnicity,
-    cw.iep_status,
-    cw.is_504,
-    cw.lep_status,
-    cw.gifted_and_talented,
-    cw.entrydate,
-    cw.exitdate,
-    cw.enroll_status,
-
-    rt.name as test_round,
-
-    ir.subject,
-
-    ir.percent_progress_to_annual_typical_growth_percent
-    / 100 as percent_progress_to_annual_typical_growth_percent,
-    ir.percent_progress_to_annual_stretch_growth_percent
-    / 100 as percent_progress_to_annual_stretch_growth_percent,
+    cw.discipline,
 
     case
         when ir.is_proficient then 1 when not ir.is_proficient then 0
@@ -77,7 +49,7 @@ inner join
     and cw.week_start_monday between rt.start_date and rt.end_date
     and rt.type = 'IREX'
 left join
-    {{ ref("base_iready__diagnostic_results") }} as ir
+    {{ ref("int_iready__diagnostic_results") }} as ir
     on cw.student_number = ir.student_id
     and cw.academic_year = ir.academic_year_int
     and cw.iready_subject = ir.subject
@@ -90,3 +62,4 @@ left join
     on cw.student_number = d.student_id
     and cw.academic_year = d.academic_year_int
     and cw.iready_subject = d.subject
+where cw.academic_year >= {{ var("current_academic_year") - 1 }}

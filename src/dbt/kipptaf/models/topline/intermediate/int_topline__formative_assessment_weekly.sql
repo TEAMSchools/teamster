@@ -15,12 +15,14 @@ with
                 when is_mastery then 1 when not is_mastery then 0 else -1
             end as is_mastery_int,
         from {{ ref("int_assessments__response_rollup") }}
-        where response_type = 'overall' and module_type in ('QA', 'MQQ', 'CRQ')
+        where
+            response_type = 'overall'
+            and module_type in ('QA', 'MQQ', 'CRQ')
+            and academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
     assessment_weeks_union as (
         select
-            'All' as formative_strategy,
             sw.student_number,
             sw.academic_year,
             sw.week_start_monday,
@@ -34,36 +36,12 @@ with
             rr.administered_at,
             rr.is_mastery_int,
 
-            last_value(rr.is_mastery_int ignore nulls) over (
-                partition by sw.student_number, sw.discipline, sw.academic_year
-                order by sw.week_start_monday asc
-            ) as mastery_as_of_week,
-        from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as sw
-        left join
-            responses_discipline as rr
-            on sw.student_number = rr.powerschool_student_number
-            and sw.academic_year = rr.academic_year
-            and sw.discipline = rr.discipline
-            and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
-            and rr.module_type in ('QA', 'MQQ')
-        where sw.is_enrolled_week
-
-        union all
-
-        select
-            'Florida' as formative_strategy,
-            sw.student_number,
-            sw.academic_year,
-            sw.week_start_monday,
-            sw.week_end_sunday,
-            sw.week_number_academic_year,
-            sw.discipline,
-
-            rr.subject_area,
-            rr.module_type,
-            rr.title,
-            rr.administered_at,
-            rr.is_mastery_int,
+            case
+                when rr.module_type in ('QA', 'MQQ')
+                then 'All'
+                when rr.module_type = 'CRQ' and sw.region = 'Miami'
+                then 'Florida'
+            end as formative_strategy,
 
             last_value(rr.is_mastery_int ignore nulls) over (
                 partition by sw.student_number, sw.discipline, sw.academic_year
@@ -76,23 +54,20 @@ with
             and sw.academic_year = rr.academic_year
             and sw.discipline = rr.discipline
             and rr.administered_at between sw.week_start_monday and sw.week_end_sunday
-            and rr.module_type = 'CRQ'
-        where sw.is_enrolled_week and sw.region = 'Miami'
+            and rr.module_type in ('QA', 'MQQ', 'CRQ')
+        where
+            sw.is_enrolled_week
+            and sw.academic_year >= {{ var("current_academic_year") - 1 }}
     )
 
 select
-    formative_strategy,
     student_number,
     academic_year,
-    subject_area,
-    discipline,
-    module_type,
-    title,
-    administered_at,
     week_start_monday,
     week_end_sunday,
-    week_number_academic_year,
-    is_mastery_int,
+    discipline,
+    formative_strategy,
 
     if(mastery_as_of_week = -1, null, mastery_as_of_week) as is_mastery_running_int,
 from assessment_weeks_union
+where formative_strategy is not null
