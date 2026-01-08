@@ -1,5 +1,7 @@
 models:
   - name: int_edplan__njsmart_powerschool_union
+    config:
+      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string

@@ -1,5 +1,7 @@
 models:
   - name: int_powerschool__gradescaleitem_lookup
+    config:
+      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string

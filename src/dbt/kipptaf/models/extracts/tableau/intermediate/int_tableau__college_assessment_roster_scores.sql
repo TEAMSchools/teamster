@@ -67,7 +67,7 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            {{ ref("stg_google_sheets__kippfwd_expected_assessments") }} as a
+            {{ ref("stg_google_sheets__kippfwd__expected_assessments") }} as a
             on e.region = a.expected_region
             and e.grade_level = a.expected_grade_level
             and a.expected_scope = 'SAT'
@@ -107,7 +107,7 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            {{ ref("stg_google_sheets__kippfwd_expected_assessments") }} as a
+            {{ ref("stg_google_sheets__kippfwd__expected_assessments") }} as a
             on e.region = a.expected_region
             and e.grade_level = a.expected_grade_level
             and a.expected_scope != 'SAT'

@@ -1,5 +1,7 @@
 models:
   - name: stg_amplify__mclass__sftp__benchmark_student_summary
+    config:
+      materialized: table
     columns:
       - name: school_name
         data_type: string

@@ -1,6 +1,7 @@
 select
+    sr.academic_year,
+
     se.student_number,
-    se.academic_year,
     se.schoolid,
 
     round(avg(ac.response_int), 1) as average_rating,
@@ -18,4 +19,5 @@ where
     sr.survey_title = 'School Community Diagnostic Student Survey'
     and sr.question_shortname like '%scd%'
     and sr.term_code = 'SCD'
-group by se.student_number, se.academic_year, se.schoolid
+    and sr.academic_year >= {{ var("current_academic_year") - 1 }}
+group by sr.academic_year, se.student_number, se.schoolid

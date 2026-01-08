@@ -16,6 +16,7 @@ on:
       - Dockerfile
       - uv.lock
       - src/dbt/amplify/**
+      - src/dbt/finalsite/**
       - src/dbt/kipppaterson/**
       - src/dbt/powerschool/**
       - src/teamster/code_locations/kipppaterson/**
@@ -23,6 +24,7 @@ on:
       - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/dbt/**
+      - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/powerschool/sis/sftp/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
@@ -37,6 +39,7 @@ on:
       - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/dbt/**
+      - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/powerschool/sis/sftp/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**

@@ -21,7 +21,7 @@ with
                 avg(if(percent_progress_to_annual_typical_growth_percent >= 100, 1, 0)),
                 2
             ) as criteria,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where test_round = 'EOY' and rn_subj_round = 1 and region = 'KIPP Miami'
         group by academic_year_int, `subject`, student_grade
 
@@ -40,7 +40,7 @@ with
                 avg(if(percent_progress_to_annual_stretch_growth_percent >= 100, 1, 0)),
                 2
             ) as criteria,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where test_round = 'EOY' and rn_subj_round = 1 and region = 'KIPP Miami'
         group by academic_year_int, `subject`, student_grade
 

@@ -95,7 +95,7 @@ with
             academic_year_int,
             `subject`,
             most_recent_overall_relative_placement,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
     ),
 
     iready as (

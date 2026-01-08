@@ -1,5 +1,7 @@
 models:
   - name: int_powerschool__gpnode_wide
+    config:
+      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string

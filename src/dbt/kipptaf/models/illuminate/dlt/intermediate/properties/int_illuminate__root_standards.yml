@@ -1,5 +1,7 @@
 models:
   - name: int_illuminate__root_standards
+    config:
+      materialized: table
     columns:
       - name: root_standard_id
         data_type: int64

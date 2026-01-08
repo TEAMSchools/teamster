@@ -1,0 +1,4 @@
+models:
+  - name: int_deanslist__incidents__attachments
+    config:
+      materialized: table

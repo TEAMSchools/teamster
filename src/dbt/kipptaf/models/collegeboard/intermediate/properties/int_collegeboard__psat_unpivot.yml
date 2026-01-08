@@ -1,5 +1,7 @@
 models:
   - name: int_collegeboard__psat_unpivot
+    config:
+      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

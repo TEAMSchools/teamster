@@ -1,8 +1,8 @@
 models:
   - name: int_extracts__student_enrollments
     config:
-      materialized: table
       schema: extracts
+      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -43,6 +43,8 @@ models:
         data_type: string
       - name: enroll_status
         data_type: int64
+      - name: enroll_status_string
+        data_type: string
       - name: cohort
         data_type: int64
       - name: yearid
@@ -234,6 +236,8 @@ models:
         data_type: float64
       - name: met_fafsa_requirement
         data_type: boolean
+      - name: pearson_local_student_identifier
+        data_type: int64
       - name: is_counseling_services
         data_type: int64
       - name: is_student_athlete

@@ -3,6 +3,7 @@ models:
     config:
       contract:
         enforced: true
+      materialized: table
     columns:
       - name: school
         data_type: string
@@ -237,4 +238,58 @@ models:
       - name: schoolid
         data_type: int64
       - name: state_assessment_type
+        data_type: string
+      - name: is_proficient_with_typical
+        data_type: boolean
+      - name: level_number_with_typical
+        data_type: int64
+      - name: proficent_scale_score
+        data_type: int64
+      - name: progress_to_stretch
+        data_type: float64
+      - name: progress_to_typical
+        data_type: float64
+      - name: projected_is_proficient
+        data_type: boolean
+      - name: projected_is_proficient_recent
+        data_type: boolean
+      - name: projected_is_proficient_stretch
+        data_type: boolean
+      - name: projected_is_proficient_typical
+        data_type: boolean
+      - name: projected_level_number
+        data_type: int64
+      - name: projected_level_number_recent
+        data_type: int64
+      - name: projected_level_number_stretch
+        data_type: int64
+      - name: projected_level_number_typical
+        data_type: int64
+      - name: projected_sublevel
+        data_type: string
+      - name: projected_sublevel_number
+        data_type: int64
+      - name: projected_sublevel_number_recent
+        data_type: int64
+      - name: projected_sublevel_number_stretch
+        data_type: int64
+      - name: projected_sublevel_number_typical
+        data_type: int64
+      - name: projected_sublevel_recent
+        data_type: string
+      - name: projected_sublevel_stretch
+        data_type: string
+      - name: projected_sublevel_typical
+        data_type: string
+      - name: rn_subj_round
+        data_type: int64
+      - name: round_number
+        data_type: string
+      - name: scale_points_to_proficiency
+        data_type: int64
+      - name: sublevel_number_with_typical
+        data_type: int64
+      - name: sublevel_with_typical
+        data_type: string
+      - name: test_round
         data_type: string

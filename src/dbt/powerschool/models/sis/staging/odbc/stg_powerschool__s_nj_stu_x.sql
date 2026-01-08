@@ -92,10 +92,7 @@ select
         languageacquisition,
         collegecreditsearned,
         cteworkbasedlearning,
-        sid_excludeenrollment,
-        {# TODO: include when present across all instances #}
-        embedded_co_writer_ela,
-        presentation
+        sid_excludeenrollment
     ),
 
     /* column transformations */
