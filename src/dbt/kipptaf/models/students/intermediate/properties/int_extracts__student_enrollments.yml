@@ -14,7 +14,6 @@ models:
           config:
             store_failures: true
             # severity: warn
-            # severity: warn
       - dbt_utils.expression_is_true:
           arguments:
             expression: cumulative_y1_gpa_unweighted < cumulative_y1_gpa
