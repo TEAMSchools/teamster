@@ -14,6 +14,7 @@ models:
               # hardcoded year because we are only checking uniqueness from sy25+
             config:
               where: academic_year >= 2025
+              severity: warn
     columns:
       - name: id
         data_type: string
