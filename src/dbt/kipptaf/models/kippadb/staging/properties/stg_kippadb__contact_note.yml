@@ -11,6 +11,8 @@ models:
               - date
               - status
               - type
+              # hardcoded year because we are only checking uniqueness from sy25+
+            where: "academic_year >= 2025"
     columns:
       - name: id
         data_type: string
