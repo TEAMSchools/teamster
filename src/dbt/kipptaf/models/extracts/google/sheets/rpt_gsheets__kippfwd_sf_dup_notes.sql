@@ -19,7 +19,7 @@ with
             ) as next_steps__c,
 
         from {{ ref("stg_kippadb__contact_note") }} as n
-        left join {{ ref("int_kippadb__roster") }} as ktc
+        left join {{ ref("int_kippadb__roster") }} as ktc on n.contact = ktc.contact_id
         where
             n.academic_year = 2025
             -- this record is not accesible to fix on SF neither by UI nor via data
