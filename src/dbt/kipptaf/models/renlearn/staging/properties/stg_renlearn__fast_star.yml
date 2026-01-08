@@ -1,2 +1,4 @@
 models:
   - name: stg_renlearn__fast_star
+    config:
+      materialized: table

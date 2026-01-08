@@ -1,10 +1,10 @@
 with
     attrition_effective_dates as (
-        select date_day,
+        select date_day, extract(year from date_day) as academic_year,
         from
             unnest(
                 generate_date_array(
-                    /* first date of the attrition snapshot*/
+                    /* first date of the attrition snapshot */
                     '2025-09-01',
                     date_add(
                         current_date('{{ var("local_timezone") }}'), interval 1 year
@@ -20,24 +20,26 @@ with
             cw.week_end_sunday,
             cw.schoolid,
             cw.academic_year,
+
             case
                 when aed.date_day > cw.week_end_sunday
                 then cw.academic_year - 1
                 else cw.academic_year
             end as attrition_year,
         from {{ ref("int_powerschool__calendar_week") }} as cw
-        left join
-            attrition_effective_dates as aed
-            on cw.academic_year = extract(year from aed.date_day)
-        where cw.academic_year >= 2025
+        inner join
+            attrition_effective_dates as aed on cw.academic_year = aed.academic_year
+        where cw.academic_year >= 2025  /* first year of topline */
     )
 
 select
     sad.employee_number,
     sad.ps_school_id,
+
     ds.academic_year,
     ds.week_start_monday,
     ds.week_end_sunday,
+
     case
         when sad.termination_date is null
         then 1 - sad.is_attrition
@@ -51,6 +53,6 @@ inner join
     on sad.academic_year = ds.attrition_year
     and (
         (sad.ps_school_id = ds.schoolid)
-        or if(sad.ps_school_id = 0, 133570965, sad.ps_school_id) = ds.schoolid
-        or coalesce(sad.ps_school_id, 133570965) = ds.schoolid
+        or (if(sad.ps_school_id = 0, 133570965, sad.ps_school_id) = ds.schoolid)
+        or (coalesce(sad.ps_school_id, 133570965) = ds.schoolid)
     )

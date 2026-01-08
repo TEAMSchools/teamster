@@ -30,7 +30,7 @@ with
                 {% if not loop.last %},{% endif %}
             {% endfor %}
 
-        from {{ ref("stg_google_sheets__kippfwd_goals") }}
+        from {{ ref("stg_google_sheets__kippfwd__goals") }}
         where expected_goal_type = 'Board' and expected_scope = 'SAT'
         group by grade_level, expected_scope, expected_score_type
     ),
@@ -92,7 +92,7 @@ with
 
         from {{ ref("int_assessments__college_assessment") }} as s
         inner join
-            {{ ref("stg_google_sheets__kippfwd_goals") }} as g
+            {{ ref("stg_google_sheets__kippfwd__goals") }} as g
             on s.score_type = g.expected_score_type
             and g.expected_goal_type != 'Board'
         left join board_goals as b on s.score_type = b.expected_score_type
@@ -235,6 +235,7 @@ with
             e.academic_year = {{ var("current_academic_year") }}
             and e.school_level = 'HS'
             and e.rn_year = 1
+            and not e.is_out_of_district
             and r.expected_goal_type = 'Attempts'
         group by
             e.academic_year,
@@ -378,6 +379,7 @@ with
             e.academic_year = 2025
             and e.school_level = 'HS'
             and e.rn_year = 1
+            and not e.is_out_of_district
             and r.expected_goal_type = 'Benchmark'
             and r.expected_region is null
             and r.expected_schoolid is null
@@ -524,6 +526,7 @@ with
             e.academic_year = 2025
             and e.school_level = 'HS'
             and e.rn_year = 1
+            and not e.is_out_of_district
             and e.grade_level = r.expected_grade_level
             and r.expected_goal_type = 'Benchmark'
             and r.expected_region is null
@@ -671,6 +674,7 @@ with
             e.academic_year = 2025
             and e.school_level = 'HS'
             and e.rn_year = 1
+            and not e.is_out_of_district
             and e.region = r.expected_region
             and e.grade_level = r.expected_grade_level
             and r.expected_goal_type = 'Benchmark'
@@ -817,6 +821,7 @@ with
             e.academic_year = 2025
             and e.school_level = 'HS'
             and e.rn_year = 1
+            and not e.is_out_of_district
             and e.schoolid = r.expected_schoolid
             and e.grade_level = r.expected_grade_level
             and r.expected_goal_type = 'Benchmark'

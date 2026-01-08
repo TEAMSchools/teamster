@@ -1,10 +1,9 @@
 sources:
   - name: kipppaterson_powerschool
     schema: |
-      {%- if env_var('GITHUB_USER', '') != '' -%}
-      zz_{{ env_var('GITHUB_USER', '') }}_
-      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}
-      z_dev_
+      {%- if target.name == 'staging' -%}z_dev_
+      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}z_dev_
+      {%- elif env_var('GITHUB_USER', '') != '' -%}zz_{{ env_var('GITHUB_USER') }}_
       {%- endif -%}kipppaterson_powerschool
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
@@ -903,3 +902,11 @@ sources:
               - kipppaterson
               - powerschool
               - stg_powerschool__student_email
+      - name: int_powerschool__terms
+        meta:
+          dagster:
+            group: powerschool
+            asset_key:
+              - kipppaterson
+              - powerschool
+              - int_powerschool__terms

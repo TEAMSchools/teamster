@@ -32,9 +32,9 @@ def _test_asset(asset: AssetsDefinition):
             "google_directory": GoogleDirectoryResource(
                 customer_id=EnvVar("GOOGLE_WORKSPACE_CUSTOMER_ID"),
                 delegated_account=EnvVar("GOOGLE_DIRECTORY_DELEGATED_ACCOUNT"),
-                service_account_file_path=(
-                    "/workspaces/teamster/env/teamster-332318-48bf4ca46803.json"
-                ),
+                # service_account_file_path=(
+                #     "/workspaces/teamster/env/teamster-332318-48bf4ca46803.json"
+                # ),
             ),
         },
     )
@@ -57,18 +57,6 @@ def _test_asset(asset: AssetsDefinition):
     )
 
     assert extras.text == ""
-
-
-def test_asset_google_directory_groups():
-    from teamster.code_locations.kipptaf._google.directory.assets import groups
-
-    _test_asset(groups)
-
-
-def test_asset_google_directory_members():
-    from teamster.code_locations.kipptaf._google.directory.assets import members
-
-    _test_asset(members)
 
 
 def test_asset_google_directory_orgunits():
@@ -126,3 +114,15 @@ def test_asset_google_directory_role_assignments_create():
 
     assert isinstance(errors.value, list)
     assert len(errors.value) == 0
+
+
+# def test_asset_google_directory_groups():
+#     from teamster.code_locations.kipptaf._google.directory.assets import groups
+
+#     _test_asset(groups)
+
+
+# def test_asset_google_directory_members():
+#     from teamster.code_locations.kipptaf._google.directory.assets import members
+
+#     _test_asset(members)

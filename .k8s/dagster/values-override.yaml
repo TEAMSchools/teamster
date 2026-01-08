@@ -31,12 +31,11 @@ dagsterCloudAgent:
   resources:
     requests:
       cpu: 250m
-      memory: 1.5Gi
+      memory: 0.5Gi
     limits:
-      cpu: 1000m
-      memory: 3.0Gi
+      cpu: 500m
+      memory: 1.5Gi
   nodeSelector:
-    cloud.google.com/compute-class: Balanced
     cloud.google.com/gke-spot: "true"
   podSecurityContext:
     runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
@@ -52,15 +51,15 @@ workspace:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
   runK8sConfig:
     containerConfig:
+      # Autopilot enforces special minimum values for resource requests on extended
+      # duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
       resources:
         requests:
-          # Autopilot clusters enforce higher minimum values for the resource requests
-          # of extended duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
           cpu: 500m
           memory: 2.0Gi
         limits:
-          cpu: 2000m
-          memory: 4.0Gi
+          cpu: 750m
+          memory: 2.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
@@ -75,25 +74,23 @@ workspace:
       resources:
         requests:
           cpu: 250m
-          memory: 1.5Gi
+          memory: 0.5Gi
         limits:
-          cpu: 1000m
-          memory: 3.0Gi
+          cpu: 500m
+          memory: 1.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
     podSpecConfig:
       nodeSelector:
+        cloud.google.com/compute-class: Scale-Out
         cloud.google.com/gke-spot: "true"
-        cloud.google.com/compute-class: Balanced
+        kubernetes.io/arch: arm64
 
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.
   # Branch deployments servers have a default TTL of 24 hours
   # The max code servers defaults to 25, and only applies to servers with TTL.
   serverTTL:
-    # fullDeployments:
-    #   enabled: true
-    #   ttlSeconds: 3600 # 1 hour
     branchDeployments:
-      ttlSeconds: 300
+      ttlSeconds: 900

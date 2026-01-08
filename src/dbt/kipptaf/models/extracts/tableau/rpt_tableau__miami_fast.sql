@@ -103,6 +103,7 @@ select
     ce.courses_course_name as course_name,
     ce.sections_section_number as section_number,
     ce.teacher_lastfirst as teacher_name,
+    ce.teachernumber,
 
     ir.total_lessons,
     ir.lessons_passed,
@@ -220,7 +221,7 @@ left join
     on co.student_number = ia.powerschool_student_number
     and co.illuminate_subject_area = ia.subject_area
 left join
-    {{ ref("base_iready__diagnostic_results") }} as dr
+    {{ ref("int_iready__diagnostic_results") }} as dr
     on co.student_number = dr.student_id
     and co.academic_year = dr.academic_year_int
     and co.iready_subject = dr.subject

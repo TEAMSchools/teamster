@@ -7,4 +7,4 @@ select
 
     if(grade = 'K', 0, safe_cast(grade as int64)) as grade_level,
 
-from {{ source("google_sheets", "src_google_sheets__dibels_goals_long") }}
+from {{ source("google_sheets", "src_google_sheets__dibels__goals_long") }}
