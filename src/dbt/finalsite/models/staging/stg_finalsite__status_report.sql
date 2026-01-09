@@ -23,14 +23,18 @@ with
                 0,
                 cast(regexp_extract(grade_level, r'\d+') as int)
             ) as grade_level,
+
         from distinct_rows
     )
 
 select
     *,
 
-    lead(status_start_date, 1, '9999-12-31') over (
-        partition by finalsite_student_id, enrollment_year
-        order by status_start_date asc
+    coalesce(
+        lead(status_start_date - 1) over (
+            partition by academic_year, finalsite_student_id order by status_start_date
+        ),
+        current_date('America/New_York')
     ) as status_end_date,
+
 from transformations
