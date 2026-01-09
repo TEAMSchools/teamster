@@ -57,7 +57,7 @@ with
 
             case
                 when
-                    department_org_field_value not in ('Teacher','Teaching Fellow')
+                    department_org_field_value not in ('Teacher', 'Teaching Fellow')
                     and time_in_application_state_new <= 7
                 then 1
                 when
