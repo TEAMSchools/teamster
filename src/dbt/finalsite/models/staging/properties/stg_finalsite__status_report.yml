@@ -5,8 +5,6 @@ models:
         data_type: string
       - name: enrollment_year
         data_type: string
-      - name: enrollment_type
-        data_type: string
       - name: status
         data_type: string
       - name: last_name
