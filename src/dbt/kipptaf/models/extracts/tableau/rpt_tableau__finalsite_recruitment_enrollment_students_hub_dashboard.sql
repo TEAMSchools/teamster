@@ -127,8 +127,6 @@ select
     x.detailed_status_ranking,
     x.powerschool_enroll_status,
     x.valid_detailed_status,
-    x.offered_ops,
-    x.conversion_ops,
 
     current_date('{{ var("local_timezone") }}') as today_date,
 
