@@ -1,6 +1,7 @@
 with
     distinct_rows as (
-        select distinct *, from {{ source("finalsite", "status_report") }}
+        select distinct * except (enrollment_type),
+        from {{ source("finalsite", "status_report") }}
     ),
 
     transformations as (
