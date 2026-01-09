@@ -58,7 +58,8 @@ with
             case
                 when
                     department_org_field_value not in ('Teacher', 'Teaching Fellow')
-                    and time_in_application_state_new <= 7
+                    and time_in_application_state_new <=7
+                    and application_state <> 'NEW'
                 then 1
                 when
                     time_in_application_state_new <= 7
