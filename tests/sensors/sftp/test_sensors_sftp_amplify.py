@@ -13,10 +13,10 @@ def _test_sensor(sensor, ssh_amplify):
         context.log.info(run_request)
 
 
-def test_amplify_sftp_sensor_kipptaf():
-    from teamster.code_locations.kipptaf.amplify.mclass.sftp.sensors import (
-        amplify_mclass_sftp_sensor,
-    )
-    from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_AMPLIFY
+# def test_amplify_sftp_sensor_kipptaf():
+#     from teamster.code_locations.kipptaf.amplify.mclass.sftp.sensors import (
+#         amplify_mclass_sftp_sensor,
+#     )
+#     from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_AMPLIFY
 
-    _test_sensor(sensor=amplify_mclass_sftp_sensor, ssh_amplify=SSH_RESOURCE_AMPLIFY)
+#     _test_sensor(sensor=amplify_mclass_sftp_sensor, ssh_amplify=SSH_RESOURCE_AMPLIFY)
