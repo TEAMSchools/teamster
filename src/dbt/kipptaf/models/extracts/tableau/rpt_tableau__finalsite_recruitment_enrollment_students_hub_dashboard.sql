@@ -127,8 +127,6 @@ select
     x.detailed_status_ranking,
     x.powerschool_enroll_status,
     x.valid_detailed_status,
-    x.offered,
-    x.conversion,
     x.offered_ops,
     x.conversion_ops,
 
