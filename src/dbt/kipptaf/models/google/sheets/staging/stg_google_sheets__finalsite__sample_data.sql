@@ -7,7 +7,7 @@ with
 
             cast(f.academic_year as string)
             || '-'
-            || right(cast(f.academic_year + 1 as string), 2) as academic_year_display,
+            || right(cast(academic_year + 1 as string), 2) as academic_year_display,
 
         from {{ source("google_sheets", "src_google_sheets__finalsite__sample_data") }}
     ),
