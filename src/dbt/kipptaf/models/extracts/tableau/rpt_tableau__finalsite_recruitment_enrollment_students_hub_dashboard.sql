@@ -95,9 +95,9 @@ with
             unnest(
                 generate_date_array(
                     -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(date '2025-09-01', week(monday)),
+                    date_trunc('2025-07-01', week(monday)),
                     -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(date '2026-08-31', week(monday)),
+                    date_trunc('2026-06-30', week(monday)),
                     interval 7 day
                 )
             ) as week_start
