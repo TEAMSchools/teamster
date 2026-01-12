@@ -20,7 +20,7 @@ with
             roster.*,
             grade_levels.grade_level as grade_taught,
             if(
-                job_title in (
+                roster.job_title in (
                     'Teacher',
                     'Teacher in Residence',
                     'ESE Teacher',
