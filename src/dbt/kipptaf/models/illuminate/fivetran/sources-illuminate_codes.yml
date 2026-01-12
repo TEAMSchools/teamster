@@ -5,20 +5,22 @@ sources:
       enabled: false
     tables:
       - name: dna_scopes
-        meta:
-          dagster:
-            group: illuminate
-            asset_key:
-              - kipptaf
-              - illuminate
-              - codes
-              - dna_scopes
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - illuminate
+                - codes
+                - dna_scopes
       - name: dna_subject_areas
-        meta:
-          dagster:
-            group: illuminate
-            asset_key:
-              - kipptaf
-              - illuminate
-              - codes
-              - dna_subject_areas
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - illuminate
+                - codes
+                - dna_subject_areas
