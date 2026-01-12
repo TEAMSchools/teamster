@@ -1,0 +1,5 @@
+models:
+  - name: stg_google_sheets__finalsite__sample_data
+    config:
+      contract:
+        enforced: false
