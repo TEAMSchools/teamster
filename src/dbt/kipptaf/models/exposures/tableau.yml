@@ -7,10 +7,11 @@ exposures:
     depends_on:
       - ref("rpt_tableau__crdc_roster")
     url: https://drive.google.com/file/d/1aChpbS6v37hwIi1QrT1EmpzOHpXkXKaz
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
   - name: attrition_dashboard
     label: Attrition Dashboard
     type: dashboard
@@ -18,10 +19,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__staff_attrition_details")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 5bf99669-00bb-4906-b2b4-79f2976ac3a4
@@ -37,10 +39,11 @@ exposures:
       - ref("rpt_tableau__college_assessment_dashboard_over_time")
       - ref("rpt_tableau__college_assessment_dashboard_roster")
       - ref("rpt_tableau__college_assessment_dashboard_scores")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 286156c4-2f9e-4983-926b-63c9b11f44f4
@@ -53,10 +56,11 @@ exposures:
     depends_on:
       - ref("rpt_tableau__assessment_entry_audit")
       - ref("rpt_tableau__student_info_audit")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 8aff929f-9e6b-4fc9-833a-7edfab8500b6
@@ -68,10 +72,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__grants_timesheets")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: c7c821a4-a236-4da8-b41e-52b2fd62cbed
@@ -85,10 +90,11 @@ exposures:
       - ref("rpt_tableau__adp_pension_and_benefits_enrollments")
       - ref("rpt_tableau__finance_accounting_people_model")
       # - ref("rpt_tableau__staff_attrition")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: c29963fb-8516-4148-b43f-cddc0f2b4093
@@ -103,10 +109,11 @@ exposures:
       - ref("rpt_tableau__graduation_requirements")
       - ref("rpt_tableau__grad_plan_tracking")
       - ref("rpt_tableau__hs_early_warning_dashboard")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 6333e047-e7a9-4d8f-a740-3df30f179d11
@@ -124,10 +131,11 @@ exposures:
       - ref("rpt_tableau__kfwd_persistence")
       - ref("rpt_tableau__kfwd_spi")
       - ref("rpt_tableau__kfwd_verification")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: ad72c094-ad35-48f4-86a0-9d2e5b53f59a
@@ -141,10 +149,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__staff_roster")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: ed2976ea-0b3c-4afb-a5d9-7e7e83227e3b
@@ -156,10 +165,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__ops_dashboard")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: d4124f15-087a-4f27-8694-e47d2ce6ae9c
@@ -171,10 +181,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__staff_roster")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: fc15566f-0bcf-453c-aaed-04fbee94d7d7
@@ -186,10 +197,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__staff_roster")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 6e0915eb-9a46-4971-8e97-6e0749066b9f
@@ -201,10 +213,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__zendesk_tickets")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 7adabf6e-fa59-4d60-bca8-de3a67005a53
@@ -216,10 +229,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__staff_job_salary_audit")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: a571cf7d-9893-4f33-970d-46dd7a392c8e
@@ -233,10 +247,11 @@ exposures:
       - ref("rpt_tableau__okrts_behavior")
       - ref("rpt_tableau__okrts_referrals")
       - ref("rpt_tableau__suspension_over_time")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 08d133d6-6e48-4218-ae6d-015f7a0abe13
@@ -251,10 +266,11 @@ exposures:
       - ref("rpt_tableau__schoolmint_grow_goals")
       - ref("rpt_tableau__teacher_observations")
       - ref("rpt_tableau__pm_outlier_detection")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: b529ca04-3560-4cff-8898-fd0a65f3e994
@@ -271,10 +287,11 @@ exposures:
       - ref("rpt_tableau__attendance_comm_log")
       - ref("rpt_tableau__attendance_dashboard")
       - ref("rpt_tableau__attendance_interventions")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 87c13e78-a912-40a4-95dd-33248fc1cbd3
@@ -288,10 +305,11 @@ exposures:
       - ref("rpt_tableau__dibels_dashboard")
       - ref("rpt_tableau__sight_words_dashboard")
       - ref("stg_google_sheets__dibels_pm_goals")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 72b16a4a-b3a9-47e5-bdff-ae641d9ee9e6
@@ -303,10 +321,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__teacher_development")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 8977a813-36c8-48df-8a61-479f374ae78a
@@ -326,10 +345,11 @@ exposures:
       - ref("rpt_tableau__gradebook_gpa_cumulative")
       - ref("rpt_tableau__gradebook_es_comments")
       - ref("rpt_tableau__gradebook_ms_hs_comments")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 5046a976-ed0e-4c77-93fe-78b732cb5548
@@ -343,10 +363,11 @@ exposures:
       - ref("rpt_tableau__gradebook_audit")
       - ref("rpt_tableau__gradebook_es_comments")
       - ref("rpt_tableau__gradebook_gpa")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 5b3b3191-c849-4ca2-9527-9f695cf7bacc
@@ -359,10 +380,11 @@ exposures:
     depends_on:
       - ref("rpt_tableau__assessment_dashboard")
       - ref("rpt_tableau__ddi_dashboard")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
@@ -378,10 +400,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__iready_apm")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: eb91563d-760b-4f2d-b9f8-65437fe22242
@@ -394,10 +417,11 @@ exposures:
     depends_on:
       - ref("rpt_tableau__approved_home_instruction")
       - ref("rpt_tableau__home_instruction_queue")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 2de24a25-5e9b-4fcd-8c07-307d0ea57660
@@ -409,10 +433,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__state_testing_accomodations")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: aca88e07-170f-4d1a-9a4f-a3816463ab27
@@ -425,10 +450,11 @@ exposures:
     depends_on:
       - ref("rpt_tableau__promo_status")
       - ref("rpt_tableau__mtss_rti")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 5698ccc2-b952-4123-878b-48166b686b16
@@ -440,10 +466,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__stipend_and_bonus_app")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 35484db7-cd5b-4834-828a-5bfc645a09c6
@@ -454,10 +481,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__powerschool_calendar_day")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: fdd90889-8efb-4254-b892-bad96a7d131f
@@ -469,10 +497,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__content_team")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 01861d02-0674-4ddb-979e-f1e6bcbcf5c0
@@ -484,10 +513,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__leadership_development")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 8f8b058f-2408-470d-95b0-681d6c8b65f4
@@ -500,10 +530,11 @@ exposures:
       - ref("rpt_tableau__miami_fast")
       - ref("rpt_tableau__miami_k2_iready")
       - ref("rpt_tableau__miami_k2_star")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 9a4decae-3707-468f-8098-d3f625d770eb
@@ -515,10 +546,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__schoolmint_grow_observation_details")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: db88d328-0d54-4dac-8003-6197841e1432
@@ -535,10 +567,11 @@ exposures:
       - ref("rpt_tableau__smartrecruiters")
       - ref("rpt_tableau__seat_tracker")
       - ref("rpt_tableau__seat_tracker_snapshot")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 970826ab-8d1c-4468-9b84-62f6432a9642
@@ -553,10 +586,11 @@ exposures:
     depends_on:
       - ref("rpt_tableau__survey_responses")
       - ref("rpt_tableau__survey_completion")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: b11542a2-6780-4feb-a1dd-534ffe724faf
@@ -569,10 +603,11 @@ exposures:
     depends_on:
       - ref("rpt_tableau__survey_completion")
       - ref("rpt_tableau__survey_responses")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 95584fbd-e5d7-425b-a1fc-9953bc2a7df9
@@ -584,10 +619,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__nj_school_register")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
@@ -599,10 +635,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__school_community_diagnostic")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
@@ -614,10 +651,11 @@ exposures:
     depends_on:
       - ref("rpt_tableau__state_assessments_dashboard")
       - ref("rpt_tableau__state_assessments_dashboard_comps")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 31b6a4a9-e0ca-479b-8f44-0daaa52e109b
@@ -630,10 +668,11 @@ exposures:
       - ref("rpt_tableau__renewal_responses_feed")
       - ref("rpt_tableau__staff_performance_compliance_history")
       - ref("rpt_tableau__staff_renewal_feed")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 5f8c5385-845b-4d8b-bf68-6f9323cb4ca8
@@ -645,10 +684,11 @@ exposures:
     depends_on:
       - ref("rpt_tableau__operations_pm")
       - ref("rpt_tableau__operations_ekg")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
   - name: topline_cascade_dashboard
     label: Topline Cascade Dashboard
     type: dashboard
@@ -656,10 +696,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__topline_cascade_dashboard")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: ecc7a45d-3ee8-4069-8f6a-d686caa04af5
@@ -671,10 +712,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__tableau_usage")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 4c9f089a-86e6-4c75-a5ac-22da73e28e22
@@ -685,10 +727,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("int_surveys__manager_survey_details")
-    meta:
-      dagster:
-        kinds:
-          - tableau
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
         asset:
           metadata:
             id: 61c1e07d-778e-40a8-81ad-327f3951c8e2
