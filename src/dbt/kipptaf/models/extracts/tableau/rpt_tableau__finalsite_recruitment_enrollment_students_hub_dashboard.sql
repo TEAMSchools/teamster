@@ -88,7 +88,7 @@ with
     weekly_spine as (
         select
             week_start as week_start_monday,
-            date_add(week_start, interval 6 day) as week_end_sunday
+            date_add(week_start, interval 6 day) as week_end_sunday,
 
         from
             -- TODO: hardcoded because idk what dates SRE will ask for
