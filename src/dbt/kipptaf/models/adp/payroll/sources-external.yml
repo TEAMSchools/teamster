@@ -18,12 +18,13 @@ sources:
               }}/adp/payroll/general_ledger_file/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            automation_condition:
-              enabled: false
-            asset_key:
-              - kipptaf
-              - adp
-              - payroll
-              - general_ledger_file
+        config:
+          meta:
+            dagster:
+              automation_condition:
+                enabled: false
+              asset_key:
+                - kipptaf
+                - adp
+                - payroll
+                - general_ledger_file
