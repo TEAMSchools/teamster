@@ -104,7 +104,24 @@ with
     )
 
 select
-    m.*,
+    m._dbt_source_relation,
+    m.finalsite_student_id,
+    m.academic_year,
+    m.academic_year_display,
+    m.enrollment_year,
+    m.region,
+    m.schoolid,
+    m.school,
+    m.powerschool_student_number,
+    m.last_name,
+    m.first_name,
+    m.grade_level,
+    m.grade_level_string,
+    m.detailed_status,
+    m.status_start_date,
+    m.status_end_date,
+    m.days_in_status,
+    m.enrollment_type,
 
     w.week_start_monday,
     w.week_end_sunday,
