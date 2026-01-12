@@ -5,7 +5,7 @@ with
 
             initcap(replace(`status`, '_', ' ')) as detailed_status,
 
-            cast(f.academic_year as string)
+            cast(academic_year as string)
             || '-'
             || right(cast(academic_year + 1 as string), 2) as academic_year_display,
 
