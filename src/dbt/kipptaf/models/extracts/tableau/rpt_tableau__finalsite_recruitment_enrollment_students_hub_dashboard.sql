@@ -7,10 +7,6 @@ with
             x.powerschool_school_id as schoolid,
             x.abbreviation as school,
 
-            cast(f.academic_year as string)
-            || '-'
-            || right(cast(f.academic_year + 1 as string), 2) as academic_year_display,
-
         from {{ ref("stg_google_sheets__finalsite__sample_data") }} as f
         left join
             {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
