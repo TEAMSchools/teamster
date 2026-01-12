@@ -16,6 +16,24 @@ with
 
     grade_levels as (select *, from {{ ref("int_powerschool__teacher_grade_levels") }}),
 
+    additional_earnings_dedupe as (
+
+    {{
+        dbt_utils.deduplicate(
+            relation=ref("stg_adp_workforce_now__additional_earnings_report"),
+            partition_by="employee_number, academic_year, pay_date,additional_earnings_description, gross_pay",
+            order_by="pay_date",
+        )
+    }}
+    ),
+
+    additional_earnings_total as (
+        select
+            employee_number, academic_year, sum(gross_pay) as additional_earnings_total,
+        from additional_earnings_clean
+        group by employee_number, academic_year
+    )
+
     final as (
         select
             r.employee_number,
@@ -33,7 +51,10 @@ with
             r.reports_to_formatted_name,
             r.primary_indicator,
             r.academic_year,
+            r.base_remuneration_annual_rate_amount as salary,
+            r.additional_remunerations_rate_amount as additional_compensation,
             gl.grade_level as grade_taught,
+            aet.additional_earnings_total,
             if(
                 r.job_title in (
                     'Teacher',
@@ -52,6 +73,9 @@ with
             on r.powerschool_teacher_number = gl.teachernumber
             and r.academic_year = gl.academic_year
             and gl.grade_level_rank = 1
+        left join additional_earnings_total as aet
+        on r.employee_number = aet.employee_number
+        and r.academic_year = aet.academic_year
     )
 
 select *,
