@@ -31,13 +31,16 @@ with
         select
             *,
 
-            lead(status_start_date - 1, 1, current_date('America/New_York')) over (
-                partition by finalsite_student_id, enrollment_year
-                order by status_start_date asc
-            ) as status_end_date,
+            lead(
+                status_start_date - 1,
+                1,
+                current_date('{{ var("local_timezone") }}') over (
+                    partition by finalsite_student_id, enrollment_year
+                    order by status_start_date asc
+                ) as status_end_date,
 
-        from transformations
-    )
+                from transformations
+            )
 
-select *, date_diff(status_end_date, status_start_date, day) as days_in_status,
-from end_date_calc
+        select *, date_diff(status_end_date, status_start_date, day) as days_in_status,
+        from end_date_calc
