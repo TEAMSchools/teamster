@@ -17,12 +17,13 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - alchemer
-              - survey
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - alchemer
+                - survey
       - name: src_alchemer__survey_campaign
         external:
           location:
@@ -35,12 +36,13 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_campaign/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - alchemer
-              - survey_campaign
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - alchemer
+                - survey_campaign
       - name: src_alchemer__survey_question
         external:
           location:
@@ -53,12 +55,13 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_question/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - alchemer
-              - survey_question
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - alchemer
+                - survey_question
       - name: src_alchemer__survey_response
         external:
           location:
@@ -71,12 +74,13 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/alchemer/survey_response/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - alchemer
-              - survey_response
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - alchemer
+                - survey_response
       - name: src_alchemer__survey_response_disqualified
         external:
           location:
@@ -91,9 +95,10 @@ sources:
               }}/alchemer/survey_response_disqualified/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - alchemer
-              - survey_response_disqualified
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - alchemer
+                - survey_response_disqualified
