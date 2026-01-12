@@ -94,7 +94,9 @@ with
             -- TODO: hardcoded because idk what dates SRE will ask for
             unnest(
                 generate_date_array(
+                    -- trunk-ignore(sqlfluff/LT01)
                     date_trunc(date '2025-09-01', week(monday)),
+                    -- trunk-ignore(sqlfluff/LT01)
                     date_trunc(date '2026-08-31', week(monday)),
                     interval 7 day
                 )
