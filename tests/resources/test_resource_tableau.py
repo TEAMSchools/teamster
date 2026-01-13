@@ -31,31 +31,6 @@ def test_tableau_workbook_refresh():
     tableau._server.workbooks.refresh(workbook)
 
 
-def test_tableau_create_group():
-    from tableauserverclient import GroupItem, UserItem
-
-    tableau = get_tableau_resource()
-
-    # create a new instance with the group name
-    group_item = GroupItem("Python API Test Group")
-    group_item.minimum_site_role = UserItem.Roles.Viewer
-
-    # call the create method
-    group = tableau._server.groups.create(group_item)
-
-    print(group)
-
-
-def test_tableau_get_groups():
-    from tableauserverclient import Pager
-
-    tableau = get_tableau_resource()
-
-    # print the names of the groups on the server
-    for group in Pager(endpoint=tableau._server.groups):
-        print(group.name, group.id)
-
-
 def test_tableau_get_user():
     from tableauserverclient import Pager
 
@@ -74,7 +49,7 @@ def test_tableau_add_group_users():
     group_item = [
         group
         for group in Pager(endpoint=tableau._server.groups)
-        if group.name == "Python API Test Group"
+        if group.name == "Teacher Gradebook Email - Auto - Newark"
     ][0]
 
     users = [
