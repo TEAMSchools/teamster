@@ -79,6 +79,24 @@ with
         from finalsite_report as f
         left join
             enrollment_type_calc as e on f.powerschool_student_number = e.student_number
+    ),
+
+    weekly_spine as (
+        select
+            week_start as week_start_monday,
+            date_add(week_start, interval 6 day) as week_end_sunday,
+
+        from
+            -- TODO: hardcoded because idk what dates SRE will ask for
+            unnest(
+                generate_date_array(
+                    -- trunk-ignore(sqlfluff/LT01)
+                    date_trunc('2025-07-01', week(monday)),
+                    -- trunk-ignore(sqlfluff/LT01)
+                    date_trunc('2026-06-30', week(monday)),
+                    interval 7 day
+                )
+            ) as week_start
     )
 
 select
@@ -122,7 +140,13 @@ select
     c.offers_to_enrolled_num,
     c.waitlisted,
 
+    w.week_start_monday,
+    w.week_end_sunday,
+
 from mod_enrollment_type as m
+inner join
+    weekly_spine as w
+    on m.status_start_date between w.week_start_monday and w.week_end_sunday
 left join
     {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
     on m.academic_year = c.academic_year
