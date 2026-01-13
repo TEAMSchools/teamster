@@ -1,5 +1,5 @@
 models:
-  - name: rpt_tableau__finalsite_recruitment_enrollment_students_hub_dashboard
+  - name: rpt_tableau__fresh_dashboard_detailed
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -81,3 +81,9 @@ models:
         data_type: int64
       - name: waitlisted
         data_type: int64
+      - name: week_start_monday
+        data_type: date
+      - name: week_end_sunday
+        data_type: date
+      - name: latest_status
+        data_type: string
