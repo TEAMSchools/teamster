@@ -10,7 +10,7 @@ with
     ),
 
     {# assigning success status just to most recent completed call #}
-    successful_calls as (
+    final as (
         select
             student_school_id as student_number,
             call_date as commlog_date,
@@ -28,9 +28,9 @@ with
             if(
                 student_school_id is not null and reason not like 'Att: Unknown%', 1, 0
             ) as is_successful_int,
-        from comm_log
+        from completed_calls
         where rn_date = 1
-    ),
+    )
 
 select *,
 from final
