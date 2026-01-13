@@ -10,8 +10,6 @@ with
             finalsite_student_id,
             grade_level,
             grade_level_string,
-            week_start_monday,
-            week_end_sunday,
 
             'KTAF' as org,
 
@@ -36,9 +34,7 @@ with
             school,
             finalsite_student_id,
             grade_level,
-            grade_level_string,
-            week_start_monday,
-            week_end_sunday
+            grade_level_string
     )
 
 select *,
