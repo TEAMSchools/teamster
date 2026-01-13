@@ -9,7 +9,7 @@ from teamster.libraries.tableau.assets import build_tableau_workbook_refresh_ass
 workbook_refresh_assets: list[AssetsDefinition] = [
     build_tableau_workbook_refresh_asset(code_location=CODE_LOCATION, **exposure)
     for exposure in manifest["exposures"].values()
-    if "tableau" in exposure["meta"]["dagster"].get("kinds", [])
+    if "tableau" in exposure["config"]["meta"]["dagster"].get("kinds", [])
 ]
 
 view_count_per_view = build_sftp_folder_asset(

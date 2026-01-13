@@ -71,7 +71,7 @@ def test_ghseet_asset_key_rename():
                 str(["kipptaf", source["source_name"], source["name"].split("__")[-1]])
             )
 
-            asset_keys_new.add(str(source["meta"]["dagster"]["asset_key"]))
+            asset_keys_new.add(str(source["config"]["meta"]["dagster"]["asset_key"]))
 
     assert asset_keys_new == asset_keys_old
 

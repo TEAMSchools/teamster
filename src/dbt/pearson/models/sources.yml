@@ -5,12 +5,13 @@ sources:
       {{ var('pearson_schema', project_name + '_pearson') }}
     tables:
       - name: src_pearson__njgpa
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - pearson
-              - njgpa
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - pearson
+                - njgpa
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -25,12 +26,13 @@ sources:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/pearson/njgpa/"
       - name: src_pearson__njsla
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - pearson
-              - njsla
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - pearson
+                - njsla
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -45,12 +47,13 @@ sources:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/pearson/njsla/"
       - name: src_pearson__njsla_science
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - pearson
-              - njsla_science
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - pearson
+                - njsla_science
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -67,12 +70,13 @@ sources:
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/pearson/njsla_science/"
       - name: src_pearson__parcc
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - pearson
-              - parcc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - pearson
+                - parcc
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -87,12 +91,13 @@ sources:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/pearson/parcc/"
       - name: src_pearson__student_list_report
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - pearson
-              - student_list_report
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - pearson
+                - student_list_report
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -109,12 +114,13 @@ sources:
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/pearson/student_list_report/"
       - name: src_pearson__student_test_update
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - pearson
-              - student_test_update
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - pearson
+                - student_test_update
         external:
           location:
             "{{ var('cloud_storage_uri_base',
