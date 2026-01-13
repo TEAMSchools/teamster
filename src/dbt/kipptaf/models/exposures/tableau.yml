@@ -136,12 +136,12 @@ exposures:
         dagster:
           kinds:
             - tableau
-        asset:
-          metadata:
-            id: ad72c094-ad35-48f4-86a0-9d2e5b53f59a
-            cron_schedule:
-              - 0 4 * * *
-              - 0 17 * * *
+          asset:
+            metadata:
+              id: ad72c094-ad35-48f4-86a0-9d2e5b53f59a
+              cron_schedule:
+                - 0 4 * * *
+                - 0 17 * * *
   - name: nj_certification_dashboard_schools_view
     label: NJ Certification Dashboard (Schools View)
     type: dashboard
@@ -271,13 +271,13 @@ exposures:
         dagster:
           kinds:
             - tableau
-        asset:
-          metadata:
-            id: b529ca04-3560-4cff-8898-fd0a65f3e994
-            cron_schedule:
-              - 0 6 * * *
-              - 30 14 * * *
-              - 15 16 * * *
+          asset:
+            metadata:
+              id: b529ca04-3560-4cff-8898-fd0a65f3e994
+              cron_schedule:
+                - 0 6 * * *
+                - 30 14 * * *
+                - 15 16 * * *
   - name: attendance_dashboard
     label: Attendance Dashboard
     type: dashboard
@@ -326,13 +326,13 @@ exposures:
         dagster:
           kinds:
             - tableau
-        asset:
-          metadata:
-            id: 8977a813-36c8-48df-8a61-479f374ae78a
-            cron_schedule:
-              - 0 12 * * *
-              - 30 14 * * *
-              - 15 16 * * *
+          asset:
+            metadata:
+              id: 8977a813-36c8-48df-8a61-479f374ae78a
+              cron_schedule:
+                - 0 12 * * *
+                - 30 14 * * *
+                - 15 16 * * *
   - name: gradebook_and_gpa_dashboard
     label: Gradebook and GPA Dashboard
     type: dashboard
@@ -385,14 +385,14 @@ exposures:
         dagster:
           kinds:
             - tableau
-        asset:
-          metadata:
-            id: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
-            cron_schedule:
-              - 0 1 * * *
-              - 40 14 * * 3
-              - 0 16 * * 5
-              - 0 18 * * *
+          asset:
+            metadata:
+              id: 6d82b643-59a8-4106-b2f9-97ddf7f638e7
+              cron_schedule:
+                - 0 1 * * *
+                - 40 14 * * 3
+                - 0 16 * * 5
+                - 0 18 * * *
   - name: apm_dashboard
     label: APM Dashboard
     type: dashboard
@@ -471,9 +471,9 @@ exposures:
         dagster:
           kinds:
             - tableau
-        asset:
-          metadata:
-            id: 35484db7-cd5b-4834-828a-5bfc645a09c6
+          asset:
+            metadata:
+              id: 35484db7-cd5b-4834-828a-5bfc645a09c6
   - name: number_of_school_days_between_two_dates
     label: Number of School Days Between Two Dates
     type: dashboard
@@ -518,9 +518,9 @@ exposures:
         dagster:
           kinds:
             - tableau
-        asset:
-          metadata:
-            id: 8f8b058f-2408-470d-95b0-681d6c8b65f4
+          asset:
+            metadata:
+              id: 8f8b058f-2408-470d-95b0-681d6c8b65f4
   - name: kipp_miami_fast_iready_analysis
     label: KIPP Miami FAST & i-Ready Analysis
     type: dashboard
@@ -551,13 +551,13 @@ exposures:
         dagster:
           kinds:
             - tableau
-        asset:
-          metadata:
-            id: db88d328-0d54-4dac-8003-6197841e1432
-            cron_schedule:
-              - 0 6 * * *
-              - 30 14 * * *
-              - 15 16 * * *
+          asset:
+            metadata:
+              id: db88d328-0d54-4dac-8003-6197841e1432
+              cron_schedule:
+                - 0 6 * * *
+                - 30 14 * * *
+                - 15 16 * * *
   - name: recruitment_dashboard
     label: Recruitment Dashboard
     type: dashboard
@@ -572,12 +572,12 @@ exposures:
         dagster:
           kinds:
             - tableau
-        asset:
-          metadata:
-            id: 970826ab-8d1c-4468-9b84-62f6432a9642
-            cron_schedule:
-              - 0 7 * * *
-              - 0 14 * * *
+          asset:
+            metadata:
+              id: 970826ab-8d1c-4468-9b84-62f6432a9642
+              cron_schedule:
+                - 0 7 * * *
+                - 0 14 * * *
   - name: survey_dashboard
     label: Survey Dashboard
     type: dashboard
@@ -640,9 +640,9 @@ exposures:
         dagster:
           kinds:
             - tableau
-        asset:
-          metadata:
-            id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
+          asset:
+            metadata:
+              id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
   - name: state_testing_analysis_tool
     label: State Testing Analysis Tool
     type: dashboard
@@ -656,9 +656,9 @@ exposures:
         dagster:
           kinds:
             - tableau
-        asset:
-          metadata:
-            id: 31b6a4a9-e0ca-479b-8f44-0daaa52e109b
+          asset:
+            metadata:
+              id: 31b6a4a9-e0ca-479b-8f44-0daaa52e109b
   - name: renewal_approval_tool
     label: Renewal Approval Tool
     type: dashboard
@@ -673,9 +673,9 @@ exposures:
         dagster:
           kinds:
             - tableau
-        asset:
-          metadata:
-            id: 5f8c5385-845b-4d8b-bf68-6f9323cb4ca8
+          asset:
+            metadata:
+              id: 5f8c5385-845b-4d8b-bf68-6f9323cb4ca8
   - name: operations_systems
     label: Operations Systems
     type: dashboard
@@ -717,9 +717,9 @@ exposures:
         dagster:
           kinds:
             - tableau
-        asset:
-          metadata:
-            id: 4c9f089a-86e6-4c75-a5ac-22da73e28e22
+          asset:
+            metadata:
+              id: 4c9f089a-86e6-4c75-a5ac-22da73e28e22
   - name: manager_survey_reports
     label: Manager Survey Reports
     type: dashboard
@@ -732,6 +732,6 @@ exposures:
         dagster:
           kinds:
             - tableau
-        asset:
-          metadata:
-            id: 61c1e07d-778e-40a8-81ad-327f3951c8e2
+          asset:
+            metadata:
+              id: 61c1e07d-778e-40a8-81ad-327f3951c8e2
