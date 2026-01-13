@@ -60,6 +60,11 @@ select
     w.week_start_monday,
     w.week_end_sunday,
 
+    any_value(m.detailed_status) over (
+        partition by m.academic_year, m.finalsite_student_id
+        order by m.status_start_date desc
+    ) as latest_status,
+
 from {{ ref("int_students__finalsite_student_roster") }} as m
 inner join
     weekly_spine as w

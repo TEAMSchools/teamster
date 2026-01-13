@@ -81,3 +81,5 @@ models:
         data_type: int64
       - name: waitlisted
         data_type: int64
+      - name: latest_status
+        data_type: string
