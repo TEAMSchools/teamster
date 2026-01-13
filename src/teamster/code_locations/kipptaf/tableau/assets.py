@@ -1,13 +1,4 @@
-from dagster import (
-    AssetCheckResult,
-    AssetCheckSeverity,
-    AssetCheckSpec,
-    AssetExecutionContext,
-    AssetKey,
-    AssetsDefinition,
-    Output,
-    asset,
-)
+from dagster import AssetExecutionContext, AssetKey, AssetsDefinition, Output, asset
 from dagster_gcp import BigQueryResource
 from tableauserverclient import Pager
 
@@ -42,12 +33,6 @@ view_count_per_view = build_sftp_folder_asset(
             ["kipptaf", "tableau", "int_tableau__gradebook_audit_teacher_scaffold"]
         )
     ],
-    check_specs=[
-        AssetCheckSpec(
-            name="zero_api_errors",
-            asset=[CODE_LOCATION, "tableau", "teacher_gradebook_group_sync"],
-        )
-    ],
     group_name="tableau",
     kinds={"python", "task"},
 )
@@ -65,8 +50,6 @@ def tableau_teacher_gradebook_group_sync(
       where teacher_tableau_username is not null
       group by region
     """
-
-    errors = []
 
     context.log.info(msg=query)
     with db_bigquery.get_client() as bq:
@@ -103,13 +86,6 @@ def tableau_teacher_gradebook_group_sync(
         )
 
     yield Output(value=None)
-    yield AssetCheckResult(
-        passed=(len(errors) == 0),
-        asset_key=context.asset_key,
-        check_name="zero_api_errors",
-        metadata={"errors": errors},
-        severity=AssetCheckSeverity.WARN,
-    )
 
 
 assets = [
