@@ -41,7 +41,6 @@ def tableau_teacher_gradebook_group_sync(
     db_bigquery: BigQueryResource,
     tableau: TableauServerResource,
 ):
-    # query source data
     query = """
       select
         concat('Teacher Gradebook Email - Auto - ', region) as group_name,
@@ -51,6 +50,7 @@ def tableau_teacher_gradebook_group_sync(
       group by region
     """
 
+    # query source data
     context.log.info(msg=query)
     with db_bigquery.get_client() as bq:
         query_job = bq.query(query=query, project=db_bigquery.project)
@@ -60,22 +60,25 @@ def tableau_teacher_gradebook_group_sync(
     context.log.info(msg=f"Retrieved {arrow.num_rows} rows")
     query_results = arrow.to_pylist()
 
-    # update groups
     for result in query_results:
+        # filter for group
         group_item = [
             group
             for group in Pager(endpoint=tableau._server.groups)
             if group.name == result["group_name"]
         ][0]
 
+        # get existing group members
         tableau._server.groups.populate_users(group_item=group_item)
         existing_users = [user.id for user in group_item.users]
 
+        # clear all group members
         if existing_users:
             tableau._server.groups.remove_users(
                 group_item=group_item, users=existing_users
             )
 
+        # add group members from query
         tableau._server.groups.add_users(
             group_item=group_item,
             users=[
