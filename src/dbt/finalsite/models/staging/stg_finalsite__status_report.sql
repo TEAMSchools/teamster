@@ -12,9 +12,11 @@ with
 
             cast(powerschool_student_number as int) as powerschool_student_number,
 
-            cast(`timestamp` as date) as status_start_date,
-
             cast(left(enrollment_year, 4) as int) as academic_year,
+
+            date(
+                cast(`timestamp` as timestamp), '{{ var("local_timezone") }}'
+            ) as status_start_date,
 
             initcap(replace(`status`, '_', ' ')) as detailed_status,
 
@@ -32,7 +34,7 @@ with
             *,
 
             lead(
-                status_start_date - 1,
+                date_sub(status_start_date, interval 1 day),
                 1,
                 current_date('{{ var("local_timezone") }}')
             ) over (
