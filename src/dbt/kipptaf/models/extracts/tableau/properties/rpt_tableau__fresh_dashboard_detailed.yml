@@ -1,5 +1,5 @@
 models:
-  - name: rpt_tableau__finalsite_recruitment_enrollment_students_hub_dashboard
+  - name: rpt_tableau__fresh_dashboard_detailed
     columns:
       - name: _dbt_source_relation
         data_type: string
