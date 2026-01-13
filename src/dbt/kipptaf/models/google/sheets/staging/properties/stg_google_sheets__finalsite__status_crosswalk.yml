@@ -13,7 +13,13 @@ models:
         data_type: string
       - name: status_category
         data_type: string
+      - name: offered_status
+        data_type: string
+      - name: offered_status_detailed
+        data_type: string
       - name: detailed_status_ranking
+        data_type: int64
+      - name: detailed_status_branched_ranking
         data_type: int64
       - name: detailed_status
         data_type: string
@@ -21,11 +27,25 @@ models:
         data_type: int64
       - name: valid_detailed_status
         data_type: boolean
-      - name: offered
-        data_type: int64
-      - name: conversion
+      - name: applicant_ops
         data_type: int64
       - name: offered_ops
         data_type: int64
-      - name: conversion_ops
+      - name: pending_offer_ops
+        data_type: int64
+      - name: overall_conversion_ops
+        data_type: int64
+      - name: offers_to_accepted_den
+        data_type: int64
+      - name: offers_to_accepted_num
+        data_type: int64
+      - name: accepted_to_enrolled_den
+        data_type: int64
+      - name: accepted_to_enrolled_num
+        data_type: int64
+      - name: offers_to_enrolled_den
+        data_type: int64
+      - name: offers_to_enrolled_num
+        data_type: int64
+      - name: waitlisted
         data_type: int64
