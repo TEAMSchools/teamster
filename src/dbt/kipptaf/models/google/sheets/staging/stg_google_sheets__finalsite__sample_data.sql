@@ -5,7 +5,7 @@ with
 
             initcap(replace(`status`, '_', ' ')) as detailed_status,
 
-            nitcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
+            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
 
             cast(academic_year as string)
             || '-'
