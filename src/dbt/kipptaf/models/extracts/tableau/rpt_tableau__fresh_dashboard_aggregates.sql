@@ -128,11 +128,12 @@ with
             )
     )
 
-select distinct
+select
     _dbt_source_relation,
     academic_year,
     academic_year_display,
     enrollment_year,
+    finalsite_student_id,
     metric_name,
     metric_value,
 
@@ -143,11 +144,12 @@ from unpivot_offer_tracking
 
 union all
 
-select distinct
+select
     _dbt_source_relation,
     academic_year,
     academic_year_display,
     enrollment_year,
+    finalsite_student_id,
     metric_name,
     metric_value,
 
@@ -158,11 +160,12 @@ from unpivot_offer_tracking
 
 union all
 
-select distinct
+select
     _dbt_source_relation,
     academic_year,
     academic_year_display,
     enrollment_year,
+    finalsite_student_id,
     metric_name,
     metric_value,
 
@@ -173,11 +176,12 @@ from unpivot_offer_tracking
 
 union all
 
-select distinct
+select
     _dbt_source_relation,
     academic_year,
     academic_year_display,
     enrollment_year,
+    finalsite_student_id,
     metric_name,
     metric_value,
 
