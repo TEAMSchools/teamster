@@ -35,8 +35,6 @@ dagsterCloudAgent:
     limits:
       cpu: 500m
       memory: 1.5Gi
-  nodeSelector:
-    cloud.google.com/gke-spot: "true"
   podSecurityContext:
     runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
   # securityContext:
