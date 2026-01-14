@@ -3,7 +3,6 @@ with
         select
             f.* except (school),
 
-            x.region,
             x.powerschool_school_id as schoolid,
             x.abbreviation as school,
 
