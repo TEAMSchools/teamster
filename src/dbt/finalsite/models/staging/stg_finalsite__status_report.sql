@@ -20,7 +20,7 @@ with
 
             initcap(replace(`status`, '_', ' ')) as detailed_status,
 
-            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region
+            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
 
             if(
                 grade_level = 'Kindergarten',
