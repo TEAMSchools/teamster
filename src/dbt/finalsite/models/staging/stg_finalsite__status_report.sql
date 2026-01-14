@@ -53,5 +53,5 @@ select
         1,
         date_diff(status_end_date, status_start_date, day)
     ) as days_in_status,
-    
+
 from end_date_calc
