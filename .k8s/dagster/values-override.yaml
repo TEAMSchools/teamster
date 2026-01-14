@@ -35,8 +35,6 @@ dagsterCloudAgent:
     limits:
       cpu: 500m
       memory: 1.5Gi
-  nodeSelector:
-    cloud.google.com/gke-spot: "true"
   podSecurityContext:
     runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
   # securityContext:
@@ -71,16 +69,19 @@ workspace:
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   serverK8sConfig:
     containerConfig:
+      # Autopilot enforces special minimum values for resource requests on extended
+      # duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
       resources:
         requests:
-          cpu: 250m
-          memory: 0.5Gi
-        limits:
           cpu: 500m
-          memory: 1.5Gi
+          memory: 2.0Gi
+        limits:
+          cpu: 750m
+          memory: 2.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
       nodeSelector:
         cloud.google.com/compute-class: Scale-Out
