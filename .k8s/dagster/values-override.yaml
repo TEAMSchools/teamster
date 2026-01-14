@@ -84,7 +84,6 @@ workspace:
     podSpecConfig:
       nodeSelector:
         cloud.google.com/compute-class: Scale-Out
-        cloud.google.com/gke-spot: "true"
         kubernetes.io/arch: arm64
 
   # Specify TTL for user code servers.
