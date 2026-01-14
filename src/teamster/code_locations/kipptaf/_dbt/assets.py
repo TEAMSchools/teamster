@@ -84,10 +84,10 @@ asset_specs = [
             for ref in exposure["refs"]
         ],
         metadata={"url": exposure.get("url")},
-        kinds=set(exposure["meta"]["dagster"]["kinds"]),
+        kinds=set(exposure["config"]["meta"]["dagster"]["kinds"]),
     )
     for exposure in manifest["exposures"].values()
-    if "tableau" not in exposure["meta"]["dagster"]["kinds"]
+    if "tableau" not in exposure["config"]["meta"]["dagster"]["kinds"]
 ]
 
 assets = [

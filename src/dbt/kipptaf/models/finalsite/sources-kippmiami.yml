@@ -5,10 +5,11 @@ sources:
       {%- endif -%}kippmiami_finalsite
     tables:
       - name: stg_finalsite__status_report
-        meta:
-          dagster:
-            group: amplify
-            asset_key:
-              - kippmiami
-              - finalsite
-              - stg_finalsite__status_report
+        config:
+          meta:
+            dagster:
+              group: amplify
+              asset_key:
+                - kippmiami
+                - finalsite
+                - stg_finalsite__status_report
