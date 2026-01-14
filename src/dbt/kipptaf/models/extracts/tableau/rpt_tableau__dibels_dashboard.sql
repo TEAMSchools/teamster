@@ -175,6 +175,7 @@ left join
 where
     s.iready_subject = 'Reading'
     and not s.is_self_contained
+    and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)
 
 union all
@@ -376,4 +377,5 @@ left join
 where
     s.iready_subject = 'Reading'
     and not s.is_self_contained
+    and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)
