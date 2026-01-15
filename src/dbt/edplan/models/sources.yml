@@ -5,12 +5,13 @@ sources:
       {{ var('edplan_schema', project_name + '_edplan') }}
     tables:
       - name: src_edplan__njsmart_powerschool
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - edplan
-              - njsmart_powerschool
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - edplan
+                - njsmart_powerschool
         external:
           location:
             "{{ var('cloud_storage_uri_base',

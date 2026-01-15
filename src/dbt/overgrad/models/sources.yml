@@ -16,12 +16,13 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - overgrad
-              - admissions
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - overgrad
+                - admissions
       - name: src_overgrad__custom_fields
         external:
           location:
@@ -34,12 +35,13 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - overgrad
-              - custom_fields
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - overgrad
+                - custom_fields
       - name: src_overgrad__followings
         external:
           location:
@@ -52,12 +54,13 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - overgrad
-              - followings
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - overgrad
+                - followings
       - name: src_overgrad__schools
         external:
           location:
@@ -69,12 +72,13 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - overgrad
-              - schools
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - overgrad
+                - schools
       - name: src_overgrad__students
         external:
           location:
@@ -87,9 +91,10 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - overgrad
-              - students
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - overgrad
+                - students

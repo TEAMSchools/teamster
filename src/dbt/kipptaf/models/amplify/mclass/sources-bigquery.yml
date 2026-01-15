@@ -6,17 +6,19 @@ sources:
     tables:
       - name: stg_amplify__mclass__api__benchmark_student_summary
         identifier: stg_amplify__benchmark_student_summary
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - amplify
-              - stg_amplify__mclass__api__benchmark_student_summary
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - amplify
+                - stg_amplify__mclass__api__benchmark_student_summary
       - name: stg_amplify__mclass__api__pm_student_summary
         identifier: stg_amplify__pm_student_summary
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - amplify
-              - stg_amplify__mclass__api__pm_student_summary
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - amplify
+                - stg_amplify__mclass__api__pm_student_summary

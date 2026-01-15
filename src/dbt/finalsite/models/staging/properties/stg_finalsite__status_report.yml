@@ -5,8 +5,6 @@ models:
         data_type: string
       - name: enrollment_year
         data_type: string
-      - name: enrollment_type
-        data_type: string
       - name: status
         data_type: string
       - name: last_name
@@ -29,3 +27,5 @@ models:
         data_type: string
       - name: status_end_date
         data_type: date
+      - name: days_in_status
+        data_type: int64
