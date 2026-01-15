@@ -65,7 +65,7 @@ with
         inner join
             {{ ref("base_powerschool__course_enrollments") }} as e
             on a.sectionsdcid = e.sections_dcid
-            and a.duedate >= e.cc_dateenrolled
+            and a.duedate between e.cc_dateenrolled and e.cc_dateleft
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
             and not e.is_dropped_section
         left join
