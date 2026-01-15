@@ -56,4 +56,7 @@ select
         date_diff(status_end_date, status_start_date, day)
     ) as days_in_status,
 
+    date(academic_year, 10, 16) as sre_year_start,
+    date(academic_year + 1, 10, 15) as sre_year_end,
+
 from end_date_calc
