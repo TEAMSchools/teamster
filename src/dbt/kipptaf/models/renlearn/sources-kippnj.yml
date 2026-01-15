@@ -3,18 +3,20 @@ sources:
     schema: kippnewark_renlearn
     tables:
       - name: stg_renlearn__accelerated_reader
-        meta:
-          dagster:
-            group: renlearn
-            asset_key:
-              - kippnewark
-              - renlearn
-              - stg_renlearn__accelerated_reader
+        config:
+          meta:
+            dagster:
+              group: renlearn
+              asset_key:
+                - kippnewark
+                - renlearn
+                - stg_renlearn__accelerated_reader
       - name: stg_renlearn__star
-        meta:
-          dagster:
-            group: renlearn
-            asset_key:
-              - kippnewark
-              - renlearn
-              - stg_renlearn__star
+        config:
+          meta:
+            dagster:
+              group: renlearn
+              asset_key:
+                - kippnewark
+                - renlearn
+                - stg_renlearn__star
