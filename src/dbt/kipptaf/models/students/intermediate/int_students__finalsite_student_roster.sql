@@ -6,10 +6,32 @@ with
             x.powerschool_school_id as schoolid,
             x.abbreviation as school,
 
+            row_number() over (
+                partition by f.academic_year, f.sre_year_start, f.sre_year_end
+                order by f.academic_year
+            ) as rn_sre_year,
+
         from {{ ref("stg_google_sheets__finalsite__sample_data") }} as f
         left join
             {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
             on f.school = x.name
+    ),
+
+    latest_school_id_gl as (
+        select
+            academic_year,
+            finalsite_student_id,
+            schoolid,
+            school,
+            grade_level,
+
+            row_number() over (
+                partition by academic_year, finalsite_student_id
+                order by status_start_date desc
+            ) as rn
+
+        from finalsite_report
+        qualify rn = 1
     ),
 
     enrollment_type_calc as (
@@ -61,8 +83,6 @@ with
             f.academic_year_display,
             f.enrollment_year,
             f.region,
-            f.schoolid,
-            f.school,
             f.powerschool_student_number,
             f.last_name,
             f.first_name,
@@ -75,24 +95,45 @@ with
 
             coalesce(e.enrollment_type, 'New') as enrollment_type,
 
+            coalesce(f.schoolid, r.schoolid) as schoolid,
+            coalesce(f.school, r.school) as school,
+
         from finalsite_report as f
         left join
             enrollment_type_calc as e on f.powerschool_student_number = e.student_number
+        left join
+            finalsite_report as r
+            on f.academic_year = r.academic_year
+            and f.finalsite_student_id = r.finalsite_student_id
     ),
 
     weekly_spine as (
-        select
+        -- distinct: get a list of schools open tied to an academic year
+        select distinct
+            e.academic_year,
+            e.region,
+            e.schoolid,
+            e.school,
+            e.grade_level,
+
+            f.sre_year_start,
+            f.sre_year_end,
+
             week_start as week_start_monday,
             date_add(week_start, interval 6 day) as week_end_sunday,
 
-        from
-            -- TODO: hardcoded because idk what dates SRE will ask for
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            finalsite_report as f
+            on e.academic_year = f.academic_year
+            and f.rn_sre_year = 1
+        cross join
             unnest(
                 generate_date_array(
                     -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc('2025-07-01', week(monday)),
+                    date_trunc(f.sre_year_start, week(monday)),
                     -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc('2026-06-30', week(monday)),
+                    date_trunc(f.sre_year_end, week(monday)),
                     interval 7 day
                 )
             ) as week_start
