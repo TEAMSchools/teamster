@@ -8,10 +8,11 @@ exposures:
       - ref("rpt_appsheet__seat_tracker_roster")
       - ref("stg_google_sheets__people__campus_crosswalk")
       - ref("stg_google_sheets__people__location_crosswalk")
-    meta:
-      dagster:
-        kinds:
-          - google
+    config:
+      meta:
+        dagster:
+          kinds:
+            - google
   - name: stipend_app
     label: Stipend and Bonus App
     type: application
@@ -19,10 +20,11 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_appsheet__stipend_app_roster")
-    meta:
-      dagster:
-        kinds:
-          - google
+    config:
+      meta:
+        dagster:
+          kinds:
+            - google
   - name: leadership_development_app
     label: Leadership Development
     type: application
@@ -32,10 +34,11 @@ exposures:
       - ref("rpt_appsheet__leadership_development_assignments")
       - ref("rpt_appsheet__leadership_development_roster")
       - ref("stg_google_sheets__performance_management__leadership_development_metrics")
-    meta:
-      dagster:
-        kinds:
-          - google
+    config:
+      meta:
+        dagster:
+          kinds:
+            - google
   - name: assessment
     label: Assessment
     type: application
@@ -43,7 +46,8 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_appsheet__assessments")
-    meta:
-      dagster:
-        kinds:
-          - google
+    config:
+      meta:
+        dagster:
+          kinds:
+            - google
