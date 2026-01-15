@@ -30,7 +30,7 @@ dagsterCloud:
 dagsterCloudAgent:
   resources:
     requests:
-      cpu: 500m
+      cpu: 500m # Autopilot minimum of 500m required for using pod anti affinity
       memory: 0.5Gi
     limits:
       cpu: 750m
@@ -66,10 +66,10 @@ workspace:
     containerConfig:
       resources:
         requests:
-          cpu: 250m
+          cpu: 500m # Autopilot minimum of 500m required for using pod anti affinity
           memory: 0.5Gi
         limits:
-          cpu: 500m
+          cpu: 750m
           memory: 1.0Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
