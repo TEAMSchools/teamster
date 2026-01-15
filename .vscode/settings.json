@@ -1,23 +1,30 @@
 {
-  "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
-  "dbt.prefixGenerateModel": "stg",
-  "dbt.queryLimit": 500,
-  "editor.defaultFormatter": "trunk.io",
+  "diffEditor.experimental.showMoves": true,
+  "diffEditor.ignoreTrimWhitespace": false,
   "editor.formatOnSave": true,
   "editor.inlineSuggest.enabled": true,
   "editor.renderControlCharacters": true,
   "editor.renderWhitespace": "all",
   "editor.wordWrap": "bounded",
   "editor.wordWrapColumn": 88,
+  "git.confirmSync": false,
+  "git.ignoreRebaseWarning": true,
   "githubPullRequests.ignoredPullRequestBranches": ["main"],
+  "python.createEnvironment.trigger": "off",
   "python.defaultInterpreterPath": ".venv/bin/python",
+  "python.envFile": "${workspaceFolder}/env/.env",
+  "python.terminal.activateEnvironment": false,
+  "python.testing.pytestArgs": ["tests", "--capture=no"],
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "testing.showAllMessages": true,
+  "trunk.showPreexistingIssues": true,
   "files.associations": {
-    "*.toml": "toml",
     "*.env": "shellscript",
-    "*.sql": "jinja-sql"
+    "*.sql": "jinja-sql",
+    "*.toml": "toml"
   },
   "files.exclude": {
-    "**/.git": false,
     "**/.trunk/*actions/": true,
     "**/.trunk/*logs/": true,
     "**/.trunk/*notifications/": true,
@@ -31,17 +38,48 @@
     "**/.trunk/*out/": true,
     "**/.trunk/*plugins/": true
   },
-  "[json]": {
-    "editor.defaultFormatter": "vscode.json-language-features"
+  "[jsonc]": {
+    "editor.defaultFormatter": "trunk.io"
   },
   "dbt.enableNewLineagePanel": true,
-  "dbt.enableNewQueryPanel": true,
-  "testing.showAllMessages": true,
-  "python.testing.pytestArgs": ["tests", "--capture=no"],
-  "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true,
-  "python.analysis.typeCheckingMode": "basic",
-  "python.createEnvironment.trigger": "off",
-  "python.terminal.activateEnvironment": false,
-  "python.envFile": "${workspaceFolder}/env/.env"
+  "[python]": {
+    "editor.defaultFormatter": "trunk.io"
+  },
+  "terminal.integrated.env.linux": {
+    "DAGSTER_HOME": "/workspaces/teamster/.dagster/home",
+    "DBT_CLOUD_ENVIRONMENT_TYPE": "dev",
+    "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt",
+    "GOOGLE_CLOUD_PROJECT": "teamster-332318",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TRUNK_TELEMETRY": "off",
+    "UV_ENV_FILE": "/workspaces/teamster/env/.env",
+    "UV_LINK_MODE": "copy",
+    "UV_RESOLUTION": "highest"
+  },
+  "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
+  "dbt.prefixGenerateModel": "stg",
+  "trunk.enableUpgradePane": false,
+  "trunk.showWhatsNew": false,
+  "trunk.trunkPath": "./trunk",
+  "trunk.autoInit": false,
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/dbt_yml_files-latest.json": [
+      "src/dbt/**/*.yml",
+      "!profiles.yml",
+      "!dbt_project.yml",
+      "!packages.yml",
+      "!selectors.yml",
+      "!profile_template.yml",
+      "!package-lock.yml"
+    ],
+    "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/dbt_project-latest.json": [
+      "dbt_project.yml"
+    ],
+    "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/selectors-latest.json": [
+      "selectors.yml"
+    ],
+    "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/packages-latest.json": [
+      "packages.yml"
+    ]
+  }
 }

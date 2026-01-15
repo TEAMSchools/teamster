@@ -1,107 +1,233 @@
 with
-    history_clean as (
+    staff_roster_history as (
         select
             employee_number,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
             assignment_status,
+            assignment_status_effective_date,
+            work_assignment_termination_date,
+
+            if(
+                assignment_status not in ('Terminated', 'Deceased', 'Pre-Start'),
+                true,
+                false
+            ) as is_active,
+
+            if(job_title = 'Intern', true, false) as is_intern,
+
+            if(
+                job_title in (
+                    'Teacher',
+                    'ESE Teacher',
+                    'Learning Specialist',
+                    'Learning Specialist Coordinator',
+                    'Teacher in Residence',
+                    'Teacher, ESL',
+                    'Teacher ESL',
+                    'Co-Teacher'
+                ),
+                true,
+                false
+            ) as is_teacher,
+
+            row_number() over (
+                partition by employee_number
+                order by assignment_status_effective_date asc
+            ) as rn_employee_status_date_asc,
+        from {{ ref("int_people__staff_roster_history") }}
+    ),
+
+    with_end_date as (
+        select
+            employee_number,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
+            is_teacher,
+            is_intern,
+            is_active,
+            rn_employee_status_date_asc,
             assignment_status_effective_date as assignment_status_effective_date_start,
-            coalesce(job_title, 'Missing Historic Job') as job_title,
+
             coalesce(
-                lead(assignment_status_effective_date, 1) over (
-                    partition by employee_number
-                    order by assignment_status_effective_date asc
+                date_sub(
+                    lead(assignment_status_effective_date, 1) over (
+                        partition by employee_number
+                        order by assignment_status_effective_date asc
+                    ),
+                    interval 1 day
                 ),
                 work_assignment_termination_date,
                 date(9999, 12, 31)
             ) as assignment_status_effective_date_end,
-        from {{ ref("base_people__staff_roster_history") }}
+        from staff_roster_history
     ),
 
-    staff_roster_history as (
+    with_end_date_corrected as (
         select
             employee_number,
-            job_title,
-            cast(
-                assignment_status_effective_date_start as datetime
-            ) as work_assignment_start_date,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
+            is_teacher,
+            rn_employee_status_date_asc,
+            assignment_status_effective_date_start,
+
             if(
-                cast(assignment_status_effective_date_end as datetime)
-                >= current_datetime('{{ var("local_timezone") }}'),
-                current_datetime('{{ var("local_timezone") }}'),
-                cast(assignment_status_effective_date_end as datetime)
-            ) as work_assignment_end_date,
-            if(
-                assignment_status = 'Active', 'days_active', 'days_inactive'
-            ) as input_column,
-        from history_clean
-        where assignment_status not in ('Terminated', 'Deceased', 'Pre-Start')
+                assignment_status_effective_date_end
+                >= current_date('{{ var("local_timezone") }}'),
+                current_date('{{ var("local_timezone") }}'),
+                assignment_status_effective_date_end
+            ) as assignment_status_effective_date_end,
+        from with_end_date
+        where
+            is_active
+            and not is_intern
+            and assignment_status_effective_date_end
+            >= assignment_status_effective_date_start
+    ),
+
+    with_year_scaffold as (
+        select
+            srh.employee_number,
+            srh.years_teaching_in_njfl,
+            srh.years_teaching_outside_njfl,
+            srh.years_exp_outside_kipp,
+            srh.rn_employee_status_date_asc,
+            srh.is_teacher,
+
+            d as date_value,
+
+            {{
+                date_to_fiscal_year(
+                    date_field="d", start_month=7, year_source="start"
+                )
+            }} as academic_year,
+        from with_end_date_corrected as srh
+        cross join
+            unnest(
+                generate_date_array(
+                    srh.assignment_status_effective_date_start,
+                    srh.assignment_status_effective_date_end
+                )
+            ) as d
+    ),
+
+    with_ay_dates as (
+        select
+            employee_number,
+            academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
+            is_teacher,
+            rn_employee_status_date_asc,
+
+            min(date_value) as academic_year_start_date,
+            max(date_value) as academic_year_end_date,
+        from with_year_scaffold
+        group by
+            employee_number,
+            academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
+            is_teacher,
+            rn_employee_status_date_asc
     ),
 
     with_date_diff as (
         select
             employee_number,
-            input_column,
-            job_title,
+            academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
+            is_teacher,
+
             date_diff(
-                work_assignment_end_date, work_assignment_start_date, day
+                academic_year_end_date, academic_year_start_date, day
             ) as work_assignment_day_count,
-        from staff_roster_history
+        from with_ay_dates
     ),
 
     day_counts as (
         select
             employee_number,
-            input_column,
-            sum(work_assignment_day_count) as work_assignment_day_count,
+            academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
+
+            'days_at_kipp' as input_column,
+
+            sum(work_assignment_day_count) over (
+                partition by employee_number order by academic_year asc
+            ) as work_assignment_day_count,
         from with_date_diff
-        where job_title != 'Intern'
-        group by employee_number, input_column
 
         union all
 
         select
             employee_number,
+            academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
+
             'days_as_teacher' as input_column,
-            sum(work_assignment_day_count) as work_assignment_day_count,
+
+            sum(work_assignment_day_count) over (
+                partition by employee_number order by academic_year asc
+            ) as work_assignment_day_count,
         from with_date_diff
-        where
-            job_title in (
-                'Teacher',
-                'Learning Specialist',
-                'Learning Specialist Coordinator',
-                'Teacher in Residence',
-                'Teacher, ESL',
-                'Teacher ESL',
-                'Co-Teacher'
-            )
-        group by employee_number
+        where is_teacher
     ),
 
     day_count_pivot as (
         select
             employee_number,
-            coalesce(days_active, 0) as days_active,
-            coalesce(days_inactive, 0) as days_inactive,
+            academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
+
+            coalesce(days_at_kipp, 0) as days_at_kipp,
             coalesce(days_as_teacher, 0) as days_as_teacher,
         from
             day_counts pivot (
                 max(work_assignment_day_count) for input_column
-                in ('days_active', 'days_inactive', 'days_as_teacher')
+                in ('days_at_kipp', 'days_as_teacher')
             )
     ),
 
     year_counts as (
         select
-            *,
-            round(days_active / 365.25, 2) as years_active_at_kipp,
-            round(days_inactive / 365.25, 2) as years_inactive_at_kipp,
+            employee_number,
+            academic_year,
+            years_teaching_in_njfl,
+            years_teaching_outside_njfl,
+            years_exp_outside_kipp,
+
+            round(days_at_kipp / 365.25, 2) as years_at_kipp,
             round(days_as_teacher / 365.25, 2) as years_teaching_at_kipp,
         from day_count_pivot
     )
 
 select
     employee_number,
-    years_active_at_kipp,
-    years_inactive_at_kipp,
+    academic_year,
     years_teaching_at_kipp,
-    years_active_at_kipp + years_inactive_at_kipp as years_at_kipp_total,
+    years_teaching_in_njfl,
+    years_teaching_outside_njfl,
+    years_exp_outside_kipp,
+    years_at_kipp as years_at_kipp_total,
+
+    years_at_kipp + coalesce(years_exp_outside_kipp, 0) as years_experience_total,
+
+    years_teaching_at_kipp
+    + coalesce(years_teaching_in_njfl, 0)
+    + coalesce(years_teaching_outside_njfl, 0) as years_teaching_total,
 from year_counts

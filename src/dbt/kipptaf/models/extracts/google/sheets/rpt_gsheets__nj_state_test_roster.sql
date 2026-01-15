@@ -1,0 +1,119 @@
+with
+    courses as (
+        select
+            cc_academic_year as academic_year,
+            students_student_number as student_number,
+            courses_credittype as credittype,
+            case
+                when courses_credittype = 'MATH' and nces_course_id = '052'
+                then 'ALG01'
+                when courses_credittype = 'MATH' and nces_course_id = '072'
+                then 'GEO01'
+                when courses_credittype = 'MATH' and nces_course_id = '056'
+                then 'ALG02'
+            end as math_course,
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where rn_credittype_year = 1 and not is_dropped_section
+    ),
+
+    roster as (
+        select
+            co.academic_year,
+            co.rn_year,
+            co.region,
+            co.is_self_contained,
+            co.school_level,
+            co.school,
+            co.grade_level,
+            co.advisory_name,
+            co.student_number,
+            co.state_studentnumber,
+            co.student_name,
+            co.special_education_code,
+            co.iep_status,
+            co.enroll_status,
+            co.lep_status,
+            co.status_504,
+
+            subj as `subject`,
+
+            concat(co.student_name, ' - ', co.student_number, ' - ', subj) as student,
+
+            case
+                when subj = 'MATH' and co.asmt_extended_time_math is not null
+                then true
+                when subj = 'ENG' and co.asmt_extended_time is not null
+                then true
+                when subj = 'SCI' and co.asmt_extended_time_math is not null
+                then true
+                else false
+            end as has_extended_time,
+
+            case
+                when subj = 'MATH' and co.graduation_pathway_math = 'M'
+                then null
+                when subj = 'MATH' and co.math_state_assessment_name = '3'
+                then null
+                when subj = 'MATH' and co.grade_level = 11
+                then 'MATGP'
+                when subj = 'MATH' and co.school_level = 'HS' and c.math_course is null
+                then 'NO MATH COURSE ASSIGNED'
+                when
+                    subj = 'MATH'
+                    and co.school_level in ('MS', 'HS')
+                    and c.math_course is not null
+                then c.math_course
+                when subj = 'MATH' and c.math_course is null
+                then concat('MAT', '0', co.grade_level)
+                when subj = 'ENG' and co.graduation_pathway_ela = 'M'
+                then null
+                when subj = 'ENG' and co.state_assessment_name in ('2', '3', '4')
+                then null
+                when subj = 'ENG' and co.grade_level = 11
+                then 'ELAGP'
+                when subj = 'ENG'
+                then concat('ELA', '0', co.grade_level)
+                when
+                    subj = 'SCI'
+                    and co.grade_level in (5, 8, 11)
+                    and co.math_state_assessment_name = '3'
+                then null
+                when subj = 'SCI' and co.grade_level in (5, 8)
+                then concat('SC', '0', co.grade_level)
+                when subj = 'SCI' and co.grade_level = 11
+                then 'SC11'
+            end as test_code,
+        from {{ ref("int_extracts__student_enrollments") }} as co
+        cross join unnest(['ENG', 'MATH', 'SCI']) as subj
+        left join
+            courses as c
+            on co.academic_year = c.academic_year
+            and co.student_number = c.student_number
+            and subj = c.credittype
+    )
+
+select
+    region,
+    school,
+    student,
+    enroll_status,
+    grade_level,
+    advisory_name,
+    student_number,
+    state_studentnumber,
+    iep_status,
+    lep_status,
+    status_504,
+    test_code,
+    has_extended_time,
+
+    concat(student_number, '_', test_code) as sn_test_hash,
+    concat(school, '-', test_code, if(has_extended_time, '-ET', '')) as session_name,
+from roster
+where
+    academic_year = {{ var("current_academic_year") }}
+    and rn_year = 1
+    and test_code is not null
+    and (grade_level between 3 and 9 or grade_level = 11)
+    and region != 'Miami'
+    and school_level != 'OD'

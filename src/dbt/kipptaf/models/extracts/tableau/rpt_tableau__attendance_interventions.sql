@@ -1,0 +1,27 @@
+select
+    co.student_number,
+    co.student_name,
+    co.grade_level,
+    co.team,
+    co.region,
+    co.school,
+
+    ai.commlog_reason,
+    ai.absence_threshold,
+    ai.days_absent_unexcused,
+    ai.commlog_staff_name,
+    ai.commlog_notes,
+    ai.commlog_topic,
+    ai.commlog_date,
+    ai.commlog_status,
+    ai.commlog_type,
+    ai.intervention_status,
+    ai.intervention_status_required_int,
+
+    if(co.ada <= .90, true, false) as is_chronic_absence,
+from {{ ref("int_extracts__student_enrollments") }} as co
+inner join
+    {{ ref("int_students__attendance_interventions") }} as ai
+    on co.student_number = ai.student_number
+    and co.academic_year = ai.academic_year
+where co.academic_year = {{ var("current_academic_year") }} and co.enroll_status = 0

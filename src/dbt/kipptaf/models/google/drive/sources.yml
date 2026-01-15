@@ -1,0 +1,162 @@
+sources:
+  - name: google_drive
+    tables:
+      - name: src_surveys__manager_survey_detail_archive
+        config:
+          enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - surveys
+                - manager_survey_detail_archive
+        external:
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            uris:
+              - https://drive.google.com/open?id=1BBUf3RyA7Y3J6LLBbCh7me75MXujhQcw
+      - name: src_surveys__staff_info_archive
+        config:
+          enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - surveys
+                - staff_info_archive
+        external:
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            uris:
+              - https://drive.google.com/open?id=1W6ACbPefRNgojIdN-fCCnepXpobuXgfv
+      - name: src_surveys__cmo_engagement_regional_survey_detail_archive
+        config:
+          enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - surveys
+                - cmo_engagement_regional_survey_detail_archive
+        external:
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            uris:
+              - https://drive.google.com/open?id=1B9tEe-9tTSD7bQDXcctl97TuJrfOOf3i
+        columns:
+          - name: respondent_df_employee_number
+            data_type: int64
+          - name: respondent_legal_entity_name
+            data_type: string
+          - name: respondent_primary_site
+            data_type: string
+          - name: date_submitted
+            data_type: date
+          - name: campaign_academic_year
+            data_type: int64
+          - name: campaign_reporting_term
+            data_type: string
+          - name: question_shortname
+            data_type: string
+          - name: answer
+            data_type: string
+          - name: answer_value
+            data_type: numeric
+      - name: src_performance_management__scores_overall_archive
+        config:
+          enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - performance_management
+                - scores_overall_archive
+        external:
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            uris:
+              - https://drive.google.com/open?id=1BYxk8q_ce4gI10-9clmybhaBivjvsSh3
+      - name: src_performance_management__scores_detail_archive
+        config:
+          enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - performance_management
+                - scores_detail_archive
+        external:
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            uris:
+              - https://drive.google.com/open?id=1BYhAzjOpQ9J1NRiP3twf3Gkahqeen_bo
+      - name: src_njdoe__parcc
+        config:
+          enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - njdoe
+                - parcc
+        external:
+          options:
+            format: CSV
+            skip_leading_rows: 1
+            uris:
+              - https://drive.google.com/open?id=1CUuCKKY6UCE6ZB5xgfyWYYhP4oFUMWzJ
+              - https://drive.google.com/open?id=1CUVK7-NENZqDVxxFfhoTEktn5kNNaLse
+              - https://drive.google.com/open?id=1CY_ulR1xo9wIlUGSvrUdSfpvF_TYa4yT
+              - https://drive.google.com/open?id=1CY3HvM2W9Qpiwl5Knc8vdyR29cZnUCO2
+              - https://drive.google.com/open?id=1CZ4TUCeDWwH255En2ZqVg3uRypC4sJv4
+              - https://drive.google.com/open?id=1CZ90QSr7nr82_n2ti976fbh1N8FsecWl
+        columns:
+          - name: row_num
+            data_type: string
+          - name: county_code
+            data_type: string
+          - name: county_name
+            data_type: string
+          - name: district_code
+            data_type: string
+          - name: district_name
+            data_type: string
+          - name: school_code
+            data_type: string
+          - name: school_name
+            data_type: string
+          - name: dfg
+            data_type: string
+          - name: subgroup
+            data_type: string
+          - name: subgroup_type
+            data_type: string
+          - name: reg_to_test
+            data_type: string
+          - name: not_tested
+            data_type: string
+          - name: valid_scores
+            data_type: string
+          - name: mean_score
+            data_type: string
+          - name: l1_percent
+            data_type: string
+          - name: l2_percent
+            data_type: string
+          - name: l3_percent
+            data_type: string
+          - name: l4_percent
+            data_type: string
+          - name: l5_percent
+            data_type: string
+          - name: academic_year
+            data_type: string
+          - name: test_season
+            data_type: string
+          - name: test_code
+            data_type: string

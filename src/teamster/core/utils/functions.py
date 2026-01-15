@@ -1,63 +1,52 @@
-import os
-import pathlib
+import csv
+import re
+from datetime import datetime, timezone
+from io import StringIO
+from typing import Mapping
 
-import pendulum
-from dagster import (
-    AssetCheckResult,
-    AssetCheckSeverity,
-    AssetCheckSpec,
-    DagsterInstance,
-    MetadataValue,
-    MultiPartitionKey,
-)
+from dagster import MultiPartitionKey
+from dagster_shared import check
+from slugify import slugify
 
 from teamster.core.utils.classes import FiscalYear
 
 
-def regex_pattern_replace(pattern: str, replacements: dict):
-    for group_name, replacement in replacements.items():
-        try:
-            start_index = pattern.index(f"(?P<{group_name}>")
-        except ValueError:
-            continue
+def regex_pattern_replace(pattern: str, replacements: Mapping[str, str]):
+    for group in re.findall(r"\(\?P<\w+>[\w\+\-\.\[\]\{\}\/\\\|]*\)", pattern):
+        match = check.not_none(
+            value=re.search(pattern=r"(?<=<)(\w+)(?=>)", string=group)
+        )
 
-        end_index = pattern.index(")", start_index)
+        group_value = replacements.get(match.group(0), "")
 
-        pattern = pattern[:start_index] + replacement + pattern[end_index + 1 :]
+        pattern = pattern.replace(group, group_value)
 
     return pattern
-
-
-def get_avro_record_schema(name: str, fields: list, namespace: str | None = None):
-    return {
-        "type": "record",
-        "name": f"{name.replace('-', '_').replace('/', '_')}_record",
-        "namespace": namespace,
-        "fields": fields,
-    }
 
 
 def parse_partition_key(partition_key, dimension=None):
     try:
         date_formats = iter(
             [
-                "YYYY-MM-DDTHH:mm:ss.SSSSSSZ",
-                "YYYY-MM-DDTHH:mm:ssZ",
-                "YYYY-MM-DDTHH:mm:ss.SSSSSS[Z]",
-                "YYYY-MM-DDTHH:mm:ss[Z]",
-                "YYYY-MM-DD",
+                "%Y-%m-%dT%H:%M:%S.%f%z",
+                "%Y-%m-%dT%H:%M:%S%z",
+                "%Y-%m-%dT%H:%M:%S.%fZ",
+                "%Y-%m-%dT%H:%M:%SZ",
+                "%Y-%m-%d",
             ]
         )
 
         while True:
             try:
-                partition_key_parsed = pendulum.from_format(
-                    string=partition_key, fmt=next(date_formats)
+                partition_key_parsed = datetime.strptime(
+                    partition_key, next(date_formats)
                 )
 
                 # save resync file with current timestamp
-                if partition_key_parsed == pendulum.from_timestamp(0):
-                    partition_key_parsed = pendulum.now()
+                if partition_key_parsed == datetime.fromtimestamp(
+                    timestamp=0, tz=timezone.utc
+                ):
+                    partition_key_parsed = datetime.now(timezone.utc)
 
                 break
             except ValueError:
@@ -67,9 +56,9 @@ def parse_partition_key(partition_key, dimension=None):
 
         return [
             f"_dagster_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
-            f"_dagster_partition_date={partition_key_parsed.to_date_string()}",
-            f"_dagster_partition_hour={partition_key_parsed.format('HH')}",
-            f"_dagster_partition_minute={partition_key_parsed.format('mm')}",
+            f"_dagster_partition_date={partition_key_parsed.date().isoformat()}",
+            f"_dagster_partition_hour={partition_key_parsed.strftime('%H')}",
+            f"_dagster_partition_minute={partition_key_parsed.strftime('%M')}",
         ]
     except StopIteration:
         if dimension is not None:
@@ -95,74 +84,59 @@ def partition_key_to_vars(partition_key):
     return {"partition_path": "/".join(path)}
 
 
-def get_avro_type(value):
-    if isinstance(value, bool):
-        return ["boolean"]
-    elif isinstance(value, int):
-        return ["int", "long"]
-    elif isinstance(value, float):
-        return ["float", "double"]
-    elif isinstance(value, bytes):
-        return ["bytes"]
-    elif isinstance(value, list):
-        return infer_avro_schema_fields(value)
-    elif isinstance(value, dict):
-        return infer_avro_schema_fields([value])
-    elif isinstance(value, str):
-        return ["string"]
+def chunk(obj: list, size: int):
+    """https://stackoverflow.com/a/312464
+    Yield successive chunks from list object.
+    """
+
+    for i in range(0, len(obj), size):
+        yield obj[i : i + size]
 
 
-def infer_avro_schema_fields(list_of_dicts):
-    all_keys = set().union(*(d.keys() for d in list_of_dicts))
+def dict_reader_to_records(
+    dict_reader: csv.DictReader,
+    slugify_cols: bool = True,
+    slugify_replacements: list[list[str]] | None = None,
+) -> list[dict[str, str | None]]:
+    if slugify_replacements is None:
+        slugify_replacements = []
 
-    types = {}
-    while all_keys:
-        d = next(iter(list_of_dicts))
+    if slugify_cols:
+        dict_reader.fieldnames = [
+            slugify(text=text, separator="_", replacements=slugify_replacements)
+            for text in check.not_none(value=dict_reader.fieldnames)
+        ]
 
-        for k in all_keys.copy():
-            v = d.get(k)
-
-            avro_type = get_avro_type(v)
-            if avro_type:
-                types[k] = avro_type
-                all_keys.remove(k)
-
-    fields = []
-    for k, v in types.items():
-        v.insert(0, "null")
-        fields.append({"name": k, "type": v})
-
-    return fields
+    return [
+        {key: (value if value != "" else None) for key, value in row.items()}
+        for row in dict_reader
+    ]
 
 
-def get_dagster_cloud_instance(dagster_home_path):
-    os.environ["DAGSTER_HOME"] = dagster_home_path
-
-    pathlib.Path(dagster_home_path).mkdir(parents=True, exist_ok=True)
-
-    return DagsterInstance.get()
-
-
-def get_avro_schema_valid_check_spec(asset):
-    return AssetCheckSpec(
-        name="avro_schema_valid",
-        asset=asset,
-        description=(
-            "Checks output records against the supplied schema and warns if any "
-            "unexpected fields are discovered"
-        ),
+def csv_string_to_records(
+    csv_string: str,
+    slugify_cols: bool = True,
+    slugify_replacements: list[list[str]] | None = None,
+) -> list[dict[str, str | None]]:
+    return dict_reader_to_records(
+        dict_reader=csv.DictReader(f=StringIO(csv_string)),
+        slugify_cols=slugify_cols,
+        slugify_replacements=slugify_replacements,
     )
 
 
-def check_avro_schema_valid(asset_key, records, schema):
-    extras = set().union(*(d.keys() for d in records)) - set(
-        field["name"] for field in schema["fields"]
-    )
+def file_to_records(
+    file: str,
+    encoding: str = "utf-8",
+    delimiter: str = ",",
+    slugify_cols: bool = True,
+    slugify_replacements: list[list[str]] | None = None,
+) -> list[dict[str, str | None]]:
+    with open(file=file, encoding=encoding, mode="r") as f:
+        records = dict_reader_to_records(
+            dict_reader=csv.DictReader(f=f, delimiter=delimiter),
+            slugify_cols=slugify_cols,
+            slugify_replacements=slugify_replacements,
+        )
 
-    return AssetCheckResult(
-        passed=len(extras) == 0,
-        asset_key=asset_key,
-        check_name="avro_schema_valid",
-        metadata={"extras": MetadataValue.text(", ".join(extras))},
-        severity=AssetCheckSeverity.WARN,
-    )
+    return records

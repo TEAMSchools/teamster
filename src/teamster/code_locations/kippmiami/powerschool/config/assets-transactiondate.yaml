@@ -1,0 +1,4 @@
+assets:
+  - asset_name: pgfinalgrades
+  - asset_name: storedgrades
+  - asset_name: attendance

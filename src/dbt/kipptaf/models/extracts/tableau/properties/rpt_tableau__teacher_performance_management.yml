@@ -1,0 +1,6 @@
+models:
+  - name: rpt_tableau__teacher_performance_management
+    config:
+      enabled: false
+      contract:
+        enforced: false

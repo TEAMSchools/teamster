@@ -1,0 +1,13 @@
+models:
+  - name: stg_google_sheets__dibels_df_student_xwalk
+    config:
+      enabled: false
+    columns:
+      - name: Student_Number
+        data_type: int64
+      - name: Grade_Level
+        data_type: int64
+      - name: Admin_Season
+        data_type: string
+      - name: Region
+        data_type: string

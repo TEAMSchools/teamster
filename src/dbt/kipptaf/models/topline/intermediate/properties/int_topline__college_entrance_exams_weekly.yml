@@ -1,0 +1,4 @@
+models:
+  - name: int_topline__college_entrance_exams_weekly
+    config:
+      materialized: table

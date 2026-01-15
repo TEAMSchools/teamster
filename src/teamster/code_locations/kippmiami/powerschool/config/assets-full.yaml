@@ -1,0 +1,81 @@
+# not using partitions
+assets:
+  # transaction_date
+  - asset_name: courses
+    partition_column: transaction_date
+  - asset_name: schools
+    partition_column: transaction_date
+  - asset_name: sections
+    partition_column: transaction_date
+  - asset_name: students
+    partition_column: transaction_date
+  - asset_name: termbins
+    partition_column: transaction_date
+  - asset_name: terms
+    partition_column: transaction_date
+  # whenmodified
+  - asset_name: emailaddress
+    partition_column: whenmodified
+  - asset_name: gradescaleitem
+    partition_column: whenmodified
+  - asset_name: originalcontactmap
+    partition_column: whenmodified
+  - asset_name: person
+    partition_column: whenmodified
+  - asset_name: personaddress
+    partition_column: whenmodified
+  - asset_name: personaddressassoc
+    partition_column: whenmodified
+  - asset_name: personemailaddressassoc
+    partition_column: whenmodified
+  - asset_name: personphonenumberassoc
+    partition_column: whenmodified
+  - asset_name: phonenumber
+    partition_column: whenmodified
+  - asset_name: roledef
+    partition_column: whenmodified
+  - asset_name: schoolstaff
+    partition_column: whenmodified
+  - asset_name: sectionteacher
+    partition_column: whenmodified
+  - asset_name: studentcontactassoc
+    partition_column: whenmodified
+  - asset_name: studentcontactdetail
+    partition_column: whenmodified
+  - asset_name: studentcorefields
+    partition_column: whenmodified
+  - asset_name: users
+    partition_column: whenmodified
+  - asset_name: userscorefields
+    partition_column: whenmodified
+  - asset_name: u_clg_et_stu
+    partition_column: whenmodified
+  - asset_name: u_clg_et_stu_alt
+    partition_column: whenmodified
+  - asset_name: cc
+    partition_column: transaction_date
+    select_columns:
+      - dcid
+      - id
+      - studentid
+      - sectionid
+      - section_number
+      - schoolid
+      - studyear
+      - termid
+      - dateenrolled
+      - dateleft
+      - course_number
+      - teacherid
+      - currentabsences
+      - currenttardies
+  - asset_name: u_studentsuserfields
+    partition_column: whenmodified
+    select_columns:
+      - studentsdcid
+      - c_504_status
+      - cr_prevschoolname
+      - fleid
+      - infosnap_id
+      - media_release
+      - is_gifted

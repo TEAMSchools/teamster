@@ -1,9 +1,11 @@
 {%- set source_model_ref = source("alchemer", model.name | replace("stg", "src")) -%}
 
 with
-    parse_partition_key as (  -- noqa: ST03
+    -- trunk-ignore(sqlfluff/ST03)
+    parse_partition_key as (
         select
             *,
+
             safe_cast(
                 regexp_extract(
                     safe_cast(_dagster_partition_key as string), r'\d+', 1, 1
@@ -24,6 +26,7 @@ with
 
 select
     safe_cast(id as int) as id,
+
     safe_cast(
         created_on as timestamp format 'YYYY-MM-DD HH24:MI:SS'
         at time zone '{{ var("local_timezone") }}'
@@ -32,8 +35,10 @@ select
         modified_on as timestamp format 'YYYY-MM-DD HH24:MI:SS'
         at time zone '{{ var("local_timezone") }}'
     ) as modified_on,
+
     (select `value`, from unnest(links) where `key` = 'default') as link_default,
     (select `value`, from unnest(links) where `key` = 'campaign') as link_campaign,
+
     {{
         dbt_utils.star(
             from=source_model_ref,

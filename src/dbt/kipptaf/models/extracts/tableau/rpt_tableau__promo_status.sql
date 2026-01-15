@@ -1,9 +1,9 @@
 select
     co.student_number,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.region,
     co.school_level,
-    co.school_abbreviation,
+    co.school as school_abbreviation,
     co.grade_level,
     co.advisory_name,
     co.advisor_lastfirst as advisor_name,
@@ -12,6 +12,7 @@ select
     co.gender,
     co.is_retained_year,
     co.is_retained_ever,
+    co.iep_status,
 
     rt.name as term,
     rt.is_current,
@@ -21,17 +22,23 @@ select
     ps.iready_reading_recent,
     ps.iready_math_recent,
     ps.n_failing,
+    ps.n_failing_core,
     ps.projected_credits_y1_term,
     ps.projected_credits_cum,
+    ps.dibels_composite_level_recent,
+    ps.star_math_level_recent,
+    ps.star_reading_level_recent,
+    ps.fast_ela_level_recent,
+    ps.fast_math_level_recent,
     ps.attendance_status,
     ps.attendance_status_hs_detail,
     ps.academic_status,
+    ps.exemption,
+    ps.manual_retention,
     ps.overall_status as promo_status_overall,
-
-    if(co.spedlep like 'SPED%', 'Has IEP', co.spedlep) as iep_status,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on co.academic_year = rt.academic_year
     and co.schoolid = rt.school_id
     and rt.type = 'RT'

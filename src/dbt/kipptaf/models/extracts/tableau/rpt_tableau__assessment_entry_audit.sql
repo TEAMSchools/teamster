@@ -7,9 +7,9 @@ select
     s.academic_year,
     s.administered_at,
     s.module_type,
-    s.module_number,
+    s.module_code as module_number,
 
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.enroll_status,
     co.region,
     co.reporting_schoolid,
@@ -23,13 +23,13 @@ select
     null as is_replacement,
 from {{ ref("int_assessments__scaffold") }} as s
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as co
+    {{ ref("int_extracts__student_enrollments") }} as co
     on s.powerschool_student_number = co.student_number
     and s.academic_year = co.academic_year
     and co.rn_year = 1
     and co.enroll_status = 0
 left join
-    {{ ref("stg_reporting__terms") }} as rta
+    {{ ref("stg_google_sheets__reporting__terms") }} as rta
     on s.administered_at between rta.start_date and rta.end_date
     and s.powerschool_school_id = rta.school_id
     and rta.type = 'RT'

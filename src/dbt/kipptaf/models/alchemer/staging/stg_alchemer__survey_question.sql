@@ -1,9 +1,11 @@
 {%- set src_question = source("alchemer", "src_alchemer__survey_question") -%}
 
 with
-    parse_partition_key as (  -- noqa: ST03
+    -- trunk-ignore(sqlfluff/ST03)
+    parse_partition_key as (
         select
             *,
+
             safe_cast(
                 regexp_extract(
                     safe_cast(_dagster_partition_key as string), r'\d+', 1, 1
@@ -24,8 +26,11 @@ with
 
 select
     survey_id,
+
     nullif(shortname, '') as shortname,
+
     (select t.value, from unnest(title) as t where t.key = 'English') as title_english,
+
     {{
         dbt_utils.star(
             from=src_question, except=["_dagster_partition_key", "shortname"]

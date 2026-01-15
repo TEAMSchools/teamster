@@ -1,120 +1,77 @@
 with
     students as (
         select
-            first_name as `givenName`,
-            last_name as `familyName`,
-            student_email_google as `primaryEmail`,
-            to_hex(sha1(student_web_password)) as `password`,
-            concat('group-students-', lower(region), '@teamstudents.org') as `groupKey`,
-            if(grade_level >= 3, true, false) as `changePasswordAtNextLogin`,
-            if(enroll_status = 0, false, true) as `suspended`,
-            case
-                region
-                when 'Newark'
-                then 'TEAM'
-                when 'Camden'
-                then 'KCNA'
-                when 'Miami'
-                then 'Miami'
-            end as ou_region,
-            if(
-                is_out_of_district,
-                'Out of District',
-                case
-                    school_abbreviation
-                    when 'KHS'
-                    then 'KCNHS'
-                    when 'Hatch'
-                    then 'KHM'
-                    when 'Sumner'
-                    then 'KSE'
-                    when 'Royalty'
-                    then 'Royalty Academy'
-                    when 'Justice'
-                    then 'KJA'
-                    when 'Purpose'
-                    then 'KPA'
-                    when 'NLH'
-                    then 'Newark Lab'
-                    when 'TEAM'
-                    then 'TEAM Academy'
-                    when 'KURA'
-                    then 'Upper Roseville'
-                    else school_abbreviation
-                end
-            ) as ou_school_name,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where rn_all = 1 and student_email_google is not null
+            student_first_name as first_name,
+            student_last_name as last_name,
+            school_name,
+            grade_level,
+            student_email as student_email_google,
+            student_web_password,
+            is_out_of_district,
+
+            lower(region) as region,
+
+            if(enroll_status = 0, false, true) as suspended,
+        from {{ ref("int_extracts__student_enrollments") }}
+        where rn_all = 1 and student_email is not null and region != 'Paterson'
     ),
 
     with_google as (
         select
-            s.`primaryEmail`,
-            s.`givenName`,
-            s.`familyName`,
-            s.`suspended`,
-            s.`password`,
-            s.`changePasswordAtNextLogin`,
-            s.`groupKey`,
+            s.*,
 
-            u.name__given_name as given_name_target,
-            u.name__family_name as family_name_target,
-            u.suspended as suspended_target,
-            u.org_unit_path as org_unit_path_target,
+            u.surrogate_key_target,
 
-            'SHA-1' as `hashFunction`,
+            if(u.primary_email is not null, true, false) as is_matched,
 
-            concat(
-                '/Students/',
-                case
-                    when s.`suspended`
-                    then 'Disabled'
-                    when s.ou_school_name = 'Out of District'
-                    then 'Disabled'
-                    else s.ou_region || '/' || s.ou_school_name
-                end
-            ) as `orgUnitPath`,
-            if(u.primary_email is not null, true, false) as `matched`,
+            if(
+                s.suspended or s.is_out_of_district,
+                '/Students/Disabled',
+                o.org_unit_path
+            ) as org_unit_path,
         from students as s
         left join
             {{ ref("stg_google_directory__users") }} as u
-            on s.`primaryEmail` = u.primary_email
+            on s.student_email_google = u.primary_email
+        left join
+            {{ ref("stg_google_directory__orgunits") }} as o
+            on s.school_name = o.description
+            and o.org_unit_path like '/Students/%'
     ),
 
     final as (
         select
-            `primaryEmail`,
-            `suspended`,
-            `password`,
-            `changePasswordAtNextLogin`,
-            `groupKey`,
-            `orgUnitPath`,
-            `hashFunction`,
-            struct(`givenName` as `givenName`, `familyName` as `familyName`) as `name`,
-            if(not `matched` and not suspended, true, false) as is_create,
+            *,
+
+            if(not is_matched and not suspended, true, false) as is_create,
+
             if(
-                `matched`
+                is_matched
                 and {{
                     dbt_utils.generate_surrogate_key(
-                        ["givenName", "familyName", "suspended", "orgUnitPath"]
+                        ["first_name", "last_name", "suspended", "org_unit_path"]
                     )
-                }}
-                !={{
-                    dbt_utils.generate_surrogate_key(
-                        [
-                            "given_name_target",
-                            "family_name_target",
-                            "suspended_target",
-                            "org_unit_path_target",
-                        ]
-                    )
-                }},
+                }} != surrogate_key_target,
                 true,
                 false
             ) as is_update,
         from with_google
     )
 
-select *,
+select
+    student_email_google as `primaryEmail`,
+    org_unit_path as `orgUnitPath`,
+    suspended,
+    is_create,
+    is_update,
+
+    'SHA-1' as `hashFunction`,
+
+    'group-students-' || region || '@teamstudents.org' as `groupKey`,
+
+    struct(first_name as `givenName`, last_name as `familyName`) as `name`,
+    to_hex(sha1(student_web_password)) as `password`,
+
+    if(grade_level >= 3, true, false) as `changePasswordAtNextLogin`,
 from final
 where is_create or is_update

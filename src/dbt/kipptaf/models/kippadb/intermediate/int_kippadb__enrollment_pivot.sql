@@ -4,16 +4,22 @@ with
             e.id as enrollment_id,
             e.student,
             e.start_date,
+
+            false as is_employment,
+
             coalesce(
-                e.actual_end_date, date({{ var("current_fiscal_year") }}, 6, 30)
+                e.actual_end_date, '{{ var("current_fiscal_year") }}-06-30'
             ) as actual_end_date,
+
             if(e.status = 'Graduated', 1, 0) as is_graduated,
+
             if(
                 e.pursuing_degree_type
                 in ("Bachelor's (4-year)", "Associate's (2 year)", 'Certificate'),
                 1,
                 null
             ) as is_ecc_degree_type,
+
             case
                 when e.pursuing_degree_type = "Bachelor's (4-year)"
                 then 'BA'
@@ -41,13 +47,11 @@ with
                     10,
                     31
                 ) between e.start_date and coalesce(
-                    e.actual_end_date, date({{ var("current_fiscal_year") }}, 6, 30)
+                    e.actual_end_date, '{{ var("current_fiscal_year") }}-06-30'
                 ),
                 1,
                 0
             ) as is_ecc_dated,
-
-            0 as is_employment,
         from {{ ref("stg_kippadb__enrollment") }} as e
         inner join {{ ref("base_kippadb__contact") }} as c on e.student = c.contact_id
         where e.status != 'Did Not Enroll'
@@ -57,18 +61,22 @@ with
         select
             id as enrollment_id,
             contact,
+
             coalesce(
                 `start_date`, enlist_date, bmt_start_date, meps_start_date
             ) as `start_date`,
+
+            true as is_employment,
+
             coalesce(
                 coalesce(end_date, discharge_date, bmt_end_date, meps_end_date),
-                date({{ var("current_fiscal_year") }}, 6, 30)
+                '{{ var("current_fiscal_year") }}-06-30'
             ) as actual_end_date,
+
             null as is_graduated,
             null as is_ecc_degree_type,
             'Employment' as pursuing_degree_level,
             null as is_ecc_dated,
-            1 as is_employment,
         from {{ ref("stg_kippadb__employment") }}
     ),
 
@@ -80,6 +88,7 @@ with
             is_ecc_degree_type,
             is_ecc_dated,
             is_employment,
+
             row_number() over (
                 partition by student, pursuing_degree_level
                 order by start_date asc, actual_end_date asc
@@ -102,6 +111,7 @@ with
     enrollment_grouped as (
         select
             student,
+
             max(
                 if(
                     pursuing_degree_level = 'BA' and rn_degree_desc = 1,
@@ -152,7 +162,7 @@ with
                 )
             ) as ecc_enrollment_id,
             max(
-                if(rn_current = 1 and is_employment = 0, enrollment_id, null)
+                if(rn_current = 1 and not is_employment, enrollment_id, null)
             ) as cur_enrollment_id,
         from enrollment_ordered
         group by student
@@ -424,6 +434,14 @@ select
     uga.competitiveness_ranking as ugrad_competitiveness_ranking,
     uga.adjusted_6_year_minority_graduation_rate
     as ugrad_adjusted_6_year_minority_graduation_rate,
+
+    if(
+        ew.ba_enrollment_id is null
+        and ew.aa_enrollment_id is null
+        and ew.cte_enrollment_id is null,
+        true,
+        false
+    ) as is_never_enrolled,
 from enrollment_wide as ew
 left join {{ ref("stg_kippadb__enrollment") }} as ug on ew.ugrad_enrollment_id = ug.id
 left join {{ ref("stg_kippadb__account") }} as uga on ug.school = uga.id

@@ -1,0 +1,41 @@
+models:
+  - name: rpt_tableau__kfwd_verification
+    columns:
+      - name: contact_id
+        data_type: string
+      - name: student_name
+        data_type: string
+      - name: hs_cohort
+        data_type: int64
+      - name: status
+        data_type: string
+      - name: currently_enrolled_school
+        data_type: string
+      - name: contact_owner_name
+        data_type: string
+      - name: account_type
+        data_type: string
+      - name: account_name
+        data_type: string
+      - name: date_last_verified
+        data_type: date
+      - name: anticipated_graduation
+        data_type: date
+      - name: enrollment_status
+        data_type: string
+      - name: semester
+        data_type: string
+      - name: verification_status_src
+        data_type: string
+      - name: year
+        data_type: string
+      - name: verification_date
+        data_type: date
+      - name: term
+        data_type: string
+      - name: verification_status
+        data_type: string
+      - name: is_collab
+        data_type: boolean
+      - name: postsec_advisor_name
+        data_type: string

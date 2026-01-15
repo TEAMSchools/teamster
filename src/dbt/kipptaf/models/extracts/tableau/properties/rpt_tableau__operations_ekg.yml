@@ -1,0 +1,43 @@
+models:
+  - name: rpt_tableau__operations_ekg
+    columns:
+      - name: respondent
+        data_type: string
+      - name: google_email
+        data_type: string
+      - name: respondent_job_title
+        data_type: string
+      - name: respondent_location
+        data_type: string
+      - name: form_id
+        data_type: string
+      - name: survey_title
+        data_type: string
+      - name: item_id
+        data_type: string
+      - name: section_title
+        data_type: string
+      - name: question_id
+        data_type: string
+      - name: question_title
+        data_type: string
+      - name: item_abbreviation
+        data_type: string
+      - name: response_id
+        data_type: string
+      - name: last_submitted_date_local
+        data_type: date
+      - name: respondent_email
+        data_type: string
+      - name: text_value
+        data_type: string
+      - name: text_value_int
+        data_type: int64
+      - name: walkthrough_round
+        data_type: string
+      - name: school
+        data_type: string
+      - name: region
+        data_type: string
+      - name: grade_band
+        data_type: string

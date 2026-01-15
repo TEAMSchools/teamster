@@ -1,46 +1,44 @@
-import datetime
-import decimal
 import json
-from typing import Optional, Union
+from datetime import date, datetime, timedelta
+from decimal import Decimal
 
-import pendulum
 from dagster import TimeWindowPartitionsDefinition
-from dagster._core.definitions.partition import DEFAULT_DATE_FORMAT
+from dagster._utils.partitions import DEFAULT_DATE_FORMAT
+from dateutil.relativedelta import relativedelta
 
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, o):
-        if isinstance(
-            o, (datetime.timedelta, decimal.Decimal, bytes, pendulum.Duration)
-        ):
+        if isinstance(o, (timedelta, Decimal, bytes)):
             return str(o)
-        elif isinstance(o, (pendulum.DateTime, pendulum.Date)):
-            return o.for_json()
-        elif isinstance(o, (datetime.datetime, datetime.date)):
+        elif isinstance(o, datetime):
+            return o.date().isoformat()
+        elif isinstance(o, date):
             return o.isoformat()
         else:
             return super().default(o)
 
 
 class FiscalYear:
-    def __init__(self, datetime, start_month) -> None:
+    def __init__(self, datetime: datetime, start_month: int) -> None:
         self.fiscal_year = (
             (datetime.year + 1) if datetime.month >= start_month else datetime.year
         )
-        self.start = pendulum.date(
-            year=(self.fiscal_year - 1), month=start_month, day=1
-        )
-        self.end = self.start.add(years=1).subtract(days=1)
+
+        self.start = date(year=(self.fiscal_year - 1), month=start_month, day=1)
+
+        self.end = self.start + relativedelta(years=1) - relativedelta(days=1)
 
 
 class FiscalYearPartitionsDefinition(TimeWindowPartitionsDefinition):
     def __new__(
         cls,
-        start_date: Union[pendulum.DateTime, str],
         start_month: int,
-        timezone: Optional[str],
+        start_date: datetime | str,
+        end_date: datetime | str | None = None,
+        timezone: str | None = None,
         start_day: int = 1,
-        fmt: Optional[str] = None,
+        fmt: str | None = None,
         end_offset: int = 1,
     ):
         _fmt = fmt or DEFAULT_DATE_FORMAT
@@ -51,5 +49,6 @@ class FiscalYearPartitionsDefinition(TimeWindowPartitionsDefinition):
             timezone=timezone,
             fmt=_fmt,
             start=start_date,
+            end=end_date,
             end_offset=end_offset,
         )

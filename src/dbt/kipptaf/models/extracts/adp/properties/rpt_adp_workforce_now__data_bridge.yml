@@ -1,0 +1,39 @@
+models:
+  - name: rpt_adp_workforce_now__data_bridge
+    columns:
+      - name: "`Employee ID`"
+        data_type: string
+      - name: "`Position ID`"
+        data_type: string
+      - name: "`Change Effective On`"
+        data_type: string
+      - name: "`Work E-Mail`"
+        data_type: string
+      - name: "`E-Mail to Use For Notification`"
+        data_type: string
+      - name: "`CDF Category`"
+        data_type: string
+      - name: "`CDF Label`"
+        data_type: string
+      - name: "`CDF Value`"
+        data_type: int64
+      - name: "`Position Uses Time`"
+        data_type: string
+      - name: Badge
+        data_type: string
+      - name: Supervisorid
+        data_type: string
+      - name: TimeZone
+        data_type: string
+      - name: Transfertopayroll
+        data_type: string
+      - name: Payclass
+        data_type: string
+      - name: Supervisorflag
+        data_type: string
+      - name: adp__badge
+        data_type: string
+      - name: adp__work_email
+        data_type: string
+      - name: adp__employee_number
+        data_type: int64

@@ -1,0 +1,265 @@
+models:
+  - name: int_deanslist__incidents__penalties
+    columns:
+      - name: hearing_flag
+        data_type: boolean
+      - name: is_active
+        data_type: boolean
+      - name: is_referral
+        data_type: boolean
+      - name: send_alert
+        data_type: boolean
+      - name: close_ts_timezone_type
+        data_type: int64
+      - name: create_ts_timezone_type
+        data_type: int64
+      - name: dl_last_update_timezone_type
+        data_type: int64
+      - name: hearing_date_timezone_type
+        data_type: int64
+      - name: issue_ts_timezone_type
+        data_type: int64
+      - name: return_date_timezone_type
+        data_type: int64
+      - name: review_ts_timezone_type
+        data_type: int64
+      - name: update_ts_timezone_type
+        data_type: int64
+      - name: addl_reqs
+        data_type: string
+      - name: admin_summary
+        data_type: string
+      - name: category
+        data_type: string
+      - name: context
+        data_type: string
+      - name: create_by
+        data_type: string
+      - name: create_first
+        data_type: string
+      - name: create_last
+        data_type: string
+      - name: create_middle
+        data_type: string
+      - name: create_title
+        data_type: string
+      - name: family_meeting_notes
+        data_type: string
+      - name: followup_notes
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: grade_level_short
+        data_type: string
+      - name: hearing_location
+        data_type: string
+      - name: hearing_notes
+        data_type: string
+      - name: hearing_time
+        data_type: string
+      - name: homeroom_name
+        data_type: string
+      - name: infraction
+        data_type: string
+      - name: location
+        data_type: string
+      - name: reported_details
+        data_type: string
+      - name: return_period
+        data_type: string
+      - name: status
+        data_type: string
+      - name: student_first
+        data_type: string
+      - name: student_last
+        data_type: string
+      - name: student_middle
+        data_type: string
+      - name: update_by
+        data_type: string
+      - name: update_first
+        data_type: string
+      - name: update_last
+        data_type: string
+      - name: update_middle
+        data_type: string
+      - name: update_title
+        data_type: string
+      - name: incident_id
+        data_type: int64
+      - name: category_id
+        data_type: int64
+      - name: create_staff_school_id
+        data_type: int64
+      - name: infraction_type_id
+        data_type: int64
+      - name: location_id
+        data_type: int64
+      - name: reporting_incident_id
+        data_type: int64
+      - name: school_id
+        data_type: int64
+      - name: status_id
+        data_type: int64
+      - name: student_id
+        data_type: int64
+      - name: student_school_id
+        data_type: int64
+      - name: update_staff_school_id
+        data_type: int64
+      - name: close_ts_timezone
+        data_type: string
+      - name: create_ts_timezone
+        data_type: string
+      - name: dl_last_update_timezone
+        data_type: string
+      - name: hearing_date_timezone
+        data_type: string
+      - name: issue_ts_timezone
+        data_type: string
+      - name: return_date_timezone
+        data_type: string
+      - name: review_ts_timezone
+        data_type: string
+      - name: update_ts_timezone
+        data_type: string
+      - name: close_ts_date
+        data_type: datetime
+      - name: create_ts_date
+        data_type: datetime
+      - name: hearing_date_date
+        data_type: datetime
+      - name: issue_ts_date
+        data_type: datetime
+      - name: return_date_date
+        data_type: datetime
+      - name: review_ts_date
+        data_type: datetime
+      - name: update_ts_date
+        data_type: datetime
+      - name: dl_last_update_date
+        data_type: datetime
+      - name: create_lastfirst
+        data_type: string
+      - name: update_lastfirst
+        data_type: string
+      - name: category_tier
+        data_type: string
+      - name: create_ts_academic_year
+        data_type: int64
+      - name: specific_behavior_incident_that_prompted_referral
+        data_type: string
+      - name: primary_area_of_concern
+        data_type: string
+      - name: level_of_concern
+        data_type: string
+      - name: approver_name
+        data_type: string
+      - name: behavior_category
+        data_type: string
+      - name: board_approval_date
+        data_type: string
+      - name: board_reconsideration_dates
+        data_type: string
+      - name: board_resolution_affirmation_date
+        data_type: string
+      - name: dcf_notes_follow_up
+        data_type: string
+      - name: dcf_officer_name
+        data_type: string
+      - name: doctor_approval
+        data_type: string
+      - name: fedex_tracking_for_determination
+        data_type: string
+      - name: fedex_tracking_for_notice
+        data_type: string
+      - name: final_approval
+        data_type: string
+      - name: hi_end_date
+        data_type: date
+      - name: hi_start_date
+        data_type: date
+      - name: home_instruction_reason
+        data_type: string
+      - name: hourly_rate
+        data_type: string
+      - name: hours_per_week
+        data_type: string
+      - name: initial_trigger_antecedent
+        data_type: string
+      - name: instructor_name
+        data_type: string
+      - name: instructor_source
+        data_type: string
+      - name: intervention
+        data_type: string
+      - name: logical_redirection
+        data_type: string
+      - name: mdr_date_if_iep_or_504
+        data_type: string
+      - name: nj_state_reporting
+        data_type: string
+      - name: non_student_witnesses_to_restraint
+        data_type: string
+      - name: others_involved
+        data_type: string
+      - name: parent_contacted
+        data_type: string
+      - name: perceived_motivation
+        data_type: string
+      - name: reporters_id_number
+        data_type: string
+      - name: restraint_duration
+        data_type: string
+      - name: restraint_notes
+        data_type: string
+      - name: restraint_type
+        data_type: string
+      - name: restraint_used
+        data_type: string
+      - name: ssds_incident_id
+        data_type: string
+      - name: staff_involved_in_restraint
+        data_type: string
+      - name: suspension_logged
+        data_type: string
+      - name: teacher_response
+        data_type: string
+      - name: referral_to_law_enforcement
+        data_type: string
+      - name: arrested_for_school_related_activity
+        data_type: string
+      - name: approver_full_name
+        data_type: string
+      - name: approver_lastfirst
+        data_type: string
+      - name: referral_tier
+        data_type: string
+      - name: is_reportable
+        data_type: boolean
+      - name: is_suspension
+        data_type: boolean
+      - name: print
+        data_type: boolean
+      - name: incident_penalty_id
+        data_type: int64
+      - name: penalty_id
+        data_type: int64
+      - name: penalty_school_id
+        data_type: int64
+      - name: penalty_student_id
+        data_type: int64
+      - name: said
+        data_type: int64
+      - name: num_periods
+        data_type: numeric
+      - name: start_date
+        data_type: date
+      - name: end_date
+        data_type: date
+      - name: penalty_name
+        data_type: string
+      - name: num_days
+        data_type: float64
+      - name: suspension_type
+        data_type: string

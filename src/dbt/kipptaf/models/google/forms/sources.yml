@@ -1,49 +1,45 @@
-version: 2
-
 sources:
   - name: google_forms
-    schema: kipptaf_google_forms
-    tags:
-      - stage_external_sources
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_google_forms
     tables:
       - name: src_google_forms__form
         external:
           location: "{{ var('cloud_storage_uri_base') }}/google/forms/form/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/google/forms/form/"
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/google/forms/form/"
             format: AVRO
             enable_logical_types: true
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - forms
+                - form
       - name: src_google_forms__responses
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/google/forms/responses/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/google/forms/responses/*"
           options:
-            hive_partition_uri_prefix: "{{ var('cloud_storage_uri_base') }}/google/forms/responses/"
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base') }}/google/forms/responses/"
             format: AVRO
             enable_logical_types: true
-      - name: src_google_forms__form_items_extension
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1OvJ95fuDCWVu9YQoVZnjauC8mdpgL4BmqdfqvgT7gAw
-            sheet_range: src_google_forms__form_items_extension
-            skip_leading_rows: 1
-        meta:
-          dagster:
-            dep_key:
-              - kipptaf
-              - google_forms
-              - form_items_extension
-        columns:
-          - name: form_id
-            data_type: STRING
-          - name: item_id
-            data_type: STRING
-          - name: question_id
-            data_type: STRING
-          - name: title
-            data_type: STRING
-          - name: abbreviation
-            data_type: STRING
-          - name: url_id
-            data_type: STRING
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - forms
+                - responses

@@ -4,6 +4,7 @@ with
             _dbt_source_relation,
             studentid,
             yearid,
+
             sum(attendancevalue) as n_attendance,
             sum(membershipvalue) as n_membership,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
@@ -24,11 +25,8 @@ with
             at_risk_only_ratio,
             lep_only_ratio,
             sped_ratio,
-            '`{{ target.database }}`.`'
-            || regexp_extract(_dbt_source_relation, r'(kipp\w+)_')
-            || '_powerschool'
-            || '`.`base_powerschool__student_enrollments`' as _dbt_source_relation,
-        from {{ ref("stg_finance__enrollment_targets") }}
+            _dbt_source_relation,
+        from {{ ref("int_finance__enrollment_targets") }}
 
         union all
 
@@ -38,6 +36,7 @@ with
             reporting_schoolid,
             is_self_contained,
             grade_level,
+
             1 as target_enrollment,
             1 as target_enrollment_finance,
             null as grade_band_ratio,
@@ -45,8 +44,9 @@ with
             null as at_risk_only_ratio,
             null as lep_only_ratio,
             null as sped_ratio,
+
             _dbt_source_relation,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_extracts__student_enrollments") }}
         where
             (is_self_contained or is_out_of_district)
             and rn_year = 1
@@ -61,6 +61,7 @@ with
             schoolid,
             is_self_contained,
             grade_level,
+
             sum(target_enrollment) as target_enrollment,
             sum(target_enrollment_finance) as target_enrollment_finance,
             max(grade_band_ratio) as grade_band_ratio,
@@ -79,14 +80,14 @@ with
 
 select
     se.student_number,
-    se.lastfirst,
+    se.student_name as lastfirst,
     se.academic_year,
     se.region,
     se.school_level,
     se.schoolid,
     se.reporting_schoolid,
     se.school_name,
-    se.school_abbreviation,
+    se.school as school_abbreviation,
     se.grade_level,
     se.enroll_status,
     se.entrydate,
@@ -128,6 +129,8 @@ select
     se.physical_therapy_services_yn,
     se.speech_lang_theapy_services_yn,
     se.other_related_services_yn,
+    se.is_retained_year,
+    se.is_retained_ever,
 
     cal.days_remaining,
     cal.days_total,
@@ -170,7 +173,7 @@ select
     lead(se.is_enrolled_oct15, 1, false) over (
         partition by se.student_number order by se.academic_year
     ) as is_enrolled_oct15_next,
-from {{ ref("base_powerschool__student_enrollments") }} as se
+from {{ ref("int_extracts__student_enrollments") }} as se
 left join
     {{ ref("int_powerschool__calendar_rollup") }} as cal
     on se.schoolid = cal.schoolid

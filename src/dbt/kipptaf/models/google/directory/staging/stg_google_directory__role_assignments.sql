@@ -7,5 +7,4 @@ select
     assigneetype as `assignee_type`,
     scopetype as `scope_type`,
     orgunitid as `org_unit_id`,
-    condition as `condition`,
 from {{ source("google_directory", "src_google_directory__role_assignments") }}

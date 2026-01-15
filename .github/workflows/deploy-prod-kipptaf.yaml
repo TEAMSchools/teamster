@@ -1,19 +1,75 @@
 name: kipptaf
 
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
 on:
   workflow_dispatch: null
   push:
     branches:
       - main
     paths:
-      - Dockerfile
-      - pdm.lock
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kipptaf.yaml
-      - src/teamster/core/**
-      - src/teamster/kipptaf/**
+      - Dockerfile
+      - uv.lock
       - src/dbt/kipptaf/**
-      - src/dbt/teamster_utils/**
+      - src/teamster/code_locations/kipptaf/**
+      - src/teamster/core/**
+      - src/teamster/libraries/adp/**
+      - src/teamster/libraries/airbyte/**
+      - src/teamster/libraries/collegeboard/**
+      - src/teamster/libraries/couchdrop/**
+      - src/teamster/libraries/coupa/**
+      - src/teamster/libraries/dbt/**
+      - src/teamster/libraries/deanslist/schema.py
+      - src/teamster/libraries/dlt/**
+      - src/teamster/libraries/extracts/**
+      - src/teamster/libraries/google/**
+      - src/teamster/libraries/knowbe4/**
+      - src/teamster/libraries/ldap/**
+      - src/teamster/libraries/overgrad/**
+      - src/teamster/libraries/performance_management/**
+      - src/teamster/libraries/powerschool/enrollment/**
+      - src/teamster/libraries/level_data/**
+      - src/teamster/libraries/sftp/**
+      - src/teamster/libraries/smartrecruiters/**
+      - src/teamster/libraries/ssh/**
+      - src/teamster/libraries/tableau/**
+  pull_request:
+    paths:
+      - .github/workflows/dagster-cloud-deploy.yaml
+      - .github/workflows/deploy-prod-kipptaf.yaml
+      - Dockerfile
+      - uv.lock
+      - src/dbt/kipptaf/profiles.yml
+      - src/teamster/code_locations/kipptaf/**
+      - src/teamster/core/**
+      - src/teamster/libraries/adp/**
+      - src/teamster/libraries/airbyte/**
+      - src/teamster/libraries/couchdrop/**
+      - src/teamster/libraries/coupa/**
+      - src/teamster/libraries/dbt/**
+      - src/teamster/libraries/deanslist/schema.py
+      - src/teamster/libraries/dlt/**
+      - src/teamster/libraries/extracts/**
+      - src/teamster/libraries/google/**
+      - src/teamster/libraries/ldap/**
+      - src/teamster/libraries/overgrad/**
+      - src/teamster/libraries/performance_management/**
+      - src/teamster/libraries/powerschool/enrollment/**
+      - src/teamster/libraries/level_data/**
+      - src/teamster/libraries/sftp/**
+      - src/teamster/libraries/smartrecruiters/**
+      - src/teamster/libraries/ssh/**
+      - src/teamster/libraries/tableau/**
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
 
 jobs:
   dagster-cloud-deploy:

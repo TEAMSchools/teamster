@@ -1,12 +1,6 @@
-instance_class:
-  module: dagster_cloud.instance
-  class: DagsterCloudAgentInstance
+telemetry:
+  enabled: false
 
-dagster_cloud_api:
-  agent_token:
-    env: DAGSTER_CLOUD_AGENT_TOKEN
-  deployment: prod
-
-user_code_launcher:
-  module: dagster_cloud.workspace.user_code_launcher
-  class: ProcessUserCodeLauncher
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator

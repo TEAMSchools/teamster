@@ -1,0 +1,99 @@
+sources:
+  - name: kippnewark_overgrad
+    schema: |
+      {%- if env_var('GITHUB_USER', '') != '' -%}
+      zz_{{ env_var('GITHUB_USER', '') }}_
+      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}
+      z_dev_
+      {%- endif -%}kippnewark_overgrad
+    tables:
+      - name: stg_overgrad__admissions
+        config:
+          meta:
+            dagster:
+              group: overgrad
+              asset_key:
+                - kippnewark
+                - overgrad
+                - stg_overgrad__admissions
+      - name: stg_overgrad__custom_fields
+        config:
+          meta:
+            dagster:
+              group: overgrad
+              asset_key:
+                - kippnewark
+                - overgrad
+                - stg_overgrad__custom_fields
+      - name: stg_overgrad__followings
+        config:
+          meta:
+            dagster:
+              group: overgrad
+              asset_key:
+                - kippnewark
+                - overgrad
+                - stg_overgrad__followings
+      - name: stg_overgrad__schools
+        config:
+          meta:
+            dagster:
+              group: overgrad
+              asset_key:
+                - kippnewark
+                - overgrad
+                - stg_overgrad__schools
+      - name: stg_overgrad__students
+        config:
+          meta:
+            dagster:
+              group: overgrad
+              asset_key:
+                - kippnewark
+                - overgrad
+                - stg_overgrad__students
+      - name: stg_overgrad__admissions__custom_field_values
+        config:
+          meta:
+            dagster:
+              group: overgrad
+              asset_key:
+                - kippnewark
+                - overgrad
+                - stg_overgrad__admissions__custom_field_values
+      - name: stg_overgrad__custom_fields__custom_field_options
+        config:
+          meta:
+            dagster:
+              group: overgrad
+              asset_key:
+                - kippnewark
+                - overgrad
+                - stg_overgrad__custom_fields__custom_field_options
+      - name: stg_overgrad__students__custom_field_values
+        config:
+          meta:
+            dagster:
+              group: overgrad
+              asset_key:
+                - kippnewark
+                - overgrad
+                - stg_overgrad__students__custom_field_values
+      - name: int_overgrad__custom_fields_pivot
+        config:
+          meta:
+            dagster:
+              group: overgrad
+              asset_key:
+                - kippnewark
+                - overgrad
+                - int_overgrad__custom_fields_pivot
+      - name: int_overgrad__students
+        config:
+          meta:
+            dagster:
+              group: overgrad
+              asset_key:
+                - kippnewark
+                - overgrad
+                - int_overgrad__students

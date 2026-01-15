@@ -1,59 +1,71 @@
-with
-    scaffold as (
-        select
-            ur.user_id,
-            ur.role_name,
-            rt.`type`,
-            rt.code,
-            rt.`name`,
-            rt.`start_date`,
-            rt.end_date,
-            rt.academic_year,
-            u.internal_id,
-            sr.employee_number,
-            sr.preferred_name_lastfirst,
-            sr.business_unit_home_name,
-            sr.home_work_location_name,
-            sr.home_work_location_grade_band,
-            sr.home_work_location_powerschool_school_id,
-            sr.department_home_name,
-            sr.primary_grade_level_taught,
-            sr.job_title,
-            sr.report_to_preferred_name_lastfirst,
-            sr.worker_original_hire_date,
-            sr.assignment_status,
+select
+    srh.employee_number,
+    srh.formatted_name as teammate,
+    srh.home_business_unit_name as entity,
+    srh.home_work_location_name as `location`,
+    srh.home_work_location_grade_band as grade_band,
+    srh.home_department_name as department,
+    srh.job_title,
+    srh.reports_to_formatted_name as manager,
+    srh.worker_original_hire_date,
+    srh.assignment_status,
+    srh.sam_account_name,
+    srh.reports_to_sam_account_name as report_to_sam_account_name,
 
-        from {{ ref("stg_schoolmint_grow__users__roles") }} as ur
-        left join
-            {{ ref("stg_reporting__terms") }} as rt on ur.role_name = rt.grade_band
-        left join {{ ref("stg_schoolmint_grow__users") }} as u on ur.user_id = u.user_id
-        left join
-            {{ ref("base_people__staff_roster") }} as sr
-            on u.internal_id = safe_cast(sr.employee_number as string)
-        where ur.role_name != 'Whetstone' and rt.type = 'O3'
-    ),
+    rt.type as tracking_type,
+    rt.code as tracking_code,
+    rt.name as tracking_rubric,
+    rt.academic_year as tracking_academic_year,
+    rt.start_date,
+    rt.end_date,
+    rt.is_current,
 
-    microgoals as (
-        select
-            a.assignment_id,
-            a.name as assignment_name,
-            a.type as assignment_type,
-            a.created as assignment_date,
-            a.user_id as teacher_id,
-            a.user_name,
-            a.creator_id,
-            a.creator_name,
+    m.tag_id as goal_code,
+    m.tag_name as goal_name,
+    m.strand_name,
+    m.bucket_name,
+    m.goal_type_name,
 
-            'O3' as reporting_term_type,
+    a.assignment_id,
+    a.created as assignment_date,
+    a.creator_name as observer,
 
-            regexp_extract(a.name, r'(\d[A-Z]\.\d\d)') as tag_name_short,
-        from {{ ref("stg_schoolmint_grow__assignments") }} as a
+    tgl.grade_level as grade_taught,
+
+    if(a.assignment_id is not null, 1, 0) as is_assigned,
+from {{ ref("int_people__staff_roster_history") }} as srh
+inner join
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
+    on srh.home_business_unit_name = rt.region
+    and (
+        rt.start_date between srh.effective_date_start and srh.effective_date_end
+        or rt.end_date between srh.effective_date_start and srh.effective_date_end
     )
-
-select s.*, m.*,
-from scaffold as s
+    and rt.type = 'MG'
+    and rt.academic_year = {{ var("current_academic_year") }}
 left join
-    microgoals as m
-    on cast(m.assignment_date as date) between s.start_date and s.end_date
-    and s.type = m.reporting_term_type
-    and s.user_id = m.teacher_id
+    {{ ref("stg_schoolmint_grow__users") }} as u
+    on srh.employee_number = u.internal_id_int
+left join
+    {{ ref("stg_schoolmint_grow__assignments") }} as a
+    on u.user_id = a.user_id
+    and a.created_date_local between rt.start_date and rt.end_date
+left join
+    {{ ref("int_schoolmint_grow__assignments__tags") }} as t
+    on a.assignment_id = t.assignment_id
+left join {{ ref("int_schoolmint_grow__microgoals") }} as m on t.tag_id = m.tag_id
+left join
+    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    on srh.powerschool_teacher_number = tgl.teachernumber
+    and rt.academic_year = tgl.academic_year
+    and tgl.grade_level_rank = 1
+where
+    srh.assignment_status = 'Active'
+    and srh.job_title in (
+        'Teacher',
+        'Teacher in Residence',
+        'ESE Teacher',
+        'Learning Specialist',
+        'Teacher ESL',
+        'Teacher in Residence ESL'
+    )
