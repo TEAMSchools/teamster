@@ -30,15 +30,29 @@ dagsterCloud:
 dagsterCloudAgent:
   resources:
     requests:
-      cpu: 250m
+      cpu: 500m # Autopilot minimum of 500m required for using pod anti affinity
       memory: 0.5Gi
     limits:
-      cpu: 500m
-      memory: 1.5Gi
+      cpu: 750m
+      memory: 1.0Gi
   podSecurityContext:
     runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
+  nodeSelector:
+    cloud.google.com/gke-spot: "true"
+  terminationGracePeriodSeconds: 15
   # Number of replicas of the agent service to keep up at a given time.
   replicas: 2
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - dagster-cloud-agent
+          topologyKey: kubernetes.io/hostname
+
   # securityContext:
   #   runAsNonRoot: true
   #   allowPrivilegeEscalation: false
@@ -47,6 +61,26 @@ dagsterCloudAgent:
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ########################################################################################
 workspace:
+  # Raw k8s configuration for the Kubernetes Deployment created for each code location.
+  serverK8sConfig:
+    containerConfig:
+      resources:
+        requests:
+          cpu: 500m # Autopilot minimum of 500m required for using pod anti affinity
+          memory: 0.5Gi
+        limits:
+          cpu: 750m
+          memory: 1.0Gi
+    podTemplateSpecMetadata: # raw config for the pod's metadata
+      annotations:
+        operator.1password.io/auto-restart: "true"
+    podSpecConfig:
+      nodeSelector:
+        cloud.google.com/compute-class: Scale-Out
+        cloud.google.com/gke-spot: "true"
+        kubernetes.io/arch: arm64
+      terminationGracePeriodSeconds: 15
+
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
   runK8sConfig:
@@ -62,27 +96,6 @@ workspace:
           memory: 2.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
-        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
-    podSpecConfig:
-      nodeSelector:
-        cloud.google.com/compute-class: Scale-Out
-        kubernetes.io/arch: arm64
-
-  # Raw k8s configuration for the Kubernetes Deployment created for each code location.
-  serverK8sConfig:
-    containerConfig:
-      # Autopilot enforces special minimum values for resource requests on extended
-      # duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
-      resources:
-        requests:
-          cpu: 500m
-          memory: 2.0Gi
-        limits:
-          cpu: 750m
-          memory: 2.5Gi
-    podTemplateSpecMetadata: # raw config for the pod's metadata
-      annotations:
-        operator.1password.io/auto-restart: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
       nodeSelector:
