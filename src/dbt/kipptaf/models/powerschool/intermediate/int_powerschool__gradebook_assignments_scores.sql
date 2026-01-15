@@ -24,7 +24,7 @@ with
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
 
-            initcap(regexp_extract(a._dbt_source_relation, r'kipp(\w+)')) as region,
+            initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
 
             case
                 when coalesce(s.isexempt, 0) = 1
