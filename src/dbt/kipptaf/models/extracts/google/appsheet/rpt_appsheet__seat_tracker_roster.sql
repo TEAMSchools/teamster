@@ -13,11 +13,19 @@ with
                 then 'Returning'
                 when
                     answer
+                    = 'I am committed to my school community/team and, if offered a renewal contract, definitely returning; the Recruitment Team should NOT hire for my position.'
+                then 'Returning'
+                when
+                    answer
                     = 'I am committed to KIPP NJ|Miami, but interested in an opportunity at another other school and/or in a different role. I will speak to my manager and/or School Leader about my interests.'
                 then 'Interested in Transfer'
                 when
                     answer
                     = 'I am not returning but want to ensure my kids have an outstanding TEAMmate next year; the Talent Acquisition Team should definitely hire for my position.'
+                then 'Not Returning'
+                when
+                    answer
+                    = 'I am not returning but want to ensure my kids have an outstanding TEAMmate next year; the Recruitment Team should definitely hire for my position.'
                 then 'Not Returning'
                 when
                     answer
