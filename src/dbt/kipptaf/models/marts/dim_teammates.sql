@@ -17,7 +17,29 @@ with
 
     final as (
         select
-            roster.*,
+            roster.assignment_status,
+            roster.base_remuneration_annual_rate_amount as salary,
+            roster.effective_date_end,
+            roster.effective_date_start,
+            roster.employee_number,
+            roster.formatted_name,
+            roster.gender_identity,
+            roster.home_business_unit_name as entity,
+            roster.home_department_name as department,
+            roster.home_work_location_grade_band as grade_band,
+            roster.home_work_location_name as location,
+            roster.is_current_record,
+            roster.is_prestart,
+            roster.job_title,
+            roster.languages_spoken,
+            roster.mail,
+            roster.primary_indicator,
+            roster.race_ethnicity_reporting,
+            roster.reports_to_formatted_name as manager_name,
+            roster.worker_hire_date_recent,
+            roster.worker_original_hire_date,
+            roster.worker_rehire_date,
+            roster.worker_termination_date,
             grade_levels.grade_level as grade_taught,
             if(
                 roster.job_title in (
