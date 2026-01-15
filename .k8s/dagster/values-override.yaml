@@ -38,7 +38,7 @@ dagsterCloudAgent:
   podSecurityContext:
     runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
   # Number of replicas of the agent service to keep up at a given time.
-  replicas: 1
+  replicas: 2
   # securityContext:
   #   runAsNonRoot: true
   #   allowPrivilegeEscalation: false
