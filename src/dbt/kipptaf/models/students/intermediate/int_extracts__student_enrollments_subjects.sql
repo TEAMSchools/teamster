@@ -167,7 +167,7 @@ with
             'Reading' as iready_subject,
 
             row_number() over (
-                partition by student_number, academic_year order by client_date desc
+                partition by student_number, academic_year order by sync_date desc
             ) as rn_year,
 
         from {{ ref("int_amplify__all_assessments") }}
@@ -178,14 +178,14 @@ with
         select
             academic_year,
             student_number,
-            client_date,
+            sync_date,
             measure_standard_level,
             measure_standard_level_int,
 
             'Reading' as iready_subject,
 
             row_number() over (
-                partition by academic_year, student_number order by client_date desc
+                partition by academic_year, student_number order by sync_date desc
             ) as rn_benchmark,
 
         from {{ ref("int_amplify__all_assessments") }}

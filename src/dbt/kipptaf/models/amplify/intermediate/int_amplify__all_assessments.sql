@@ -158,6 +158,13 @@ with
                 order by measure_standard_level_int desc
             ) as rn_highest,
 
+<<<<<<< HEAD
+            row_number() over (
+                partition by academic_year, student_number order by sync_date
+            ) as rn_distinct,
+
+=======
+>>>>>>> 76bc392bf109c0397d60bd3d4e3b13dbeeaea2af
         from assessments_scores
     ),
 
