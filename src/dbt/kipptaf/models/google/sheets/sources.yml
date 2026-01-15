@@ -16,14 +16,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1RTGV4MGqyBcWKgyrtpnhq4aPUmWA1qJu9sbQVgxuVHs
             sheet_range: src_google_sheets__zendesk_org_lookup
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - zendesk
-              - org_lookup
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - zendesk
+                - org_lookup
         columns:
           - name: ADP_Business_Unit
             data_type: string
@@ -41,13 +42,14 @@ sources:
               - https://docs.google.com/spreadsheets/d/1CbSOG-gs0dIPtf7wneJNhSqudRFKWpfcNoefyAEi5AM
             sheet_range: src_students__graduation_path_combos
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - student_graduation_path_combos
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - student_graduation_path_combos
       - name: src_google_sheets__student_graduation_path_cutoffs
         external:
           options:
@@ -56,13 +58,14 @@ sources:
               - https://docs.google.com/spreadsheets/d/1CbSOG-gs0dIPtf7wneJNhSqudRFKWpfcNoefyAEi5AM
             sheet_range: src_students__graduation_path_cutoffs
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - student_graduation_path_cutoffs
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - student_graduation_path_cutoffs
       - name: src_google_sheets__state_test_comparison
         external:
           options:
@@ -71,13 +74,14 @@ sources:
               - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
             sheet_range: src_google_sheets__state_test_comparison
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - state_test_comparison
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - state_test_comparison
       - name: src_google_sheets__state_test_comparison_demographics
         external:
           options:
@@ -86,13 +90,14 @@ sources:
               - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
             sheet_range: src_google_sheets__state_test_comparison_demographics
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - state_test_comparison_demographics
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - state_test_comparison_demographics
       - name: src_google_sheets__dibels__expected_assessments
         external:
           options:
@@ -101,14 +106,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
             sheet_range: src_google_sheets__dibels_expected_assessments
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - dibels
-              - expected_assessments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - dibels
+                - expected_assessments
         columns:
           - name: Academic_Year
             data_type: int64
@@ -150,14 +156,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
             sheet_range: src_google_sheets__dibels_foundation_goals
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - dibels
-              - foundation_goals
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - dibels
+                - foundation_goals
       - name: src_google_sheets__dibels__measures
         external:
           options:
@@ -166,13 +173,14 @@ sources:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
             sheet_range: src_google_sheets__dibels_measures
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - dibels_measures
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - dibels_measures
         columns:
           - name: grade_level
             data_type: string
@@ -194,14 +202,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
             sheet_range: src_google_sheets__dibels_goals_long
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - dibels
-              - goals_long
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - dibels
+                - goals_long
       - name: src_google_sheets__dibels__pm_goals
         external:
           options:
@@ -210,14 +219,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
             sheet_range: src_google_sheets__dibels_pm_goals
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - dibels
-              - pm_goals
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - dibels
+                - pm_goals
       - name: src_google_sheets__dibels__bm_goals
         external:
           options:
@@ -226,14 +236,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
             sheet_range: src_google_sheets__dibels_bm_goals
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - dibels
-              - bm_goals
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - dibels
+                - bm_goals
       - name: src_google_sheets__gradebook_expectations_assignments
         external:
           options:
@@ -242,13 +253,14 @@ sources:
               - https://docs.google.com/spreadsheets/d/1jEZHhe6ZGM0k2fFqDKlh3I45FRjTRa-uYT1rY0JmtlA
             sheet_range: src_google_sheets__gradebook_expectations_assignments
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - gradebook_expectations_assignments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - gradebook_expectations_assignments
       - name: src_google_sheets__gradebook_flags
         external:
           options:
@@ -257,13 +269,14 @@ sources:
               - https://docs.google.com/spreadsheets/d/1jEZHhe6ZGM0k2fFqDKlh3I45FRjTRa-uYT1rY0JmtlA
             sheet_range: src_google_sheets__gradebook_flags
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - gradebook_flags
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - gradebook_flags
       - name: src_google_sheets__gradebook_exceptions
         external:
           options:
@@ -272,13 +285,14 @@ sources:
               - https://docs.google.com/spreadsheets/d/1jEZHhe6ZGM0k2fFqDKlh3I45FRjTRa-uYT1rY0JmtlA
             sheet_range: src_google_sheets__gradebook_exceptions
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - gradebook_exceptions
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - gradebook_exceptions
       - name: src_google_sheets__topline__student_goals
         external:
           options:
@@ -287,14 +301,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0
             sheet_range: src_google_sheets__topline_student_goals_v2
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - topline
-              - student_goals
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - topline
+                - student_goals
       - name: src_google_sheets__topline__aggregate_goals
         external:
           options:
@@ -303,14 +318,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0
             sheet_range: src_google_sheets__topline_aggregate_goals
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - topline
-              - aggregate_goals
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - topline
+                - aggregate_goals
       - name: src_google_sheets__topline__enrollment_targets
         external:
           options:
@@ -319,14 +335,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0
             sheet_range: src_google_sheets__topline_enrollment_targets
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - topline
-              - enrollment_targets
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - topline
+                - enrollment_targets
       - name: src_google_sheets__kippfwd__goals
         external:
           options:
@@ -335,14 +352,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
             sheet_range: src_google_sheets__kippfwd_goals_v2
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - kippfwd
-              - goals
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kippfwd
+                - goals
       - name: src_google_sheets__kippfwd__expected_assessments
         external:
           options:
@@ -351,14 +369,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
             sheet_range: src_google_sheets__kippfwd_expected_assessments
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - kippfwd
-              - expected_assessments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kippfwd
+                - expected_assessments
       - name: src_google_sheets__kippfwd__expected_assessments_archive
         external:
           options:
@@ -367,14 +386,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
             sheet_range: src_google_sheets__kippfwd_expected_assessments_archive
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - kippfwd
-              - expected_assessments_archive
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kippfwd
+                - expected_assessments_archive
       - name: src_google_sheets__kippfwd__act_scale_score_key
         external:
           options:
@@ -383,14 +403,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
             sheet_range: src_google_sheets__kippfwd_act_scale_score_key
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - kippfwd
-              - act_scale_score_key
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kippfwd
+                - act_scale_score_key
       - name: src_google_sheets__recruitment__school_projections
         external:
           options:
@@ -399,14 +420,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1JPMDSGcdil-ineSk3BZJRnqyms-XXXp2s7vNJeyQp7Q
             sheet_range: src_google_sheets__recruitment__school_projections
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - recruitment
-              - school_projections
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - recruitment
+                - school_projections
       - name: src_google_sheets__egencia__traveler_groups
         external:
           options:
@@ -426,14 +448,15 @@ sources:
             data_type: string
           - name: egencia_traveler_group
             data_type: string
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - egencia
-              - traveler_groups
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - egencia
+                - traveler_groups
       - name: src_google_sheets__egencia__travel_managers
         external:
           options:
@@ -445,14 +468,15 @@ sources:
         columns:
           - name: employee_number
             data_type: int64
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - egencia
-              - google
-              - sheets
-              - travel_managers
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - egencia
+                - google
+                - sheets
+                - travel_managers
       - name: src_google_sheets__kippadb__nsc_crosswalk
         external:
           options:
@@ -461,14 +485,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1smCSUKz2SXwnohmz59LNptoN5jHzYD2TfZNHZwK7Dts
             sheet_range: src_kippadb__nsc_crosswalk
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - kippadb
-              - nsc_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kippadb
+                - nsc_crosswalk
       - name: src_google_sheets__google_forms__form_items_extension
         external:
           options:
@@ -477,14 +502,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1OvJ95fuDCWVu9YQoVZnjauC8mdpgL4BmqdfqvgT7gAw
             sheet_range: src_google_forms__form_items_extension
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - google_forms
-              - form_items_extension
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - google_forms
+                - form_items_extension
         columns:
           - name: form_id
             data_type: string
@@ -506,14 +532,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1yCW2pmQYwLQuTel72QWCyq83qlyQEemYbONLPAIvy7c
             sheet_range: src_finance__enrollment_targets
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - finance
-              - enrollment_targets
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - finance
+                - enrollment_targets
       - name: src_google_sheets__finance__payroll_code_mapping
         external:
           options:
@@ -522,14 +549,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1yCW2pmQYwLQuTel72QWCyq83qlyQEemYbONLPAIvy7c
             sheet_range: src_finance__payroll_code_mapping
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - finance
-              - payroll_code_mapping
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - finance
+                - payroll_code_mapping
       - name: src_google_sheets__crdc__sced_code_crosswalk
         external:
           options:
@@ -553,14 +581,15 @@ sources:
             data_type: boolean
           - name: duplicate
             data_type: numeric
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - crdc
-              - sced_code_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - crdc
+                - sced_code_crosswalk
       - name: src_google_sheets__crdc__student_numbers
         external:
           options:
@@ -574,14 +603,15 @@ sources:
             data_type: string
           - name: student_number
             data_type: numeric
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - crdc
-              - student_numbers
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - crdc
+                - student_numbers
       - name: src_google_sheets__coupa__address_name_crosswalk
         external:
           options:
@@ -595,14 +625,15 @@ sources:
             data_type: string
           - name: coupa_address_name
             data_type: string
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - coupa
-              - address_name_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - coupa
+                - address_name_crosswalk
       - name: src_google_sheets__coupa__school_name_crosswalk
         external:
           options:
@@ -616,14 +647,15 @@ sources:
             data_type: string
           - name: coupa_school_name
             data_type: string
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - coupa
-              - school_name_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - coupa
+                - school_name_crosswalk
       - name: src_google_sheets__coupa__school_name_lookup
         external:
           options:
@@ -641,14 +673,15 @@ sources:
             data_type: string
           - name: coupa_school_name
             data_type: string
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - coupa
-              - school_name_lookup
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - coupa
+                - school_name_lookup
       - name: src_google_sheets__coupa__user_exceptions
         external:
           options:
@@ -666,14 +699,15 @@ sources:
             data_type: string
           - name: sage_intacct_department
             data_type: int64
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - coupa
-              - user_exceptions
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - coupa
+                - user_exceptions
       - name: src_google_sheets__coupa__intacct_program_lookup
         external:
           options:
@@ -682,14 +716,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
             sheet_range: src_coupa__intacct_program_lookup
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - coupa
-              - intacct_program_lookup
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - coupa
+                - intacct_program_lookup
       - name: src_google_sheets__coupa__intacct_location_lookup
         external:
           options:
@@ -707,14 +742,15 @@ sources:
             data_type: string
           - name: sage_intacct_location
             data_type: string
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - coupa
-              - intacct_location_lookup
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - coupa
+                - intacct_location_lookup
       - name: src_google_sheets__coupa__intacct_fund_lookup
         external:
           options:
@@ -723,14 +759,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
             sheet_range: src_coupa__intacct_fund_lookup
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - coupa
-              - intacct_fund_lookup
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - coupa
+                - intacct_fund_lookup
       - name: src_google_sheets__coupa__intacct_department_lookup
         external:
           options:
@@ -739,14 +776,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
             sheet_range: src_coupa__intacct_department_lookup
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - coupa
-              - intacct_department_lookup
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - coupa
+                - intacct_department_lookup
       - name: src_google_sheets__collegeboard__sat_id_crosswalk
         external:
           options:
@@ -760,14 +798,15 @@ sources:
             data_type: int64
           - name: PowerSchool_Student_Number
             data_type: int64
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - collegeboard
-              - sat_id_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - collegeboard
+                - sat_id_crosswalk
       - name: src_google_sheets__collegeboard__ap_id_crosswalk
         external:
           options:
@@ -781,14 +820,15 @@ sources:
             data_type: string
           - name: PowerSchool_Student_Number
             data_type: int64
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - collegeboard
-              - ap_id_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - collegeboard
+                - ap_id_crosswalk
       - name: src_google_sheets__collegeboard__ap_codes
         external:
           options:
@@ -804,14 +844,15 @@ sources:
             data_type: string
           - name: Description
             data_type: string
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - collegeboard
-              - ap_codes
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - collegeboard
+                - ap_codes
       - name: src_google_sheets__collegeboard__ap_course_crosswalk
         external:
           options:
@@ -829,14 +870,15 @@ sources:
             data_type: string
           - name: AP_Course_Name
             data_type: string
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - collegeboard
-              - ap_course_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - collegeboard
+                - ap_course_crosswalk
       - name: src_google_sheets__assessments__course_subject_crosswalk
         external:
           options:
@@ -862,14 +904,15 @@ sources:
             data_type: string
           - name: Duplicate_Audit
             data_type: int64
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - assessments
-              - course_subject_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - assessments
+                - course_subject_crosswalk
       - name: src_google_sheets__assessments__academic_goals
         external:
           options:
@@ -878,14 +921,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__academic_goals
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - assessments
-              - academic_goals
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - assessments
+                - academic_goals
       - name: src_google_sheets__assessments__qbls_power_standards
         external:
           options:
@@ -894,14 +938,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__qbls_power_standards
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - assessments
-              - qbls_power_standards
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - assessments
+                - qbls_power_standards
       - name: src_google_sheets__assessments__standard_domains
         external:
           options:
@@ -915,14 +960,15 @@ sources:
             data_type: string
           - name: standard_domain
             data_type: string
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - assessments
-              - standard_domains
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - assessments
+                - standard_domains
       - name: src_google_sheets__iready__crosswalk
         external:
           options:
@@ -931,14 +977,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1r6i----UdAbpvDtUB982ignbCMxiDnM60MYwik11MkI
             sheet_range: src_google_sheets__iready_crosswalk
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - iready
-              - crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - iready
+                - crosswalk
       - name: src_google_sheets__iready__expected_assessments
         external:
           options:
@@ -978,14 +1025,15 @@ sources:
             data_type: string
           - name: PS_Credit_Type
             data_type: string
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - iready
-              - expected_assessments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - iready
+                - expected_assessments
       - name: src_google_sheets__surveys__scd_question_crosswalk
         external:
           options:
@@ -994,14 +1042,15 @@ sources:
             skip_leading_rows: 1
             uris:
               - https://docs.google.com/spreadsheets/d/1pVY5ByKU03s8kfrd9ori1m6Sa-xOTJR9Qt0eFkkKycM
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - surveys
-              - scd_question_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - surveys
+                - scd_question_crosswalk
         columns:
           - name: question_code
             data_type: string
@@ -1015,14 +1064,15 @@ sources:
             skip_leading_rows: 1
             uris:
               - https://docs.google.com/spreadsheets/d/1pVY5ByKU03s8kfrd9ori1m6Sa-xOTJR9Qt0eFkkKycM
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - surveys
-              - scd_answer_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - surveys
+                - scd_answer_crosswalk
       - name: src_google_sheets__reporting__terms
         external:
           options:
@@ -1031,14 +1081,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
             sheet_range: src_reporting__terms
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - reporting
-              - terms
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - reporting
+                - terms
         columns:
           - name: type
             data_type: string
@@ -1075,14 +1126,15 @@ sources:
             skip_leading_rows: 1
             uris:
               - https://docs.google.com/spreadsheets/d/1xPzM3XM3-5e343VkH75rz5fsQlO4z0BsPNh3xAWvPQ4
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - performance_management
-              - leadership_development_metrics
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - performance_management
+                - leadership_development_metrics
       - name: src_google_sheets__people__employee_numbers_archive
         external:
           options:
@@ -1091,14 +1143,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
             sheet_range: src_people__employee_numbers_archive
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - people
-              - employee_numbers_archive
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - employee_numbers_archive
       - name: src_google_sheets__people__location_crosswalk
         external:
           options:
@@ -1107,14 +1160,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
             sheet_range: src_people__location_crosswalk
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - people
-              - location_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - location_crosswalk
       - name: src_google_sheets__people__campus_crosswalk
         external:
           options:
@@ -1123,14 +1177,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
             sheet_range: src_people__campus_crosswalk
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - people
-              - campus_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - campus_crosswalk
       - name: src_google_sheets__people__powerschool_crosswalk
         external:
           options:
@@ -1139,14 +1194,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
             sheet_range: src_people__powerschool_crosswalk
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - people
-              - powerschool_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - powerschool_crosswalk
       - name: src_google_sheets__people__student_logins_archive
         external:
           options:
@@ -1155,14 +1211,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
             sheet_range: src_people__student_logins_archive
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - people
-              - student_logins_archive
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - student_logins_archive
       - name: src_google_sheets__people__salary_scale
         external:
           options:
@@ -1171,14 +1228,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
             sheet_range: src_people__salary_scale
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - people
-              - salary_scale
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - salary_scale
       - name: src_google_sheets__people__renewal_approvers
         external:
           options:
@@ -1187,14 +1245,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
             sheet_range: src_people__renewal_approvers
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - people
-              - renewal_approvers
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - renewal_approvers
       - name: src_google_sheets__people__renewal_letter_mapping
         external:
           options:
@@ -1203,14 +1262,15 @@ sources:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
             sheet_range: src_people__renewal_letter_mapping
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - people
-              - renewal_letter_mapping
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - renewal_letter_mapping
         columns:
           - name: jobs
             data_type: string
@@ -1233,17 +1293,43 @@ sources:
             data_type: string
           - name: Student_Number
             data_type: int64
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - pearson
-              - student_crosswalk
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - pearson
+                - student_crosswalk
+      - name: src_google_sheets__finalsite__status_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1TMkujoNxxAQw4B1hRWoIllpWZht1BAT5Wx006gXkVXU
+            sheet_range: src_google_sheets__finalsite__status_crosswalk_v2
+            skip_leading_rows: 1
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - finalsite
+                - status_crosswalk
       - name: src_google_sheets__reporting__gradebook_expectations
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - reporting
+                - gradebook_expectations
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1251,17 +1337,17 @@ sources:
               - https://docs.google.com/spreadsheets/d/1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
             sheet_range: src_reporting__gradebook_expectations
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - reporting
-              - gradebook_expectations
       - name: src_google_sheets__reporting__promo_status_cutoffs
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - reporting
+                - promo_status_cutoffs
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1269,17 +1355,17 @@ sources:
               - https://docs.google.com/spreadsheets/d/1bRd3cI3WlTdizm5ja7IxGxGjJDzXrOX6i2G731h9yr8
             sheet_range: src_reporting__promo_status_cutoffs
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - reporting
-              - promo_status_cutoffs
       - name: src_google_sheets__reporting__gradebook_flags
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - reporting
+                - gradebook_flags
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1287,17 +1373,17 @@ sources:
               - https://docs.google.com/spreadsheets/d/1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
             sheet_range: src_reporting__gradebook_flags
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - reporting
-              - gradebook_flags
       - name: src_google_sheets__reporting__graduation_path_combos
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - reporting
+                - graduation_path_combos
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1305,17 +1391,17 @@ sources:
               - https://docs.google.com/spreadsheets/d/1azcq9FsGDjYpvK7VBIHtGOsY8Yd-E5hFrxWuk5hFLH0
             sheet_range: src_reporting__graduation_path_combos
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - reporting
-              - graduation_path_combos
       - name: src_google_sheets__people__staffing_model
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - staffing_model
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1323,17 +1409,17 @@ sources:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
             sheet_range: src_people__staffing_model
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - people
-              - staffing_model
       - name: src_google_sheets__kippfwd__seasons
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kippfwd
+                - seasons
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1341,17 +1427,17 @@ sources:
               - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
             sheet_range: src_google_sheets__kippfwd_seasons
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - kippfwd
-              - seasons
       - name: src_google_sheets__dibels__goals_wide
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - dibels
+                - goals_wide
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1359,17 +1445,17 @@ sources:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
             sheet_range: src_google_sheets__dibels_goals_wide
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - dibels
-              - goals_wide
       - name: src_google_sheets__dibels__df_student_xwalk
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - dibels
+                - df_student_xwalk
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1377,17 +1463,16 @@ sources:
               - https://docs.google.com/spreadsheets/d/15u_nUWcJY5-3V2xT0ZvICkQ1nrpGuMI2LAy5UMmUbNs
             sheet_range: src_google_sheets__dibels_df_student_xwalk
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - dibels
-              - df_student_xwalk
       - name: src_google_sheets__state_test_expected_assessments
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - state_test_expected_assessments
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1395,16 +1480,17 @@ sources:
               - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
             sheet_range: src_google_sheets__state_test_expected_assessments
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - state_test_expected_assessments
       - name: src_google_sheets__alchemer__response_id_override
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - alchemer
+                - response_id_override
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1412,17 +1498,17 @@ sources:
               - https://docs.google.com/spreadsheets/d/15PIpnnKaU2NF42JzjUbnrocL_2F41JOVZP4dYDS7mME
             sheet_range: src_alchemer__response_id_override
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - alchemer
-              - response_id_override
       - name: src_google_sheets__assessments__college_readiness_expected_tests
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - assessments
+                - college_readiness_expected_tests
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1430,17 +1516,17 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__college_readiness_expected_tests
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - assessments
-              - college_readiness_expected_tests
       - name: src_google_sheets__assessments__internal_assessment_scopes
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - assessments
+                - internal_assessment_scopes
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1448,17 +1534,17 @@ sources:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
             sheet_range: src_assessments__internal_assessment_scopes
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - assessments
-              - internal_assessment_scopes
       - name: src_google_sheets__people__miami_performance_criteria
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - miami_performance_criteria
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1466,17 +1552,17 @@ sources:
               - https://docs.google.com/spreadsheets/d/1t6aN_0Bd6KUUmVcz7WSAzolToAW-3Cf4AV0ZkBFseiY
             sheet_range: src_people__miami_performance_criteria
             skip_leading_rows: 1
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - people
-              - miami_performance_criteria
       - name: src_google_sheets__egencia__traveler_group_exceptions
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - egencia
+                - traveler_group_exceptions
         external:
           options:
             format: GOOGLE_SHEETS
@@ -1489,11 +1575,20 @@ sources:
             data_type: int64
           - name: traveler_group
             data_type: string
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - sheets
-              - egencia
-              - traveler_group_exceptions
+      - name: src_google_sheets__finalsite__sample_data
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1TMkujoNxxAQw4B1hRWoIllpWZht1BAT5Wx006gXkVXU
+            sheet_range: src_google_sheets__finalsite__sample_data
+            skip_leading_rows: 1
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - finalsite
+                - sample_data

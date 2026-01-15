@@ -81,6 +81,7 @@ with
             r.contact_owner_name,
             r.es_graduated,
             r.tier,
+            r.contact_advising_provider as advising_provider,
 
             e.pursuing_degree_type,
             e.type,

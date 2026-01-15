@@ -5,10 +5,11 @@ sources:
       {%- endif -%}kippnewark_finalsite
     tables:
       - name: stg_finalsite__status_report
-        meta:
-          dagster:
-            group: amplify
-            asset_key:
-              - kippnewark
-              - finalsite
-              - stg_finalsite__status_report
+        config:
+          meta:
+            dagster:
+              group: amplify
+              asset_key:
+                - kippnewark
+                - finalsite
+                - stg_finalsite__status_report
