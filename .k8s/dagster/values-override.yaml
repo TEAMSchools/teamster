@@ -30,10 +30,10 @@ dagsterCloud:
 dagsterCloudAgent:
   resources:
     requests:
-      cpu: 250m
+      cpu: 500m
       memory: 0.5Gi
     limits:
-      cpu: 500m
+      cpu: 750m
       memory: 1.0Gi
   podSecurityContext:
     runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
