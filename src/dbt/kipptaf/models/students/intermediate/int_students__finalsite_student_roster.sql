@@ -24,11 +24,12 @@ with
             schoolid,
             school,
             grade_level,
+            grade_level_string,
 
             row_number() over (
                 partition by academic_year, finalsite_student_id
                 order by status_start_date desc
-            ) as rn
+            ) as rn,
 
         from finalsite_report
         qualify rn = 1
@@ -86,8 +87,6 @@ with
             f.powerschool_student_number,
             f.last_name,
             f.first_name,
-            f.grade_level,
-            f.grade_level_string,
             f.detailed_status,
             f.status_start_date,
             f.status_end_date,
@@ -97,12 +96,14 @@ with
 
             coalesce(f.schoolid, r.schoolid) as schoolid,
             coalesce(f.school, r.school) as school,
+            coalesce(f.grade_level, r.grade_level) as grade_level,
+            coalesce(f.grade_level_string, r.grade_level_string) as grade_level_string,
 
         from finalsite_report as f
         left join
             enrollment_type_calc as e on f.powerschool_student_number = e.student_number
         left join
-            finalsite_report as r
+            latest_school_id_gl as r
             on f.academic_year = r.academic_year
             and f.finalsite_student_id = r.finalsite_student_id
     ),
@@ -137,6 +138,7 @@ with
                     interval 7 day
                 )
             ) as week_start
+        where e.grade_level != 99
     )
 
 select
