@@ -4,12 +4,10 @@ with
             _dbt_source_relation,
             academic_year,
             academic_year_display,
-            enrollment_year,
             region,
             school,
             finalsite_student_id,
             grade_level,
-            grade_level_string,
             detailed_status,
             status_start_date,
             days_in_status,
@@ -70,11 +68,10 @@ with
             s._dbt_source_relation,
             s.academic_year,
             s.academic_year_display,
-            s.enrollment_year,
             s.org,
             s.region,
             s.school,
-            s.grade_level_string,
+            s.grade_level,
             s.finalsite_student_id,
 
             coalesce(o.offered_ops, 0) as offered_ops,
@@ -106,11 +103,10 @@ with
             _dbt_source_relation,
             academic_year,
             academic_year_display,
-            enrollment_year,
             org,
             region,
             school,
-            grade_level_string,
+            grade_level,
             finalsite_student_id,
 
             metric_name,
@@ -132,7 +128,6 @@ select
     _dbt_source_relation,
     academic_year,
     academic_year_display,
-    enrollment_year,
     finalsite_student_id,
     metric_name,
     metric_value,
@@ -148,13 +143,12 @@ select
     _dbt_source_relation,
     academic_year,
     academic_year_display,
-    enrollment_year,
     finalsite_student_id,
     metric_name,
     metric_value,
 
     'Region' as org_level,
-    coalesce(region, 'No Region Assigned') as org_level_name,
+    region as org_level_name,
 
 from unpivot_offer_tracking
 
@@ -164,13 +158,12 @@ select
     _dbt_source_relation,
     academic_year,
     academic_year_display,
-    enrollment_year,
     finalsite_student_id,
     metric_name,
     metric_value,
 
     'School' as org_level,
-    coalesce(school, 'No School Assigned') as org_level_name,
+    school as org_level_name,
 
 from unpivot_offer_tracking
 
@@ -180,12 +173,11 @@ select
     _dbt_source_relation,
     academic_year,
     academic_year_display,
-    enrollment_year,
     finalsite_student_id,
     metric_name,
     metric_value,
 
     'Grade' as org_level,
-    coalesce(grade_level_string, 'No Grade Assigned') as org_level_name,
+    if(grade_level = 0, 'K', safe_cast(grade_level as string)) as org_level_name,
 
 from unpivot_offer_tracking

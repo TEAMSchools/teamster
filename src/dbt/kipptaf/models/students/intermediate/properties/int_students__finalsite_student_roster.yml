@@ -1,5 +1,101 @@
 models:
   - name: int_students__finalsite_student_roster
     config:
-      contract:
-        enabled: false
+      materialized: table
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: academic_year_display
+        data_type: string
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: sre_year_start
+        data_type: date
+      - name: sre_year_end
+        data_type: date
+      - name: week_start_monday
+        data_type: date
+      - name: week_end_sunday
+        data_type: date
+      - name: enrollment_type
+        data_type: string
+      - name: overall_status
+        data_type: string
+      - name: funnel_status
+        data_type: string
+      - name: status_category
+        data_type: string
+      - name: offered_status
+        data_type: string
+      - name: offered_status_detailed
+        data_type: string
+      - name: detailed_status
+        data_type: string
+      - name: detailed_status_ranking
+        data_type: int64
+      - name: detailed_status_branched_ranking
+        data_type: int64
+      - name: powerschool_enroll_status
+        data_type: int64
+      - name: valid_detailed_status
+        data_type: boolean
+      - name: applicant_ops
+        data_type: int64
+      - name: offered_ops
+        data_type: int64
+      - name: pending_offer_ops
+        data_type: int64
+      - name: overall_conversion_ops
+        data_type: int64
+      - name: offers_to_accepted_den
+        data_type: int64
+      - name: offers_to_accepted_num
+        data_type: int64
+      - name: accepted_to_enrolled_den
+        data_type: int64
+      - name: accepted_to_enrolled_num
+        data_type: int64
+      - name: offers_to_enrolled_den
+        data_type: int64
+      - name: offers_to_enrolled_num
+        data_type: int64
+      - name: waitlisted
+        data_type: int64
+      - name: finalsite_student_id
+        data_type: string
+      - name: student_enrollment_year
+        data_type: string
+      - name: student_region
+        data_type: string
+      - name: student_schoolid
+        data_type: int64
+      - name: student_school
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: student_last_name
+        data_type: string
+      - name: student_first_name
+        data_type: string
+      - name: student_grade_level
+        data_type: int64
+      - name: student_grade_level_string
+        data_type: string
+      - name: student_detailed_status
+        data_type: string
+      - name: status_start_date
+        data_type: date
+      - name: status_end_date
+        data_type: date
+      - name: days_in_status
+        data_type: int64
+      - name: student_enrollment_type
+        data_type: string

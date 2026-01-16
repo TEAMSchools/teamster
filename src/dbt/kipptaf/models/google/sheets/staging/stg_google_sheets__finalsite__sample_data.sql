@@ -5,6 +5,8 @@ with
 
             initcap(replace(`status`, '_', ' ')) as detailed_status,
 
+            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
+
             cast(academic_year as string)
             || '-'
             || right(cast(academic_year + 1 as string), 2) as academic_year_display,
@@ -24,5 +26,16 @@ with
         from distinct_rows
     )
 
-select *, date_diff(status_end_date, status_start_date, day) as days_in_status,
+select
+    *,
+
+    if(
+        status_end_date = status_start_date,
+        1,
+        date_diff(status_end_date, status_start_date, day)
+    ) as days_in_status,
+
+    date(academic_year, 10, 16) as sre_year_start,
+    date(academic_year + 1, 10, 15) as sre_year_end,
+
 from end_date_calc
