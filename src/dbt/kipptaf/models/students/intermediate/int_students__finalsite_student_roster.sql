@@ -149,6 +149,36 @@ with
             ) as week_start
         cross join {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
         where m.academic_year = c.academic_year and m.rn_sre_year = 1
+
+        union all
+
+        select
+            m._dbt_source_relation,
+            m.academic_year,
+            m.region,
+            null as schoolid,
+            m.finalsite_student_id,
+            m.grade_level,
+
+            c.enrollment_type,
+            c.detailed_status,
+
+            week_start as week_start_monday,
+            date_add(week_start, interval 6 day) as week_end_sunday,
+
+        from mod_enrollment_type as m
+        cross join
+            unnest(
+                generate_date_array(
+                    -- trunk-ignore(sqlfluff/LT01)
+                    date_trunc(m.sre_year_start, week(monday)),
+                    -- trunk-ignore(sqlfluff/LT01)
+                    date_trunc(m.sre_year_end, week(monday)),
+                    interval 7 day
+                )
+            ) as week_start
+        cross join {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
+        where m.academic_year = c.academic_year and m.rn_sre_year = 1
     ),
 
     scaffold as (
