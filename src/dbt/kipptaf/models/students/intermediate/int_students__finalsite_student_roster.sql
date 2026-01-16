@@ -338,7 +338,6 @@ inner join
     and s.enrollment_type = stu.enrollment_type
     and s.detailed_status = stu.detailed_status
     and s.week_start_monday = stu.week_start_monday
-    and s.week_end_sunday = stu.week_end_sunday
 left join
     mod_enrollment_type as m
     on s.academic_year = m.academic_year
