@@ -110,6 +110,7 @@ with
             m.enrollment_type,
 
             w.week_start_monday,
+            w.week_end_sunday,
 
             c.detailed_status,
 
@@ -281,11 +282,11 @@ inner join
     and {{ union_dataset_join_clause(left_alias="s", right_alias="stu") }}
 left join
     mod_enrollment_type as m
-    on s.academic_year = m.academic_year
-    and s.schoolid = m.schoolid
-    and s.grade_level = m.grade_level
-    and s.detailed_status = m.detailed_status
-    and s.enrollment_type = m.enrollment_type
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
+    on stu.academic_year = m.academic_year
+    and stu.schoolid = m.schoolid
+    and stu.grade_level = m.grade_level
+    and stu.detailed_status = m.detailed_status
+    and stu.enrollment_type = m.enrollment_type
+    and {{ union_dataset_join_clause(left_alias="stu", right_alias="m") }}
     and stu.finalsite_student_id = m.finalsite_student_id
-    and m.status_start_date between s.week_start_monday and s.week_end_sunday
+    and m.status_start_date between stu.week_start_monday and stu.week_end_sunday
