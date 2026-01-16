@@ -1,4 +1,28 @@
 with
+    weekly_spine as (
+        -- need only one row per expected sre academic year
+        select distinct
+            academic_year,
+            sre_year_start,
+            sre_year_end,
+
+            week_start as week_start_monday,
+            date_add(week_start, interval 6 day) as week_end_sunday,
+
+        from {{ ref("int_finalsite__status_report") }}
+        cross join
+            unnest(
+                generate_date_array(
+                    -- trunk-ignore(sqlfluff/LT01)
+                    date_trunc(sre_year_start, week(monday)),
+                    -- trunk-ignore(sqlfluff/LT01)
+                    date_trunc(sre_year_end, week(monday)),
+                    interval 7 day
+                )
+            ) as week_start
+        where rn = 1
+    ),
+
     enrollment_type_calc as (
         select
             _dbt_source_relation,
@@ -82,21 +106,12 @@ with
             m.grade_level,
             m.enrollment_type,
 
+            w.week_start_monday,
+
             c.detailed_status,
 
-            week_start as week_start_monday,
-
         from mod_enrollment_type as m
-        cross join
-            unnest(
-                generate_date_array(
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(m.sre_year_start, week(monday)),
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(m.sre_year_end, week(monday)),
-                    interval 7 day
-                )
-            ) as week_start
+        inner join weekly_spine as w on m.academic_year = w.academic_year
         cross join {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
         where
             m.academic_year = c.academic_year
@@ -114,8 +129,10 @@ with
             e.school,
             e.grade_level,
 
-            f.sre_year_start,
-            f.sre_year_end,
+            w.sre_year_start,
+            w.sre_year_end,
+            w.week_start_monday,
+            w.week_end_sunday,
 
             c.enrollment_type,
             c.overall_status,
@@ -141,30 +158,15 @@ with
             c.offers_to_enrolled_num,
             c.waitlisted,
 
-            week_start as week_start_monday,
-            date_add(week_start, interval 6 day) as week_end_sunday,
-
             cast(e.academic_year as string)
             || '-'
             || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
-        inner join
-            {{ ref("int_finalsite__status_report") }} as f
-            on e.academic_year = f.academic_year
-            and f.rn = 1
-        cross join
-            unnest(
-                generate_date_array(
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(f.sre_year_start, week(monday)),
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(f.sre_year_end, week(monday)),
-                    interval 7 day
-                )
-            ) as week_start
+        inner join weekly_spine as w on e.academic_year = w.academic_year
         cross join {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
-        where e.grade_level != 99 and e.academic_year = c.academic_year
+        where
+            e.grade_level != 99 and e.academic_year = c.academic_year and e.rn_year = 1
 
         union all
 
@@ -178,8 +180,10 @@ with
             cast(null as string) as school,
             e.grade_level,
 
-            f.sre_year_start,
-            f.sre_year_end,
+            w.sre_year_start,
+            w.sre_year_end,
+            w.week_start_monday,
+            w.week_end_sunday,
 
             c.enrollment_type,
             c.overall_status,
@@ -205,30 +209,15 @@ with
             c.offers_to_enrolled_num,
             c.waitlisted,
 
-            week_start as week_start_monday,
-            date_add(week_start, interval 6 day) as week_end_sunday,
-
             cast(e.academic_year as string)
             || '-'
             || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
-        inner join
-            {{ ref("int_finalsite__status_report") }} as f
-            on e.academic_year = f.academic_year
-            and f.rn = 1
-        cross join
-            unnest(
-                generate_date_array(
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(f.sre_year_start, week(monday)),
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(f.sre_year_end, week(monday)),
-                    interval 7 day
-                )
-            ) as week_start
+        inner join weekly_spine as w on e.academic_year = w.academic_year
         cross join {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
-        where e.grade_level != 99 and e.academic_year = c.academic_year
+        where
+            e.grade_level != 99 and e.academic_year = c.academic_year and e.rn_year = 1
     )
 
 select
