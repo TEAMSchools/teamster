@@ -79,16 +79,13 @@ with
         select
             m._dbt_source_relation,
             m.academic_year,
-            m.region,
-            m.schoolid,
             m.finalsite_student_id,
             m.grade_level,
+            m.enrollment_type,
 
-            c.enrollment_type,
             c.detailed_status,
 
             week_start as week_start_monday,
-            date_add(week_start, interval 6 day) as week_end_sunday,
 
         from mod_enrollment_type as m
         cross join
@@ -102,37 +99,10 @@ with
                 )
             ) as week_start
         cross join {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
-        where m.academic_year = c.academic_year and m.rn_sre_year = 1
-
-        union all
-
-        select
-            m._dbt_source_relation,
-            m.academic_year,
-            m.region,
-            null as schoolid,
-            m.finalsite_student_id,
-            m.grade_level,
-
-            c.enrollment_type,
-            c.detailed_status,
-
-            week_start as week_start_monday,
-            date_add(week_start, interval 6 day) as week_end_sunday,
-
-        from mod_enrollment_type as m
-        cross join
-            unnest(
-                generate_date_array(
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(m.sre_year_start, week(monday)),
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(m.sre_year_end, week(monday)),
-                    interval 7 day
-                )
-            ) as week_start
-        cross join {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
-        where m.academic_year = c.academic_year and m.rn_sre_year = 1
+        where
+            m.academic_year = c.academic_year
+            and m.enrollment_type = c.enrollment_type
+            and m.rn_sre_year = 1
     ),
 
     scaffold as (
@@ -181,7 +151,7 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            finalsite_report as f
+            {{ ref("int_finalsite__status_report") }} as f
             on e.academic_year = f.academic_year
             and f.rn_sre_year = 1
         cross join
@@ -244,7 +214,7 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            finalsite_report as f
+            {{ ref("int_finalsite__status_report") }} as f
             on e.academic_year = f.academic_year
             and f.rn_sre_year = 1
         cross join
@@ -317,7 +287,6 @@ from scaffold as s
 inner join
     student_scaffold as stu
     on s.academic_year = stu.academic_year
-    and s.schoolid = stu.schoolid
     and s.grade_level = stu.grade_level
     and s.enrollment_type = stu.enrollment_type
     and s.detailed_status = stu.detailed_status
