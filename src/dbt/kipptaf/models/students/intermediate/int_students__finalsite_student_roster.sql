@@ -45,7 +45,6 @@ with
     mod_enrollment_type as (
         select
             f._dbt_source_relation,
-            f.finalsite_student_id,
             f.academic_year,
             f.academic_year_display,
             f.enrollment_year,
