@@ -42,7 +42,7 @@ select
             partition by academic_year, finalsite_student_id
             order by status_start_date desc
         ),
-        000000
+        0
     ) as schoolid,
 
     coalesce(

@@ -176,7 +176,7 @@ with
             e._dbt_source_relation,
             e.academic_year,
             e.region,
-            000000 as schoolid,
+            0 as schoolid,
             'No School Assigned' as school,
             e.grade_level,
 
