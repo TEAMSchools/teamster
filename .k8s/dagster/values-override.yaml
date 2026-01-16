@@ -11,18 +11,18 @@ dagsterCloud:
   # organization.
   branchDeployments: true
 
-  # Optionally customize the socket_options that are passed in to the underlying HTTP
-  # connection pool used to send HTTP requests to Dagster Cloud.
-  # See https://urllib3.readthedocs.io/en/stable/reference/urllib3.connection.html for
-  # the expected format.
-  # socketOptions should be a list of lists, where each inner list has three elements.
-  # The list values can either be string name of socket attributes (like "IPPROTO_TCP")
-  # or the integer value of that attribute.
-  socketOptions:
-    - [SOL_SOCKET, SO_KEEPALIVE, 1]
-    - [IPPROTO_TCP, TCP_KEEPIDLE, 11]
-    - [IPPROTO_TCP, TCP_KEEPINTVL, 7]
-    - [IPPROTO_TCP, TCP_KEEPCNT, 5]
+  # # Optionally customize the socket_options that are passed in to the underlying HTTP
+  # # connection pool used to send HTTP requests to Dagster Cloud.
+  # # See https://urllib3.readthedocs.io/en/stable/reference/urllib3.connection.html for
+  # # the expected format.
+  # # socketOptions should be a list of lists, where each inner list has three elements.
+  # # The list values can either be string name of socket attributes (like "IPPROTO_TCP")
+  # # or the integer value of that attribute.
+  # socketOptions:
+  #   - [SOL_SOCKET, SO_KEEPALIVE, 1]
+  #   - [IPPROTO_TCP, TCP_KEEPIDLE, 11]
+  #   - [IPPROTO_TCP, TCP_KEEPINTVL, 7]
+  #   - [IPPROTO_TCP, TCP_KEEPCNT, 5]
 
 ########################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
@@ -35,13 +35,18 @@ dagsterCloudAgent:
     limits:
       cpu: 750m
       memory: 1.0Gi
+
   podSecurityContext:
     runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
+
   nodeSelector:
     cloud.google.com/gke-spot: "true"
+
   terminationGracePeriodSeconds: 15
+
   # Number of replicas of the agent service to keep up at a given time.
   replicas: 2
+
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -67,10 +72,10 @@ workspace:
       resources:
         requests:
           cpu: 500m # Autopilot minimum of 500m required for using pod anti affinity
-          memory: 0.5Gi
+          memory: 2.0Gi
         limits:
           cpu: 750m
-          memory: 1.0Gi
+          memory: 2.5Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
