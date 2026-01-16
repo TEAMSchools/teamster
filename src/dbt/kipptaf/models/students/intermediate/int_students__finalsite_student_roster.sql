@@ -22,6 +22,7 @@ with
             _dbt_source_relation,
             academic_year,
             finalsite_student_id,
+            powerschool_student_number,
             schoolid,
             school,
             grade_level,
@@ -88,7 +89,6 @@ with
             f.academic_year_display,
             f.enrollment_year,
             f.region,
-            f.powerschool_student_number,
             f.last_name,
             f.first_name,
             f.detailed_status,
@@ -98,6 +98,9 @@ with
 
             coalesce(e.enrollment_type, 'New') as enrollment_type,
 
+            coalesce(
+                f.powerschool_student_number, r.powerschool_student_number
+            ) as powerschool_student_number,
             coalesce(f.schoolid, r.schoolid) as schoolid,
             coalesce(f.school, r.school) as school,
             coalesce(f.grade_level, r.grade_level) as grade_level,
