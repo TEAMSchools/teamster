@@ -23,6 +23,7 @@ with
             academic_year,
             max(
                 if(
+                    effective_date_start < date (academic_year,7,1) and
                     worker_termination_date between date(academic_year, 9, 1) and date(
                         academic_year + 1, 4, 30
                     ),
