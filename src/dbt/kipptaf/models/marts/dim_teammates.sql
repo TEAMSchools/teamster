@@ -15,7 +15,7 @@ with
 
     grade_levels as (select *, from {{ ref("int_powerschool__teacher_grade_levels") }}),
 
-    managers as (select distinct reports_to_employee_number from roster),
+    managers as (select distinct reports_to_employee_number, from roster),
 
     final as (
         select
@@ -57,7 +57,7 @@ with
             ) as is_teacher,
             if(
                 roster.employee_number
-                in (select reports_to_employee_number from managers),
+                in (select managers.reports_to_employee_number, from managers),
                 true,
                 false
             ) as is_manager,
