@@ -33,6 +33,7 @@ with
             ) as rn,
 
         from finalsite_report
+        where school is not null
         qualify rn = 1
     ),
 
@@ -175,6 +176,69 @@ with
             ) as week_start
         cross join {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
         where e.grade_level != 99 and c.academic_year = c.academic_year
+
+        union all
+
+        -- distinct: get a list of grade levels by region tied to an academic year
+        select distinct
+            e._dbt_source_relation,
+            e.academic_year,
+            e.region,
+            null as schoolid,
+            cast(null as string) as school,
+            e.grade_level,
+
+            f.sre_year_start,
+            f.sre_year_end,
+
+            c.enrollment_type,
+            c.overall_status,
+            c.funnel_status,
+            c.status_category,
+            c.offered_status,
+            c.offered_status_detailed,
+            c.detailed_status,
+            c.detailed_status_ranking,
+            c.detailed_status_branched_ranking,
+            c.powerschool_enroll_status,
+            c.valid_detailed_status,
+
+            c.applicant_ops,
+            c.offered_ops,
+            c.pending_offer_ops,
+            c.overall_conversion_ops,
+            c.offers_to_accepted_den,
+            c.offers_to_accepted_num,
+            c.accepted_to_enrolled_den,
+            c.accepted_to_enrolled_num,
+            c.offers_to_enrolled_den,
+            c.offers_to_enrolled_num,
+            c.waitlisted,
+
+            week_start as week_start_monday,
+            date_add(week_start, interval 6 day) as week_end_sunday,
+
+            cast(e.academic_year as string)
+            || '-'
+            || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            finalsite_report as f
+            on e.academic_year = f.academic_year
+            and f.rn_sre_year = 1
+        cross join
+            unnest(
+                generate_date_array(
+                    -- trunk-ignore(sqlfluff/LT01)
+                    date_trunc(f.sre_year_start, week(monday)),
+                    -- trunk-ignore(sqlfluff/LT01)
+                    date_trunc(f.sre_year_end, week(monday)),
+                    interval 7 day
+                )
+            ) as week_start
+        cross join {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
+        where e.grade_level != 99 and c.academic_year = c.academic_year
     )
 
 select
@@ -212,44 +276,29 @@ select
     s.offers_to_enrolled_num,
     s.waitlisted,
 
-    coalesce(m1.finalsite_student_id, m2.finalsite_student_id) as finalsite_student_id,
-    coalesce(m1.enrollment_year, m2.enrollment_year) as student_enrollment_year,
-    coalesce(m1.region, m2.region) as student_region,
-    coalesce(m1.schoolid, m2.schoolid) as student_schoolid,
-    coalesce(m1.school, m2.school) as student_school,
-    coalesce(
-        m1.powerschool_student_number, m2.powerschool_student_number
-    ) as powerschool_student_number,
-    coalesce(m1.last_name, m2.last_name) as student_last_name,
-    coalesce(m1.first_name, m2.first_name) as student_first_name,
-    coalesce(m1.grade_level, m2.grade_level) as student_grade_level,
-    coalesce(
-        m1.grade_level_string, m2.grade_level_string
-    ) as student_grade_level_string,
-    coalesce(m1.detailed_status, m2.detailed_status) as student_detailed_status,
-    coalesce(m1.status_start_date, m2.status_start_date) as status_start_date,
-    coalesce(m1.status_end_date, m2.status_end_date) as status_end_date,
-    coalesce(m1.days_in_status, m2.days_in_status) as days_in_status,
-    coalesce(m1.enrollment_type, m2.enrollment_type) as student_enrollment_type,
+    m.finalsite_student_id,
+    m.enrollment_year as student_enrollment_year,
+    m.region as student_region,
+    m.schoolid as student_schoolid,
+    m.school as student_school,
+    m.powerschool_student_number as student_number,
+    m.last_name as student_last_name,
+    m.first_name student_first_name,
+    m.grade_level student_grade_level,
+    m.grade_level_string as student_grade_level_string,
+    m.detailed_status as student_detailed_status,
+    m.status_start_date as status_start_date,
+    m.status_end_date as status_end_date,
+    m.days_in_status as days_in_status,
+    m.enrollment_type as student_enrollment_type,
 
 from scaffold as s
 left join
-    mod_enrollment_type as m1
-    on s.academic_year = m1.academic_year
-    and s.schoolid = m1.schoolid
-    and s.grade_level = m1.grade_level
-    and s.detailed_status = m1.detailed_status
-    and s.enrollment_type = m1.enrollment_type
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="m1") }}
-    and m1.status_start_date between s.week_start_monday and s.week_end_sunday
-    and m1.schoolid is not null
-left join
-    mod_enrollment_type as m2
-    on s.academic_year = m2.academic_year
-    and s.schoolid = m2.schoolid
-    and s.grade_level = m2.grade_level
-    and s.detailed_status = m2.detailed_status
-    and s.enrollment_type = m2.enrollment_type
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="m2") }}
-    and m2.status_start_date between s.week_start_monday and s.week_end_sunday
-    and m2.schoolid is null
+    mod_enrollment_type as m
+    on s.academic_year = m.academic_year
+    and s.schoolid = m.schoolid
+    and s.grade_level = m.grade_level
+    and s.detailed_status = m.detailed_status
+    and s.enrollment_type = m.enrollment_type
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
+    and m.status_start_date between s.week_start_monday and s.week_end_sunday
