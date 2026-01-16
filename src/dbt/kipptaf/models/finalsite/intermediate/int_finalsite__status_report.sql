@@ -10,7 +10,7 @@ with
                 partition by f.academic_year, f.sre_year_start, f.sre_year_end
                 order by f.academic_year
             ) as rn_sre_year,
-            
+
         -- TODO: replace with real data source once it is ready
         from {{ ref("stg_google_sheets__finalsite__sample_data") }} as f
         left join
