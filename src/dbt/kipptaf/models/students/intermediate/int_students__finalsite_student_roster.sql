@@ -228,7 +228,7 @@ with
                 )
             ) as week_start
         cross join {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
-        where e.grade_level != 99 and c.academic_year = c.academic_year
+        where e.grade_level != 99 and e.academic_year = c.academic_year
     )
 
 select
