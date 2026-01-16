@@ -19,10 +19,10 @@ lint:
     - oxipng@10.0.0
     - prettier@3.8.0
     - pyright@1.1.408
-    - ruff@0.14.12
+    - ruff@0.14.13
     - shellcheck@0.11.0
     - shfmt@3.6.0
-    - sqlfluff@3.5.0
+    - sqlfluff@4.0.0
     - sqlfmt@0.29.0
     - svgo@4.0.0
     - taplo@0.10.0
