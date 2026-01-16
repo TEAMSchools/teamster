@@ -63,7 +63,7 @@ with
             f.days_in_status,
             f.sre_year_start,
             f.sre_year_end,
-            f.rn_sre_year,
+            f.rn,
 
             coalesce(e.enrollment_type, 'New') as enrollment_type,
 
@@ -101,7 +101,7 @@ with
         where
             m.academic_year = c.academic_year
             and m.enrollment_type = c.enrollment_type
-            and m.rn_sre_year = 1
+            and m.rn = 1
     ),
 
     scaffold as (
@@ -152,7 +152,7 @@ with
         inner join
             {{ ref("int_finalsite__status_report") }} as f
             on e.academic_year = f.academic_year
-            and f.rn_sre_year = 1
+            and f.rn = 1
         cross join
             unnest(
                 generate_date_array(
@@ -168,7 +168,8 @@ with
 
         union all
 
-        -- distinct: get a list of grade levels by region tied to an academic year
+        /* distinct: get a list of grade levels but schoolid by region tied to an
+           academic year */
         select distinct
             e._dbt_source_relation,
             e.academic_year,
@@ -215,7 +216,7 @@ with
         inner join
             {{ ref("int_finalsite__status_report") }} as f
             on e.academic_year = f.academic_year
-            and f.rn_sre_year = 1
+            and f.rn = 1
         cross join
             unnest(
                 generate_date_array(
