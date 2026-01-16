@@ -37,6 +37,10 @@ select
         partition by academic_year, finalsite_student_id order by status_start_date desc
     ) as powerschool_student_number,
 
+    first_value(schoolid) over (
+        partition by academic_year, finalsite_student_id order by status_start_date desc
+    ) as schoolid,
+
     first_value(school) over (
         partition by academic_year, finalsite_student_id order by status_start_date desc
     ) as school,
