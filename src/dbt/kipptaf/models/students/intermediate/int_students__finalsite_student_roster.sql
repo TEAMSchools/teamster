@@ -3,6 +3,7 @@ with
         -- need only one row per expected sre academic year
         select distinct
             academic_year,
+            academic_year_display,
             sre_year_start,
             sre_year_end,
 
@@ -102,6 +103,8 @@ with
         select
             m._dbt_source_relation,
             m.academic_year,
+            m.schoolid,
+            m.school,
             m.finalsite_student_id,
             m.grade_level,
             m.enrollment_type,
@@ -129,6 +132,7 @@ with
             e.school,
             e.grade_level,
 
+            w.academic_year_display,
             w.sre_year_start,
             w.sre_year_end,
             w.week_start_monday,
@@ -157,10 +161,6 @@ with
             c.offers_to_enrolled_den,
             c.offers_to_enrolled_num,
             c.waitlisted,
-
-            cast(e.academic_year as string)
-            || '-'
-            || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join weekly_spine as w on e.academic_year = w.academic_year
@@ -176,10 +176,11 @@ with
             e._dbt_source_relation,
             e.academic_year,
             e.region,
-            null as schoolid,
-            cast(null as string) as school,
+            000000 as schoolid,
+            'No School Assigned' as school,
             e.grade_level,
 
+            w.academic_year_display,
             w.sre_year_start,
             w.sre_year_end,
             w.week_start_monday,
@@ -208,10 +209,6 @@ with
             c.offers_to_enrolled_den,
             c.offers_to_enrolled_num,
             c.waitlisted,
-
-            cast(e.academic_year as string)
-            || '-'
-            || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join weekly_spine as w on e.academic_year = w.academic_year
@@ -276,6 +273,7 @@ from scaffold as s
 inner join
     student_scaffold as stu
     on s.academic_year = stu.academic_year
+    and s.schoolid = stu.schoolid
     and s.grade_level = stu.grade_level
     and s.enrollment_type = stu.enrollment_type
     and s.detailed_status = stu.detailed_status

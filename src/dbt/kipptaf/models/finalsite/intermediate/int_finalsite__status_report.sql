@@ -37,12 +37,20 @@ select
         partition by academic_year, finalsite_student_id order by status_start_date desc
     ) as powerschool_student_number,
 
-    first_value(schoolid) over (
-        partition by academic_year, finalsite_student_id order by status_start_date desc
+    coalesce(
+        first_value(schoolid) over (
+            partition by academic_year, finalsite_student_id
+            order by status_start_date desc
+        ),
+        000000
     ) as schoolid,
 
-    first_value(school) over (
-        partition by academic_year, finalsite_student_id order by status_start_date desc
+    coalesce(
+        first_value(school) over (
+            partition by academic_year, finalsite_student_id
+            order by status_start_date desc
+        ),
+        'No School Assigned'
     ) as school,
 
 from finalsite_report
