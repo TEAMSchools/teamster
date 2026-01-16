@@ -280,6 +280,7 @@ inner join
     and s.enrollment_type = stu.enrollment_type
     and s.detailed_status = stu.detailed_status
     and s.week_start_monday = stu.week_start_monday
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="stu") }}
 left join
     mod_enrollment_type as m
     on s.academic_year = m.academic_year
