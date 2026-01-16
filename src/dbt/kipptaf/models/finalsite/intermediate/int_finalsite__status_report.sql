@@ -7,9 +7,9 @@ with
             x.abbreviation as school,
 
             row_number() over (
-                partition by f.academic_year, f.sre_year_start, f.sre_year_end
-                order by f.academic_year
-            ) as rn_sre_year,
+                partition by f.academic_year, f.finalsite_student_id,
+                order by f.status_start_date desc
+            ) as rn,
 
         -- TODO: replace with real data source once it is ready
         from {{ ref("stg_google_sheets__finalsite__sample_data") }} as f
