@@ -7,7 +7,7 @@ with
             x.abbreviation as school,
 
             row_number() over (
-                partition by f.academic_year, f.finalsite_student_id,
+                partition by f.academic_year, f.finalsite_student_id
                 order by f.status_start_date desc
             ) as rn,
 
