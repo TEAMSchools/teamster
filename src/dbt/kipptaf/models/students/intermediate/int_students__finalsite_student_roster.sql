@@ -139,6 +139,7 @@ with
             w.week_start_monday,
             w.week_end_sunday,
 
+            c.enrollment_year,
             c.enrollment_type,
             c.overall_status,
             c.funnel_status,
@@ -187,6 +188,7 @@ with
             w.week_start_monday,
             w.week_end_sunday,
 
+            c.enrollment_year,
             c.enrollment_type,
             c.overall_status,
             c.funnel_status,
@@ -230,6 +232,7 @@ select
     s.sre_year_end,
     s.week_start_monday,
     s.week_end_sunday,
+    s.enrollment_year,
     s.enrollment_type,
     s.overall_status,
     s.funnel_status,
