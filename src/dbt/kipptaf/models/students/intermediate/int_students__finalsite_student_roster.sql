@@ -287,9 +287,9 @@ select
     m.grade_level as student_grade_level,
     m.grade_level_string as student_grade_level_string,
     m.detailed_status as student_detailed_status,
-    m.status_start_date as status_start_date,
-    m.status_end_date as status_end_date,
-    m.days_in_status as days_in_status,
+    m.status_start_date,
+    m.status_end_date,
+    m.days_in_status,
     m.enrollment_type as student_enrollment_type,
 
 from scaffold as s
