@@ -305,3 +305,69 @@ left join
     and s.enrollment_type = m.enrollment_type
     and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
     and m.status_start_date between s.week_start_monday and s.week_end_sunday
+    and m.schoolid is not null
+
+union all
+
+select
+    s._dbt_source_relation,
+    s.academic_year,
+    s.academic_year_display,
+    s.region,
+    s.schoolid,
+    s.school,
+    s.grade_level,
+    s.sre_year_start,
+    s.sre_year_end,
+    s.week_start_monday,
+    s.week_end_sunday,
+    s.enrollment_type,
+    s.overall_status,
+    s.funnel_status,
+    s.status_category,
+    s.offered_status,
+    s.offered_status_detailed,
+    s.detailed_status,
+    s.detailed_status_ranking,
+    s.detailed_status_branched_ranking,
+    s.powerschool_enroll_status,
+    s.valid_detailed_status,
+    s.applicant_ops,
+    s.offered_ops,
+    s.pending_offer_ops,
+    s.overall_conversion_ops,
+    s.offers_to_accepted_den,
+    s.offers_to_accepted_num,
+    s.accepted_to_enrolled_den,
+    s.accepted_to_enrolled_num,
+    s.offers_to_enrolled_den,
+    s.offers_to_enrolled_num,
+    s.waitlisted,
+
+    m.finalsite_student_id,
+    m.enrollment_year as student_enrollment_year,
+    m.region as student_region,
+    m.schoolid as student_schoolid,
+    m.school as student_school,
+    m.powerschool_student_number as student_number,
+    m.last_name as student_last_name,
+    m.first_name as student_first_name,
+    m.grade_level as student_grade_level,
+    m.grade_level_string as student_grade_level_string,
+    m.detailed_status as student_detailed_status,
+    m.status_start_date,
+    m.status_end_date,
+    m.days_in_status,
+    m.enrollment_type as student_enrollment_type,
+
+from scaffold as s
+left join
+    mod_enrollment_type as m
+    on s.academic_year = m.academic_year
+    and s.region = m.region
+    and s.grade_level = m.grade_level
+    and s.detailed_status = m.detailed_status
+    and s.enrollment_type = m.enrollment_type
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="m") }}
+    and m.status_start_date between s.week_start_monday and s.week_end_sunday
+    and m.schoolid is null
