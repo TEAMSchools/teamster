@@ -1,43 +1,4 @@
 with
-    finalsite_report as (
-        select
-            f.* except (school),
-
-            x.powerschool_school_id as schoolid,
-            x.abbreviation as school,
-
-            row_number() over (
-                partition by f.academic_year, f.sre_year_start, f.sre_year_end
-                order by f.academic_year
-            ) as rn_sre_year,
-
-        from {{ ref("stg_google_sheets__finalsite__sample_data") }} as f
-        left join
-            {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
-            on f.school = x.name
-    ),
-
-    latest_school_id_gl as (
-        select
-            _dbt_source_relation,
-            academic_year,
-            finalsite_student_id,
-            powerschool_student_number,
-            schoolid,
-            school,
-            grade_level,
-            grade_level_string,
-
-            row_number() over (
-                partition by academic_year, finalsite_student_id
-                order by status_start_date desc
-            ) as rn,
-
-        from finalsite_report
-        where school is not null
-        qualify rn = 1
-    ),
-
     enrollment_type_calc as (
         select
             _dbt_source_relation,
@@ -89,8 +50,14 @@ with
             f.academic_year_display,
             f.enrollment_year,
             f.region,
+            f.schoolid,
+            f.school,
+            f.finalsite_student_id,
+            f.powerschool_student_number,
             f.last_name,
             f.first_name,
+            f.grade_level,
+            f.grade_level_string,
             f.detailed_status,
             f.status_start_date,
             f.status_end_date,
@@ -101,24 +68,11 @@ with
 
             coalesce(e.enrollment_type, 'New') as enrollment_type,
 
-            coalesce(
-                f.powerschool_student_number, r.powerschool_student_number
-            ) as powerschool_student_number,
-            coalesce(f.schoolid, r.schoolid) as schoolid,
-            coalesce(f.school, r.school) as school,
-            coalesce(f.grade_level, r.grade_level) as grade_level,
-            coalesce(f.grade_level_string, r.grade_level_string) as grade_level_string,
-
-        from finalsite_report as f
+        from {{ ref("int_finalsite__status_report") }} as f
         left join
             enrollment_type_calc as e
             on f.powerschool_student_number = e.student_number
             and {{ union_dataset_join_clause(left_alias="f", right_alias="e") }}
-        left join
-            latest_school_id_gl as r
-            on f.academic_year = r.academic_year
-            and f.finalsite_student_id = r.finalsite_student_id
-            and {{ union_dataset_join_clause(left_alias="f", right_alias="r") }}
     ),
 
     student_scaffold as (
