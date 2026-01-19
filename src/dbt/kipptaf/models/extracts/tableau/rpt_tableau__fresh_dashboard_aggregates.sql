@@ -50,7 +50,11 @@ with
 
         from summary
         where metric_name = 'pending_offer_ops' and metric_value = 1
-        group by _dbt_source_relation, academic_year, finalsite_student_id
+        group by
+            _dbt_source_relation,
+            academic_year,
+            finalsite_student_id,
+            student_finalsite_student_id
     ),
 
     offered as (
