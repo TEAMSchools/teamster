@@ -4,6 +4,7 @@ with
             _dbt_source_relation,
             academic_year,
             academic_year_display,
+            org,
             region,
             school,
             finalsite_student_id,
@@ -11,8 +12,6 @@ with
             detailed_status,
             status_start_date,
             days_in_status,
-
-            'KTAF' as org,
 
             metric_name,
             metric_value,

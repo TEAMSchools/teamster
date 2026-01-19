@@ -7,6 +7,8 @@ with
             sre_year_start,
             sre_year_end,
 
+            'KTAF' as org,
+
             week_start as week_start_monday,
             date_add(week_start, interval 6 day) as week_end_sunday,
 
@@ -128,6 +130,7 @@ with
         select distinct
             e._dbt_source_relation,
             e.academic_year,
+            'KTAF' as org,
             e.region,
             e.schoolid,
             e.school,
@@ -176,6 +179,7 @@ with
         select distinct
             e._dbt_source_relation,
             e.academic_year,
+            'KTAF' as org,
             e.region,
             0 as schoolid,
             'No School Assigned' as school,
@@ -222,6 +226,7 @@ select
     s._dbt_source_relation,
     s.academic_year,
     s.academic_year_display,
+    s.org,
     s.region,
     s.schoolid,
     s.school,
