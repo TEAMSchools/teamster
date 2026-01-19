@@ -32,7 +32,7 @@ select
     if(
         status_end_date = status_start_date,
         1,
-        date_diff(status_end_date, status_start_date, day)
+        date_diff(status_end_date, status_start_date, day) + 1
     ) as days_in_status,
 
     date(academic_year, 10, 16) as sre_year_start,
