@@ -8,6 +8,7 @@ with
             region,
             school,
             finalsite_student_id,
+            student_finalsite_student_id,
             grade_level,
             detailed_status,
             status_start_date,
@@ -37,6 +38,7 @@ with
             _dbt_source_relation,
             academic_year,
             finalsite_student_id,
+            student_finalsite_student_id,
 
             1 as pending_offer_ops,
 
@@ -56,6 +58,7 @@ with
             _dbt_source_relation,
             academic_year,
             finalsite_student_id,
+            student_finalsite_student_id,
             metric_value as offered_ops,
 
         from summary
@@ -72,6 +75,7 @@ with
             s.school,
             s.grade_level,
             s.finalsite_student_id,
+            s.student_finalsite_student_id,
 
             coalesce(o.offered_ops, 0) as offered_ops,
 
@@ -107,6 +111,7 @@ with
             school,
             grade_level,
             finalsite_student_id,
+            student_finalsite_student_id,
 
             metric_name,
             metric_value,
@@ -128,6 +133,7 @@ select
     academic_year,
     academic_year_display,
     finalsite_student_id,
+    student_finalsite_student_id,
     metric_name,
     metric_value,
 
@@ -143,6 +149,7 @@ select
     academic_year,
     academic_year_display,
     finalsite_student_id,
+    student_finalsite_student_id,
     metric_name,
     metric_value,
 
@@ -158,6 +165,7 @@ select
     academic_year,
     academic_year_display,
     finalsite_student_id,
+    student_finalsite_student_id,
     metric_name,
     metric_value,
 
@@ -173,6 +181,7 @@ select
     academic_year,
     academic_year_display,
     finalsite_student_id,
+    student_finalsite_student_id,
     metric_name,
     metric_value,
 

@@ -53,6 +53,7 @@ select
     f.offers_to_enrolled_num,
     f.waitlisted,
     f.finalsite_student_id,
+    f.student_finalsite_student_id,
     f.student_enrollment_year,
     f.student_region,
     f.student_schoolid,

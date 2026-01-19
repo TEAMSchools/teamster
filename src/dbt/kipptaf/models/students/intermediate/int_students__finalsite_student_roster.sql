@@ -260,6 +260,7 @@ select
 
     stu.finalsite_student_id,
 
+    m.finalsite_student_id as student_finalsite_student_id,
     m.enrollment_year as student_enrollment_year,
     m.region as student_region,
     m.schoolid as student_schoolid,
