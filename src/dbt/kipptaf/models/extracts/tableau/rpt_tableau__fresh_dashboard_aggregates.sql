@@ -264,4 +264,3 @@ with
 
 select *,
 from final
-
