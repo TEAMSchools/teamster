@@ -101,6 +101,50 @@ with
             and {{ union_dataset_join_clause(left_alias="f", right_alias="e") }}
     ),
 
+    finalsite_data as (
+        select
+            f._dbt_source_relation,
+            f.academic_year,
+            f.academic_year_display,
+            f.enrollment_year,
+            f.region,
+            f.schoolid,
+            f.school,
+            f.finalsite_student_id,
+            f.powerschool_student_number,
+            f.last_name,
+            f.first_name,
+            f.grade_level,
+            f.grade_level_string,
+            f.detailed_status,
+            f.status_start_date,
+            f.status_end_date,
+            f.days_in_status,
+            f.sre_year_start,
+            f.sre_year_end,
+            f.rn,
+            f.enrollment_type,
+
+            x.applicant_ops as student_applicant_ops,
+            x.offered_ops as student_offered_ops,
+            x.pending_offer_ops as student_pending_offer_ops,
+            x.overall_conversion_ops as student_overall_conversion_ops,
+            x.offers_to_accepted_den as student_offers_to_accepted_den,
+            x.offers_to_accepted_num as student_offers_to_accepted_num,
+            x.accepted_to_enrolled_den as student_accepted_to_enrolled_den,
+            x.accepted_to_enrolled_num as student_accepted_to_enrolled_num,
+            x.offers_to_enrolled_den as student_offers_to_enrolled_den,
+            x.offers_to_enrolled_num as student_offers_to_enrolled_num,
+            x.waitlisted as student_waitlisted,
+
+        from mod_enrollment_type as f
+        inner join
+            {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
+            on f.academic_year = x.academic_year
+            and f.enrollment_type = x.enrollment_type
+            and f.detailed_status = x.detailed_status
+    ),
+
     student_scaffold as (
         select
             m._dbt_source_relation,
@@ -260,21 +304,32 @@ select
 
     stu.finalsite_student_id,
 
-    m.finalsite_student_id as student_finalsite_student_id,
-    m.enrollment_year as student_enrollment_year,
-    m.region as student_region,
-    m.schoolid as student_schoolid,
-    m.school as student_school,
-    m.powerschool_student_number as student_number,
-    m.last_name as student_last_name,
-    m.first_name as student_first_name,
-    m.grade_level as student_grade_level,
-    m.grade_level_string as student_grade_level_string,
-    m.detailed_status as student_detailed_status,
-    m.status_start_date,
-    m.status_end_date,
-    m.days_in_status,
-    m.enrollment_type as student_enrollment_type,
+    f.finalsite_student_id as student_finalsite_student_id,
+    f.enrollment_year as student_enrollment_year,
+    f.region as student_region,
+    f.schoolid as student_schoolid,
+    f.school as student_school,
+    f.powerschool_student_number as student_number,
+    f.last_name as student_last_name,
+    f.first_name as student_first_name,
+    f.grade_level as student_grade_level,
+    f.grade_level_string as student_grade_level_string,
+    f.detailed_status as student_detailed_status,
+    f.status_start_date,
+    f.status_end_date,
+    f.days_in_status,
+    f.enrollment_type as student_enrollment_type,
+    f.student_applicant_ops,
+    f.student_offered_ops,
+    f.student_pending_offer_ops,
+    f.student_overall_conversion_ops,
+    f.student_offers_to_accepted_den,
+    f.student_offers_to_accepted_num,
+    f.student_accepted_to_enrolled_den,
+    f.student_accepted_to_enrolled_num,
+    f.student_offers_to_enrolled_den,
+    f.student_offers_to_enrolled_num,
+    f.student_waitlisted,
 
 from scaffold as s
 inner join
@@ -287,12 +342,12 @@ inner join
     and s.week_start_monday = stu.week_start_monday
     and {{ union_dataset_join_clause(left_alias="s", right_alias="stu") }}
 left join
-    mod_enrollment_type as m
-    on stu.academic_year = m.academic_year
-    and stu.schoolid = m.schoolid
-    and stu.grade_level = m.grade_level
-    and stu.detailed_status = m.detailed_status
-    and stu.enrollment_type = m.enrollment_type
-    and {{ union_dataset_join_clause(left_alias="stu", right_alias="m") }}
-    and stu.finalsite_student_id = m.finalsite_student_id
-    and m.status_start_date between stu.week_start_monday and stu.week_end_sunday
+    finalsite_data as f
+    on stu.academic_year = f.academic_year
+    and stu.schoolid = f.schoolid
+    and stu.grade_level = f.grade_level
+    and stu.detailed_status = f.detailed_status
+    and stu.enrollment_type = f.enrollment_type
+    and {{ union_dataset_join_clause(left_alias="stu", right_alias="f") }}
+    and stu.finalsite_student_id = f.finalsite_student_id
+    and f.status_start_date between stu.week_start_monday and stu.week_end_sunday

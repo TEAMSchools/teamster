@@ -20,15 +20,17 @@ with
         from
             {{ ref("int_students__finalsite_student_roster") }} unpivot (
                 metric_value for metric_name in (
-                    offered_ops,
-                    pending_offer_ops,
-                    overall_conversion_ops,
-                    offers_to_accepted_num,
-                    offers_to_accepted_den,
-                    accepted_to_enrolled_num,
-                    accepted_to_enrolled_den,
-                    offers_to_enrolled_num,
-                    offers_to_enrolled_den
+                    student_applicant_ops,
+                    student_offered_ops,
+                    student_pending_offer_ops,
+                    student_overall_conversion_ops,
+                    student_offers_to_accepted_den,
+                    student_offers_to_accepted_num,
+                    student_accepted_to_enrolled_den,
+                    student_accepted_to_enrolled_num,
+                    student_offers_to_enrolled_den,
+                    student_offers_to_enrolled_num,
+                    student_waitlisted
                 )
             )
     ),
