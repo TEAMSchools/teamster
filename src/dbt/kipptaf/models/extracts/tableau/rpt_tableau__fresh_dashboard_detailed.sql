@@ -62,7 +62,7 @@ select
 
     first_value(f.student_detailed_status) over (
         partition by f.academic_year, f.finalsite_student_id
-        order by d.calendar_day desc
+        order by f.status_start_date desc
     ) as latest_status,
 
 from {{ ref("int_students__finalsite_student_roster") }} as f
