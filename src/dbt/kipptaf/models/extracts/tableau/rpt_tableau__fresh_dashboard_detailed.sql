@@ -70,7 +70,7 @@ select
 
     d.calendar_day,
 
-    first_value(f.detailed_status) over (
+    first_value(f.student_detailed_status) over (
         partition by f.academic_year, f.finalsite_student_id
         order by d.calendar_day desc
     ) as latest_status,
