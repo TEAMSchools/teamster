@@ -1,55 +1,79 @@
-select
-    _dbt_source_relation,
-    academic_year,
-    academic_year_display,
-    region,
-    schoolid,
-    school,
-    grade_level,
-    sre_year_start,
-    sre_year_end,
-    week_start_monday,
-    week_end_sunday,
-    enrollment_type,
-    overall_status,
-    funnel_status,
-    status_category,
-    offered_status,
-    offered_status_detailed,
-    detailed_status,
-    detailed_status_ranking,
-    detailed_status_branched_ranking,
-    powerschool_enroll_status,
-    valid_detailed_status,
-    applicant_ops,
-    offered_ops,
-    pending_offer_ops,
-    overall_conversion_ops,
-    offers_to_accepted_den,
-    offers_to_accepted_num,
-    accepted_to_enrolled_den,
-    accepted_to_enrolled_num,
-    offers_to_enrolled_den,
-    offers_to_enrolled_num,
-    waitlisted,
-    finalsite_student_id,
-    student_enrollment_year,
-    student_region,
-    student_schoolid,
-    student_school,
-    student_number,
-    student_last_name,
-    student_first_name,
-    student_grade_level,
-    student_grade_level_string,
-    student_detailed_status,
-    status_start_date,
-    status_end_date,
-    days_in_status,
-    student_enrollment_type,
+with
+    daily_spine as (
+        -- need only one row per expected sre academic year
+        select distinct academic_year, calendar_day,
 
-    first_value(detailed_status) over (
-        partition by academic_year, finalsite_student_id order by status_start_date desc
+        from {{ ref("int_finalsite__status_report") }}
+        cross join
+            unnest(
+                generate_date_array(
+                    -- trunk-ignore(sqlfluff/LT01)
+                    date_trunc(sre_year_start, week(monday)),
+                    -- trunk-ignore(sqlfluff/LT01)
+                    date_trunc(sre_year_end, week(monday)),
+                    interval 1 day
+                )
+            ) as calendar_day
+        where rn = 1
+    )
+
+select
+    f._dbt_source_relation,
+    f.academic_year,
+    f.academic_year_display,
+    f.region,
+    f.schoolid,
+    f.school,
+    f.grade_level,
+    f.sre_year_start,
+    f.sre_year_end,
+    f.week_start_monday,
+    f.week_end_sunday,
+    f.enrollment_type,
+    f.overall_status,
+    f.funnel_status,
+    f.status_category,
+    f.offered_status,
+    f.offered_status_detailed,
+    f.detailed_status,
+    f.detailed_status_ranking,
+    f.detailed_status_branched_ranking,
+    f.powerschool_enroll_status,
+    f.valid_detailed_status,
+    f.applicant_ops,
+    f.offered_ops,
+    f.pending_offer_ops,
+    f.overall_conversion_ops,
+    f.offers_to_accepted_den,
+    f.offers_to_accepted_num,
+    f.accepted_to_enrolled_den,
+    f.accepted_to_enrolled_num,
+    f.offers_to_enrolled_den,
+    f.offers_to_enrolled_num,
+    f.waitlisted,
+    f.finalsite_student_id,
+    f.student_enrollment_year,
+    f.student_region,
+    f.student_schoolid,
+    f.student_school,
+    f.student_number,
+    f.student_last_name,
+    f.student_first_name,
+    f.student_grade_level,
+    f.student_grade_level_string,
+    f.student_detailed_status,
+    f.status_start_date,
+    f.status_end_date,
+    f.days_in_status,
+    f.student_enrollment_type,
+
+    d.calendar_day,
+
+    first_value(f.detailed_status) over (
+        partition by f.academic_year, f.finalsite_student_id
+        order by d.calendar_day desc
     ) as latest_status,
 
-from {{ ref("int_students__finalsite_student_roster") }}
+from {{ ref("int_students__finalsite_student_roster") }} as f
+inner join
+    daily_spine as d on d.calendar_day between f.week_start_monday and f.week_end_sunday
