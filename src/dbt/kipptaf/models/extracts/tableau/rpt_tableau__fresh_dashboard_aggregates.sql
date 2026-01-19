@@ -264,3 +264,4 @@ with
 
 select *,
 from final
+where calendar_day <= current_date('{{ var("local_timezone") }}')
