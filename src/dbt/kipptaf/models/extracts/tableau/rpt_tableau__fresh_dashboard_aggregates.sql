@@ -40,6 +40,7 @@ with
                 [
                     'Applications',
                     'Offers',
+                    'Pending Offers'
                     'Pending Offer <= 4',
                     'Pending Offer >= 5 & <=10',
                     'Pending Offer > 10'
@@ -72,6 +73,7 @@ with
                 [
                     'Applications',
                     'Offers',
+                    'Pending Offers'
                     'Pending Offer <= 4',
                     'Pending Offer >= 5 & <=10',
                     'Pending Offer > 10'
@@ -199,7 +201,9 @@ with
             s.calendar_day,
             s.metric,
 
-            p.student_finalsite_student_id,
+            if(
+                p.application_cumulative = 1, p.student_finalsite_student_id, null
+            ) as student_finalsite_student_id,
 
         from scaffold as s
         left join
@@ -224,7 +228,9 @@ with
             s.calendar_day,
             s.metric,
 
-            p.student_finalsite_student_id,
+            if(
+                p.offers_cumulative = 1, p.student_finalsite_student_id, null
+            ) as student_finalsite_student_id,
 
         from scaffold as s
         left join
@@ -235,6 +241,33 @@ with
             and s.grade_level = p.grade_level
             and s.calendar_day = p.calendar_day
         where s.metric = 'Offers'
+
+        union all
+
+        select
+            s._dbt_source_relation,
+            s.academic_year,
+            s.academic_year_display,
+            s.org,
+            s.region,
+            s.school,
+            s.grade_level,
+            s.calendar_day,
+            s.metric,
+
+            if(
+                p.pending_offer_daily = 1, p.student_finalsite_student_id, null
+            ) as student_finalsite_student_id,
+
+        from scaffold as s
+        left join
+            pending_offer_calcs as p
+            on s.academic_year = p.academic_year
+            and s.region = p.region
+            and s.school = p.school
+            and s.grade_level = p.grade_level
+            and s.calendar_day = p.calendar_day
+        where s.metric = 'Pending Offers'
 
         union all
 
