@@ -40,7 +40,7 @@ with
                 [
                     'Applications',
                     'Offers',
-                    'Pending Offers'
+                    'Pending Offers',
                     'Pending Offer <= 4',
                     'Pending Offer >= 5 & <=10',
                     'Pending Offer > 10'
@@ -73,7 +73,7 @@ with
                 [
                     'Applications',
                     'Offers',
-                    'Pending Offers'
+                    'Pending Offers',
                     'Pending Offer <= 4',
                     'Pending Offer >= 5 & <=10',
                     'Pending Offer > 10'
