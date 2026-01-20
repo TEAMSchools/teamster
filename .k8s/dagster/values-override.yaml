@@ -127,4 +127,7 @@ extraManifests:
       maxUnavailable: 1
       selector:
         matchLabels:
+          app.kubernetes.io/instance: user-cloud
           app.kubernetes.io/name: dagster-cloud-agent
+          component: agent
+          deployment: agent
