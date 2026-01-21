@@ -26,7 +26,7 @@ core_dbt_assets = build_dbt_assets(
     op_tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1500m"}}
+                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "2000m"}}
             }
         }
     },
@@ -55,7 +55,7 @@ google_sheet_dbt_assets = build_dbt_assets(
     op_tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1500m"}}
+                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "2000m"}}
             }
         }
     },
