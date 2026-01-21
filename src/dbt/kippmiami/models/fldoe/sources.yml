@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: fldoe
     schema: |
@@ -7,12 +5,13 @@ sources:
       {{ var('fldoe_schema', project_name + '_fldoe') }}
     tables:
       - name: src_fldoe__fast
-        meta:
-          dagster:
-            asset_key:
-              - kippmiami
-              - fldoe
-              - fast
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kippmiami
+                - fldoe
+                - fast
         external:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/fast/*"
           options:
@@ -24,21 +23,22 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: stg_fldoe__fsa
-        meta:
-          dagster:
-            asset_key:
-              - kippmiami
-              - fldoe
-              - fsa
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kippmiami
+                - fldoe
+                - fsa
       - name: src_fldoe__fsa
-        conifg:
+        config:
           enabled: false
-        meta:
-          dagster:
-            asset_key:
-              - kippmiami
-              - fldoe
-              - fsa
+          meta:
+            dagster:
+              asset_key:
+                - kippmiami
+                - fldoe
+                - fsa
         external:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/fsa/*"
           options:
@@ -50,12 +50,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_fldoe__science
-        meta:
-          dagster:
-            asset_key:
-              - kippmiami
-              - fldoe
-              - science
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kippmiami
+                - fldoe
+                - science
         external:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/science/*"
           options:
@@ -67,12 +68,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_fldoe__eoc
-        meta:
-          dagster:
-            asset_key:
-              - kippmiami
-              - fldoe
-              - eoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kippmiami
+                - fldoe
+                - eoc
         external:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/eoc/*"
           options:
@@ -84,12 +86,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_fldoe__fte
-        meta:
-          dagster:
-            asset_key:
-              - kippmiami
-              - fldoe
-              - fte
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kippmiami
+                - fldoe
+                - fte
         external:
           location: "{{ var('cloud_storage_uri_base') }}/fldoe/fte/*"
           options:

@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: int_tableau__gradebook_audit_categories_teacher
+    # config:
+    #   materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string

@@ -16,8 +16,6 @@ assets:
   # whenmodified
   - asset_name: emailaddress
     partition_column: whenmodified
-  - asset_name: gpstudentwaiver
-    partition_column: whenmodified
   - asset_name: gradescaleitem
     partition_column: whenmodified
   - asset_name: originalcontactmap
@@ -42,8 +40,6 @@ assets:
     partition_column: whenmodified
   - asset_name: s_nj_stu_x
     partition_column: whenmodified
-  - asset_name: s_nj_usr_x
-    partition_column: whenmodified
   - asset_name: s_stu_x
     partition_column: whenmodified
   - asset_name: schoolstaff
@@ -60,13 +56,11 @@ assets:
     partition_column: whenmodified
   - asset_name: users
     partition_column: whenmodified
+  - asset_name: userscorefields
+    partition_column: whenmodified
   - asset_name: u_clg_et_stu
     partition_column: whenmodified
   - asset_name: u_clg_et_stu_alt
-    partition_column: whenmodified
-  - asset_name: u_storedgrades_de
-    partition_column: whenmodified
-  - asset_name: userscorefields
     partition_column: whenmodified
   - asset_name: cc
     partition_column: transaction_date
@@ -96,3 +90,9 @@ assets:
       - media_release
       - newark_enrollment_number
       - rides_staff
+  - asset_name: u_storedgrades_de
+    partition_column: whenmodified
+  # - asset_name: gpstudentwaiver
+  #   partition_column: whenmodified
+  # - asset_name: s_nj_usr_x
+  #   partition_column: whenmodified

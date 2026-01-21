@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__seat_tracker
     columns:
@@ -8,13 +7,9 @@ models:
         data_type: string
       - name: adp_location
         data_type: string
-      - name: job_title
-        data_type: string
       - name: entity
         data_type: string
       - name: grade_band
-        data_type: string
-      - name: location
         data_type: string
       - name: plan_status
         data_type: string
@@ -25,18 +20,48 @@ models:
       - name: staffing_model_id
         data_type: string
       - name: recruiter
-        data_type: string
+        data_type: int64
       - name: recruiter_manager
         data_type: string
       - name: teammate
-        data_type: string
-      - name: open
-        data_type: int64
-      - name: new_hire
-        data_type: int64
-      - name: staffed
-        data_type: int64
-      - name: active
         data_type: int64
       - name: mid_year_hire
+        data_type: boolean
+      - name: active_seats
         data_type: int64
+      - name: adp_title
+        data_type: string
+      - name: anticipated_hires
+        data_type: int64
+      - name: culture
+        data_type: boolean
+      - name: display_name
+        data_type: string
+      - name: edited_at
+        data_type: timestamp
+      - name: edited_by
+        data_type: string
+      - name: flex
+        data_type: boolean
+      - name: mid_year_hires
+        data_type: int64
+      - name: new_hires
+        data_type: int64
+      - name: open_seats
+        data_type: int64
+      - name: recruiter_name
+        data_type: string
+      - name: recruiting_notes
+        data_type: string
+      - name: recruitment_group
+        data_type: string
+      - name: short_name
+        data_type: string
+      - name: staffed_seats
+        data_type: int64
+      - name: staffing_model_notes
+        data_type: string
+      - name: surrogate_key
+        data_type: string
+      - name: teammate_name
+        data_type: string

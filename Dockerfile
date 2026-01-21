@@ -1,5 +1,3 @@
-# trunk-ignore-all(checkov/CKV_DOCKER_2)
-# trunk-ignore-all(trivy/DS026)
 # https://hub.docker.com/_/python
 FROM python:3.13-slim
 ARG CODE_LOCATION
@@ -15,7 +13,7 @@ ENV UV_COMPILE_BYTECODE=1
 # trunk-ignore(hadolint/DL3008)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        openssh-client sshpass \
+        openssh-client sshpass build-essential git \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -g 1234 teamster \

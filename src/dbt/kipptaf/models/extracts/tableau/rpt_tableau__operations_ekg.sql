@@ -8,7 +8,9 @@ with
         from {{ ref("int_people__staff_roster") }}
     ),
 
-    schools as (select *, from {{ ref("stg_people__location_crosswalk") }}),
+    schools as (
+        select *, from {{ ref("stg_google_sheets__people__location_crosswalk") }}
+    ),
 
     form_responses as (
         select
@@ -23,6 +25,7 @@ with
             last_submitted_date_local,
             respondent_email,
             text_value,
+
             if(
                 regexp_contains(text_value, r'^-?\d+$'),
                 safe_cast(text_value as int),
@@ -38,6 +41,7 @@ with
     responses_pivoted as (
         select
             *,
+
             -- pivoting out walkthrough round and school selection items 
             max(
                 case
@@ -45,6 +49,7 @@ with
                     then form_responses.text_value
                 end
             ) over (partition by form_responses.response_id) as walkthrough_round,
+
             max(
                 case
                     when form_responses.item_id = '669334db'

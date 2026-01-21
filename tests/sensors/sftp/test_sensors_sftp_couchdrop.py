@@ -1,9 +1,9 @@
 from dagster import SensorResult, build_sensor_context
 
-from teamster.core.resources import SSH_COUCHDROP
-
 
 def _test_sensor(sftp_sensor):
+    from teamster.core.resources import SSH_COUCHDROP
+
     context = build_sensor_context(sensor_name=sftp_sensor.name)
 
     result: SensorResult = sftp_sensor(context=context, ssh_couchdrop=SSH_COUCHDROP)

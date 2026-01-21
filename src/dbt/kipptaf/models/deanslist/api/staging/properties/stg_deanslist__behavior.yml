@@ -1,7 +1,18 @@
-version: 2
 models:
   - name: stg_deanslist__behavior
+    # config:
+    #   materialized: table
     columns:
+      - name: school_name
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_google_sheets__people__location_crosswalk")
+                field: name
+              config:
+                store_failures: true
+                severity: warn
       - name: _dbt_source_relation
         data_type: string
       - name: assignment
@@ -13,8 +24,6 @@ models:
       - name: notes
         data_type: string
       - name: roster
-        data_type: string
-      - name: school_name
         data_type: string
       - name: source_procedure
         data_type: string

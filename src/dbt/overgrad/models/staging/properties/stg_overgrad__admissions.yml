@@ -1,13 +1,12 @@
-version: 2
 models:
   - name: stg_overgrad__admissions
-    config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("overgrad",
-        "src_overgrad__admissions") | replace("`", "") }}')
     columns:
       - name: id
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: created_at
         data_type: string
       - name: updated_at
@@ -92,3 +91,5 @@ models:
         data_type: float64
       - name: award_letter__seog
         data_type: float64
+      - name: object
+        data_type: string

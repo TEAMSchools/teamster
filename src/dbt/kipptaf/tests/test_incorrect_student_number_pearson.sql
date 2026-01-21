@@ -1,15 +1,23 @@
 {{
     config(
-        severity="warn", store_failures=true, store_failures_as="view", enabled=false
+        severity="warn",
+        store_failures=true,
+        store_failures_as="view",
+        meta={
+            "dagster": {
+                "ref": {"name": "int_pearson__all_assessments"},
+            },
+        },
     )
 }}
 
 select
-    a.academic_year,
+    a.studenttestuuid,
     a.localstudentidentifier,
     a.statestudentidentifier,
     a.firstname,
     a.lastorsurname,
+    a.academic_year,
     a.testcode,
 
     e.student_number,

@@ -35,6 +35,7 @@ with
             item_abbreviation,
             text_value,
             last_submitted_date_local,
+
             max(last_submitted_date_local) over (
                 partition by respondent_email, item_abbreviation, text_value
             )
@@ -53,6 +54,7 @@ with
             additional_future_plans as dps_additional_future_plans,
             kfwd_support as dps_kfwd_support,
             dream_career as dps_dream_career,
+
             row_number() over (
                 partition by respondent_email order by last_submitted_date_local desc
             ) as rn_response,
@@ -73,12 +75,12 @@ with
 -- trunk-ignore(sqlfluff/ST06)
 select
     co.student_number,
-    co.lastfirst as student_name,
-    co.school_abbreviation as school,
+    co.student_name,
+    co.school,
     co.region,
     co.advisor_lastfirst as advisor,
     co.gender,
-    co.student_email_google,
+    co.student_email as student_email_google,
 
     ce.teacher_lastfirst as ccr_teacher,
     ce.sections_external_expression as ccr_period,
@@ -90,7 +92,7 @@ select
 
     coalesce(kt.contact_id, 'not in salesforce') as sf_id,
 
-    if(co.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
+    co.iep_status,
 
     case
         when co.enroll_status = 0
@@ -101,7 +103,7 @@ select
         then 'graduated'
     end as enroll_status,
 
-    concat(co.lastfirst, ' - ', co.student_number) as student_identifier,
+    concat(co.student_name, ' - ', co.student_number) as student_identifier,
 
     act.act_count,
 
@@ -141,7 +143,8 @@ select
         kt.ktc_status
     ) as taf_enroll_status,
 
-    gpa.cumulative_y1_gpa_unweighted,
+    co.cumulative_y1_gpa_unweighted,
+
     case
         when kt.contact_college_match_display_gpa >= 3.00
         then 'FLC Eligible'
@@ -149,6 +152,7 @@ select
     end as flc_eligibility,
 
     if(kt.overgrad_students_id is not null, 'Yes', 'No') as has_overgrad_account_yn,
+
     kt.overgrad_students_assigned_counselor_lastfirst as overgrad_counselor,
 
     dps.dps_submit_date_most_recent,
@@ -166,7 +170,11 @@ select
 
     coalesce(cn.as1, 0) as as1_complete,
     coalesce(cn.bm, 0) as bm_complete,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+
+    kt.contact_graduation_year as graduation_year,
+
+    coalesce(cn.as6, 0) as as6_complete,
+from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     {{ ref("int_kippadb__roster") }} as kt on co.student_number = kt.student_number
 left join
@@ -184,10 +192,5 @@ left join
     {{ ref("int_kippadb__contact_note_rollup") }} as cn
     on kt.contact_id = cn.contact_id
     and cn.academic_year = {{ var("current_academic_year") }}
-left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gpa
-    on co.studentid = gpa.studentid
-    and co.schoolid = gpa.schoolid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
-left join dps_pivot as dps on co.student_email_google = dps.respondent_email
+left join dps_pivot as dps on co.student_email = dps.respondent_email
 where co.rn_undergrad = 1 and co.grade_level != 99

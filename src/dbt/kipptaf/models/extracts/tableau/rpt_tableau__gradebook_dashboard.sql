@@ -549,18 +549,4 @@ left join
     and tr.schoolid = e1.schoolid
     and {{ union_dataset_join_clause(left_alias="tr", right_alias="e1") }}
     and e1.year_in_school = 1
-left join
-    {{ ref("int_powerschool__spenrollments") }} as sp
-    on co.studentid = sp.studentid
-    and current_date('{{ var("local_timezone") }}')
-    between sp.enter_date and sp.exit_date
-    and sp.specprog_name = 'Counseling Services'
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
-left join
-    {{ ref("int_powerschool__spenrollments") }} as sa
-    on co.studentid = sa.studentid
-    and current_date('{{ var("local_timezone") }}')
-    between sa.enter_date and sa.exit_date
-    and sa.specprog_name = 'Student Athlete'
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="sa") }}
 where tr.storecode = 'Y1' and tr.course_number is null

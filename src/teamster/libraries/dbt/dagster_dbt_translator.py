@@ -39,36 +39,6 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
 
         if not automation_condition_config.get("enabled", True):
             return None
-        elif (
-            dbt_resource_props["resource_type"] == "model"
-            and dbt_resource_props["config"]["materialized"] == "view"
-            and dbt_resource_props["name"][:3] == "rpt"
-        ):
-            """forked from AutomationCondition.eager()
-            - add code_version_changed()
-            - add ignore external assets
-            - replace since_last_handled() to allow initial_evaluation()
-            - remove any_deps_updated()
-            """
-            return (
-                AutomationCondition.in_latest_time_window()
-                & (
-                    AutomationCondition.newly_missing()
-                    | AutomationCondition.code_version_changed()
-                ).since(
-                    AutomationCondition.newly_requested()
-                    | AutomationCondition.newly_updated()
-                )
-                & ~AutomationCondition.any_deps_missing().ignore(
-                    ignore_selection
-                    | (
-                        AssetSelection.all(include_sources=True)
-                        - AssetSelection.all(include_sources=False)
-                    )
-                )
-                & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
-                & ~AutomationCondition.in_progress()
-            )
         else:
             """forked from AutomationCondition.eager()
             - add code_version_changed()

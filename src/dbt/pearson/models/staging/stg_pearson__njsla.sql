@@ -78,7 +78,7 @@ with
             cast(testingdistrictcode as int) as testingdistrictcode,
             cast(testingorganizationaltype as int) as testingorganizationaltype,
             cast(testingschoolcode as int) as testingschoolcode,
-            cast(testperformancelevel as int) as testperformancelevel,
+
             cast(colorcontrast as numeric) as colorcontrast,
             cast(elaconstructedresponse as numeric) as elaconstructedresponse,
             cast(elalconstructedresponse as numeric) as elalconstructedresponse,
@@ -96,7 +96,6 @@ with
                 homelessprimarynighttimeresidence as numeric
             ) as homelessprimarynighttimeresidence,
             cast(humanreaderorhumansigner as numeric) as humanreaderorhumansigner,
-            cast(localstudentidentifier as numeric) as localstudentidentifier,
             cast(
                 mathematics_scienceaccommodatedresponse as numeric
             ) as mathematics_scienceaccommodatedresponse,
@@ -133,12 +132,8 @@ with
             cast(subclaim4category as numeric) as subclaim4category,
             cast(subclaim5category as numeric) as subclaim5category,
             cast(testcsemprobablerange as numeric) as testcsemprobablerange,
-            cast(testreadingcsem as numeric) as testreadingcsem,
-            cast(testreadingscalescore as numeric) as testreadingscalescore,
             cast(testscalescore as numeric) as testscalescore,
             cast(testscorecomplete as numeric) as testscorecomplete,
-            cast(testwritingcsem as numeric) as testwritingcsem,
-            cast(testwritingscalescore as numeric) as testwritingscalescore,
             cast(texttospeech as numeric) as texttospeech,
             cast(totaltestitems as numeric) as totaltestitems,
             cast(totaltestitemsattempted as numeric) as totaltestitemsattempted,
@@ -150,9 +145,31 @@ with
             cast(unit3totaltestitems as numeric) as unit3totaltestitems,
             cast(voidscorereason as numeric) as voidscorereason,
 
-            cast(left(assessmentyear, 4) as int) as academic_year,
+            cast(
+                cast(localstudentidentifier as numeric) as int
+            ) as localstudentidentifier,
+            cast(cast(testperformancelevel as numeric) as int) as testperformancelevel,
 
             cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
+
+            cast(
+                nullif(regexp_replace(testreadingcsem, r'[^\d\.]', ''), '') as numeric
+            ) as testreadingcsem,
+            cast(
+                nullif(
+                    regexp_replace(testreadingscalescore, r'[^\d\.]', ''), ''
+                ) as numeric
+            ) as testreadingscalescore,
+            cast(
+                nullif(regexp_replace(testwritingcsem, r'[^\d\.]', ''), '') as numeric
+            ) as testwritingcsem,
+            cast(
+                nullif(
+                    regexp_replace(testwritingscalescore, r'[^\d\.]', ''), ''
+                ) as numeric
+            ) as testwritingscalescore,
+
+            cast(left(assessmentyear, 4) as int) as academic_year,
 
             coalesce(multilinguallearnerml, englishlearnerel) as englishlearnerel,
 

@@ -15,7 +15,6 @@ from teamster.code_locations.kipptaf import (
     _google,
     adp,
     airbyte,
-    amplify,
     asset_checks,
     collegeboard,
     couchdrop,
@@ -25,6 +24,7 @@ from teamster.code_locations.kipptaf import (
     knowbe4,
     ldap,
     level_data,
+    nsc,
     overgrad,
     performance_management,
     powerschool,
@@ -53,6 +53,7 @@ from teamster.core.resources import (
 defs = Definitions(
     executor=k8s_job_executor,
     assets=[
+        *_dbt.asset_specs,
         *_google.asset_specs,
         *airbyte.asset_specs,
         *load_assets_from_modules(
@@ -61,7 +62,6 @@ defs = Definitions(
                 _dlt,
                 _google,
                 adp,
-                amplify,
                 collegeboard,
                 coupa,
                 deanslist,
@@ -69,6 +69,7 @@ defs = Definitions(
                 knowbe4,
                 ldap,
                 level_data,
+                nsc,
                 overgrad,
                 performance_management,
                 powerschool,
@@ -130,7 +131,6 @@ defs = Definitions(
         "ps_enrollment": resources.POWERSCHOOL_ENROLLMENT_RESOURCE,
         "smartrecruiters": resources.SMARTRECRUITERS_RESOURCE,
         "ssh_adp_workforce_now": resources.SSH_RESOURCE_ADP_WORKFORCE_NOW,
-        "ssh_amplify": resources.SSH_RESOURCE_AMPLIFY,
         "ssh_clever": resources.SSH_RESOURCE_CLEVER,
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_coupa": resources.SSH_RESOURCE_COUPA,

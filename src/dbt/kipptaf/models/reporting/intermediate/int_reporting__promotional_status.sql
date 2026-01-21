@@ -20,7 +20,8 @@ with
                     )
                 ),
                 0
-            ) as n_absences_y1_running_non_susp,
+            )
+            + floor(sum(is_tardy) / 3) as n_absences_y1_running_non_susp,
 
             case
                 regexp_extract(mem._dbt_source_relation, r'(kipp\w+)_')
@@ -42,7 +43,7 @@ with
             end as hs_off_track_absences,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as mem
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on mem.schoolid = rt.school_id
             and mem.yearid = rt.powerschool_year_id
             /* join to all terms after calendardate */
@@ -94,7 +95,7 @@ with
             academic_year_int,
             `subject`,
             most_recent_overall_relative_placement,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
     ),
 
     iready as (
@@ -129,11 +130,11 @@ with
 
             if(
                 grade_level > 0,
-                cast(right(state_benchmark_category_name, 1) as int64),
+                cast(right(state_benchmark_category_name, 1) as int),
                 5 - district_benchmark_category_level
             ) as star_achievement_level,
-        from {{ ref("int_renlearn__star_rollup") }}
-        where rn_subj_year = 1
+        from {{ ref("stg_renlearn__star") }}
+        where rn_subject_year = 1
     ),
 
     star as (
@@ -288,26 +289,36 @@ with
                 then 'Off-Track'
                 /* NJ Gr K */
                 when
-                    co.region in ('Camden', 'Newark')
+                    co.region = 'Newark'
                     and co.grade_level = 0
-                    and att.ada_term_running < 0.80
+                    and att.ada_term_running < 0.85
+                then 'Off-Track'
+                when
+                    co.region = 'Camden'
+                    and co.grade_level = 0
+                    and att.ada_term_running < 0.82
                 then 'Off-Track'
                 /* NJ Gr 1-2 */
                 when
-                    co.region in ('Camden', 'Newark')
+                    co.region = 'Newark'
                     and co.grade_level between 1 and 2
-                    and att.ada_term_running < 0.85
+                    and att.ada_term_running < 0.87
+                then 'Off-Track'
+                when
+                    co.region = 'Newark'
+                    and co.grade_level between 1 and 2
+                    and att.ada_term_running < 0.86
                 then 'Off-Track'
                 /* NJ Gr3-8 */
                 when
                     co.grade_level between 3 and 8
                     and co.region = 'Camden'
-                    and att.ada_term_running < 0.86
+                    and att.ada_term_running < 0.87
                 then 'Off-Track'
                 when
                     co.grade_level between 3 and 8
                     and co.region = 'Newark'
-                    and att.ada_term_running < 0.87
+                    and att.ada_term_running < 0.9
                 then 'Off-Track'
                 /* Miami K */
                 when
@@ -340,34 +351,44 @@ with
             end as attendance_status,
 
             case
-                /* Gr K-8 */
+                /* NJ Gr K-8 */
                 when
                     co.region in ('Camden', 'Newark')
                     and co.grade_level <= 8
                     and att.ada_term_running is null
                 then 'Off-Track'
-                /* Gr K */
+                /* NJ Gr K */
                 when
-                    co.region in ('Camden', 'Newark')
+                    co.region = 'Newark'
                     and co.grade_level = 0
-                    and att.ada_term_running < 0.80
-                then 'Off-Track'
-                /* Gr 1-2 */
-                when
-                    co.region in ('Camden', 'Newark')
-                    and co.grade_level between 1 and 2
                     and att.ada_term_running < 0.85
                 then 'Off-Track'
-                /* Gr3-8 */
+                when
+                    co.region = 'Camden'
+                    and co.grade_level = 0
+                    and att.ada_term_running < 0.82
+                then 'Off-Track'
+                /* NJ Gr 1-2 */
+                when
+                    co.region = 'Newark'
+                    and co.grade_level between 1 and 2
+                    and att.ada_term_running < 0.87
+                then 'Off-Track'
+                when
+                    co.region = 'Newark'
+                    and co.grade_level between 1 and 2
+                    and att.ada_term_running < 0.86
+                then 'Off-Track'
+                /* NJ Gr3-8 */
                 when
                     co.grade_level between 3 and 8
                     and co.region = 'Camden'
-                    and att.ada_term_running < 0.86
+                    and att.ada_term_running < 0.87
                 then 'Off-Track'
                 when
                     co.grade_level between 3 and 8
                     and co.region = 'Newark'
-                    and att.ada_term_running < 0.87
+                    and att.ada_term_running < 0.9
                 then 'Off-Track'
                 /* Miami K */
                 when
@@ -458,7 +479,7 @@ with
             end as academic_status,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on co.academic_year = rt.academic_year
             and co.schoolid = rt.school_id
             and rt.type = 'RT'

@@ -13,7 +13,7 @@ from teamster.libraries.google.drive.resources import GoogleDriveResource
 from teamster.libraries.google.forms.resources import GoogleFormsResource
 from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 from teamster.libraries.overgrad.resources import OvergradResource
-from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
+from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.zendesk.resources import ZendeskResource
 
@@ -137,4 +137,11 @@ SSH_TITAN = SSHResource(
     remote_port=22,
     username=EnvVar("TITAN_SFTP_USERNAME"),
     password=EnvVar("TITAN_SFTP_PASSWORD"),
+)
+
+SSH_RESOURCE_AMPLIFY = SSHResource(
+    remote_host=EnvVar("AMPLIFY_SFTP_HOST"),
+    remote_port=22,
+    username=EnvVar("AMPLIFY_SFTP_USERNAME"),
+    password=EnvVar("AMPLIFY_SFTP_PASSWORD"),
 )

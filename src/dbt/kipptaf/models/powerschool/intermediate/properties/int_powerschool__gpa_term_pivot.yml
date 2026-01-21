@@ -1,11 +1,14 @@
 models:
   - name: int_powerschool__gpa_term_pivot
+    config:
+      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - _dbt_source_relation
-            - studentid
-            - yearid
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - studentid
+              - yearid
           config:
             severity: warn
             store_failures: true

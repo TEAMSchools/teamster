@@ -1,0 +1,61 @@
+models:
+  - name: rpt_gsheets__csgf_hs_ap_offerings
+    columns:
+      - name: school_name
+        data_type: string
+      - name: ap_african_american_studies
+        data_type: string
+      - name: ap_art_history
+        data_type: string
+      - name: ap_biology
+        data_type: string
+      - name: ap_calculus_ab
+        data_type: string
+      - name: ap_calculus_bc
+        data_type: string
+      - name: ap_chemistry
+        data_type: string
+      - name: ap_comparative_government_and_politics
+        data_type: string
+      - name: ap_computer_science_a
+        data_type: string
+      - name: ap_computer_science_principles
+        data_type: string
+      - name: ap_english_language_and_composition
+        data_type: string
+      - name: ap_english_literature_and_composition
+        data_type: string
+      - name: ap_environmental_science
+        data_type: string
+      - name: ap_french_language_and_culture
+        data_type: string
+      - name: ap_human_geography
+        data_type: string
+      - name: ap_macroeconomics
+        data_type: string
+      - name: ap_microeconomics
+        data_type: string
+      - name: ap_physics_1
+        data_type: string
+      - name: ap_pre_calculus
+        data_type: string
+      - name: ap_psychology
+        data_type: string
+      - name: ap_seminar
+        data_type: string
+      - name: ap_spanish_language_and_culture
+        data_type: string
+      - name: ap_statistics
+        data_type: string
+      - name: ap_2d_art_and_design_portfolio
+        data_type: string
+      - name: ap_3d_art_and_design_portfolio
+        data_type: string
+      - name: ap_drawing
+        data_type: string
+      - name: ap_us_government_and_politics
+        data_type: string
+      - name: ap_us_history
+        data_type: string
+      - name: ap_world_history_modern
+        data_type: string

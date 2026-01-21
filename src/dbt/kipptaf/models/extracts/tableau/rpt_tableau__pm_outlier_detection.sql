@@ -50,7 +50,7 @@ with
             timestamp(rt.end_date) as end_date_timestamp,
         from {{ ref("stg_performance_management__outlier_detection") }} as od
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on od.academic_year = rt.academic_year
             and od.form_term = rt.code
             and rt.type in ('PM', 'PMS')

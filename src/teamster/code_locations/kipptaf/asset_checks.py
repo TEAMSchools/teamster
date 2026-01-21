@@ -13,14 +13,14 @@ adp_wfn_asset_selection = [
         [
             "kipptaf",
             "adp_workforce_now",
-            "stg_adp_workforce_now__workers__work_assignments",
+            "int_adp_workforce_now__workers__work_assignments",
         ]
     ),
     AssetKey(
         [
             "kipptaf",
             "adp_workforce_now",
-            "stg_adp_workforce_now__workers__work_assignments__reports_to",
+            "int_adp_workforce_now__workers__work_assignments__reports_to",
         ]
     ),
 ]

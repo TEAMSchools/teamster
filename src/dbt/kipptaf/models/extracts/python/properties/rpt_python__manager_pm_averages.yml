@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_python__manager_pm_averages
     columns:

@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: int_iready__domain_unpivot
+    config:
+      materialized: table
     columns:
       - name: student_id
         data_type: int64

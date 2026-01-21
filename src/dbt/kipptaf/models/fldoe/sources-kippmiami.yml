@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: kippmiami_fldoe
     schema: |
@@ -7,58 +5,65 @@ sources:
       kippmiami_fldoe
     tables:
       - name: stg_fldoe__fast
-        meta:
-          dagster:
-            group: fldoe
-            asset_key:
-              - kippmiami
-              - fldoe
-              - stg_fldoe__fast
+        config:
+          meta:
+            dagster:
+              group: fldoe
+              asset_key:
+                - kippmiami
+                - fldoe
+                - stg_fldoe__fast
       - name: stg_fldoe__fsa
-        meta:
-          dagster:
-            group: fldoe
-            asset_key:
-              - kippmiami
-              - fldoe
-              - stg_fldoe__fsa
+        config:
+          meta:
+            dagster:
+              group: fldoe
+              asset_key:
+                - kippmiami
+                - fldoe
+                - stg_fldoe__fsa
       - name: stg_fldoe__eoc
-        meta:
-          dagster:
-            group: fldoe
-            asset_key:
-              - kippmiami
-              - fldoe
-              - stg_fldoe__eoc
+        config:
+          meta:
+            dagster:
+              group: fldoe
+              asset_key:
+                - kippmiami
+                - fldoe
+                - stg_fldoe__eoc
       - name: stg_fldoe__science
-        meta:
-          dagster:
-            group: fldoe
-            asset_key:
-              - kippmiami
-              - fldoe
-              - stg_fldoe__science
+        config:
+          meta:
+            dagster:
+              group: fldoe
+              asset_key:
+                - kippmiami
+                - fldoe
+                - stg_fldoe__science
       - name: int_fldoe__fast_standard_performance_unpivot
-        meta:
-          dagster:
-            group: fldoe
-            asset_key:
-              - kippmiami
-              - fldoe
-              - int_fldoe__fast_standard_performance_unpivot
+        config:
+          meta:
+            dagster:
+              group: fldoe
+              asset_key:
+                - kippmiami
+                - fldoe
+                - int_fldoe__fast_standard_performance_unpivot
       - name: int_fldoe__all_assessments
-        meta:
-          dagster:
-            group: fldoe
-            asset_key:
-              - kippmiami
-              - fldoe
-              - int_fldoe__all_assessments
+        config:
+          meta:
+            dagster:
+              group: fldoe
+              asset_key:
+                - kippmiami
+                - fldoe
+                - int_fldoe__all_assessments
       - name: int_fldoe__fte_pivot
-        meta:
-          dagster:
-            group: fldoe
-            asset_key:
-              - kippmiami
-              - fldoe
-              - int_fldoe__fte_pivot
+        config:
+          meta:
+            dagster:
+              group: fldoe
+              asset_key:
+                - kippmiami
+                - fldoe
+                - int_fldoe__fte_pivot

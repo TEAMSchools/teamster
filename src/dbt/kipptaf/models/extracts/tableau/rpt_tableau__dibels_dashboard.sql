@@ -27,9 +27,12 @@ select
     s.hos,
     s.nj_student_tier,
     s.is_tutoring as tutoring_nj,
+    s.is_sipps,
 
     'Benchmark' as assessment_type,
 
+    a.start_date as expected_start_date,
+    a.end_date as expected_end_date,
     a.admin_season as expected_test,
     a.month_round as expected_month_round,
     a.grade as expected_grade_level_int,
@@ -111,7 +114,7 @@ select
 
 from {{ ref("int_extracts__student_enrollments_subjects") }} as s
 inner join
-    {{ ref("stg_google_sheets__dibels_expected_assessments") }} as a
+    {{ ref("int_google_sheets__dibels_expected_assessments") }} as a
     on s.academic_year = a.academic_year
     and s.region = a.region
     and s.grade_level = a.grade
@@ -122,7 +125,7 @@ inner join
     and a.assessment_type = 'Benchmark'
     and a.assessment_include is null
 left join
-    {{ ref("rpt_gsheets__dibels_bm_goals_calculations") }} as g
+    {{ ref("stg_google_sheets__dibels_bm_goals") }} as g
     on a.academic_year = g.academic_year
     and a.region = g.region
     and a.grade = g.assessment_grade_int
@@ -147,7 +150,14 @@ left join
         'ELA Gr5',
         'ELA Gr6',
         'ELA Gr7',
-        'ELA Gr8'
+        'ELA Gr8',
+        'English Language Arts Kindergarten',
+        'English Language Arts 1st',
+        'English Language Arts 2nd',
+        'English Language Arts 3rd',
+        'English Language Arts 5th',
+        'English Language Arts 6th ',
+        'English Language Arts 7th'
     )
 left join
     {{ ref("int_amplify__all_assessments") }} as b
@@ -165,6 +175,7 @@ left join
 where
     s.iready_subject = 'Reading'
     and not s.is_self_contained
+    and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)
 
 union all
@@ -198,9 +209,12 @@ select
     s.hos,
     s.nj_student_tier,
     s.is_tutoring as tutoring_nj,
+    s.is_sipps,
 
     'PM' as assessment_type,
 
+    e.start_date as expected_start_date,
+    e.end_date as expected_end_date,
     e.admin_season as expected_test,
     e.month_round as expected_month_round,
     e.grade as expected_grade_level_int,
@@ -329,7 +343,14 @@ left join
         'ELA Gr5',
         'ELA Gr6',
         'ELA Gr7',
-        'ELA Gr8'
+        'ELA Gr8',
+        'English Language Arts Kindergarten',
+        'English Language Arts 1st',
+        'English Language Arts 2nd',
+        'English Language Arts 3rd',
+        'English Language Arts 5th',
+        'English Language Arts 6th ',
+        'English Language Arts 7th'
     )
 left join
     {{ ref("int_amplify__all_assessments") }} as a
@@ -356,4 +377,5 @@ left join
 where
     s.iready_subject = 'Reading'
     and not s.is_self_contained
+    and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)

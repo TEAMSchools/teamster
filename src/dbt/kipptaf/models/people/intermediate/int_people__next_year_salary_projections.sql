@@ -89,7 +89,7 @@ left join
     and y.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 left join
-    {{ ref("stg_people__salary_scale") }} as pss
+    {{ ref("stg_google_sheets__people__salary_scale") }} as pss
     on y.academic_year = pss.academic_year
     and h.home_business_unit_name = pss.region
     and h.job_title = pss.job_title
@@ -102,13 +102,13 @@ left join
         between pss.scale_ny_salary_minus_1_dollar and pss.scale_ny_salary_plus_1_dollar
     )
 left join
-    {{ ref("stg_people__salary_scale") }} as tss
+    {{ ref("stg_google_sheets__people__salary_scale") }} as tss
     on y.academic_year = tss.academic_year
     and h.job_title = tss.job_title
     and h.home_business_unit_name = tss.region
     and p.final_tier = tss.scale_step
 left join
-    {{ ref("stg_people__salary_scale") }} as mss
+    {{ ref("stg_google_sheets__people__salary_scale") }} as mss
     on y.academic_year = mss.academic_year
     and h.job_title = mss.job_title
     and h.home_business_unit_name = mss.region

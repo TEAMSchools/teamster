@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: rpt_tableau__college_assessment_dashboard
+    config:
+      enabled: false
     columns:
       - name: academic_year
         data_type: int64
@@ -108,3 +109,7 @@ models:
         data_type: boolean
       - name: is_exempt_state_testing
         data_type: boolean
+      - name: expected_strategy
+        data_type: boolean
+      - name: test_academic_year
+        data_type: int64

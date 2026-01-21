@@ -1,0 +1,6 @@
+models:
+  - name: stg_schoolmint_grow__meetings
+    config:
+      enabled: false
+      contract:
+        enforced: false

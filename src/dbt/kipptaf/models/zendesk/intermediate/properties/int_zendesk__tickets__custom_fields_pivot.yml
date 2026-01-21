@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_zendesk__tickets__custom_fields_pivot
     columns:

@@ -33,12 +33,12 @@ with
             e.end_date,
             e.matching_pm_season as matching_season,
 
-        from {{ ref("stg_amplify__benchmark_student_summary") }} as bss
+        from {{ ref("int_amplify__mclass__benchmark_student_summary") }} as bss
         inner join
-            {{ ref("int_amplify__benchmark_student_summary_unpivot") }} as u
+            {{ ref("int_amplify__mclass__benchmark_student_summary_unpivot") }} as u
             on bss.surrogate_key = u.surrogate_key
         inner join
-            {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
+            {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
             on bss.academic_year = e.academic_year
             and bss.region = e.region
             and bss.assessment_grade_int = e.grade
@@ -86,9 +86,9 @@ with
             e.end_date,
             e.matching_pm_season as matching_season,
 
-        from {{ ref("int_amplify__dibels_data_farming_unpivot") }} as df
+        from {{ source("amplify", "int_amplify__dds__data_farming_unpivot") }} as df
         inner join
-            {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
+            {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
             on df.academic_year = e.academic_year
             and df.region = e.region
             and df.assessment_grade_int = e.grade
@@ -135,15 +135,15 @@ with
 
             if(p.pm_period = 'BOY->MOY', 'MOY', 'EOY') as matching_season,
 
-        from {{ ref("stg_amplify__pm_student_summary") }} as p
+        from {{ ref("int_amplify__mclass__pm_student_summary") }} as p
         inner join
-            {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
+            {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
             on p.academic_year = e.academic_year
             and p.region = e.region
             and p.assessment_grade_int = e.grade
             and p.measure = e.expected_measure_standard
             and p.pm_period = e.admin_season
-            and p.client_date between e.start_date and e.end_date
+            and p.sync_date between e.start_date and e.end_date
             and e.assessment_include is null
             and e.pm_goal_include is null
         where p.enrollment_grade = p.assessment_grade and p.assessment_grade is not null
@@ -154,13 +154,9 @@ with
             *,
 
             row_number() over (
-                partition by surrogate_key, measure_standard
+                partition by surrogate_key, round_number, measure_standard
                 order by measure_standard_level_int desc
             ) as rn_highest,
-
-            row_number() over (
-                partition by academic_year, student_number order by client_date
-            ) as rn_distinct,
 
         from assessments_scores
     ),
@@ -186,7 +182,8 @@ with
     ),
 
     probe_eligible_tag as (
-        select
+        -- TODO: rn_distinct calc wasnt working - will review later
+        select distinct
             s.academic_year,
             s.student_number,
 
@@ -209,7 +206,7 @@ with
             overall_composite_by_window as c
             on s.academic_year = c.academic_year
             and s.student_number = c.student_number
-        where s.rn_distinct = 1 and s.assessment_type = 'Benchmark'
+        where s.assessment_type = 'Benchmark'
     )
 
 select

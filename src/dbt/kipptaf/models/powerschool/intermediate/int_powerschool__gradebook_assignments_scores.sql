@@ -20,13 +20,11 @@ with
             e.students_dcid,
             e.courses_credittype as credit_type,
 
-            d.school_level,
-
             coalesce(s.islate, 0) as is_late,
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
 
-            initcap(regexp_extract(a._dbt_source_relation, r'kipp(\w+)')) as region,
+            initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
 
             case
                 when coalesce(s.isexempt, 0) = 1
@@ -35,6 +33,16 @@ with
                 then false
                 else true
             end as is_expected,
+
+            /* hardcoding year while we look for a better solution to custom grade
+               level vs school level */
+            if(
+                e.cc_academic_year = 2025
+                and e.cc_schoolid = 179905
+                and e.sections_grade_level = 5,
+                'MS',
+                d.school_level
+            ) as school_level,
 
             if(
                 a.scoretype = 'POINTS',
@@ -57,7 +65,7 @@ with
         inner join
             {{ ref("base_powerschool__course_enrollments") }} as e
             on a.sectionsdcid = e.sections_dcid
-            and a.duedate >= e.cc_dateenrolled
+            and a.duedate between e.cc_dateenrolled and e.cc_dateleft
             and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
             and not e.is_dropped_section
         left join

@@ -1,5 +1,3 @@
-{{ config(materialized="table", cluster_by="cte_grouping") }}
-
 with
     student_unpivot as (
         select u.*, f.cte_grouping, f.audit_category, f.code_type,
@@ -9,7 +7,6 @@ with
                 audit_flag_value for audit_flag_name in (
                     assign_null_score,
                     assign_score_above_max,
-                    assign_exempt_with_score,
                     assign_w_score_less_5,
                     assign_h_score_less_5,
                     assign_f_score_less_5,
@@ -359,7 +356,6 @@ select
     r.assign_final_score_percent,
     r.assign_expected_to_be_scored,
     r.assign_expected_with_score,
-
     r.cte_grouping,
     r.audit_flag_name,
 
@@ -373,9 +369,11 @@ select
     t.n_is_null_not_missing,
     t.n_expected,
     t.n_expected_scored,
+
     null as total_expected_scored_section_quarter_week_category,
     null as total_expected_section_quarter_week_category,
     null as percent_graded_for_quarter_week_class,
+
     t.sum_totalpointvalue_section_quarter_category,
     t.teacher_running_total_assign_by_cat,
     t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
@@ -396,6 +394,7 @@ left join
     and r.assignmentid = t.assignmentid
 
 union all
+
 /* this captures all student_course_category: qt_effort_grade_missing,
 qt_formative_grade_missing, qt_summative_grade_missing, and
 w_grade_inflation */
@@ -454,7 +453,7 @@ select
     teacher_tableau_username,
     school_leader,
     school_leader_tableau_username,
-    quarter,
+    `quarter`,
     semester,
     quarter_start_date,
     quarter_end_date,
@@ -525,6 +524,7 @@ select
 from student_course_category
 
 union all
+
 -- this captures all eoq items except conduct_code
 select
     _dbt_source_relation,
@@ -581,7 +581,7 @@ select
     teacher_tableau_username,
     school_leader,
     school_leader_tableau_username,
-    quarter,
+    `quarter`,
     semester,
     quarter_start_date,
     quarter_end_date,
@@ -710,7 +710,7 @@ select
     teacher_tableau_username,
     school_leader,
     school_leader_tableau_username,
-    quarter,
+    `quarter`,
     semester,
     quarter_start_date,
     quarter_end_date,
@@ -895,7 +895,6 @@ select
 
     r.cte_grouping,
     r.audit_flag_name,
-
     r.n_students,
     r.n_late,
     r.n_exempt,
@@ -906,13 +905,14 @@ select
     r.n_is_null_not_missing,
     r.n_expected,
     r.n_expected_scored,
+
     null as total_expected_scored_section_quarter_week_category,
     null as total_expected_section_quarter_week_category,
     null as percent_graded_for_quarter_week_class,
     null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
-    r.teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
+    r.teacher_avg_score_for_assign_per_class_section_and_assign_id,
     r.audit_category,
     r.code_type,
 
@@ -1043,11 +1043,13 @@ select
     null as n_is_null_not_missing,
     null as n_expected,
     null as n_expected_scored,
+
     r.total_expected_scored_section_quarter_week_category,
     r.total_expected_section_quarter_week_category,
     r.percent_graded_for_quarter_week_class,
     r.sum_totalpointvalue_section_quarter_category,
     r.teacher_running_total_assign_by_cat,
+
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     r.audit_category,

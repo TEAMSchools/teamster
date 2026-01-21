@@ -1,12 +1,5 @@
-version: 2
 models:
   - name: stg_pearson__parcc
-    config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("pearson",
-        "src_pearson__parcc") | replace("`", "") }}')
-      contract:
-        enforced: true
     columns:
       - name: accountabledistrictcode
         data_type: int64
@@ -129,7 +122,7 @@ models:
       - name: lastorsurname
         data_type: string
       - name: localstudentidentifier
-        data_type: numeric
+        data_type: int64
       - name: mathematicsresponse
         data_type: numeric
       - name: mathematicsresponseel

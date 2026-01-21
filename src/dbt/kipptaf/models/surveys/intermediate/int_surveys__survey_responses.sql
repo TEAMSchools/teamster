@@ -31,6 +31,7 @@ select
     ) as survey_response_link,
 
     if(safe_cast(fr.text_value as int) is null, 1, 0) as is_open_ended,
+
     dense_rank() over (
         partition by fr.respondent_email, rt.academic_year, rt.code, fr.form_id
         order by fr.last_submitted_time desc
@@ -41,7 +42,7 @@ left join
     on fr.respondent_email = ldap.google_email
     and ldap.uac_account_disable = 0
 left join
-    {{ ref("stg_reporting__terms") }} as rt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on fr.info_title = rt.name
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
     and rt.type = 'SURVEY'
@@ -86,11 +87,12 @@ select
     ) as survey_response_link,
 
     if(safe_cast(sr.response_value as int) is null, 1, 0) as is_open_ended,
+
     1 as rn_round,
 from {{ source("alchemer", "base_alchemer__survey_results") }} as sr
 inner join
-    {{ ref("stg_reporting__terms") }} as rt
-    on rt.name = sr.survey_title
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
+    on sr.survey_title = rt.name
     and sr.response_date_submitted_date between rt.start_date and rt.end_date
 left join
     {{ source("surveys", "int_surveys__response_identifiers") }} as ri

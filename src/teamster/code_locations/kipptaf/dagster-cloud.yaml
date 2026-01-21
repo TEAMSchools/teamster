@@ -32,6 +32,17 @@ locations:
                       - key: id_rsa_egencia
                         path: id_rsa_egencia
         server_k8s_config:
+          pod_spec_config:
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchExpressions:
+                        - key: location_name
+                          operator: In
+                          values:
+                            - kipptaf
+                    topologyKey: kubernetes.io/hostname
           container_config:
             env:
               - name: ADP_SFTP_PASSWORD
@@ -99,41 +110,6 @@ locations:
                   secretKeyRef:
                     name: op-airbyte-api
                     key: workspace-id
-              - name: AMPLIFY_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-service-account
-                    key: password
-              - name: AMPLIFY_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-service-account
-                    key: username
-              - name: AMPLIFY_SFTP_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-sftp
-                    key: URL
-              - name: AMPLIFY_SFTP_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-sftp
-                    key: password
-              - name: AMPLIFY_SFTP_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-sftp
-                    key: username
-              - name: AMPLIFY_DDS_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-dds-service-account
-                    key: password_confirm
-              - name: AMPLIFY_DDS_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-dds-service-account
-                    key: username
               - name: CLEVER_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -507,41 +483,6 @@ locations:
                   secretKeyRef:
                     name: op-airbyte-api
                     key: workspace-id
-              - name: AMPLIFY_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-service-account
-                    key: password
-              - name: AMPLIFY_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-service-account
-                    key: username
-              - name: AMPLIFY_SFTP_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-sftp
-                    key: URL
-              - name: AMPLIFY_SFTP_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-sftp
-                    key: password
-              - name: AMPLIFY_SFTP_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-sftp
-                    key: username
-              - name: AMPLIFY_DDS_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-dds-service-account
-                    key: password_confirm
-              - name: AMPLIFY_DDS_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-dds-service-account
-                    key: username
               - name: CLEVER_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:

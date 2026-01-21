@@ -1,14 +1,13 @@
-version: 2
 models:
   - name: rpt_illuminate__student_portal_accounts
     columns:
-      - name: 01 student id
+      - name: "`01 Student ID`"
         data_type: int64
-      - name: 02 username
+      - name: "`02 Username`"
         data_type: string
-      - name: 03 email
+      - name: "`03 Email`"
         data_type: string
-      - name: 04 enable portal
+      - name: "`04 Enable Portal`"
         data_type: int64
-      - name: 05 temporary password
+      - name: "`05 Temporary Password`"
         data_type: string

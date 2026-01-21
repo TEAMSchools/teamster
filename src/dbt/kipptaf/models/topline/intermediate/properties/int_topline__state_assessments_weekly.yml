@@ -1,0 +1,4 @@
+models:
+  - name: int_topline__state_assessments_weekly
+    config:
+      materialized: table

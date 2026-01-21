@@ -12,6 +12,6 @@ select
     iready_proficiency_eoy as iready_eoy_previous_year,
 from {{ ref("int_extracts__student_enrollments_subjects") }}
 where
-    nj_student_tier is not null
-    and academic_year = {{ var("current_academic_year") }}
+    academic_year = {{ var("current_academic_year") }}
     and rn_year = 1
+    and enroll_status = 0

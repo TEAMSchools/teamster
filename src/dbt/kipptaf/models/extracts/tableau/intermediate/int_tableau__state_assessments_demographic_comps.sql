@@ -160,7 +160,7 @@ from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     assessment_scores as a
     on e.academic_year = a.academic_year
-    and e.student_number = a.localstudentidentifier
+    and e.pearson_local_student_identifier = a.localstudentidentifier
     and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
     and a.results_type = 'Actual'
 where
@@ -199,12 +199,14 @@ select
         then 'Blank'
     end as aggregate_ethnicity,
 
-    if(e.lep_status, 'ML', 'Not ML') as ml_status,
+    e.ml_status,
+
     if(
         e.iep_status = 'Has IEP',
         'Students With Disabilities',
         'Students Without Disabilities'
     ) as iep_status,
+
     if(
         e.lunch_status in ('F', 'R'),
         'Economically Disadvantaged',
@@ -236,9 +238,9 @@ where
     and e.academic_year >= {{ var("current_academic_year") - 7 }}
     and e.grade_level > 2
 
-union all
-
-/* NJ prelim scores */
+    -- union all
+    /* NJ prelim scores */
+    /* disabled until december
 select
     e.academic_year,
     e.region,
@@ -266,12 +268,14 @@ select
         then 'Blank'
     end as aggregate_ethnicity,
 
-    if(e.lep_status, 'ML', 'Not ML') as ml_status,
+    e.ml_status,
+    
     if(
         e.iep_status = 'Has IEP',
         'Students With Disabilities',
         'Students Without Disabilities'
     ) as iep_status,
+    
     if(
         e.lunch_status in ('F', 'R'),
         'Economically Disadvantaged',
@@ -302,3 +306,4 @@ where
     and e.rn_year = 1
     and e.grade_level > 2
     and e.school_level != 'OD'
+*/

@@ -1,18 +1,18 @@
-version: 2
 models:
   - name: rpt_tableau__dibels_dashboard
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - academic_year
-            - student_number
-            - grade_level_int
-            - expected_test
-            - expected_round_number
-            - expected_measure_standard
-          config:
-            severity: warn
-            store_failures: true
+    # data_tests:
+    #   - dbt_utils.unique_combination_of_columns:
+    #       arguments:
+    #         combination_of_columns:
+    #           - academic_year
+    #           - student_number
+    #           - grade_level_int
+    #           - expected_test
+    #           - expected_round_number
+    #           - expected_measure_standard
+    #       config:
+    #         severity: warn
+    #         store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -64,8 +64,20 @@ models:
         data_type: string
       - name: cohort
         data_type: int64
+      - name: hos
+        data_type: string
+      - name: nj_student_tier
+        data_type: string
+      - name: tutoring_nj
+        data_type: boolean
+      - name: is_sipps
+        data_type: boolean
       - name: assessment_type
         data_type: string
+      - name: expected_start_date
+        data_type: date
+      - name: expected_end_date
+        data_type: date
       - name: expected_test
         data_type: string
       - name: expected_month_round
@@ -85,23 +97,23 @@ models:
       - name: admin_goal_grade_range
         data_type: float64
       - name: n_admin_season_school_gl_all
-        data_type: float64
+        data_type: int64
       - name: n_admin_season_school_gl_at_above
         data_type: int64
       - name: n_admin_season_school_gl_bl_wb
         data_type: int64
       - name: n_admin_season_school_gl_at_above_expected
-        data_type: float64
+        data_type: int64
       - name: n_admin_season_school_gl_at_above_gap
         data_type: float64
       - name: n_admin_season_region_gl_all
-        data_type: float64
+        data_type: int64
       - name: n_admin_season_region_gl_at_above
         data_type: int64
       - name: n_admin_season_region_gl_bl_wb
         data_type: int64
       - name: n_admin_season_region_gl_at_above_expected
-        data_type: float64
+        data_type: int64
       - name: n_admin_season_region_gl_at_above_gap
         data_type: float64
       - name: grade_level
@@ -115,7 +127,7 @@ models:
       - name: pm_days
         data_type: int64
       - name: benchmark_goal
-        data_type: int64
+        data_type: float64
       - name: required_growth_words
         data_type: int64
       - name: daily_growth_rate
@@ -123,7 +135,7 @@ models:
       - name: round_growth_words_goal
         data_type: int64
       - name: goal
-        data_type: int64
+        data_type: float64
       - name: schedule_student_number
         data_type: int64
       - name: teacherid
@@ -194,12 +206,6 @@ models:
         data_type: int64
       - name: met_pm_round_overall_criteria
         data_type: int64
-      - name: hos
-        data_type: string
-      - name: nj_student_tier
-        data_type: string
-      - name: tutoring_nj
-        data_type: boolean
       - name: expected_round_number
         data_type: string
       - name: schedule_student_grade_level

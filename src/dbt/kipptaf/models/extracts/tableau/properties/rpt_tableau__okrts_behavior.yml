@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__okrts_behavior
     columns:
@@ -64,3 +63,9 @@ models:
         data_type: int64
       - name: school_enrollment_by_week
         data_type: int64
+      - name: is_earned_progress_to_quarterly
+        data_type: int64
+      - name: is_earned_quarterly_incentive
+        data_type: int64
+      - name: state_studentnumber
+        data_type: string

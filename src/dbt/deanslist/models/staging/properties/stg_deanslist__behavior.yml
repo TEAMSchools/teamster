@@ -1,11 +1,12 @@
-version: 2
 models:
   - name: stg_deanslist__behavior
-    config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
-        "src_deanslist__behavior") | replace("`", "") }}')
     columns:
+      - name: dl_said
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: assignment
         data_type: string
       - name: behavior
@@ -38,8 +39,6 @@ models:
         data_type: string
       - name: weight
         data_type: string
-      - name: dl_said
-        data_type: int64
       - name: behavior_id
         data_type: int64
       - name: dl_organization_id
@@ -49,7 +48,7 @@ models:
       - name: dl_student_id
         data_type: int64
       - name: dl_user_id
-        data_type: int64
+        data_type: string
       - name: roster_id
         data_type: int64
       - name: secondary_student_id
@@ -57,7 +56,7 @@ models:
       - name: source_id
         data_type: int64
       - name: staff_school_id
-        data_type: int64
+        data_type: string
       - name: student_school_id
         data_type: int64
       - name: behavior_date
@@ -66,3 +65,7 @@ models:
         data_type: datetime
       - name: point_value
         data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: staff_full_name
+        data_type: string

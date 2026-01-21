@@ -9,9 +9,9 @@ with
 
 select
     co.student_number,
-    co.lastfirst as student_name,
+    co.student_name,
     co.grade_level,
-    co.school_abbreviation as school,
+    co.school,
     co.lep_status,
     co.gender,
     co.ethnicity as race_ethnicity,
@@ -42,7 +42,7 @@ select
     regexp_replace(
         left(up.domain_name, length(up.domain_name) - 19), '_', ' '
     ) as domain_name,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['BOY', 'MOY', 'EOY']) as ar
 left join
@@ -54,7 +54,7 @@ left join
     and not e.is_dropped_section
     and e.rn_credittype_year = 1
 left join
-    {{ ref("base_iready__diagnostic_results") }} as ir
+    {{ ref("int_iready__diagnostic_results") }} as ir
     on co.student_number = ir.student_id
     and co.academic_year = ir.academic_year_int
     and subj.iready_subject = ir.subject

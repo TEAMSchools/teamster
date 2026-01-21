@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_gsheets__kfwd_rem_roster
     columns:
@@ -91,4 +90,12 @@ models:
       - name: most_recent_college_enrollment_status
         data_type: string
       - name: currently_enrolled_school
+        data_type: string
+      - name: postsec_advisor
+        data_type: string
+      - name: postsec_advisor_name
+        data_type: string
+      - name: student_name_id_hash
+        data_type: string
+      - name: es_graduated
         data_type: string

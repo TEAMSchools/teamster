@@ -11,12 +11,14 @@ with
     ),
 
     translations as (
-
         select
-            ur._dbt_source_relation,
             ur.id,
 
             cf.name,
+
+            regexp_extract(
+                ur._dbt_source_relation, r'`stg_overgrad__(\w+)__custom_field_values`'
+            ) as source_object,
 
             case
                 when cf.field_type = 'date'
@@ -37,7 +39,9 @@ with
 
 select
     id,
+    source_object,
 
+    /* pivot cols */
     fafsa_verification_status,
     intended_degree_type,
     eof_status,
@@ -69,6 +73,7 @@ select
     teacher_lor_status,
     common_app_linked,
     ed_ea_scholarships_applied_to,
+    top_choice_schools,
 
     cast(student_aid_index as numeric) as student_aid_index,
 
@@ -76,10 +81,6 @@ select
     date(
         state_aid_application_submission_date
     ) as state_aid_application_submission_date,
-
-    regexp_extract(
-        _dbt_source_relation, r'`(stg_overgrad__\w+)__custom_field_values`'
-    ) as _dbt_source_model,
 from
     translations pivot (
         max(`value`) for `name` in (
@@ -119,6 +120,7 @@ from
             'Wishlist Goal' as `wishlist_goal`,
             'Wishlist Signed Off by Counselor' as `wishlist_signed_off_by_counselor`,
             'Common App Linked' as `common_app_linked`,
-            'ED/EA Scholarships Applied To' as `ed_ea_scholarships_applied_to`
+            'ED/EA Scholarships Applied To' as `ed_ea_scholarships_applied_to`,
+            'Top Choice' as `top_choice_schools`
         )
     )

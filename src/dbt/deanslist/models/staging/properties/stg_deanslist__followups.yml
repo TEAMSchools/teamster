@@ -1,11 +1,12 @@
-version: 2
 models:
   - name: stg_deanslist__followups
-    config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
-        "src_deanslist__followups") | replace("`", "") }}')
     columns:
+      - name: followup_id
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: c_first
         data_type: string
       - name: c_last
@@ -50,8 +51,6 @@ models:
         data_type: string
       - name: url
         data_type: string
-      - name: followup_id
-        data_type: int64
       - name: ext_status
         data_type: int64
       - name: init_by
@@ -74,3 +73,5 @@ models:
         data_type: datetime
       - name: close_ts
         data_type: datetime
+      - name: c_first_last
+        data_type: string

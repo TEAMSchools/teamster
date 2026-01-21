@@ -1,14 +1,14 @@
-version: 2
-
 models:
   - name: stg_adp_workforce_now__pension_and_benefits_enrollments
-    config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("adp_workforce_now",
-        "src_adp_workforce_now__pension_and_benefits_enrollments") |
-        replace("`", "") }}')
-      contract:
-        enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - position_id
+              - enrollment_status
+              - plan_name
+          config:
+            store_failures: true
     columns:
       - name: employee_number
         data_type: int64
@@ -21,10 +21,12 @@ models:
       - name: coverage_level
         data_type: string
       - name: effective_date
-        data_type: string
+        data_type: date
       - name: enrollment_end_date
-        data_type: string
+        data_type: date
       - name: enrollment_start_date
-        data_type: string
+        data_type: date
       - name: enrollment_status
         data_type: string
+      - name: rn_enrollment_recent
+        data_type: int64

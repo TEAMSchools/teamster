@@ -1,6 +1,13 @@
-version: 2
 models:
   - name: int_overgrad__custom_fields_pivot
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - id
+              - source_object
+          config:
+            store_failures: true
     columns:
       - name: id
         data_type: int64
@@ -72,5 +79,5 @@ models:
         data_type: date
       - name: state_aid_application_submission_date
         data_type: date
-      - name: _dbt_source_model
+      - name: source_object
         data_type: string

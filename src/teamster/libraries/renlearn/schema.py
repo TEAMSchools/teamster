@@ -209,7 +209,7 @@ class StarSkillArea(BaseModel):
     StudentUserID: str | None = None
 
 
-class FastStarCore(BaseModel):
+class FastStar(BaseModel):
     AchievementLevel: str | None = None
     Assess_Num: str | None = None
     Assess_Status: str | None = None
@@ -329,24 +329,52 @@ class FastStarCore(BaseModel):
     TotalTime: str | None = None
     UnifiedScore: str | None = None
 
-
-class FastStar(FastStarCore):
     # Math
+    AR_Algebraic_Thinking: str | None = None
+    AR_Operations: str | None = None
+    DA_Data_Analysis: str | None = None
+    F_Fractions: str | None = None
+    GR_Geometric_Concepts: str | None = None
+    GR_Peri_Area_Volume: str | None = None
+    M_Measurement: str | None = None
+    M_Time_Money: str | None = None
+    MT_Geometry: str | None = None
+    MT_Measurement: str | None = None
+    MT_Number_Operations: str | None = None
+    MT_Number_Sense: str | None = None
+    MT_Patterns: str | None = None
+    MT_Spatial_Relations: str | None = None
+    NS_Number_Operations: str | None = None
+    NS_Number_Sense: str | None = None
+    NSO_Counting: str | None = None
     Quantile: str | None = None
+
     # Reading
     IRL: str | None = None
     PassingScore_G3: str | None = None
     PassingStatus_G3: str | None = None
+    Plots: str | None = None
+    FS_Fluency: str | None = None
+    FS_Phonics_Word: str | None = None
+    FS_Phonological: str | None = None
+    FS_Print_Concepts: str | None = None
+    LL_Emergent_Reading: str | None = None
+    LL_Vocabulary: str | None = None
+    OS_Other_Subjects: str | None = None
+    R_Across_Genres: str | None = None
+    R_Informational_Text: str | None = None
+    R_Prose_Poetry: str | None = None
+    V_Finding_Meaning: str | None = None
     ZPD_Lexile_Lower: str | None = None
     ZPD_Lexile_Upper: str | None = None
     ZPD_Lower: str | None = None
     ZPD_Upper: str | None = None
+
     # Early Literacy
     Attempts_G3: str | None = None
     Lexile: str | None = None
     LexileRange: str | None = None
     LitClassification: str | None = None
-    # Early Literacy - Domains
     SubDomain_AP_SkillSet_A: str | None = None
     SubDomain_AP_SkillSet_B: str | None = None
     SubDomain_AP_SkillSet_C: str | None = None
@@ -400,3 +428,13 @@ class FastStar(FastStarCore):
     SubDomain_VS_SkillSet_A: str | None = None
     SubDomain_VS_SkillSet_B: str | None = None
     SubDomain_VS: str | None = None
+    AP_Alphabetic_Principle: str | None = None
+    CW_Concept_Word: str | None = None
+    EN_Early_Numeracy: str | None = None
+    P_Phonics: str | None = None
+    PA_Phonemic_Awareness: str | None = None
+    PLC_Paragraph_Lvl_Comp: str | None = None
+    SA_Structural_Analysis: str | None = None
+    SLC_Sentence_Lvl_Comp: str | None = None
+    V_Vocabulary: str | None = None
+    VD_Visual_Discrimination: str | None = None

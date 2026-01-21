@@ -38,7 +38,7 @@ with
             ) as is_failing_0_classes_y1,
         from student_enrollments as co
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on co.academic_year = rt.academic_year
             and co.schoolid = rt.school_id
             and rt.type = 'RT'
@@ -64,15 +64,17 @@ inner join
     on co.studentid = sp.studentid
     and co.academic_year = sp.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
+    and sp.is_current
     and sp.specprog_name in (
         'Counseling Services',
         'Home Instruction',
         'Out of District',
         'Self-Contained Special Education',
         'Student Athlete',
-        'Tutoring'
+        'Tutoring',
+        'High School Honors Program',
+        'High School Tech Academy'
     )
-    and sp.exit_date >= current_date('{{ var("local_timezone") }}')
 
 union all
 

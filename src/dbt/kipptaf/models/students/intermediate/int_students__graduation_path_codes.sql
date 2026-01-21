@@ -1,5 +1,3 @@
-{{ config(materialized="table") }}
-
 with
     students as (
         select
@@ -15,13 +13,21 @@ with
             e.discipline,
             e.powerschool_credittype,
             e.met_fafsa_requirement as has_fafsa,
-
             /* this is not their final code, but it is used to calculate their final 
             code */
-            u.values_column as ps_grad_path_code,
+            e.ps_grad_path_code,
+
+            case
+                when e.ps_grad_path_code in ('M', 'N')
+                then true
+                when e.ps_grad_path_code in ('O', 'P')
+                then false
+            end as pre_met_pathway_cutoff,
 
             /* needed to join on transfer njgpa scores */
             safe_cast(e.state_studentnumber as int) as state_studentnumber_int,
+
+            if(e.ps_grad_path_code = 'M', true, false) as pre_attempted_njgpa_subject,
 
             /* this is the date we start holding 11th graders accountable to 
             fulfilling the NJGPA test requirement */
@@ -41,22 +47,7 @@ with
                 true
             ) as fafsa_season_12th,
 
-            case
-                when u.values_column in ('M', 'N')
-                then true
-                when u.values_column in ('O', 'P')
-                then false
-            end as pre_met_pathway_cutoff,
-
-            if(u.values_column = 'M', true, false) as pre_attempted_njgpa_subject,
-
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
-        left join
-            {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as u
-            on e.students_dcid = u.studentsdcid
-            and e.discipline = u.discipline
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="u") }}
-            and u.value_type = 'Graduation Pathway'
         where e.rn_undergrad = 1 and e.region != 'Miami' and e.grade_level >= 8
     ),
 
@@ -315,9 +306,9 @@ with
             and u.discipline = s.discipline
     ),
 
-    met_subject as (
-        /* calculating if the student met the discipline overall, regardless of how 
+    /* calculating if the student met the discipline overall, regardless of how 
         they  did it, assuming they took the njgpa */
+    met_subject as (
         select student_number, max(ela) as met_ela, max(math) as met_math,
         from
             unpivot_calcs_ps_code pivot (
@@ -407,6 +398,7 @@ with
             row_number() over (
                 partition by l.student_number, l.score_type order by l.scale_score desc
             ) as rn_highest,
+
         from lookup_table as l
         left join
             unpivot_calcs as u

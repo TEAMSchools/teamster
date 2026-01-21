@@ -294,108 +294,28 @@ class FAST(FLDOECore, FLDOECategories):
     grade_8_fast_mathematics_percentile_rank: str | None = None
     grade_8_fast_mathematics_scale_score: str | None = None
 
-    field_1_reading_prose_and_poetry_performance: str | None = Field(
-        default=None, validation_alias="1_reading_prose_and_poetry_performance"
-    )
-    field_2_reading_informational_text_performance: str | None = Field(
-        default=None, validation_alias="2_reading_informational_text_performance"
-    )
-    field_3_reading_across_genres_vocabulary_performance: str | None = Field(
-        default=None, validation_alias="3_reading_across_genres_vocabulary_performance"
-    )
-
-    field_1_number_sense_and_additive_reasoning_performance: str | None = Field(
-        default=None,
-        validation_alias="1_number_sense_and_additive_reasoning_performance",
-    )
-    field_1_number_sense_and_operations_with_whole_numbers_performance: str | None = (
-        Field(
-            default=None,
-            validation_alias=(
-                "1_number_sense_and_operations_with_whole_numbers_performance"
-            ),
-        )
-    )
-    field_1_number_sense_and_operations_performance: str | None = Field(
-        default=None, validation_alias="1_number_sense_and_operations_performance"
-    )
-    field_1_number_sense_and_operations_and_algebraic_reasoning_performance: (
+    algebraic_reasoning_performance: str | None = None
+    data_analysis_and_probability_performance: str | None = None
+    fractional_reasoning_performance: str | None = None
+    geometric_reasoning_data_analysis_and_probability_performance: str | None = None
+    geometric_reasoning_performance: str | None = None
+    geometric_reasoning_measurement_and_data_analysis_and_probability_performance: (
         str | None
-    ) = Field(
-        default=None,
-        validation_alias=(
-            "1_number_sense_and_operations_and_algebraic_reasoning_performance"
-        ),
+    ) = None
+    linear_relationships_data_analysis_and_functions_performance: str | None = None
+    number_sense_and_additive_reasoning_performance: str | None = None
+    number_sense_and_operations_with_whole_numbers_performance: str | None = None
+    number_sense_and_operations_performance: str | None = None
+    number_sense_and_operations_and_algebraic_reasoning_performance: str | None = None
+    number_sense_and_operations_and_probability_performance: str | None = None
+    number_sense_and_multiplicative_reasoning_performance: str | None = None
+    number_sense_and_operations_with_fractions_and_decimals_performance: str | None = (
+        None
     )
-    field_1_number_sense_and_operations_and_probability_performance: str | None = Field(
-        default=None,
-        validation_alias="1_number_sense_and_operations_and_probability_performance",
-    )
-
-    field_2_number_sense_and_multiplicative_reasoning_performance: str | None = Field(
-        default=None,
-        validation_alias="2_number_sense_and_multiplicative_reasoning_performance",
-    )
-    field_2_number_sense_and_operations_with_fractions_and_decimals_performance: (
-        str | None
-    ) = Field(
-        default=None,
-        validation_alias=(
-            "2_number_sense_and_operations_with_fractions_and_decimals_performance"
-        ),
-    )
-    field_2_algebraic_reasoning_performance: str | None = Field(
-        default=None, validation_alias="2_algebraic_reasoning_performance"
-    )
-    field_2_proportional_reasoning_and_relationships_performance: str | None = Field(
-        default=None,
-        validation_alias="2_proportional_reasoning_and_relationships_performance",
-    )
-
-    field_3_fractional_reasoning_performance: str | None = Field(
-        default=None, validation_alias="3_fractional_reasoning_performance"
-    )
-    field_3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance: (
-        str | None
-    ) = Field(
-        default=None,
-        validation_alias="3_geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
-    )
-    field_3_algebraic_reasoning_performance: str | None = Field(
-        default=None, validation_alias="3_algebraic_reasoning_performance"
-    )
-    field_3_geometric_reasoning_data_analysis_and_probability_performance: (
-        str | None
-    ) = Field(
-        default=None,
-        validation_alias=(
-            "3_geometric_reasoning_data_analysis_and_probability_performance"
-        ),
-    )
-    field_3_geometric_reasoning_performance: str | None = Field(
-        default=None, validation_alias="3_geometric_reasoning_performance"
-    )
-    field_3_linear_relationships_data_analysis_and_functions_performance: str | None = (
-        Field(
-            default=None,
-            validation_alias=(
-                "3_linear_relationships_data_analysis_and_functions_performance"
-            ),
-        )
-    )
-
-    field_4_data_analysis_and_probability_performance: str | None = Field(
-        default=None, validation_alias="4_data_analysis_and_probability_performance"
-    )
-    field_4_geometric_reasoning_performance: str | None = Field(
-        default=None, validation_alias="4_geometric_reasoning_performance"
-    )
-    field_4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance: (
-        str | None
-    ) = Field(
-        default=None,
-        validation_alias="4_geometric_reasoning_measurement_and_data_analysis_and_probability_performance",
-    )
+    proportional_reasoning_and_relationships_performance: str | None = None
+    reading_prose_and_poetry_performance: str | None = None
+    reading_informational_text_performance: str | None = None
+    reading_across_genres_vocabulary_performance: str | None = None
 
 
 class EOC(FLDOECore, FLDOECategories):

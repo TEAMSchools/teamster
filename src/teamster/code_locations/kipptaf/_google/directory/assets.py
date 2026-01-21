@@ -3,16 +3,14 @@ from dagster import (
     AssetCheckSeverity,
     AssetCheckSpec,
     AssetExecutionContext,
+    AssetKey,
     Output,
-    StaticPartitionsDefinition,
     asset,
 )
 from dagster_gcp import BigQueryResource
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf._google.directory.schema import (
-    GROUPS_SCHEMA,
-    MEMBERS_SCHEMA,
     ORGUNITS_SCHEMA,
     ROLE_ASSIGNMENTS_SCHEMA,
     ROLES_SCHEMA,
@@ -62,23 +60,6 @@ def users(context: AssetExecutionContext, google_directory: GoogleDirectoryResou
 
 
 @asset(
-    key=[*key_prefix, "groups"],
-    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "groups"])],
-    io_manager_key="io_manager_gcs_avro",
-    group_name="google_directory",
-    kinds={"python"},
-)
-def groups(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
-    data = google_directory.list_groups()
-
-    yield Output(value=(data, GROUPS_SCHEMA), metadata={"record_count": len(data)})
-
-    yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=GROUPS_SCHEMA
-    )
-
-
-@asset(
     key=[*key_prefix, "roles"],
     check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "roles"])],
     io_manager_key="io_manager_gcs_avro",
@@ -117,38 +98,15 @@ def role_assignments(
 
 
 @asset(
-    key=[*key_prefix, "members"],
-    check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "members"])],
-    partitions_def=StaticPartitionsDefinition(
-        [
-            "group-students-camden@teamstudents.org",
-            "group-students-miami@teamstudents.org",
-            "group-students-newark@teamstudents.org",
-        ]
-    ),
-    io_manager_key="io_manager_gcs_avro",
-    group_name="google_directory",
-    kinds={"python"},
-)
-def members(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
-    data = google_directory.list_members(group_key=context.partition_key)
-
-    yield Output(value=(data, MEMBERS_SCHEMA), metadata={"record_count": len(data)})
-
-    yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=data, schema=MEMBERS_SCHEMA
-    )
-
-
-@asset(
     key=[*key_prefix, "role_assignments_create"],
+    deps=[AssetKey(["kipptaf", "extracts", "rpt_google_directory__admin_import"])],
     check_specs=[
         AssetCheckSpec(
             name="zero_api_errors", asset=[*key_prefix, "role_assignments_create"]
         )
     ],
     group_name="google_directory",
-    kinds={"python"},
+    kinds={"python", "task"},
 )
 def google_directory_role_assignments_create(
     context: AssetExecutionContext,
@@ -188,11 +146,12 @@ def google_directory_role_assignments_create(
 
 @asset(
     key=[*key_prefix, "user_create"],
+    deps=[AssetKey(["kipptaf", "extracts", "rpt_google_directory__users_import"])],
     check_specs=[
         AssetCheckSpec(name="zero_api_errors", asset=[*key_prefix, "user_create"])
     ],
     group_name="google_directory",
-    kinds={"python"},
+    kinds={"python", "task"},
 )
 def google_directory_user_create(
     context: AssetExecutionContext,
@@ -249,11 +208,12 @@ def google_directory_user_create(
 
 @asset(
     key=[*key_prefix, "user_update"],
+    deps=[AssetKey(["kipptaf", "extracts", "rpt_google_directory__users_import"])],
     check_specs=[
         AssetCheckSpec(name="zero_api_errors", asset=[*key_prefix, "user_update"])
     ],
     group_name="google_directory",
-    kinds={"python"},
+    kinds={"python", "task"},
 )
 def google_directory_user_update(
     context: AssetExecutionContext,
@@ -293,21 +253,59 @@ def google_directory_user_update(
 
 
 google_directory_nonpartitioned_assets = [
-    groups,
     orgunits,
     role_assignments,
     roles,
     users,
 ]
 
-google_directory_partitioned_assets = [
-    members,
-]
-
 assets = [
     *google_directory_nonpartitioned_assets,
-    *google_directory_partitioned_assets,
     google_directory_role_assignments_create,
     google_directory_user_create,
     google_directory_user_update,
 ]
+
+# @asset(
+#     key=[*key_prefix, "groups"],
+#     check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "groups"])],
+#     io_manager_key="io_manager_gcs_avro",
+#     group_name="google_directory",
+#     kinds={"python"},
+# )
+# def groups(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
+#     data = google_directory.list_groups()
+
+#     yield Output(value=(data, GROUPS_SCHEMA), metadata={"record_count": len(data)})
+
+#     yield check_avro_schema_valid(
+#         asset_key=context.asset_key, records=data, schema=GROUPS_SCHEMA
+#     )
+
+
+# @asset(
+#     key=[*key_prefix, "members"],
+#     check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "members"])],
+#     partitions_def=StaticPartitionsDefinition(
+#         [
+#             "group-students-camden@teamstudents.org",
+#             "group-students-miami@teamstudents.org",
+#             "group-students-newark@teamstudents.org",
+#         ]
+#     ),
+#     io_manager_key="io_manager_gcs_avro",
+#     group_name="google_directory",
+#     kinds={"python"},
+# )
+# def members(context: AssetExecutionContext, google_directory: GoogleDirectoryResource):
+#     data = google_directory.list_members(group_key=context.partition_key)
+
+#     yield Output(value=(data, MEMBERS_SCHEMA), metadata={"record_count": len(data)})
+
+#     yield check_avro_schema_valid(
+#         asset_key=context.asset_key, records=data, schema=MEMBERS_SCHEMA
+#     )
+
+# google_directory_partitioned_assets = [
+#     members,
+# ]

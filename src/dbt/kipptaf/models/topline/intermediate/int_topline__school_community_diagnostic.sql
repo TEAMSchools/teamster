@@ -1,6 +1,7 @@
 select
+    sr.academic_year,
+
     se.student_number,
-    se.academic_year,
     se.schoolid,
 
     round(avg(ac.response_int), 1) as average_rating,
@@ -11,10 +12,12 @@ inner join
     and sr.academic_year = se.academic_year
     and se.is_enrolled_y1
 left join
-    {{ ref("stg_surveys__scd_answer_crosswalk") }} as ac
+    {{ ref("stg_google_sheets__surveys__scd_answer_crosswalk") }} as ac
     on sr.question_shortname = ac.question_code
     and sr.answer = ac.response
 where
     sr.survey_title = 'School Community Diagnostic Student Survey'
     and sr.question_shortname like '%scd%'
-group by se.student_number, se.academic_year, se.schoolid
+    and sr.term_code = 'SCD'
+    and sr.academic_year >= {{ var("current_academic_year") - 1 }}
+group by sr.academic_year, se.student_number, se.schoolid

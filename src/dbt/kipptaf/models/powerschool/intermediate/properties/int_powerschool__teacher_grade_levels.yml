@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: int_powerschool__teacher_grade_levels
+    config:
+      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string

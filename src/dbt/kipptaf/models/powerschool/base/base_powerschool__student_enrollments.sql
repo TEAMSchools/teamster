@@ -17,6 +17,10 @@ with
                         "kippmiami_powerschool",
                         "base_powerschool__student_enrollments",
                     ),
+                    source(
+                        "kipppaterson_powerschool",
+                        "base_powerschool__student_enrollments",
+                    ),
                 ]
             )
         }}
@@ -28,19 +32,13 @@ with
             *,
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
+
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
         from union_relations
     )
 
 select
-    ar.* except (lep_status, lunchstatus, spedlep),
-
-    sr.mail as advisor_email,
-    sr.work_cell as advisor_phone,
-
-    sl.username as student_web_id,
-    sl.default_password as student_web_password,
-    sl.google_email as student_email_google,
+    ar.* except (lep_status, lunchstatus, spedlep, prevstudentid),
 
     /* regional differences */
     suf.fleid,
@@ -71,6 +69,13 @@ select
     njs.other_related_services_yn,
     njs.lepbegindate,
     njs.lependdate,
+    njs.lep_tf,
+    njs.liep_parent_refusal_date,
+    njs.programtypecode,
+    njs.home_language,
+
+    sr.mail as advisor_email,
+    sr.work_cell as advisor_phone,
 
     tpd.total_balance as lunch_balance,
 
@@ -78,16 +83,25 @@ select
     adb.college_match_display_gpa as salesforce_contact_college_match_display_gpa,
     adb.kipp_hs_class as salesforce_contact_kipp_hs_class,
     adb.owner_id as salesforce_contact_owner_id,
+    adb.graduation_year,
 
-    adbu.name as salesfoce_contact_owner_name,
+    adbu.name as salesforce_contact_owner_name,
+    adbu.phone as salesforce_contact_owner_phone,
+    adbu.email as salesforce_contact_owner_email,
 
     ill.student_id as illuminate_student_id,
 
-    coalesce(njs.gifted_and_talented, suf.gifted_and_talented) as gifted_and_talented,
+    coalesce(
+        njs.gifted_and_talented, suf.gifted_and_talented, 'N'
+    ) as gifted_and_talented,
 
     coalesce(njr.pid_504_tf, suf.is_504, false) as is_504,
 
     coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,
+
+    if(ar.region = 'Paterson', se.email, sl.google_email) as student_email_google,
+    if(ar.region = 'Paterson', null, sl.username) as student_web_id,
+    if(ar.region = 'Paterson', null, sl.default_password) as student_web_password,
 
     if(ar.region = 'Miami' and fte.survey_2 is not null, true, false) as is_fldoe_fte_2,
     if(ar.region = 'Miami' and fte.survey_3 is not null, true, false) as is_fldoe_fte_3,
@@ -157,13 +171,30 @@ select
         then '<2.00'
         else 'No GPA'
     end as salesforce_contact_college_match_gpa_band,
+    if(
+        extract(
+            month
+            from coalesce(adb.actual_hs_graduation_date, adb.expected_hs_graduation)
+        )
+        < 10,
+        extract(
+            year
+            from coalesce(adb.actual_hs_graduation_date, adb.expected_hs_graduation)
+        ),
+        extract(
+            year
+            from coalesce(adb.actual_hs_graduation_date, adb.expected_hs_graduation)
+        )
+        + 1
+    ) as salesforce_graduation_year,
+
+    if(
+        ar.region = 'Paterson' and ar.academic_year <= 2024,
+        ar.prevstudentid,
+        ar.student_number
+    ) as pearson_local_student_identifier,
+
 from with_region as ar
-left join
-    {{ ref("int_people__staff_roster") }} as sr
-    on ar.advisor_teachernumber = sr.powerschool_teacher_number
-left join
-    {{ ref("stg_people__student_logins") }} as sl
-    on ar.student_number = sl.student_number
 left join
     {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
     on ar.students_dcid = suf.studentsdcid
@@ -176,6 +207,15 @@ left join
     {{ ref("stg_powerschool__s_nj_ren_x") }} as njr
     on ar.reenrollments_dcid = njr.reenrollmentsdcid
     and {{ union_dataset_join_clause(left_alias="ar", right_alias="njr") }}
+left join
+    {{ ref("stg_powerschool__student_email") }} as se
+    on ar.student_number = se.student_number
+left join
+    {{ ref("stg_people__student_logins") }} as sl
+    on ar.student_number = sl.student_number
+left join
+    {{ ref("int_people__staff_roster") }} as sr
+    on ar.advisor_teachernumber = sr.powerschool_teacher_number
 left join
     {{ ref("int_edplan__njsmart_powerschool_union") }} as sped
     on ar.student_number = sped.student_number

@@ -1,0 +1,37 @@
+models:
+  - name: stg_google_sheets__topline_aggregate_goals
+    columns:
+      - name: Layer
+        data_type: string
+      - name: Topline_Indicator
+        data_type: string
+      - name: Goal_Type
+        data_type: string
+      - name: Entity
+        data_type: string
+      - name: Schoolid
+        data_type: int64
+      - name: Grade_Low
+        data_type: int64
+      - name: Grade_High
+        data_type: int64
+      - name: Org_Level
+        data_type: string
+      - name: Has_Goal
+        data_type: boolean
+      - name: Aggregation_Type
+        data_type: string
+      - name: Goal_Direction
+        data_type: string
+      - name: goal
+        data_type: numeric
+      - name: aggregation_hash
+        data_type: string
+      - name: Indicator_Display
+        data_type: string
+      - name: Discipline
+        data_type: string
+      - name: Aggregation_Data_Type
+        data_type: string
+      - name: grade_band
+        data_type: string

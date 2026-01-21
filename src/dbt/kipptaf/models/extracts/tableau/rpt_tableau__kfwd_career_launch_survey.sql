@@ -42,6 +42,7 @@ with
 
             max(if(a.name = 'Project BASTA', true, false)) as is_basta,
             max(if(a.name = 'Braven', true, false)) as is_braven,
+            max(if(a.name = 'Backrs', true, false)) as is_backrs,
             max(
                 if(
                     a.name in ('KIPP New Jersey - Camden', 'KIPP New Jersey - Newark'),
@@ -78,6 +79,9 @@ with
             r.contact_actual_college_graduation_date as actual_college_grad_date,
             r.contact_current_kipp_student as current_kipp_student,
             r.contact_owner_name,
+            r.es_graduated,
+            r.tier,
+            r.contact_advising_provider as advising_provider,
 
             e.pursuing_degree_type,
             e.type,
@@ -95,6 +99,7 @@ with
 
             coalesce(p.is_basta, false) as is_basta,
             coalesce(p.is_braven, false) as is_braven,
+            coalesce(p.is_backrs, false) as is_backrs,
             coalesce(p.is_kippnj_internship, false) as is_kippnj_internship,
 
             case

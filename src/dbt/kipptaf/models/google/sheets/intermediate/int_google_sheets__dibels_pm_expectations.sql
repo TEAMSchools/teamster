@@ -17,13 +17,12 @@ with
             and c.insession = 1
             and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
         inner join
-            {{ ref("stg_reporting__terms") }} as t
+            {{ ref("stg_google_sheets__reporting__terms") }} as t
             on s.schoolcity = t.region
             and c.date_value between t.start_date and t.end_date
             and t.type = 'LIT'
             and t.name in ('BOY->MOY', 'MOY->EOY')
         where s.state_excludefromreporting = 0
-        -- trunk-ignore(sqlfluff/RF01)
         group by s.schoolcity, t.academic_year, t.name, round_number
     ),
 
@@ -63,9 +62,9 @@ select
     g.admin_season as benchmark_season,
     g.grade_level_standard as benchmark_goal,
 
-from {{ ref("stg_google_sheets__dibels_expected_assessments") }} as e
+from {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
 inner join
-    {{ ref("stg_reporting__terms") }} as t
+    {{ ref("stg_google_sheets__reporting__terms") }} as t
     on e.academic_year = t.academic_year
     and e.region = t.region
     and e.admin_season = t.name
@@ -83,4 +82,5 @@ left join
     on e.expected_measure_standard = g.measure_standard
     and e.grade = g.grade_level
     and e.admin_season = g.matching_pm_season
-where e.academic_year >= 2024  /* TODO: update to current_school_year var */
+{# TODO: update to current_school_year var #}
+where e.academic_year >= 2024

@@ -28,7 +28,8 @@ select
     h.base_remuneration_hourly_rate_amount as ay_hourly,
     h.home_work_location_abbreviation as ay_school_shortname,
     h.home_work_location_campus_name as ay_campus_name,
-    h.head_of_schools_sam_account_name as ay_head_of_school_samaccount,
+
+    ayl.head_of_school_sam_account_name as ay_head_of_school_samaccount,
 
     p.final_score as ay_pm4_overall_score,
     p.final_tier as ay_pm4_overall_tier,
@@ -52,9 +53,9 @@ select
     s.edited_at as seat_tracker_last_edited,
     s.status_detail as ny_status,
 
-    nyl.location_abbreviation as ny_school_shortname,
-    nyl.campus_name as ny_campus_name,
-    nyl.head_of_schools_sam_account_name as ny_head_of_school_samaccount,
+    nyl.home_work_location_abbreviation as ny_school_shortname,
+    nyl.home_work_location_campus_name as ny_campus_name,
+    nyl.head_of_school_sam_account_name as ny_head_of_school_samaccount,
 
     stp.nonrenewal_reason,
     stp.nonrenewal_notes,
@@ -72,6 +73,9 @@ left join
     and h.primary_indicator
     and h.job_title is not null
 left join
+    {{ ref("int_people__leadership_crosswalk") }} as ayl
+    on h.home_work_location_name = ayl.home_work_location_name
+left join
     {{ ref("int_performance_management__overall_scores") }} as p
     on c.employee_number = p.employee_number
     and y.academic_year = p.academic_year
@@ -85,13 +89,13 @@ left join
     on c.employee_number = sp.employee_number
     and y.academic_year = sp.academic_year
 left join
-    {{ ref("stg_seat_tracker__seats") }} as s
+    {{ ref("stg_google_appsheet__seat_tracker__seats") }} as s
     on c.employee_number = s.teammate
     and y.fiscal_year = s.academic_year
 left join
-    {{ ref("int_people__location_crosswalk") }} as nyl
-    on s.adp_location = nyl.location_name
+    {{ ref("int_people__leadership_crosswalk") }} as nyl
+    on s.adp_location = nyl.home_work_location_name
 left join
-    {{ ref("stg_people__seat_tracker_people") }} as stp
+    {{ ref("stg_google_appsheet__people__seat_tracker_people") }} as stp
     on c.employee_number = stp.employee_number
     and y.academic_year = stp.academic_year

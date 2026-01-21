@@ -1,2 +1,14 @@
-select *,
-from {{ source("amplify", "src_amplify__mclass__sftp__benchmark_student_summary") }}
+{{
+    dbt_utils.union_relations(
+        relations=[
+            source(
+                "kippnewark_amplify",
+                "stg_amplify__mclass__sftp__benchmark_student_summary",
+            ),
+            source(
+                "kipppaterson_amplify",
+                "stg_amplify__mclass__sftp__benchmark_student_summary",
+            ),
+        ]
+    )
+}}
