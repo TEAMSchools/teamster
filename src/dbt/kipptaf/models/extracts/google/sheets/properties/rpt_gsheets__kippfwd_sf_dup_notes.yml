@@ -1,5 +1,19 @@
 models:
   - name: rpt_gsheets__kippfwd_sf_dup_notes
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - contact__c
+              - subject__c
+              - comments__c
+              - next_steps__c
+              - date__c
+              - status__c
+              - type__c
+              # hardcoded year because we are only checking uniqueness from sy25+
+            config:
+              severity: warn
     columns:
       - name: id
         data_type: string

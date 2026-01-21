@@ -1,24 +1,5 @@
 models:
   - name: stg_kippadb__contact_note
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - contact
-              - subject
-              - comments
-              - next_steps
-              - date
-              - status
-              - type
-              # hardcoded year because we are only checking uniqueness from sy25+
-            config:
-              where:
-                "academic_year >= 2025 and exists (select
-                ktc.contact_advising_provider from {{ ref('int_kippadb__roster')
-                }} as ktc where contact = ktc.contact_id and
-                ktc.contact_advising_provider is null)"
-              severity: warn
     columns:
       - name: id
         data_type: string
