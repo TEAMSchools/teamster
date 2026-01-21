@@ -1,6 +1,4 @@
 select
-    s.student_number || "_" || sg.course_number as `hash`,
-
     s.student_number,
     s.lastfirst,
 
@@ -17,6 +15,8 @@ select
     de.de_score,
     de.de_semester,
     de.de_institution,
+
+    s.student_number || "_" || sg.course_number as `hash`,
 
 from {{ ref("stg_powerschool__storedgrades") }} sg
 left join
