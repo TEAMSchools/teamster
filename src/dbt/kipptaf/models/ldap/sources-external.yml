@@ -13,12 +13,13 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - ldap
-              - user_person
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - ldap
+                - user_person
       - name: src_ldap__group
         external:
           location: "{{ var('cloud_storage_uri_base') }}/ldap/group/*"
@@ -28,9 +29,10 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - ldap
-              - group
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - ldap
+                - group

@@ -23,4 +23,4 @@ select
         when org_level = 'school'
         then schoolid || '_' || grade_low || '-' || grade_high
     end as aggregation_hash,
-from {{ source("google_sheets", "src_google_sheets__topline_aggregate_goals") }}
+from {{ source("google_sheets", "src_google_sheets__topline__aggregate_goals") }}

@@ -1,42 +1,68 @@
 with
-    calendar as (select *, from {{ ref("int_powerschool__calendar_week") }}),
+    calendar as (
+        select
+            schoolid,
+            academic_year,
+            week_start_monday,
+            week_end_sunday,
+            is_current_week_mon_sun,
+        from {{ ref("int_powerschool__calendar_week") }}
+        where academic_year >= {{ var("current_academic_year") - 1 }}
+    ),
 
-    /* only active seats for the current academic year */
     seat_tracker as (
-        select *,
+        select
+            staffing_model_id, entity, adp_location, valid_from, valid_to, is_staffed,
         from {{ ref("int_seat_tracker__snapshot") }}
+        /* only active seats for the current academic year */
         where academic_year = {{ var("current_academic_year") }} and is_active
     ),
 
-    locations as (select *, from {{ ref("int_people__location_crosswalk") }}),
+    locations as (
+        select location_powerschool_school_id, location_name,
+        from {{ ref("int_people__location_crosswalk") }}
+    ),
 
     goals as (
-        select *,
+        select
+            entity,
+            schoolid,
+            indicator_display,
+            org_level,
+            has_goal,
+            goal_type,
+            goal_direction,
+            aggregation_data_type,
+            aggregation_type,
+            aggregation_hash,
+            aggregation_display,
+            goal,
+            layer,
+            topline_indicator,
         from {{ ref("int_google_sheets__topline_aggregate_goals") }}
         where layer = 'Outstanding Teammates' and topline_indicator = 'Staffed'
     ),
 
     final as (
         select
-            seat_tracker.staffing_model_id,
-            seat_tracker.entity,
+            st.staffing_model_id,
+            st.entity,
 
-            locations.location_powerschool_school_id as schoolid,
-            locations.location_name as school,
+            l.location_powerschool_school_id as schoolid,
+            l.location_name as school,
 
-            calendar.week_start_monday,
-            calendar.week_end_sunday,
-            calendar.academic_year,
-            calendar.is_current_week_mon_sun as is_current_week,
+            cal.week_start_monday,
+            cal.week_end_sunday,
+            cal.academic_year,
+            cal.is_current_week_mon_sun as is_current_week,
 
-            if(seat_tracker.is_staffed, 1, 0) as is_staffed,
-        from seat_tracker
-        left join locations on seat_tracker.adp_location = locations.location_name
+            if(st.is_staffed, 1, 0) as is_staffed,
+        from seat_tracker as st
+        inner join locations as l on st.adp_location = l.location_name
         inner join
-            calendar
-            on locations.location_powerschool_school_id = calendar.schoolid
-            and calendar.week_start_monday
-            between seat_tracker.valid_from and seat_tracker.valid_to
+            calendar as cal
+            on l.location_powerschool_school_id = cal.schoolid
+            and cal.week_start_monday between st.valid_from and st.valid_to
     )
 
 select

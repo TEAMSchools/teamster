@@ -1,8 +1,21 @@
 with
     student_metrics as (
-        select *,
+        select
+            academic_year,
+            region,
+            schoolid,
+            school,
+            grade_level,
+            layer,
+            indicator,
+            discipline,
+            term,
+            term_end,
+            is_current_week,
+            numerator,
+            denominator,
+            metric_value,
         from {{ ref("int_topline__student_metrics") }}
-        where region != 'Paterson'
     ),
 
     pre_agg_union_student as (
@@ -290,17 +303,82 @@ with
     ),
 
     agg_union_student as (
-        select *,
+        select
+            academic_year,
+            region,
+            schoolid,
+            school,
+            layer,
+            indicator,
+            discipline,
+            term,
+            term_end,
+            is_current_week,
+            indicator_display,
+            org_level,
+            has_goal,
+            goal_type,
+            goal_direction,
+            aggregation_data_type,
+            aggregation_type,
+            aggregation_hash,
+            aggregation_display,
+            goal,
+            metric_aggregate_value,
         from pre_agg_union_student
 
         union all
 
-        select *,
+        select
+            academic_year,
+            region,
+            schoolid,
+            school,
+            layer,
+            indicator,
+            discipline,
+            term,
+            term_end,
+            is_current_week,
+            indicator_display,
+            org_level,
+            has_goal,
+            goal_type,
+            goal_direction,
+            aggregation_data_type,
+            aggregation_type,
+            aggregation_hash,
+            aggregation_display,
+            goal,
+            metric_aggregate_value,
         from target_goals
 
         union all
 
-        select *,
+        select
+            academic_year,
+            region,
+            schoolid,
+            school,
+            layer,
+            indicator,
+
+            null as discipline,
+
+            term,
+            term_end,
+            is_current_week,
+            indicator_display,
+            org_level,
+            has_goal,
+            goal_type,
+            goal_direction,
+            aggregation_data_type,
+            aggregation_type,
+            aggregation_hash,
+            aggregation_display,
+            goal,
+            metric_aggregate_value,
         from {{ ref("int_topline__student_retention_weekly_aggregations") }}
     ),
 

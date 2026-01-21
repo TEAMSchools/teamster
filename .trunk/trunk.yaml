@@ -8,25 +8,25 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - bandit@1.8.6
-    - actionlint@1.7.8
+    - bandit@1.9.2
+    - actionlint@1.7.10
     - git-diff-check
-    - gitleaks@8.29.0
+    - gitleaks@8.30.0
     - hadolint@2.14.0
     - isort@7.0.0
-    - markdownlint@0.45.0
-    - osv-scanner@2.2.4
-    - oxipng@9.1.5
-    - prettier@3.6.2
-    - pyright@1.1.407
-    - ruff@0.14.5
+    - markdownlint@0.47.0
+    - osv-scanner@2.3.2
+    - oxipng@10.0.0
+    - prettier@3.8.0
+    - pyright@1.1.408
+    - ruff@0.14.13
     - shellcheck@0.11.0
     - shfmt@3.6.0
-    - sqlfluff@3.5.0
-    - sqlfmt@0.28.2
+    - sqlfluff@4.0.0
+    - sqlfmt@0.29.0
     - svgo@4.0.0
     - taplo@0.10.0
-    - yamllint@1.37.1
+    - yamllint@1.38.0
   disabled:
     - terrascan
     - black

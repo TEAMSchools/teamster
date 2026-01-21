@@ -5,18 +5,20 @@ sources:
       {%- endif -%}kipppaterson_amplify
     tables:
       - name: stg_amplify__mclass__sftp__benchmark_student_summary
-        meta:
-          dagster:
-            group: amplify
-            asset_key:
-              - kipppaterson
-              - amplify
-              - stg_amplify__mclass__sftp__benchmark_student_summary
+        config:
+          meta:
+            dagster:
+              group: amplify
+              asset_key:
+                - kipppaterson
+                - amplify
+                - stg_amplify__mclass__sftp__benchmark_student_summary
       - name: stg_amplify__mclass__sftp__pm_student_summary
-        meta:
-          dagster:
-            group: amplify
-            asset_key:
-              - kipppaterson
-              - amplify
-              - stg_amplify__mclass__sftp__pm_student_summary
+        config:
+          meta:
+            dagster:
+              group: amplify
+              asset_key:
+                - kipppaterson
+                - amplify
+                - stg_amplify__mclass__sftp__pm_student_summary

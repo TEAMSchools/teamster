@@ -19,7 +19,7 @@ from teamster.libraries.tableau.resources import TableauServerResource
 
 
 def build_tableau_workbook_refresh_asset(
-    code_location: str, name: str, refs: dict, meta: dict, label: str, **kwargs
+    code_location: str, name: str, refs: dict, config: dict, label: str, **kwargs
 ):
     @asset(
         key=[code_location, "tableau", name],
@@ -29,11 +29,11 @@ def build_tableau_workbook_refresh_asset(
             )
             for ref in refs
         ],
-        metadata=meta["dagster"].get("asset", {}).get("metadata"),
+        metadata=config["meta"]["dagster"].get("asset", {}).get("metadata"),
         description=label,
         group_name="tableau",
         output_required=False,
-        kinds=set(meta["dagster"]["kinds"]),
+        kinds=set(config["meta"]["dagster"]["kinds"]),
         pool="tableau_pat_session_limit",
     )
     def _asset(context: AssetExecutionContext, tableau: TableauServerResource):

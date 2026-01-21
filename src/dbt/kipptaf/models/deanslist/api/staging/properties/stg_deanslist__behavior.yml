@@ -1,5 +1,7 @@
 models:
   - name: stg_deanslist__behavior
+    # config:
+    #   materialized: table
     columns:
       - name: school_name
         data_type: string

@@ -41,7 +41,6 @@ models:
       workforce_manager:
         +enabled: false
         +schema: adp_workforce_manager
-        +materialized: table
         +meta:
           dagster:
             group: adp_workforce_manager
@@ -67,8 +66,6 @@ models:
       +schema: alchemer
     amplify:
       +schema: amplify
-      intermediate:
-        +materialized: table
       dds:
         +enabled: false
     assessments:
@@ -108,6 +105,8 @@ models:
     facebook:
       +enabled: false
       +schema: facebook
+    finalsite:
+      +schema: finalsite
     finance:
       +schema: finance
     fldoe:
@@ -141,11 +140,11 @@ models:
             enforced: true
       sheets:
         +schema: google_sheets
-        +materialized: table
         +meta:
           dagster:
             group: google_sheets
         staging:
+          +materialized: table
           +tags: google_sheet
           +contract:
             enforced: true
@@ -155,8 +154,8 @@ models:
     illuminate:
       +schema: illuminate
       dlt:
-        +materialized: table
         staging:
+          +materialized: table
           +contract:
             enforced: true
           repositories:
@@ -190,8 +189,12 @@ models:
           enforced: true
     marts:
       +schema: marts
-    metrics:
-      +schema: metrics
+    nsc:
+      +schema: nsc
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     overgrad:
       +schema: overgrad
       staging:
@@ -202,14 +205,14 @@ models:
       +schema: pearson
     people:
       +schema: people
-      +materialized: table
       staging:
+        +materialized: table
         +contract:
           enforced: true
     performance_management:
       +schema: performance_management
-      +materialized: table
       staging:
+        +materialized: table
         +contract:
           enforced: true
     powerschool:

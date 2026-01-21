@@ -175,7 +175,7 @@ with
                 then 1
                 else 0
             end as is_below_int,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where
             test_round = 'BOY'
             and rn_subj_round = 1
@@ -197,7 +197,7 @@ with
             if(level_number_with_typical >= 4, 1, 0) as is_proficient_int,
             if(level_number_with_typical = 3, 1, 0) as is_approaching_int,
             if(level_number_with_typical < 3, 1, 0) as is_below_int,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where
             test_round = 'BOY'
             and rn_subj_round = 1

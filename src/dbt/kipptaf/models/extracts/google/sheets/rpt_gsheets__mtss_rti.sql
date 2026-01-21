@@ -12,7 +12,7 @@ with
                 most_recent_completion_date,
                 ')'
             ) as iready_most_recent,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where rn_subj_year = 1
     ),
 

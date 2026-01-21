@@ -3,9 +3,10 @@ sources:
     schema: kipptaf_iready
     tables:
       - name: snapshot_iready__instructional_usage_data
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - iready
-              - snapshot_iready__instructional_usage_data
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - iready
+                - snapshot_iready__instructional_usage_data

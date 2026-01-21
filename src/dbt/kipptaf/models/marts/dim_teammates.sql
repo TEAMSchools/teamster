@@ -11,26 +11,38 @@ with
                 )
             }} as academic_year,
         from {{ ref("int_people__staff_roster_history") }}
-
     ),
 
     grade_levels as (select *, from {{ ref("int_powerschool__teacher_grade_levels") }}),
 
+    managers as (select distinct reports_to_employee_number, from roster),
+
     final as (
         select
-            {{
-                dbt_utils.generate_surrogate_key(
-                    ["employee_number", "effective_date_start"]
-                )
-            }} as teammate_history_key,
-            roster.*,
+            roster.assignment_status,
+            roster.base_remuneration_annual_rate_amount as salary,
+            roster.effective_date_end,
+            roster.effective_date_start,
+            roster.employee_number,
+            roster.formatted_name,
+            roster.gender_identity,
+            roster.home_business_unit_name as entity,
+            roster.home_department_name as department,
+            roster.home_work_location_grade_band as grade_band,
+            roster.home_work_location_name as location,
+            roster.is_current_record,
+            roster.is_prestart,
+            roster.job_title,
+            roster.languages_spoken,
+            roster.mail,
+            roster.primary_indicator,
+            roster.race_ethnicity_reporting,
+            roster.reports_to_formatted_name as manager_name,
+            roster.worker_hire_date_recent,
+            roster.worker_original_hire_date,
+            roster.worker_rehire_date,
+            roster.worker_termination_date,
             grade_levels.grade_level as grade_taught,
-            if(
-                roster.primary_indicator
-                and (roster.is_current_record or roster.is_prestart),
-                true,
-                false
-            ) as current_roster,
             if(
                 roster.job_title in (
                     'Teacher',
@@ -43,7 +55,12 @@ with
                 true,
                 false
             ) as is_teacher,
-
+            if(
+                roster.employee_number
+                in (select managers.reports_to_employee_number, from managers),
+                true,
+                false
+            ) as is_manager,
         from roster
         left join
             grade_levels
