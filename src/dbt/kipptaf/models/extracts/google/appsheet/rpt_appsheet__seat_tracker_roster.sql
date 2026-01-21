@@ -125,7 +125,7 @@ with
                         or contains_substr(sr.job_title, 'Manager')
                     )
                 then 5
-                /* see school, edit teammate fields (name in position, gutcheck, nonrenewal)*/
+                /* see school, edit teammate fields (name, gutcheck, nonrenewal)*/
                 when
                     sr.job_title in (
                         'School Leader',
@@ -182,7 +182,7 @@ with
 
         union all
 
-        /* generic roster names used for positions that are open, closed, pre-start, or subs */
+        /* generic roster names used for positions without active teammates */
         select
             999999 as employee_number,
             'Active' as assignment_status,
