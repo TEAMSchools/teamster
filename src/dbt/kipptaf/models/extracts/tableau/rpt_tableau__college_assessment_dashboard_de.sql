@@ -18,7 +18,7 @@ select
 
     s.student_number || '_' || sg.course_number as `hash`,
 
-from {{ ref("stg_powerschool__storedgrades") }} sg
+from {{ ref("stg_powerschool__storedgrades") }} as sg
 left join
     {{ ref("stg_powerschool__students") }} as s
     on sg.studentid = s.id
