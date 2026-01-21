@@ -18,16 +18,22 @@ with
                     "assessmentgrade",
                     "assessmentyear",
                     "blackorafricanamerican",
+                    "discipline",
                     "englishlearnerel",
                     "hispanicorlatinoethnicity",
                     "is_proficient",
+                    "is_bl_fb",
                     "nativehawaiianorotherpacificislander",
                     "period",
                     "statestudentidentifier",
+                    "localstudentidentifier",
+                    "firstname",
+                    "lastorsurname",
                     "studentwithdisabilities",
-                    "subject_area",
                     "subject",
                     "testcode",
+                    "studenttestuuid",
+                    "test_grade",
                     "testperformancelevel_text",
                     "testperformancelevel",
                     "testscalescore",
@@ -36,78 +42,63 @@ with
                 ],
             )
         }}
-    ),
-
-    with_translations as (
-        select  -- noqa: AM04
-            * except (statestudentidentifier, _dbt_source_relation_2),
-
-            safe_cast(statestudentidentifier as string) as statestudentidentifier,
-
-            upper(
-                regexp_extract(_dbt_source_relation, r'__(\w+)`$')
-            ) as assessment_name,
-
-            case
-                when
-                    `subject`
-                    in ('English Language Arts', 'English Language Arts/Literacy')
-                then 'ELA'
-                when `subject` in ('Mathematics', 'Algebra I', 'Algebra II', 'Geometry')
-                then 'Math'
-                when `subject` = 'Science'
-                then 'Science'
-            end as subject_area,
-
-            case
-                testperformancelevel
-                when 5
-                then 'Exceeded Expectations'
-                when 4
-                then 'Met Expectations'
-                when 3
-                then 'Approached Expectations'
-                when 2
-                then 'Partially Met Expectations'
-                when 1
-                then 'Did Not Yet Meet Expectations'
-            end as testperformancelevel_text,
-
-            case
-                when `subject` = 'Science' and testperformancelevel >= 3
-                then true
-                when testcode in ('MATGP', 'ELAGP') and testperformancelevel = 2
-                then true
-                when testperformancelevel >= 4
-                then true
-                when testperformancelevel < 4
-                then false
-            end as is_proficient,
-        from union_relations
     )
 
 select
-    _dbt_source_relation,
-    assessment_name,
-    statestudentidentifier,
-    assessmentyear,
-    academic_year,
-    `period`,
-    testcode,
-    `subject`,
-    subject_area,
-    assessmentgrade,
-    testscalescore,
-    testperformancelevel,
-    testperformancelevel_text,
-    is_proficient,
-    studentwithdisabilities,
-    englishlearnerel,
-    twoormoreraces,
-    americanindianoralaskanative,
-    asian,
-    blackorafricanamerican,
-    hispanicorlatinoethnicity,
-    nativehawaiianorotherpacificislander,
-    white,
-from with_translations
+    u._dbt_source_relation,
+    u.academic_year,
+    u.americanindianoralaskanative,
+    u.asian,
+    u.assessment_name,
+    u.assessmentgrade,
+    u.assessmentyear,
+    u.blackorafricanamerican,
+    u.discipline,
+    u.hispanicorlatinoethnicity,
+    u.is_proficient,
+    u.is_bl_fb,
+    u.nativehawaiianorotherpacificislander,
+    u.period,
+    u.firstname,
+    u.lastorsurname,
+    u.subject,
+    u.testcode,
+    u.studenttestuuid,
+    u.test_grade,
+    u.testperformancelevel_text,
+    u.testperformancelevel,
+    u.testscalescore,
+    u.twoormoreraces,
+    u.white,
+
+    cast(u.statestudentidentifier as string) as statestudentidentifier,
+
+    coalesce(u.studentwithdisabilities in ('504', 'B'), false) as is_504,
+
+    coalesce(x.student_number, u.localstudentidentifier) as localstudentidentifier,
+
+    if(u.englishlearnerel = 'Y', true, false) as lep_status,
+
+    if(u.studentwithdisabilities in ('IEP', 'B'), 'Has IEP', 'No IEP') as iep_status,
+
+    case
+        when u.twoormoreraces = 'Y'
+        then 'T'
+        when u.hispanicorlatinoethnicity = 'Y'
+        then 'H'
+        when u.americanindianoralaskanative = 'Y'
+        then 'I'
+        when u.asian = 'Y'
+        then 'A'
+        when u.blackorafricanamerican = 'Y'
+        then 'B'
+        when u.nativehawaiianorotherpacificislander = 'Y'
+        then 'P'
+        when u.white = 'Y'
+        then 'W'
+    end as race_ethnicity,
+
+from union_relations as u
+left join
+    {{ ref("stg_google_sheets__pearson__student_crosswalk") }} as x
+    on u.studenttestuuid = x.student_test_uuid

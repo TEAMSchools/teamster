@@ -1,0 +1,6 @@
+models:
+  - name: stg_overgrad__admissions
+    config:
+      contract:
+        enforced: false
+      materialized: table

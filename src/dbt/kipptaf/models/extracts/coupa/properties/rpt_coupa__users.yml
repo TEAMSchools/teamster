@@ -1,0 +1,63 @@
+models:
+  - name: rpt_coupa__users
+    columns:
+      - name: "`Login`"
+        data_type: string
+      - name: "`Sso Identifier`"
+        data_type: string
+      - name: "`Email`"
+        data_type: string
+      - name: "`First Name`"
+        data_type: string
+      - name: "`Last Name`"
+        data_type: string
+      - name: "`Employee Number`"
+        data_type: int64
+      - name: "`User Role Names`"
+        data_type: string
+      - name: "`Default Address Location Code`"
+        data_type: string
+      - name: "`Default Address Street 1`"
+        data_type: string
+      - name: "`Default Address Street 2`"
+        data_type: string
+      - name: "`Default Address City`"
+        data_type: string
+      - name: "`Default Address State`"
+        data_type: string
+      - name: "`Default Address Postal Code`"
+        data_type: string
+      - name: "`Default Address Attention`"
+        data_type: string
+      - name: "`Default Address Name`"
+        data_type: string
+      - name: "`Status`"
+        data_type: string
+      - name: "`Sage Intacct ID`"
+        data_type: int64
+      - name: "`Sage Intacct Fund`"
+        data_type: int64
+      - name: "`Default Address Country Code`"
+        data_type: string
+      - name: "`Authentication Method`"
+        data_type: string
+      - name: "`Generate Password And Notify User`"
+        data_type: string
+      - name: "`Employee Payment Channel`"
+        data_type: string
+      - name: "`Expense User`"
+        data_type: string
+      - name: "`Purchasing User`"
+        data_type: string
+      - name: "`Content Groups`"
+        data_type: string
+      - name: "`Mention Name`"
+        data_type: string
+      - name: "`School Name`"
+        data_type: string
+      - name: "`Sage Intacct Program`"
+        data_type: int64
+      - name: "`Sage Intacct Department`"
+        data_type: int64
+      - name: "`Sage Intacct Location`"
+        data_type: int64

@@ -1,0 +1,31 @@
+models:
+  - name: stg_schoolmint_grow__measurements
+    columns:
+      - name: measurement_id
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: district
+        data_type: string
+      - name: name
+        data_type: string
+      - name: description
+        data_type: string
+      - name: row_style
+        data_type: string
+      - name: scale_max
+        data_type: int64
+      - name: scale_min
+        data_type: int64
+      - name: created
+        data_type: timestamp
+      - name: last_modified
+        data_type: timestamp
+      - name: archived_at
+        data_type: timestamp
+      # - name: text_boxes
+      #   data_type: array
+      # - name: measurement_options
+      #   data_type: array

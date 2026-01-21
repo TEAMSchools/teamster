@@ -1,6 +1,6 @@
 with
     studentrace_agg as (
-        select studentid, _dbt_source_relation, string_agg(racecd) as racecd,
+        select _dbt_source_relation, studentid, string_agg(racecd) as racecd,
         from {{ ref("stg_powerschool__studentrace") }}
         group by studentid, _dbt_source_relation
     ),
@@ -10,11 +10,10 @@ with
             _dbt_source_relation,
             students_student_number,
             cc_academic_year,
+
             count(cc_sectionid) as sectionid_count,
         from {{ ref("base_powerschool__course_enrollments") }}
-        where
-            cc_academic_year = {{ var("current_academic_year") }}
-            and not is_dropped_section
+        where not is_dropped_section
         group by _dbt_source_relation, students_student_number, cc_academic_year
     ),
 
@@ -23,7 +22,7 @@ with
             se._dbt_source_relation,
             se.student_number,
             se.state_studentnumber,
-            se.lastfirst,
+            se.student_name as lastfirst,
             se.enroll_status,
             se.gender,
             se.ethnicity,
@@ -32,26 +31,30 @@ with
             se.region,
             se.schoolid,
             se.school_name,
-            se.school_abbreviation,
+            se.school as school_abbreviation,
             se.grade_level,
             se.advisory_name,
             se.fteid,
 
             r.racecd,
 
-            safe_cast(se.dob as string) as dob,
-            if(
-                regexp_contains(se.lastfirst, r"\s{2,}|[^\w\s',-]"), 1, 0
-            ) as name_spelling_flag,
+            cast(se.dob as string) as dob,
+
+            cast(cec.sectionid_count as string) as sectionid_count,
+
             if(se.ethnicity is null, 1, 0) as missing_ethnicity_flag,
             if(se.gender is null, 1, 0) as missing_gender_flag,
             if(se.state_studentnumber is null, 1, 0) as missing_sid_flag,
             if(se.dob is null, 1, 0) as missing_dob_flag,
 
-            safe_cast(cec.sectionid_count as string) as sectionid_count,
+            if(
+                regexp_contains(se.student_name, r"\s{2,}|[^\w\s',-]"), 1, 0
+            ) as name_spelling_flag,
+
             if(cec.sectionid_count < 3, true, false) as underenrollment_flag,
 
-            -- noqa: disable=CV10
+            if(se.region = 'KMS', se.ethnicity, r.racecd) as race_eth_detail,
+
             case
                 when se.fteid != fte.id
                 then concat(se.fteid, ' != ', fte.id)
@@ -61,6 +64,7 @@ with
                 then 'FTE == 0'
                 else safe_cast(se.fteid as string)
             end as fteid_detail,
+
             case
                 when se.fteid is null
                 then 1
@@ -71,7 +75,6 @@ with
                 else 0
             end as missing_fte_flag,
 
-            if(se.region = 'KMS', se.ethnicity, r.racecd) as race_eth_detail,
             case
                 when se.region = 'Miami' and se.ethnicity is null
                 then 1
@@ -84,7 +87,7 @@ with
                 then 1
                 else 0
             end as race_eth_flag,
-        from {{ ref("base_powerschool__student_enrollments") }} as se
+        from {{ ref("int_extracts__student_enrollments") }} as se
         left join
             {{ ref("stg_powerschool__fte") }} as fte
             on se.schoolid = fte.schoolid
@@ -104,6 +107,39 @@ with
             se.academic_year = {{ var("current_academic_year") }}
             and se.schoolid != 999999
             and se.rn_year = 1
+    ),
+
+    cc_lag as (
+        select
+            _dbt_source_relation,
+            studyear,
+            course_number,
+            dateleft,
+
+            lag(dateleft) over (
+                partition by _dbt_source_relation, studyear, course_number
+                order by dateleft asc
+            ) as dateleft_prev,
+        from {{ ref("stg_powerschool__cc") }}
+        where course_number != 'LOG300'
+    ),
+
+    enr_dupes as (
+        select
+            cc._dbt_source_relation,
+            cc.cc_academic_year,
+            cc.cc_course_number,
+            cc.cc_dateenrolled,
+            cc.cc_dateleft,
+            cc.sections_section_number,
+            cc.students_student_number,
+        from {{ ref("base_powerschool__course_enrollments") }} as cc
+        inner join
+            cc_lag as cco
+            on cc.cc_studyear = cco.studyear
+            and cc.cc_course_number = cco.course_number
+            and {{ union_dataset_join_clause(left_alias="cc", right_alias="cco") }}
+            and cco.dateleft <= cco.dateleft_prev
     )
 
 select
@@ -253,6 +289,7 @@ select
     'Under Enrolled' as element,
 
     sectionid_count as detail,
+
     1 as flag,
 from student_enrollments
 where underenrollment_flag
@@ -281,11 +318,13 @@ select distinct
         '-',
         ceo.cc_dateleft
     ) as detail,
+
     1 as flag,
+
 from student_enrollments as se
 inner join
-    {{ ref("qa_powerschool__course_enrollment_overlap") }} as ceo
+    enr_dupes as ceo
     on se.student_number = ceo.students_student_number
     and se.academic_year = ceo.cc_academic_year
     and {{ union_dataset_join_clause(left_alias="se", right_alias="ceo") }}
-where se.enroll_status = 0 and ceo.cc_course_number != 'LOG300'
+where se.enroll_status = 0

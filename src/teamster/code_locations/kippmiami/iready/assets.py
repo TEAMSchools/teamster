@@ -1,32 +1,61 @@
-import pathlib
+from teamster.code_locations.kippmiami import CODE_LOCATION, CURRENT_FISCAL_YEAR
+from teamster.code_locations.kippmiami.iready.schema import (
+    DIAGNOSTIC_RESULTS_SCHEMA,
+    INSTRUCTION_BY_LESSON_SCHEMA,
+    PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
+    PERSONALIZED_INSTRUCTION_SUMMARY,
+)
+from teamster.libraries.iready.assets import build_iready_sftp_asset
 
-from dagster import (
-    MultiPartitionsDefinition,
-    StaticPartitionsDefinition,
-    config_from_files,
+region_subfolder = "fl-kipp_miami"
+key_prefix = [CODE_LOCATION, "iready"]
+
+personalized_instruction_summary = build_iready_sftp_asset(
+    asset_key=[*key_prefix, "personalized_instruction_summary"],
+    region_subfolder=region_subfolder,
+    remote_file_regex=(
+        r"personalized_instruction_summary_(?P<subject>ela|math)_CONFIDENTIAL\.csv"
+    ),
+    avro_schema=PERSONALIZED_INSTRUCTION_SUMMARY,
+    start_fiscal_year=2025,
+    end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
 )
 
-from teamster.code_locations.kippmiami import CODE_LOCATION
-from teamster.code_locations.kippmiami.iready.schema import ASSET_SCHEMA
-from teamster.libraries.sftp.assets import build_sftp_asset
+diagnostic_results = build_iready_sftp_asset(
+    asset_key=[*key_prefix, "diagnostic_results"],
+    region_subfolder=region_subfolder,
+    remote_file_regex=r"diagnostic_results_(?P<subject>ela|math)(_CONFIDENTIAL)?\.csv",
+    avro_schema=DIAGNOSTIC_RESULTS_SCHEMA,
+    start_fiscal_year=2021,
+    end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+)
+
+instruction_by_lesson = build_iready_sftp_asset(
+    asset_key=[*key_prefix, "personalized_instruction_by_lesson"],
+    region_subfolder=region_subfolder,
+    remote_file_regex=(
+        r"(personalized|iready)_instruction_by_lesson_"
+        r"(?P<subject>ela|math)(_CONFIDENTIAL)?\.csv"
+    ),
+    avro_schema=PERSONALIZED_INSTRUCTION_BY_LESSON_SCHEMA,
+    start_fiscal_year=2023,
+    end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+)
+
+instruction_by_lesson_pro = build_iready_sftp_asset(
+    asset_key=[*key_prefix, "instruction_by_lesson"],
+    region_subfolder=region_subfolder,
+    remote_file_regex=(
+        r"iready_pro_instruction_by_lesson_(?P<subject>ela|math)_CONFIDENTIAL\.csv"
+    ),
+    avro_schema=INSTRUCTION_BY_LESSON_SCHEMA,
+    start_fiscal_year=2025,
+    end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
+)
 
 assets = [
-    build_sftp_asset(
-        asset_key=[CODE_LOCATION, "iready", a["asset_name"]],
-        ssh_resource_key="ssh_iready",
-        avro_schema=ASSET_SCHEMA[a["asset_name"]],
-        partitions_def=MultiPartitionsDefinition(
-            {
-                "subject": StaticPartitionsDefinition(["ela", "math"]),
-                "academic_year": StaticPartitionsDefinition(
-                    a["partition_keys"]["academic_year"]
-                ),
-            }
-        ),
-        slugify_replacements=[["%", "percent"]],
-        **a,
-    )
-    for a in config_from_files(
-        [f"{pathlib.Path(__file__).parent}/config/assets.yaml"],
-    )["assets"]
+    diagnostic_results,
+    instruction_by_lesson,
+    instruction_by_lesson_pro,
+    personalized_instruction_summary,
 ]

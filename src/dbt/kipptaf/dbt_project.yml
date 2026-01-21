@@ -2,15 +2,11 @@ name: kipptaf
 version: 1.0.0
 config-version: 2
 
-# This setting configures which profile dbt uses for this project.
 profile: kipptaf
 
 dbt-cloud:
   project-id: 211862
 
-# These configurations specify where dbt should look for different types of files.
-# The `source-paths` config, for example, states that models in this project can be
-# found in the models/ directory. You probably won't need to change these!
 model-paths: [models]
 analysis-paths: [analyses]
 test-paths: [tests]
@@ -18,109 +14,157 @@ seed-paths: [seeds]
 macro-paths: [macros]
 snapshot-paths: [snapshots]
 
-target-path: target # directory which will store compiled SQL files
-clean-targets: # directories to be removed by `dbt clean`
+target-path: target
+clean-targets:
   - target
   - dbt_packages
 
 vars:
   local_timezone: America/New_York
   cloud_storage_uri_base: gs://teamster-kipptaf/dagster/kipptaf
-  current_academic_year: 2024
-  current_fiscal_year: 2025
-  alchemer_survey_identifier_short_names:
-    - respondent_employee_number
-    - respondent_df_employee_number
-    - respondent_userprincipalname
-    - respondent_adp_associate_id
-    - subject_df_employee_number
-    - employee_number
-    - email
-    - employee_preferred_name
-    - salesforce_id
-    - is_manager
+  bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
+  current_academic_year: 2025
+  current_fiscal_year: 2026
 
-# Configuring models
-# Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
-  +post-hook:
-    - "{{ dagster.log_column_level_metadata() }}"
   kipptaf:
     act:
+      +enabled: false
       +schema: act
     adp:
       payroll:
         +schema: adp_payroll
         staging:
           +materialized: table
+          +contract:
+            enforced: true
       workforce_manager:
+        +enabled: false
         +schema: adp_workforce_manager
-        +materialized: table
+        +meta:
+          dagster:
+            group: adp_workforce_manager
       workforce_now:
         +schema: adp_workforce_now
-        staging:
-          +materialized: table
+        +meta:
+          dagster:
+            group: adp_workforce_now
+        api:
+          staging:
+            +materialized: table
+            +contract:
+              enforced: true
+        sftp:
+          staging:
+            +materialized: table
+            +contract:
+              enforced: true
+        fivetran:
+          +enabled: false
     alchemer:
+      +enabled: false
       +schema: alchemer
-      staging:
-        +materialized: table
     amplify:
       +schema: amplify
-      staging:
-        +materialized: table
+      dds:
+        +enabled: false
     assessments:
       +schema: assessments
+    collegeboard:
+      +schema: collegeboard
       staging:
         +materialized: table
+        +contract:
+          enforced: true
     coupa:
       +schema: coupa
-      staging:
-        +materialized: table
+      api:
+        staging:
+          +materialized: table
+          +contract:
+            enforced: true
+      fivetran:
+        +enabled: false
     dayforce:
+      +enabled: false
       +schema: dayforce
-      staging:
-        +materialized: table
     deanslist:
       +schema: deanslist
+      sftp:
+        staging:
+          +contract:
+            enforced: true
     edplan:
       +schema: edplan
     extracts:
       +schema: extracts
-      +materialized: table
-      deanslist:
-        +materialized: view
-      google:
-        sheets:
-          +materialized: view
-      powerschool:
-        +materialized: view
+      +contract:
+        enforced: true
       tableau:
         +schema: tableau
-        +materialized: view
+    facebook:
+      +enabled: false
+      +schema: facebook
+    finalsite:
+      +schema: finalsite
     finance:
       +schema: finance
-      staging:
-        +materialized: table
     fldoe:
       +schema: fldoe
     google:
-      forms:
-        +schema: google_forms
+      appsheet:
+        +schema: google_appsheet
+        +meta:
+          dagster:
+            group: google_appsheet
         staging:
-          +materialized: table
+          +contract:
+            enforced: true
       directory:
         +schema: google_directory
+        +meta:
+          dagster:
+            group: google_directory
         staging:
           +materialized: table
-      appsheet:
-        +schema: appsheet
+          +contract:
+            enforced: true
+      forms:
+        +schema: google_forms
+        +meta:
+          dagster:
+            group: google_forms
+        staging:
+          +materialized: table
+          +contract:
+            enforced: true
+      sheets:
+        +schema: google_sheets
+        +meta:
+          dagster:
+            group: google_sheets
+        staging:
+          +materialized: table
+          +tags: google_sheet
+          +contract:
+            enforced: true
+          +meta:
+            dagster:
+              tags: google_sheet
     illuminate:
       +schema: illuminate
-      staging:
-        +materialized: table
-      base:
-        +materialized: table
+      dlt:
+        staging:
+          +materialized: table
+          +contract:
+            enforced: true
+          repositories:
+            +contract:
+              enforced: false
+      fivetran:
+        +enabled: false
     instagram:
+      +enabled: false
       business:
         +schema: instagram_business
     iready:
@@ -129,57 +173,90 @@ models:
       +schema: kippadb
       staging:
         +materialized: table
+        +contract:
+          enforced: true
+    knowbe4:
+      +schema: knowbe4
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     ldap:
       +schema: ldap
       staging:
         +materialized: table
-    njdoe:
-      +schema: njdoe
+        +contract:
+          enforced: true
+    marts:
+      +schema: marts
+    nsc:
+      +schema: nsc
       staging:
         +materialized: table
+        +contract:
+          enforced: true
+    overgrad:
+      +schema: overgrad
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     pearson:
       +schema: pearson
     people:
       +schema: people
-      +materialized: table
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     performance_management:
       +schema: performance_management
-      +materialized: table
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     powerschool:
       +schema: powerschool
     powerschool_enrollment:
       +schema: powerschool_enrollment
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     renlearn:
       +schema: renlearn
     reporting:
       +schema: reporting
-      +materialized: table
     schoolmint:
       grow:
         +schema: schoolmint_grow
         staging:
           +materialized: table
+          +contract:
+            enforced: true
     smartrecruiters:
       +schema: smartrecruiters
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
     students:
       +schema: students
     surveys:
       +schema: surveys
-      +materialized: table
     tableau:
       +schema: tableau
       staging:
         +materialized: table
+        +contract:
+          enforced: true
     titan:
       +schema: titan
-    utils:
-      +schema: utils
-      +materialized: table
+    topline:
+      +schema: topline
     zendesk:
       +schema: zendesk
       staging:
         +materialized: table
-
-snapshots:
-  +post-hook:
-    - "{{ dagster.log_column_level_metadata() }}"
+        +contract:
+          enforced: true

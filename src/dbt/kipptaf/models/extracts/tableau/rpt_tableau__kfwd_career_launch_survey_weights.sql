@@ -25,7 +25,7 @@ with
             item_title,
             item_abbreviation,
             cast(text_value as numeric) as response_numeric_value,
-        from {{ ref("base_google_forms__form_responses") }}
+        from {{ ref("int_google_forms__form_responses") }}
         where
             form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
             and item_abbreviation in (

@@ -1,82 +1,121 @@
 import json
 import re
+from collections import defaultdict
+from datetime import datetime
+from itertools import groupby
+from operator import itemgetter
+from zoneinfo import ZoneInfo
 
-import pendulum
 from dagster import (
+    AssetKey,
     AssetsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    _check,
+    define_asset_job,
     sensor,
 )
+from dagster_shared import check
 
 from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_renlearn_sftp_sensor(
-    code_location,
-    asset_defs: list[AssetsDefinition],
-    fiscal_year,
-    timezone,
+    code_location: str,
+    timezone: ZoneInfo,
+    asset_selection: list[AssetsDefinition],
+    partition_key_start_date: str,
     minimum_interval_seconds=None,
+    tags=None,
 ):
-    fiscal_year_start_string = fiscal_year.start.to_date_string()
+    base_job_name = f"{code_location}_renlearn_sftp_asset_job"
+
+    keys_by_partitions_def = defaultdict(set[AssetKey])
+
+    for assets_def in asset_selection:
+        keys_by_partitions_def[assets_def.partitions_def].add(assets_def.key)
+
+    jobs = [
+        define_asset_job(
+            name=(
+                f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
+            ),
+            selection=list(keys),
+        )
+        for partitions_def, keys in keys_by_partitions_def.items()
+    ]
 
     @sensor(
-        name=f"{code_location}_renlearn_sftp_sensor",
+        name=f"{base_job_name}_sensor",
+        jobs=jobs,
         minimum_interval_seconds=minimum_interval_seconds,
-        asset_selection=asset_defs,
     )
     def _sensor(context: SensorEvaluationContext, ssh_renlearn: SSHResource):
-        now = pendulum.now(tz=timezone)
+        now_timestamp = datetime.now(timezone).timestamp()
+
+        run_request_kwargs = []
+        run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            files = ssh_renlearn.listdir_attr_r()
-        except Exception as e:
-            context.log.exception(e)
-            return SensorResult(skip_reason=str(e))
+        files = ssh_renlearn.listdir_attr_r()
 
-        run_requests = []
-        for asset in asset_defs:
+        for asset in asset_selection:
             asset_metadata = asset.metadata_by_key[asset.key]
             asset_identifier = asset.key.to_python_identifier()
             context.log.info(asset_identifier)
 
             last_run = cursor.get(asset_identifier, 0)
 
-            partitions_def = _check.inst(
-                asset.partitions_def, MultiPartitionsDefinition
-            )
+            partitions_def = check.inst(asset.partitions_def, MultiPartitionsDefinition)
 
             subjects = partitions_def.get_partitions_def_for_dimension("subject")
+            job_name = (
+                f"{base_job_name}_{partitions_def.get_serializable_unique_identifier()}"
+            )
 
             for f, _ in files:
                 match = re.match(
                     pattern=asset_metadata["remote_file_regex"], string=f.filename
                 )
 
-                if match is not None:
+                if (
+                    match is not None
+                    and f.st_mtime > last_run
+                    and check.not_none(value=f.st_size) > 0
+                ):
                     context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                    if f.st_mtime > last_run and _check.not_none(value=f.st_size) > 0:
-                        for subject in subjects.get_partition_keys():
-                            run_requests.append(
-                                RunRequest(
-                                    run_key=f"{asset_identifier}_{f.st_mtime}",
-                                    asset_selection=[asset.key],
-                                    partition_key=MultiPartitionKey(
-                                        {
-                                            "start_date": fiscal_year_start_string,
-                                            "subject": subject,
-                                        }
-                                    ),
-                                )
-                            )
+                    for subject in subjects.get_partition_keys():
+                        run_request_kwargs.append(
+                            {
+                                "asset_key": asset.key,
+                                "job_name": job_name,
+                                "partition_key": MultiPartitionKey(
+                                    {
+                                        "start_date": partition_key_start_date,
+                                        "subject": subject,
+                                    }
+                                ),
+                            }
+                        )
 
-                cursor[asset_identifier] = now.timestamp()
+                    cursor[asset_identifier] = now_timestamp
+
+        item_getter_key = itemgetter("job_name", "partition_key")
+
+        for (job_name, partition_key), group in groupby(
+            iterable=sorted(run_request_kwargs, key=item_getter_key),
+            key=item_getter_key,
+        ):
+            run_requests.append(
+                RunRequest(
+                    run_key=f"{job_name}_{partition_key}_{now_timestamp}",
+                    job_name=job_name,
+                    partition_key=partition_key,
+                    asset_selection=[g["asset_key"] for g in group],
+                )
+            )
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 

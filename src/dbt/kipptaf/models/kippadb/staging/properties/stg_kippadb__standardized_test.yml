@@ -1,0 +1,89 @@
+models:
+  - name: stg_kippadb__standardized_test
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: contact
+        data_type: string
+      - name: date
+        data_type: date
+      - name: test_type
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: scoring_irregularity
+        data_type: boolean
+      - name: administration_round
+        data_type: string
+      - name: act_composite
+        data_type: numeric
+      - name: act_ela
+        data_type: numeric
+      - name: act_english
+        data_type: numeric
+      - name: act_math
+        data_type: numeric
+      - name: act_reading
+        data_type: numeric
+      - name: act_science
+        data_type: numeric
+      - name: act_stem
+        data_type: numeric
+      - name: act_writing
+        data_type: numeric
+      - name: sat_total_score
+        data_type: numeric
+      - name: sat_ebrw
+        data_type: numeric
+      - name: sat_essay_analysis
+        data_type: numeric
+      - name: sat_essay_reading
+        data_type: numeric
+      - name: sat_essay_writing
+        data_type: numeric
+      - name: sat_math
+        data_type: numeric
+      - name: sat_math_test_score
+        data_type: numeric
+      - name: sat_reading_test_score
+        data_type: numeric
+      - name: sat_verbal
+        data_type: numeric
+      - name: sat_writing
+        data_type: numeric
+      - name: sat_critical_reading_pre_2016
+        data_type: numeric
+      - name: sat_math_pre_2016
+        data_type: numeric
+      - name: sat_writing_and_language_test_score
+        data_type: numeric
+      - name: sat_writing_pre_2016
+        data_type: numeric
+      - name: ap
+        data_type: numeric
+      - name: psat_total_score
+        data_type: numeric
+      - name: psat_ebrw
+        data_type: numeric
+      - name: psat_math
+        data_type: numeric
+      - name: psat_math_test_score
+        data_type: numeric
+      - name: psat_reading_test_score
+        data_type: numeric
+      - name: psat_verbal
+        data_type: numeric
+      - name: psat_writing
+        data_type: numeric
+      - name: psat_writing_and_language_test_score
+        data_type: numeric
+      - name: psat_critical_reading_pre_2016
+        data_type: numeric
+      - name: psat_math_pre_2016
+        data_type: numeric
+      - name: psat_writing_pre_2016
+        data_type: numeric
+      - name: academic_year
+        data_type: int64

@@ -19,37 +19,31 @@ locations:
                 - secret:
                     name: op-adp-wfn-api
                     items:
-                      - key: KTAF_Mutual_SSL.pem
-                        path: adp_wfn_cert
+                      - key: adp_wfn_api.cer
+                        path: adp_wfn_api.cer
                 - secret:
                     name: op-adp-wfn-api
                     items:
-                      - key: kipptaf_auth.key
-                        path: adp_wfn_key
+                      - key: adp_wfn_api.key
+                        path: adp_wfn_api.key
                 - secret:
                     name: op-egencia-sftp
                     items:
                       - key: id_rsa_egencia
                         path: id_rsa_egencia
-                - secret:
-                    name: op-gcp-service-account-dbt
-                    items:
-                      - key: dbt_user_credentials.json
-                        path: dbt_user_creds_json
-                - secret:
-                    name: op-gcp-service-account-teamster
-                    items:
-                      - key: service_account_gserviceaccount.json
-                        path: gcloud_service_account_json
         server_k8s_config:
+          pod_spec_config:
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchExpressions:
+                        - key: location_name
+                          operator: In
+                          values:
+                            - kipptaf
+                    topologyKey: kubernetes.io/hostname
           container_config:
-            resources:
-              requests:
-                cpu: 1250m
-                memory: 2.0Gi
-              limits:
-                cpu: 1250m
-                memory: 2.0Gi
             env:
               - name: ADP_SFTP_PASSWORD
                 valueFrom:
@@ -101,41 +95,21 @@ locations:
                   secretKeyRef:
                     name: op-adp-wfn-api
                     key: client-secret
-              - name: AIRBYTE_API_KEY
+              - name: AIRBYTE_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
                     name: op-airbyte-api
-                    key: api-key
-              - name: ALCHEMER_API_TOKEN
-                valueFrom:
-                  secretKeyRef:
-                    name: op-alchemer-api
-                    key: token
-              - name: ALCHEMER_API_TOKEN_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    name: op-alchemer-api
-                    key: token-secret
-              - name: AMPLIFY_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-service-account
-                    key: password
-              - name: AMPLIFY_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-service-account
                     key: username
-              - name: BLISSBOOK_SFTP_PASSWORD
+              - name: AIRBYTE_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
-                    name: op-blissbook-sftp
-                    key: password
-              - name: BLISSBOOK_SFTP_USERNAME
+                    name: op-airbyte-api
+                    key: credential
+              - name: AIRBYTE_WORKSPACE_ID
                 valueFrom:
                   secretKeyRef:
-                    name: op-blissbook-sftp
-                    key: username
+                    name: op-airbyte-api
+                    key: workspace-id
               - name: CLEVER_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -166,6 +140,21 @@ locations:
                   secretKeyRef:
                     name: op-coupa-sftp
                     key: username
+              - name: COUPA_API_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: username
+              - name: COUPA_API_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: credential
+              - name: COUPA_API_INSTANCE_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: hostname
               - name: DEANSLIST_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -181,16 +170,6 @@ locations:
                   secretKeyRef:
                     name: op-egencia-sftp
                     key: username
-              - name: FIVETRAN_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-key
-              - name: FIVETRAN_API_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-secret
               - name: ILLUMINATE_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -261,6 +240,11 @@ locations:
                   secretKeyRef:
                     name: op-smartrecruiters-api
                     key: smart-token
+              - name: ZENDESK_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-zendesk-api
+                    key: subdomain
               - name: ZENDESK_EMAIL
                 valueFrom:
                   secretKeyRef:
@@ -286,16 +270,6 @@ locations:
                   secretKeyRef:
                     name: op-adp-wfn-sftp
                     key: ip
-              - name: BLISSBOOK_SFTP_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-blissbook-sftp
-                    key: host
-              - name: BLISSBOOK_SFTP_PORT
-                valueFrom:
-                  secretKeyRef:
-                    name: op-blissbook-sftp
-                    key: port
               - name: CLEVER_SFTP_HOST
                 valueFrom:
                   secretKeyRef:
@@ -386,18 +360,63 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
+              - name: ILLUMINATE_DB_DRIVERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: driver
+              - name: ILLUMINATE_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: ip
+              - name: ILLUMINATE_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: database
+              - name: ILLUMINATE_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: username
+              - name: ILLUMINATE_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: password
               - name: OVERGRAD_API_KEY
                 valueFrom:
                   secretKeyRef:
-                    name: op-overgrad-api
+                    name: op-overgrad-api-kippnewark
+                    key: credential
+              - name: OUTLOOK_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: host
+              - name: OUTLOOK_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: port
+              - name: OUTLOOK_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: username
+              - name: OUTLOOK_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: password
+              - name: KNOWBE4_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-knowbe4
                     key: credential
         run_k8s_config:
           container_config:
-            resources:
-              requests:
-                cpu: 750m
-              limits:
-                cpu: 750m
             env:
               - name: ADP_SFTP_PASSWORD
                 valueFrom:
@@ -449,41 +468,21 @@ locations:
                   secretKeyRef:
                     name: op-adp-wfn-api
                     key: client-secret
-              - name: AIRBYTE_API_KEY
+              - name: AIRBYTE_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
                     name: op-airbyte-api
-                    key: api-key
-              - name: ALCHEMER_API_TOKEN
-                valueFrom:
-                  secretKeyRef:
-                    name: op-alchemer-api
-                    key: token
-              - name: ALCHEMER_API_TOKEN_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    name: op-alchemer-api
-                    key: token-secret
-              - name: AMPLIFY_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-service-account
-                    key: password
-              - name: AMPLIFY_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-service-account
                     key: username
-              - name: BLISSBOOK_SFTP_PASSWORD
+              - name: AIRBYTE_CLIENT_SECRET
                 valueFrom:
                   secretKeyRef:
-                    name: op-blissbook-sftp
-                    key: password
-              - name: BLISSBOOK_SFTP_USERNAME
+                    name: op-airbyte-api
+                    key: credential
+              - name: AIRBYTE_WORKSPACE_ID
                 valueFrom:
                   secretKeyRef:
-                    name: op-blissbook-sftp
-                    key: username
+                    name: op-airbyte-api
+                    key: workspace-id
               - name: CLEVER_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -529,16 +528,6 @@ locations:
                   secretKeyRef:
                     name: op-egencia-sftp
                     key: username
-              - name: FIVETRAN_API_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-key
-              - name: FIVETRAN_API_SECRET
-                valueFrom:
-                  secretKeyRef:
-                    name: op-fivetran-api
-                    key: api-secret
               - name: ILLUMINATE_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -609,6 +598,11 @@ locations:
                   secretKeyRef:
                     name: op-smartrecruiters-api
                     key: smart-token
+              - name: ZENDESK_SUBDOMAIN
+                valueFrom:
+                  secretKeyRef:
+                    name: op-zendesk-api
+                    key: subdomain
               - name: ZENDESK_EMAIL
                 valueFrom:
                   secretKeyRef:
@@ -634,16 +628,6 @@ locations:
                   secretKeyRef:
                     name: op-adp-wfn-sftp
                     key: ip
-              - name: BLISSBOOK_SFTP_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-blissbook-sftp
-                    key: host
-              - name: BLISSBOOK_SFTP_PORT
-                valueFrom:
-                  secretKeyRef:
-                    name: op-blissbook-sftp
-                    key: port
               - name: CLEVER_SFTP_HOST
                 valueFrom:
                   secretKeyRef:
@@ -659,6 +643,21 @@ locations:
                   secretKeyRef:
                     name: op-coupa-sftp
                     key: host
+              - name: COUPA_API_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: username
+              - name: COUPA_API_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: credential
+              - name: COUPA_API_INSTANCE_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: op-coupa-api
+                    key: hostname
               - name: DEANSLIST_SUBDOMAIN
                 valueFrom:
                   secretKeyRef:
@@ -734,8 +733,58 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
+              - name: ILLUMINATE_DB_DRIVERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: driver
+              - name: ILLUMINATE_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: ip
+              - name: ILLUMINATE_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: database
+              - name: ILLUMINATE_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: username
+              - name: ILLUMINATE_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-illuminate-db
+                    key: password
               - name: OVERGRAD_API_KEY
                 valueFrom:
                   secretKeyRef:
-                    name: op-overgrad-api
+                    name: op-overgrad-api-kippnewark
+                    key: credential
+              - name: OUTLOOK_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: host
+              - name: OUTLOOK_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: port
+              - name: OUTLOOK_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: username
+              - name: OUTLOOK_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: password
+              - name: KNOWBE4_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-knowbe4
                     key: credential

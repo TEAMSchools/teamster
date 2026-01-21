@@ -1,0 +1,19 @@
+models:
+  - name: stg_kippadb__user
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - id
+          config:
+            severity: warn
+            store_failures: true
+    columns:
+      - name: id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: email
+        data_type: string
+      - name: phone
+        data_type: string

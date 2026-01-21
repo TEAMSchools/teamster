@@ -1,5 +1,5 @@
 select
-    id as id,
+    id,
     `name`,
     `description`,
     `type`,

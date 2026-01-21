@@ -1,38 +1,32 @@
 with
     suspension as (
         select
-            ics._dbt_source_relation,
-            ics.student_school_id,
-            ics.create_ts_academic_year,
+            _dbt_source_relation,
+            student_school_id,
+            create_ts_academic_year,
 
-            count(ips.incident_penalty_id) as suspension_count,
-            sum(ips.num_days) as suspension_days,
-        from {{ ref("stg_deanslist__incidents") }} as ics
-        inner join
-            {{ ref("stg_deanslist__incidents__penalties") }} as ips
-            on ips.incident_id = ics.incident_id
-            and ips._dbt_source_relation = ics._dbt_source_relation
-        where ips.is_suspension
-        group by
-            ics.student_school_id, ics.create_ts_academic_year, ics._dbt_source_relation
+            count(incident_penalty_id) as suspension_count,
+            sum(num_days) as suspension_days,
+        from {{ ref("int_deanslist__incidents__penalties") }}
+        where is_suspension
+        group by student_school_id, create_ts_academic_year, _dbt_source_relation
     )
 
 select
     co.studentid,
     co.student_number,
-    co.lastfirst,
+    co.student_name,
     co.dob,
     co.academic_year,
     co.region,
     co.school_level,
     co.schoolid,
-    co.reporting_schoolid,
     co.school_name,
+    co.school,
     co.grade_level,
     co.cohort,
-    co.advisory_name as team,
-    co.advisor_lastfirst as advisor_name,
-    co.spedlep as iep_status,
+    co.advisory,
+    co.iep_status,
     co.lep_status,
     co.is_504 as c_504_status,
     co.gender,
@@ -43,6 +37,12 @@ select
     co.year_in_network,
     co.code_location as `db_name`,
     co.boy_status,
+    co.`ada`,
+    co.cumulative_y1_gpa,
+    co.cumulative_y1_gpa_projected,
+    co.earned_credits_cum,
+    co.earned_credits_cum_projected,
+    co.potential_credits_cum,
 
     dt.name as term_name,
     dt.code as reporting_term,
@@ -66,19 +66,12 @@ select
     gpa.gpa_y1_unweighted,
     gpa.gpa_term,
 
-    gpc.cumulative_y1_gpa,
-    gpc.cumulative_y1_gpa_projected,
-    gpc.earned_credits_cum,
-    gpc.earned_credits_cum_projected,
-    gpc.potential_credits_cum,
-
-    att.`ada`,
-
     sus.suspension_count,
     sus.suspension_days,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
-    {{ ref("stg_reporting__terms") }} as dt
+    {{ ref("stg_google_sheets__reporting__terms") }} as dt
     on co.academic_year = dt.academic_year
     and co.schoolid = dt.school_id
     and dt.type = 'RT'
@@ -101,16 +94,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
     and dt.name = gpa.term_name
 left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gpc
-    on co.studentid = gpc.studentid
-    and co.schoolid = gpc.schoolid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpc") }}
-left join
-    {{ ref("int_powerschool__ada") }} as att
-    on co.studentid = att.studentid
-    and co.yearid = att.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
-left join
     suspension as sus
     on co.student_number = sus.student_school_id
     and co.academic_year = sus.create_ts_academic_year
@@ -118,5 +101,5 @@ left join
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
-    and co.is_enrolled_recent
     and co.school_level = 'HS'
+    and co.is_enrolled_recent

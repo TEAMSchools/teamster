@@ -1,0 +1,245 @@
+name: kipppaterson
+version: 1.0.0
+config-version: 2
+
+profile: kipppaterson
+
+model-paths: [models]
+analysis-paths: [analyses]
+test-paths: [tests]
+seed-paths: [seeds]
+macro-paths: [macros]
+snapshot-paths: [snapshots]
+
+target-path: target
+clean-targets:
+  - target
+  - dbt_packages
+
+vars:
+  local_timezone: America/New_York
+  current_academic_year: 2025
+  current_fiscal_year: 2026
+  cloud_storage_uri_base: gs://teamster-kipppaterson/dagster/kipppaterson
+  bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
+  powerschool_external_location_root: gs://teamster-kipppaterson/dagster/kipppaterson/powerschool/sis/sftp
+
+models:
+  amplify:
+    dds:
+      +enabled: false
+    mclass:
+      api:
+        +enabled: false
+  pearson:
+    +materialized: table
+    staging:
+      stg_pearson__njgpa:
+        +enabled: false
+      stg_pearson__parcc:
+        +enabled: false
+      stg_pearson__student_test_update:
+        +enabled: false
+  powerschool:
+    +materialized: table
+    sis:
+      base:
+        base_powerschool__final_grades:
+          +enabled: false
+      intermediate:
+        int_powerschool__gradebook_assignments:
+          +enabled: false
+        int_powerschool__gpa_cumulative:
+          +enabled: false
+        int_powerschool__gpa_term:
+          +enabled: false
+        int_powerschool__category_grades:
+          +enabled: false
+        int_powerschool__category_grades_pivot:
+          +enabled: false
+        int_powerschool__final_grades_pivot:
+          +enabled: false
+        int_powerschool__gradescaleitem_lookup:
+          +enabled: false
+        int_powerschool__section_grade_config:
+          +enabled: false
+        int_powerschool__teacher_grade_levels:
+          +enabled: false
+      staging:
+        odbc:
+          +enabled: false
+        sftp:
+          +enabled: true
+          stg_powerschool__assignmentscore:
+            +enabled: false
+          stg_powerschool__assignmentcategoryassoc:
+            +enabled: false
+          stg_powerschool__assignmentsection:
+            +enabled: false
+          stg_powerschool__districtteachercategory:
+            +enabled: false
+          stg_powerschool__gpnode:
+            +enabled: false
+          stg_powerschool__gpprogresssubject:
+            +enabled: false
+          stg_powerschool__gpprogresssubjectearned:
+            +enabled: false
+          stg_powerschool__gpprogresssubjectenrolled:
+            +enabled: false
+          stg_powerschool__gradecalcformulaweight:
+            +enabled: false
+          stg_powerschool__gradecalcschoolassoc:
+            +enabled: false
+          stg_powerschool__gradecalculationtype:
+            +enabled: false
+          stg_powerschool__gradeformulaset:
+            +enabled: false
+          stg_powerschool__gradescaleitem:
+            +enabled: false
+          stg_powerschool__gradeschoolconfig:
+            +enabled: false
+          stg_powerschool__gradeschoolformulaassoc:
+            +enabled: false
+          stg_powerschool__gradesectionconfig:
+            +enabled: false
+          stg_powerschool__log:
+            +enabled: false
+          stg_powerschool__pgfinalgrades:
+            +enabled: false
+          stg_powerschool__roledef:
+            +enabled: false
+          stg_powerschool__s_stu_x:
+            +enabled: false
+          stg_powerschool__sectionteacher:
+            +enabled: false
+          stg_powerschool__storedgrades:
+            +enabled: false
+          stg_powerschool__studentrace:
+            +enabled: false
+          stg_powerschool__studenttest:
+            +enabled: false
+          stg_powerschool__studenttestscore:
+            +enabled: false
+          stg_powerschool__teachercategory:
+            +enabled: false
+          stg_powerschool__test:
+            +enabled: false
+          stg_powerschool__testscore:
+            +enabled: false
+          stg_powerschool__u_clg_et_stu:
+            +enabled: false
+          stg_powerschool__u_clg_et_stu_alt:
+            +enabled: false
+
+sources:
+  pearson:
+    pearson:
+      src_pearson__njgpa:
+        +enabled: false
+      src_pearson__parcc:
+        +enabled: false
+      src_pearson__student_test_update:
+        +enabled: false
+  powerschool:
+    sis:
+      staging:
+        odbc:
+          +enabled: false
+        sftp:
+          powerschool_sftp:
+            src_powerschool__assignmentscore:
+              +enabled: false
+            src_powerschool__assignmentcategoryassoc:
+              +enabled: false
+            src_powerschool__assignmentsection:
+              +enabled: false
+            src_powerschool__districtteachercategory:
+              +enabled: false
+            src_powerschool__gpnode:
+              +enabled: false
+            src_powerschool__gpprogresssubject:
+              +enabled: false
+            src_powerschool__gpprogresssubjectearned:
+              +enabled: false
+            src_powerschool__gpprogresssubjectenrolled:
+              +enabled: false
+            src_powerschool__gpprogresssubjectrequested:
+              +enabled: false
+            src_powerschool__gradecalcformulaweight:
+              +enabled: false
+            src_powerschool__gradecalcschoolassoc:
+              +enabled: false
+            src_powerschool__gradecalculationtype:
+              +enabled: false
+            src_powerschool__gradeformulaset:
+              +enabled: false
+            src_powerschool__gradescaleitem:
+              +enabled: false
+            src_powerschool__gradeschoolconfig:
+              +enabled: false
+            src_powerschool__gradeschoolformulaassoc:
+              +enabled: false
+            src_powerschool__gradesectionconfig:
+              +enabled: false
+            src_powerschool__gradplan:
+              +enabled: false
+            src_powerschool__log:
+              +enabled: false
+            src_powerschool__period:
+              +enabled: false
+            src_powerschool__pgfinalgrades:
+              +enabled: false
+            src_powerschool__prefs:
+              +enabled: false
+            src_powerschool__roledef:
+              +enabled: false
+            src_powerschool__s_nj_usr_x:
+              +enabled: false
+            src_powerschool__s_stu_x:
+              +enabled: false
+            src_powerschool__sced_code_mapping:
+              +enabled: false
+            src_powerschool__sectionteacher:
+              +enabled: false
+            src_powerschool__storedgrades:
+              +enabled: false
+            src_powerschool__studentrace:
+              +enabled: false
+            src_powerschool__studenttest:
+              +enabled: false
+            src_powerschool__studenttestscore:
+              +enabled: false
+            src_powerschool__teachercategory:
+              +enabled: false
+            src_powerschool__test:
+              +enabled: false
+            src_powerschool__testscore:
+              +enabled: false
+            src_powerschool__userscorefields:
+              +enabled: false
+            src_powerschool__u_clg_et_stu:
+              +enabled: false
+            src_powerschool__u_clg_et_stu_alt:
+              +enabled: false
+            src_powerschool__u_def_ext_students:
+              +enabled: false
+            src_powerschool__u_studentsuserfields:
+              +enabled: false
+            src_powerschool__u_storedgrades_de:
+              +enabled: false
+            src_powerschool__gpprogresssubjectwaived:
+              +enabled: false
+            src_powerschool__gpprogresssubjwaivedapplied:
+              +enabled: false
+            src_powerschool__gpselectedcrs:
+              +enabled: false
+            src_powerschool__gpselectedcrtype:
+              +enabled: false
+            src_powerschool__gpselector:
+              +enabled: false
+            src_powerschool__gptarget:
+              +enabled: false
+            src_powerschool__gpversion:
+              +enabled: false
+            src_powerschool__gpstudentwaiver:
+              +enabled: false

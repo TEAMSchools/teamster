@@ -1,80 +1,23 @@
-version: 2
-
 sources:
   - name: overgrad
-    schema: kipptaf_overgrad
-    tags:
-      - stage_external_sources
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_overgrad
     tables:
-      - name: src_overgrad__admissions
-        external:
-          location: "{{ var('cloud_storage_uri_base') }}/overgrad/admissions/*"
-          options:
-            format: AVRO
-            enable_logical_types: true
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - overgrad
-              - admissions
-      - name: src_overgrad__custom_fields
-        external:
-          location: "{{ var('cloud_storage_uri_base') }}/overgrad/custom_fields/*"
-          options:
-            format: AVRO
-            enable_logical_types: true
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - overgrad
-              - custom_fields
-      - name: src_overgrad__followings
-        external:
-          location: "{{ var('cloud_storage_uri_base') }}/overgrad/followings/*"
-          options:
-            format: AVRO
-            enable_logical_types: true
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - overgrad
-              - followings
-      - name: src_overgrad__schools
-        external:
-          location: "{{ var('cloud_storage_uri_base') }}/overgrad/schools/*"
-          options:
-            format: AVRO
-            enable_logical_types: true
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - overgrad
-              - schools
-      - name: src_overgrad__students
-        external:
-          location: "{{ var('cloud_storage_uri_base') }}/overgrad/students/*"
-          options:
-            format: AVRO
-            enable_logical_types: true
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - overgrad
-              - students
       - name: src_overgrad__universities
         external:
-          location: "{{ var('cloud_storage_uri_base') }}/overgrad/universities/*"
+          location:
+            "{{ var('cloud_storage_uri_base') }}/overgrad/universities/*"
           options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            parent_asset_key_path:
-              - kipptaf
-              - overgrad
-              - universities
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - overgrad
+                - universities

@@ -1,0 +1,24 @@
+models:
+  - name: rpt_illuminate__roles
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - "`01 Local User ID`"
+              - "`02 Site ID`"
+              - "`03 Role Name`"
+              - "`04 Academic Year`"
+              - "`05 Session Type ID`"
+          config:
+            store_failures: true
+    columns:
+      - name: "`01 Local User ID`"
+        data_type: string
+      - name: "`02 Site ID`"
+        data_type: int64
+      - name: "`03 Role Name`"
+        data_type: string
+      - name: "`04 Academic Year`"
+        data_type: string
+      - name: "`05 Session Type ID`"
+        data_type: int64

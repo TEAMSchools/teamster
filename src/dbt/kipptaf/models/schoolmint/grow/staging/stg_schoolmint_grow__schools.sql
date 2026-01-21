@@ -17,9 +17,5 @@ select
     region,
     `state`,
     zip,
-    admins,
-    assistantadmins as assistant_admins,
-    noninstructionaladmins as non_instructional_admins,
-    observationgroups as observation_groups,
 from {{ source("schoolmint_grow", "src_schoolmint_grow__schools") }}
 where _dagster_partition_key = 'f'

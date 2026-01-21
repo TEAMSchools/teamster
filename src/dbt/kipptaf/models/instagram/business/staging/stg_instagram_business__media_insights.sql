@@ -9,5 +9,6 @@ with
         }}
     )
 
-select *, like_count + comment_count as total_like_comments,  -- noqa: AM04
+-- trunk-ignore(sqlfluff/AM04)
+select *, like_count + comment_count as total_like_comments,
 from deduplicate

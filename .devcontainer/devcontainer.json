@@ -1,26 +1,29 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
   "features": {
-    "ghcr.io/devcontainers-contrib/features/pdm:2": {},
-    "ghcr.io/trunk-io/devcontainer-feature/trunk:1": {},
-    "ghcr.io/devcontainers-contrib/features/mkdocs:2": {
-      "plugins": "mkdocs-material mkdocstrings[python]"
-    },
-    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/dhoeric/features/google-cloud-cli:1": {
-      "installGkeGcloudAuthPlugin": true
-    },
-    "ghcr.io/flexwie/devcontainer-features/op:1": {}
+    "ghcr.io/itsmechlark/features/1password:1": {}
   },
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
   "postStartCommand": "bash .devcontainer/scripts/postStart.sh",
   "containerEnv": {
-    "PYTHONDONTWRITEBYTECODE": "1",
-    "USE_GKE_GCLOUD_AUTH_PLUGIN": "True",
-    "GOOGLE_APPLICATION_CREDENTIALS": "/etc/secret-volume/gcloud_service_account_json",
-    "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt",
     "DAGSTER_HOME": "/workspaces/teamster/.dagster/home",
-    "TRUNK_TELEMETRY": "off"
+    "DBT_CLOUD_ENVIRONMENT_TYPE": "dev",
+    "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt",
+    "GOOGLE_CLOUD_PROJECT": "teamster-332318",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TRUNK_TELEMETRY": "off",
+    "UV_ENV_FILE": "/workspaces/teamster/env/.env",
+    "UV_LINK_MODE": "copy",
+    "UV_RESOLUTION": "highest"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "innoverio.vscode-dbt-power-user",
+        "trunk.io",
+        "ms-python.python",
+        "redhat.vscode-yaml"
+      ]
+    }
   }
 }

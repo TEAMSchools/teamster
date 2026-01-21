@@ -1,7 +1,8 @@
 {%- set src_question = source("alchemer", "src_alchemer__survey_question") -%}
 
 with
-    parse_partition_key as (  -- noqa: ST03
+    -- trunk-ignore(sqlfluff/ST03)
+    parse_partition_key as (
         select
             *,
 

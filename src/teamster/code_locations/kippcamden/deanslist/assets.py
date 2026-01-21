@@ -8,22 +8,40 @@ from dagster import (
 )
 
 from teamster.code_locations.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kippcamden.deanslist.schema import ASSET_SCHEMA
-from teamster.libraries.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.code_locations.kippcamden.deanslist.schema import (
+    ASSET_SCHEMA,
+    BEHAVIOR_SCHEMA,
+)
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.deanslist.assets import (
     build_deanslist_multi_partition_asset,
+    build_deanslist_paginated_multi_partition_asset,
     build_deanslist_static_partition_asset,
 )
 
-static_partitions_def = StaticPartitionsDefinition(["120", "126", "130", "473", "652"])
+DEANSLIST_STATIC_PARTITIONS_DEF = StaticPartitionsDefinition(
+    ["120", "126", "130", "473", "652"]
+)
+
+DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
+    partitions_defs={
+        "school": DEANSLIST_STATIC_PARTITIONS_DEF,
+        "date": FiscalYearPartitionsDefinition(
+            start_date="2016-07-01",
+            start_month=7,
+            timezone=str(LOCAL_TIMEZONE),
+            end_offset=1,
+        ),
+    }
+)
 
 config_dir = pathlib.Path(__file__).parent / "config"
 
-static_partition_assets = [
+static_partitioned_assets = [
     build_deanslist_static_partition_asset(
-        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        code_location=CODE_LOCATION,
         schema=ASSET_SCHEMA[e["endpoint"]],
-        partitions_def=static_partitions_def,
+        partitions_def=DEANSLIST_STATIC_PARTITIONS_DEF,
         **e,
     )
     for e in config_from_files([f"{config_dir}/static-partition-assets.yaml"])[
@@ -31,16 +49,17 @@ static_partition_assets = [
     ]
 ]
 
-multi_partition_monthly_assets = [
+month_partitioned_assets = [
     build_deanslist_multi_partition_asset(
-        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        code_location=CODE_LOCATION,
+        api_version="v1",
         schema=ASSET_SCHEMA[e["endpoint"]],
         partitions_def=MultiPartitionsDefinition(
             partitions_defs={
+                "school": DEANSLIST_STATIC_PARTITIONS_DEF,
                 "date": MonthlyPartitionsDefinition(
-                    start_date="2016-07-01", timezone=LOCAL_TIMEZONE.name, end_offset=1
+                    start_date="2016-07-01", timezone=str(LOCAL_TIMEZONE), end_offset=1
                 ),
-                "school": static_partitions_def,
             }
         ),
         **e,
@@ -50,21 +69,12 @@ multi_partition_monthly_assets = [
     ]
 ]
 
-multi_partition_fiscal_assets = [
+year_partitioned_assets = [
     build_deanslist_multi_partition_asset(
-        asset_key=[CODE_LOCATION, "deanslist", e["endpoint"].replace("-", "_")],
+        code_location=CODE_LOCATION,
+        api_version="v1",
         schema=ASSET_SCHEMA[e["endpoint"]],
-        partitions_def=MultiPartitionsDefinition(
-            partitions_defs={
-                "date": FiscalYearPartitionsDefinition(
-                    start_date="2016-07-01",
-                    start_month=7,
-                    timezone=LOCAL_TIMEZONE.name,
-                    end_offset=1,
-                ),
-                "school": static_partitions_def,
-            }
-        ),
+        partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
         **e,
     )
     for e in config_from_files([f"{config_dir}/multi-partition-fiscal-assets.yaml"])[
@@ -72,8 +82,18 @@ multi_partition_fiscal_assets = [
     ]
 ]
 
+year_partitioned_assets.append(
+    build_deanslist_paginated_multi_partition_asset(
+        code_location=CODE_LOCATION,
+        endpoint="behavior",
+        api_version="v1",
+        schema=BEHAVIOR_SCHEMA,
+        partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
+    )
+)
+
 assets = [
-    *static_partition_assets,
-    *multi_partition_monthly_assets,
-    *multi_partition_fiscal_assets,
+    *static_partitioned_assets,
+    *month_partitioned_assets,
+    *year_partitioned_assets,
 ]

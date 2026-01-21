@@ -18,4 +18,4 @@ select
     v.content_url as view_content_url,
     v.total_views as view_total_views,
 from {{ source("tableau", "src_tableau__workbook") }} as w
-cross join unnest(views) as v
+cross join unnest(w.views) as v

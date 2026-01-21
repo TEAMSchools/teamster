@@ -80,12 +80,14 @@ class UserPerson(BaseModel):
     mS_DS_ConsistencyGuid: bytes | None = None
     msDS_ExternalDirectoryObjectId: str | None = None
     msDS_KeyCredentialLink: bytes | None = None
+    msDS_LastKnownRDN: str | None = None
     msDS_SupportedEncryptionTypes: int | None = None
     msExchArchiveGUID: bytes | None = None
     msExchArchiveName: str | None = None
     msExchArchiveStatus: int | None = None
     msExchBlockedSendersHash: bytes | None = None
     msExchCoManagedObjectsBL: str | None = None
+    msExchDisabledArchiveGUID: bytes | None = None
     msExchHideFromAddressLists: bool | None = None
     msExchHomeServerName: str | None = None
     msExchMailboxGuid: bytes | None = None
@@ -95,6 +97,7 @@ class UserPerson(BaseModel):
     msExchMDBRulesQuota: int | None = None
     msExchMobileMailboxFlags: int | None = None
     msExchMobileMailboxPolicyLink: str | None = None
+    msExchModeratedObjectsBL: str | None = None
     msExchOmaAdminWirelessEnable: int | None = None
     msExchPoliciesExcluded: str | None = None
     msExchPoliciesIncluded: str | None = None
@@ -105,6 +108,7 @@ class UserPerson(BaseModel):
     msExchRemoteRecipientType: int | None = None
     msExchSafeRecipientsHash: bytes | None = None
     msExchSafeSendersHash: bytes | None = None
+    msExchTransportRecipientSettingsFlags: int | None = None
     msExchUMDtmfMap: str | None = None
     msExchUserAccountControl: int | None = None
     msExchUserCulture: str | None = None
@@ -116,6 +120,8 @@ class UserPerson(BaseModel):
     msNPAllowDialin: bool | None = None
     msTSExpireDate: float | None = None
     msTSLicenseVersion: str | None = None
+    msTSLicenseVersion2: str | None = None
+    msTSLicenseVersion3: str | None = None
     msTSManagingLS: str | None = None
     name: str | None = None
     o: str | None = None
@@ -216,11 +222,13 @@ class Group(BaseModel):
     msExchArbitrationMailbox: str | None = None
     msExchCoManagedByLink: str | None = None
     msExchCoManagedObjectsBL: str | None = None
+    msExchEnableModeration: bool | None = None
     msExchGroupDepartRestriction: int | None = None
     msExchGroupExternalMemberCount: int | None = None
     msExchGroupJoinRestriction: int | None = None
     msExchGroupMemberCount: int | None = None
     msExchHideFromAddressLists: bool | None = None
+    msExchModeratedByLink: str | None = None
     msExchPoliciesExcluded: str | None = None
     msExchPoliciesIncluded: str | None = None
     msExchRecipientDisplayType: int | None = None

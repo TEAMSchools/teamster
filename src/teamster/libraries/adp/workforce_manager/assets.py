@@ -3,7 +3,7 @@ from io import StringIO
 
 from dagster import (
     AssetsDefinition,
-    AutoMaterializePolicy,
+    AutomationCondition,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     MultiPartitionKey,
@@ -11,19 +11,19 @@ from dagster import (
     OpExecutionContext,
     Output,
     StaticPartitionsDefinition,
-    _check,
     asset,
 )
+from dagster_shared import check
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
 
-from teamster.libraries.adp.workforce_manager.resources import (
-    AdpWorkforceManagerResource,
-)
-from teamster.libraries.core.asset_checks import (
+from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
+)
+from teamster.libraries.adp.workforce_manager.resources import (
+    AdpWorkforceManagerResource,
 )
 
 
@@ -46,16 +46,16 @@ def build_adp_wfm_asset(
             }
         ),
         group_name="adp_workforce_manager",
-        auto_materialize_policy=AutoMaterializePolicy.eager(),
+        automation_condition=AutomationCondition.eager(),
         check_specs=[build_check_spec_avro_schema_valid(asset_key)],
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
         asset = context.assets_def
-        partition_key = _check.inst(context.partition_key, MultiPartitionKey)
+        partition_key = check.inst(context.partition_key, MultiPartitionKey)
 
         symbolic_id = partition_key.keys_by_dimension["symbolic_id"]
 
-        symbolic_period_response = _check.not_none(
+        symbolic_period_response = check.not_none(
             adp_wfm.get(endpoint="v1/commons/symbolicperiod")
         )
 
@@ -65,7 +65,7 @@ def build_adp_wfm_asset(
             if sp["symbolicId"] == symbolic_id
         ][0]
 
-        hyperfind_response = _check.not_none(
+        hyperfind_response = check.not_none(
             adp_wfm.get(endpoint="v1/commons/hyperfind")
         )
 
@@ -79,7 +79,7 @@ def build_adp_wfm_asset(
             f"Executing {report_name}:\n{symbolic_period_record}\n{hyperfind_record}"
         )
 
-        report_execution_response = _check.not_none(
+        report_execution_response = check.not_none(
             adp_wfm.post(
                 endpoint=f"v1/platform/reports/{report_name}/execute",
                 json={
@@ -107,7 +107,7 @@ def build_adp_wfm_asset(
         report_execution_id = report_execution_response_json["id"]
 
         while True:
-            report_executions_response = _check.not_none(
+            report_executions_response = check.not_none(
                 adp_wfm.get(endpoint="v1/platform/report_executions")
             )
 
@@ -117,12 +117,19 @@ def build_adp_wfm_asset(
                 if rex["id"] == report_execution_id
             ][0]
 
-            context.log.info(report_execution_record)
+            context.log.debug(report_execution_record)
 
-            if report_execution_record["status"]["qualifier"] == "Completed":
+            status_qualifier = report_execution_record["status"]["qualifier"]
+
+            if status_qualifier == "Failed":
+                api_output_error = report_execution_record["apiOutputError"]
+
+                context.log.error(msg=api_output_error)
+                raise Exception(api_output_error)
+            elif status_qualifier == "Completed":
                 context.log.info(f"Downloading {report_name}")
 
-                file_response = _check.not_none(
+                file_response = check.not_none(
                     adp_wfm.get(
                         endpoint=(
                             f"v1/platform/report_executions/{report_execution_id}/file"

@@ -22,23 +22,25 @@ with
             round(
                 safe_divide(asr.percent_correct, 100) * asr.number_of_questions, 0
             ) as overall_number_correct,
-        from {{ ref("base_illuminate__assessments") }} as ais
+        from {{ ref("int_illuminate__assessments") }} as ais
         inner join
-            {{ ref("stg_illuminate__assessment_grade_levels") }} as agl
+            {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
             on ais.assessment_id = agl.assessment_id
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on ais.administered_at between rt.start_date and rt.end_date
             and rt.type = 'ACT'
         inner join
-            {{ ref("stg_illuminate__agg_student_responses_overall") }} as asr
+            {{ ref("stg_illuminate__dna_assessments__agg_student_responses_overall") }}
+            as asr
             on ais.assessment_id = asr.assessment_id
         inner join
-            {{ ref("stg_illuminate__students") }} as s on asr.student_id = s.student_id
+            {{ ref("stg_illuminate__public__students") }} as s
+            on asr.student_id = s.student_id
         where ais.scope = 'ACT Prep'
     ),
 
-    scaled as (  -- noqa: ST03
+    scaled as (
         select
             ld.student_number,
             ld.illuminate_student_id,
@@ -58,7 +60,7 @@ with
             ssk.scale_score,
         from assessment_responses as ld
         left join
-            {{ ref("stg_assessments__act_scale_score_key") }} as ssk
+            {{ ref("stg_google_sheets__assessments__act_scale_score_key") }} as ssk
             on ld.academic_year = ssk.academic_year
             and ld.grade_level = ssk.grade_level
             and ld.term_code = ssk.administration_round
@@ -68,16 +70,7 @@ with
     ),
 
     overall_scores as (
-        {{
-            dbt_utils.deduplicate(
-                relation="scaled",
-                partition_by="student_number, academic_year, subject_area, term_code",
-                order_by="overall_number_correct desc",
-            )
-        }}
-
-        union all
-
+        -- trunk-ignore(sqlfluff/ST06)
         select
             student_number,
             illuminate_student_id,
@@ -97,10 +90,13 @@ with
 
             sum(number_of_questions) as number_of_questions,
             sum(overall_number_correct) as overall_number_correct,
+
             round(
                 (sum(overall_number_correct) / sum(number_of_questions)) * 100, 0
             ) as overall_percent_correct,
+
             null as overall_performance_band,
+
             if(count(scale_score) = 4, round(avg(scale_score), 0), null) as scale_score,
         from scaled
         group by
@@ -110,6 +106,16 @@ with
             grade_level,
             administration_round,
             term_code
+
+        union all
+
+        {{
+            dbt_utils.deduplicate(
+                relation="scaled",
+                partition_by="student_number, academic_year, subject_area, term_code",
+                order_by="overall_number_correct desc",
+            )
+        }}
     ),
 
     sub as (
@@ -190,6 +196,6 @@ select
     ) as rn_student_assessment,
 from sub
 left join
-    {{ ref("base_illuminate__agg_student_responses_standard") }} as std
+    {{ ref("int_illuminate__agg_student_responses_standard") }} as std
     on sub.assessment_id = std.assessment_id
     and sub.illuminate_student_id = std.student_id

@@ -1,27 +1,35 @@
-from dagster import ScheduleDefinition
+from dagster import MAX_RUNTIME_SECONDS_TAG, ScheduleDefinition
 
 from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kippnewark.powerschool.assets import full_assets
-from teamster.code_locations.kippnewark.powerschool.jobs import (
-    powerschool_nonpartition_asset_job,
+from teamster.code_locations.kippnewark.powerschool.assets import (
+    powerschool_table_assets_gradebook_full,
+    powerschool_table_assets_gradebook_monthly,
+    powerschool_table_assets_nightly,
+    powerschool_table_assets_no_partition,
 )
-from teamster.libraries.powerschool.sis.schedules import build_powerschool_schedule
+from teamster.libraries.powerschool.sis.odbc.schedules import (
+    build_powerschool_sis_asset_schedule,
+)
 
-last_modified_schedule = build_powerschool_schedule(
+powerschool_sis_asset_gradebook_schedule = build_powerschool_sis_asset_schedule(
     code_location=CODE_LOCATION,
-    cron_schedule="0 * * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
-    asset_defs=full_assets,
-    max_runtime_seconds=(60 * 10),
+    asset_selection=[
+        *powerschool_table_assets_gradebook_full,
+        *powerschool_table_assets_gradebook_monthly,
+    ],
+    cron_schedule="0 2 * * *",
+    execution_timezone=LOCAL_TIMEZONE,
 )
 
-nonpartition_asset_job_schedule = ScheduleDefinition(
-    job=powerschool_nonpartition_asset_job,
+powerschool_sis_asset_no_partition_job_schedule = ScheduleDefinition(
+    name=f"{CODE_LOCATION}__powerschool__sis__assets_no_partition_job_schedule",
+    target=[*powerschool_table_assets_nightly, *powerschool_table_assets_no_partition],
     cron_schedule="0 0 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
+    execution_timezone=str(LOCAL_TIMEZONE),
+    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 10)},
 )
 
 schedules = [
-    last_modified_schedule,
-    nonpartition_asset_job_schedule,
+    powerschool_sis_asset_gradebook_schedule,
+    powerschool_sis_asset_no_partition_job_schedule,
 ]

@@ -38,9 +38,9 @@ def adp_wfn_update_workers_op(
         associate_oid = worker["associate_oid"]
         employee_number = worker["employee_number"]
 
-        # update work email if new
+        # update work email if missing or different
         mail = worker["mail"]
-        mail_adp = worker["communication_business_email"]
+        mail_adp = worker["adp__work_email"]
 
         if mail != mail_adp or mail_adp is None:
             context.log.info(f"{employee_number}\twork_email\t{mail_adp} => {mail}")
@@ -60,11 +60,11 @@ def adp_wfn_update_workers_op(
             )
 
         # update employee number if missing
-        employee_number_adp = worker["custom_employee_number"]
+        employee_number_adp = worker["adp__custom_field__employee_number"]
 
         if employee_number_adp is None:
             context.log.info(
-                f"{employee_number}\tcustom_employee_number\t{employee_number_adp}"
+                f"{employee_number}\temployee_number\t{employee_number_adp}"
                 f" => {employee_number}"
             )
 
@@ -78,55 +78,6 @@ def adp_wfn_update_workers_op(
                             associate_oid=associate_oid,
                             item_id="9200112834881_1",
                             string_value=employee_number,
-                        )
-                    ]
-                },
-            )
-
-        # update wfm badge number, if missing
-        wfmgr_badge_number_adp = worker["custom_wfmgr_badge_number"]
-
-        if wfmgr_badge_number_adp is None:
-            context.log.info(
-                f"{employee_number}\twfmgr_badge_number\t{wfmgr_badge_number_adp}"
-                f" => {employee_number}"
-            )
-
-            adp_wfn.post(
-                endpoint="events/hr/v1/worker",
-                subresource="custom-field.string",
-                verb="change",
-                payload={
-                    "events": [
-                        get_event_payload(
-                            associate_oid=associate_oid,
-                            item_id="9200137663381_1",
-                            string_value=employee_number,
-                        )
-                    ]
-                },
-            )
-
-        # update wfm trigger if not null
-        wfmgr_trigger = worker["wfmgr_trigger"]
-        wfmgr_trigger_adp = worker["custom_wfmgr_trigger"]
-
-        if wfmgr_trigger is not None:
-            context.log.info(
-                f"{employee_number}\twfm_trigger\t{wfmgr_trigger_adp}"
-                f" => {wfmgr_trigger}"
-            )
-
-            adp_wfn.post(
-                endpoint="events/hr/v1/worker",
-                subresource="custom-field.string",
-                verb="change",
-                payload={
-                    "events": [
-                        get_event_payload(
-                            associate_oid=associate_oid,
-                            item_id="9200039822128_1",
-                            string_value=wfmgr_trigger,
                         )
                     ]
                 },

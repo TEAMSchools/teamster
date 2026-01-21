@@ -1,0 +1,41 @@
+connector_name: adp_workforce_now
+connector_id: sameness_cunning
+group_name: adp_workforce_now
+schemas:
+  - destination_tables:
+      - business_communication
+      - classification
+      - groups
+      - location
+      - organizational_unit
+      - other_personal_address
+      - person_communication
+      - person_disability
+      - person_history
+      - person_military_classification
+      - person_preferred_salutation
+      - person_social_insurance_program
+      - work_assignment_history
+      - worker
+      - worker_additional_remuneration
+      - worker_assigned_location
+      - worker_assigned_organizational_unit
+      - worker_base_remuneration
+      - worker_classification
+      - worker_group
+      - worker_home_organizational_unit
+      - worker_report_to
+      # - additional_remuneration_associated_rate_qualifier
+      # - assigned_work_communication
+      # - associated_rate_qualifier
+      # - base_remuneration_associated_rate_qualifier
+      # - person
+      # - person_alternate_preferred_name
+      # - person_citizenship
+      # - person_document
+      # - person_former_name
+      # - person_residency
+      # - person_title_affix
+      # - person_title_prefix
+      # - worker_assignment_cost_center
+      # - worker_home_work_communication

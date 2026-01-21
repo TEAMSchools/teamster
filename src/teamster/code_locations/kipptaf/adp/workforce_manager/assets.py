@@ -1,4 +1,4 @@
-from dagster import DailyPartitionsDefinition, DynamicPartitionsDefinition
+"""from dagster import DailyPartitionsDefinition, DynamicPartitionsDefinition
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.workforce_manager.schema import (
@@ -19,7 +19,7 @@ accrual_reporting_period_summary = build_adp_wfm_asset(
     symbolic_ids=["Today"],
     date_partitions_def=DailyPartitionsDefinition(
         start_date="2023-05-17",
-        timezone=LOCAL_TIMEZONE.name,
+        timezone=str(LOCAL_TIMEZONE),
         fmt="%Y-%m-%d",
         end_offset=1,
     ),
@@ -48,3 +48,4 @@ assets = [
     *adp_wfm_assets_daily,
     *adp_wfm_assets_dynamic,
 ]
+"""

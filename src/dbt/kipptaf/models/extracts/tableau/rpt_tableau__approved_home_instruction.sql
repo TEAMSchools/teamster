@@ -1,29 +1,22 @@
 select
-    co.school_abbreviation as school,
-    co.student_number,
-    co.lastfirst as student,
-    co.academic_year,
-    co.dob,
-    co.is_504,
-    co.spedlep as iep_status,
-    co.lep_status,
-    co.grade_level,
-    co.region,
+    school,
+    student_number,
+    student_name as student,
+    academic_year,
+    dob,
+    is_504,
+    spedlep as iep_status,
+    lep_status,
+    grade_level,
+    region,
+    home_instruction_enter_date as enter_date,
+    home_instruction_exit_date as exit_date,
+    home_instruction_sp_comment as sp_comment,
 
-    sp.enter_date,
-    sp.exit_date,
-    sp.sp_comment,
-
-    case
-        when sp.exit_date < current_date('{{ var("local_timezone") }}')
-        then 'Expired'
-        else 'Current'
-    end as hi_status,
-from {{ ref("base_powerschool__student_enrollments") }} as co
-inner join
-    {{ ref("int_powerschool__spenrollments") }} as sp
-    on co.studentid = sp.studentid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
-    and co.academic_year = sp.academic_year
-    and sp.specprog_name = 'Home Instruction'
-where co.academic_year >= {{ var("current_academic_year") - 1 }} and co.rn_year = 1
+    if(
+        home_instruction_exit_date < current_date('{{ var("local_timezone") }}'),
+        'Expired',
+        'Current'
+    ) as hi_status,
+from {{ ref("int_extracts__student_enrollments") }}
+where academic_year >= {{ var("current_academic_year") - 1 }} and rn_year = 1

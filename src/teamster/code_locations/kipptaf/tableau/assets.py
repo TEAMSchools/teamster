@@ -1,119 +1,98 @@
-import pathlib
-
-from dagster import (
-    AssetExecutionContext,
-    AssetKey,
-    AssetsDefinition,
-    AssetSpec,
-    DailyPartitionsDefinition,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    Output,
-    StaticPartitionsDefinition,
-    _check,
-    asset,
-    config_from_files,
-)
-from slugify import slugify
+from dagster import AssetExecutionContext, AssetKey, AssetsDefinition, Output, asset
+from dagster_gcp import BigQueryResource
+from tableauserverclient import Pager
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
-from teamster.code_locations.kipptaf.tableau.schema import WORKBOOK_SCHEMA
-from teamster.libraries.core.asset_checks import (
-    build_check_spec_avro_schema_valid,
-    check_avro_schema_valid,
-)
-from teamster.libraries.core.definitions.external_asset import (
-    external_assets_from_specs,
-)
+from teamster.code_locations.kipptaf._dbt.assets import manifest
+from teamster.code_locations.kipptaf.tableau.schema import VIEW_COUNT_PER_VIEW_SCHEMA
+from teamster.libraries.sftp.assets import build_sftp_folder_asset
+from teamster.libraries.tableau.assets import build_tableau_workbook_refresh_asset
 from teamster.libraries.tableau.resources import TableauServerResource
 
-config = config_from_files([f"{pathlib.Path(__file__).parent}/config/assets.yaml"])
+workbook_refresh_assets: list[AssetsDefinition] = [
+    build_tableau_workbook_refresh_asset(code_location=CODE_LOCATION, **exposure)
+    for exposure in manifest["exposures"].values()
+    if "tableau" in exposure["config"]["meta"]["dagster"].get("kinds", [])
+]
 
-workbook_asset_def = config["workbook"]["asset_def"]
-
-asset_name = workbook_asset_def["name"]
-
-asset_key = [*workbook_asset_def["key_prefix"], asset_name]
+view_count_per_view = build_sftp_folder_asset(
+    asset_key=[CODE_LOCATION, "tableau", "view_count_per_view"],
+    remote_dir_regex=r"/data-team/kipptaf/tableau/view_count_per_view",
+    remote_file_regex=r".+\.csv",
+    file_sep="\t",
+    file_encoding="utf-16",
+    avro_schema=VIEW_COUNT_PER_VIEW_SCHEMA,
+    ssh_resource_key="ssh_couchdrop",
+)
 
 
 @asset(
-    partitions_def=MultiPartitionsDefinition(
-        {
-            "workbook_id": StaticPartitionsDefinition(
-                [a["metadata"]["id"] for a in config["external_assets"]]
-            ),
-            "date": DailyPartitionsDefinition(
-                start_date=config["workbook"]["partitions_def"]["start_date"],
-                end_offset=1,
-            ),
-        }
-    ),
-    check_specs=[build_check_spec_avro_schema_valid(asset_key)],
-    **workbook_asset_def,
+    key=[CODE_LOCATION, "tableau", "teacher_gradebook_group_sync"],
+    deps=[
+        AssetKey(
+            ["kipptaf", "tableau", "int_tableau__gradebook_audit_teacher_scaffold"]
+        )
+    ],
+    group_name="tableau",
+    kinds={"python", "task"},
 )
-def workbook(context: AssetExecutionContext, tableau: TableauServerResource):
-    partition_key = _check.inst(context.partition_key, MultiPartitionKey)
+def tableau_teacher_gradebook_group_sync(
+    context: AssetExecutionContext,
+    db_bigquery: BigQueryResource,
+    tableau: TableauServerResource,
+):
+    query = """
+      select
+        concat('Teacher Gradebook Email - Auto - ', region) as group_name,
+        array_agg(distinct teacher_tableau_username) as user_names,
+      from kipptaf_tableau.int_tableau__gradebook_audit_teacher_scaffold
+      where teacher_tableau_username is not null
+      group by region
+    """
 
-    workbook = tableau._server.workbooks.get_by_id(
-        partition_key.keys_by_dimension["workbook_id"]
-    )
+    # query source data
+    context.log.info(msg=query)
+    with db_bigquery.get_client() as bq:
+        query_job = bq.query(query=query, project=db_bigquery.project)
 
-    tableau._server.workbooks.populate_views(workbook_item=workbook, usage=True)
+    arrow = query_job.to_arrow()
 
-    records = [
-        {
-            "content_url": workbook.content_url,
-            "id": workbook.id,
-            "name": workbook.name,
-            "owner_id": workbook.owner_id,
-            "project_id": workbook.project_id,
-            "project_name": workbook.project_name,
-            "size": workbook.size,
-            "show_tabs": workbook.show_tabs,
-            "webpage_url": workbook.webpage_url,
-            "views": [
-                {
-                    "content_url": v.content_url,
-                    "id": v.id,
-                    "name": v.name,
-                    "owner_id": v.owner_id,
-                    "project_id": v.project_id,
-                    "total_views": v.total_views,
-                }
-                for v in workbook.views
+    context.log.info(msg=f"Retrieved {arrow.num_rows} rows")
+    query_results = arrow.to_pylist()
+
+    for result in query_results:
+        # filter for group
+        group_item = [
+            group
+            for group in Pager(endpoint=tableau._server.groups)
+            if group.name == result["group_name"]
+        ][0]
+
+        # get existing group members
+        tableau._server.groups.populate_users(group_item=group_item)
+        existing_users = [user.id for user in group_item.users]
+
+        # clear all group members
+        if existing_users:
+            tableau._server.groups.remove_users(
+                group_item=group_item, users=existing_users
+            )
+
+        # add group members from query
+        tableau._server.groups.add_users(
+            group_item=group_item,
+            users=[
+                user
+                for user in Pager(endpoint=tableau._server.users)
+                if user.name in result["user_names"]
             ],
-        }
-    ]
+        )
 
-    yield Output(value=(records, WORKBOOK_SCHEMA), metadata={"records": 1})
+    yield Output(value=None)
 
-    yield check_avro_schema_valid(
-        asset_key=context.asset_key, records=records, schema=WORKBOOK_SCHEMA
-    )
-
-
-specs = [
-    AssetSpec(
-        key=AssetKey(
-            [
-                CODE_LOCATION,
-                "tableau",
-                slugify(text=a["name"], separator="_", regex_pattern=r"[^A-Za-z0-9_]"),
-            ]
-        ),
-        description=a["name"],
-        deps=a["deps"],
-        metadata=a["metadata"],
-        group_name="tableau",
-    )
-    for a in config["external_assets"]
-]
-
-external_assets: list[AssetsDefinition] = external_assets_from_specs(
-    specs=specs, compute_kind="tableau"
-)
 
 assets = [
-    workbook,
-    *external_assets,
+    *workbook_refresh_assets,
+    tableau_teacher_gradebook_group_sync,
+    view_count_per_view,
 ]

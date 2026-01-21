@@ -1,53 +1,30 @@
-from dagster import (
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    RunRequest,
-    ScheduleEvaluationContext,
-    _check,
-    define_asset_job,
-    schedule,
+from dagster import ScheduleDefinition
+
+from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf.tableau.assets import (
+    tableau_teacher_gradebook_group_sync,
+    workbook_refresh_assets,
 )
 
-from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.tableau.assets import workbook
-
-job = define_asset_job(
-    name=f"{CODE_LOCATION}_tableau_workbook_asset_job", selection=[workbook]
+teacher_gradebook_group_sync_schedule = ScheduleDefinition(
+    name=f"{tableau_teacher_gradebook_group_sync.key.to_python_identifier()}_schedule",
+    target=tableau_teacher_gradebook_group_sync,
+    cron_schedule="0 3 * * *",
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
-
-@schedule(
-    name=f"{job.name}_schedule",
-    job=job,
-    cron_schedule="0 1 * * *",
-    execution_timezone=LOCAL_TIMEZONE.name,
-)
-def tableau_workbook_asset_job_schedule(context: ScheduleEvaluationContext):
-    partitions_def = _check.inst(workbook.partitions_def, MultiPartitionsDefinition)
-
-    workbook_id_partition = partitions_def.get_partitions_def_for_dimension(
-        "workbook_id"
+extract_refresh_schedules = [
+    ScheduleDefinition(
+        name=f"{a.key.to_python_identifier()}_extract_refresh_schedule",
+        cron_schedule=a.metadata_by_key[a.key].get("cron_schedule"),
+        execution_timezone=str(LOCAL_TIMEZONE),
+        target=a,
     )
-    date_partition = partitions_def.get_partitions_def_for_dimension("date")
-
-    workbook_id_partition_keys = workbook_id_partition.get_partition_keys()
-    last_date_partition_key = _check.not_none(
-        value=date_partition.get_last_partition_key()
-    )
-
-    for workbook_id in workbook_id_partition_keys:
-        partition_key = MultiPartitionKey(
-            {"workbook_id_partition": workbook_id, "date": last_date_partition_key}
-        )
-
-        yield RunRequest(
-            run_key=f"{CODE_LOCATION}_{context._schedule_name}_{partition_key}",
-            asset_selection=[workbook.key],
-            partition_key=partition_key,
-            tags={"tableau_pat_session_limit": "true"},
-        )
-
+    for a in workbook_refresh_assets
+    if a.metadata_by_key[a.key].get("cron_schedule") is not None
+]
 
 schedules = [
-    tableau_workbook_asset_job_schedule,
+    *extract_refresh_schedules,
+    teacher_gradebook_group_sync_schedule,
 ]

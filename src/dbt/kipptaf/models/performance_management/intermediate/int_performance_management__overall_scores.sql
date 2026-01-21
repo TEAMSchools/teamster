@@ -2,7 +2,7 @@ with
     observation_rollup as (
         select employee_number, academic_year, avg(observation_score) as final_score,
         from {{ ref("int_performance_management__observations") }}
-        where observation_type_abbreviation = 'PM' and term_code in ('PM2', 'PM3')
+        where observation_type_abbreviation = 'PMS' and term_code in ('PM2', 'PM3')
         group by employee_number, academic_year
     )
 
@@ -26,4 +26,10 @@ from observation_rollup
 union all
 
 select employee_number, academic_year, final_score, final_tier,
-from {{ ref("int_performance_management__observations_archive") }}
+from
+    {{
+        source(
+            "performance_management",
+            "int_performance_management__overall_scores_archive",
+        )
+    }}

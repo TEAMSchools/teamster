@@ -2,7 +2,7 @@ with
     max_completion_date as (
         select
             student_id, academic_year, subject, max(completion_date) as completion_date,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where academic_year_int = {{ var("current_academic_year") }}
         group by academic_year, subject, student_id
     ),
@@ -17,11 +17,16 @@ with
             test_round,
             percentile,
             overall_placement,
+            overall_relative_placement,
             overall_scale_score,
             overall_relative_placement,
             percent_progress_to_annual_typical_growth_percent,
             percent_progress_to_annual_stretch_growth_percent,
             rn_subj_round,
+
+            concat(
+                overall_relative_placement, ' (', overall_scale_score, ')'
+            ) as score_display,
 
             case
                 test_round
@@ -54,7 +59,7 @@ with
                 regexp_replace(overall_placement, 'Level', 'Grade'),
                 overall_placement
             ) as overall_placement_display,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where academic_year_int >= {{ var("current_academic_year") - 1 }}
     )
 
@@ -69,11 +74,13 @@ select
     test_round_display_short,
     percentile,
     overall_placement,
+    overall_relative_placement,
     overall_scale_score,
     overall_placement_display,
     overall_relative_placement,
     percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
+    score_display,
 
     'Test Rounds' as `domain`,
 from diagnostic_results
@@ -92,11 +99,13 @@ select
     ir.test_round_display_short,
     ir.percentile,
     ir.overall_placement,
+    ir.overall_relative_placement,
     ir.overall_scale_score,
     ir.overall_placement_display,
     ir.overall_relative_placement,
     ir.percent_progress_to_annual_typical_growth_percent as pct_progress_typical,
     ir.percent_progress_to_annual_stretch_growth_percent as pct_progress_stretch,
+    ir.score_display,
 
     'YTD Growth' as `domain`,
 from diagnostic_results as ir

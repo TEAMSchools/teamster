@@ -1,5 +1,10 @@
 name: kippnewark
 
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
 on:
   workflow_dispatch: null
   push:
@@ -9,44 +14,57 @@ on:
       - .github/workflows/dagster-cloud-deploy.yaml
       - .github/workflows/deploy-prod-kippnewark.yaml
       - Dockerfile
-      - requirements.txt
+      - uv.lock
+      - src/dbt/amplify/**
       - src/dbt/deanslist/**
       - src/dbt/edplan/**
+      - src/dbt/finalsite/**
       - src/dbt/iready/**
       - src/dbt/kippnewark/**
+      - src/dbt/overgrad/**
       - src/dbt/pearson/**
       - src/dbt/powerschool/**
       - src/dbt/renlearn/**
-      - src/dbt/teamster_utils/**
       - src/dbt/titan/**
       - src/teamster/code_locations/kippnewark/**
-      - src/teamster/libraries/core/**
+      - src/teamster/core/**
+      - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/edplan/**
+      - src/teamster/libraries/finalsite/**
+      - src/teamster/libraries/google/drive/resources.py
       - src/teamster/libraries/iready/**
+      - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/renlearn/**
-      - src/teamster/libraries/sqlalchemy/**
+      - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
   pull_request:
     paths:
+      - .github/workflows/dagster-cloud-deploy.yaml
+      - .github/workflows/deploy-prod-kippnewark.yaml
+      - Dockerfile
+      - uv.lock
       - src/teamster/code_locations/kippnewark/**
-      - src/teamster/libraries/core/**
+      - src/teamster/core/**
+      - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/extracts/**
+      - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/edplan/**
       - src/teamster/libraries/iready/**
+      - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/renlearn/**
-      - src/teamster/libraries/sqlalchemy/**
+      - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
     types:

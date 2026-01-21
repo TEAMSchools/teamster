@@ -1,0 +1,58 @@
+assets:
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_clever__enrollments
+          schema: kipptaf_extracts
+    file_config:
+      stem: enrollments
+      suffix: csv
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_clever__teachers
+          schema: kipptaf_extracts
+    file_config:
+      stem: teachers
+      suffix: csv
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_clever__students
+          schema: kipptaf_extracts
+    file_config:
+      stem: students
+      suffix: csv
+      format:
+        header_replacements:
+          ext__gifted: ext.gifted
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_clever__staff
+          schema: kipptaf_extracts
+    file_config:
+      stem: staff
+      suffix: csv
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_clever__sections
+          schema: kipptaf_extracts
+    file_config:
+      stem: sections
+      suffix: csv
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_clever__schools
+          schema: kipptaf_extracts
+    file_config:
+      stem: schools
+      suffix: csv

@@ -1,105 +1,135 @@
-import pathlib
+import time
 
-import pendulum
 from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetCheckSpec,
     AssetExecutionContext,
-    MonthlyPartitionsDefinition,
+    AssetKey,
     Output,
-    _check,
     asset,
 )
-from fastavro import block_reader, parse_schema, writer
-from pendulum.datetime import DateTime
-from zenpy.lib.api_objects import BaseObject
-from zenpy.lib.exception import RecordNotFoundException
-from zenpy.lib.generator import SearchExportResultGenerator
+from dagster_gcp import BigQueryResource
 
-from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kipptaf.zendesk.schema import TICKET_METRIC_SCHEMA
+from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.core.utils.functions import chunk
 from teamster.libraries.zendesk.resources import ZendeskResource
+
+asset_key = [CODE_LOCATION, "zendesk", "user_sync"]
 
 
 @asset(
-    key=[CODE_LOCATION, "zendesk", "ticket_metrics_archive"],
-    io_manager_key="io_manager_gcs_file",
-    partitions_def=MonthlyPartitionsDefinition(
-        start_date=pendulum.datetime(2011, 7, 1),
-        end_date=pendulum.datetime(2023, 6, 30),
-        timezone=LOCAL_TIMEZONE.name,
-    ),
+    key=asset_key,
+    deps=[AssetKey(["kipptaf", "extracts", "rpt_zendesk__users"])],
+    check_specs=[AssetCheckSpec(name="zero_api_errors", asset=asset_key)],
     group_name="zendesk",
-    compute_kind="python",
+    kinds={"python", "task"},
 )
-def ticket_metrics_archive(context: AssetExecutionContext, zendesk: ZendeskResource):
-    partition_key = _check.not_none(value=context.partition_key)
+def zendesk_user_sync(
+    context: AssetExecutionContext,
+    db_bigquery: BigQueryResource,
+    zendesk: ZendeskResource,
+):
+    query = "select * from kipptaf_extracts.rpt_zendesk__users"
+    running_jobs = []
+    errors = []
+    jobs_queue = {}
 
-    partition_key_datetime = _check.inst(pendulum.parse(text=partition_key), DateTime)
+    context.log.info(msg=query)
+    with db_bigquery.get_client() as bq:
+        query_job = bq.query(query=query, project=db_bigquery.project)
 
-    data_filepath = pathlib.Path("env/ticket_metrics_archive/data.avro")
-    schema = parse_schema(schema=TICKET_METRIC_SCHEMA)
+    arrow = query_job.to_arrow()
 
-    start_date = partition_key_datetime.subtract(seconds=1)
-    end_date = partition_key_datetime.add(months=1)
+    context.log.info(msg=f"Retrieved {arrow.num_rows} rows")
+    chunked_users = chunk(obj=arrow.to_pylist(), size=100)
 
-    context.log.info(
-        f"Searching closed tickets: updated>{start_date} updated<{end_date}"
-    )
-    archived_tickets = _check.inst(
-        zendesk._client.search_export(
-            type="ticket", status="closed", updated_between=[start_date, end_date]
-        ),
-        SearchExportResultGenerator,
-    )
-
-    context.log.info(f"Saving results to {data_filepath}")
-    data_filepath.parent.mkdir(parents=True, exist_ok=True)
-
-    writer(
-        fo=data_filepath.open("wb"),
-        schema=schema,
-        records=[],
-        codec="snappy",
-        strict_allow_default=True,
-    )
-
-    fo = data_filepath.open("a+b")
-
-    try:
-        for ticket in archived_tickets:
-            ticket_id = ticket.id
-
-            context.log.info(f"Getting metrics for ticket #{ticket_id}")
-            metrics = _check.inst(
-                zendesk._client.tickets.metrics(ticket_id), BaseObject
-            )
-
+    while True:
+        # add job to queue
+        if len(running_jobs) == 30:
+            context.log.warning("Jobs queue full...")
+        else:
             try:
-                writer(
-                    fo=fo,
-                    schema=schema,
-                    records=[metrics.to_dict()],
-                    codec="snappy",
-                    strict_allow_default=True,
-                )
-            except RecordNotFoundException as e:
-                context.log.exception(e)
+                users_chunk: list[dict] = next(chunked_users)
+
+                payload = [
+                    {
+                        k: v
+                        for k, v in u.items()
+                        if k
+                        in [
+                            "email",
+                            "external_id",
+                            "name",
+                            "suspended",
+                            "organization_id",
+                            "role",
+                            "user_fields",
+                            "verified",
+                        ]
+                    }
+                    for u in users_chunk
+                ]
+
+                post_response = zendesk.post(
+                    resource="users/create_or_update_many", json={"users": payload}
+                ).json()
+
+                jobs_queue[post_response["job_status"]["id"]] = post_response[
+                    "job_status"
+                ]["status"]
+            except StopIteration:
                 pass
 
-    except IndexError as e:
-        context.log.exception(e)
-        pass
+        running_jobs = [
+            id
+            for id, status in jobs_queue.items()
+            if status not in ["completed", "failed"]
+        ]
 
-    fo.close()
+        context.log.info(f"{len(running_jobs)} job(s) running...")
 
-    try:
-        with data_filepath.open(mode="rb") as f:
-            num_records = sum(block.num_records for block in block_reader(f))
-    except FileNotFoundError:
-        num_records = 0
+        # check status of jobs in queue
+        if running_jobs:
+            job_statuses = zendesk.get(
+                resource="job_statuses/show_many",
+                params={"ids": ",".join(running_jobs)},
+            ).json()
 
-    yield Output(value=data_filepath, metadata={"records": num_records})
+            for js in job_statuses["job_statuses"]:
+                context.log.debug(
+                    f"{js['id']} {js['job_type']}: {js['status']} "
+                    f"({js['progress'] or 0}/{js['total']} records)"
+                    + (f"\n{js['message']}" if js["message"] else "")
+                )
+                jobs_queue[js["id"]] = js["status"]
+
+                # capture errors
+                if js["status"] == "completed":
+                    for r in js["results"]:
+                        if r["status"] == "Failed":
+                            context.log.error(msg=r)
+                            errors.append(r)
+                elif js["status"] == "failed":
+                    context.log.error(msg=js)
+                    errors.append(js)
+
+        # terminate loop when queue is empty
+        if len(running_jobs) == 0:
+            break
+        else:
+            time.sleep(1)
+
+    yield Output(value=None)
+    yield AssetCheckResult(
+        passed=(len(errors) == 0),
+        asset_key=context.asset_key,
+        check_name="zero_api_errors",
+        metadata={"errors": errors},
+        severity=AssetCheckSeverity.WARN,
+    )
 
 
 assets = [
-    ticket_metrics_archive,
+    zendesk_user_sync,
 ]

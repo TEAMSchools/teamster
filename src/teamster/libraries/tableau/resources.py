@@ -25,5 +25,5 @@ class TableauServerResource(ConfigurableResource):
             )
         )
 
-    def teardown_after_execution(self, context: InitResourceContext) -> None:
-        self._server.auth.sign_out()
+    # def teardown_after_execution(self, context: InitResourceContext) -> None:
+    #     self._server.auth.sign_out()

@@ -1,11 +1,13 @@
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+import time
+
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
 from requests import Response
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 from requests_oauthlib import OAuth2Session
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 
 class AdpWorkforceNowResource(ConfigurableResource):
@@ -13,13 +15,14 @@ class AdpWorkforceNowResource(ConfigurableResource):
     client_secret: str
     cert_filepath: str
     key_filepath: str
+    masked: bool = True
 
     _service_root: str = PrivateAttr(default="https://api.adp.com")
     _session: OAuth2Session = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
         # instantiate client
         self._session = OAuth2Session(
@@ -38,20 +41,28 @@ class AdpWorkforceNowResource(ConfigurableResource):
 
         self._session.headers["Authorization"] = f"Bearer {access_token}"
 
-    @retry(
-        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
-    )
-    def _request(self, method, url, **kwargs):
-        response = Response()
+        if not self.masked:
+            self._session.headers["Accept"] = "application/json;masked=false"
+
+    def _request(self, method, url, **kwargs) -> Response:
+        response = self._session.request(method=method, url=url, **kwargs)
 
         try:
-            response = self._session.request(method=method, url=url, **kwargs)
-
             response.raise_for_status()
+
+            # https://developers.adp.com/learn/key-concepts/access-tokens
+            # Your application should limit access to under 300 times in a 60 second
+            # period, with no more than 50 concurrent requests in any time. ADP will
+            # throttle your requests when this limit is exceeded. Then, return a
+            # response of HTTP 429 for too many requests.
+            time.sleep(60 / 300)
+
             return response
         except HTTPError as e:
-            self._log.error(response.text)
-            raise HTTPError() from e
+            response_json = response.json()
+
+            self._log.error(msg=response_json)
+            raise Exception(response_json) from e
 
     def post(self, endpoint, subresource, verb, payload):
         return self._request(
@@ -72,15 +83,15 @@ class AdpWorkforceNowResource(ConfigurableResource):
         page_size = 100
         all_records = []
 
+        endpoint_name = endpoint.split("/")[-1]
+
         if params is None:
             params = {}
-
-        endpoint_name = endpoint.split("/")[-1]
 
         params.update({"$top": page_size, "$skip": 0})
 
         while True:
-            self._log.debug(params)
+            self._log.debug(msg=params)
             response = self.get(endpoint=endpoint, params=params)
 
             if response.status_code == 204:
@@ -89,7 +100,6 @@ class AdpWorkforceNowResource(ConfigurableResource):
             response_json = response.json()[endpoint_name]
 
             all_records.extend(response_json)
-
             params.update({"$skip": params["$skip"] + page_size})
 
         return all_records

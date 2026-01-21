@@ -1,8 +1,10 @@
-version: 2
-
 sources:
   - name: edplan
-    schema: "{{ var('edplan_schema', 'edplan') }}"
-    database: "{{ var('edplan_database', target.database) }}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ var('edplan_schema', project_name + '_edplan') }}
     tables:
+      - name: stg_edplan__njsmart_powerschool_archive
       - name: src_edplan__njsmart_powerschool_archive
+        config:
+          +enabled: false

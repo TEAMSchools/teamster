@@ -1,7 +1,8 @@
 from bs4 import BeautifulSoup, Tag
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from pydantic import PrivateAttr
-from requests import Response, Session, exceptions
+from requests import Session, exceptions
 
 
 class DibelsDataSystemResource(ConfigurableResource):
@@ -13,13 +14,26 @@ class DibelsDataSystemResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
         self._session.headers["Content-Type"] = "application/x-www-form-urlencoded"
+
+        response = self._request(method="GET", url=f"{self._base_url}/user/login")
+
+        soup = BeautifulSoup(markup=response.text, features="html.parser")
+
+        csrf_token = check.inst(
+            obj=soup.find(name="meta", attrs={"name": "csrf-token"}), ttype=Tag
+        )
 
         self._request(
             method="POST",
             url=f"{self._base_url}/user/login",
-            data={"name": self.username, "password": self.password, "login": "Login"},
+            data={
+                "_token": csrf_token.get(key="content"),
+                "username": self.username,
+                "password": self.password,
+                "login": "Login",
+            },
         )
 
     def _get_url(self, path, *args):
@@ -29,11 +43,9 @@ class DibelsDataSystemResource(ConfigurableResource):
             return f"{self._base_url}/{path}"
 
     def _request(self, method, url, **kwargs):
-        response = Response()
+        response = self._session.request(method=method, url=url, **kwargs)
 
         try:
-            response = self._session.request(method=method, url=url, **kwargs)
-
             response.raise_for_status()
             return response
         except exceptions.HTTPError as e:
@@ -46,24 +58,7 @@ class DibelsDataSystemResource(ConfigurableResource):
 
         return self._request(method="GET", url=url, **kwargs)
 
-    def report(
-        self,
-        report,
-        scope,
-        district,
-        grade,
-        start_year,
-        end_year,
-        assessment,
-        assessment_period,
-        student_filter,
-        delimiter,
-        growth_measure,
-        fields: list[int] | None = None,
-    ):
-        if fields is None:
-            fields = []
-
+    def report(self, report, scope, district, grade, assessment, delimiter, **kwargs):
         response = self.get(
             path="reports/report.php",
             params={
@@ -71,20 +66,15 @@ class DibelsDataSystemResource(ConfigurableResource):
                 "Scope": scope,
                 "district": district,
                 "Grade": grade,
-                "StartYear": start_year,
-                "EndYear": end_year,
                 "Assessment": assessment,
-                "AssessmentPeriod": assessment_period,
-                "StudentFilter": student_filter,
-                "GrowthMeasure": growth_measure,
                 "Delimiter": delimiter,
-                "Fields": fields,
+                **kwargs,
             },
         )
 
         soup = BeautifulSoup(markup=response.text, features="html.parser")
 
-        csv_link = _check.inst(
+        csv_link = check.inst(
             obj=soup.find(name="a", attrs={"class": "csv-link"}), ttype=Tag
         )
 

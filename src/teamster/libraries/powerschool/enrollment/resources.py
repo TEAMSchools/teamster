@@ -1,4 +1,5 @@
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import Response, Session
 from requests.exceptions import HTTPError
@@ -14,7 +15,7 @@ class PowerSchoolEnrollmentResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
         self._session.auth = (self.api_key, "")
 
     def _get_url(self, endpoint, *args):
@@ -45,20 +46,23 @@ class PowerSchoolEnrollmentResource(ConfigurableResource):
 
         return self._parse_response(response)
 
-    def get_all_records(self, endpoint, *args, **kwargs) -> list[dict]:
+    def list(self, endpoint, **kwargs) -> list[dict]:
         page = 1
         all_records = []
-        kwargs["params"] = {"pagesize": self.page_size}
+
+        params = {"pagesize": self.page_size}
 
         while True:
-            kwargs["params"].update({"page": page})
+            params.update({"page": page})
 
-            meta_data, records = self.get(endpoint, *args, **kwargs).values()
+            metadata, records = self.get(
+                endpoint=endpoint, params=params, **kwargs
+            ).values()
 
-            self._log.debug(meta_data)
+            self._log.debug(metadata)
             all_records.extend(records)
 
-            if page == meta_data["pageCount"]:
+            if page == metadata["pageCount"]:
                 break
             else:
                 page += 1

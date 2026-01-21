@@ -91,6 +91,8 @@ class Student(StudentIDs):
     first_generation: bool | None = None
     fathers_education: str | None = None
     mothers_education: str | None = None
+    parent1_education: str | None = None
+    parent2_education: str | None = None
     awards: str | None = None
     extracurricular_activities: str | None = None
     interests: str | None = None

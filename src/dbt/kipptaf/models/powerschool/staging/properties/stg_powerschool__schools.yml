@@ -1,0 +1,16 @@
+models:
+  - name: stg_powerschool__schools
+    config:
+      materialized: table
+    columns:
+      - name: school_number
+        data_type: int64
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_google_sheets__people__location_crosswalk")
+                field: powerschool_school_id
+              config:
+                where: state_excludefromreporting = 0
+                store_failures: true
+                severity: warn

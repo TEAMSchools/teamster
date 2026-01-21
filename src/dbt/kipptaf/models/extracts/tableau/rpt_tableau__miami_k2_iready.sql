@@ -1,14 +1,17 @@
 with
     subjects as (
         select 'Reading' as iready_subject, 'ENG' as ps_credittype,
+
         union all
+
         select 'Math' as iready_subject, 'MATH' as ps_credittype,
     )
+
 select
     co.student_number,
-    co.lastfirst as student_name,
+    co.student_name,
     co.grade_level,
-    co.school_abbreviation as school,
+    co.school,
     co.lep_status,
     co.gender,
     co.ethnicity as race_ethnicity,
@@ -35,21 +38,23 @@ select
 
     up.relative_placement,
     up.rn_subject_test,
+
     regexp_replace(
         left(up.domain_name, length(up.domain_name) - 19), '_', ' '
     ) as domain_name,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['BOY', 'MOY', 'EOY']) as ar
 left join
     {{ ref("base_powerschool__course_enrollments") }} as e
     on co.student_number = e.students_student_number
     and co.academic_year = e.cc_academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="e") }}
     and subj.ps_credittype = e.courses_credittype
     and not e.is_dropped_section
     and e.rn_credittype_year = 1
 left join
-    {{ ref("base_iready__diagnostic_results") }} as ir
+    {{ ref("int_iready__diagnostic_results") }} as ir
     on co.student_number = ir.student_id
     and co.academic_year = ir.academic_year_int
     and subj.iready_subject = ir.subject

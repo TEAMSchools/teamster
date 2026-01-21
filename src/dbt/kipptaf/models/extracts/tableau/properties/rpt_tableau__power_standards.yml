@@ -1,0 +1,6 @@
+models:
+  - name: rpt_tableau__power_standards
+    config:
+      enabled: false
+      contract:
+        enforced: false

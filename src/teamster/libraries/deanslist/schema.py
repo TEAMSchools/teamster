@@ -1,5 +1,9 @@
 from pydantic import BaseModel
 
+"""
+API assets
+"""
+
 
 class Date(BaseModel):
     date: str | None = None
@@ -42,6 +46,7 @@ class Behavior(BaseModel):
     DLSchoolID: str | None = None
     DLStudentID: str | None = None
     DLUserID: str | None = None
+    ExpireTime: str | None = None
     is_deleted: bool | None = None
     Notes: str | None = None
     PointValue: str | None = None
@@ -61,6 +66,8 @@ class Behavior(BaseModel):
     StudentLastName: str | None = None
     StudentMiddleName: str | None = None
     StudentSchoolID: str | None = None
+    TimeIn: str | None = None
+    TimeOut: str | None = None
     Weight: str | None = None
 
 
@@ -196,6 +203,31 @@ class Penalty(BaseModel):
     NumDays: int | float | None = None
 
 
+class Attachment(BaseModel):
+    AttachmentID: str | None = None
+    AttachmentType: str | None = None
+    Bytes: str | None = None
+    ContentType: str | None = None
+    EntityID: str | None = None
+    EntityName: str | None = None
+    EntityType: str | None = None
+    InternalFilename: str | None = None
+    InternalFolder: str | None = None
+    MinUserLevel: str | None = None
+    MinUserLevelGroupName: str | None = None
+    PublicFilename: str | None = None
+    ReportDate: str | None = None
+    ReportType: str | None = None
+    SchoolID: str | None = None
+    SourceID: str | None = None
+    SourceType: str | None = None
+    StudentID: str | None = None
+    TermID: str | None = None
+    URL: str | None = None
+
+    FilePostedAt: Date | None = None
+
+
 class Incident(BaseModel):
     AddlReqs: str | None = None
     AdminSummary: str | None = None
@@ -242,6 +274,7 @@ class Incident(BaseModel):
     UpdateMiddle: str | None = None
     UpdateStaffSchoolID: str | None = None
     UpdateTitle: str | None = None
+    URI: str | None = None
 
     CloseTS: Date | None = None
     CreateTS: Date | None = None
@@ -253,6 +286,7 @@ class Incident(BaseModel):
     UpdateTS: Date | None = None
 
     Actions: list[Action | None] | None = None
+    Attachments: list[Attachment] | None = None
     Penalties: list[Penalty | None] | None = None
     Custom_Fields: list[CustomField | None] | None = None
 
@@ -286,6 +320,7 @@ class RosterAssignment(BaseModel):
 
 class Roster(BaseModel):
     Active: str | None = None
+    AttScanVisible: str | None = None
     CollectHW: str | None = None
     CourseNumber: str | None = None
     GradeLevels: str | None = None
@@ -474,12 +509,22 @@ class Student(BaseModel):
     CustomFields: list[CustomField | None] | None = None
 
 
+class DFFStats(BaseModel):
+    StudentCount: int | None = None
+    StudentWithGuardianCount: int | None = None
+
+
+"""
+SFTP assets
+"""
+
+
 class ReconcileAttendance(BaseModel):
     attendancebehavior: str | None = None
     attendancedate: str | None = None
     schoolname: str | None = None
     studentfirst: str | None = None
-    studentid: int | None = None
+    studentid: str | None = None
     studentlast: str | None = None
     submittedat: str | None = None
     submittedfn: str | None = None
@@ -493,12 +538,14 @@ class ReconcileSuspensions(BaseModel):
     conend: str | None = None
     consequence: str | None = None
     constart: str | None = None
-    dlincidentid: int | None = None
+    dlincidentid: str | None = None
+    dlpenaltyid: str | None = None
     schoolname: str | None = None
     studentfirst: str | None = None
-    studentid: int | None = None
+    studentid: str | None = None
     studentlast: str | None = None
     submittedat: str | None = None
     submittedfn: str | None = None
     submittedln: str | None = None
     unnamed_13: str | None = None
+    unnamed_14: str | None = None

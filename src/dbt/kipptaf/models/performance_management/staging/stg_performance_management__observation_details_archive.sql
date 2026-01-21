@@ -1,13 +1,11 @@
 select
     employee_number,
     academic_year,
-    form_term as term_code,
     form_type,
     observation_id,
     teacher_id,
     rubric_id,
     form_long_name as rubric_name,
-    observer_employee_number,
     measurement_name,
     row_score_value as value_score,
     score_measurement_type,
@@ -23,7 +21,6 @@ select
     etr_tier,
     so_score,
     final_score,
-    final_tier,
 
     true as locked,
     'Teacher Performance Management' as observation_type,
@@ -33,7 +30,13 @@ select
     timestamp(observed_at) as observed_at,
     date(observed_at) as observed_at_date_local,
 
+    coalesce(pm_term, form_term) as term_code,
     coalesce(so_tier.long_value, cast(so_tier.double_value as int)) as so_tier,
+    coalesce(final_tier.long_value, cast(final_tier.double_value as int)) as final_tier,
+    coalesce(
+        observer_employee_number.long_value,
+        cast(observer_employee_number.double_value as int)
+    ) as observer_employee_number,
 
     case
         when score_measurement_type = 'etr'
@@ -42,13 +45,6 @@ select
         then 'Self & Others: Manager Feedback'
         else 'Comments'
     end as measurement_group_name,
-    case
-        when score_measurement_type = 'etr'
-        then etr_score
-        when score_measurement_type = 's&o'
-        then so_score
-    end as score_averaged_by_strand,
-
     case
         form_term
         when 'PM1'

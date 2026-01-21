@@ -17,24 +17,28 @@ locations:
             projected:
               sources:
                 - secret:
-                    name: op-gcp-service-account-dbt
-                    items:
-                      - key: dbt_user_credentials.json
-                        path: dbt_user_creds_json
-                - secret:
                     name: op-deanslist-api
                     items:
                       - key: deanslist_api_key_map.yaml
                         path: deanslist_api_key_map_yaml
+                - secret:
+                    name: op-ps-ssh-kippnewark
+                    items:
+                      - key: password
+                        path: powerschool_ssh_password.txt
         server_k8s_config:
+          pod_spec_config:
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchExpressions:
+                        - key: location_name
+                          operator: In
+                          values:
+                            - kippnewark
+                    topologyKey: kubernetes.io/hostname
           container_config:
-            # resources:
-            #   requests:
-            #     cpu: 750m
-            #     memory: 2.0Gi
-            #   limits:
-            #     cpu: 750m
-            #     memory: 2.0Gi
             env:
               - name: COUCHDROP_SFTP_PASSWORD
                 valueFrom:
@@ -70,11 +74,6 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-db-kippnewark
-                    key: password
-              - name: PS_SSH_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-ssh-kippnewark
                     key: password
               - name: PS_SSH_PORT
                 valueFrom:
@@ -160,12 +159,32 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-titan-sftp-kippnewark
-                    key: host
+                    key: ip
               - name: DEANSLIST_SUBDOMAIN
                 valueFrom:
                   secretKeyRef:
                     name: op-deanslist-api
                     key: subdomain
+              - name: OVERGRAD_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-overgrad-api-kippnewark
+                    key: credential
+              - name: AMPLIFY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipptaf
+                    key: URL
+              - name: AMPLIFY_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipptaf
+                    key: password
+              - name: AMPLIFY_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipptaf
+                    key: username
         run_k8s_config:
           container_config:
             env:
@@ -293,9 +312,29 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-titan-sftp-kippnewark
-                    key: host
+                    key: ip
               - name: DEANSLIST_SUBDOMAIN
                 valueFrom:
                   secretKeyRef:
                     name: op-deanslist-api
                     key: subdomain
+              - name: OVERGRAD_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-overgrad-api-kippnewark
+                    key: credential
+              - name: AMPLIFY_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipptaf
+                    key: URL
+              - name: AMPLIFY_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipptaf
+                    key: password
+              - name: AMPLIFY_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-amplify-sftp-kipptaf
+                    key: username

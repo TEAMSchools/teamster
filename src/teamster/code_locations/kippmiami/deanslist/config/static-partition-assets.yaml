@@ -3,8 +3,6 @@ endpoints:
     api_version: v1
     params:
       IncludeInactive: Y
-  - endpoint: lists
-    api_version: v1
   - endpoint: terms
     api_version: v1
   - endpoint: rosters
@@ -19,3 +17,7 @@ endpoints:
       IncludeCustomFields: Y
       IncludeUnenrolled: Y
       IncludeParents: Y
+  # - endpoint: lists
+  #   api_version: v1
+  # - endpoint: dff/stats
+  #   api_version: v1

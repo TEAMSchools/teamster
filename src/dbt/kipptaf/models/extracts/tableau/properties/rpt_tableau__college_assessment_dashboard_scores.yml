@@ -1,0 +1,29 @@
+models:
+  - name: rpt_tableau__college_assessment_dashboard_scores
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: test_type
+        data_type: string
+      - name: scope
+        data_type: string
+      - name: score_type
+        data_type: string
+      - name: subject_area
+        data_type: string
+      - name: aligned_subject_area
+        data_type: string
+      - name: test_date
+        data_type: date
+      - name: scale_score
+        data_type: numeric
+      - name: max_scale_score
+        data_type: numeric
+      - name: region
+        data_type: string
+      - name: school
+        data_type: string
+      - name: graduation_year
+        data_type: int64
+      - name: ktc_cohort
+        data_type: int64

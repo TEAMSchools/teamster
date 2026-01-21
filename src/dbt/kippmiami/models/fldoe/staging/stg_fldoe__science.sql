@@ -1,5 +1,5 @@
 with
-    source as (
+    science as (
         select
             student_id,
             local_id,
@@ -18,32 +18,42 @@ with
             test_oppnumber,
             test_reason,
             testing_location,
-            `1_nature_of_science_performance`,
-            `2_earth_and_space_science_performance`,
-            `3_physical_science_performance`,
-            `4_life_science_performance`,
+            field_1_nature_of_science_performance as nature_of_science_performance,
+            field_2_earth_and_space_science_performance
+            as earth_and_space_science_performance,
+            field_3_physical_science_performance as physical_science_performance,
+            field_4_life_science_performance as life_science_performance,
 
-            cast(_dagster_partition_grade_level_subject as int) as test_grade_level,
+            'PM3' as administration_window,
+            'Spring' as season,
+            'Science' as discipline,
+            'Science' as assessment_subject,
+
+            cast(_dagster_partition_grade_level_subject as int) as assessment_grade,
             cast(_dagster_partition_school_year_term as int) as academic_year,
+            cast(enrolled_grade as int) as enrolled_grade,
 
-            coalesce(
-                grade_5_science_scale_score, grade_8_science_scale_score
+            cast(
+                coalesce(
+                    grade_5_science_scale_score, grade_8_science_scale_score
+                ) as int
             ) as scale_score,
+
             coalesce(
                 grade_5_science_achievement_level, grade_8_science_achievement_level
             ) as achievement_level,
-
-            coalesce(
-                enrolled_grade.long_value, cast(enrolled_grade.double_value as int)
-            ) as enrolled_grade,
         from {{ source("fldoe", "src_fldoe__science") }}
     ),
 
     with_achievement_level_int as (
-        select
-            *, safe_cast(right(achievement_level, 1) as int) as achievement_level_int,
-        from source
+        select *, cast(right(achievement_level, 1) as int) as achievement_level_int,
+        from science
     )
 
-select *, if(achievement_level_int >= 3, true, false) as is_proficient,
+select
+    *,
+
+    if(achievement_level_int >= 3, true, false) as is_proficient,
+
+    case assessment_grade when 5 then 'SCI05' when 8 then 'SCI08' end as test_code,
 from with_achievement_level_int

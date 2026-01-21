@@ -5,10 +5,6 @@ assets = [
     *sftp.assets,
 ]
 
-jobs = [
-    *api.jobs,
-]
-
 schedules = [
     *api.schedules,
 ]
@@ -19,7 +15,6 @@ sensors = [
 
 __all__ = [
     "assets",
-    "jobs",
     "schedules",
     "sensors",
 ]
