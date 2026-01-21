@@ -1,5 +1,33 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_de
-    config:
-      contract:
-        enforced: false
+    columns:
+      - name: student_number
+        data_type: int64
+      - name: lastfirst
+        data_type: string
+      - name: studentid
+        data_type: int64
+      - name: schoolname
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: course_name
+        data_type: string
+      - name: course_number
+        data_type: string
+      - name: teacher_name
+        data_type: string
+      - name: storedgrades_dcid
+        data_type: int64
+      - name: de_course_name
+        data_type: string
+      - name: de_pass_yn
+        data_type: int64
+      - name: de_score
+        data_type: string
+      - name: de_semester
+        data_type: string
+      - name: de_institution
+        data_type: string
+      - name: unique_identifier
+        data_type: string

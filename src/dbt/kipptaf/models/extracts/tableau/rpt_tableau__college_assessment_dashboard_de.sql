@@ -16,7 +16,7 @@ select
     de.de_semester,
     de.de_institution,
 
-    s.student_number || '_' || sg.course_number as `hash`,
+    s.student_number || '_' || sg.course_number as unique_identifier,
 
 from {{ ref("stg_powerschool__storedgrades") }} as sg
 left join
