@@ -1,4 +1,0 @@
-models:
-  - name: stg_powerschool__u_storedgrades_de
-    config:
-      materialized: table
