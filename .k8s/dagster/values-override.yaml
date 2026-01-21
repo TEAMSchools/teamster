@@ -114,3 +114,20 @@ workspace:
   serverTTL:
     branchDeployments:
       ttlSeconds: 900
+
+########################################################################################
+# Extra Manifests: (Optional) Create additional k8s resources within this chart
+########################################################################################
+extraManifests:
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: dca-pdb
+    spec:
+      maxUnavailable: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/instance: user-cloud
+          app.kubernetes.io/name: dagster-cloud-agent
+          component: agent
+          deployment: agent
