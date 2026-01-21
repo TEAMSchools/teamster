@@ -1,18 +1,17 @@
-version: 2
-
 sources:
   - name: iready
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ var('iready_schema', project_name + '_iready') }}
     tables:
       - name: src_iready__diagnostic_results
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - iready
-              - diagnostic_results
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - iready
+                - diagnostic_results
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -20,8 +19,8 @@ sources:
             }}/iready/diagnostic_results/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -29,12 +28,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_iready__diagnostic_and_instruction
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - iready
-              - diagnostic_and_instruction
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - iready
+                - diagnostic_and_instruction
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -42,8 +42,8 @@ sources:
             }}/iready/diagnostic_and_instruction/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -51,12 +51,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_iready__instructional_usage_data
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - iready
-              - instructional_usage_data
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - iready
+                - instructional_usage_data
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -64,8 +65,8 @@ sources:
             }}/iready/instructional_usage_data/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -73,12 +74,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_iready__instruction_by_lesson
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - iready
-              - personalized_instruction_by_lesson
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - iready
+                - personalized_instruction_by_lesson
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -86,8 +88,8 @@ sources:
             }}/iready/personalized_instruction_by_lesson/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -95,12 +97,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_iready__instruction_by_lesson_pro
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - iready
-              - instruction_by_lesson
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - iready
+                - instruction_by_lesson
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -108,11 +111,34 @@ sources:
             }}/iready/instruction_by_lesson/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
               }}/iready/instruction_by_lesson/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_iready__personalized_instruction_summary
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - iready
+                - personalized_instruction_summary
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/iready/personalized_instruction_summary/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/iready/personalized_instruction_summary/"
             format: AVRO
             enable_logical_types: true

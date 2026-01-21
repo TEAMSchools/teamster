@@ -344,12 +344,8 @@ with
             /* year can be masked as 0000 */
             safe_cast(person.birthdate as date) as person__birth_date,
 
-            timestamp_sub(
-                timestamp_add(
-                    timestamp(effective_date_start, '{{ var("local_timezone") }}'),
-                    interval 1 day
-                ),
-                interval 1 millisecond
+            timestamp(
+                effective_date_start, '{{ var("local_timezone") }}'
             ) as effective_date_start_timestamp,
 
             lag(worker_status.statuscode.codevalue, 1) over (
@@ -372,6 +368,9 @@ with
 select
     *,
 
+    coalesce(
+        worker_dates__rehire_date, worker_dates__original_hire_date
+    ) as worker_hire_date_recent,
     coalesce(
         person__preferred_name__given_name, person__legal_name__given_name
     ) as person__given_name,
@@ -411,16 +410,22 @@ select
         )
     ) as effective_date_end_timestamp,
 
-    if(
-        worker_status__status_code__code_value = 'Active'
-        and effective_date_start > current_date('{{ var("local_timezone") }}')
-        and (
-            worker_status__status_code__code_value_lag = 'Terminated'
-            or worker_status__status_code__code_value_lag is null
-        ),
-        true,
-        false
-    ) as is_prestart,
+    case
+        when
+            worker_status__status_code__code_value = 'Active'
+            and worker_dates__original_hire_date
+            > current_date('{{ var("local_timezone") }}')
+        then true
+        when
+            worker_status__status_code__code_value = 'Active'
+            and worker_dates__rehire_date > current_date('{{ var("local_timezone") }}')
+            and (
+                worker_status__status_code__code_value_lag = 'Terminated'
+                or worker_status__status_code__code_value_lag is null
+            )
+        then true
+        else false
+    end as is_prestart,
 
     if(
         current_date('{{ var("local_timezone") }}')

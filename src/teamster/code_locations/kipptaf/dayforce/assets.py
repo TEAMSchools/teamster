@@ -1,4 +1,4 @@
-import pathlib
+"""import pathlib
 
 from dagster import config_from_files
 
@@ -18,3 +18,4 @@ assets = [
         [f"{pathlib.Path(__file__).parent}/config/assets.yaml"],
     )["assets"]
 ]
+"""

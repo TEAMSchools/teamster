@@ -1,48 +1,48 @@
-version: 2
-
 sources:
   - name: kippmiami_renlearn
-    schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
-      kippmiami_renlearn
     tables:
       - name: stg_renlearn__accelerated_reader
-        meta:
-          dagster:
-            group: renlearn
-            asset_key:
-              - kippmiami
-              - renlearn
-              - stg_renlearn__accelerated_reader
+        config:
+          meta:
+            dagster:
+              group: renlearn
+              asset_key:
+                - kippmiami
+                - renlearn
+                - stg_renlearn__accelerated_reader
       - name: stg_renlearn__fast_star
-        meta:
-          dagster:
-            group: renlearn
-            asset_key:
-              - kippmiami
-              - renlearn
-              - stg_renlearn__fast_star
+        config:
+          meta:
+            dagster:
+              group: renlearn
+              asset_key:
+                - kippmiami
+                - renlearn
+                - stg_renlearn__fast_star
       - name: stg_renlearn__star_dashboard_standards
-        meta:
-          dagster:
-            group: renlearn
-            asset_key:
-              - kippmiami
-              - renlearn
-              - stg_renlearn__star_dashboard_standards
+        config:
+          meta:
+            dagster:
+              group: renlearn
+              asset_key:
+                - kippmiami
+                - renlearn
+                - stg_renlearn__star_dashboard_standards
       - name: stg_renlearn__star_skill_area
-        meta:
-          dagster:
-            group: renlearn
-            asset_key:
-              - kippmiami
-              - renlearn
-              - stg_renlearn__star_skill_area
+        config:
+          meta:
+            dagster:
+              group: renlearn
+              asset_key:
+                - kippmiami
+                - renlearn
+                - stg_renlearn__star_skill_area
       - name: stg_renlearn__star
-        meta:
-          dagster:
-            group: renlearn
-            asset_key:
-              - kippmiami
-              - renlearn
-              - stg_renlearn__star
+        config:
+          meta:
+            dagster:
+              group: renlearn
+              asset_key:
+                - kippmiami
+                - renlearn
+                - stg_renlearn__star

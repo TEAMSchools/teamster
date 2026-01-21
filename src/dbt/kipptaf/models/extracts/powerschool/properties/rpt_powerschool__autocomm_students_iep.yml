@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_powerschool__autocomm_students_iep
     columns:

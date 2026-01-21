@@ -1,0 +1,15 @@
+models:
+  - name: stg_amplify__mclass__sftp__pm_student_summary
+    config:
+      materialized: table
+    columns:
+      - name: school_name
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_google_sheets__people__location_crosswalk")
+                field: name
+              config:
+                store_failures: true
+                severity: warn

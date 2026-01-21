@@ -1,18 +1,16 @@
-version: 2
-
 sources:
   - name: deanslist
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
-      {{ var('deanslist_schema', project_name + '_deanslist') }}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}{{ var('deanslist_schema', project_name + '_deanslist') }}
     tables:
       - name: src_deanslist__behavior
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - behavior
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - behavior
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -20,8 +18,8 @@ sources:
             }}/deanslist/behavior/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -29,12 +27,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__comm_log
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - comm_log
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - comm_log
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -42,8 +41,8 @@ sources:
             }}/deanslist/comm_log/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -51,12 +50,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__followups
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - followups
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - followups
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -64,8 +64,8 @@ sources:
             }}/deanslist/followups/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -73,12 +73,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__homework
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - homework
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - homework
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -86,8 +87,8 @@ sources:
             }}/deanslist/homework/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -95,12 +96,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__incidents
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - incidents
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - incidents
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -108,8 +110,8 @@ sources:
             }}/deanslist/incidents/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -117,32 +119,34 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__lists
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - lists
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - lists
         external:
           location:
             "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/deanslist/lists/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/deanslist/lists/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__roster_assignments
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - roster_assignments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - roster_assignments
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -150,8 +154,8 @@ sources:
             }}/deanslist/roster_assignments/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -159,12 +163,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__rosters
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - rosters
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - rosters
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -172,8 +177,8 @@ sources:
             }}/deanslist/rosters/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -181,52 +186,55 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__terms
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - terms
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - terms
         external:
           location:
             "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/deanslist/terms/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/deanslist/terms/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__users
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - users
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - users
         external:
           location:
             "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/deanslist/users/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/deanslist/users/"
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__students
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - students
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - students
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -234,8 +242,8 @@ sources:
             }}/deanslist/students/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -243,12 +251,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__dff_stats
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - dff_stats
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - dff_stats
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -256,8 +265,8 @@ sources:
             }}/deanslist/dff_stats/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))

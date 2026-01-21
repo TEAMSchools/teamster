@@ -1,5 +1,3 @@
-{{- config(enabled=False) -}}
-
 with
     ada_group as (
         select
@@ -13,7 +11,7 @@ with
             max(att.membershipvalue) as membershipvalue,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as att
         inner join
-            {{ ref("stg_reporting__terms") }} as fte
+            {{ ref("stg_google_sheets__reporting__terms") }} as fte
             on att.yearid = fte.powerschool_year_id
             and att.calendardate between fte.start_date and fte.end_date
             and fte.type = 'FTE'

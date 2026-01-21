@@ -1,6 +1,6 @@
 with
     grad_path as (
-        select _dbt_source_relation, student_number, discipline, final_grad_path,
+        select _dbt_source_relation, student_number, discipline, final_grad_path_code,
         from {{ ref("int_students__graduation_path_codes") }}
     ),
 
@@ -12,7 +12,7 @@ with
             s_nj_stu_x__graduation_pathway_ela,
         from
             grad_path pivot (
-                max(final_grad_path) for discipline in (
+                max(final_grad_path_code) for discipline in (
                     'Math' as `s_nj_stu_x__graduation_pathway_math`,
                     'ELA' as `s_nj_stu_x__graduation_pathway_ela`
                 )
@@ -26,7 +26,7 @@ select
     se.lunch_status as eligibility_name,
     se.lunch_balance as total_balance,
     se.advisor_lastfirst as home_room,
-    se.student_email_google as u_studentsuserfields__studentemail,
+    se.student_email as u_studentsuserfields__studentemail,
 
     g.s_nj_stu_x__graduation_pathway_math,
     g.s_nj_stu_x__graduation_pathway_ela,
@@ -46,6 +46,7 @@ select
     if(
         s.student_web_password is not null, null, se.student_web_password
     ) as student_web_password,
+
     if(
         s.student_web_password is not null, null, se.student_web_password
     ) as web_password,
@@ -62,7 +63,17 @@ select
         when se.grade_level = 4
         then 'E'
     end as track,
-from {{ ref("base_powerschool__student_enrollments") }} as se
+
+    case
+        when se.grade_level = 12 and pfs.fafsa = 'N'
+        then pfs.fafsa
+        when se.grade_level = 12 and se.overgrad_fafsa_opt_out = 'Yes'
+        then 'E'
+        when se.grade_level = 12 and se.has_fafsa = 'Yes'
+        then 'C'
+    end as s_stu_x__fafsa,
+
+from {{ ref("int_extracts__student_enrollments") }} as se
 left join
     {{ ref("stg_powerschool__students") }} as s
     on se.student_number = s.student_number
@@ -76,6 +87,10 @@ left join
     grad_path_pivot as g
     on se.student_number = g.student_number
     and {{ union_dataset_join_clause(left_alias="se", right_alias="g") }}
+left join
+    {{ ref("stg_powerschool__s_stu_x") }} as pfs
+    on se.students_dcid = pfs.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="se", right_alias="pfs") }}
 where
     se.academic_year = {{ var("current_academic_year") }}
     and se.rn_year = 1

@@ -1,18 +1,18 @@
 select
-    sr.last_name,
-    sr.middle_name,
-    sr.first_name,
+    sr.student_last_name as last_name,
+    sr.student_middle_name as middle_name,
+    sr.student_first_name as first_name,
     sr.gender,
     sr.cohort as graduation_year,
     sr.ethnicity as race,
-    sr.student_email_google as student_email,
+    sr.student_email,
     sr.student_web_id as username,
     sr.gifted_and_talented as ext__gifted,
 
     sc.relationship_type as contact_relationship,
 
-    gpa.cumulative_y1_gpa as unweighted_gpa,
-    gpa.cumulative_y1_gpa_unweighted as weighted_gpa,
+    sr.cumulative_y1_gpa as unweighted_gpa,
+    sr.cumulative_y1_gpa_unweighted as weighted_gpa,
 
     null as hispanic_latino,
     null as home_language,
@@ -54,20 +54,16 @@ select
         when sc.contact_type = 'daytime'
         then 'Work'
     end as contact_phone_type,
-from {{ ref("base_powerschool__student_enrollments") }} as sr
+from {{ ref("int_extracts__student_enrollments") }} as sr
 left join
     {{ ref("int_powerschool__student_contacts") }} as sc
-    on sr.student_number = sc.student_number
+    on sr.students_dcid = sc.studentdcid
     and {{ union_dataset_join_clause(left_alias="sr", right_alias="sc") }}
     and sc.contact_category = 'Phone'
     and sc.person_type != 'self'
-left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gpa
-    on sr.studentid = gpa.studentid
-    and sr.schoolid = gpa.schoolid
-    and {{ union_dataset_join_clause(left_alias="sr", right_alias="gpa") }}
 where
     sr.academic_year = {{ var("current_academic_year") }}
     and sr.rn_year = 1
     and not sr.is_out_of_district
-    and sr.grade_level != 99
+    and sr.enroll_status in (0, -1)
+    and sr._dbt_source_relation not like '%kipppaterson%'

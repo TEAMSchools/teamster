@@ -1,12 +1,8 @@
 endpoints:
-  - endpoint: lists
-    api_version: v1
   - endpoint: terms
     api_version: v1
   - endpoint: roster-assignments
     api_version: beta
-  - endpoint: dff/stats
-    api_version: v1
   - endpoint: users
     api_version: v1
     params:
@@ -21,3 +17,7 @@ endpoints:
       IncludeCustomFields: Y
       IncludeUnenrolled: Y
       IncludeParents: Y
+  # - endpoint: lists
+  #   api_version: v1
+  # - endpoint: dff/stats
+  #   api_version: v1

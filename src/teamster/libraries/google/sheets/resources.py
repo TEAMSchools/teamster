@@ -1,38 +1,33 @@
-import pathlib
-
-import google.auth
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
+from google import auth
 from google.auth.credentials import Credentials
-from gspread.auth import authorize, service_account
-from gspread.client import Client
-from gspread.exceptions import SpreadsheetNotFound
-from gspread.utils import rowcol_to_a1
+from gspread import Client, SpreadsheetNotFound, authorize, service_account, utils
 from pydantic import PrivateAttr
 
 
 class GoogleSheetsResource(ConfigurableResource):
+    scopes: list[str] = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive",
+    ]
     service_account_file_path: str | None = None
 
     _client: Client = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
         if self.service_account_file_path is not None:
             self._client = service_account(
-                filename=pathlib.Path(self.service_account_file_path)
+                filename=self.service_account_file_path, scopes=self.scopes
             )
         else:
-            credentials, project_id = google.auth.default(
-                scopes=[
-                    "https://www.googleapis.com/auth/spreadsheets",
-                    "https://www.googleapis.com/auth/drive",
-                ]
-            )
+            credentials, project_id = auth.default(scopes=self.scopes)
 
             self._client = authorize(
-                credentials=_check.inst(obj=credentials, ttype=Credentials)
+                credentials=check.inst(obj=credentials, ttype=Credentials)
             )
 
     def open(self, **kwargs):
@@ -58,4 +53,4 @@ class GoogleSheetsResource(ConfigurableResource):
 
     @staticmethod
     def rowcol_to_a1(row, col):
-        return rowcol_to_a1(row=row, col=col)
+        return utils.rowcol_to_a1(row=row, col=col)

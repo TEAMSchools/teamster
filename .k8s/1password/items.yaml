@@ -282,22 +282,6 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-gcp-service-account-dbt
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/Teamster Service Account - dbt
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
-  name: op-gcp-service-account-teamster
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/Teamster Service Account - Default
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
   name: op-tableau-server-api
   namespace: dagster-cloud
 spec:
@@ -346,7 +330,31 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-slack-api
+  name: op-outlook-pm
   namespace: dagster-cloud
 spec:
-  itemPath: vaults/Data Team/items/Slack API - Teamster
+  itemPath: vaults/Data Team/items/Outlook - Performance Management
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-knowbe4
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/KnowBe4 Reporting REST API
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-amplify-sftp-kipptaf
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Amplify SFTP
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-amplify-sftp-kipppaterson
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Amplify SFTP - Paterson

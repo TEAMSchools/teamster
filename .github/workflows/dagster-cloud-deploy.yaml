@@ -2,6 +2,19 @@
 # https://github.com/dagster-io/dagster-cloud-action
 # https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
 
+# uses:
+# https://github.com/actions/checkout
+# https://github.com/actions/download-artifact
+# https://github.com/actions/upload-artifact
+# https://github.com/docker/build-push-action
+# https://github.com/docker/metadata-action
+# https://github.com/docker/setup-buildx-action
+# https://github.com/google-github-actions/auth
+# https://github.com/google-github-actions/setup-gcloud
+# https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/ci-init/action.yml
+# https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
+# https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/prerun/action.yml
+
 name: Dagster Cloud Hybrid Deployment
 
 on:
@@ -21,8 +34,8 @@ env:
   DAGSTER_CLOUD_ORGANIZATION: ${{ vars.DAGSTER_ORGANIZATION_ID }}
   DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
   REGISTRY_IMAGE:
-    ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/teamster/${{
-    inputs.code-location }}
+    ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID
+    }}/teamster/${{ inputs.code-location }}
   DAGSTER_CLOUD_YAML_PATH:
     src/teamster/code_locations/${{ inputs.code-location }}/dagster-cloud.yaml
   IMAGE_TAG: ${{ inputs.code-location }}-${{ github.sha }}-${{ github.run_id }}
@@ -40,7 +53,6 @@ jobs:
     steps:
       # If this is a closed PR the prerun step closes the branch deployment and returns
       # output.result='skip' which is used to skip other steps in this workflow.
-      # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/prerun/action.yml
       - name: Pre-run checks
         id: prerun
         uses: dagster-io/dagster-cloud-action/actions/utils/prerun@main
@@ -62,39 +74,33 @@ jobs:
           runner=${{ matrix.runner }}
           echo "PLATFORM_PAIR=${runner//-//}" >> "${GITHUB_ENV}"
 
-      # https://github.com/actions/checkout
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.head_ref }}
 
-      # https://github.com/google-github-actions/auth
       - name: Authenticate to Google Cloud
         id: auth
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
           workload_identity_provider: |
             projects/${{ vars.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/teamster
 
-      # https://github.com/google-github-actions/setup-gcloud
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
 
       - name: gcloud auth configure-docker
         run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev
 
-      # https://github.com/docker/metadata-action
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY_IMAGE }}
 
-      # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # https://github.com/docker/build-push-action
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
@@ -115,9 +121,8 @@ jobs:
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"
 
-      # https://github.com/actions/upload-artifact
       - name: Upload digest
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: digests-${{ matrix.runner }}
           path: /tmp/digests/*
@@ -129,33 +134,30 @@ jobs:
     needs:
       - prerun
       - build
-    if: needs.prerun.outputs.result != 'skip' && github.actor != 'dependabot[bot]'
+    if:
+      needs.prerun.outputs.result != 'skip' && github.actor != 'dependabot[bot]'
     steps:
-      # https://github.com/actions/download-artifact
       - name: Download digests
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           path: /tmp/digests
           pattern: digests-*
           merge-multiple: true
 
-      # https://github.com/google-github-actions/auth
       - name: Authenticate to Google Cloud
         id: auth
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
           workload_identity_provider: |
             projects/${{ vars.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/teamster
 
-      # https://github.com/google-github-actions/setup-gcloud
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
 
       - name: gcloud auth configure-docker
         run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev
 
-      # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -176,15 +178,13 @@ jobs:
       - merge
     if: github.actor != 'dependabot[bot]'
     steps:
-      # https://github.com/actions/checkout
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         if: needs.prerun.outputs.result != 'skip'
         with:
           ref: ${{ github.head_ref }}
 
       # Validate dagster_cloud.yaml and the connection to dagster.cloud
-      # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Validate configuration
         id: ci-validate
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@main
@@ -195,7 +195,6 @@ jobs:
 
       # Parse dagster_cloud.yaml, detect if this is branch deployment and initialize
       # the build session
-      # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/ci-init/action.yml
       - name: Initialize build session
         id: ci-init
         uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@main
@@ -207,7 +206,6 @@ jobs:
           # this value is ignored and a branch deployment is used.
           deployment: prod
 
-      # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Update build session with image tag
         id: ci-set-build-output
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@main
@@ -217,7 +215,6 @@ jobs:
             ci set-build-output --location-name=${{ inputs.code-location }} --image-tag=${{ env.IMAGE_TAG }}
 
       # Deploy all code locations in this build session to Dagster Cloud
-      # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Deploy to Dagster Cloud
         id: ci-deploy
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@main
@@ -227,7 +224,6 @@ jobs:
 
       # Update a PR comment - this runs always() so the comment is updated on success
       # and failure
-      # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Update PR comment for branch deployments
         id: ci-notify
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@main
@@ -236,7 +232,6 @@ jobs:
           command: ci notify --project-dir=${{ env.DAGSTER_PROJECT_DIR }}
 
       # Generate a summary that shows up on the Workflow Summary page
-      # https://github.com/dagster-io/dagster-cloud-action/blob/main/actions/utils/dagster-cloud-cli/action.yml
       - name: Generate a summary
         id: ci-summary
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@main

@@ -1,5 +1,3 @@
-{{- config(materialized="view") -}}
-
 with
     years as (
         select effective_date, extract(year from effective_date) - 1 as academic_year,

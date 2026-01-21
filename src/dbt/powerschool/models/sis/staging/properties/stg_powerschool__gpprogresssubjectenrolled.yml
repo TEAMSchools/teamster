@@ -1,0 +1,13 @@
+models:
+  - name: stg_powerschool__gpprogresssubjectenrolled
+    columns:
+      - name: coursenumber
+        data_type: string
+      - name: id
+        data_type: int64
+      - name: gpprogresssubjectid
+        data_type: int64
+      - name: ccdcid
+        data_type: int64
+      - name: enrolledcredits
+        data_type: float64

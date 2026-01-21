@@ -1,18 +1,17 @@
-version: 2
-
 sources:
   - name: titan
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_{%- endif -%}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
       {{ var('titan_schema', project_name + '_titan') }}
     tables:
       - name: src_titan__person_data
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - titan
-              - person_data
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - titan
+                - person_data
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -20,8 +19,8 @@ sources:
             }}/titan/person_data/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
@@ -29,12 +28,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_titan__income_form_data
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - titan
-              - income_form_data
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - titan
+                - income_form_data
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -42,8 +42,8 @@ sources:
             }}/titan/income_form_data/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
-            metadata_cache_mode: AUTOMATIC
-            max_staleness: INTERVAL 1 DAY
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))

@@ -14,7 +14,7 @@ select
     passed_or_not_passed_numeric,
 
     'Traditional' as lesson_source,
-from {{ ref("stg_iready__instruction_by_lesson") }}
+from {{ ref("int_iready__instruction_by_lesson") }}
 
 union all
 
@@ -23,15 +23,17 @@ select
     student_id,
     school,
     `subject`,
-    lesson as lesson_id,
-    lesson as lesson_name,
+    lesson_title as lesson_id,
+    lesson_title as lesson_name,
+
     null as lesson_objective,
     null as lesson_level,
     null as lesson_grade,
+
     lesson_result as passed_or_not_passed,
     lesson_time_on_task_min,
     completion_date,
     passed_or_not_passed_numeric,
 
     'Pro' as lesson_source,
-from {{ ref("stg_iready__instruction_by_lesson_pro") }}
+from {{ ref("int_iready__instruction_by_lesson_pro") }}

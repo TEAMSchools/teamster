@@ -1,7 +1,6 @@
 {
   "diffEditor.experimental.showMoves": true,
   "diffEditor.ignoreTrimWhitespace": false,
-  "editor.defaultFormatter": "trunk.io",
   "editor.formatOnSave": true,
   "editor.inlineSuggest.enabled": true,
   "editor.renderControlCharacters": true,
@@ -49,12 +48,38 @@
   "terminal.integrated.env.linux": {
     "DAGSTER_HOME": "/workspaces/teamster/.dagster/home",
     "DBT_CLOUD_ENVIRONMENT_TYPE": "dev",
-    "DBT_DEV_CLOUD_STORAGE_URI_BASE": "gs://teamster-test/dagster/kippnewark",
     "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt",
+    "GOOGLE_CLOUD_PROJECT": "teamster-332318",
     "PYTHONDONTWRITEBYTECODE": "1",
     "TRUNK_TELEMETRY": "off",
     "UV_ENV_FILE": "/workspaces/teamster/env/.env",
     "UV_LINK_MODE": "copy",
     "UV_RESOLUTION": "highest"
+  },
+  "dbt.fileNameTemplateGenerateModel": "{prefix}_{sourceName}__{tableName}",
+  "dbt.prefixGenerateModel": "stg",
+  "trunk.enableUpgradePane": false,
+  "trunk.showWhatsNew": false,
+  "trunk.trunkPath": "./trunk",
+  "trunk.autoInit": false,
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/dbt_yml_files-latest.json": [
+      "src/dbt/**/*.yml",
+      "!profiles.yml",
+      "!dbt_project.yml",
+      "!packages.yml",
+      "!selectors.yml",
+      "!profile_template.yml",
+      "!package-lock.yml"
+    ],
+    "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/dbt_project-latest.json": [
+      "dbt_project.yml"
+    ],
+    "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/selectors-latest.json": [
+      "selectors.yml"
+    ],
+    "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/packages-latest.json": [
+      "packages.yml"
+    ]
   }
 }

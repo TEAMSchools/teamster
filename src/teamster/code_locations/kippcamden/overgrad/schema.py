@@ -6,7 +6,6 @@ from teamster.libraries.overgrad.schema import (
     Admission,
     CustomField,
     Following,
-    School,
     Student,
 )
 
@@ -16,7 +15,7 @@ ADMISSION_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=Admission, options=pas_options)
 )
 
-SCHOOL_SCHEMA = json.loads(py_avro_schema.generate(py_type=School, options=pas_options))
+# SCHOOL_SCHEMA = json.loads(py_avro_schema.generate(py_type=School, options=pas_options))
 
 STUDENT_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=Student, options=pas_options)

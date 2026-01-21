@@ -1,0 +1,21 @@
+models:
+  - name: stg_overgrad__admissions__custom_field_values
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - id
+              - custom_field_id
+          config:
+            store_failures: true
+    columns:
+      - name: id
+        data_type: int64
+      - name: custom_field_id
+        data_type: int64
+      - name: number
+        data_type: float64
+      - name: date
+        data_type: string
+      - name: "`select`"
+        data_type: int64

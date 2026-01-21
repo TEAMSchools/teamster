@@ -1,5 +1,3 @@
-{{- config(enabled=false) -}}
-
 with
     identifier_responses as (
         select
@@ -84,8 +82,16 @@ with
         from
             identifier_responses pivot (
                 max(response_string_value) for question_short_name in (
-                    -- trunk-ignore(sqlfluff/LT05)
-                    '{{ var("alchemer_survey_identifier_short_names") | join("', '") }}'
+                    respondent_employee_number,
+                    respondent_df_employee_number,
+                    respondent_userprincipalname,
+                    respondent_adp_associate_id,
+                    subject_df_employee_number,
+                    employee_number,
+                    email,
+                    employee_preferred_name,
+                    salesforce_id,
+                    is_manager
                 )
             )
     )

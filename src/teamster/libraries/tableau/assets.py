@@ -1,17 +1,16 @@
 from dagster import (
     AssetExecutionContext,
-    AutomationCondition,
     DailyPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
-    _check,
     asset,
 )
-from dagster._core.definitions.declarative_automation import OrAutomationCondition
-from slugify import slugify
+from dagster_dbt import get_asset_key_for_model
+from dagster_shared import check
 
+from teamster.code_locations.kipptaf._dbt.assets import core_dbt_assets
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
@@ -20,47 +19,21 @@ from teamster.libraries.tableau.resources import TableauServerResource
 
 
 def build_tableau_workbook_refresh_asset(
-    code_location: str,
-    name: str,
-    deps: list[str],
-    metadata: dict[str, str],
-    cron_schedule: str | list[str] | None = None,
-    cron_timezone: str | None = None,
+    code_location: str, name: str, refs: dict, config: dict, label: str, **kwargs
 ):
-    if isinstance(cron_schedule, str):
-        cron_schedule = [cron_schedule]
-
-    if cron_schedule is None:
-        automation_condition = None
-    else:
-        cron_timezone = _check.not_none(value=cron_timezone)
-
-        automation_condition = OrAutomationCondition(
-            operands=[
-                AutomationCondition.on_cron(
-                    cron_schedule=cs, cron_timezone=cron_timezone
-                ).without(
-                    AutomationCondition.all_deps_updated_since_cron(
-                        cron_schedule=cs, cron_timezone=cron_timezone
-                    )
-                )
-                for cs in cron_schedule
-            ]
-        )
-
     @asset(
-        key=[
-            code_location,
-            "tableau",
-            slugify(text=name, separator="_", regex_pattern=r"[^A-Za-z0-9_]"),
+        key=[code_location, "tableau", name],
+        deps=[
+            get_asset_key_for_model(
+                dbt_assets=[core_dbt_assets], model_name=ref["name"]
+            )
+            for ref in refs
         ],
-        description=name,
-        deps=deps,
-        metadata=metadata,
-        automation_condition=automation_condition,
-        kinds={"tableau"},
+        metadata=config["meta"]["dagster"].get("asset", {}).get("metadata"),
+        description=label,
         group_name="tableau",
         output_required=False,
+        kinds=set(config["meta"]["dagster"]["kinds"]),
         pool="tableau_pat_session_limit",
     )
     def _asset(context: AssetExecutionContext, tableau: TableauServerResource):
@@ -98,7 +71,7 @@ def build_tableau_workbook_stats_asset(
         op_tags={"dagster/priority": "-1"},
     )
     def _asset(context: AssetExecutionContext, tableau: TableauServerResource):
-        partition_key = _check.inst(context.partition_key, MultiPartitionKey)
+        partition_key = check.inst(context.partition_key, MultiPartitionKey)
 
         workbook = tableau._server.workbooks.get_by_id(
             partition_key.keys_by_dimension["workbook_id"]

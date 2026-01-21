@@ -1,20 +1,15 @@
-# trunk-ignore-all(pyright/reportIncompatibleVariableOverride)
 import json
 
 import py_avro_schema
 
 from teamster.libraries.deanslist.schema import (
-    Action,
     Behavior,
     CommLog,
-    CustomField,
-    Date,
     DFFStats,
     Followup,
     Homework,
     Incident,
     ListModel,
-    Penalty,
     ReconcileAttendance,
     ReconcileSuspensions,
     Roster,
@@ -23,50 +18,6 @@ from teamster.libraries.deanslist.schema import (
     Term,
     User,
 )
-
-
-class CloseTS_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class CreateTS_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class DL_LASTUPDATE_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class HearingDate_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class IssueTS_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class ReturnDate_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class ReviewTS_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class UpdateTS_record(Date):
-    """helper class for backwards compatibility"""
-
-
-class action_record(Action):
-    """helper class for backwards compatibility"""
-
-
-class custom_field_record(CustomField):
-    """helper class for backwards compatibility"""
-
-
-class penalty_record(Penalty):
-    """helper class for backwards compatibility"""
 
 
 class behavior_record(Behavior):
@@ -81,27 +32,14 @@ class homework_record(Homework):
     """helper class for backwards compatibility"""
 
 
-class incidents_record(Incident):
-    """helper class for backwards compatibility"""
-
-    CloseTS: CloseTS_record | None = None
-    CreateTS: CreateTS_record | None = None
-    DL_LASTUPDATE: DL_LASTUPDATE_record | None = None
-    HearingDate: HearingDate_record | None = None
-    IssueTS: IssueTS_record | None = None
-    ReturnDate: ReturnDate_record | None = None
-    ReviewTS: ReviewTS_record | None = None
-    UpdateTS: UpdateTS_record | None = None
-
-    Actions: list[action_record | None] | None = None
-    Penalties: list[penalty_record | None] | None = None
-    Custom_Fields: list[custom_field_record | None] | None = None
-
-
 pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
 
 BEHAVIOR_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=behavior_record, options=pas_options)
+)
+
+INCIDENTS_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=Incident, options=pas_options)
 )
 
 ASSET_SCHEMA = {
@@ -124,9 +62,7 @@ ASSET_SCHEMA = {
     "homework": json.loads(
         py_avro_schema.generate(py_type=homework_record, options=pas_options)
     ),
-    "incidents": json.loads(
-        py_avro_schema.generate(py_type=incidents_record, options=pas_options)
-    ),
+    "incidents": INCIDENTS_SCHEMA,
     "dff/stats": json.loads(
         py_avro_schema.generate(py_type=DFFStats, options=pas_options)
     ),

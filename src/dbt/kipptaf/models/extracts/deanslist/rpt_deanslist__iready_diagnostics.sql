@@ -2,7 +2,7 @@ with
     max_completion_date as (
         select
             student_id, academic_year, subject, max(completion_date) as completion_date,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where academic_year_int = {{ var("current_academic_year") }}
         group by academic_year, subject, student_id
     ),
@@ -58,7 +58,7 @@ with
                 regexp_replace(overall_placement, 'Level', 'Grade'),
                 overall_placement
             ) as overall_placement_display,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where academic_year_int >= {{ var("current_academic_year") - 1 }}
     )
 

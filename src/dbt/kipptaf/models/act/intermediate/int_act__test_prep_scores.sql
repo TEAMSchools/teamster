@@ -1,4 +1,3 @@
-{{ config(enabled=False) }}
 with
     assessment_responses as (
         select
@@ -28,7 +27,7 @@ with
             {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
             on ais.assessment_id = agl.assessment_id
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on ais.administered_at between rt.start_date and rt.end_date
             and rt.type = 'ACT'
         inner join
@@ -61,7 +60,7 @@ with
             ssk.scale_score,
         from assessment_responses as ld
         left join
-            {{ ref("stg_assessments__act_scale_score_key") }} as ssk
+            {{ ref("stg_google_sheets__assessments__act_scale_score_key") }} as ssk
             on ld.academic_year = ssk.academic_year
             and ld.grade_level = ssk.grade_level
             and ld.term_code = ssk.administration_round

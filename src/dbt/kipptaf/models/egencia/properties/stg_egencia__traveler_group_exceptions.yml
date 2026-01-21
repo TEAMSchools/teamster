@@ -1,8 +1,0 @@
-version: 2
-models:
-  - name: stg_egencia__traveler_group_exceptions
-    columns:
-      - name: employee_number
-        data_type: int64
-      - name: traveler_group
-        data_type: string

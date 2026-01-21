@@ -5,7 +5,11 @@
 /src/teamster/ @TEAMSchools/data-engineers
 
 # dbt code
+/src/dbt/kipptaf @TEAMSchools/kipp-taf-admins
 /src/dbt/kipptaf/models/extracts @TEAMSchools/analytics-engineers
+/src/dbt/kipptaf/models/marts @TEAMSchools/analytics-engineers
+/src/dbt/kipptaf/models/metrics @TEAMSchools/analytics-engineers
+/src/dbt/kipptaf/models/exposures @TEAMSchools/analytics-engineers
 
 # docs
 /docs @TEAMSchools/data-team

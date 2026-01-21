@@ -1,35 +1,26 @@
 with
     students as (
         select
-            first_name,
-            last_name,
+            student_first_name as first_name,
+            student_last_name as last_name,
             school_name,
             grade_level,
-            student_email_google,
+            student_email as student_email_google,
             student_web_password,
             is_out_of_district,
 
             lower(region) as region,
 
             if(enroll_status = 0, false, true) as suspended,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where rn_all = 1 and student_email_google is not null
+        from {{ ref("int_extracts__student_enrollments") }}
+        where rn_all = 1 and student_email is not null and region != 'Paterson'
     ),
 
     with_google as (
         select
             s.*,
 
-            {{
-                dbt_utils.generate_surrogate_key(
-                    [
-                        "u.name__given_name",
-                        "u.name__family_name",
-                        "u.suspended",
-                        "u.org_unit_path",
-                    ]
-                )
-            }} as surrogate_key_target,
+            u.surrogate_key_target,
 
             if(u.primary_email is not null, true, false) as is_matched,
 
@@ -76,7 +67,7 @@ select
 
     'SHA-1' as `hashFunction`,
 
-    concat('group-students-', region, '@teamstudents.org') as `groupKey`,
+    'group-students-' || region || '@teamstudents.org' as `groupKey`,
 
     struct(first_name as `givenName`, last_name as `familyName`) as `name`,
     to_hex(sha1(student_web_password)) as `password`,

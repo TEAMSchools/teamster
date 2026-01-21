@@ -1,6 +1,0 @@
-version: 2
-models:
-  - name: stg_egencia__travel_managers
-    columns:
-      - name: employee_number
-        data_type: int64
