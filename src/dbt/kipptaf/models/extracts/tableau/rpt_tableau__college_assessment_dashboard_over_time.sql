@@ -46,7 +46,7 @@ with
 
     goals as (
         select *,
-        from {{ ref("stg_google_sheets__kippfwd_goals") }}
+        from {{ ref("stg_google_sheets__kippfwd__goals") }}
         where region is null and schoolid is null and expected_goal_type != 'Board'
     ),
 
@@ -127,7 +127,11 @@ with
             alt_max_scale_score as c
             on s.student_number = c.student_number
             and s.score_type = c.score_type
-        where e.school_level = 'HS' and e.rn_undergrad = 1 and e.rn_year = 1
+        where
+            e.school_level = 'HS'
+            and e.rn_undergrad = 1
+            and e.rn_year = 1
+            and not e.is_out_of_district
         group by
             e.region,
             e.school,

@@ -26,7 +26,7 @@ core_dbt_assets = build_dbt_assets(
     op_tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1500m"}}
+                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "2000m"}}
             }
         }
     },
@@ -41,7 +41,7 @@ reporting_dbt_assets = build_dbt_assets(
     op_tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1500m"}}
+                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1750m"}}
             }
         }
     },
@@ -55,7 +55,7 @@ google_sheet_dbt_assets = build_dbt_assets(
     op_tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1250m"}}
+                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "2000m"}}
             }
         }
     },
@@ -70,7 +70,7 @@ adp_payroll_dbt_assets = build_dbt_assets(
     op_tags={
         "dagster-k8s/config": {
             "container_config": {
-                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1000m"}}
+                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1250m"}}
             }
         }
     },
@@ -84,10 +84,10 @@ asset_specs = [
             for ref in exposure["refs"]
         ],
         metadata={"url": exposure.get("url")},
-        kinds=set(exposure["meta"]["dagster"]["kinds"]),
+        kinds=set(exposure["config"]["meta"]["dagster"]["kinds"]),
     )
     for exposure in manifest["exposures"].values()
-    if "tableau" not in exposure["meta"]["dagster"]["kinds"]
+    if "tableau" not in exposure["config"]["meta"]["dagster"]["kinds"]
 ]
 
 assets = [

@@ -7,7 +7,7 @@ with
 
             avg(min_score) as min_score,
 
-        from {{ ref("stg_google_sheets__kippfwd_goals") }}
+        from {{ ref("stg_google_sheets__kippfwd__goals") }}
         where expected_goal_type = 'Benchmark' and region is null and schoolid is null
         group by expected_test_type, expected_score_type, expected_metric_name
     ),
@@ -24,7 +24,7 @@ with
             e.student_last_name,
             e.grade_level,
             e.student_email,
-            e.enroll_status,
+            e.enroll_status_string as enroll_status,
             e.ktc_cohort,
             e.graduation_year,
             e.year_in_network,
@@ -41,7 +41,6 @@ with
             sc.score_type,
             sc.scale_score,
 
-            g.min_score,
             g.expected_metric_name,
 
             ss.superscore as sat_total_superscore,
@@ -136,7 +135,6 @@ select
     subject_area as test_subject,
     scale_score,
     highest_score_by_test,
-    min_score,
 
     coalesce(hs_grad_ready, 'NA') as hs_grad_ready,
     coalesce(college_ready, 'NA') as college_ready,

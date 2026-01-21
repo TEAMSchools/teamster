@@ -18,12 +18,13 @@ sources:
               }}/adp_workforce_manager/accrual_reporting_period_summary/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - adp_workforce_manager
-              - accrual_reporting_period_summary
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - adp_workforce_manager
+                - accrual_reporting_period_summary
       - name: src_adp_workforce_manager__time_details
         external:
           location:
@@ -38,9 +39,10 @@ sources:
               }}/adp_workforce_manager/time_details/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - adp_workforce_manager
-              - time_details
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - adp_workforce_manager
+                - time_details

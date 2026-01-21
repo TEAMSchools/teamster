@@ -78,7 +78,7 @@ select
 
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
-    {{ ref("stg_google_sheets__kippfwd_expected_assessments") }} as ea
+    {{ ref("stg_google_sheets__kippfwd__expected_assessments") }} as ea
     on e.region = ea.expected_region
     and ea.rn = 1
 left join
@@ -125,3 +125,4 @@ where
     and e.graduation_year >= {{ var("current_academic_year") + 1 }}
     and e.school_level = 'HS'
     and e.rn_year = 1
+    and not e.is_out_of_district

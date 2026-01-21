@@ -95,3 +95,5 @@ models:
         data_type: boolean
       - name: is_submitted_dps_int
         data_type: int64
+      - name: as6_complete
+        data_type: int64
