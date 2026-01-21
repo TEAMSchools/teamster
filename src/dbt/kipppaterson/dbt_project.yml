@@ -31,6 +31,15 @@ models:
     mclass:
       api:
         +enabled: false
+  pearson:
+    +materialized: table
+    staging:
+      stg_pearson__njgpa:
+        +enabled: false
+      stg_pearson__parcc:
+        +enabled: false
+      stg_pearson__student_test_update:
+        +enabled: false
   powerschool:
     +materialized: table
     sis:
@@ -123,6 +132,14 @@ models:
             +enabled: false
 
 sources:
+  pearson:
+    pearson:
+      src_pearson__njgpa:
+        +enabled: false
+      src_pearson__parcc:
+        +enabled: false
+      src_pearson__student_test_update:
+        +enabled: false
   powerschool:
     sis:
       staging:

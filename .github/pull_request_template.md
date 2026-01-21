@@ -53,17 +53,18 @@
             - ref("[model name]")
             - ...
           url: ...  # optional
-          meta:
-            dagster:
-              kinds:
-                - tableau | googlesheets | ...
-                - ...
-              asset:
-                metadata:
-                  id: [lsid]  # required for Tableau Server workbooks
-                  cron_schedule:  # required for Dagster automation
-                    - * * * * *
-                    - ...
+          config:
+            meta:
+              dagster:
+                kinds:
+                  - tableau | googlesheets | ...
+                  - ...
+                asset:
+                  metadata:
+                    id: [lsid]  # required for Tableau Server workbooks
+                    cron_schedule:  # required for Dagster automation
+                      - * * * * *
+                      - ...
 
 [Dagster "kinds" Reference](https://docs.dagster.io/guides/build/assets/metadata-and-tags/kind-tags#supported-icons)
 

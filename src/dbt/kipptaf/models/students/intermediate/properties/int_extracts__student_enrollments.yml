@@ -236,6 +236,8 @@ models:
         data_type: float64
       - name: met_fafsa_requirement
         data_type: boolean
+      - name: pearson_local_student_identifier
+        data_type: int64
       - name: is_counseling_services
         data_type: int64
       - name: is_student_athlete
