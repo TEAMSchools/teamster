@@ -27,5 +27,5 @@ left join
     {{ ref("stg_powerschool__u_storedgrades_de") }} as de
     on sg.dcid = de.storedgradesdcid
     and {{ union_dataset_join_clause(left_alias="sg", right_alias="de") }}
-    and de.de_course_name not null
+    and de.de_course_name is not null
 where sg.course_name like '%(DE)' and sg.storecode = 'Y1'
