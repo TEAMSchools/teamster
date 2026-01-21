@@ -46,7 +46,7 @@ with
             null as sped_ratio,
 
             _dbt_source_relation,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_extracts__student_enrollments") }}
         where
             (is_self_contained or is_out_of_district)
             and rn_year = 1
@@ -80,14 +80,14 @@ with
 
 select
     se.student_number,
-    se.lastfirst,
+    se.student_name as lastfirst,
     se.academic_year,
     se.region,
     se.school_level,
     se.schoolid,
     se.reporting_schoolid,
     se.school_name,
-    se.school_abbreviation,
+    se.school as school_abbreviation,
     se.grade_level,
     se.enroll_status,
     se.entrydate,
@@ -129,6 +129,8 @@ select
     se.physical_therapy_services_yn,
     se.speech_lang_theapy_services_yn,
     se.other_related_services_yn,
+    se.is_retained_year,
+    se.is_retained_ever,
 
     cal.days_remaining,
     cal.days_total,
@@ -171,7 +173,7 @@ select
     lead(se.is_enrolled_oct15, 1, false) over (
         partition by se.student_number order by se.academic_year
     ) as is_enrolled_oct15_next,
-from {{ ref("base_powerschool__student_enrollments") }} as se
+from {{ ref("int_extracts__student_enrollments") }} as se
 left join
     {{ ref("int_powerschool__calendar_rollup") }} as cal
     on se.schoolid = cal.schoolid

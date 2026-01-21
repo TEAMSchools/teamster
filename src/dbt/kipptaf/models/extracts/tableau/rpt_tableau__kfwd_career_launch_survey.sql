@@ -1,7 +1,7 @@
 with
     survey_reconciliation_raw as (
         select response_id, item_title, text_value, create_timestamp,
-        from {{ ref("base_google_forms__form_responses") }}
+        from {{ ref("int_google_forms__form_responses") }}
         where
             form_id = '1oUBls4Kaj0zcbQyeWowe8Es1BFqunolAPEamzT6enQs'
             and item_title in ('Survey response ID', 'Salesforce contact ID')
@@ -42,6 +42,7 @@ with
 
             max(if(a.name = 'Project BASTA', true, false)) as is_basta,
             max(if(a.name = 'Braven', true, false)) as is_braven,
+            max(if(a.name = 'Backrs', true, false)) as is_backrs,
             max(
                 if(
                     a.name in ('KIPP New Jersey - Camden', 'KIPP New Jersey - Newark'),
@@ -78,6 +79,9 @@ with
             r.contact_actual_college_graduation_date as actual_college_grad_date,
             r.contact_current_kipp_student as current_kipp_student,
             r.contact_owner_name,
+            r.es_graduated,
+            r.tier,
+            r.contact_advising_provider as advising_provider,
 
             e.pursuing_degree_type,
             e.type,
@@ -95,6 +99,7 @@ with
 
             coalesce(p.is_basta, false) as is_basta,
             coalesce(p.is_braven, false) as is_braven,
+            coalesce(p.is_backrs, false) as is_backrs,
             coalesce(p.is_kippnj_internship, false) as is_kippnj_internship,
 
             case
@@ -158,11 +163,9 @@ with
             cast(ri.survey_id as string) as survey_id,
             cast(ri.response_id as string) as response_id,
             lower(ri.respondent_user_principal_name) as respondent_user_principal_name,
-        /* hardcode disabled model */
-        from kipptaf_surveys.int_surveys__response_identifiers as ri
+        from {{ source("surveys", "int_surveys__response_identifiers") }} as ri
         inner join
-            /* hardcode disabled model */
-            kipptaf_alchemer.base_alchemer__survey_results as sr
+            {{ source("alchemer", "base_alchemer__survey_results") }} as sr
             on ri.survey_id = sr.survey_id
             and ri.response_id = sr.response_id
         where ri.survey_id = 6734664  /* 'KIPP Forward Career Launch Survey' */
@@ -178,7 +181,7 @@ with
             cast(fr.form_id as string) as survey_id,
             cast(fr.response_id as string) as response_id,
             lower(fr.respondent_email) as respondent_user_principal_name,
-        from {{ ref("base_google_forms__form_responses") }} as fr
+        from {{ ref("int_google_forms__form_responses") }} as fr
         /* 'KIPP Forward Career Launch Survey - OLD' */
         where fr.form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
 
@@ -193,7 +196,7 @@ with
             cast(fr.form_id as string) as survey_id,
             cast(fr.response_id as string) as response_id,
             lower(fr.respondent_email) as respondent_user_principal_name,
-        from {{ ref("base_google_forms__form_responses") }} as fr
+        from {{ ref("int_google_forms__form_responses") }} as fr
         /* 'KIPP Forward Career Launch Survey' */
         where fr.form_id = '1c4SLP61YIVnUUvRl_IUdFuLXdtI1Vsq9OE3Jrz3HR0U'
     ),

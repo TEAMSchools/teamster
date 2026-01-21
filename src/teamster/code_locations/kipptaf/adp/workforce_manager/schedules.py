@@ -1,4 +1,4 @@
-from typing import Generator
+"""from typing import Generator
 
 from dagster import (
     DynamicPartitionsDefinition,
@@ -6,11 +6,11 @@ from dagster import (
     MultiPartitionsDefinition,
     RunRequest,
     ScheduleEvaluationContext,
-    _check,
     build_schedule_from_partitioned_job,
     define_asset_job,
     schedule,
 )
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.workforce_manager.assets import (
@@ -49,18 +49,18 @@ def adp_wfm_dynamic_partition_schedule(
     context: ScheduleEvaluationContext, adp_wfm: AdpWorkforceManagerResource
 ) -> Generator:
     for asset in adp_wfm_assets_dynamic:
-        partitions_def = _check.inst(asset.partitions_def, MultiPartitionsDefinition)
+        partitions_def = check.inst(asset.partitions_def, MultiPartitionsDefinition)
 
         symbolic_id_partition = partitions_def.get_partitions_def_for_dimension(
             "symbolic_id"
         )
-        date_partition = _check.inst(
+        date_partition = check.inst(
             partitions_def.get_partitions_def_for_dimension("date"),
             DynamicPartitionsDefinition,
         )
 
         for symbolic_id in symbolic_id_partition.get_partition_keys():
-            symbolic_period_response = _check.not_none(
+            symbolic_period_response = check.not_none(
                 adp_wfm.post(
                     endpoint="v1/commons/symbolicperiod/read",
                     json={
@@ -76,7 +76,7 @@ def adp_wfm_dynamic_partition_schedule(
             )
 
             context.instance.add_dynamic_partitions(
-                partitions_def_name=_check.not_none(value=date_partition.name),
+                partitions_def_name=check.not_none(value=date_partition.name),
                 partition_keys=[symbolic_period_record["begin"]],
             )
 
@@ -90,3 +90,4 @@ schedules = [
     adp_wfm_daily_partition_asset_job_schedule,
     adp_wfm_dynamic_partition_schedule,
 ]
+"""

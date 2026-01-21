@@ -1,97 +1,135 @@
 with
-    applications_unpivot as (
-        select
-            application_id,
-            candidate_id,
-            job_city,
-            recruiters,
-            department_internal,
-            job_title,
-            application_status,
-            reason_for_rejection,
-            phone_interview_score,
-            status_type,
-            date_val,
-            coalesce(resume_score, star_score) as resume_score,
-            if(
-                subject_preference is null, 'No Preference', subject_preference
-            ) as subject_preference,
-        from
-            {{ ref("stg_smartrecruiters__applications") }} unpivot (
-                date_val for status_type in (
-                    demo_date,
-                    hired_date,
-                    new_date,
-                    offer_date,
-                    phone_screen_complete_date,
-                    phone_screen_requested_date
-                )
-            )
-    ),
-
     applications_unnested as (
         select
-            au.application_id,
-            au.candidate_id,
-            au.job_city,
-            au.recruiters,
-            au.department_internal,
-            au.job_title,
-            au.application_status,
-            au.reason_for_rejection,
-            au.phone_interview_score,
-            au.status_type,
-            au.date_val,
-            au.resume_score,
-            trim(subject_preference) as subject_preference,
-        from applications_unpivot as au
-        cross join unnest(split(subject_preference, ',')) as subject_preference
+            a.application_id,
+            a.application_state,
+            a.application_url,
+            a.candidate_email,
+            a.candidate_first_name,
+            a.candidate_id,
+            a.candidate_last_name,
+            a.candidate_linkedin_profile_url,
+            a.department_internal,
+            a.department_org_field_value,
+            a.job_city,
+            a.job_title,
+            a.source,
+            a.source_subtype,
+            a.source_type,
+            a.time_in_application_state_new,
+            a.time_in_application_state_in_review,
+            a.time_in_application_state_lead,
+            a.school_shared_with,
+            a.application_field_phone_interview_score as phone_interview_score,
+            a.application_reason_for_rejection as reason_for_rejection,
+            a.recruiters as recruiter_multiple,
+            a.subject_preference as subject_preference_multiple,
+            a.demo_date as date_demo,
+            a.hired_date as date_hired,
+            a.last_update_date as date_last_update,
+            a.lead_date as date_lead,
+            a.new_date as date_new,
+            a.offer_date as date_offer,
+            a.phone_screen_complete_date as date_phone_screen_complete,
+            a.phone_screen_requested_date as date_phone_screen_requested,
+            a.rejected_date as date_rejected,
+
+            recruiter,
+
+            trim(subject_preference_single) as subject_preference,
+
+            coalesce(a.resume_score, a.average_rating) as resume_score,
+
+            -- trunk-ignore(sqlfluff/LT01)
+            date_trunc(a.new_date, week(monday)) as application_week_start,
+        from {{ ref("stg_smartrecruiters__applications") }} as a
+        /* separating out multi-select fields for reporting */
+        cross join unnest(split(a.subject_preference, ',')) as subject_preference_single
+        cross join unnest(split(a.recruiters, ',')) as recruiter
+    ),
+
+    add_dimensions_and_metrics as (
+        select
+            *,
+
+            /* custom dimensions */
+            if(resume_score >= 3, 1, 0) as high_quality_candidate,
+
+            case
+                when
+                    department_org_field_value not in ('Teacher', 'Teaching Fellow')
+                    and time_in_application_state_new <= 7
+                    and application_state != 'NEW'
+                then 1
+                when
+                    time_in_application_state_new <= 7
+                    and resume_score is not null
+                    and application_state != 'IN_REVIEW'
+                then 1
+                when
+                    time_in_application_state_lead <= 7
+                    and resume_score is not null
+                    and application_state not in ('NEW', 'IN_REVIEW')
+                then 1
+                when
+                    date_diff(date_rejected, date_new, day) <= 7
+                    and resume_score is not null
+                    and application_state not in ('NEW', 'IN_REVIEW')
+                then 1
+                when
+                    date_diff(date_phone_screen_requested, date_new, day) <= 7
+                    and resume_score is not null
+                    and application_state not in ('NEW', 'IN_REVIEW')
+                then 1
+                when
+                    date_diff(date_phone_screen_complete, date_new, day) <= 7
+                    and resume_score is not null
+                    and application_state not in ('NEW', 'IN_REVIEW')
+                then 1
+                when
+                    date_diff(date_demo, date_new, day) <= 7
+                    and resume_score is not null
+                    and application_state not in ('NEW', 'IN_REVIEW')
+                then 1
+                when
+                    date_diff(date_offer, date_new, day) <= 7
+                    and resume_score is not null
+                    and application_state not in ('NEW', 'IN_REVIEW')
+                then 1
+                when
+                    date_diff(date_hired, date_new, day) <= 7
+                    and resume_score is not null
+                    and application_state not in ('NEW', 'IN_REVIEW')
+                then 1
+                else 0
+            end as within_week_initial_review,
+
+            /* calculated metrics */
+            date_diff(date_hired, date_new, day) as days_to_hire,
+            date_diff(current_date(), date_last_update, day) as days_since_update,
+        from applications_unnested
     )
 
 select
-    a.application_id,
-    a.job_city,
-    a.recruiters,
-    a.department_internal,
-    a.job_title,
-    a.application_status,
-    a.reason_for_rejection,
-    a.phone_interview_score,
-    a.resume_score,
-    a.subject_preference,
-    a.status_type,
-    a.date_val,
+    *,
 
-    s.candidate_email,
-    s.candidate_first_and_last_name,
-    s.candidate_first_name,
-    s.candidate_id,
-    s.candidate_last_name,
-    s.candidate_source_subtype,
-    s.candidate_source_type,
-    s.candidate_source,
-    s.candidate_tags_values,
-    s.current_employer,
-    s.teacher_certification_endorsement_question,
-    s.city_of_interest,
-    s.how_did_you_hear_about_kipp_nj_miami,
-    s.out_of_state_teacher_certification_sped_credits,
-    s.kf_are_you_alumnus,
-    s.kf_gender,
-    s.kf_in_which_regions_alumnus,
-    s.kf_race,
-    s.taf_affiliated_orgs,
-    s.taf_current_or_former_kipp_employee,
-    s.taf_current_or_former_kipp_nj_miami_employee,
-    s.taf_expected_salary,
-    s.taf_other_orgs,
-    s.nj_out_of_state_sped_credits,
-    s.candidate_last_first,
-    s.school_shared_with,
-    s.undergrad_gpa,
-    s.grad_gpa,
-    s.certification_in_state,
-    s.certification_out_of_state,
-from applications_unnested as a
-left join
-    {{ ref("stg_smartrecruiters__applicants") }} as s on a.candidate_id = s.candidate_id
+    /* derived metrics */
+    case
+        when
+            days_since_update >= 7
+            and application_state
+            not in ('HIRED', 'REJECTED', 'TRANSFERRED', 'WITHDRAWN')
+        then 1
+        else 0
+    end as stalled_application,
+
+    case
+        when
+            days_since_update >= 7
+            and high_quality_candidate = 1
+            and application_state
+            not in ('HIRED', 'REJECTED', 'TRANSFERRED', 'WITHDRAWN')
+        then 1
+        else 0
+    end as stalled_application_high_quality,
+from add_dimensions_and_metrics

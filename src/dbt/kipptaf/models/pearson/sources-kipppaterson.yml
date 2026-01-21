@@ -1,0 +1,60 @@
+sources:
+  - name: kipppaterson_pearson
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}
+      z_dev_{%- endif -%}kipppaterson_pearson
+    tables:
+      - name: stg_pearson__njgpa
+        config:
+          meta:
+            dagster:
+              group: pearson
+              asset_key:
+                - kipppaterson
+                - pearson
+                - stg_pearson__njgpa
+      - name: stg_pearson__njsla
+        config:
+          meta:
+            dagster:
+              group: pearson
+              asset_key:
+                - kipppaterson
+                - pearson
+                - stg_pearson__njsla
+      - name: stg_pearson__njsla_science
+        config:
+          meta:
+            dagster:
+              group: pearson
+              asset_key:
+                - kipppaterson
+                - pearson
+                - stg_pearson__njsla_science
+      - name: stg_pearson__parcc
+        config:
+          meta:
+            dagster:
+              group: pearson
+              asset_key:
+                - kipppaterson
+                - pearson
+                - stg_pearson__parcc
+      - name: stg_pearson__student_list_report
+        config:
+          meta:
+            dagster:
+              group: pearson
+              asset_key:
+                - kipppaterson
+                - pearson
+                - stg_pearson__student_list_report
+      - name: stg_pearson__student_test_update
+        config:
+          meta:
+            dagster:
+              group: pearson
+              asset_key:
+                - kipppaterson
+                - pearson
+                - stg_pearson__student_test_update

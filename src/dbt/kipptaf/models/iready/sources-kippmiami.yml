@@ -1,40 +1,55 @@
-version: 2
-
 sources:
   - name: kippmiami_iready
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      kippmiami_iready
+      {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['staging', 'dev'] -%}
+      z_dev_
+      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'prod' -%}
+      {%- elif env_var('GITHUB_USER', '') != '' -%}
+      zz_{{ env_var('GITHUB_USER', '') }}_
+      {%- endif -%}kippmiami_iready
     tables:
       - name: stg_iready__diagnostic_results
-        meta:
-          dagster:
-            group: iready
-            asset_key:
-              - kippmiami
-              - iready
-              - stg_iready__diagnostic_results
+        config:
+          meta:
+            dagster:
+              group: iready
+              asset_key:
+                - kippmiami
+                - iready
+                - stg_iready__diagnostic_results
       - name: stg_iready__instructional_usage_data
-        meta:
-          dagster:
-            group: iready
-            asset_key:
-              - kippmiami
-              - iready
-              - stg_iready__instructional_usage_data
+        config:
+          meta:
+            dagster:
+              group: iready
+              asset_key:
+                - kippmiami
+                - iready
+                - stg_iready__instructional_usage_data
       - name: stg_iready__instruction_by_lesson
-        meta:
-          dagster:
-            group: iready
-            asset_key:
-              - kippmiami
-              - iready
-              - stg_iready__instruction_by_lesson
+        config:
+          meta:
+            dagster:
+              group: iready
+              asset_key:
+                - kippmiami
+                - iready
+                - stg_iready__instruction_by_lesson
       - name: stg_iready__instruction_by_lesson_pro
-        meta:
-          dagster:
-            group: iready
-            asset_key:
-              - kippmiami
-              - iready
-              - stg_iready__instruction_by_lesson_pro
+        config:
+          meta:
+            dagster:
+              group: iready
+              asset_key:
+                - kippmiami
+                - iready
+                - stg_iready__instruction_by_lesson_pro
+      - name: stg_iready__personalized_instruction_summary
+        config:
+          meta:
+            dagster:
+              group: iready
+              asset_key:
+                - kippmiami
+                - iready
+                - stg_iready__personalized_instruction_summary

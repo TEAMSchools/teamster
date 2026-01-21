@@ -1,92 +1,36 @@
-with
-    roster as (
-        select
-            e._dbt_source_relation,
-            e.academic_year,
-            e.academic_year_display,
-            e.region,
-            e.schoolid,
-            e.school_name,
-            e.school,
-            e.students_dcid,
-            e.studentid,
-            e.state_studentnumber,
-            e.student_number,
-            e.student_name,
-            e.student_first_name,
-            e.student_last_name,
-            e.grade_level,
-            e.enroll_status,
-            e.cohort,
-            e.advisory,
-            e.iep_status,
-            e.is_504,
-            e.lep_status,
-            e.is_retained_year,
-            e.is_retained_ever,
-            e.student_email as student_email_google,
-            e.salesforce_id as kippadb_contact_id,
-            e.ktc_cohort,
-            e.has_fafsa,
-
-            s.courses_course_name,
-            s.teacher_lastfirst,
-            s.sections_external_expression,
-            s.sections_section_number as section_number,
-
-            discipline,
-
-        from {{ ref("int_extracts__student_enrollments") }} as e
-        left join
-            {{ ref("base_powerschool__course_enrollments") }} as s
-            on e.studentid = s.cc_studentid
-            and e.academic_year = s.cc_academic_year
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
-            and s.courses_course_name like 'College and Career%'
-            and s.rn_course_number_year = 1
-            and not s.is_dropped_section
-        cross join unnest(['Math', 'ELA']) as discipline
-        where
-            e.academic_year = {{ var("current_academic_year") }}
-            and e.region != 'Miami'
-            and e.schoolid != 999999
-            and e.cohort between ({{ var("current_academic_year") - 1 }}) and (
-                {{ var("current_academic_year") + 5 }}
-            )
-    )
-
 select
-    r._dbt_source_relation,
-    r.academic_year,
-    r.academic_year_display,
-    r.region,
-    r.schoolid,
-    r.school_name,
-    r.school,
-    r.student_number,
-    r.state_studentnumber,
-    r.kippadb_contact_id,
-    r.students_dcid,
-    r.student_name,
-    r.student_first_name,
-    r.student_last_name,
-    r.enroll_status,
-    r.cohort,
-    r.ktc_cohort,
-    r.has_fafsa,
-    r.grade_level,
-    r.iep_status,
-    r.is_504,
-    r.lep_status,
-    r.is_retained_year,
-    r.is_retained_ever,
-    r.student_email_google,
-    r.advisory,
-    r.courses_course_name as ccr_course,
-    r.teacher_lastfirst as ccr_teacher,
-    r.sections_external_expression as ccr_period,
-    r.section_number as ccr_section_number,
-    r.discipline,
+    e._dbt_source_relation,
+    e.academic_year,
+    e.academic_year_display,
+    e.region,
+    e.schoolid,
+    e.school_name,
+    e.school,
+    e.students_dcid,
+    e.studentid,
+    e.state_studentnumber,
+    e.student_number,
+    e.student_name,
+    e.student_first_name,
+    e.student_last_name,
+    e.grade_level,
+    e.enroll_status,
+    e.cohort,
+    e.advisory,
+    e.iep_status,
+    e.is_504,
+    e.lep_status,
+    e.is_retained_year,
+    e.is_retained_ever,
+    e.student_email as student_email_google,
+    e.salesforce_id as kippadb_contact_id,
+    e.ktc_cohort,
+    e.discipline,
+
+    s.courses_course_name,
+    s.teacher_lastfirst,
+    s.sections_external_expression,
+    s.sections_section_number as section_number,
 
     c.pathway_option,
     c.test_type,
@@ -109,10 +53,28 @@ select
     c.final_grad_path_code,
     c.grad_eligibility,
 
-from roster as r
+    if(e.met_fafsa_requirement, 'Yes', 'No') as has_fafsa,
+
+from {{ ref("int_extracts__student_enrollments_subjects") }} as e
+left join
+    {{ ref("base_powerschool__course_enrollments") }} as s
+    on e.studentid = s.cc_studentid
+    and e.academic_year = s.cc_academic_year
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
+    and s.courses_course_name like 'College and Career%'
+    and s.rn_course_number_year = 1
+    and not s.is_dropped_section
 left join
     {{ ref("int_students__graduation_path_codes") }} as c
-    on r.student_number = c.student_number
-    and r.discipline = c.discipline
+    on e.student_number = c.student_number
+    and e.discipline = c.discipline
     and c.scale_score is not null
     and c.rn_highest = 1
+where
+    e.academic_year = {{ var("current_academic_year") }}
+    and e.rn_year = 1
+    and e.region != 'Miami'
+    and e.schoolid != 999999
+    and e.cohort between ({{ var("current_academic_year") - 1 }}) and (
+        {{ var("current_academic_year") + 5 }}
+    )

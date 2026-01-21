@@ -1,13 +1,13 @@
 import time
 
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
 from requests import Response
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 from requests_oauthlib import OAuth2Session
-from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
 
 class AdpWorkforceNowResource(ConfigurableResource):
@@ -22,7 +22,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
         # instantiate client
         self._session = OAuth2Session(
@@ -44,8 +44,6 @@ class AdpWorkforceNowResource(ConfigurableResource):
         if not self.masked:
             self._session.headers["Accept"] = "application/json;masked=false"
 
-    # TODO: refine retrying rules for rate limit
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential_jitter())
     def _request(self, method, url, **kwargs) -> Response:
         response = self._session.request(method=method, url=url, **kwargs)
 
@@ -61,8 +59,10 @@ class AdpWorkforceNowResource(ConfigurableResource):
 
             return response
         except HTTPError as e:
-            self._log.error(msg=response.text)
-            raise e
+            response_json = response.json()
+
+            self._log.error(msg=response_json)
+            raise Exception(response_json) from e
 
     def post(self, endpoint, subresource, verb, payload):
         return self._request(

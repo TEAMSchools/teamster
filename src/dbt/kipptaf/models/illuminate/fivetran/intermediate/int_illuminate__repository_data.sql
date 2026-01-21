@@ -1,5 +1,3 @@
-{{ config(materialized="view") }}
-
 {% set relations = dbt_utils.get_relations_by_prefix(
     schema="kipptaf_illuminate",
     prefix="stg_illuminate__repository_",

@@ -19,7 +19,8 @@ with
             if(app.type_for_roll_ups = 'Alternative Program', true, false) as is_cte,
             if(
                 app.type_for_roll_ups
-                in ('Alternative Program', 'Organization', 'Other', 'Private 2 yr'),
+                in ('Alternative Program', 'Organization', 'Other')
+                or (app.type_for_roll_ups = 'College' and acc.type = 'Private 2 yr'),
                 true,
                 false
             ) as is_certificate,
@@ -82,7 +83,9 @@ with
                 app.type_for_roll_ups = 'College' and acc.type like '%4 yr', true, false
             ) as is_4yr_college,
             if(
-                app.type_for_roll_ups = 'College' and acc.type like '%2 yr', true, false
+                app.type_for_roll_ups = 'College' and acc.type = 'Public 2 yr',
+                true,
+                false
             ) as is_2yr_college,
 
             row_number() over (
@@ -104,13 +107,15 @@ with
             and c.contact_kipp_hs_class = enr.start_date_year
             and enr.rn_stu_school_start = 1
         left join
-            {{ ref("stg_kippadb__nsc_crosswalk") }} as n
+            {{ ref("stg_google_sheets__kippadb__nsc_crosswalk") }} as n
             on acc.id = n.account_id
             and n.rn_account = 1
     )
 
 select
     *,
+
+    if(is_matriculated and is_4yr_college, true, false) as is_matriculated_ba,
     if(is_early_action or is_early_decision, true, false) as is_early_action_decision,
     if(is_submitted and is_2yr_college, true, false) as is_submitted_aa,
     if(is_submitted and is_4yr_college, true, false) as is_submitted_ba,
@@ -120,6 +125,7 @@ select
     if(
         is_submitted and is_certificate and is_accepted, true, false
     ) as is_accepted_certificate,
+
     row_number() over (
         partition by applicant, school
         order by is_matriculated desc, is_accepted desc, is_submitted desc

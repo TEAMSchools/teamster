@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_assessments__college_assessment
     columns:
@@ -6,6 +5,8 @@ models:
         data_type: int64
       - name: administration_round
         data_type: string
+      - name: academic_year
+        data_type: int64
       - name: test_date
         data_type: date
       - name: scope
@@ -20,7 +21,33 @@ models:
         data_type: numeric
       - name: rn_highest
         data_type: int64
-      - name: test_type
-        data_type: string
       - name: salesforce_id
         data_type: string
+      - name: row_count_by_test_date
+        data_type: int64
+      - name: aligned_subject_area
+        data_type: string
+      - name: strategy_case
+        data_type: string
+      - name: running_max_scale_score
+        data_type: numeric
+      - name: surrogate_key
+        data_type: string
+      - name: max_scale_score
+        data_type: numeric
+      - name: previous_total_score_change
+        data_type: numeric
+      - name: superscore
+        data_type: numeric
+      - name: avg_running_max_superscore
+        data_type: numeric
+      - name: sum_running_max_superscore
+        data_type: numeric
+      - name: test_type
+        data_type: string
+      - name: aligned_subject
+        data_type: string
+      - name: test_month
+        data_type: string
+      - name: runnning_superscore
+        data_type: numeric

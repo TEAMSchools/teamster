@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: int_surveys__support_survey_details
+    config:
+      enabled: false
     columns:
       - name: survey_id
         data_type: string

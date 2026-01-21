@@ -19,6 +19,6 @@ select
     || regexp_extract(sch._dbt_source_relation, r'(kipp\w+)_')
     || '_powerschool'
     || '`.`base_powerschool__student_enrollments`' as _dbt_source_relation,
-from {{ ref("stg_finance__enrollment_targets") }} as et
+from {{ ref("stg_google_sheets__finance__enrollment_targets") }} as et
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on et.schoolid = sch.school_number

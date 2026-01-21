@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__attendance_dashboard
     columns:
@@ -9,7 +8,7 @@ models:
       - name: membershipvalue
         data_type: float64
       - name: is_present
-        data_type: numeric
+        data_type: float64
       - name: is_absent
         data_type: float64
       - name: student_number
@@ -61,7 +60,7 @@ models:
       - name: nj_overall_student_tier
         data_type: string
       - name: ada_running
-        data_type: numeric
+        data_type: float64
       - name: pct_ontime_running
         data_type: float64
       - name: is_oss_running
@@ -70,3 +69,15 @@ models:
         data_type: float64
       - name: is_suspended_running
         data_type: float64
+      - name: is_iss
+        data_type: float64
+      - name: is_oss
+        data_type: float64
+      - name: is_present_flip
+        data_type: boolean
+      - name: is_present_hs_alt
+        data_type: float64
+      - name: is_tardy
+        data_type: float64
+      - name: is_truant
+        data_type: boolean

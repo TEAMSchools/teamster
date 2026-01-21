@@ -1,0 +1,21 @@
+models:
+  - name: stg_powerschool__u_storedgrades_de
+    columns:
+      - name: id
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: storedgradesdcid
+        data_type: int64
+      - name: de_course_name
+        data_type: string
+      - name: de_institution
+        data_type: string
+      - name: de_pass_yn
+        data_type: int64
+      - name: de_score
+        data_type: string
+      - name: de_semester
+        data_type: string

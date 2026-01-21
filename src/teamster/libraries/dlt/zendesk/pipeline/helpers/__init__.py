@@ -1,8 +1,8 @@
+# trunk-ignore-all(pyright/reportPrivateImportUsage)
+
 """Zendesk source helpers"""
 
 from dlt.common import pendulum
-
-# trunk-ignore(pyright/reportPrivateImportUsage)
 from dlt.common.time import timedelta
 
 

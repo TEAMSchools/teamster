@@ -23,7 +23,7 @@ select
     r.position_id,
     r.payroll_group_code as company_code,
 
-from {{ ref("stg_stipend_and_bonus__output") }} as o
+from {{ ref("stg_google_appsheet__stipend_and_bonus__output") }} as o
 left join
     {{ ref("rpt_appsheet__stipend_app_roster") }} as r
     on o.employee_number = r.employee_number

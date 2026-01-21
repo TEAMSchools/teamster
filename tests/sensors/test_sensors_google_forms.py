@@ -2,14 +2,14 @@ import json
 
 from dagster import DagsterInstance, SensorResult, build_sensor_context
 
-from teamster.code_locations.kipptaf._google.forms.sensors import (
-    google_forms_responses_sensor,
-)
-from teamster.libraries.google.drive.resources import GoogleDriveResource
-from teamster.libraries.google.forms.resources import GoogleFormsResource
+from teamster.core.resources import GOOGLE_DRIVE_RESOURCE, GOOGLE_FORMS_RESOURCE
 
 
 def test_google_forms_responses_sensor():
+    from teamster.code_locations.kipptaf._google.forms.sensors import (
+        google_forms_responses_sensor,
+    )
+
     cursor = {
         "1jpeMof_oQ9NzTw85VFsA5A7G9VrH3XkSc_nZDFz07nA": "2025-01-09T17:52:11.213611Z",
         "1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0": "2025-01-09T17:52:11.213611Z",
@@ -34,16 +34,8 @@ def test_google_forms_responses_sensor():
             sensor_name=google_forms_responses_sensor.name,
             cursor=json.dumps(obj=cursor),
         ),
-        google_forms=GoogleFormsResource(
-            service_account_file_path=(
-                "/etc/secret-volume/gcloud_dagster_service_account.json"
-            ),
-        ),
-        google_drive=GoogleDriveResource(
-            service_account_file_path=(
-                "/etc/secret-volume/gcloud_dagster_service_account.json"
-            ),
-        ),
+        google_forms=GOOGLE_FORMS_RESOURCE,
+        google_drive=GOOGLE_DRIVE_RESOURCE,
     )
 
     assert isinstance(sensor_result, SensorResult)

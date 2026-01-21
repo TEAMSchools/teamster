@@ -63,19 +63,20 @@ with
             e.college_match_gpa,
             e.college_match_gpa_bands,
             e.ms_attended,
+            e.graduation_year,
+            e.is_exempt_state_testing as dlm,
 
             s.courses_course_name,
             s.teacher_lastfirst,
             s.sections_external_expression,
 
             if(e.iep_status = 'No IEP', 0, 1) as sped,
-
-            coalesce(f.is_exempt_state_testing, false) as dlm,
-        from {{ ref("int_extracts__student_enrollments") }} as e
-        left join
+        from {{ ref("int_extracts__student_enrollments_subjects") }} as e
+        inner join
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.studentid = s.cc_studentid
             and e.academic_year = s.cc_academic_year
+            and e.powerschool_credittype = s.courses_credittype
             and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
             and s.rn_course_number_year = 1
             and not s.is_dropped_section
@@ -86,23 +87,18 @@ with
                 'College and Career II',
                 'HR'
             )
-        left join
+        inner join
             expected_course as ec
             on s.cc_academic_year = ec.cc_academic_year
             and s.students_student_number = ec.student_number
             and s.courses_course_name = ec.courses_course_name_expected
             and {{ union_dataset_join_clause(left_alias="s", right_alias="ec") }}
-        left join
-            {{ ref("int_extracts__student_enrollments_subjects") }} as f
-            on s.cc_academic_year = f.academic_year
-            and s.students_student_number = f.student_number
-            and s.courses_credittype = f.powerschool_credittype
-        where e.school_level = 'HS' and ec.courses_course_name_expected is not null
+        where e.rn_year = 1 and e.school_level = 'HS'
     ),
 
     college_assessments_official as (
         select
-            salesforce_id as contact,
+            student_number,
             scope,
             test_date,
             administration_round,
@@ -121,7 +117,6 @@ with
                     date_field="test_date", start_month=7, year_source="start"
                 )
             }} as test_academic_year,
-
         from {{ ref("int_assessments__college_assessment") }}
         where
             score_type in (
@@ -161,6 +156,7 @@ select
     e.contact_owner_name,
     e.college_match_gpa,
     e.college_match_gpa_bands,
+    e.graduation_year,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
@@ -189,10 +185,11 @@ select
 
     o.scale_score,
     o.rn_highest,
+
 from roster as e
 left join
     college_assessments_official as o
-    on e.contact_id = o.contact
+    on e.student_number = o.student_number
     and e.academic_year = o.test_academic_year
 where o.test_type = 'Official'
 
@@ -221,6 +218,7 @@ select
     e.contact_owner_name,
     e.college_match_gpa,
     e.college_match_gpa_bands,
+    e.graduation_year,
     e.courses_course_name,
     e.teacher_lastfirst,
     e.sections_external_expression,
@@ -248,6 +246,7 @@ select
         partition by e.student_number, p.scope, p.subject_area
         order by p.scale_score desc
     ) as rn_highest,
+
 from roster as e
 left join
     {{ ref("int_assessments__college_assessment_practice") }} as p

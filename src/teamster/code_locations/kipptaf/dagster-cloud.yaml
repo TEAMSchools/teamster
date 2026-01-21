@@ -32,6 +32,17 @@ locations:
                       - key: id_rsa_egencia
                         path: id_rsa_egencia
         server_k8s_config:
+          pod_spec_config:
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchExpressions:
+                        - key: location_name
+                          operator: In
+                          values:
+                            - kipptaf
+                    topologyKey: kubernetes.io/hostname
           container_config:
             env:
               - name: ADP_SFTP_PASSWORD
@@ -99,26 +110,6 @@ locations:
                   secretKeyRef:
                     name: op-airbyte-api
                     key: workspace-id
-              - name: AMPLIFY_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-service-account
-                    key: password
-              - name: AMPLIFY_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-service-account
-                    key: username
-              - name: AMPLIFY_DDS_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-dds-service-account
-                    key: password_confirm
-              - name: AMPLIFY_DDS_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-dds-service-account
-                    key: username
               - name: CLEVER_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -369,11 +360,6 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: SLACK_TOKEN
-                valueFrom:
-                  secretKeyRef:
-                    name: op-slack-api
-                    key: credential
               - name: ILLUMINATE_DB_DRIVERNAME
                 valueFrom:
                   secretKeyRef:
@@ -403,6 +389,31 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-overgrad-api-kippnewark
+                    key: credential
+              - name: OUTLOOK_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: host
+              - name: OUTLOOK_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: port
+              - name: OUTLOOK_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: username
+              - name: OUTLOOK_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: password
+              - name: KNOWBE4_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-knowbe4
                     key: credential
         run_k8s_config:
           container_config:
@@ -472,26 +483,6 @@ locations:
                   secretKeyRef:
                     name: op-airbyte-api
                     key: workspace-id
-              - name: AMPLIFY_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-service-account
-                    key: password
-              - name: AMPLIFY_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-service-account
-                    key: username
-              - name: AMPLIFY_DDS_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-dds-service-account
-                    key: password_confirm
-              - name: AMPLIFY_DDS_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-amplify-dds-service-account
-                    key: username
               - name: CLEVER_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -742,11 +733,6 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: ip
-              - name: SLACK_TOKEN
-                valueFrom:
-                  secretKeyRef:
-                    name: op-slack-api
-                    key: credential
               - name: ILLUMINATE_DB_DRIVERNAME
                 valueFrom:
                   secretKeyRef:
@@ -776,4 +762,29 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-overgrad-api-kippnewark
+                    key: credential
+              - name: OUTLOOK_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: host
+              - name: OUTLOOK_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: port
+              - name: OUTLOOK_USER
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: username
+              - name: OUTLOOK_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-outlook-pm
+                    key: password
+              - name: KNOWBE4_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: op-knowbe4
                     key: credential

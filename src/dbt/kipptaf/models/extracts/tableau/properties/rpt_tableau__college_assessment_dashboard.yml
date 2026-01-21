@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: rpt_tableau__college_assessment_dashboard
+    config:
+      enabled: false
     columns:
       - name: academic_year
         data_type: int64
@@ -52,8 +53,20 @@ models:
         data_type: string
       - name: expected_scope
         data_type: string
+      - name: expected_scope_round
+        data_type: string
+      - name: expected_score_type
+        data_type: string
+      - name: expected_admin_season
+        data_type: string
+      - name: expected_month_round
+        data_type: string
+      - name: expected_actual_month_round
+        data_type: string
       - name: expected_subject_area
         data_type: string
+      - name: strategy
+        data_type: boolean
       - name: test_type
         data_type: string
       - name: scope
@@ -96,3 +109,7 @@ models:
         data_type: boolean
       - name: is_exempt_state_testing
         data_type: boolean
+      - name: expected_strategy
+        data_type: boolean
+      - name: test_academic_year
+        data_type: int64

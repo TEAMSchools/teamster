@@ -39,7 +39,7 @@ def main() -> None:
         ]
 
         if args.select:
-            list_args.extend(["--select", " ".join(*args.select)])
+            list_args.extend(["--select", " ".join(args.select)])
 
         print(" ".join(list_args))
 
@@ -53,16 +53,11 @@ def main() -> None:
         ]
 
     for model_name in model_names:
-        file_path = project_dir / f"models/properties/{model_name}.yml"
-
-        # skip if file has already been created
-        # if file_path.exists():
-        #     continue
-
         run_args = [
             "dbt",
             "run-operation",
             "generate_model_yaml",
+            f"--target={args.project if args.dev else 'prod'}",
             f"--project-dir={project_dir}",
             "--args",
             json.dumps({"model_names": [model_name]}),
@@ -80,9 +75,7 @@ def main() -> None:
             ]
         )
 
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(file=file_path, mode="w") as io_wrapper:
+        with open(file=f"{model_name}.yml", mode="w") as io_wrapper:
             io_wrapper.write(yaml)
 
 

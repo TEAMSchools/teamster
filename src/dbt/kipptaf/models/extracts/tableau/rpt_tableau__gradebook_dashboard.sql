@@ -1,78 +1,57 @@
 with
     student_roster as (
         select
-            co.studentid,
-            co.student_number,
-            co.lastfirst,
-            co.enroll_status,
-            co.yearid,
-            co.academic_year,
-            co.region,
-            co.school_level,
-            co.reporting_schoolid as schoolid,
-            co.school_abbreviation,
-            co.grade_level,
-            co.advisory_name as team,
-            co.advisor_lastfirst as advisor_name,
-            co.spedlep as iep_status,
-            co.cohort,
-            co.gender,
-            co.year_in_school,
-            co._dbt_source_relation,
-
-            case when sp.studentid is not null then 1 end as is_counselingservices,
-
-            case when sa.studentid is not null then 1 end as is_studentathlete,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
-        left join
-            {{ ref("int_powerschool__spenrollments") }} as sp
-            on co.studentid = sp.studentid
-            and current_date('{{ var("local_timezone") }}')
-            between sp.enter_date and sp.exit_date
-            and sp.specprog_name = 'Counseling Services'
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
-        left join
-            {{ ref("int_powerschool__spenrollments") }} as sa
-            on co.studentid = sa.studentid
-            and current_date('{{ var("local_timezone") }}')
-            between sa.enter_date and sa.exit_date
-            and sa.specprog_name = 'Student Athlete'
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="sa") }}
-        where co.rn_year = 1 and co.grade_level != 99
+            _dbt_source_relation,
+            studentid,
+            student_number,
+            student_name as lastfirst,
+            enroll_status,
+            yearid,
+            academic_year,
+            region,
+            school_level,
+            reporting_schoolid as schoolid,
+            school as school_abbreviation,
+            grade_level,
+            advisory_name as team,
+            advisor_lastfirst as advisor_name,
+            spedlep as iep_status,
+            cohort,
+            gender,
+            year_in_school,
+            is_tutoring as tutoring_nj,
+            is_counseling_services as is_counselingservices,
+            is_student_athlete as is_studentathlete,
+            unweighted_ada as ada,
+            hos,
+        from {{ ref("int_extracts__student_enrollments") }}
+        where rn_year = 1
     ),
 
     section_teacher as (
         select
+            enr._dbt_source_relation,
             enr.cc_studentid as studentid,
             enr.cc_sectionid as sectionid,
             enr.cc_yearid as yearid,
             enr.cc_course_number as course_number,
-            enr._dbt_source_relation,
+            enr.sections_section_number as section_number,
+            enr.sections_external_expression as external_expression,
+            enr.sections_termid as termid,
+            enr.courses_credittype as credittype,
+            enr.courses_course_name as course_name,
+            enr.teacher_lastfirst as teacher_name,
 
-            sec.sections_section_number as section_number,
-            sec.sections_external_expression as external_expression,
-            sec.sections_termid as termid,
-            sec.courses_credittype as credittype,
-            sec.courses_course_name as course_name,
-            sec.teacher_lastfirst as teacher_name,
-
-            f.is_tutoring as tutoring_nj,
             f.nj_student_tier,
         from {{ ref("base_powerschool__course_enrollments") }} as enr
-        left join
-            {{ ref("base_powerschool__sections") }} as sec
-            on enr.cc_sectionid = sec.sections_id
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="sec") }}
         left join
             {{ ref("int_extracts__student_enrollments_subjects") }} as f
             on enr.cc_studentid = f.studentid
             and enr.cc_academic_year = f.academic_year
-            and sec.courses_credittype = f.powerschool_credittype
+            and enr.courses_credittype = f.powerschool_credittype
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="f") }}
-        where
-            not enr.is_dropped_course
-            and not enr.is_dropped_section
-            and enr.rn_course_number_year = 1
+            and f.rn_year = 1
+        where enr.rn_course_number_year = 1 and not enr.is_dropped_section
     )
 
 /* current year - term grades */
@@ -93,6 +72,9 @@ select
     co.school_level,
     co.is_counselingservices,
     co.is_studentathlete,
+    co.tutoring_nj,
+    co.hos,
+    co.ada,
 
     gr.course_number,
     gr.storecode as term_name,
@@ -105,7 +87,9 @@ select
     gr.y1_percent_grade_adjusted as y1_grade_percent_adjusted,
     gr.y1_letter_grade as y1_grade_letter,
     gr.y1_grade_points as y1_gpa_points,
+
     if(gr.termbin_is_current, 1, 0) as is_curterm,
+
     gr.credittype,
     gr.course_name,
 
@@ -120,10 +104,7 @@ select
     st.section_number,
     st.section_number as `period`,
     st.external_expression,
-    st.tutoring_nj,
     st.nj_student_tier,
-
-    hos.head_of_school_preferred_name_lastfirst as hos,
 
     max(case when gr.termbin_is_current then gr.need_60 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
@@ -138,7 +119,6 @@ select
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_90,
 
-    round(ada.ada, 3) as ada,
 from student_roster as co
 left join
     {{ ref("base_powerschool__final_grades") }} as gr
@@ -158,14 +138,6 @@ left join
     and co.yearid = st.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
     and gr.course_number = st.course_number
-left join
-    {{ ref("int_powerschool__ada") }} as ada
-    on co.yearid = ada.yearid
-    and co.studentid = ada.studentid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as hos
-    on co.schoolid = hos.home_work_location_powerschool_school_id
 where co.academic_year = {{ var("current_academic_year") }}
 
 union all
@@ -188,6 +160,9 @@ select
     co.school_level,
     co.is_counselingservices,
     co.is_studentathlete,
+    co.tutoring_nj,
+    co.hos,
+    co.ada,
 
     gr.course_number,
 
@@ -217,10 +192,7 @@ select
     st.section_number,
     st.section_number as `period`,
     st.external_expression,
-    st.tutoring_nj,
     st.nj_student_tier,
-
-    hos.head_of_school_preferred_name_lastfirst as hos,
 
     max(case when gr.termbin_is_current then gr.need_60 end) over (
         partition by co.student_number, co.academic_year, gr.course_number
@@ -235,7 +207,6 @@ select
         partition by co.student_number, co.academic_year, gr.course_number
     ) as need_90,
 
-    round(ada.ada, 3) as ada,
 from student_roster as co
 left join
     {{ ref("base_powerschool__final_grades") }} as gr
@@ -257,14 +228,6 @@ left join
     and co.yearid = st.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
     and gr.course_number = st.course_number
-left join
-    {{ ref("int_powerschool__ada") }} as ada
-    on co.yearid = ada.yearid
-    and co.studentid = ada.studentid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as hos
-    on co.schoolid = hos.home_work_location_powerschool_school_id
 where co.academic_year = {{ var("current_academic_year") }}
 
 union all
@@ -287,6 +250,9 @@ select
     co.school_level,
     co.is_counselingservices,
     co.is_studentathlete,
+    co.tutoring_nj,
+    co.hos,
+    co.ada,
 
     cg.course_number,
     cg.storecode as term_name,
@@ -325,18 +291,13 @@ select
     st.section_number,
     st.section_number as `period`,
     st.external_expression,
-
-    st.tutoring_nj,
     st.nj_student_tier,
-
-    hos.head_of_school_preferred_name_lastfirst as hos,
 
     null as need_65,
     null as need_70,
     null as need_80,
     null as need_90,
 
-    round(ada.ada, 3) as ada,
 from student_roster as co
 left join
     {{ ref("int_powerschool__category_grades") }} as cg
@@ -350,14 +311,6 @@ left join
     and co.yearid = st.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
     and cg.course_number = st.course_number
-left join
-    {{ ref("int_powerschool__ada") }} as ada
-    on co.yearid = ada.yearid
-    and co.studentid = ada.studentid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as hos
-    on co.schoolid = hos.home_work_location_powerschool_school_id
 where co.academic_year = {{ var("current_academic_year") }}
 
 union all
@@ -380,6 +333,9 @@ select
     co.school_level,
     co.is_counselingservices,
     co.is_studentathlete,
+    co.tutoring_nj,
+    co.hos,
+    co.ada,
 
     cy.course_number,
 
@@ -414,18 +370,13 @@ select
     st.section_number,
     st.section_number as `period`,
     st.external_expression,
-
-    st.tutoring_nj,
     st.nj_student_tier,
-
-    hos.head_of_school_preferred_name_lastfirst as hos,
 
     null as need_65,
     null as need_70,
     null as need_80,
     null as need_90,
 
-    round(ada.ada, 3) as ada,
 from student_roster as co
 left join
     {{ ref("int_powerschool__category_grades") }} as cy
@@ -441,14 +392,6 @@ left join
     and co.yearid = st.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
     and cy.course_number = st.course_number
-left join
-    {{ ref("int_powerschool__ada") }} as ada
-    on co.yearid = ada.yearid
-    and co.studentid = ada.studentid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as hos
-    on co.schoolid = hos.home_work_location_powerschool_school_id
 where co.academic_year = {{ var("current_academic_year") }}
 
 union all
@@ -471,6 +414,9 @@ select
     co.school_level,
     co.is_counselingservices,
     co.is_studentathlete,
+    co.tutoring_nj,
+    co.hos,
+    co.ada,
 
     sg.course_number,
 
@@ -501,17 +447,12 @@ select
     st.section_number,
     st.section_number as `period`,
     st.external_expression,
-    st.tutoring_nj,
     st.nj_student_tier,
-
-    hos.head_of_school_preferred_name_lastfirst as hos,
 
     null as need_65,
     null as need_70,
     null as need_80,
     null as need_90,
-
-    round(ada.ada, 3) as ada,
 from student_roster as co
 left join
     {{ ref("stg_powerschool__storedgrades") }} as sg
@@ -526,14 +467,6 @@ left join
     and co.yearid = st.yearid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
     and sg.course_number = st.course_number
-left join
-    {{ ref("int_powerschool__ada") }} as ada
-    on co.yearid = ada.yearid
-    and co.studentid = ada.studentid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as hos
-    on co.schoolid = hos.home_work_location_powerschool_school_id
 where co.academic_year < {{ var("current_academic_year") }}
 
 union all
@@ -558,9 +491,13 @@ select
     coalesce(co.region, e1.region) as region,
     coalesce(co.gender, e1.gender) as gender,
     coalesce(co.school_level, e1.school_level) as school_level,
-
     coalesce(co.is_counselingservices, 0) as is_counselingservices,
     coalesce(co.is_studentathlete, 0) as is_studentathlete,
+
+    null as tutoring_nj,
+
+    coalesce(co.hos, e1.hos) as hos,
+    coalesce(co.ada, e1.ada) as ada,
 
     concat(
         'T', upper(regexp_extract(tr._dbt_source_relation, r'(kipp\w+)_')), tr.dcid
@@ -594,17 +531,11 @@ select
     'TRANSFER' as section_number,
     null as `period`,
     null as external_expression,
-    null as tutoring_nj,
     null as nj_student_tier,
-
-    hos.head_of_school_preferred_name_lastfirst as hos,
-
     null as need_65,
     null as need_70,
     null as need_80,
     null as need_90,
-
-    round(ada.ada, 3) as ada,
 from {{ ref("stg_powerschool__storedgrades") }} as tr
 left join
     student_roster as co
@@ -618,26 +549,4 @@ left join
     and tr.schoolid = e1.schoolid
     and {{ union_dataset_join_clause(left_alias="tr", right_alias="e1") }}
     and e1.year_in_school = 1
-left join
-    {{ ref("int_powerschool__spenrollments") }} as sp
-    on co.studentid = sp.studentid
-    and current_date('{{ var("local_timezone") }}')
-    between sp.enter_date and sp.exit_date
-    and sp.specprog_name = 'Counseling Services'
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
-left join
-    {{ ref("int_powerschool__spenrollments") }} as sa
-    on co.studentid = sa.studentid
-    and current_date('{{ var("local_timezone") }}')
-    between sa.enter_date and sa.exit_date
-    and sa.specprog_name = 'Student Athlete'
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="sa") }}
-left join
-    {{ ref("int_powerschool__ada") }} as ada
-    on co.yearid = ada.yearid
-    and co.studentid = ada.studentid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as hos
-    on co.schoolid = hos.home_work_location_powerschool_school_id
 where tr.storecode = 'Y1' and tr.course_number is null

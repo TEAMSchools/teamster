@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__academic_goals_rollup
     columns:
@@ -31,7 +30,7 @@ models:
       - name: homeroom_teacher_name
         data_type: string
       - name: scale_score_state
-        data_type: float64
+        data_type: numeric
       - name: is_proficient_int_state
         data_type: int64
       - name: scale_score_iready
@@ -41,9 +40,9 @@ models:
       - name: benchmark_assessment_type
         data_type: string
       - name: performance_level
-        data_type: float64
+        data_type: int64
       - name: scale_score
-        data_type: float64
+        data_type: numeric
       - name: is_proficient_int
         data_type: int64
       - name: is_approaching_int
@@ -90,3 +89,7 @@ models:
         data_type: int64
       - name: student_tier_calculated
         data_type: string
+      - name: is_bucket3_eligible
+        data_type: boolean
+      - name: pct_rank_bfb
+        data_type: float64

@@ -1,0 +1,35 @@
+models:
+  - name: stg_google_sheets__kippfwd__expected_assessments
+    columns:
+      - name: expected_region
+        data_type: string
+      - name: expected_grade_level
+        data_type: int64
+      - name: expected_test_type
+        data_type: string
+      - name: expected_scope
+        data_type: string
+      - name: expected_score_type
+        data_type: string
+      - name: expected_month_round
+        data_type: string
+      - name: expected_admin_season
+        data_type: string
+      - name: expected_admin_season_order
+        data_type: int64
+      - name: expected_grouping
+        data_type: string
+      - name: expected_score_type_aligned
+        data_type: string
+      - name: expected_month
+        data_type: string
+      - name: expected_field_name
+        data_type: string
+      - name: expected_score_category
+        data_type: string
+      - name: expected_months_included
+        data_type: string
+      - name: rn
+        data_type: int64
+      - name: expected_unique_test_admin_id
+        data_type: string

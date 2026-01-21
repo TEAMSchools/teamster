@@ -12,13 +12,13 @@ with
             co.gender,
             co.lep_status,
             co.is_504,
+            co.gifted_and_talented,
 
             term,
 
             y.gpa_y1,
 
             gpa.gpa_term,
-            coalesce(co.gifted_and_talented, 'N') as gifted_and_talented,
         from {{ ref("int_extracts__student_enrollments") }} as co
         cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term
         left join
@@ -37,6 +37,7 @@ with
             and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
         where
             co.academic_year = {{ var("current_academic_year") }}
+            and co.rn_year = 1
             and co.enroll_status = 0
             and co.grade_level >= 5
     )

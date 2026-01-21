@@ -1,6 +1,16 @@
-version: 2
 models:
   - name: int_assessments__scaffold
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - illuminate_student_id
+              - assessment_id
+          config:
+            severity: warn
+            store_failures: true
     columns:
       - name: illuminate_student_id
         data_type: int64

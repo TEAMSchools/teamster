@@ -18,6 +18,7 @@ with
     business_groups as (
         select
             user_id,
+
             string_agg(
                 content_group_name order by content_group_name asc
             ) as business_group_names,
@@ -36,8 +37,6 @@ with
             sr.home_department_name,
             sr.job_title,
             sr.home_work_location_name,
-            sr.worker_type_code,
-            sr.wf_mgr_pay_rule,
             sr.uac_account_disable,
             sr.physical_delivery_office_name,
             sr.sam_account_name,
@@ -56,9 +55,7 @@ with
                 day
             ) as days_terminated,
 
-            case
-                cu.purchasing_user when true then 'Yes' when false then 'No'
-            end as purchasing_user,
+            if(cu.purchasing_user, 'Yes', 'No') as purchasing_user,
         from {{ ref("int_people__staff_roster") }} as sr
         inner join
             {{ ref("stg_coupa__users") }} as cu
@@ -72,7 +69,6 @@ with
             )
             >= '{{ var("current_academic_year") - 1 }}-07-01'
             and not regexp_contains(sr.worker_type_code, r'Part Time|Intern')
-            and (sr.wf_mgr_pay_rule != 'PT Hourly' or sr.wf_mgr_pay_rule is null)
 
         union all
 
@@ -86,8 +82,6 @@ with
             sr.home_department_name,
             sr.job_title,
             sr.home_work_location_name,
-            sr.worker_type_code,
-            sr.wf_mgr_pay_rule,
             sr.uac_account_disable,
             sr.physical_delivery_office_name,
             sr.sam_account_name,
@@ -107,7 +101,6 @@ with
             not sr.is_prestart
             and sr.assignment_status not in ('Terminated', 'Deceased')
             and not regexp_contains(sr.worker_type_code, r'Part Time|Intern')
-            and (sr.wf_mgr_pay_rule != 'PT Hourly' or sr.wf_mgr_pay_rule is null)
             and cu.employee_number is null
     ),
 
@@ -125,8 +118,6 @@ with
             au.home_work_location_name,
             au.home_department_name,
             au.job_title,
-            au.worker_type_code,
-            au.wf_mgr_pay_rule,
             au.sam_account_name,
             au.user_principal_name,
             au.mail,
@@ -144,9 +135,6 @@ with
             a.postal_code,
 
             case
-                /* no interns */
-                when au.worker_type_code like 'Intern%'
-                then 'inactive'
                 when au.uac_account_disable = 0
                 then 'active'
                 when au.days_terminated <= 7
@@ -174,20 +162,20 @@ with
             ) as coupa_school_name,
         from all_users as au
         left join
-            {{ ref("stg_coupa__school_name_lookup") }} as sn
+            {{ ref("stg_google_sheets__coupa__school_name_lookup") }} as sn
             on au.home_business_unit_code = sn.adp_business_unit_home_code
             and au.home_department_name = sn.adp_department_home_name
             and au.job_title = sn.adp_job_title
         left join
-            {{ ref("stg_coupa__school_name_lookup") }} as sn2
+            {{ ref("stg_google_sheets__coupa__school_name_lookup") }} as sn2
             on au.home_business_unit_code = sn2.adp_business_unit_home_code
             and au.home_department_name = sn2.adp_department_home_name
             and sn2.adp_job_title = 'Default'
         left join
-            {{ ref("stg_coupa__user_exceptions") }} as x
+            {{ ref("stg_google_sheets__coupa__user_exceptions") }} as x
             on au.employee_number = x.employee_number
         left join
-            {{ ref("stg_coupa__address_name_crosswalk") }} as anc
+            {{ ref("stg_google_sheets__coupa__address_name_crosswalk") }} as anc
             on coalesce(x.home_work_location_name, au.home_work_location_name)
             = anc.adp_home_work_location_name
         left join
@@ -222,15 +210,7 @@ select
     'No' as `Generate Password And Notify User`,
     'CoupaPay' as `Employee Payment Channel`,
 
-    case
-        when regexp_contains(sub.worker_type_code, r'Part Time|Intern')
-        then 'No'
-        when sub.wf_mgr_pay_rule = 'PT Hourly'
-        then 'No'
-        when sub.coupa_status = 'inactive'
-        then 'No'
-        else 'Yes'
-    end as `Expense User`,
+    if(sub.coupa_status = 'inactive', 'No', 'Yes') as `Expense User`,
 
     case
         when sub.coupa_status = 'inactive'
@@ -303,41 +283,41 @@ select
     ) as `Sage Intacct Location`,
 from sub
 left join
-    {{ ref("stg_coupa__school_name_crosswalk") }} as sna
+    {{ ref("stg_google_sheets__coupa__school_name_crosswalk") }} as sna
     on sub.coupa_school_name = sna.ldap_physical_delivery_office_name
 left join
-    {{ ref("stg_coupa__intacct_fund_lookup") }} as ifl
+    {{ ref("stg_google_sheets__coupa__intacct_fund_lookup") }} as ifl
     on sub.home_business_unit_code = ifl.adp_business_unit_home_code
 left join
-    {{ ref("stg_coupa__intacct_program_lookup") }} as ipl1
+    {{ ref("stg_google_sheets__coupa__intacct_program_lookup") }} as ipl1
     on sub.home_business_unit_code = ipl1.adp_business_unit_home_code
     and sub.home_work_location_name = ipl1.adp_home_work_location_name
 left join
-    {{ ref("stg_coupa__intacct_program_lookup") }} as ipl2
+    {{ ref("stg_google_sheets__coupa__intacct_program_lookup") }} as ipl2
     on sub.home_business_unit_code = ipl2.adp_business_unit_home_code
     and ipl2.adp_home_work_location_name = 'Default'
 left join
-    {{ ref("stg_coupa__intacct_department_lookup") }} as idl1
+    {{ ref("stg_google_sheets__coupa__intacct_department_lookup") }} as idl1
     on sub.home_business_unit_code = idl1.adp_business_unit_home_code
     and sub.home_department_name = idl1.adp_department_home_name
     and sub.job_title = idl1.adp_job_title
 left join
-    {{ ref("stg_coupa__intacct_department_lookup") }} as idl2
+    {{ ref("stg_google_sheets__coupa__intacct_department_lookup") }} as idl2
     on sub.home_business_unit_code = idl2.adp_business_unit_home_code
     and sub.home_department_name = idl2.adp_department_home_name
     and idl2.adp_job_title = 'Default'
 left join
-    {{ ref("stg_coupa__intacct_location_lookup") }} as ill1
+    {{ ref("stg_google_sheets__coupa__intacct_location_lookup") }} as ill1
     on sub.home_business_unit_code = ill1.adp_business_unit_home_code
     and sub.home_department_name = ill1.adp_department_home_name
     and sub.job_title = ill1.adp_job_title
 left join
-    {{ ref("stg_coupa__intacct_location_lookup") }} as ill2
+    {{ ref("stg_google_sheets__coupa__intacct_location_lookup") }} as ill2
     on sub.home_business_unit_code = ill2.adp_business_unit_home_code
     and sub.home_department_name = ill2.adp_department_home_name
     and ill2.adp_job_title = 'Default'
 left join
-    {{ ref("stg_coupa__intacct_location_lookup") }} as ill3
+    {{ ref("stg_google_sheets__coupa__intacct_location_lookup") }} as ill3
     on sub.home_business_unit_code = ill3.adp_business_unit_home_code
     and ill3.adp_department_home_name = 'Default'
     and ill3.adp_job_title = 'Default'

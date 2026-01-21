@@ -1,12 +1,12 @@
 from dagster import AssetsDefinition, materialize
 from dagster_dbt import DbtProject
 
-from teamster.core.resources import get_dbt_cli_resource
-
 
 def _test_dbt_assets(
     assets: list[AssetsDefinition], code_location: str, selection: list[str]
 ):
+    from teamster.core.resources import get_dbt_cli_resource
+
     result = materialize(
         assets=assets,
         resources={
@@ -21,16 +21,30 @@ def _test_dbt_assets(
     assert result.success
 
 
-def test_dbt_assets_kipptaf():
-    from teamster.code_locations.kipptaf._dbt.assets import dbt_assets
+def test_dbt_assets_kippnewark():
+    from teamster.code_locations.kippnewark._dbt.assets import dbt_assets
 
     _test_dbt_assets(
         assets=[dbt_assets],
+        code_location="kippnewark",
+        selection=[
+            "kippnewark/powerschool/stg_powerschool__districtteachercategory",
+            "kippnewark/powerschool/stg_powerschool__schoolstaff",
+        ],
+    )
+
+
+def test_dbt_assets_kipptaf():
+    from teamster.code_locations.kipptaf._dbt.assets import assets
+
+    _test_dbt_assets(
+        assets=assets,
         code_location="kipptaf",
         selection=[
-            "kipptaf/schoolmint_grow/stg_schoolmint_grow__users",
-            "kipptaf/schoolmint_grow/stg_schoolmint_grow__schools",
-            "kipptaf/schoolmint_grow/int_schoolmint_grow__observations",
-            "kipptaf/illuminate/stg_illuminate__reporting_groups",
+            "kipptaf/edplan/qa_edplan__powerschool_mismatch",
+            "kipptaf/kippadb/qa_kippadb__hs_enrollment_audit",
+            "kipptaf/people/snapshot_people__student_logins",
+            "kipptaf/people/stg_people__student_logins",
+            "kipptaf/powerschool/stg_powerschool__students",
         ],
     )

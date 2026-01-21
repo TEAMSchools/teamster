@@ -1,0 +1,4 @@
+models:
+  - name: int_topline__student_retention_weekly_aggregations
+    config:
+      materialized: table

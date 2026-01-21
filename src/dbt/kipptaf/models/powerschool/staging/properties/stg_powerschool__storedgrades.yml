@@ -1,9 +1,17 @@
-version: 2
 models:
   - name: stg_powerschool__storedgrades
+    config:
+      contract:
+        enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - dcid
+          config:
+            store_failures: true
     columns:
-      - name: _dbt_source_relation
-        data_type: string
       - name: dcid
         data_type: int64
       - name: studentid
@@ -131,6 +139,8 @@ models:
       - name: fiscal_year
         data_type: int64
       - name: gradescale_name_unweighted
+        data_type: string
+      - name: _dbt_source_relation
         data_type: string
       - name: is_transfer_grade
         data_type: boolean

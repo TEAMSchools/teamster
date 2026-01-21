@@ -40,24 +40,31 @@ select
             r.home_department_name
             in ('Data', 'Human Resources', 'Leadership Development', 'Executive')
         then 3
-        /* in-region/state view */
         when
-            contains_substr(r.job_title, 'Director')
+            r.home_business_unit_code = 'KIPP_TAF'
             and r.home_department_name = 'Operations'
             and contains_substr(r.home_work_location_name, 'Room')
-        then 2
+        then 3
+        /* in-region/state view */
         when
-            r.job_title in (
-                'Head of Schools',
-                'Managing Director of Operations',
-                'Managing Director of School Operations'
+            (
+                contains_substr(r.job_title, 'Director')
+                or contains_substr(r.job_title, 'Head')
             )
+            and contains_substr(r.home_work_location_name, 'Room')
         then 2
         /* in-region/state view: username temp permissions for RDO coverage */
         when r.sam_account_name = 'tmiddleton'
         then 2
         /* in location/campus view */
-        when r.job_title in ('Director School Operations', 'Director Campus Operations')
+        when
+            r.job_title in (
+                'Director School Operations',
+                'Director Campus Operations',
+                'Fellow School Operations Director',
+                'School Leader',
+                'School Leader in Residence'
+            )
         then 1
         else 0
     end as app_permissions,

@@ -1,0 +1,32 @@
+models:
+  - name: stg_adp_workforce_now__pension_and_benefits_enrollments
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - position_id
+              - enrollment_status
+              - plan_name
+          config:
+            store_failures: true
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: position_id
+        data_type: string
+      - name: plan_type
+        data_type: string
+      - name: plan_name
+        data_type: string
+      - name: coverage_level
+        data_type: string
+      - name: effective_date
+        data_type: date
+      - name: enrollment_end_date
+        data_type: date
+      - name: enrollment_start_date
+        data_type: date
+      - name: enrollment_status
+        data_type: string
+      - name: rn_enrollment_recent
+        data_type: int64

@@ -17,7 +17,6 @@ select
     y.academic_year,
 
     h.home_business_unit_name,
-    h.wf_mgr_pay_rule,
     h.base_remuneration_annual_rate_amount as ay_salary,
     h.base_remuneration_hourly_rate_amount as ay_hourly,
 
@@ -28,12 +27,15 @@ select
     pss.scale_step,
 
     tss.scale_ny_salary as pm_salary_increase,
+
+    h.base_remuneration_hourly_rate_amount + 1 as ny_hourly,
+
     if(
-        regexp_contains(h.wf_mgr_pay_rule, r'Hourly'), 'Hourly', 'Salary'
+        regexp_contains(h.worker_type_code, r'Part Time|Intern'), 'Hourly', 'Salary'
     ) as salary_or_hourly,
 
     if(
-        regexp_contains(h.wf_mgr_pay_rule, r'Hourly'),
+        regexp_contains(h.worker_type_code, r'Part Time|Intern'),
         h.base_remuneration_hourly_rate_amount,
         h.base_remuneration_annual_rate_amount
     ) as ay_hourly_salary_rate,
@@ -65,8 +67,6 @@ select
                 + h.base_remuneration_annual_rate_amount * 0.03
         end
     ) as ny_salary,
-
-    h.base_remuneration_hourly_rate_amount + 1 as ny_hourly,
 from {{ ref("int_people__staff_roster") }} as c
 inner join
     years as y
@@ -89,7 +89,7 @@ left join
     and y.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 left join
-    {{ ref("stg_people__salary_scale") }} as pss
+    {{ ref("stg_google_sheets__people__salary_scale") }} as pss
     on y.academic_year = pss.academic_year
     and h.home_business_unit_name = pss.region
     and h.job_title = pss.job_title
@@ -102,13 +102,13 @@ left join
         between pss.scale_ny_salary_minus_1_dollar and pss.scale_ny_salary_plus_1_dollar
     )
 left join
-    {{ ref("stg_people__salary_scale") }} as tss
+    {{ ref("stg_google_sheets__people__salary_scale") }} as tss
     on y.academic_year = tss.academic_year
     and h.job_title = tss.job_title
     and h.home_business_unit_name = tss.region
     and p.final_tier = tss.scale_step
 left join
-    {{ ref("stg_people__salary_scale") }} as mss
+    {{ ref("stg_google_sheets__people__salary_scale") }} as mss
     on y.academic_year = mss.academic_year
     and h.job_title = mss.job_title
     and h.home_business_unit_name = mss.region

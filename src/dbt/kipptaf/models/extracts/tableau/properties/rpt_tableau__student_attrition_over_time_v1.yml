@@ -1,0 +1,6 @@
+models:
+  - name: rpt_tableau__student_attrition_over_time_v1
+    config:
+      enabled: false
+      contract:
+        enforced: false

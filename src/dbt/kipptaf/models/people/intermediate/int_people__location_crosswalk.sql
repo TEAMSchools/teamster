@@ -13,11 +13,7 @@ select
     lc.head_of_schools_employee_number as location_head_of_schools_employee_number,
 
     cc.name as campus_name,
-
-    ldap.sam_account_name as head_of_schools_sam_account_name,
-from {{ ref("stg_people__location_crosswalk") }} as lc
+from {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
 left join
-    {{ ref("stg_people__campus_crosswalk") }} as cc on lc.clean_name = cc.location_name
-left join
-    {{ ref("stg_ldap__user_person") }} as ldap
-    on lc.head_of_schools_employee_number = ldap.employee_number
+    {{ ref("stg_google_sheets__people__campus_crosswalk") }} as cc
+    on lc.clean_name = cc.location_name
