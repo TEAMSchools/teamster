@@ -1,29 +1,33 @@
+{{ config(severity="warn", store_failures=true, enabled=true) }}
+
 with
     salesforce_notes as (
         select
-            id,
-            name,
-            contact as contact__c,
-            `subject` as subject__c,
-            `date` as date__c,
-            `status` as status__c,
-            `type` as type__c,
-            academic_year,
+            n.id,
+            n.name,
+            n.contact as contact__c,
+            n.`subject` as subject__c,
+            n.`date` as date__c,
+            n.`status` as status__c,
+            n.`type` as type__c,
+            n.academic_year,
 
             trim(
-                regexp_replace(regexp_replace(comments, r'\r|\n', ' '), r'\s+', ' ')
+                regexp_replace(regexp_replace(n.comments, r'\r|\n', ' '), r'\s+', ' ')
             ) as comments__c,
 
             trim(
-                regexp_replace(regexp_replace(next_steps, r'\r|\n', ' '), r'\s+', ' ')
+                regexp_replace(regexp_replace(n.next_steps, r'\r|\n', ' '), r'\s+', ' ')
             ) as next_steps__c,
 
-        from {{ ref("stg_kippadb__contact_note") }}
+        from {{ ref("stg_kippadb__contact_note") }} as n
+        left join {{ ref("int_kippadb__roster") }} as ktc on n.contact = ktc.contact_id
         where
-            academic_year = 2025
+            n.academic_year >= 2025
             -- this record is not accesible to fix on SF neither by UI nor via data
             -- loader
-            and id != 'a0LQg00000SOadzMAD'
+            and n.id != 'a0LQg00000SOadzMAD'
+            and ktc.contact_advising_provider is null
     ),
 
     dups as (
