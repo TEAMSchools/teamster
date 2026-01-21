@@ -1,3 +1,5 @@
+{{ config(severity="warn", store_failures=true, enabled=true) }}
+
 with
     salesforce_notes as (
         select
