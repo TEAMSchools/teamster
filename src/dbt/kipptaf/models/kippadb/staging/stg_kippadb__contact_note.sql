@@ -37,4 +37,4 @@ select
     as academic_year,
 
 from {{ source("kippadb", "contact_note") }}
-where not isdeleted
+where not isdeleted and id != 'a0LQg00000SOadzMAD'  -- record not accesible to fix on SF
