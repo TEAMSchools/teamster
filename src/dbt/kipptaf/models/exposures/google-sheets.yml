@@ -441,7 +441,6 @@ exposures:
       - ref("rpt_gsheets__kippfwd_contacts")
       - ref("rpt_gsheets__kippfwd_sfsat")
       - ref("rpt_gsheets__kippfwd_ogsat")
-      - ref("rpt_gsheets__kippfwd_sf_dup_notes")
     config:
       meta:
         dagster:
