@@ -221,6 +221,7 @@ with
             sp._dbt_source_relation,
             sp.studentid,
             sp.academic_year,
+            sp.enter_date,
 
             right(sp.specprog_name, length(sp.specprog_name) - 4) as discipline,
 
@@ -234,6 +235,16 @@ with
             and {{ union_dataset_join_clause(left_alias="sp", right_alias="t") }}
             and t.schoolid = 0
         where sp.specprog_name like 'MTSS%'
+    ),
+
+    mtss_dedupe as (
+        {{
+            dbt_utils.deduplicate(
+                relation="mtss",
+                partition_by="_dbt_source_relation, studentid, academic_year, discipline",
+                order_by="enter_date desc",
+            )
+        }}
     )
 
 select
@@ -358,7 +369,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
     and sj.discipline = b.discipline
 left join
-    mtss
+    mtss_dedupe as mtss
     on co.studentid = mtss.studentid
     and co.academic_year = mtss.academic_year
     and sj.discipline = mtss.discipline
