@@ -12,7 +12,7 @@ with
             ) as rn,
 
         -- TODO: replace with real data source once it is ready
-        from {{ ref("stg_google_sheets__finalsite__sample_data") }} as f
+        from {{ ref("stg_finalsite__status_report") }} as f
         left join
             {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
             on f.school = x.name
