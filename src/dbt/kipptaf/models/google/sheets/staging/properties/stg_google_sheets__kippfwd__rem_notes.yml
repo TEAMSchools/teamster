@@ -1,5 +1,21 @@
 models:
   - name: stg_google_sheets__kippfwd__rem_notes
-    config:
-      contract:
-        enforced: false
+    columns:
+      - name: name
+        data_type: string
+      - name: salesforce_id
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: comments
+        data_type: string
+      - name: next_steps
+        data_type: string
+      - name: contact_date
+        data_type: date
+      - name: status
+        data_type: string
+      - name: type
+        data_type: string
+      - name: campaign_name
+        data_type: string
