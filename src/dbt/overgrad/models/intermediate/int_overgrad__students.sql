@@ -27,6 +27,10 @@ select
 
     cf.* except (id, source_object, student_aid_index),
 
+    c.first_choice_school,
+    c.second_choice_school,
+    c.third_choice_school,
+
     coalesce(s.student_aid_index, cf.student_aid_index) as student_aid_index,
 from {{ ref("stg_overgrad__students") }} as s
 left join
