@@ -473,9 +473,9 @@ sources:
             dagster:
               asset_key:
                 - kipptaf
-                - egencia
                 - google
                 - sheets
+                - egencia
                 - travel_managers
       - name: src_google_sheets__kippadb__nsc_crosswalk
         external:
