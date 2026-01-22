@@ -216,6 +216,7 @@ with
         }}
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     mtss as (
         select
             sp._dbt_source_relation,
