@@ -27,6 +27,7 @@ with
             roster.teammate_history_key,
             roster.academic_year,
             roster.assignment_status,
+            roster.assignment_status_reason,
             roster.base_remuneration_annual_rate_amount as salary,
             roster.effective_date_end,
             roster.effective_date_start,
