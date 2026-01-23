@@ -3,7 +3,7 @@ with
 
     academic_years as (select distinct academic_year from teammate_history),
 
-    {# any staff not inactive status between 9/1 and 4/30 of an academic year #}
+    {# any staff not in an inactive status between 9/1 and 4/30 of an academic year #}
     denominator_cohort_ranking as (
         select
             ay.academic_year,
