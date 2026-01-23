@@ -1,8 +1,10 @@
 with
+    {# creating fields to join to academic year fact tables and remove 
+    unnecessary rows #}
     roster as (
         select
             *,
-            {# creating field to join to academic year fact tables #}
+            
             {{
                 dbt_utils.generate_surrogate_key(
                     ["employee_number", "effective_date_start"]
@@ -15,7 +17,28 @@ with
                     year_source="start",
                 )
             }} as academic_year,
+            {{
+                date_to_fiscal_year(
+                    date_field="worker_termination_date",
+                    start_month=7,
+                    year_source="start",
+                )
+            }} as termination_academic_year,
         from {{ ref("int_people__staff_roster_history") }}
+        where primary_indicator
+
+    ),
+
+    {# limiting system generated actions to records <= worker termination year
+    for academic year fact tables #}
+    remove_system_generated_updates as (
+        select *
+        from roster
+        where
+            academic_year
+            <= coalesce(termination_academic_year, {{ var("current_academic_year") }})
+            and assignment_status_reason
+            not in ('Import Created Action', 'Upgrade Created Action')
     ),
 
     grade_levels as (select *, from {{ ref("int_powerschool__teacher_grade_levels") }}),
@@ -24,35 +47,37 @@ with
 
     final as (
         select
-            roster.teammate_history_key,
-            roster.academic_year,
-            roster.assignment_status,
-            roster.assignment_status_reason,
-            roster.base_remuneration_annual_rate_amount as salary,
-            roster.effective_date_end,
-            roster.effective_date_start,
-            roster.employee_number,
-            roster.formatted_name,
-            roster.gender_identity,
-            roster.home_business_unit_name as entity,
-            roster.home_department_name as department,
-            roster.home_work_location_grade_band as grade_band,
-            roster.home_work_location_name as location,
-            roster.is_current_record,
-            roster.is_prestart,
-            roster.job_title,
-            roster.languages_spoken,
-            roster.mail,
-            roster.primary_indicator,
-            roster.race_ethnicity_reporting,
-            roster.reports_to_formatted_name as manager_name,
-            roster.worker_hire_date_recent,
-            roster.worker_original_hire_date,
-            roster.worker_rehire_date,
-            roster.worker_termination_date,
-            grade_levels.grade_level as grade_taught,
+            rm.teammate_history_key,
+            rm.academic_year,
+            rm.assignment_status,
+            rm.assignment_status_reason,
+            rm.assignment_status_lag,
+            rm.base_remuneration_annual_rate_amount as salary,
+            rm.effective_date_end,
+            rm.effective_date_start,
+            rm.employee_number,
+            rm.formatted_name,
+            rm.gender_identity,
+            rm.home_business_unit_name as entity,
+            rm.home_department_name as department,
+            rm.home_work_location_grade_band as grade_band,
+            rm.home_work_location_name as location,
+            rm.is_current_record,
+            rm.is_prestart,
+            rm.job_title,
+            rm.languages_spoken,
+            rm.mail,
+            rm.primary_indicator,
+            rm.race_ethnicity_reporting,
+            rm.reports_to_formatted_name as manager_name,
+            rm.worker_hire_date_recent,
+            rm.worker_original_hire_date,
+            rm.worker_rehire_date,
+            rm.worker_termination_date,
+            rm.termination_academic_year,
+            gl.grade_level as grade_taught,
             if(
-                roster.job_title in (
+                rm.job_title in (
                     'Teacher',
                     'Teacher in Residence',
                     'ESE Teacher',
@@ -64,17 +89,17 @@ with
                 false
             ) as is_teacher,
             if(
-                roster.employee_number
+                rm.employee_number
                 in (select managers.reports_to_employee_number, from managers),
                 true,
                 false
             ) as is_manager,
-        from roster
+        from remove_system_generated_updates as rm
         left join
-            grade_levels
-            on roster.powerschool_teacher_number = grade_levels.teachernumber
-            and roster.academic_year = grade_levels.academic_year
-            and grade_levels.grade_level_rank = 1
+            grade_levels as gl
+            on rm.powerschool_teacher_number = gl.teachernumber
+            and rm.academic_year = gl.academic_year
+            and gl.grade_level_rank = 1
     )
 
 select *,
