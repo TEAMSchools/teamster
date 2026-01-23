@@ -29,8 +29,8 @@ with
 
     ),
 
-    {# limiting system generated actions to records <= worker termination year
-    for academic year fact tables #}
+    {# Limiting system generated actions to records <= worker termination year
+    for academic year fact tables. Some records have effective dates after worker termination dates, so instead of a filter based on termination date we are accounting for changes through the whole academic year for the purposes of annual metrics like % Terminations by year. A select distinct record is still likely necessary for aggregations on this data.#}
     remove_system_generated_updates as (
         select *
         from roster
