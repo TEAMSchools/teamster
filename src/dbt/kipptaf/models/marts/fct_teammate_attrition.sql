@@ -2,32 +2,28 @@ with
     teammate_history as (
         select *,
         from {{ ref("dim_teammates") }}
-        where job_title != 'Intern' or assignment_status_reason != 'Internship Ended'
+        where
+            (job_title != 'Intern' or assignment_status_reason != 'Internship Ended')
+            and primary_indicator
     ),
 
     academic_years as (select distinct academic_year from teammate_history),
 
-    {# any staff not in an inactive status between 9/1 and 4/30 of an academic year #}
-    denominator_cohort_ranking as (
+    {# latest record for staff not in an inactive status between 9/1 and 4/30 of an academic year #}
+    denominator_cohort as (
         select
             ay.academic_year,
             th.employee_number,
             th.teammate_history_key,
-            row_number() over (
-                partition by ay.academic_year, th.employee_number
-                order by th.effective_date_start desc
-            ) as rn_row,
+            max(th.effective_date_start) as max_effective_date_start,
         from academic_years as ay
         inner join
             teammate_history as th
             on th.effective_date_start <= date(ay.academic_year + 1, 4, 30)
             and th.effective_date_end >= date(ay.academic_year, 9, 1)
-        where
-            th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
-            and primary_indicator
+        where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
+        group by ay.academic_year, th.employee_number, th.teammate_history_key
     ),
-
-    denominator_cohort as (select *, from denominator_cohort_ranking where rn_row = 1),
 
     {# any staff not in terminated or deceased status on 9/1 of the following academic year #}
     returner_cohort as (
@@ -37,11 +33,10 @@ with
             teammate_history as th
             on th.effective_date_start <= date(ay.academic_year + 1, 9, 1)
             and th.effective_date_end >= date(ay.academic_year + 1, 9, 1)
-        where
-            th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
-            and primary_indicator
+        where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
     ),
-    {# left join to determine returner versus last year roster #}
+
+    {# left join to compare prior year to following year rosters #}
     final as (
         select
             dc.academic_year,
