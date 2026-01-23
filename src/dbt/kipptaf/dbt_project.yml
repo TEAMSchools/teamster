@@ -197,10 +197,6 @@ models:
           enforced: true
     overgrad:
       +schema: overgrad
-      staging:
-        +materialized: table
-        +contract:
-          enforced: true
     pearson:
       +schema: pearson
     people:
