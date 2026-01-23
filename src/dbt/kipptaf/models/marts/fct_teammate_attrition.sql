@@ -2,7 +2,7 @@ with
     teammate_history as (
         select *,
         from {{ ref("dim_teammates") }}
-        where job_title != 'Intern' and assignment_status_reason != 'Internship Ended'
+        where job_title != 'Intern' or assignment_status_reason != 'Internship Ended'
     ),
 
     academic_years as (select distinct academic_year from teammate_history),
