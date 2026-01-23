@@ -224,7 +224,7 @@ with
             sp.academic_year,
             sp.enter_date,
 
-            right(sp.specprog_name, length(sp.specprog_name) - 4) as discipline,
+            right(sp.specprog_name, length(sp.specprog_name) - 5) as discipline,
 
             if(t.abbreviation like 'S%', t.name, 'Year') as mtss_enrollment,
         from {{ ref("int_powerschool__spenrollments") }} as sp
