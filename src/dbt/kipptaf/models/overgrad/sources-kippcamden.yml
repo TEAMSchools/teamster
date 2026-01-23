@@ -97,3 +97,12 @@ sources:
                 - kippcamden
                 - overgrad
                 - int_overgrad__students
+      - name: int_overgrad__admissions
+        config:
+          meta:
+            dagster:
+              group: overgrad
+              asset_key:
+                - kippcamden
+                - overgrad
+                - int_overgrad__admissions

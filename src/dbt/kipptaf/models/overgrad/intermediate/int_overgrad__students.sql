@@ -8,10 +8,10 @@ with
                 ]
             )
         }}
-    )
+    ),
 
     choices_long as (
-        select student__id, top_choice_schools, name,
+        select student__id, top_choice_schools, university_name,
         from {{ ref("int_overgrad__admissions") }}
         where top_choice_schools is not null
     ),
@@ -21,7 +21,7 @@ with
             student__id, first_choice_school, second_choice_school, third_choice_school,
         from
             choices_long pivot (
-                max(name)
+                max(university_name)
                 for
                 top_choice_schools in (
                     '#1 Choice' as first_choice_school,
@@ -31,6 +31,7 @@ with
             )
     )
 
+-- trunk-ignore(sqlfluff/AM04)
 select ur.*, c.first_choice_school, c.second_choice_school, c.third_choice_school,
 from union_relations as ur
 left join choices_pivot as c on ur.id = c.student__id
