@@ -1,0 +1,21 @@
+models:
+  - name: stg_google_sheets__kippfwd__rem_notes
+    columns:
+      - name: name
+        data_type: string
+      - name: Salesforce_ID
+        data_type: string
+      - name: Subject
+        data_type: string
+      - name: Comments
+        data_type: string
+      - name: Next_Steps
+        data_type: string
+      - name: Contact_Date
+        data_type: date
+      - name: Status
+        data_type: string
+      - name: Type
+        data_type: string
+      - name: Campaign_Name
+        data_type: string
