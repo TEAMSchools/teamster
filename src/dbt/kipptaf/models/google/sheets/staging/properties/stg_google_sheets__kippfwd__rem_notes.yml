@@ -3,19 +3,19 @@ models:
     columns:
       - name: name
         data_type: string
-      - name: Salesforce_ID
+      - name: salesforce_id
         data_type: string
-      - name: Subject
+      - name: subject
         data_type: string
-      - name: Comments
+      - name: comments
         data_type: string
-      - name: Next_Steps
+      - name: next_steps
         data_type: string
-      - name: Contact_Date
+      - name: contact_date
         data_type: date
-      - name: Status
+      - name: status
         data_type: string
-      - name: Type
+      - name: type
         data_type: string
-      - name: Campaign_Name
+      - name: campaign_name
         data_type: string
