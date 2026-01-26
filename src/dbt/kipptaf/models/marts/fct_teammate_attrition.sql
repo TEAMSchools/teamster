@@ -14,7 +14,6 @@ with
         select
             ay.academic_year,
             th.employee_number,
-            th.teammate_history_key,
             max(th.effective_date_start) as max_effective_date_start,
         from academic_years as ay
         inner join
@@ -22,12 +21,12 @@ with
             on th.effective_date_start <= date(ay.academic_year + 1, 4, 30)
             and th.effective_date_end >= date(ay.academic_year, 9, 1)
         where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
-        group by ay.academic_year, th.employee_number, th.teammate_history_key
+        group by ay.academic_year, th.employee_number
     ),
 
     {# any staff not in terminated or deceased status on 9/1 of the following academic year #}
     returner_cohort as (
-        select distinct ay.academic_year, th.employee_number, th.teammate_history_key,
+        select distinct ay.academic_year, th.employee_number
         from academic_years as ay
         inner join
             teammate_history as th
@@ -41,7 +40,6 @@ with
         select
             dc.academic_year,
             dc.employee_number,
-            dc.teammate_history_key,
             if(rc.employee_number is null, true, false) as is_attrition
         from denominator_cohort as dc
         left join

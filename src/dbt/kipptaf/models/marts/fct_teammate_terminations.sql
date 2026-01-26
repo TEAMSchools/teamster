@@ -13,7 +13,7 @@ with
     ),
 
     {# first termination record by academic year#}
-    {# grabbing effective date to filter post-termination actions#}
+    {# using effective start date downstream to filter post-termination actions#}
     terminations as (
         select
             employee_number,
