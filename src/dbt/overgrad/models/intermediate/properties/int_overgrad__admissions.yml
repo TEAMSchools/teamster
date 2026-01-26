@@ -1,5 +1,5 @@
 models:
-  - name: int_overgrad__students
+  - name: int_overgrad__admissions
     columns:
       - name: id
         data_tests:
