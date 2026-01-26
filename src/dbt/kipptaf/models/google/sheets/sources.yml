@@ -473,9 +473,9 @@ sources:
             dagster:
               asset_key:
                 - kipptaf
-                - egencia
                 - google
                 - sheets
+                - egencia
                 - travel_managers
       - name: src_google_sheets__kippadb__nsc_crosswalk
         external:
@@ -1592,3 +1592,20 @@ sources:
                 - sheets
                 - finalsite
                 - sample_data
+      - name: src_google_sheets__kippfwd__rem_notes
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1WPCMxDQ9XOMwQy6OVXxWVg4ph45DvX73lKGgU3K039o
+            sheet_range: src_google_sheets__kippfwd__rem_notes
+            skip_leading_rows: 1
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kippfwd
+                - rem_notes
