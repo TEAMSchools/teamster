@@ -1,44 +1,51 @@
 with
     teammates as (select * from {{ ref("dim_teammates") }}),
 
-    annual_roster as (select distinct employee_number, academic_year from teammates),
+    {# determining unique years in which records are present for teammate#}
+    {# filtering out years with post-termination actions#}
+    annual_roster as (
+        select distinct employee_number, academic_year
+        from teammates
+        where
+            assignment_status_reason is null
+            or assignment_status_reason
+            not in ('Import Created Action', 'Upgrade Created Action')
+    ),
 
+    {# first termination record by academic year#}
+    {# grabbing effective date to filter post-termination actions#}
     terminations as (
         select
             employee_number,
             academic_year,
-            effective_date_start,
             assignment_status as termination_status,
-            assignment_status_reason as termination_reason
+            assignment_status_reason as termination_reason,
+            min(effective_date_start) as min_effective_date,
+            min(assignment_status_effective_date) as termination_effective_date,
         from teammates
-        where assignment_status = 'Terminated'
-    ),
-
-    {# first termination record by academic year #}
-    first_termination_record as (
-        select
-            employee_number,
-            academic_year,
-            termination_status,
-            termination_reason,
-            min(effective_date_start) as termination_effective_date
-        from terminations
-        group by employee_number, academic_year, termination_status, termination_reason
+        where
+            assignment_status = 'Terminated'
+            and assignment_status_reason
+            not in ('Import Created Action', 'Upgrade Created Action')
+        group by all
     ),
 
     final as (
         select
             ar.employee_number,
             ar.academic_year,
-            ftr.termination_status,
-            ftr.termination_reason,
-            ftr.termination_effective_date,
-            if(ftr.employee_number is null, false, true) as is_termination
+            tr.termination_status,
+            tr.termination_reason,
+            tr.termination_effective_date,
+            if(tr.employee_number is null, false, true) as is_termination
         from annual_roster as ar
         left join
-            first_termination_record as ftr
-            on ar.employee_number = ftr.employee_number
-            and ar.academic_year = ftr.academic_year
+            terminations as tr
+            on ar.employee_number = tr.employee_number
+            and ar.academic_year = tr.academic_year
+        where
+            min_effective_date <= termination_effective_date
+            or termination_effective_date is null
     )
 
 select *

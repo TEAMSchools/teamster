@@ -17,28 +17,8 @@ with
                     year_source="start",
                 )
             }} as academic_year,
-            {{
-                date_to_fiscal_year(
-                    date_field="worker_termination_date",
-                    start_month=7,
-                    year_source="start",
-                )
-            }} as termination_academic_year,
         from {{ ref("int_people__staff_roster_history") }}
         where primary_indicator
-
-    ),
-
-    {# Limiting system generated actions to records <= worker termination year
-    for academic year fact tables. Some records have effective dates after worker termination dates, so instead of a filter based on termination date we are accounting for changes through the whole academic year for the purposes of annual metrics like % Terminations by year. A select distinct record is still likely necessary for aggregations on this data.#}
-    remove_system_generated_updates as (
-        select *
-        from roster
-        where
-            academic_year
-            <= coalesce(termination_academic_year, {{ var("current_academic_year") }})
-            and assignment_status_reason
-            not in ('Import Created Action', 'Upgrade Created Action')
     ),
 
     grade_levels as (select *, from {{ ref("int_powerschool__teacher_grade_levels") }}),
@@ -47,37 +27,37 @@ with
 
     final as (
         select
-            rm.teammate_history_key,
-            rm.academic_year,
-            rm.assignment_status,
-            rm.assignment_status_reason,
-            rm.assignment_status_lag,
-            rm.base_remuneration_annual_rate_amount as salary,
-            rm.effective_date_end,
-            rm.effective_date_start,
-            rm.employee_number,
-            rm.formatted_name,
-            rm.gender_identity,
-            rm.home_business_unit_name as entity,
-            rm.home_department_name as department,
-            rm.home_work_location_grade_band as grade_band,
-            rm.home_work_location_name as location,
-            rm.is_current_record,
-            rm.is_prestart,
-            rm.job_title,
-            rm.languages_spoken,
-            rm.mail,
-            rm.primary_indicator,
-            rm.race_ethnicity_reporting,
-            rm.reports_to_formatted_name as manager_name,
-            rm.worker_hire_date_recent,
-            rm.worker_original_hire_date,
-            rm.worker_rehire_date,
-            rm.worker_termination_date,
-            rm.termination_academic_year,
+            r.teammate_history_key,
+            r.academic_year,
+            r.assignment_status,
+            r.assignment_status_reason,
+            r.assignment_status_lag,
+            r.assignment_status_effective_date,
+            r.base_remuneration_annual_rate_amount as salary,
+            r.effective_date_end,
+            r.effective_date_start,
+            r.employee_number,
+            r.formatted_name,
+            r.gender_identity,
+            r.home_business_unit_name as entity,
+            r.home_department_name as department,
+            r.home_work_location_grade_band as grade_band,
+            r.home_work_location_name as location,
+            r.is_current_record,
+            r.is_prestart,
+            r.job_title,
+            r.languages_spoken,
+            r.mail,
+            r.primary_indicator,
+            r.race_ethnicity_reporting,
+            r.reports_to_formatted_name as manager_name,
+            r.worker_hire_date_recent,
+            r.worker_original_hire_date,
+            r.worker_rehire_date,
+            r.worker_termination_date,
             gl.grade_level as grade_taught,
             if(
-                rm.job_title in (
+                r.job_title in (
                     'Teacher',
                     'Teacher in Residence',
                     'ESE Teacher',
@@ -89,16 +69,16 @@ with
                 false
             ) as is_teacher,
             if(
-                rm.employee_number
+                r.employee_number
                 in (select managers.reports_to_employee_number, from managers),
                 true,
                 false
             ) as is_manager,
-        from remove_system_generated_updates as rm
+        from roster as r
         left join
             grade_levels as gl
-            on rm.powerschool_teacher_number = gl.teachernumber
-            and rm.academic_year = gl.academic_year
+            on r.powerschool_teacher_number = gl.teachernumber
+            and r.academic_year = gl.academic_year
             and gl.grade_level_rank = 1
     )
 
