@@ -27,6 +27,17 @@ locations:
                       - key: password
                         path: powerschool_ssh_password.txt
         server_k8s_config:
+          pod_spec_config:
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchExpressions:
+                        - key: location_name
+                          operator: In
+                          values:
+                            - kippcamden
+                    topologyKey: kubernetes.io/hostname
           container_config:
             env:
               - name: COUCHDROP_SFTP_PASSWORD
@@ -118,7 +129,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
-                    key: ip
+                    key: host
               - name: DEANSLIST_SUBDOMAIN
                 valueFrom:
                   secretKeyRef:
@@ -226,7 +237,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
-                    key: ip
+                    key: host
               - name: DEANSLIST_SUBDOMAIN
                 valueFrom:
                   secretKeyRef:
