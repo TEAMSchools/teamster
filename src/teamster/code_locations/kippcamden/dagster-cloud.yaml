@@ -129,7 +129,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
-                    key: ip
+                    key: host
               - name: DEANSLIST_SUBDOMAIN
                 valueFrom:
                   secretKeyRef:
@@ -237,7 +237,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
-                    key: ip
+                    key: host
               - name: DEANSLIST_SUBDOMAIN
                 valueFrom:
                   secretKeyRef:
