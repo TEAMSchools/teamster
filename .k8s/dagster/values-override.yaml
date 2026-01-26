@@ -72,10 +72,10 @@ workspace:
       resources:
         requests:
           cpu: 500m # Autopilot minimum of 500m required for using pod anti affinity
-          memory: 2.0Gi
+          memory: 0.5Gi
         limits:
           cpu: 750m
-          memory: 2.5Gi
+          memory: 1.0Gi
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
