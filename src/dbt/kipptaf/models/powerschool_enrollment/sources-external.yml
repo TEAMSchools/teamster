@@ -18,10 +18,11 @@ sources:
               }}/powerschool/enrollment/submission_records/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - powerschool
-              - enrollment
-              - submission_records
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - powerschool
+                - enrollment
+                - submission_records

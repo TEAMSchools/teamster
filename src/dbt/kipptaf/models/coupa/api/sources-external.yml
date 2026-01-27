@@ -13,13 +13,14 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            group: coupa
-            asset_key:
-              - kipptaf
-              - coupa
-              - addresses
+        config:
+          meta:
+            dagster:
+              group: coupa
+              asset_key:
+                - kipptaf
+                - coupa
+                - addresses
       - name: src_coupa__users
         external:
           location: "{{ var('cloud_storage_uri_base') }}/coupa/users/*"
@@ -29,10 +30,11 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            group: coupa
-            asset_key:
-              - kipptaf
-              - coupa
-              - users
+        config:
+          meta:
+            dagster:
+              group: coupa
+              asset_key:
+                - kipptaf
+                - coupa
+                - users

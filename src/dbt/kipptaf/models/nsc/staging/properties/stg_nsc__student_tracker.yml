@@ -67,3 +67,5 @@ models:
         data_type: string
       - name: your_unique_identifier
         data_type: string
+      - name: contact_id
+        data_type: string

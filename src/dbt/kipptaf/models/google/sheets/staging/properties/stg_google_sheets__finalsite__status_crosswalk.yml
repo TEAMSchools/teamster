@@ -1,0 +1,51 @@
+models:
+  - name: stg_google_sheets__finalsite__status_crosswalk
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: enrollment_academic_year
+        data_type: int64
+      - name: enrollment_type
+        data_type: string
+      - name: overall_status
+        data_type: string
+      - name: funnel_status
+        data_type: string
+      - name: status_category
+        data_type: string
+      - name: offered_status
+        data_type: string
+      - name: offered_status_detailed
+        data_type: string
+      - name: detailed_status_ranking
+        data_type: int64
+      - name: detailed_status_branched_ranking
+        data_type: int64
+      - name: detailed_status
+        data_type: string
+      - name: powerschool_enroll_status
+        data_type: int64
+      - name: valid_detailed_status
+        data_type: boolean
+      - name: applicant_ops
+        data_type: int64
+      - name: offered_ops
+        data_type: int64
+      - name: pending_offer_ops
+        data_type: int64
+      - name: overall_conversion_ops
+        data_type: int64
+      - name: offers_to_accepted_den
+        data_type: int64
+      - name: offers_to_accepted_num
+        data_type: int64
+      - name: accepted_to_enrolled_den
+        data_type: int64
+      - name: accepted_to_enrolled_num
+        data_type: int64
+      - name: offers_to_enrolled_den
+        data_type: int64
+      - name: offers_to_enrolled_num
+        data_type: int64
+      - name: waitlisted
+        data_type: int64

@@ -5,20 +5,22 @@ sources:
       enabled: false
     tables:
       - name: group_student_aff
-        meta:
-          dagster:
-            group: illuminate
-            asset_key:
-              - kipptaf
-              - illuminate
-              - groups
-              - group_student_aff
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - illuminate
+                - groups
+                - group_student_aff
       - name: groups
-        meta:
-          dagster:
-            group: illuminate
-            asset_key:
-              - kipptaf
-              - illuminate
-              - groups
-              - groups
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - illuminate
+                - groups
+                - groups

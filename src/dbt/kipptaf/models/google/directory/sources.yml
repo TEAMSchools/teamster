@@ -14,13 +14,14 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - directory
-              - users
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - directory
+                - users
       - name: src_google_directory__orgunits
         external:
           location:
@@ -31,13 +32,14 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - directory
-              - orgunits
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - directory
+                - orgunits
       - name: src_google_directory__roles
         external:
           location:
@@ -48,13 +50,14 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - directory
-              - roles
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - directory
+                - roles
       - name: src_google_directory__role_assignments
         external:
           location:
@@ -66,10 +69,11 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - directory
-              - role_assignments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - directory
+                - role_assignments

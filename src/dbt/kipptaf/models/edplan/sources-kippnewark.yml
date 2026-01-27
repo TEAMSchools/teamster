@@ -2,10 +2,11 @@ sources:
   - name: kippnewark_edplan
     tables:
       - name: int_edplan__njsmart_powerschool_union
-        meta:
-          dagster:
-            group: edplan
-            asset_key:
-              - kippnewark
-              - edplan
-              - int_edplan__njsmart_powerschool_union
+        config:
+          meta:
+            dagster:
+              group: edplan
+              asset_key:
+                - kippnewark
+                - edplan
+                - int_edplan__njsmart_powerschool_union

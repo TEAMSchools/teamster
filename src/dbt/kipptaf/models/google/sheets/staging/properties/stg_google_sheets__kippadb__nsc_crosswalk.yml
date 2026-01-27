@@ -15,3 +15,5 @@ models:
         data_type: boolean
       - name: rn_account
         data_type: int64
+      - name: rn_college_code_nsc
+        data_type: int64

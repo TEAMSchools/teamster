@@ -173,7 +173,7 @@ with
                     tw.region != 'Miami'
                     and current_date(
                         '{{ var("local_timezone") }}'
-                    ) between (tw.quarter_end_date_insession - interval 9 day) and (
+                    ) between (tw.quarter_end_date_insession - interval 5 day) and (
                         tw.quarter_end_date_insession + interval 14 day
                     )
                 then true

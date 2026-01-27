@@ -107,8 +107,6 @@ models:
             +enabled: false
           stg_powerschool__u_def_ext_students:
             +enabled: false
-          stg_powerschool__u_storedgrades_de:
-            +enabled: false
   renlearn:
     +materialized: table
     staging:
@@ -163,6 +161,4 @@ sources:
             src_powerschool__sced_code_mapping:
               +enabled: false
             src_powerschool__u_def_ext_students:
-              +enabled: false
-            src_powerschool__u_storedgrades_de:
               +enabled: false

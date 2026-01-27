@@ -18,14 +18,15 @@ sources:
               }}/amplify/mclass/sftp/benchmark_student_summary/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - amplify
-              - mclass
-              - sftp
-              - benchmark_student_summary
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - amplify
+                - mclass
+                - sftp
+                - benchmark_student_summary
       - name: pm_student_summary
         external:
           location:
@@ -40,14 +41,15 @@ sources:
               }}/amplify/mclass/sftp/pm_student_summary/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - amplify
-              - mclass
-              - sftp
-              - pm_student_summary
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - amplify
+                - mclass
+                - sftp
+                - pm_student_summary
   - name: amplify_mclass_api
     schema: |
       {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
@@ -66,12 +68,13 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/amplify/benchmark_student_summary/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - amplify
-              - benchmark_student_summary
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - amplify
+                - benchmark_student_summary
       - name: pm_student_summary
         external:
           location:
@@ -86,12 +89,13 @@ sources:
               "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/amplify/pm_student_summary/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - amplify
-              - pm_student_summary
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - amplify
+                - pm_student_summary
   - name: amplify_dds
     schema: |
       {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
@@ -111,13 +115,14 @@ sources:
               "{{ var('cloud_storage_uri_base', env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/amplify/dibels/data_farming/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - amplify
-              - dibels
-              - data_farming
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - amplify
+                - dibels
+                - data_farming
       - name: progress_export
         external:
           location:
@@ -131,10 +136,11 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/amplify/dibels/progress_export/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - amplify
-              - dibels
-              - progress_export
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - amplify
+                - dibels
+                - progress_export

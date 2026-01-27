@@ -1,0 +1,8 @@
+models:
+  - name: int_overgrad__admissions
+    columns:
+      - name: id
+        data_tests:
+          - unique:
+              config:
+                store_failures: true

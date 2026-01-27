@@ -27,6 +27,17 @@ locations:
                       - key: password
                         path: powerschool_ssh_password.txt
         server_k8s_config:
+          pod_spec_config:
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchExpressions:
+                        - key: location_name
+                          operator: In
+                          values:
+                            - kippmiami
+                    topologyKey: kubernetes.io/hostname
           container_config:
             env:
               - name: COUCHDROP_SFTP_PASSWORD

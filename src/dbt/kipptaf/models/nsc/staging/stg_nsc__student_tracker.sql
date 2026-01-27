@@ -34,4 +34,6 @@ select
     parse_date('%Y%m%d', enrollment_end) as enrollment_end,
     parse_date('%Y%m%d', graduation_date) as graduation_date,
     parse_date('%Y%m%d', search_date) as search_date,
+
+    left(requester_return_field, length(requester_return_field) - 1) as contact_id,
 from {{ source("nsc", "src_nsc__student_tracker") }}

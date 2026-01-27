@@ -14,15 +14,22 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - smartrecruiters
-              - applications
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - smartrecruiters
+                - applications
       - name: src_smartrecruiters__applicants
         config:
           enabled: false
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - smartrecruiters
+                - applicants
         external:
           location:
             "{{ var('cloud_storage_uri_base') }}/smartrecruiters/applicants/*"
@@ -32,9 +39,3 @@ sources:
             max_staleness: INTERVAL 7 DAY
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - smartrecruiters
-              - applicants

@@ -15,13 +15,14 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/google/forms/form/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - forms
-              - form
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - forms
+                - form
       - name: src_google_forms__responses
         external:
           location:
@@ -34,10 +35,11 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/google/forms/responses/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - google
-              - forms
-              - responses
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - forms
+                - responses

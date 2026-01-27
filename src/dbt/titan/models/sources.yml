@@ -5,12 +5,13 @@ sources:
       {{ var('titan_schema', project_name + '_titan') }}
     tables:
       - name: src_titan__person_data
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - titan
-              - person_data
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - titan
+                - person_data
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -27,12 +28,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_titan__income_form_data
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - titan
-              - income_form_data
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - titan
+                - income_form_data
         external:
           location:
             "{{ var('cloud_storage_uri_base',

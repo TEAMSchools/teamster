@@ -71,6 +71,20 @@ with
         where c.record_id != 14846967 and ktc.contact_advising_provider is null
     ),
 
+    rem_notes as (
+        select
+            salesforce_id,
+            `subject`,
+            contact_date,
+            `status`,
+            `type`,
+
+            coalesce(comments, 'Blank') as comments,
+            coalesce(next_steps, 'Blank') as next_steps,
+
+        from {{ ref("stg_google_sheets__kippfwd__rem_notes") }}
+    ),
+
     salesforce_notes as (
         select
             id,
@@ -111,3 +125,27 @@ left join
     and d.status = s.status
     and d.type = s.type
 where d.academic_year = {{ var("current_academic_year") }} and s.subject is null
+
+union all
+
+select
+    r.salesforce_id as contact__c,
+    r.subject as subject__c,
+    r.contact_date as date__c,
+    r.status as status__c,
+    r.type as type__c,
+
+    if(r.comments = 'Blank', null, r.comments) as comments__c,
+    if(r.next_steps = 'Blank', null, r.next_steps) as next_steps__c,
+
+from rem_notes as r
+left join
+    salesforce_notes as s
+    on r.salesforce_id = s.contact
+    and r.subject = s.subject
+    and r.comments = s.comments
+    and r.next_steps = s.next_steps
+    and r.contact_date = s.date
+    and r.status = s.status
+    and r.type = s.type
+where s.subject is null

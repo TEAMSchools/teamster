@@ -100,12 +100,12 @@ defs = Definitions(
         *adp.sensors,
         *couchdrop.sensors,
         *deanslist.sensors,
-        build_sensor_for_freshness_checks(
-            freshness_checks=asset_checks.freshness_checks
-        ),
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
             target=AssetSelection.all(),
+        ),
+        build_sensor_for_freshness_checks(
+            freshness_checks=asset_checks.freshness_checks
         ),
     ],
     resources={

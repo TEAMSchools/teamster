@@ -107,7 +107,11 @@ select
     ) as is_6yr_cte_grad_int,
 
     if(
-        e.ugrad_status = 'Graduated'
+        (
+            e.ba_status = 'Graduated'
+            or e.aa_status = 'Graduated'
+            or e.cte_status = 'Graduated'
+        )
         and e.ugrad_actual_end_date <= current_date('{{ var("local_timezone") }}'),
         1,
         0

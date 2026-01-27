@@ -29,7 +29,7 @@ class OvergradResource(ConfigurableResource):
         else:
             return f"{versioned_url}/{path}"
 
-    # TODO: use tenacity exponential backoff
+    # TODO: use exponential backoff
     def _request(self, method, url, **kwargs):
         response = self._session.request(
             method=method, url=url, timeout=self.request_timeout, **kwargs
@@ -37,11 +37,6 @@ class OvergradResource(ConfigurableResource):
 
         try:
             response.raise_for_status()
-
-            # Overgrad's API limits users to making 60 requests per minute
-            # and 1000 requests per hour
-            # NB: increased past 1 req/sec becase we still get 429 errors
-            time.sleep(1.25)
 
             return response
         except HTTPError as e:
@@ -71,5 +66,10 @@ class OvergradResource(ConfigurableResource):
                 break
             else:
                 page += 1
+
+                # Overgrad's API limits users to making 60 requests per minute and 1000
+                # requests per hour
+                # - increased past 1 req/sec becase we still get 429 errors
+                time.sleep(1.5)
 
         return data

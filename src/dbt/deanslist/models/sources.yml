@@ -4,12 +4,13 @@ sources:
       {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}{{ var('deanslist_schema', project_name + '_deanslist') }}
     tables:
       - name: src_deanslist__behavior
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - behavior
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - behavior
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -26,12 +27,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__comm_log
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - comm_log
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - comm_log
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -48,12 +50,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__followups
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - followups
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - followups
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -70,12 +73,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__homework
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - homework
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - homework
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -92,12 +96,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__incidents
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - incidents
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - incidents
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -114,12 +119,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__lists
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - lists
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - lists
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -134,12 +140,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__roster_assignments
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - roster_assignments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - roster_assignments
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -156,12 +163,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__rosters
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - rosters
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - rosters
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -178,12 +186,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__terms
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - terms
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - terms
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -198,12 +207,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__users
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - users
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - users
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -218,12 +228,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__students
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - students
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - students
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -240,12 +251,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_deanslist__dff_stats
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - deanslist
-              - dff_stats
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - deanslist
+                - dff_stats
         external:
           location:
             "{{ var('cloud_storage_uri_base',

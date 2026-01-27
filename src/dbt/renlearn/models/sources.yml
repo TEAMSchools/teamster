@@ -5,12 +5,13 @@ sources:
       {{ var('renlearn_schema', project_name + '_renlearn') }}
     tables:
       - name: src_renlearn__accelerated_reader
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - renlearn
-              - accelerated_reader
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - renlearn
+                - accelerated_reader
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -27,12 +28,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_renlearn__star
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - renlearn
-              - star
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - renlearn
+                - star
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -47,12 +49,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_renlearn__star_skill_area
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - renlearn
-              - star_skill_area
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - renlearn
+                - star_skill_area
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -69,12 +72,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_renlearn__star_dashboard_standards
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - renlearn
-              - star_dashboard_standards
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - renlearn
+                - star_dashboard_standards
         external:
           location:
             "{{ var('cloud_storage_uri_base',
@@ -91,12 +95,13 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_renlearn__fast_star
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - renlearn
-              - fast_star
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - renlearn
+                - fast_star
         external:
           location:
             "{{ var('cloud_storage_uri_base',

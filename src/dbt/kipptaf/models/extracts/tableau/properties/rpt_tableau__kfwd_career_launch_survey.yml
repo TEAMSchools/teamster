@@ -149,3 +149,5 @@ models:
         data_type: string
       - name: tier
         data_type: string
+      - name: advising_provider
+        data_type: string
