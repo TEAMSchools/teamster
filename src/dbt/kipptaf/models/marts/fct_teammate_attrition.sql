@@ -133,13 +133,13 @@ with
             employee_number,
             max(
                 case when attrition_type = 'foundation' then is_attrition end
-            ) as foundation_attrition,
+            ) as is_foundation_attrition,
             max(
                 case when attrition_type = 'nj_compliance' then is_attrition end
-            ) as nj_compliance_attrition,
+            ) as is_nj_compliance_attrition,
             max(
                 case when attrition_type = 'recruitment' then is_attrition end
-            ) as recruitment_attrition
+            ) as is_recruitment_attrition
         from attrition_type_union
         group by academic_year, employee_number
     )
