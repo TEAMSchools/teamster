@@ -161,11 +161,12 @@ with
 
         from mod_enrollment_type as m
         inner join weekly_spine as w on m.academic_year = w.academic_year
-        cross join {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
-        where
-            m.academic_year = c.academic_year
+        inner join {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
+        on             m.academic_year = c.academic_year
             and m.enrollment_type = c.enrollment_type
-            and m.rn = 1
+        where
+
+             m.rn = 1
     ),
 
     scaffold as (
