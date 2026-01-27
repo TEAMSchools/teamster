@@ -1,7 +1,7 @@
 with
     daily_spine as (
         -- need only one row per expected sre academic year
-        select distinct academic_year, calendar_day,
+        select distinct sre_academic_year, calendar_day,
 
         from {{ ref("int_finalsite__status_report") }}
         cross join
@@ -19,7 +19,7 @@ with
 
 select
     f._dbt_source_relation,
-    f.academic_year,
+    f.sre_academic_year,
     f.enrollment_academic_year_display,
     f.org,
     f.region,
@@ -61,7 +61,7 @@ select
     d.calendar_day,
 
     first_value(f.student_detailed_status) over (
-        partition by f.academic_year, f.finalsite_student_id
+        partition by f.sre_academic_year, f.finalsite_student_id
         order by f.status_start_date desc
     ) as latest_status,
 

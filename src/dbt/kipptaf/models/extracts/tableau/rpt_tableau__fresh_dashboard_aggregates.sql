@@ -1,7 +1,7 @@
 with
     daily_spine as (
         -- need only one row per expected sre academic year
-        select distinct academic_year, calendar_day,
+        select distinct sre_academic_year, calendar_day,
 
         from {{ ref("int_finalsite__status_report") }}
         cross join
@@ -34,7 +34,7 @@ with
             metric,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
-        inner join daily_spine as d on e.academic_year = d.academic_year
+        inner join daily_spine as d on e.academic_year = d.sre_academic_year
         cross join
             unnest(
                 [
@@ -67,7 +67,7 @@ with
             metric,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
-        inner join daily_spine as d on e.academic_year = d.academic_year
+        inner join daily_spine as d on e.academic_year = d.sre_academic_year
         cross join
             unnest(
                 [
