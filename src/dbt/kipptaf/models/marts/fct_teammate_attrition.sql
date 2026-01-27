@@ -131,15 +131,18 @@ with
         select
             academic_year,
             employee_number,
-            max(
-                case when attrition_type = 'foundation' then is_attrition end
-            ) as is_foundation_attrition,
-            max(
-                case when attrition_type = 'nj_compliance' then is_attrition end
-            ) as is_nj_compliance_attrition,
-            max(
-                case when attrition_type = 'recruitment' then is_attrition end
-            ) as is_recruitment_attrition
+            coalesce(
+                max(case when attrition_type = 'foundation' then is_attrition end),
+                false
+            ) as is_attrition_foundation,
+            coalesce(
+                max(case when attrition_type = 'nj_compliance' then is_attrition end),
+                false
+            ) as is_attrition_nj_compliance,
+            coalese(
+                max(case when attrition_type = 'recruitment' then is_attrition end),
+                false
+            ) as is_attrition_recruitment,
         from attrition_type_union
         group by academic_year, employee_number
     )
