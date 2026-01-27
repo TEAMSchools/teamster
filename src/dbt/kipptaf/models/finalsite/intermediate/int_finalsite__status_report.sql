@@ -8,7 +8,7 @@ with
             x.region,
 
             row_number() over (
-                partition by f.academic_year, f.finalsite_student_id
+                partition by f.enrollment_academic_year, f.finalsite_student_id
                 order by f.status_start_date desc
             ) as rn,
 
@@ -27,20 +27,23 @@ select
     /* since we get snapshot data, these will ensure only the latest of these fields is
     used for a student, retroactively, for a given academic year */
     first_value(region) over (
-        partition by academic_year, finalsite_student_id order by status_start_date desc
+        partition by enrollment_academic_year, finalsite_student_id
+        order by status_start_date desc
     ) as region,
 
     first_value(finalsite_student_id) over (
-        partition by academic_year, finalsite_student_id order by status_start_date desc
+        partition by enrollment_academic_year, finalsite_student_id
+        order by status_start_date desc
     ) as finalsite_student_id,
 
     first_value(powerschool_student_number) over (
-        partition by academic_year, finalsite_student_id order by status_start_date desc
+        partition by enrollment_academic_year, finalsite_student_id
+        order by status_start_date desc
     ) as powerschool_student_number,
 
     coalesce(
         first_value(schoolid) over (
-            partition by academic_year, finalsite_student_id
+            partition by enrollment_academic_year, finalsite_student_id
             order by status_start_date desc
         ),
         0
@@ -48,7 +51,7 @@ select
 
     coalesce(
         first_value(school) over (
-            partition by academic_year, finalsite_student_id
+            partition by enrollment_academic_year, finalsite_student_id
             order by status_start_date desc
         ),
         'No School Assigned'

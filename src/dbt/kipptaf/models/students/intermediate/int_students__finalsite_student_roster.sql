@@ -2,14 +2,15 @@ with
     weekly_spine as (
         -- need only one row per expected sre academic year
         select distinct
-            academic_year,
             academic_year_display,
+            sre_academic_year as academic_year,
             sre_year_start,
             sre_year_end,
 
+            week_start as week_start_monday,
+
             'KTAF' as org,
 
-            week_start as week_start_monday,
             date_add(week_start, interval 6 day) as week_end_sunday,
 
         from {{ ref("int_finalsite__status_report") }}
@@ -72,7 +73,7 @@ with
     mod_enrollment_type as (
         select
             f._dbt_source_relation,
-            f.academic_year,
+            f.sre_academic_year as academic_year,
             f.academic_year_display,
             f.enrollment_year,
             f.region,
