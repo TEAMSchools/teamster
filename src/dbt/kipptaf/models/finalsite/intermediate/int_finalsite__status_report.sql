@@ -5,6 +5,7 @@ with
 
             x.powerschool_school_id as schoolid,
             x.abbreviation as school,
+            x.region,
 
             row_number() over (
                 partition by f.academic_year, f.finalsite_student_id
@@ -23,8 +24,8 @@ select
         region, finalsite_student_id, powerschool_student_number, schoolid, school
     ),
 
-    /* since we get snapshot data, these will ensure only the latest of these fields
-       is used for a student, retroactively, for a given academic year */
+    /* since we get snapshot data, these will ensure only the latest of these fields is
+    used for a student, retroactively, for a given academic year */
     first_value(region) over (
         partition by academic_year, finalsite_student_id order by status_start_date desc
     ) as region,
