@@ -2,7 +2,7 @@ with
     weekly_spine as (
         -- need only one row per expected sre academic year
         select distinct
-            academic_year_display,
+            enrollment_academic_year_display,
             sre_academic_year as academic_year,
             sre_year_start,
             sre_year_end,
@@ -74,7 +74,7 @@ with
         select
             f._dbt_source_relation,
             f.sre_academic_year as academic_year,
-            f.academic_year_display,
+            f.enrollment_academic_year_display,
             f.enrollment_year,
             f.region,
             f.schoolid,
@@ -106,7 +106,7 @@ with
         select
             f._dbt_source_relation,
             f.academic_year,
-            f.academic_year_display,
+            f.enrollment_academic_year_display,
             f.enrollment_year,
             f.region,
             f.schoolid,
@@ -230,7 +230,7 @@ with
             'No School Assigned' as school,
             e.grade_level,
 
-            w.academic_year_display,
+            w.enrollment_academic_year_display,
             w.sre_year_start,
             w.sre_year_end,
             w.week_start_monday,
@@ -270,7 +270,7 @@ with
 select
     s._dbt_source_relation,
     s.academic_year,
-    s.academic_year_display,
+    s.enrollment_academic_year_display,
     s.org,
     s.region,
     s.schoolid,
