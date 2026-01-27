@@ -133,3 +133,58 @@ extraManifests:
           app.kubernetes.io/name: dagster-cloud-agent
           component: agent
           deployment: agent
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: kippcamden-pdb
+    spec:
+      maxUnavailable: 1
+      selector:
+        matchLabels:
+          deployment_name: prod
+          managed_by: K8sUserCodeLauncher
+          location_name: kippcamden
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: kippmiami-pdb
+    spec:
+      maxUnavailable: 1
+      selector:
+        matchLabels:
+          deployment_name: prod
+          managed_by: K8sUserCodeLauncher
+          location_name: kippmiami
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: kippnewark-pdb
+    spec:
+      maxUnavailable: 1
+      selector:
+        matchLabels:
+          deployment_name: prod
+          managed_by: K8sUserCodeLauncher
+          location_name: kippnewark
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: kipppaterson-pdb
+    spec:
+      maxUnavailable: 1
+      selector:
+        matchLabels:
+          deployment_name: prod
+          managed_by: K8sUserCodeLauncher
+          location_name: kipppaterson
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: kipptaf-pdb
+    spec:
+      maxUnavailable: 1
+      selector:
+        matchLabels:
+          deployment_name: prod
+          managed_by: K8sUserCodeLauncher
+          location_name: kipptaf
