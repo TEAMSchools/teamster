@@ -70,7 +70,8 @@ workspace:
   serverK8sConfig:
     containerConfig:
       resources:
-        # Autopilot minimum of 0.5 vCPU & 2 GiB required for using pod anti affinity
+        # Autopilot minimum of 0.5 vCPU & 2 GiB required for scale-out pods using
+        # workload separation: https://docs.cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
         requests:
           cpu: 500m
           memory: 2.0Gi
