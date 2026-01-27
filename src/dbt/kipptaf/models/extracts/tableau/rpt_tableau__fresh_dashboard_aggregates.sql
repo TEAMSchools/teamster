@@ -86,7 +86,7 @@ with
         select
             r._dbt_source_relation,
             r.academic_year,
-            r.academic_year_display,
+            r.enrollment_academic_year_display,
             r.org,
             r.region,
             r.school,
@@ -119,7 +119,7 @@ with
         select
             _dbt_source_relation,
             academic_year,
-            academic_year_display,
+            enrollment_academic_year_display,
             org,
             region,
             school,
@@ -147,7 +147,7 @@ with
         select
             _dbt_source_relation,
             academic_year,
-            academic_year_display,
+            enrollment_academic_year_display,
             org,
             region,
             school,
