@@ -20,7 +20,7 @@ with
 select
     f._dbt_source_relation,
     f.academic_year,
-    f.academic_year_display,
+    f.enrollment_academic_year_display,
     f.org,
     f.region,
     f.schoolid,
