@@ -1,5 +1,13 @@
-{{
-    dbt_utils.union_relations(
-        relations=[source("kippmiami_finalsite", "stg_finalsite__status_report")]
+with
+    union_relations as (
+        {{
+            dbt_utils.union_relations(
+                relations=[
+                    source("kippmiami_finalsite", "stg_finalsite__status_report")
+                ]
+            )
+        }}
     )
-}}
+
+select *, initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
+from union_relations

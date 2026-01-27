@@ -5,14 +5,12 @@ with
 
             x.powerschool_school_id as schoolid,
             x.abbreviation as school,
-            x.region,
 
             row_number() over (
                 partition by f.enrollment_academic_year, f.finalsite_student_id
                 order by f.status_start_date desc
             ) as rn,
 
-        -- TODO: replace with real data source once it is ready
         from {{ ref("stg_finalsite__status_report") }} as f
         left join
             {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
