@@ -4,7 +4,7 @@ with
     roster as (
         select
             *,
-            
+
             {{
                 dbt_utils.generate_surrogate_key(
                     ["employee_number", "effective_date_start"]
@@ -74,6 +74,12 @@ with
                 true,
                 false
             ) as is_manager,
+            lag(r.base_remuneration_annual_rate_amount) over (
+                partition by employee_number order by effective_date_start
+            ) as previous_salary,
+            lag(r.job_title) over (
+                partition by employee_number order by effective_date_start
+            ) as previous_job_title,
         from roster as r
         left join
             grade_levels as gl
@@ -84,3 +90,4 @@ with
 
 select *,
 from final
+where employee_number = 101068

@@ -7,7 +7,9 @@ with
             and primary_indicator
     ),
 
-    academic_years as (select distinct academic_year from teammate_history),
+    academic_years as (
+        select distinct employee_number, academic_year from teammate_history
+    ),
 
     {# Foundation Attrition: latest record for staff not in an inactive status between 9/1 and 4/30 of an academic year #}
     foundation_year_cohort as (
@@ -87,8 +89,8 @@ with
         where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
     ),
 
-    {# left join to compare prior year to following year rosters #}
-    attrition_type_union as (
+    {# left joins to compare prior year to following year rosters #}
+    final as (
         select
             'foundation' as attrition_type,
             fyc.academic_year,
@@ -99,7 +101,6 @@ with
             foundation_returner_cohort as frc
             on fyc.employee_number = frc.employee_number
             and fyc.academic_year = frc.academic_year
-
         union all
 
         select
@@ -112,7 +113,6 @@ with
             nj_returner_cohort as njrc
             on njyc.employee_number = njrc.employee_number
             and njyc.academic_year = njrc.academic_year
-
         union all
 
         select
@@ -125,26 +125,6 @@ with
             recruitment_returner_cohort as rrc
             on ryc.employee_number = rrc.employee_number
             and ryc.academic_year = rrc.academic_year
-    ),
-
-    final as (
-        select
-            academic_year,
-            employee_number,
-            coalesce(
-                max(case when attrition_type = 'foundation' then is_attrition end),
-                false
-            ) as is_attrition_foundation,
-            coalesce(
-                max(case when attrition_type = 'nj_compliance' then is_attrition end),
-                false
-            ) as is_attrition_nj_compliance,
-            coalese(
-                max(case when attrition_type = 'recruitment' then is_attrition end),
-                false
-            ) as is_attrition_recruitment,
-        from attrition_type_union
-        group by academic_year, employee_number
     )
 
 select *,
