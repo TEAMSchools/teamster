@@ -11,10 +11,10 @@ with
                 order by f.status_start_date desc
             ) as rn,
 
-            cast(enrollment_academic_year as string)
+            cast(f.enrollment_academic_year as string)
             || '-'
             || right(
-                cast(enrollment_academic_year + 1 as string), 2
+                cast(f.enrollment_academic_year + 1 as string), 2
             ) as enrollment_academic_year_display,
 
         from {{ ref("stg_finalsite__status_report") }} as f
