@@ -19,7 +19,7 @@ with
 
 select
     f._dbt_source_relation,
-    f.sre_academic_year,
+    f.academic_year,
     f.enrollment_academic_year_display,
     f.org,
     f.region,
@@ -51,7 +51,6 @@ select
     f.student_last_name,
     f.student_first_name,
     f.student_grade_level,
-    f.student_grade_level_string,
     f.student_detailed_status,
     f.status_start_date,
     f.status_end_date,
@@ -61,7 +60,7 @@ select
     d.calendar_day,
 
     first_value(f.student_detailed_status) over (
-        partition by f.sre_academic_year, f.finalsite_student_id
+        partition by f.academic_year, f.finalsite_student_id
         order by f.status_start_date desc
     ) as latest_status,
 
