@@ -28,6 +28,7 @@ select
     s.nj_student_tier,
     s.is_tutoring as tutoring_nj,
     s.is_sipps,
+    s.mtss_enrollment,
 
     'Benchmark' as assessment_type,
 
@@ -210,6 +211,7 @@ select
     s.nj_student_tier,
     s.is_tutoring as tutoring_nj,
     s.is_sipps,
+    s.mtss_enrollment,
 
     'PM' as assessment_type,
 

@@ -97,3 +97,12 @@ sources:
                 - kippnewark
                 - overgrad
                 - int_overgrad__students
+      - name: int_overgrad__admissions
+        config:
+          meta:
+            dagster:
+              group: overgrad
+              asset_key:
+                - kippnewark
+                - overgrad
+                - int_overgrad__admissions
