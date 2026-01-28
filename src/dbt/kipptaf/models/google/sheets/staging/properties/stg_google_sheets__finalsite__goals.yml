@@ -1,5 +1,0 @@
-models:
-  - name: stg_google_sheets__finalsite__goals
-    config:
-      contract:
-        enforced: false
