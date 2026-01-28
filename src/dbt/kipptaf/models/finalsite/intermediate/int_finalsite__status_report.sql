@@ -52,6 +52,6 @@ select
             order by status_start_date desc
         ),
         'No School Assigned'
-    ) as latest_school,
-
+    ) as latest_school, 
+    
 from finalsite_report
