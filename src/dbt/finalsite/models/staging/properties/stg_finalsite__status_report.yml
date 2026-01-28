@@ -31,7 +31,7 @@ models:
         data_type: int64
       - name: sre_academic_year
         data_type: int64
-      - name: sre_year_start
+      - name: sre_academic_year_start
         data_type: date
-      - name: sre_year_end
+      - name: sre_academic_year_end
         data_type: date

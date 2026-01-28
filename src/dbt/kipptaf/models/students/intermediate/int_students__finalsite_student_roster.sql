@@ -3,9 +3,10 @@ with
         -- need only one row per expected sre academic year
         select distinct
             enrollment_academic_year_display,
-            sre_academic_year as academic_year,
-            sre_year_start,
-            sre_year_end,
+            enrollment_academic_year,
+            sre_academic_year,
+            sre_academic_year_start,
+            sre_academic_year_end,
 
             week_start as week_start_monday,
 
@@ -18,9 +19,9 @@ with
             unnest(
                 generate_date_array(
                     -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(sre_year_start, week(monday)),
+                    date_trunc(sre_academic_year_start, week(monday)),
                     -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(sre_year_end, week(monday)),
+                    date_trunc(sre_academic_year_end, week(monday)),
                     interval 7 day
                 )
             ) as week_start
@@ -73,12 +74,15 @@ with
     mod_enrollment_type as (
         select
             f._dbt_source_relation,
-            f.sre_academic_year as academic_year,
+            f.sre_academic_year,
             f.enrollment_academic_year_display,
             f.enrollment_year,
             f.region,
+            f.latest_region,
             f.schoolid,
+            f.latest_schoolid,
             f.school,
+            f.latest_school,
             f.finalsite_student_id,
             f.powerschool_student_number,
             f.last_name,
@@ -88,8 +92,8 @@ with
             f.status_start_date,
             f.status_end_date,
             f.days_in_status,
-            f.sre_year_start,
-            f.sre_year_end,
+            f.sre_academic_year_start,
+            f.sre_academic_year_end,
             f.rn,
 
             coalesce(e.enrollment_type, 'New') as enrollment_type,
@@ -104,12 +108,15 @@ with
     finalsite_data as (
         select
             f._dbt_source_relation,
-            f.academic_year,
+            f.sre_academic_year,
             f.enrollment_academic_year_display,
             f.enrollment_year,
             f.region,
+            f.latest_region,
             f.schoolid,
+            f.latest_schoolid,
             f.school,
+            f.latest_school,
             f.finalsite_student_id,
             f.powerschool_student_number,
             f.last_name,
@@ -119,8 +126,8 @@ with
             f.status_start_date,
             f.status_end_date,
             f.days_in_status,
-            f.sre_year_start,
-            f.sre_year_end,
+            f.sre_academic_year_start,
+            f.sre_academic_year_end,
             f.rn,
             f.enrollment_type,
 

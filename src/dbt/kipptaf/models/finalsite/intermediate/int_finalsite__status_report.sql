@@ -25,7 +25,7 @@ with
 
 select
     * except (
-        region, finalsite_student_id, powerschool_student_number, schoolid, school
+       finalsite_student_id, powerschool_student_number
     ),
 
     /* since we get snapshot data, these will ensure only the latest of these fields is
@@ -33,7 +33,7 @@ select
     first_value(region) over (
         partition by enrollment_academic_year, finalsite_student_id
         order by status_start_date desc
-    ) as region,
+    ) as latest_region,
 
     first_value(finalsite_student_id) over (
         partition by enrollment_academic_year, finalsite_student_id
@@ -51,7 +51,7 @@ select
             order by status_start_date desc
         ),
         0
-    ) as schoolid,
+    ) as latest_schoolid,
 
     coalesce(
         first_value(school) over (
@@ -59,6 +59,6 @@ select
             order by status_start_date desc
         ),
         'No School Assigned'
-    ) as school,
+    ) as latest_school,
 
 from finalsite_report
