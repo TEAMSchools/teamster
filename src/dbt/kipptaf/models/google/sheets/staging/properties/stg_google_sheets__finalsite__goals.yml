@@ -1,5 +1,25 @@
 models:
   - name: stg_google_sheets__finalsite__goals
-    config:
-      contract:
-        enforced: false
+    columns:
+      - name: enrollment_academic_year
+        data_type: int64
+      - name: academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: goal_granularity
+        data_type: string
+      - name: goal_type
+        data_type: string
+      - name: goal_name
+        data_type: string
+      - name: goal_value
+        data_type: int64
