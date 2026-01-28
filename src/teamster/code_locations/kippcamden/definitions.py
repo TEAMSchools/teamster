@@ -2,6 +2,7 @@ from dagster import (
     AssetSelection,
     AutomationConditionSensorDefinition,
     Definitions,
+    build_sensor_for_freshness_checks,
     load_assets_from_modules,
 )
 from dagster_k8s import k8s_job_executor
@@ -10,6 +11,7 @@ from teamster.code_locations.kippcamden import (
     CODE_LOCATION,
     DBT_PROJECT,
     _dbt,
+    asset_checks,
     couchdrop,
     deanslist,
     edplan,
@@ -52,6 +54,7 @@ defs = Definitions(
             titan,
         ]
     ),
+    asset_checks=asset_checks.freshness_checks,
     schedules=[
         *extracts.schedules,
         *deanslist.schedules,
@@ -66,6 +69,9 @@ defs = Definitions(
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
             target=AssetSelection.all(),
+        ),
+        build_sensor_for_freshness_checks(
+            freshness_checks=asset_checks.freshness_checks
         ),
     ],
     resources={
