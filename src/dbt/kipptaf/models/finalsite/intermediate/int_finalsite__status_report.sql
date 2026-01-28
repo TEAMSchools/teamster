@@ -33,11 +33,6 @@ select
         order by status_start_date desc
     ) as latest_region,
 
-    first_value(finalsite_student_id) over (
-        partition by enrollment_academic_year, finalsite_student_id
-        order by status_start_date desc
-    ) as finalsite_student_id,
-
     first_value(powerschool_student_number) over (
         partition by enrollment_academic_year, finalsite_student_id
         order by status_start_date desc
