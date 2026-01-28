@@ -36,6 +36,8 @@ with
             first_name,
             last_name,
 
+            (academic_year + 1) as enrollment_academic_year,
+
             case
                 when
                     coalesce(
@@ -74,9 +76,9 @@ with
     mod_enrollment_type as (
         select
             f._dbt_source_relation,
-            f.sre_academic_year,
             f.enrollment_academic_year_display,
-            f.enrollment_year,
+            f.enrollment_academic_year,
+            f.sre_academic_year,
             f.region,
             f.latest_region,
             f.schoolid,
@@ -108,9 +110,9 @@ with
     finalsite_data as (
         select
             f._dbt_source_relation,
-            f.sre_academic_year,
             f.enrollment_academic_year_display,
-            f.enrollment_year,
+            f.enrollment_academic_year,
+            f.sre_academic_year,
             f.region,
             f.latest_region,
             f.schoolid,
@@ -146,7 +148,7 @@ with
         from mod_enrollment_type as f
         inner join
             {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
-            on f.academic_year = x.academic_year
+            on f.enrollment_academic_year = x.enrollment_academic_year
             and f.enrollment_type = x.enrollment_type
             and f.detailed_status = x.detailed_status
     ),
@@ -155,6 +157,7 @@ with
         select
             m._dbt_source_relation,
             m.academic_year,
+            m.enrollment_academic_year,
             m.schoolid,
             m.school,
             m.finalsite_student_id,
@@ -170,7 +173,7 @@ with
         inner join weekly_spine as w on m.academic_year = w.academic_year
         inner join
             {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
-            on m.academic_year = c.academic_year
+            on m.enrollment_academic_year = c.enrollment_academic_year
             and m.enrollment_type = c.enrollment_type
         where m.rn = 1
     ),
@@ -279,6 +282,7 @@ with
 select
     s._dbt_source_relation,
     s.academic_year,
+    s.enrollment_academic_year,
     s.enrollment_academic_year_display,
     s.org,
     s.region,
@@ -315,7 +319,7 @@ select
     stu.finalsite_student_id,
 
     f.finalsite_student_id as student_finalsite_student_id,
-    f.enrollment_year as student_enrollment_year,
+    f.enrollment_academic_year as student_enrollment_academic_year,
     f.region as student_region,
     f.schoolid as student_schoolid,
     f.school as student_school,
