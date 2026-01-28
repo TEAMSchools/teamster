@@ -24,9 +24,7 @@ with
     )
 
 select
-    * except (
-       finalsite_student_id, powerschool_student_number
-    ),
+    * except (finalsite_student_id, powerschool_student_number),
 
     /* since we get snapshot data, these will ensure only the latest of these fields is
     used for a student, retroactively, for a given academic year */
