@@ -19,7 +19,7 @@ models:
         data_type: int64
       - name: status_start_date
         data_type: date
-      - name: academic_year
+      - name: enrollment_academic_year
         data_type: int64
       - name: grade_level
         data_type: int64
@@ -29,3 +29,9 @@ models:
         data_type: date
       - name: days_in_status
         data_type: int64
+      - name: sre_academic_year
+        data_type: int64
+      - name: sre_academic_year_start
+        data_type: date
+      - name: sre_academic_year_end
+        data_type: date
