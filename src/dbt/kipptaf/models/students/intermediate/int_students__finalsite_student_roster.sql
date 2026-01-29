@@ -98,6 +98,8 @@ with
             f.sre_academic_year_end,
             f.rn,
 
+            e.academic_year,
+
             coalesce(e.enrollment_type, 'New') as enrollment_type,
 
         from {{ ref("int_finalsite__status_report") }} as f
