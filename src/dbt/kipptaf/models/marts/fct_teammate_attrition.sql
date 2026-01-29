@@ -26,7 +26,6 @@ with
         where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
         group by ay.academic_year, th.employee_number
     ),
-
     {# Foundation Attrition: any staff not in terminated or deceased status #} 
     {# on 9/1 of the following academic year #}
     foundation_returner_cohort as (
@@ -107,7 +106,6 @@ with
             foundation_returner_cohort as frc
             on fyc.employee_number = frc.employee_number
             and fyc.academic_year = frc.academic_year
-        
         union all
 
         select
