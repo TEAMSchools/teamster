@@ -8,10 +8,11 @@ with
     ),
 
     academic_years as (
-        select distinct employee_number, academic_year from teammate_history
+        select distinct employee_number, academic_year, from teammate_history
     ),
 
-    {# Foundation Attrition: latest record for staff not in an inactive status between 9/1 and 4/30 of an academic year #}
+    {# Foundation Attrition: latest record for staff not #}
+    {#in an inactive status between 9/1 and 4/30 of an academic year #}
     foundation_year_cohort as (
         select
             ay.academic_year,
@@ -26,9 +27,10 @@ with
         group by ay.academic_year, th.employee_number
     ),
 
-    {# Foundation Attrition: any staff not in terminated or deceased status on 9/1 of the following academic year #}
+    {# Foundation Attrition: any staff not in terminated or deceased status #} 
+    {# on 9/1 of the following academic year #}
     foundation_returner_cohort as (
-        select distinct ay.academic_year, th.employee_number
+        select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
             teammate_history as th
@@ -37,7 +39,8 @@ with
         where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
     ),
 
-    {# New Jersey Compliance Attrition: latest record for staff not in an inactive status between 7/1 and 6/30 of an academic year #}
+    {# New Jersey Compliance Attrition: latest record for staff #}
+    {# not in an inactive status between 7/1 and 6/30 of an academic year #}
     nj_year_cohort as (
         select
             ay.academic_year,
@@ -52,9 +55,10 @@ with
         group by ay.academic_year, th.employee_number
     ),
 
-    {# New Jersey Compliance  Attrition: any staff not in terminated or deceased status on 7/1 of the following academic year #}
+    {# New Jersey Compliance  Attrition: any staff not in #}
+    {# terminated or deceased status on 7/1 of the following academic year #}
     nj_returner_cohort as (
-        select distinct ay.academic_year, th.employee_number
+        select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
             teammate_history as th
@@ -63,7 +67,8 @@ with
         where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
     ),
 
-    {# Recruitment Attrition: latest record for staff not in an inactive status between 9/1 and 8/31 of an academic year #}
+    {# Recruitment Attrition: latest record for staff not in an #}
+    {# inactive status between 9/1 and 8/31 of an academic year #}
     recruitment_year_cohort as (
         select
             ay.academic_year,
@@ -78,9 +83,10 @@ with
         group by ay.academic_year, th.employee_number
     ),
 
-    {# Recruitment  Attrition: any staff not in terminated or deceased status on 9/1 of the following academic year #}
+    {# Recruitment Attrition: any staff not in terminated or deceased #}
+    {# status on 9/1 of the following academic year #}
     recruitment_returner_cohort as (
-        select distinct ay.academic_year, th.employee_number
+        select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
             teammate_history as th
@@ -95,19 +101,20 @@ with
             'foundation' as attrition_type,
             fyc.academic_year,
             fyc.employee_number,
-            if(frc.employee_number is null, true, false) as is_attrition
+            if(frc.employee_number is null, true, false) as is_attrition,
         from foundation_year_cohort as fyc
         left join
             foundation_returner_cohort as frc
             on fyc.employee_number = frc.employee_number
             and fyc.academic_year = frc.academic_year
+        
         union all
 
         select
             'nj_compliance' as attrition_type,
             njyc.academic_year,
             njyc.employee_number,
-            if(njrc.employee_number is null, true, false) as is_attrition
+            if(njrc.employee_number is null, true, false) as is_attrition,
         from nj_year_cohort as njyc
         left join
             nj_returner_cohort as njrc
@@ -119,7 +126,7 @@ with
             'recruitment' as attrition_type,
             ryc.academic_year,
             ryc.employee_number,
-            if(rrc.employee_number is null, true, false) as is_attrition
+            if(rrc.employee_number is null, true, false) as is_attrition,
         from recruitment_year_cohort as ryc
         left join
             recruitment_returner_cohort as rrc

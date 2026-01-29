@@ -21,15 +21,18 @@ with
         where primary_indicator
     ),
 
-    grade_levels as (select *, from {{ ref("int_powerschool__teacher_grade_levels") }}),
+    grade_levels as (select *, from {{ ref("int_powerschool__teacher_grade_levels") }}
+    ),
 
-    managers as (select distinct reports_to_employee_number, from roster),
+    managers as (select distinct reports_to_employee_number, from roster
+    ),
 
     performance_management_tiers as (
-        select * from {{ ref('int_performance_management__overall_scores') }}),
+        select *, from {{ ref('int_performance_management__overall_scores') }}
+        ),
 
     years_experience as (
-        select * from {{ ref('int_people__years_experience') }}
+        select *, from {{ ref('int_people__years_experience') }}
     ),
 
     final as (
@@ -90,7 +93,6 @@ with
             lag(r.job_title) over (
                 partition by r.employee_number order by r.effective_date_start
             ) as previous_job_title,
-            
         from roster as r
         left join
             grade_levels as gl
