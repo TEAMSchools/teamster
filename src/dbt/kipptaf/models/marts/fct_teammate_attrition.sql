@@ -12,7 +12,7 @@ with
     ),
 
     {# Foundation Attrition: latest record for staff not #}
-    {#in an inactive status between 9/1 and 4/30 of an academic year #}
+    {# in an inactive status between 9/1 and 4/30 of an academic year #}
     foundation_year_cohort as (
         select
             ay.academic_year,
@@ -26,7 +26,7 @@ with
         where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
         group by ay.academic_year, th.employee_number
     ),
-    {# Foundation Attrition: any staff not in terminated or deceased status #} 
+    {# Foundation Attrition: any staff not in terminated or deceased status #}
     {# on 9/1 of the following academic year #}
     foundation_returner_cohort as (
         select distinct ay.academic_year, th.employee_number,
