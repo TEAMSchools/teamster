@@ -172,7 +172,7 @@ with
             c.detailed_status,
 
         from mod_enrollment_type as m
-        inner join weekly_spine as w on m.academic_year = w.academic_year
+        inner join weekly_spine as w on m.academic_year = w.sre_academic_year
         inner join
             {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
             on m.enrollment_academic_year = c.enrollment_academic_year
@@ -192,8 +192,9 @@ with
             e.grade_level,
 
             w.enrollment_academic_year_display,
-            w.sre_year_start,
-            w.sre_year_end,
+            w.enrollment_academic_year,
+            w.sre_academic_year_start,
+            w.sre_academic_year_end,
             w.week_start_monday,
             w.week_end_sunday,
 
@@ -222,7 +223,7 @@ with
             c.waitlisted,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
-        inner join weekly_spine as w on e.academic_year = w.academic_year
+        inner join weekly_spine as w on e.academic_year = w.sre_academic_year
         inner join
             {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
             on e.grade_level != 99
@@ -243,8 +244,9 @@ with
             e.grade_level,
 
             w.enrollment_academic_year_display,
-            w.sre_year_start,
-            w.sre_year_end,
+            w.enrollment_academic_year,
+            w.sre_academic_year_start,
+            w.sre_academic_year_end,
             w.week_start_monday,
             w.week_end_sunday,
 
@@ -273,7 +275,7 @@ with
             c.waitlisted,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
-        inner join weekly_spine as w on e.academic_year = w.academic_year
+        inner join weekly_spine as w on e.academic_year = w.sre_academic_year
         inner join
             {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
             on e.grade_level != 99
@@ -291,8 +293,8 @@ select
     s.schoolid,
     s.school,
     s.grade_level,
-    s.sre_year_start,
-    s.sre_year_end,
+    s.sre_academic_year_start,
+    s.sre_academic_year_end,
     s.week_start_monday,
     s.week_end_sunday,
     s.enrollment_type,
@@ -358,7 +360,7 @@ inner join
     and {{ union_dataset_join_clause(left_alias="s", right_alias="stu") }}
 left join
     finalsite_data as f
-    on stu.academic_year = f.academic_year
+    on stu.academic_year = f.sre_academic_year
     and stu.schoolid = f.schoolid
     and stu.grade_level = f.grade_level
     and stu.detailed_status = f.detailed_status

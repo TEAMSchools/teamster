@@ -8,9 +8,9 @@ with
             unnest(
                 generate_date_array(
                     -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(sre_year_start, week(monday)),
+                    date_trunc(sre_academic_year_start, week(monday)),
                     -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(sre_year_end, week(monday)),
+                    date_trunc(sre_academic_year_end, week(monday)),
                     interval 1 day
                 )
             ) as calendar_day
@@ -86,6 +86,7 @@ with
         select
             r._dbt_source_relation,
             r.academic_year,
+            r.enrollment_academic_year,
             r.enrollment_academic_year_display,
             r.org,
             r.region,
@@ -119,6 +120,7 @@ with
         select
             _dbt_source_relation,
             academic_year,
+            enrollment_academic_year,
             enrollment_academic_year_display,
             org,
             region,
@@ -147,6 +149,7 @@ with
         select
             _dbt_source_relation,
             academic_year,
+            enrollment_academic_year,
             enrollment_academic_year_display,
             org,
             region,
