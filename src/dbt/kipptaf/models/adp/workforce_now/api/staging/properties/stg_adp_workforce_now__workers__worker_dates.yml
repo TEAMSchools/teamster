@@ -1,0 +1,17 @@
+models:
+  - name: stg_adp_workforce_now__workers__worker_dates
+    columns:
+      - name: associate_oid
+        data_type: string
+      - name: effective_date_start
+        data_type: date
+      - name: worker_dates__original_hire_date
+        data_type: date
+      - name: worker_dates__rehire_date
+        data_type: date
+      - name: worker_dates__termination_date
+        data_type: date
+      - name: worker_dates_surrogate_key
+        data_type: string
+      - name: worker_hire_date_recent
+        data_type: date

@@ -1,0 +1,277 @@
+models:
+  - name: stg_adp_workforce_now__workers__person
+    columns:
+      - name: associate_oid
+        data_type: string
+      - name: effective_date_start
+        data_type: date
+      - name: person_surrogate_key
+        data_type: string
+      - name: person__disabled_indicator
+        data_type: bool
+      - name: person__military_discharge_date
+        data_type: string
+      - name: person__tobacco_user_indicator
+        data_type: bool
+      - name: person__birth_name__formatted_name
+        data_type: string
+      - name: person__birth_name__given_name
+        data_type: string
+      - name: person__birth_name__middle_name
+        data_type: string
+      - name: person__birth_name__family_name_1
+        data_type: string
+      - name: person__birth_name__nick_name
+        data_type: string
+      - name: person__birth_name__generation_affix_code__code_value
+        data_type: string
+      - name: person__birth_name__generation_affix_code__long_name
+        data_type: string
+      - name: person__birth_name__generation_affix_code__short_name
+        data_type: string
+      - name: person__birth_name__qualification_affix_code__code_value
+        data_type: string
+      - name: person__birth_name__qualification_affix_code__long_name
+        data_type: string
+      - name: person__birth_name__qualification_affix_code__short_name
+        data_type: string
+      - name: person__legal_name__family_name_1
+        data_type: string
+      - name: person__legal_name__formatted_name
+        data_type: string
+      - name: person__legal_name__given_name
+        data_type: string
+      - name: person__legal_name__middle_name
+        data_type: string
+      - name: person__legal_name__nick_name
+        data_type: string
+      - name: person__legal_name__generation_affix_code__code_value
+        data_type: string
+      - name: person__legal_name__generation_affix_code__long_name
+        data_type: string
+      - name: person__legal_name__generation_affix_code__short_name
+        data_type: string
+      - name: person__legal_name__qualification_affix_code__code_value
+        data_type: string
+      - name: person__legal_name__qualification_affix_code__long_name
+        data_type: string
+      - name: person__legal_name__qualification_affix_code__short_name
+        data_type: string
+      - name: person__preferred_name__formatted_name
+        data_type: string
+      - name: person__preferred_name__given_name
+        data_type: string
+      - name: person__preferred_name__middle_name
+        data_type: string
+      - name: person__preferred_name__family_name_1
+        data_type: string
+      - name: person__preferred_name__nick_name
+        data_type: string
+      - name: person__preferred_name__generation_affix_code__code_value
+        data_type: string
+      - name: person__preferred_name__generation_affix_code__long_name
+        data_type: string
+      - name: person__preferred_name__generation_affix_code__short_name
+        data_type: string
+      - name: person__preferred_name__qualification_affix_code__code_value
+        data_type: string
+      - name: person__preferred_name__qualification_affix_code__long_name
+        data_type: string
+      - name: person__preferred_name__qualification_affix_code__short_name
+        data_type: string
+      - name: person__ethnicity_code__code_value
+        data_type: string
+      - name: person__ethnicity_code__long_name
+        data_type: string
+      - name: person__ethnicity_code__short_name
+        data_type: string
+      - name: person__gender_code__code_value
+        data_type: string
+      - name: person__gender_code__long_name
+        data_type: string
+      - name: person__gender_code__short_name
+        data_type: string
+      - name: person__gender_self_identity_code__code_value
+        data_type: string
+      - name: person__gender_self_identity_code__long_name
+        data_type: string
+      - name: person__gender_self_identity_code__short_name
+        data_type: string
+      - name: person__highest_education_level_code__code_value
+        data_type: string
+      - name: person__highest_education_level_code__long_name
+        data_type: string
+      - name: person__highest_education_level_code__short_name
+        data_type: string
+      - name: person__legal_address__item_id
+        data_type: string
+      - name: person__legal_address__line_one
+        data_type: string
+      - name: person__legal_address__line_two
+        data_type: string
+      - name: person__legal_address__line_three
+        data_type: string
+      - name: person__legal_address__city_name
+        data_type: string
+      - name: person__legal_address__postal_code
+        data_type: string
+      - name: person__legal_address__country_code
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_1__subdivision_type
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_1__code_value
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_1__long_name
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_1__short_name
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_2__subdivision_type
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_2__code_value
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_2__long_name
+        data_type: string
+      - name: person__legal_address__country_subdivision_level_2__short_name
+        data_type: string
+      - name: person__legal_address__name_code__code_value
+        data_type: string
+      - name: person__legal_address__name_code__long_name
+        data_type: string
+      - name: person__legal_address__name_code__short_name
+        data_type: string
+      - name: person__legal_address__type_code__code_value
+        data_type: string
+      - name: person__legal_address__type_code__long_name
+        data_type: string
+      - name: person__legal_address__type_code__short_name
+        data_type: string
+      - name: person__marital_status_code__code_value
+        data_type: string
+      - name: person__marital_status_code__long_name
+        data_type: string
+      - name: person__marital_status_code__short_name
+        data_type: string
+      - name: person__military_status_code__code_value
+        data_type: string
+      - name: person__military_status_code__long_name
+        data_type: string
+      - name: person__military_status_code__short_name
+        data_type: string
+      - name: person__preferred_gender_pronoun_code__code_value
+        data_type: string
+      - name: person__preferred_gender_pronoun_code__long_name
+        data_type: string
+      - name: person__preferred_gender_pronoun_code__short_name
+        data_type: string
+      - name: person__race_code__code_value
+        data_type: string
+      - name: person__race_code__long_name
+        data_type: string
+      - name: person__race_code__short_name
+        data_type: string
+      - name: person__race_code__identification_method_code__code_value
+        data_type: string
+      - name: person__race_code__identification_method_code__long_name
+        data_type: string
+      - name: person__race_code__identification_method_code__short_name
+        data_type: string
+      - name: person__birth_name__generation_affix_code__effective_date
+        data_type: date
+      - name: person__birth_name__qualification_affix_code__effective_date
+        data_type: date
+      - name: person__legal_name__generation_affix_code__effective_date
+        data_type: date
+      - name: person__legal_name__qualification_affix_code__effective_date
+        data_type: date
+      - name: person__preferred_name__generation_affix_code__effective_date
+        data_type: date
+      - name: person__preferred_name__qualification_affix_code__effective_date
+        data_type: date
+      - name: person__ethnicity_code__effective_date
+        data_type: date
+      - name: person__gender_code__effective_date
+        data_type: date
+      - name: person__gender_self_identity_code__effective_date
+        data_type: date
+      - name: person__highest_education_level_code__effective_date
+        data_type: date
+      - name: person__legal_address__country_subdivision_level_1__effective_date
+        data_type: date
+      - name: person__legal_address__country_subdivision_level_2__effective_date
+        data_type: date
+      - name: person__legal_address__name_code__effective_date
+        data_type: date
+      - name: person__legal_address__type_code__effective_date
+        data_type: date
+      - name: person__marital_status_code__effective_date
+        data_type: date
+      - name: person__military_status_code__effective_date
+        data_type: date
+      - name: person__preferred_gender_pronoun_code__effective_date
+        data_type: date
+      - name: person__race_code__effective_date
+        data_type: date
+      - name: person__race_code__identification_method_code__effective_date
+        data_type: date
+      - name: person__birth_date
+        data_type: date
+      - name: person__given_name
+        data_type: string
+      - name: person__family_name_1
+        data_type: string
+      - name: person__race_code_name
+        data_type: string
+      - name: person__ethnicity_code_name
+        data_type: string
+      - name: person__gender_code_name
+        data_type: string
+      - name: race_ethnicity_reporting
+        data_type: string
+      - name: person__disability_type_codes
+        data_type: |
+          ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>
+      - name: person__military_classification_codes
+        data_type: |
+          ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>
+      - name: person__other_personal_addresses
+        data_type: |
+          ARRAY<STRUCT<cityName STRING, countryCode STRING, itemID STRING, lineOne STRING, lineTwo STRING, lineThree STRING, postalCode STRING, countrySubdivisionLevel1 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, countrySubdivisionLevel2 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
+      - name: person__social_insurance_programs
+        data_type: |
+          ARRAY<STRUCT<coveredIndicator BOOL, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
+      - name: person__birth_name__preferred_salutations
+        data_type: |
+          ARRAY<STRUCT<salutationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
+      - name: person__communication__emails
+        data_type: |
+          ARRAY<STRUCT<emailUri STRING, itemID STRING, notificationIndicator BOOL, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
+      - name: person__communication__landlines
+        data_type: |
+          ARRAY<STRUCT<areaDialing STRING, countryDialing STRING, dialNumber STRING, formattedNumber STRING, itemID STRING, access STRING, extension STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
+      - name: person__communication__mobiles
+        data_type: |
+          ARRAY<STRUCT<areaDialing STRING, countryDialing STRING, dialNumber STRING, formattedNumber STRING, itemID STRING, access STRING, extension STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
+      - name: person__custom_field_group__code_fields
+        data_type: |
+          ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
+      - name: person__custom_field_group__date_fields
+        data_type: |
+          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, dateValue STRING>>
+      - name: person__custom_field_group__indicator_fields
+        data_type: |
+          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, indicatorValue BOOL>>
+      - name: person__custom_field_group__multi_code_fields
+        data_type: |
+          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, codes ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>
+      - name: person__custom_field_group__number_fields
+        data_type: |
+          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, numberValue FLOAT64>>
+      - name: person__custom_field_group__string_fields
+        data_type: |
+          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, stringValue STRING>>
+      - name: person__legal_name__preferred_salutations
+        data_type: |
+          ARRAY<STRUCT<salutationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
+      - name: person__preferred_name__preferred_salutations
+        data_type: |
+          ARRAY<STRUCT<salutationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
