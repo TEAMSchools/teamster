@@ -24,7 +24,7 @@ with
     )
 
 select
-    * except (finalsite_student_id, powerschool_student_number),
+    * except (powerschool_student_number),
 
     /* since we get snapshot data, these will ensure only the latest of these fields is
     used for a student, retroactively, for a given academic year */
@@ -52,6 +52,6 @@ select
             order by status_start_date desc
         ),
         'No School Assigned'
-    ) as latest_school, 
-    
+    ) as latest_school,
+
 from finalsite_report
