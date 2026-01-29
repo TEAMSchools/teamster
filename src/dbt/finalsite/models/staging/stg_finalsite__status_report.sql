@@ -12,7 +12,7 @@ with
 
             cast(powerschool_student_number as int) as powerschool_student_number,
 
-            cast(left(enrollment_year, 4) as int) as academic_year,
+            cast(left(enrollment_year, 4) as int) as enrollment_academic_year,
 
             date(
                 cast(`timestamp` as timestamp), '{{ var("local_timezone") }}'
@@ -45,5 +45,18 @@ with
         from transformations
     )
 
-select *, date_diff(status_end_date, status_start_date, day) as days_in_status,
+select
+    *,
+
+    enrollment_academic_year - 1 as sre_academic_year,
+
+    if(
+        status_end_date = status_start_date,
+        1,
+        date_diff(status_end_date, status_start_date, day)
+    ) as days_in_status,
+
+    date(enrollment_academic_year - 1, 10, 16) as sre_academic_year_start,
+    date(enrollment_academic_year, 10, 15) as sre_academic_year_end,
+
 from end_date_calc
