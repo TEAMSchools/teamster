@@ -5,350 +5,58 @@ models:
         data_type: string
       - name: effective_date_start
         data_type: date
-      - name: worker_id__id_value
-        data_type: string
-      - name: worker_id__scheme_code__code_value
-        data_type: string
-      - name: worker_id__scheme_code__long_name
-        data_type: string
-      - name: worker_id__scheme_code__short_name
-        data_type: string
-      - name: worker_status__status_code__code_value
-        data_type: string
-      - name: worker_status__status_code__long_name
-        data_type: string
-      - name: worker_status__status_code__short_name
-        data_type: string
-      - name: language_code__code_value
-        data_type: string
-      - name: language_code__long_name
-        data_type: string
-      - name: language_code__short_name
-        data_type: string
-      - name: person__disabled_indicator
-        data_type: boolean
-      - name: person__military_discharge_date
-        data_type: string
-      - name: person__tobacco_user_indicator
-        data_type: boolean
-      - name: person__birth_name__formatted_name
-        data_type: string
-      - name: person__birth_name__given_name
-        data_type: string
-      - name: person__birth_name__middle_name
-        data_type: string
-      - name: person__birth_name__family_name_1
-        data_type: string
-      - name: person__birth_name__nick_name
-        data_type: string
-      - name: person__birth_name__generation_affix_code__code_value
-        data_type: string
-      - name: person__birth_name__generation_affix_code__long_name
-        data_type: string
-      - name: person__birth_name__generation_affix_code__short_name
-        data_type: string
-      - name: person__birth_name__qualification_affix_code__code_value
-        data_type: string
-      - name: person__birth_name__qualification_affix_code__long_name
-        data_type: string
-      - name: person__birth_name__qualification_affix_code__short_name
-        data_type: string
-      - name: person__legal_name__family_name_1
-        data_type: string
-      - name: person__legal_name__formatted_name
-        data_type: string
-      - name: person__legal_name__given_name
-        data_type: string
-      - name: person__legal_name__middle_name
-        data_type: string
-      - name: person__legal_name__nick_name
-        data_type: string
-      - name: person__legal_name__generation_affix_code__code_value
-        data_type: string
-      - name: person__legal_name__generation_affix_code__long_name
-        data_type: string
-      - name: person__legal_name__generation_affix_code__short_name
-        data_type: string
-      - name: person__legal_name__qualification_affix_code__code_value
-        data_type: string
-      - name: person__legal_name__qualification_affix_code__long_name
-        data_type: string
-      - name: person__legal_name__qualification_affix_code__short_name
-        data_type: string
-      - name: person__preferred_name__formatted_name
-        data_type: string
-      - name: person__preferred_name__given_name
-        data_type: string
-      - name: person__preferred_name__middle_name
-        data_type: string
-      - name: person__preferred_name__family_name_1
-        data_type: string
-      - name: person__preferred_name__nick_name
-        data_type: string
-      - name: person__preferred_name__generation_affix_code__code_value
-        data_type: string
-      - name: person__preferred_name__generation_affix_code__long_name
-        data_type: string
-      - name: person__preferred_name__generation_affix_code__short_name
-        data_type: string
-      - name: person__preferred_name__qualification_affix_code__code_value
-        data_type: string
-      - name: person__preferred_name__qualification_affix_code__long_name
-        data_type: string
-      - name: person__preferred_name__qualification_affix_code__short_name
-        data_type: string
-      - name: person__ethnicity_code__code_value
-        data_type: string
-      - name: person__ethnicity_code__long_name
-        data_type: string
-      - name: person__ethnicity_code__short_name
-        data_type: string
-      - name: person__gender_code__code_value
-        data_type: string
-      - name: person__gender_code__long_name
-        data_type: string
-      - name: person__gender_code__short_name
-        data_type: string
-      - name: person__gender_self_identity_code__code_value
-        data_type: string
-      - name: person__gender_self_identity_code__long_name
-        data_type: string
-      - name: person__gender_self_identity_code__short_name
-        data_type: string
-      - name: person__highest_education_level_code__code_value
-        data_type: string
-      - name: person__highest_education_level_code__long_name
-        data_type: string
-      - name: person__highest_education_level_code__short_name
-        data_type: string
-      - name: person__legal_address__item_id
-        data_type: string
-      - name: person__legal_address__line_one
-        data_type: string
-      - name: person__legal_address__line_two
-        data_type: string
-      - name: person__legal_address__line_three
-        data_type: string
-      - name: person__legal_address__city_name
-        data_type: string
-      - name: person__legal_address__postal_code
-        data_type: string
-      - name: person__legal_address__country_code
-        data_type: string
-      - name: person__legal_address__country_subdivision_level_1__subdivision_type
-        data_type: string
-      - name: person__legal_address__country_subdivision_level_1__code_value
-        data_type: string
-      - name: person__legal_address__country_subdivision_level_1__long_name
-        data_type: string
-      - name: person__legal_address__country_subdivision_level_1__short_name
-        data_type: string
-      - name: person__legal_address__country_subdivision_level_2__subdivision_type
-        data_type: string
-      - name: person__legal_address__country_subdivision_level_2__code_value
-        data_type: string
-      - name: person__legal_address__country_subdivision_level_2__long_name
-        data_type: string
-      - name: person__legal_address__country_subdivision_level_2__short_name
-        data_type: string
-      - name: person__legal_address__name_code__code_value
-        data_type: string
-      - name: person__legal_address__name_code__long_name
-        data_type: string
-      - name: person__legal_address__name_code__short_name
-        data_type: string
-      - name: person__legal_address__type_code__code_value
-        data_type: string
-      - name: person__legal_address__type_code__long_name
-        data_type: string
-      - name: person__legal_address__type_code__short_name
-        data_type: string
-      - name: person__marital_status_code__code_value
-        data_type: string
-      - name: person__marital_status_code__long_name
-        data_type: string
-      - name: person__marital_status_code__short_name
-        data_type: string
-      - name: person__military_status_code__code_value
-        data_type: string
-      - name: person__military_status_code__long_name
-        data_type: string
-      - name: person__military_status_code__short_name
-        data_type: string
-      - name: person__preferred_gender_pronoun_code__code_value
-        data_type: string
-      - name: person__preferred_gender_pronoun_code__long_name
-        data_type: string
-      - name: person__preferred_gender_pronoun_code__short_name
-        data_type: string
-      - name: person__race_code__code_value
-        data_type: string
-      - name: person__race_code__long_name
-        data_type: string
-      - name: person__race_code__short_name
-        data_type: string
-      - name: person__race_code__identification_method_code__code_value
-        data_type: string
-      - name: person__race_code__identification_method_code__long_name
-        data_type: string
-      - name: person__race_code__identification_method_code__short_name
-        data_type: string
-      - name: worker_dates__original_hire_date
-        data_type: date
-      - name: worker_dates__rehire_date
-        data_type: date
-      - name: worker_dates__termination_date
-        data_type: date
-      - name: worker_id__scheme_code__effective_date
-        data_type: date
-      - name: worker_status__status_code__effective_date
-        data_type: date
-      - name: language_code__effective_date
-        data_type: date
-      - name: person__birth_name__generation_affix_code__effective_date
-        data_type: date
-      - name: person__birth_name__qualification_affix_code__effective_date
-        data_type: date
-      - name: person__legal_name__generation_affix_code__effective_date
-        data_type: date
-      - name: person__legal_name__qualification_affix_code__effective_date
-        data_type: date
-      - name: person__preferred_name__generation_affix_code__effective_date
-        data_type: date
-      - name: person__preferred_name__qualification_affix_code__effective_date
-        data_type: date
-      - name: person__ethnicity_code__effective_date
-        data_type: date
-      - name: person__gender_code__effective_date
-        data_type: date
-      - name: person__gender_self_identity_code__effective_date
-        data_type: date
-      - name: person__highest_education_level_code__effective_date
-        data_type: date
-      - name: person__legal_address__country_subdivision_level_1__effective_date
-        data_type: date
-      - name: person__legal_address__country_subdivision_level_2__effective_date
-        data_type: date
-      - name: person__legal_address__name_code__effective_date
-        data_type: date
-      - name: person__legal_address__type_code__effective_date
-        data_type: date
-      - name: person__marital_status_code__effective_date
-        data_type: date
-      - name: person__military_status_code__effective_date
-        data_type: date
-      - name: person__preferred_gender_pronoun_code__effective_date
-        data_type: date
-      - name: person__race_code__effective_date
-        data_type: date
-      - name: person__race_code__identification_method_code__effective_date
-        data_type: date
-      - name: person__birth_date
-        data_type: date
       - name: effective_date_start_timestamp
         data_type: timestamp
-      - name: worker_status__status_code__code_value_lag
-        data_type: string
       - name: effective_date_end
         data_type: date
-      - name: person__given_name
-        data_type: string
-      - name: person__family_name_1
-        data_type: string
-      - name: person__race_code_name
-        data_type: string
-      - name: person__ethnicity_code_name
-        data_type: string
-      - name: person__gender_code_name
-        data_type: string
-      - name: race_ethnicity_reporting
-        data_type: string
       - name: effective_date_end_timestamp
         data_type: timestamp
-      - name: is_prestart
-        data_type: boolean
       - name: is_current_record
         data_type: boolean
-      - name: worker_hire_date_recent
-        data_type: date
+      - name: business_communication_surrogate_key
+        data_type: string
+      - name: custom_field_group_surrogate_key
+        data_type: string
+      - name: language_code_surrogate_key
+        data_type: string
+      - name: person_surrogate_key
+        data_type: string
+      - name: photos_surrogate_key
+        data_type: string
+      - name: work_assignments_surrogate_key
+        data_type: string
+      - name: worker_dates_surrogate_key
+        data_type: string
+      - name: worker_id_surrogate_key
+        data_type: string
+      - name: worker_status_surrogate_key
+        data_type: string
+      - name: surrogate_key
+        data_type: string
+      - name: language_code
+        data_type: |
+          STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>
+      - name: worker_dates
+        data_type: |
+          STRUCT<originalHireDate STRING, terminationDate STRING, rehireDate STRING>
+      - name: worker_id
+        data_type: |
+          STRUCT<idValue STRING, schemeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>
+      - name: worker_status
+        data_type: |
+          STRUCT<statusCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>
+      - name: business_communication
+        data_type: |
+          STRUCT<emails ARRAY<STRUCT<emailUri STRING, itemID STRING, notificationIndicator BOOL, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, landlines ARRAY<STRUCT<areaDialing STRING, countryDialing STRING, dialNumber STRING, formattedNumber STRING, itemID STRING, access STRING, extension STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, mobiles ARRAY<STRUCT<areaDialing STRING, countryDialing STRING, dialNumber STRING, formattedNumber STRING, itemID STRING, access STRING, extension STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>
+      - name: custom_field_group
+        data_type: |
+          STRUCT<codeFields ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, dateFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, dateValue STRING>>, indicatorFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, indicatorValue BOOL>>, multiCodeFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, codes ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, numberFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, numberValue FLOAT64>>, stringFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, stringValue STRING>>>
+      - name: person
+        data_type: |
+          STRUCT<birthDate STRING, disabledIndicator BOOL, militaryDischargeDate STRING, tobaccoUserIndicator BOOL, birthName STRUCT<formattedName STRING, familyName1 STRING, givenName STRING, middleName STRING, nickName STRING, generationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, qualificationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, preferredSalutations ARRAY<STRUCT<salutationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, communication STRUCT<emails ARRAY<STRUCT<emailUri STRING, itemID STRING, notificationIndicator BOOL, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, landlines ARRAY<STRUCT<areaDialing STRING, countryDialing STRING, dialNumber STRING, formattedNumber STRING, itemID STRING, access STRING, extension STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, mobiles ARRAY<STRUCT<areaDialing STRING, countryDialing STRING, dialNumber STRING, formattedNumber STRING, itemID STRING, access STRING, extension STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, customFieldGroup STRUCT<codeFields ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, dateFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, dateValue STRING>>, indicatorFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, indicatorValue BOOL>>, multiCodeFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, codes ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, numberFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, numberValue FLOAT64>>, stringFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, stringValue STRING>>>, ethnicityCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, genderCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, genderSelfIdentityCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, highestEducationLevelCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, legalAddress STRUCT<cityName STRING, countryCode STRING, itemID STRING, lineOne STRING, lineTwo STRING, lineThree STRING, postalCode STRING, countrySubdivisionLevel1 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, countrySubdivisionLevel2 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, legalName STRUCT<formattedName STRING, familyName1 STRING, givenName STRING, middleName STRING, nickName STRING, generationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, qualificationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, preferredSalutations ARRAY<STRUCT<salutationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, maritalStatusCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, militaryStatusCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, preferredGenderPronounCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, preferredName STRUCT<formattedName STRING, familyName1 STRING, givenName STRING, middleName STRING, nickName STRING, generationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, qualificationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, preferredSalutations ARRAY<STRUCT<salutationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, raceCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, identificationMethodCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, disabilityTypeCodes ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, governmentIDs ARRAY<STRUCT<countryCode STRING, idValue STRING, itemID STRING, expirationDate STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, statusCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, militaryClassificationCodes ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, otherPersonalAddresses ARRAY<STRUCT<cityName STRING, countryCode STRING, itemID STRING, lineOne STRING, lineTwo STRING, lineThree STRING, postalCode STRING, countrySubdivisionLevel1 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, countrySubdivisionLevel2 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, socialInsurancePrograms ARRAY<STRUCT<coveredIndicator BOOL, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>
       - name: photos
         data_type: |
           ARRAY<STRUCT<links ARRAY<STRUCT<href STRING, mediaType STRING, method STRING>>>>
-      - name: business_communication__emails
-        data_type: |
-          ARRAY<STRUCT<emailUri STRING, itemID STRING, notificationIndicator BOOL, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
-      - name: business_communication__landlines
-        data_type: |
-          ARRAY<STRUCT<areaDialing STRING, countryDialing STRING, dialNumber STRING, formattedNumber STRING, itemID STRING, access STRING, extension STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
-      - name: business_communication__mobiles
-        data_type: |
-          ARRAY<STRUCT<areaDialing STRING, countryDialing STRING, dialNumber STRING, formattedNumber STRING, itemID STRING, access STRING, extension STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
-      - name: custom_field_group__code_fields
-        data_type: |
-          ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
-      - name: custom_field_group__date_fields
-        data_type: |
-          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, dateValue STRING>>
-      - name: custom_field_group__indicator_fields
-        data_type: |
-          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, indicatorValue BOOL>>
-      - name: custom_field_group__multi_code_fields
-        data_type: |
-          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, codes ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>
-      - name: custom_field_group__number_fields
-        data_type: |
-          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, numberValue FLOAT64>>
-      - name: custom_field_group__string_fields
-        data_type: |
-          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, stringValue STRING>>
-      - name: person__disability_type_codes
-        data_type: |
-          ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>
-      - name: person__military_classification_codes
-        data_type: |
-          ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>
-      - name: person__other_personal_addresses
-        data_type: |
-          ARRAY<STRUCT<cityName STRING, countryCode STRING, itemID STRING, lineOne STRING, lineTwo STRING, lineThree STRING, postalCode STRING, countrySubdivisionLevel1 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, countrySubdivisionLevel2 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
-      - name: person__social_insurance_programs
-        data_type: |
-          ARRAY<STRUCT<coveredIndicator BOOL, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
-      - name: person__birth_name__preferred_salutations
-        data_type: |
-          ARRAY<STRUCT<salutationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
-      - name: person__communication__emails
-        data_type: |
-          ARRAY<STRUCT<emailUri STRING, itemID STRING, notificationIndicator BOOL, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
-      - name: person__communication__landlines
-        data_type: |
-          ARRAY<STRUCT<areaDialing STRING, countryDialing STRING, dialNumber STRING, formattedNumber STRING, itemID STRING, access STRING, extension STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
-      - name: person__communication__mobiles
-        data_type: |
-          ARRAY<STRUCT<areaDialing STRING, countryDialing STRING, dialNumber STRING, formattedNumber STRING, itemID STRING, access STRING, extension STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
-      - name: person__custom_field_group__code_fields
-        data_type: |
-          ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
-      - name: person__custom_field_group__date_fields
-        data_type: |
-          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, dateValue STRING>>
-      - name: person__custom_field_group__indicator_fields
-        data_type: |
-          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, indicatorValue BOOL>>
-      - name: person__custom_field_group__multi_code_fields
-        data_type: |
-          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, codes ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>
-      - name: person__custom_field_group__number_fields
-        data_type: |
-          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, numberValue FLOAT64>>
-      - name: person__custom_field_group__string_fields
-        data_type: |
-          ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, stringValue STRING>>
-      - name: person__legal_name__preferred_salutations
-        data_type: |
-          ARRAY<STRUCT<salutationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
-      - name: person__preferred_name__preferred_salutations
-        data_type: |
-          ARRAY<STRUCT<salutationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
       - name: work_assignments
         data_type: |
           ARRAY<STRUCT<actualStartDate STRING, fullTimeEquivalenceRatio FLOAT64, hireDate STRING, itemID STRING, jobTitle STRING, managementPositionIndicator BOOL, payrollFileNumber STRING, payrollGroupCode STRING, payrollScheduleGroupID STRING, positionID STRING, primaryIndicator BOOL, seniorityDate STRING, terminationDate STRING, voluntaryIndicator BOOL, assignmentStatus STRUCT<effectiveDate STRING, statusCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, reasonCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, baseRemuneration STRUCT<effectiveDate STRING, annualRateAmount STRUCT<amountValue FLOAT64, currencyCode STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, payPeriodRateAmount STRUCT<amountValue FLOAT64, currencyCode STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, hourlyRateAmount STRUCT<amountValue FLOAT64, currencyCode STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, dailyRateAmount STRUCT<amountValue FLOAT64, currencyCode STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, customFieldGroup STRUCT<codeFields ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, dateFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, dateValue STRING>>, indicatorFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, indicatorValue BOOL>>, multiCodeFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, codes ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, numberFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, numberValue FLOAT64>>, stringFields ARRAY<STRUCT<itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, stringValue STRING>>>, homeWorkLocation STRUCT<address STRUCT<cityName STRING, countryCode STRING, itemID STRING, lineOne STRING, lineTwo STRING, lineThree STRING, postalCode STRING, countrySubdivisionLevel1 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, countrySubdivisionLevel2 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, jobCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, payCycleCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, payrollProcessingStatusCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, standardHours STRUCT<hoursQuantity FLOAT64, unitCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, standardPayPeriodHours STRUCT<hoursQuantity FLOAT64>, wageLawCoverage STRUCT<coverageCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, wageLawNameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, workerTimeProfile STRUCT<badgeID STRING, timeAndAttendanceIndicator BOOL, timeZoneCode STRING, timeServiceSupervisor STRUCT<associateOID STRING, positionID STRING, workerID STRUCT<idValue STRING, schemeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, reportsToWorkerName STRUCT<formattedName STRING, familyName1 STRING, givenName STRING, middleName STRING, nickName STRING, generationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, qualificationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, preferredSalutations ARRAY<STRUCT<salutationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>>>, workerTypeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, additionalRemunerations ARRAY<STRUCT<itemID STRING, effectiveDate STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, rate STRUCT<amountValue FLOAT64, currencyCode STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, assignedOrganizationalUnits ARRAY<STRUCT<nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, assignedWorkLocations ARRAY<STRUCT<address STRUCT<cityName STRING, countryCode STRING, itemID STRING, lineOne STRING, lineTwo STRING, lineThree STRING, postalCode STRING, countrySubdivisionLevel1 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, countrySubdivisionLevel2 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, homeOrganizationalUnits ARRAY<STRUCT<nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, occupationalClassifications ARRAY<STRUCT<nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, classificationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>, reportsTo ARRAY<STRUCT<associateOID STRING, positionID STRING, reportsToWorkerName STRUCT<formattedName STRING, familyName1 STRING, givenName STRING, middleName STRING, nickName STRING, generationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, qualificationAffixCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, preferredSalutations ARRAY<STRUCT<salutationCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, workerID STRUCT<idValue STRING, schemeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>, workerGroups ARRAY<STRUCT<groupCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>>
