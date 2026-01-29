@@ -15,7 +15,7 @@ with
                     'Chronic Absence: 5',
                     'Chronic Absence: 8',
                     'Chronic Absence: 10',
-                    'Chronic Absence: 15+'                
+                    'Chronic Absence: 15+'
                 ]
             ) as commlog_reason
 
