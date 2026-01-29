@@ -1,10 +1,10 @@
 with
-    teammates as (select * from {{ ref("dim_teammates") }}),
+    teammates as (select *, from {{ ref("dim_teammates") }}),
 
     {# determining unique years in which records are present for teammate#}
     {# filtering out years with post-termination actions#}
     annual_roster as (
-        select distinct employee_number, academic_year
+        select distinct employee_number, academic_year,
         from teammates
         where
             assignment_status_reason is null
@@ -37,16 +37,16 @@ with
             tr.termination_status,
             tr.termination_reason,
             tr.termination_effective_date,
-            if(tr.employee_number is null, false, true) as is_termination
+            if(tr.employee_number is null, false, true) as is_termination,
         from annual_roster as ar
         left join
             terminations as tr
             on ar.employee_number = tr.employee_number
             and ar.academic_year = tr.academic_year
         where
-            min_effective_date <= termination_effective_date
-            or termination_effective_date is null
+            tr.min_effective_date <= tr.termination_effective_date
+            or tr.termination_effective_date is null
     )
 
-select *
+select *,
 from final
