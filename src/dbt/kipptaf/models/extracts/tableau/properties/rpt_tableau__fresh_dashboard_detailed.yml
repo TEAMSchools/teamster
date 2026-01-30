@@ -57,9 +57,15 @@ models:
         data_type: int64
       - name: student_region
         data_type: string
+      - name: student_latest_region
+        data_type: string
       - name: student_schoolid
         data_type: int64
+      - name: student_latest_schoolid
+        data_type: int64
       - name: student_school
+        data_type: string
+      - name: student_latest_school
         data_type: string
       - name: student_number
         data_type: int64
