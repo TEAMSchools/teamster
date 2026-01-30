@@ -23,7 +23,7 @@ with
             e._dbt_source_relation,
             e.academic_year,
             e.academic_year_display,
-            'KTAF' as org,
+            e.district as org,
             e.region,
             e.schoolid,
             e.school,
@@ -43,7 +43,8 @@ with
                     'Pending Offers',
                     'Pending Offer <= 4',
                     'Pending Offer >= 5 & <=10',
-                    'Pending Offer > 10'
+                    'Pending Offer > 10',
+                    'Conversion'
                 ]
             ) as metric
         where e.grade_level != 99 and e.rn_year = 1
@@ -56,7 +57,7 @@ with
             e._dbt_source_relation,
             e.academic_year,
             e.academic_year_display,
-            'KTAF' as org,
+            e.district as org,
             e.region,
             0 as schoolid,
             'No School Assigned' as school,
@@ -76,7 +77,8 @@ with
                     'Pending Offers',
                     'Pending Offer <= 4',
                     'Pending Offer >= 5 & <=10',
-                    'Pending Offer > 10'
+                    'Pending Offer > 10',
+                    'Conversion'
                 ]
             ) as metric
         where e.grade_level != 99 and e.rn_year = 1
@@ -86,6 +88,7 @@ with
         select
             r._dbt_source_relation,
             r.academic_year,
+            r.sre_academic_year,
             r.enrollment_academic_year,
             r.enrollment_academic_year_display,
             r.org,
@@ -120,6 +123,7 @@ with
         select
             _dbt_source_relation,
             academic_year,
+            sre_academic_year,
             enrollment_academic_year,
             enrollment_academic_year_display,
             org,
@@ -131,15 +135,20 @@ with
             calendar_day,
 
             max(student_applicant_ops) over (
-                partition by academic_year, student_finalsite_student_id
+                partition by sre_academic_year, student_finalsite_student_id
             ) as application_cumulative,
 
             max(student_offered_ops) over (
-                partition by academic_year, student_finalsite_student_id
+                partition by sre_academic_year, student_finalsite_student_id
             ) as offers_cumulative,
 
+            max(student_overall_conversion_ops) over (
+                partition by sre_academic_year, student_finalsite_student_id
+            ) as conversion_cumulative,
+
             max(student_pending_offer_ops) over (
-                partition by academic_year, student_finalsite_student_id, calendar_day
+                partition by
+                    sre_academic_year, student_finalsite_student_id, calendar_day
             ) as pending_offer_daily,
 
         from summary
@@ -149,6 +158,7 @@ with
         select
             _dbt_source_relation,
             academic_year,
+            sre_academic_year,
             enrollment_academic_year,
             enrollment_academic_year_display,
             org,
@@ -160,13 +170,14 @@ with
             calendar_day,
             application_cumulative,
             offers_cumulative,
+            conversion_cumulative,
             pending_offer_daily,
 
             case
                 when
                     pending_offer_daily = 1
                     and sum(pending_offer_daily) over (
-                        partition by academic_year, student_finalsite_student_id
+                        partition by sre_academic_year, student_finalsite_student_id
                         order by calendar_day asc
                     )
                     <= 4
@@ -174,7 +185,7 @@ with
                 when
                     pending_offer_daily = 1
                     and sum(pending_offer_daily) over (
-                        partition by academic_year, student_finalsite_student_id
+                        partition by sre_academic_year, student_finalsite_student_id
                         order by calendar_day asc
                     )
                     between 5 and 10
@@ -182,7 +193,7 @@ with
                 when
                     pending_offer_daily = 1
                     and sum(pending_offer_daily) over (
-                        partition by academic_year, student_finalsite_student_id
+                        partition by sre_academic_year, student_finalsite_student_id
                         order by calendar_day asc
                     )
                     > 10
@@ -197,6 +208,8 @@ with
             s._dbt_source_relation,
             s.academic_year,
             s.academic_year_display,
+            s.enrollment_academic_year,
+            s.enrollment_academic_year_display,
             s.org,
             s.region,
             s.school,
@@ -222,8 +235,9 @@ with
 
         select
             s._dbt_source_relation,
-            s.academic_year,
             s.academic_year_display,
+            s.enrollment_academic_year,
+            s.enrollment_academic_year_display,
             s.org,
             s.region,
             s.school,
@@ -249,8 +263,37 @@ with
 
         select
             s._dbt_source_relation,
-            s.academic_year,
             s.academic_year_display,
+            s.enrollment_academic_year,
+            s.enrollment_academic_year_display,
+            s.org,
+            s.region,
+            s.school,
+            s.grade_level,
+            s.calendar_day,
+            s.metric,
+
+            if(
+                p.conversion_cumulative = 1, p.student_finalsite_student_id, null
+            ) as student_finalsite_student_id,
+
+        from scaffold as s
+        left join
+            pending_offer_calcs as p
+            on s.academic_year = p.academic_year
+            and s.region = p.region
+            and s.school = p.school
+            and s.grade_level = p.grade_level
+            and s.calendar_day = p.calendar_day
+        where s.metric = 'Conversion'
+
+        union all
+
+        select
+            s._dbt_source_relation,
+            s.academic_year_display,
+            s.enrollment_academic_year,
+            s.enrollment_academic_year_display,
             s.org,
             s.region,
             s.school,
@@ -276,8 +319,9 @@ with
 
         select
             s._dbt_source_relation,
-            s.academic_year,
             s.academic_year_display,
+            s.enrollment_academic_year,
+            s.enrollment_academic_year_display,
             s.org,
             s.region,
             s.school,
@@ -298,6 +342,26 @@ with
             and s.metric = p.pending_offer_timing_status
     )
 
-select *,
-from final
-where calendar_day = current_date('{{ var("local_timezone") }}')
+select
+    f.*,
+
+    r.region as enrollment_region,
+    r.schoolid as enrollment_schoolid,
+    r.school as enrollment_school,
+    r.student_number as enrollment_student_number,
+    r.grade_level as enrollment_grade_level,
+    r.enroll_status as enrollment_latest_enroll_status,
+    r.is_enrolled_y1 as enrollment_is_enrolled_y1,
+    r.is_enrolled_oct01 as enrollment_is_enrolled_oct01,
+    r.is_enrolled_oct15 as enrollment_is_enrolled_oct15,
+    r.is_self_contained as enrollment_is_self_contained,
+
+from final as f
+left join
+    {{ ref("int_extracts__student_enrollments") }} as r
+    on f.enrollment_academic_year = r.academic_year
+    and f.student_number = r.student_number
+    and {{ union_dataset_join_clause(left_alias="f", right_alias="r") }}
+    and r.grade_level != 99
+    and r.rn_year = 1
+where f.calendar_day = current_date('{{ var("local_timezone") }}')
