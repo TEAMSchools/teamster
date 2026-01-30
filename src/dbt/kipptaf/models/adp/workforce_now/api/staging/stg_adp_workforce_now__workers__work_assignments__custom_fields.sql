@@ -13,7 +13,7 @@ with
             custom_field_group__multi_code_fields,
             custom_field_group__number_fields,
             custom_field_group__string_fields,
-        from {{ ref("int_adp_workforce_now__workers__work_assignments") }}
+        from {{ ref("stg_adp_workforce_now__workers__work_assignments") }}
     ),
 
     multi_code_fields as (

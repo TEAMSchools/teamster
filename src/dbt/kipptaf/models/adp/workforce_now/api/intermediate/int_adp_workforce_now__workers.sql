@@ -88,7 +88,7 @@ select
     ) as assignment_status__status_code__name__lag,
 from {{ ref("stg_adp_workforce_now__workers") }} as w
 inner join
-    {{ ref("int_adp_workforce_now__workers__work_assignments") }} as wa
+    {{ ref("stg_adp_workforce_now__workers__work_assignments") }} as wa
     on w.associate_oid = wa.associate_oid
     and wa.effective_date_start between w.effective_date_start and w.effective_date_end
 left join
@@ -109,7 +109,7 @@ left join
     and ou.effective_date_start
     between wa.effective_date_start and wa.effective_date_end
 left join
-    {{ ref("int_adp_workforce_now__workers__work_assignments__reports_to") }} as rt
+    {{ ref("stg_adp_workforce_now__workers__work_assignments__reports_to") }} as rt
     on wa.associate_oid = rt.associate_oid
     and wa.item_id = rt.item_id
     and rt.effective_date_start

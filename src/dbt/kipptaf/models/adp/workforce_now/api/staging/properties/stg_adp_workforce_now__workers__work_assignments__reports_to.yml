@@ -1,5 +1,5 @@
 models:
-  - name: int_adp_workforce_now__workers__work_assignments__reports_to
+  - name: stg_adp_workforce_now__workers__work_assignments__reports_to
     columns:
       - name: associate_oid
         data_type: string
