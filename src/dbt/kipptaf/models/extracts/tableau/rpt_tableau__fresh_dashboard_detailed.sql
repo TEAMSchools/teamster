@@ -29,8 +29,8 @@ select
     f.grade_level,
     f.sre_academic_year_start,
     f.sre_academic_year_end,
-    f.week_start_monday,
-    f.week_end_sunday,
+    f.sre_academic_year_wk_start_monday,
+    f.sre_academic_year_wk_end_sunday,
     f.enrollment_type,
     f.overall_status,
     f.funnel_status,
@@ -67,4 +67,6 @@ select
 
 from {{ ref("int_students__finalsite_student_roster") }} as f
 inner join
-    daily_spine as d on d.calendar_day between f.week_start_monday and f.week_end_sunday
+    daily_spine as d
+    on d.calendar_day
+    between f.sre_academic_year_wk_start_monday and f.sre_academic_year_wk_end_sunday

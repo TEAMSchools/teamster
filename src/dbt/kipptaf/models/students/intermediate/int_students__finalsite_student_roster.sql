@@ -165,8 +165,8 @@ with
             m.grade_level,
             m.enrollment_type,
 
-            w.week_start_monday,
-            w.week_end_sunday,
+            w.sre_academic_year_wk_start_monday,
+            w.sre_academic_year_wk_end_sunday,
 
             c.detailed_status,
 
@@ -194,8 +194,8 @@ with
             w.enrollment_academic_year,
             w.sre_academic_year_start,
             w.sre_academic_year_end,
-            w.week_start_monday,
-            w.week_end_sunday,
+            w.sre_academic_year_wk_start_monday,
+            w.sre_academic_year_wk_end_sunday,
 
             c.enrollment_type,
             c.overall_status,
@@ -246,8 +246,8 @@ with
             w.enrollment_academic_year,
             w.sre_academic_year_start,
             w.sre_academic_year_end,
-            w.week_start_monday,
-            w.week_end_sunday,
+            w.sre_academic_year_wk_start_monday,
+            w.sre_academic_year_wk_end_sunday,
 
             c.enrollment_type,
             c.overall_status,
@@ -294,8 +294,8 @@ select
     s.grade_level,
     s.sre_academic_year_start,
     s.sre_academic_year_end,
-    s.week_start_monday,
-    s.week_end_sunday,
+    s.sre_academic_year_wk_start_monday,
+    s.sre_academic_year_wk_end_sunday,
     s.enrollment_type,
     s.overall_status,
     s.funnel_status,
@@ -355,7 +355,7 @@ inner join
     and s.grade_level = stu.grade_level
     and s.enrollment_type = stu.enrollment_type
     and s.detailed_status = stu.detailed_status
-    and s.week_start_monday = stu.week_start_monday
+    and s.sre_academic_year_wk_start_monday = stu.sre_academic_year_wk_start_monday
     and {{ union_dataset_join_clause(left_alias="s", right_alias="stu") }}
 left join
     finalsite_data as f
@@ -366,4 +366,6 @@ left join
     and stu.enrollment_type = f.enrollment_type
     and {{ union_dataset_join_clause(left_alias="stu", right_alias="f") }}
     and stu.finalsite_student_id = f.finalsite_student_id
-    and f.status_start_date between stu.week_start_monday and stu.week_end_sunday
+    and f.status_start_date
+    between stu.sre_academic_year_wk_start_monday
+    and stu.sre_academic_year_wk_end_sunday
