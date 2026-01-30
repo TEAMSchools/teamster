@@ -1,5 +1,5 @@
 models:
-  - name: int_adp_workforce_now__workers__work_assignments
+  - name: stg_adp_workforce_now__workers__work_assignments
     columns:
       - name: home_work_location__name_code__name
         data_type: string
@@ -15,12 +15,8 @@ models:
         data_type: string
       - name: effective_date_start
         data_type: date
-      - name: effective_date_end
-        data_type: date
-      - name: effective_date_start_timestamp
-        data_type: timestamp
-      - name: is_current_record
-        data_type: boolean
+      - name: work_assignments_surrogate_key
+        data_type: string
       - name: item_id
         data_type: string
       - name: position_id
@@ -235,8 +231,6 @@ models:
         data_type: date
       - name: worker_type_code__effective_date
         data_type: date
-      - name: surrogate_key
-        data_type: string
       - name: additional_remunerations__rate__amount_value__sum
         data_type: float64
       - name: benefits_eligibility_class__group_code__name

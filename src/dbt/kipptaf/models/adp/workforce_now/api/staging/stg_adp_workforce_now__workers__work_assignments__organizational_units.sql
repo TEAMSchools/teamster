@@ -18,7 +18,7 @@ select
     date(ou.namecode.effectivedate) as name_code__effective_date,
 
     'home' as organizational_unit_type,
-from {{ ref("int_adp_workforce_now__workers__work_assignments") }} as wa
+from {{ ref("stg_adp_workforce_now__workers__work_assignments") }} as wa
 cross join unnest(wa.home_organizational_units) as ou
 
 union all
@@ -43,5 +43,5 @@ select
     date(ou.namecode.effectivedate) as name_code__effective_date,
 
     'assigned' as organizational_unit_type,
-from {{ ref("int_adp_workforce_now__workers__work_assignments") }} as wa
+from {{ ref("stg_adp_workforce_now__workers__work_assignments") }} as wa
 cross join unnest(wa.assigned_organizational_units) as ou

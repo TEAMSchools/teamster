@@ -13,7 +13,7 @@ with
             `access`,
 
             regexp_replace(name_code__code_value, r'\W', '') as pivot_column,
-        from {{ ref("int_adp_workforce_now__workers__communication") }}
+        from {{ ref("stg_adp_workforce_now__workers__communication") }}
     )
 
 select

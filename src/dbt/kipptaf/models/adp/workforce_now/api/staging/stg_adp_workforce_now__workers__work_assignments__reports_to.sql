@@ -50,5 +50,5 @@ select
     date(
         rt.reportstoworkername.qualificationaffixcode.effectivedate
     ) as reports_to_worker_name__qualification_affix_code__effective_date,
-from {{ ref("int_adp_workforce_now__workers__work_assignments") }} as wa
+from {{ ref("stg_adp_workforce_now__workers__work_assignments") }} as wa
 cross join unnest(wa.reports_to) as rt

@@ -9,7 +9,7 @@ with
             code_value,
 
             regexp_replace(name_code__code_value, r'\W', '') as pivot_column,
-        from {{ ref("int_adp_workforce_now__workers__custom_fields") }}
+        from {{ ref("stg_adp_workforce_now__workers__custom_fields") }}
     )
 
 select
