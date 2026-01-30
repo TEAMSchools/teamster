@@ -24,9 +24,13 @@ select
     f.enrollment_academic_year_display,
     f.org,
     f.region,
+    f.latest_region,
     f.schoolid,
+    f.latest_schoolid,
     f.school,
+    f.latest_school,
     f.grade_level,
+    f.sre_academic_year,
     f.sre_academic_year_start,
     f.sre_academic_year_end,
     f.sre_academic_year_wk_start_monday,
@@ -61,7 +65,7 @@ select
     d.calendar_day,
 
     first_value(f.student_detailed_status) over (
-        partition by f.academic_year, f.finalsite_student_id
+        partition by f.sre_academic_year, f.finalsite_student_id
         order by f.status_start_date desc
     ) as latest_status,
 

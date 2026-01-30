@@ -182,6 +182,7 @@ with
 
             w.enrollment_academic_year_display,
             w.enrollment_academic_year,
+            w.sre_academic_year,
             w.sre_academic_year_start,
             w.sre_academic_year_end,
             w.sre_academic_year_wk_start_monday,
@@ -234,6 +235,7 @@ with
 
             w.enrollment_academic_year_display,
             w.enrollment_academic_year,
+            w.sre_academic_year,
             w.sre_academic_year_start,
             w.sre_academic_year_end,
             w.sre_academic_year_wk_start_monday,
@@ -282,6 +284,7 @@ select
     s.schoolid,
     s.school,
     s.grade_level,
+    s.sre_academic_year,
     s.sre_academic_year_start,
     s.sre_academic_year_end,
     s.sre_academic_year_wk_start_monday,
@@ -354,8 +357,8 @@ left join
     and stu.grade_level = f.grade_level
     and stu.detailed_status = f.detailed_status
     and stu.enrollment_type = f.enrollment_type
-    and {{ union_dataset_join_clause(left_alias="stu", right_alias="f") }}
     and stu.finalsite_student_id = f.finalsite_student_id
+    and {{ union_dataset_join_clause(left_alias="stu", right_alias="f") }}
     and f.status_start_date
     between stu.sre_academic_year_wk_start_monday
     and stu.sre_academic_year_wk_end_sunday
