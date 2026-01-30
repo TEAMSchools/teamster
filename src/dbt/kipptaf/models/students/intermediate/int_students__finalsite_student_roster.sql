@@ -39,13 +39,10 @@ with
 
             case
                 when
-                    coalesce(
-                        lag(
-                            sum(if(date_diff(exitdate, entrydate, day) >= 7, 1, 0))
-                        ) over (partition by student_number order by academic_year),
-                        0
+                    lag(academic_year) over (
+                        partition by student_number order by academic_year
                     )
-                    = 0
+                    is null
                 then 'New'
                 when
                     coalesce(
@@ -54,14 +51,7 @@ with
                         ) over (partition by student_number order by academic_year),
                         0
                     )
-                    = 1
-                    and academic_year - coalesce(
-                        lag(academic_year) over (
-                            partition by student_number order by academic_year
-                        ),
-                        0
-                    )
-                    > 1
+                    = 0
                 then 'New'
                 else 'Returner'
             end as enrollment_type,
