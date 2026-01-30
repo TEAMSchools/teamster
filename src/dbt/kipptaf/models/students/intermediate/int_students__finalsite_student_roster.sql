@@ -2,17 +2,16 @@ with
     weekly_spine as (
         -- need only one row per expected sre academic year
         select distinct
+            org,
             enrollment_academic_year_display,
             enrollment_academic_year,
             sre_academic_year,
             sre_academic_year_start,
             sre_academic_year_end,
 
-            week_start as week_start_monday,
+            week_start as sre_academic_year_wk_start_monday,
 
-            'KTAF' as org,
-
-            date_add(week_start, interval 6 day) as week_end_sunday,
+            date_add(week_start, interval 6 day) as sre_academic_year_wk_end_sunday,
 
         from {{ ref("int_finalsite__status_report") }}
         cross join

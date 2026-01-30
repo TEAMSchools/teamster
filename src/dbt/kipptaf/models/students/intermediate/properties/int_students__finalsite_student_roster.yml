@@ -17,13 +17,13 @@ models:
         data_type: string
       - name: grade_level
         data_type: int64
-      - name: sre_year_start
+      - name: sre_academic_year_start
         data_type: date
-      - name: sre_year_end
+      - name: sre_academic_year_end
         data_type: date
-      - name: week_start_monday
+      - name: sre_academic_year_wk_start_monday
         data_type: date
-      - name: week_end_sunday
+      - name: sre_academic_year_wk_end_sunday
         data_type: date
       - name: enrollment_type
         data_type: string

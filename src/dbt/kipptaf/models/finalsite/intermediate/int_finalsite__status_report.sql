@@ -26,18 +26,10 @@ with
 select
     * except (powerschool_student_number),
 
+    'KTAF' as org,
+
     /* since we get snapshot data, these will ensure only the latest of these fields is
-    used for a student, retroactively, for a given academic year */
-    first_value(region) over (
-        partition by enrollment_academic_year, finalsite_student_id
-        order by status_start_date desc
-    ) as latest_region,
-
-    first_value(powerschool_student_number) over (
-        partition by enrollment_academic_year, finalsite_student_id
-        order by status_start_date desc
-    ) as powerschool_student_number,
-
+    used for a student, retroactively, for a given enroll academic year */
     coalesce(
         first_value(schoolid) over (
             partition by enrollment_academic_year, finalsite_student_id
@@ -53,5 +45,15 @@ select
         ),
         'No School Assigned'
     ) as latest_school,
+
+    first_value(region) over (
+        partition by enrollment_academic_year, finalsite_student_id
+        order by status_start_date desc
+    ) as latest_region,
+
+    first_value(powerschool_student_number) over (
+        partition by enrollment_academic_year, finalsite_student_id
+        order by status_start_date desc
+    ) as powerschool_student_number,
 
 from finalsite_report
