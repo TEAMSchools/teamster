@@ -1,14 +1,12 @@
 from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kippmiami.finalsite.assets import (
-    assets as finalsite_assets,
-)
-from teamster.code_locations.kippmiami.fldoe.assets import assets as fldoe_assets
+from teamster.code_locations.kippmiami.finalsite.assets import status_report
+from teamster.code_locations.kippmiami.fldoe.assets import eoc, fast, fte, science
 from teamster.libraries.couchdrop.sensors import build_couchdrop_sftp_sensor
 
 couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
     code_location=CODE_LOCATION,
     local_timezone=LOCAL_TIMEZONE,
-    asset_selection=[*fldoe_assets, *finalsite_assets],
+    asset_selection=[eoc, fast, fte, science, status_report],
     minimum_interval_seconds=(60 * 10),
     folder_id="1BLu_qlbcw_jcRZ8m9KIib0UbkPgK4uiM",
     exclude_dirs=[f"/data-team/{CODE_LOCATION}/fldoe/fsa"],
