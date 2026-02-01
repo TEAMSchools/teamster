@@ -7,7 +7,7 @@ with
             x.abbreviation as school,
 
             concat(
-                f.enrollment_academic_year - 1, '-', f.enrollment_academic_year
+                f.enrollment_academic_year - 1, ',', f.enrollment_academic_year
             ) as sre_academic_year_expanded,
 
             row_number() over (
