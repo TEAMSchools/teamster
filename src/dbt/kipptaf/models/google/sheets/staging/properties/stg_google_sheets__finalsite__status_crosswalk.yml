@@ -49,3 +49,5 @@ models:
         data_type: int64
       - name: waitlisted
         data_type: int64
+      - name: enrollment_academic_year_display
+        data_type: string
