@@ -208,8 +208,6 @@ with
             s._dbt_source_relation,
             s.academic_year,
             s.academic_year_display,
-            s.enrollment_academic_year,
-            s.enrollment_academic_year_display,
             s.org,
             s.region,
             s.school,
@@ -235,9 +233,8 @@ with
 
         select
             s._dbt_source_relation,
+            s.academic_year,
             s.academic_year_display,
-            s.enrollment_academic_year,
-            s.enrollment_academic_year_display,
             s.org,
             s.region,
             s.school,
@@ -263,9 +260,8 @@ with
 
         select
             s._dbt_source_relation,
+            s.academic_year,
             s.academic_year_display,
-            s.enrollment_academic_year,
-            s.enrollment_academic_year_display,
             s.org,
             s.region,
             s.school,
@@ -291,9 +287,8 @@ with
 
         select
             s._dbt_source_relation,
+            s.academic_year,
             s.academic_year_display,
-            s.enrollment_academic_year,
-            s.enrollment_academic_year_display,
             s.org,
             s.region,
             s.school,
@@ -319,9 +314,8 @@ with
 
         select
             s._dbt_source_relation,
+            s.academic_year,
             s.academic_year_display,
-            s.enrollment_academic_year,
-            s.enrollment_academic_year_display,
             s.org,
             s.region,
             s.school,
@@ -342,26 +336,6 @@ with
             and s.metric = p.pending_offer_timing_status
     )
 
-select
-    f.*,
-
-    r.region as enrollment_region,
-    r.schoolid as enrollment_schoolid,
-    r.school as enrollment_school,
-    r.student_number as enrollment_student_number,
-    r.grade_level as enrollment_grade_level,
-    r.enroll_status as enrollment_latest_enroll_status,
-    r.is_enrolled_y1 as enrollment_is_enrolled_y1,
-    r.is_enrolled_oct01 as enrollment_is_enrolled_oct01,
-    r.is_enrolled_oct15 as enrollment_is_enrolled_oct15,
-    r.is_self_contained as enrollment_is_self_contained,
-
-from final as f
-left join
-    {{ ref("int_extracts__student_enrollments") }} as r
-    on f.enrollment_academic_year = r.academic_year
-    and f.student_number = r.student_number
-    and {{ union_dataset_join_clause(left_alias="f", right_alias="r") }}
-    and r.grade_level != 99
-    and r.rn_year = 1
-where f.calendar_day = current_date('{{ var("local_timezone") }}')
+select *
+from final
+where calendar_day = current_date('{{ var("local_timezone") }}')

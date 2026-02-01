@@ -217,7 +217,7 @@ with
         inner join
             {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
             on e.grade_level != 99
-            and e.academic_year = c.academic_year
+            and e.academic_year = c.sre_academic_year
             and e.rn_year = 1
 
         union all
@@ -270,7 +270,7 @@ with
         inner join
             {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
             on e.grade_level != 99
-            and e.academic_year = c.academic_year
+            and e.academic_year = c.sre_academic_year
             and e.rn_year = 1
     )
 
