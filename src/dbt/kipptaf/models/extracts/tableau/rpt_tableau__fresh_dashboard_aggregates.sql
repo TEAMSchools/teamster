@@ -336,6 +336,6 @@ with
             and s.metric = p.pending_offer_timing_status
     )
 
-select *
+select *,
 from final
 where calendar_day = current_date('{{ var("local_timezone") }}')
