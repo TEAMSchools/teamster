@@ -6,6 +6,10 @@ with
             x.powerschool_school_id as schoolid,
             x.abbreviation as school,
 
+            concat(
+                f.enrollment_academic_year - 1, '-', f.enrollment_academic_year
+            ) as sre_academic_year_expanded,
+
             row_number() over (
                 partition by f.enrollment_academic_year, f.finalsite_student_id
                 order by f.status_start_date desc
