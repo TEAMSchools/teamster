@@ -16,7 +16,7 @@ lint:
     - isort@7.0.0
     - markdownlint@0.47.0
     - osv-scanner@2.3.2
-    - oxipng@10.0.0
+    - oxipng@10.1.0
     - prettier@3.8.1
     - pyright@1.1.408
     - ruff@0.14.14
