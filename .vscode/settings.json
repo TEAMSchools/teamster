@@ -82,5 +82,6 @@
       "packages.yml"
     ]
   },
-  "dbt.dbtPythonPathOverride": "/workspaces/teamster/.venv/bin/dbt"
+  "dbt.enableNotebooks": false,
+  "dbt.installDepsOnProjectInitialization": false
 }
