@@ -92,9 +92,11 @@ select
     end as aligned_test_code,
 
     case
-        when a.test_code = 'ALG01'
-        then concat(a.test_code, '_', e.school_level)
-        else a.test_code
+        when u.test_code = 'ALG01' and u.test_grade between 5 and 8
+        then concat(a.test_code, '_', 'MS')
+        when u.test_code = 'ALG01' and u.test_grade between 9 and 12
+        then concat(a.test_code, '_', 'HS')
+        else u.test_code
     end as aligned_test_code_level,
 
     case
