@@ -174,15 +174,15 @@ with
             end as ktc_status,
 
             case
-                when contact_college_match_display_gpa >= 3.50
+                when c.contact_college_match_display_gpa >= 3.50
                 then '3.50+'
-                when contact_college_match_display_gpa >= 3.00
+                when c.contact_college_match_display_gpa >= 3.00
                 then '3.00-3.49'
-                when contact_college_match_display_gpa >= 2.50
+                when c.contact_college_match_display_gpa >= 2.50
                 then '2.50-2.99'
-                when contact_college_match_display_gpa >= 2.00
+                when c.contact_college_match_display_gpa >= 2.00
                 then '2.00-2.50'
-                when contact_college_match_display_gpa < 2.00
+                when c.contact_college_match_display_gpa < 2.00
                 then '<2.00'
             end as hs_gpa_bands,
 
