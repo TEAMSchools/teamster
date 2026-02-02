@@ -32,6 +32,17 @@ locations:
                       - key: id_rsa_egencia
                         path: id_rsa_egencia
         server_k8s_config:
+          pod_spec_config:
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchExpressions:
+                        - key: location_name
+                          operator: In
+                          values:
+                            - kipptaf
+                    topologyKey: kubernetes.io/hostname
           container_config:
             env:
               - name: ADP_SFTP_PASSWORD

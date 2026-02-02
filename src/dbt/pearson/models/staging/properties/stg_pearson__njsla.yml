@@ -401,3 +401,9 @@ models:
         data_type: string
       - name: is_bl_fb
         data_type: boolean
+      - name: homeless_primary_nighttime_residence
+        data_type: string
+      - name: multilinguallearneraccommodatedresponse
+        data_type: string
+      - name: requiredhighschoolmathassessment
+        data_type: string

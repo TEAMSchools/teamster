@@ -8,11 +8,12 @@ exposures:
       - ref("snapshot_leadership_development__output")
       - ref("snapshot_people__employee_numbers")
       - ref("snapshot_people__student_logins")
-    meta:
-      dagster:
-        kinds:
-          - dbt
-          - table
+    config:
+      meta:
+        dagster:
+          kinds:
+            - dbt
+            - table
   - name: dbt_semantic_layer
     label: dbt Semantic Layer
     type: ml
@@ -20,7 +21,7 @@ exposures:
       name: Data Team
     depends_on:
       - ref("dim_dates")
-      - ref("dim_schools")
+      - ref("dim_locations")
       - ref("dim_seats")
       - ref("dim_staff")
       - ref("dim_students")
@@ -28,11 +29,12 @@ exposures:
       - ref("dim_terms")
       - ref("fct_attendance")
       - ref("fct_microgoals")
-    meta:
-      dagster:
-        kinds:
-          - dbt
-          - semanticmodel
+    config:
+      meta:
+        dagster:
+          kinds:
+            - dbt
+            - semanticmodel
   - name: ad_hoc_reporting_views
     label: Ad Hoc Reporting
     type: analysis
@@ -40,8 +42,9 @@ exposures:
       name: Data Team
     depends_on:
       - ref("int_powerschool__attendance_streak")
-    meta:
-      dagster:
-        kinds:
-          - dbt
-          - view
+    config:
+      meta:
+        dagster:
+          kinds:
+            - dbt
+            - view

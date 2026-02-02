@@ -6,10 +6,11 @@ sources:
     tables:
       - name: int_amplify__dds__data_farming_unpivot
         identifier: int_amplify__dibels_data_farming_unpivot
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - amplify
-              - dds
-              - int_amplify__dibels_data_farming_unpivot
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - amplify
+                - dds
+                - int_amplify__dibels_data_farming_unpivot
