@@ -73,7 +73,7 @@ with
             _dbt_source_relation,
             academic_year,
 
-            localstudentidentifier,
+            local_student_identifier as localstudentidentifier,
 
             cast(state_student_identifier as string) as state_id,
 
