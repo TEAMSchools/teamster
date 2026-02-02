@@ -92,14 +92,6 @@ select
     end as aligned_test_code,
 
     case
-        when u.test_code = 'ALG01' and u.test_grade between 5 and 8
-        then concat(a.test_code, '_', 'MS')
-        when u.test_code = 'ALG01' and u.test_grade between 9 and 12
-        then concat(a.test_code, '_', 'HS')
-        else u.test_code
-    end as aligned_test_code_level,
-
-    case
         when u.twoormoreraces = 'Y'
         then 'T'
         when u.hispanicorlatinoethnicity = 'Y'
