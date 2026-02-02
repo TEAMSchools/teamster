@@ -69,14 +69,6 @@ sources:
       - name: src_google_sheets__state_test_comparison
         config:
           enabled: false
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
-            sheet_range: src_google_sheets__state_test_comparison
-            skip_leading_rows: 1
-        config:
           meta:
             dagster:
               asset_key:
@@ -84,6 +76,13 @@ sources:
                 - google
                 - sheets
                 - state_test_comparison
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
+            sheet_range: src_google_sheets__state_test_comparison
+            skip_leading_rows: 1
       - name: src_google_sheets__state_test_comparison_demographics
         external:
           options:
