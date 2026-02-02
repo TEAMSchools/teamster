@@ -50,6 +50,12 @@ select
 
     enrollment_academic_year - 1 as sre_academic_year,
 
+    cast(enrollment_academic_year as string)
+    || '-'
+    || right(
+        cast(enrollment_academic_year + 1 as string), 2
+    ) as enrollment_academic_year_display,
+
     if(
         status_end_date = status_start_date,
         1,
@@ -58,5 +64,10 @@ select
 
     date(enrollment_academic_year - 1, 10, 16) as sre_academic_year_start,
     date(enrollment_academic_year, 10, 15) as sre_academic_year_end,
+
+    row_number() over (
+        partition by enrollment_academic_year, finalsite_student_id
+        order by status_start_date desc
+    ) as rn,
 
 from end_date_calc
