@@ -252,18 +252,14 @@ def google_directory_user_update(
     )
 
 
-google_directory_nonpartitioned_assets = [
+assets = [
+    google_directory_role_assignments_create,
+    google_directory_user_create,
+    google_directory_user_update,
     orgunits,
     role_assignments,
     roles,
     users,
-]
-
-assets = [
-    *google_directory_nonpartitioned_assets,
-    google_directory_role_assignments_create,
-    google_directory_user_create,
-    google_directory_user_update,
 ]
 
 # @asset(
