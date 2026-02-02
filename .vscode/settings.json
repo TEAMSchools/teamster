@@ -81,5 +81,7 @@
     "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/packages-latest.json": [
       "packages.yml"
     ]
-  }
+  },
+  "dbt.enableNotebooks": false,
+  "dbt.installDepsOnProjectInitialization": false
 }
