@@ -5,9 +5,10 @@ sources:
       {{ project_name }}_dayforce
     tables:
       - name: int_dayforce__employee_history
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - dayforce
-              - int_dayforce__employee_history
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - dayforce
+                - int_dayforce__employee_history

@@ -108,6 +108,38 @@ dagsterCloud:
   #   includeDefaultQueue: true
   #   additionalQueues:
   #     - foo
+  #
+  # Advanced/Optional: Uncomment to specify a list of location names that this agent is allowed
+  # to serve requests for.
+  #
+  # If allowedFullDeploymentLocations is specified for a particular deployment, the agent will
+  # refuse to serve requests for any other code locations, even if that code location has been
+  # configured to send requests to a queue that is served by this agent.
+  # (For example, if this agent provides access to sensitive resources and you want to guarantee
+  # that only users with permissions to deploy code to particular code locations can access
+  # those resources). Requests that are rejected by an agent for this reason will raise an
+  # exception and fail, so you should prefer agentQueues if you just want to route requests to
+  # specific agents, and only use allowedFullDeploymentLocations or allowedBranchDeploymentLocations
+  # as an additional optional security measure.
+  #
+  # Example for full deployments:
+  # allowedFullDeploymentLocations:
+  #   prod:
+  #     - sensitive-location
+  #     - another-location
+  #   staging:
+  #     - test-location
+  # If a deployment name key is not specified in allowedFullDeploymentLocations, all
+  # code locations for that deployment will be allowed.
+  #
+  # Example for branch deployments:
+  # allowedBranchDeploymentLocations:
+  #   - branch-location-1
+  #   - branch-location-2
+  #
+  # If allowedBranchDeploymentLocations is not specified, all code locations for branch deployments
+  # will be allowed.
+
 
 ####################################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent

@@ -3,14 +3,29 @@
 git config pull.rebase false # specify how to reconcile divergent branches (merge)
 git config push.autoSetupRemote true
 
-# add gcloud gpg key
-curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg || true
-echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+# rm broken yarn key
+sudo rm /etc/apt/sources.list.d/yarn.list
 
-# update/install apt packages
+# import the Google Cloud public key
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg |
+  sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg ||
+  true
+
+# add the gcloud CLI distribution URI as a package source
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" |
+  sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+
+# update/install base apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install bash-completion google-cloud-cli sshpass &&
+  sudo apt-get -y --no-install-recommends install \
+    apt-transport-https \
+    bash-completion \
+    ca-certificates \
+    curl \
+    gnupg \
+    google-cloud-cli \
+    sshpass &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
@@ -43,8 +58,8 @@ op inject -f --in-file=.devcontainer/tpl/powerschool_ssh_password.txt.tpl \
   sudo mv -f env/powerschool_ssh_password.txt /etc/secret-volume/powerschool_ssh_password.txt
 
 # set up trunk
-chmod +x trunk
-trunk install
+chmod +x /workspaces/teamster/trunk
+/workspaces/teamster/trunk install
 
 # install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh || true

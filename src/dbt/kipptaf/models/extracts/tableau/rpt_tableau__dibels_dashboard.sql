@@ -28,6 +28,7 @@ select
     s.nj_student_tier,
     s.is_tutoring as tutoring_nj,
     s.is_sipps,
+    s.mtss_enrollment,
 
     'Benchmark' as assessment_type,
 
@@ -175,6 +176,7 @@ left join
 where
     s.iready_subject = 'Reading'
     and not s.is_self_contained
+    and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)
 
 union all
@@ -209,6 +211,7 @@ select
     s.nj_student_tier,
     s.is_tutoring as tutoring_nj,
     s.is_sipps,
+    s.mtss_enrollment,
 
     'PM' as assessment_type,
 
@@ -376,4 +379,5 @@ left join
 where
     s.iready_subject = 'Reading'
     and not s.is_self_contained
+    and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)
