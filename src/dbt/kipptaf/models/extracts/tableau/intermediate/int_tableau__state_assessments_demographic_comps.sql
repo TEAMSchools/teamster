@@ -243,7 +243,6 @@ select
         'Students With Disabilities',
         'Students Without Disabilities'
     ) as iep_status,
-
     
     if(
         e.lunch_status in ('F', 'R'),

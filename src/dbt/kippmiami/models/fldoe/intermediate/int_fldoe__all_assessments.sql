@@ -23,12 +23,12 @@ with
             scale_score,
             achievement_level,
             is_proficient,
+            performance_level as achievement_level_int,
 
             cast(
                 coalesce(assessment_grade, test_grade, enrolled_grade) as string
             ) as assessment_grade,
 
-            coalesce(performance_level, achievement_level_int) as performance_level,
             coalesce(student_id, fleid) as student_id,
 
             regexp_extract(
