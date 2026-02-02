@@ -81,5 +81,6 @@
     "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/packages-latest.json": [
       "packages.yml"
     ]
-  }
+  },
+  "dbt.dbtPythonPathOverride": "/workspaces/teamster/.venv/bin/dbt"
 }
