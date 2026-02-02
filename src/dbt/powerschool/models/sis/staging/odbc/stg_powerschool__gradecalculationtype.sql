@@ -7,7 +7,8 @@ select
         isdroplowstudentfavor,
         isalternatepointsused,
         iscalcformulaeditable,
-        isdropscoreeditable
+        isdropscoreeditable,
+        ismulticategoryeditable
     ),
 
     /* column transformations */
@@ -19,4 +20,5 @@ select
     isalternatepointsused.int_value as isalternatepointsused,
     iscalcformulaeditable.int_value as iscalcformulaeditable,
     isdropscoreeditable.int_value as isdropscoreeditable,
+    ismulticategoryeditable.int_value as ismulticategoryeditable,
 from {{ source("powerschool_odbc", "src_powerschool__gradecalculationtype") }}
