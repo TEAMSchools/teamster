@@ -47,6 +47,8 @@ models:
     staging:
       stg_edplan__njsmart_powerschool_archive:
         +enabled: false
+  finalsite:
+    +enabled: false
   overgrad:
     +materialized: table
     staging:
@@ -101,6 +103,8 @@ models:
         +enabled: false
 
 sources:
+  finalsite:
+    +enabled: false
   powerschool:
     sis:
       staging:
@@ -138,3 +142,7 @@ sources:
               +enabled: false
             src_powerschool__u_def_ext_students:
               +enabled: false
+  titan:
+    titan:
+      src_titan__income_form_data:
+        +enabled: false
