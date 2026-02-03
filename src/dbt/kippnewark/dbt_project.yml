@@ -125,6 +125,11 @@ models:
         +enabled: false
 
 sources:
+  amplify:
+    amplify_mclass_api:
+      +enabled: false
+    amplify_dds:
+      +enabled: false
   powerschool:
     sis:
       staging:
@@ -162,3 +167,13 @@ sources:
               +enabled: false
             src_powerschool__u_def_ext_students:
               +enabled: false
+  renlearn:
+    renlearn:
+      src_renlearn__accelerated_reader:
+        +enabled: false
+      src_renlearn__fast_star:
+        +enabled: false
+      src_renlearn__star_dashboard_standards:
+        +enabled: false
+      src_renlearn__star_skill_area:
+        +enabled: false
