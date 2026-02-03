@@ -85,7 +85,7 @@ with
             test_name,
             test_code,
             region,
-            'Spring' as season,
+            season,
 
             {% for entity in comparison_entities %}
                 avg(
@@ -103,7 +103,10 @@ with
                 {% if not loop.last %},{% endif %}
             {% endfor %}
 
-        from {{ ref("stg_google_sheets__state_test_comparison") }}
+        from {{ ref("stg_google_sheets__state_test_comparison_demographics") }}
+        where
+            comparison_demographic_group = 'Total'
+            and comparison_demographic_subgroup = 'All Students'
         group by academic_year, test_name, test_code, region
     ),
 
@@ -195,74 +198,25 @@ with
             cast(state_student_identifier as string) as state_id,
 
             test_type as assessment_name,
-
-            case
-                when test_name like '%Mathematics%'
-                then 'Math'
-                when test_name in ('Algebra I', 'Geometry')
-                then 'Math'
-                else 'ELA'
-            end as discipline,
+            discipline,
 
             scale_score as score,
-
-            case
-                when performance_level = 'Did Not Yet Meet Expectations'
-                then 1
-                when performance_level = 'Partially Met Expectations'
-                then 2
-                when performance_level = 'Approached Expectations'
-                then 3
-                when performance_level = 'Met Expectations'
-                then 4
-                when performance_level = 'Exceeded Expectations'
-                then 5
-                when performance_level = 'Not Yet Graduation Ready'
-                then 1
-                when performance_level = 'Graduation Ready'
-                then 2
-            end as performance_band_level,
-
-            if(
-                performance_level
-                in ('Met Expectations', 'Exceeded Expectations', 'Graduation Ready'),
-                true,
-                false
-            ) as is_proficient,
-
+            performance_band_level,
+            is_proficient,
             performance_level as performance_band,
+
             null as lep_status,
             null as is_504,
             null as iep_status,
             null as race_ethnicity,
             null as test_grade,
 
-            'Preliminary' as results_type,
+            results_type,
             administration as `admin`,
             administration as season,
 
-            case
-                when test_name like '%Mathematics%'
-                then 'Mathematics'
-                when test_name in ('Algebra I', 'Geometry')
-                then 'Mathematics'
-                else 'English Language Arts'
-            end as subject,
-
-            case
-                when test_name = 'ELA Graduation Proficiency'
-                then 'ELAGP'
-                when test_name = 'Mathematics Graduation Proficiency'
-                then 'MATGP'
-                when test_name = 'Geometry'
-                then 'GEO01'
-                when test_name = 'Algebra I'
-                then 'ALG01'
-                when test_name like '%Mathematics%'
-                then concat('MAT', regexp_extract(test_name, r'.{6}(.{2})'))
-                when test_name like '%ELA%'
-                then concat('ELA', regexp_extract(test_name, r'.{6}(.{2})'))
-            end as test_code,
+            `subject`,
+            test_code,
 
         from {{ ref("stg_pearson__student_list_report") }}
         where
