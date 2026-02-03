@@ -188,11 +188,13 @@ select
 
     coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,
 
-    coalesce(fs.finalsite_enrollment_type, 'New') as finalsite_enrollment_type,
-
     cast(e.academic_year as string)
     || '-'
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
+
+    if(
+        e.grade_level = 99, null, coalesce(fs.finalsite_enrollment_type, 'New')
+    ) as finalsite_enrollment_type,
 
     if(ovg.fafsa_opt_out is not null, 'Yes', 'No') as overgrad_fafsa_opt_out,
 
