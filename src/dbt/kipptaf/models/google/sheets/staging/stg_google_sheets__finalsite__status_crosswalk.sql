@@ -1,5 +1,5 @@
 select
-    *,
+    * except (academic_year),
 
     cast(enrollment_academic_year as string)
     || '-'
