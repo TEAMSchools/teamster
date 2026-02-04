@@ -5,7 +5,6 @@ with
             org,
             enrollment_academic_year_display,
             enrollment_academic_year,
-            sre_academic_year,
             sre_academic_year_start,
             sre_academic_year_end,
 

@@ -47,4 +47,7 @@ select
         order by status_start_date desc
     ) as powerschool_student_number,
 
+    date(enrollment_academic_year - 1, 10, 16) as sre_academic_year_start,
+    date(enrollment_academic_year, 06, 30) as sre_academic_year_end,
+
 from finalsite_report
