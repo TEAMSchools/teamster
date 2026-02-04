@@ -6,6 +6,8 @@ with
             x.powerschool_school_id as schoolid,
             x.abbreviation as school,
 
+            initcap(regexp_extract(f._dbt_source_relation, r'kipp(\w+)_')) as region,
+
         from {{ ref("stg_finalsite__status_report") }} as f
         left join
             {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
