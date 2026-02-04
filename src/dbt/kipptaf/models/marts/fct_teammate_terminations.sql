@@ -1,7 +1,11 @@
 with
     teammate_history as (
-        select distinct assignment_status_effective_date, employee_number, assignment_status, assignment_status_reason,
-        {{
+        select distinct
+            assignment_status_effective_date,
+            employee_number,
+            assignment_status,
+            assignment_status_reason,
+            {{
                 date_to_fiscal_year(
                     date_field="assignment_status_effective_date",
                     start_month=7,
@@ -11,7 +15,8 @@ with
         from {{ ref("int_people__staff_roster_history") }}
         where
             (job_title != 'Intern' or assignment_status_reason != 'Internship Ended')
-            and primary_indicator),
+            and primary_indicator
+    ),
 
     {# determining unique years in which records are present for teammate#}
     {# filtering out years with post-termination actions#}
@@ -20,8 +25,11 @@ with
         from teammate_history
         where
             assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
-            or (assignment_status = 'Terminated' and assignment_status_reason
-            not in ('Import Created Action', 'Upgrade Created Action'))
+            or (
+                assignment_status = 'Terminated'
+                and assignment_status_reason
+                not in ('Import Created Action', 'Upgrade Created Action')
+            )
     ),
 
     {# first termination record by academic year#}
