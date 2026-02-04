@@ -1,7 +1,18 @@
 with
     teammate_history as (
-        select *,
-        from {{ ref("dim_teammates") }}
+        select distinct
+            effective_date_start,
+            effective_date_end,
+            employee_number,
+            assignment_status,
+            {{
+                date_to_fiscal_year(
+                    date_field="effective_date_start",
+                    start_month=7,
+                    year_source="start",
+                )
+            }} as academic_year,
+        from {{ ref("int_people__staff_roster_history") }}
         where
             (job_title != 'Intern' or assignment_status_reason != 'Internship Ended')
             and primary_indicator
@@ -12,7 +23,7 @@ with
     ),
 
     {# Foundation Attrition: latest record for staff not #}
-    {#in an inactive status between 9/1 and 4/30 of an academic year #}
+    {# in an inactive status between 9/1 and 4/30 of an academic year #}
     foundation_year_cohort as (
         select
             ay.academic_year,
@@ -26,7 +37,8 @@ with
         where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
         group by ay.academic_year, th.employee_number
     ),
-    {# Foundation Attrition: any staff not in terminated or deceased status #} 
+
+    {# Foundation Attrition: any staff not in terminated or deceased status #}
     {# on 9/1 of the following academic year #}
     foundation_returner_cohort as (
         select distinct ay.academic_year, th.employee_number,
@@ -106,6 +118,7 @@ with
             foundation_returner_cohort as frc
             on fyc.employee_number = frc.employee_number
             and fyc.academic_year = frc.academic_year
+
         union all
 
         select
@@ -118,6 +131,7 @@ with
             nj_returner_cohort as njrc
             on njyc.employee_number = njrc.employee_number
             and njyc.academic_year = njrc.academic_year
+
         union all
 
         select
