@@ -21,7 +21,7 @@ with
             initcap(replace(`status`, '_', ' ')) as detailed_status,
 
             if(
-                grade_level = 'Kindergarten',
+                grade_level in ('Kindergarten', 'K'),
                 0,
                 cast(regexp_extract(grade_level, r'\d+') as int)
             ) as grade_level,
