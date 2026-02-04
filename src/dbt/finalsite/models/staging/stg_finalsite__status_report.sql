@@ -34,6 +34,18 @@ with
                 partition by finalsite_student_id, enrollment_year
                 order by status_start_date asc
             ) as status_lag,
+
+            last_value(school ignore nulls) over (
+                partition by enrollment_academic_year, finalsite_student_id
+                order by status_start_date asc
+                rows between unbounded preceding and unbounded following
+            ) as latest_school,
+
+            last_value(powerschool_student_number ignore nulls) over (
+                partition by enrollment_academic_year, finalsite_student_id
+                order by status_start_date asc
+                rows between unbounded preceding and unbounded following
+            ) as latest_powerschool_student_number,
         from transformations
     ),
 
