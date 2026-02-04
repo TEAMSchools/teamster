@@ -173,6 +173,19 @@ with
                 then 'TAF'
             end as ktc_status,
 
+            case
+                when c.contact_college_match_display_gpa >= 3.50
+                then '3.50+'
+                when c.contact_college_match_display_gpa >= 3.00
+                then '3.00-3.49'
+                when c.contact_college_match_display_gpa >= 2.50
+                then '2.50-2.99'
+                when c.contact_college_match_display_gpa >= 2.00
+                then '2.00-2.50'
+                when c.contact_college_match_display_gpa < 2.00
+                then '<2.00'
+            end as hs_gpa_bands,
+
             (
                 {{ var("current_academic_year") }} - se.academic_year + se.grade_level
             ) as current_grade_level_projection,
