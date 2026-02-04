@@ -73,6 +73,37 @@ with
 
         from {{ ref("stg_powerschool__s_nj_stu_x") }}
         where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
+    ),
+
+    finalsite_enrollment_type_calc as (
+        select
+            _dbt_source_relation,
+            academic_year,
+            student_number,
+
+            case
+                when
+                    lag(academic_year) over (
+                        partition by student_number order by academic_year
+                    )
+                    is null
+                then 'New'
+                when
+                    coalesce(
+                        lag(
+                            sum(if(date_diff(exitdate, entrydate, day) >= 7, 1, 0))
+                        ) over (partition by student_number order by academic_year),
+                        0
+                    )
+                    = 0
+                then 'New'
+                else 'Returner'
+            end as finalsite_enrollment_type,
+
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where grade_level != 99
+        group by
+            _dbt_source_relation, academic_year, student_number, first_name, last_name
     )
 
 select
@@ -160,6 +191,10 @@ select
     cast(e.academic_year as string)
     || '-'
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
+
+    if(
+        e.grade_level = 99, null, coalesce(fs.finalsite_enrollment_type, 'New')
+    ) as finalsite_enrollment_type,
 
     if(ovg.fafsa_opt_out is not null, 'Yes', 'No') as overgrad_fafsa_opt_out,
 
@@ -365,6 +400,11 @@ left join
     graduation_pathway_m as mc
     on e.students_dcid = mc.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="mc") }}
+left join
+    finalsite_enrollment_type_calc as fs
+    on e.academic_year = fs.academic_year
+    and e.student_number = fs.student_number
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="fs") }}
 left join
     {{ ref("base_powerschool__course_enrollments") }} as sip
     on e.student_number = sip.students_student_number

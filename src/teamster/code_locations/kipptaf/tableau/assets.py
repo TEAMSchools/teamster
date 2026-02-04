@@ -23,6 +23,16 @@ view_count_per_view = build_sftp_folder_asset(
     file_encoding="utf-16",
     avro_schema=VIEW_COUNT_PER_VIEW_SCHEMA,
     ssh_resource_key="ssh_couchdrop",
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"memory": "2.0Gi"},
+                    "limits": {"memory": "3.0Gi"},
+                }
+            }
+        }
+    },
 )
 
 
