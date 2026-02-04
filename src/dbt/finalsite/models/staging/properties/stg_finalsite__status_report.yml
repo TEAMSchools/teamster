@@ -39,3 +39,5 @@ models:
         data_type: date
       - name: rn
         data_type: int64
+      - name: enrollment_type_raw
+        data_type: string

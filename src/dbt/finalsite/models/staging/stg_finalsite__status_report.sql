@@ -1,13 +1,11 @@
 with
-    distinct_rows as (
-        select distinct * except (enrollment_type),
-        from {{ source("finalsite", "status_report") }}
-    ),
-
     transformations as (
         select
-            * except (powerschool_student_number, `timestamp`, grade_level),
+            * except (
+                powerschool_student_number, `timestamp`, grade_level, enrollment_type
+            ),
 
+            enrollment_type as enrollment_type_raw,
             grade_level as grade_level_name,
 
             cast(powerschool_student_number as int) as powerschool_student_number,
@@ -25,13 +23,23 @@ with
                 0,
                 cast(regexp_extract(grade_level, r'\d+') as int)
             ) as grade_level,
+        from {{ source("finalsite", "status_report") }}
+    ),
 
-        from distinct_rows
+    dedupe as (
+        select
+            *,
+
+            lag(`status`, 1, '') over (
+                partition by finalsite_student_id, enrollment_year
+                order by status_start_date asc
+            ) as status_lag,
+        from transformations
     ),
 
     end_date_calc as (
         select
-            *,
+            * except (status_lag),
 
             lead(
                 date_sub(status_start_date, interval 1 day),
@@ -41,8 +49,8 @@ with
                 partition by finalsite_student_id, enrollment_year
                 order by status_start_date asc
             ) as status_end_date,
-
-        from transformations
+        from dedupe
+        where `status` != status_lag
     )
 
 select
