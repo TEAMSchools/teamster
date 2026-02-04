@@ -305,7 +305,7 @@ with
                     and att.ada_term_running < 0.87
                 then 'Off-Track'
                 when
-                    co.region = 'Newark'
+                    co.region = 'Camden'
                     and co.grade_level between 1 and 2
                     and att.ada_term_running < 0.86
                 then 'Off-Track'
