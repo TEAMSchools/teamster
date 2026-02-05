@@ -2,7 +2,7 @@ with
     location_crosswalk as (select *, from {{ ref("int_people__location_crosswalk") }}),
 
     final as (
-        select
+        select distinct
             location_clean_name as location_name,
             location_region,
             location_grade_band,
