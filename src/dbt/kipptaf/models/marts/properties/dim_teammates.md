@@ -23,7 +23,7 @@ filtering.
 
 {% enddocs %}
 
-{% docs teammates_home_business_unit_name %}
+{% docs teammates_entity %}
 
 Our organization is made up of four entities, also called business units or
 regions. 'KIPP TEAM and Family Schools Inc', the charter management organization
@@ -35,7 +35,7 @@ structure and business unit.
 
 {% enddocs %}
 
-{% docs teammates_home_work_location_name %}
+{% docs teammates_location %}
 
 This is the physical location where the employee/teammate works. We have 19
 active school locations with names like "KIPP TEAM Academy" and "KIPP Lanning
@@ -47,7 +47,7 @@ district/network work.
 
 {% enddocs %}
 
-{% docs teammates_home_work_location_grade_band %}
+{% docs teammates_grade_band %}
 
 Schools are divided into three grade bands: ES: Elementary or Primary schools
 (typically grades Kindergarten - 4) MS: Middle Schools (typically grades 5 - 8)
@@ -56,7 +56,7 @@ HS: High Schools (typically grades 9 - 12). Kids in grade 9 are called Freshman,
 
 {% enddocs %}
 
-{% docs teammates_home_department_name %}
+{% docs teammates_department %}
 
 The department the employee/teammate belongs to. In schools this is sometimes
 the subject area they teach, like 'Science', 'Math' or 'ELA', which stands for
@@ -64,7 +64,9 @@ English/Language arts. Outside of schools are departments that serve many
 schools like 'Data', 'Technology', and 'Talent'. Commonly used to filter staff
 to see how they are allocated across departments. {% enddocs %}
 
-{% docs teammates_job_title %} The formal title of the employee's current
+{% docs teammates_job_title %} 
+
+The formal title of the employee's current
 position as entered in ADP, our Human Resources Information System. Examples:
 'Teacher', 'Assistant Principal', 'Director of Operations', 'Custodian',
 'Systems Analyst'. Useful for filtering by role type and in conjunction with the
@@ -73,7 +75,9 @@ with a role teaching in the classroom.
 
 {% enddocs %}
 
-{% docs teammates_reports_to_formatted_name %} The employee/teammate's formal
+{% docs teammates_manager_name %} 
+
+The employee/teammate's formal
 manager as entered in ADP, our Human Resources Information System. For
 instructional roles, this person is often called a the teacher's 'coach'. Used
 to group or filter staff by reporting structure and analyze coaching loads.
@@ -83,20 +87,6 @@ manager?"
 
 {% enddocs %}
 
-{% docs teammates_original_hire_date %} The date the employee was first hired by
-KIPP, regardless of whether they left and came back at any point in time. Used
-to track tenure, calculate years of service, and measure long-term staff trends.
-
-{% enddocs %}
-
-{% docs teammates_work_assignment_actual_start_date %} The date the employee
-began their current assignment or role. For instructional employees, these
-typically start at the beginning of a new school year. Our academic years run
-from July to June, and we use the year of the July date as the academic year.
-Example: March 2026 is in the 2025 academic year. Useful for measuring
-assignment duration or transitions.
-
-{% enddocs %}
 
 {% docs teammates_is_teacher %} A boolean field to note whether someone is in a
 role where they teach in the classroom. We tend to group certain roles as
