@@ -66,7 +66,6 @@ with
             f._dbt_source_relation,
             f.enrollment_academic_year_display,
             f.enrollment_academic_year,
-            f.sre_academic_year,
             f.region,
             f.latest_region,
             f.schoolid,
@@ -102,7 +101,6 @@ with
             f._dbt_source_relation,
             f.enrollment_academic_year_display,
             f.enrollment_academic_year,
-            f.sre_academic_year,
             f.region,
             f.latest_region,
             f.schoolid,
@@ -146,7 +144,6 @@ with
     student_scaffold as (
         select
             m._dbt_source_relation,
-            m.academic_year,
             m.enrollment_academic_year,
             m.schoolid,
             m.school,
@@ -160,7 +157,8 @@ with
             c.detailed_status,
 
         from mod_enrollment_type as m
-        inner join weekly_spine as w on m.academic_year = w.sre_academic_year
+        inner join
+            weekly_spine as w on m.enrollment_academic_year = w.enrollment_academic_year
         inner join
             {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
             on m.enrollment_academic_year = c.enrollment_academic_year
@@ -172,8 +170,7 @@ with
         -- distinct: get a list of schools open tied to an academic year
         select distinct
             e._dbt_source_relation,
-            e.academic_year,
-            'KTAF' as org,
+            e.district as org,
             e.region,
             e.schoolid,
             e.school,
@@ -181,7 +178,6 @@ with
 
             w.enrollment_academic_year_display,
             w.enrollment_academic_year,
-            w.sre_academic_year,
             w.sre_academic_year_start,
             w.sre_academic_year_end,
             w.sre_academic_year_wk_start_monday,
@@ -226,7 +222,7 @@ with
         select distinct
             e._dbt_source_relation,
             e.academic_year,
-            'KTAF' as org,
+            e.district as org,
             e.region,
             0 as schoolid,
             'No School Assigned' as school,
@@ -234,7 +230,6 @@ with
 
             w.enrollment_academic_year_display,
             w.enrollment_academic_year,
-            w.sre_academic_year,
             w.sre_academic_year_start,
             w.sre_academic_year_end,
             w.sre_academic_year_wk_start_monday,
@@ -275,7 +270,6 @@ with
 
 select
     s._dbt_source_relation,
-    s.academic_year,
     s.enrollment_academic_year,
     s.enrollment_academic_year_display,
     s.org,
@@ -283,7 +277,6 @@ select
     s.schoolid,
     s.school,
     s.grade_level,
-    s.sre_academic_year,
     s.sre_academic_year_start,
     s.sre_academic_year_end,
     s.sre_academic_year_wk_start_monday,
