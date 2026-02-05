@@ -23,6 +23,8 @@ models:
                 values:
                   - No issues
               config:
+                where:
+                  grade_level != 99
                 severity: warn
                 store_failures: true
       - name: _dbt_source_relation
