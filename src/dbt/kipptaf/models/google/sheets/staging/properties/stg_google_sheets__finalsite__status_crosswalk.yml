@@ -49,3 +49,7 @@ models:
         data_type: int64
       - name: enrollment_academic_year_display
         data_type: string
+      - name: sre_academic_year_start
+        data_type: date
+      - name: sre_academic_year_end
+        data_type: date
