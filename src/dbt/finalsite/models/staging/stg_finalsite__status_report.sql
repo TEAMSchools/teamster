@@ -129,7 +129,7 @@ select
     enrollment_academic_year - 1 as sre_academic_year,
 
     date(enrollment_academic_year - 1, 10, 16) as sre_academic_year_start,
-    date(enrollment_academic_year, 06, 30) as sre_academic_year_end,
+    date(enrollment_academic_year, 6, 30) as sre_academic_year_end,
 
     cast(enrollment_academic_year as string)
     || '-'
