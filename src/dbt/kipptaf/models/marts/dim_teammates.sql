@@ -18,7 +18,7 @@ with
             languages_spoken,
             race_ethnicity_reporting,
             gender_identity,
-            {# key for rows with relevant changes #}
+            /* key for rows with relevant changes */
             {{
                 dbt_utils.generate_surrogate_key(
                     [
@@ -32,7 +32,7 @@ with
                     ]
                 )
             }} as surrogate_key,
-            {# assignment academic year to each row for annual aggregations #}
+            /* assignment academic year to each row for annual aggregations */
             {{
                 date_to_fiscal_year(
                     date_field="effective_date_start",
