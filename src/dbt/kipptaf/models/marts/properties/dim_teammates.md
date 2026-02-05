@@ -64,29 +64,26 @@ English/Language arts. Outside of schools are departments that serve many
 schools like 'Data', 'Technology', and 'Talent'. Commonly used to filter staff
 to see how they are allocated across departments. {% enddocs %}
 
-{% docs teammates_job_title %} 
+{% docs teammates_job_title %}
 
-The formal title of the employee's current
-position as entered in ADP, our Human Resources Information System. Examples:
-'Teacher', 'Assistant Principal', 'Director of Operations', 'Custodian',
-'Systems Analyst'. Useful for filtering by role type and in conjunction with the
-field is_teacher which groups several titles into a category to denote someone
-with a role teaching in the classroom.
-
-{% enddocs %}
-
-{% docs teammates_manager_name %} 
-
-The employee/teammate's formal
-manager as entered in ADP, our Human Resources Information System. For
-instructional roles, this person is often called a the teacher's 'coach'. Used
-to group or filter staff by reporting structure and analyze coaching loads.
-Example question: "How many teachers does this Assistant Principal coach?" is
-the same as "For how many employees/teammates is this person listed as the
-manager?"
+The formal title of the employee's current position as entered in ADP, our Human
+Resources Information System. Examples: 'Teacher', 'Assistant Principal',
+'Director of Operations', 'Custodian', 'Systems Analyst'. Useful for filtering
+by role type and in conjunction with the field is_teacher which groups several
+titles into a category to denote someone with a role teaching in the classroom.
 
 {% enddocs %}
 
+{% docs teammates_manager_name %}
+
+The employee/teammate's formal manager as entered in ADP, our Human Resources
+Information System. For instructional roles, this person is often called a the
+teacher's 'coach'. Used to group or filter staff by reporting structure and
+analyze coaching loads. Example question: "How many teachers does this Assistant
+Principal coach?" is the same as "For how many employees/teammates is this
+person listed as the manager?"
+
+{% enddocs %}
 
 {% docs teammates_is_teacher %} A boolean field to note whether someone is in a
 role where they teach in the classroom. We tend to group certain roles as
