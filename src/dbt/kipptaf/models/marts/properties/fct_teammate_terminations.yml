@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: fct_teammate_terminations
+    description: ""
+    columns:
+      - name: employee_number
+        data_type: int64
+        description: ""
+
+      - name: academic_year
+        data_type: int64
+        description: ""
+
+      - name: termination_status
+        data_type: string
+        description: ""
+
+      - name: termination_reason
+        data_type: string
+        description: ""
+
+      - name: termination_effective_date
+        data_type: date
+        description: ""
+
+      - name: is_termination
+        data_type: boolean
+        description: ""

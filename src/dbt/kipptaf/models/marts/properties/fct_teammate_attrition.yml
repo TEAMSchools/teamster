@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: fct_teammate_attrition
+    description: ""
+    columns:
+      - name: attrition_type
+        data_type: string
+        description: ""
+
+      - name: academic_year
+        data_type: int64
+        description: ""
+
+      - name: employee_number
+        data_type: int64
+        description: ""
+
+      - name: is_attrition
+        data_type: boolean
+        description: ""

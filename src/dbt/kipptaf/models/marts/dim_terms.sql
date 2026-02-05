@@ -23,5 +23,20 @@ with
         from reporting_terms
     )
 
-select *,
+select
+    term_type,
+    term_code,
+    term_name,
+    term_start_date,
+    term_end_date,
+    academic_year,
+    fiscal_year,
+    powerschool_year_id,
+    powerschool_term_id,
+    school_id,
+    entity,
+    grade_band,
+    lockbox_date,
+    is_current,
+    city,
 from final

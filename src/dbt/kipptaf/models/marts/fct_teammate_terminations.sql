@@ -47,16 +47,19 @@ with
             assignment_status = 'Terminated'
             and assignment_status_reason
             not in ('Import Created Action', 'Upgrade Created Action')
-        group by all
+        group by
+            employee_number, academic_year, assignment_status, assignment_status_reason
     ),
 
     final as (
         select
             ar.employee_number,
             ar.academic_year,
+
             tr.termination_status,
             tr.termination_reason,
             tr.termination_effective_date,
+
             if(tr.employee_number is null, false, true) as is_termination,
         from annual_roster as ar
         left join
@@ -68,5 +71,11 @@ with
             or tr.termination_effective_date is null
     )
 
-select *,
+select
+    employee_number,
+    academic_year,
+    termination_status,
+    termination_reason,
+    termination_effective_date,
+    is_termination,
 from final

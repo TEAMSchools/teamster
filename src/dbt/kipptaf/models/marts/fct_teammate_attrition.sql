@@ -146,5 +146,5 @@ with
             and ryc.academic_year = rrc.academic_year
     )
 
-select *,
+select attrition_type, academic_year, employee_number, is_attrition,
 from final
