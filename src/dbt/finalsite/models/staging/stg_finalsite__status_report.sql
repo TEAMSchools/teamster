@@ -59,7 +59,7 @@ with
                 then 17
                 when 'financial_hold'
                 then 18
-                when 'not_enrollming'
+                when 'not_enrolling'
                 then 19
                 when 'enrolled'
                 then 20
@@ -70,7 +70,7 @@ with
                 when 'retained'
                 then 23
                 when 'summer_withdraw'
-                then 23
+                then 24
             end as status_order,
         from {{ source("finalsite", "status_report") }}
     ),
