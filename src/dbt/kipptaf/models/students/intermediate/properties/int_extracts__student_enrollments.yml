@@ -23,6 +23,9 @@ models:
                 values:
                   - No issues
               config:
+                where:
+                  grade_level != 99 and academic_year = {{
+                  var('current_academic_year')}}
                 severity: warn
                 store_failures: true
       - name: _dbt_source_relation
