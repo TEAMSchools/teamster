@@ -1,0 +1,43 @@
+models:
+  - name: fct_benefits_enrollments
+    description: ""
+    columns:
+      - name: employee_number
+        data_type: int64
+        description: ""
+
+      - name: position_id
+        data_type: string
+        description: ""
+
+      - name: plan_type
+        data_type: string
+        description: ""
+
+      - name: plan_name
+        data_type: string
+        description: ""
+
+      - name: coverage_level
+        data_type: string
+        description: ""
+
+      - name: effective_date
+        data_type: date
+        description: ""
+
+      - name: enrollment_end_date
+        data_type: date
+        description: ""
+
+      - name: enrollment_start_date
+        data_type: date
+        description: ""
+
+      - name: enrollment_status
+        data_type: string
+        description: ""
+      
+      - name: rn_enrollment_recent
+        data_type: int64
+        description: ""

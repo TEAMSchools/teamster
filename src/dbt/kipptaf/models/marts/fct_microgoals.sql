@@ -30,6 +30,13 @@ with
 
     )
 
-select *,
+select
+    employee_number,
+    assignment_id,
+    assignment_date,
+    creator_name,
+    goal_name,
+    strand_name,
+    bucket_name,
 from final
 where goal_name is not null

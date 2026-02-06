@@ -35,5 +35,13 @@ with
         where rn_date = 1
     )
 
-select *,
+select
+    student_number,
+    commlog_date,
+    commlog_staff_name,
+    commlog_reason,
+    commlog_notes,
+    commlog_topic,
+    commlog_type,
+    commlog_status,
 from final
