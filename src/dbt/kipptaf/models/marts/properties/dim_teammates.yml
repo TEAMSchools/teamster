@@ -1,7 +1,6 @@
-version: 2
-
 models:
   - name: dim_teammates
+
     description:
       An SCD Type 2 table of teammates by work assignment and academic year.
 
