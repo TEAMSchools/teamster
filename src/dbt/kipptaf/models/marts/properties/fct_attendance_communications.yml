@@ -1,31 +1,35 @@
 models:
-  - name: fct_microgoals
+  - name: fct_attendance_communications
     description: ""
     columns:
-      - name: employee_number
+      - name: student_number
         data_type: int64
         description: ""
 
-      - name: assignment_id
-        data_type: string
-        description: ""
-
-      - name: assignment_date
+      - name: commlog_date
         data_type: date
         description: ""
 
-      - name: creator_name
+      - name: commlog_staff_name
         data_type: string
         description: ""
 
-      - name: goal_name
+      - name: commlog_reason
         data_type: string
         description: ""
 
-      - name: strand_name
+      - name: commlog_notes
         data_type: string
         description: ""
 
-      - name: bucket_name
+      - name: commlog_topic
+        data_type: string
+        description: ""
+
+      - name: commlog_type
+        data_type: string
+        description: ""
+
+      - name: commlog_status
         data_type: string
         description: ""

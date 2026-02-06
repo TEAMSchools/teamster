@@ -1,0 +1,71 @@
+models:
+  - name: dim_seats
+    description: ""
+    columns:
+      - name: academic_year
+        data_type: int64
+        description: ""
+
+      - name: staffing_model_id
+        data_type: string
+        description: ""
+
+      - name: entity
+        data_type: string
+        description: ""
+
+      - name: grade_band
+        data_type: string
+        description: ""
+
+      - name: recruitment_group
+        data_type: string
+        description: ""
+
+      - name: home_department_name
+        data_type: string
+        description: ""
+
+      - name: job_title
+        data_type: string
+        description: ""
+
+      - name: home_work_location_name
+        data_type: string
+        description: ""
+
+      - name: location_short_name
+        data_type: string
+        description: ""
+
+      - name: recruiter_employee_number
+        data_type: int64
+        description: ""
+
+      - name: teammate_employee_number
+        data_type: int64
+        description: ""
+
+      - name: plan_status
+        data_type: string
+        description: ""
+
+      - name: staffing_status
+        data_type: string
+        description: ""
+
+      - name: status_detail
+        data_type: string
+        description: ""
+
+      - name: is_mid_year_hire
+        data_type: boolean
+        description: ""
+
+      - name: dbt_valid_from
+        data_type: timestamp
+        description: ""
+
+      - name: dbt_valid_to
+        data_type: timestamp
+        description: ""
