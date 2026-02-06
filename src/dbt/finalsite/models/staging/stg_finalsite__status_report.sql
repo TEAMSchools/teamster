@@ -59,7 +59,7 @@ with
                 then 17
                 when 'financial_hold'
                 then 18
-                when 'not_enrollming'
+                when 'not_enrolling'
                 then 19
                 when 'enrolled'
                 then 20
