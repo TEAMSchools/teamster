@@ -72,11 +72,18 @@ def tableau_teacher_gradebook_group_sync(
 
     for result in query_results:
         # filter for group
-        group_item = [
-            group
-            for group in Pager(endpoint=tableau._server.groups)
-            if group.name == result["group_name"]
-        ][0]
+        group_item = next(
+            (
+                group
+                for group in Pager(endpoint=tableau._server.groups)
+                if group.name == result["group_name"]
+            ),
+            None,
+        )
+        if group_item is None:
+            raise ValueError(
+                f"Tableau group not found for name {result['group_name']!r}"
+            )
 
         # get existing group members
         tableau._server.groups.populate_users(group_item=group_item)
