@@ -106,7 +106,11 @@ with
         select
             * except (status_lag),
 
-            lead(status_start_timestamp, 1, '9999-12-31') over (
+            lead(
+                status_start_timestamp,
+                1,
+                '{{ var("status_default_end_date", "9999-12-31") }}'
+            ) over (
                 partition by finalsite_student_id, enrollment_year
                 order by status_start_timestamp asc, status_order asc
             ) as status_end_timestamp,
