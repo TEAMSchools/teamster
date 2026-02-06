@@ -37,7 +37,7 @@ models:
       - name: enrollment_status
         data_type: string
         description: ""
-      
+
       - name: rn_enrollment_recent
         data_type: int64
         description: ""
