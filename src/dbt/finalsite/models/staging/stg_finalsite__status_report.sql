@@ -70,7 +70,7 @@ with
                 when 'retained'
                 then 23
                 when 'summer_withdraw'
-                then 23
+                then 24
             end as status_order,
         from {{ source("finalsite", "status_report") }}
     ),
