@@ -41,13 +41,13 @@ with
             se.grade_level,
             se.ms_attended,
 
-            of.nj_overall_student_tier,
+            ov.nj_overall_student_tier,
 
         from student_enrollments as se
         left join
-            overall_filters as of
-            on se.academic_year = of.academic_year
-            and se.student_number = of.student_number
+            overall_filters as ov
+            on se.academic_year = ov.academic_year
+            and se.student_number = ov.student_number
     )
 
 select *

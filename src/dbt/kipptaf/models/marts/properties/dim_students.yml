@@ -1,0 +1,103 @@
+models:
+  - name: dim_students
+    description: ""
+    columns:
+      - name: student_number
+        data_type: int64
+        description: ""
+
+      - name: enrollment_start_date
+        data_type: date
+        description: ""
+
+      - name: enrollment_end_date
+        data_type: date
+        description: ""
+
+      - name: academic_year
+        data_type: int64
+        description: ""
+
+      - name: school_id
+        data_type: int64
+        description: ""
+
+      - name: iep_status
+        data_type: string
+        description: ""
+
+      - name: lep_status
+        data_type: boolean
+        description: ""
+
+      - name: status_504
+        data_type: string
+        description: ""
+
+      - name: gender
+        data_type: string
+        description: ""
+
+      - name: ethnicity
+        data_type: string
+        description: ""
+
+      - name: gifted_and_talented
+        data_type: string
+        description: ""
+
+      - name: enroll_status
+        data_type: int64
+        description: ""
+
+      - name: cohort_primary
+        data_type: int64
+        description: ""
+
+      - name: year_in_network
+        data_type: int64
+        description: ""
+
+      - name: is_enrolled_oct01
+        data_type: boolean
+        description: ""
+
+      - name: is_retained_year
+        data_type: boolean
+        description: ""
+
+      - name: boy_status
+        data_type: string
+        description: ""
+
+      - name: entry_school_id
+        data_type: int64
+        description: ""
+
+      - name: advisor_lastfirst
+        data_type: string
+        description: ""
+
+      - name: advisory_name
+        data_type: string
+        description: ""
+
+      - name: is_self_contained
+        data_type: boolean
+        description: ""
+
+      - name: is_out_of_district
+        data_type: boolean
+        description: ""
+
+      - name: grade_level
+        data_type: int64
+        description: ""
+
+      - name: ms_attended
+        data_type: string
+        description: ""
+
+      - name: nj_overall_student_tier
+        data_type: string
+        description: ""
