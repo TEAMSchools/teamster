@@ -1,0 +1,5 @@
+models:
+  - name: rpt_tableau__fresh_dashboard_quality_control
+    config:
+      contract:
+        enforced: false
