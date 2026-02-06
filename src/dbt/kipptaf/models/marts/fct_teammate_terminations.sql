@@ -5,6 +5,7 @@ with
             employee_number,
             assignment_status,
             assignment_status_reason,
+
             {{
                 date_to_fiscal_year(
                     date_field="assignment_status_effective_date",
@@ -14,12 +15,14 @@ with
             }} as academic_year,
         from {{ ref("int_people__staff_roster_history") }}
         where
-            (job_title != 'Intern' or assignment_status_reason != 'Internship Ended')
-            and primary_indicator
+            primary_indicator
+            and (
+                job_title != 'Intern' or assignment_status_reason != 'Internship Ended'
+            )
     ),
 
-    {# determining unique years in which records are present for teammate#}
-    {# filtering out years with post-termination actions#}
+    /* determining unique years in which records are present for teammate */
+    /* filtering out years with post-termination actions */
     annual_roster as (
         select distinct employee_number, academic_year,
         from teammate_history
@@ -32,14 +35,15 @@ with
             )
     ),
 
-    {# first termination record by academic year#}
-    {# using effective start date downstream to filter post-termination actions#}
+    /* first termination record by academic year */
+    /* using effective start date downstream to filter post-termination actions */
     terminations as (
         select
             employee_number,
             academic_year,
             assignment_status as termination_status,
             assignment_status_reason as termination_reason,
+
             min(assignment_status_effective_date) as min_effective_date,
             min(assignment_status_effective_date) as termination_effective_date,
         from teammate_history

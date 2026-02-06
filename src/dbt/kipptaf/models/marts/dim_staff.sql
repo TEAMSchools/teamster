@@ -1,5 +1,3 @@
-with staff_roster as (select *, from {{ ref("int_people__staff_roster") }})
-
 select
     employee_number,
     home_business_unit_name as entity,
@@ -12,6 +10,7 @@ select
     work_assignment_actual_start_date,
     assignment_status,
     race_ethnicity_reporting,
+
     if(
         job_title in (
             'Teacher',
@@ -24,4 +23,4 @@ select
         true,
         false
     ) as is_teacher,
-from staff_roster
+from {{ ref("int_people__staff_roster") }}

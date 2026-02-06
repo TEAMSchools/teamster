@@ -18,6 +18,7 @@ with
             languages_spoken,
             race_ethnicity_reporting,
             gender_identity,
+
             /* key for rows with relevant changes */
             {{
                 dbt_utils.generate_surrogate_key(
@@ -32,6 +33,7 @@ with
                     ]
                 )
             }} as surrogate_key,
+
             /* assignment academic year to each row for annual aggregations */
             {{
                 date_to_fiscal_year(
@@ -47,6 +49,7 @@ with
     dedupe as (
         select
             *,
+
             lag(surrogate_key, 1, '') over (
                 partition by employee_number order by effective_date_start asc
             ) as surrogate_key_lag,
@@ -82,10 +85,14 @@ with
             r.race_ethnicity_reporting,
             r.gender_identity,
             r.salary,
+
             gl.grade_level as grade_taught,
+
             pm.final_tier as performance_management_tier,
+
             ye.years_experience_total,
             ye.years_teaching_total,
+
             if(
                 r.job_title in (
                     'Teacher',
@@ -98,18 +105,22 @@ with
                 true,
                 false
             ) as is_teacher,
+
             if(
                 r.employee_number
                 in (select managers.reports_to_employee_number, from managers),
                 true,
                 false
             ) as is_manager,
+
             lag(r.salary) over (
                 partition by r.employee_number order by r.effective_date_start
             ) as previous_salary,
+
             lag(r.job_title) over (
                 partition by r.employee_number order by r.effective_date_start
             ) as previous_job_title,
+
             coalesce(
                 date_sub(
                     lead(r.effective_date_start) over (

@@ -15,9 +15,11 @@ with
     final as (
         select
             gu.internal_id_int as employee_number,
+
             a.assignment_id,
             a.created_date_local as assignment_date,
             a.creator_name,
+
             m.tag_name as goal_name,
             m.strand_name,
             m.bucket_name,
