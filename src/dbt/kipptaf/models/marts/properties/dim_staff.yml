@@ -96,8 +96,7 @@ models:
 
       - name: is_teacher
         data_type: boolean
-        description:
-          "{{ doc('staff_is_teacher') }}"
+        description: "{{ doc('staff_is_teacher') }}"
 
       - name: is_manager
         data_type: boolean
