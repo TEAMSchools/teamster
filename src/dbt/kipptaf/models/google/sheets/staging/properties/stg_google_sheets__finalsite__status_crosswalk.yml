@@ -27,6 +27,8 @@ models:
         data_type: boolean
       - name: applicant_ops
         data_type: int64
+      - name: applicant_ops_alt
+        data_type: int64
       - name: offered_ops
         data_type: int64
       - name: pending_offer_ops
