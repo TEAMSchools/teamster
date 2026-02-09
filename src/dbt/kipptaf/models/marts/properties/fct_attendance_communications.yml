@@ -1,35 +1,27 @@
 models:
   - name: fct_attendance_communications
-    description: ""
+
     columns:
       - name: student_number
         data_type: int64
-        description: ""
 
       - name: commlog_date
         data_type: date
-        description: ""
 
       - name: commlog_staff_name
         data_type: string
-        description: ""
 
       - name: commlog_reason
         data_type: string
-        description: ""
 
       - name: commlog_notes
         data_type: string
-        description: ""
 
       - name: commlog_topic
         data_type: string
-        description: ""
 
       - name: commlog_type
         data_type: string
-        description: ""
 
       - name: commlog_status
         data_type: string
-        description: ""
