@@ -890,5 +890,6 @@ class StudentTestUpdate(BaseModel):
     white: str | None = None
     word_prediction: str | None = None
     word_to_word_dictionary_english_native_language: str | None = None
+    source_file_name: str | None = None
 
     filler: str | None = FILLER_FIELD
