@@ -1,5 +1,5 @@
 models:
-  - name: dim_teammates
+  - name: dim_staff
 
     description:
       An SCD Type 2 table of teammates by work assignment and academic year.
@@ -12,9 +12,7 @@ models:
 
       - name: assignment_status
         data_type: string
-        description:
-          Teammate's employment status, whether Active, Leave, Terminated, or
-          Deceased.
+        description: "{{ doc('staff_assignment_status') }}"
 
       - name: assignment_status_reason
         data_type: string
@@ -32,19 +30,19 @@ models:
 
       - name: entity
         data_type: string
-        description: Legal entity in which the teammate is hired.
+        description: "{{ doc('staff_entity') }}"
 
       - name: grade_band
         data_type: string
-        description: Grade band of the teammate's location
+        description: "{{ doc('staff_grade_band') }}"
 
       - name: location
         data_type: string
-        description: Name of the teammate's work location
+        description: "{{ doc('staff_location') }}"
 
       - name: department
         data_type: string
-        description: A teammate's department
+        description: "{{ doc('staff_department') }}"
 
       - name: job_title
         data_type: string
@@ -52,7 +50,7 @@ models:
 
       - name: manager_name
         data_type: string
-        description: The name of the person the teammate reports to in the HRIS
+        description: "{{ doc('staff_manager_name') }}"
 
       - name: languages_spoken
         data_type: string
@@ -62,7 +60,7 @@ models:
 
       - name: race_ethnicity_reporting
         data_type: string
-        description: The teammate's race/ethnicity.
+        description: "{{ doc('staff_race_ethnicity_reporting') }}"
 
       - name: gender_identity
         data_type: string
@@ -99,7 +97,7 @@ models:
       - name: is_teacher
         data_type: boolean
         description:
-          Indicator of whether a teammate's job title is a teaching role
+          "{{ doc('staff_is_teacher') }}"
 
       - name: is_manager
         data_type: boolean

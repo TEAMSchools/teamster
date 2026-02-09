@@ -1,4 +1,4 @@
-{% docs teammates_assignment_status %}
+{% docs staff_assignment_status %}
 
 The employment status of a teammate (also known as an employee). This dimension
 is frequently used to filter staff for analysis, such as counting only 'Active'
@@ -10,7 +10,7 @@ employees are not currently employed.
 
 {% enddocs %}
 
-{% docs teammates_race_ethnicity_reporting %}
+{% docs staff_race_ethnicity_reporting %}
 
 The race or ethnicity of an employee, based on self-reported data and grouped.
 Used in DEI reporting and filtering by demographic groups. Employees can
@@ -23,7 +23,7 @@ filtering.
 
 {% enddocs %}
 
-{% docs teammates_entity %}
+{% docs staff_entity %}
 
 Our organization is made up of multiple entities, also called business units or
 regions. 'KIPP TEAM and Family Schools Inc', the charter management organization
@@ -35,7 +35,7 @@ New Jersey. Used to group staff by organizational structure and business unit.
 
 {% enddocs %}
 
-{% docs teammates_location %}
+{% docs staff_location %}
 
 This is the physical location where the employee/teammate works. We have 19
 active school locations with names like "KIPP TEAM Academy" and "KIPP Lanning
@@ -47,7 +47,7 @@ district/network work.
 
 {% enddocs %}
 
-{% docs teammates_grade_band %}
+{% docs staff_grade_band %}
 
 Schools are divided into three grade bands: ES: Elementary or Primary schools
 (typically grades Kindergarten - 4) MS: Middle Schools (typically grades 5 - 8)
@@ -56,7 +56,7 @@ HS: High Schools (typically grades 9 - 12). Kids in grade 9 are called Freshman,
 
 {% enddocs %}
 
-{% docs teammates_department %}
+{% docs staff_department %}
 
 The department the employee/teammate belongs to. In schools this is sometimes
 the subject area they teach, like 'Science', 'Math' or 'ELA', which stands for
@@ -64,7 +64,7 @@ English/Language arts. Outside of schools are departments that serve many
 schools like 'Data', 'Technology', and 'Talent'. Commonly used to filter staff
 to see how they are allocated across departments. {% enddocs %}
 
-{% docs teammates_job_title %}
+{% docs staff_job_title %}
 
 The formal title of the employee's current position as entered in ADP, our Human
 Resources Information System. Examples: 'Teacher', 'Assistant Principal',
@@ -74,22 +74,22 @@ titles into a category to denote someone with a role teaching in the classroom.
 
 {% enddocs %}
 
-{% docs teammates_manager_name %}
+{% docs staff_manager_name %}
 
 The employee/teammate's formal manager as entered in ADP, our Human Resources
 Information System. For instructional roles, this person is often called a the
 teacher's 'coach'. Used to group or filter staff by reporting structure and
 analyze coaching loads. Example question: "How many teachers does this Assistant
-Principal coach?" is the same as "For how many employees/teammates is this
-person listed as the manager?"
+Principal coach?" is the same as "For how many employees/staff is this person
+listed as the manager?"
 
 {% enddocs %}
 
-{% docs teammates_is_teacher %} A boolean field to note whether someone is in a
-role where they teach in the classroom. We tend to group certain roles as
-"teacher" although the official job title may vary. This indicator includes all
-teammates/employees in these roles: 'Teacher','Teacher in Residence','ESE
-Teacher', 'Teacher ESL', 'Teacher in Residence ESL' and 'Learning Specialist'.
-Used to count the number of teammates in classroom instructional roles.
+{% docs staff_is_teacher %} A boolean field to note whether someone is in a role
+where they teach in the classroom. We tend to group certain roles as "teacher"
+although the official job title may vary. This indicator includes all
+staff/employees in these roles: 'Teacher','Teacher in Residence','ESE Teacher',
+'Teacher ESL', 'Teacher in Residence ESL' and 'Learning Specialist'. Used to
+count the number of staff in classroom instructional roles.
 
 {% enddocs %}
