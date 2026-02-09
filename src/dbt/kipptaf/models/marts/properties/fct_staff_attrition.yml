@@ -1,5 +1,5 @@
 models:
-  - name: fct_teammate_attrition
+  - name: fct_staff_attrition
 
     columns:
       - name: attrition_type

@@ -1,5 +1,5 @@
 models:
-  - name: fct_teammate_terminations
+  - name: fct_staff_terminations
 
     columns:
       - name: employee_number
