@@ -293,6 +293,7 @@ class FAST(FLDOECore, FLDOECategories):
     grade_8_fast_mathematics_achievement_level: str | None = None
     grade_8_fast_mathematics_percentile_rank: str | None = None
     grade_8_fast_mathematics_scale_score: str | None = None
+    source_file_name: str | None = None
 
     algebraic_reasoning_performance: str | None = None
     data_analysis_and_probability_performance: str | None = None

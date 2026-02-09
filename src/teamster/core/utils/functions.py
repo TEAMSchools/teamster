@@ -97,6 +97,7 @@ def dict_reader_to_records(
     dict_reader: csv.DictReader,
     slugify_cols: bool = True,
     slugify_replacements: list[list[str]] | None = None,
+    file_path: str = "",
 ) -> list[dict[str, str | None]]:
     if slugify_replacements is None:
         slugify_replacements = []
@@ -107,10 +108,17 @@ def dict_reader_to_records(
             for text in check.not_none(value=dict_reader.fieldnames)
         ]
 
-    return [
+    records = [
         {key: (value if value != "" else None) for key, value in row.items()}
         for row in dict_reader
     ]
+
+    source_file_name = file_path.split("/")[-1]
+
+    for row in records:
+        row["source_file_name"] = source_file_name
+
+    return records
 
 
 def csv_string_to_records(
@@ -126,17 +134,20 @@ def csv_string_to_records(
 
 
 def file_to_records(
-    file: str,
+    file_path: str,
     encoding: str = "utf-8",
     delimiter: str = ",",
     slugify_cols: bool = True,
     slugify_replacements: list[list[str]] | None = None,
 ) -> list[dict[str, str | None]]:
-    with open(file=file, encoding=encoding, mode="r") as f:
+    with open(file=file_path, encoding=encoding, mode="r") as f:
+        dict_reader = csv.DictReader(f=f, delimiter=delimiter)
+
         records = dict_reader_to_records(
-            dict_reader=csv.DictReader(f=f, delimiter=delimiter),
+            dict_reader=dict_reader,
             slugify_cols=slugify_cols,
             slugify_replacements=slugify_replacements,
+            file_path=file_path,
         )
 
     return records
