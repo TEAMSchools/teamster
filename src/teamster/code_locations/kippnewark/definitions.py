@@ -2,7 +2,6 @@ from dagster import (
     AssetSelection,
     AutomationConditionSensorDefinition,
     Definitions,
-    build_sensor_for_freshness_checks,
     load_assets_from_modules,
 )
 from dagster_k8s import k8s_job_executor
@@ -81,9 +80,6 @@ defs = Definitions(
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
             target=AssetSelection.all(),
-        ),
-        build_sensor_for_freshness_checks(
-            freshness_checks=asset_checks.freshness_checks
         ),
     ],
     resources={
