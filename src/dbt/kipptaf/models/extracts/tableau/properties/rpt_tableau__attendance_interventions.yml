@@ -37,3 +37,5 @@ models:
         data_type: string
       - name: is_chronic_absence
         data_type: boolean
+      - name: is_ca_exception
+        data_type: boolean
