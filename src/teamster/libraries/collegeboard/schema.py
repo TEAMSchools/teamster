@@ -377,6 +377,7 @@ class PSAT(BaseModel):
     writlang_ques_ans7: str | None = None
     writlang_ques_ans8: str | None = None
     writlang_ques_ans9: str | None = None
+    source_file_name: str | None = None
 
     filler: str | None = FILLER_FIELD
 
@@ -1476,5 +1477,6 @@ class SAT(BaseModel):
     writlang_ques_correct: str | None = None
     writlang_ques_incorrect: str | None = None
     writlang_ques_omit: str | None = None
+    source_file_name: str | None = None
 
     filler: str | None = FILLER_FIELD
