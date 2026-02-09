@@ -1,8 +1,6 @@
 models:
   - name: stg_google_sheets__finalsite__status_crosswalk
     columns:
-      - name: sre_academic_year
-        data_type: int64
       - name: enrollment_academic_year
         data_type: int64
       - name: enrollment_type
@@ -28,6 +26,8 @@ models:
       - name: valid_detailed_status
         data_type: boolean
       - name: applicant_ops
+        data_type: int64
+      - name: applicant_ops_alt
         data_type: int64
       - name: offered_ops
         data_type: int64
