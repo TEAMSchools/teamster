@@ -1308,7 +1308,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1TMkujoNxxAQw4B1hRWoIllpWZht1BAT5Wx006gXkVXU
-            sheet_range: src_google_sheets__finalsite__status_crosswalk_v2
+            sheet_range: src_google_sheets__finalsite__status_crosswalk_v4
             skip_leading_rows: 1
         config:
           meta:
@@ -1616,7 +1616,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1TMkujoNxxAQw4B1hRWoIllpWZht1BAT5Wx006gXkVXU
-            sheet_range: src_google_sheets__finalsite__goals
+            sheet_range: src_google_sheets__finalsite__goals_v2
             skip_leading_rows: 1
         config:
           meta:
@@ -1627,3 +1627,20 @@ sources:
                 - sheets
                 - finalsite
                 - goals
+      - name: src_google_sheets__finalsite__school_scaffold
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1TMkujoNxxAQw4B1hRWoIllpWZht1BAT5Wx006gXkVXU
+            sheet_range: src_google_sheets__finalsite__school_scaffold
+            skip_leading_rows: 1
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - finalsite
+                - school_scaffold
