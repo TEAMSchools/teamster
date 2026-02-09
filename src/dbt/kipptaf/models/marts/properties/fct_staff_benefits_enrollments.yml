@@ -1,5 +1,5 @@
 models:
-  - name: fct_benefits_enrollments
+  - name: fct_staff_benefits_enrollments
 
     columns:
       - name: employee_number
