@@ -189,6 +189,8 @@ models:
           enforced: true
     marts:
       +schema: marts
+      +contract:
+        enforced: true
     nsc:
       +schema: nsc
       staging:
