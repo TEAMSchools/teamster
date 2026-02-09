@@ -1,31 +1,24 @@
 models:
   - name: fct_microgoals
-    description: ""
+
     columns:
       - name: employee_number
         data_type: int64
-        description: ""
 
       - name: assignment_id
         data_type: string
-        description: ""
 
       - name: assignment_date
         data_type: date
-        description: ""
 
       - name: creator_name
         data_type: string
-        description: ""
 
       - name: goal_name
         data_type: string
-        description: ""
 
       - name: strand_name
         data_type: string
-        description: ""
 
       - name: bucket_name
         data_type: string
-        description: ""
