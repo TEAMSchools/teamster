@@ -100,7 +100,8 @@ with
                     'ESE Teacher',
                     'Learning Specialist',
                     'Teacher ESL',
-                    'Teacher in Residence ESL'
+                    'Teacher in Residence ESL',
+                    'Instructor in Residence'
                 ),
                 true,
                 false

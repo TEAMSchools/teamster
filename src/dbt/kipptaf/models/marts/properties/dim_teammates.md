@@ -25,12 +25,12 @@ filtering.
 
 {% docs teammates_entity %}
 
-Our organization is made up of four entities, also called business units or
+Our organization is made up of multiple entities, also called business units or
 regions. 'KIPP TEAM and Family Schools Inc', the charter management organization
 for three other entities 'TEAM Academy Charter School', which operates schools
 in Newark, New Jersey region, 'KIPP Cooper Norcross Academy' which operates
-schools in the Camden, New Jersey region, and 'KIPP Miami', which operates
-schools in the Miami, Florida region. Used to group staff by organizational
+schools in the Camden, New Jersey region, 'KIPP Miami', which operates
+schools in the Miami, Florida region, and 'KIPP Paterson' which operates in Paterson, New Jersey. Used to group staff by organizational
 structure and business unit.
 
 {% enddocs %}
