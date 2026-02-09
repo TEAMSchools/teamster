@@ -129,7 +129,7 @@ with
                     ),
                     interval 1 day
                 ),
-                date('9999-12-31')
+                '9999-12-31'
             ) as marts_effective_end_date,
         from roster as r
         left join

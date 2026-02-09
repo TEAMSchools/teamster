@@ -1,0 +1,22 @@
+exposures:
+  - name: cube_semantic_layer
+    label: Cube Semantic Layer
+    type: ml
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("dim_dates")
+      - ref("dim_locations")
+      - ref("dim_seats")
+      - ref("dim_staff")
+      - ref("dim_students")
+      - ref("dim_teammates")
+      - ref("dim_terms")
+      - ref("fct_attendance")
+      - ref("fct_microgoals")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - semanticmodel
+            - cube
