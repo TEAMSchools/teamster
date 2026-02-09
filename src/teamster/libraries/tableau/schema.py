@@ -149,3 +149,4 @@ class ViewCountPerView(BaseModel):
     workbook_id: str | None = None
     workbook_url: str | None = None
     worker: str | None = None
+    source_file_name: str | None = None
