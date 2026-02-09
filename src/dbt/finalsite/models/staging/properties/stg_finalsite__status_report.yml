@@ -51,3 +51,5 @@ models:
         data_type: int64
       - name: status_start_timestamp
         data_type: timestamp
+      - name: source_file_name
+        data_type: string
