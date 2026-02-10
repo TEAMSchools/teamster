@@ -59,6 +59,7 @@ with
     roster as (select *, from dedupe where surrogate_key != surrogate_key_lag),
 
     -- grade_levels as (select *, from {{ ref("int_powerschool__teacher_grade_levels") }}),
+    -- noqa: LT05
     managers as (select distinct reports_to_employee_number, from roster),
 
     -- performance_management_tiers as (
