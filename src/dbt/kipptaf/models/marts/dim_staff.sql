@@ -70,6 +70,11 @@ with
 
     final as (
         select
+            {{
+                dbt_utils.generate_surrogate_key(
+                    ["r.employee_number", "r.effective_date_start"]
+                )
+            }} as staff_history_key,
             r.effective_date_start as marts_effective_date_start,
             r.assignment_status,
             r.assignment_status_reason,

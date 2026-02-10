@@ -5,6 +5,15 @@ models:
       An SCD Type 2 table of teammates by work assignment and academic year.
 
     columns:
+      - name: staff_history_key
+        data_type: string
+        tests:
+          - unique:
+              config:
+                store_failures: true 
+          - not_null
+          
+
       - name: marts_effective_date_start
         data_type: date
         description:
@@ -104,17 +113,7 @@ models:
           Indicator for whether a teammate is listed as the reports_to person
           for another teammate in ADP.
 
-      - name: previous_salary
-        data_type: numeric
-        description:
-          The teammate's immediate prior salary to the one listed in this row.
-
-      - name: previous_job_title
-        data_type: string
-        description:
-          The teammates immediate prior job title to the one listed in this row.
-
-      - name: marts_effective_end_date
+      - name: marts_effective_date_end
         data_type: date
         description:
           A calculated end date using the day before the next valid,
