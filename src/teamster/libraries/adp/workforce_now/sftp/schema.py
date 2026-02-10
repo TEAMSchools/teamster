@@ -1,7 +1,11 @@
 from pydantic import BaseModel
 
 
-class AdditionalEarnings(BaseModel):
+class SFTPFile(BaseModel):
+    source_file_name: str | None = None
+
+
+class AdditionalEarnings(SFTPFile):
     additional_earnings_code: str | None = None
     additional_earnings_description: str | None = None
     check_voucher_number: str | None = None
@@ -15,14 +19,14 @@ class AdditionalEarnings(BaseModel):
     position_status: str | None = None
 
 
-class ComprehensiveBenefits(BaseModel):
+class ComprehensiveBenefits(SFTPFile):
     coverage_level: str | None = None
     plan_name: str | None = None
     plan_type: str | None = None
     position_id: str | None = None
 
 
-class PensionBenefitsEnrollments(BaseModel):
+class PensionBenefitsEnrollments(SFTPFile):
     coverage_level: str | None = None
     effective_date: str | None = None
     employee_number: str | None = None
@@ -34,7 +38,7 @@ class PensionBenefitsEnrollments(BaseModel):
     position_id: str | None = None
 
 
-class TimeAndAttendance(BaseModel):
+class TimeAndAttendance(SFTPFile):
     badge: str | None = None
     include_in_time_summary_payroll: str | None = None
     pay_class: str | None = None
@@ -43,7 +47,7 @@ class TimeAndAttendance(BaseModel):
     supervisor_position: str | None = None
 
 
-class EmployeeMemberships(BaseModel):
+class EmployeeMemberships(SFTPFile):
     associate_id: str | None = None
     membership_code: str | None = None
     membership_description: str | None = None

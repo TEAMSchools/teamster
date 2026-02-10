@@ -1,7 +1,11 @@
 from pydantic import BaseModel
 
 
-class SPEnrollments(BaseModel):
+class SFTPFile(BaseModel):
+    source_file_name: str | None = None
+
+
+class SPEnrollments(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     code1: str | None = None
@@ -17,7 +21,7 @@ class SPEnrollments(BaseModel):
     studentid: str | None = None
 
 
-class Users(BaseModel):
+class Users(SFTPFile):
     dcid: str | None = None
     access: str | None = None
     adminldapenabled: str | None = None
@@ -87,7 +91,7 @@ class Users(BaseModel):
     zip: str | None = None
 
 
-class Attendance(BaseModel):
+class Attendance(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     ada_value_code: str | None = None
@@ -119,7 +123,7 @@ class Attendance(BaseModel):
     yearid: str | None = None
 
 
-class AttendanceCode(BaseModel):
+class AttendanceCode(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     alternate_code: str | None = None
@@ -139,7 +143,7 @@ class AttendanceCode(BaseModel):
     yearid: str | None = None
 
 
-class AttendanceConversionItems(BaseModel):
+class AttendanceConversionItems(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     attendance_conversion_id: str | None = None
@@ -152,7 +156,7 @@ class AttendanceConversionItems(BaseModel):
     unused: str | None = None
 
 
-class BellSchedule(BaseModel):
+class BellSchedule(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     attendance_conversion_id: str | None = None
@@ -162,7 +166,7 @@ class BellSchedule(BaseModel):
     year_id: str | None = None
 
 
-class CalendarDay(BaseModel):
+class CalendarDay(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     a: str | None = None
@@ -187,7 +191,7 @@ class CalendarDay(BaseModel):
     whomodifiedtype: str | None = None
 
 
-class CC(BaseModel):
+class CC(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     ab_course_cmp_ext_crd: str | None = None
@@ -230,7 +234,7 @@ class CC(BaseModel):
     whomodifiedtype: str | None = None
 
 
-class CodeSet(BaseModel):
+class CodeSet(SFTPFile):
     alternatecode1: str | None = None
     alternatecode2: str | None = None
     changevalidation: str | None = None
@@ -256,7 +260,7 @@ class CodeSet(BaseModel):
     whomodified: str | None = None
 
 
-class Courses(BaseModel):
+class Courses(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     add_to_gpa: str | None = None
@@ -348,7 +352,7 @@ class Courses(BaseModel):
     whomodifiedtype: str | None = None
 
 
-class CycleDay(BaseModel):
+class CycleDay(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     abbreviation: str | None = None
@@ -361,7 +365,7 @@ class CycleDay(BaseModel):
     year_id: str | None = None
 
 
-class EmailAddress(BaseModel):
+class EmailAddress(SFTPFile):
     emailaddress: str | None = None
     emailaddressid: str | None = None
     whencreated: str | None = None
@@ -370,7 +374,7 @@ class EmailAddress(BaseModel):
     whomodified: str | None = None
 
 
-class FTE(BaseModel):
+class FTE(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     description: str | None = None
@@ -382,7 +386,7 @@ class FTE(BaseModel):
     yearid: str | None = None
 
 
-class Gen(BaseModel):
+class Gen(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     cat: str | None = None
@@ -412,7 +416,7 @@ class Gen(BaseModel):
     yearid: str | None = None
 
 
-class OriginalContactMap(BaseModel):
+class OriginalContactMap(SFTPFile):
     originalcontactmapid: str | None = None
     originalcontacttype: str | None = None
     studentcontactassocid: str | None = None
@@ -422,7 +426,7 @@ class OriginalContactMap(BaseModel):
     whomodified: str | None = None
 
 
-class Person(BaseModel):
+class Person(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     employer: str | None = None
@@ -442,7 +446,7 @@ class Person(BaseModel):
     whomodified: str | None = None
 
 
-class PersonAddress(BaseModel):
+class PersonAddress(SFTPFile):
     addressline3: str | None = None
     addressline4: str | None = None
     addressline5: str | None = None
@@ -465,7 +469,7 @@ class PersonAddress(BaseModel):
     whomodified: str | None = None
 
 
-class PersonAddressAssoc(BaseModel):
+class PersonAddressAssoc(SFTPFile):
     addresspriorityorder: str | None = None
     addresstypecodesetid: str | None = None
     enddate: str | None = None
@@ -479,7 +483,7 @@ class PersonAddressAssoc(BaseModel):
     whomodified: str | None = None
 
 
-class PersonEmailAddressAssoc(BaseModel):
+class PersonEmailAddressAssoc(SFTPFile):
     emailaddressid: str | None = None
     emailaddresspriorityorder: str | None = None
     emailtypecodesetid: str | None = None
@@ -492,7 +496,7 @@ class PersonEmailAddressAssoc(BaseModel):
     whomodified: str | None = None
 
 
-class PersonPhoneNumberAssoc(BaseModel):
+class PersonPhoneNumberAssoc(SFTPFile):
     ispreferred: str | None = None
     personid: str | None = None
     personphonenumberassocid: str | None = None
@@ -506,7 +510,7 @@ class PersonPhoneNumberAssoc(BaseModel):
     whomodified: str | None = None
 
 
-class PhoneNumber(BaseModel):
+class PhoneNumber(SFTPFile):
     issms: str | None = None
     phonenumber: str | None = None
     phonenumberext: str | None = None
@@ -517,7 +521,7 @@ class PhoneNumber(BaseModel):
     whomodified: str | None = None
 
 
-class Reenrollments(BaseModel):
+class Reenrollments(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     districtofresidence: str | None = None
@@ -544,7 +548,7 @@ class Reenrollments(BaseModel):
     withdrawal_reason_code: str | None = None
 
 
-class SNJCrsX(BaseModel):
+class SNJCrsX(SFTPFile):
     coursesdcid: str | None = None
     ap_course_subject: str | None = None
     block_schedule_session: str | None = None
@@ -570,7 +574,7 @@ class SNJCrsX(BaseModel):
     whomodified: str | None = None
 
 
-class SNJRenX(BaseModel):
+class SNJRenX(SFTPFile):
     reenrollmentsdcid: str | None = None
     alternativeeducationprogram_yn: str | None = None
     city: str | None = None
@@ -662,7 +666,7 @@ class SNJRenX(BaseModel):
     withdrawal_date: str | None = None
 
 
-class SNJStuX(BaseModel):
+class SNJStuX(SFTPFile):
     studentsdcid: str | None = None
     access_accountablecounty: str | None = None
     access_accountabledistrict: str | None = None
@@ -1097,7 +1101,7 @@ class SNJStuX(BaseModel):
     worldlang_assessment5: str | None = None
 
 
-class Schools(BaseModel):
+class Schools(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     abbreviation: str | None = None
@@ -1149,7 +1153,7 @@ class Schools(BaseModel):
     whomodifiedtype: str | None = None
 
 
-class SchoolStaff(BaseModel):
+class SchoolStaff(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     balance1: str | None = None
@@ -1194,7 +1198,7 @@ class SchoolStaff(BaseModel):
     whomodifiedtype: str | None = None
 
 
-class Sections(BaseModel):
+class Sections(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     att_mode_code: str | None = None
@@ -1260,7 +1264,7 @@ class Sections(BaseModel):
     whomodifiedtype: str | None = None
 
 
-class StudentContactAssoc(BaseModel):
+class StudentContactAssoc(SFTPFile):
     contactpriorityorder: str | None = None
     currreltypecodesetid: str | None = None
     personid: str | None = None
@@ -1272,7 +1276,7 @@ class StudentContactAssoc(BaseModel):
     whomodified: str | None = None
 
 
-class StudentContactDetail(BaseModel):
+class StudentContactDetail(SFTPFile):
     confidentialcommflag: str | None = None
     enddate: str | None = None
     excludefromstatereportingflg: str | None = None
@@ -1294,7 +1298,7 @@ class StudentContactDetail(BaseModel):
     whomodified: str | None = None
 
 
-class StudentCoreFields(BaseModel):
+class StudentCoreFields(SFTPFile):
     studentsdcid: str | None = None
     act_composite: str | None = None
     act_date: str | None = None
@@ -1419,7 +1423,7 @@ class StudentCoreFields(BaseModel):
     whomodified: str | None = None
 
 
-class Students(BaseModel):
+class Students(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     alert_discipline: str | None = None
@@ -1574,7 +1578,7 @@ class Students(BaseModel):
     zip: str | None = None
 
 
-class TermBins(BaseModel):
+class TermBins(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     changegradeto: str | None = None
@@ -1604,7 +1608,7 @@ class TermBins(BaseModel):
     yearid: str | None = None
 
 
-class Terms(BaseModel):
+class Terms(SFTPFile):
     id: str | None = None
     dcid: str | None = None
     abbreviation: str | None = None
@@ -1633,7 +1637,7 @@ class Terms(BaseModel):
     yearlycredithrs: str | None = None
 
 
-class StudentEmail(BaseModel):
+class StudentEmail(SFTPFile):
     student_number: str | None = None
     first_name: str | None = None
     last_name: str | None = None
