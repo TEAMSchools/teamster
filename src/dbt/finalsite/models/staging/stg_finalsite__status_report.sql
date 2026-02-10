@@ -2,7 +2,11 @@ with
     transformations as (
         select
             * except (
-                powerschool_student_number, `timestamp`, grade_level, enrollment_type
+                powerschool_student_number,
+                `timestamp`,
+                grade_level,
+                enrollment_type,
+                source_file_name
             ),
 
             enrollment_type as enrollment_type_raw,
@@ -12,6 +16,15 @@ with
             cast(`timestamp` as timestamp) as status_start_timestamp,
 
             cast(left(enrollment_year, 4) as int) as enrollment_academic_year,
+
+            regexp_extract(
+                source_file_name, r'\w+((?:Current|Next)_Year).+'
+            ) as extract_year,
+
+            parse_datetime(
+                '%d-%m-%Y_%H-%M-%S',
+                regexp_extract(source_file_name, r'\w+_(\d+-\d+-\d+_\d+-\d+-\d+).+')
+            ) as extract_timestamp,
 
             initcap(replace(`status`, '_', ' ')) as detailed_status,
 
