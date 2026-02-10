@@ -2,6 +2,12 @@ models:
   - name: dim_students
 
     columns:
+      - name: student_enrollments_key
+        data_type: string
+        tests:
+          - unique
+          - not_null
+          
       - name: student_number
         data_type: int64
 
