@@ -4,7 +4,9 @@ models:
       - name: terms_key
         data_type: string
         tests:
-          - unique
+          - unique:
+              config:
+                store_failures: true 
           - not_null
 
       - name: term_type
