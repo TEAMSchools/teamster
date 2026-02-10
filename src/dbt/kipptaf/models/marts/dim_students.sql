@@ -1,6 +1,7 @@
 with
     student_enrollments as (
-        select * from {{ ref("int_extracts__student_enrollments") }}
+        select *
+        from {{ ref("int_extracts__student_enrollments") }}
         where entrydate is not null
     ),
 
@@ -19,7 +20,7 @@ with
         select
             {{
                 dbt_utils.generate_surrogate_key(
-                    ["se.student_number", "se.entrydate"]
+                    ["se.student_number", "se.entrydate", "se.schoolid"]
                 )
             }} as student_enrollments_key,
             se.student_number,
