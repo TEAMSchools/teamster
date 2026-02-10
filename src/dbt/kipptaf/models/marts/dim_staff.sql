@@ -91,9 +91,9 @@ with
             r.gender_identity,
             r.salary,
 
-            gl.grade_level as grade_taught,
+            --gl.grade_level as grade_taught,
 
-            pm.final_tier as performance_management_tier,
+            --pm.final_tier as performance_management_tier,
 
             ye.years_experience_total,
             ye.years_teaching_total,
@@ -135,17 +135,17 @@ with
                     interval 1 day
                 ),
                 '9999-12-31'
-            ) as marts_effective_end_date,
+            ) as marts_effective_date_end,
         from roster as r
-        left join
-            grade_levels as gl
-            on r.powerschool_teacher_number = gl.teachernumber
-            and r.academic_year = gl.academic_year
-            and gl.grade_level_rank = 1
-        left join
-            performance_management_tiers as pm
-            on r.employee_number = pm.employee_number
-            and r.academic_year = pm.academic_year
+        -- left join
+        --     grade_levels as gl
+        --     on r.powerschool_teacher_number = gl.teachernumber
+        --     and r.academic_year = gl.academic_year
+        --     and gl.grade_level_rank = 1
+        -- left join
+        --     performance_management_tiers as pm
+        --     on r.employee_number = pm.employee_number
+        --     and r.academic_year = pm.academic_year
         left join
             years_experience as ye
             on r.employee_number = ye.employee_number

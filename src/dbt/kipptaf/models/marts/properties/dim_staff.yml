@@ -83,16 +83,16 @@ models:
           A teammate's base annual salary amount, before any other forms of
           compensation like stipends and bonuses.
 
-      - name: grade_taught
-        data_type: int64
-        description:
-          For teachers, the most common grade of students in their classes
+      # - name: grade_taught
+      #   data_type: int64
+      #   description:
+      #     For teachers, the most common grade of students in their classes
 
-      - name: performance_management_tier
-        data_type: int64
-        description:
-          For teachers, the tier level of their performance management score for
-          this academic year. The average of their MOY and EOY scores.
+      # - name: performance_management_tier
+      #   data_type: int64
+      #   description:
+      #     For teachers, the tier level of their performance management score for
+      #     this academic year. The average of their MOY and EOY scores.
 
       - name: years_experience_total
         data_type: float64
@@ -112,6 +112,16 @@ models:
         description:
           Indicator for whether a teammate is listed as the reports_to person
           for another teammate in ADP.
+      
+      - name: previous_salary
+        data_type: numeric
+        description:
+          The teammate's immediate prior salary to the one listed in this row.
+
+      - name: previous_job_title
+        data_type: string
+        description:
+          The teammates immediate prior job title to the one listed in this row.
 
       - name: marts_effective_date_end
         data_type: date
