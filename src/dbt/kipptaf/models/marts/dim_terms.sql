@@ -1,7 +1,7 @@
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["code", "start_date", "region", "school_id"]
+            ["type", "code", "name", "start_date", "region", "school_id"]
         )
     }} as terms_key,
     `type` as term_type,
