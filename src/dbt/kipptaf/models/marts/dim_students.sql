@@ -20,7 +20,7 @@ with
         select
             {{
                 dbt_utils.generate_surrogate_key(
-                    ["se.student_number", "se.entrydate", "se.schoolid"]
+                    ["se.student_number", "se.entrydate"]
                 )
             }} as student_enrollments_key,
             se.student_number,

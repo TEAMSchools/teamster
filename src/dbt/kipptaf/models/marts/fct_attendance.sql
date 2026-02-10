@@ -4,8 +4,11 @@ with
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["student_number", "calendardate"]) }}
-    as attendance_key,
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["student_number", "calendardate", "schoolid"]
+        )
+    }} as attendance_key,
     student_number,
     schoolid as school_id,
     calendardate as date_day,
