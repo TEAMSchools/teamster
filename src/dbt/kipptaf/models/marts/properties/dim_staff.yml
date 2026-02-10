@@ -10,9 +10,8 @@ models:
         tests:
           - unique:
               config:
-                store_failures: true 
+                store_failures: true
           - not_null
-          
 
       - name: marts_effective_date_start
         data_type: date
@@ -112,7 +111,7 @@ models:
         description:
           Indicator for whether a teammate is listed as the reports_to person
           for another teammate in ADP.
-      
+
       - name: previous_salary
         data_type: numeric
         description:

@@ -6,7 +6,7 @@ models:
         tests:
           - unique:
               config:
-                store_failures: true 
+                store_failures: true
           - not_null
 
       - name: term_type
