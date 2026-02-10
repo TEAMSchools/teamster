@@ -2,6 +2,14 @@ models:
   - name: fct_attendance
 
     columns:
+      - name: attendance_key
+        data_type: string
+        tests:
+          - unique:
+              config:
+                store_failures: true 
+          - not_null
+
       - name: student_number
         data_type: int64
 
