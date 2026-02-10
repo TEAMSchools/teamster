@@ -24,7 +24,7 @@ with
             parse_datetime(
                 '%d-%m-%Y_%H-%M-%S',
                 regexp_extract(source_file_name, r'\w+_(\d+-\d+-\d+_\d+-\d+-\d+).+')
-            ) as extract_timestamp,
+            ) as extract_datetime,
 
             initcap(replace(`status`, '_', ' ')) as detailed_status,
 
