@@ -59,7 +59,6 @@ with
     roster as (select *, from dedupe where surrogate_key != surrogate_key_lag),
 
     -- grade_levels as (select *, from {{ ref("int_powerschool__teacher_grade_levels") }}),
-    -- noqa: LT05
     managers as (select distinct reports_to_employee_number, from roster),
 
     -- performance_management_tiers as (
@@ -69,11 +68,12 @@ with
 
     final as (
         select
+            
             {{
                 dbt_utils.generate_surrogate_key(
                     ["r.employee_number", "r.effective_date_start"]
                 )
-            }} as staff_history_key,
+            }} as staff_history_key, -- noqa: LT05
             r.effective_date_start as marts_effective_date_start,
             r.assignment_status,
             r.assignment_status_reason,
