@@ -1,6 +1,7 @@
 with
     student_enrollments as (
         select * from {{ ref("int_extracts__student_enrollments") }}
+        where entrydate is not null
     ),
 
     overall_filters as (
@@ -16,6 +17,11 @@ with
 
     final as (
         select
+            {{
+                dbt_utils.generate_surrogate_key(
+                    ["se.student_number", "se.entrydate"]
+                )
+            }} as student_enrollments_key,
             se.student_number,
             se.entrydate as enrollment_start_date,
             se.exitdate as enrollment_end_date,
