@@ -1,7 +1,11 @@
 from pydantic import BaseModel, Field
 
 
-class FTE(BaseModel):
+class SFTPFile(BaseModel):
+    source_file_name: str | None = None
+
+
+class FTE(SFTPFile):
     school_number: str | None = None
     student_id: str | None = None
     florida_student_id: str | None = None
@@ -11,7 +15,7 @@ class FTE(BaseModel):
     fte_uncapped: str | None = None
 
 
-class FLDOECore(BaseModel):
+class FLDOECore(SFTPFile):
     date_taken: str | None = None
     district_use: str | None = None
     english_language_learner_ell_status: str | None = None
@@ -293,7 +297,6 @@ class FAST(FLDOECore, FLDOECategories):
     grade_8_fast_mathematics_achievement_level: str | None = None
     grade_8_fast_mathematics_percentile_rank: str | None = None
     grade_8_fast_mathematics_scale_score: str | None = None
-    source_file_name: str | None = None
 
     algebraic_reasoning_performance: str | None = None
     data_analysis_and_probability_performance: str | None = None
@@ -378,7 +381,7 @@ class Science(FLDOECore, FLDOECategories):
     )
 
 
-class FSA(BaseModel):
+class FSA(SFTPFile):
     conditioncode: str | None = None
     dis: str | None = None
     disname: str | None = None
