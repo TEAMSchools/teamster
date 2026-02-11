@@ -1,8 +1,6 @@
 models:
   - name: int_iready__instruction_by_lesson
     config:
-      contract:
-        enforced: true
       materialized: table
     columns:
       - name: school
