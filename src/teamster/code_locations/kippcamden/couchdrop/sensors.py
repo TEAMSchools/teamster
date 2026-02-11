@@ -6,6 +6,7 @@ from teamster.code_locations.kippcamden.pearson.assets import (
     student_list_report,
     student_test_update,
 )
+from teamster.code_locations.kipppaterson.finalsite.assets import status_report
 from teamster.libraries.couchdrop.sensors import build_couchdrop_sftp_sensor
 
 couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
@@ -15,6 +16,7 @@ couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
         njgpa,
         njsla_science,
         njsla,
+        status_report,
         student_list_report,
         student_test_update,
     ],
