@@ -20,7 +20,8 @@ with
                 collectiondate,
                 date1,
                 date2,
-                transaction_date
+                transaction_date,
+                source_file_name
             ),
 
             cast(collect as int) as collect,
