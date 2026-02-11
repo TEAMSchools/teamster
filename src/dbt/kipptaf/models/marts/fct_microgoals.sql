@@ -15,9 +15,11 @@ with
     final as (
         select
             gu.internal_id_int as employee_number,
+
             a.assignment_id,
             a.created_date_local as assignment_date,
             a.creator_name,
+
             m.tag_name as goal_name,
             m.strand_name,
             m.bucket_name,
@@ -28,6 +30,13 @@ with
 
     )
 
-select *,
+select
+    employee_number,
+    assignment_id,
+    assignment_date,
+    creator_name,
+    goal_name,
+    strand_name,
+    bucket_name,
 from final
 where goal_name is not null
