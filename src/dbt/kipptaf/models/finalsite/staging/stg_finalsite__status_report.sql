@@ -10,7 +10,7 @@ with
         }}
     ),
 
-    latest_region_calc as (
+    region_calc as (
         -- trunk-ignore(sqlfluff/AM04)
         select
             *, initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
@@ -26,4 +26,4 @@ select
         rows between unbounded preceding and unbounded following
     ) as latest_region,
 
-from latest_region_calc
+from region_calc
