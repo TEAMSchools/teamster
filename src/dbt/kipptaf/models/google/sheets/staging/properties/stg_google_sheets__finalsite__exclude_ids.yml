@@ -1,5 +1,0 @@
-models:
-  - name: stg_google_sheets__finalsite__exclude_ids
-    columns:
-      - name: finalsite_student_id
-        data_type: string
