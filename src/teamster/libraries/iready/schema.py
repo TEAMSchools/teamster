@@ -21,6 +21,7 @@ class IReadyBaseModel(BaseModel):
     student_id: str | None = None
     subject: str | None = None
     user_name: str | None = None
+    source_file_name: str | None = None
 
 
 class DiagnosticInstruction(IReadyBaseModel):
@@ -439,3 +440,4 @@ class PersonalizedInstructionSummary(BaseModel):
     )
     i_ready_pro_whole_numbers_and_operations_skills_completed: str | None = None
     i_ready_pro_whole_numbers_and_operations_skills_successful: str | None = None
+    source_file_name: str | None = None

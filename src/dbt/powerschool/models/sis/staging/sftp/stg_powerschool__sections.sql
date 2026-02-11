@@ -35,7 +35,8 @@ select
         wheretaught,
         wheretaughtdistrict,
         whomodifiedid,
-        comment
+        comment,
+        source_file_name
     ),
 
     comment as comment_value,

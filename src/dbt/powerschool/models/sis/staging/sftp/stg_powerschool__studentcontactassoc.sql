@@ -6,7 +6,8 @@ select
         studentcontactassocid,
         studentdcid,
         whencreated,
-        whenmodified
+        whenmodified,
+        source_file_name
     ),
 
     cast(contactpriorityorder as int) as contactpriorityorder,

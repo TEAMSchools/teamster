@@ -119,7 +119,8 @@ select
         sid_exitdate,
         withdrawal_date,
         whencreated,
-        whenmodified
+        whenmodified,
+        source_file_name
     ),
 
     cast(asmt_exclude_ela as int) as asmt_exclude_ela,
