@@ -211,3 +211,5 @@ models:
         data_type: integer
       - name: _dagster_partition_subject
         data_type: string
+      - name: source_file_name
+        data_type: string

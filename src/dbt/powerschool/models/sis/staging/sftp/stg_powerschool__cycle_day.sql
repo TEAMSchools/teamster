@@ -1,5 +1,5 @@
 select
-    * except (day_number, dcid, id, schoolid, sortorder, year_id),
+    * except (day_number, dcid, id, schoolid, sortorder, year_id, source_file_name),
 
     cast(dcid as int) as dcid,
     cast(id as int) as id,
