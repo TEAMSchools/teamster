@@ -5,7 +5,7 @@ select
     date_trunc(date_day, week(monday)) as week_start_monday,
 
     -- trunk-ignore(sqlfluff/LT01)
-    last_day(date_day, week(monday)) as week_end_sunday
+    last_day(date_day, week(monday)) as week_end_sunday,
 
     {{ date_to_fiscal_year(date_field="date_day", start_month=7, year_source="start") }}
     as academic_year,
