@@ -1,5 +1,5 @@
 select
-    * except (dcid, fte_value, id, schoolid, yearid),
+    * except (dcid, fte_value, id, schoolid, yearid, source_file_name),
 
     cast(dcid as int) as dcid,
     cast(id as int) as id,

@@ -26,7 +26,8 @@ select
         wm_exclude,
         wm_statusdate,
         wm_ta_date,
-        wm_tier
+        wm_tier,
+        source_file_name
     ),
 
     cast(`group` as int) as groupvalue,

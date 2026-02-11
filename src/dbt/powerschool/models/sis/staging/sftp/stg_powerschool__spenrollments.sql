@@ -9,7 +9,8 @@ with
                 schoolid,
                 studentid,
                 enter_date,
-                exit_date
+                exit_date,
+                source_file_name
             ),
 
             cast(dcid as int) as dcid,

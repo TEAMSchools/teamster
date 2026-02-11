@@ -1,5 +1,5 @@
 select
-    * except (issms, phonenumberid, whencreated, whenmodified),
+    * except (issms, phonenumberid, whencreated, whenmodified, source_file_name),
 
     cast(issms as int) as issms,
     cast(phonenumberid as int) as phonenumberid,

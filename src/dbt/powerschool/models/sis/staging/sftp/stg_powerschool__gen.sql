@@ -16,7 +16,8 @@ select
         valueli4,
         valuer,
         valuer2,
-        yearid
+        yearid,
+        source_file_name
     ),
 
     cast(dcid as int) as dcid,

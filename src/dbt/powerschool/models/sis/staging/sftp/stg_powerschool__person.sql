@@ -9,7 +9,8 @@ select
         statecontactnumber,
         suffixcodesetid,
         whencreated,
-        whenmodified
+        whenmodified,
+        source_file_name
     ),
 
     cast(dcid as int) as dcid,
