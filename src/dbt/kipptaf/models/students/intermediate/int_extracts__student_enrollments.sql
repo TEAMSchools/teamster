@@ -81,29 +81,13 @@ with
             academic_year,
             student_number,
 
-            case
-                when
-                    lag(academic_year) over (
-                        partition by student_number order by academic_year
-                    )
-                    is null
-                then 'New'
-                when
-                    coalesce(
-                        lag(
-                            sum(if(date_diff(exitdate, entrydate, day) >= 7, 1, 0))
-                        ) over (partition by student_number order by academic_year),
-                        0
-                    )
-                    = 0
-                then 'New'
-                else 'Returner'
-            end as finalsite_enrollment_type,
+            if(
+                sum(date_diff(exitdate, entrydate, day)) >= 7, 'Returner', 'New'
+            ) as next_year_enrolllment_type,
 
         from {{ ref("base_powerschool__student_enrollments") }}
         where grade_level != 99
-        group by
-            _dbt_source_relation, academic_year, student_number, first_name, last_name
+        group by _dbt_source_relation, academic_year, student_number
     ),
 
     finalsite_student_id_calc as (
