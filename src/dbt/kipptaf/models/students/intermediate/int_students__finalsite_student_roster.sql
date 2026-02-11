@@ -36,7 +36,7 @@ with
             on n.finalsite_student_id = c.finalsite_student_id
         where
             n.extract_year = 'Next_Year'
-            -- and n.detailed_status != 'Inactive Inquiry'
+            and n.detailed_status != 'Inactive Inquiry'
             and c.finalsite_student_id is null
     ),
 
