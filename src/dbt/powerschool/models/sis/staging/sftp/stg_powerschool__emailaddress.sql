@@ -1,5 +1,5 @@
 select
-    * except (emailaddressid, whencreated, whenmodified),
+    * except (emailaddressid, whencreated, whenmodified, source_file_name),
 
     cast(emailaddressid as int) as emailaddressid,
 

@@ -8,7 +8,8 @@ select
         id,
         input_value,
         unused,
-        comment
+        comment,
+        source_file_name
     ),
 
     comment as comment_value,

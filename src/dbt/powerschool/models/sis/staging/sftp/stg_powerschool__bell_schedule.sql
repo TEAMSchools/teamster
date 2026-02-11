@@ -1,5 +1,5 @@
 select
-    * except (attendance_conversion_id, dcid, id, schoolid, year_id),
+    * except (attendance_conversion_id, dcid, id, schoolid, year_id, source_file_name),
 
     cast(attendance_conversion_id as int) as attendance_conversion_id,
     cast(dcid as int) as dcid,

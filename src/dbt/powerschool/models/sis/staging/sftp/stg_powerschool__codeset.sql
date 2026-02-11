@@ -10,7 +10,8 @@ select
         effectivestartdate,
         effectiveenddate,
         whencreated,
-        whenmodified
+        whenmodified,
+        source_file_name
     ),
 
     cast(codesetid as int) as codesetid,

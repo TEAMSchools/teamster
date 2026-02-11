@@ -519,7 +519,11 @@ SFTP assets
 """
 
 
-class ReconcileAttendance(BaseModel):
+class SFTPFile(BaseModel):
+    source_file_name: str | None = None
+
+
+class ReconcileAttendance(SFTPFile):
     attendancebehavior: str | None = None
     attendancedate: str | None = None
     schoolname: str | None = None
@@ -532,7 +536,7 @@ class ReconcileAttendance(BaseModel):
     unnamed_9: str | None = None
 
 
-class ReconcileSuspensions(BaseModel):
+class ReconcileSuspensions(SFTPFile):
     attendancebehavior: str | None = None
     attendancedate: str | None = None
     conend: str | None = None
