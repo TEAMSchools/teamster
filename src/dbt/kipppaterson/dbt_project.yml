@@ -31,8 +31,6 @@ models:
     mclass:
       api:
         +enabled: false
-  finalsite:
-    +enabled: false
   pearson:
     +materialized: table
     staging:
@@ -139,8 +137,6 @@ sources:
       +enabled: false
     amplify_dds:
       +enabled: false
-  finalsite:
-    +enabled: false
   pearson:
     pearson:
       src_pearson__njgpa:
