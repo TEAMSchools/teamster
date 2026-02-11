@@ -185,8 +185,8 @@ select
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
     if(
-        e.grade_level = 99, null, coalesce(fs.finalsite_enrollment_type, 'New')
-    ) as finalsite_enrollment_type,
+        e.grade_level = 99, null, fs.next_year_enrolllment_type
+    ) as next_year_enrolllment_type,
 
     if(ovg.fafsa_opt_out is not null, 'Yes', 'No') as overgrad_fafsa_opt_out,
 
