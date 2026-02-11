@@ -188,6 +188,8 @@ select
     ny.next_year_school,
     ny.next_year_schoolid,
 
+    fid.finalsite_student_id,
+
     'KTAF' as district,
 
     concat(e.region, e.school_level) as region_school_level,
