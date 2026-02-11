@@ -1,9 +1,4 @@
 select
-    {{
-        dbt_utils.generate_surrogate_key(
-            ["type", "code", "name", "start_date", "region", "school_id"]
-        )
-    }} as terms_key,
     `type` as term_type,
     code as term_code,
     `name` as term_name,
@@ -19,4 +14,10 @@ select
     lockbox_date,
     is_current,
     city,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["type", "code", "name", "start_date", "region", "school_id"]
+        )
+    }} as terms_key,
 from {{ ref("stg_google_sheets__reporting__terms") }}

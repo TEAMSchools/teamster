@@ -1,14 +1,4 @@
-with
-    daily_attendance as (
-        select *, from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
-    )
-
 select
-    {{
-        dbt_utils.generate_surrogate_key(
-            ["student_number", "calendardate", "schoolid"]
-        )
-    }} as attendance_key,
     student_number,
     schoolid as school_id,
     calendardate as date_day,
@@ -26,4 +16,10 @@ select
     semester,
     term,
     att_code as attendance_code,
-from daily_attendance
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["student_number", "calendardate", "schoolid"]
+        )
+    }} as attendance_key,
+from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
