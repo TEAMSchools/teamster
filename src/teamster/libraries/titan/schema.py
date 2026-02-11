@@ -14,6 +14,7 @@ class PersonData(BaseModel):
     total_balance: str | None = None
     total_negative_balance: str | None = None
     total_positive_balance: str | None = None
+    source_file_name: str | None = None
 
 
 class IncomeFormData(BaseModel):

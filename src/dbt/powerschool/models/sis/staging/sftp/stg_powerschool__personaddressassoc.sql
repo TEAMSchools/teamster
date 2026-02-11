@@ -8,7 +8,8 @@ select
         enddate,
         startdate,
         whencreated,
-        whenmodified
+        whenmodified,
+        source_file_name
     ),
 
     cast(addresspriorityorder as int) as addresspriorityorder,

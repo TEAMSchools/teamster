@@ -39,3 +39,4 @@ class NJSmartPowerschool(BaseModel):
     ti_serv_other: str | None = None
     ti_serv_physical: str | None = None
     ti_serv_speech: str | None = None
+    source_file_name: str | None = None

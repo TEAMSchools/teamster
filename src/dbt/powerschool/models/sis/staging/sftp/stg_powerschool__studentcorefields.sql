@@ -1,5 +1,12 @@
 select
-    * except (lep_status, studentsdcid, prevstudentid, whencreated, whenmodified),
+    * except (
+        lep_status,
+        studentsdcid,
+        prevstudentid,
+        whencreated,
+        whenmodified,
+        source_file_name
+    ),
 
     cast(studentsdcid as int) as studentsdcid,
     cast(prevstudentid as int) as prevstudentid,

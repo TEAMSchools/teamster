@@ -33,7 +33,7 @@ def build_mclass_asset(asset_key, dyd_payload, partitions_def, schema):
         if "NO_DATA" in response.text:
             raise Exception(response.json())
 
-        records = csv_string_to_records(response.text)
+        records = csv_string_to_records(csv_string=response.text)
 
         yield Output(value=(records, schema), metadata={"records": len(records)})
         yield check_avro_schema_valid(

@@ -175,7 +175,13 @@ FILLER_FIELD = Field(
 )
 
 
-class PARCC(BaseModel):
+class SFTPFile(BaseModel):
+    source_file_name: str | None = None
+
+    filler: str | None = FILLER_FIELD
+
+
+class PARCC(SFTPFile):
     accountabledistrictcode: str | None = None
     accountabledistrictname: str | None = None
     accountableorganizationaltype: str | None = None
@@ -396,10 +402,8 @@ class PARCC(BaseModel):
     wordpredictionforelal: str | None = None
     wordtoworddictionaryenglishnativelanguage: str | None = None
 
-    filler: str | None = FILLER_FIELD
 
-
-class NJSLA(BaseModel):
+class NJSLA(SFTPFile):
     accountabledistrictcode: str | None = None
     accountabledistrictname: str | None = None
     accountableorganizationaltype: str | None = None
@@ -597,10 +601,8 @@ class NJSLA(BaseModel):
     wordprediction: str | None = None
     wordtoworddictionaryenglishnativelanguage: str | None = None
 
-    filler: str | None = FILLER_FIELD
 
-
-class NJGPA(BaseModel):
+class NJGPA(SFTPFile):
     accountabledistrictcode: str | None = None
     accountabledistrictname: str | None = None
     accountableorganizationaltype: str | None = None
@@ -776,10 +778,8 @@ class NJGPA(BaseModel):
     wordprediction: str | None = None
     wordtoworddictionaryenglishnativelanguage: str | None = None
 
-    filler: str | None = FILLER_FIELD
 
-
-class StudentListReport(BaseModel):
+class StudentListReport(SFTPFile):
     accountable_school: str | None = None
     date_of_birth: str | None = None
     first_name: str | None = None
@@ -792,7 +792,7 @@ class StudentListReport(BaseModel):
     testing_school: str | None = None
 
 
-class StudentTestUpdate(BaseModel):
+class StudentTestUpdate(SFTPFile):
     accountable_district_code: str | None = None
     accountable_school_code: str | None = None
     administration_directions_clarified_in_student_s_native_language: str | None = None
@@ -890,5 +890,3 @@ class StudentTestUpdate(BaseModel):
     white: str | None = None
     word_prediction: str | None = None
     word_to_word_dictionary_english_native_language: str | None = None
-
-    filler: str | None = FILLER_FIELD
