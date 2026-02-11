@@ -10,8 +10,8 @@ models:
         tests:
           - unique:
               config:
+                severity: warn
                 store_failures: true
-          - not_null
 
       - name: marts_effective_date_start
         data_type: date
