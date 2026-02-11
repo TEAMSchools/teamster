@@ -1,8 +1,22 @@
 with
+    active_finalsite_by_extract_year as (
+        select *,
+        from {{ ref("int_finalsite__status_report") }}
+        where extract_date_time = latest_extract_datetime
+    )
+
     final_enrollment_calc as (
         select
             f._dbt_source_relation,
+            f.enrollment_year,
             f.enrollment_academic_year,
+            f.enrollment_academic_year_display,
+            f.sre_academic_year_start,
+            f.sre_academic_year_end,
+            f.extract_year,
+            f.extract_datetime,
+            f.latest_extract_datetime,
+            f.org,
             f.region,
             f.latest_region,
             f.schoolid,
@@ -10,14 +24,21 @@ with
             f.school,
             f.latest_school,
             f.finalsite_student_id,
-            f.powerschool_student_number,
-            f.last_name,
             f.first_name,
+            f.last_name,
+            f.grade_level_name,
             f.grade_level,
+            f.status,
             f.detailed_status,
+            f.status_order,
             f.status_start_date,
             f.status_end_date,
             f.days_in_status,
+            f.rn,
+            f.enrollment_type_raw,
+
+            e.enroll_status as enroll_yr_min_1_enroll_status,
+            e.finalsite_enrollment_type as enroll_yr_min_1_enrollment_type,
 
             case
                 e.finalsite_enrollment_type
@@ -33,12 +54,14 @@ with
             {{ ref("int_extracts__student_enrollments") }} as e
             on f.enrollment_academic_year - 1 = e.academic_year
             and f.powerschool_student_number = e.student_number
+            and e.rn_year = 1
     )
 
 select
     f.*,
 
     x.applicant_ops as student_applicant_ops,
+    x.applicant_ops_alt as student_applicant_ops_alt,
     x.offered_ops as student_offered_ops,
     x.pending_offer_ops as student_pending_offer_ops,
     x.overall_conversion_ops as student_overall_conversion_ops,

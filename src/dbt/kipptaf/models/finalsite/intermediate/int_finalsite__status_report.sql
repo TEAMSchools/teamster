@@ -32,6 +32,10 @@ select
     coalesce(xl.powerschool_school_id, 0) as latest_schoolid,
     coalesce(xl.abbreviation, 'No School Assigned') as latest_school,
 
+    max(f.extract_datetime) over (
+        partition by f.extract_year
+    ) as latest_extract_datetime,
+
 from {{ ref("stg_finalsite__status_report") }} as f
 left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as x on f.school = x.name
