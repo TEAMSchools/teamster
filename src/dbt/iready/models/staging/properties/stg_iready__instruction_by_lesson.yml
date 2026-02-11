@@ -43,3 +43,5 @@ models:
         data_type: date
       - name: passed_or_not_passed_numeric
         data_type: float64
+      - name: source_file_name
+        data_type: string

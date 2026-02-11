@@ -7,7 +7,8 @@ select
         personemailaddressassocid,
         personid,
         whencreated,
-        whenmodified
+        whenmodified,
+        source_file_name
     ),
 
     cast(emailaddressid as int) as emailaddressid,
