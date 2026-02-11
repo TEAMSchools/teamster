@@ -2,7 +2,7 @@ models:
   - name: stg_performance_management__observation_details_archive
     config:
       contract:
-        enabled: true
+        enforced: true
       # enabled: false
     columns:
       - name: employee_number
@@ -73,3 +73,5 @@ models:
         data_type: string
       - name: eval_date
         data_type: date
+      - name: form_term
+        data_type: string

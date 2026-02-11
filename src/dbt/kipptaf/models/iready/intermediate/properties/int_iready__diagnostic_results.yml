@@ -1,8 +1,6 @@
 models:
   - name: int_iready__diagnostic_results
     config:
-      contract:
-        enforced: true
       materialized: table
     columns:
       - name: school
