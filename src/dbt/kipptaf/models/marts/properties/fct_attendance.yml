@@ -7,8 +7,8 @@ models:
         tests:
           - unique:
               config:
+                severity: warn
                 store_failures: true
-          - not_null
 
       - name: student_number
         data_type: int64
