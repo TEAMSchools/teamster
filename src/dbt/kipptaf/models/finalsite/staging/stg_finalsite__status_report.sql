@@ -10,7 +10,7 @@ with
         }}
     ),
 
-    latest_region_calc as (
+    region_calc as (
         -- trunk-ignore(sqlfluff/AM04)
         select
             *, initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
@@ -18,7 +18,11 @@ with
     )
 
 select
-    *,
+    * except (extract_year, first_name),
+
+    initcap(first_name) as first_name,
+
+    coalesce(extract_year, 'Next_Year') as extract_year,
 
     last_value(region ignore nulls) over (
         partition by enrollment_academic_year, finalsite_student_id
@@ -26,4 +30,10 @@ select
         rows between unbounded preceding and unbounded following
     ) as latest_region,
 
-from latest_region_calc
+    last_value(grade_level ignore nulls) over (
+        partition by enrollment_academic_year, finalsite_student_id
+        order by status_start_timestamp asc, status_order asc
+        rows between unbounded preceding and unbounded following
+    ) as latest_grade_level,
+
+from region_calc
