@@ -47,6 +47,7 @@ with
 
 select l.*,
 from latest_region_grade as l
-left join {{ ref('stg_google_sheets__finalsite__exclude_ids') }} as e
-on l.finalsite_student_id = e.finalsite_student_id
+left join
+    {{ ref("stg_google_sheets__finalsite__exclude_ids") }} as e
+    on l.finalsite_student_id = e.finalsite_student_id
 where e.finalsite_student_id is null
