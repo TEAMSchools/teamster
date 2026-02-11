@@ -1,4 +1,5 @@
 from teamster.code_locations.kippcamden import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kippcamden.finalsite.assets import status_report
 from teamster.code_locations.kippcamden.pearson.assets import (
     njgpa,
     njsla,
@@ -6,7 +7,6 @@ from teamster.code_locations.kippcamden.pearson.assets import (
     student_list_report,
     student_test_update,
 )
-from teamster.code_locations.kipppaterson.finalsite.assets import status_report
 from teamster.libraries.couchdrop.sensors import build_couchdrop_sftp_sensor
 
 couchdrop_sftp_sensor = build_couchdrop_sftp_sensor(
