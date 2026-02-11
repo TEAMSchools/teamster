@@ -10,4 +10,6 @@ select distinct
     campus_name,
 
     coalesce(location_abbreviation, location_clean_name) as location_abbreviation,
+
+    {{ dbt_utils.generate_surrogate_key(["location_name"]) }} as locations_key,
 from {{ ref("int_people__location_crosswalk") }}
