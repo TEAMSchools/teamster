@@ -1,5 +1,13 @@
 models:
   - name: int_powerschool__calendar_week
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - schoolid
+              - week_start_date
+          config:
+            store_failures: true
     columns:
       - name: schoolid
         data_type: int64
