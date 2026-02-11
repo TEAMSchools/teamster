@@ -104,6 +104,12 @@ with
         where grade_level != 99
         group by
             _dbt_source_relation, academic_year, student_number, first_name, last_name
+    ),
+
+    finalsite_student_id_calc as (
+        select powerschool_student_number, finalsite_student_id,
+        from {{ ref("int_finalsite__status_report") }}
+        where powerschool_student_number is not null and latest_finalsite_student_id = 1
     )
 
 select
@@ -181,6 +187,8 @@ select
 
     ny.next_year_school,
     ny.next_year_schoolid,
+
+    fid.finalsite_student_id,
 
     'KTAF' as district,
 
@@ -405,6 +413,9 @@ left join
     on e.academic_year = fs.academic_year
     and e.student_number = fs.student_number
     and {{ union_dataset_join_clause(left_alias="e", right_alias="fs") }}
+left join
+    finalsite_student_id_calc as fid
+    on e.student_number = fid.powerschool_student_number
 left join
     {{ ref("base_powerschool__course_enrollments") }} as sip
     on e.student_number = sip.students_student_number
