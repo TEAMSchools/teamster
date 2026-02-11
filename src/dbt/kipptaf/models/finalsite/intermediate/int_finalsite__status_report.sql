@@ -36,6 +36,11 @@ select
         partition by f.extract_year
     ) as latest_extract_datetime,
 
+    row_number() over (
+        partition by f.latest_powerschool_student_number, f.finalsite_student_id
+        order by f.extract_datetime desc
+    ) as latest_finalsite_student_id,
+
 from {{ ref("stg_finalsite__status_report") }} as f
 left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as x on f.school = x.name

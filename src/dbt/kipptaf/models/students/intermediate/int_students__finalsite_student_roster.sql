@@ -1,9 +1,52 @@
 with
-    active_finalsite_by_extract_year as (
-        select *,
+    -- trunk-ignore(sqlfluff/ST03)
+    active_finalsite_for_current_year as (
+        select
+            {{ var("current_academic_year") }} as enrollment_academic_year,
+            finalsite_student_id,
+
         from {{ ref("int_finalsite__status_report") }}
-        where extract_date_time = latest_extract_datetime
-    )
+        where
+            extract_year = 'Current_Year'
+            and detailed_status = 'Enrolled'
+            and powerschool_student_number is not null
+
+        union all
+
+        select academic_year as enrollment_academic_year, finalsite_student_id,
+
+        from {{ ref("int_extracts__student_enrollments") }}
+        where
+            academic_year = {{ var("current_academic_year") }}
+            and finalsite_student_id is not null
+            and grade_level != 99
+            and enroll_status = 0
+            and rn_year = 1
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="active_finalsite_for_current_year",
+                partition_by="enrollment_academic_year, finalsite_student_id",
+                order_by="finalsite_student_id",
+            )
+        }}
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03)
+    active_finalsite_for_next_year as (
+        select
+            {{ var("current_academic_year") }} + 1 as enrollment_academic_year,
+            b.finalsite_student_id,
+
+        from {{ ref("int_finalsite__status_report") }} as b
+        left join deduplicate as d on b.finalsite_student_id = d.finalsite_student_id
+        where
+            b.extract_year = 'Next_Year'
+            and b.latest_finalsite_student_id = 1
+            and d.finalsite_student_id is null
+    ),
 
     final_enrollment_calc as (
         select
@@ -24,6 +67,7 @@ with
             f.school,
             f.latest_school,
             f.finalsite_student_id,
+            f.powerschool_student_number,
             f.first_name,
             f.last_name,
             f.grade_level_name,
@@ -54,6 +98,7 @@ with
             {{ ref("int_extracts__student_enrollments") }} as e
             on f.enrollment_academic_year - 1 = e.academic_year
             and f.powerschool_student_number = e.student_number
+            and e.grade_level != 99
             and e.rn_year = 1
     )
 
