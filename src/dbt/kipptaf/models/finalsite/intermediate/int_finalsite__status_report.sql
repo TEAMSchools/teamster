@@ -33,7 +33,7 @@ select
     coalesce(xl.abbreviation, 'No School Assigned') as latest_school,
 
     max(f.extract_datetime) over (
-        partition by f.region,f.extract_year
+        partition by f.region, f.extract_year
     ) as latest_extract_datetime,
 
     row_number() over (
