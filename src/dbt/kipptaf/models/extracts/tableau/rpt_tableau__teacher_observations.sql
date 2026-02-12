@@ -101,7 +101,7 @@ select
 
     rc.formatted_name as observer_name,
 
-    gl.grade_taught,
+    gl.grade_level as grade_taught,
 
     if(op.observation_id is not null, 1, 0) as is_observed,
 
@@ -170,7 +170,7 @@ select
 
     rc.formatted_name as observer_name,
 
-    gl.grade_taught,
+    gl.grade_level as grade_taught,
 
     if(op.observation_id is not null, 1, 0) as is_observed,
 
