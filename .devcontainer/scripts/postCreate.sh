@@ -69,18 +69,6 @@ uv tool install datamodel-code-generator
 uv tool install dagster-dg
 uv sync
 
-# install dbt deps for packages
-uv run dbt deps --project-dir=src/dbt/amplify
-uv run dbt deps --project-dir=src/dbt/deanslist
-uv run dbt deps --project-dir=src/dbt/edplan
-uv run dbt deps --project-dir=src/dbt/finalsite
-uv run dbt deps --project-dir=src/dbt/iready
-uv run dbt deps --project-dir=src/dbt/overgrad
-uv run dbt deps --project-dir=src/dbt/pearson
-uv run dbt deps --project-dir=src/dbt/powerschool
-uv run dbt deps --project-dir=src/dbt/renlearn
-uv run dbt deps --project-dir=src/dbt/titan
-
 # install dbt deps for projects
 uv run dbt deps --project-dir=src/dbt/kippcamden
 uv run dbt deps --project-dir=src/dbt/kippmiami
