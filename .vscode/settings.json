@@ -83,5 +83,12 @@
     "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/packages-latest.json": [
       "packages.yml"
     ]
-  }
+  },
+  "dbt.allowListFolders": [
+    "src/dbt/kipptaf",
+    "src/dbt/kippcamden",
+    "src/dbt/kippmiami",
+    "src/dbt/kippnewark",
+    "src/dbt/kipppaterson"
+  ]
 }
