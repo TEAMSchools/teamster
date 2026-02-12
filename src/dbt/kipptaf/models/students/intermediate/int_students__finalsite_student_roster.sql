@@ -89,6 +89,7 @@ select
     f.enrollment_academic_year_display,
     f.sre_academic_year_start,
     f.sre_academic_year_end,
+    f.org,
     f.region,
     f.latest_region,
     f.schoolid,
@@ -122,6 +123,11 @@ select
     x.offers_to_enrolled_den as student_offers_to_enrolled_den,
     x.offers_to_enrolled_num as student_offers_to_enrolled_num,
     x.waitlisted as student_waitlisted,
+
+    first_value(f.detailed_status) over (
+        partition by a.enrollment_academic_year, a.latest_finalsite_student_id
+        order by f.status_start_date desc
+    ) as latest_status,
 
 from active_fs_roster as a
 inner join
