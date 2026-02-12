@@ -1,7 +1,11 @@
 with
     most_recent_students as (
         -- need distinct because of students with multiple apps
-        select distinct latest_finalsite_student_id,
+        select distinct
+            coalesce(
+                latest_finalsite_student_id, finalsite_student_id
+            ) as finalsite_student_id,
+
         from {{ ref("int_finalsite__status_report") }}
         where extract_datetime = latest_extract_datetime
     ),
@@ -16,7 +20,7 @@ with
         from {{ ref("int_finalsite__status_report") }} as c
         inner join
             most_recent_students as m
-            on c.latest_finalsite_student_id = m.latest_finalsite_student_id
+            on c.latest_finalsite_student_id = m.finalsite_student_id
         left join
             {{ ref("int_extracts__student_enrollments") }} as e
             on c.latest_finalsite_student_id = e.finalsite_student_id
@@ -27,7 +31,7 @@ with
             c.extract_year = 'Current_Year'
             and c.detailed_status = 'Enrolled'
             and c.powerschool_student_number is not null
-            and c.latest_finalsite_student_id = 1
+            and c.latest_finalsite_student_id_rn = 1
     ),
 
     active_finalsite_for_next_year as (
@@ -41,8 +45,7 @@ with
 
         from {{ ref("int_finalsite__status_report") }} as n
         inner join
-            most_recent_students as m
-            on n.finalsite_student_id = m.latest_finalsite_student_id
+            most_recent_students as m on n.finalsite_student_id = m.finalsite_student_id
         left join
             active_finalsite_for_current_year as c
             on n.finalsite_student_id = c.latest_finalsite_student_id

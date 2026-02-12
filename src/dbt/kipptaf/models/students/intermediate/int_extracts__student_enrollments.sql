@@ -93,7 +93,9 @@ with
     finalsite_student_id_calc as (
         select powerschool_student_number, latest_finalsite_student_id,
         from {{ ref("int_finalsite__status_report") }}
-        where powerschool_student_number is not null and latest_finalsite_student_id = 1
+        where
+            powerschool_student_number is not null
+            and latest_finalsite_student_id_rn = 1
     )
 
 select

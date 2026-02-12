@@ -42,6 +42,12 @@ with
                 rows between unbounded preceding and unbounded following
             ) as latest_grade_level,
 
+            last_value(finalsite_student_id ignore nulls) over (
+                partition by enrollment_academic_year, powerschool_student_number
+                order by status_start_timestamp asc, status_order asc
+                rows between unbounded preceding and unbounded following
+            ) as latest_finalsite_student_id,
+
         from region_calc
     )
 

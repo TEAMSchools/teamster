@@ -10,10 +10,12 @@ select
     f.region,
     f.latest_region,
     f.finalsite_student_id,
+    f.latest_finalsite_student_id,
     f.first_name,
     f.last_name,
     f.grade_level_name,
     f.grade_level,
+    f.latest_grade_level,
     f.status,
     f.detailed_status,
     f.status_order,
@@ -37,9 +39,8 @@ select
     ) as latest_extract_datetime,
 
     row_number() over (
-        partition by f.latest_powerschool_student_number, f.finalsite_student_id
-        order by f.extract_datetime desc
-    ) as latest_finalsite_student_id,
+        partition by f.latest_finalsite_student_id order by f.extract_datetime desc
+    ) as latest_finalsite_student_id_rn,
 
 from {{ ref("stg_finalsite__status_report") }} as f
 left join
