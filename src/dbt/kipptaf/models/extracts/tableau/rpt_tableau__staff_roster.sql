@@ -52,12 +52,16 @@ select
     b.memberships,
     b.is_leader_development_program,
     b.is_teacher_development_program,
+    b.primary_grade_level_taught,
 
     ye.years_at_kipp_total,
     ye.years_teaching_total,
     ye.years_experience_total,
 
-    tgl.grade_level as primary_grade_level_taught,
+    lc.school_leader_mail,
+    lc.school_leader_preferred_name_lastfirst,
+    lc.dso_mail,
+    lc.dso_preferred_name_lastfirst,
 
     /* retired fields, kept to not break tableau */
     null as salesforce_job_position_name_custom,
@@ -71,21 +75,11 @@ select
     null as reports_to_name,
     null as gender,
     null as grades_taught_custom,
-
-    lc.school_leader_mail,
-    lc.school_leader_preferred_name_lastfirst,
-    lc.dso_mail,
-    lc.dso_preferred_name_lastfirst,
 from {{ ref("int_people__staff_roster") }} as b
 left join
     {{ ref("int_people__years_experience") }} as ye
     on b.employee_number = ye.employee_number
     and ye.academic_year = {{ var("current_academic_year") }}
-left join
-    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
-    on b.powerschool_teacher_number = tgl.teachernumber
-    and tgl.academic_year = {{ var("current_academic_year") }}
-    and tgl.grade_level_rank = 1
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
     on b.home_work_location_name = lc.home_work_location_name

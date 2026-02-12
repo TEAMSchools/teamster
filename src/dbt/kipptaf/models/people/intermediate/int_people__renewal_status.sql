@@ -64,7 +64,7 @@ from {{ ref("int_people__staff_roster") }} as c
 inner join
     years as y
     on y.effective_date between c.worker_original_hire_date and coalesce(
-        c.worker_termination_date, date(9999, 12, 31)
+        c.worker_termination_date, '9999-12-31'
     )
 left join
     {{ ref("int_people__staff_roster_history") }} as h
@@ -82,6 +82,7 @@ left join
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on c.powerschool_teacher_number = tgl.teachernumber
+    and c.home_work_location_dagster_code_location = tgl._dbt_source_project
     and y.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 left join
