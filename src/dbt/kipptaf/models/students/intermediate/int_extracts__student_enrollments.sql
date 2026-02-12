@@ -97,7 +97,6 @@ with
             powerschool_student_number is not null
             and latest_finalsite_student_id_rn = 1
     )
-
 select
     e.* except (
         lastfirst,
