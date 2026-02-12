@@ -93,7 +93,10 @@ with
                 'KIPP Miami Suspension Letter',
                 'Short-Term OSS (no further investigation)',
                 'OSS Long-Term Suspension',
-                'OSS Suspended Next Day'
+                'OSS Suspended Next Day',
+                'OSS',
+                'OSS Suspension Letter (pending further investigation)',
+                'ISS Suspension Letter'
             )
         group by incident_id
 
