@@ -14,6 +14,7 @@ select
     f.last_name,
     f.grade_level_name,
     f.grade_level,
+    f.latest_grade_level,
     f.status,
     f.detailed_status,
     f.status_order,
