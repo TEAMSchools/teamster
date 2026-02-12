@@ -1,50 +1,68 @@
+with
+    observation_details as (
+        select
+            form_type,
+            observation_id,
+            teacher_id,
+            rubric_id,
+            form_long_name as rubric_name,
+            measurement_name,
+            score_measurement_type,
+            score_measurement_id,
+            score_measurement_shortname,
+            text_box,
+            glows,
+            grows,
+            form_term,
+
+            true as locked,
+            'Teacher Performance Management' as observation_type,
+            'PM' as observation_type_abbreviation,
+            'Coaching Tool: Coach ETR and Reflection' as term_name,
+
+            cast(employee_number as int) as employee_number,
+            cast(academic_year as int) as academic_year,
+            cast(so_tier as int) as so_tier,
+            cast(final_tier as int) as final_tier,
+            cast(observer_employee_number as int) as observer_employee_number,
+            cast(rn_submission as int) as rn_submission,
+
+            cast(etr_score as float64) as etr_score,
+            cast(etr_tier as float64) as etr_tier,
+            cast(final_score as float64) as final_score,
+            cast(overall_tier as float64) as overall_tier,
+            cast(so_score as float64) as so_score,
+            cast(overall_score as float64) as score,
+            cast(row_score_value as float64) as value_score,
+
+            coalesce(pm_term, form_term) as term_code,
+
+            coalesce(
+                safe_cast(observed_at as timestamp),
+                cast(parse_date('%m/%d/%Y', observed_at) as timestamp)
+            ) as observed_at,
+
+            case
+                when score_measurement_type = 'etr'
+                then 'Excellent Teaching Rubric'
+                when score_measurement_type = 's&o'
+                then 'Self & Others: Manager Feedback'
+                else 'Comments'
+            end as measurement_group_name,
+        from
+            {{
+                source(
+                    "performance_management",
+                    "src_performance_management__observation_details_archive",
+                )
+            }}
+    )
+
 select
-    employee_number,
-    academic_year,
-    form_type,
-    observation_id,
-    teacher_id,
-    rubric_id,
-    form_long_name as rubric_name,
-    measurement_name,
-    row_score_value as value_score,
-    score_measurement_type,
-    score_measurement_id,
-    score_measurement_shortname,
-    text_box,
-    glows,
-    grows,
-    rn_submission,
-    overall_score as score,
-    overall_tier,
-    etr_score,
-    etr_tier,
-    so_score,
-    final_score,
+    *,
 
-    true as locked,
-    'Teacher Performance Management' as observation_type,
-    'PM' as observation_type_abbreviation,
-    'Coaching Tool: Coach ETR and Reflection' as term_name,
+    date(observed_at, '{{ var("local_timezone") }}') as observed_at_date_local,
 
-    timestamp(observed_at) as observed_at,
-    date(observed_at) as observed_at_date_local,
-
-    coalesce(pm_term, form_term) as term_code,
-    coalesce(so_tier.long_value, cast(so_tier.double_value as int)) as so_tier,
-    coalesce(final_tier.long_value, cast(final_tier.double_value as int)) as final_tier,
-    coalesce(
-        observer_employee_number.long_value,
-        cast(observer_employee_number.double_value as int)
-    ) as observer_employee_number,
-
-    case
-        when score_measurement_type = 'etr'
-        then 'Excellent Teaching Rubric'
-        when score_measurement_type = 's&o'
-        then 'Self & Others: Manager Feedback'
-        else 'Comments'
-    end as measurement_group_name,
     case
         form_term
         when 'PM1'
@@ -54,10 +72,4 @@ select
         when 'PM3'
         then date(academic_year + 1, 3, 1)
     end as eval_date,
-from
-    {{
-        source(
-            "performance_management",
-            "src_performance_management__observation_details_archive",
-        )
-    }}
+from observation_details

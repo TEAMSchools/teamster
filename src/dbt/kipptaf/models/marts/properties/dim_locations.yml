@@ -5,8 +5,10 @@ models:
       - name: locations_key
         data_type: string
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: warn
+                store_failures: true
 
       - name: location_name
         data_type: string

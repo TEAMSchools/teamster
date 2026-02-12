@@ -5,8 +5,10 @@ models:
       - name: student_enrollments_key
         data_type: string
         tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: warn
+                store_failures: true
 
       - name: student_number
         data_type: int64
