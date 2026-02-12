@@ -1,6 +1,14 @@
 models:
   - name: dim_terms
     columns:
+      - name: terms_key
+        data_type: string
+        tests:
+          - unique:
+              config:
+                severity: warn
+                store_failures: true
+
       - name: term_type
         data_type: string
 

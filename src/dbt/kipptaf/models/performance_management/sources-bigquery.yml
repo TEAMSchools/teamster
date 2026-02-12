@@ -9,6 +9,7 @@ sources:
               asset_key:
                 - kipptaf
                 - performance_management
+                - archive
                 - stg_performance_management__observation_details_archive
       - name: int_performance_management__overall_scores_archive
         config:
@@ -17,4 +18,5 @@ sources:
               asset_key:
                 - kipptaf
                 - performance_management
+                - archive
                 - int_performance_management__overall_scores_archive

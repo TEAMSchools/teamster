@@ -58,94 +58,76 @@ with
 
     roster as (select *, from dedupe where surrogate_key != surrogate_key_lag),
 
-    grade_levels as (select *, from {{ ref("int_powerschool__teacher_grade_levels") }}),
-
     managers as (select distinct reports_to_employee_number, from roster),
 
-    performance_management_tiers as (
-        select *, from {{ ref("int_performance_management__overall_scores") }}
-    ),
+    years_experience as (select *, from {{ ref("int_people__years_experience") }})
 
-    years_experience as (select *, from {{ ref("int_people__years_experience") }}),
+select
+    r.effective_date_start as marts_effective_date_start,
+    r.assignment_status,
+    r.assignment_status_reason,
+    r.employee_number,
+    r.formatted_name,
+    r.entity,
+    r.grade_band,
+    r.location,
+    r.department,
+    r.job_title,
+    r.manager_name,
+    r.languages_spoken,
+    r.race_ethnicity_reporting,
+    r.gender_identity,
+    r.salary,
 
-    final as (
-        select
-            r.effective_date_start as marts_effective_date_start,
-            r.assignment_status,
-            r.assignment_status_reason,
-            r.employee_number,
-            r.formatted_name,
-            r.entity,
-            r.grade_band,
-            r.location,
-            r.department,
-            r.job_title,
-            r.manager_name,
-            r.languages_spoken,
-            r.race_ethnicity_reporting,
-            r.gender_identity,
-            r.salary,
+    ye.years_experience_total,
+    ye.years_teaching_total,
 
-            gl.grade_level as grade_taught,
+    if(
+        r.job_title in (
+            'Teacher',
+            'Teacher in Residence',
+            'ESE Teacher',
+            'Learning Specialist',
+            'Teacher ESL',
+            'Teacher in Residence ESL',
+            'Instructor in Residence'
+        ),
+        true,
+        false
+    ) as is_teacher,
 
-            pm.final_tier as performance_management_tier,
+    if(
+        r.employee_number
+        in (select managers.reports_to_employee_number, from managers),
+        true,
+        false
+    ) as is_manager,
 
-            ye.years_experience_total,
-            ye.years_teaching_total,
+    lag(r.salary) over (
+        partition by r.employee_number order by r.effective_date_start
+    ) as previous_salary,
 
-            if(
-                r.job_title in (
-                    'Teacher',
-                    'Teacher in Residence',
-                    'ESE Teacher',
-                    'Learning Specialist',
-                    'Teacher ESL',
-                    'Teacher in Residence ESL',
-                    'Instructor in Residence'
-                ),
-                true,
-                false
-            ) as is_teacher,
+    lag(r.job_title) over (
+        partition by r.employee_number order by r.effective_date_start
+    ) as previous_job_title,
 
-            if(
-                r.employee_number
-                in (select managers.reports_to_employee_number, from managers),
-                true,
-                false
-            ) as is_manager,
-
-            lag(r.salary) over (
+    coalesce(
+        date_sub(
+            lead(r.effective_date_start) over (
                 partition by r.employee_number order by r.effective_date_start
-            ) as previous_salary,
+            ),
+            interval 1 day
+        ),
+        '9999-12-31'
+    ) as marts_effective_date_end,
 
-            lag(r.job_title) over (
-                partition by r.employee_number order by r.effective_date_start
-            ) as previous_job_title,
-
-            coalesce(
-                date_sub(
-                    lead(r.effective_date_start) over (
-                        partition by r.employee_number order by r.effective_date_start
-                    ),
-                    interval 1 day
-                ),
-                '9999-12-31'
-            ) as marts_effective_end_date,
-        from roster as r
-        left join
-            grade_levels as gl
-            on r.powerschool_teacher_number = gl.teachernumber
-            and r.academic_year = gl.academic_year
-            and gl.grade_level_rank = 1
-        left join
-            performance_management_tiers as pm
-            on r.employee_number = pm.employee_number
-            and r.academic_year = pm.academic_year
-        left join
-            years_experience as ye
-            on r.employee_number = ye.employee_number
-            and r.academic_year = ye.academic_year
-    )
-
-select *,
-from final
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["r.employee_number", "r.effective_date_start"]
+        )
+    }} as staff_history_key,
+from roster as r
+left join
+    years_experience as ye
+    on r.employee_number = ye.employee_number
+    and r.academic_year = ye.academic_year

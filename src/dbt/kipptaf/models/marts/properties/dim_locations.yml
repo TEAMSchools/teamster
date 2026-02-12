@@ -2,6 +2,14 @@ models:
   - name: dim_locations
 
     columns:
+      - name: locations_key
+        data_type: string
+        tests:
+          - unique:
+              config:
+                severity: warn
+                store_failures: true
+
       - name: location_name
         data_type: string
 
