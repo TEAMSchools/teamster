@@ -14,7 +14,6 @@ select
     f.last_name,
     f.grade_level_name,
     f.grade_level,
-    f.latest_grade_level,
     f.status,
     f.detailed_status,
     f.status_order,
@@ -34,7 +33,7 @@ select
     coalesce(xl.abbreviation, 'No School Assigned') as latest_school,
 
     max(f.extract_datetime) over (
-        partition by f.extract_year
+        partition by f.region, f.extract_year
     ) as latest_extract_datetime,
 
     row_number() over (
