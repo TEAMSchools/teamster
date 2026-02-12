@@ -1,0 +1,5 @@
+models:
+  - name: int_students__finalsite_student_roster
+    config:
+      contract:
+        enforced: false
