@@ -86,6 +86,7 @@ left join
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on c.powerschool_teacher_number = tgl.teachernumber
+    and c.home_work_location_dagster_code_location = tgl._dbt_source_project
     and y.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 left join
@@ -93,8 +94,7 @@ left join
     on y.academic_year = pss.academic_year
     and h.home_business_unit_name = pss.region
     and h.job_title = pss.job_title
-    and h.home_work_location_grade_band
-    = coalesce(pss.school_level, h.home_work_location_grade_band)
+    and (h.home_work_location_grade_band = pss.school_level or pss.school_level is null)
     and (
         h.base_remuneration_annual_rate_amount + 150
         between pss.scale_cy_salary and pss.scale_ny_salary_plus_1_cent
