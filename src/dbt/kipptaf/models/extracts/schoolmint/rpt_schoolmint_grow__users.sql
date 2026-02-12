@@ -65,6 +65,7 @@ with
                     and (
                         contains_substr(sr.job_title, 'Assistant School Leader')
                         or contains_substr(sr.job_title, 'Dean')
+                        or sr.job_title = 'School Leader in Residence'
                     )
                 then 'School Assistant Admin'
                 /* basic roles */
