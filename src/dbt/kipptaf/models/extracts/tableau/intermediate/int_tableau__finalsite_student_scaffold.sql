@@ -21,6 +21,8 @@ with
             x.detailed_status,
 
             calendar_day,
+
+            {{ var("current_academic_year") + 1 }} as aligned_enrollment_academic_year,
             -- trunk-ignore(sqlfluff/LT01)
             date_trunc(calendar_day, week(monday)) as sre_academic_year_wk_start_monday,
 
@@ -95,6 +97,12 @@ select
     r.student_accepted_to_enrolled_den,
     r.student_offers_to_enrolled_num,
     r.student_offers_to_enrolled_den,
+
+    cast(r.aligned_enrollment_academic_year as string)
+    || '-'
+    || right(
+        cast(r.aligned_enrollment_academic_year + 1 as string), 2
+    ) as aligned_enrollment_academic_year,
 
     row_number() over (
         partition by
