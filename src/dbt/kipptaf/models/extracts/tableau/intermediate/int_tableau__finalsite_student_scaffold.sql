@@ -79,7 +79,7 @@ select
     r.last_name as student_last_name,
     r.first_name as student_first_name,
     r.grade_level as student_grade_level,
-    r.enrollment_year_enrollment_type as student_enrollment_year_enrollment_type,
+    r.next_year_enrollment_type as student_next_year_enrollment_type,
     r.detailed_status as student_detailed_status,
     r.latest_status as student_latest_status,
     r.status_start_date,
@@ -98,16 +98,16 @@ select
 
     row_number() over (
         partition by
-            x.enrollment_academic_year,
-            x.finalsite_student_id,
-            x.sre_academic_year_wk_start_monday
-        order by x.calendar_day desc
+            s.enrollment_academic_year,
+            s.finalsite_student_id,
+            s.sre_academic_year_wk_start_monday
+        order by s.calendar_day desc
     ) as weekly_scaffold,
 
 from scaffold as s
 left join
-    {{ ref("int_students__finalsite_student_roster ") }} as r
-    on x.enrollment_academic_year = r.enrollment_academic_year
-    and x.finalsite_student_id = r.finalsite_student_id
-    and x.detailed_status = r.detailed_status
-    and x.calendar_day between r.status_start_date and r.status_end_date
+    {{ ref("int_students__finalsite_student_roster") }} as r
+    on s.enrollment_academic_year = r.enrollment_academic_year
+    and s.finalsite_student_id = r.finalsite_student_id
+    and s.detailed_status = r.detailed_status
+    and s.calendar_day between r.status_start_date and r.status_end_date
