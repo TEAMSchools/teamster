@@ -60,3 +60,12 @@ models:
 
       - name: attendance_code
         data_type: string
+
+      - name: rolling_avg_daily_attendance
+        data_type: string
+
+      - name: rolling_avg_daily_attendance
+        data_type: string
+
+      - name: is_chronic_absentee_ytd
+        data_type: string
