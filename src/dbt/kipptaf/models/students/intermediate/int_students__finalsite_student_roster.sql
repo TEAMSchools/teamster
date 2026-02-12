@@ -40,7 +40,7 @@ with
         /* cannot use latest_finalsite_student_id to get unique row counts because new
            students typically do not have a powerschool_student_number */
         select distinct
-            {{ var("current_academic_year") + 1 }} + 1 as enrollment_academic_year,
+            {{ var("current_academic_year") + 1 }} as enrollment_academic_year,
             n.finalsite_student_id as latest_finalsite_student_id,
 
             coalesce(e.next_year_enrollment_type, 'New') as next_year_enrollment_type,
