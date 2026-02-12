@@ -42,6 +42,11 @@ select
         partition by f.latest_finalsite_student_id order by f.extract_datetime desc
     ) as latest_finalsite_student_id_rn,
 
+    first_value(f.detailed_status) over (
+        partition by f.enrollment_academic_year, f.finalsite_student_id
+        order by f.status_start_date desc
+    ) as latest_status,
+
 from {{ ref("stg_finalsite__status_report") }} as f
 left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as x on f.school = x.name

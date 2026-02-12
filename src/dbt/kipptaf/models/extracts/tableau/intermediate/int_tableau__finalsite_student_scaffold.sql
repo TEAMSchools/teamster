@@ -1,10 +1,12 @@
 with
     scaffold as (
         select
+            r.aligned_enrollment_academic_year,
+            r.aligned_enrollment_academic_year_display,
             r.enrollment_academic_year,
             r.enrollment_academic_year_display,
-            r.sre_academic_year_start,
-            r.sre_academic_year_end,
+            r.sre_aligned_academic_year_start,
+            r.sre_aligned_academic_year_end,
             r.org,
             r.region,
             r.finalsite_student_id,
@@ -22,14 +24,15 @@ with
 
             calendar_day,
 
-            {{ var("current_academic_year") + 1 }} as aligned_enrollment_academic_year,
-            -- trunk-ignore(sqlfluff/LT01)
-            date_trunc(calendar_day, week(monday)) as sre_academic_year_wk_start_monday,
+            date_trunc(
+                -- trunk-ignore(sqlfluff/LT01)
+                calendar_day, week(monday)
+            ) as sre_aligned_academic_year_wk_start_monday,
 
             date_add(
                 -- trunk-ignore(sqlfluff/LT01)
                 date_trunc(calendar_day, week(monday)), interval 6 day
-            ) as sre_academic_year_wk_end_sunday,
+            ) as sre_aligned_academic_year_wk_end_sunday,
 
         from {{ ref("int_students__finalsite_student_roster") }} as r
         inner join
@@ -40,19 +43,21 @@ with
             unnest(
                 generate_date_array(
                     -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(r.sre_academic_year_start, week(monday)),
+                    date_trunc(r.sre_aligned_academic_year_start, week(monday)),
                     -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(r.sre_academic_year_end, week(monday)),
+                    date_trunc(r.sre_aligned_academic_year_end, week(monday)),
                     interval 1 day
                 )
             ) as calendar_day
     )
 
 select
+    s.aligned_enrollment_academic_year,
+    s.aligned_enrollment_academic_year_display,
     s.enrollment_academic_year,
     s.enrollment_academic_year_display,
-    s.sre_academic_year_start,
-    s.sre_academic_year_end,
+    s.sre_aligned_academic_year_start,
+    s.sre_aligned_academic_year_end,
     s.org,
     s.region,
     s.finalsite_student_id,
@@ -67,8 +72,8 @@ select
     s.detailed_status_branched_ranking,
     s.detailed_status,
     s.calendar_day,
-    s.sre_academic_year_wk_start_monday,
-    s.sre_academic_year_wk_end_sunday,
+    s.sre_aligned_academic_year_wk_start_monday,
+    s.sre_aligned_academic_year_wk_end_sunday,
 
     r.org as student_org,
     r.region as student_region,
@@ -84,9 +89,9 @@ select
     r.next_year_enrollment_type as student_next_year_enrollment_type,
     r.detailed_status as student_detailed_status,
     r.latest_status as student_latest_status,
-    r.status_start_date,
-    r.status_end_date,
-    r.days_in_status,
+    r.status_start_date as student_status_start_date,
+    r.status_end_date as student_status_end_date,
+    r.days_in_status as student_days_in_status,
     r.student_applicant_ops,
     r.student_offered_ops,
     r.student_pending_offer_ops,
@@ -98,17 +103,11 @@ select
     r.student_offers_to_enrolled_num,
     r.student_offers_to_enrolled_den,
 
-    cast(r.aligned_enrollment_academic_year as string)
-    || '-'
-    || right(
-        cast(r.aligned_enrollment_academic_year + 1 as string), 2
-    ) as aligned_enrollment_academic_year,
-
     row_number() over (
         partition by
             s.enrollment_academic_year,
             s.finalsite_student_id,
-            s.sre_academic_year_wk_start_monday
+            s.sre_aligned_academic_year_wk_start_monday
         order by s.calendar_day desc
     ) as weekly_scaffold,
 
