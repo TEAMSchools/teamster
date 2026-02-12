@@ -17,9 +17,6 @@ select
     term,
     att_code as attendance_code,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            ["student_number", "calendardate", "schoolid"]
-        )
-    }} as attendance_key,
+    {{ dbt_utils.generate_surrogate_key(["student_number", "calendardate"]) }}
+    as attendance_key,
 from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
