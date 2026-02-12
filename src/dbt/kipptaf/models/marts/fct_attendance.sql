@@ -28,7 +28,7 @@ with
             }} as attendance_key,
 
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
-    ),
+    )
 
 select
     student_number,
