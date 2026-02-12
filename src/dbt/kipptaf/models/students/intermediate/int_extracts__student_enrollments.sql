@@ -81,29 +81,13 @@ with
             academic_year,
             student_number,
 
-            case
-                when
-                    lag(academic_year) over (
-                        partition by student_number order by academic_year
-                    )
-                    is null
-                then 'New'
-                when
-                    coalesce(
-                        lag(
-                            sum(if(date_diff(exitdate, entrydate, day) >= 7, 1, 0))
-                        ) over (partition by student_number order by academic_year),
-                        0
-                    )
-                    = 0
-                then 'New'
-                else 'Returner'
-            end as finalsite_enrollment_type,
+            if(
+                sum(date_diff(exitdate, entrydate, day)) >= 7, 'Returner', 'New'
+            ) as next_year_enrolllment_type,
 
         from {{ ref("base_powerschool__student_enrollments") }}
         where grade_level != 99
-        group by
-            _dbt_source_relation, academic_year, student_number, first_name, last_name
+        group by _dbt_source_relation, academic_year, student_number
     ),
 
     finalsite_student_id_calc as (
@@ -201,8 +185,8 @@ select
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
     if(
-        e.grade_level = 99, null, coalesce(fs.finalsite_enrollment_type, 'New')
-    ) as finalsite_enrollment_type,
+        e.grade_level = 99, null, fs.next_year_enrolllment_type
+    ) as next_year_enrolllment_type,
 
     if(ovg.fafsa_opt_out is not null, 'Yes', 'No') as overgrad_fafsa_opt_out,
 

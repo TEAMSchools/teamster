@@ -1,15 +1,23 @@
 models:
   - name: dim_dates
-
+    config:
+      materialized: table
     columns:
+      - name: date_timestamp
+        data_type: timestamp
+      - name: date_datetime_local
+        data_type: datetime
       - name: date_day
         data_type: date
-
+      - name: week_start_date
+        data_type: date
+      - name: week_end_date
+        data_type: date
       - name: week_start_monday
         data_type: date
-
       - name: week_end_sunday
         data_type: date
-
       - name: academic_year
+        data_type: int64
+      - name: fiscal_year
         data_type: int64
