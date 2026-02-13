@@ -64,6 +64,7 @@ with
             section_count_distinct,
             student_count,
             student_total_all_grades,
+
             student_count / student_total_all_grades as grade_level_ratio,
         from grade_level_counts_window
     )

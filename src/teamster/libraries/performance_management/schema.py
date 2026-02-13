@@ -79,3 +79,4 @@ class ObservationDetail(BaseModel):
     so_tier: str | None = None
     teacher_id: str | None = None
     text_box: str | None = None
+    source_file_name: str | None = None
