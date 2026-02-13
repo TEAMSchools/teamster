@@ -1,7 +1,7 @@
 with
     roster_history as (
         select distinct
-            _dbt_source_relation,
+            home_work_location_dagster_code_location,
             formatted_name,
             effective_date_start,
             assignment_status,
@@ -86,6 +86,10 @@ select
     r.gender_identity,
     r.salary,
 
+    gl.grade_level as grade_taught,
+
+    pm.final_tier as performance_management_tier,
+
     ye.years_experience_total,
     ye.years_teaching_total,
 
@@ -137,7 +141,7 @@ from roster as r
 left join
     grade_levels as gl
     on r.powerschool_teacher_number = gl.teachernumber
-    and r._dbt_source_relation = gl._dbt_source_project
+    and r.home_work_location_dagster_code_location = gl._dbt_source_project
     and r.academic_year = gl.academic_year
     and gl.grade_level_rank = 1
 left join
