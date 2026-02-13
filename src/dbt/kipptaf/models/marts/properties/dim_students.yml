@@ -55,6 +55,9 @@ models:
       - name: is_enrolled_oct01
         data_type: boolean
 
+      - name: is_enrolled_recent
+        data_type: boolean
+
       - name: is_retained_year
         data_type: boolean
 
