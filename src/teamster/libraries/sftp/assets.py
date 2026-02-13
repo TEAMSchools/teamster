@@ -294,7 +294,8 @@ def build_sftp_archive_asset(
             yield check_avro_schema_valid(
                 asset_key=context.asset_key, records=records, schema=avro_schema
             )
-            return
+
+            return None
 
         if len(file_matches) > 1:
             context.log.warning(
@@ -321,7 +322,8 @@ def build_sftp_archive_asset(
             yield check_avro_schema_valid(
                 asset_key=context.asset_key, records=records, schema=avro_schema
             )
-            return
+
+            return None
 
         archive_file_regex_composed = compose_regex(
             regexp=archive_file_regex, partition_key=partition_key
