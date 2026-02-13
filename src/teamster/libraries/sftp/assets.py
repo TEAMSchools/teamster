@@ -325,18 +325,54 @@ def build_sftp_archive_asset(
 
             return None
 
-        archive_file_regex_composed = compose_regex(
+        archive_file_regex_pattern = compose_regex(
             regexp=archive_file_regex, partition_key=partition_key
-        ).replace("\\", "")
+        )
 
         with zipfile.ZipFile(file=local_filepath) as zf:
+            archive_members = zf.namelist()
+            matching_members = [
+                member
+                for member in archive_members
+                if re.fullmatch(archive_file_regex_pattern, member)
+            ]
+
+            if not matching_members:
+                context.log.warning(
+                    msg=(
+                        "Found no archive members matching pattern "
+                        f"{archive_file_regex_pattern!r} in {local_filepath}"
+                    )
+                )
+                records = [{}]
+
+                yield Output(value=(records, avro_schema), metadata={"records": 0})
+                yield check_avro_schema_valid(
+                    asset_key=context.asset_key,
+                    records=records,
+                    schema=avro_schema,
+                )
+
+                return None
+
+            if len(matching_members) > 1:
+                context.log.warning(
+                    msg=(
+                        "Found multiple archive members matching pattern "
+                        f"{archive_file_regex_pattern!r} in {local_filepath}\n"
+                        f"{matching_members}"
+                    )
+                )
+
+            archive_member = matching_members[0]
+
             zf.extract(
-                member=archive_file_regex_composed,
+                member=archive_member,
                 path=f"./env/{context.asset_key.to_user_string()}",
             )
 
         local_filepath = (
-            f"./env/{context.asset_key.to_user_string()}/{archive_file_regex_composed}"
+            f"./env/{context.asset_key.to_user_string()}/{archive_member}"
         )
 
         if os.path.getsize(local_filepath) == 0:
