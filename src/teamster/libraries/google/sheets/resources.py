@@ -39,6 +39,8 @@ class GoogleSheetsResource(ConfigurableResource):
             return self._client.open_by_key(key=kwargs["sheet_id"])
         elif "url" in kwargs_keys:
             return self._client.open_by_url(**kwargs)
+        else:
+            return None
 
     def open_or_create_sheet(self, **kwargs):
         try:
