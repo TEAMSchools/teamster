@@ -44,7 +44,9 @@ with
 
             null as y1_grade_points_unweighted,
 
-            c.credit_hours as potential_credit_hours_default,
+            if(
+                sg.potentialcrhrs != 0.0, sg.potentialcrhrs, c.credit_hours
+            ) as potential_credit_hours_default,
 
             if(storecode in ('Q4', 'T3'), true, false) as is_current,
 
