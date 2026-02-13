@@ -189,3 +189,5 @@ class GCSIOManager(GCSPickleIOManager):
                 client=self.gcs.get_client(),
                 prefix=self.gcs_prefix,
             )
+        else:
+            return None
