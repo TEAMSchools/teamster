@@ -66,6 +66,8 @@ with
             latest_finalsite_student_id,
             next_year_enrollment_type,
 
+            {{ var("current_academic_year") + 1 }} as aligned_enrollment_academic_year,
+
         from active_finalsite_for_current_year
 
         union all
@@ -75,82 +77,75 @@ with
             latest_finalsite_student_id,
             next_year_enrollment_type,
 
-        from active_finalsite_for_next_year
-    ),
-
-    aligned_year_calcs as (
-        select
-            a.enrollment_academic_year,
-            a.latest_finalsite_student_id as finalsite_student_id,
-            a.next_year_enrollment_type,
-
-            f._dbt_source_relation,
-            f.enrollment_year,
-            f.enrollment_academic_year_display,
-            f.sre_academic_year_start,
-            f.sre_academic_year_end,
-            f.org,
-            f.region,
-            f.latest_region,
-            f.schoolid,
-            f.latest_schoolid,
-            f.school,
-            f.latest_school,
-            f.powerschool_student_number,
-            f.first_name,
-            f.last_name,
-            f.grade_level,
-            f.latest_grade_level,
-            f.detailed_status,
-            f.status_order,
-            f.status_start_date,
-            f.status_end_date,
-            f.days_in_status,
-            f.rn,
-            f.enrollment_type_raw,
-            f.latest_status,
-
-            x.applicant_ops as student_applicant_ops,
-            x.applicant_ops_alt as student_applicant_ops_alt,
-            x.offered_ops as student_offered_ops,
-            x.pending_offer_ops as student_pending_offer_ops,
-            x.overall_conversion_ops as student_overall_conversion_ops,
-            x.offers_to_accepted_den as student_offers_to_accepted_den,
-            x.offers_to_accepted_num as student_offers_to_accepted_num,
-            x.accepted_to_enrolled_den as student_accepted_to_enrolled_den,
-            x.accepted_to_enrolled_num as student_accepted_to_enrolled_num,
-            x.offers_to_enrolled_den as student_offers_to_enrolled_den,
-            x.offers_to_enrolled_num as student_offers_to_enrolled_num,
-            x.waitlisted as student_waitlisted,
-
             {{ var("current_academic_year") + 1 }} as aligned_enrollment_academic_year,
 
-        from active_fs_roster as a
-        inner join
-            {{ ref("int_finalsite__status_report") }} as f
-            on a.enrollment_academic_year = f.enrollment_academic_year
-            and a.latest_finalsite_student_id = f.finalsite_student_id
-        inner join
-            {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
-            on a.enrollment_academic_year = x.enrollment_academic_year
-            and a.next_year_enrollment_type = x.enrollment_type
-            and f.detailed_status = x.detailed_status
-        where a.enrollment_academic_year <= {{ var("current_academic_year") + 1 }}
+        from active_finalsite_for_next_year
     )
 
 select
-    *,
+    r.aligned_enrollment_academic_year,
+    r.enrollment_academic_year,
+    r.latest_finalsite_student_id as finalsite_student_id,
+    r.next_year_enrollment_type,
 
-    cast(aligned_enrollment_academic_year as string)
+    f._dbt_source_relation,
+    f.enrollment_year,
+    f.enrollment_academic_year_display,
+    f.sre_academic_year_start,
+    f.sre_academic_year_end,
+    f.org,
+    f.region,
+    f.latest_region,
+    f.schoolid,
+    f.latest_schoolid,
+    f.school,
+    f.latest_school,
+    f.powerschool_student_number,
+    f.first_name,
+    f.last_name,
+    f.grade_level,
+    f.latest_grade_level,
+    f.detailed_status,
+    f.status_order,
+    f.status_start_date,
+    f.status_end_date,
+    f.days_in_status,
+    f.rn,
+    f.enrollment_type_raw,
+    f.latest_status,
+
+    x.applicant_ops as student_applicant_ops,
+    x.applicant_ops_alt as student_applicant_ops_alt,
+    x.offered_ops as student_offered_ops,
+    x.pending_offer_ops as student_pending_offer_ops,
+    x.overall_conversion_ops as student_overall_conversion_ops,
+    x.offers_to_accepted_den as student_offers_to_accepted_den,
+    x.offers_to_accepted_num as student_offers_to_accepted_num,
+    x.accepted_to_enrolled_den as student_accepted_to_enrolled_den,
+    x.accepted_to_enrolled_num as student_accepted_to_enrolled_num,
+    x.offers_to_enrolled_den as student_offers_to_enrolled_den,
+    x.offers_to_enrolled_num as student_offers_to_enrolled_num,
+    x.waitlisted as student_waitlisted,
+
+    cast(r.aligned_enrollment_academic_year as string)
     || '-'
     || right(
-        cast(aligned_enrollment_academic_year + 1 as string), 2
+        cast(r.aligned_enrollment_academic_year + 1 as string), 2
     ) as aligned_enrollment_academic_year_display,
 
     date(
-        aligned_enrollment_academic_year - 1, 10, 16
+        r.aligned_enrollment_academic_year - 1, 10, 16
     ) as sre_aligned_academic_year_start,
 
-    date(aligned_enrollment_academic_year, 6, 30) as sre_aligned_academic_year_end,
+    date(r.aligned_enrollment_academic_year, 6, 30) as sre_aligned_academic_year_end,
 
-from aligned_year_calcs
+from active_fs_roster as r
+inner join
+    {{ ref("int_finalsite__status_report") }} as f
+    on r.enrollment_academic_year = f.enrollment_academic_year
+    and r.latest_finalsite_student_id = f.finalsite_student_id
+inner join
+    {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
+    on r.enrollment_academic_year = x.enrollment_academic_year
+    and r.next_year_enrollment_type = x.enrollment_type
+    and f.detailed_status = x.detailed_status
