@@ -1,6 +1,7 @@
 with
     roster_history as (
         select distinct
+            _dbt_source_relation,
             formatted_name,
             effective_date_start,
             assignment_status,
@@ -57,6 +58,12 @@ with
     ),
 
     roster as (select *, from dedupe where surrogate_key != surrogate_key_lag),
+
+    grade_levels as (select *, from {{ ref("int_powerschool__teacher_grade_levels") }}),
+
+    performance_management_tiers as (
+        select *, from {{ ref("int_performance_management__overall_scores") }}
+    ),
 
     managers as (select distinct reports_to_employee_number, from roster),
 
@@ -127,6 +134,16 @@ select
         )
     }} as staff_history_key,
 from roster as r
+left join
+    grade_levels as gl
+    on r.powerschool_teacher_number = gl.teachernumber
+    and r._dbt_source_relation = gl._dbt_source_project
+    and r.academic_year = gl.academic_year
+    and gl.grade_level_rank = 1
+left join
+    performance_management_tiers as pm
+    on r.employee_number = pm.employee_number
+    and r.academic_year = pm.academic_year
 left join
     years_experience as ye
     on r.employee_number = ye.employee_number
