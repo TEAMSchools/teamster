@@ -60,7 +60,7 @@ def deanslist_sftp_sensor(context: SensorEvaluationContext, ssh_deanslist: SSHRe
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
     else:
-        SkipReason()
+        return SkipReason()
 
 
 sensors = [

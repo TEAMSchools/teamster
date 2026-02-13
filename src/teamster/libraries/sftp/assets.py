@@ -442,7 +442,10 @@ def build_sftp_folder_asset(
                     f"{remote_dir_regex_composed}/{remote_file_regex_composed}"
                 )
             )
-            return Output(value=([], avro_schema), metadata={"records": 0})
+
+            yield Output(value=([], avro_schema), metadata={"records": 0})
+
+            return None
 
         local_filepaths = []
 
