@@ -76,10 +76,4 @@ select
     etr_tier,
     so_score,
     so_tier,
-from
-    {{
-        source(
-            "performance_management",
-            "stg_performance_management__observation_details_archive",
-        )
-    }}
+from {{ ref("stg_performance_management__observation_details_archive") }}
