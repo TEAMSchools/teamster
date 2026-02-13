@@ -284,4 +284,4 @@ left join
     and f.school = g.school
     and g.goal_type = 'Applications'
     and g.goal_granularity = 'School'
-where f.calendar_day = ccurrent_date('{{ var("local_timezone") }}')
+where f.calendar_day = current_date('{{ var("local_timezone") }}')
