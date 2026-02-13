@@ -172,7 +172,7 @@ def build_sftp_file_asset(
             )
 
             context.log.error(msg=msg)
-            raise Exception(msg)
+            raise RuntimeError(msg)
         else:
             file_match = file_matches[0]
 
