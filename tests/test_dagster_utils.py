@@ -77,7 +77,7 @@ def test_ghseet_asset_key_rename():
     assert asset_keys_new == asset_keys_old
 
 
-def test_foo():
+def test_compose_regex_sftp_file_matching():
     from teamster.libraries.sftp.assets import compose_regex
 
     files = [
