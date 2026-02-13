@@ -90,5 +90,6 @@
     "src/dbt/kippmiami",
     "src/dbt/kippnewark",
     "src/dbt/kipppaterson"
-  ]
+  ],
+  "dbt.perspectiveTheme": "Vintage"
 }
