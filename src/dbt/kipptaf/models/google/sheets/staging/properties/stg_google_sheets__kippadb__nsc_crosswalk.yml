@@ -20,4 +20,4 @@ models:
       - name: NCES_ID
         data_type: int64
       - name: Overgrad_URM_Grad_Rate
-        data_type: numeric
+        data_type: string
