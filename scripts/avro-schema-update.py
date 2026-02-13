@@ -109,17 +109,6 @@ def kippnewark_renlearn_star():
     )
 
 
-# def kippnewark_renlearn_accelerated_reader():
-#     from teamster.code_locations.kippnewark.renlearn.schema import (
-#         ACCELERATED_READER_SCHEMA,
-#     )
-
-#     rewrite_blobs(
-#         asset_key=["kippnewark", "renlearn", "accelerated_reader"],
-#         schema=parse_schema(ACCELERATED_READER_SCHEMA),
-#     )
-
-
 def kippnewark_edplan_njsmart_powerschool():
     from teamster.code_locations.kippnewark.edplan.schema import (
         NJSMART_POWERSCHOOL_SCHEMA,
@@ -226,17 +215,6 @@ def kippnewark_iready_instruction_by_lesson_pro():
         asset_key=["kippnewark", "iready", "instruction_by_lesson"],
         schema=parse_schema(INSTRUCTION_BY_LESSON_SCHEMA),
     )
-
-
-# def kippnewark_iready_instructional_usage_data():
-#     from teamster.code_locations.kippnewark.iready.schema import (
-#         INSTRUCTIONAL_USAGE_DATA_SCHEMA,
-#     )
-
-#     rewrite_blobs(
-#         asset_key=["kippnewark", "iready", "instructional_usage_data"],
-#         schema=parse_schema(INSTRUCTIONAL_USAGE_DATA_SCHEMA),
-#     )
 
 
 def kippcamden_edplan_njsmart_powerschool():
@@ -387,28 +365,6 @@ def kippmiami_iready_instruction_by_lesson_pro():
     )
 
 
-# def kippmiami_iready_instructional_usage_data():
-#     from teamster.code_locations.kippmiami.iready.schema import (
-#         INSTRUCTIONAL_USAGE_DATA_SCHEMA,
-#     )
-
-#     rewrite_blobs(
-#         asset_key=["kippmiami", "iready", "instructional_usage_data"],
-#         schema=parse_schema(INSTRUCTIONAL_USAGE_DATA_SCHEMA),
-#     )
-
-
-# def kippmiami_renlearn_accelerated_reader():
-#     from teamster.code_locations.kippmiami.renlearn.schema import (
-#         ACCELERATED_READER_SCHEMA,
-#     )
-
-#     rewrite_blobs(
-#         asset_key=["kippmiami", "renlearn", "accelerated_reader"],
-#         schema=parse_schema(ACCELERATED_READER_SCHEMA),
-#     )
-
-
 def kippmiami_renlearn_star():
     from teamster.code_locations.kippmiami.renlearn.schema import STAR_SCHEMA
 
@@ -435,15 +391,6 @@ def kippmiami_renlearn_star_dashboard_standards():
         asset_key=["kippmiami", "renlearn", "star_dashboard_standards"],
         schema=parse_schema(STAR_DASHBOARD_STANDARDS_SCHEMA),
     )
-
-
-# def kippmiami_renlearn_star_skill_area():
-#     from teamster.code_locations.kippmiami.renlearn.schema import STAR_SKILL_AREA_SCHEMA
-
-#     rewrite_blobs(
-#         asset_key=["kippmiami", "renlearn", "star_skill_area"],
-#         schema=parse_schema(STAR_SKILL_AREA_SCHEMA),
-#     )
 
 
 def kipptaf_adp_payroll_general_ledger_file():
@@ -544,28 +491,6 @@ def kipptaf_tableau_view_count_per_view():
         asset_key=["kipptaf", "tableau", "view_count_per_view"],
         schema=parse_schema(VIEW_COUNT_PER_VIEW_SCHEMA),
     )
-
-
-# def kipptaf_amplify_pm_student_summary():
-#     from teamster.code_locations.kipptaf.amplify.mclass.api.schema import (
-#         PM_STUDENT_SUMMARY_SCHEMA,
-#     )
-
-#     rewrite_blobs(
-#         asset_key=["kipptaf", "amplify", "pm_student_summary"],
-#         schema=parse_schema(PM_STUDENT_SUMMARY_SCHEMA),
-#     )
-
-
-# def kipptaf_amplify_benchmark_student_summary():
-#     from teamster.code_locations.kipptaf.amplify.mclass.api.schema import (
-#         BENCHMARK_STUDENT_SUMMARY_SCHEMA,
-#     )
-
-#     rewrite_blobs(
-#         asset_key=["kipptaf", "amplify", "benchmark_student_summary"],
-#         schema=parse_schema(BENCHMARK_STUDENT_SUMMARY_SCHEMA),
-#     )
 
 
 def main(fn):
