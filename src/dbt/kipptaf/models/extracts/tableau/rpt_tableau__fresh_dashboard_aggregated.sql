@@ -82,7 +82,7 @@ with
                     enrollment_academic_year, student_finalsite_student_id, calendar_day
             ) as pending_offer_daily,
 
-        from {{ ref("int_tableau__finalsite_student_scaffol") }}
+        from {{ ref("int_tableau__finalsite_student_scaffold") }}
     ),
 
     pending_offer_calcs as (
