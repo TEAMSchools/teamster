@@ -2,7 +2,6 @@ with
     daily_attendance as (
         select
             student_number,
-            schoolid as school_id,
             calendardate as attendance_date,
             academic_year,
             membershipvalue as membership_value,
@@ -30,7 +29,6 @@ with
 
 select
     student_number,
-    school_id,
     attendance_date,
     academic_year,
     membership_value,
@@ -48,6 +46,5 @@ select
     attendance_code,
     attendance_key,
     rolling_avg_daily_attendance,
-
     if(rolling_avg_daily_attendance < 0.90, 1, 0) as is_chronic_absentee_ytd,
 from daily_attendance
