@@ -183,7 +183,7 @@ def build_sftp_file_asset(
 
         if os.path.getsize(local_filepath) == 0:
             context.log.warning(msg=f"File is empty: {local_filepath}")
-            records, n_rows = ([{}], 0)
+            records, n_rows = ([], 0)
         elif remote_file_regex[-4:] == ".pdf":
             records, n_rows = extract_pdf_to_dict(
                 stream=local_filepath,
