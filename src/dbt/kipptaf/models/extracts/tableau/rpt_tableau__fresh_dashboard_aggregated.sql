@@ -26,9 +26,9 @@ with
 
             metric,
 
-        from teamster-332318.dbt_cloud_pr_440244_3195_google_sheets.stg_google_sheets__finalsite__school_scaffold as b
+        from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as b
         inner join
-            teamster-332318.dbt_cloud_pr_440244_3195_google_sheets.stg_google_sheets__finalsite__status_crosswalk as x
+            {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
             on b.academic_year = x.enrollment_academic_year
         cross join
             unnest(
@@ -79,10 +79,10 @@ with
 
             max(student_pending_offer_ops) over (
                 partition by
-                   enrollment_academic_year, student_finalsite_student_id, calendar_day
+                    enrollment_academic_year, student_finalsite_student_id, calendar_day
             ) as pending_offer_daily,
 
-        from `grangel.int_tableau__finalsite_student_scaffold`
+        from {{ ref("int_tableau__finalsite_student_scaffol") }}
     ),
 
     pending_offer_calcs as (
@@ -104,7 +104,8 @@ with
                 when
                     pending_offer_daily = 1
                     and sum(pending_offer_daily) over (
-                        partition by enrollment_academic_year, student_finalsite_student_id
+                        partition by
+                            enrollment_academic_year, student_finalsite_student_id
                         order by calendar_day asc
                     )
                     <= 4
@@ -112,7 +113,8 @@ with
                 when
                     pending_offer_daily = 1
                     and sum(pending_offer_daily) over (
-                        partition by enrollment_academic_year, student_finalsite_student_id
+                        partition by
+                            enrollment_academic_year, student_finalsite_student_id
                         order by calendar_day asc
                     )
                     between 5 and 10
@@ -120,7 +122,8 @@ with
                 when
                     pending_offer_daily = 1
                     and sum(pending_offer_daily) over (
-                        partition by enrollment_academic_year, student_finalsite_student_id
+                        partition by
+                            enrollment_academic_year, student_finalsite_student_id
                         order by calendar_day asc
                     )
                     > 10
@@ -184,7 +187,7 @@ with
         union all
 
         select
-             s.enrollment_academic_year,
+            s.enrollment_academic_year,
             s.enrollment_academic_year_display,
             s.org,
             s.region,
@@ -271,14 +274,14 @@ select
 
     g.goal_value,
 
-    if(f.metric = 'Offers','Offers',f.metric) as goal_type,
-    if(f.metric = 'Offers','Offers Target',null) as goal_name,
+    if(f.metric = 'Offers', 'Offers', f.metric) as goal_type,
+    if(f.metric = 'Offers', 'Offers Target', null) as goal_name,
 
 from final as f
-left join `kipptaf_google_sheets.stg_google_sheets__finalsite__goals` as g
-on 
-    f.enrollment_academic_year = g.enrollment_academic_year
+left join
+    {{ ref("stg_google_sheets__finalsite__goals") }} as g
+    on f.enrollment_academic_year = g.enrollment_academic_year
     and f.school = g.school
     and g.goal_type = 'Applications'
     and g.goal_granularity = 'School'
-where f.calendar_day = current_date('America/New_York')
+where f.calendar_day = ccurrent_date('{{ var("local_timezone") }}')
