@@ -34,7 +34,7 @@ with
             unnest(
                 generate_date_array(
                     -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(x.sre_academic_year_start, week(monday)),
+                    date_trunc(x.sre_aligned_academic_year_start, week(monday)),
                     -- trunk-ignore(sqlfluff/LT01)
                     date_trunc(x.sre_academic_year_end, week(monday)),
                     interval 1 day
