@@ -72,12 +72,25 @@ def build_sftp_file_asset(
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
+    use_iready_partitions: bool = False,
 ):
     if group_name is None:
         group_name = asset_key[1]
 
     if exclude_dirs is None:
         exclude_dirs = []
+
+    # Maintain backward compatibility: if a specific group name is used that
+    # historically relied on specialized partition behavior, enable that
+    # behavior by default while still allowing it to be configured explicitly.
+    if group_name == "iready" and not use_iready_partitions:
+        use_iready_partitions = True
+
+    # Maintain backward compatibility: auto-enable iready-style partition
+    # handling for the historical "iready" group name, while allowing other
+    # groups to opt into the same behavior via the parameter.
+    if group_name == "iready" and not use_iready_partitions:
+        use_iready_partitions = True
 
     @asset(
         key=asset_key,
@@ -103,7 +116,7 @@ def build_sftp_file_asset(
         else:
             partition_key = None
 
-        if group_name == "iready":
+        if use_iready_partitions:
             partition_key = check.inst(obj=partition_key, ttype=MultiPartitionKey)
 
             academic_year_key, subject_key = partition_key.keys_by_dimension.values()
