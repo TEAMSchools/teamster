@@ -1,0 +1,5 @@
+models:
+  - name: int_tableau__finalsite_student_scaffold
+    config:
+      contract:
+        enforced: false
