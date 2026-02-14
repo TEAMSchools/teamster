@@ -72,12 +72,25 @@ def build_sftp_file_asset(
     slugify_replacements: list[list[str]] | None = None,
     tags: dict[str, str] | None = None,
     op_tags: dict | None = None,
+    use_iready_partitions: bool = False,
 ):
     if group_name is None:
         group_name = asset_key[1]
 
     if exclude_dirs is None:
         exclude_dirs = []
+
+    # Maintain backward compatibility: if a specific group name is used that
+    # historically relied on specialized partition behavior, enable that
+    # behavior by default while still allowing it to be configured explicitly.
+    if group_name == "iready" and not use_iready_partitions:
+        use_iready_partitions = True
+
+    # Maintain backward compatibility: auto-enable iready-style partition
+    # handling for the historical "iready" group name, while allowing other
+    # groups to opt into the same behavior via the parameter.
+    if group_name == "iready" and not use_iready_partitions:
+        use_iready_partitions = True
 
     @asset(
         key=asset_key,
@@ -103,7 +116,7 @@ def build_sftp_file_asset(
         else:
             partition_key = None
 
-        if group_name == "iready":
+        if use_iready_partitions:
             partition_key = check.inst(obj=partition_key, ttype=MultiPartitionKey)
 
             academic_year_key, subject_key = partition_key.keys_by_dimension.values()
@@ -172,7 +185,7 @@ def build_sftp_file_asset(
             )
 
             context.log.error(msg=msg)
-            raise Exception(msg)
+            raise RuntimeError(msg)
         else:
             file_match = file_matches[0]
 
@@ -183,7 +196,7 @@ def build_sftp_file_asset(
 
         if os.path.getsize(local_filepath) == 0:
             context.log.warning(msg=f"File is empty: {local_filepath}")
-            records, n_rows = ([{}], 0)
+            records, n_rows = ([], 0)
         elif remote_file_regex[-4:] == ".pdf":
             records, n_rows = extract_pdf_to_dict(
                 stream=local_filepath,
@@ -325,18 +338,54 @@ def build_sftp_archive_asset(
 
             return None
 
-        archive_file_regex_composed = compose_regex(
+        archive_file_regex_pattern = compose_regex(
             regexp=archive_file_regex, partition_key=partition_key
-        ).replace("\\", "")
+        )
 
         with zipfile.ZipFile(file=local_filepath) as zf:
+            archive_members = zf.namelist()
+            matching_members = [
+                member
+                for member in archive_members
+                if re.fullmatch(archive_file_regex_pattern, member)
+            ]
+
+            if not matching_members:
+                context.log.warning(
+                    msg=(
+                        "Found no archive members matching pattern "
+                        f"{archive_file_regex_pattern!r} in {local_filepath}"
+                    )
+                )
+                records = [{}]
+
+                yield Output(value=(records, avro_schema), metadata={"records": 0})
+                yield check_avro_schema_valid(
+                    asset_key=context.asset_key,
+                    records=records,
+                    schema=avro_schema,
+                )
+
+                return None
+
+            if len(matching_members) > 1:
+                context.log.warning(
+                    msg=(
+                        "Found multiple archive members matching pattern "
+                        f"{archive_file_regex_pattern!r} in {local_filepath}\n"
+                        f"{matching_members}"
+                    )
+                )
+
+            archive_member = matching_members[0]
+
             zf.extract(
-                member=archive_file_regex_composed,
+                member=archive_member,
                 path=f"./env/{context.asset_key.to_user_string()}",
             )
 
         local_filepath = (
-            f"./env/{context.asset_key.to_user_string()}/{archive_file_regex_composed}"
+            f"./env/{context.asset_key.to_user_string()}/{archive_member}"
         )
 
         if os.path.getsize(local_filepath) == 0:
