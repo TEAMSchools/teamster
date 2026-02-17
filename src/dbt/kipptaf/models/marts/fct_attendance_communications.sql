@@ -44,4 +44,7 @@ select
     commlog_topic,
     commlog_type,
     commlog_status,
+
+    {{ dbt_utils.generate_surrogate_key(["student_number", "commlog_date"]) }}
+    as commlog_key,
 from final
