@@ -1,7 +1,5 @@
 models:
   - name: rpt_tableau__fresh_dashboard_progress_to_goals
-    config:
-      enabled: false
     columns:
       - name: aligned_enrollment_academic_year
         data_type: integer
