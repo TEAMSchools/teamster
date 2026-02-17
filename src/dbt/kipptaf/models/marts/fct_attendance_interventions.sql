@@ -14,6 +14,9 @@ select
     intervention_status,
     intervention_status_required_int,
 
-    {{ dbt_utils.generate_surrogate_key(["student_number", "academic_year","commlog_reason"]) }}
-    as interventions_key,
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["student_number", "academic_year", "commlog_reason"]
+        )
+    }} as interventions_key,
 from {{ ref("int_students__attendance_interventions") }}

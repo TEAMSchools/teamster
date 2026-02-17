@@ -9,8 +9,7 @@ models:
               config:
                 severity: Warn
                 store_failures: true
-      
-      
+
       - name: student_number
         data_type: int64
 
