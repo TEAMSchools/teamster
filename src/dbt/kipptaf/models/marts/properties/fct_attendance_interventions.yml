@@ -2,6 +2,15 @@ models:
   - name: fct_attendance_interventions
 
     columns:
+      - name: interventions_key
+        data_type: string
+        tests:
+          - unique:
+              config:
+                severity: Warn
+                store_failures: true
+      
+      
       - name: student_number
         data_type: int64
 
@@ -13,6 +22,9 @@ models:
 
       - name: absence_threshold
         data_type: int64
+
+      - name: days_absent_unexcused
+        data_type: float64
 
       - name: commlog_notes
         data_type: string
