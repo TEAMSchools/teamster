@@ -48,6 +48,3 @@ models:
 
       - name: intervention_status
         data_type: string
-
-      - name: intervention_status_required_int
-        data_type: int64

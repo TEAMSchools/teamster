@@ -12,7 +12,6 @@ select
     commlog_staff_name,
     schoolid as school_id,
     intervention_status,
-    intervention_status_required_int,
 
     {{
         dbt_utils.generate_surrogate_key(

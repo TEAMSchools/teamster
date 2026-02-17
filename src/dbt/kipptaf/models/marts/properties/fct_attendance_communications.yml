@@ -33,3 +33,6 @@ models:
 
       - name: commlog_status
         data_type: string
+
+      - name: is_successful
+        data_type: boolean
