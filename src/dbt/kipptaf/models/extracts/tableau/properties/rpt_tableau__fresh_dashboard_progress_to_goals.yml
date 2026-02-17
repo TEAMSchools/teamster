@@ -66,6 +66,6 @@ models:
       - name: sre_aligned_academic_year_end
         data_type: date
       - name: seat_target
-        data_type: numeric
+        data_type: float64
       - name: fdos_target
-        data_type: numeric
+        data_type: float64
