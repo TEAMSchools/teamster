@@ -6,6 +6,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     sensor,
 )
 from dagster_shared import check
@@ -64,6 +65,8 @@ def adp_wfn_sftp_sensor(
 
     if run_requests:
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
+    else:
+        return SkipReason()
 
 
 sensors = [

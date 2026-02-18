@@ -71,9 +71,3 @@ def test_renlearn_fast_star_kippmiami():
         code_location="kippmiami",
         partition_key="2025-07-01|Participation",
     )
-
-
-# def test_renlearn_star_skill_area_kippmiami():
-#     from teamster.code_locations.kippmiami.renlearn.assets import star_skill_area
-
-#     _test_asset(asset=star_skill_area, code_location="kippmiami")
