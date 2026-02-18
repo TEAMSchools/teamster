@@ -134,7 +134,6 @@ def adp_workforce_now_workers_update(
                 )
             except Exception as e:
                 errors.append(e.args[0])
-                pass
 
         # update employee number if missing
         employee_number_adp = worker["adp__custom_field__employee_number"]

@@ -2,6 +2,7 @@ from dagster import (
     AssetsDefinition,
     RunRequest,
     ScheduleEvaluationContext,
+    SkipReason,
     define_asset_job,
     schedule,
 )
@@ -37,5 +38,7 @@ def build_dbt_code_version_schedule(
 
         if asset_selection:
             return RunRequest(asset_selection=asset_selection)
+        else:
+            return SkipReason()
 
     return _schedule

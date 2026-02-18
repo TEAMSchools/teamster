@@ -1,0 +1,71 @@
+models:
+  - name: rpt_tableau__fresh_dashboard_progress_to_goals
+    columns:
+      - name: aligned_enrollment_academic_year
+        data_type: integer
+      - name: enrollment_academic_year
+        data_type: integer
+      - name: finalsite_student_id
+        data_type: string
+      - name: next_year_enrollment_type
+        data_type: string
+      - name: _dbt_source_relation
+        data_type: string
+      - name: enrollment_year
+        data_type: string
+      - name: enrollment_academic_year_display
+        data_type: string
+      - name: sre_academic_year_start
+        data_type: date
+      - name: sre_academic_year_end
+        data_type: date
+      - name: org
+        data_type: string
+      - name: region
+        data_type: string
+      - name: latest_region
+        data_type: string
+      - name: schoolid
+        data_type: integer
+      - name: latest_schoolid
+        data_type: integer
+      - name: school
+        data_type: string
+      - name: latest_school
+        data_type: string
+      - name: powerschool_student_number
+        data_type: integer
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: grade_level
+        data_type: integer
+      - name: latest_grade_level
+        data_type: integer
+      - name: detailed_status
+        data_type: string
+      - name: status_order
+        data_type: integer
+      - name: status_start_date
+        data_type: date
+      - name: status_end_date
+        data_type: date
+      - name: days_in_status
+        data_type: integer
+      - name: rn
+        data_type: integer
+      - name: enrollment_type_raw
+        data_type: string
+      - name: latest_status
+        data_type: string
+      - name: aligned_enrollment_academic_year_display
+        data_type: string
+      - name: sre_aligned_academic_year_start
+        data_type: date
+      - name: sre_aligned_academic_year_end
+        data_type: date
+      - name: seat_target
+        data_type: float64
+      - name: fdos_target
+        data_type: float64
