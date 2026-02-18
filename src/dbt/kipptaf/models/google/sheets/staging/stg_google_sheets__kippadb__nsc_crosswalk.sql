@@ -1,5 +1,12 @@
 select
-    *,
+    Account_ID,
+    College_Name_NSC,
+    College_State_NSC,
+    College_Code_NSC,
+    Meets_Full_Need,
+    Is_Strong_OOS_Option,
+    NCES_ID,
+    Overgrad_URM_Grad_Rate,
 
     row_number() over (
         partition by account_id order by college_name_nsc desc
