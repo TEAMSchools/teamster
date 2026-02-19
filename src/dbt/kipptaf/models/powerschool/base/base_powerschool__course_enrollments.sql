@@ -61,6 +61,7 @@ select
             ur._dbt_source_relation, ur.cc_studyear, csc.illuminate_subject_area
         order by ur.cc_termid desc, ur.cc_dateenrolled desc, ur.cc_dateleft desc
     ) as rn_student_year_illuminate_subject_desc,
+
 from union_relations as ur
 left join
     {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
