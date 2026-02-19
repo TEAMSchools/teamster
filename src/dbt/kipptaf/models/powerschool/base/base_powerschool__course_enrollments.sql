@@ -49,12 +49,13 @@ select
     csc.illuminate_subject_area,
     csc.is_foundations,
     csc.is_advanced_math,
-    csc.exclude_from_gradebook,
     csc.discipline,
 
     initcap(regexp_extract(ur._dbt_source_relation, r'kipp(\w+)_')) as region,
 
     if(cx.ap_course_subject is not null, true, false) as is_ap_course,
+
+    if(csc.discipline = 'SOC', 'Civics', csc.discipline) as standardized_discipline,
 
     row_number() over (
         partition by
