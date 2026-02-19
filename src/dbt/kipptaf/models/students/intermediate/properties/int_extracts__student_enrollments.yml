@@ -506,6 +506,8 @@ models:
         data_type: string
       - name: next_year_schoolid
         data_type: int64
+      - name: finalsite_student_id
+        data_type: string
       - name: district
         data_type: string
       - name: region_school_level
@@ -513,6 +515,8 @@ models:
       - name: guardian_email
         data_type: string
       - name: academic_year_display
+        data_type: string
+      - name: next_year_enrollment_type
         data_type: string
       - name: overgrad_fafsa_opt_out
         data_type: string
@@ -531,13 +535,9 @@ models:
         data_type: string
       - name: ml_status
         data_type: string
-      - name: finalsite_enrollment_type
+      - name: status_504
         data_type: string
-      - name: academic_year_display
-        data_type: string
-      - name: next_year_enrollment_type
-        data_type: string
-      - name: iep_status
+      - name: self_contained_status
         data_type: string
       - name: state_studentnumber
         data_type: string
