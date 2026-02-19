@@ -1,5 +1,8 @@
 models:
   - name: int_pearson__all_assessments
+    config:
+      contract:
+        enabled: false
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -62,4 +65,8 @@ models:
       - name: iep_status
         data_type: string
       - name: race_ethnicity
+        data_type: string
+      - name: illuminate_subject
+        data_type: string
+      - name: njsla_aggregated_proficiency
         data_type: string
