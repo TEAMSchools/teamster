@@ -24,6 +24,19 @@ models:
             store_failures: true
             severity: warn
     columns:
+      - name: fafsa_status_mismatch_category
+        data_type: string
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - No issues
+              config:
+                where:
+                  grade_level != 99 and academic_year = {{
+                  var('current_academic_year')}}
+                severity: warn
+                store_failures: true
       - name: _dbt_source_relation
         data_type: string
       - name: studentid
@@ -531,9 +544,13 @@ models:
         data_type: string
       - name: ml_status
         data_type: string
-      - name: status_504
+      - name: finalsite_enrollment_type
         data_type: string
-      - name: self_contained_status
+      - name: academic_year_display
+        data_type: string
+      - name: next_year_enrollment_type
+        data_type: string
+      - name: iep_status
         data_type: string
       - name: state_studentnumber
         data_type: string

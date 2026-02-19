@@ -1,5 +1,8 @@
 models:
   - name: stg_performance_management__outlier_detection
+    config:
+      contract:
+        enabled: true
     columns:
       - name: observer_employee_number
         data_type: int64

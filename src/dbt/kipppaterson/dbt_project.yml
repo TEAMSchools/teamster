@@ -132,6 +132,11 @@ models:
             +enabled: false
 
 sources:
+  amplify:
+    amplify_mclass_api:
+      +enabled: false
+    amplify_dds:
+      +enabled: false
   pearson:
     pearson:
       src_pearson__njgpa:

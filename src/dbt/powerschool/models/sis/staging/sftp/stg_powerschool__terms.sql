@@ -20,7 +20,8 @@ with
                 yearlycredithrs,
                 firstday,
                 lastday,
-                transaction_date
+                transaction_date,
+                source_file_name
             ),
 
             cast(attendance_calculation_code as int) as attendance_calculation_code,

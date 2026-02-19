@@ -66,8 +66,6 @@ class AdpWorkforceManagerResource(ConfigurableResource):
             response = self._session.request(method=method, url=url, **kwargs)
 
             response.raise_for_status()
-
-            return response
         except exceptions.HTTPError as e:
             self._log.exception(e)
 
@@ -76,6 +74,8 @@ class AdpWorkforceManagerResource(ConfigurableResource):
                 self._request(method=method, url=url, **kwargs)
             else:
                 raise exceptions.HTTPError(response.text) from e
+
+        return response
 
     def _get_url(self, endpoint, *args):
         return f"{self._base_url}/{endpoint}" + ("/" + "/".join(args) if args else "")

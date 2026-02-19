@@ -31,7 +31,8 @@ select
         sid_exitdate,
         withdrawal_date,
         whencreated,
-        whenmodified
+        whenmodified,
+        source_file_name
     ),
 
     cast(cumulativedaysabsent as int) as cumulativedaysabsent,

@@ -1,0 +1,65 @@
+models:
+  - name: fct_attendance
+
+    columns:
+      - name: attendance_key
+        data_type: string
+        tests:
+          - unique:
+              config:
+                severity: Warn
+                store_failures: true
+
+      - name: student_number
+        data_type: int64
+
+      - name: attendance_date
+        data_type: date
+
+      - name: academic_year
+        data_type: int64
+
+      - name: membership_value
+        data_type: float64
+
+      - name: is_present
+        data_type: float64
+
+      - name: is_absent
+        data_type: float64
+
+      - name: is_present_weighted
+        data_type: float64
+
+      - name: is_tardy
+        data_type: float64
+
+      - name: is_ontime
+        data_type: float64
+
+      - name: is_oss
+        data_type: float64
+
+      - name: is_iss
+        data_type: float64
+
+      - name: is_suspended
+        data_type: float64
+
+      - name: is_truant
+        data_type: boolean
+
+      - name: semester
+        data_type: string
+
+      - name: term
+        data_type: string
+
+      - name: attendance_code
+        data_type: string
+
+      - name: rolling_avg_daily_attendance
+        data_type: FLOAT64
+
+      - name: is_chronic_absentee_ytd
+        data_type: INT64

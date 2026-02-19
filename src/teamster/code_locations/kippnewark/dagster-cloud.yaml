@@ -159,7 +159,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-titan-sftp-kippnewark
-                    key: ip
+                    key: host
               - name: DEANSLIST_SUBDOMAIN
                 valueFrom:
                   secretKeyRef:
@@ -312,7 +312,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-titan-sftp-kippnewark
-                    key: ip
+                    key: host
               - name: DEANSLIST_SUBDOMAIN
                 valueFrom:
                   secretKeyRef:

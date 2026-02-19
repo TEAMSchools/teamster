@@ -1,1 +1,2 @@
-select *, from {{ source("powerschool_sftp", "src_powerschool__gpnode") }}
+select * except (source_file_name),
+from {{ source("powerschool_sftp", "src_powerschool__gpnode") }}

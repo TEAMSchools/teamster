@@ -4,7 +4,8 @@ select
         exclude_course_submission_tf,
         sla_include_tf,
         whencreated,
-        whenmodified
+        whenmodified,
+        source_file_name
     ),
 
     cast(coursesdcid as int) as coursesdcid,

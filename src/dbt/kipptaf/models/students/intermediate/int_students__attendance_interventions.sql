@@ -15,8 +15,7 @@ with
                     'Chronic Absence: 5',
                     'Chronic Absence: 8',
                     'Chronic Absence: 10',
-                    'Chronic Absence: 15+',
-                    'Chronic Absence: 20+'
+                    'Chronic Absence: 15+'
                 ]
             ) as commlog_reason
 
@@ -66,6 +65,7 @@ with
 
 select
     ada._dbt_source_relation,
+    ada.studentid,
     ada.student_number,
     ada.academic_year,
     ada.days_absent_unexcused,
@@ -84,6 +84,12 @@ select
 
     if(c.reason is not null, 'Complete', 'Missing') as intervention_status,
     if(c.reason is not null, 1, 0) as intervention_status_required_int,
+
+    if(
+        current_date('America/New_York') between ae.enter_date and ae.exit_date,
+        true,
+        false
+    ) as is_ca_exception,
 from {{ ref("int_powerschool__ada") }} as ada
 inner join
     intervention_scaffold as sc
@@ -98,3 +104,9 @@ left join
     and sc.commlog_reason = c.reason
     and {{ union_dataset_join_clause(left_alias="sc", right_alias="c") }}
 left join schoolid_crosswalk as lc on c.dl_school_id = lc.deanslist_school_id
+left join
+    {{ ref("int_powerschool__spenrollments") }} as ae
+    on ada.studentid = ae.studentid
+    and ada.academic_year = ae.academic_year
+    and ae.specprog_name = 'Attendance Exceptions'
+    and {{ union_dataset_join_clause(left_alias="ada", right_alias="ae") }}

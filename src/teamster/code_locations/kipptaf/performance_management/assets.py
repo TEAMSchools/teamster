@@ -17,12 +17,14 @@ from sklearn.ensemble import IsolationForest
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, CURRENT_FISCAL_YEAR
 from teamster.code_locations.kipptaf.performance_management.schema import (
+    OBSERVATION_DETAILS_SCHEMA,
     OUTLIER_DETECTION_SCHEMA,
 )
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
+from teamster.libraries.sftp.assets import build_sftp_file_asset
 
 FIT_TRANSFORM_COLUMNS = [
     "etr1a",
@@ -225,25 +227,26 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
     )
 
 
+observation_details = build_sftp_file_asset(
+    asset_key=[CODE_LOCATION, "performance_management", "observation_details"],
+    remote_dir_regex=(
+        r"/data-team/kipptaf/performance-management/observation-details/"
+        r"(?P<academic_year>\d+)/(?P<term>PM\d)"
+    ),
+    remote_file_regex=r"[\w-]+\.csv",
+    avro_schema=OBSERVATION_DETAILS_SCHEMA,
+    ssh_resource_key="ssh_couchdrop",
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "academic_year": StaticPartitionsDefinition(
+                ["2018", "2019", "2020", "2021", "2022", "2023"]
+            ),
+            "term": StaticPartitionsDefinition(["PM1", "PM2", "PM3"]),
+        }
+    ),
+)
+
 assets = [
+    observation_details,
     outlier_detection,
 ]
-
-# observation_details = build_sftp_file_asset(
-#     asset_key=[CODE_LOCATION, "performance_management", "observation_details"],
-#     remote_dir_regex=(
-#         r"/data-team/kipptaf/performance-management/observation-details/"
-#         r"(?P<academic_year>\d+)/(?P<term>PM\d)"
-#     ),
-#     remote_file_regex=r"[\w-]+\.csv",
-#     avro_schema=OBSERVATION_DETAILS_SCHEMA,
-#     ssh_resource_key="ssh_couchdrop",
-#     partitions_def=MultiPartitionsDefinition(
-#         {
-#             "academic_year": StaticPartitionsDefinition(
-#                 ["2018", "2019", "2020", "2021", "2022", "2023"]
-#             ),
-#             "term": StaticPartitionsDefinition(["PM1", "PM2", "PM3"]),
-#         }
-#     ),
-# )

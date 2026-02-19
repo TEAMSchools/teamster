@@ -21,6 +21,10 @@ with
                 then 'Interested in Transfer'
                 when
                     answer
+                    = 'I am committed to KIPP NJ|Miami, but interested in an opportunity at another school and/or in a different role. I will speak to my manager and/or School Leader about my interests.'
+                then 'Interested in Transfer'
+                when
+                    answer
                     = 'I am not returning but want to ensure my kids have an outstanding TEAMmate next year; the Talent Acquisition Team should definitely hire for my position.'
                 then 'Not Returning'
                 when
@@ -70,12 +74,15 @@ select
 
     /* future feeds from other data sources*/
     ir.answer_short as itr_response,
+
     null as certification_renewal_status,
+
     pm.overall_tier as last_performance_management_score,
+
     null as smart_recruiter_id,
 
     coalesce(
-        cast(tgl.grade_level as string), sr.home_department_name
+        cast(sr.primary_grade_level_taught as string), sr.home_department_name
     ) as grade_department,
 
     coalesce(lc.region, sr.home_business_unit_name) as location_entity,
@@ -107,6 +114,11 @@ select
             and contains_substr(sr.job_title, 'Director')
         then 7
         /* see your state/region, edit everything, (intentionally blank below)*/
+        when
+            sr.job_title = 'Director'
+            and sr.home_department_name in ('Operations')
+            and sr.home_work_location_name like '%Room%'
+        then 6
         /* see everything, edit teammate and seat status fields (recruiters)*/
         when
             sr.home_department_name = 'Talent Acquisition'
@@ -115,7 +127,7 @@ select
                 or contains_substr(sr.job_title, 'Manager')
             )
         then 5
-        /* see school, edit teammate fields (name in position, gutcheck, nonrenewal)*/
+        /* see school, edit teammate fields (name, gutcheck, nonrenewal)*/
         when
             sr.job_title in (
                 'School Leader',
@@ -144,7 +156,7 @@ select
         then 2
         when
             contains_substr(sr.job_title, 'Director')
-            and sr.home_department_name in ('Operations', 'School Support')
+            and sr.home_department_name in ('School Support')
             and sr.home_work_location_name like '%Room%'
         then 2
         when contains_substr(sr.job_title, 'Head of Schools')
@@ -159,17 +171,12 @@ inner join
 left join
     {{ ref("stg_google_sheets__people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.location_name
-left join
-    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
-    on sr.powerschool_teacher_number = tgl.teachernumber
-    and tgl.academic_year = {{ var("current_academic_year") }}
-    and tgl.grade_level_rank = 1
 left join itr_response as ir on sr.employee_number = ir.employee_number
 left join pm_tier as pm on sr.employee_number = pm.employee_number
 
 union all
 
-/* generic roster names used for positions that are open, closed, pre-start, or subs */
+/* generic roster names used for positions without active teammates */
 select
     999999 as employee_number,
     'Active' as assignment_status,

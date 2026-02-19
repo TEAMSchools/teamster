@@ -191,7 +191,7 @@ def build_sftp_file_asset(
             )
         else:
             records = file_to_records(
-                file=local_filepath,
+                file_path=local_filepath,
                 encoding=file_encoding,
                 delimiter=file_sep,
                 slugify_cols=slugify_cols,
@@ -294,7 +294,8 @@ def build_sftp_archive_asset(
             yield check_avro_schema_valid(
                 asset_key=context.asset_key, records=records, schema=avro_schema
             )
-            return
+
+            return None
 
         if len(file_matches) > 1:
             context.log.warning(
@@ -321,7 +322,8 @@ def build_sftp_archive_asset(
             yield check_avro_schema_valid(
                 asset_key=context.asset_key, records=records, schema=avro_schema
             )
-            return
+
+            return None
 
         archive_file_regex_composed = compose_regex(
             regexp=archive_file_regex, partition_key=partition_key
@@ -342,7 +344,7 @@ def build_sftp_archive_asset(
             records, n_rows = ([{}], 0)
         else:
             records = file_to_records(
-                file=local_filepath,
+                file_path=local_filepath,
                 encoding=file_encoding,
                 delimiter=file_sep,
                 slugify_cols=slugify_cols,
@@ -440,7 +442,12 @@ def build_sftp_folder_asset(
                     f"{remote_dir_regex_composed}/{remote_file_regex_composed}"
                 )
             )
-            return Output(value=([], avro_schema), metadata={"records": 0})
+
+            yield Output(value=([], avro_schema), metadata={"records": 0})
+
+            return None
+
+        local_filepaths = []
 
         for file in file_matches:
             local_filepath = ssh.sftp_get(
@@ -453,8 +460,11 @@ def build_sftp_folder_asset(
                 context.log.warning(msg=f"File is empty: {local_filepath}")
                 continue
 
+            local_filepaths.append(local_filepath)
+
+        for file_path in local_filepaths:
             records = file_to_records(
-                file=local_filepath,
+                file_path=file_path,
                 encoding=file_encoding,
                 delimiter=file_sep,
                 slugify_cols=slugify_cols,
@@ -467,6 +477,7 @@ def build_sftp_folder_asset(
                 context.log.warning(msg="File contains 0 rows")
 
             all_records.extend(records)
+
             record_count += n_rows
 
         yield Output(
