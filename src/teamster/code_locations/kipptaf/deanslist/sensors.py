@@ -6,6 +6,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     define_asset_job,
     sensor,
 )
@@ -58,6 +59,8 @@ def deanslist_sftp_sensor(context: SensorEvaluationContext, ssh_deanslist: SSHRe
         )
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
+    else:
+        return SkipReason()
 
 
 sensors = [

@@ -10,6 +10,7 @@ from teamster.code_locations.kippcamden import (
     CODE_LOCATION,
     DBT_PROJECT,
     _dbt,
+    asset_checks,
     couchdrop,
     deanslist,
     edplan,
@@ -52,6 +53,7 @@ defs = Definitions(
             titan,
         ]
     ),
+    asset_checks=asset_checks.freshness_checks,
     schedules=[
         *extracts.schedules,
         *deanslist.schedules,

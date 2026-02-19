@@ -36,6 +36,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__ap_assessment_dashboard")
       - ref("rpt_tableau__college_assessment_dashboard_current")
+      - ref("rpt_tableau__college_assessment_dashboard_de")
       - ref("rpt_tableau__college_assessment_dashboard_over_time")
       - ref("rpt_tableau__college_assessment_dashboard_roster")
       - ref("rpt_tableau__college_assessment_dashboard_scores")

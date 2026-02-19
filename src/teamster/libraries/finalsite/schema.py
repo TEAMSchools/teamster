@@ -12,3 +12,4 @@ class StatusReport(BaseModel):
     first_name: str | None = None
     grade_level: str | None = None
     school: str | None = None
+    source_file_name: str | None = None

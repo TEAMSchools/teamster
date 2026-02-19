@@ -214,6 +214,38 @@ with
                 order_by="enter_date desc",
             )
         }}
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03)
+    mtss as (
+        select
+            sp._dbt_source_relation,
+            sp.studentid,
+            sp.academic_year,
+            sp.enter_date,
+
+            right(sp.specprog_name, length(sp.specprog_name) - 5) as discipline,
+
+            if(t.abbreviation like 'S%', t.name, 'Year') as mtss_enrollment,
+        from {{ ref("int_powerschool__spenrollments") }} as sp
+        inner join
+            {{ ref("stg_powerschool__terms") }} as t
+            on sp.enter_date = t.firstday
+            and sp.exit_date = t.lastday
+            and sp.academic_year = t.academic_year
+            and {{ union_dataset_join_clause(left_alias="sp", right_alias="t") }}
+            and t.schoolid = 0
+        where sp.specprog_name like 'MTSS%'
+    ),
+
+    mtss_dedupe as (
+        {{
+            dbt_utils.deduplicate(
+                relation="mtss",
+                partition_by="_dbt_source_relation, studentid, academic_year, discipline",
+                order_by="enter_date desc",
+            )
+        }}
     )
 
 select
@@ -275,6 +307,7 @@ select
         else false
     end as is_exempt_state_testing,
 
+    coalesce(mtss.mtss_enrollment, 'No Intervention') as mtss_enrollment,
 from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as sj
 left join
@@ -336,3 +369,9 @@ left join
     and co.academic_year = b.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
     and sj.discipline = b.discipline
+left join
+    mtss_dedupe as mtss
+    on co.studentid = mtss.studentid
+    and co.academic_year = mtss.academic_year
+    and sj.discipline = mtss.discipline
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="mtss") }}

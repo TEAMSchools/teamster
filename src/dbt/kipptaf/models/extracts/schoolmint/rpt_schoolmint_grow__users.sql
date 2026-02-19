@@ -28,7 +28,9 @@ with
             if(sr.assignment_status in ('Terminated', 'Deceased'), 1, 0) as inactive,
 
             if(
-                tgl.grade_level = 0, 'K', cast(tgl.grade_level as string)
+                sr.primary_grade_level_taught = 0,
+                'K',
+                cast(sr.primary_grade_level_taught as string)
             ) as grade_abbreviation,
 
             case
@@ -65,6 +67,7 @@ with
                     and (
                         contains_substr(sr.job_title, 'Assistant School Leader')
                         or contains_substr(sr.job_title, 'Dean')
+                        or sr.job_title = 'School Leader in Residence'
                     )
                 then 'School Assistant Admin'
                 /* basic roles */
@@ -76,11 +79,6 @@ with
                 then 'Teacher'
             end as role_name,
         from {{ ref("int_people__staff_roster") }} as sr
-        left join
-            {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
-            on sr.powerschool_teacher_number = tgl.teachernumber
-            and tgl.academic_year = {{ var("current_academic_year") }}
-            and tgl.grade_level_rank = 1
         where
             sr.user_principal_name is not null
             and sr.home_department_name != 'Data'
@@ -150,7 +148,27 @@ with
 
     surrogate_keys as (
         select
-            *,
+            user_internal_id,
+            user_name,
+            user_email,
+            inactive,
+            role_name,
+            school_id,
+            role_id,
+            user_id,
+            archived_at,
+            user_email_ws,
+            user_name_ws,
+            school_id_ws,
+            grade_id_ws,
+            course_id_ws,
+            coach_id_ws,
+            coach_id,
+            course_id,
+            grade_id,
+            role_id_ws,
+            inactive_ws,
+            group_type,
 
             {{
                 dbt_utils.generate_surrogate_key(
@@ -184,7 +202,30 @@ with
         from roster
     )
 
-select *,
+select
+    user_internal_id,
+    user_name,
+    user_email,
+    inactive,
+    role_name,
+    school_id,
+    role_id,
+    user_id,
+    archived_at,
+    user_email_ws,
+    user_name_ws,
+    school_id_ws,
+    grade_id_ws,
+    course_id_ws,
+    coach_id_ws,
+    coach_id,
+    course_id,
+    grade_id,
+    role_id_ws,
+    inactive_ws,
+    group_type,
+    surrogate_key_source,
+    surrogate_key_destination,
 from surrogate_keys
 where
     /* create */

@@ -1,154 +1,151 @@
 with
-    finalsite_report as (
+    most_recent_students as (
+        -- need distinct because of students with multiple apps
+        select distinct
+            coalesce(
+                latest_finalsite_student_id, finalsite_student_id
+            ) as finalsite_student_id,
+
+        from {{ ref("int_finalsite__status_report") }}
+        where
+            extract_datetime = latest_extract_datetime
+            and detailed_status not in ('Inactive Inquiry', 'Deferred')
+    ),
+
+    active_finalsite_for_current_year as (
         select
-            f.* except (school),
+            {{ var("current_academic_year") }} as enrollment_academic_year,
+            c.latest_finalsite_student_id,
 
-            x.region,
-            x.powerschool_school_id as schoolid,
-            x.abbreviation as school,
+            coalesce(e.next_year_enrollment_type, 'New') as next_year_enrollment_type,
 
-        from {{ ref("stg_google_sheets__finalsite__sample_data") }} as f
+        from {{ ref("int_finalsite__status_report") }} as c
+        inner join
+            most_recent_students as m
+            on c.latest_finalsite_student_id = m.finalsite_student_id
         left join
-            {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
-            on f.school = x.name
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on c.latest_finalsite_student_id = e.finalsite_student_id
+            and e.academic_year = {{ var("current_academic_year") }}
+            and e.grade_level != 99
+            and e.rn_year = 1
+        where
+            c.extract_year = 'Current_Year'
+            and c.detailed_status = 'Enrolled'
+            and c.powerschool_student_number is not null
+            and c.latest_finalsite_student_id_rn = 1
     ),
 
-    enrollment_type_calc as (
-        select
-            academic_year,
-            student_number,
-            first_name,
-            last_name,
+    active_finalsite_for_next_year as (
+        /* cannot use latest_finalsite_student_id to get unique row counts because new
+           students typically do not have a powerschool_student_number */
+        select distinct
+            {{ var("current_academic_year") + 1 }} as enrollment_academic_year,
+            n.finalsite_student_id as latest_finalsite_student_id,
 
-            case
-                when
-                    coalesce(
-                        lag(
-                            sum(if(date_diff(exitdate, entrydate, day) >= 7, 1, 0))
-                        ) over (partition by student_number order by academic_year),
-                        0
-                    )
-                    = 0
-                then 'New'
-                when
-                    coalesce(
-                        lag(
-                            sum(if(date_diff(exitdate, entrydate, day) >= 7, 1, 0))
-                        ) over (partition by student_number order by academic_year),
-                        0
-                    )
-                    = 1
-                    and academic_year - coalesce(
-                        lag(academic_year) over (
-                            partition by student_number order by academic_year
-                        ),
-                        0
-                    )
-                    > 1
-                then 'New'
-                else 'Returner'
-            end as enrollment_type,
+            coalesce(e.next_year_enrollment_type, 'New') as next_year_enrollment_type,
 
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where grade_level != 99
-        group by academic_year, student_number, first_name, last_name
-    ),
-
-    mod_enrollment_type as (
-        select
-            f._dbt_source_relation,
-            f.finalsite_student_id,
-            f.academic_year,
-            f.academic_year_display,
-            f.enrollment_year,
-            f.region,
-            f.schoolid,
-            f.school,
-            f.powerschool_student_number,
-            f.last_name,
-            f.first_name,
-            f.grade_level,
-            f.grade_level_string,
-            f.detailed_status,
-            f.status_start_date,
-            f.status_end_date,
-            f.days_in_status,
-
-            coalesce(e.enrollment_type, 'New') as enrollment_type,
-
-        from finalsite_report as f
+        from {{ ref("int_finalsite__status_report") }} as n
+        inner join
+            most_recent_students as m on n.finalsite_student_id = m.finalsite_student_id
         left join
-            enrollment_type_calc as e on f.powerschool_student_number = e.student_number
+            active_finalsite_for_current_year as c
+            on n.finalsite_student_id = c.latest_finalsite_student_id
+        left join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on n.latest_finalsite_student_id = e.finalsite_student_id
+            and e.academic_year = {{ var("current_academic_year") }}
+            and e.grade_level != 99
+            and e.rn_year = 1
+        where n.extract_year = 'Next_Year' and c.latest_finalsite_student_id is null
     ),
 
-    weekly_spine as (
+    active_fs_roster as (
         select
-            week_start as week_start_monday,
-            date_add(week_start, interval 6 day) as week_end_sunday,
+            enrollment_academic_year,
+            latest_finalsite_student_id,
+            next_year_enrollment_type,
 
-        from
-            -- TODO: hardcoded because idk what dates SRE will ask for
-            unnest(
-                generate_date_array(
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc('2025-07-01', week(monday)),
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc('2026-06-30', week(monday)),
-                    interval 7 day
-                )
-            ) as week_start
+            {{ var("current_academic_year") + 1 }} as aligned_enrollment_academic_year,
+
+        from active_finalsite_for_current_year
+
+        union all
+
+        select
+            enrollment_academic_year,
+            latest_finalsite_student_id,
+            next_year_enrollment_type,
+
+            {{ var("current_academic_year") + 1 }} as aligned_enrollment_academic_year,
+
+        from active_finalsite_for_next_year
     )
 
 select
-    m._dbt_source_relation,
-    m.finalsite_student_id,
-    m.academic_year,
-    m.academic_year_display,
-    m.enrollment_year,
-    m.region,
-    m.schoolid,
-    m.school,
-    m.powerschool_student_number,
-    m.last_name,
-    m.first_name,
-    m.grade_level,
-    m.grade_level_string,
-    m.detailed_status,
-    m.status_start_date,
-    m.status_end_date,
-    m.days_in_status,
-    m.enrollment_type,
-    c.overall_status,
-    c.funnel_status,
-    c.status_category,
-    c.offered_status,
-    c.offered_status_detailed,
-    c.detailed_status_ranking,
-    c.detailed_status_branched_ranking,
-    c.powerschool_enroll_status,
-    c.valid_detailed_status,
+    r.aligned_enrollment_academic_year,
+    r.enrollment_academic_year,
+    r.latest_finalsite_student_id as finalsite_student_id,
+    r.next_year_enrollment_type,
 
-    c.applicant_ops,
-    c.offered_ops,
-    c.pending_offer_ops,
-    c.overall_conversion_ops,
-    c.offers_to_accepted_den,
-    c.offers_to_accepted_num,
-    c.accepted_to_enrolled_den,
-    c.accepted_to_enrolled_num,
-    c.offers_to_enrolled_den,
-    c.offers_to_enrolled_num,
-    c.waitlisted,
+    f._dbt_source_relation,
+    f.enrollment_year,
+    f.enrollment_academic_year_display,
+    f.sre_academic_year_start,
+    f.sre_academic_year_end,
+    f.org,
+    f.region,
+    f.latest_region,
+    f.schoolid,
+    f.latest_schoolid,
+    f.school,
+    f.latest_school,
+    f.powerschool_student_number,
+    f.first_name,
+    f.last_name,
+    f.grade_level,
+    f.latest_grade_level,
+    f.detailed_status,
+    f.status_order,
+    f.status_start_date,
+    f.status_end_date,
+    f.days_in_status,
+    f.rn,
+    f.enrollment_type_raw,
+    f.latest_status,
 
-    w.week_start_monday,
-    w.week_end_sunday,
+    x.applicant_ops as student_applicant_ops,
+    x.applicant_ops_alt as student_applicant_ops_alt,
+    x.offered_ops as student_offered_ops,
+    x.pending_offer_ops as student_pending_offer_ops,
+    x.overall_conversion_ops as student_overall_conversion_ops,
+    x.offers_to_accepted_den as student_offers_to_accepted_den,
+    x.offers_to_accepted_num as student_offers_to_accepted_num,
+    x.accepted_to_enrolled_den as student_accepted_to_enrolled_den,
+    x.accepted_to_enrolled_num as student_accepted_to_enrolled_num,
+    x.offers_to_enrolled_den as student_offers_to_enrolled_den,
+    x.offers_to_enrolled_num as student_offers_to_enrolled_num,
+    x.waitlisted as student_waitlisted,
 
-from mod_enrollment_type as m
+    cast(r.aligned_enrollment_academic_year as string)
+    || '-'
+    || right(
+        cast(r.aligned_enrollment_academic_year + 1 as string), 2
+    ) as aligned_enrollment_academic_year_display,
+
+    date(
+        r.aligned_enrollment_academic_year - 1, 10, 16
+    ) as sre_aligned_academic_year_start,
+
+    date(r.aligned_enrollment_academic_year, 6, 30) as sre_aligned_academic_year_end,
+
+from active_fs_roster as r
 inner join
-    weekly_spine as w
-    on m.status_start_date between w.week_start_monday and w.week_end_sunday
-left join
-    {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as c
-    on m.academic_year = c.academic_year
-    and m.enrollment_type = c.enrollment_type
-    and m.detailed_status = c.detailed_status
+    {{ ref("int_finalsite__status_report") }} as f
+    on r.enrollment_academic_year = f.enrollment_academic_year
+    and r.latest_finalsite_student_id = f.finalsite_student_id
+inner join
+    {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
+    on r.enrollment_academic_year = x.enrollment_academic_year
+    and r.next_year_enrollment_type = x.enrollment_type
+    and f.detailed_status = x.detailed_status

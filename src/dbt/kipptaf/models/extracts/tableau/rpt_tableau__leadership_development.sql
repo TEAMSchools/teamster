@@ -160,4 +160,3 @@ left join
 left join metrics_lookup as m on p.metric_id = m.metric_id
 left join
     {{ ref("int_people__staff_roster") }} as r on p.employee_number = r.employee_number
-where l.active

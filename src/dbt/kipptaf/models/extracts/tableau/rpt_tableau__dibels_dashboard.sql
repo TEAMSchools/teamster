@@ -28,6 +28,7 @@ select
     s.nj_student_tier,
     s.is_tutoring as tutoring_nj,
     s.is_sipps,
+    s.mtss_enrollment,
 
     'Benchmark' as assessment_type,
 
@@ -150,14 +151,7 @@ left join
         'ELA Gr5',
         'ELA Gr6',
         'ELA Gr7',
-        'ELA Gr8',
-        'English Language Arts Kindergarten',
-        'English Language Arts 1st',
-        'English Language Arts 2nd',
-        'English Language Arts 3rd',
-        'English Language Arts 5th',
-        'English Language Arts 6th ',
-        'English Language Arts 7th'
+        'ELA Gr8'
     )
 left join
     {{ ref("int_amplify__all_assessments") }} as b
@@ -210,6 +204,7 @@ select
     s.nj_student_tier,
     s.is_tutoring as tutoring_nj,
     s.is_sipps,
+    s.mtss_enrollment,
 
     'PM' as assessment_type,
 
@@ -343,14 +338,7 @@ left join
         'ELA Gr5',
         'ELA Gr6',
         'ELA Gr7',
-        'ELA Gr8',
-        'English Language Arts Kindergarten',
-        'English Language Arts 1st',
-        'English Language Arts 2nd',
-        'English Language Arts 3rd',
-        'English Language Arts 5th',
-        'English Language Arts 6th ',
-        'English Language Arts 7th'
+        'ELA Gr8'
     )
 left join
     {{ ref("int_amplify__all_assessments") }} as a

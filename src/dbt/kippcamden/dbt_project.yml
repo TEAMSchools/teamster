@@ -94,8 +94,6 @@ models:
             +enabled: false
           stg_powerschool__u_def_ext_students:
             +enabled: false
-          stg_powerschool__u_storedgrades_de:
-            +enabled: false
   titan:
     +materialized: table
     staging:
@@ -140,5 +138,7 @@ sources:
               +enabled: false
             src_powerschool__u_def_ext_students:
               +enabled: false
-            src_powerschool__u_storedgrades_de:
-              +enabled: false
+  titan:
+    titan:
+      src_titan__income_form_data:
+        +enabled: false

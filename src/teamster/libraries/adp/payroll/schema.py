@@ -27,3 +27,4 @@ class GeneralLedger(BaseModel):
     sourceentity: str | None = None
     state: str | None = None
     vendor_id: str | None = None
+    source_file_name: str | None = None
