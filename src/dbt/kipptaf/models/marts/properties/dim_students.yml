@@ -7,7 +7,7 @@ models:
         tests:
           - unique:
               config:
-                severity: warn
+                severity: Warn
                 store_failures: true
 
       - name: student_number
@@ -53,6 +53,9 @@ models:
         data_type: int64
 
       - name: is_enrolled_oct01
+        data_type: boolean
+
+      - name: is_enrolled_recent
         data_type: boolean
 
       - name: is_retained_year

@@ -14,7 +14,7 @@ models:
                   idauto_status = 'A' and uac_account_disable = 0 and
                   employee_id like 'TMP%'
                 store_failures: true
-                # severity: warn
+                severity: warn
       - name: distinguished_name
         data_type: string
       - name: user_principal_name
