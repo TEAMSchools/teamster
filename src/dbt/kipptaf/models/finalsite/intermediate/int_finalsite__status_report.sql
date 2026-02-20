@@ -34,6 +34,8 @@ with
         select
             * except (enrollment_academic_year),
 
+            {{ var("current_academic_year") + 1 }} as aligned_enrollment_academic_year,
+
             cast(actual_enrollment_academic_year as string)
             || '-'
             || right(
@@ -57,6 +59,12 @@ with
         select
             * except (days_in_status),
 
+            cast(aligned_enrollment_academic_year as string)
+            || '-'
+            || right(
+                cast(aligned_enrollment_academic_year + 1 as string), 2
+            ) as aligned_enrollment_academic_year_display,
+
             if(
                 status_end_date = status_start_date,
                 1,
@@ -70,6 +78,8 @@ select
     f.region,
     f.actual_enrollment_academic_year as enrollment_academic_year,
     f.enrollment_academic_year_display,
+    f.aligned_enrollment_academic_year,
+    f.aligned_enrollment_academic_year_display,
     f.finalsite_student_id,
     f.powerschool_student_number,
     f.last_name,
