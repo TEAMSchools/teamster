@@ -79,6 +79,13 @@ with
             enr.pursuing_degree_type as enrollment_pursuing_degree_type,
             enr.start_date as enrollment_start_date,
 
+            n.overgrad_urm_grad_rate as og_urm,
+
+            coalesce(
+                cast(n.overgrad_urm_grad_rate as numeric),
+                acc.adjusted_6_year_minority_graduation_rate
+            ) as og_urm_preferred,
+
             if(
                 app.type_for_roll_ups = 'College' and acc.type like '%4 yr', true, false
             ) as is_4yr_college,
