@@ -67,12 +67,12 @@ with
     )
 
 select
-    *,
+    ec.*,
 
-    extract(year from `start_date`) as start_date_year,
+    extract(year from ec.`start_date`) as start_date_year,
 
     row_number() over (
-        partition by student, school, extract(year from `start_date`)
-        order by `start_date` asc
+        partition by ec.student, ec.school, extract(year from ec.`start_date`)
+        order by ec.`start_date` asc
     ) as rn_stu_school_start,
-from enr_clean
+from enr_clean as ec

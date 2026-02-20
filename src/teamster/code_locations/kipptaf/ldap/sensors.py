@@ -5,6 +5,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     define_asset_job,
     sensor,
 )
@@ -56,6 +57,8 @@ def ldap_asset_sensor(context: SensorEvaluationContext, ldap: LdapResource):
         )
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(cursor))
+    else:
+        return SkipReason()
 
 
 sensors = [

@@ -25,6 +25,7 @@ select
     se.enroll_status,
     se.cohort_primary,
     se.year_in_network,
+    se.is_enrolled_recent,
     se.is_enrolled_oct01,
     se.is_retained_year,
     se.boy_status,

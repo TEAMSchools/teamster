@@ -1,0 +1,27 @@
+models:
+  - name: rpt_tableau__fresh_dashboard_progress_to_goals
+    columns:
+      - name: row_type
+        data_type: string
+      - name: latest_schoolid
+        data_type: integer
+      - name: latest_school
+        data_type: string
+      - name: latest_grade_level
+        data_type: integer
+      - name: region
+        data_type: string
+      - name: finalsite_student_id
+        data_type: string
+      - name: latest_status
+        data_type: string
+      - name: student_count
+        data_type: integer
+      - name: seat_target
+        data_type: float64
+      - name: fdos_target
+        data_type: float64
+      - name: student_name
+        data_type: string
+      - name: school_level
+        data_type: string
