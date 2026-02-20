@@ -1,62 +1,108 @@
+with
+    scaffold as (
+        select
+            b.academic_year as powerschool_academic_year,
+            b.org,
+            b.region,
+            b.schoolid,
+            b.school,
+            b.grade_level,
+
+            x.enrollment_academic_year,
+            x.enrollment_academic_year_display,
+            x.enrollment_type,
+            x.overall_status,
+            x.funnel_status,
+            x.status_category,
+            x.offered_status,
+            x.offered_status_detailed,
+            x.detailed_status_ranking,
+            x.detailed_status_branched_ranking,
+            x.detailed_status,
+            x.valid_detailed_status,
+            x.powerschool_enroll_status,
+            x.sre_academic_year_start,
+            x.sre_academic_year_end,
+
+            calendar_day,
+
+            -- trunk-ignore(sqlfluff/LT01)
+            date_trunc(calendar_day, week(monday)) as sre_academic_year_wk_start_monday,
+
+            date_add(
+                -- trunk-ignore(sqlfluff/LT01)
+                date_trunc(calendar_day, week(monday)), interval 6 day
+            ) as sre_academic_year_wk_end_sunday,
+
+        from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as b
+        inner join
+            {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
+            on b.academic_year = x.enrollment_academic_year
+        cross join
+            unnest(
+                generate_date_array(
+                    -- trunk-ignore(sqlfluff/LT01)
+                    date_trunc(x.sre_academic_year_start, week(monday)),
+                    -- trunk-ignore(sqlfluff/LT01)
+                    date_trunc(x.sre_academic_year_end, week(monday)),
+                    interval 1 day
+                )
+            ) as calendar_day
+    )
+
 select
-    s.academic_year,
-    s.org,
-    s.region,
-    s.schoolid,
-    s.school,
-    s.grade_level,
+    f._dbt_source_relation,
+    f.enrollment_academic_year,
+    f.enrollment_academic_year_display,
+    f.org,
+    f.region,
+    f.schoolid,
+    f.school,
+    f.grade_level,
+    f.sre_academic_year_start,
+    f.sre_academic_year_end,
+    f.sre_academic_year_wk_start_monday,
+    f.sre_academic_year_wk_end_sunday,
+    f.enrollment_type,
+    f.overall_status,
+    f.funnel_status,
+    f.status_category,
+    f.offered_status,
+    f.offered_status_detailed,
+    f.detailed_status,
+    f.detailed_status_ranking,
+    f.detailed_status_branched_ranking,
+    f.powerschool_enroll_status,
+    f.valid_detailed_status,
+    f.calendar_day,
 
-    d.aligned_enrollment_academic_year,
-    d.aligned_enrollment_academic_year_display,
-    d.enrollment_academic_year,
-    d.enrollment_academic_year_display,
-    d.sre_aligned_academic_year_start,
-    d.sre_aligned_academic_year_end,
-    d.finalsite_student_id,
-    d.latest_grade_level,
-    d.next_year_enrollment_type,
-    d.overall_status,
-    d.funnel_status,
-    d.status_category,
-    d.offered_status,
-    d.offered_status_detailed,
-    d.detailed_status_ranking,
-    d.detailed_status_branched_ranking,
-    d.detailed_status,
-    d.calendar_day,
-    d.sre_aligned_academic_year_wk_start_monday,
-    d.sre_aligned_academic_year_wk_end_sunday,
-    d.student_org,
-    d.student_region,
-    d.student_latest_region,
-    d.student_schoolid,
-    d.student_latest_schoolid,
-    d.student_school,
-    d.student_latest_school,
-    d.student_finalsite_student_id,
-    d.student_last_name,
-    d.student_first_name,
-    d.student_grade_level,
-    d.student_next_year_enrollment_type,
-    d.student_detailed_status,
-    d.student_latest_status,
-    d.student_status_start_date,
-    d.student_status_end_date,
-    d.student_days_in_status,
-    d.student_applicant_ops,
-    d.student_offered_ops,
-    d.student_pending_offer_ops,
-    d.student_overall_conversion_ops,
-    d.student_offers_to_accepted_num,
-    d.student_offers_to_accepted_den,
-    d.student_accepted_to_enrolled_num,
-    d.student_accepted_to_enrolled_den,
-    d.student_offers_to_enrolled_num,
-    d.student_offers_to_enrolled_den,
+    s.finalsite_student_id,
+    s.student_finalsite_student_id,
+    s.student_region,
+    s.student_latest_region,
+    s.student_schoolid,
+    s.student_latest_schoolid,
+    s.student_school,
+    s.student_latest_school,
+    s.student_last_name,
+    s.student_first_name,
+    s.student_grade_level,
+    s.student_detailed_status,
+    s.status_start_date,
+    s.status_end_date,
+    s.days_in_status,
+    s.student_enrollment_year_enrollment_type,
 
-from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
+    first_value(s.student_detailed_status) over (
+        partition by s.enrollment_academic_year, s.finalsite_student_id
+        order by s.status_start_date desc
+    ) as latest_status,
+
+from scaffold as f
 left join
-    {{ ref("int_tableau__finalsite_student_scaffold") }} as d
-    on s.academic_year = d.aligned_enrollment_academic_year
-    and s.schoolid = d.latest_schoolid
-    and s.grade_level = d.latest_grade_level
+    `grangel.int_tableau__finalsite_student_scaffold` as s
+    on f.enrollment_academic_year = s.enrollment_academic_year
+    and f.schoolid = s.student_schoolid
+    and f.detailed_status = s.detailed_status
+    and f.grade_level = s.student_grade_level
+    and f.calendar_day = s.calendar_day
