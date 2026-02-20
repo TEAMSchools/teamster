@@ -211,6 +211,29 @@ with
         from {{ ref("int_kippadb__persistence") }}
         where rn_enrollment_year = 1 and pursuing_degree_type = "Bachelor's (4-year)"
         group by sf_contact_id
+    ),
+
+    military as (
+        select
+            contact,
+            `status`,
+            category as job_industry,
+            military_branch,
+            meps_location,
+            meps_start_date,
+            meps_end_date,
+            delayed_entry_enlistment_program_dep,
+            `start_date`,
+            end_date,
+            ineligible_for_military_enlistment,
+            discharge_type,
+            discharge_date,
+
+            row_number() over (
+                partition by contact order by start_date desc
+            ) as rn_enlistment,
+        from {{ ref("stg_kippadb__employment") }}
+        where category = 'Military Specific Occupations'
     )
 
 select
@@ -489,6 +512,18 @@ select
 
     ba.n_ba_enrolled_semesters,
 
+    mil.`status` as military_status,
+    mil.military_branch,
+    mil.meps_location,
+    mil.meps_start_date,
+    mil.meps_end_date,
+    mil.delayed_entry_enlistment_program_dep,
+    mil.`start_date` as bmt_start_date,
+    mil.end_date as bmt_end_date,
+    mil.ineligible_for_military_enlistment,
+    mil.discharge_type as military_discharge_type,
+    mil.discharge_date as military_discharge_date,
+
     if(
         c.contact_kipp_region_name = 'KIPP Miami' and c.ktc_status like 'TAF%',
         'Miami TAF',
@@ -704,6 +739,7 @@ left join
     on sv.contact = c.contact_id
     and sv.academic_year = ay.academic_year
 left join ba_semesters_enrolled as ba on c.contact_id = ba.sf_contact_id
+left join military as mil on c.contact_id = mil.contact and mil.rn_enlistment = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
