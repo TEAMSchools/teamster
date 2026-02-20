@@ -547,25 +547,25 @@ models:
         data_type: int64
       - name: is_enrolled_ba_5_semesters
         data_type: boolean
-      - name: military_status,
+      - name: military_status
         data_type: string
-      - name: military_branch,
+      - name: military_branch
         data_type: string
-      - name: meps_location,
+      - name: meps_location
         data_type: string
-      - name: meps_start_date,
+      - name: meps_start_date
         data_type: date
-      - name: meps_end_date,
+      - name: meps_end_date
         data_type: date
-      - name: delayed_entry_enlistment_program_dep,
+      - name: delayed_entry_enlistment_program_dep
         data_type: string
-      - name: bmt_start_date,
+      - name: bmt_start_date
         data_type: date
-      - name: bmt_end_date,
+      - name: bmt_end_date
         data_type: date
-      - name: ineligible_for_military_enlistment,
+      - name: ineligible_for_military_enlistment
         data_type: string
-      - name: military_discharge_type,
+      - name: military_discharge_type
         data_type: string
-      - name: military_discharge_date,
+      - name: military_discharge_date
         data_type: date
