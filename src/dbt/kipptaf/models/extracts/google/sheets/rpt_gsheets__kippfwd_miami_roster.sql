@@ -3,13 +3,10 @@ with
         select
             _dbt_source_relation,
             student_id,
-            assessment_subject,
-            assessment_grade,
-            administration_window,
             academic_year,
 
             concat(achievement_level, ' (', scale_score, ')') as fast_score,
-            concat(discipline, '_', lower(administration_window)) as pivot_column,
+            lower(concat(discipline, '_', administration_window)) as pivot_column,
         from {{ ref("stg_fldoe__fast") }}
     ),
 
@@ -19,7 +16,6 @@ with
             _dbt_source_relation,
             student_id,
             academic_year,
-            administration_window,
             ela_pm1,
             ela_pm2,
             ela_pm3,
