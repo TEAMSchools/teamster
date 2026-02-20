@@ -51,7 +51,6 @@ with
     )
 
 select
-    f._dbt_source_relation,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
     f.org,
@@ -100,7 +99,7 @@ select
 
 from scaffold as f
 left join
-    `grangel.int_tableau__finalsite_student_scaffold` as s
+    {{ ref("int_tableau__finalsite_student_scaffold") }} as s
     on f.enrollment_academic_year = s.enrollment_academic_year
     and f.schoolid = s.student_schoolid
     and f.detailed_status = s.detailed_status
