@@ -744,4 +744,3 @@ left join military as mil on c.contact_id = mil.contact and mil.rn_enlistment = 
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
-
