@@ -8,13 +8,13 @@ def test_regex_pattern_replace():
         r"(?P<fiscal_year>\d+)_NJ-\d+-\d+_\w+GPA\w+\.csv",
         r"(?P<subject>)_Dashboard_Standards_v2\.csv",
         r"(?P<subject>)_SkillArea_v1\.csv",
-        r"(?P<subject>)\.csv" r"(?P<subject>)\.csv",
+        r"(?P<subject>)\.csv",
         r"{remote_dir_regex_prefix}/student_list_report/(?P<test_type>[a-z]+)",
         r"/data-team/kippmiami/fldoe/eoc/(?P<school_year_term>\d+)",
         r"/data-team/kippmiami/fldoe/fast/(?P<school_year_term>\d+/PM\d)",
         r"/data-team/kippmiami/fldoe/science/(?P<school_year_term>\d+)",
         r"/data-team/kipptaf/performance-management/observation-details/(?P<academic_year>\d+)/(?P<term>PM\d)",
-        r"/exports/fl-kipp_miami/(?P<academic_year>\w+)"
+        r"/exports/fl-kipp_miami/(?P<academic_year>\w+)",
         r"/exports/nj-kipp_nj/(?P<academic_year>\w+)",
         r"\w+-\w+_(?P<grade_level_subject>[\w\.]+)EOC_StudentData_\d+\s[AP]M\.csv",
         r"\w+-\w+_(?P<grade_level_subject>Grade\dFAST\w+)_StudentData_.+\.csv",
@@ -27,13 +27,14 @@ def test_regex_pattern_replace():
         r"instructional_usage_data_(?P<subject>\w+)\.csv",
         r"njs(?P<fiscal_year>\d+)_NJ-\d+_\w+\.csv",
         r"PC_pcspr(?P<fiscal_year>\d+)_NJ-\d+(-\d+)?_\w+\.csv",
-        r"pc(?P<administration>[a-z]+)"
+        r"pc(?P<administration>[a-z]+)",
         r"pc(?P<administration>[a-z]+)(?P<fiscal_year>\d+)_NJ-\d+(-\d+)?_\w+GPA\w+\.csv",
         r"pcspr(?P<fiscal_year>\d+)_NJ-\d+(-\d+)?_\w+\.csv",
         r"personalized_instruction_by_lesson_(?P<subject>\w+)\.csv",
         r"StudentListReport_(?P<administration_fiscal_year>[A-Za-z]+\d+)_\d+_\d+-\d+-\d+\.csv",
         r"StudentListReport_(?P<administration_fiscal_year>[A-Za-z]+\d+)(_\d+_|\s-\s)\d+-\d+-\d+(T\w+\.\d+\+\d+)?\.csv",
     ]
+
     for test_pattern in test_patterns:
         result_pattern = regex_pattern_replace(
             pattern=test_pattern,

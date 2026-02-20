@@ -483,7 +483,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1smCSUKz2SXwnohmz59LNptoN5jHzYD2TfZNHZwK7Dts
-            sheet_range: src_kippadb__nsc_crosswalk
+            sheet_range: src_kippadb__nsc_crosswalk_v2
             skip_leading_rows: 1
         config:
           meta:

@@ -114,12 +114,12 @@ class ZendeskResource(ConfigurableResource):
                         return True
                     else:
                         # Endpoint-specific limit exceeded; stop making more calls
-                        self.handle_limit_exceeded(endpoint_limit_reset_seconds)
+                        return self.handle_limit_exceeded(endpoint_limit_reset_seconds)
                 else:
                     # No endpoint-specific limit
                     return True
             else:
                 # Account-wide limit exceeded
-                self.handle_limit_exceeded(rate_limit_reset)
+                return self.handle_limit_exceeded(rate_limit_reset)
         else:
             return False
