@@ -132,6 +132,7 @@ with
             is_persisting_int,
 
             cast(persistence_year as string) as persistence_year,
+
         from {{ ref("int_kippadb__persistence") }}
         where
             is_ecc
