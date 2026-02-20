@@ -15,7 +15,13 @@ with
     region_calc as (
         -- trunk-ignore(sqlfluff/AM04)
         select
-            * except (extract_year, first_name, sre_academic_year),
+            * except (
+                extract_year,
+                first_name,
+                sre_academic_year,
+                sre_academic_year_start,
+                sre_academic_year_end
+            ),
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
 
@@ -42,6 +48,7 @@ with
                 rows between unbounded preceding and unbounded following
             ) as latest_grade_level,
 
+            -- only works for students with a ps student number on fs
             last_value(finalsite_student_id ignore nulls) over (
                 partition by enrollment_academic_year, latest_powerschool_student_number
                 order by status_start_timestamp asc, status_order asc
@@ -51,7 +58,12 @@ with
         from region_calc
     )
 
-select l.*,
+select
+    l.*,
+
+    {{ var("current_academic_year") }} as current_academic_year,
+    {{ var("current_academic_year") }} + 1 as next_academic_year,
+
 from latest_region_grade as l
 left join
     {{ ref("stg_google_sheets__finalsite__exclude_ids") }} as e
