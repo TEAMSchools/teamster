@@ -1,7 +1,6 @@
 models:
   - name: rpt_tableau__fresh_dashboard_progress_to_goals
     columns:
-    columns:
       - name: row_type
         data_type: string
       - name: latest_schoolid
