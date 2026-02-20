@@ -4,6 +4,7 @@ with
             f.enrollment_academic_year,
             f.enrollment_academic_year_display,
             f.aligned_enrollment_academic_year,
+            f.aligned_enrollment_academic_year_display,
             f.sre_academic_year_start,
             f.sre_academic_year_end,
             f.org,
