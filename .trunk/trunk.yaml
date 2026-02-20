@@ -13,13 +13,13 @@ lint:
     - git-diff-check
     - gitleaks@8.30.0
     - hadolint@2.14.0
-    - isort@7.0.0
+    - isort@8.0.0
     - markdownlint@0.47.0
     - osv-scanner@2.3.3
     - oxipng@10.1.0
     - prettier@3.8.1
     - pyright@1.1.408
-    - ruff@0.15.1
+    - ruff@0.15.2
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - sqlfluff@4.0.4
