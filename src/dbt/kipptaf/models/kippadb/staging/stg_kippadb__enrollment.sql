@@ -62,7 +62,13 @@ with
             terms__c as terms,
             transfer_reason__c as transfer_reason,
             type__c as `type`,
+
+            n.overgrad_urm_grad_rate as og_urm,
         from {{ source("kippadb", "enrollment") }}
+        left join
+            {{ ref("stg_google_sheets__kippadb__nsc_crosswalk") }} as n
+            on id = n.account_id
+            and n.rn_account = 1
         where not isdeleted
     )
 
