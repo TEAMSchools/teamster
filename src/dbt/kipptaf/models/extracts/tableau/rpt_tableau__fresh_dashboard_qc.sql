@@ -35,7 +35,7 @@ left join
     finalsite_roster as f
     on e.student_number = f.powerschool_student_number
     and e.academic_year = f.enrollment_academic_year
-where e.rn_year = 1 and e.enroll_status = 0
+where e.rn_year = 1 and e.enroll_status = 0 and f.enrollment_academic_year is not null
 
 union all
 
