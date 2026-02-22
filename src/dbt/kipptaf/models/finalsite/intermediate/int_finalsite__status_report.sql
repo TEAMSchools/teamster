@@ -90,7 +90,6 @@ select
     f.status_start_date,
     f.status_end_date,
     f.days_in_status,
-    f.next_academic_year as aligned_enrollment_academic_year,
 
     'KTAF' as org,
 
