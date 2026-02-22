@@ -19,6 +19,7 @@ with
     )
 
 select
+    e.region,
     e.student_number,
     e.student_name,
     e.grade_level,
@@ -40,7 +41,7 @@ where e.rn_year = 1 and e.enroll_status = 0 and f.enrollment_academic_year is no
 union all
 
 select
-
+    f.region,
     f.powerschool_student_number,
     concat(f.last_name, ', ', f.first_name) as student_name,
     f.grade_level,
