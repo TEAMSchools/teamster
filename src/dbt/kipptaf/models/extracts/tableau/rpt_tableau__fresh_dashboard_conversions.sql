@@ -180,7 +180,7 @@ with
 
             metric,
 
-        from {{ ref("tg_google_sheets__finalsite__school_scaffold") }} as s
+        from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
         cross join
             unnest(
                 ['Offers to Accepted', 'Offers to Enrolled', 'Accepted to Enrolled']
