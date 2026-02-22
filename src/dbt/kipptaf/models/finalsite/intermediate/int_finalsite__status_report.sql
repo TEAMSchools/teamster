@@ -1,30 +1,101 @@
+with
+    actual_enroll_year as (
+        select
+            * except (
+                enrollment_year, enrollment_academic_year_display, status_end_date
+            ),
+            -- flawed because it only works when we only have 2 academic years at a time
+            if(
+                extract_year = 'Current_Year' and detailed_status = 'Enrolled',
+                current_academic_year,
+                null
+            ) as actual_enrollment_academic_year,
+
+        from {{ ref("stg_finalsite__status_report") }}
+        -- limited to only 2 yrs as a temp workaround
+        where enrollment_academic_year <= {{ var("current_academic_year") + 1 }}
+    ),
+
+    fill_in_actual_enroll_year as (
+        select
+            * except (actual_enrollment_academic_year),
+
+            coalesce(
+                max(actual_enrollment_academic_year) over (
+                    partition by finalsite_student_id
+                ),
+                enrollment_academic_year
+            ) as actual_enrollment_academic_year,
+
+        from actual_enroll_year
+    ),
+
+    remove_not_in_workflow_rows as (
+        select
+            * except (enrollment_academic_year),
+
+            {{ var("current_academic_year") + 1 }} as aligned_enrollment_academic_year,
+
+            cast(actual_enrollment_academic_year as string)
+            || '-'
+            || right(
+                cast(actual_enrollment_academic_year + 1 as string), 2
+            ) as enrollment_academic_year_display,
+
+            lead(
+                status_start_date,
+                1,
+                current_date('{{ var("local_timezone") }}')
+            ) over (
+                partition by finalsite_student_id, actual_enrollment_academic_year
+                order by status_start_date asc, status_order asc
+            ) as status_end_date,
+
+        from fill_in_actual_enroll_year
+        where enrollment_academic_year = actual_enrollment_academic_year
+    ),
+
+    days_in_stat as (
+        select
+            * except (days_in_status),
+
+            cast(aligned_enrollment_academic_year as string)
+            || '-'
+            || right(
+                cast(aligned_enrollment_academic_year + 1 as string), 2
+            ) as aligned_enrollment_academic_year_display,
+
+            if(
+                status_end_date = status_start_date,
+                1,
+                date_diff(status_end_date, status_start_date, day)
+            ) as days_in_status,
+
+            row_number() over (
+                partition by latest_finalsite_student_id order by extract_datetime desc
+            ) as latest_finalsite_student_id_rn,
+
+        from remove_not_in_workflow_rows
+    )
+
 select
-    f._dbt_source_relation,
-    f.enrollment_year,
-    f.enrollment_academic_year,
-    f.enrollment_academic_year_display,
-    f.sre_academic_year_start,
-    f.sre_academic_year_end,
-    f.extract_year,
-    f.extract_datetime,
     f.region,
-    f.latest_region,
+    f.actual_enrollment_academic_year as enrollment_academic_year,
+    f.enrollment_academic_year_display,
+    f.aligned_enrollment_academic_year,
+    f.aligned_enrollment_academic_year_display,
     f.finalsite_student_id,
-    f.latest_finalsite_student_id,
-    f.first_name,
+    f.powerschool_student_number,
     f.last_name,
-    f.grade_level_name,
+    f.first_name,
     f.grade_level,
-    f.latest_grade_level,
-    f.status,
-    f.detailed_status,
     f.status_order,
+    f.detailed_status,
     f.status_start_date,
     f.status_end_date,
     f.days_in_status,
-    f.rn,
-    f.enrollment_type_raw,
-    f.latest_powerschool_student_number as powerschool_student_number,
+    f.latest_finalsite_student_id,
+    f.latest_finalsite_student_id_rn,
 
     'KTAF' as org,
 
@@ -34,20 +105,20 @@ select
     coalesce(xl.powerschool_school_id, 0) as latest_schoolid,
     coalesce(xl.abbreviation, 'No School Assigned') as latest_school,
 
-    max(f.extract_datetime) over (
-        partition by f.region, f.extract_year
-    ) as latest_extract_datetime,
+    date(f.actual_enrollment_academic_year - 1, 10, 16) as sre_academic_year_start,
+    date(f.actual_enrollment_academic_year, 6, 30) as sre_academic_year_end,
 
     row_number() over (
-        partition by f.latest_finalsite_student_id order by f.extract_datetime desc
-    ) as latest_finalsite_student_id_rn,
+        partition by f.actual_enrollment_academic_year, f.finalsite_student_id
+        order by f.status_start_date desc, f.status_order desc
+    ) as rn,
 
     first_value(f.detailed_status) over (
-        partition by f.enrollment_academic_year, f.finalsite_student_id
+        partition by f.actual_enrollment_academic_year, f.finalsite_student_id
         order by f.status_start_date desc
     ) as latest_status,
 
-from {{ ref("stg_finalsite__status_report") }} as f
+from days_in_stat as f
 left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as x on f.school = x.name
 left join
