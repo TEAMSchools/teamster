@@ -1,0 +1,5 @@
+models:
+  - name: rpt_tableau__fresh_dashboard_aggregated
+    config:
+      contract:
+        enforced: false
