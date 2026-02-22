@@ -19,6 +19,7 @@ with
     )
 
 select
+    e.region,
     e.student_number,
     e.student_name,
     e.grade_level,
@@ -35,12 +36,12 @@ left join
     finalsite_roster as f
     on e.student_number = f.powerschool_student_number
     and e.academic_year = f.enrollment_academic_year
-where e.rn_year = 1 and e.enroll_status = 0
+where e.rn_year = 1 and e.enroll_status = 0 and f.enrollment_academic_year is not null
 
 union all
 
 select
-
+    f.region,
     f.powerschool_student_number,
     concat(f.last_name, ', ', f.first_name) as student_name,
     f.grade_level,
