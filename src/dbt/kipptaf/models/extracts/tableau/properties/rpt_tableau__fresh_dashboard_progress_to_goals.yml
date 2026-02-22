@@ -7,7 +7,7 @@ models:
         data_type: integer
       - name: latest_school
         data_type: string
-      - name: latest_grade_level
+      - name: grade_level
         data_type: integer
       - name: region
         data_type: string
