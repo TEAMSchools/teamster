@@ -30,7 +30,7 @@ select
     'Goal' as row_type,
     gs.schoolid as latest_schoolid,
     gs.school as latest_school,
-    gs.grade_level as latest_grade_level,
+    gs.grade_level as grade_level,
     gs.region,
     null as finalsite_student_id,
     'Goal Record' as latest_status,
