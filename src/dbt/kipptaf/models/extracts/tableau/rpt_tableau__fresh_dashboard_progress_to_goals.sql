@@ -3,7 +3,7 @@ select
     'Student' as row_type,
     r.latest_schoolid,
     r.latest_school,
-    r.latest_grade_level,
+    r.grade_level,
     r.region,
     r.finalsite_student_id,
     r.latest_status,
