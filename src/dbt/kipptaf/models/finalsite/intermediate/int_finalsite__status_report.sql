@@ -71,6 +71,10 @@ with
                 date_diff(status_end_date, status_start_date, day)
             ) as days_in_status,
 
+            row_number() over (
+                partition by latest_finalsite_student_id order by extract_datetime desc
+            ) as latest_finalsite_student_id_rn,
+
         from remove_not_in_workflow_rows
     )
 
@@ -90,6 +94,8 @@ select
     f.status_start_date,
     f.status_end_date,
     f.days_in_status,
+    f.latest_finalsite_student_id,
+    f.latest_finalsite_student_id_rn,
 
     'KTAF' as org,
 
@@ -106,6 +112,11 @@ select
         partition by f.actual_enrollment_academic_year, f.finalsite_student_id
         order by f.status_start_date desc, f.status_order desc
     ) as rn,
+
+    first_value(f.detailed_status) over (
+        partition by f.actual_enrollment_academic_year, f.finalsite_student_id
+        order by f.status_start_date desc
+    ) as latest_status,
 
 from days_in_stat as f
 left join

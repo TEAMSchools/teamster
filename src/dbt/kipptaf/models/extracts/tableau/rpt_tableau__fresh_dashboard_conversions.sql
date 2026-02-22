@@ -6,14 +6,14 @@ with
             r.enrollment_academic_year,
             r.enrollment_academic_year_display,
             r.org,
-            r.latest_region,
+            r.region,
             r.latest_schoolid,
             r.latest_school,
             r.finalsite_student_id,
             r.powerschool_student_number,
             r.first_name,
             r.last_name,
-            r.latest_grade_level,
+            r.grade_level,
             r.detailed_status,
 
             coalesce(
@@ -21,9 +21,7 @@ with
             ) as aligned_enrollment_academic_year_enrollment_type,
 
             if(
-                r.enrollment_academic_year = 2025,
-                r.latest_grade_level + 1,
-                r.latest_grade_level
+                r.enrollment_academic_year = 2025, r.grade_level + 1, r.grade_level
             ) as aligned_enrollment_year_grade_level,
 
         from {{ ref("int_finalsite__status_report") }} as r
@@ -67,14 +65,14 @@ with
             enrollment_academic_year,
             enrollment_academic_year_display,
             org,
-            latest_region,
+            region,
             latest_schoolid,
             latest_school,
             finalsite_student_id,
             powerschool_student_number,
             first_name,
             last_name,
-            latest_grade_level,
+            grade_level,
             aligned_enrollment_year_grade_level,
             aligned_enrollment_academic_year_enrollment_type,
 
@@ -104,14 +102,14 @@ with
             enrollment_academic_year,
             enrollment_academic_year_display,
             org,
-            latest_region,
+            region,
             latest_schoolid,
             latest_school,
             finalsite_student_id,
             powerschool_student_number,
             first_name,
             last_name,
-            latest_grade_level,
+            grade_level,
             aligned_enrollment_year_grade_level,
             aligned_enrollment_academic_year_enrollment_type,
 
@@ -141,14 +139,14 @@ with
             enrollment_academic_year,
             enrollment_academic_year_display,
             org,
-            latest_region,
+            region,
             latest_schoolid,
             latest_school,
             finalsite_student_id,
             powerschool_student_number,
             first_name,
             last_name,
-            latest_grade_level,
+            grade_level,
             aligned_enrollment_year_grade_level,
             aligned_enrollment_academic_year_enrollment_type,
 
@@ -182,7 +180,7 @@ with
 
             metric,
 
-        from `kipptaf_google_sheets.stg_google_sheets__finalsite__school_scaffold` as s
+        from {{ ref("tg_google_sheets__finalsite__school_scaffold") }} as s
         cross join
             unnest(
                 ['Offers to Accepted', 'Offers to Enrolled', 'Accepted to Enrolled']
@@ -220,7 +218,7 @@ left join
     and s.grade_level = c.aligned_enrollment_year_grade_level
     and s.metric = c.metric
 left join
-    `kipptaf_google_sheets.stg_google_sheets__finalsite__goals` as g
+    {{ ref("stg_google_sheets__finalsite__goals") }} as g
     on c.enrollment_academic_year = g.enrollment_academic_year
     and c.metric = g.goal_name
     and c.latest_schoolid = g.schoolid
