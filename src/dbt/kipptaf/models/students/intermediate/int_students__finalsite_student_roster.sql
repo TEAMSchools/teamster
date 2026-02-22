@@ -24,6 +24,7 @@ with
             f.status_end_date,
             f.days_in_status,
             f.rn,
+            f.latest_status,
 
             if(
                 e.next_year_enrollment_type is null, 'New', e.next_year_enrollment_type
