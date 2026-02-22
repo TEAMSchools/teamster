@@ -25,6 +25,7 @@ select
 
     if(
         f.powerschool_student_number is null,
+        -- trunk-ignore(sqlfluff/LT05)
         'Student is active on PS for the current academic year, but does not have an Enrolled status on FS for current academic year',
         'PS to FS enrollment match'
     ) as enrollment_match,
@@ -41,11 +42,12 @@ union all
 select
 
     f.powerschool_student_number,
-    concat(last_name, ', ', first_name) as student_name,
+    concat(f.last_name, ', ', f.first_name) as student_name,
     f.grade_level,
 
     if(
         e.student_number is null,
+        -- trunk-ignore(sqlfluff/LT05)
         'Student is tagged as Enrolled on FS for the current academic year, but is not actively enrolled on PS for current academic year',
         'FS to PS enrollment match'
     ) as enrollment_match,
