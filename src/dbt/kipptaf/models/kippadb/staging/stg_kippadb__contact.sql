@@ -51,6 +51,8 @@ select
     postsecondary_status__c as postsecondary_status,
     secondary_email__c as secondary_email,
     postsec_advisor__c as postsec_advisor,
+    intent_to_enlist__c as intent_to_enlist,
+    middle_skilling_trade_military_interest__c as cte_military_interest,
 
     safe_cast(kipp_hs_class__c as int) as kipp_hs_class,
     safe_cast(school_specific_id__c as int) as school_specific_id,

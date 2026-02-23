@@ -6,6 +6,14 @@ select
     test_type__c as test_type,
     subject__c as `subject`,
     scoring_irregularity__c as scoring_irregularity,
+    physical_training_requirement_passed__c as physical_training_requirement_passed,
+    afqt_score__c as afqt_score,
+    qualified_air_force__c as qualified_air_force,
+    qualified_army__c as qualified_army,
+    qualified_coast_guard__c as qualified_coast_guard,
+    qualified_marine_corps__c as qualified_marine_corps,
+    qualified_navy__c as qualified_navy,
+    total_qualified_military_branches__c as total_qualified_military_branches,
 
     concat(
         format_date('%b', date__c), ' ', format_date('%g', date__c)
@@ -70,6 +78,7 @@ select
     if(
         psat_writing_pre_2016__c = 0, null, psat_writing_pre_2016__c
     ) as psat_writing_pre_2016,
+    if(afqt_score__c = 0, null, afqt_score__c) as afqt_score,
 
     {{ date_to_fiscal_year(date_field="date__c", start_month=7, year_source="start") }}
     as academic_year,
