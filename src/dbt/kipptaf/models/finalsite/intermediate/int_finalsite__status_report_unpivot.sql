@@ -16,7 +16,7 @@ with
 
             initcap(
                 regexp_replace(replace(fs_status_field, '_', ' '), r'\s+[Dd]ate$', '')
-            ) as detailed_status
+            ) as detailed_status,
 
         from
             -- trunk-ignore(sqlfluff/LT01)
