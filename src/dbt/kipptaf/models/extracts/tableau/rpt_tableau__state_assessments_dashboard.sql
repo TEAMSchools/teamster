@@ -15,6 +15,7 @@ with
             c.teacher_lastfirst as teacher_name,
             c.courses_course_name as course_name,
             c.cc_course_number as course_number,
+            c.pearson_local_student_identifier,
 
             s.abbreviation as school,
 
@@ -50,6 +51,7 @@ with
             e.teacher_lastfirst as teacher_name,
             e.courses_course_name as course_name,
             e.cc_course_number as course_number,
+            c.pearson_local_student_identifier,
 
             c.school as school_current,
             c.teachernumber as teachernumber_current,
@@ -371,7 +373,7 @@ left join
 left join
     schedules as m
     on a.academic_year = m.cc_academic_year
-    and a.localstudentidentifier = m.students_student_number
+    and a.localstudentidentifier = m.pearson_local_student_identifier
     and a.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="a", right_alias="m") }}
 left join
