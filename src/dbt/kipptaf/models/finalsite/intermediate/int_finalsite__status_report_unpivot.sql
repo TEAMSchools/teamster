@@ -14,7 +14,9 @@ with
             fs_status_field,
             safe_cast(status_start_timestamp as date) as status_start_date,
 
-            initcap(replace(fs_status_field, '_', ' ')) as detailed_status,
+            initcap(
+                replace(replace(fs_status_field, '_', ' '), ' Date', '')
+            ) as detailed_status,
 
         from
             -- trunk-ignore(sqlfluff/LT01)
