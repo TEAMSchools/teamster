@@ -17,6 +17,7 @@ with
             initcap(replace(fs_status_field, '_', ' ')) as detailed_status,
 
         from
+            -- trunk-ignore(sqlfluff/LT01)
             {{ ref("stg_finalsite__status_report_wide") }} unpivot include nulls(
                 status_start_timestamp for fs_status_field in (
                     inquiry_date,
@@ -57,7 +58,7 @@ with
             coalesce(x.abbreviation, 'No School Assigned') as school,
 
             case
-                fs_status_field
+                u.fs_status_field
                 when 'inquiry_date'
                 then 1
                 when 'inquiry_completed_date'
