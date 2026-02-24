@@ -4,7 +4,7 @@ from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
-from teamster.libraries.finalsite.resources import FinalsiteResource
+from teamster.libraries.finalsite.api.resources import FinalsiteResource
 
 
 def build_finalsite_asset(code_location: str, asset_name: str, schema):
