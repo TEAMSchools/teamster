@@ -3,7 +3,7 @@ from dagster._core.events import StepMaterializationData
 from dagster_shared import check
 
 from teamster.core.resources import get_io_manager_gcs_avro
-from teamster.libraries.finalsite.resources import FinalsiteResource
+from teamster.libraries.finalsite.api.resources import FinalsiteResource
 
 
 def _test_asset(
