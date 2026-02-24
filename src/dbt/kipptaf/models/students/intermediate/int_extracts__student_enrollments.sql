@@ -82,7 +82,7 @@ with
             student_number,
 
             if(
-                sum(date_diff(exitdate, entrydate, day)) >= 7, 'Returner', 'New'
+                sum(date_diff(exitdate, entrydate, day)) >= 7, 'Returning', 'New'
             ) as next_year_enrollment_type,
 
         from {{ ref("base_powerschool__student_enrollments") }}

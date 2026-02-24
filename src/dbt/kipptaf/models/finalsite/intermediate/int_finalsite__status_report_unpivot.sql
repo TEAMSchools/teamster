@@ -63,6 +63,12 @@ select
     coalesce(x.powerschool_school_id, 0) as schoolid,
     coalesce(x.abbreviation, 'No School Assigned') as school,
 
+    cast(u.enrollment_academic_year as string)
+    || '-'
+    || right(
+        cast(u.enrollment_academic_year + 1 as string), 2
+    ) as enrollment_academic_year_display,
+
     case
         u.fs_status_field
         when 'inquiry_date'
