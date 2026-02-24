@@ -2,6 +2,8 @@ with
     unpivot_data as (
         select
             active_school_year,
+            current_academic_year,
+            next_academic_year,
             region,
             assigned_school,
             finalsite_student_id,
@@ -9,6 +11,7 @@ with
             first_name,
             last_name,
             grade,
+            grade_level,
             self_contained,
 
             fs_status_field,
