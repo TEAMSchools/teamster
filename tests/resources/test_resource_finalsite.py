@@ -1,6 +1,6 @@
 from dagster import EnvVar, build_resources
 
-from teamster.libraries.finalsite.resources import FinalsiteResource
+from teamster.libraries.finalsite.api.resources import FinalsiteResource
 
 
 def test_finalsite_resource():
