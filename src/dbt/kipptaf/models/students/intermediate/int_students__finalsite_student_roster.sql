@@ -25,7 +25,7 @@ with
             e1.region as ps_region,
             e1.school as ps_school,
             e1.grade_level as ps_grade_level,
-            -- e1.is_enrolled_fdos,
+            e1.is_enrolled_fdos,
             e1.is_enrolled_oct01,
             e.is_enrolled_oct15,
 
@@ -74,6 +74,9 @@ select
     f.ps_region,
     f.ps_school,
     f.ps_grade_level,
+    f.is_enrolled_fdos,
+    f.is_enrolled_oct01,
+    f.is_enrolled_oct15,
 
     x.detailed_status_branched_ranking,
     x.valid_detailed_status,
