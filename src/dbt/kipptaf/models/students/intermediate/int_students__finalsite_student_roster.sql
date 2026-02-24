@@ -43,6 +43,8 @@ with
             on f.enrollment_academic_year - 1 = e2.academic_year
             and f.powerschool_student_number = e2.student_number
             and e2.rn_year = 1
+        -- fixing the value for now - will remove once a better data model is created
+        where f.enrollment_academic_year <= 2026
     )
 
 select
@@ -85,6 +87,11 @@ select
     || right(
         cast(f.aligned_enrollment_academic_year + 1 as string), 2
     ) as aligned_enrollment_academic_year_display,
+
+    first_value(f.detailed_status) over (
+        partition by f.enrollment_academic_year, f.finalsite_student_id
+        order by f.status_start_date desc
+    ) as latest_status,
 
 from actual_enroll_type as f
 inner join
