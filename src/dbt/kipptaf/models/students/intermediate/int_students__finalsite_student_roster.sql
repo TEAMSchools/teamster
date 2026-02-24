@@ -14,8 +14,12 @@ with
             f.first_name,
             f.last_name,
             f.grade_level,
+            f.self_contained,
             f.detailed_status,
+            f.status_order,
             f.status_start_date,
+
+            f.next_academic_year as aligned_enrollment_academic_year,
 
             e.enroll_status as ps_enroll_status,
             e.region as ps_region,
@@ -24,7 +28,7 @@ with
 
             if(
                 e.next_year_enrollment_type is null, 'New', e.next_year_enrollment_type
-            ) as enrollment_year_enrollment_type,
+            ) as next_academic_year_enrollment_type,
 
         from {{ ref("int_finalsite__status_report_unpivot") }} as f
         left join
@@ -35,6 +39,7 @@ with
     )
 
 select
+    f.aligned_enrollment_academic_year,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
     f.current_academic_year,
@@ -45,12 +50,14 @@ select
     f.school,
     f.finalsite_student_id,
     f.powerschool_student_number,
-    f.last_name,
     f.first_name,
+    f.last_name,
     f.grade_level,
+    f.self_contained,
     f.detailed_status,
+    f.status_order,
     f.status_start_date,
-    f.enrollment_year_enrollment_type,
+    f.next_academic_year_enrollment_type,
     f.ps_enroll_status,
     f.ps_region,
     f.ps_school,
@@ -66,9 +73,15 @@ select
     x.sre_academic_year_start,
     x.sre_academic_year_end,
 
+    cast(f.aligned_enrollment_academic_year as string)
+    || '-'
+    || right(
+        cast(f.aligned_enrollment_academic_year + 1 as string), 2
+    ) as aligned_enrollment_academic_year_display,
+
 from actual_enroll_type as f
 inner join
     {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
     on f.enrollment_academic_year = x.enrollment_academic_year
-    and f.enrollment_year_enrollment_type = x.enrollment_type
+    and f.next_academic_year_enrollment_type = x.enrollment_type
     and f.detailed_status = x.detailed_status
