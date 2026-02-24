@@ -21,21 +21,28 @@ with
 
             f.next_academic_year as aligned_enrollment_academic_year,
 
-            e.enroll_status as ps_enroll_status,
-            e.region as ps_region,
-            e.school as ps_school,
-            e.grade_level as ps_grade_level,
+            e1.enroll_status as ps_enroll_status,
+            e1.region as ps_region,
+            e1.school as ps_school,
+            e1.grade_level as ps_grade_level,
 
             if(
-                e.next_year_enrollment_type is null, 'New', e.next_year_enrollment_type
-            ) as next_academic_year_enrollment_type,
+                e2.next_year_enrollment_type is null,
+                'New',
+                e2.next_year_enrollment_type
+            ) as enrollment_academic_year_enrollment_type,
 
         from {{ ref("int_finalsite__status_report_unpivot") }} as f
         left join
-            {{ ref("int_extracts__student_enrollments") }} as e
-            on f.enrollment_academic_year - 1 = e.academic_year
-            and f.powerschool_student_number = e.student_number
-            and e.rn_year = 1
+            {{ ref("int_extracts__student_enrollments") }} as e1
+            on f.enrollment_academic_year = e1.academic_year
+            and f.powerschool_student_number = e1.student_number
+            and e1.rn_year = 1
+        left join
+            {{ ref("int_extracts__student_enrollments") }} as e2
+            on f.enrollment_academic_year - 1 = e2.academic_year
+            and f.powerschool_student_number = e2.student_number
+            and e2.rn_year = 1
     )
 
 select
@@ -57,7 +64,7 @@ select
     f.detailed_status,
     f.status_order,
     f.status_start_date,
-    f.next_academic_year_enrollment_type,
+    f.enrollment_academic_year_enrollment_type,
     f.ps_enroll_status,
     f.ps_region,
     f.ps_school,
@@ -83,5 +90,5 @@ from actual_enroll_type as f
 inner join
     {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
     on f.enrollment_academic_year = x.enrollment_academic_year
-    and f.next_academic_year_enrollment_type = x.enrollment_type
+    and f.enrollment_academic_year_enrollment_type = x.enrollment_type
     and f.detailed_status = x.detailed_status
