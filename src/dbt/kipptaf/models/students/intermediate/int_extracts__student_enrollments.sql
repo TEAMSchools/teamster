@@ -171,7 +171,7 @@ select
     ny.next_year_school,
     ny.next_year_schoolid,
 
-    fid.latest_finalsite_student_id as finalsite_student_id,
+    fid.finalsite_student_id,
 
     'KTAF' as district,
 
