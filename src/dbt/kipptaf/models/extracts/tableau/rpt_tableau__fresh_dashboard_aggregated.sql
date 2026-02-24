@@ -86,3 +86,4 @@ select
     goal_value,
 
 from scaffold
+where goal_type in ('Waitlisted', 'Inquiries')
