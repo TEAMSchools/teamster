@@ -22,6 +22,10 @@ with
                 then true
                 else false
             end as is_enrolled_recent,
+
+            case
+                when enr.entrydate = < cr.min_calendardate then true else false
+            end as is_enrolled_fdos,
         from deduplicate as enr
         left join
             {{ ref("int_powerschool__calendar_rollup") }} as cr
@@ -62,6 +66,10 @@ with
             max(is_enrolled_recent) over (
                 partition by studentid, yearid
             ) as is_enrolled_recent,
+
+            max(is_enrolled_fdos) over (
+                partition by studentid, yearid
+            ) as is_enrolled_fdos,
 
             max(is_retained_year) over (
                 partition by studentid, yearid
