@@ -93,6 +93,12 @@ select
         order by f.status_start_date desc
     ) as latest_status,
 
+    if(
+        f.enrollment_academic_year = f.current_academic_year,
+        f.grade_level + 1,
+        f.grade_level
+    ) as enrollment_academic_year_grade_level,
+
 from actual_enroll_type as f
 inner join
     {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
