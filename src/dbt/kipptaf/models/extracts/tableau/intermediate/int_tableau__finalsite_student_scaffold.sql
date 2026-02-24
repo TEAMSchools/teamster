@@ -22,6 +22,9 @@ select
     status_group_denominator as grouped_status,
     sre_academic_year_start,
     sre_academic_year_end,
+    is_enrolled_fdos,
+    is_enrolled_oct01,
+    is_enrolled_oct15,
 
     'All' as aligned_enrollment_type,
 
@@ -53,7 +56,10 @@ group by
     enrollment_academic_year_enrollment_type,
     status_group_denominator,
     sre_academic_year_start,
-    sre_academic_year_end
+    sre_academic_year_end,
+    is_enrolled_fdos,
+    is_enrolled_oct01,
+    is_enrolled_oct15
 
 union all
 
@@ -80,6 +86,9 @@ select
     conversion_metric_denominator as grouped_status,
     sre_academic_year_start,
     sre_academic_year_end,
+    is_enrolled_fdos,
+    is_enrolled_oct01,
+    is_enrolled_oct15,
 
     'All' as aligned_enrollment_type,
 
@@ -111,7 +120,10 @@ group by
     enrollment_academic_year_enrollment_type,
     conversion_metric_denominator,
     sre_academic_year_start,
-    sre_academic_year_end
+    sre_academic_year_end,
+    is_enrolled_fdos,
+    is_enrolled_oct01,
+    is_enrolled_oct15
 
 union all
 
@@ -138,6 +150,9 @@ select
     detailed_status as grouped_status,
     sre_academic_year_start,
     sre_academic_year_end,
+    is_enrolled_fdos,
+    is_enrolled_oct01,
+    is_enrolled_oct15,
 
     'All' as aligned_enrollment_type,
 
@@ -171,6 +186,9 @@ select
     status_group_numerator as grouped_status,
     sre_academic_year_start,
     sre_academic_year_end,
+    is_enrolled_fdos,
+    is_enrolled_oct01,
+    is_enrolled_oct15,
 
     'All' as aligned_enrollment_type,
 
@@ -200,7 +218,10 @@ group by
     enrollment_academic_year_enrollment_type,
     status_group_numerator,
     sre_academic_year_start,
-    sre_academic_year_end
+    sre_academic_year_end,
+    is_enrolled_fdos,
+    is_enrolled_oct01,
+    is_enrolled_oct15
 
 union all
 
@@ -227,6 +248,9 @@ select
     conversion_metric_numerator as grouped_status,
     sre_academic_year_start,
     sre_academic_year_end,
+    is_enrolled_fdos,
+    is_enrolled_oct01,
+    is_enrolled_oct15,
 
     'All' as aligned_enrollment_type,
 
@@ -258,4 +282,7 @@ group by
     enrollment_academic_year_enrollment_type,
     conversion_metric_numerator,
     sre_academic_year_start,
-    sre_academic_year_end
+    sre_academic_year_end,
+    is_enrolled_fdos,
+    is_enrolled_oct01,
+    is_enrolled_oct15
