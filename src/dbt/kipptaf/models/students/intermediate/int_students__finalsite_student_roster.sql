@@ -25,6 +25,9 @@ with
             e1.region as ps_region,
             e1.school as ps_school,
             e1.grade_level as ps_grade_level,
+            -- e1.is_enrolled_fdos,
+            e1.is_enrolled_oct01,
+            e.is_enrolled_oct15,
 
             if(
                 e2.next_year_enrollment_type is null,
@@ -97,7 +100,7 @@ select
         f.enrollment_academic_year = f.current_academic_year,
         f.grade_level + 1,
         f.grade_level
-    ) as enrollment_academic_year_grade_level,
+    ) as aligned_enrollment_academic_year_grade_level,
 
 from actual_enroll_type as f
 inner join
