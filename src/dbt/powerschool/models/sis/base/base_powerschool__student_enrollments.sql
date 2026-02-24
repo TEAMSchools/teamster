@@ -13,6 +13,8 @@ with
         select
             enr.*,
 
+            if(enr.entrydate <= cr.min_calendardate, true, false) as is_enrolled_fdos,
+
             case
                 when enr.exitdate >= cr.max_calendardate
                 then true
@@ -22,10 +24,6 @@ with
                 then true
                 else false
             end as is_enrolled_recent,
-
-            case
-                when enr.entrydate = < cr.min_calendardate then true else false
-            end as is_enrolled_fdos,
         from deduplicate as enr
         left join
             {{ ref("int_powerschool__calendar_rollup") }} as cr
