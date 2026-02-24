@@ -17,7 +17,7 @@ with
 
         from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as b
         inner join
-            {{ ref("stg_google_sheets__finalsite_goals") }} as g
+            {{ ref("stg_google_sheets__finalsite__goals") }} as g
             on b.academic_year = g.enrollment_academic_year
             and b.region = g.region
             and b.schoolid = g.schoolid
@@ -42,7 +42,7 @@ with
 
         from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as b
         inner join
-            {{ ref("stg_google_sheets__finalsite_goals") }} as g
+            {{ ref("stg_google_sheets__finalsite__goals") }} as g
             on b.academic_year = g.enrollment_academic_year
             and b.region = g.region
             and b.schoolid = g.schoolid
@@ -66,7 +66,7 @@ with
 
         from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as b
         inner join
-            {{ ref("stg_google_sheets__finalsite_goals") }} as g
+            {{ ref("stg_google_sheets__finalsite__goals") }} as g
             on b.academic_year = g.enrollment_academic_year
             and b.region = g.region
             and b.grade_level = g.grade_level
