@@ -22,6 +22,8 @@ select
     sre_academic_year_start,
     sre_academic_year_end,
 
+    'All' as aligned_enrollment_type,
+
     max(status_start_date) as status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}
@@ -75,6 +77,8 @@ select
     conversion_metric_denominator as grouped_status,
     sre_academic_year_start,
     sre_academic_year_end,
+
+    'All' as aligned_enrollment_type,
 
     max(status_start_date) as status_start_date,
 
@@ -130,6 +134,8 @@ select
     sre_academic_year_start,
     sre_academic_year_end,
 
+    'All' as aligned_enrollment_type,
+
     status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}
@@ -159,6 +165,8 @@ select
     status_group_numerator as grouped_status,
     sre_academic_year_start,
     sre_academic_year_end,
+
+    'All' as aligned_enrollment_type,
 
     max(status_start_date) as status_start_date,
 
@@ -211,6 +219,8 @@ select
     conversion_metric_numerator as grouped_status,
     sre_academic_year_start,
     sre_academic_year_end,
+
+    'All' as aligned_enrollment_type,
 
     max(status_start_date) as status_start_date,
 
