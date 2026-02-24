@@ -52,6 +52,11 @@ select
     f.status_start_date,
     f.enrollment_year_enrollment_type,
 
+    e.ps_enroll_status,
+    e.ps_region,
+    e.ps_school,
+    e.ps_grade_level,
+
     x.detailed_status_branched_ranking,
     x.valid_detailed_status,
     x.qa_flag,
