@@ -42,6 +42,7 @@ with
                 is_enrolled_oct01,
                 is_enrolled_oct15,
                 is_enrolled_recent,
+                is_enrolled_fdos,
                 is_retained_year
             ),
 
