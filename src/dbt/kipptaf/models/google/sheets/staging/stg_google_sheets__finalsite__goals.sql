@@ -51,7 +51,7 @@ select
 from {{ source("google_sheets", "src_google_sheets__finalsite__goals") }}
 where
     goal_granularity = 'School/Grade Level' and goal_type = 'Applications'
-   x
+   
 union all
 
 select
