@@ -73,9 +73,9 @@ with
 
         from {{ ref("stg_powerschool__s_nj_stu_x") }}
         where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
-    ),
+    )
 
-    finalsite_enrollment_type_calc as (
+{# finalsite_enrollment_type_calc as (
         select
             _dbt_source_relation,
             academic_year,
@@ -88,13 +88,14 @@ with
         from {{ ref("base_powerschool__student_enrollments") }}
         where grade_level != 99
         group by _dbt_source_relation, academic_year, student_number
-    ),
-
-    finalsite_student_id_calc as (
-        select powerschool_student_number, finalsite_student_id,
-        from {{ ref("stg_finalsite__status_report_wide") }}
-        where powerschool_student_number is not null
-    )
+    ), #}
+{# finalsite_student_id_calc as (
+        select powerschool_student_number, latest_finalsite_student_id,
+        from {{ ref("int_finalsite__status_report") }}
+        where
+            powerschool_student_number is not null
+            and latest_finalsite_student_id_rn = 1
+    ) #}
 select
     e.* except (
         lastfirst,
@@ -171,7 +172,8 @@ select
     ny.next_year_school,
     ny.next_year_schoolid,
 
-    fid.finalsite_student_id,
+    {# fid.latest_finalsite_student_id as finalsite_student_id, #}
+    null as finalsite_student_id,
 
     'KTAF' as district,
 
@@ -183,9 +185,10 @@ select
     || '-'
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
-    if(
+    {# if(
         e.grade_level = 99, null, fs.next_year_enrollment_type
-    ) as next_year_enrollment_type,
+    ) as next_year_enrollment_type, #}
+    null as next_year_enrollment_type,
 
     if(ovg.fafsa_opt_out is not null, 'Yes', 'No') as overgrad_fafsa_opt_out,
 
@@ -391,14 +394,14 @@ left join
     graduation_pathway_m as mc
     on e.students_dcid = mc.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="mc") }}
-left join
+{# left join
     finalsite_enrollment_type_calc as fs
     on e.academic_year = fs.academic_year
     and e.student_number = fs.student_number
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="fs") }}
-left join
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="fs") }} #}
+{# left join
     finalsite_student_id_calc as fid
-    on e.student_number = fid.powerschool_student_number
+    on e.student_number = fid.powerschool_student_number #}
 left join
     {{ ref("base_powerschool__course_enrollments") }} as sip
     on e.student_number = sip.students_student_number
