@@ -29,7 +29,7 @@ select
 
     'All' as aligned_enrollment_type,
 
-    max(status_start_date) as status_start_date,
+    max(status_start_date) as grouped_status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}
 where
@@ -95,7 +95,7 @@ select
 
     'All' as aligned_enrollment_type,
 
-    max(status_start_date) as status_start_date,
+    max(status_start_date) as grouped_status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}
 where
@@ -161,7 +161,7 @@ select
 
     'All' as aligned_enrollment_type,
 
-    status_start_date,
+    status_start_date as grouped_status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}
 where detailed_status = 'Enrolled' and status_start_date is not null and not qa_flag
@@ -198,7 +198,7 @@ select
 
     'All' as aligned_enrollment_type,
 
-    max(status_start_date) as status_start_date,
+    max(status_start_date) as grouped_status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}
 where
@@ -262,7 +262,7 @@ select
 
     'All' as aligned_enrollment_type,
 
-    max(status_start_date) as status_start_date,
+    max(status_start_date) as grouped_status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}
 where

@@ -1,5 +1,9 @@
 models:
   - name: rpt_tableau__fresh_dashboard_progress_to_goals
+    config:
+      enabled: false
+      contract:
+        enforced: false
     columns:
       - name: row_type
         data_type: string
