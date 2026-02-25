@@ -214,4 +214,3 @@ select
 from {{ source("google_sheets", "src_google_sheets__finalsite__goals") }}
 where goal_granularity = 'Region/Grade Level' and goal_type = 'Applications'
 */
-    
