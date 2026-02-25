@@ -63,6 +63,7 @@ left join
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
     and f.latest_status = 'Waitlisted'
+where s.goal_type = 'Wailisted'
 
 union all
 
