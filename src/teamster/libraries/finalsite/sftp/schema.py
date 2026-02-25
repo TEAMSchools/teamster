@@ -38,3 +38,4 @@ class StatusReport(BaseModel):
     never_attended_date: str | None = None
     retained_date: str | None = None
     summer_withdraw_date: str | None = None
+    source_file_name: str | None = None
