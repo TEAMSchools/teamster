@@ -1,5 +1,5 @@
 models:
-  - name: rpt_tableau__fresh_dashboard_conversions
+  - name: rpt_tableau__fresh_dashboard_detailed
     config:
       enabled: false
     columns:
