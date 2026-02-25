@@ -9,9 +9,7 @@ status_report = build_sftp_file_asset(
     asset_key=[CODE_LOCATION, "finalsite", "status_report"],
     remote_dir_regex=rf"/data-team/{CODE_LOCATION}/finalsite/status_report",
     remote_file_regex=(
-        rf"{CODE_LOCATION}_SwissArmyExport_SFTP_Export___"
-        r"Status_Report_SFTP_Status_Export___"
-        r"(?P<school_year>\d+_\d+)\.csv"
+        rf"{CODE_LOCATION}_SwissArmyExport_\w+_(?P<school_year>\d+_\d+)\.csv"
     ),
     partitions_def=get_finalsite_school_year_partition_keys(
         start_year=2025, end_year=CURRENT_FISCAL_YEAR.fiscal_year
