@@ -541,7 +541,7 @@ select
         when c.contact_college_match_display_gpa >= 2.50
         then '2.50-2.99'
         when c.contact_college_match_display_gpa >= 2.00
-        then '2.00-2.50'
+        then '2.00-2.49'
         when c.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
