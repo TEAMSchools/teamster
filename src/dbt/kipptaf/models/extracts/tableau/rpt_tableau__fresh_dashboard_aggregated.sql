@@ -25,14 +25,14 @@ with
 
         union all
 
-        -- join for school
+        -- join for school, no grade level
         select
             b.academic_year,
             b.org,
             b.region,
             b.schoolid,
             b.school,
-            b.grade_level,
+            null as grade_level,
 
             g.school_level,
             g.goal_granularity,
@@ -46,6 +46,7 @@ with
             on b.academic_year = g.enrollment_academic_year
             and b.region = g.region
             and b.schoolid = g.schoolid
+            and b.grade_level = g.grade_level
 
         union all
 
@@ -55,7 +56,7 @@ with
             b.org,
             b.region,
             b.schoolid,
-            b.school,
+            null as school,
             b.grade_level,
 
             g.school_level,
