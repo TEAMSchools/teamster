@@ -63,7 +63,7 @@ left join
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
     and f.latest_status = 'Waitlisted'
-where s.goal_type = 'Waitlisted' and g.goal_granularity = 'Region/Grade Level'
+where s.goal_type = 'Waitlisted' and s.goal_granularity = 'Region/Grade Level'
 
 union all
 
@@ -105,4 +105,4 @@ left join
     and s.region = f.region
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
-where s.goal_type = 'Inquiries' and g.goal_granularity = 'Region/Grade Level'
+where s.goal_type = 'Inquiries' and s.goal_granularity = 'Region/Grade Level'
