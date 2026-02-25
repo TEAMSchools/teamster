@@ -65,6 +65,8 @@ left join
     and f.latest_status = 'Waitlisted'
 where s.goal_type = 'Waitlisted' and g.goal_granularity = 'Region/Grade Level'
 
+union all
+
 -- currently inquiries
 select
     s.academic_year,
