@@ -7,6 +7,8 @@ models:
           - unique:
               config:
                 store_failures: true
+      - name: _dagster_partition_key
+        data_type: string
       - name: academic_hold_date
         data_type: date
       - name: academic_hold_timestamp
