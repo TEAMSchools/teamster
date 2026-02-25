@@ -1,4 +1,4 @@
 models:
-  - name: stg_finalsite__status_report
+  - name: int_finalsite__status_report
     config:
       enabled: false

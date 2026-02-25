@@ -1,5 +1,7 @@
 models:
   - name: rpt_tableau__fresh_dashboard_detailed
     config:
-      contract:
-        enforced: false
+      enabled: false
+    columns:
+      - name: foo
+        data_type: string
