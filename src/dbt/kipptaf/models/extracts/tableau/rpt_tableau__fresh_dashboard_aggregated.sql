@@ -21,7 +21,6 @@ with
             on b.academic_year = g.enrollment_academic_year
             and b.region = g.region
             and b.grade_level = g.grade_level
-            and g.goal_granularity = 'Region/Grade Level'
     )
 
 -- currently waitlisted
