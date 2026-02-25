@@ -1,6 +1,7 @@
 with
     status_report as (
         select
+            _dagster_partition_key,
             finalsite_enrollment_id,
             last_name,
             first_name,
@@ -53,6 +54,7 @@ with
 
             cast(left(active_school_year, 4) as int) as active_school_year_int,
         from {{ source("finalsite", "status_report") }}
+        where powerschool_student_number is null or powerschool_student_number != 'test'
     )
 
 select
