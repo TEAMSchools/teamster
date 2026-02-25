@@ -10,16 +10,6 @@ select
     goal_name,
     goal_value,
 
-    row_number() over (
-        partition by
-            enrollment_academic_year,
-            grade_level,
-            goal_granularity,
-            goal_type,
-            goal_name
-        order by enrollment_academic_year
-    ) as rn_groupings,
-
 from
     {{ source("google_sheets", "src_google_sheets__finalsite__goals") }}
     /*
