@@ -1,4 +1,6 @@
 models:
   - name: rpt_tableau__fresh_dashboard_conversions
     config:
-        enabled: false
+      enabled: false
+      contract:
+        enforced: false
