@@ -93,7 +93,7 @@ select
     f.powerschool_student_number,
     f.first_name,
     f.last_name,
-    f.grade_level,
+    f.grade_level as student_grade_level,
     f.aligned_enrollment_academic_year_grade_level,
     f.self_contained,
     f.enrollment_academic_year_enrollment_type,
@@ -105,7 +105,7 @@ select
 from scaffold as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
-    on s.academic_year = f.aligned_enrollment_academic_year
+    on s.academic_year = f.enrollment_academic_year
     and s.region = f.region
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
@@ -135,7 +135,7 @@ select
     f.powerschool_student_number,
     f.first_name,
     f.last_name,
-    f.grade_level,
+    f.grade_level as student_grade_level,
     f.aligned_enrollment_academic_year_grade_level,
     f.self_contained,
     f.enrollment_academic_year_enrollment_type,
@@ -147,7 +147,7 @@ select
 from scaffold as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
-    on s.academic_year = f.aligned_enrollment_academic_year
+    on s.academic_year = f.enrollment_academic_year
     and s.region = f.region
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
