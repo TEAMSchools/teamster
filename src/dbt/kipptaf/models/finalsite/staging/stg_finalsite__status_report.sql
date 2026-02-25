@@ -15,10 +15,7 @@ with
     region_calc as (
         -- trunk-ignore(sqlfluff/AM04)
         select
-            * except (
-                extract_year,
-                first_name,
-            ),
+            * except (extract_year, first_name,),
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
 
