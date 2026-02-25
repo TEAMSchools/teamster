@@ -25,6 +25,7 @@ select
     is_enrolled_fdos,
     is_enrolled_oct01,
     is_enrolled_oct15,
+    latest_status,
 
     'All' as aligned_enrollment_type,
 
@@ -59,7 +60,8 @@ group by
     sre_academic_year_end,
     is_enrolled_fdos,
     is_enrolled_oct01,
-    is_enrolled_oct15
+    is_enrolled_oct15,
+    latest_status
 
 union all
 
@@ -89,6 +91,7 @@ select
     is_enrolled_fdos,
     is_enrolled_oct01,
     is_enrolled_oct15,
+    latest_status,
 
     'All' as aligned_enrollment_type,
 
@@ -123,7 +126,8 @@ group by
     sre_academic_year_end,
     is_enrolled_fdos,
     is_enrolled_oct01,
-    is_enrolled_oct15
+    is_enrolled_oct15,
+    latest_status
 
 union all
 
@@ -153,6 +157,7 @@ select
     is_enrolled_fdos,
     is_enrolled_oct01,
     is_enrolled_oct15,
+    latest_status,
 
     'All' as aligned_enrollment_type,
 
@@ -189,6 +194,7 @@ select
     is_enrolled_fdos,
     is_enrolled_oct01,
     is_enrolled_oct15,
+    latest_status,
 
     'All' as aligned_enrollment_type,
 
@@ -221,7 +227,8 @@ group by
     sre_academic_year_end,
     is_enrolled_fdos,
     is_enrolled_oct01,
-    is_enrolled_oct15
+    is_enrolled_oct15,
+    latest_status
 
 union all
 
@@ -251,6 +258,7 @@ select
     is_enrolled_fdos,
     is_enrolled_oct01,
     is_enrolled_oct15,
+    latest_status,
 
     'All' as aligned_enrollment_type,
 
@@ -285,4 +293,5 @@ group by
     sre_academic_year_end,
     is_enrolled_fdos,
     is_enrolled_oct01,
-    is_enrolled_oct15
+    is_enrolled_oct15,
+    latest_status
