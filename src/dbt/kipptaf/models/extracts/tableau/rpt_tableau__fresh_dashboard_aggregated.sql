@@ -24,6 +24,7 @@ with
             and g.goal_granularity = 'Region/Grade Level'
     )
 
+-- currently waitlisted
 select
     s.academic_year,
     s.org,
@@ -62,10 +63,10 @@ left join
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
     and f.latest_status = 'Waitlisted'
-where s.goal_type = 'Waitlisted'
 
 union all
 
+-- ever inquiries
 select
     s.academic_year,
     s.org,
