@@ -1,4 +1,2 @@
 models:
   - name: stg_finalsite__status_report
-    config:
-      materialized: table
