@@ -1,287 +1,391 @@
 with
     scaffold as (
+        -- join for region/grade level
         select
-            b.academic_year as powerschool_academic_year,
+            b.academic_year,
             b.org,
             b.region,
             b.schoolid,
             b.school,
             b.grade_level,
 
-            x.enrollment_academic_year,
-            x.enrollment_academic_year_display,
-            x.enrollment_type,
-            x.overall_status,
-            x.funnel_status,
-            x.status_category,
-            x.offered_status,
-            x.offered_status_detailed,
-            x.detailed_status_ranking,
-            x.detailed_status_branched_ranking,
-            x.detailed_status,
-            x.sre_academic_year_start,
-            x.sre_academic_year_end,
-
-            calendar_day,
-
-            metric,
+            g.school_level,
+            g.goal_granularity,
+            g.goal_type,
+            g.goal_name,
+            g.goal_value,
 
         from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as b
         inner join
-            {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
-            on b.academic_year = x.enrollment_academic_year
-        cross join
-            unnest(
-                generate_date_array(
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(x.sre_academic_year_start, week(monday)),
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(x.sre_academic_year_end, week(monday)),
-                    interval 1 day
-                )
-            ) as calendar_day
-        cross join
-            unnest(
-                [
-                    'Applications',
-                    'Offers',
-                    'Pending Offers',
-                    'Pending Offer <= 4',
-                    'Pending Offer >= 5 & <=10',
-                    'Pending Offer > 10',
-                    'Conversion'
-                ]
-            ) as metric
+            {{ ref("stg_google_sheets__finalsite__goals") }} as g
+            on b.academic_year = g.enrollment_academic_year
+            and b.region = g.region
+            and b.school = g.school
+            and b.grade_level = g.grade_level
     ),
 
-    max_custom_status as (
+    add_group_status_end_date as (
         select
             enrollment_academic_year,
-            enrollment_academic_year_display,
-            student_org,
-            student_region,
-            student_school,
-            student_finalsite_student_id,
-            student_grade_level,
-            calendar_day,
+            finalsite_id,
+            grouped_status,
+            grouped_status_order,
+            grouped_status_start_date,
 
-            max(student_applicant_ops) over (
-                partition by enrollment_academic_year, student_finalsite_student_id
-            ) as application_cumulative,
-
-            max(student_offered_ops) over (
-                partition by enrollment_academic_year, student_finalsite_student_id
-            ) as offers_cumulative,
-
-            max(student_overall_conversion_ops) over (
-                partition by enrollment_academic_year, student_finalsite_student_id
-            ) as conversion_cumulative,
-
-            max(student_pending_offer_ops) over (
-                partition by
-                    enrollment_academic_year, student_finalsite_student_id, calendar_day
-            ) as pending_offer_daily,
+            lead(
+                grouped_status_start_date,
+                1,
+                current_date('{{ var("local_timezone") }}')
+            ) over (
+                partition by finalsite_id, enrollment_academic_year
+                order by grouped_status_start_date asc, grouped_status_order asc
+            ) as grouped_status_end_date,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
+        where grouped_status_order != 0
     ),
 
-    pending_offer_calcs as (
+    days_in_status as (
         select
             enrollment_academic_year,
-            enrollment_academic_year_display,
-            student_org,
-            student_region,
-            student_school,
-            student_finalsite_student_id,
-            student_grade_level,
-            calendar_day,
-            application_cumulative,
-            offers_cumulative,
-            conversion_cumulative,
-            pending_offer_daily,
-
-            case
-                when
-                    pending_offer_daily = 1
-                    and sum(pending_offer_daily) over (
-                        partition by
-                            enrollment_academic_year, student_finalsite_student_id
-                        order by calendar_day asc
-                    )
-                    <= 4
-                then 'Pending Offer <= 4'
-                when
-                    pending_offer_daily = 1
-                    and sum(pending_offer_daily) over (
-                        partition by
-                            enrollment_academic_year, student_finalsite_student_id
-                        order by calendar_day asc
-                    )
-                    between 5 and 10
-                then 'Pending Offer >= 5 & <=10'
-                when
-                    pending_offer_daily = 1
-                    and sum(pending_offer_daily) over (
-                        partition by
-                            enrollment_academic_year, student_finalsite_student_id
-                        order by calendar_day asc
-                    )
-                    > 10
-                then 'Pending Offer > 10'
-            end as pending_offer_timing_status,
-
-        from max_custom_status
-    ),
-
-    final as (
-        select
-            s.enrollment_academic_year,
-            s.enrollment_academic_year_display,
-            s.org,
-            s.region,
-            s.school,
-            s.grade_level,
-            s.calendar_day,
-            s.metric,
+            finalsite_id,
+            grouped_status,
+            grouped_status_order,
+            grouped_status_start_date,
+            grouped_status_end_date,
 
             if(
-                p.application_cumulative = 1, p.student_finalsite_student_id, null
-            ) as student_finalsite_student_id,
+                grouped_status_end_date = grouped_status_start_date,
+                1,
+                date_diff(grouped_status_end_date, grouped_status_start_date, day)
+            ) as days_in_grouped_status,
 
-        from scaffold as s
-        left join
-            pending_offer_calcs as p
-            on s.enrollment_academic_year = p.enrollment_academic_year
-            and s.region = p.student_region
-            and s.school = p.student_school
-            and s.grade_level = p.student_grade_level
-            and s.calendar_day = p.calendar_day
-        where s.metric = 'Applications'
-
-        union all
-
-        select
-            s.enrollment_academic_year,
-            s.enrollment_academic_year_display,
-            s.org,
-            s.region,
-            s.school,
-            s.grade_level,
-            s.calendar_day,
-            s.metric,
-
-            if(
-                p.offers_cumulative = 1, p.student_finalsite_student_id, null
-            ) as student_finalsite_student_id,
-
-        from scaffold as s
-        left join
-            pending_offer_calcs as p
-            on s.enrollment_academic_year = p.enrollment_academic_year
-            and s.region = p.student_region
-            and s.school = p.student_school
-            and s.grade_level = p.student_grade_level
-            and s.calendar_day = p.calendar_day
-        where s.metric = 'Offers'
-
-        union all
-
-        select
-            s.enrollment_academic_year,
-            s.enrollment_academic_year_display,
-            s.org,
-            s.region,
-            s.school,
-            s.grade_level,
-            s.calendar_day,
-            s.metric,
-
-            if(
-                p.conversion_cumulative = 1, p.student_finalsite_student_id, null
-            ) as student_finalsite_student_id,
-
-        from scaffold as s
-        left join
-            pending_offer_calcs as p
-            on s.enrollment_academic_year = p.enrollment_academic_year
-            and s.region = p.student_region
-            and s.school = p.student_school
-            and s.grade_level = p.student_grade_level
-            and s.calendar_day = p.calendar_day
-        where s.metric = 'Conversion'
-
-        union all
-
-        select
-            s.enrollment_academic_year,
-            s.enrollment_academic_year_display,
-            s.org,
-            s.region,
-            s.school,
-            s.grade_level,
-            s.calendar_day,
-            s.metric,
-
-            if(
-                p.pending_offer_daily = 1, p.student_finalsite_student_id, null
-            ) as student_finalsite_student_id,
-
-        from scaffold as s
-        left join
-            pending_offer_calcs as p
-            on s.enrollment_academic_year = p.enrollment_academic_year
-            and s.region = p.student_region
-            and s.school = p.student_school
-            and s.grade_level = p.student_grade_level
-            and s.calendar_day = p.calendar_day
-        where s.metric = 'Pending Offers'
-
-        union all
-
-        select
-            s.enrollment_academic_year,
-            s.enrollment_academic_year_display,
-            s.org,
-            s.region,
-            s.school,
-            s.grade_level,
-            s.calendar_day,
-            s.metric,
-
-            p.student_finalsite_student_id,
-
-        from scaffold as s
-        left join
-            pending_offer_calcs as p
-            on s.enrollment_academic_year = p.enrollment_academic_year
-            and s.region = p.student_region
-            and s.school = p.student_school
-            and s.grade_level = p.student_grade_level
-            and s.calendar_day = p.calendar_day
-            and s.metric = p.pending_offer_timing_status
+        from add_group_status_end_date
     )
 
+-- currently waitlisted
 select
+    s.academic_year,
+    s.org,
+    s.region,
+    s.school_level,
+    s.schoolid,
+    s.school,
+    s.grade_level,
+    s.goal_granularity,
+    s.goal_type,
+    s.goal_name,
+    s.goal_value,
+
+    f.aligned_enrollment_academic_year,
+    f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
-    f.org,
-    f.region,
-    f.school,
-    f.grade_level,
-    f.calendar_day,
-    f.metric,
-    f.student_finalsite_student_id,
+    f.finalsite_id,
+    f.powerschool_student_number,
+    f.first_name,
+    f.last_name,
+    f.grade_level as student_grade_level,
+    f.aligned_enrollment_academic_year_grade_level,
+    f.grouped_status,
+    f.self_contained,
+    f.enrollment_academic_year_enrollment_type,
+    f.is_enrolled_fdos,
+    f.is_enrolled_oct01,
+    f.is_enrolled_oct15,
+    f.aligned_enrollment_type,
 
-    g.goal_value,
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
 
-    if(f.metric = 'Offers', 'Offers', f.metric) as goal_type,
-    if(f.metric = 'Offers', 'Offers Target', null) as goal_name,
-
-from final as f
+from scaffold as s
 left join
-    {{ ref("stg_google_sheets__finalsite__goals") }} as g
-    on f.enrollment_academic_year = g.enrollment_academic_year
-    and f.school = g.school
-    and g.goal_type = 'Applications'
-    and g.goal_granularity = 'School'
-where f.calendar_day = current_date('current_time')
+    {{ ref("int_tableau__finalsite_student_scaffold") }} as f
+    on s.academic_year = f.enrollment_academic_year
+    and s.region = f.region
+    and s.grade_level = f.grade_level
+    and s.goal_type = f.grouped_status
+    and f.latest_status = 'Waitlisted'
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_id = d.finalsite_id
+    and f.grouped_status = d.grouped_status
+where s.goal_type = 'Waitlisted'
+
+union all
+
+-- inquiries ever
+select
+    s.academic_year,
+    s.org,
+    s.region,
+    s.school_level,
+    s.schoolid,
+    s.school,
+    s.grade_level,
+    s.goal_granularity,
+    s.goal_type,
+    s.goal_name,
+    s.goal_value,
+
+    f.aligned_enrollment_academic_year,
+    f.aligned_enrollment_academic_year_display,
+    f.enrollment_academic_year,
+    f.enrollment_academic_year_display,
+    f.finalsite_id,
+    f.powerschool_student_number,
+    f.first_name,
+    f.last_name,
+    f.grade_level as student_grade_level,
+    f.aligned_enrollment_academic_year_grade_level,
+    f.grouped_status,
+    f.self_contained,
+    f.enrollment_academic_year_enrollment_type,
+    f.is_enrolled_fdos,
+    f.is_enrolled_oct01,
+    f.is_enrolled_oct15,
+    f.aligned_enrollment_type,
+
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
+from scaffold as s
+left join
+    {{ ref("int_tableau__finalsite_student_scaffold") }} as f
+    on s.academic_year = f.enrollment_academic_year
+    and s.region = f.region
+    and s.grade_level = f.grade_level
+    and s.goal_type = f.grouped_status
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_id = d.finalsite_id
+    and f.grouped_status = d.grouped_status
+where s.goal_type = 'Inquiries'
+
+union all
+
+-- applications ever
+select
+    s.academic_year,
+    s.org,
+    s.region,
+    s.school_level,
+    s.schoolid,
+    s.school,
+    s.grade_level,
+    s.goal_granularity,
+    s.goal_type,
+    s.goal_name,
+    s.goal_value,
+
+    f.aligned_enrollment_academic_year,
+    f.aligned_enrollment_academic_year_display,
+    f.enrollment_academic_year,
+    f.enrollment_academic_year_display,
+    f.finalsite_id,
+    f.powerschool_student_number,
+    f.first_name,
+    f.last_name,
+    f.grade_level as student_grade_level,
+    f.aligned_enrollment_academic_year_grade_level,
+    f.grouped_status,
+    f.self_contained,
+    f.enrollment_academic_year_enrollment_type,
+    f.is_enrolled_fdos,
+    f.is_enrolled_oct01,
+    f.is_enrolled_oct15,
+    f.aligned_enrollment_type,
+
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
+from scaffold as s
+left join
+    {{ ref("int_tableau__finalsite_student_scaffold") }} as f
+    on s.academic_year = f.enrollment_academic_year
+    and s.region = f.region
+    and s.school = f.school
+    and s.grade_level = f.grade_level
+    and s.goal_type = f.grouped_status
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_id = d.finalsite_id
+    and f.grouped_status = d.grouped_status
+where s.goal_type = 'Applications'
+
+union all
+
+-- offers ever
+select
+    s.academic_year,
+    s.org,
+    s.region,
+    s.school_level,
+    s.schoolid,
+    s.school,
+    s.grade_level,
+    s.goal_granularity,
+    s.goal_type,
+    s.goal_name,
+    s.goal_value,
+
+    f.aligned_enrollment_academic_year,
+    f.aligned_enrollment_academic_year_display,
+    f.enrollment_academic_year,
+    f.enrollment_academic_year_display,
+    f.finalsite_id,
+    f.powerschool_student_number,
+    f.first_name,
+    f.last_name,
+    f.grade_level as student_grade_level,
+    f.aligned_enrollment_academic_year_grade_level,
+    f.grouped_status,
+    f.self_contained,
+    f.enrollment_academic_year_enrollment_type,
+    f.is_enrolled_fdos,
+    f.is_enrolled_oct01,
+    f.is_enrolled_oct15,
+    f.aligned_enrollment_type,
+
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
+from scaffold as s
+left join
+    {{ ref("int_tableau__finalsite_student_scaffold") }} as f
+    on s.academic_year = f.enrollment_academic_year
+    and s.region = f.region
+    and s.school = f.school
+    and s.grade_level = f.grade_level
+    and s.goal_type = f.grouped_status
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_id = d.finalsite_id
+    and f.grouped_status = d.grouped_status
+where s.goal_type = 'Offers'
+
+union all
+
+-- currently pending offers
+select
+    s.academic_year,
+    s.org,
+    s.region,
+    s.school_level,
+    s.schoolid,
+    s.school,
+    s.grade_level,
+    s.goal_granularity,
+    s.goal_type,
+    s.goal_name,
+    s.goal_value,
+
+    f.aligned_enrollment_academic_year,
+    f.aligned_enrollment_academic_year_display,
+    f.enrollment_academic_year,
+    f.enrollment_academic_year_display,
+    f.finalsite_id,
+    f.powerschool_student_number,
+    f.first_name,
+    f.last_name,
+    f.grade_level as student_grade_level,
+    f.aligned_enrollment_academic_year_grade_level,
+    f.grouped_status,
+    f.self_contained,
+    f.enrollment_academic_year_enrollment_type,
+    f.is_enrolled_fdos,
+    f.is_enrolled_oct01,
+    f.is_enrolled_oct15,
+    f.aligned_enrollment_type,
+
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
+from scaffold as s
+left join
+    {{ ref("int_tableau__finalsite_student_scaffold") }} as f
+    on s.academic_year = f.enrollment_academic_year
+    and s.region = f.region
+    and s.school = f.school
+    and s.grade_level = f.grade_level
+    and s.goal_type = f.grouped_status
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_id = d.finalsite_id
+    and f.grouped_status = d.grouped_status
+where
+    s.goal_type = 'Pending Offers'
+    and s.goal_name = 'Pending Offers'
+    and s.academic_year = {{ var("current_academic_year") + 1 }}
+
+union all
+
+-- currently pending offers <= 4 days
+select
+    s.academic_year,
+    s.org,
+    s.region,
+    s.school_level,
+    s.schoolid,
+    s.school,
+    s.grade_level,
+    s.goal_granularity,
+    s.goal_type,
+    s.goal_name,
+    s.goal_value,
+
+    f.aligned_enrollment_academic_year,
+    f.aligned_enrollment_academic_year_display,
+    f.enrollment_academic_year,
+    f.enrollment_academic_year_display,
+    f.finalsite_id,
+    f.powerschool_student_number,
+    f.first_name,
+    f.last_name,
+    f.grade_level as student_grade_level,
+    f.aligned_enrollment_academic_year_grade_level,
+    f.grouped_status,
+    f.self_contained,
+    f.enrollment_academic_year_enrollment_type,
+    f.is_enrolled_fdos,
+    f.is_enrolled_oct01,
+    f.is_enrolled_oct15,
+    f.aligned_enrollment_type,
+
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
+from scaffold as s
+left join
+    {{ ref("int_tableau__finalsite_student_scaffold") }} as f
+    on s.academic_year = f.enrollment_academic_year
+    and s.region = f.region
+    and s.school = f.school
+    and s.grade_level = f.grade_level
+    and s.goal_type = f.grouped_status
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_id = d.finalsite_id
+    and f.grouped_status = d.grouped_status
+where
+    s.goal_type = 'Pending Offers'
+    and s.goal_name = '<= 4 Days'
+    and s.academic_year = {{ var("current_academic_year") + 1 }}
