@@ -29,6 +29,19 @@ select
 
     'All' as aligned_enrollment_type,
 
+    case
+        status_group_denominator
+        when 'Inquiries'
+        then 1
+        when 'Applications'
+        then 2
+        when 'Offers'
+        then 3
+        when 'Accepted'
+        then 5
+        else 0
+    end as grouped_status_order,
+
     max(status_start_date) as grouped_status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}
@@ -94,6 +107,8 @@ select
     latest_status,
 
     'All' as aligned_enrollment_type,
+
+    0 as grouped_status_order,
 
     max(status_start_date) as grouped_status_start_date,
 
@@ -161,6 +176,8 @@ select
 
     'All' as aligned_enrollment_type,
 
+    7 as grouped_status_order,
+
     status_start_date as grouped_status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}
@@ -197,6 +214,8 @@ select
     latest_status,
 
     'All' as aligned_enrollment_type,
+
+    if(status_group_numerator = 'Pending Offers' 4, 6) as grouped_status_order,
 
     max(status_start_date) as grouped_status_start_date,
 
