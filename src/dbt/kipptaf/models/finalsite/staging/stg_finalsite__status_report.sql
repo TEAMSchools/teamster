@@ -26,10 +26,8 @@ with
                 cast(regexp_extract(application_grade, r'\d+') as int)
             ) as grade_level,
 
-            cast(active_school_year_int as string)
-            || '-'
-            || right(
-                cast(active_school_year_int + 1 as string), 2
+            regexp_replace(
+                active_school_year, r'-\d{2}', '-'
             ) as active_school_year_display,
 
         from union_relations
