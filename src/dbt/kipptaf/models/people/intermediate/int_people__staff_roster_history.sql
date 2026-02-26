@@ -112,7 +112,8 @@ with
         /* after transistion from Dayforce */
         where
             w.effective_date_end >= '2021-01-01'
-            and w.organizational_unit__home__business_unit__name != 'KIPP Paterson'
+            and coalesce(w.organizational_unit__home__business_unit__name, '')
+            != 'KIPP Paterson'
 
         union all
 
