@@ -13,11 +13,11 @@ with
             self_contained,
             gender,
 
+            active_school_year_int as enrollment_academic_year,
+            active_school_year_display as enrollment_academic_year_display,
+
             fs_status_field,
-
-            cast(left(active_school_year, 4) as int64) as enrollment_academic_year,
-
-            safe_cast(status_start_timestamp as date) as status_start_date,
+            status_start_date,
 
             initcap(
                 regexp_replace(replace(fs_status_field, '_', ' '), r'\s+[Dd]ate$', '')
@@ -26,7 +26,7 @@ with
         from
             -- trunk-ignore(sqlfluff/LT01)
             {{ ref("stg_finalsite__status_report") }} unpivot include nulls(
-                status_start_timestamp for fs_status_field in (
+                status_start_date for fs_status_field in (
                     inquiry_date,
                     inquiry_completed_date,
                     inactive_inquiry_date,
@@ -62,12 +62,6 @@ select
 
     coalesce(x.powerschool_school_id, 0) as schoolid,
     coalesce(x.abbreviation, 'No School Assigned') as school,
-
-    cast(u.enrollment_academic_year as string)
-    || '-'
-    || right(
-        cast(u.enrollment_academic_year + 1 as string), 2
-    ) as enrollment_academic_year_display,
 
     case
         u.fs_status_field
