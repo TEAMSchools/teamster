@@ -9,7 +9,7 @@ with
             f.region,
             f.schoolid,
             f.school,
-            f.finalsite_student_id,
+            f.finalsite_enrollment_id as finalsite_student_id,
             f.powerschool_student_number,
             f.first_name,
             f.last_name,

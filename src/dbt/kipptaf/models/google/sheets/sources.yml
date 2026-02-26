@@ -1683,14 +1683,8 @@ sources:
                 - finalsite
                 - exclude_ids
       - name: src_google_sheets__finalsite__status_report_wide
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1TMkujoNxxAQw4B1hRWoIllpWZht1BAT5Wx006gXkVXU
-            sheet_range: src_google_sheets__finalsite__status_report_wide
-            skip_leading_rows: 1
         config:
+          enabled: false
           meta:
             dagster:
               asset_key:
@@ -1699,3 +1693,11 @@ sources:
                 - sheets
                 - finalsite
                 - status_report_wide
+
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1TMkujoNxxAQw4B1hRWoIllpWZht1BAT5Wx006gXkVXU
+            sheet_range: src_google_sheets__finalsite__status_report_wide
+            skip_leading_rows: 1

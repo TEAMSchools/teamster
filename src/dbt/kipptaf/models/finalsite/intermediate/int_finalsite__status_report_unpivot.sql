@@ -5,13 +5,13 @@ with
             next_academic_year,
             region,
             assigned_school,
-            finalsite_student_id,
+            finalsite_enrollment_id,
             powerschool_student_number,
             first_name,
             last_name,
-            grade,
             grade_level,
             self_contained,
+            gender,
 
             fs_status_field,
 
@@ -25,7 +25,7 @@ with
 
         from
             -- trunk-ignore(sqlfluff/LT01)
-            {{ ref("stg_finalsite__status_report_wide") }} unpivot include nulls(
+            {{ ref("stg_finalsite__status_report") }} unpivot include nulls(
                 status_start_timestamp for fs_status_field in (
                     inquiry_date,
                     inquiry_completed_date,
