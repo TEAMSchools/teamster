@@ -112,7 +112,7 @@ select
     ) as is_fldoe_fte_all,
 
     if(
-        ar.region = 'Miami', ar.spedlep, sped.special_education_code
+        ar.region in ('Miami', 'Paterson'), ar.spedlep, sped.special_education_code
     ) as special_education_code,
 
     if(adb.latest_fafsa_date is null, 'No', 'Yes') as salesforce_contact_df_has_fafsa,
