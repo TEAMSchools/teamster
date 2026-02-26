@@ -27,7 +27,7 @@ with
     add_group_status_end_date as (
         select
             enrollment_academic_year,
-            finalsite_student_id,
+            finalsite_id,
             grouped_status,
             grouped_status_order,
             grouped_status_start_date,
@@ -37,7 +37,7 @@ with
                 1,
                 current_date('{{ var("local_timezone") }}')
             ) over (
-                partition by finalsite_student_id, enrollment_academic_year
+                partition by finalsite_id, enrollment_academic_year
                 order by grouped_status_start_date asc, grouped_status_order asc
             ) as grouped_status_end_date,
 
@@ -48,7 +48,7 @@ with
     days_in_status as (
         select
             enrollment_academic_year,
-            finalsite_student_id,
+            finalsite_id,
             grouped_status,
             grouped_status_order,
             grouped_status_start_date,
@@ -81,7 +81,7 @@ select
     f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
-    f.finalsite_student_id,
+    f.finalsite_id,
     f.powerschool_student_number,
     f.first_name,
     f.last_name,
@@ -111,7 +111,7 @@ left join
 left join
     days_in_status as d
     on f.enrollment_academic_year = d.enrollment_academic_year
-    and f.finalsite_student_id = d.finalsite_student_id
+    and f.finalsite_id = d.finalsite_id
     and f.grouped_status = d.grouped_status
 where s.goal_type = 'Waitlisted'
 
@@ -135,7 +135,7 @@ select
     f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
-    f.finalsite_student_id,
+    f.finalsite_id,
     f.powerschool_student_number,
     f.first_name,
     f.last_name,
@@ -164,7 +164,7 @@ left join
 left join
     days_in_status as d
     on f.enrollment_academic_year = d.enrollment_academic_year
-    and f.finalsite_student_id = d.finalsite_student_id
+    and f.finalsite_id = d.finalsite_id
     and f.grouped_status = d.grouped_status
 where s.goal_type = 'Inquiries'
 
@@ -188,7 +188,7 @@ select
     f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
-    f.finalsite_student_id,
+    f.finalsite_id,
     f.powerschool_student_number,
     f.first_name,
     f.last_name,
@@ -218,7 +218,7 @@ left join
 left join
     days_in_status as d
     on f.enrollment_academic_year = d.enrollment_academic_year
-    and f.finalsite_student_id = d.finalsite_student_id
+    and f.finalsite_id = d.finalsite_id
     and f.grouped_status = d.grouped_status
 where s.goal_type = 'Applications'
 
@@ -242,7 +242,7 @@ select
     f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
-    f.finalsite_student_id,
+    f.finalsite_id,
     f.powerschool_student_number,
     f.first_name,
     f.last_name,
@@ -272,7 +272,7 @@ left join
 left join
     days_in_status as d
     on f.enrollment_academic_year = d.enrollment_academic_year
-    and f.finalsite_student_id = d.finalsite_student_id
+    and f.finalsite_id = d.finalsite_id
     and f.grouped_status = d.grouped_status
 where s.goal_type = 'Offers'
 
@@ -296,7 +296,7 @@ select
     f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
-    f.finalsite_student_id,
+    f.finalsite_id,
     f.powerschool_student_number,
     f.first_name,
     f.last_name,
@@ -326,7 +326,7 @@ left join
 left join
     days_in_status as d
     on f.enrollment_academic_year = d.enrollment_academic_year
-    and f.finalsite_student_id = d.finalsite_student_id
+    and f.finalsite_id = d.finalsite_id
     and f.grouped_status = d.grouped_status
 where
     s.goal_type = 'Pending Offers'
@@ -353,7 +353,7 @@ select
     f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
-    f.finalsite_student_id,
+    f.finalsite_id,
     f.powerschool_student_number,
     f.first_name,
     f.last_name,
@@ -383,7 +383,7 @@ left join
 left join
     days_in_status as d
     on f.enrollment_academic_year = d.enrollment_academic_year
-    and f.finalsite_student_id = d.finalsite_student_id
+    and f.finalsite_id = d.finalsite_id
     and f.grouped_status = d.grouped_status
 where
     s.goal_type = 'Pending Offers'
