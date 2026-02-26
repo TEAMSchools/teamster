@@ -20,7 +20,7 @@ with
             {{ ref("stg_google_sheets__finalsite__goals") }} as g
             on b.academic_year = g.enrollment_academic_year
             and b.region = g.region
-            and b.schoolid = g.schoolid
+            and b.school = g.school
             and b.grade_level = g.grade_level
     ),
 
@@ -107,13 +107,12 @@ left join
     and s.region = f.region
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
-    and f.latest_status = 'Waitlisted'
 left join
     days_in_status as d
     on f.enrollment_academic_year = d.enrollment_academic_year
     and f.finalsite_student_id = d.finalsite_student_id
     and f.grouped_status = d.grouped_status
-where s.goal_type = 'Waitlisted'
+where s.goal_type = 'Waitlisted' and f.latest_status = 'Waitlisted'
 
 union all
 
