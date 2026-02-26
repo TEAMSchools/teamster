@@ -42,39 +42,16 @@ select
         else 0
     end as grouped_status_order,
 
-    max(status_start_date) as grouped_status_start_date,
+    max(status_start_date) over (
+        partition by
+            enrollment_academic_year, finalsite_enrollment_id, status_group_denominator
+    ) as grouped_status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}
 where
     status_group_denominator is not null
     and status_start_date is not null
     and not qa_flag
-group by
-    aligned_enrollment_academic_year,
-    aligned_enrollment_academic_year_display,
-    enrollment_academic_year,
-    enrollment_academic_year_display,
-    current_academic_year,
-    next_academic_year,
-    org,
-    region,
-    schoolid,
-    school,
-    finalsite_enrollment_id,
-    powerschool_student_number,
-    first_name,
-    last_name,
-    grade_level,
-    aligned_enrollment_academic_year_grade_level,
-    self_contained,
-    enrollment_academic_year_enrollment_type,
-    status_group_denominator,
-    sre_academic_year_start,
-    sre_academic_year_end,
-    is_enrolled_fdos,
-    is_enrolled_oct01,
-    is_enrolled_oct15,
-    latest_status
 
 union all
 
@@ -110,39 +87,18 @@ select
 
     0 as grouped_status_order,
 
-    max(status_start_date) as grouped_status_start_date,
+    max(status_start_date) over (
+        partition by
+            enrollment_academic_year,
+            finalsite_enrollment_id,
+            conversion_metric_denominator
+    ) as grouped_status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}
 where
     conversion_metric_denominator is not null
     and status_start_date is not null
     and not qa_flag
-group by
-    aligned_enrollment_academic_year,
-    aligned_enrollment_academic_year_display,
-    enrollment_academic_year,
-    enrollment_academic_year_display,
-    current_academic_year,
-    next_academic_year,
-    org,
-    region,
-    schoolid,
-    school,
-    finalsite_enrollment_id,
-    powerschool_student_number,
-    first_name,
-    last_name,
-    grade_level,
-    aligned_enrollment_academic_year_grade_level,
-    self_contained,
-    enrollment_academic_year_enrollment_type,
-    conversion_metric_denominator,
-    sre_academic_year_start,
-    sre_academic_year_end,
-    is_enrolled_fdos,
-    is_enrolled_oct01,
-    is_enrolled_oct15,
-    latest_status
 
 union all
 
@@ -217,37 +173,14 @@ select
 
     if(status_group_numerator = 'Pending Offers', 4, 6) as grouped_status_order,
 
-    max(status_start_date) as grouped_status_start_date,
+    max(status_start_date) over (
+        partition by
+            enrollment_academic_year, finalsite_enrollment_id, status_group_numerator
+    ) as grouped_status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}
 where
     status_group_numerator is not null and status_start_date is not null and not qa_flag
-group by
-    aligned_enrollment_academic_year,
-    aligned_enrollment_academic_year_display,
-    enrollment_academic_year,
-    enrollment_academic_year_display,
-    current_academic_year,
-    next_academic_year,
-    org,
-    region,
-    schoolid,
-    school,
-    finalsite_enrollment_id,
-    powerschool_student_number,
-    first_name,
-    last_name,
-    grade_level,
-    aligned_enrollment_academic_year_grade_level,
-    self_contained,
-    enrollment_academic_year_enrollment_type,
-    status_group_numerator,
-    sre_academic_year_start,
-    sre_academic_year_end,
-    is_enrolled_fdos,
-    is_enrolled_oct01,
-    is_enrolled_oct15,
-    latest_status
 
 union all
 
@@ -283,36 +216,15 @@ select
 
     0 as grouped_status_order,
 
-    max(status_start_date) as grouped_status_start_date,
+    max(status_start_date) over (
+        partition by
+            enrollment_academic_year,
+            finalsite_enrollment_id,
+            conversion_metric_numerator
+    ) as grouped_status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}
 where
     conversion_metric_numerator is not null
     and status_start_date is not null
     and not qa_flag
-group by
-    aligned_enrollment_academic_year,
-    aligned_enrollment_academic_year_display,
-    enrollment_academic_year,
-    enrollment_academic_year_display,
-    current_academic_year,
-    next_academic_year,
-    org,
-    region,
-    schoolid,
-    school,
-    finalsite_enrollment_id,
-    powerschool_student_number,
-    first_name,
-    last_name,
-    grade_level,
-    aligned_enrollment_academic_year_grade_level,
-    self_contained,
-    enrollment_academic_year_enrollment_type,
-    conversion_metric_numerator,
-    sre_academic_year_start,
-    sre_academic_year_end,
-    is_enrolled_fdos,
-    is_enrolled_oct01,
-    is_enrolled_oct15,
-    latest_status
