@@ -281,6 +281,8 @@ select
 
     'All' as aligned_enrollment_type,
 
+    0 as grouped_status_order,
+
     max(status_start_date) as grouped_status_start_date,
 
 from {{ ref("int_students__finalsite_student_roster") }}

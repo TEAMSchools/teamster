@@ -22,6 +22,26 @@ with
             and b.region = g.region
             and b.schoolid = g.schoolid
             and b.grade_level = g.grade_level
+    ),
+
+    add_group_status_end_date as (
+        select
+            enrollment_academic_year,
+            finalsite_student_id,
+            grouped_status,
+            grouped_status_start_date,
+
+            lead(
+                grouped_status_start_date,
+                1,
+                current_date('{{ var("local_timezone") }}')
+            ) over (
+                partition by finalsite_student_id, enrollment_academic_year
+                order by grouped_status_start_date asc, grouped_status_order asc
+            ) as grouped_status_end_date,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }}
+        where grouped_status_order != 0
     )
 
 -- currently waitlisted
