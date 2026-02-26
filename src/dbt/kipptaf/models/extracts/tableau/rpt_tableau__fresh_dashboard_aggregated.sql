@@ -42,6 +42,23 @@ with
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
         where grouped_status_order != 0
+    ),
+
+    days_in_status as (
+        select
+            enrollment_academic_year,
+            finalsite_student_id,
+            grouped_status,
+            grouped_status_start_date,
+            grouped_status_end_date,
+
+            if(
+                grouped_status_end_date = grouped_status_start_date,
+                1,
+                date_diff(grouped_status_end_date, grouped_status_start_date, day)
+            ) as days_in_grouped_status,
+
+        from add_group_status_end_date
     )
 
 -- currently waitlisted
@@ -75,6 +92,11 @@ select
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
 
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
 from scaffold as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
@@ -83,6 +105,11 @@ left join
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
     and f.latest_status = 'Waitlisted'
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_student_id = d.finalsite_student_id
+    and f.grouped_status = d.grouped_status
 where s.goal_type = 'Waitlisted'
 
 union all
@@ -118,6 +145,11 @@ select
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
 
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
 from scaffold as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
@@ -125,6 +157,11 @@ left join
     and s.region = f.region
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_student_id = d.finalsite_student_id
+    and f.grouped_status = d.grouped_status
 where s.goal_type = 'Inquiries'
 
 union all
@@ -160,6 +197,11 @@ select
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
 
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
 from scaffold as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
@@ -167,6 +209,11 @@ left join
     and s.region = f.region
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_student_id = d.finalsite_student_id
+    and f.grouped_status = d.grouped_status
 where s.goal_type = 'Applications'
 
 union all
@@ -202,6 +249,11 @@ select
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
 
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
 from scaffold as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
@@ -209,6 +261,11 @@ left join
     and s.region = f.region
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_student_id = d.finalsite_student_id
+    and f.grouped_status = d.grouped_status
 where s.goal_type = 'Offers'
 
 union all
@@ -244,6 +301,11 @@ select
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
 
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
 from scaffold as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
@@ -251,6 +313,11 @@ left join
     and s.region = f.region
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_student_id = d.finalsite_student_id
+    and f.grouped_status = d.grouped_status
 where
     s.goal_type = 'Pending Offers'
     and s.goal_name = 'Pending Offers'
@@ -289,6 +356,11 @@ select
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
 
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
 from scaffold as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
@@ -296,6 +368,11 @@ left join
     and s.region = f.region
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_student_id = d.finalsite_student_id
+    and f.grouped_status = d.grouped_status
 where
     s.goal_type = 'Pending Offers'
     and s.goal_name = '<= 4 Days'
