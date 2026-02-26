@@ -265,9 +265,7 @@ select
         then 'Imported as Historical'
     end as enroll_status_string,
 
-    case
-        e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
-    end as race_ethnicity,
+    e.ethnicity as race_ethnicity,
 
     case
         when
