@@ -15,11 +15,16 @@ with
     region_calc as (
         -- trunk-ignore(sqlfluff/AM04)
         select
-            * except (extract_year, first_name),
+            * except (first_name),
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-
             initcap(first_name) as first_name,
+
+            if(
+                application_grade in ('K', 'Kindergarten'),
+                0,
+                cast(regexp_extract(application_grade, r'\d+') as int)
+            ) as grade_level,
 
         from union_relations
     )
@@ -33,5 +38,5 @@ select
 from region_calc as l
 left join
     {{ ref("stg_google_sheets__finalsite__exclude_ids") }} as e
-    on l.finalsite_student_id = e.finalsite_student_id
+    on l.finalsite_enrollment_id = e.finalsite_student_id
 where e.finalsite_student_id is null
