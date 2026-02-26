@@ -26,6 +26,12 @@ with
                 cast(regexp_extract(application_grade, r'\d+') as int)
             ) as grade_level,
 
+            cast(active_school_year as string)
+            || '-'
+            || right(
+                cast(active_school_year + 1 as string), 2
+            ) as active_school_year_display,
+
         from union_relations
     )
 
