@@ -1673,6 +1673,9 @@ sources:
               - https://docs.google.com/spreadsheets/d/1TMkujoNxxAQw4B1hRWoIllpWZht1BAT5Wx006gXkVXU
             sheet_range: src_google_sheets__finalsite__exclude_ids
             skip_leading_rows: 1
+        columns:
+          - name: finalsite_student_id
+            data_type: string
         config:
           meta:
             dagster:
