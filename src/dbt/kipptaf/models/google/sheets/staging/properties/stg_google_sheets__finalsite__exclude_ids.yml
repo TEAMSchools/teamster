@@ -3,3 +3,7 @@ models:
     columns:
       - name: finalsite_student_id
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
