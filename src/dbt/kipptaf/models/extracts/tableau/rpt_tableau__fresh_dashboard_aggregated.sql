@@ -211,6 +211,7 @@ left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
     on s.academic_year = f.enrollment_academic_year
     and s.region = f.region
+    and s.school = f.school
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
 left join
@@ -264,6 +265,7 @@ left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
     on s.academic_year = f.enrollment_academic_year
     and s.region = f.region
+    and s.school = f.school
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
 left join
@@ -317,6 +319,7 @@ left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
     on s.academic_year = f.enrollment_academic_year
     and s.region = f.region
+    and s.school = f.school
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
 left join
@@ -373,6 +376,7 @@ left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
     on s.academic_year = f.enrollment_academic_year
     and s.region = f.region
+    and s.school = f.school
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
 left join
