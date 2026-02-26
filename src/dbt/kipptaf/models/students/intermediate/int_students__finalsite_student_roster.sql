@@ -9,7 +9,7 @@ with
             f.region,
             f.schoolid,
             f.school,
-            f.finalsite_enrollment_id as finalsite_student_id,
+            f.finalsite_enrollment_id,
             f.powerschool_student_number,
             f.first_name,
             f.last_name,
@@ -60,7 +60,7 @@ select
     f.region,
     f.schoolid,
     f.school,
-    f.finalsite_student_id,
+    f.finalsite_enrollment_id,
     f.powerschool_student_number,
     f.first_name,
     f.last_name,
@@ -95,7 +95,7 @@ select
     ) as aligned_enrollment_academic_year_display,
 
     first_value(f.detailed_status) over (
-        partition by f.enrollment_academic_year, f.finalsite_student_id
+        partition by f.enrollment_academic_year, f.finalsite_enrollment_id
         order by f.status_start_date desc
     ) as latest_status,
 
