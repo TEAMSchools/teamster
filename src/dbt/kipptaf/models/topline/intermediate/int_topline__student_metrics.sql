@@ -13,9 +13,7 @@ with
         select * from {{ ref("int_topline__state_assessments_weekly") }}
     ),
 
-    enrollments as (
-        select * from {{ ref("int_extracts__student_enrollments_weeks") }}
-    ),
+    enrollments as (select * from {{ ref("int_extracts__student_enrollments_weeks") }}),
 
     multilayer_metrics as (
         /* K-8 Reading & Math */
