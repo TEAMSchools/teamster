@@ -1,6 +1,16 @@
 models:
   - name: stg_finalsite__status_report
     columns:
+      - name: assigned_school
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_google_sheets__people__location_crosswalk")
+                field: name
+              config:
+                store_failures: true
+                severity: warn
       - name: _dbt_source_relation
         data_type: string
       - name: finalsite_enrollment_id
@@ -33,17 +43,6 @@ models:
         data_type: date
       - name: application_withdrawn_timestamp
         data_type: timestamp
-      - name: assigned_school
-        data_type: string
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref("stg_google_sheets__people__location_crosswalk")
-                field: name
-              config:
-                where: state_excludefromreporting = 0
-                store_failures: true
-                severity: Warn
       - name: assigned_school_date
         data_type: date
       - name: assigned_school_timestamp
