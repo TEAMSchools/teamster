@@ -215,7 +215,7 @@ select
 
     'All' as aligned_enrollment_type,
 
-    if(status_group_numerator = 'Pending Offers' 4, 6) as grouped_status_order,
+    if(status_group_numerator = 'Pending Offers', 4, 6) as grouped_status_order,
 
     max(status_start_date) as grouped_status_start_date,
 
