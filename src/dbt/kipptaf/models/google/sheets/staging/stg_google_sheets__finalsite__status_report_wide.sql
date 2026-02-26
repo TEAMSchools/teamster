@@ -1,2 +1,0 @@
-select *,
-from {{ source("google_sheets", "src_google_sheets__finalsite__status_report_wide") }}

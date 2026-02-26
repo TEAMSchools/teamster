@@ -1,4 +1,0 @@
-models:
-  - name: stg_finalsite__status_report_wide
-    config:
-      enabled: false
