@@ -1,0 +1,7 @@
+{
+  "enabledPlugins": {
+    "dagster-expert@dagster": true,
+    "dagster-integrations@dagster": true,
+    "dignified-python@dagster": true
+  }
+}
