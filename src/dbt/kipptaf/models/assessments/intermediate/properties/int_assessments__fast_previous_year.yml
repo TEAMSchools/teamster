@@ -35,3 +35,5 @@ models:
         data_type: int64
       - name: scale_points_to_proficiency_pm3
         data_type: int64
+      - name: fldoe_dynamic_percentile_rank
+        data_type: float64

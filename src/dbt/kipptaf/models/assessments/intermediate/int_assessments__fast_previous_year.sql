@@ -73,16 +73,16 @@ with
             on co.fleid = pp.student_id
             and (co.academic_year - 1) = pp.academic_year
             and pp.administration_window = 'PM3'
-        inner join
-            fte_survey_availability as fa
-            on co.academic_year = fa.academic_year
+        inner join fte_survey_availability as fa on co.academic_year = fa.academic_year
         where
             co.rn_year = 1
             and co.region = 'Miami'
             and co.grade_level != 99
             and case
-                when fa.has_fte3_data then co.is_fldoe_fte_all
-                when fa.has_fte2_data then co.is_fldoe_fte_2
+                when fa.has_fte3_data
+                then co.is_fldoe_fte_all
+                when fa.has_fte2_data
+                then co.is_fldoe_fte_2
                 else co.enroll_status = 0
             end
     )
