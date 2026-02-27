@@ -1,8 +1,9 @@
 with
     stacked_data as (
 
-        /* denominator groupings for inquiries, applications, waitlisted, offers, assigned school and accepted */
-        /* need distinct to bring only one row per student when they have multiple statuses per group */
+        /* denominator groupings for inquiries, applications, waitlisted, offers,
+           assigned school and accepted. need distinct to bring only one row per
+           student when they have multiple statuses per group */
         select distinct
             aligned_enrollment_academic_year,
             aligned_enrollment_academic_year_display,
