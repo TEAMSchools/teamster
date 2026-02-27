@@ -159,15 +159,15 @@ with
                         single_syllable_skills_completed,
                         single_syllable_skills_successful,
                         single_syllable_percent_skills_successful
-                    ) as 'single_syllable'
+                    ) as 'single_syllable',
                 )
             )
     )
 
-select *
+select *,
 from lessons_unpivot
 
 union all
 
-select *
+select *,
 from skills_unpivot
