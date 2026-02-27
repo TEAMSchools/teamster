@@ -164,10 +164,10 @@ with
             )
     )
 
-select *
+select *,
 from lessons_unpivot
 
 union all
 
-select *
+select *,
 from skills_unpivot
