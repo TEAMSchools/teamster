@@ -317,6 +317,8 @@ left join
     and f.grouped_status = d.grouped_status
 where s.goal_type = 'Offers'
 
+union all
+
 -- currently pending offers
 select
     s.academic_year,
