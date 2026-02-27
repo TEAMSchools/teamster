@@ -132,7 +132,7 @@ select
 
     dob as `06 Birth Date`,
 
-    'L25' as `07 Program ID`,
+    if(discipline = 'ELA', 'L25E', 'L25M') as `07 Program ID`,
     null as `08 Eligibility Start Date`,
     null as `09 Eligibility End Date`,
 
@@ -150,4 +150,3 @@ where
     academic_year = {{ current_school_year(var("local_timezone")) }}
     and rn_year = 1
     and is_low_25_fl
-qualify row_number() over (partition by student_number order by discipline) = 1
