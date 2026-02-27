@@ -373,7 +373,7 @@ where s.goal_type = 'Applications' and s.goal_granularity = 'School'
 
 union all
 
--- offers ever
+-- offers ever for region/grade level
 select
     s.academic_year,
     s.org,
@@ -423,7 +423,115 @@ left join
     on f.enrollment_academic_year = d.enrollment_academic_year
     and f.finalsite_id = d.finalsite_id
     and f.grouped_status = d.grouped_status
-where s.goal_type = 'Offers'
+where s.goal_type = 'Offers' and s.goal_granularity = 'Region/Grade Level'
+
+union all
+
+-- offers ever for school/grade level
+select
+    s.academic_year,
+    s.org,
+    s.region,
+    s.school_level,
+    s.schoolid,
+    s.school,
+    s.grade_level,
+    s.goal_granularity,
+    s.goal_type,
+    s.goal_name,
+    s.goal_value,
+
+    f.aligned_enrollment_academic_year,
+    f.aligned_enrollment_academic_year_display,
+    f.enrollment_academic_year,
+    f.enrollment_academic_year_display,
+    f.finalsite_id,
+    f.powerschool_student_number,
+    f.first_name,
+    f.last_name,
+    f.grade_level as student_grade_level,
+    f.aligned_enrollment_academic_year_grade_level,
+    f.grouped_status,
+    f.self_contained,
+    f.enrollment_academic_year_enrollment_type,
+    f.is_enrolled_fdos,
+    f.is_enrolled_oct01,
+    f.is_enrolled_oct15,
+    f.aligned_enrollment_type,
+
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
+from scaffold as s
+left join
+    {{ ref("int_tableau__finalsite_student_scaffold") }} as f
+    on s.academic_year = f.enrollment_academic_year
+    and s.region = f.region
+    and s.school = f.school
+    and s.grade_level = f.grade_level
+    and s.goal_type = f.grouped_status
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_id = d.finalsite_id
+    and f.grouped_status = d.grouped_status
+where s.goal_type = 'Offers' and s.goal_granularity = 'School/Grade Level'
+
+union all
+
+-- offers ever for school
+select
+    s.academic_year,
+    s.org,
+    s.region,
+    s.school_level,
+    s.schoolid,
+    s.school,
+    s.grade_level,
+    s.goal_granularity,
+    s.goal_type,
+    s.goal_name,
+    s.goal_value,
+
+    f.aligned_enrollment_academic_year,
+    f.aligned_enrollment_academic_year_display,
+    f.enrollment_academic_year,
+    f.enrollment_academic_year_display,
+    f.finalsite_id,
+    f.powerschool_student_number,
+    f.first_name,
+    f.last_name,
+    f.grade_level as student_grade_level,
+    f.aligned_enrollment_academic_year_grade_level,
+    f.grouped_status,
+    f.self_contained,
+    f.enrollment_academic_year_enrollment_type,
+    f.is_enrolled_fdos,
+    f.is_enrolled_oct01,
+    f.is_enrolled_oct15,
+    f.aligned_enrollment_type,
+
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
+from scaffold as s
+left join
+    {{ ref("int_tableau__finalsite_student_scaffold") }} as f
+    on s.academic_year = f.enrollment_academic_year
+    and s.region = f.region
+    and s.school = f.school
+    and s.grade_level = f.grade_level
+    and s.goal_type = f.grouped_status
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_id = d.finalsite_id
+    and f.grouped_status = d.grouped_status
+where s.goal_type = 'Offers' and s.goal_granularity = 'School'
 
 union all
 
