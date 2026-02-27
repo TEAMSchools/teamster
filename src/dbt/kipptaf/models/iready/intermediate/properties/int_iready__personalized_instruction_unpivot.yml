@@ -13,6 +13,8 @@ models:
         data_type: date
       - name: date_range_end
         data_type: date
+      - name: date_range
+        data_type: string
       - name: school
         data_type: string
       - name: student_grade
