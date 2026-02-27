@@ -3,5 +3,8 @@
     "dagster-expert@dagster": true,
     "dagster-integrations@dagster": true,
     "dignified-python@dagster": true
+  },
+  "permissions": {
+    "allow": ["Bash(python -m pytest tests/ -x -q)"]
   }
 }
