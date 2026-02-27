@@ -492,7 +492,7 @@ where
 
 union all
 
--- currently pending offers >= 10 days
+-- currently pending offers > 10 days
 select
     s.academic_year,
     s.org,
@@ -546,4 +546,4 @@ where
     s.goal_type = 'Pending Offers'
     and s.goal_name = '>= 10 Days'
     and s.academic_year = {{ var("current_academic_year") + 1 }}
-    and (d.days_in_grouped_status >= 10 or d.days_in_grouped_status is null)
+    and (d.days_in_grouped_status > 10 or d.days_in_grouped_status is null)
