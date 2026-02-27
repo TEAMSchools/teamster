@@ -20,8 +20,59 @@ with
             {{ ref("stg_google_sheets__finalsite__goals") }} as g
             on b.academic_year = g.enrollment_academic_year
             and b.region = g.region
-            and b.school = g.school
             and b.grade_level = g.grade_level
+            and g.goal_granularity = 'Region/Grade Level'
+
+        union all
+
+        -- join for school/grade level
+        select
+            b.academic_year,
+            b.org,
+            b.region,
+            b.schoolid,
+            b.school,
+            b.grade_level,
+
+            g.school_level,
+            g.goal_granularity,
+            g.goal_type,
+            g.goal_name,
+            g.goal_value,
+
+        from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as b
+        inner join
+            {{ ref("stg_google_sheets__finalsite__goals") }} as g
+            on b.academic_year = g.enrollment_academic_year
+            and b.region = g.region
+            and b.schoolid = g.schoolid
+            and b.grade_level = g.grade_level
+            and g.goal_granularity = 'School/Grade Level'
+
+        union all
+
+        -- join for school
+        select
+            b.academic_year,
+            b.org,
+            b.region,
+            b.schoolid,
+            b.school,
+            b.grade_level,
+
+            g.school_level,
+            g.goal_granularity,
+            g.goal_type,
+            g.goal_name,
+            g.goal_value,
+
+        from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as b
+        inner join
+            {{ ref("stg_google_sheets__finalsite__goals") }} as g
+            on b.academic_year = g.enrollment_academic_year
+            and b.region = g.region
+            and b.schoolid = g.schoolid
+            and g.goal_granularity = 'School'
     ),
 
     add_group_status_end_date as (
