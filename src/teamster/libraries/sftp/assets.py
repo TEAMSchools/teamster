@@ -1,7 +1,7 @@
 import os
 import re
 import zipfile
-from typing import Sequence
+from collections.abc import Sequence
 
 from dagster import (
     AssetExecutionContext,
