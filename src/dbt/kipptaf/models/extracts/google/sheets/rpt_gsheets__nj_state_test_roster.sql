@@ -16,10 +16,8 @@ with
         where rn_credittype_year = 1 and not is_dropped_section
     ),
 
-    roster as (
+    roster_long as (
         select
-            co.academic_year,
-            co.rn_year,
             co.region,
             co.is_self_contained,
             co.school_level,
@@ -35,9 +33,16 @@ with
             co.lep_status,
             co.status_504,
 
-            subj as `subject`,
+            -- exemption source fields (preserved through pivot for reason labels)
+            co.graduation_pathway_math,
+            co.graduation_pathway_ela,
+            co.math_state_assessment_name,
+            co.state_assessment_name,
 
-            concat(co.student_name, ' - ', co.student_number, ' - ', subj) as student,
+            -- display string is student-scoped, not test-scoped
+            concat(co.student_name, ' - ', co.student_number) as student,
+
+            subj as `subject`,
 
             case
                 when subj = 'MATH' and co.asmt_extended_time_math is not null
@@ -90,6 +95,53 @@ with
             on co.academic_year = c.academic_year
             and co.student_number = c.student_number
             and subj = c.credittype
+        where
+            co.academic_year = {{ var("current_academic_year") }}
+            and co.rn_year = 1
+            and (co.grade_level between 3 and 9 or co.grade_level = 11)
+            and co.region != 'Miami'
+            and co.school_level != 'OD'
+    ),
+
+    roster as (
+        select
+            student_number,
+            any_value(region) as region,
+            any_value(school) as school,
+            any_value(student) as student,
+            any_value(enroll_status) as enroll_status,
+            any_value(grade_level) as grade_level,
+            any_value(advisory_name) as advisory_name,
+            any_value(state_studentnumber) as state_studentnumber,
+            any_value(iep_status) as iep_status,
+            any_value(lep_status) as lep_status,
+            any_value(status_504) as status_504,
+            any_value(special_education_code) as special_education_code,
+            any_value(is_self_contained) as is_self_contained,
+
+            -- exemption source fields
+            any_value(graduation_pathway_math) as graduation_pathway_math,
+            any_value(graduation_pathway_ela) as graduation_pathway_ela,
+            any_value(math_state_assessment_name) as math_state_assessment_name,
+            any_value(state_assessment_name) as state_assessment_name,
+
+            -- per-subject test codes
+            max(case when `subject` = 'ENG' then test_code end) as ela_test_code,
+            max(case when `subject` = 'MATH' then test_code end) as math_test_code,
+            max(case when `subject` = 'SCI' then test_code end) as sci_test_code,
+
+            -- per-subject extended time
+            max(
+                case when `subject` = 'ENG' then has_extended_time end
+            ) as ela_has_extended_time,
+            max(
+                case when `subject` = 'MATH' then has_extended_time end
+            ) as math_has_extended_time,
+            max(
+                case when `subject` = 'SCI' then has_extended_time end
+            ) as sci_has_extended_time,
+        from roster_long
+        group by student_number
     )
 
 select
@@ -104,16 +156,52 @@ select
     iep_status,
     lep_status,
     status_504,
-    test_code,
-    has_extended_time,
+    special_education_code,
+    is_self_contained,
 
-    concat(student_number, '_', test_code) as sn_test_hash,
-    concat(school, '-', test_code, if(has_extended_time, '-ET', '')) as session_name,
+    ela_test_code,
+    math_test_code,
+    sci_test_code,
+
+    ela_has_extended_time,
+    math_has_extended_time,
+    sci_has_extended_time,
+
+    -- why is ELA exempt? (null = not exempt)
+    case
+        when ela_test_code is not null
+        then null
+        when graduation_pathway_ela = 'M'
+        then 'IEP - Graduation Pathway'
+        when state_assessment_name = '4'
+        then 'DLM + ACCESS (IEP and ML)'
+        when state_assessment_name = '3'
+        then 'DLM - Alternate Assessment'
+        when state_assessment_name = '2'
+        then 'ACCESS Only - ML Exempt'
+        else 'ELA Exempt - Other'
+    end as ela_exemption_reason,
+
+    -- why is Math exempt? (null = not exempt)
+    case
+        when math_test_code is not null
+        then null
+        when graduation_pathway_math = 'M'
+        then 'IEP - Graduation Pathway'
+        when math_state_assessment_name = '3'
+        then 'DLM - Alternate Assessment'
+        else 'Math Exempt - Other'
+    end as math_exemption_reason,
+
+    -- summary visual flag for quick stakeholder scan (null = no exemptions)
+    case
+        when ela_test_code is null and math_test_code is null
+        then 'ELA and Math Exempt'
+        when ela_test_code is null
+        then 'ELA Exempt'
+        when math_test_code is null
+        then 'Math Exempt'
+    end as subject_exemption_flag,
+
 from roster
-where
-    academic_year = {{ var("current_academic_year") }}
-    and rn_year = 1
-    and test_code is not null
-    and (grade_level between 3 and 9 or grade_level = 11)
-    and region != 'Miami'
-    and school_level != 'OD'
+where ela_test_code is not null or math_test_code is not null or sci_test_code is not null
