@@ -574,7 +574,7 @@ left join
     and f.grouped_status = d.grouped_status
 where
     s.goal_type = 'Pending Offers'
-    and s.goal_name = '>= 10 Days'
+    and s.goal_name = '> 10 Days'
     and s.academic_year = {{ var("current_academic_year") + 1 }}
     and (d.days_in_grouped_status > 10 or d.days_in_grouped_status is null)
 
