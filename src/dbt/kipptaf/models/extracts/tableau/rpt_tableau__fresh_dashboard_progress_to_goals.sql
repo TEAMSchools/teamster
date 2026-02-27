@@ -76,17 +76,21 @@ from {{ ref("stg_google_sheets__finalsite__goals") }} as gs
 left join
     {{ ref("stg_google_sheets__finalsite__goals") }} as gf
     on gs.schoolid = gf.schoolid
+    and gs.goal_granularity = gf.goal_granularity
     and gf.goal_name = 'FDOS Target'
 left join
     {{ ref("stg_google_sheets__finalsite__goals") }} as gb
     on gs.schoolid = gb.schoolid
+    and gs.goal_granularity = gb.goal_granularity
     and gb.goal_name = 'Budget Target'
 left join
     {{ ref("stg_google_sheets__finalsite__goals") }} as gn
     on gs.schoolid = gn.schoolid
+    and gs.goal_granularity = gn.goal_granularity
     and gn.goal_name = 'New Student Target'
 left join
     {{ ref("stg_google_sheets__finalsite__goals") }} as ge
     on gs.schoolid = ge.schoolid
+    and gs.goal_granularity = ge.goal_granularity
     and ge.goal_name = 'Re-Enroll Projection'
 where gs.goal_name = 'Seat Target' and gs.goal_granularity = 'School'
