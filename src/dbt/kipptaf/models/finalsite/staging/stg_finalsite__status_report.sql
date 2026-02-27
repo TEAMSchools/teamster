@@ -10,62 +10,29 @@ with
                 ]
             )
         }}
-    ),
-
-    region_calc as (
-        -- trunk-ignore(sqlfluff/AM04)
-        select
-            * except (
-                extract_year,
-                first_name,
-                sre_academic_year,
-                sre_academic_year_start,
-                sre_academic_year_end
-            ),
-
-            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-
-            initcap(first_name) as first_name,
-
-            coalesce(extract_year, 'Next_Year') as extract_year,
-
-        from union_relations
-    ),
-
-    latest_region_grade as (
-        select
-            *,
-
-            last_value(region ignore nulls) over (
-                partition by enrollment_academic_year, finalsite_student_id
-                order by status_start_timestamp asc, status_order asc
-                rows between unbounded preceding and unbounded following
-            ) as latest_region,
-
-            last_value(grade_level ignore nulls) over (
-                partition by enrollment_academic_year, finalsite_student_id
-                order by status_start_timestamp asc, status_order asc
-                rows between unbounded preceding and unbounded following
-            ) as latest_grade_level,
-
-            -- only works for students with a ps student number on fs
-            last_value(finalsite_student_id ignore nulls) over (
-                partition by enrollment_academic_year, latest_powerschool_student_number
-                order by status_start_timestamp asc, status_order asc
-                rows between unbounded preceding and unbounded following
-            ) as latest_finalsite_student_id,
-
-        from region_calc
     )
 
 select
-    l.*,
+    * except (first_name),
+
+    initcap(first_name) as first_name,
+
+    regexp_replace(active_school_year, r'-\d{2}', '-') as active_school_year_display,
+
+    initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
+
+    if(
+        application_grade in ('K', 'Kindergarten'),
+        0,
+        cast(regexp_extract(application_grade, r'\d+') as int)
+    ) as grade_level,
 
     {{ var("current_academic_year") }} as current_academic_year,
     {{ var("current_academic_year") }} + 1 as next_academic_year,
 
-from latest_region_grade as l
-left join
-    {{ ref("stg_google_sheets__finalsite__exclude_ids") }} as e
-    on l.finalsite_student_id = e.finalsite_student_id
-where e.finalsite_student_id is null
+from union_relations
+where
+    finalsite_enrollment_id not in (
+        select x.finalsite_student_id,
+        from {{ ref("stg_google_sheets__finalsite__exclude_ids") }} as x
+    )
