@@ -1,6 +1,8 @@
 /* denominator groupings for inquiries, applications, waitlisted, offers, assigned
    school and accepted */
-select
+/* need distinct to bring only one row per student when they have multiple statuses
+   per group */
+select distinct
     aligned_enrollment_academic_year,
     aligned_enrollment_academic_year_display,
     enrollment_academic_year,
@@ -56,7 +58,9 @@ where
 union all
 
 -- denominator for conversion metrics groupings 
-select
+/* need distinct to bring only one row per student when they have multiple statuses
+   per group */
+select distinct
     aligned_enrollment_academic_year,
     aligned_enrollment_academic_year_display,
     enrollment_academic_year,
@@ -142,7 +146,9 @@ where detailed_status = 'Enrolled' and status_start_date is not null and not qa_
 union all
 
 /* numerator groupings for pending offer and currently accepted */
-select
+/* need distinct to bring only one row per student when they have multiple statuses
+   per group */
+select distinct
     aligned_enrollment_academic_year,
     aligned_enrollment_academic_year_display,
     enrollment_academic_year,
@@ -185,7 +191,9 @@ where
 union all
 
 -- numerator for conversion metrics groupings 
-select
+/* need distinct to bring only one row per student when they have multiple statuses
+   per group */
+select distinct
     aligned_enrollment_academic_year,
     aligned_enrollment_academic_year_display,
     enrollment_academic_year,
