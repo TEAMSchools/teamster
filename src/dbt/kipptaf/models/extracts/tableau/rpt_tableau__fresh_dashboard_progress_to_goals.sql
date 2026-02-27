@@ -1,51 +1,42 @@
 /* PART 1: THE STUDENTS (Actuals) */
 select
-    r.latest_schoolid,
-    r.latest_school,
-    r.grade_level,
     r.region,
-    r.finalsite_student_id,
+    r.schoolid,
+    r.school,
+    r.grade_level,
+    r.finalsite_id,
     r.latest_status,
 
     'Student' as row_type,
+
     1 as student_count,
+
     null as seat_target,
     null as fdos_target,
 
-    r.last_name || ', ' || r.first_name as student_name,
-
-    case
-        when grade_level >= 9
-        then 'HS'
-        when grade_level >= 5
-        then 'MS'
-        when grade_level >= 0
-        then 'ES'
-    end as school_level,
-from {{ ref("int_students__finalsite_student_roster") }} as r
-where r.latest_status = 'Enrolled'
+from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
+where r.grouped_status = 'Enrolled'
 
 union all
 
 /* PART 2: THE GOALS (Targets) */
 select
-    gs.schoolid as latest_schoolid,
-    gs.school as latest_school,
-    gs.grade_level,
     gs.region,
+    gs.schoolid,
+    gs.school,
+    gs.grade_level,
 
     null as finalsite_student_id,
+
     'Goal Record' as latest_status,
     'Goal' as row_type,
+
     0 as student_count,
 
     gs.goal_value as seat_target,
 
     gf.goal_value as fdos_target,
 
-    null as student_name,
-
-    gs.school_level,
 from {{ ref("stg_google_sheets__finalsite__goals") }} as gs
 left join
     {{ ref("stg_google_sheets__finalsite__goals") }} as gf
