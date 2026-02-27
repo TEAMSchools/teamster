@@ -61,8 +61,8 @@ with
 
         union all
 
-        -- denominator for conversion metrics groupings 
-        /* need distinct to bring only one row per student when they have multiple statuses per group */
+        /* denominator for conversion metrics groupings need distinct to bring only
+           one row per student when they have multiple statuses per group */
         select distinct
             aligned_enrollment_academic_year,
             aligned_enrollment_academic_year_display,
@@ -151,8 +151,9 @@ with
 
         union all
 
-        /* numerator groupings for pending offer and currently accepted */
-        /* need distinct to bring only one row per student when they have multiple statuses per group */
+        /* numerator groupings for pending offer and currently accepted need distinct
+           to bring only one row per student when they have multiple statuses per
+           group */
         select distinct
             aligned_enrollment_academic_year,
             aligned_enrollment_academic_year_display,
@@ -199,8 +200,8 @@ with
 
         union all
 
-        -- numerator for conversion metrics groupings 
-        /* need distinct to bring only one row per student when they have multiple statuses per group */
+        /* numerator for conversion metrics groupings need distinct to bring only one
+           row per student when they have multiple statuses per group */
         select distinct
             aligned_enrollment_academic_year,
             aligned_enrollment_academic_year_display,
