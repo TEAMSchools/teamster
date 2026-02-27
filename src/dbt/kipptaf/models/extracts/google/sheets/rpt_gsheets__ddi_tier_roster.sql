@@ -7,7 +7,8 @@ select
     advisory_name as team,
     spedlep as iep_status,
     iready_subject as `subject`,
-    coalesce(nj_student_tier, if(is_low_25_fl, 'L25', null)) as nj_student_tier,
+    nj_student_tier,
+    is_low_25_fl,
     state_test_proficiency as njsla_previous_year,
     iready_proficiency_eoy as iready_eoy_previous_year,
 from {{ ref("int_extracts__student_enrollments_subjects") }}
