@@ -53,3 +53,12 @@ sources:
                 - kippmiami
                 - iready
                 - stg_iready__personalized_instruction_summary
+      - name: int_iready__personalized_instruction_unpivot
+        config:
+          meta:
+            dagster:
+              group: iready
+              asset_key:
+                - kippmiami
+                - iready
+                - int_iready__personalized_instruction_unpivot
