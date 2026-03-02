@@ -312,6 +312,29 @@ with
         left join
             {{ ref("int_kippadb__enrollment_pivot") }} as eis
             on r.contact_id = eis.student
+    ),
+
+    enrollment_by_semester as (
+        select
+            student_number,
+            persistence_year,
+            semester,
+            max(coalesce(is_persisting_int, 0)) as was_enrolled,
+        from persistence_union
+        group by student_number, persistence_year, semester
+    ),
+
+    cumulative_enrollment as (
+        select
+            student_number,
+            persistence_year,
+            semester,
+            sum(was_enrolled) over (
+                partition by student_number
+                order by persistence_year asc, semester asc
+                rows between unbounded preceding and current row
+            ) as cumulative_semesters_enrolled,
+        from enrollment_by_semester
     )
 
 select
@@ -374,6 +397,20 @@ select
         * .083,
         3
     ) as progress_multiplier_6yr,
+
+    ce.cumulative_semesters_enrolled,
+
+    logical_or(p.persistence_status = 'Graduated') over (
+        partition by p.student_number
+    ) as is_6yr_graduate_any,
+    logical_or(
+        p.persistence_status = 'Graduated'
+        and p.pursuing_degree_type = "Bachelor's (4-year)"
+    ) over (partition by p.student_number) as is_6yr_graduate_ba,
+    logical_or(
+        p.persistence_status = 'Graduated'
+        and p.pursuing_degree_type = "Associate's (2 year)"
+    ) over (partition by p.student_number) as is_6yr_graduate_aa,
 from persistence_union as p
 left join
     gpa_enrollment_recent as gpr
@@ -385,3 +422,8 @@ left join
     and p.academic_year = gps.academic_year
     and p.semester = gps.semester
     and gps.rn_transcript_date_year_semester_recent = 1
+left join
+    cumulative_enrollment as ce
+    on p.student_number = ce.student_number
+    and p.persistence_year = ce.persistence_year
+    and p.semester = ce.semester
