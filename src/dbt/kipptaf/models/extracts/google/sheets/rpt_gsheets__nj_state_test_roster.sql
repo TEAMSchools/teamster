@@ -204,4 +204,5 @@ select
     end as subject_exemption_flag,
 
 from roster
-where ela_test_code is not null or math_test_code is not null or sci_test_code is not null
+where
+    ela_test_code is not null or math_test_code is not null or sci_test_code is not null
