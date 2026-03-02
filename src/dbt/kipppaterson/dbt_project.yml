@@ -24,6 +24,14 @@ vars:
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
 
 models:
+  kipppaterson:
+    powerschool:
+      +materialized: table
+      +schema: powerschool
+      sis:
+        staging:
+          +contract:
+            enforced: true
   amplify:
     dds:
       +enabled: false
