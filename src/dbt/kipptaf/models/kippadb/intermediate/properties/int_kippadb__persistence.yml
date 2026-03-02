@@ -69,5 +69,13 @@ models:
         data_type: float64
       - name: progress_multiplier_6yr
         data_type: float64
+      - name: cumulative_semesters_enrolled
+        data_type: int64
+      - name: is_6yr_graduate_any
+        data_type: boolean
+      - name: is_6yr_graduate_ba
+        data_type: boolean
+      - name: is_6yr_graduate_aa
+        data_type: boolean
       - name: es_graduated
         data_type: string
