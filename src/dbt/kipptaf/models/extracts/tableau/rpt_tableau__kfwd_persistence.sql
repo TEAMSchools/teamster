@@ -33,6 +33,10 @@ select
     p.n_semester,
     p.progress_multiplier_4yr,
     p.progress_multiplier_6yr,
+    p.cumulative_semesters_enrolled,
+    p.is_6yr_graduate_any,
+    p.is_6yr_graduate_ba,
+    p.is_6yr_graduate_aa,
 
     r.lastfirst as student_name,
     r.last_name as student_last_name,
