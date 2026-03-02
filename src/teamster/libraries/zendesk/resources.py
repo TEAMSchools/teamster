@@ -98,11 +98,10 @@ class ZendeskResource(ConfigurableResource):
         if not rate_limit_remaining:
             return False
 
-        account_remaining = int(rate_limit_remaining)
-
-        if account_remaining <= 0:
-            rate_limit_reset = int(response.headers.get("ratelimit-reset", "60"))
-            return self.handle_limit_exceeded(rate_limit_reset)
+        if int(rate_limit_remaining) <= 0:
+            return self.handle_limit_exceeded(
+                float(response.headers.get("ratelimit-reset", "60"))
+            )
 
         rate_limit_endpoint: str = response.headers.get(
             "Zendesk-RateLimit-Endpoint", ""
@@ -111,12 +110,9 @@ class ZendeskResource(ConfigurableResource):
         if not rate_limit_endpoint:
             return True
 
-        endpoint_remaining = int(rate_limit_endpoint.split(";")[1].split("=")[1])
+        parts = rate_limit_endpoint.split(";")
 
-        if endpoint_remaining > 0:
+        if int(parts[1].split("=")[1]) > 0:
             return True
 
-        endpoint_limit_reset_seconds = int(
-            rate_limit_endpoint.split(";")[2].split("=")[1]
-        )
-        return self.handle_limit_exceeded(endpoint_limit_reset_seconds)
+        return self.handle_limit_exceeded(int(parts[2].split("=")[1]))

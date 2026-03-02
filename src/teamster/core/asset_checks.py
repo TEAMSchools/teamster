@@ -7,9 +7,7 @@ from dagster import (
 )
 
 
-def build_check_spec_avro_schema_valid(
-    asset: str | list[str],
-) -> AssetCheckSpec:
+def build_check_spec_avro_schema_valid(asset: str | list[str]) -> AssetCheckSpec:
     return AssetCheckSpec(
         name="avro_schema_valid",
         asset=asset,
