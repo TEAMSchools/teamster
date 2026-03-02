@@ -199,5 +199,6 @@ SCHEMAS = {
     "students": STUDENTS_SCHEMA,
     "termbins": TERMBINS_SCHEMA,
     "terms": TERMS_SCHEMA,
+    "u_studentsuserfields": ...,
     "users": USERS_SCHEMA,
 }
