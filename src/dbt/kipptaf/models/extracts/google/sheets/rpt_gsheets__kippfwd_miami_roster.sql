@@ -60,14 +60,14 @@ select
     fp.math_pm2,
     fp.math_pm3,
 
-    fp_prev.ela_pm3 as ela_pm3_prev,
-    fp_prev.math_pm3 as math_pm3_prev,
-
     co.cumulative_y1_gpa_unweighted as gpa_cumulative,
     co.ada_unweighted_year_prev as previous_year_ada,
     co.state_studentnumber as fleid,
 
     gpa.gpa_y1,
+
+    fp_prev.ela_pm3 as ela_pm3_prev,
+    fp_prev.math_pm3 as math_pm3_prev,
 from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     fast_pivot as fp
