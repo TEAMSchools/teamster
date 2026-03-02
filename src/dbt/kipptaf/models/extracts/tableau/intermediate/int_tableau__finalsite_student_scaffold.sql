@@ -299,7 +299,8 @@ with
 
         union all
 
-        /* CURRENT numerator for conversion metrics groupings need distinct to bring only one row per student when they have multiple statuses per group */
+        /* CURRENT numerator for conversion metrics groupings need distinct to bring
+           only one row per student when they have multiple statuses per group */
         select distinct
             aligned_enrollment_academic_year,
             aligned_enrollment_academic_year_display,
