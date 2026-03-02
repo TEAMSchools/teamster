@@ -287,3 +287,5 @@ models:
         data_type: string
       - name: school_level
         data_type: string
+      - name: is_enrolled_fdos
+        data_type: boolean

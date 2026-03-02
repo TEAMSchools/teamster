@@ -110,7 +110,10 @@ with
             on w.worker_id__id_value = en.adp_associate_id
             and en.is_active
         /* after transistion from Dayforce */
-        where w.effective_date_end >= '2021-01-01'
+        where
+            w.effective_date_end >= '2021-01-01'
+            and coalesce(w.organizational_unit__home__business_unit__name, '')
+            != 'KIPP Paterson'
 
         union all
 

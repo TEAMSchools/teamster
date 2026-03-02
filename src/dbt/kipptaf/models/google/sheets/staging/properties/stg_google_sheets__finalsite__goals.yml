@@ -20,4 +20,4 @@ models:
       - name: goal_name
         data_type: string
       - name: goal_value
-        data_type: float
+        data_type: numeric
