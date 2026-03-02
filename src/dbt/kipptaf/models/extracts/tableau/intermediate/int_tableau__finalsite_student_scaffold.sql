@@ -42,7 +42,7 @@ with
                 when 'Offers'
                 then 3
                 when 'Accepted'
-                then 5
+                then 6
                 else 0
             end as grouped_status_order,
 
@@ -183,7 +183,7 @@ with
 
             'All' as aligned_enrollment_type,
 
-            if(status_group_numerator = 'Pending Offers', 4, 6) as grouped_status_order,
+            if(status_group_numerator = 'Pending Offers', 4, 5) as grouped_status_order,
 
             max(status_start_date) over (
                 partition by
