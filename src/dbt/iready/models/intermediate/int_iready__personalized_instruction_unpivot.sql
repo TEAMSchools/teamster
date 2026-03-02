@@ -48,7 +48,7 @@ with
                         high_frequency_words_lessons_completed,
                         high_frequency_words_lessons_passed,
                         high_frequency_words_percent_lessons_passed
-                    ) as 'high_frequency_words',
+                    ) as 'high_frequency_words_standard',
                     (
                         phonics_lessons_completed,
                         phonics_lessons_passed,
@@ -125,7 +125,7 @@ with
                         high_frequency_words_skills_completed,
                         high_frequency_words_skills_successful,
                         high_frequency_words_percent_skills_successful
-                    ) as 'high_frequency_words',
+                    ) as 'high_frequency_words_pro',
                     (
                         multi_syllable_skills_completed,
                         multi_syllable_skills_successful,
@@ -141,7 +141,19 @@ with
     )
 
 select
-    *,
+    student_id,
+    academic_year_int,
+    `subject`,
+    date_range,
+    date_range_start,
+    date_range_end,
+    completed,
+    passed,
+    percent_passed,
+
+    if(
+        domain like 'high_frequency_words_%', 'high_frequency_words', domain
+    ) as `domain`,
 
     case
         when
@@ -150,7 +162,7 @@ select
                 'comprehension_close_reading',
                 'comprehension',
                 'geometry',
-                'high_frequency_words',
+                'high_frequency_words_standard',
                 'language_structures',
                 'measurement_and_data',
                 'number_and_operations',
@@ -167,7 +179,7 @@ select
                 'equations_and_functions',
                 'fractions_and_operations',
                 'geometric_measurement_and_figures',
-                'high_frequency_words',
+                'high_frequency_words_pro',
                 'multi_syllable',
                 'rational_numbers_and_operations',
                 'ratios_and_proportions',
