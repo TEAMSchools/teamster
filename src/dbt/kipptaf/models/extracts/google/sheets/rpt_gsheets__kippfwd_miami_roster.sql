@@ -11,7 +11,6 @@ with
     ),
 
     fast_pivot as (
-        /* TODO: Add prev-year PM3 */
         select
             _dbt_source_relation,
             student_id,
@@ -61,6 +60,9 @@ select
     fp.math_pm2,
     fp.math_pm3,
 
+    fp_prev.ela_pm3 as ela_pm3_prev,
+    fp_prev.math_pm3 as math_pm3_prev,
+
     co.cumulative_y1_gpa_unweighted as gpa_cumulative,
     co.ada_unweighted_year_prev as previous_year_ada,
     co.state_studentnumber as fleid,
@@ -72,6 +74,11 @@ left join
     on co.state_studentnumber = fp.student_id
     and co.academic_year = fp.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="fp") }}
+left join
+    fast_pivot as fp_prev
+    on co.state_studentnumber = fp_prev.student_id
+    and co.academic_year - 1 = fp_prev.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="fp_prev") }}
 left join
     {{ ref("int_powerschool__gpa_term") }} as gpa
     on co.studentid = gpa.studentid
