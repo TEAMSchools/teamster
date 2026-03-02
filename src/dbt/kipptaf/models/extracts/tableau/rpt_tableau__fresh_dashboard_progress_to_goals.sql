@@ -1,7 +1,8 @@
 with
     data_stack_school as (
-        /* PART 1: THE STUDENTS (Actuals) */
-        select
+        /* PART 1A: THE STUDENTS (Actuals) for NEW students with aligned enroll type
+          Need only one row per student */
+        select distinct
             r.aligned_enrollment_academic_year,
             r.region,
             r.schoolid,
@@ -22,11 +23,48 @@ with
             null as re_enroll_projection,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
-        where r.latest_status = 'Enrolled'
+        where
+            r.latest_status in ('Enrolled', 'Enrollment In Progress')
+            and r.aligned_enrollment_type = 'New'
 
         union all
 
-        select
+        /* PART 1A: THE STUDENTS (Actuals) for Returning students with aligned enroll
+           type who are enrolled in PS. Need only one row per student */
+        select distinct
+            r.aligned_enrollment_academic_year,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.finalsite_id,
+            r.latest_status,
+            r.aligned_enrollment_type as enrollment_type,
+            r.self_contained,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on r.finalsite_id = e.infosnap_id
+            and e.academic_year = {{ var("current_academic_year") }}
+            and e.enroll_status = 0
+            and e.rn_year = 1
+        where r.aligned_enrollment_type = 'Returning'
+
+        union all
+
+        /* PART 1B: THE STUDENTS (Actuals) for NEW students with regular enroll type
+          who are enrolled in PS. Need only one row per student */
+        select distinct
             r.aligned_enrollment_academic_year,
             r.region,
             r.schoolid,
@@ -47,7 +85,42 @@ with
             null as re_enroll_projection,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
-        where r.latest_status = 'Enrolled'
+        where
+            r.latest_status in ('Enrolled', 'Enrollment In Progress')
+            and r.aligned_enrollment_type = 'New'
+
+        union all
+
+        /* PART 1B: THE STUDENTS (Actuals) for Returning students with regular enroll
+          type who are enrolled in PS. Need only one row per student */
+        select distinct
+            r.aligned_enrollment_academic_year,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.finalsite_id,
+            r.latest_status,
+            r.enrollment_academic_year_enrollment_type as enrollment_type,
+            r.self_contained,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on r.finalsite_id = e.infosnap_id
+            and e.academic_year = {{ var("current_academic_year") }}
+            and e.enroll_status = 0
+            and e.rn_year = 1
+        where r.aligned_enrollment_type = 'Returning'
 
         union all
 
@@ -102,8 +175,9 @@ with
     ),
 
     data_stack_school_grade_level as (
-        /* PART 1: THE STUDENTS (Actuals) */
-        select
+        /* PART 1A: THE STUDENTS (Actuals) for NEW students with aligned enroll type
+          Need only one row per student */
+        select distinct
             r.aligned_enrollment_academic_year,
             r.region,
             r.schoolid,
@@ -125,11 +199,49 @@ with
             null as re_enroll_projection,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
-        where r.latest_status = 'Enrolled'
+        where
+            r.latest_status in ('Enrolled', 'Enrollment In Progress')
+            and r.aligned_enrollment_type = 'New'
 
         union all
 
-        select
+        /* PART 1A: THE STUDENTS (Actuals) for Returning students with aligned enroll
+           type who are enrolled in PS. Need only one row per student */
+        select distinct
+            r.aligned_enrollment_academic_year,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.grade_level,
+            r.finalsite_id,
+            r.latest_status,
+            r.aligned_enrollment_type as enrollment_type,
+            r.self_contained,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on r.finalsite_id = e.infosnap_id
+            and e.academic_year = {{ var("current_academic_year") }}
+            and e.enroll_status = 0
+            and e.rn_year = 1
+        where r.aligned_enrollment_type = 'Returning'
+
+        union all
+
+        /* PART 1B: THE STUDENTS (Actuals) for NEW students with regular enroll type
+          who are enrolled in PS. Need only one row per student */
+        select distinct
             r.aligned_enrollment_academic_year,
             r.region,
             r.schoolid,
@@ -151,10 +263,45 @@ with
             null as re_enroll_projection,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
-        where r.latest_status = 'Enrolled'
+        where
+            r.latest_status in ('Enrolled', 'Enrollment In Progress')
+            and r.aligned_enrollment_type = 'New'
 
         union all
 
+        /* PART 1B: THE STUDENTS (Actuals) for Returning students with regular enroll
+          type who are enrolled in PS. Need only one row per student */
+        select distinct
+            r.aligned_enrollment_academic_year,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.grade_level,
+            r.finalsite_id,
+            r.latest_status,
+            r.enrollment_academic_year_enrollment_type as enrollment_type,
+            r.self_contained,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on r.finalsite_id = e.infosnap_id
+            and e.academic_year = {{ var("current_academic_year") }}
+            and e.enroll_status = 0
+            and e.rn_year = 1
+        where r.aligned_enrollment_type = 'Returning'
+
+        union all
         /* PART 2: THE GOALS (Targets) */
         select
             gs.enrollment_academic_year as aligned_enrollment_academic_year,
