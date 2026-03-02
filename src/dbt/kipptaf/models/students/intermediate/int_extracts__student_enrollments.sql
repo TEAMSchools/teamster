@@ -82,7 +82,7 @@ with
             student_number,
 
             if(
-                sum(date_diff(exitdate, entrydate, day)) >= 7, 'Returner', 'New'
+                sum(date_diff(exitdate, entrydate, day)) >= 7, 'Returning', 'New'
             ) as next_year_enrollment_type,
 
         from {{ ref("base_powerschool__student_enrollments") }}
@@ -91,12 +91,11 @@ with
     ),
 
     finalsite_student_id_calc as (
-        select powerschool_student_number, latest_finalsite_student_id,
-        from {{ ref("int_finalsite__status_report") }}
-        where
-            powerschool_student_number is not null
-            and latest_finalsite_student_id_rn = 1
+        select powerschool_student_number, finalsite_enrollment_id,
+        from {{ ref("stg_finalsite__status_report") }}
+        where powerschool_student_number is not null
     )
+
 select
     e.* except (
         lastfirst,
@@ -173,7 +172,7 @@ select
     ny.next_year_school,
     ny.next_year_schoolid,
 
-    fid.latest_finalsite_student_id as finalsite_student_id,
+    fid.finalsite_enrollment_id as finalsite_student_id,
 
     'KTAF' as district,
 

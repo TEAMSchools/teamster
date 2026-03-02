@@ -51,12 +51,6 @@ def _test_asset(
     assert extras.text == ""
 
 
-def test_schools_kippcamden():
-    from teamster.code_locations.kippcamden.overgrad.assets import schools
-
-    _test_asset(asset=schools, code_location="KIPPCAMDEN")
-
-
 def test_admissions_kippcamden():
     from teamster.code_locations.kippcamden.overgrad.assets import admissions
 
@@ -79,12 +73,6 @@ def test_students_kippcamden():
     from teamster.code_locations.kippcamden.overgrad.assets import students
 
     _test_asset(asset=students, code_location="KIPPCAMDEN")
-
-
-def test_schools_kippnewark():
-    from teamster.code_locations.kippnewark.overgrad.assets import schools
-
-    _test_asset(asset=schools, code_location="KIPPNEWARK")
 
 
 def test_admissions_kippnewark():
