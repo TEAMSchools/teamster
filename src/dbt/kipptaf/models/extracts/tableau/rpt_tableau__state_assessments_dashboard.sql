@@ -373,7 +373,7 @@ left join
 left join
     schedules as m
     on a.academic_year = m.cc_academic_year
-    and a.localstudentidentifier = m.pearson_local_student_identifier
+    and a.localstudentidentifier = e.pearson_local_student_identifier
     and a.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="a", right_alias="m") }}
 left join
