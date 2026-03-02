@@ -223,8 +223,6 @@ sources:
               +enabled: false
             src_powerschool__u_def_ext_students:
               +enabled: false
-            src_powerschool__u_studentsuserfields:
-              +enabled: false
             src_powerschool__u_storedgrades_de:
               +enabled: false
             src_powerschool__gpprogresssubjectwaived:
