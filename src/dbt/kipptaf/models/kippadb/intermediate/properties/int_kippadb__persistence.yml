@@ -1,5 +1,14 @@
 models:
   - name: int_kippadb__persistence
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - persistence_year
+              - semester
+          config:
+            store_failures: true
     columns:
       - name: student_number
         data_type: int64
