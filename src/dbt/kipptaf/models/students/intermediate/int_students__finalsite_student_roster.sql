@@ -39,12 +39,12 @@ with
         left join
             {{ ref("int_extracts__student_enrollments") }} as e1
             on f.enrollment_academic_year = e1.academic_year
-            and f.powerschool_student_number = e1.student_number
+            and f.finalsite_enrollment_id = e1.infosnap_id
             and e1.rn_year = 1
         left join
             {{ ref("int_extracts__student_enrollments") }} as e2
             on f.enrollment_academic_year - 1 = e2.academic_year
-            and f.powerschool_student_number = e2.student_number
+            and f.finalsite_enrollment_id = e2.infosnap_id
             and e2.rn_year = 1
         -- fixing the value for now - will remove once a better data model is created
         where f.enrollment_academic_year <= 2026
