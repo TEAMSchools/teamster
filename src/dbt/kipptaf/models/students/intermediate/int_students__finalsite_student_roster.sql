@@ -46,7 +46,7 @@ with
             on f.enrollment_academic_year - 1 = e2.academic_year
             and f.finalsite_enrollment_id = e2.infosnap_id
             and e2.rn_year = 1
-        -- fixing the value for now - will remove when a better data model is created
+        -- fixing the value for now - will remove once a better data model is created
         where f.enrollment_academic_year <= 2026
     )
 
