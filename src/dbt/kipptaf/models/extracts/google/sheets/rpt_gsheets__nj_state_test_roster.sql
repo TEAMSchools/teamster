@@ -34,10 +34,10 @@ with
             co.status_504,
 
             -- exemption source fields (preserved through pivot for reason labels)
-            -- TODO: re-add co.graduation_pathway_math and co.graduation_pathway_ela
-            -- when those fields are available in int_extracts__student_enrollments
             co.math_state_assessment_name,
             co.state_assessment_name,
+            sub.ps_grad_path_code,
+            sub.is_exempt_state_testing,
 
             -- display string is student-scoped, not test-scoped
             concat(co.student_name, ' - ', co.student_number) as student,
@@ -55,8 +55,9 @@ with
             end as has_extended_time,
 
             case
-                -- TODO: re-add graduation_pathway_math = 'M' exemption when available
-                when subj = 'MATH' and co.math_state_assessment_name = '3'
+                when subj = 'MATH' and sub.ps_grad_path_code = 'M'
+                then null
+                when subj = 'MATH' and sub.is_exempt_state_testing
                 then null
                 when subj = 'MATH' and co.grade_level = 11
                 then 'MATGP'
@@ -69,8 +70,9 @@ with
                 then c.math_course
                 when subj = 'MATH' and c.math_course is null
                 then concat('MAT', '0', co.grade_level)
-                -- TODO: re-add graduation_pathway_ela = 'M' exemption when available
-                when subj = 'ENG' and co.state_assessment_name in ('2', '3', '4')
+                when subj = 'ENG' and sub.ps_grad_path_code = 'M'
+                then null
+                when subj = 'ENG' and sub.is_exempt_state_testing
                 then null
                 when subj = 'ENG' and co.grade_level = 11
                 then 'ELAGP'
@@ -93,6 +95,12 @@ with
             on co.academic_year = c.academic_year
             and co.student_number = c.student_number
             and subj = c.credittype
+        left join
+            {{ ref("int_extracts__student_enrollments_subjects") }} as sub
+            on co.student_number = sub.student_number
+            and co.academic_year = sub.academic_year
+            and subj = sub.powerschool_credittype
+            and sub.rn_year = 1
         where
             co.academic_year = {{ var("current_academic_year") }}
             and co.rn_year = 1
@@ -118,10 +126,14 @@ with
             any_value(is_self_contained) as is_self_contained,
 
             -- exemption source fields
-            -- TODO: re-add graduation_pathway_math and graduation_pathway_ela
-            -- when those fields are available in int_extracts__student_enrollments
             any_value(math_state_assessment_name) as math_state_assessment_name,
             any_value(state_assessment_name) as state_assessment_name,
+            max(
+                case when `subject` = 'ENG' then ps_grad_path_code end
+            ) as ela_grad_path_code,
+            max(
+                case when `subject` = 'MATH' then ps_grad_path_code end
+            ) as math_grad_path_code,
 
             -- per-subject test codes
             max(case when `subject` = 'ENG' then test_code end) as ela_test_code,
@@ -166,10 +178,11 @@ select
     sci_has_extended_time,
 
     -- why is ELA exempt? (null = not exempt)
-    -- TODO: re-add graduation_pathway_ela = 'M' → 'IEP - Graduation Pathway' when available
     case
         when ela_test_code is not null
         then null
+        when ela_grad_path_code = 'M'
+        then 'IEP - Graduation Pathway'
         when state_assessment_name = '4'
         then 'DLM + ACCESS (IEP and ML)'
         when state_assessment_name = '3'
@@ -180,10 +193,11 @@ select
     end as ela_exemption_reason,
 
     -- why is Math exempt? (null = not exempt)
-    -- TODO: re-add graduation_pathway_math = 'M' → 'IEP - Graduation Pathway' when available
     case
         when math_test_code is not null
         then null
+        when math_grad_path_code = 'M'
+        then 'IEP - Graduation Pathway'
         when math_state_assessment_name = '3'
         then 'DLM - Alternate Assessment'
         else 'Math Exempt - Other'
