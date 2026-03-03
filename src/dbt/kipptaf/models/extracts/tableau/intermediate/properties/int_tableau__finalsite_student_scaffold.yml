@@ -1,5 +1,7 @@
 models:
   - name: int_tableau__finalsite_student_scaffold
+    config:
+      enabled: false
     columns:
       - name: aligned_enrollment_academic_year
         data_type: int64
