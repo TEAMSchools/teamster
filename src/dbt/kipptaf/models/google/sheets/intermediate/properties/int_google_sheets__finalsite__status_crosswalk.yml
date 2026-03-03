@@ -3,4 +3,3 @@ models:
     config:
       contract:
         enforced: false
-
