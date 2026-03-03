@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 
 
 class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, o):
+    def default(self, o: object) -> str:
         if isinstance(o, (timedelta, Decimal, bytes)):
             return str(o)
         elif isinstance(o, datetime):

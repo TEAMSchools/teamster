@@ -2,7 +2,7 @@ import time
 from datetime import datetime, timedelta
 
 import jwt
-from dagster import ConfigurableResource, DagsterLogManager
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import HTTPError, Response, Session
@@ -20,7 +20,7 @@ class FinalsiteResource(ConfigurableResource):
     _session: Session = PrivateAttr(default_factory=Session)
     _log: DagsterLogManager = PrivateAttr()
 
-    def setup_for_execution(self, context):
+    def setup_for_execution(self, context: InitResourceContext) -> None:
         self._log = check.not_none(value=context.log)
         self._service_root = self._service_root.format(self.server)
 
@@ -60,10 +60,10 @@ class FinalsiteResource(ConfigurableResource):
                 self._log.error(response.text)
                 raise e
 
-    def get(self, path: str, id: str | None = None, **kwargs):
+    def get(self, path: str, id: str | None = None, **kwargs) -> Response:
         return self._request(method="GET", path=path, id=id, **kwargs)
 
-    def list(self, path, **kwargs):
+    def list(self, path: str, **kwargs) -> list[dict]:
         params = kwargs.get("params", {})
 
         all_data = []
