@@ -34,8 +34,8 @@ with
             co.status_504,
 
             -- exemption source fields (preserved through pivot for reason labels)
-            co.math_state_assessment_name,
-            co.state_assessment_name,
+            nj.math_state_assessment_name,
+            nj.state_assessment_name,
             sub.ps_grad_path_code,
             sub.is_exempt_state_testing,
 
@@ -81,7 +81,7 @@ with
                 when
                     subj = 'SCI'
                     and co.grade_level in (5, 8, 11)
-                    and co.math_state_assessment_name = '3'
+                    and nj.math_state_assessment_name = '3'
                 then null
                 when subj = 'SCI' and co.grade_level in (5, 8)
                 then concat('SC', '0', co.grade_level)
@@ -101,6 +101,10 @@ with
             and co.academic_year = sub.academic_year
             and subj = sub.powerschool_credittype
             and sub.rn_year = 1
+        left join
+            {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
+            on co.students_dcid = nj.studentsdcid
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
         where
             co.academic_year = {{ var("current_academic_year") }}
             and co.rn_year = 1
