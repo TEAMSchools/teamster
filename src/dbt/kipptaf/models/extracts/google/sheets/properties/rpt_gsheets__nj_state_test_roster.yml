@@ -20,7 +20,7 @@ models:
       - name: iep_status
         data_type: string
       - name: lep_status
-        data_type: string
+        data_type: boolean
       - name: status_504
         data_type: string
       - name: special_education_code
