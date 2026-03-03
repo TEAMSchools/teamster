@@ -55,16 +55,16 @@ class CoupaResource(ConfigurableResource):
             self._log.error(response.text)
             raise e
 
-    def get(self, resource: str, id: int | None = None, **kwargs):
+    def get(self, resource: str, id: int | None = None, **kwargs) -> Response:
         return self._request(method="GET", resource=resource, id=id, **kwargs)
 
-    def put(self, resource: str, id: int, **kwargs):
+    def put(self, resource: str, id: int, **kwargs) -> Response:
         return self._request(method="PUT", resource=resource, id=id, **kwargs)
 
-    def post(self, resource: str, **kwargs):
+    def post(self, resource: str, **kwargs) -> Response:
         return self._request(method="POST", resource=resource, **kwargs)
 
-    def list(self, resource, **kwargs):
+    def list(self, resource: str, **kwargs) -> list[dict]:
         all_data = []
         offset = 0
 

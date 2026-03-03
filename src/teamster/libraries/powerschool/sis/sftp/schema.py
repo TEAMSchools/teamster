@@ -1705,3 +1705,13 @@ class StoredGrades(SFTPFile):
     transaction_date: str | None = None
     whomodifiedid: str | None = None
     whomodifiedtype: str | None = None
+
+
+class U_StudentsUserFields(SFTPFile):
+    studentsdcid: str | None = None
+    infosnap_id: str | None = None
+    media_release: str | None = None
+    whencreated: str | None = None
+    whenmodified: str | None = None
+    whocreated: str | None = None
+    whomodified: str | None = None
