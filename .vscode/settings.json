@@ -48,9 +48,6 @@
   "[jsonc]": {
     "editor.defaultFormatter": "trunk.io"
   },
-  "[python]": {
-    "editor.defaultFormatter": "trunk.io"
-  },
   "terminal.integrated.env.linux": {
     "DAGSTER_HOME": "${workspaceFolder}/.dagster/home",
     "DBT_CLOUD_ENVIRONMENT_TYPE": "dev",
