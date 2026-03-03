@@ -18,3 +18,4 @@ select
     safe_cast(grade_level as int64) as grade_level,
 
 from {{ source("google_sheets", "src_google_sheets__gradebook_exceptions") }}
+where academic_year = {{ var("current_academic_year") }}

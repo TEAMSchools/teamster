@@ -9,7 +9,7 @@ with
 
         from {{ ref("int_powerschool__gradebook_assignments_scores") }} as s
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            {{ ref("stg_google_sheets__gradebook_exceptions_permanent") }} as e1
             on s.academic_year = e1.academic_year
             and s.region = e1.region
             and s.school_level = e1.school_level
@@ -295,12 +295,11 @@ select
 
 from final as f
 left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+    {{ ref("stg_google_sheets__gradebook_exceptions_temporary") }} as e
     on f.academic_year = e.academic_year
     and f.region = e.region
     and f.course_number = e.course_number
     and f.is_quarter_end_date_range = e.is_quarter_end_date_range
     and e.view_name = 'categories_teacher'
     and e.cte is null
-    and e.is_quarter_end_date_range is not null
 where e.include_row is null

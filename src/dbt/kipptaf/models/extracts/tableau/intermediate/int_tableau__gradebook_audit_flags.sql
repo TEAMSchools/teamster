@@ -33,7 +33,7 @@ with
             and f.cte_grouping = 'assignment_student'
         -- temporarily remove flags during non-eoq times
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            {{ ref("stg_google_sheets__gradebook_exceptions_temporary") }} as e1
             on u.academic_year = e1.academic_year
             and u.region = e1.region
             and u.course_number = e1.course_number
@@ -41,10 +41,9 @@ with
             and u.is_quarter_end_date_range = e1.is_quarter_end_date_range
             and e1.view_name = 'audit_flags'
             and e1.cte = 'student_unpivot'
-            and e1.is_quarter_end_date_range is not null
         -- temporarily remove flags during non-eoq times
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            {{ ref("stg_google_sheets__gradebook_exceptions_temporary") }} as e2
             on u.academic_year = e2.academic_year
             and u.region = e2.region
             and u.course_number = e2.course_number
@@ -53,7 +52,6 @@ with
             and u.is_quarter_end_date_range = e2.is_quarter_end_date_range
             and e2.view_name = 'audit_flags'
             and e2.cte = 'student_unpivot'
-            and e2.is_quarter_end_date_range is not null
         where e1.include_row is null and e2.include_row is null
     ),
 
@@ -79,17 +77,16 @@ with
             and f.cte_grouping = 'class_category_assignment'
         -- permanently remove flags
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            {{ ref("stg_google_sheets__gradebook_exceptions_permanent") }} as e1
             on r.academic_year = e1.academic_year
             and r.region = e1.region
             and r.school_level = e1.school_level
             and r.credit_type = e1.credit_type
             and e1.view_name = 'audit_flags'
             and e1.cte = 'teacher_unpivot_cca'
-            and e1.is_quarter_end_date_range is null
         -- temporarily remove flags
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            {{ ref("stg_google_sheets__gradebook_exceptions_temporary") }} as e2
             on r.academic_year = e2.academic_year
             and r.region = e2.region
             and r.course_number = e2.course_number
@@ -97,7 +94,6 @@ with
             and r.is_quarter_end_date_range = e2.is_quarter_end_date_range
             and e2.view_name = 'audit_flags'
             and e2.cte = 'teacher_unpivot_cca'
-            and e2.is_quarter_end_date_range is not null
         where e1.include_row is null and e2.include_row is null
     ),
 
@@ -158,7 +154,7 @@ with
             and f.cte_grouping in ('student_course', 'student')
             and f.audit_category != 'Conduct Code'
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            {{ ref("stg_google_sheets__gradebook_exceptions_permanent") }} as e1
             on r.academic_year = e1.academic_year
             and r.region = e1.region
             and r.school_level = e1.school_level
@@ -197,7 +193,7 @@ with
             and f.audit_category = 'Conduct Code'
         -- permanently remove flags by credit type
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            {{ ref("stg_google_sheets__gradebook_exceptions_permanent") }} as e1
             on r.academic_year = e1.academic_year
             and r.region = e1.region
             and r.school_level = e1.school_level
@@ -208,7 +204,7 @@ with
             and e1.credit_type is not null
         -- permanently remove flags by course number
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            {{ ref("stg_google_sheets__gradebook_exceptions_permanent") }} as e2
             on r.academic_year = e2.academic_year
             and r.region = e2.region
             and r.school_level = e2.school_level
@@ -247,7 +243,7 @@ with
             and f.cte_grouping = 'student_course_category'
         -- temporarily remove flags
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+            {{ ref("stg_google_sheets__gradebook_exceptions_temporary") }} as e
             on r.academic_year = e.academic_year
             and r.region = e.region
             and r.course_number = e.course_number
@@ -255,7 +251,6 @@ with
             and r.is_quarter_end_date_range = e.is_quarter_end_date_range
             and e.view_name = 'audit_flags'
             and e.cte = 'student_course_category'
-            and e.is_quarter_end_date_range is not null
         where e.include_row is null
     )
 

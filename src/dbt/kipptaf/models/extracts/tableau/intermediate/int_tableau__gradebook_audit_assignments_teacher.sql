@@ -108,7 +108,7 @@ left join
     and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
 -- temporarily remove rows for assignmnent_rollup calcs during non-eoq times
 left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+    {{ ref("stg_google_sheets__gradebook_exceptions_temporary") }} as e
     on sec.academic_year = e.academic_year
     and sec.region = e.region
     and sec.course_number = e.course_number
@@ -116,5 +116,4 @@ left join
     and e.view_name = 'assignments_teacher'
     and e.cte is null
     and e.course_number is not null
-    and e.is_quarter_end_date_range is not null
 where sec.scaffold_name = 'teacher_category_scaffold'

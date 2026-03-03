@@ -34,7 +34,7 @@ with
         left join
             /* permanently remove rows from the gradebook audit dash based on course
             number */
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            {{ ref("stg_google_sheets__gradebook_exceptions_permanent") }} as e1
             on s.terms_academic_year = e1.academic_year
             and s.sections_course_number = e1.course_number
             and e1.view_name = 'teacher_scaffold'
@@ -43,7 +43,7 @@ with
         left join
             /* permanently remove rows from the gradebook audit dash based on course
             number for certain schools only */
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            {{ ref("stg_google_sheets__gradebook_exceptions_permanent") }} as e2
             on s.terms_academic_year = e2.academic_year
             and s.sections_schoolid = e2.school_id
             and s.sections_course_number = e2.course_number
@@ -237,7 +237,7 @@ with
         /* permanently remove rows for certain gradebook category(s) from the entire
            gradebook audit dash by course_number */
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+            {{ ref("stg_google_sheets__gradebook_exceptions_permanent") }} as e1
             on tw.academic_year = e1.academic_year
             and tw.course_number = e1.course_number
             and ge.assignment_category_code = e1.gradebook_category
@@ -246,7 +246,7 @@ with
         /* permanently remove rows for certain gradebook category(s) from the entire
            gradebook audit dash by course_number for a region */
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+            {{ ref("stg_google_sheets__gradebook_exceptions_permanent") }} as e2
             on tw.academic_year = e2.academic_year
             and tw.course_number = e2.course_number
             and tw.region = e2.region
@@ -256,7 +256,7 @@ with
         /* permanently remove rows for certain gradebook category(s) from the entire
            gradebook audit dash by credit type for a region/school level */
         left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e3
+            {{ ref("stg_google_sheets__gradebook_exceptions_permanent") }} as e3
             on tw.academic_year = e3.academic_year
             and tw.credit_type = e3.credit_type
             and tw.region = e3.region
@@ -282,7 +282,7 @@ from final as f
 /* temporarily remove rows from the entire gradebook audit dash when EOQ is false
    by region/school level and credit type */
 left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+    {{ ref("stg_google_sheets__gradebook_exceptions_temporary") }} as e1
     on f.academic_year = e1.academic_year
     and f.region = e1.region
     and f.school_level = e1.school_level
@@ -293,7 +293,7 @@ left join
 /* temporarily remove rows from the entire gradebook audit dash when EOQ is false
    by region/school level and course number */
 left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+    {{ ref("stg_google_sheets__gradebook_exceptions_temporary") }} as e2
     on f.academic_year = e2.academic_year
     and f.region = e2.region
     and f.school_level = e2.school_level
