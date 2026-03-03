@@ -15,6 +15,8 @@ from teamster.core.automation_conditions import (
 )
 
 _EMPTY_SELECTION = AssetSelection.assets()
+_VIEW_TAG = {"dagster/materialized": "view"}
+_TABLE_TAG = {"dagster/materialized": "table"}
 
 
 def _get_view_condition() -> AutomationCondition:
@@ -28,11 +30,15 @@ def _get_table_condition() -> AutomationCondition:
 def test_view_not_requested_on_upstream_update():
     """Views should NOT be requested when an upstream table is updated."""
 
-    @asset
+    @asset(tags=_TABLE_TAG)
     def upstream_table():
         return 1
 
-    @asset(deps=[upstream_table], automation_condition=_get_view_condition())
+    @asset(
+        deps=[upstream_table],
+        automation_condition=_get_view_condition(),
+        tags=_VIEW_TAG,
+    )
     def my_view():
         return 2
 
@@ -56,11 +62,15 @@ def test_view_not_requested_on_upstream_update():
 def test_table_requested_on_upstream_update():
     """Tables SHOULD be requested when a direct upstream table is updated."""
 
-    @asset
+    @asset(tags=_TABLE_TAG)
     def upstream_table():
         return 1
 
-    @asset(deps=[upstream_table], automation_condition=_get_table_condition())
+    @asset(
+        deps=[upstream_table],
+        automation_condition=_get_table_condition(),
+        tags=_TABLE_TAG,
+    )
     def downstream_table():
         return 2
 
@@ -87,15 +97,23 @@ def test_table_view_table_chain():
     - downstream_table SHOULD be requested (sees through the view)
     """
 
-    @asset
+    @asset(tags=_TABLE_TAG)
     def upstream_table():
         return 1
 
-    @asset(deps=[upstream_table], automation_condition=_get_view_condition())
+    @asset(
+        deps=[upstream_table],
+        automation_condition=_get_view_condition(),
+        tags=_VIEW_TAG,
+    )
     def intermediate_view():
         return 2
 
-    @asset(deps=[intermediate_view], automation_condition=_get_table_condition())
+    @asset(
+        deps=[intermediate_view],
+        automation_condition=_get_table_condition(),
+        tags=_TABLE_TAG,
+    )
     def downstream_table():
         return 3
 
@@ -122,19 +140,21 @@ def test_double_view_chain():
     Tests that the ancestor lookthrough handles multiple consecutive views.
     """
 
-    @asset
+    @asset(tags=_TABLE_TAG)
     def source_table():
         return 1
 
-    @asset(deps=[source_table], automation_condition=_get_view_condition())
+    @asset(
+        deps=[source_table], automation_condition=_get_view_condition(), tags=_VIEW_TAG
+    )
     def view_a():
         return 2
 
-    @asset(deps=[view_a], automation_condition=_get_view_condition())
+    @asset(deps=[view_a], automation_condition=_get_view_condition(), tags=_VIEW_TAG)
     def view_b():
         return 3
 
-    @asset(deps=[view_b], automation_condition=_get_table_condition())
+    @asset(deps=[view_b], automation_condition=_get_table_condition(), tags=_TABLE_TAG)
     def target_table():
         return 4
 
@@ -155,10 +175,72 @@ def test_double_view_chain():
     assert result.get_num_requested(AssetKey("target_table")) == 1
 
 
+def test_update_propagates_through_view_between_tables():
+    """Table -> Table -> View -> Table chain.
+
+    When source_table is updated:
+    - middle_table sees the direct dep update and is requested
+    - will_be_requested() makes middle_table visible to intervening_view's deps
+    - downstream_table's ancestor lookthrough sees middle_table through the view
+    - All tables in the chain are correctly requested
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def source_table():
+        return 1
+
+    @asset(
+        deps=[source_table],
+        automation_condition=_get_table_condition(),
+        tags=_TABLE_TAG,
+    )
+    def middle_table():
+        return 2
+
+    @asset(
+        deps=[middle_table],
+        automation_condition=_get_view_condition(),
+        tags=_VIEW_TAG,
+    )
+    def intervening_view():
+        return 3
+
+    @asset(
+        deps=[intervening_view],
+        automation_condition=_get_table_condition(),
+        tags=_TABLE_TAG,
+    )
+    def downstream_table():
+        return 4
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [source_table, middle_table, intervening_view, downstream_table]
+    defs = Definitions(assets=all_assets)
+
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # Update only source_table
+    materialize(assets=[source_table], instance=instance, selection=[source_table])
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+
+    # middle_table should be requested (direct dep updated)
+    assert result.get_num_requested(AssetKey("middle_table")) == 1
+    # intervening_view should NOT be requested (view ignores upstream updates)
+    assert result.get_num_requested(AssetKey("intervening_view")) == 0
+    # downstream_table SHOULD be requested — ancestor lookthrough sees
+    # middle_table (will_be_requested) through intervening_view
+    assert result.get_num_requested(AssetKey("downstream_table")) == 1
+
+
 def test_view_requested_on_code_version_change():
     """Views SHOULD be requested when their code version changes."""
 
-    @asset
+    @asset(tags=_TABLE_TAG)
     def upstream_table():
         return 1
 
@@ -166,6 +248,7 @@ def test_view_requested_on_code_version_change():
         deps=[upstream_table],
         automation_condition=_get_view_condition(),
         code_version="1",
+        tags=_VIEW_TAG,
     )
     def my_view():
         return 2
@@ -184,6 +267,7 @@ def test_view_requested_on_code_version_change():
         deps=[upstream_table],
         automation_condition=_get_view_condition(),
         code_version="2",
+        tags=_VIEW_TAG,
     )
     def my_view_v2():
         return 2

@@ -18,6 +18,11 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
 
         super().__init__(settings)
 
+    def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
+        tags = super().get_tags(dbt_resource_props)
+        materialized = dbt_resource_props.get("config", {}).get("materialized", "view")
+        return {**tags, "dagster/materialized": materialized}
+
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         asset_key = super().get_asset_key(dbt_resource_props)
 
