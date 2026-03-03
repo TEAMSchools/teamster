@@ -34,8 +34,8 @@ with
             co.status_504,
 
             -- exemption source fields (preserved through pivot for reason labels)
-            co.graduation_pathway_math,
-            co.graduation_pathway_ela,
+            -- TODO: re-add co.graduation_pathway_math and co.graduation_pathway_ela
+            -- when those fields are available in int_extracts__student_enrollments
             co.math_state_assessment_name,
             co.state_assessment_name,
 
@@ -55,8 +55,7 @@ with
             end as has_extended_time,
 
             case
-                when subj = 'MATH' and co.graduation_pathway_math = 'M'
-                then null
+                -- TODO: re-add graduation_pathway_math = 'M' exemption when available
                 when subj = 'MATH' and co.math_state_assessment_name = '3'
                 then null
                 when subj = 'MATH' and co.grade_level = 11
@@ -70,8 +69,7 @@ with
                 then c.math_course
                 when subj = 'MATH' and c.math_course is null
                 then concat('MAT', '0', co.grade_level)
-                when subj = 'ENG' and co.graduation_pathway_ela = 'M'
-                then null
+                -- TODO: re-add graduation_pathway_ela = 'M' exemption when available
                 when subj = 'ENG' and co.state_assessment_name in ('2', '3', '4')
                 then null
                 when subj = 'ENG' and co.grade_level = 11
@@ -120,8 +118,8 @@ with
             any_value(is_self_contained) as is_self_contained,
 
             -- exemption source fields
-            any_value(graduation_pathway_math) as graduation_pathway_math,
-            any_value(graduation_pathway_ela) as graduation_pathway_ela,
+            -- TODO: re-add graduation_pathway_math and graduation_pathway_ela
+            -- when those fields are available in int_extracts__student_enrollments
             any_value(math_state_assessment_name) as math_state_assessment_name,
             any_value(state_assessment_name) as state_assessment_name,
 
@@ -168,11 +166,10 @@ select
     sci_has_extended_time,
 
     -- why is ELA exempt? (null = not exempt)
+    -- TODO: re-add graduation_pathway_ela = 'M' → 'IEP - Graduation Pathway' when available
     case
         when ela_test_code is not null
         then null
-        when graduation_pathway_ela = 'M'
-        then 'IEP - Graduation Pathway'
         when state_assessment_name = '4'
         then 'DLM + ACCESS (IEP and ML)'
         when state_assessment_name = '3'
@@ -183,11 +180,10 @@ select
     end as ela_exemption_reason,
 
     -- why is Math exempt? (null = not exempt)
+    -- TODO: re-add graduation_pathway_math = 'M' → 'IEP - Graduation Pathway' when available
     case
         when math_test_code is not null
         then null
-        when graduation_pathway_math = 'M'
-        then 'IEP - Graduation Pathway'
         when math_state_assessment_name = '3'
         then 'DLM - Alternate Assessment'
         else 'Math Exempt - Other'
