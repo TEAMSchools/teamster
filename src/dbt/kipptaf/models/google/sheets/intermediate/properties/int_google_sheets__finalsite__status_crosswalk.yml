@@ -1,0 +1,5 @@
+models:
+  - name: int_google_sheets__finalsite__status_crosswalk
+    config:
+      contract:
+        enforced: false
