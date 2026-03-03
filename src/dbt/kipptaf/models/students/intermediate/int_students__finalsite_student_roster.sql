@@ -100,7 +100,7 @@ select
 
 from actual_enroll_type as f
 inner join
-    {{ ref("int_google_sheets__finalsite__status_crosswalk") }} as x
+    {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as x
     on f.enrollment_academic_year = x.enrollment_academic_year
     and f.enrollment_academic_year_enrollment_type = x.enrollment_type
     and f.detailed_status = x.detailed_status
