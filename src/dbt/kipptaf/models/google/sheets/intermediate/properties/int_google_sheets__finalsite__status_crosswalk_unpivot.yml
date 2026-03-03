@@ -1,5 +1,7 @@
 models:
   - name: int_google_sheets__finalsite__status_crosswalk_unpivot
+    config:
+      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
