@@ -39,10 +39,6 @@ models:
         data_type: string
       - name: grouped_status
         data_type: string
-      - name: sre_academic_year_start
-        data_type: date
-      - name: sre_academic_year_end
-        data_type: date
       - name: is_enrolled_fdos
         data_type: boolean
       - name: is_enrolled_oct01
