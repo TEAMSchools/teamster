@@ -12,6 +12,7 @@ with
             grade_level,
             self_contained,
             gender,
+            birthdate,
 
             active_school_year_int as enrollment_academic_year,
             active_school_year_display as enrollment_academic_year_display,
@@ -24,8 +25,7 @@ with
             ) as detailed_status,
 
         from
-            -- trunk-ignore(sqlfluff/LT01)
-            {{ ref("stg_finalsite__status_report") }} unpivot include nulls(
+            {{ ref("stg_finalsite__status_report") }} unpivot (
                 status_start_date for fs_status_field in (
                     inquiry_date,
                     inquiry_completed_date,
