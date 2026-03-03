@@ -45,11 +45,11 @@ with
             subj as `subject`,
 
             case
-                when subj = 'MATH' and co.asmt_extended_time_math is not null
+                when subj = 'MATH' and nj.asmt_extended_time_math is not null
                 then true
-                when subj = 'ENG' and co.asmt_extended_time is not null
+                when subj = 'ENG' and nj.asmt_extended_time is not null
                 then true
-                when subj = 'SCI' and co.asmt_extended_time_math is not null
+                when subj = 'SCI' and nj.asmt_extended_time_math is not null
                 then true
                 else false
             end as has_extended_time,
