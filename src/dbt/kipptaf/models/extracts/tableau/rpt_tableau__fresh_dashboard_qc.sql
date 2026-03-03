@@ -5,17 +5,24 @@ with
             org,
             region,
             school,
-            finalsite_student_id,
+            finalsite_enrollment_id,
             powerschool_student_number,
             last_name,
             first_name,
             grade_level,
+            ps_region,
+            ps_school,
+            ps_grade_level,
+            ps_enroll_status,
+            valid_detailed_status,
+            qa_flag,
 
         from {{ ref("int_students__finalsite_student_roster") }}
         where
-            rn = 1
-            and powerschool_student_number is not null
+            powerschool_student_number is not null
             and latest_status = 'Enrolled'
+            and detailed_status = 'Enrolled'
+            and status_start_date is not null
     )
 
 select
