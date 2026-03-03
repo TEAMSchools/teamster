@@ -78,15 +78,8 @@ select
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
 
-    x.detailed_status_branched_ranking,
-    x.valid_detailed_status,
-    x.qa_flag,
-    x.status_group_numerator,
-    x.status_group_denominator,
-    x.conversion_metric_numerator,
-    x.conversion_metric_denominator,
-    x.sre_academic_year_start,
-    x.sre_academic_year_end,
+    x.status_group_name,
+    x.status_group_value,
 
     cast(f.aligned_enrollment_academic_year as string)
     || '-'
@@ -107,7 +100,7 @@ select
 
 from actual_enroll_type as f
 inner join
-    {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
+    {{ ref("int_google_sheets__finalsite__status_crosswalk") }} as x
     on f.enrollment_academic_year = x.enrollment_academic_year
     and f.enrollment_academic_year_enrollment_type = x.enrollment_type
     and f.detailed_status = x.detailed_status
