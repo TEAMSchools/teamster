@@ -39,10 +39,10 @@ with
             sub.ps_grad_path_code,
             sub.is_exempt_state_testing,
 
+            subj as `subject`,
+
             -- display string is student-scoped, not test-scoped
             concat(co.student_name, ' - ', co.student_number) as student,
-
-            subj as `subject`,
 
             case
                 when subj = 'MATH' and nj.asmt_extended_time_math is not null
