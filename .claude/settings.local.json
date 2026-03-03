@@ -1,9 +1,10 @@
 {
   "permissions": {
     "allow": [
+      "Bash(python -c \":*)",
       "Bash(python -m pytest tests/ -x -q)",
-      "Read(//home/vscode/.claude/plugins/cache/dagster/dignified-python/0.0.8/skills/dignified-python/references/**)",
-      "Read(//home/vscode/.claude/plugins/cache/dagster/dignified-python/0.0.8/skills/dignified-python/**)"
+      "Read(//home/vscode/.claude/plugins/cache/dagster/dignified-python/0.0.8/**)",
+      "WebFetch(domain:github.com)"
     ]
   },
   "enabledPlugins": {
