@@ -1,7 +1,7 @@
 import os
 
 from dagster import EnvVar
-from dagster_dbt import DbtCliResource
+from dagster_dbt import DbtCliResource, DbtProject
 from dagster_dlt import DagsterDltResource
 from dagster_gcp import BigQueryResource, GCSResource
 from dagster_shared import check
@@ -55,7 +55,7 @@ def get_io_manager_gcs_file(code_location: str, test: bool = False) -> GCSIOMana
     )
 
 
-def get_dbt_cli_resource(dbt_project: str, test: bool = False) -> DbtCliResource:
+def get_dbt_cli_resource(dbt_project: DbtProject, test: bool = False) -> DbtCliResource:
     if test:
         return DbtCliResource(
             project_dir=dbt_project, dbt_executable="/workspaces/teamster/.venv/bin/dbt"
