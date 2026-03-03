@@ -69,5 +69,8 @@
       "!src/dbt/**/selectors.yml",
       "!src/dbt/**/packages.yml"
     ]
+  },
+  "[python]": {
+    "editor.defaultFormatter": "trunk.io"
   }
 }
