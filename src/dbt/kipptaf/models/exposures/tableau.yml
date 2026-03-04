@@ -743,7 +743,10 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__fresh_dashboard_aggregated")
+      - ref("rpt_tableau__fresh_dashboard_progress_to_goals")
+      - ref("rpt_tableau__fresh_dashboard_qc")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
