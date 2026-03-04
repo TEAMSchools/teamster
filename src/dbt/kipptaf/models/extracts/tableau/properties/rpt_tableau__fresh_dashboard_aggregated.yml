@@ -1,5 +1,7 @@
 models:
   - name: rpt_tableau__fresh_dashboard_aggregated
+    config:
+      enabled: false
     columns:
       - name: academic_year
         data_type: int64
@@ -65,3 +67,5 @@ models:
         data_type: date
       - name: days_in_grouped_status
         data_type: int64
+      - name: goal_name_value
+        data_type: string

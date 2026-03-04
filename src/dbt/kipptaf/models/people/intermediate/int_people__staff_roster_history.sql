@@ -114,6 +114,8 @@ with
             w.effective_date_end >= '2021-01-01'
             and coalesce(w.organizational_unit__home__business_unit__name, '')
             != 'KIPP Paterson'
+            and coalesce(w.organizational_unit__assigned__business_unit__name, '')
+            != 'KIPP Paterson'
 
         union all
 

@@ -26,8 +26,4 @@ select
         cast(enrollment_academic_year + 1 as string), 2
     ) as enrollment_academic_year_display,
 
-    date(enrollment_academic_year - 1, 10, 16) as sre_academic_year_start,
-
-    date(enrollment_academic_year, 6, 30) as sre_academic_year_end,
-
 from transformations
