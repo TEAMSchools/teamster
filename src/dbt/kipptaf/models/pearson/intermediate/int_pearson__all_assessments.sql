@@ -61,7 +61,7 @@ select
     u.period,
     u.firstname,
     u.lastorsurname,
-    u.subject,
+    u.`subject`,
     u.testcode,
     u.studenttestuuid,
     u.test_grade,
@@ -71,15 +71,25 @@ select
     u.twoormoreraces,
     u.white,
 
+    'Actual' as results_type,
+    'KTAF NJ' as district_state,
+
     cast(u.statestudentidentifier as string) as statestudentidentifier,
 
     coalesce(u.studentwithdisabilities in ('504', 'B'), false) as is_504,
 
     coalesce(x.student_number, u.localstudentidentifier) as localstudentidentifier,
 
-    if(u.englishlearnerel = 'Y', true, false) as lep_status,
-
-    if(u.studentwithdisabilities in ('IEP', 'B'), 'Has IEP', 'No IEP') as iep_status,
+    case
+        u.testcode
+        when 'SC05'
+        then 'SCI05'
+        when 'SC08'
+        then 'SCI08'
+        when 'SC11'
+        then 'SCI11'
+        else u.testcode
+    end as aligned_test_code,
 
     case
         when u.twoormoreraces = 'Y'
@@ -97,6 +107,39 @@ select
         when u.white = 'Y'
         then 'W'
     end as race_ethnicity,
+
+    case
+        when u.`subject` like 'English Language Arts%'
+        then 'Text Study'
+        when u.`subject` in ('Algebra I', 'Algebra II', 'Geometry')
+        then 'Mathematics'
+        else u.`subject`
+    end as illuminate_subject,
+
+    case
+        when u.assessment_name = 'NJSLA' and u.testperformancelevel <= 2
+        then 'Below/Far Below'
+        when u.assessment_name = 'NJSLA' and u.testperformancelevel = 3
+        then 'Approaching'
+        when u.assessment_name = 'NJSLA' and u.testperformancelevel >= 4
+        then 'At/Above'
+    end as njsla_aggregated_proficiency,
+
+    if(u.englishlearnerel = 'Y', true, false) as lep_status,
+
+    if(u.studentwithdisabilities in ('IEP', 'B'), 'Has IEP', 'No IEP') as iep_status,
+
+    if(u.`period` = 'FallBlock', 'Fall', u.`period`) as `admin`,
+
+    if(u.`period` = 'FallBlock', 'Fall', u.`period`) as season,
+
+    if(
+        u.`subject` = 'English Language Arts/Literacy',
+        'English Language Arts',
+        u.`subject`
+    ) as aligned_subject,
+
+    if(u.is_proficient, 1, 0) as is_proficient_int,
 
 from union_relations as u
 left join

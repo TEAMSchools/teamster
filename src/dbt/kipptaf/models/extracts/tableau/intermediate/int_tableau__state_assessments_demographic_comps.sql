@@ -8,19 +8,9 @@ with
             assessment_name,
             is_proficient,
 
-            'Actual' as results_type,
-            'KTAF NJ' as district_state,
-
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as test_code,
+            results_type,
+            district_state,
+            aligned_test_code as test_code,
 
             case
                 when race_ethnicity = 'B'
@@ -83,42 +73,21 @@ with
             _dbt_source_relation,
             academic_year,
 
-            null as localstudentidentifier,
+            local_student_identifier as localstudentidentifier,
 
             cast(state_student_identifier as string) as state_id,
 
             test_type as assessment_name,
-
-            if(
-                performance_level
-                in ('Met Expectations', 'Exceeded Expectations', 'Graduation Ready'),
-                true,
-                false
-            ) as is_proficient,
-
-            'Preliminary' as results_type,
-            'KTAF NJ' as district_state,
-
-            case
-                when test_name = 'ELA Graduation Proficiency'
-                then 'ELAGP'
-                when test_name = 'Mathematics Graduation Proficiency'
-                then 'MATGP'
-                when test_name = 'Geometry'
-                then 'GEO01'
-                when test_name = 'Algebra I'
-                then 'ALG01'
-                when test_name like '%Mathematics%'
-                then concat('MAT', regexp_extract(test_name, r'.{6}(.{2})'))
-                when test_name like '%ELA%'
-                then concat('ELA', regexp_extract(test_name, r'.{6}(.{2})'))
-            end as test_code,
+            is_proficient,
+            results_type,
+            district_state,
+            test_code,
 
             null as aggregate_ethnicity,
             null as ml_status,
             null as iep_status,
 
-        from {{ ref("stg_pearson__student_list_report") }}
+        from {{ ref("int_pearson__student_list_report") }}
         where
             state_student_identifier is not null
             and administration = 'Spring'
@@ -137,14 +106,13 @@ select
     a.aggregate_ethnicity,
     a.ml_status,
     a.iep_status,
+    a.is_proficient_int,
 
     if(
         e.lunch_status in ('F', 'R'),
         'Economically Disadvantaged',
         'Non Economically Disadvantaged'
     ) as lunch_status,
-
-    if(a.is_proficient, 1, 0) as is_proficient_int,
 
     case
         when a.test_code = 'ALG01'
