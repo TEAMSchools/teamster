@@ -49,18 +49,20 @@ select
     csc.illuminate_subject_area,
     csc.is_foundations,
     csc.is_advanced_math,
-    csc.exclude_from_gradebook,
     csc.discipline,
 
     initcap(regexp_extract(ur._dbt_source_relation, r'kipp(\w+)_')) as region,
 
     if(cx.ap_course_subject is not null, true, false) as is_ap_course,
 
+    if(csc.discipline = 'SOC', 'Civics', csc.discipline) as standardized_discipline,
+
     row_number() over (
         partition by
             ur._dbt_source_relation, ur.cc_studyear, csc.illuminate_subject_area
         order by ur.cc_termid desc, ur.cc_dateenrolled desc, ur.cc_dateleft desc
     ) as rn_student_year_illuminate_subject_desc,
+
 from union_relations as ur
 left join
     {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
