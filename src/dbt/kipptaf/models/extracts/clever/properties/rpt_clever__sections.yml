@@ -1,0 +1,57 @@
+models:
+  - name: rpt_clever__sections
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - school_id
+              - section_id
+          config:
+            store_failures: true
+    columns:
+      - name: school_id
+        data_type: int64
+      - name: section_id
+        data_type: string
+      - name: teacher_id
+        data_type: string
+      - name: teacher_2_id
+        data_type: string
+      - name: teacher_3_id
+        data_type: string
+      - name: teacher_4_id
+        data_type: string
+      - name: teacher_5_id
+        data_type: string
+      - name: teacher_6_id
+        data_type: string
+      - name: teacher_7_id
+        data_type: string
+      - name: teacher_8_id
+        data_type: string
+      - name: teacher_9_id
+        data_type: string
+      - name: teacher_10_id
+        data_type: string
+      - name: name
+        data_type: int64
+      - name: section_number
+        data_type: string
+      - name: grade
+        data_type: string
+      - name: course_name
+        data_type: string
+      - name: course_number
+        data_type: string
+      - name: course_description
+        data_type: int64
+      - name: period
+        data_type: string
+      - name: subject
+        data_type: string
+      - name: term_name
+        data_type: string
+      - name: term_start
+        data_type: string
+      - name: term_end
+        data_type: string

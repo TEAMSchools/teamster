@@ -1,0 +1,6 @@
+models:
+  - name: rpt_tableau__college_assessment_qc_report
+    config:
+      enabled: false
+      contract:
+        enforced: false

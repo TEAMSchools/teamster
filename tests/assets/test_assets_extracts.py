@@ -3,7 +3,6 @@ from datetime import datetime
 
 from dagster import AssetsDefinition, DagsterInstance, MultiPartitionKey, materialize
 
-from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
 from teamster.core.resources import BIGQUERY_RESOURCE, GCS_RESOURCE, SSH_COUCHDROP
 from teamster.libraries.extracts.assets import format_file_name
 
@@ -68,7 +67,7 @@ def test_construct_query_schema():
     print(sql)
     assert str(sql) == (
         "SELECT * \nFROM "
-        f"{query_value["table"]["schema"]}.{query_value["table"]["name"]} \n"
+        f"{query_value['table']['schema']}.{query_value['table']['name']} \n"
         f"WHERE date = '{date}' AND group_code = '{group_code}'"
     )
 
@@ -96,6 +95,8 @@ def test_format_file_name_default():
 
 
 def test_format_file_name_multi_partition():
+    from teamster.code_locations.kipptaf import LOCAL_TIMEZONE
+
     group_code = "3LE"
     date = "20230815"
 
@@ -167,4 +168,15 @@ def test_clever_extract():
         assets=clever_extract_assets,
         asset_selection="kipptaf/extracts/clever/students_csv",
         ssh_clever=SSH_RESOURCE_CLEVER,
+    )
+
+
+def test_illuminate_extract():
+    from teamster.code_locations.kipptaf.extracts.assets import (
+        illuminate_extract_assets,
+    )
+    from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_ILLUMINATE
+
+    _test_asset(
+        assets=illuminate_extract_assets, ssh_illuminate=SSH_RESOURCE_ILLUMINATE
     )

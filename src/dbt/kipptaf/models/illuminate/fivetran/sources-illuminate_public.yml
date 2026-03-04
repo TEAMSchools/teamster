@@ -1,0 +1,56 @@
+sources:
+  - name: illuminate
+    schema: illuminate_public
+    config:
+      enabled: false
+    tables:
+      - name: grade_levels
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - illuminate
+                - public
+                - grade_levels
+      - name: sessions
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - illuminate
+                - public
+                - sessions
+      - name: student_session_aff
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - illuminate
+                - public
+                - student_session_aff
+      - name: students
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - illuminate
+                - public
+                - students
+      - name: users
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - illuminate
+                - public
+                - users

@@ -5,9 +5,6 @@ with
             e.student,
             e.start_date,
 
-            c.contact_kipp_hs_class,
-            c.contact_birthdate,
-
             false as is_employment,
 
             coalesce(
@@ -69,9 +66,6 @@ with
                 `start_date`, enlist_date, bmt_start_date, meps_start_date
             ) as `start_date`,
 
-            null as contact_kipp_hs_class,
-            null as contact_birthdate,
-
             true as is_employment,
 
             coalesce(
@@ -89,8 +83,6 @@ with
     enrollment_ordered as (
         select
             student,
-            contact_kipp_hs_class,
-            contact_birthdate,
             enrollment_id,
             pursuing_degree_level,
             is_ecc_degree_type,
@@ -119,8 +111,6 @@ with
     enrollment_grouped as (
         select
             student,
-            contact_kipp_hs_class,
-            contact_birthdate,
 
             max(
                 if(
@@ -175,14 +165,12 @@ with
                 if(rn_current = 1 and not is_employment, enrollment_id, null)
             ) as cur_enrollment_id,
         from enrollment_ordered
-        group by student, contact_kipp_hs_class, contact_birthdate
+        group by student
     ),
 
     enrollment_wide as (
         select
             e.student,
-            e.contact_kipp_hs_class,
-            e.contact_birthdate,
             e.ba_enrollment_id,
             e.aa_enrollment_id,
             e.ecc_enrollment_id,
@@ -335,8 +323,6 @@ with
 
 select
     ew.student,
-    ew.contact_kipp_hs_class,
-    ew.contact_birthdate,
     ew.ba_enrollment_id,
     ew.aa_enrollment_id,
     ew.ecc_enrollment_id,

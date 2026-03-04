@@ -44,4 +44,10 @@ select
     organizations,
     phones,
     relations,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["name.givenname", "name.familyname", "suspended", "orgunitpath"]
+        )
+    }} as surrogate_key_target,
 from {{ source("google_directory", "src_google_directory__users") }}

@@ -1,0 +1,51 @@
+models:
+  - name: stg_schoolmint_grow__rubrics__measurement_groups__measurements
+    columns:
+      - name: rubric_id
+        data_type: string
+      - name: name
+        data_type: string
+      - name: district
+        data_type: string
+      - name: scale_min
+        data_type: int64
+      - name: scale_max
+        data_type: int64
+      - name: is_private
+        data_type: boolean
+      - name: is_published
+        data_type: boolean
+      - name: archived_at
+        data_type: timestamp
+      - name: created
+        data_type: timestamp
+      - name: last_modified
+        data_type: timestamp
+      - name: measurement_group_name
+        data_type: string
+      - name: measurement_group_id
+        data_type: string
+      - name: measurement_group_key
+        data_type: string
+      - name: measurement_group_description
+        data_type: string
+      - name: measurement_group_weight
+        data_type: int64
+      - name: measurement_key
+        data_type: string
+      - name: measurement_weight
+        data_type: float64
+      - name: measurement_id
+        data_type: string
+      - name: is_private_measurement
+        data_type: boolean
+      - name: exclude_measurement
+        data_type: boolean
+      - name: require_measurement
+        data_type: boolean
+      # - name: order
+      #   data_type: int64
+      # - name: settings
+      #   data_type: array
+      # - name: layout
+      #   data_type: array

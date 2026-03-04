@@ -3,17 +3,16 @@ from dagster_gcp import BigQueryResource
 from google.cloud.bigquery import DatasetReference
 
 
-class BigQueryGetTableOpConfig(Config):
-    dataset_id: str
-    table_id: str
+class BigQueryOpConfig(Config):
+    dataset_id: str = ""
+    table_id: str = ""
+    query: str | None = None
     project: str | None = None
 
 
 @op
 def bigquery_get_table_op(
-    context: OpExecutionContext,
-    db_bigquery: BigQueryResource,
-    config: BigQueryGetTableOpConfig,
+    context: OpExecutionContext, db_bigquery: BigQueryResource, config: BigQueryOpConfig
 ):
     project = config.project or db_bigquery.project
 
@@ -38,19 +37,21 @@ def bigquery_get_table_op(
 
 @op
 def bigquery_query_op(
-    context: OpExecutionContext,
-    db_bigquery: BigQueryResource,
-    config: BigQueryGetTableOpConfig,
+    context: OpExecutionContext, db_bigquery: BigQueryResource, config: BigQueryOpConfig
 ):
     project = config.project or db_bigquery.project
 
-    object_id = f"{config.dataset_id}.{config.table_id}"
-    context.log.info(msg=f"Querying table: {object_id}")
+    if config.query is not None:
+        query = config.query
+    else:
+        # trunk-ignore(bandit/B608)
+        query = f"select * from {config.dataset_id}.{config.table_id}"
 
+    context.log.info(msg=query)
     with db_bigquery.get_client() as bq:
-        query = bq.query(query=f"select * from {object_id}", project=project)
+        query_job = bq.query(query=query, project=project)
 
-    arrow = query.to_arrow()
+    arrow = query_job.to_arrow()
 
     context.log.info(msg=f"Retrieved {arrow.num_rows} rows")
 

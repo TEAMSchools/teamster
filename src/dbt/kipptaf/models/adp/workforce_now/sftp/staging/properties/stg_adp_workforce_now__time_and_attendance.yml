@@ -1,0 +1,15 @@
+models:
+  - name: stg_adp_workforce_now__time_and_attendance
+    columns:
+      - name: position_id
+        data_type: string
+      - name: badge
+        data_type: string
+      - name: pay_class
+        data_type: string
+      - name: supervisor_id
+        data_type: string
+      - name: supervisor_flag
+        data_type: string
+      - name: transfer_to_payroll
+        data_type: string

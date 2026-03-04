@@ -1,5 +1,3 @@
-{{- config(enabled=false) -}}
-
 with
     standards_grouped as (
         select fs.field_id, string_agg(s.custom_code, '; ') as standard_codes,

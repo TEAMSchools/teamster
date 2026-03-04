@@ -1,0 +1,69 @@
+models:
+  - name: rpt_illuminate__users
+    columns:
+      - name: "`01 User ID`"
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: "`02 User Last Name`"
+        data_type: string
+      - name: "`03 User First Name`"
+        data_type: string
+      - name: "`04 User Middle Name`"
+        data_type: int64
+      - name: "`05 Birth Date`"
+        data_type: int64
+      - name: "`06 Gender`"
+        data_type: int64
+      - name: "`07 Email Address`"
+        data_type: string
+      - name: "`08 Username`"
+        data_type: string
+      - name: "`09 Password`"
+        data_type: int64
+      - name: "`10 State User Or Employee ID`"
+        data_type: int64
+      - name: "`11 Name Suffix`"
+        data_type: int64
+      - name: "`12 Former First Name`"
+        data_type: int64
+      - name: "`13 Former Middle Name`"
+        data_type: int64
+      - name: "`14 Former Last Name`"
+        data_type: int64
+      - name: "`15 Primary Race`"
+        data_type: int64
+      - name: "`16 User Is Hispanic`"
+        data_type: int64
+      - name: "`17 Address`"
+        data_type: int64
+      - name: "`18 City`"
+        data_type: string
+      - name: "`19 State`"
+        data_type: int64
+      - name: "`20 Zip`"
+        data_type: int64
+      - name: "`21 Job Title`"
+        data_type: string
+      - name: "`22 Education Level`"
+        data_type: int64
+      - name: "`23 Hire Date`"
+        data_type: int64
+      - name: "`24 Exit Date`"
+        data_type: int64
+      - name: "`25 Active`"
+        data_type: int64
+      - name: "`26 Position Status`"
+        data_type: int64
+      - name: "`27 Total Years Edu Service`"
+        data_type: int64
+      - name: "`28 Total Year In District`"
+        data_type: int64
+      - name: "`29 Email2`"
+        data_type: int64
+      - name: "`30 Phone1`"
+        data_type: int64
+      - name: "`31 Phone2`"
+        data_type: int64

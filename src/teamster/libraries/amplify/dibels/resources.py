@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup, Tag
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import Session, exceptions
 
@@ -13,14 +14,14 @@ class DibelsDataSystemResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
         self._session.headers["Content-Type"] = "application/x-www-form-urlencoded"
 
         response = self._request(method="GET", url=f"{self._base_url}/user/login")
 
         soup = BeautifulSoup(markup=response.text, features="html.parser")
 
-        csrf_token = _check.inst(
+        csrf_token = check.inst(
             obj=soup.find(name="meta", attrs={"name": "csrf-token"}), ttype=Tag
         )
 
@@ -73,7 +74,7 @@ class DibelsDataSystemResource(ConfigurableResource):
 
         soup = BeautifulSoup(markup=response.text, features="html.parser")
 
-        csv_link = _check.inst(
+        csv_link = check.inst(
             obj=soup.find(name="a", attrs={"class": "csv-link"}), ttype=Tag
         )
 

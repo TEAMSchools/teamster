@@ -1,5 +1,3 @@
-{{- config(enabled=false) -}}
-
 select
     w._dagster_partition_fiscal_year as fiscal_year,
     w._dagster_partition_date as `date`,

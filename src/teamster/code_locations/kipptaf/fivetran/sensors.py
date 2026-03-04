@@ -1,4 +1,4 @@
-from teamster import GCS_PROJECT_NAME
+"""from teamster import GCS_PROJECT_NAME
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.fivetran.assets import asset_specs
 from teamster.libraries.fivetran.sensors import (
@@ -15,3 +15,4 @@ fivetran_connector_sync_status_sensor = build_fivetran_connector_sync_status_sen
 sensors = [
     fivetran_connector_sync_status_sensor,
 ]
+"""

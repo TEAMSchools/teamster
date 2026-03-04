@@ -1,16 +1,19 @@
-select
-    id,
-    created_at,
-    updated_at,
-    applied_on,
-    application_source,
-    `status`,
-    status_updated_at,
-    waitlisted,
-    deferred,
-    academic_fit,
-    probability_of_acceptance,
+with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("overgrad", "src_overgrad__admissions"),
+                partition_by="id",
+                order_by="updated_at desc",
+            )
+        }}
+    )
 
+-- trunk-ignore(sqlfluff/AM04)
+select
+    * except (custom_field_values, student, university, due_date, award_letter),
+
+    /* records */
     student.id as student__id,
     student.external_student_id as student__external_student_id,
 
@@ -50,4 +53,4 @@ select
     award_letter.unmet_need_with_max_family_contribution
     as award_letter__unmet_need_with_max_family_contribution,
     award_letter.seog as award_letter__seog,
-from {{ source("overgrad", "src_overgrad__admissions") }}
+from deduplicate

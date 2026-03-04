@@ -75,43 +75,44 @@ select
     end as survey_audience,
 from {{ ref("int_surveys__survey_responses") }} as sr
 left join
-    {{ ref("base_people__staff_roster_history") }} as srh
+    {{ ref("int_people__staff_roster_history") }} as srh
     on sr.respondent_email = srh.google_email
     and sr.date_submitted
-    between srh.work_assignment_start_timestamp and srh.work_assignment_end_timestamp
+    between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
 left join
-    {{ ref("base_powerschool__student_enrollments") }} as se1
-    on sr.respondent_email = se1.student_email_google
+    {{ ref("int_extracts__student_enrollments") }} as se1
+    on sr.respondent_email = se1.student_email
     and sr.academic_year = se1.academic_year
 left join
     family_responses as fr
-    on fr.survey_id = sr.survey_id
-    and fr.survey_response_id = sr.survey_response_id
+    on sr.survey_id = fr.survey_id
+    and sr.survey_response_id = fr.survey_response_id
 left join
-    {{ ref("base_powerschool__student_enrollments") }} as se2
+    {{ ref("int_extracts__student_enrollments") }} as se2
     on fr.respondent_number = se2.student_number
     and fr.academic_year = se2.academic_year
 left join
-    {{ ref("stg_surveys__scd_answer_crosswalk") }} as ac
+    {{ ref("stg_google_sheets__surveys__scd_answer_crosswalk") }} as ac
     on sr.question_shortname = ac.question_code
     and sr.answer = ac.response
 left join
-    {{ ref("stg_surveys__scd_question_crosswalk") }} as qc
+    {{ ref("stg_google_sheets__surveys__scd_question_crosswalk") }} as qc
     on sr.question_shortname = qc.question_code
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber
+    and srh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and sr.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 where
-    sr.survey_title in (
+    sr.question_shortname like '%scd%'
+    and sr.survey_title in (
         'Engagement & Support Surveys',
         'KIPP NJ & KIPP Miami Family Survey',
         'School Community Diagnostic Student Survey',
         'School Community Diagnostic Staff Survey',
         'KIPP Miami Re-Commitment Form & Family School Community Diagnostic'
     )
-    and sr.question_shortname like '%scd%'
 
 union all
 
@@ -119,12 +120,16 @@ union all
 select
     'PowerSchool' as survey_id,
     'PowerSchool Family School Community Diagnostic' as survey_title,
+
     sr.external_student_id as survey_response_id,
     sr.data_item_key as question_shortname,
+
     safe_cast(sr.submitted as timestamp) as date_submitted,
+
     sr.academic_year,
 
     qc.question_text,
+
     ac.response_string as answer_text,
     ac.response_int as answer_value,
 
@@ -142,23 +147,22 @@ select
     'Family' as survey_audience,
 from {{ ref("stg_powerschool_enrollment__submission_records") }} as sr
 left join
-    {{ ref("stg_reporting__terms") }} as rt
-    on rt.name = 'PowerSchool Family School Community Diagnostic'
-    and sr.submitted between rt.start_date and rt.end_date
+    {{ ref("stg_google_sheets__reporting__terms") }} as rt
+    on sr.submitted between rt.start_date and rt.end_date
+    and rt.name = 'PowerSchool Family School Community Diagnostic'
 left join
-    {{ ref("base_powerschool__student_enrollments") }} as se
+    {{ ref("int_extracts__student_enrollments") }} as se
     on sr.external_student_id = safe_cast(se.student_number as string)
     and rt.academic_year = se.academic_year
 left join
-    {{ ref("stg_surveys__scd_answer_crosswalk") }} as ac
+    {{ ref("stg_google_sheets__surveys__scd_answer_crosswalk") }} as ac
     on sr.data_item_key = ac.question_code
     and sr.data_item_value = ac.response
 left join
-    {{ ref("stg_surveys__scd_question_crosswalk") }} as qc
+    {{ ref("stg_google_sheets__surveys__scd_question_crosswalk") }} as qc
     on sr.data_item_key = qc.question_code
 where
-    sr.published_action_id = 39362
-    and sr.data_item_key in (
+    sr.data_item_key in (
         'School_Survey_01',
         'School_Survey_02',
         'School_Survey_03',

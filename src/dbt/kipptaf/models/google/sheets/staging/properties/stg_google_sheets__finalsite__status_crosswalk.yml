@@ -1,0 +1,39 @@
+models:
+  - name: stg_google_sheets__finalsite__status_crosswalk
+    columns:
+      - name: enrollment_year_extract
+        data_type: string
+      - name: enrollment_type
+        data_type: string
+      - name: detailed_status
+        data_type: string
+      - name: detailed_status_ranking
+        data_type: int64
+      - name: detailed_status_branched_ranking
+        data_type: int64
+      - name: detailed_status
+        data_type: string
+      - name: valid_detailed_status
+        data_type: boolean
+      - name: fs_status_field
+        data_type: string
+      - name: qa_flag
+        data_type: boolean
+      - name: status_enrollment
+        data_type: string
+      - name: status_group_numerator
+        data_type: string
+      - name: status_group_denominator
+        data_type: string
+      - name: conversion_metric_numerator_1
+        data_type: string
+      - name: conversion_metric_numerator_2
+        data_type: string
+      - name: conversion_metric_numerator_3
+        data_type: string
+      - name: conversion_metric_denominator
+        data_type: string
+      - name: enrollment_academic_year
+        data_type: int64
+      - name: enrollment_academic_year_display
+        data_type: string

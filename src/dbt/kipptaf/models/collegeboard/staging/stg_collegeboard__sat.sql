@@ -1,0 +1,323 @@
+select
+    ai_code,
+    ai_name,
+    district_name,
+    name_last,
+    name_first,
+    name_mi,
+    gender,
+    secondary_id,
+    district_student_id,
+    state_student_id,
+    address_line1,
+    address_line2,
+    address_city,
+    address_state,
+    address_zip,
+    address_county,
+    address_country,
+    address_province,
+    grad_date,
+
+    college_name1,
+    college_name2,
+    college_name3,
+    college_name4,
+
+    latest_sat_grade as admin1_sat_grade,
+    admin2_sat_grade,
+    admin3_sat_grade,
+    admin4_sat_grade,
+    admin5_sat_grade,
+    admin6_sat_grade,
+
+    latest_sat_ks_reading_section as admin1_sat_ks_reading_section,
+    latest_sat_ks_reading_information as admin1_sat_ks_reading_information,
+    latest_sat_ks_reading_craft as admin1_sat_ks_reading_craft,
+    latest_sat_ks_reading_standard as admin1_sat_ks_reading_standard,
+    latest_sat_ks_reading_expression as admin1_sat_ks_reading_expression,
+    latest_sat_ks_math_section as admin1_sat_ks_math_section,
+    latest_sat_ks_math_algebra as admin1_sat_ks_math_algebra,
+    latest_sat_ks_math_advanced as admin1_sat_ks_math_advanced,
+    latest_sat_ks_math_problemsolving as admin1_sat_ks_math_problemsolving,
+    latest_sat_ks_math_geometry as admin1_sat_ks_math_geometry,
+
+    cast(report_date as date) as report_date,
+    cast(birth_date as date) as birth_date,
+    cast(latest_sat_date as date) as admin1_sat_date,
+    cast(admin2_sat_date as date) as admin2_sat_date,
+    cast(admin3_sat_date as date) as admin3_sat_date,
+    cast(admin4_sat_date as date) as admin4_sat_date,
+    cast(admin5_sat_date as date) as admin5_sat_date,
+    cast(admin6_sat_date as date) as admin6_sat_date,
+
+    cast(record_num as int) as record_num,
+    cast(cb_id as int) as cb_id,
+    cast(cohort_year as int) as cohort_year,
+
+    cast(latest_sat_total as int) as admin1_sat_total,
+    cast(latest_sat_ebrw as int) as admin1_sat_ebrw,
+    cast(latest_sat_math_section as int) as admin1_sat_math_section,
+    cast(latest_sat_essay_reading as int) as admin1_sat_essay_reading,
+    cast(latest_sat_essay_analysis as int) as admin1_sat_essay_analysis,
+    cast(latest_sat_essay_writing as int) as admin1_sat_essay_writing,
+    cast(admin2_sat_total as int) as admin2_sat_total,
+    cast(admin2_sat_ebrw as int) as admin2_sat_ebrw,
+    cast(admin2_sat_math_section as int) as admin2_sat_math_section,
+    cast(admin2_sat_reading as int) as admin2_sat_reading,
+    cast(admin2_sat_writ_lang as int) as admin2_sat_writ_lang,
+    cast(admin2_sat_sci_cross as int) as admin2_sat_sci_cross,
+    cast(admin2_sat_hist_socst_cross as int) as admin2_sat_hist_socst_cross,
+    cast(admin2_sat_words_context as int) as admin2_sat_words_context,
+    cast(admin2_sat_comm_evidence as int) as admin2_sat_comm_evidence,
+    cast(admin2_sat_expr_ideas as int) as admin2_sat_expr_ideas,
+    cast(admin2_sat_eng_convent as int) as admin2_sat_eng_convent,
+    cast(admin2_sat_heart_algebra as int) as admin2_sat_heart_algebra,
+    cast(admin2_sat_adv_math as int) as admin2_sat_adv_math,
+    cast(admin2_sat_probslv_data as int) as admin2_sat_probslv_data,
+    cast(admin2_sat_essay_reading as int) as admin2_sat_essay_reading,
+    cast(admin2_sat_essay_analysis as int) as admin2_sat_essay_analysis,
+    cast(admin2_sat_essay_writing as int) as admin2_sat_essay_writing,
+    cast(admin3_sat_total as int) as admin3_sat_total,
+    cast(admin3_sat_ebrw as int) as admin3_sat_ebrw,
+    cast(admin3_sat_math_section as int) as admin3_sat_math_section,
+    cast(admin3_sat_reading as int) as admin3_sat_reading,
+    cast(admin3_sat_writ_lang as int) as admin3_sat_writ_lang,
+    cast(admin3_sat_sci_cross as int) as admin3_sat_sci_cross,
+    cast(admin3_sat_hist_socst_cross as int) as admin3_sat_hist_socst_cross,
+    cast(admin3_sat_words_context as int) as admin3_sat_words_context,
+    cast(admin3_sat_comm_evidence as int) as admin3_sat_comm_evidence,
+    cast(admin3_sat_expr_ideas as int) as admin3_sat_expr_ideas,
+    cast(admin3_sat_eng_convent as int) as admin3_sat_eng_convent,
+    cast(admin3_sat_heart_algebra as int) as admin3_sat_heart_algebra,
+    cast(admin3_sat_adv_math as int) as admin3_sat_adv_math,
+    cast(admin3_sat_probslv_data as int) as admin3_sat_probslv_data,
+    cast(admin3_sat_essay_reading as int) as admin3_sat_essay_reading,
+    cast(admin3_sat_essay_analysis as int) as admin3_sat_essay_analysis,
+    cast(admin3_sat_essay_writing as int) as admin3_sat_essay_writing,
+    cast(admin4_sat_total as int) as admin4_sat_total,
+    cast(admin4_sat_ebrw as int) as admin4_sat_ebrw,
+    cast(admin4_sat_math_section as int) as admin4_sat_math_section,
+    cast(admin4_sat_reading as int) as admin4_sat_reading,
+    cast(admin4_sat_writ_lang as int) as admin4_sat_writ_lang,
+    cast(admin4_sat_sci_cross as int) as admin4_sat_sci_cross,
+    cast(admin4_sat_hist_socst_cross as int) as admin4_sat_hist_socst_cross,
+    cast(admin4_sat_words_context as int) as admin4_sat_words_context,
+    cast(admin4_sat_comm_evidence as int) as admin4_sat_comm_evidence,
+    cast(admin4_sat_expr_ideas as int) as admin4_sat_expr_ideas,
+    cast(admin4_sat_eng_convent as int) as admin4_sat_eng_convent,
+    cast(admin4_sat_heart_algebra as int) as admin4_sat_heart_algebra,
+    cast(admin4_sat_adv_math as int) as admin4_sat_adv_math,
+    cast(admin4_sat_probslv_data as int) as admin4_sat_probslv_data,
+    cast(admin4_sat_essay_reading as int) as admin4_sat_essay_reading,
+    cast(admin4_sat_essay_analysis as int) as admin4_sat_essay_analysis,
+    cast(admin4_sat_essay_writing as int) as admin4_sat_essay_writing,
+    cast(admin5_sat_total as int) as admin5_sat_total,
+    cast(admin5_sat_ebrw as int) as admin5_sat_ebrw,
+    cast(admin5_sat_math_section as int) as admin5_sat_math_section,
+    cast(admin5_sat_reading as int) as admin5_sat_reading,
+    cast(admin5_sat_writ_lang as int) as admin5_sat_writ_lang,
+    cast(admin5_sat_sci_cross as int) as admin5_sat_sci_cross,
+    cast(admin5_sat_hist_socst_cross as int) as admin5_sat_hist_socst_cross,
+    cast(admin5_sat_words_context as int) as admin5_sat_words_context,
+    cast(admin5_sat_comm_evidence as int) as admin5_sat_comm_evidence,
+    cast(admin5_sat_expr_ideas as int) as admin5_sat_expr_ideas,
+    cast(admin5_sat_eng_convent as int) as admin5_sat_eng_convent,
+    cast(admin5_sat_heart_algebra as int) as admin5_sat_heart_algebra,
+    cast(admin5_sat_adv_math as int) as admin5_sat_adv_math,
+    cast(admin5_sat_probslv_data as int) as admin5_sat_probslv_data,
+    cast(admin5_sat_essay_reading as int) as admin5_sat_essay_reading,
+    cast(admin5_sat_essay_analysis as int) as admin5_sat_essay_analysis,
+    cast(admin5_sat_essay_writing as int) as admin5_sat_essay_writing,
+    cast(admin6_sat_total as int) as admin6_sat_total,
+    cast(admin6_sat_ebrw as int) as admin6_sat_ebrw,
+    cast(admin6_sat_math_section as int) as admin6_sat_math_section,
+    cast(admin6_sat_reading as int) as admin6_sat_reading,
+    cast(admin6_sat_writ_lang as int) as admin6_sat_writ_lang,
+    cast(admin6_sat_sci_cross as int) as admin6_sat_sci_cross,
+    cast(admin6_sat_hist_socst_cross as int) as admin6_sat_hist_socst_cross,
+    cast(admin6_sat_words_context as int) as admin6_sat_words_context,
+    cast(admin6_sat_comm_evidence as int) as admin6_sat_comm_evidence,
+    cast(admin6_sat_expr_ideas as int) as admin6_sat_expr_ideas,
+    cast(admin6_sat_eng_convent as int) as admin6_sat_eng_convent,
+    cast(admin6_sat_heart_algebra as int) as admin6_sat_heart_algebra,
+    cast(admin6_sat_adv_math as int) as admin6_sat_adv_math,
+    cast(admin6_sat_probslv_data as int) as admin6_sat_probslv_data,
+    cast(admin6_sat_essay_reading as int) as admin6_sat_essay_reading,
+    cast(admin6_sat_essay_analysis as int) as admin6_sat_essay_analysis,
+    cast(admin6_sat_essay_writing as int) as admin6_sat_essay_writing,
+
+    cast(admin2_sat_critical_reading as int) as admin2_sat_critical_reading,
+    cast(admin3_sat_critical_reading as int) as admin3_sat_critical_reading,
+    cast(admin4_sat_critical_reading as int) as admin4_sat_critical_reading,
+    cast(admin5_sat_critical_reading as int) as admin5_sat_critical_reading,
+    cast(admin6_sat_critical_reading as int) as admin6_sat_critical_reading,
+    cast(admin2_sat_essay as int) as admin2_sat_essay,
+    cast(admin3_sat_essay as int) as admin3_sat_essay,
+    cast(admin4_sat_essay as int) as admin4_sat_essay,
+    cast(admin5_sat_essay as int) as admin5_sat_essay,
+    cast(admin6_sat_essay as int) as admin6_sat_essay,
+    cast(admin2_sat_essay_mc as int) as admin2_sat_essay_mc,
+    cast(admin3_sat_essay_mc as int) as admin3_sat_essay_mc,
+    cast(admin4_sat_essay_mc as int) as admin4_sat_essay_mc,
+    cast(admin5_sat_essay_mc as int) as admin5_sat_essay_mc,
+    cast(admin6_sat_essay_mc as int) as admin6_sat_essay_mc,
+    cast(admin2_sat_math as int) as admin2_sat_math,
+    cast(admin3_sat_math as int) as admin3_sat_math,
+    cast(admin4_sat_math as int) as admin4_sat_math,
+    cast(admin5_sat_math as int) as admin5_sat_math,
+    cast(admin6_sat_math as int) as admin6_sat_math,
+    cast(admin2_sat_writing as int) as admin2_sat_writing,
+    cast(admin3_sat_writing as int) as admin3_sat_writing,
+    cast(admin4_sat_writing as int) as admin4_sat_writing,
+    cast(admin5_sat_writing as int) as admin5_sat_writing,
+    cast(admin6_sat_writing as int) as admin6_sat_writing,
+
+    cast(percentile_state_total as int) as admin1_percentile_state_total,
+    cast(percentile_state_rw as int) as admin1_percentile_state_rw,
+    cast(percentile_state_math as int) as admin1_percentile_state_math,
+    cast(percentile_country_total as int) as admin1_percentile_country_total,
+    cast(percentile_country_rw as int) as admin1_percentile_country_rw,
+    cast(percentile_country_math as int) as admin1_percentile_country_math,
+    cast(percentile_natrep_sat_total as int) as admin1_percentile_natrep_sat_total,
+    cast(percentile_natrep_sat_ebrw as int) as admin1_percentile_natrep_sat_ebrw,
+    cast(
+        percentile_natrep_sat_math_section as int
+    ) as admin1_percentile_natrep_sat_math_section,
+    cast(percentile_natuser_sat_total as int) as admin1_percentile_natuser_sat_total,
+    cast(percentile_natuser_sat_ebrw as int) as admin1_percentile_natuser_sat_ebrw,
+    cast(
+        percentile_natuser_sat_math_section as int
+    ) as admin1_percentile_natuser_sat_math_section,
+
+    cast(college_code1 as int) as college_code1,
+    cast(college_code2 as int) as college_code2,
+    cast(college_code3 as int) as college_code3,
+    cast(college_code4 as int) as college_code4,
+
+    cast(admin2_sat_math_test as numeric) as admin2_sat_math_test,
+    cast(admin3_sat_math_test as numeric) as admin3_sat_math_test,
+    cast(admin4_sat_math_test as numeric) as admin4_sat_math_test,
+    cast(admin5_sat_math_test as numeric) as admin5_sat_math_test,
+    cast(admin6_sat_math_test as numeric) as admin6_sat_math_test,
+
+    cast(
+        coalesce(latest_record_locator, latest_registration_num) as int
+    ) as admin1_record_locator,
+    cast(
+        coalesce(admin2_record_locator, admin2_registration_num) as int
+    ) as admin2_record_locator,
+    cast(
+        coalesce(admin3_record_locator, admin3_registration_num) as int
+    ) as admin3_record_locator,
+    cast(
+        coalesce(admin4_record_locator, admin4_registration_num) as int
+    ) as admin4_record_locator,
+    cast(
+        coalesce(admin5_record_locator, admin5_registration_num) as int
+    ) as admin5_record_locator,
+    cast(
+        coalesce(admin6_record_locator, admin6_registration_num) as int
+    ) as admin6_record_locator,
+
+    case
+        when college_reportable = 'N'
+        then false
+        when latest_sat_date is not null
+        then true
+    end as admin1_college_reportable,
+    case
+        when admin_2_college_reportable = 'N'
+        then false
+        when admin2_sat_date is not null
+        then true
+    end as admin2_college_reportable,
+    case
+        when admin_3_college_reportable = 'N'
+        then false
+        when admin3_sat_date is not null
+        then true
+    end as admin3_college_reportable,
+    case
+        when admin_4_college_reportable = 'N'
+        then false
+        when admin4_sat_date is not null
+        then true
+    end as admin4_college_reportable,
+    case
+        when admin_5_college_reportable = 'N'
+        then false
+        when admin5_sat_date is not null
+        then true
+    end as admin5_college_reportable,
+    case
+        when admin_6_college_reportable = 'N'
+        then false
+        when admin6_sat_date is not null
+        then true
+    end as admin6_college_reportable,
+
+    case
+        when latest_make_up = 'Y' then true when latest_sat_date is not null then false
+    end as admin1_make_up,
+    case
+        when admin2_make_up = 'Y' then true when admin2_sat_date is not null then false
+    end as admin2_make_up,
+    case
+        when admin3_make_up = 'Y' then true when admin3_sat_date is not null then false
+    end as admin3_make_up,
+    case
+        when admin4_make_up = 'Y' then true when admin4_sat_date is not null then false
+    end as admin4_make_up,
+    case
+        when admin5_make_up = 'Y' then true when admin5_sat_date is not null then false
+    end as admin5_make_up,
+    case
+        when admin6_make_up = 'Y' then true when admin6_sat_date is not null then false
+    end as admin6_make_up,
+
+    case
+        when latest_sat_revised = 'Z'
+        then true
+        when latest_sat_date is not null
+        then false
+    end as admin1_sat_revised,
+    case
+        when admin2_sat_revised = 'Z'
+        then true
+        when admin2_sat_date is not null
+        then false
+    end as admin2_sat_revised,
+    case
+        when admin3_sat_revised = 'Z'
+        then true
+        when admin3_sat_date is not null
+        then false
+    end as admin3_sat_revised,
+    case
+        when admin4_sat_revised = 'Z'
+        then true
+        when admin4_sat_date is not null
+        then false
+    end as admin4_sat_revised,
+    case
+        when admin5_sat_revised = 'Z'
+        then true
+        when admin5_sat_date is not null
+        then false
+    end as admin5_sat_revised,
+    case
+        when admin6_sat_revised = 'Z'
+        then true
+        when admin6_sat_date is not null
+        then false
+    end as admin6_sat_revised,
+
+    case
+        ebrw_ccr_benchmark when 'Y' then true when 'N' then false
+    end as ebrw_ccr_benchmark,
+
+    case
+        math_ccr_benchmark when 'Y' then true when 'N' then false
+    end as math_ccr_benchmark,
+from {{ source("collegeboard", "src_collegeboard__sat") }}

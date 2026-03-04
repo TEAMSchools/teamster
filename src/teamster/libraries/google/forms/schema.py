@@ -151,10 +151,12 @@ class VideoItem(BaseModel):
     video: Video | None = None
 
 
-class PageBreakItem(BaseModel): ...
+class PageBreakItem(BaseModel):
+    pass
 
 
-class TextItem(BaseModel): ...
+class TextItem(BaseModel):
+    pass
 
 
 class Item(BaseModel):
@@ -172,6 +174,15 @@ class Item(BaseModel):
 
 class FormSettings(BaseModel):
     quizSettings: QuizSettings | None = None
+
+
+class PublishState(BaseModel):
+    isPublished: bool | None = None
+    isAcceptingResponses: bool | None = None
+
+
+class PublishSettings(BaseModel):
+    publishState: PublishState | None = None
 
 
 class Info(BaseModel):
@@ -231,5 +242,6 @@ class Form(BaseModel):
 
     info: Info | None = None
     settings: FormSettings | None = None
+    publishSettings: PublishSettings | None = None
 
     items: list[Item | None] | None = None

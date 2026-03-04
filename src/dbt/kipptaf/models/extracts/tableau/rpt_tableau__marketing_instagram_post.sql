@@ -1,5 +1,3 @@
-{{ config(enabled=false) }}
-
 select
     h.ig_account_id,
     h.username,

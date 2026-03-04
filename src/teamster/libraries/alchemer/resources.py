@@ -1,4 +1,5 @@
-from alchemer import AlchemerSession  # type: ignore
+"""
+from alchemer import AlchemerSession
 from dagster import ConfigurableResource, InitResourceContext
 from pydantic import PrivateAttr
 
@@ -19,3 +20,4 @@ class AlchemerResource(ConfigurableResource):
             timeout=self.timeout,
             time_zone="America/New_York",  # pre-determined by Alchemer
         )
+"""

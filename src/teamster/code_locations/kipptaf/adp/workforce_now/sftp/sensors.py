@@ -7,19 +7,20 @@ from dagster import (
     SensorEvaluationContext,
     SensorResult,
     SkipReason,
-    _check,
-    define_asset_job,
     sensor,
 )
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.workforce_now.sftp.assets import assets
 from teamster.libraries.ssh.resources import SSHResource
 
-job = define_asset_job(name=f"{CODE_LOCATION}_adp_wfn_sftp_asset_job", selection=assets)
 
-
-@sensor(name=f"{job.name}_sensor", minimum_interval_seconds=(60 * 10), job=job)
+@sensor(
+    name=f"{CODE_LOCATION}__adp__workforce_now__sftp_assets_sensor",
+    target=assets,
+    minimum_interval_seconds=(60 * 10),
+)
 def adp_wfn_sftp_sensor(
     context: SensorEvaluationContext, ssh_adp_workforce_now: SSHResource
 ):
@@ -28,16 +29,7 @@ def adp_wfn_sftp_sensor(
     run_requests = []
     cursor: dict = json.loads(context.cursor or "{}")
 
-    try:
-        files = ssh_adp_workforce_now.listdir_attr_r()
-    except TimeoutError as e:
-        if "timed out" in e.args:
-            return SkipReason(str(e))
-        else:
-            raise e
-    except Exception as e:
-        context.log.error(msg=str(e))
-        raise e
+    files = ssh_adp_workforce_now.listdir_attr_r()
 
     for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]
@@ -55,7 +47,7 @@ def adp_wfn_sftp_sensor(
             if (
                 match is not None
                 and f.st_mtime > last_run
-                and _check.not_none(value=f.st_size) > 0
+                and check.not_none(value=f.st_size) > 0
             ):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                 updates.append({"mtime": f.st_mtime})
@@ -73,6 +65,8 @@ def adp_wfn_sftp_sensor(
 
     if run_requests:
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
+    else:
+        return SkipReason()
 
 
 sensors = [

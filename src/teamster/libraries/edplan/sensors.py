@@ -1,7 +1,6 @@
 import json
 import re
 from datetime import datetime, timezone
-from socket import gaierror
 from zoneinfo import ZoneInfo
 
 from dagster import (
@@ -9,11 +8,10 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    SkipReason,
-    _check,
     define_asset_job,
     sensor,
 )
+from dagster_shared import check
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -39,21 +37,7 @@ def build_edplan_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            files = ssh_edplan.listdir_attr_r("Reports")
-        except gaierror as e:
-            if (
-                "[Errno -3] Temporary failure in name resolution" in e.args
-                or "[Errno -5] No address associated with hostname" in e.args
-            ):
-                return SkipReason(str(e))
-            else:
-                raise e
-        except TimeoutError as e:
-            if "timed out" in e.args:
-                return SkipReason(str(e))
-            else:
-                raise e
+        files = ssh_edplan.listdir_attr_r("Reports")
 
         asset_identifier = asset.key.to_python_identifier()
         context.log.info(asset_identifier)
@@ -69,12 +53,12 @@ def build_edplan_sftp_sensor(
             if (
                 match is not None
                 and f.st_mtime > last_run
-                and _check.not_none(value=f.st_size) > 0
+                and check.not_none(value=f.st_size) > 0
             ):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
                 partition_key = (
                     datetime.fromtimestamp(
-                        timestamp=_check.not_none(value=f.st_mtime), tz=timezone.utc
+                        timestamp=check.not_none(value=f.st_mtime), tz=timezone.utc
                     )
                     .date()
                     .isoformat()

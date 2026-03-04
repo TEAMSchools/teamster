@@ -3,7 +3,7 @@ with
         select
             sr.google_email,
 
-            u.id as `assignedTo`,
+            u.id as user_id,
 
             case
                 sr.home_work_location_dagster_code_location
@@ -68,14 +68,7 @@ with
     ),
 
     with_ids as (
-        select
-            sr.google_email,
-            sr.org_unit_path,
-            sr.`assignedTo`,
-
-            r.role_id as `roleId`,
-
-            split(ous.org_unit_id, ':')[1] as `orgUnitId`,
+        select sr.*, r.role_id, split(ous.org_unit_id, ':')[1] as org_unit_id,
         from staff_roster as sr
         inner join
             {{ ref("stg_google_directory__roles") }} as r
@@ -85,11 +78,18 @@ with
             on sr.org_unit_path = ous.org_unit_path
     )
 
-select ids.*, 'ORG_UNIT' as `scopeType`,
+select
+    ids.google_email,
+    ids.org_unit_path,
+    ids.user_id as `assignedTo`,
+    ids.role_id as `roleId`,
+    ids.org_unit_id as `orgUnitId`,
+
+    'ORG_UNIT' as `scopeType`,
 from with_ids as ids
 left join
     {{ ref("stg_google_directory__role_assignments") }} as ra
-    on ids.assignedto = ra.assigned_to
-    and ids.roleid = ra.role_id
-    and ids.orgunitid = ra.org_unit_id
+    on ids.user_id = ra.assigned_to
+    and ids.role_id = ra.role_id
+    and ids.org_unit_id = ra.org_unit_id
 where ra.role_assignment_id is null

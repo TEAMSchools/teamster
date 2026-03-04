@@ -1,0 +1,15 @@
+sources:
+  - name: kipppaterson_finalsite
+    schema: |
+      {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_
+      {%- endif -%}kipppaterson_finalsite
+    tables:
+      - name: stg_finalsite__status_report
+        config:
+          meta:
+            dagster:
+              group: amplify
+              asset_key:
+                - kipppaterson
+                - finalsite
+                - stg_finalsite__status_report

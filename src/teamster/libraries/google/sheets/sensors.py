@@ -7,9 +7,10 @@ from dagster import (
     AssetSpec,
     SensorEvaluationContext,
     SensorResult,
-    _check,
+    SkipReason,
     sensor,
 )
+from dagster_shared import check
 from gspread.exceptions import APIError
 
 from teamster.libraries.google.sheets.resources import GoogleSheetsResource
@@ -35,7 +36,7 @@ def build_google_sheets_asset_sensor(
             asset_keys = [g.key for g in group]
 
             try:
-                spreadsheet = _check.not_none(value=gsheets.open(sheet_id=sheet_id))
+                spreadsheet = check.not_none(value=gsheets.open(sheet_id=sheet_id))
             except APIError as e:
                 if str(e.code)[0] == "5":
                     context.log.error(msg=str(e))
@@ -64,5 +65,7 @@ def build_google_sheets_asset_sensor(
             return SensorResult(
                 asset_events=asset_events, cursor=json.dumps(obj=cursor)
             )
+        else:
+            return SkipReason()
 
     return _sensor

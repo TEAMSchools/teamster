@@ -1,0 +1,6 @@
+models:
+  - name: stg_powerschool__gpprogresssubjectrequested
+    config:
+      enabled: false
+      contract:
+        enforced: false

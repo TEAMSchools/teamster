@@ -1,0 +1,19 @@
+packages:
+  - local: ../amplify
+    name: amplify
+  - local: ../finalsite
+    name: finalsite
+  - local: ../pearson
+    name: pearson
+  - local: ../powerschool
+    name: powerschool
+  - name: dbt_external_tables
+    package: dbt-labs/dbt_external_tables
+    version: 0.12.0
+  - name: codegen
+    package: dbt-labs/codegen
+    version: 0.14.0
+  - name: dbt_utils
+    package: dbt-labs/dbt_utils
+    version: 1.3.3
+sha1_hash: 21f5a2002574f3e45b111341313a2769ddfabca8

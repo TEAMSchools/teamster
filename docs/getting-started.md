@@ -15,8 +15,8 @@
 ## Data Engineering
 
 - Dagster
+- dlt
 - Airbyte
-- Fivetran
 - VS Code
 
 ## Helpful Tools

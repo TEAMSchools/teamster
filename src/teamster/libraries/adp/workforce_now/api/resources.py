@@ -1,13 +1,13 @@
 import time
 
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
 from requests import Response
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 from requests_oauthlib import OAuth2Session
-from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
 
 class AdpWorkforceNowResource(ConfigurableResource):
@@ -22,7 +22,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
         # instantiate client
         self._session = OAuth2Session(
@@ -32,6 +32,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
 
         # authorize client
         token_dict = self._session.fetch_token(
+            # trunk-ignore(bandit/B106)
             token_url="https://accounts.adp.com/auth/oauth/v2/token",
             auth=HTTPBasicAuth(username=self.client_id, password=self.client_secret),
         )
@@ -43,25 +44,36 @@ class AdpWorkforceNowResource(ConfigurableResource):
         if not self.masked:
             self._session.headers["Accept"] = "application/json;masked=false"
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential_jitter())
-    def _request(self, method, url, **kwargs) -> Response:
+    def _request(self, method: str, url: str, **kwargs) -> Response:
         response = self._session.request(method=method, url=url, **kwargs)
 
         try:
             response.raise_for_status()
+
+            # https://developers.adp.com/learn/key-concepts/access-tokens
+            # Your application should limit access to under 300 times in a 60 second
+            # period, with no more than 50 concurrent requests in any time. ADP will
+            # throttle your requests when this limit is exceeded. Then, return a
+            # response of HTTP 429 for too many requests.
+            time.sleep(60 / 300)
+
             return response
         except HTTPError as e:
-            self._log.error(response.text)
-            raise HTTPError() from e
+            response_json = response.json()
 
-    def post(self, endpoint, subresource, verb, payload):
+            self._log.error(msg=response_json)
+            raise Exception(response_json) from e
+
+    def post(
+        self, endpoint: str, subresource: str, verb: str, payload: dict
+    ) -> Response:
         return self._request(
             method="POST",
             url=f"{self._service_root}/{endpoint}.{subresource}.{verb}",
             json=payload,
         )
 
-    def get(self, endpoint, params: dict | None = None):
+    def get(self, endpoint: str, params: dict | None = None) -> Response:
         if params is None:
             params = {}
 
@@ -69,19 +81,19 @@ class AdpWorkforceNowResource(ConfigurableResource):
             method="GET", url=f"{self._service_root}/{endpoint}", params=params
         )
 
-    def get_records(self, endpoint, params: dict | None = None) -> list[dict]:
+    def get_records(self, endpoint: str, params: dict | None = None) -> list[dict]:
         page_size = 100
         all_records = []
+
+        endpoint_name = endpoint.split("/")[-1]
 
         if params is None:
             params = {}
 
-        endpoint_name = endpoint.split("/")[-1]
-
         params.update({"$top": page_size, "$skip": 0})
 
         while True:
-            self._log.debug(params)
+            self._log.debug(msg=params)
             response = self.get(endpoint=endpoint, params=params)
 
             if response.status_code == 204:
@@ -90,14 +102,6 @@ class AdpWorkforceNowResource(ConfigurableResource):
             response_json = response.json()[endpoint_name]
 
             all_records.extend(response_json)
-
             params.update({"$skip": params["$skip"] + page_size})
-
-            # https://developers.adp.com/learn/key-concepts/access-tokens
-            # Your application should limit access to under 300 times in a 60 second
-            # period, with no more than 50 concurrent requests in any time. ADP will
-            # throttle your requests when this limit is exceeded. Then, return a
-            # response of HTTP 429 for too many requests.
-            time.sleep(60 / 300)
 
         return all_records

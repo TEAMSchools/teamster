@@ -16,6 +16,7 @@ on:
       - Dockerfile
       - uv.lock
       - src/dbt/deanslist/**
+      - src/dbt/finalsite/**
       - src/dbt/iready/**
       - src/dbt/kippmiami/**
       - src/dbt/powerschool/**
@@ -23,12 +24,14 @@ on:
       - src/teamster/code_locations/kippmiami/**
       - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/fldoe/**
+      - src/teamster/libraries/google/drive/resources.py
       - src/teamster/libraries/iready/**
-      - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/renlearn/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
@@ -41,12 +44,13 @@ on:
       - src/teamster/code_locations/kippmiami/**
       - src/teamster/core/**
       - src/teamster/libraries/couchdrop/**
-      - src/teamster/libraries/datagun/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/fldoe/**
       - src/teamster/libraries/iready/**
-      - src/teamster/libraries/powerschool/sis/**
+      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/renlearn/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**

@@ -1,0 +1,6 @@
+models:
+  - name: rpt_blissbook__employee_list
+    config:
+      enabled: false
+      contract:
+        enforced: false

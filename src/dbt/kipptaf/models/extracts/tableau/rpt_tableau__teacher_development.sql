@@ -2,6 +2,7 @@ with
     smg_glows_grows as (
         select
             o.observation_id,
+
             max(
                 if(
                     od.measurement_name like '%Glow%',
@@ -9,6 +10,7 @@ with
                     null
                 )
             ) as glow_area,
+
             max(
                 if(
                     od.measurement_name like '%Grow%',
@@ -16,9 +18,11 @@ with
                     null
                 )
             ) as growth_area,
+
             max(
                 if(od.measurement_name like '%Glow%', od.measurement_comments, null)
             ) as glow_notes,
+
             max(
                 if(od.measurement_name like '%Grow%', od.measurement_comments, null)
             ) as growth_notes,
@@ -35,6 +39,7 @@ with
         select
             employee_number,
             academic_year,
+
             max(case when term_code = 'PM1' then observation_score end) as pm1,
             max(case when term_code = 'PM2' then observation_score end) as pm2,
             max(case when term_code = 'PM3' then observation_score end) as pm3,
@@ -47,6 +52,7 @@ with
         select
             o.employee_number,
             o.academic_year,
+
             avg(case when od.term_code = 'PM1' then od.row_score end) as pm1,
             avg(case when od.term_code = 'PM2' then od.row_score end) as pm2,
             avg(case when od.term_code = 'PM3' then od.row_score end) as pm3,
@@ -60,13 +66,13 @@ with
             and od.measurement_name not like '%5%'
             and od.measurement_name not like '%S&O%'
         group by o.employee_number, o.academic_year
-
     ),
 
     pm_etr as (
         select
             o.employee_number,
             o.academic_year,
+
             avg(case when od.term_code = 'PM1' then od.row_score end) as pm1,
             avg(case when od.term_code = 'PM2' then od.row_score end) as pm2,
             avg(case when od.term_code = 'PM3' then od.row_score end) as pm3,
@@ -84,6 +90,7 @@ with
         select
             o.employee_number,
             o.academic_year,
+
             avg(case when od.term_code = 'PM1' then od.row_score end) as pm1,
             avg(case when od.term_code = 'PM2' then od.row_score end) as pm2,
             avg(case when od.term_code = 'PM3' then od.row_score end) as pm3,
@@ -126,11 +133,12 @@ with
             gg.glow_notes,
             gg.growth_notes,
         from {{ ref("int_performance_management__observations") }} as o
-        left join
+        inner join
             {{ ref("int_performance_management__observation_details") }} as od
             on o.observation_id = od.observation_id
+            and od.row_score is not null
         left join smg_glows_grows as gg on o.observation_id = gg.observation_id
-        where o.observation_type_abbreviation = 'TDT' and od.row_score is not null
+        where o.observation_type_abbreviation = 'TDT'
 
         union all
 
@@ -146,8 +154,10 @@ with
             td.observation_type,
             td.observation_type_abbreviation,
             td.observation_subject,
+
             /* grades not noted in archive data*/
             null as observation_grade,
+
             td.observation_notes,
             td.row_score,
             td.measurement_name,
@@ -184,24 +194,24 @@ select
     td.glow_notes,
     td.growth_notes,
 
-    srh.preferred_name_lastfirst as teammate,
-    srh.business_unit_home_name as entity,
+    srh.formatted_name as teammate,
+    srh.home_business_unit_name as entity,
     srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
-    srh.department_home_name as department,
+    srh.home_department_name as department,
     srh.job_title,
-    srh.report_to_preferred_name_lastfirst as manager,
+    srh.reports_to_formatted_name as manager,
     srh.worker_original_hire_date,
     srh.assignment_status,
     srh.sam_account_name,
-    srh.report_to_sam_account_name,
+    srh.reports_to_sam_account_name as report_to_sam_account_name,
 
     tgl.grade_level as grade_taught,
 
     os.final_score as performance_management_final_score,
     os.final_tier as performance_management_final_tier,
 
-    sr.preferred_name_lastfirst as observer_name,
+    sr.formatted_name as observer_name,
 
     pm.pm1,
     pm.pm2,
@@ -223,20 +233,19 @@ select
     (etr.pm2 * .8 + so.pm2 * .2) as tir_pm2,
     (etr.pm3 * .8 + so.pm3 * .2) as tir_pm3,
 
-    if(
-        sr.department_home_name = 'New Teacher Development', 'TDT', 'NTNC'
-    ) as observer_team,
+    if(sr.home_department_name = 'Teacher Development', 'TDT', 'NTNC') as observer_team,
+
     -- trunk-ignore(sqlfluff/LT01) 
     date_trunc(td.observed_at, week(monday)) as week_start,
 from observations_td_union as td
 left join
-    {{ ref("base_people__staff_roster_history") }} as srh
+    {{ ref("int_people__staff_roster_history") }} as srh
     on td.employee_number = srh.employee_number
-    and td.observed_at
-    between srh.work_assignment_start_date and srh.work_assignment_end_date
+    and td.observed_at between srh.effective_date_start and srh.effective_date_end
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber
+    and srh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and td.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 left join
@@ -244,7 +253,7 @@ left join
     on td.employee_number = os.employee_number
     and td.academic_year = os.academic_year
 left join
-    {{ ref("base_people__staff_roster") }} as sr
+    {{ ref("int_people__staff_roster") }} as sr
     on td.observer_employee_number = sr.employee_number
 left join
     pm_scores as pm

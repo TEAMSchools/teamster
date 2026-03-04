@@ -9,19 +9,19 @@ from dagster import (
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
-    _check,
     asset,
     materialize,
 )
 from dagster._core.events import HandledOutputData
+from dagster_shared import check
 from pydantic import BaseModel
-
-from teamster.core.resources import get_io_manager_gcs_avro, get_io_manager_gcs_file
 
 
 def build_test_asset_avro(
     name, partitions_def=None, output_schema=None, output_data=None
 ):
+    from teamster.core.resources import get_io_manager_gcs_avro
+
     if output_data is None:
 
         class TestSchema(BaseModel):
@@ -42,6 +42,8 @@ def build_test_asset_avro(
 
 
 def build_test_asset_file(name, partitions_def=None):
+    from teamster.core.resources import get_io_manager_gcs_file
+
     @asset(
         key=["staging", "test", name],
         partitions_def=partitions_def,
@@ -66,7 +68,7 @@ def _test_asset_handle_output_path(
         e for e in result.all_node_events if e.event_type_value == "HANDLED_OUTPUT"
     ][0]
 
-    event_specific_data = _check.inst(
+    event_specific_data = check.inst(
         handled_output_event.event_specific_data, HandledOutputData
     )
 

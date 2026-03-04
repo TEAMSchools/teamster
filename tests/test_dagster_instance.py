@@ -2,8 +2,6 @@ import re
 
 from dagster import DagsterInstance
 
-from teamster.code_locations.kipptaf._dbt.assets import dbt_assets
-
 
 def _add_dynamic_partitions(partitions_def_name: str, partition_keys: list):
     instance = DagsterInstance.from_config(
@@ -33,19 +31,3 @@ def _test_delete_dynamic_partitions_alchemer():
     _delete_dynamic_partitions(
         partitions_def_name="kipptaf_alchemer_survey_response", pattern=r"\d+_\d{2,}\.0"
     )
-
-
-def test_code_versions():
-    instance = DagsterInstance.from_config(
-        config_dir=".dagster/home", config_filename="dagster-cloud.yaml"
-    )
-
-    latest_code_versions = instance.get_latest_materialization_code_versions(
-        asset_keys=list(dbt_assets.code_versions_by_key.keys())
-    )
-
-    for asset_key, current_code_version in dbt_assets.code_versions_by_key.items():
-        latest_code_version = latest_code_versions.get(asset_key)
-
-        if current_code_version != latest_code_version:
-            print(asset_key, current_code_version, latest_code_version)

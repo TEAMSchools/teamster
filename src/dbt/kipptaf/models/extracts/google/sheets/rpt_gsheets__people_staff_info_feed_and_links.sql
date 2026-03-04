@@ -1,21 +1,21 @@
 -- trunk-ignore(sqlfluff/ST06)
 select
     employee_number,
-    status_value,
-    business_unit_assigned_name as business_unit,
+    worker_status_code as status_value,
+    assigned_business_unit_name as business_unit,
 
-    coalesce(preferred_name_given_name, legal_name_given_name) as first_name,
-    coalesce(preferred_name_family_name, legal_name_family_name) as last_name,
+    coalesce(given_name, legal_given_name) as first_name,
+    coalesce(family_name_1, legal_family_name) as last_name,
 
     home_work_location_name as work_location,
     job_title,
     worker_original_hire_date as hire_date,
-    communication_business_email as business_email,
+    work_email as business_email,
 
     concat(
-        coalesce(preferred_name_given_name, legal_name_given_name),
+        coalesce(given_name, legal_given_name),
         ' ',
-        coalesce(preferred_name_family_name, legal_name_family_name),
+        coalesce(family_name_1, legal_family_name),
         ' - ',
         home_work_location_name,
         ' (',
@@ -23,7 +23,7 @@ select
         ')'
     ) as respondent_response_name,
 
-    regexp_extract(communication_business_email, r'^(.*?)@') as worker_username,
+    regexp_extract(work_email, r'^(.*?)@') as worker_username,
 
     survey_last_submitted_timestamp as last_submitted_time,
     race_ethnicity as last_submitted_race_ethnicity,
@@ -48,9 +48,9 @@ select
             '?usp=pp_url',
             /* Name + ID */
             '&entry.1744062351=',
-            coalesce(preferred_name_given_name, legal_name_given_name),
+            coalesce(given_name, legal_given_name),
             ' ',
-            coalesce(preferred_name_family_name, legal_name_family_name),
+            coalesce(family_name_1, legal_family_name),
             ' - ',
             coalesce(home_work_location_name, ''),
             ' (',
@@ -116,4 +116,4 @@ select
         ' ',
         '+'
     ) as staff_info_update_personal_link,
-from {{ ref("base_people__staff_roster") }}
+from {{ ref("int_people__staff_roster") }}

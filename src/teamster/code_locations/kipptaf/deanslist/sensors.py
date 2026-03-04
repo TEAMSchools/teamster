@@ -6,10 +6,11 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    _check,
+    SkipReason,
     define_asset_job,
     sensor,
 )
+from dagster_shared import check
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.deanslist import assets
@@ -44,7 +45,7 @@ def deanslist_sftp_sensor(context: SensorEvaluationContext, ssh_deanslist: SSHRe
 
             if match is not None:
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                if f.st_mtime > last_run and _check.not_none(value=f.st_size) > 0:
+                if f.st_mtime > last_run and check.not_none(value=f.st_size) > 0:
                     asset_selection.append(asset.key)
 
                 cursor[asset_identifier] = now.timestamp()
@@ -58,6 +59,8 @@ def deanslist_sftp_sensor(context: SensorEvaluationContext, ssh_deanslist: SSHRe
         )
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
+    else:
+        return SkipReason()
 
 
 sensors = [

@@ -14,33 +14,22 @@ select
     o.edited_at,
     o.submitter,
 
-    r.preferred_name_lastfirst as teammate,
+    r.formatted_name as teammate,
     r.job_title,
-    r.department_home_name as department,
-    r.home_work_location_name as `location`,
-    r.business_unit_home_name as entity,
-    r.route,
+    r.department,
+    r.location,
+    r.entity,
+    r.entity_short,
     r.position_id,
     r.payroll_group_code as company_code,
 
-    if(
-        o.first_approver_employee_number is null and r.route = 'MDSO',
-        'MDSO Queue',
-        r1.preferred_name_lastfirst
-    ) as first_approver,
-
-    if(
-        o.second_approver_employee_number is null and r.route = 'MDSO',
-        'MDSO Queue',
-        r2.preferred_name_lastfirst
-    ) as second_approver,
-from {{ ref("stg_stipend_and_bonus__output") }} as o
+from {{ ref("stg_google_appsheet__stipend_and_bonus__output") }} as o
 left join
     {{ ref("rpt_appsheet__stipend_app_roster") }} as r
     on o.employee_number = r.employee_number
 left join
-    {{ ref("base_people__staff_roster") }} as r1
+    {{ ref("int_people__staff_roster") }} as r1
     on o.first_approver_employee_number = r1.employee_number
 left join
-    {{ ref("base_people__staff_roster") }} as r2
+    {{ ref("int_people__staff_roster") }} as r2
     on o.second_approver_employee_number = r2.employee_number

@@ -1,4 +1,10 @@
-from dagster import AssetExecutionContext, DynamicPartitionsDefinition, Output, asset
+from dagster import (
+    AssetExecutionContext,
+    AutomationCondition,
+    DynamicPartitionsDefinition,
+    Output,
+    asset,
+)
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf._google.forms.schema import (
@@ -27,6 +33,7 @@ asset_kwargs = {
 @asset(
     key=[*key_prefix, "form"],
     check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "form"])],
+    automation_condition=AutomationCondition.newly_missing(),
     **asset_kwargs,
 )
 def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
@@ -42,6 +49,7 @@ def form(context: AssetExecutionContext, google_forms: GoogleFormsResource):
 @asset(
     key=[*key_prefix, "responses"],
     check_specs=[build_check_spec_avro_schema_valid([*key_prefix, "responses"])],
+    automation_condition=AutomationCondition.newly_missing(),
     **asset_kwargs,
 )
 def responses(context: AssetExecutionContext, google_forms: GoogleFormsResource):

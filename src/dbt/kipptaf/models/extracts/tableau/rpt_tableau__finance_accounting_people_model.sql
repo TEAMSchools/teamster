@@ -18,8 +18,8 @@ with
 
 select
     hd.employee_number,
-    hd.work_assignment_start_date as effective_start_date,
-    hd.work_assignment_end_date as effective_end_date,
+    hd.effective_date_start as effective_start_date,
+    hd.effective_date_end as effective_end_date,
     hd.historic_position_status as position_status,
     hd.historic_legal_entity as business_unit,
     hd.historic_location as location,

@@ -4,8 +4,11 @@ select
 
     if(region = 'Miami', fleid, newark_enrollment_number) as newark_enrollment_number,
 
-    state_studentnumber,
-    lastfirst,
+    if(
+        region = 'Miami', secondary_state_studentnumber, state_studentnumber
+    ) as state_studentnumber,
+
+    student_name as lastfirst,
     schoolid,
     school_name,
 
@@ -46,8 +49,8 @@ select
     coalesce(contact_1_email_current, contact_2_email_current) as guardianemail,
     concat(street, ', ', city, ', ', `state`, ' ', zip) as `address`,
 
-    first_name,
-    last_name,
+    student_first_name as first_name,
+    student_last_name as last_name,
     student_web_id,
     student_web_password,
 
@@ -66,5 +69,7 @@ select
     infosnap_id,
     rides_staff,
     gifted_and_talented,
-from {{ ref("base_powerschool__student_enrollments") }}
+    salesforce_id as salesforce_contact_id,
+    home_language,
+from {{ ref("int_extracts__student_enrollments") }}
 where enroll_status in (0, -1) and rn_all = 1
