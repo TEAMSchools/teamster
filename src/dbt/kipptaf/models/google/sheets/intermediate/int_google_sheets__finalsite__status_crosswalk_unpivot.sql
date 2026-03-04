@@ -34,6 +34,22 @@ select
         else 0
     end as grouped_status_order,
 
+    case
+        when
+            status_group_value in (
+                'Inquiries',
+                'Applications',
+                'Offers',
+                'Assigned School',
+                'Accepted',
+                'Offers to Accepted',
+                'Accepted to Enrolled',
+                'Offers to Enrolled'
+            )
+        then 'Ever'
+        else 'Current'
+    end as grouped_status_timeframe,
+
 from
     {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} unpivot (
         status_group_value for status_group_name in (
