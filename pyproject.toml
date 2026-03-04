@@ -31,7 +31,11 @@ dependencies = [
   "pypdf>=5.0.0",
   "python-dateutil>=2.9.0.post0",
   "scikit-learn>=1.4.0",
+<<<<<<< HEAD
+  "simple-salesforce>=1.12.6",
+=======
   "sqlalchemy>=2.0.42",
+>>>>>>> main
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
   "urllib3>=2.6.3",

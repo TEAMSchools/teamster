@@ -50,7 +50,7 @@ from teamster.core.resources import (
 )
 
 defs = Definitions(
-    executor=k8s_job_executor,
+    # executor=k8s_job_executor,
     assets=[
         *_dbt.asset_specs,
         *_google.asset_specs,

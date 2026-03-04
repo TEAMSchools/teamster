@@ -1,8 +1,18 @@
+<<<<<<< HEAD
+import logging
+
+from dagster import AssetExecutionContext, AssetKey
+from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+from dlt import pipeline
+from dlt.common.runtime.collector import LogCollector
+from dlt.destinations import bigquery
+=======
 # from dagster import AssetExecutionContext, AssetKey
 # from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 # from dlt import pipeline
 # from dlt.common.runtime.collector import LogCollector
 # from dlt.destinations import bigquery
+>>>>>>> main
 
 # from teamster.libraries.dlt.salesforce.pipeline import salesforce_source
 
@@ -41,12 +51,21 @@
 #         security_token=salesforce_security_token,
 #     )
 
+<<<<<<< HEAD
+    dlt_pipeline = pipeline(
+        pipeline_name="kippadb",
+        destination=bigquery(),
+        dataset_name=f"dagster_{code_location}_dlt_kippadb",
+        progress=LogCollector(dump_system_stats=False, log_level=logging.DEBUG),
+    )
+=======
 #     dlt_pipeline = pipeline(
 #         pipeline_name="kippadb",
 #         destination=bigquery(),
 #         dataset_name=f"dagster_{code_location}_dlt_kippadb",
 #         progress=LogCollector(dump_system_stats=False),
 #     )
+>>>>>>> main
 
 #     @dlt_assets(
 #         dlt_source=dlt_source,

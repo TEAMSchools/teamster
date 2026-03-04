@@ -27,6 +27,15 @@
 #     """
 #     Retrieves data from Salesforce using the Salesforce API.
 
+<<<<<<< HEAD
+    Args:
+        user_name (str): The username for authentication.
+            Defaults to the value in the `dlt.secrets` object.
+        password (str): The password for authentication.
+            Defaults to the value in the `dlt.secrets` object.
+        security_token (str): The security token for authentication.
+            Defaults to the value in the `dlt.secrets` object.
+=======
 #     Args:
 #         user_name (str): The username for authentication. Defaults to the value in the
 #             `dlt.secrets` object.
@@ -34,6 +43,7 @@
 #             `dlt.secrets` object.
 #         security_token (str): The security token for authentication. Defaults to the
 #             value in the `dlt.secrets` object.
+>>>>>>> main
 
 #     Yields:
 #         DltResource: Data resources from Salesforce.
@@ -43,6 +53,137 @@
 #         username=user_name, password=password, security_token=security_token
 #     )
 
+<<<<<<< HEAD
+    opportunity_last_timestamp = dlt.sources.incremental(
+        cursor_path="SystemModstamp", initial_value=None
+    )
+    opportunity_line_item_last_timestamp = dlt.sources.incremental(
+        cursor_path="SystemModstamp", initial_value=None
+    )
+    opportunity_contact_role_last_timestamp = dlt.sources.incremental(
+        cursor_path="SystemModstamp", initial_value=None
+    )
+    account_last_timestamp = dlt.sources.incremental(
+        cursor_path="LastModifiedDate", initial_value=None
+    )
+    campaign_member_last_timestamp = dlt.sources.incremental(
+        cursor_path="SystemModstamp", initial_value=None
+    )
+    task_last_timestamp = dlt.sources.incremental(
+        cursor_path="SystemModstamp", initial_value=None
+    )
+    event_last_timestamp = dlt.sources.incremental(
+        cursor_path="SystemModstamp", initial_value=None
+    )
+
+    # define resources
+    @dlt.resource(write_disposition="replace")
+    def sf_user() -> Iterable[TDataItem]:
+        yield get_records(sf=client, sobject="User")
+
+    @dlt.resource(write_disposition="replace")
+    def user_role() -> Iterable[TDataItem]:
+        yield get_records(sf=client, sobject="UserRole")
+
+    @dlt.resource(write_disposition="merge")
+    def opportunity(
+        last_timestamp: incremental = opportunity_last_timestamp,
+    ) -> Iterable[TDataItem]:
+        yield get_records(
+            sf=client,
+            sobject="Opportunity",
+            last_state=last_timestamp.last_value,
+            replication_key="SystemModstamp",
+        )
+
+    @dlt.resource(write_disposition="merge")
+    def opportunity_line_item(
+        last_timestamp: incremental = opportunity_line_item_last_timestamp,
+    ) -> Iterable[TDataItem]:
+        yield get_records(
+            sf=client,
+            sobject="OpportunityLineItem",
+            last_state=last_timestamp.last_value,
+            replication_key="SystemModstamp",
+        )
+
+    @dlt.resource(write_disposition="merge")
+    def opportunity_contact_role(
+        last_timestamp: incremental = opportunity_contact_role_last_timestamp,
+    ) -> Iterable[TDataItem]:
+        yield get_records(
+            sf=client,
+            sobject="OpportunityContactRole",
+            last_state=last_timestamp.last_value,
+            replication_key="SystemModstamp",
+        )
+
+    @dlt.resource(write_disposition="merge")
+    def account(
+        last_timestamp: incremental = account_last_timestamp,
+    ) -> Iterable[TDataItem]:
+        yield get_records(
+            sf=client,
+            sobject="Account",
+            last_state=last_timestamp.last_value,
+            replication_key="LastModifiedDate",
+        )
+
+    @dlt.resource(write_disposition="replace")
+    def contact() -> Iterable[TDataItem]:
+        yield get_records(sf=client, sobject="Contact")
+
+    @dlt.resource(write_disposition="replace")
+    def lead() -> Iterable[TDataItem]:
+        yield get_records(sf=client, sobject="Lead")
+
+    @dlt.resource(write_disposition="replace")
+    def campaign() -> Iterable[TDataItem]:
+        yield get_records(sf=client, sobject="Campaign")
+
+    @dlt.resource(write_disposition="merge")
+    def campaign_member(
+        last_timestamp: incremental = campaign_member_last_timestamp,
+    ) -> Iterable[TDataItem]:
+        yield get_records(
+            sf=client,
+            sobject="CampaignMember",
+            last_state=last_timestamp.last_value,
+            replication_key="SystemModstamp",
+        )
+
+    @dlt.resource(write_disposition="replace")
+    def product_2() -> Iterable[TDataItem]:
+        yield get_records(sf=client, sobject="Product2")
+
+    @dlt.resource(write_disposition="replace")
+    def pricebook_2() -> Iterable[TDataItem]:
+        yield get_records(sf=client, sobject="Pricebook2")
+
+    @dlt.resource(write_disposition="replace")
+    def pricebook_entry() -> Iterable[TDataItem]:
+        yield get_records(sf=client, sobject="PricebookEntry")
+
+    @dlt.resource(write_disposition="merge")
+    def task(last_timestamp: incremental = task_last_timestamp) -> Iterable[TDataItem]:
+        yield get_records(
+            sf=client,
+            sobject="Task",
+            last_state=last_timestamp.last_value,
+            replication_key="SystemModstamp",
+        )
+
+    @dlt.resource(write_disposition="merge")
+    def event(
+        last_timestamp: incremental = event_last_timestamp,
+    ) -> Iterable[TDataItem]:
+        yield get_records(
+            sf=client,
+            sobject="Event",
+            last_state=last_timestamp.last_value,
+            replication_key="SystemModstamp",
+        )
+=======
 #     # define resources
 #     @dlt.resource(write_disposition="replace")
 #     def sf_user() -> Iterable[TDataItem]:
@@ -144,6 +285,7 @@
 #         ),
 #     ) -> Iterable[TDataItem]:
 #         yield get_records(client, "Event", last_timestamp.last_value, "SystemModstamp")
+>>>>>>> main
 
 #     return (
 #         sf_user,

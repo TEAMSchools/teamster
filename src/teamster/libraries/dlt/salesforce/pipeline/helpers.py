@@ -2,9 +2,15 @@
 
 # from typing import Iterable
 
+<<<<<<< HEAD
+import pendulum
+from dlt.common.typing import TDataItem
+from simple_salesforce.api import Salesforce
+=======
 # import pendulum
 # from dlt.common.typing import TDataItem
 # from simple_salesforce.api import Salesforce, SFType
+>>>>>>> main
 
 # from teamster.libraries.dlt.salesforce.pipeline.settings import IS_PRODUCTION
 
@@ -30,10 +36,15 @@
 #         Dict[TDataItem]: A dictionary representing a record from the Salesforce sObject.
 #     """
 
+<<<<<<< HEAD
+    # Get all fields for the sobject
+    desc = getattr(sf, sobject).describe()
+=======
 #     s_object: SFType = getattr(sf, sobject)
 
 #     # Get all fields for the sobject
 #     desc = s_object.describe()
+>>>>>>> main
 
 #     # Salesforce returns compound fields as separate fields, so we need to filter them
 #     # out
