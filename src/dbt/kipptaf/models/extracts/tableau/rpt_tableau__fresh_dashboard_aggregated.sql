@@ -140,7 +140,7 @@ with
         select enrollment_academic_year, finalsite_id,
 
         from days_in_status
-        where grouped_status = 'Enrollment in Progress'
+        where grouped_status = 'Enrollment In Progress'
     ),
 
     conversion_grouping_numerator as (
@@ -150,7 +150,7 @@ with
         where
             grouped_status in (
                 'Offers to Accepted Num',
-                'Accepted to Enroll Num',
+                'Accepted to Enrolled Num',
                 'Offers to Enrolled Num'
             )
     )
