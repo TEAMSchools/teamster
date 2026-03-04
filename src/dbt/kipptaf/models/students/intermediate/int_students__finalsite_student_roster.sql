@@ -28,13 +28,15 @@ with
             e.is_enrolled_oct15,
 
             if(
-                e.enroll_status = 0, current_academic_year, next_academic_year
+                e.enroll_status = 0, f.current_academic_year, f.next_academic_year
             ) as enrollment_academic_year,
 
             if(
                 e.enroll_status = 0,
-                regexp_replace(current_academic_year, r'-\d{2}', '-'),
-                enrollment_academic_year_display
+                cast(f.current_academic_year as string)
+                || '-'
+                || right(cast(f.current_academic_year + 1 as string), 2),
+                f.enrollment_academic_year_display
             ) as enrollment_academic_year_display,
 
             if(
