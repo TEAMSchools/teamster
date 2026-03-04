@@ -60,13 +60,13 @@ with
 select
     u.*,
 
-    'KTAF' as org,
-
-    t.`type`,
+    t.type,
     t.code,
-    t.`name`,
-    t.`start_date`,
+    t.name,
+    t.start_date,
     t.end_date,
+
+    'KTAF' as org,
 
     coalesce(x.powerschool_school_id, 0) as schoolid,
     coalesce(x.abbreviation, 'No School Assigned') as school,
