@@ -20,6 +20,11 @@ with
             f.status_start_date,
 
             f.next_academic_year as aligned_enrollment_academic_year,
+            f.`type`,
+            f.code,
+            f.`name`,
+            f.`start_date`,
+            f.end_date,
 
             e1.enroll_status as ps_enroll_status,
             e1.region as ps_region,
@@ -35,16 +40,6 @@ with
                 e2.next_year_enrollment_type
             ) as enrollment_academic_year_enrollment_type,
 
-            if(
-                current_date(
-                    '{{ var("local_timezone") }}'
-                ) between date(f.next_academic_year, 01, 01) and date(
-                    f.next_academic_year, 02, 28
-                ),
-                true,
-                false
-            ) as active_roster,
-
         from {{ ref("int_finalsite__status_report_unpivot") }} as f
         left join
             {{ ref("int_extracts__student_enrollments") }} as e1
@@ -56,7 +51,7 @@ with
             on f.enrollment_academic_year - 1 = e2.academic_year
             and f.finalsite_enrollment_id = e2.infosnap_id
             and e2.rn_year = 1
-        where f.enrollment_academic_year <= {{ var("current_academic_year") + 1 }}
+        where f.name = 'Pre FS Rollover'
     ),
 
     post_rollover_custom_enroll_year as (
@@ -75,6 +70,11 @@ with
             f.detailed_status,
             f.status_order,
             f.status_start_date,
+            f.`type`,
+            f.code,
+            f.`name`,
+            f.`start_date`,
+            f.end_date,
 
             f.next_academic_year as aligned_enrollment_academic_year,
 
@@ -104,23 +104,13 @@ with
                 e.next_year_enrollment_type is null, 'New', e.next_year_enrollment_type
             ) as enrollment_academic_year_enrollment_type,
 
-            if(
-                current_date(
-                    '{{ var("local_timezone") }}'
-                ) between date(f.next_academic_year, 03, 01) and date(
-                    f.next_academic_year, 06, 30
-                ),
-                true,
-                false
-            ) as active_roster,
-
         from {{ ref("int_finalsite__status_report_unpivot") }} as f
         left join
             {{ ref("int_extracts__student_enrollments") }} as e
             on f.enrollment_academic_year - 1 = e.academic_year
             and f.finalsite_enrollment_id = e.infosnap_id
             and e.rn_year = 1
-        where f.enrollment_academic_year = {{ var("current_academic_year") + 1 }}
+        where f.name = 'After FS Rollover'
     ),
 
     post_rollover_aligned_enroll_year as (
@@ -142,6 +132,11 @@ with
             f.detailed_status,
             f.status_order,
             f.status_start_date,
+            f.`type`,
+            f.code,
+            f.`name`,
+            f.`start_date`,
+            f.end_date,
 
             f.next_academic_year as aligned_enrollment_academic_year,
 
@@ -159,16 +154,6 @@ with
                 e2.next_year_enrollment_type
             ) as enrollment_academic_year_enrollment_type,
 
-            if(
-                current_date(
-                    '{{ var("local_timezone") }}'
-                ) between date(f.next_academic_year, 07, 01) and date(
-                    f.next_academic_year, 10, 15
-                ),
-                true,
-                false
-            ) as active_roster,
-
         from {{ ref("int_finalsite__status_report_unpivot") }} as f
         left join
             {{ ref("int_extracts__student_enrollments") }} as e1
@@ -177,10 +162,10 @@ with
             and e1.rn_year = 1
         left join
             {{ ref("int_extracts__student_enrollments") }} as e2
-            on f.enrollment_academic_year - 1 = e2.academic_year
+            on f.enrollment_academic_year - 2 = e2.academic_year
             and f.finalsite_enrollment_id = e2.infosnap_id
             and e2.rn_year = 1
-        where f.enrollment_academic_year = {{ var("current_academic_year") }}
+        where f.name = 'After PS Rollover'
     ),
 
     appended_rosters as (
@@ -204,7 +189,6 @@ with
             detailed_status,
             status_order,
             status_start_date,
-            active_roster,
             ps_enroll_status,
             ps_region,
             ps_school,
@@ -212,6 +196,11 @@ with
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
+            `type`,
+            code,
+            `name`,
+            `start_date`,
+            end_date,
 
         from pre_rollover
 
@@ -237,7 +226,6 @@ with
             detailed_status,
             status_order,
             status_start_date,
-            active_roster,
             ps_enroll_status,
             ps_region,
             ps_school,
@@ -245,6 +233,11 @@ with
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
+            `type`,
+            code,
+            `name`,
+            `start_date`,
+            end_date,
 
         from post_rollover_custom_enroll_year
 
@@ -270,7 +263,6 @@ with
             detailed_status,
             status_order,
             status_start_date,
-            active_roster,
             ps_enroll_status,
             ps_region,
             ps_school,
@@ -278,6 +270,11 @@ with
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
+            `type`,
+            code,
+            `name`,
+            `start_date`,
+            end_date,
 
         from post_rollover_aligned_enroll_year
     )
@@ -333,4 +330,4 @@ inner join
     on a.enrollment_academic_year = x.enrollment_academic_year
     and a.enrollment_academic_year_enrollment_type = x.enrollment_type
     and a.detailed_status = x.detailed_status
-where a.active_roster
+where current_date('{{ var("local_timezone") }}') between a.start_date and a.end_date
