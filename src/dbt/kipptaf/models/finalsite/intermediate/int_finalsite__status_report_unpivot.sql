@@ -20,11 +20,11 @@ with
             fs_status_field,
             status_start_date,
 
+            cast(left(_dagster_partition_key, 4) as int) as file_year,
+
             initcap(
                 regexp_replace(replace(fs_status_field, '_', ' '), r'\s+[Dd]ate$', '')
             ) as detailed_status,
-
-            cast(left(_dagster_partition_key, 4) as int) as file_year,
 
         from
             {{ ref("stg_finalsite__status_report") }} unpivot (
