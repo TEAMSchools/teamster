@@ -29,7 +29,6 @@ with
             e.student_last_name,
             e.student_email,
             e.region,
-            e.schoolid,
             e.school,
             e.grade_level,
             e.enroll_status,
@@ -56,7 +55,6 @@ with
 
             hm.max_scale_score as sat_math_highest,
 
-            coalesce(c.courses_course_name, 'No Data') as ccr_course,
             coalesce(c.teacher_lastfirst, 'No Data') as ccr_teacher_name,
             coalesce(c.sections_external_expression, 'No Data') as ccr_section,
 
@@ -64,8 +62,6 @@ with
             coalesce(p.psat10_count_lifetime, 0) as psat10_count_lifetime,
             coalesce(p.psatnmsqt_count_lifetime, 0) as psatnmsqt_count_lifetime,
             coalesce(p.sat_count_lifetime, 0) as sat_count_lifetime,
-            coalesce(p.act_count_lifetime, 0) as act_count_lifetime,
-
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
             {{ ref("stg_google_sheets__kippfwd__expected_assessments") }} as ea
@@ -120,26 +116,21 @@ with
             and ea.expected_admin_season_order is not null
     ),
     first_sat as (
-        select
-            school_specific_id as student_number,
-            min(`date`) as first_sat_date,
+        select school_specific_id as student_number, min(`date`) as first_sat_date,
         from {{ ref("int_kippadb__standardized_test_unpivot") }}
         where score_type = 'sat_total_score' and `date` is not null
         group by school_specific_id
     ),
     earliest_sat as (
-        select
-            s.school_specific_id as student_number,
-            s.score as earliest_sat_total,
+        select s.school_specific_id as student_number, s.score as earliest_sat_total,
         from {{ ref("int_kippadb__standardized_test_unpivot") }} as s
-        inner join first_sat as f
+        inner join
+            first_sat as f
             on s.school_specific_id = f.student_number
             and s.`date` = f.first_sat_date
         where s.score_type = 'sat_total_score'
         qualify
-            row_number() over (
-                partition by s.school_specific_id order by s.score desc
-            )
+            row_number() over (partition by s.school_specific_id order by s.score desc)
             = 1
     ),
     latest_psat_before_first_sat as (
@@ -149,11 +140,11 @@ with
             p.score_type as psat_score_type,
             p.latest_psat_date as psat_date,
         from {{ ref("int_collegeboard__psat_unpivot") }} as p
-        inner join first_sat as f
+        inner join
+            first_sat as f
             on p.powerschool_student_number = f.student_number
             and p.latest_psat_date < f.first_sat_date
-        where
-            p.score_type in ('psat89_total', 'psat10_total', 'psatnmsqt_total')
+        where p.score_type in ('psat89_total', 'psat10_total', 'psatnmsqt_total')
         qualify
             row_number() over (
                 partition by p.powerschool_student_number
@@ -169,10 +160,8 @@ select
     r.student_last_name,
     r.student_email,
     r.region,
-    r.schoolid,
     r.school,
     r.grade_level,
-    r.enroll_status,
     r.graduation_year,
     r.ktc_cohort,
     r.year_in_network,
@@ -182,14 +171,12 @@ select
     r.cumulative_y1_gpa_projected,
     r.college_match_gpa,
     r.college_match_gpa_bands,
-    max(r.ccr_course) as ccr_course,
     max(r.ccr_teacher_name) as ccr_teacher_name,
     max(r.ccr_section) as ccr_section,
     max(r.psat89_count_lifetime) as psat89_count_lifetime,
     max(r.psat10_count_lifetime) as psat10_count_lifetime,
     max(r.psatnmsqt_count_lifetime) as psatnmsqt_count_lifetime,
     max(r.sat_count_lifetime) as sat_count_lifetime,
-    max(r.act_count_lifetime) as act_count_lifetime,
     max(r.sat_total_superscore) as sat_total_superscore,
     max(r.sat_ebrw_highest) as sat_ebrw_highest,
     max(r.sat_math_highest) as sat_math_highest,
@@ -214,7 +201,8 @@ select
                 and r.expected_grade_level = 12
             then r.score
         end
-    ) - es.earliest_sat_total as g12_sat_total_fall_growth_from_first_sat,
+    )
+    - es.earliest_sat_total as g12_sat_total_fall_growth_from_first_sat,
     max(
         case
             when
@@ -223,7 +211,8 @@ select
                 and r.expected_grade_level = 12
             then r.score
         end
-    ) - lp.latest_psat_total as g12_sat_total_fall_growth_from_psat,
+    )
+    - lp.latest_psat_total as g12_sat_total_fall_growth_from_psat,
     max(
         case
             when
@@ -268,7 +257,8 @@ select
                 and r.expected_grade_level = 12
             then r.score
         end
-    ) - es.earliest_sat_total as g12_sat_total_winter_growth_from_first_sat,
+    )
+    - es.earliest_sat_total as g12_sat_total_winter_growth_from_first_sat,
     max(
         case
             when
@@ -277,7 +267,8 @@ select
                 and r.expected_grade_level = 12
             then r.score
         end
-    ) - lp.latest_psat_total as g12_sat_total_winter_growth_from_psat,
+    )
+    - lp.latest_psat_total as g12_sat_total_winter_growth_from_psat,
     max(
         case
             when
@@ -322,7 +313,8 @@ select
                 and r.expected_grade_level = 11
             then r.score
         end
-    ) - es.earliest_sat_total as g11_sat_total_winter_growth_from_first_sat,
+    )
+    - es.earliest_sat_total as g11_sat_total_winter_growth_from_first_sat,
     max(
         case
             when
@@ -331,7 +323,8 @@ select
                 and r.expected_grade_level = 11
             then r.score
         end
-    ) - lp.latest_psat_total as g11_sat_total_winter_growth_from_psat,
+    )
+    - lp.latest_psat_total as g11_sat_total_winter_growth_from_psat,
     max(
         case
             when
@@ -376,7 +369,8 @@ select
                 and r.expected_grade_level = 11
             then r.score
         end
-    ) - es.earliest_sat_total as g11_sat_total_spring_growth_from_first_sat,
+    )
+    - es.earliest_sat_total as g11_sat_total_spring_growth_from_first_sat,
     max(
         case
             when
@@ -385,7 +379,8 @@ select
                 and r.expected_grade_level = 11
             then r.score
         end
-    ) - lp.latest_psat_total as g11_sat_total_spring_growth_from_psat,
+    )
+    - lp.latest_psat_total as g11_sat_total_spring_growth_from_psat,
     max(
         case
             when
@@ -424,8 +419,7 @@ select
     max(
         case
             when
-                r.expected_score_type = 'psatnmsqt_ebrw'
-                and r.expected_grade_level = 10
+                r.expected_score_type = 'psatnmsqt_ebrw' and r.expected_grade_level = 10
             then r.score
         end
     ) as g10_psatnmsqt_ebrw,
@@ -439,17 +433,13 @@ select
     ) as g10_psatnmsqt_math,
     max(
         case
-            when
-                r.expected_score_type = 'psat10_total'
-                and r.expected_grade_level = 10
+            when r.expected_score_type = 'psat10_total' and r.expected_grade_level = 10
             then r.score
         end
     ) as g10_psat10_total,
     max(
         case
-            when
-                r.expected_score_type = 'psat10_ebrw'
-                and r.expected_grade_level = 10
+            when r.expected_score_type = 'psat10_ebrw' and r.expected_grade_level = 10
             then r.score
         end
     ) as g10_psat10_ebrw,
@@ -463,17 +453,13 @@ select
     ) as g10_psat10_math,
     max(
         case
-            when
-                r.expected_score_type = 'psat89_total'
-                and r.expected_grade_level = 9
+            when r.expected_score_type = 'psat89_total' and r.expected_grade_level = 9
             then r.score
         end
     ) as g9_psat89_total,
     max(
         case
-            when
-                r.expected_score_type = 'psat89_ebrw'
-                and r.expected_grade_level = 9
+            when r.expected_score_type = 'psat89_ebrw' and r.expected_grade_level = 9
             then r.score
         end
     ) as g9_psat89_ebrw,
@@ -487,31 +473,23 @@ select
     ) as g9_psat89_math,
     max(
         case
-            when
-                r.expected_score_type = 'psat10_total'
-                and r.expected_grade_level = 10
+            when r.expected_score_type = 'psat10_total' and r.expected_grade_level = 10
             then r.score
         end
     ) - max(
         case
-            when
-                r.expected_score_type = 'psat89_total'
-                and r.expected_grade_level = 9
+            when r.expected_score_type = 'psat89_total' and r.expected_grade_level = 9
             then r.score
         end
     ) as psat89_to_psat10_total_growth,
     max(
         case
-            when
-                r.expected_score_type = 'psat10_ebrw'
-                and r.expected_grade_level = 10
+            when r.expected_score_type = 'psat10_ebrw' and r.expected_grade_level = 10
             then r.score
         end
     ) - max(
         case
-            when
-                r.expected_score_type = 'psat89_ebrw'
-                and r.expected_grade_level = 9
+            when r.expected_score_type = 'psat89_ebrw' and r.expected_grade_level = 9
             then r.score
         end
     ) as psat89_to_psat10_ebrw_growth,
@@ -532,8 +510,7 @@ select
     ) as psat89_to_psat10_math_growth
 from roster as r
 left join earliest_sat as es on r.student_number = es.student_number
-left join
-    latest_psat_before_first_sat as lp on r.student_number = lp.student_number
+left join latest_psat_before_first_sat as lp on r.student_number = lp.student_number
 group by
     r.student_number,
     r.salesforce_id,
@@ -542,10 +519,8 @@ group by
     r.student_last_name,
     r.student_email,
     r.region,
-    r.schoolid,
     r.school,
     r.grade_level,
-    r.enroll_status,
     r.graduation_year,
     r.ktc_cohort,
     r.year_in_network,
