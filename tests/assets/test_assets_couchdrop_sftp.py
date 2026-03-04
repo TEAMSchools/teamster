@@ -137,6 +137,12 @@ def test_finalsite_status_report_kippmiami():
     _test_asset(asset=status_report)
 
 
+def test_finalsite_status_report_kippnewark():
+    from teamster.code_locations.kippnewark.finalsite.assets import status_report
+
+    _test_asset(asset=status_report)
+
+
 def test_pearson_njgpa_kippnewark():
     from teamster.code_locations.kippnewark.pearson.assets import njgpa
 

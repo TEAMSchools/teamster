@@ -1,61 +1,106 @@
 with
-    int_finalsite__status_report as (
+    actual_enroll_type as (
         select
             f.enrollment_academic_year,
             f.enrollment_academic_year_display,
-            f.aligned_enrollment_academic_year,
-            f.aligned_enrollment_academic_year_display,
-            f.sre_academic_year_start,
-            f.sre_academic_year_end,
+            f.current_academic_year,
+            f.next_academic_year,
             f.org,
             f.region,
-            f.region as latest_region,
             f.schoolid,
-            f.latest_schoolid,
             f.school,
-            f.latest_school,
-            f.finalsite_student_id,
+            f.finalsite_enrollment_id,
             f.powerschool_student_number,
-            f.last_name,
             f.first_name,
+            f.last_name,
             f.grade_level,
+            f.self_contained,
             f.detailed_status,
+            f.status_order,
             f.status_start_date,
-            f.status_end_date,
-            f.days_in_status,
-            f.rn,
-            f.latest_status,
+
+            f.next_academic_year as aligned_enrollment_academic_year,
+
+            e1.enroll_status as ps_enroll_status,
+            e1.region as ps_region,
+            e1.school as ps_school,
+            e1.grade_level as ps_grade_level,
+            e1.is_enrolled_fdos,
+            e1.is_enrolled_oct01,
+            e1.is_enrolled_oct15,
 
             if(
-                e.next_year_enrollment_type is null, 'New', e.next_year_enrollment_type
-            ) as enrollment_year_enrollment_type,
+                e2.next_year_enrollment_type is null,
+                'New',
+                e2.next_year_enrollment_type
+            ) as enrollment_academic_year_enrollment_type,
 
-        from {{ ref("int_finalsite__status_report") }} as f
+        from {{ ref("int_finalsite__status_report_unpivot") }} as f
         left join
-            {{ ref("int_extracts__student_enrollments") }} as e
-            on f.aligned_enrollment_academic_year - 1 = e.academic_year
-            and f.powerschool_student_number = e.student_number
+            {{ ref("int_extracts__student_enrollments") }} as e1
+            on f.enrollment_academic_year = e1.academic_year
+            and f.finalsite_enrollment_id = e1.infosnap_id
+            and e1.rn_year = 1
+        left join
+            {{ ref("int_extracts__student_enrollments") }} as e2
+            on f.enrollment_academic_year - 1 = e2.academic_year
+            and f.finalsite_enrollment_id = e2.infosnap_id
+            and e2.rn_year = 1
+        -- fixing the value for now - will remove once a better data model is created
+        where f.enrollment_academic_year <= 2026
     )
 
 select
-    f.*,
+    f.aligned_enrollment_academic_year,
+    f.enrollment_academic_year,
+    f.enrollment_academic_year_display,
+    f.current_academic_year,
+    f.next_academic_year,
+    f.org,
+    f.region,
+    f.schoolid,
+    f.school,
+    f.finalsite_enrollment_id,
+    f.powerschool_student_number,
+    f.first_name,
+    f.last_name,
+    f.grade_level,
+    f.self_contained,
+    f.detailed_status,
+    f.status_order,
+    f.status_start_date,
+    f.enrollment_academic_year_enrollment_type,
+    f.ps_enroll_status,
+    f.ps_region,
+    f.ps_school,
+    f.ps_grade_level,
+    f.is_enrolled_fdos,
+    f.is_enrolled_oct01,
+    f.is_enrolled_oct15,
 
-    x.applicant_ops as student_applicant_ops,
-    x.applicant_ops_alt as student_applicant_ops_alt,
-    x.offered_ops as student_offered_ops,
-    x.pending_offer_ops as student_pending_offer_ops,
-    x.overall_conversion_ops as student_overall_conversion_ops,
-    x.offers_to_accepted_den as student_offers_to_accepted_den,
-    x.offers_to_accepted_num as student_offers_to_accepted_num,
-    x.accepted_to_enrolled_den as student_accepted_to_enrolled_den,
-    x.accepted_to_enrolled_num as student_accepted_to_enrolled_num,
-    x.offers_to_enrolled_den as student_offers_to_enrolled_den,
-    x.offers_to_enrolled_num as student_offers_to_enrolled_num,
-    x.waitlisted as student_waitlisted,
+    x.status_group_name,
+    x.status_group_value,
 
-from int_finalsite__status_report as f
+    cast(f.aligned_enrollment_academic_year as string)
+    || '-'
+    || right(
+        cast(f.aligned_enrollment_academic_year + 1 as string), 2
+    ) as aligned_enrollment_academic_year_display,
+
+    first_value(f.detailed_status) over (
+        partition by f.enrollment_academic_year, f.finalsite_enrollment_id
+        order by f.status_start_date desc
+    ) as latest_status,
+
+    if(
+        f.enrollment_academic_year = f.current_academic_year,
+        f.grade_level + 1,
+        f.grade_level
+    ) as aligned_enrollment_academic_year_grade_level,
+
+from actual_enroll_type as f
 inner join
-    {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
+    {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as x
     on f.enrollment_academic_year = x.enrollment_academic_year
-    and f.enrollment_year_enrollment_type = x.enrollment_type
+    and f.enrollment_academic_year_enrollment_type = x.enrollment_type
     and f.detailed_status = x.detailed_status

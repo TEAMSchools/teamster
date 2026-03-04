@@ -69,9 +69,48 @@ uv tool install datamodel-code-generator
 uv tool install dagster-dg
 uv sync
 
-# install dbt deps for projects
+# install dbt projects
+uv run dbt deps --project-dir=src/dbt/amplify
+uv run dbt parse --project-dir=src/dbt/amplify
+
+uv run dbt deps --project-dir=src/dbt/deanslist
+uv run dbt parse --project-dir=src/dbt/deanslist
+
+uv run dbt deps --project-dir=src/dbt/edplan
+uv run dbt parse --project-dir=src/dbt/edplan
+
+uv run dbt deps --project-dir=src/dbt/finalsite
+uv run dbt parse --project-dir=src/dbt/finalsite
+
+uv run dbt deps --project-dir=src/dbt/iready
+uv run dbt parse --project-dir=src/dbt/iready
+
+uv run dbt deps --project-dir=src/dbt/overgrad
+uv run dbt parse --project-dir=src/dbt/overgrad
+
+uv run dbt parse --project-dir=src/dbt/pearson
+uv run dbt deps --project-dir=src/dbt/pearson
+
+uv run dbt deps --project-dir=src/dbt/powerschool
+uv run dbt parse --project-dir=src/dbt/powerschool
+
+uv run dbt deps --project-dir=src/dbt/renlearn
+uv run dbt parse --project-dir=src/dbt/renlearn
+
+uv run dbt deps --project-dir=src/dbt/titan
+uv run dbt parse --project-dir=src/dbt/titan
+
 uv run dbt deps --project-dir=src/dbt/kippcamden
+uv run dbt parse --project-dir=src/dbt/kippcamden
+
 uv run dbt deps --project-dir=src/dbt/kippmiami
+uv run dbt parse --project-dir=src/dbt/kippmiami
+
 uv run dbt deps --project-dir=src/dbt/kippnewark
+uv run dbt parse --project-dir=src/dbt/kippnewark
+
 uv run dbt deps --project-dir=src/dbt/kipppaterson
+uv run dbt parse --project-dir=src/dbt/kipppaterson
+
 uv run dbt deps --project-dir=src/dbt/kipptaf
+uv run dbt parse --project-dir=src/dbt/kipptaf
