@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: stg_kippadb__record_type
     columns:

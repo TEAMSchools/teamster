@@ -23,8 +23,8 @@ select
     student_id,
     school,
     `subject`,
-    lesson as lesson_id,
-    lesson as lesson_name,
+    lesson_title as lesson_id,
+    lesson_title as lesson_name,
 
     null as lesson_objective,
     null as lesson_level,

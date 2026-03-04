@@ -32,12 +32,13 @@ with
             *,
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
+
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
         from union_relations
     )
 
 select
-    ar.* except (lep_status, lunchstatus, spedlep),
+    ar.* except (lep_status, lunchstatus, spedlep, prevstudentid),
 
     /* regional differences */
     suf.fleid,
@@ -111,12 +112,14 @@ select
     ) as is_fldoe_fte_all,
 
     if(
-        ar.region = 'Miami', ar.spedlep, sped.special_education_code
+        ar.region in ('Miami', 'Paterson'), ar.spedlep, sped.special_education_code
     ) as special_education_code,
 
     if(adb.latest_fafsa_date is null, 'No', 'Yes') as salesforce_contact_df_has_fafsa,
 
-    coalesce(if(ar.region = 'Miami', ar.spedlep, sped.spedlep), 'No IEP') as spedlep,
+    coalesce(
+        if(ar.region in ('Miami', 'Paterson'), ar.spedlep, sped.spedlep), 'No IEP'
+    ) as spedlep,
 
     case
         when ar.region = 'Miami'
@@ -186,6 +189,12 @@ select
         )
         + 1
     ) as salesforce_graduation_year,
+
+    if(
+        ar.region = 'Paterson' and ar.academic_year <= 2024,
+        ar.prevstudentid,
+        ar.student_number
+    ) as pearson_local_student_identifier,
 
 from with_region as ar
 left join

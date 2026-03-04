@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_surveys__staff_information_survey_pivot
     columns:

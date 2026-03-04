@@ -1,10 +1,8 @@
 with
-    -- trunk-ignore(sqlfluff/ST03)
     interventions as (
         select
             student_number,
             academic_year,
-            dbt_valid_from,
             dbt_valid_to,
             successful_call_count,
             total_anticipated_calls,
@@ -27,11 +25,9 @@ with
 
 select
     co.student_number,
-    co.schoolid,
     co.academic_year,
     co.week_start_monday,
     co.week_end_sunday,
-    co.week_number_academic_year,
 
     ca.successful_call_count,
     ca.total_anticipated_calls,
@@ -41,4 +37,4 @@ left join
     deduplicate as ca
     on co.student_number = ca.student_number
     and co.week_start_monday between ca.dbt_valid_from_date and ca.dbt_valid_to_date
-where co.is_enrolled_week
+where co.is_enrolled_week and co.academic_year >= {{ var("current_academic_year") - 1 }}

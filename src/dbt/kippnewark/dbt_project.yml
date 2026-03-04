@@ -32,6 +32,19 @@ models:
       +schema: extracts
       +contract:
         enforced: true
+    powerschool:
+      +materialized: table
+      +schema: powerschool
+      sis:
+        staging:
+          +contract:
+            enforced: true
+  amplify:
+    dds:
+      +enabled: false
+    mclass:
+      api:
+        +enabled: false
   deanslist:
     +materialized: table
     staging:
@@ -44,6 +57,9 @@ models:
         +enabled: false
   iready:
     +materialized: table
+    staging:
+      stg_iready__instructional_usage_data:
+        +enabled: false
   overgrad:
     +materialized: table
     staging:
@@ -91,8 +107,6 @@ models:
             +enabled: false
           stg_powerschool__u_def_ext_students:
             +enabled: false
-          stg_powerschool__u_storedgrades_de:
-            +enabled: false
   renlearn:
     +materialized: table
     staging:
@@ -111,6 +125,11 @@ models:
         +enabled: false
 
 sources:
+  amplify:
+    amplify_mclass_api:
+      +enabled: false
+    amplify_dds:
+      +enabled: false
   powerschool:
     sis:
       staging:
@@ -148,5 +167,13 @@ sources:
               +enabled: false
             src_powerschool__u_def_ext_students:
               +enabled: false
-            src_powerschool__u_storedgrades_de:
-              +enabled: false
+  renlearn:
+    renlearn:
+      src_renlearn__accelerated_reader:
+        +enabled: false
+      src_renlearn__fast_star:
+        +enabled: false
+      src_renlearn__star_dashboard_standards:
+        +enabled: false
+      src_renlearn__star_skill_area:
+        +enabled: false

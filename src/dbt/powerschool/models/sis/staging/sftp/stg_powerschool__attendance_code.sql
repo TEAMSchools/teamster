@@ -9,7 +9,8 @@ select
         schoolid,
         sortorder,
         yearid,
-        lock_teacher_yn
+        lock_teacher_yn,
+        source_file_name
     ),
 
     cast(dcid as int) as dcid,

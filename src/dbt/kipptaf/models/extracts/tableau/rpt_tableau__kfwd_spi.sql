@@ -9,6 +9,7 @@ select
     r.contact_expected_hs_graduation as expected_hs_graduation,
     r.contact_college_match_display_gpa as hs_gpa,
     r.contact_highest_act_score as highest_act_score,
+    cast(r.contact_highest_sat_score as int64) as highest_sat_score,
 
     e.status,
     e.pursuing_degree_type,
@@ -152,6 +153,7 @@ select
     r.contact_expected_hs_graduation as expected_hs_graduation,
     r.contact_college_match_display_gpa as hs_gpa,
     r.contact_highest_act_score as highest_act_score,
+    cast(r.contact_highest_sat_score as int64) as highest_sat_score,
 
     a.application_status as `status`,
     a.intended_degree_type as pursuing_degree_type,

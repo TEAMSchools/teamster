@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__gradecalcformulaweight
-    config:
-      contract:
-        enforced: true
     columns:
       - name: storecode
         data_type: string

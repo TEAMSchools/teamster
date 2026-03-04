@@ -1,9 +1,6 @@
-version: 2
 models:
   - name: stg_deanslist__homework
     config:
-      contract:
-        enforced: true
       enabled: false
     columns:
       - name: dl_said

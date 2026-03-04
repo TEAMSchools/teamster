@@ -8,7 +8,8 @@ select
         personaddressid,
         statescodesetid,
         whencreated,
-        whenmodified
+        whenmodified,
+        source_file_name
     ),
 
     cast(countrycodesetid as int) as countrycodesetid,

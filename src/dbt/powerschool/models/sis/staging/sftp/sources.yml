@@ -1,24 +1,24 @@
-version: 2
-
 sources:
   - name: powerschool_sftp
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ var('powerschool_schema', project_name + '_powerschool') }}
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_
+      {%- endif -%}{{ var('powerschool_schema', project_name + '_powerschool') }}
     tables:
       - name: src_powerschool__assignmentscore
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - assignmentscore
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - assignmentscore
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/assignmentscore/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/assignmentscore/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -26,18 +26,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__attendance
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - attendance
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - attendance
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/attendance/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/attendance/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -45,18 +47,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__pgfinalgrades
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - pgfinalgrades
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - pgfinalgrades
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/pgfinalgrades/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/pgfinalgrades/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -64,18 +68,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__storedgrades
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - storedgrades
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - storedgrades
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/storedgrades/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/storedgrades/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -83,19 +89,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__assignmentcategoryassoc
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - assignmentcategoryassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - assignmentcategoryassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/assignmentcategoryassoc/*"
+            }}/powerschool/sis/sftp/assignmentcategoryassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -103,19 +110,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__assignmentsection
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - assignmentsection
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - assignmentsection
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/assignmentsection/*"
+            }}/powerschool/sis/sftp/assignmentsection/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -123,18 +131,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__cc
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - cc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - cc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/cc/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/cc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -142,18 +152,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__codeset
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - codeset
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - codeset
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/codeset/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/codeset/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -161,18 +173,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__courses
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - courses
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - courses
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/courses/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/courses/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -180,19 +194,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__districtteachercategory
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - districtteachercategory
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - districtteachercategory
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/districtteachercategory/*"
+            }}/powerschool/sis/sftp/districtteachercategory/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -200,18 +215,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__emailaddress
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - emailaddress
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - emailaddress
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/emailaddress/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/emailaddress/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -219,19 +236,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalcformulaweight
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gradecalcformulaweight
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gradecalcformulaweight
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gradecalcformulaweight/*"
+            }}/powerschool/sis/sftp/gradecalcformulaweight/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -239,19 +257,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalcschoolassoc
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gradecalcschoolassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gradecalcschoolassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gradecalcschoolassoc/*"
+            }}/powerschool/sis/sftp/gradecalcschoolassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -259,19 +278,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradecalculationtype
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gradecalculationtype
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gradecalculationtype
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gradecalculationtype/*"
+            }}/powerschool/sis/sftp/gradecalculationtype/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -279,18 +299,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeformulaset
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gradeformulaset
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gradeformulaset
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gradeformulaset/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/gradeformulaset/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -298,18 +320,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradescaleitem
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gradescaleitem
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gradescaleitem
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gradescaleitem/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/gradescaleitem/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -317,19 +341,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeschoolconfig
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gradeschoolconfig
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gradeschoolconfig
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gradeschoolconfig/*"
+            }}/powerschool/sis/sftp/gradeschoolconfig/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -337,19 +362,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradeschoolformulaassoc
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gradeschoolformulaassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gradeschoolformulaassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gradeschoolformulaassoc/*"
+            }}/powerschool/sis/sftp/gradeschoolformulaassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -357,19 +383,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradesectionconfig
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gradesectionconfig
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gradesectionconfig
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gradesectionconfig/*"
+            }}/powerschool/sis/sftp/gradesectionconfig/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -377,19 +404,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__originalcontactmap
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - originalcontactmap
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - originalcontactmap
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/originalcontactmap/*"
+            }}/powerschool/sis/sftp/originalcontactmap/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -397,18 +425,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__person
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - person
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - person
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/person/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/person/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -416,18 +446,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personaddress
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - personaddress
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - personaddress
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/personaddress/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/personaddress/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -435,19 +467,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personaddressassoc
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - personaddressassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - personaddressassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/personaddressassoc/*"
+            }}/powerschool/sis/sftp/personaddressassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -455,19 +488,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personemailaddressassoc
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - personemailaddressassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - personemailaddressassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/personemailaddressassoc/*"
+            }}/powerschool/sis/sftp/personemailaddressassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -475,19 +509,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__personphonenumberassoc
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - personphonenumberassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - personphonenumberassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/personphonenumberassoc/*"
+            }}/powerschool/sis/sftp/personphonenumberassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -495,18 +530,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__phonenumber
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - phonenumber
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - phonenumber
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/phonenumber/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/phonenumber/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -514,18 +551,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__prefs
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - prefs
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - prefs
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/prefs/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/prefs/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -533,18 +572,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__roledef
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - roledef
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - roledef
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/roledef/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/roledef/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -552,18 +593,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_crs_x
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - s_nj_crs_x
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - s_nj_crs_x
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_nj_crs_x/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/s_nj_crs_x/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -571,18 +614,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_ren_x
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - s_nj_ren_x
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - s_nj_ren_x
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_nj_ren_x/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/s_nj_ren_x/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -590,18 +635,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_stu_x
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - s_nj_stu_x
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - s_nj_stu_x
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_nj_stu_x/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/s_nj_stu_x/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -609,18 +656,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_nj_usr_x
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - s_nj_usr_x
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - s_nj_usr_x
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_nj_usr_x/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/s_nj_usr_x/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -628,18 +677,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__schools
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - schools
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - schools
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/schools/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/schools/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -647,18 +698,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__schoolstaff
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - schoolstaff
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - schoolstaff
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/schoolstaff/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/schoolstaff/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -666,18 +719,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__sections
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - sections
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - sections
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/sections/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/sections/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -685,18 +740,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__sectionteacher
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - sectionteacher
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - sectionteacher
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/sectionteacher/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/sectionteacher/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -704,19 +761,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcontactassoc
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - studentcontactassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - studentcontactassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/studentcontactassoc/*"
+            }}/powerschool/sis/sftp/studentcontactassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -724,19 +782,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcontactdetail
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - studentcontactdetail
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - studentcontactdetail
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/studentcontactdetail/*"
+            }}/powerschool/sis/sftp/studentcontactdetail/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -744,19 +803,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentcorefields
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - studentcorefields
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - studentcorefields
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/studentcorefields/*"
+            }}/powerschool/sis/sftp/studentcorefields/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -764,18 +824,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studentrace
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - studentrace
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - studentrace
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/studentrace/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/studentrace/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -783,18 +845,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__students
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - students
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - students
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/students/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/students/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -802,18 +866,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__teachercategory
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - teachercategory
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - teachercategory
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/teachercategory/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/teachercategory/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -821,18 +887,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__termbins
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - termbins
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - termbins
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/termbins/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/termbins/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -840,18 +908,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__terms
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - terms
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - terms
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/terms/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/terms/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -859,18 +929,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_clg_et_stu
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - u_clg_et_stu
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - u_clg_et_stu
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/u_clg_et_stu/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/u_clg_et_stu/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -878,18 +950,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_clg_et_stu_alt
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - u_clg_et_stu_alt
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - u_clg_et_stu_alt
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/u_clg_et_stu_alt/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/u_clg_et_stu_alt/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -897,19 +971,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_def_ext_students
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - u_def_ext_students
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - u_def_ext_students
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/u_def_ext_students/*"
+            }}/powerschool/sis/sftp/u_def_ext_students/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -917,19 +992,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_studentsuserfields
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - u_studentsuserfields
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - u_studentsuserfields
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/u_studentsuserfields/*"
+            }}/powerschool/sis/sftp/u_studentsuserfields/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -937,18 +1013,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__users
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - users
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - users
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/users/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/users/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -957,18 +1035,20 @@ sources:
             enable_logical_types: true
       # not-partitionable
       - name: src_powerschool__attendance_code
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - attendance_code
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - attendance_code
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/attendance_code/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/attendance_code/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -976,19 +1056,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__attendance_conversion_items
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - attendance_conversion_items
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - attendance_conversion_items
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/attendance_conversion_items/*"
+            }}/powerschool/sis/sftp/attendance_conversion_items/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -996,18 +1077,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__bell_schedule
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - bell_schedule
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - bell_schedule
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/bell_schedule/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/bell_schedule/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1015,18 +1098,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__calendar_day
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - calendar_day
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - calendar_day
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/calendar_day/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/calendar_day/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1034,18 +1119,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__cycle_day
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - cycle_day
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - cycle_day
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/cycle_day/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/cycle_day/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1053,18 +1140,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__fte
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - fte
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - fte
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/fte/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/fte/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1072,18 +1161,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gen
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gen
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gen
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gen/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/gen/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1091,18 +1182,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__log
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - log
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - log
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/log/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/log/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1110,18 +1203,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__period
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - period
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - period
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/period/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/period/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1129,18 +1224,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__reenrollments
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - reenrollments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - reenrollments
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/reenrollments/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/reenrollments/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1148,18 +1245,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__spenrollments
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - spenrollments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - spenrollments
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/spenrollments/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/spenrollments/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1167,18 +1266,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__test
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - test
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - test
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/test/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/test/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1186,18 +1287,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__testscore
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - testscore
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - testscore
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/testscore/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/testscore/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1205,18 +1308,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studenttest
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - studenttest
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - studenttest
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/studenttest/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/studenttest/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1224,18 +1329,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__studenttestscore
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - studenttestscore
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - studenttestscore
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/studenttestscore/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/studenttestscore/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1243,19 +1350,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__sced_code_mapping
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - sced_code_mapping
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - sced_code_mapping
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/sced_code_mapping/*"
+            }}/powerschool/sis/sftp/sced_code_mapping/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1263,18 +1371,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gradplan
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gradplan
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gradplan
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gradplan/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/gradplan/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1282,18 +1392,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__userscorefields
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - userscorefields
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - userscorefields
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/userscorefields/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/userscorefields/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1301,19 +1413,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__u_storedgrades_de
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - u_storedgrades_de
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - u_storedgrades_de
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/u_storedgrades_de/*"
+            }}/powerschool/sis/sftp/u_storedgrades_de/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1321,18 +1434,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpnode
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gpnode
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gpnode
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpnode/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/gpnode/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1340,19 +1455,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpprogresssubject
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gpprogresssubject
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gpprogresssubject
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gpprogresssubject/*"
+            }}/powerschool/sis/sftp/gpprogresssubject/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1360,19 +1476,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpprogresssubjectearned
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gpprogresssubjectearned
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gpprogresssubjectearned
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gpprogresssubjectearned/*"
+            }}/powerschool/sis/sftp/gpprogresssubjectearned/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1380,19 +1497,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpprogresssubjectenrolled
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gpprogresssubjectenrolled
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gpprogresssubjectenrolled
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gpprogresssubjectenrolled/*"
+            }}/powerschool/sis/sftp/gpprogresssubjectenrolled/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1400,19 +1518,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpprogresssubjectrequested
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gpprogresssubjectrequested
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gpprogresssubjectrequested
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gpprogresssubjectrequested/*"
+            }}/powerschool/sis/sftp/gpprogresssubjectrequested/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1420,19 +1539,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpprogresssubjectwaived
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gpprogresssubjectwaived
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gpprogresssubjectwaived
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gpprogresssubjectwaived/*"
+            }}/powerschool/sis/sftp/gpprogresssubjectwaived/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1440,19 +1560,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpprogresssubjwaivedapplied
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gpprogresssubjwaivedapplied
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gpprogresssubjwaivedapplied
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gpprogresssubjwaivedapplied/*"
+            }}/powerschool/sis/sftp/gpprogresssubjwaivedapplied/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1460,18 +1581,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpselectedcrs
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gpselectedcrs
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gpselectedcrs
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpselectedcrs/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/gpselectedcrs/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1479,18 +1602,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpselectedcrtype
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gpselectedcrtype
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gpselectedcrtype
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpselectedcrtype/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/gpselectedcrtype/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1498,18 +1623,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpselector
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gpselector
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gpselector
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpselector/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/gpselector/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1517,18 +1644,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gptarget
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gptarget
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gptarget
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gptarget/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/gptarget/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1536,18 +1665,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpversion
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gpversion
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gpversion
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpversion/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/gpversion/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1555,18 +1686,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__gpstudentwaiver
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - gpstudentwaiver
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - gpstudentwaiver
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpstudentwaiver/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/gpstudentwaiver/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1574,18 +1707,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__s_stu_x
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - s_stu_x
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - s_stu_x
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_stu_x/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/s_stu_x/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1593,18 +1728,20 @@ sources:
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__student_email
-        meta:
-          dagster:
-            asset_key:
-              - "{{ project_name }}"
-              - powerschool
-              - sis
-              - sftp
-              - student_email
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sftp
+                - student_email
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/student_email/*"
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sis/sftp/student_email/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL

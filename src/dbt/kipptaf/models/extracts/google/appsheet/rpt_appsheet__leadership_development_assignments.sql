@@ -2,7 +2,8 @@ with
     roster as (select *, from {{ ref("rpt_appsheet__leadership_development_roster") }}),
 
     active_users as (
-        select *, from {{ ref("stg_leadership_development__active_users") }}
+        select *,
+        from {{ ref("stg_google_appsheet__leadership_development__active_users") }}
     ),
 
     metrics as (
@@ -17,7 +18,8 @@ with
     ),
 
     existing_assignments as (
-        select assignment_id, from {{ ref("stg_leadership_development__output") }}
+        select assignment_id,
+        from {{ ref("stg_google_appsheet__leadership_development__output") }}
     ),
 
     leader_pm_participants as (

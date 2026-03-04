@@ -1,0 +1,4 @@
+models:
+  - name: int_deanslist__students__custom_fields__pivot
+    config:
+      materialized: table

@@ -52,6 +52,7 @@ with
             and e2.school_id is not null
         where
             s.terms_academic_year = {{ var("current_academic_year") }}
+            and s.sections_no_of_students != 0
             and e1.include_row is null
             and e2.include_row is null
     ),
@@ -161,9 +162,18 @@ with
 
             case
                 when
-                    current_date(
+                    tw.region = 'Miami'
+                    and current_date(
                         '{{ var("local_timezone") }}'
                     ) between (tw.quarter_end_date_insession - interval 9 day) and (
+                        tw.quarter_end_date_insession + interval 28 day
+                    )
+                then true
+                when
+                    tw.region != 'Miami'
+                    and current_date(
+                        '{{ var("local_timezone") }}'
+                    ) between (tw.quarter_end_date_insession - interval 5 day) and (
                         tw.quarter_end_date_insession + interval 14 day
                     )
                 then true

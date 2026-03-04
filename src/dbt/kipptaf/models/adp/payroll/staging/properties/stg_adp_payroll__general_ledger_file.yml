@@ -1,14 +1,11 @@
-version: 2
 models:
   - name: stg_adp_payroll__general_ledger_file
     config:
-      contract:
-        enforced: true
-    meta:
-      dagster:
-        group: adp_payroll
-        automation_condition:
-          enabled: false
+      meta:
+        dagster:
+          group: adp_payroll
+          automation_condition:
+            enabled: false
     columns:
       - name: journal
         data_type: string

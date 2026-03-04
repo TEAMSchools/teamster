@@ -45,4 +45,3 @@ operator:
   # Node selector stanza for the Operator pod
   nodeSelector:
     cloud.google.com/gke-spot: "true"
-    cloud.google.com/compute-class: Balanced

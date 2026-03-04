@@ -110,12 +110,19 @@ with
             on w.worker_id__id_value = en.adp_associate_id
             and en.is_active
         /* after transistion from Dayforce */
-        where w.effective_date_end >= '2021-01-01'
+        where
+            w.effective_date_end >= '2021-01-01'
+            and coalesce(w.organizational_unit__home__business_unit__name, '')
+            != 'KIPP Paterson'
+            and coalesce(w.organizational_unit__assigned__business_unit__name, '')
+            != 'KIPP Paterson'
 
         union all
 
         select
-            '{{ ref("int_dayforce__employee_history") }}' as _dbt_source_relation,
+            '{{ source("dayforce", "int_dayforce__employee_history") }}'
+            as _dbt_source_relation,
+
             null as associate_oid,
 
             effective_end_date as effective_date_end,
@@ -219,7 +226,7 @@ with
             manager_employee_number as reports_to_employee_number,
             effective_start_date as effective_date_start,
             effective_start_timestamp as effective_date_start_timestamp,
-        from {{ ref("int_dayforce__employee_history") }}
+        from {{ source("dayforce", "int_dayforce__employee_history") }}
     )
 
 select
@@ -237,7 +244,6 @@ select
     lc.location_head_of_schools_employee_number
     as home_work_location_head_of_schools_employee_number,
     lc.campus_name as home_work_location_campus_name,
-    lc.head_of_schools_sam_account_name,
 
     ldap.physical_delivery_office_name,
     ldap.uac_account_disable,
@@ -325,6 +331,7 @@ left join
     {{ ref("stg_adp_workforce_now__pension_and_benefits_enrollments") }} as pbe
     on w.position_id = pbe.position_id
     and pbe.enrollment_status = 'Active'
+    and pbe.rn_enrollment_recent = 1
     and pbe.plan_name in (
         'NJ Pension - DCRP:Eligible Employees(Prudential Financial)',
         'NJ Pension - PERS:Eligible Employees(NJ Pension)',

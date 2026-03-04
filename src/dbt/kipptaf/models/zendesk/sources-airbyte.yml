@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: zendesk
     schema: "{{ project_name }}_zendesk"

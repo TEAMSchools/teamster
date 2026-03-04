@@ -151,10 +151,12 @@ class VideoItem(BaseModel):
     video: Video | None = None
 
 
-class PageBreakItem(BaseModel): ...
+class PageBreakItem(BaseModel):
+    pass
 
 
-class TextItem(BaseModel): ...
+class TextItem(BaseModel):
+    pass
 
 
 class Item(BaseModel):

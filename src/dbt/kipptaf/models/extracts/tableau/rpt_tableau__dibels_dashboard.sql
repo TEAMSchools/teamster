@@ -28,9 +28,12 @@ select
     s.nj_student_tier,
     s.is_tutoring as tutoring_nj,
     s.is_sipps,
+    s.mtss_enrollment,
 
     'Benchmark' as assessment_type,
 
+    a.start_date as expected_start_date,
+    a.end_date as expected_end_date,
     a.admin_season as expected_test,
     a.month_round as expected_month_round,
     a.grade as expected_grade_level_int,
@@ -166,6 +169,7 @@ left join
 where
     s.iready_subject = 'Reading'
     and not s.is_self_contained
+    and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)
 
 union all
@@ -200,9 +204,12 @@ select
     s.nj_student_tier,
     s.is_tutoring as tutoring_nj,
     s.is_sipps,
+    s.mtss_enrollment,
 
     'PM' as assessment_type,
 
+    e.start_date as expected_start_date,
+    e.end_date as expected_end_date,
     e.admin_season as expected_test,
     e.month_round as expected_month_round,
     e.grade as expected_grade_level_int,
@@ -358,4 +365,5 @@ left join
 where
     s.iready_subject = 'Reading'
     and not s.is_self_contained
+    and not s.is_out_of_district
     and s.enroll_status in (0, 2, 3)

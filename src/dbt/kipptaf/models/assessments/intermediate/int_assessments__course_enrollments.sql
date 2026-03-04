@@ -1,5 +1,3 @@
-{{ config(materialized="table") }}
-
 with
     enrollments_union as (
         /* K-12 enrollments */

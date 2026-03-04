@@ -39,7 +39,8 @@ with
                 unused2,
                 unused3,
                 whomodifiedid,
-                whomodifiedtype
+                whomodifiedtype,
+                source_file_name
             ),
 
             cast(currentabsences as int) as currentabsences,

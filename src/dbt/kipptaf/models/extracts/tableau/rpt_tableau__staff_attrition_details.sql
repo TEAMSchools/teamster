@@ -28,7 +28,9 @@ select
     l.memberships,
     l.is_teacher_development_program,
     l.is_leader_development_program,
+
     tgl.grade_level as primary_grade_level_taught,
+
     pm.final_tier as overall_tier,
     pm.final_score as overall_score,
 from {{ ref("int_people__staff_attrition_details") }} as l
@@ -36,6 +38,7 @@ left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on l.powerschool_teacher_number = tgl.teachernumber
     and l.academic_year = tgl.academic_year
+    and l.home_work_location_dagster_code_location = tgl._dbt_source_project
     and tgl.grade_level_rank = 1
 left join
     {{ ref("int_performance_management__overall_scores") }} as pm

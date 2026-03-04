@@ -79,3 +79,5 @@ models:
         data_type: float64
       - name: is_tardy
         data_type: float64
+      - name: is_truant
+        data_type: boolean

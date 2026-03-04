@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__cycle_day
-    config:
-      contract:
-        enforced: true
     columns:
       - name: letter
         data_type: string

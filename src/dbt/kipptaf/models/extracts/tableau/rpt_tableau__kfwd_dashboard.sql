@@ -67,9 +67,10 @@ with
         select
             contact,
             `subject` as grad_plan_year,
+            academic_year,
 
             row_number() over (
-                partition by contact order by `date` desc
+                partition by contact, academic_year order by `date` desc
             ) as rn_contact_desc,
         from {{ ref("stg_kippadb__contact_note") }}
         where `subject` like 'Grad Plan FY%'
@@ -131,6 +132,7 @@ with
             is_persisting_int,
 
             cast(persistence_year as string) as persistence_year,
+
         from {{ ref("int_kippadb__persistence") }}
         where
             is_ecc
@@ -203,6 +205,36 @@ with
         from {{ ref("stg_kippadb__contact_note") }}
         where `type` = 'School Visit' and `status` = 'Successful'
         group by contact, academic_year
+    ),
+
+    ba_semesters_enrolled as (
+        select sf_contact_id, count(*) as n_ba_enrolled_semesters,
+        from {{ ref("int_kippadb__persistence") }}
+        where rn_enrollment_year = 1 and pursuing_degree_type = "Bachelor's (4-year)"
+        group by sf_contact_id
+    ),
+
+    military as (
+        select
+            contact,
+            `status`,
+            category as job_industry,
+            military_branch,
+            meps_location,
+            meps_start_date,
+            meps_end_date,
+            delayed_entry_enlistment_program_dep,
+            `start_date`,
+            end_date,
+            ineligible_for_military_enlistment,
+            discharge_type,
+            discharge_date,
+
+            row_number() over (
+                partition by contact order by start_date desc
+            ) as rn_enlistment,
+        from {{ ref("stg_kippadb__employment") }}
+        where category = 'Military Specific Occupations'
     )
 
 select
@@ -262,6 +294,9 @@ select
     c.common_app_linked,
     c.wishlist_signed_off_by_counselor,
     c.wishlist_notes,
+    c.ktc_status,
+    c.es_graduated,
+    c.contact_highest_sat_score as highest_sat_score,
 
     ay.academic_year,
 
@@ -476,6 +511,26 @@ select
     c.contact_opt_out_regional_contact,
     c.entry_school,
 
+    ba.n_ba_enrolled_semesters,
+
+    mil.`status` as military_status,
+    mil.military_branch,
+    mil.meps_location,
+    mil.meps_start_date,
+    mil.meps_end_date,
+    mil.delayed_entry_enlistment_program_dep,
+    mil.`start_date` as bmt_start_date,
+    mil.end_date as bmt_end_date,
+    mil.ineligible_for_military_enlistment,
+    mil.discharge_type as military_discharge_type,
+    mil.discharge_date as military_discharge_date,
+
+    if(
+        c.contact_kipp_region_name = 'KIPP Miami' and c.ktc_status like 'TAF%',
+        'Miami TAF',
+        c.ktc_status
+    ) as ktc_status_detail,
+
     coalesce(ar.max_ecc_accepted, 0) as max_ecc_accepted,
 
     case
@@ -624,7 +679,8 @@ select
     ) as has_4yr_ecc_enrollment,
 
     coalesce(ei.ecc_adjusted_6_year_minority_graduation_rate, 0) as urm_ecc_school,
-    c.contact_highest_sat_score as highest_sat_score,
+
+    if(ba.n_ba_enrolled_semesters >= 5, true, false) as is_enrolled_ba_5_semesters,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
@@ -664,7 +720,11 @@ left join
     on c.contact_id = tier.contact
     and ay.academic_year = tier.academic_year
     and tier.rn_contact_year_desc = 1
-left join grad_plan as gp on c.contact_id = gp.contact and gp.rn_contact_desc = 1
+left join
+    grad_plan as gp
+    on c.contact_id = gp.contact
+    and ay.academic_year = gp.academic_year
+    and gp.rn_contact_desc = 1
 left join finaid as fa on c.contact_id = fa.student and fa.rn_finaid = 1
 left join
     benchmark as b
@@ -679,6 +739,8 @@ left join
     school_visit as sv
     on sv.contact = c.contact_id
     and sv.academic_year = ay.academic_year
+left join ba_semesters_enrolled as ba on c.contact_id = ba.sf_contact_id
+left join military as mil on c.contact_id = mil.contact and mil.rn_enlistment = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null

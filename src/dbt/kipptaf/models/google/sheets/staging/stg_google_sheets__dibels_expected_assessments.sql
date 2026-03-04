@@ -15,4 +15,4 @@ select
         admin_season when 'BOY' then 'BOY->MOY' when 'MOY' then 'MOY->EOY'
     end as matching_pm_season,
 
-from {{ source("google_sheets", "src_google_sheets__dibels_expected_assessments") }}
+from {{ source("google_sheets", "src_google_sheets__dibels__expected_assessments") }}

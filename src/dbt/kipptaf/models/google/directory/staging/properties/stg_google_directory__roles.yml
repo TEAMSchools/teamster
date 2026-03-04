@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: stg_google_directory__roles
     columns:
@@ -17,8 +16,4 @@ models:
       - name: etag
         data_type: string
       - name: role_privileges
-        data_type: record
-      - name: role_privileges.privilegename
-        data_type: string
-      - name: role_privileges.serviceid
-        data_type: string
+        data_type: array<struct<privilegeName string, serviceId string>>

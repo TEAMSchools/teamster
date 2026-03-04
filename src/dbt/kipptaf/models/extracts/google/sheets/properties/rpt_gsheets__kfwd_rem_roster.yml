@@ -97,3 +97,7 @@ models:
         data_type: string
       - name: student_name_id_hash
         data_type: string
+      - name: es_graduated
+        data_type: string
+      - name: contact_kipp_region_name
+        data_type: string

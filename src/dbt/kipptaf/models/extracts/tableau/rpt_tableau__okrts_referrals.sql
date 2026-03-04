@@ -93,7 +93,10 @@ with
                 'KIPP Miami Suspension Letter',
                 'Short-Term OSS (no further investigation)',
                 'OSS Long-Term Suspension',
-                'OSS Suspended Next Day'
+                'OSS Suspended Next Day',
+                'OSS',
+                'OSS Suspension Letter (pending further investigation)',
+                'ISS Suspension Letter'
             )
         group by incident_id
 
@@ -191,7 +194,9 @@ select
     if(tr.student_school_id is not null, true, false) as is_tier3_4,
 
     case
-        when left(dli.category, 2) in ('SW', 'SS') or left(dli.category, 3) = 'SSC'
+        when
+            left(dli.category, 2) in ('SW', 'SS')
+            or left(dli.category, 3) in ('SSC', 'SSW')
         then 'Social Work'
         when left(dli.category, 2) = 'TX'
         then 'Non-Behavioral'

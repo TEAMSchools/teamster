@@ -14,8 +14,18 @@ models:
       - name: n_lessons_completed_week
         data_type: int64
       - name: n_lessons_passed_week
-        data_type: float64
+        data_type: int64
       - name: n_lessons_passed_y1
-        data_type: float64
+        data_type: int64
       - name: student_number
         data_type: int64
+      - name: total_lesson_time_on_task_min_week
+        data_type: int64
+      - name: percent_all_lessons_passed_week
+        data_type: numeric
+      - name: n_lessons_completed_y1
+        data_type: int64
+      - name: total_lesson_time_on_task_min_y1
+        data_type: int64
+      - name: percent_all_lessons_passed_y1
+        data_type: numeric

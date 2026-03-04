@@ -2,7 +2,6 @@ from dagster import (
     AssetSelection,
     AutomationConditionSensorDefinition,
     Definitions,
-    build_sensor_for_freshness_checks,
     load_assets_from_modules,
 )
 from dagster_k8s import k8s_job_executor
@@ -15,7 +14,6 @@ from teamster.code_locations.kipptaf import (
     _google,
     adp,
     airbyte,
-    amplify,
     asset_checks,
     collegeboard,
     couchdrop,
@@ -25,6 +23,7 @@ from teamster.code_locations.kipptaf import (
     knowbe4,
     ldap,
     level_data,
+    nsc,
     overgrad,
     performance_management,
     powerschool,
@@ -62,7 +61,6 @@ defs = Definitions(
                 _dlt,
                 _google,
                 adp,
-                amplify,
                 collegeboard,
                 coupa,
                 deanslist,
@@ -70,6 +68,7 @@ defs = Definitions(
                 knowbe4,
                 ldap,
                 level_data,
+                nsc,
                 overgrad,
                 performance_management,
                 powerschool,
@@ -100,10 +99,6 @@ defs = Definitions(
         *adp.sensors,
         *couchdrop.sensors,
         *deanslist.sensors,
-        *amplify.sensors,
-        build_sensor_for_freshness_checks(
-            freshness_checks=asset_checks.freshness_checks
-        ),
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
             target=AssetSelection.all(),
@@ -132,7 +127,6 @@ defs = Definitions(
         "ps_enrollment": resources.POWERSCHOOL_ENROLLMENT_RESOURCE,
         "smartrecruiters": resources.SMARTRECRUITERS_RESOURCE,
         "ssh_adp_workforce_now": resources.SSH_RESOURCE_ADP_WORKFORCE_NOW,
-        "ssh_amplify": resources.SSH_RESOURCE_AMPLIFY,
         "ssh_clever": resources.SSH_RESOURCE_CLEVER,
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_coupa": resources.SSH_RESOURCE_COUPA,

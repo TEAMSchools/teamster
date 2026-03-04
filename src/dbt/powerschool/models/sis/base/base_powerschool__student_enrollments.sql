@@ -1,7 +1,19 @@
 with
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation=ref("int_powerschool__student_enrollment_union"),
+                partition_by="student_number, academic_year, entrydate",
+                order_by="student_number desc",
+            )
+        }}
+    ),
+
     enr_bools as (
         select
             enr.*,
+
+            if(enr.entrydate <= cr.min_calendardate, true, false) as is_enrolled_fdos,
 
             case
                 when enr.exitdate >= cr.max_calendardate
@@ -12,7 +24,7 @@ with
                 then true
                 else false
             end as is_enrolled_recent,
-        from {{ ref("int_powerschool__student_enrollment_union") }} as enr
+        from deduplicate as enr
         left join
             {{ ref("int_powerschool__calendar_rollup") }} as cr
             on enr.schoolid = cr.schoolid
@@ -30,6 +42,7 @@ with
                 is_enrolled_oct01,
                 is_enrolled_oct15,
                 is_enrolled_recent,
+                is_enrolled_fdos,
                 is_retained_year
             ),
 
@@ -52,6 +65,10 @@ with
             max(is_enrolled_recent) over (
                 partition by studentid, yearid
             ) as is_enrolled_recent,
+
+            max(is_enrolled_fdos) over (
+                partition by studentid, yearid
+            ) as is_enrolled_fdos,
 
             max(is_retained_year) over (
                 partition by studentid, yearid
@@ -111,6 +128,7 @@ select
     scf.spedlep,
     scf.lep_status,
     scf.is_homeless,
+    scf.prevstudentid,
 
     adv.advisory_section_number,
     adv.advisory_name,

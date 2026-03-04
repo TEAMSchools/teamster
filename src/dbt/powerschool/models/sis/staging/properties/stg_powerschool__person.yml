@@ -1,9 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool__person
-    config:
-      contract:
-        enforced: true
     columns:
       - name: firstname
         data_type: string

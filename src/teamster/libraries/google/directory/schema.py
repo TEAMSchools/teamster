@@ -145,6 +145,7 @@ class User(DirectoryBaseModel):
     thumbnailPhotoEtag: str | None = None
     recoveryEmail: str | None = None
     recoveryPhone: str | None = None
+    isGuestUser: bool | None = None
 
     gender: Gender | None = None
     notes: Notes | None = None

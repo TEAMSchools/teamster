@@ -424,12 +424,16 @@ class Assignment(Ref, Timestamp):
     private: bool | None = None
     observation: str | None = None
     type: str | None = None
-    goalType: str | Ref | None = None
 
+    grade: Ref | None = None
+    school: Ref | None = None
+    course: Ref | None = None
     creator: UserRef | None = None
     parent: Ref | None = None
     progress: Progress | None = None
     user: UserRef | None = None
+
+    goalType: str | Ref | None = None
 
     tags: list[Tag | None] | None = None
 

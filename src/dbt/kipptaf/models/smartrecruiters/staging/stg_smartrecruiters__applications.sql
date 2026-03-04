@@ -2,15 +2,20 @@ with
     applications as (
         select
             * except (
+                application_field_school_shared_with_miami,
+                application_field_school_shared_with_new_jersey,
+                application_last_update_date,
                 application_state_hired_date,
+                application_state_lead_date,
                 application_state_new_date,
                 application_state_offer_date,
                 application_state_rejected_date,
-                application_state_lead_date,
-                application_last_update_date,
                 application_status_interview_demo_date,
+                application_status_interview_invited_to_selection_day_date,
                 application_status_interview_phone_screen_complete_date,
                 application_status_interview_phone_screen_requested_date,
+                application_status_interview_selection_day_date,
+                average_rating,
                 screening_question_answer_knjm_application_subject_preference,
                 time_in_application_state_in_review,
                 time_in_application_state_interview,
@@ -23,50 +28,63 @@ with
                 time_in_application_status_interview_phone_screen_requested
             ),
 
-            datetime(application_state_hired_date) as hired_datetime,
-            datetime(application_state_new_date) as new_datetime,
-            datetime(application_state_lead_date) as lead_datetime,
-            datetime(application_state_offer_date) as offer_datetime,
-            datetime(application_state_rejected_date) as rejected_datetime,
-            datetime(application_status_interview_demo_date) as demo_datetime,
-            datetime(
-                application_status_interview_phone_screen_complete_date
+            cast(application_state_hired_date as datetime) as hired_datetime,
+            cast(application_state_new_date as datetime) as new_datetime,
+            cast(application_state_lead_date as datetime) as lead_datetime,
+            cast(application_state_offer_date as datetime) as offer_datetime,
+            cast(application_state_rejected_date as datetime) as rejected_datetime,
+            cast(application_status_interview_demo_date as datetime) as demo_datetime,
+            cast(
+                application_status_interview_phone_screen_complete_date as datetime
             ) as phone_screen_complete_datetime,
-            datetime(
-                application_status_interview_phone_screen_requested_date
+            cast(
+                application_status_interview_phone_screen_requested_date as datetime
             ) as phone_screen_requested_datetime,
-            datetime(application_last_update_date) as last_update_datetime,
-            safe_cast(
+            cast(application_last_update_date as datetime) as last_update_datetime,
+            cast(
+                application_status_interview_invited_to_selection_day_date as datetime
+            ) as invited_to_selection_day_datetime,
+            cast(
+                application_status_interview_selection_day_date as datetime
+            ) as selection_day_datetime,
+
+            cast(
                 time_in_application_state_in_review as int
             ) as time_in_application_state_in_review,
-            safe_cast(
+            cast(
                 time_in_application_state_interview as int
             ) as time_in_application_state_interview,
-            safe_cast(
+            cast(
                 time_in_application_state_lead as int
             ) as time_in_application_state_lead,
-            safe_cast(
-                time_in_application_state_new as int
-            ) as time_in_application_state_new,
-            safe_cast(
+            cast(time_in_application_state_new as int) as time_in_application_state_new,
+            cast(
                 time_in_application_state_offered as int
             ) as time_in_application_state_offered,
-            safe_cast(
+            cast(
                 time_in_application_status_in_review_resume_review as int
             ) as time_in_application_status_in_review_resume_review,
-            safe_cast(
+            cast(
                 time_in_application_status_interview_demo as int
             ) as time_in_application_status_interview_demo,
-            safe_cast(
+            cast(
                 time_in_application_status_interview_phone_screen_complete as int
             ) as time_in_application_status_interview_phone_screen_complete,
-            safe_cast(
+            cast(
                 time_in_application_status_interview_phone_screen_requested as int
             ) as time_in_application_status_interview_phone_screen_requested,
-            if(
-                screening_question_answer_knjm_application_subject_preference is null,
-                'No Preference',
-                screening_question_answer_knjm_application_subject_preference
+            cast(application_field_resume_score as int) as resume_score,
+
+            cast(average_rating as numeric) as average_rating,
+
+            coalesce(
+                application_field_school_shared_with_miami,
+                application_field_school_shared_with_new_jersey
+            ) as school_shared_with,
+
+            coalesce(
+                screening_question_answer_knjm_application_subject_preference,
+                'No Preference'
             ) as subject_preference,
         from {{ source("smartrecruiters", "src_smartrecruiters__applications") }}
     )
@@ -74,13 +92,15 @@ with
 select
     *,
 
-    date(new_datetime) as date_new,
-    date(phone_screen_complete_datetime) as date_phone_screen_complete,
-    date(phone_screen_requested_datetime) as date_phone_screen_requested,
-    date(demo_datetime) as date_demo,
-    date(offer_datetime) as date_offer,
-    date(hired_datetime) as date_hired,
-    date(rejected_datetime) as date_rejected,
-    date(last_update_datetime) as date_last_update,
-    date(lead_datetime) as date_lead,
+    cast(demo_datetime as date) as demo_date,
+    cast(hired_datetime as date) as hired_date,
+    cast(invited_to_selection_day_datetime as date) as invited_to_selection_day_date,
+    cast(last_update_datetime as date) as last_update_date,
+    cast(lead_datetime as date) as lead_date,
+    cast(new_datetime as date) as new_date,
+    cast(offer_datetime as date) as offer_date,
+    cast(phone_screen_complete_datetime as date) as phone_screen_complete_date,
+    cast(phone_screen_requested_datetime as date) as phone_screen_requested_date,
+    cast(rejected_datetime as date) as rejected_date,
+    cast(selection_day_datetime as date) as selection_day_date,
 from applications

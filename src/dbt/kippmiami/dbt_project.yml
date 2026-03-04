@@ -33,6 +33,16 @@ models:
     fldoe:
       +schema: fldoe
       +materialized: table
+      staging:
+        +contract:
+          enforced: true
+    powerschool:
+      +materialized: table
+      +schema: powerschool
+      sis:
+        staging:
+          +contract:
+            enforced: true
   deanslist:
     +materialized: table
     staging:
@@ -40,6 +50,9 @@ models:
         +enabled: false
   iready:
     +materialized: table
+    staging:
+      stg_iready__instructional_usage_data:
+        +enabled: false
   powerschool:
     +materialized: table
     sis:
@@ -102,8 +115,6 @@ models:
     +materialized: table
     staging:
       stg_renlearn__accelerated_reader:
-        +enabled: false
-      stg_renlearn__fast_star:
         +enabled: false
       stg_renlearn__star_skill_area:
         +enabled: false

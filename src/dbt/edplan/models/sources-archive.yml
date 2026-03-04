@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: edplan
     schema: |
@@ -9,4 +7,4 @@ sources:
       - name: stg_edplan__njsmart_powerschool_archive
       - name: src_edplan__njsmart_powerschool_archive
         config:
-          +enabled: false
+          enabled: false

@@ -23,7 +23,9 @@ with
 
     seats_snapshot as (select *, from {{ ref("int_seat_tracker__snapshot") }}),
 
-    seats_detail as (select *, from {{ ref("stg_seat_tracker__seats") }}),
+    seats_detail as (
+        select *, from {{ ref("stg_google_appsheet__seat_tracker__seats") }}
+    ),
 
     projections as (
         select *, from {{ ref("stg_google_sheets__recruitment__school_projections") }}
@@ -70,6 +72,7 @@ with
             seats_snapshot
             on date_spine.date_week
             between seats_snapshot.valid_from and seats_snapshot.valid_to
+            and date_spine.academic_year <= seats_snapshot.academic_year
         inner join
             seats_detail
             on seats_snapshot.staffing_model_id = seats_detail.staffing_model_id

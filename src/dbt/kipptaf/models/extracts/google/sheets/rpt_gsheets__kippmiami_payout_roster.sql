@@ -21,7 +21,7 @@ with
                 avg(if(percent_progress_to_annual_typical_growth_percent >= 100, 1, 0)),
                 2
             ) as criteria,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where test_round = 'EOY' and rn_subj_round = 1 and region = 'KIPP Miami'
         group by academic_year_int, `subject`, student_grade
 
@@ -40,7 +40,7 @@ with
                 avg(if(percent_progress_to_annual_stretch_growth_percent >= 100, 1, 0)),
                 2
             ) as criteria,
-        from {{ ref("base_iready__diagnostic_results") }}
+        from {{ ref("int_iready__diagnostic_results") }}
         where test_round = 'EOY' and rn_subj_round = 1 and region = 'KIPP Miami'
         group by academic_year_int, `subject`, student_grade
 
@@ -51,7 +51,7 @@ with
             concat('STAR ', star_discipline, ' proficiency') as measure,
             cast(grade_level as string) as grade_level,
             round(avg(is_district_benchmark_proficient_int), 2) as criteria,
-        from {{ ref("int_renlearn__star_rollup") }}
+        from {{ ref("stg_renlearn__star") }}
         where screening_period_window_name = 'Spring' and rn_subj_round = 1
         group by academic_year, star_discipline, grade_level
 
@@ -62,7 +62,7 @@ with
             concat('STAR ', star_discipline, ' proficiency') as measure,
             'Royalty' as grade_level,
             round(avg(is_district_benchmark_proficient_int), 2) as criteria,
-        from {{ ref("int_renlearn__star_rollup") }}
+        from {{ ref("stg_renlearn__star") }}
         where screening_period_window_name = 'Spring' and rn_subj_round = 1
         group by academic_year, star_discipline
 

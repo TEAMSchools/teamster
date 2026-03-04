@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: int_students__graduation_path_codes
+    config:
+      materialized: table
     data_tests:
       - distinct_count:
           arguments:
