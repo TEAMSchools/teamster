@@ -59,7 +59,8 @@ select
         targetclasssize,
         transaction_date,
         vocational,
-        whomodifiedid
+        whomodifiedid,
+        source_file_name
     ),
 
     prerequisites as prerequisitesvalue,

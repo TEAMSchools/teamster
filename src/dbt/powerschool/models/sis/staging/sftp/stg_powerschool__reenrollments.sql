@@ -12,7 +12,8 @@ select
         fulltimeequiv_obsolete,
         membershipshare,
         entrydate,
-        exitdate
+        exitdate,
+        source_file_name
     ),
 
     cast(dcid as int) as dcid,

@@ -25,3 +25,4 @@ models:
 vars:
   cloud_storage_uri_base: null
   bigquery_external_connection_name: null
+  local_timezone: null
