@@ -1,5 +1,0 @@
-models:
-  - name: rpt_tableau__fresh_dashboard_conversions
-    config:
-      contract:
-        enforced: false

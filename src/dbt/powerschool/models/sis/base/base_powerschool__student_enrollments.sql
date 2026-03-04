@@ -13,6 +13,8 @@ with
         select
             enr.*,
 
+            if(enr.entrydate <= cr.min_calendardate, true, false) as is_enrolled_fdos,
+
             case
                 when enr.exitdate >= cr.max_calendardate
                 then true
@@ -40,6 +42,7 @@ with
                 is_enrolled_oct01,
                 is_enrolled_oct15,
                 is_enrolled_recent,
+                is_enrolled_fdos,
                 is_retained_year
             ),
 
@@ -62,6 +65,10 @@ with
             max(is_enrolled_recent) over (
                 partition by studentid, yearid
             ) as is_enrolled_recent,
+
+            max(is_enrolled_fdos) over (
+                partition by studentid, yearid
+            ) as is_enrolled_fdos,
 
             max(is_retained_year) over (
                 partition by studentid, yearid
