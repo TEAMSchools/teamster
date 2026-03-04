@@ -1,8 +1,6 @@
 with
     actual_enroll_type as (
         select
-            f.enrollment_academic_year,
-            f.enrollment_academic_year_display,
             f.current_academic_year,
             f.next_academic_year,
             f.org,
@@ -21,33 +19,36 @@ with
 
             f.next_academic_year as aligned_enrollment_academic_year,
 
-            e1.enroll_status as ps_enroll_status,
-            e1.region as ps_region,
-            e1.school as ps_school,
-            e1.grade_level as ps_grade_level,
-            e1.is_enrolled_fdos,
-            e1.is_enrolled_oct01,
-            e1.is_enrolled_oct15,
+            e.enroll_status as ps_enroll_status,
+            e.region as ps_region,
+            e.school as ps_school,
+            e.grade_level as ps_grade_level,
+            e.is_enrolled_fdos,
+            e.is_enrolled_oct01,
+            e.is_enrolled_oct15,
 
             if(
-                e2.next_year_enrollment_type is null,
-                'New',
-                e2.next_year_enrollment_type
+                e.enroll_status = 0, current_academic_year, next_academic_year
+            ) as enrollment_academic_year,
+
+            if(
+                e.enroll_status = 0,
+                regexp_replace(current_academic_year, r'-\d{2}', '-'),
+                enrollment_academic_year_display
+            ) as enrollment_academic_year_display,
+
+            if(
+                e.next_year_enrollment_type is null, 'New', e.next_year_enrollment_type
             ) as enrollment_academic_year_enrollment_type,
 
         from {{ ref("int_finalsite__status_report_unpivot") }} as f
         left join
-            {{ ref("int_extracts__student_enrollments") }} as e1
-            on f.enrollment_academic_year = e1.academic_year
-            and f.finalsite_enrollment_id = e1.infosnap_id
-            and e1.rn_year = 1
-        left join
-            {{ ref("int_extracts__student_enrollments") }} as e2
-            on f.enrollment_academic_year - 1 = e2.academic_year
-            and f.finalsite_enrollment_id = e2.infosnap_id
-            and e2.rn_year = 1
-        -- fixing the value for now - will remove once a better data model is created
-        where f.enrollment_academic_year <= 2026
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on f.enrollment_academic_year = e.academic_year
+            and f.finalsite_enrollment_id = e.infosnap_id
+            and e.rn_year = 1
+        -- this has to be a fixed value that is changed when the rollover happens
+        where f.enrollment_academic_year = 2026
     )
 
 select
