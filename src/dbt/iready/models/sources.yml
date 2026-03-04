@@ -1,8 +1,9 @@
 sources:
   - name: iready
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ var('iready_schema', project_name + '_iready') }}
+      {% if target.name == 'dev' -%}zz_dev_{{ env_var('GITHUB_USER', '') }}_
+      {%- elif target.name == 'staging' or env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}zz_staging_
+      {%- endif -%}{{ var('iready_schema', project_name + '_iready') }}
     tables:
       - name: src_iready__diagnostic_results
         config:

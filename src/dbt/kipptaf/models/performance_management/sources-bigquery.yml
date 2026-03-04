@@ -1,6 +1,6 @@
 sources:
   - name: performance_management
-    schema: "{{ project_name }}_performance_management"
+    schema: kipptaf_performance_management
     config:
       enabled: false
     tables:

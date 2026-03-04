@@ -1,8 +1,9 @@
 sources:
   - name: amplify
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ project_name }}_amplify
+      {% if target.name == 'dev' -%}zz_dev_{{ env_var('GITHUB_USER', '') }}_
+      {%- elif target.name == 'staging' or env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}zz_staging_
+      kipptaf_amplify
     tables:
       - name: stg_amplify__mclass__api__benchmark_student_summary
         identifier: stg_amplify__benchmark_student_summary

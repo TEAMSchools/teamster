@@ -1,8 +1,9 @@
 sources:
   - name: collegeboard
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}
-      z_dev_{%- endif -%}kipptaf_collegeboard
+      {% if target.name == 'dev' -%}zz_dev_{{ env_var('GITHUB_USER', '') }}_
+      {%- elif target.name == 'staging' or env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}zz_staging_
+      {%- endif -%}kipptaf_collegeboard
     tables:
       - name: src_collegeboard__psat
         external:

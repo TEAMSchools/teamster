@@ -1,8 +1,9 @@
 sources:
   - name: tableau
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ project_name }}_tableau
+      {% if target.name == 'dev' -%}zz_dev_{{ env_var('GITHUB_USER', '') }}_
+      {%- elif target.name == 'staging' or env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}zz_staging_
+      {%- endif -%}kipptaf_tableau
     tables:
       - name: src_tableau__view_count_per_view
         external:

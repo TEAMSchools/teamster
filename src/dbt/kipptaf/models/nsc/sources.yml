@@ -1,7 +1,8 @@
 sources:
   - name: nsc
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}
+      {% if target.name == 'dev' -%}zz_dev_{{ env_var('GITHUB_USER', '') }}_
+      {%- elif target.name == 'staging' or env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}zz_staging_
       z_dev_{%- endif -%}kipptaf_nsc
     tables:
       - name: src_nsc__student_tracker

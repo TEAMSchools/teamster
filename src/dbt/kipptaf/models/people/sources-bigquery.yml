@@ -1,6 +1,6 @@
 sources:
   - name: people
-    schema: "{{ project_name }}_people"
+    schema: kipptaf_people
     tables:
       - name: src_people__employee_numbers
         identifier: stg_people__employee_numbers

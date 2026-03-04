@@ -1,5 +1,7 @@
 sources:
   - name: google_drive
+    config:
+      enabled: false
     tables:
       - name: src_surveys__manager_survey_detail_archive
         config:

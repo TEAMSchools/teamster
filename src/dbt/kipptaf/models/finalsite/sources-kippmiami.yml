@@ -1,7 +1,8 @@
 sources:
   - name: kippmiami_finalsite
     schema: |
-      {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_
+      {% if target.name == 'dev' -%}zz_dev_{{ env_var('GITHUB_USER', '') }}_
+      {%- elif target.name == 'staging' or env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}zz_staging_
       {%- endif -%}kippmiami_finalsite
     tables:
       - name: stg_finalsite__status_report

@@ -1,6 +1,6 @@
 sources:
   - name: surveys
-    schema: "{{ project_name }}_surveys"
+    schema: kipptaf_surveys
     tables:
       - name: int_surveys__response_identifiers
         config:

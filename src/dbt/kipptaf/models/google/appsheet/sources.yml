@@ -1,6 +1,6 @@
 sources:
   - name: google_appsheet
-    schema: "{{ project_name }}_appsheet"
+    schema: kipptaf_appsheet
     tables:
       - name: src_google_appsheet__illuminate_assessments_extension
         identifier: illuminate_assessments_extension

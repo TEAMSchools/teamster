@@ -1,8 +1,9 @@
 sources:
   - name: kippcamden_pearson
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}
-      z_dev_{%- endif -%}kippcamden_pearson
+      {% if target.name == 'dev' -%}zz_dev_{{ env_var('GITHUB_USER', '') }}_
+      {%- elif target.name == 'staging' or env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}zz_staging_
+      {%- endif -%}kippcamden_pearson
     tables:
       - name: stg_pearson__njgpa
         config:

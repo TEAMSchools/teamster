@@ -1,8 +1,9 @@
 sources:
   - name: edplan
     schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ var('edplan_schema', project_name + '_edplan') }}
+      {% if target.name == 'dev' -%}zz_dev_{{ env_var('GITHUB_USER', '') }}_
+      {%- elif target.name == 'staging' or env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}zz_staging_
+      {%- endif -%}{{ var('edplan_schema', project_name + '_edplan') }}
     tables:
       - name: src_edplan__njsmart_powerschool
         config:

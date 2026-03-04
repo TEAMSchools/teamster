@@ -1,6 +1,6 @@
 sources:
   - name: kippadb
-    schema: "{{ project_name }}_kippadb"
+    schema: kipptaf_kippadb
     tables:
       - name: account
         identifier: Account
