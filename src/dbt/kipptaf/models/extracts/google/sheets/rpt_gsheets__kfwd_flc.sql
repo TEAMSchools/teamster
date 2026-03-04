@@ -12,7 +12,7 @@ with
 
     early as (
         select applicant, max(is_early_action_decision) as is_ea_ed,
-        from {{ ref("base_kippadb__application") }}
+        from {{ ref("int_kippadb__application") }}
         group by applicant
     ),
 
@@ -25,7 +25,7 @@ with
             matriculation_decision,
 
             row_number() over (partition by applicant order by id asc) as rn_applicant,
-        from {{ ref("base_kippadb__application") }}
+        from {{ ref("int_kippadb__application") }}
         where matriculation_decision = 'Matriculated (Intent to Enroll)'
     ),
 

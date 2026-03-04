@@ -80,7 +80,8 @@ with
         where
             e.school_level = 'HS'
             and e.rn_year = 1
-            and e.graduation_year >= {{ var("current_academic_year") + 1 }}
+            and e.salesforce_contact_graduation_year
+            >= {{ var("current_academic_year") + 1 }}
 
         union all
 
@@ -118,7 +119,8 @@ with
         where
             e.school_level = 'HS'
             and e.rn_year = 1
-            and e.graduation_year >= {{ var("current_academic_year") + 1 }}
+            and e.salesforce_contact_graduation_year
+            >= {{ var("current_academic_year") + 1 }}
     ),
 
     final_scores as (

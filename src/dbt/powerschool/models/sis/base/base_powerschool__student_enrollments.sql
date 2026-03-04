@@ -124,6 +124,9 @@ select
 
     sch.name as school_name,
     sch.abbreviation as school_abbreviation,
+    sch.schoolphone as school_phone,
+    sch.principal as school_principal,
+    sch.asstprincipal as school_assistant_principal,
 
     scf.spedlep,
     scf.lep_status,
