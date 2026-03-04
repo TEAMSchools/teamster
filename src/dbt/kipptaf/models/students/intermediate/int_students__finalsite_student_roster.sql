@@ -1,6 +1,8 @@
 with
-    actual_enroll_type as (
+    pre_rollover as (
         select
+            f.enrollment_academic_year,
+            f.enrollment_academic_year_display,
             f.current_academic_year,
             f.next_academic_year,
             f.org,
@@ -19,6 +21,63 @@ with
 
             f.next_academic_year as aligned_enrollment_academic_year,
 
+            e1.enroll_status as ps_enroll_status,
+            e1.region as ps_region,
+            e1.school as ps_school,
+            e1.grade_level as ps_grade_level,
+            e1.is_enrolled_fdos,
+            e1.is_enrolled_oct01,
+            e1.is_enrolled_oct15,
+
+            if(
+                e2.next_year_enrollment_type is null,
+                'New',
+                e2.next_year_enrollment_type
+            ) as enrollment_academic_year_enrollment_type,
+
+            if(
+                current_date(
+                    '{{ var("local_timezone") }}'
+                ) between date(f.next_academic_year, 01, 01) and date(
+                    f.next_academic_year, 02, 28
+                ),
+                true,
+                false
+            ) as active_roster,
+
+        from {{ ref("int_finalsite__status_report_unpivot") }} as f
+        left join
+            {{ ref("int_extracts__student_enrollments") }} as e1
+            on f.enrollment_academic_year = e1.academic_year
+            and f.finalsite_enrollment_id = e1.infosnap_id
+            and e1.rn_year = 1
+        left join
+            {{ ref("int_extracts__student_enrollments") }} as e2
+            on f.enrollment_academic_year - 1 = e2.academic_year
+            and f.finalsite_enrollment_id = e2.infosnap_id
+            and e2.rn_year = 1
+        where f.enrollment_academic_year <= {{ var("current_academic_year") + 1 }}
+    ),
+
+    post_rollover_custom_enroll_year as (
+        select
+            f.current_academic_year,
+            f.next_academic_year,
+            f.org,
+            f.region,
+            f.schoolid,
+            f.school,
+            f.finalsite_enrollment_id,
+            f.powerschool_student_number,
+            f.first_name,
+            f.last_name,
+            f.self_contained,
+            f.detailed_status,
+            f.status_order,
+            f.status_start_date,
+
+            f.next_academic_year as aligned_enrollment_academic_year,
+
             e.enroll_status as ps_enroll_status,
             e.region as ps_region,
             e.school as ps_school,
@@ -26,6 +85,8 @@ with
             e.is_enrolled_fdos,
             e.is_enrolled_oct01,
             e.is_enrolled_oct15,
+
+            if(e.enroll_status = 0, e.grade_level, f.grade_level) as grade_level,
 
             if(
                 e.enroll_status = 0, f.current_academic_year, f.next_academic_year
@@ -35,7 +96,7 @@ with
                 e.enroll_status = 0,
                 cast(f.current_academic_year as string)
                 || '-'
-                || right(cast(f.current_academic_year + 1 as string), 2),
+                || right(cast(f.next_academic_year as string), 2),
                 f.enrollment_academic_year_display
             ) as enrollment_academic_year_display,
 
@@ -43,67 +104,230 @@ with
                 e.next_year_enrollment_type is null, 'New', e.next_year_enrollment_type
             ) as enrollment_academic_year_enrollment_type,
 
+            if(
+                current_date(
+                    '{{ var("local_timezone") }}'
+                ) between date(f.next_academic_year, 03, 01) and date(
+                    f.next_academic_year, 06, 30
+                ),
+                true,
+                false
+            ) as active_roster,
+
         from {{ ref("int_finalsite__status_report_unpivot") }} as f
         left join
             {{ ref("int_extracts__student_enrollments") }} as e
-            on f.enrollment_academic_year = e.academic_year
+            on f.enrollment_academic_year - 1 = e.academic_year
             and f.finalsite_enrollment_id = e.infosnap_id
             and e.rn_year = 1
-        -- this has to be a fixed value that is changed when the rollover happens
-        where f.enrollment_academic_year = 2026
+        where f.enrollment_academic_year = {{ var("current_academic_year") + 1 }}
+    ),
+
+    post_rollover_aligned_enroll_year as (
+        select
+            f.enrollment_academic_year,
+            f.enrollment_academic_year_display,
+            f.current_academic_year,
+            f.next_academic_year,
+            f.org,
+            f.region,
+            f.schoolid,
+            f.school,
+            f.finalsite_enrollment_id,
+            f.powerschool_student_number,
+            f.first_name,
+            f.last_name,
+            f.grade_level,
+            f.self_contained,
+            f.detailed_status,
+            f.status_order,
+            f.status_start_date,
+
+            f.next_academic_year as aligned_enrollment_academic_year,
+
+            e1.enroll_status as ps_enroll_status,
+            e1.region as ps_region,
+            e1.school as ps_school,
+            e1.grade_level as ps_grade_level,
+            e1.is_enrolled_fdos,
+            e1.is_enrolled_oct01,
+            e1.is_enrolled_oct15,
+
+            if(
+                e2.next_year_enrollment_type is null,
+                'New',
+                e2.next_year_enrollment_type
+            ) as enrollment_academic_year_enrollment_type,
+
+            if(
+                current_date(
+                    '{{ var("local_timezone") }}'
+                ) between date(f.next_academic_year, 07, 01) and date(
+                    f.next_academic_year, 10, 15
+                ),
+                true,
+                false
+            ) as active_roster,
+
+        from {{ ref("int_finalsite__status_report_unpivot") }} as f
+        left join
+            {{ ref("int_extracts__student_enrollments") }} as e1
+            on f.enrollment_academic_year = e1.academic_year
+            and f.finalsite_enrollment_id = e1.infosnap_id
+            and e1.rn_year = 1
+        left join
+            {{ ref("int_extracts__student_enrollments") }} as e2
+            on f.enrollment_academic_year - 1 = e2.academic_year
+            and f.finalsite_enrollment_id = e2.infosnap_id
+            and e2.rn_year = 1
+        where f.enrollment_academic_year = {{ var("current_academic_year") }}
+    ),
+
+    appended_rosters as (
+        select
+            enrollment_academic_year,
+            enrollment_academic_year_display,
+            aligned_enrollment_academic_year,
+            current_academic_year,
+            next_academic_year,
+            org,
+            region,
+            schoolid,
+            school,
+            finalsite_enrollment_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
+            grade_level,
+            enrollment_academic_year_enrollment_type,
+            self_contained,
+            detailed_status,
+            status_order,
+            status_start_date,
+            active_roster,
+            ps_enroll_status,
+            ps_region,
+            ps_school,
+            ps_grade_level,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+
+        from pre_rollover
+
+        union all
+
+        select
+            enrollment_academic_year,
+            enrollment_academic_year_display,
+            aligned_enrollment_academic_year,
+            current_academic_year,
+            next_academic_year,
+            org,
+            region,
+            schoolid,
+            school,
+            finalsite_enrollment_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
+            grade_level,
+            enrollment_academic_year_enrollment_type,
+            self_contained,
+            detailed_status,
+            status_order,
+            status_start_date,
+            active_roster,
+            ps_enroll_status,
+            ps_region,
+            ps_school,
+            ps_grade_level,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+
+        from post_rollover_custom_enroll_year
+
+        union all
+
+        select
+            enrollment_academic_year,
+            enrollment_academic_year_display,
+            aligned_enrollment_academic_year,
+            current_academic_year,
+            next_academic_year,
+            org,
+            region,
+            schoolid,
+            school,
+            finalsite_enrollment_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
+            grade_level,
+            enrollment_academic_year_enrollment_type,
+            self_contained,
+            detailed_status,
+            status_order,
+            status_start_date,
+            active_roster,
+            ps_enroll_status,
+            ps_region,
+            ps_school,
+            ps_grade_level,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+
+        from post_rollover_aligned_enroll_year
     )
 
 select
-    f.aligned_enrollment_academic_year,
-    f.enrollment_academic_year,
-    f.enrollment_academic_year_display,
-    f.current_academic_year,
-    f.next_academic_year,
-    f.org,
-    f.region,
-    f.schoolid,
-    f.school,
-    f.finalsite_enrollment_id,
-    f.powerschool_student_number,
-    f.first_name,
-    f.last_name,
-    f.grade_level,
-    f.self_contained,
-    f.detailed_status,
-    f.status_order,
-    f.status_start_date,
-    f.enrollment_academic_year_enrollment_type,
-    f.ps_enroll_status,
-    f.ps_region,
-    f.ps_school,
-    f.ps_grade_level,
-    f.is_enrolled_fdos,
-    f.is_enrolled_oct01,
-    f.is_enrolled_oct15,
+    a.aligned_enrollment_academic_year,
+    a.enrollment_academic_year,
+    a.enrollment_academic_year_display,
+    a.current_academic_year,
+    a.next_academic_year,
+    a.org,
+    a.region,
+    a.schoolid,
+    a.school,
+    a.finalsite_enrollment_id,
+    a.powerschool_student_number,
+    a.first_name,
+    a.last_name,
+    a.grade_level,
+    a.self_contained,
+    a.detailed_status,
+    a.status_order,
+    a.status_start_date,
+    a.enrollment_academic_year_enrollment_type,
+    a.ps_enroll_status,
+    a.ps_region,
+    a.ps_school,
+    a.ps_grade_level,
+    a.is_enrolled_fdos,
+    a.is_enrolled_oct01,
+    a.is_enrolled_oct15,
 
     x.status_group_name,
     x.status_group_value,
 
-    cast(f.aligned_enrollment_academic_year as string)
+    cast(a.aligned_enrollment_academic_year as string)
     || '-'
     || right(
-        cast(f.aligned_enrollment_academic_year + 1 as string), 2
+        cast(a.aligned_enrollment_academic_year + 1 as string), 2
     ) as aligned_enrollment_academic_year_display,
 
-    first_value(f.detailed_status) over (
-        partition by f.enrollment_academic_year, f.finalsite_enrollment_id
-        order by f.status_start_date desc
+    first_value(a.detailed_status) over (
+        partition by a.enrollment_academic_year, a.finalsite_enrollment_id
+        order by a.status_start_date desc
     ) as latest_status,
 
-    if(
-        f.enrollment_academic_year = f.current_academic_year,
-        f.grade_level + 1,
-        f.grade_level
-    ) as aligned_enrollment_academic_year_grade_level,
-
-from actual_enroll_type as f
+from appended_rosters as a
 inner join
     {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as x
-    on f.enrollment_academic_year = x.enrollment_academic_year
-    and f.enrollment_academic_year_enrollment_type = x.enrollment_type
-    and f.detailed_status = x.detailed_status
+    on a.enrollment_academic_year = x.enrollment_academic_year
+    and a.enrollment_academic_year_enrollment_type = x.enrollment_type
+    and a.detailed_status = x.detailed_status
+where a.active_roster
