@@ -60,11 +60,11 @@ with
 select
     u.*,
 
-    t.type,
-    t.code,
-    t.name,
-    t.start_date,
-    t.end_date,
+    t.type as reporting_type,
+    t.code as reporting_code,
+    t.name as reporting_season,
+    t.start_date as reporting_start_date,
+    t.end_date as reporting_end_date,
 
     'KTAF' as org,
 
