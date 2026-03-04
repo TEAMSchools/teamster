@@ -1645,3 +1645,73 @@ class StudentEmail(SFTPFile):
     grade_level: str | None = None
     schoolid: str | None = None
     state_studentnumber: str | None = None
+
+
+class StoredGrades(SFTPFile):
+    dcid: str | None = None
+    ab_course_cmp_ext_crd: str | None = None
+    ab_course_cmp_fun_flg: str | None = None
+    ab_course_cmp_fun_sch: str | None = None
+    ab_course_cmp_met_cd: str | None = None
+    ab_course_cmp_sta_cd: str | None = None
+    ab_course_eva_pro_cd: str | None = None
+    ab_dipl_exam_mark: str | None = None
+    ab_final_mark: str | None = None
+    ab_lng_cd: str | None = None
+    ab_pri_del_met_cd: str | None = None
+    absences: str | None = None
+    behavior: str | None = None
+    comment: str | None = None
+    course_equiv: str | None = None
+    course_name: str | None = None
+    course_number: str | None = None
+    credit_type: str | None = None
+    datestored: str | None = None
+    earnedcrhrs: str | None = None
+    excludefromclassrank: str | None = None
+    excludefromgpa: str | None = None
+    excludefromgradesuppression: str | None = None
+    excludefromgraduation: str | None = None
+    excludefromhonorroll: str | None = None
+    excludefromtranscripts: str | None = None
+    executionid: str | None = None
+    gpa_addedvalue: str | None = None
+    gpa_custom1: str | None = None
+    gpa_custom2: str | None = None
+    gpa_points: str | None = None
+    grade: str | None = None
+    grade_level: str | None = None
+    gradereplacementpolicy_id: str | None = None
+    gradescale_name: str | None = None
+    ip_address: str | None = None
+    isearnedcrhrsfromgb: str | None = None
+    ispotentialcrhrsfromgb: str | None = None
+    log: str | None = None
+    percent: str | None = None
+    potentialcrhrs: str | None = None
+    psguid: str | None = None
+    replaced_dcid: str | None = None
+    replaced_equivalent_course: str | None = None
+    replaced_grade: str | None = None
+    schoolid: str | None = None
+    schoolname: str | None = None
+    sectionid: str | None = None
+    storecode: str | None = None
+    studentid: str | None = None
+    tardies: str | None = None
+    teacher_name: str | None = None
+    termbinsname: str | None = None
+    termid: str | None = None
+    transaction_date: str | None = None
+    whomodifiedid: str | None = None
+    whomodifiedtype: str | None = None
+
+
+class U_StudentsUserFields(SFTPFile):
+    studentsdcid: str | None = None
+    infosnap_id: str | None = None
+    media_release: str | None = None
+    whencreated: str | None = None
+    whenmodified: str | None = None
+    whocreated: str | None = None
+    whomodified: str | None = None

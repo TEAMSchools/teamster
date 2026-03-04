@@ -1,71 +1,43 @@
 models:
   - name: rpt_tableau__fresh_dashboard_progress_to_goals
+    config:
+      enabled: false
     columns:
       - name: aligned_enrollment_academic_year
-        data_type: integer
-      - name: enrollment_academic_year
-        data_type: integer
-      - name: finalsite_student_id
-        data_type: string
-      - name: next_year_enrollment_type
-        data_type: string
-      - name: _dbt_source_relation
-        data_type: string
-      - name: enrollment_year
-        data_type: string
-      - name: enrollment_academic_year_display
-        data_type: string
-      - name: sre_academic_year_start
-        data_type: date
-      - name: sre_academic_year_end
-        data_type: date
+        data_type: int64
       - name: org
         data_type: string
       - name: region
         data_type: string
-      - name: latest_region
+      - name: school_level
         data_type: string
       - name: schoolid
-        data_type: integer
-      - name: latest_schoolid
-        data_type: integer
+        data_type: int64
       - name: school
         data_type: string
-      - name: latest_school
-        data_type: string
-      - name: powerschool_student_number
-        data_type: integer
-      - name: first_name
-        data_type: string
-      - name: last_name
-        data_type: string
       - name: grade_level
-        data_type: integer
-      - name: latest_grade_level
-        data_type: integer
-      - name: detailed_status
-        data_type: string
-      - name: status_order
-        data_type: integer
-      - name: status_start_date
-        data_type: date
-      - name: status_end_date
-        data_type: date
-      - name: days_in_status
-        data_type: integer
-      - name: rn
-        data_type: integer
-      - name: enrollment_type_raw
+        data_type: int64
+      - name: finalsite_id
         data_type: string
       - name: latest_status
         data_type: string
-      - name: aligned_enrollment_academic_year_display
+      - name: enrollment_type
         data_type: string
-      - name: sre_aligned_academic_year_start
-        data_type: date
-      - name: sre_aligned_academic_year_end
-        data_type: date
+      - name: self_contained
+        data_type: string
+      - name: row_type
+        data_type: string
+      - name: student_count
+        data_type: int64
       - name: seat_target
-        data_type: float64
+        data_type: numeric
       - name: fdos_target
-        data_type: float64
+        data_type: numeric
+      - name: budget_target
+        data_type: numeric
+      - name: new_student_target
+        data_type: numeric
+      - name: re_enroll_projection
+        data_type: numeric
+      - name: granularity
+        data_type: string
