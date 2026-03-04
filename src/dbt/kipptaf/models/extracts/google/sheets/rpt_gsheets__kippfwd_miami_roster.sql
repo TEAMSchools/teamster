@@ -3,23 +3,18 @@ with
         select
             _dbt_source_relation,
             student_id,
-            assessment_subject,
-            assessment_grade,
-            administration_window,
             academic_year,
 
             concat(achievement_level, ' (', scale_score, ')') as fast_score,
-            concat(discipline, '_', lower(administration_window)) as pivot_column,
+            lower(concat(discipline, '_', administration_window)) as pivot_column,
         from {{ ref("stg_fldoe__fast") }}
     ),
 
     fast_pivot as (
-        /* TODO: Add prev-year PM3 */
         select
             _dbt_source_relation,
             student_id,
             academic_year,
-            administration_window,
             ela_pm1,
             ela_pm2,
             ela_pm3,
@@ -70,12 +65,20 @@ select
     co.state_studentnumber as fleid,
 
     gpa.gpa_y1,
+
+    fp_prev.ela_pm3 as ela_pm3_prev,
+    fp_prev.math_pm3 as math_pm3_prev,
 from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     fast_pivot as fp
     on co.state_studentnumber = fp.student_id
     and co.academic_year = fp.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="fp") }}
+left join
+    fast_pivot as fp_prev
+    on co.state_studentnumber = fp_prev.student_id
+    and co.academic_year - 1 = fp_prev.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="fp_prev") }}
 left join
     {{ ref("int_powerschool__gpa_term") }} as gpa
     on co.studentid = gpa.studentid

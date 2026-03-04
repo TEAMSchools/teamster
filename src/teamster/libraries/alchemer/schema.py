@@ -1,5 +1,3 @@
-from typing import Union
-
 from pydantic import BaseModel
 
 
@@ -244,7 +242,7 @@ class Answer(BaseModel):
         str | SignatureAnswer | HeatMapAnswer | dict[str, OptionAnswer | None] | None
     ) = None
 
-    subquestions: dict[str, Union["Answer", dict[str, "Answer"], None]] | None = None
+    subquestions: dict[str, "Answer | dict[str, Answer] | None"] | None = None
 
 
 class SurveyResponse(BaseModel):

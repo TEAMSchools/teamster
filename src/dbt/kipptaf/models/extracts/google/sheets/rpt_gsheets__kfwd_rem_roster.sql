@@ -168,6 +168,7 @@ select
     r.contact_postsec_advisor as postsec_advisor,
     r.contact_postsec_advisor_name as postsec_advisor_name,
     r.es_graduated,
+    r.contact_kipp_region_name,
 from {{ ref("int_kippadb__roster") }} as r
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
 left join {{ ref("stg_kippadb__enrollment") }} as e on ei.cur_enrollment_id = e.id
