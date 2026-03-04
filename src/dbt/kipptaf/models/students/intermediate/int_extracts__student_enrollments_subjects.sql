@@ -258,6 +258,11 @@ select
     sj.discipline,
     sj.fast_subject,
 
+<<<<<<< HEAD:src/dbt/kipptaf/models/extracts/intermediate/int_extracts__student_enrollments_subjects.sql
+    coalesce(sip.is_sipps, false) as is_sipps,
+
+=======
+>>>>>>> main:src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments_subjects.sql
     dr.measure_standard_level_int as dibels_most_recent_composite_int,
 
     a.values_column as ps_grad_path_code,
