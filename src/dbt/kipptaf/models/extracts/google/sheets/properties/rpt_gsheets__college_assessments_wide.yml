@@ -140,3 +140,9 @@ models:
         data_type: numeric
       - name: g9_psat89_math
         data_type: numeric
+      - name: psat89_to_psat10_total_growth
+        data_type: numeric
+      - name: psat89_to_psat10_ebrw_growth
+        data_type: numeric
+      - name: psat89_to_psat10_math_growth
+        data_type: numeric

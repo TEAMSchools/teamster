@@ -116,6 +116,7 @@ with
             and e.school_level = 'HS'
             and e.rn_year = 1
             and not e.is_out_of_district
+            and e.enroll_status = 0
             and ea.expected_admin_season_order is not null
     ),
     first_sat as (
@@ -483,7 +484,52 @@ select
                 and r.expected_grade_level = 9
             then r.score
         end
-    ) as g9_psat89_math
+    ) as g9_psat89_math,
+    max(
+        case
+            when
+                r.expected_score_type = 'psat10_total'
+                and r.expected_grade_level = 10
+            then r.score
+        end
+    ) - max(
+        case
+            when
+                r.expected_score_type = 'psat89_total'
+                and r.expected_grade_level = 9
+            then r.score
+        end
+    ) as psat89_to_psat10_total_growth,
+    max(
+        case
+            when
+                r.expected_score_type = 'psat10_ebrw'
+                and r.expected_grade_level = 10
+            then r.score
+        end
+    ) - max(
+        case
+            when
+                r.expected_score_type = 'psat89_ebrw'
+                and r.expected_grade_level = 9
+            then r.score
+        end
+    ) as psat89_to_psat10_ebrw_growth,
+    max(
+        case
+            when
+                r.expected_score_type = 'psat10_math_section'
+                and r.expected_grade_level = 10
+            then r.score
+        end
+    ) - max(
+        case
+            when
+                r.expected_score_type = 'psat89_math_section'
+                and r.expected_grade_level = 9
+            then r.score
+        end
+    ) as psat89_to_psat10_math_growth
 from roster as r
 left join earliest_sat as es on r.student_number = es.student_number
 left join
