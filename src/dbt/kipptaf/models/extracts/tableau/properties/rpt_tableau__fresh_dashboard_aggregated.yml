@@ -1,5 +1,7 @@
 models:
   - name: rpt_tableau__fresh_dashboard_aggregated
+    config:
+      enabled: false
     columns:
       - name: academic_year
         data_type: int64
