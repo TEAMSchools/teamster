@@ -1,0 +1,6 @@
+models:
+  - name: stg_powerschool__gpselector
+    config:
+      enabled: false
+      contract:
+        enforced: false

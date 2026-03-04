@@ -258,5 +258,6 @@ left join
     and {{ union_dataset_join_clause(left_alias="gw", right_alias="ggs") }}
 where
     e.academic_year = {{ var("current_academic_year") }}
+    and e.rn_year = 1
     and e.enroll_status = 0
     and e.grade_level >= 9

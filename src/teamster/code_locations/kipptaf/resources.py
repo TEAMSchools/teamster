@@ -3,7 +3,6 @@ from dagster_airbyte import AirbyteCloudWorkspace
 from dagster_shared import check
 
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
-from teamster.libraries.amplify.mclass.resources import MClassResource
 from teamster.libraries.coupa.resources import CoupaResource
 from teamster.libraries.email.resources import EmailResource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
@@ -60,12 +59,6 @@ LDAP_RESOURCE = LdapResource(
     port=EnvVar("LDAP_PORT"),
     user=EnvVar("LDAP_USER"),
     password=EnvVar("LDAP_PASSWORD"),
-)
-
-MCLASS_RESOURCE = MClassResource(
-    username=EnvVar("AMPLIFY_USERNAME"),
-    password=EnvVar("AMPLIFY_PASSWORD"),
-    request_timeout=(60 * 10),
 )
 
 POWERSCHOOL_ENROLLMENT_RESOURCE = PowerSchoolEnrollmentResource(

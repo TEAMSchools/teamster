@@ -7,6 +7,7 @@ from dagster import (
     AssetSpec,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     sensor,
 )
 from dagster_shared import check
@@ -64,5 +65,7 @@ def build_google_sheets_asset_sensor(
             return SensorResult(
                 asset_events=asset_events, cursor=json.dumps(obj=cursor)
             )
+        else:
+            return SkipReason()
 
     return _sensor

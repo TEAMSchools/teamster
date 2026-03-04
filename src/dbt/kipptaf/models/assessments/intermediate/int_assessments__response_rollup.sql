@@ -7,6 +7,7 @@ with
             s.title,
             s.scope,
             s.subject_area,
+            s.discipline,
             s.academic_year,
             s.administered_at,
             s.module_type,
@@ -41,6 +42,7 @@ with
             academic_year,
             scope,
             subject_area,
+            discipline,
             module_type,
             module_code,
             region,
@@ -71,7 +73,24 @@ with
             ) as percent_correct,
         from scaffold_responses
         where is_internal_assessment
-        group by all
+        group by
+            illuminate_student_id,
+            powerschool_student_number,
+            academic_year,
+            scope,
+            subject_area,
+            discipline,
+            module_type,
+            module_code,
+            region,
+            is_internal_assessment,
+            is_replacement,
+            response_type,
+            response_type_id,
+            response_type_code,
+            response_type_description,
+            response_type_root_description,
+            powerschool_school_id
     ),
 
     response_union as (
@@ -81,6 +100,7 @@ with
             academic_year,
             scope,
             subject_area,
+            discipline,
             module_type,
             module_code,
             region,
@@ -171,6 +191,7 @@ with
             academic_year,
             scope,
             subject_area,
+            discipline,
             module_type,
             module_code,
             region,
@@ -206,9 +227,11 @@ select
     ru.academic_year,
     ru.scope,
     ru.subject_area,
+    ru.discipline,
     ru.module_type,
     ru.module_code,
     ru.region,
+    ru.powerschool_school_id,
     ru.is_internal_assessment,
     ru.is_replacement,
     ru.response_type,
@@ -240,12 +263,12 @@ left join
     on ru.performance_band_set_id = pbl.performance_band_set_id
     and ru.percent_correct between pbl.minimum_value and pbl.maximum_value
 left join
-    {{ ref("stg_reporting__terms") }} as rta
+    {{ ref("stg_google_sheets__reporting__terms") }} as rta
     on ru.administered_at between rta.start_date and rta.end_date
     and ru.powerschool_school_id = rta.school_id
     and rta.type = 'RT'
 left join
-    {{ ref("stg_reporting__terms") }} as rtt
+    {{ ref("stg_google_sheets__reporting__terms") }} as rtt
     on ru.date_taken between rtt.start_date and rtt.end_date
     and ru.powerschool_school_id = rtt.school_id
     and rtt.type = 'RT'

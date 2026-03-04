@@ -3,12 +3,12 @@ with
         select student_number, is_retained_year,
         from {{ ref("int_extracts__student_enrollments") }}
         where
-            -- submission is always for the previous school year, but retention is
-            -- tracked only on the submission year + 1 (current academic year)
+            /* submission is always for the previous school year, but retention is 
+            tracked only on the submission year + 1 (current academic year) */
             academic_year = {{ var("current_academic_year") }}
-            and grade_level != 99
+            and rn_year = 1
             and is_retained_year
-            -- miami does their own submission
+            /* miami does their own submission */
             and region != 'Miami'
     ),
 
@@ -41,6 +41,7 @@ with
             -- tag the manual entry for student numbers on the crdc student crosswalk
             -- g-sheet feed
             me.crdc_question_section,
+
             coalesce(r.is_retained_year, false) as is_retained_year,
 
             case
@@ -81,24 +82,20 @@ with
 
             if(e.iep_status = 'No IEP' and is_504, true, false) as c504_only,
 
-            if(lep.liep_parent_refusal_date is null, false, true) as lep_parent_refusal,
+            if(
+                e.lep_tf = 1 and e.liep_parent_refusal_date is not null, true, false
+            ) as lep_parent_refusal,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join retained as r on e.student_number = r.student_number
         left join
-            {{ ref("stg_crdc__student_numbers") }} as me
+            {{ ref("stg_google_sheets__crdc__student_numbers") }} as me
             on e.student_number = me.student_number
-        left join
-            {{ ref("stg_powerschool__s_nj_stu_x") }} as lep
-            on e.students_dcid = lep.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="lep") }}
-            and lep.lep_tf = 1
-            and lep.liep_parent_refusal_date is not null
         where
-            -- submission is always for the previous school year
+            /* submission is always for the previous school year */
             e.academic_year = {{ var("current_academic_year") - 1 }}
-            and e.grade_level != 99
-            -- miami does their own submission
+            and e.rn_year = 1
+            /* miami does their own submission */
             and e.region != 'Miami'
     ),
 
@@ -177,7 +174,7 @@ with
             and {{ union_dataset_join_clause(left_alias="c", right_alias="g") }}
             and g.storecode = 'Y1'
         left join
-            {{ ref("stg_crdc__sced_code_crosswalk") }} as x
+            {{ ref("stg_google_sheets__crdc__sced_code_crosswalk") }} as x
             on concat(c.nces_subject_area, c.nces_course_id) = x.sced_code
         where
             -- submission is always for the previous school year

@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: base_powerschool__course_enrollments
+    # config:
+    #   materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string

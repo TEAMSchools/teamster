@@ -342,3 +342,19 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/KnowBe4 Reporting REST API
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-amplify-sftp-kipptaf
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Amplify SFTP
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-amplify-sftp-kipppaterson
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Amplify SFTP - Paterson

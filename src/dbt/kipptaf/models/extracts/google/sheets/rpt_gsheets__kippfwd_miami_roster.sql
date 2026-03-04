@@ -2,30 +2,44 @@ with
     fast_concat as (
         select
             _dbt_source_relation,
+            student_id,
             academic_year,
-            student_id as fleid,
-            assessment_subject as `subject`,
-            assessment_grade,
+
             concat(achievement_level, ' (', scale_score, ')') as fast_score,
+            lower(concat(discipline, '_', administration_window)) as pivot_column,
         from {{ ref("stg_fldoe__fast") }}
-        where administration_window = 'PM3'
     ),
 
     fast_pivot as (
-        select _dbt_source_relation, fleid, academic_year, fast_ela, fast_math,
+        select
+            _dbt_source_relation,
+            student_id,
+            academic_year,
+            ela_pm1,
+            ela_pm2,
+            ela_pm3,
+            math_pm1,
+            math_pm2,
+            math_pm3,
         from
             fast_concat pivot (
-                max(fast_score) for `subject`
-                in ('English Language Arts' as fast_ela, 'Mathematics' as fast_math)
+                max(fast_score) for pivot_column
+                in ('ela_pm1', 'ela_pm2', 'ela_pm3', 'math_pm1', 'math_pm2', 'math_pm3')
             )
+    ),
+
+    gpa_term as (
+        select yearid, schoolid, studentid, _dbt_source_relation, gpa_y1,
+        from {{ ref("int_powerschool__gpa_term") }}
+        where is_current
     )
 
 select
     co.academic_year,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.advisor_lastfirst,
     co.student_number as ps_id,
-    co.state_studentnumber as mdcps_id,
+    co.secondary_state_studentnumber as mdcps_id,
     co.gender,
     co.spedlep as iep_status,
     co.contact_1_name,
@@ -39,30 +53,40 @@ select
     co.enroll_status,
     co.grade_level,
 
-    fp.fast_ela,
-    fp.fast_math,
+    fp.ela_pm1,
+    fp.ela_pm2,
+    fp.ela_pm3,
+    fp.math_pm1,
+    fp.math_pm2,
+    fp.math_pm3,
 
-    gpa.cumulative_y1_gpa_unweighted as gpa,
+    co.cumulative_y1_gpa_unweighted as gpa_cumulative,
+    co.ada_unweighted_year_prev as previous_year_ada,
+    co.state_studentnumber as fleid,
 
-    round(ada.ada, 2) as previous_year_ada,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+    gpa.gpa_y1,
+
+    fp_prev.ela_pm3 as ela_pm3_prev,
+    fp_prev.math_pm3 as math_pm3_prev,
+from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     fast_pivot as fp
-    on co.fleid = fp.fleid
-    and co.academic_year - 1 = fp.academic_year
+    on co.state_studentnumber = fp.student_id
+    and co.academic_year = fp.academic_year
     and {{ union_dataset_join_clause(left_alias="co", right_alias="fp") }}
 left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gpa
+    fast_pivot as fp_prev
+    on co.state_studentnumber = fp_prev.student_id
+    and co.academic_year - 1 = fp_prev.academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="fp_prev") }}
+left join
+    {{ ref("int_powerschool__gpa_term") }} as gpa
     on co.studentid = gpa.studentid
+    and co.yearid = gpa.yearid
     and co.schoolid = gpa.schoolid
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
-left join
-    {{ ref("int_powerschool__ada") }} as ada
-    on co.studentid = ada.studentid
-    and co.yearid = ada.yearid + 1
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ada") }}
 where
-    co.academic_year >= {{ var("current_academic_year") }} - 1
-    and co.rn_year = 1
-    and co.grade_level in (7, 8)
+    co.rn_year = 1
     and co.region = 'Miami'
+    and co.grade_level in (7, 8)
+    and co.academic_year >= {{ var("current_academic_year") - 1 }}

@@ -1,35 +1,25 @@
 with
     psat as (
         select
-            cb_id,
             name_first,
-            name_last,
             name_mi,
+            name_last,
             gender,
-            latest_psat_total,
-            latest_psat_math_section,
-            latest_psat_ebrw,
-            latest_psat_reading,
 
-            safe_cast(birth_date as date) as birth_date,
+            cast(cb_id as int) as cb_id,
 
-            safe_cast(latest_psat_math_test as integer) as latest_psat_math_test,
+            cast(latest_psat_ebrw as numeric) as latest_psat_ebrw,
+            cast(latest_psat_math_section as numeric) as latest_psat_math_section,
+            cast(latest_psat_math_test as numeric) as latest_psat_math_test,
+            cast(latest_psat_reading as numeric) as latest_psat_reading,
+            cast(latest_psat_total as numeric) as latest_psat_total,
 
-            safe_cast(latest_psat_date as date) as latest_psat_date,
+            cast(cast(district_student_id as numeric) as int) as district_student_id,
+            cast(cast(latest_psat_grade as numeric) as int) as latest_psat_grade,
+            cast(cast(secondary_id as numeric) as int) as secondary_id,
 
-            coalesce(
-                district_student_id.long_value,
-                cast(district_student_id.double_value as int)
-            ) as district_student_id,
-
-            coalesce(
-                secondary_id.long_value, cast(secondary_id.double_value as int)
-            ) as secondary_id,
-
-            coalesce(
-                latest_psat_grade.long_value,
-                cast(latest_psat_grade.double_value as int)
-            ) as latest_psat_grade,
+            cast(birth_date as date) as birth_date,
+            cast(latest_psat_date as date) as latest_psat_date,
 
             if(
                 _dagster_partition_key = 'PSATNM',

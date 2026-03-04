@@ -1,7 +1,7 @@
 import time
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
-from dagster._utils.backoff import backoff, backoff_delay_generator
+from dagster._utils.backoff import backoff, exponential_delay_generator
 from dagster_shared import check
 from google.auth import default, load_credentials_from_file
 from google.auth.compute_engine import Credentials
@@ -303,7 +303,7 @@ class GoogleDirectoryResource(ConfigurableResource):
             backoff(
                 fn=batch_request.execute,
                 retry_on=(errors.HttpError,),
-                delay_generator=backoff_delay_generator(),
+                delay_generator=exponential_delay_generator(),
             )
 
             exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])

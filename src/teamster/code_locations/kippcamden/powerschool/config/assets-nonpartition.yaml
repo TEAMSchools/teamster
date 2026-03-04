@@ -11,15 +11,6 @@ assets:
   - asset_name: gpprogresssubject
   - asset_name: gpprogresssubjectearned
   - asset_name: gpprogresssubjectenrolled
-  - asset_name: gpprogresssubjectrequested
-  - asset_name: gpprogresssubjectwaived
-  - asset_name: gpprogresssubjwaivedapplied
-  - asset_name: gpselectedcrs
-  - asset_name: gpselectedcrtype
-  - asset_name: gpselector
-  - asset_name: gptarget
-  - asset_name: gpversion
-  - asset_name: gradplan
   - asset_name: reenrollments
   - asset_name: spenrollments
   - asset_name: studenttest
@@ -33,11 +24,12 @@ assets:
       - entry
       - entry_date
   - asset_name: studenttestscore
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              cpu: 250m
-            limits:
-              cpu: 750m
+  # - asset_name: gpprogresssubjectrequested
+  # - asset_name: gpprogresssubjectwaived
+  # - asset_name: gpprogresssubjwaivedapplied
+  # - asset_name: gpselectedcrs
+  # - asset_name: gpselectedcrtype
+  # - asset_name: gpselector
+  # - asset_name: gptarget
+  # - asset_name: gpversion
+  # - asset_name: gradplan

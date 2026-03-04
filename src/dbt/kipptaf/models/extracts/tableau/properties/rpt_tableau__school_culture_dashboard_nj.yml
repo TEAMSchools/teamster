@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: rpt_tableau__school_culture_dashboard_nj
+    config:
+      enabled: false
     columns:
       - name: student_number
         data_type: int64

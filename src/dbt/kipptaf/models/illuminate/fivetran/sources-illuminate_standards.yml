@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: illuminate
     schema: illuminate_standards
@@ -7,20 +5,22 @@ sources:
       enabled: false
     tables:
       - name: standards
-        meta:
-          dagster:
-            group: illuminate
-            asset_key:
-              - kipptaf
-              - illuminate
-              - standards
-              - standards
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - illuminate
+                - standards
+                - standards
       - name: subjects
-        meta:
-          dagster:
-            group: illuminate
-            asset_key:
-              - kipptaf
-              - illuminate
-              - standards
-              - subjects
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - illuminate
+                - standards
+                - subjects

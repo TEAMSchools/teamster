@@ -1,6 +1,16 @@
-version: 2
 models:
   - name: int_people__staff_roster
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - employee_number
+              - powerschool_teacher_number
+          config:
+            severity: warn
+            store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -107,24 +117,24 @@ models:
         data_type: string
       - name: custom_field__employee_number
         data_type: int64
-      - name: wf_mgr_accrual_profile
-        data_type: string
-      - name: wf_mgr_badge_number
-        data_type: int64
-      - name: wf_mgr_ee_type
-        data_type: string
-      - name: wf_mgr_pay_rule
-        data_type: string
-      - name: wf_mgr_trigger
-        data_type: string
-      - name: wf_mgr_trigger_new
-        data_type: string
       - name: assigned_business_unit_code
         data_type: string
       - name: assigned_business_unit_name
         data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+                where: worker_status_code != 'Terminated'
       - name: assigned_department_name
         data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                store_failures: true
+                where: worker_status_code != 'Terminated'
       - name: home_business_unit_code
         data_type: string
       - name: home_business_unit_name

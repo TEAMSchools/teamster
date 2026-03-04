@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 
 
 class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, o):
+    def default(self, o: object) -> str:
         if isinstance(o, (timedelta, Decimal, bytes)):
             return str(o)
         elif isinstance(o, datetime):
@@ -33,8 +33,9 @@ class FiscalYear:
 class FiscalYearPartitionsDefinition(TimeWindowPartitionsDefinition):
     def __new__(
         cls,
-        start_date: datetime | str,
         start_month: int,
+        start_date: datetime | str,
+        end_date: datetime | str | None = None,
         timezone: str | None = None,
         start_day: int = 1,
         fmt: str | None = None,
@@ -48,5 +49,6 @@ class FiscalYearPartitionsDefinition(TimeWindowPartitionsDefinition):
             timezone=timezone,
             fmt=_fmt,
             start=start_date,
+            end=end_date,
             end_offset=end_offset,
         )

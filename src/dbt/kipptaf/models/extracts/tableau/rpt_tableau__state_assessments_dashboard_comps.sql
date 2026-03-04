@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
     ktaf as (
         select
             b.academic_year,
@@ -84,33 +85,13 @@ with
 
     -- deduping here because of how group by cube generates rows
     dedup_ktaf as (
-        select
-            academic_year,
-            region,
-            comparison_entity,
-            comparison_demographic_group,
-            comparison_demographic_subgroup,
-            focus_level,
-            assessment_name,
-            test_code,
-            total_proficient_students,
-            total_students,
-            percent_proficient,
-
-            row_number() over (
-                partition by
-                    academic_year,
-                    region,
-                    comparison_entity,
-                    comparison_demographic_group,
-                    comparison_demographic_subgroup,
-                    focus_level,
-                    assessment_name,
-                    test_code
-            ) as rn,
-
-        from ktaf
-        qualify rn = 1
+        {{
+            dbt_utils.deduplicate(
+                relation="ktaf",
+                partition_by="academic_year, region, comparison_entity,comparison_demographic_group,comparison_demographic_subgroup,focus_level,assessment_name,test_code",
+                order_by="academic_year",
+            )
+        }}
     ),
 
     appended as (
@@ -311,18 +292,42 @@ with
     )
 
 select
-    academic_year,
-    school_level,
-    grade_range_band,
-    assessment_name,
-    discipline,
-    test_code,
-    region,
-    comparison_entity,
-    comparison_demographic_group,
-    comparison_demographic_subgroup,
-    total_proficient_students,
-    total_students,
-    percent_proficient,
+    a.academic_year,
+    a.school_level,
+    a.grade_range_band,
+    a.assessment_name,
+    a.discipline,
+    a.test_code,
+    a.region,
+    a.comparison_entity,
+    a.comparison_demographic_group,
+    a.comparison_demographic_subgroup,
+    a.total_proficient_students,
+    a.total_students,
+    a.percent_proficient,
 
-from grouped_comps
+    if(b.percent_proficient = a.percent_proficient, true, false) as region_matched,
+    if(b.percent_proficient > a.percent_proficient, true, false) as region_outperformed,
+
+    if(
+        b.percent_proficient = a.percent_proficient
+        or b.percent_proficient > a.percent_proficient,
+        true,
+        false
+    ) as region_matched_or_outperformed,
+
+from grouped_comps as a
+left join
+    grouped_comps as b
+    on a.academic_year = b.academic_year
+    and a.academic_year = b.academic_year
+    and a.school_level = b.school_level
+    and a.grade_range_band = b.grade_range_band
+    and a.assessment_name = b.assessment_name
+    and a.discipline = b.discipline
+    and a.test_code = b.test_code
+    and a.region = b.region
+    and a.comparison_entity = b.comparison_entity
+    and a.comparison_demographic_group = b.comparison_demographic_group
+    and a.comparison_demographic_subgroup = b.comparison_demographic_subgroup
+    and b.comparison_entity = 'Region'

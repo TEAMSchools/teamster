@@ -1,32 +1,24 @@
-select
-    id,
-    external_student_id,
-    created_at,
-    updated_at,
-    email,
-    first_name,
-    last_name,
-    graduation_year,
-    telephone,
-    `address`,
-    gender,
-    birth_date,
-    ethnicity,
-    family_income,
-    fafsa_completed,
-    student_aid_index,
-    maximum_family_contribution,
-    pell_grant,
-    post_high_school_plan,
-    first_generation,
-    fathers_education,
-    mothers_education,
-    awards,
-    extracurricular_activities,
-    interests,
-    target_grad_rate,
-    ideal_grad_rate,
+with
+    deduplicate as (
+        /* students object might contain duplicate ids */
+        {{
+            dbt_utils.deduplicate(
+                relation=source("overgrad", "src_overgrad__students"),
+                partition_by="id",
+                order_by="id desc",
+            )
+        }}
+    )
 
+-- trunk-ignore(sqlfluff/AM04)
+select
+    * except (
+        custom_field_values, school, assigned_counselor, academics, student_aid_index
+    ),
+
+    cast(student_aid_index as int) as student_aid_index,
+
+    /* records */
     school.id as school__id,
     school.object as school__object,
     school.name as school__name,
@@ -51,4 +43,4 @@ select
     academics.highest_psat_nmsqt as academics__highest_psat_nmsqt,
     academics.highest_psat_10 as academics__highest_psat_10,
     academics.highest_psat_8_9 as academics__highest_psat_8_9,
-from {{ source("overgrad", "src_overgrad__students") }}
+from deduplicate

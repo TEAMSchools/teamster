@@ -4,7 +4,7 @@ import py_avro_schema
 
 from teamster.libraries.adp.workforce_now.sftp.schema import (
     AdditionalEarnings,
-    ComprehensiveBenefits,
+    EmployeeMemberships,
     PensionBenefitsEnrollments,
     TimeAndAttendance,
 )
@@ -15,14 +15,14 @@ ADDITIONAL_EARNINGS_REPORT_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=AdditionalEarnings, options=pas_options)
 )
 
-COMPREHENSIVE_BENEFITS_REPORT_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=ComprehensiveBenefits, options=pas_options)
-)
-
 PENSION_AND_BENEFITS_ENROLLMENTS_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=PensionBenefitsEnrollments, options=pas_options)
 )
 
 TIME_AND_ATTENDANCE_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=TimeAndAttendance, options=pas_options)
+)
+
+EMPLOYEE_MEMBERSHIPS_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=EmployeeMemberships, options=pas_options)
 )

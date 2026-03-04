@@ -62,15 +62,6 @@ with
             w.received_sign_on_bonus,
             w.remote_work_status,
             w.teacher_prep_program,
-            {# TODO: drop WFM cols #}
-            w.wf_mgr_accrual_profile,
-            w.wf_mgr_badge_number,
-            w.wf_mgr_ee_type,
-            w.wf_mgr_home_hyperfind,
-            w.wf_mgr_loa_return_date,
-            w.wf_mgr_loa,
-            w.wf_mgr_pay_rule,
-            w.wf_mgr_trigger,
             w.organizational_unit__assigned__business_unit__code_value
             as assigned_business_unit_code,
             w.organizational_unit__assigned__business_unit__name
@@ -95,7 +86,6 @@ with
             as time_and_attendance_indicator,
             w.worker_time_profile__time_zone_code,
             w.worker_hire_date_recent,
-            w.wf_mgr_trigger_new,
 
             en.employee_number,
 
@@ -120,12 +110,19 @@ with
             on w.worker_id__id_value = en.adp_associate_id
             and en.is_active
         /* after transistion from Dayforce */
-        where w.effective_date_end >= '2021-01-01'
+        where
+            w.effective_date_end >= '2021-01-01'
+            and coalesce(w.organizational_unit__home__business_unit__name, '')
+            != 'KIPP Paterson'
+            and coalesce(w.organizational_unit__assigned__business_unit__name, '')
+            != 'KIPP Paterson'
 
         union all
 
         select
-            '{{ ref("int_dayforce__employee_history") }}' as _dbt_source_relation,
+            '{{ source("dayforce", "int_dayforce__employee_history") }}'
+            as _dbt_source_relation,
+
             null as associate_oid,
 
             effective_end_date as effective_date_end,
@@ -202,15 +199,6 @@ with
             null as received_sign_on_bonus,
             null as remote_work_status,
             null as teacher_prep_program,
-            {# TODO: drop WFM cols #}
-            null as wf_mgr_accrual_profile,
-            null as wf_mgr_badge_number,
-            null as wf_mgr_ee_type,
-            null as wf_mgr_home_hyperfind,
-            null as wf_mgr_loa_return_date,
-            null as wf_mgr_loa,
-            null as wf_mgr_pay_rule,
-            null as wf_mgr_trigger,
             null as assigned_business_unit_code,
 
             legal_entity_name as assigned_business_unit_name,
@@ -232,92 +220,17 @@ with
             null as time_and_attendance_indicator,
             null as worker_time_profile__time_zone_code,
             null as worker_hire_date_recent,
-            null as wf_mgr_trigger_new,
 
             employee_number,
             race_ethnicity_reporting,
             manager_employee_number as reports_to_employee_number,
             effective_start_date as effective_date_start,
             effective_start_timestamp as effective_date_start_timestamp,
-        from {{ ref("int_dayforce__employee_history") }}
+        from {{ source("dayforce", "int_dayforce__employee_history") }}
     )
 
 select
-    w._dbt_source_relation,
-    w.associate_oid,
-    w.worker_id,
-    w.employee_number,
-    w.effective_date_start,
-    w.effective_date_end,
-    w.effective_date_start_timestamp,
-    w.effective_date_end_timestamp,
-    w.is_current_record,
-    w.worker_original_hire_date,
-    w.worker_rehire_date,
-    w.worker_termination_date,
-    w.worker_status_code,
-    w.work_assignment_termination_date,
-    w.work_assignment_actual_start_date,
-    w.formatted_name,
-    w.family_name_1,
-    w.given_name,
-    w.legal_formatted_name,
-    w.legal_family_name,
-    w.legal_given_name,
-    w.birth_date,
-    w.race_code,
-    w.ethnicity_code,
-    w.gender_code,
-    w.legal_address_city_name,
-    w.legal_address_country_subdivision_level_1_code,
-    w.legal_address_line_one,
-    w.legal_address_postal_code,
-    w.is_prestart,
-    w.item_id,
-    w.position_id,
-    w.job_title,
-    w.primary_indicator,
-    w.management_position_indicator,
-    w.assignment_status,
-    w.assignment_status_lag,
-    w.assignment_status_effective_date,
-    w.assignment_status_reason,
-    w.home_work_location_name,
-    w.worker_type_code,
-    w.wage_law_name,
-    w.wage_law_coverage,
-    w.base_remuneration_annual_rate_amount,
-    w.base_remuneration_hourly_rate_amount,
-    w.additional_remunerations_rate_amount,
-    w.personal_cell,
-    w.personal_email,
-    w.work_cell,
-    w.work_email,
-    w.custom_field__employee_number,
-    {# TODO: drop WFM cols #}
-    w.wf_mgr_accrual_profile,
-    w.wf_mgr_badge_number,
-    w.wf_mgr_ee_type,
-    w.wf_mgr_pay_rule,
-    w.wf_mgr_trigger,
-    w.wf_mgr_trigger_new,
-    w.assigned_business_unit_code,
-    w.assigned_business_unit_name,
-    w.assigned_department_name,
-    w.home_business_unit_code,
-    w.home_business_unit_name,
-    w.home_department_name,
-    w.reports_to_position_id,
-    w.reports_to_worker_id,
-    w.reports_to_formatted_name,
-    w.payroll_file_number,
-    w.payroll_group_code,
-    w.benefits_eligibility_class,
-    w.badge_id,
-    w.time_service_supervisor_position_id,
-    w.time_and_attendance_indicator,
-    w.worker_time_profile__time_zone_code,
-    w.worker_hire_date_recent,
+    w.* except (reports_to_employee_number, race_ethnicity_reporting),
 
     lc.location_region as home_work_location_region,
     lc.location_dagster_code_location as home_work_location_dagster_code_location,
@@ -331,7 +244,6 @@ select
     lc.location_head_of_schools_employee_number
     as home_work_location_head_of_schools_employee_number,
     lc.campus_name as home_work_location_campus_name,
-    lc.head_of_schools_sam_account_name,
 
     ldap.physical_delivery_office_name,
     ldap.uac_account_disable,
@@ -353,6 +265,8 @@ select
     sis.years_teaching_outside_njfl,
 
     rtldap.google_email as reports_to_google_email,
+
+    pbe.plan_name as nj_pension_plan_name,
 
     coalesce(lc.location_grade_band, 'N/A') as home_work_location_grade_band,
 
@@ -403,7 +317,7 @@ left join
     {{ ref("stg_ldap__user_person") }} as ldap
     on w.employee_number = ldap.employee_number
 left join
-    {{ ref("stg_people__powerschool_crosswalk") }} as idps
+    {{ ref("stg_google_sheets__people__powerschool_crosswalk") }} as idps
     on w.employee_number = idps.employee_number
     and idps.is_active
 left join
@@ -413,3 +327,13 @@ left join
     {{ ref("stg_ldap__user_person") }} as rtldap
     on coalesce(w.reports_to_employee_number, rten.employee_number)
     = rtldap.employee_number
+left join
+    {{ ref("stg_adp_workforce_now__pension_and_benefits_enrollments") }} as pbe
+    on w.position_id = pbe.position_id
+    and pbe.enrollment_status = 'Active'
+    and pbe.rn_enrollment_recent = 1
+    and pbe.plan_name in (
+        'NJ Pension - DCRP:Eligible Employees(Prudential Financial)',
+        'NJ Pension - PERS:Eligible Employees(NJ Pension)',
+        'NJ Pension - TPAF:Eligible Employees(NJ Pension)'
+    )

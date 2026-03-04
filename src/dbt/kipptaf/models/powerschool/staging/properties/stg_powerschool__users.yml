@@ -1,9 +1,12 @@
-version: 2
 models:
   - name: stg_powerschool__users
+    config:
+      contract:
+        enforced: true
+      materialized: table
     columns:
-      - name: _dbt_source_relation
-        data_type: string
+      - name: dcid
+        data_type: int64
       - name: lastfirst
         data_type: string
       - name: first_name
@@ -86,14 +89,6 @@ models:
         data_type: string
       - name: sif_stateprid
         data_type: string
-      - name: whocreated
-        data_type: string
-      - name: whencreated
-        data_type: timestamp
-      - name: whomodified
-        data_type: string
-      - name: whenmodified
-        data_type: timestamp
       - name: psguid
         data_type: string
       - name: ip_address
@@ -102,10 +97,6 @@ models:
         data_type: string
       - name: transaction_date
         data_type: timestamp
-      - name: executionid
-        data_type: string
-      - name: dcid
-        data_type: int64
       - name: homeschoolid
         data_type: int64
       - name: photo
@@ -144,15 +135,11 @@ models:
         data_type: int64
       - name: ptaccess
         data_type: int64
+      - name: prefixcodesetid
+        data_type: int64
       - name: whomodifiedid
         data_type: int64
-      - name: prefixcodesetid
-        data_type: record
-      - name: prefixcodesetid.int_value
-        data_type: int64
-      - name: prefixcodesetid.double_value
-        data_type: float64
-      - name: prefixcodesetid.bytes_decimal_value
-        data_type: numeric
+      - name: _dbt_source_relation
+        data_type: string
       - name: dagster_code_location
         data_type: string

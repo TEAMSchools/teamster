@@ -66,15 +66,6 @@ select
     cf.received_sign_on_bonus,
     cf.remote_work_status,
     cf.teacher_prep_program,
-    {# TODO: drop WFM cols #}
-    cf.wf_mgr_accrual_profile,
-    cf.wf_mgr_badge_number,
-    cf.wf_mgr_ee_type,
-    cf.wf_mgr_home_hyperfind,
-    cf.wf_mgr_loa_return_date,
-    cf.wf_mgr_loa,
-    cf.wf_mgr_pay_rule,
-    cf.wf_mgr_trigger,
 
     ou.organizational_unit__assigned__business_unit__code_value,
     ou.organizational_unit__assigned__business_unit__name,
@@ -92,32 +83,12 @@ select
     || ', '
     || rtw.person__given_name as reports_to_formatted_name,
 
-    {# TODO: drop WFM cols #}
-    {{
-        dbt_utils.generate_surrogate_key(
-            field_list=[
-                "wa.assignment_status__status_code__name",
-                "wa.base_remuneration__annual_rate_amount__amount_value",
-                "wa.home_work_location__name_code__name",
-                "wa.job_title",
-                "ou.organizational_unit__assigned__business_unit__name",
-                "ou.organizational_unit__assigned__department__name",
-                "rt.reports_to_worker_id__id_value",
-                "wa.wage_law_coverage__coverage_code__name",
-                "cf.wf_mgr_accrual_profile",
-                "cf.wf_mgr_badge_number",
-                "cf.wf_mgr_ee_type",
-                "cf.wf_mgr_pay_rule",
-            ]
-        )
-    }} as wf_mgr_trigger_new,
-
     lag(wa.assignment_status__status_code__name, 1) over (
         partition by w.associate_oid order by wa.assignment_status__effective_date asc
     ) as assignment_status__status_code__name__lag,
 from {{ ref("stg_adp_workforce_now__workers") }} as w
 inner join
-    {{ ref("stg_adp_workforce_now__workers__work_assignments") }} as wa
+    {{ ref("int_adp_workforce_now__workers__work_assignments") }} as wa
     on w.associate_oid = wa.associate_oid
     and wa.effective_date_start between w.effective_date_start and w.effective_date_end
 left join
@@ -138,7 +109,7 @@ left join
     and ou.effective_date_start
     between wa.effective_date_start and wa.effective_date_end
 left join
-    {{ ref("stg_adp_workforce_now__workers__work_assignments__reports_to") }} as rt
+    {{ ref("int_adp_workforce_now__workers__work_assignments__reports_to") }} as rt
     on wa.associate_oid = rt.associate_oid
     and wa.item_id = rt.item_id
     and rt.effective_date_start

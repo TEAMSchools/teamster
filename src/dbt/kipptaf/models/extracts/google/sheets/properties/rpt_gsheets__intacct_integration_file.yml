@@ -1,48 +1,48 @@
-version: 2
 models:
   - name: rpt_gsheets__intacct_integration_file
-    meta:
-      dagster:
-        automation_condition:
-          enabled: false
+    config:
+      meta:
+        dagster:
+          automation_condition:
+            enabled: false
     columns:
-      - name: journal
+      - name: JOURNAL
         data_type: string
-      - name: date
+      - name: DATE
         data_type: string
-      - name: description
+      - name: DESCRIPTION
         data_type: string
-      - name: reference_no
+      - name: REFERENCE_NO
         data_type: int64
-      - name: state
+      - name: STATE
         data_type: string
-      - name: sourceentity
+      - name: SOURCEENTITY
         data_type: string
-      - name: line_no
+      - name: LINE_NO
         data_type: int64
-      - name: document
+      - name: DOCUMENT
         data_type: string
-      - name: acct_no
+      - name: ACCT_NO
         data_type: int64
-      - name: debit
-        data_type: float64
-      - name: credit
-        data_type: float64
-      - name: memo
+      - name: DEBIT
+        data_type: numeric
+      - name: CREDIT
+        data_type: numeric
+      - name: MEMO
         data_type: string
-      - name: location_id
+      - name: LOCATION_ID
         data_type: int64
-      - name: dept_id
+      - name: DEPT_ID
         data_type: int64
-      - name: glentry_classid
+      - name: GLENTRY_CLASSID
         data_type: int64
-      - name: glentry_projectid
-        data_type: int64
-      - name: gldimfunction
+      - name: GLENTRY_PROJECTID
         data_type: string
-      - name: gldimdonor_restriction
+      - name: GLDIMFUNCTION
         data_type: string
-      - name: glentry_employeeid
+      - name: GLDIMDONOR_RESTRICTION
+        data_type: string
+      - name: GLENTRY_EMPLOYEEID
         data_type: int64
       - name: preferred_name
         data_type: string

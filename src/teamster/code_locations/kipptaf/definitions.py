@@ -2,7 +2,6 @@ from dagster import (
     AssetSelection,
     AutomationConditionSensorDefinition,
     Definitions,
-    build_sensor_for_freshness_checks,
     load_assets_from_modules,
 )
 from dagster_k8s import k8s_job_executor
@@ -15,7 +14,6 @@ from teamster.code_locations.kipptaf import (
     _google,
     adp,
     airbyte,
-    amplify,
     asset_checks,
     collegeboard,
     couchdrop,
@@ -25,6 +23,7 @@ from teamster.code_locations.kipptaf import (
     knowbe4,
     ldap,
     level_data,
+    nsc,
     overgrad,
     performance_management,
     powerschool,
@@ -53,6 +52,7 @@ from teamster.core.resources import (
 defs = Definitions(
     executor=k8s_job_executor,
     assets=[
+        *_dbt.asset_specs,
         *_google.asset_specs,
         *airbyte.asset_specs,
         *load_assets_from_modules(
@@ -61,7 +61,6 @@ defs = Definitions(
                 _dlt,
                 _google,
                 adp,
-                amplify,
                 collegeboard,
                 coupa,
                 deanslist,
@@ -69,6 +68,7 @@ defs = Definitions(
                 knowbe4,
                 ldap,
                 level_data,
+                nsc,
                 overgrad,
                 performance_management,
                 powerschool,
@@ -83,7 +83,6 @@ defs = Definitions(
         *_google.schedules,
         *adp.schedules,
         *airbyte.schedules,
-        *amplify.schedules,
         *coupa.schedules,
         *extracts.schedules,
         *knowbe4.schedules,
@@ -100,9 +99,6 @@ defs = Definitions(
         *adp.sensors,
         *couchdrop.sensors,
         *deanslist.sensors,
-        build_sensor_for_freshness_checks(
-            freshness_checks=asset_checks.freshness_checks
-        ),
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
             target=AssetSelection.all(),
@@ -127,7 +123,6 @@ defs = Definitions(
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "knowbe4": resources.KNOWBE4_RESOURCE,
         "ldap": resources.LDAP_RESOURCE,
-        "mclass": resources.MCLASS_RESOURCE,
         "overgrad": OVERGRAD_RESOURCE,
         "ps_enrollment": resources.POWERSCHOOL_ENROLLMENT_RESOURCE,
         "smartrecruiters": resources.SMARTRECRUITERS_RESOURCE,

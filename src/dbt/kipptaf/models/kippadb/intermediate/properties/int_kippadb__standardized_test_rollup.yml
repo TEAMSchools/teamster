@@ -1,0 +1,4 @@
+models:
+  - name: int_kippadb__standardized_test_rollup
+    config:
+      materialized: ephemeral

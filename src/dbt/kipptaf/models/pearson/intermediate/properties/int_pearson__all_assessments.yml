@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: int_pearson__all_assessments
     columns:
@@ -19,7 +18,7 @@ models:
       - name: hispanicorlatinoethnicity
         data_type: string
       - name: localstudentidentifier
-        data_type: float64
+        data_type: int64
       - name: firstname
         data_type: string
       - name: lastorsurname

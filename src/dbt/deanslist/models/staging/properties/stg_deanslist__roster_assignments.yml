@@ -1,10 +1,13 @@
-version: 2
 models:
   - name: stg_deanslist__roster_assignments
-    config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("deanslist",
-        "src_deanslist__roster_assignments") | replace("`", "") }}')
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - dl_roster_id
+              - dl_student_id
+          config:
+            store_failures: true
     columns:
       - name: first_name
         data_type: string
@@ -25,7 +28,7 @@ models:
       - name: dl_student_id
         data_type: int64
       - name: integration_id
-        data_type: int64
+        data_type: string
       - name: secondary_integration_id
         data_type: int64
       - name: secondary_student_id

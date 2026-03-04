@@ -19,3 +19,24 @@ where
     and not is_prestart
     and employee_number is not null
     and home_work_location_powerschool_school_id is not null
+
+union all
+
+select
+    powerschool_school_id as school_id,
+    employee_id as teacher_id,
+    employee_id as teacher_number,
+
+    null as state_teacher_id,
+
+    user_principal_name as teacher_email,
+    given_name as first_name,
+
+    null as middle_name,
+
+    sn as last_name,
+    title,
+    sam_account_name as username,
+
+    null as `password`,
+from {{ ref("int_people__temp_staff") }}

@@ -15,10 +15,10 @@ left join
     {{ ref("int_people__staff_roster") }} as sr
     on l.employee_number = sr.employee_number
 left join
-    {{ ref("stg_leadership_development__active_users") }} as a
+    {{ ref("stg_google_appsheet__leadership_development__active_users") }} as a
     on l.employee_number = safe_cast(a.employee_number as int)
 where
-    l.academic_year = 2024
+    l.academic_year = {{ var("current_academic_year") }}
     and (l.round_completion_self = 0 or l.round_completion_manager = 0)
     and l.active_assignment
     and a.app_selection_active

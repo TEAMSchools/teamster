@@ -1,5 +1,3 @@
-{{ config(materialized="table") }}
-
 with
     assessment_region_scaffold as (
         select
@@ -10,36 +8,19 @@ with
             a.administered_at,
             a.subject_area,
             a.performance_band_set_id,
-            a.illuminate_grade_level_id as grade_level_id,
             a.scope,
             a.module_type,
             a.module_code,
 
             trim(region) as region,
+
+            coalesce(a.illuminate_grade_level_id, agl.grade_level_id) as grade_level_id,
         from {{ ref("int_assessments__assessments") }} as a
         cross join unnest(split(a.regions_assessed, ',')) as region
-        where a.is_internal_assessment
-    ),
-
-    grade_scaffold as (
-        select
-            a.assessment_id,
-            a.title,
-            a.academic_year,
-            a.academic_year_clean,
-            a.administered_at,
-            a.scope,
-            a.subject_area,
-            a.module_type,
-            a.module_code,
-            a.performance_band_set_id,
-            a.region,
-
-            coalesce(a.grade_level_id, agl.grade_level_id) as grade_level_id,
-        from assessment_region_scaffold as a
         left join
             {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
             on a.assessment_id = agl.assessment_id
+        where a.is_internal_assessment
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
@@ -65,7 +46,8 @@ with
             ce.powerschool_school_id,
             ce.cc_dateenrolled,
             ce.cc_dateleft,
-        from grade_scaffold as a
+            ce.discipline,
+        from assessment_region_scaffold as a
         inner join
             {{ ref("int_illuminate__student_session_aff") }} as ssa
             on a.academic_year = ssa.academic_year
@@ -106,6 +88,7 @@ with
             ce.powerschool_school_id,
             ce.cc_dateenrolled,
             ce.cc_dateleft,
+            ce.discipline,
         from assessment_region_scaffold as a
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
@@ -147,6 +130,7 @@ select
     ia.scope,
     ia.module_type,
     ia.module_code,
+    ia.discipline,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -182,6 +166,8 @@ select
     a.scope,
     a.module_type,
     a.module_code,
+
+    null as discipline,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -228,6 +214,8 @@ select
     a.scope,
     a.module_type,
     a.module_code,
+
+    null as discipline,
 
     sa.student_assessment_id,
     sa.date_taken,

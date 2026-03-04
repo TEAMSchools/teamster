@@ -142,6 +142,10 @@ select
 
     ce.teacher_lastfirst as ccr_teacher,
     ce.sections_external_expression as ccr_period,
+
+    ktc.powerschool_contact_1_phone_mobile,
+    ktc.powerschool_contact_1_email_current,
+    ktc.powerschool_contact_1_phone_primary,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_kippadb__roster") }} as ktc
 left join

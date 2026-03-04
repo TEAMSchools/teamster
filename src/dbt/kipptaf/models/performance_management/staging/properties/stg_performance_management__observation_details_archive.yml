@@ -1,13 +1,8 @@
-version: 2
 models:
   - name: stg_performance_management__observation_details_archive
     config:
-      enabled: false
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{
-        source("performance_management",
-        "src_performance_management__observation_details_archive") |
-        replace("`", "") }}')
+      contract:
+        enforced: true
     columns:
       - name: employee_number
         data_type: int64
@@ -77,3 +72,5 @@ models:
         data_type: string
       - name: eval_date
         data_type: date
+      - name: form_term
+        data_type: string

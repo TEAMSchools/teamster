@@ -51,7 +51,7 @@ with
                 'College and Career II'
             )
         left join
-            {{ ref("stg_assessments__assessment_expectations") }} as t
+            {{ ref("stg_google_sheets__kippfwd__expected_assessments_archive") }} as t
             on e.academic_year = t.academic_year
             and e.grade_level = t.grade
             and e.region = t.region
@@ -60,6 +60,7 @@ with
             and t.strategy
         where
             e.academic_year = {{ var("current_academic_year") }}
+            and e.rn_year = 1
             and e.school_level = 'HS'
     ),
 
@@ -92,6 +93,7 @@ with
         where
             e.school_level = 'HS'
             and e.academic_year = {{ var("current_academic_year") }}
+            and e.rn_year = 1
     ),
 
     custom_scores as (
@@ -124,7 +126,7 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            {{ ref("stg_assessments__assessment_expectations") }} as t
+            {{ ref("stg_google_sheets__kippfwd__expected_assessments_archive") }} as t
             on e.academic_year = t.academic_year
             and e.region = t.region
             and e.grade_level = t.grade
@@ -138,7 +140,7 @@ with
             and t.assessment_subject_area = o.score_type
             and t.actual_month_round = o.test_month
             and e.student_number = o.student_number
-        where e.school_level = 'HS' and t.subject_area != 'Science'
+        where e.rn_year = 1 and e.school_level = 'HS' and t.subject_area != 'Science'
     )
 
 select

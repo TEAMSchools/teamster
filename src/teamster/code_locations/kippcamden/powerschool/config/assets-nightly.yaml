@@ -1,5 +1,3 @@
 assets:
-  - asset_name: prefs
-    partition_column: transaction_date
   - asset_name: codeset
     partition_column: whenmodified

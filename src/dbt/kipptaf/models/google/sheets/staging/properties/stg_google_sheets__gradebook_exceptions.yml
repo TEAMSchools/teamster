@@ -1,10 +1,5 @@
-version: 2
 models:
   - name: stg_google_sheets__gradebook_exceptions
-    config:
-      contract:
-        enforced: true
-      tags: google_sheet
     columns:
       - name: academic_year
         data_type: int64
@@ -26,13 +21,15 @@ models:
         data_type: string
       - name: audit_flag_name
         data_type: string
+      - name: is_quarter_end_date_range
+        data_type: boolean
       - name: view_name
         data_type: string
       - name: cte
         data_type: string
       - name: purpose
         data_type: string
-      - name: include
+      - name: include_row
         data_type: boolean
       - name: grade_level
         data_type: int64

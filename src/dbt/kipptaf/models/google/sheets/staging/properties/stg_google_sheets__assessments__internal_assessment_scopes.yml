@@ -1,0 +1,6 @@
+models:
+  - name: stg_google_sheets__assessments__internal_assessment_scopes
+    config:
+      enabled: false
+      contract:
+        enforced: false

@@ -1,0 +1,9 @@
+models:
+  - name: stg_google_appsheet__leadership_development__active_users
+    columns:
+      - name: employee_number
+        data_type: int64
+      - name: active_override
+        data_type: boolean
+      - name: app_selection_active
+        data_type: boolean

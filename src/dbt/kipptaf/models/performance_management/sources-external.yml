@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: performance_management
     schema: |
@@ -20,12 +18,13 @@ sources:
               }}/performance_management/outlier_detection/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - performance_management
-              - outlier_detection
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - performance_management
+                - outlier_detection
       - name: src_performance_management__observation_details_archive
         external:
           location:
@@ -40,9 +39,10 @@ sources:
               }}/performance_management/observation_details/"
             format: AVRO
             enable_logical_types: true
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - performance_management
-              - observation_details
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - performance_management
+                - observation_details

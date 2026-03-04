@@ -1,0 +1,89 @@
+models:
+  - name: rpt_tableau__college_assessment_dashboard_roster
+    columns:
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: salesforce_id
+        data_type: string
+      - name: student_name
+        data_type: string
+      - name: student_first_name
+        data_type: string
+      - name: student_last_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: student_email
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: ktc_cohort
+        data_type: int64
+      - name: graduation_year
+        data_type: int64
+      - name: year_in_network
+        data_type: int64
+      - name: iep_status
+        data_type: string
+      - name: grad_iep_exempt_status_overall
+        data_type: string
+      - name: cumulative_y1_gpa
+        data_type: float64
+      - name: cumulative_y1_gpa_projected
+        data_type: float64
+      - name: college_match_gpa
+        data_type: numeric
+      - name: college_match_gpa_bands
+        data_type: string
+      - name: expected_test_type
+        data_type: string
+      - name: expected_scope
+        data_type: string
+      - name: expected_score_type
+        data_type: string
+      - name: expected_grouping
+        data_type: string
+      - name: expected_grade_level
+        data_type: int64
+      - name: expected_admin_season
+        data_type: string
+      - name: expected_months_included
+        data_type: string
+      - name: expected_field_name
+        data_type: string
+      - name: expected_score_category
+        data_type: string
+      - name: expected_admin_season_order
+        data_type: int64
+      - name: score
+        data_type: numeric
+      - name: sat_total_superscore
+        data_type: numeric
+      - name: sat_ebrw_highest
+        data_type: numeric
+      - name: sat_math_highest
+        data_type: numeric
+      - name: expected_field_name_score_category
+        data_type: string
+      - name: psat89_count_lifetime
+        data_type: int64
+      - name: psat10_count_lifetime
+        data_type: int64
+      - name: psatnmsqt_count_lifetime
+        data_type: int64
+      - name: sat_count_lifetime
+        data_type: int64
+      - name: act_count_lifetime
+        data_type: int64
+      - name: ccr_course
+        data_type: string
+      - name: ccr_teacher_name
+        data_type: string
+      - name: ccr_section
+        data_type: string
