@@ -255,9 +255,7 @@ select
         then 'Imported as Historical'
     end as enroll_status_string,
 
-    case
-        e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
-    end as race_ethnicity,
+    e.ethnicity as race_ethnicity,
 
     case
         when
@@ -283,15 +281,12 @@ select
     end as `state`,
 
     case
-        /* starting SY26, HS uses weighted ADA */
         when
-            e.school_level = 'HS'
-            and e.academic_year >= 2025
-            and ada.ada_weighted_year >= 0.80
-        then true
-        when e.school_level = 'HS' and e.academic_year <= 2024 and ada.ada_year >= 0.80
-        then true
-        when ada.ada_year >= 0.80
+            if(
+                e.school_level = 'HS' and e.academic_year >= 2025,
+                ada.ada_weighted_year,
+                ada.ada_year
+            ) >= 0.80
         then true
     end as ada_above_or_at_80,
 
