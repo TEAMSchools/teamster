@@ -26,7 +26,8 @@ select
         balance2,
         balance3,
         balance4,
-        transaction_date
+        transaction_date,
+        source_file_name
     ),
 
     cast(dcid as int) as dcid,

@@ -72,7 +72,8 @@ select
         wm_createtime,
         wm_statusdate,
         wm_ta_date,
-        wm_tier
+        wm_tier,
+        source_file_name
     ),
 
     cast(allowwebaccess as int) as allowwebaccess,

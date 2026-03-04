@@ -1,80 +1,130 @@
-semantic_models:
+models:
   - name: dim_staff
-    model: ref('dim_staff')
+
     description:
-      Staff roster dimension with job titles, departments, demographics, and
-      employment status. Includes key fields for HR reporting, DEI analytics,
-      and workforce tracking.
+      An SCD Type 2 table of teammates by work assignment and academic year.
 
-    entities:
-      - name: teammate
-        type: primary
-        expr: employee_number
+    columns:
+      - name: staff_history_key
+        data_type: string
+        tests:
+          - unique:
+              config:
+                severity: warn
+                store_failures: true
 
-    dimensions:
+      - name: marts_effective_date_start
+        data_type: date
+        description:
+          The start or valid from date of a change in the teammate's record.
+
       - name: assignment_status
-        type: categorical
-        description: '{{doc("teammate_assignment_status")}}'
+        data_type: string
+        description: "{{ doc('staff_assignment_status') }}"
 
-      - name: race_ethnicity_reporting
-        type: categorical
-        description: '{{doc("teammate_race_ethnicity_reporting")}}'
+      - name: assignment_status_reason
+        data_type: string
+        description: Detail on change made to employment status
+
+      - name: employee_number
+        data_type: int64
+        description:
+          A unique identifier for all teammates across all entities, the primary
+          key for this model
+
+      - name: formatted_name
+        data_type: string
+        description: The teammate's preferred name in Last, First Middle format
 
       - name: entity
-        type: categorical
-        description: '{{doc("teammate_entity")}}'
-
-      - name: location
-        type: categorical
-        description: '{{doc("teammate_location")}}'
+        data_type: string
+        description: "{{ doc('staff_entity') }}"
 
       - name: grade_band
-        type: categorical
-        description: '{{doc("teammate_grade_band")}}'
+        data_type: string
+        description: "{{ doc('staff_grade_band') }}"
+
+      - name: location
+        data_type: string
+        description: "{{ doc('staff_location') }}"
 
       - name: department
-        type: categorical
-        description: '{{doc("teammate_department")}}'
+        data_type: string
+        description: "{{ doc('staff_department') }}"
 
       - name: job_title
-        type: categorical
-        description: '{{doc("teammate_job_title")}}'
+        data_type: string
+        description: A teammate's formal job title in the HRIS
 
-      - name: manager
-        type: categorical
-        description: '{{doc("teammate_manager")}}'
+      - name: manager_name
+        data_type: string
+        description: "{{ doc('staff_manager_name') }}"
+
+      - name: languages_spoken
+        data_type: string
+        description:
+          A comma separated list of all languages spoken by the teammate, as
+          indicated on the staff information survey.
+
+      - name: race_ethnicity_reporting
+        data_type: string
+        description: "{{ doc('staff_race_ethnicity_reporting') }}"
+
+      - name: gender_identity
+        data_type: string
+        description:
+          The teammates preferred gender identity as reported in the staff
+          information survey.
+
+      - name: salary
+        data_type: numeric
+        description:
+          A teammate's base annual salary amount, before any other forms of
+          compensation like stipends and bonuses.
+
+      - name: grade_taught
+        data_type: int64
+        description:
+          For teachers, the most common grade of students in their classes
+
+      - name: performance_management_tier
+        data_type: int64
+        description:
+          For teachers, the tier level of their performance management score for
+          this academic year. The average of their MOY and EOY scores.
+
+      - name: years_experience_total
+        data_type: float64
+        description:
+          The total number of years experience in any type of position.
+
+      - name: years_teaching_total
+        data_type: float64
+        description: The total number of years teaching at KIPP or elsewhere.
 
       - name: is_teacher
-        type: categorical
-        description: '{{doc("teammate_is_teacher")}}'
+        data_type: boolean
+        description: "{{ doc('staff_is_teacher') }}"
 
-      - name: worker_original_hire_date
-        type: time
-        description: '{{doc("teammate_original_hire_date")}}'
-        type_params:
-          time_granularity: day
+      - name: is_manager
+        data_type: boolean
+        description:
+          Indicator for whether a teammate is listed as the reports_to person
+          for another teammate in ADP.
 
-      - name: work_assignment_actual_start_date
-        type: time
-        description: '{{doc("teammate_work_assignment_actual_start_date")}}'
-        type_params:
-          time_granularity: day
+      - name: previous_salary
+        data_type: numeric
+        description:
+          The teammate's immediate prior salary to the one listed in this row.
 
-    measures:
-      - name: staff_count
-        description: Total number of staff
-        agg: count
-        expr: employee_number
-        agg_time_dimension: worker_original_hire_date
+      - name: previous_job_title
+        data_type: string
+        description:
+          The teammates immediate prior job title to the one listed in this row.
 
-metrics:
-  - name: staff_count
-    description:
-      A simple metric that counts unique employees based on their employee
-      number. Often used to measure workforce size by filters like location,
-      assignment status, or department.
-    type: simple
-    label: staff_count
-    type_params:
-      measure:
-        name: staff_count
+      - name: marts_effective_date_end
+        data_type: date
+        description:
+          A calculated end date using the day before the next valid,
+          non-duplicate work assignment or '9999-12-31' for current, ongoing
+          assignments.

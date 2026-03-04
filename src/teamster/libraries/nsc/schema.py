@@ -34,5 +34,6 @@ class StudentTracker(BaseModel):
     requester_return_field: str | None = None
     search_date: str | None = None
     your_unique_identifier: str | None = None
+    source_file_name: str | None = None
 
     two_year_four_year: str | None = Field(None, alias="2_year_4_year")

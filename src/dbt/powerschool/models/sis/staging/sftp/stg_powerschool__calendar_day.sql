@@ -17,7 +17,8 @@ with
                 membershipvalue,
                 schoolid,
                 week_num,
-                whomodifiedid
+                whomodifiedid,
+                source_file_name
             ),
 
             cast(dcid as int) as dcid,

@@ -1,7 +1,7 @@
 import os
 
 from dagster import EnvVar
-from dagster_dbt import DbtCliResource
+from dagster_dbt import DbtCliResource, DbtProject
 from dagster_dlt import DagsterDltResource
 from dagster_gcp import BigQueryResource, GCSResource
 from dagster_shared import check
@@ -20,7 +20,7 @@ from teamster.libraries.zendesk.resources import ZendeskResource
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
 
-def get_io_manager_gcs_pickle(code_location):
+def get_io_manager_gcs_pickle(code_location: str) -> GCSIOManager:
     if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
         code_location = "test"
 
@@ -29,7 +29,7 @@ def get_io_manager_gcs_pickle(code_location):
     )
 
 
-def get_io_manager_gcs_avro(code_location, test=False):
+def get_io_manager_gcs_avro(code_location: str, test: bool = False) -> GCSIOManager:
     if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
         code_location = "test"
         test = True
@@ -42,7 +42,7 @@ def get_io_manager_gcs_avro(code_location, test=False):
     )
 
 
-def get_io_manager_gcs_file(code_location, test=False):
+def get_io_manager_gcs_file(code_location: str, test: bool = False) -> GCSIOManager:
     if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
         code_location = "test"
         test = True
@@ -55,7 +55,7 @@ def get_io_manager_gcs_file(code_location, test=False):
     )
 
 
-def get_dbt_cli_resource(dbt_project, test=False):
+def get_dbt_cli_resource(dbt_project: DbtProject, test: bool = False) -> DbtCliResource:
     if test:
         return DbtCliResource(
             project_dir=dbt_project, dbt_executable="/workspaces/teamster/.venv/bin/dbt"
@@ -64,7 +64,7 @@ def get_dbt_cli_resource(dbt_project, test=False):
         return DbtCliResource(project_dir=dbt_project)
 
 
-def get_powerschool_ssh_resource():
+def get_powerschool_ssh_resource() -> SSHResource:
     return SSHResource(
         remote_host=EnvVar("PS_SSH_HOST"),
         remote_port=int(check.not_none(value=EnvVar("PS_SSH_PORT").get_value())),

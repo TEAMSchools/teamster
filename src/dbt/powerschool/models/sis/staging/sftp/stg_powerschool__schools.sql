@@ -18,7 +18,8 @@ select
         state_excludefromreporting,
         transaction_date,
         view_in_portal,
-        whomodifiedid
+        whomodifiedid,
+        source_file_name
     ),
 
     cast(alternate_school_number as int) as alternate_school_number,
