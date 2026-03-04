@@ -1,7 +1,15 @@
 models:
   - name: int_performance_management__overall_scores_archive
-    config:
-      enabled: false
+    # config:
+    #   enabled: false
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - employee_number
+              - academic_year
+          config:
+            store_failures: true
     columns:
       - name: employee_number
         data_type: int64

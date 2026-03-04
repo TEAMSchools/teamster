@@ -14,6 +14,42 @@ with
 
         from {{ ref("int_deanslist__roster_assignments") }}
         where school_id = 472 and roster_type = 'House' and active = 'Y'
+<<<<<<< HEAD
+=======
+    ),
+
+    graduation_pathway_m as (
+        select
+            _dbt_source_relation,
+            studentsdcid,
+
+            case
+                when graduation_pathway_math = 'M' and graduation_pathway_ela = 'M'
+                then 'Yes'
+                when graduation_pathway_math = 'M' and graduation_pathway_ela != 'M'
+                then 'Math only. No ELA match.'
+                when graduation_pathway_math != 'M' and graduation_pathway_ela = 'M'
+                then 'ELA only. No Math match.'
+            end as grad_iep_exempt_overall,
+
+        from {{ ref("stg_powerschool__s_nj_stu_x") }}
+        where graduation_pathway_math = 'M' or graduation_pathway_ela = 'M'
+    ),
+
+    finalsite_enrollment_type_calc as (
+        select
+            _dbt_source_relation,
+            academic_year,
+            student_number,
+
+            if(
+                sum(date_diff(exitdate, entrydate, day)) >= 7, 'Returning', 'New'
+            ) as next_year_enrollment_type,
+
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where grade_level != 99
+        group by _dbt_source_relation, academic_year, student_number
+>>>>>>> main
     )
 
 select
@@ -71,9 +107,23 @@ select
 
     concat(e.region, e.school_level) as region_school_level,
 
+<<<<<<< HEAD
     concat(
         e.academic_year, '-', right(cast(e.academic_year + 1 as string), 2)
     ) as academic_year_display,
+=======
+    if(
+        e.grade_level = 99, null, fs.next_year_enrollment_type
+    ) as next_year_enrollment_type,
+
+    if(ovg.fafsa_opt_out is not null, 'Yes', 'No') as overgrad_fafsa_opt_out,
+
+    if(
+        e.enroll_status = 0 and mc.grad_iep_exempt_overall is not null,
+        mc.grad_iep_exempt_overall,
+        'Not Grad IEP Exempt'
+    ) as grad_iep_exempt_status_overall,
+>>>>>>> main
 
     if(e.spedlep like 'SPED%', 'Has IEP', 'No IEP') as iep_status,
     if(e.lep_status, 'ML', 'Not ML') as ml_status,
@@ -253,3 +303,78 @@ left join
     on e.student_number = mt.student_school_id
     and {{ union_dataset_join_clause(left_alias="e", right_alias="mt") }}
     and mt.rn_territory = 1
+<<<<<<< HEAD
+=======
+left join
+    {{ ref("int_powerschool__spenrollments") }} as cs
+    on e.studentid = cs.studentid
+    and e.academic_year = cs.academic_year
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="cs") }}
+    and cs.specprog_name = 'Counseling Services'
+    and cs.rn_student_program_year_desc = 1
+left join
+    {{ ref("int_powerschool__spenrollments") }} as ath
+    on e.studentid = ath.studentid
+    and e.academic_year = ath.academic_year
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="ath") }}
+    and ath.specprog_name = 'Student Athlete'
+    and ath.rn_student_program_year_desc = 1
+left join
+    {{ ref("int_powerschool__spenrollments") }} as tut
+    on e.studentid = tut.studentid
+    and e.academic_year = tut.academic_year
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="tut") }}
+    and tut.specprog_name = 'Tutoring'
+    and tut.rn_student_program_year_desc = 1
+left join
+    {{ ref("int_powerschool__spenrollments") }} as hi
+    on e.studentid = hi.studentid
+    and e.academic_year = hi.academic_year
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="hi") }}
+    and hi.specprog_name = 'Home Instruction'
+    and hi.rn_student_program_year_desc = 1
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as hos
+    on e.schoolid = hos.home_work_location_powerschool_school_id
+left join
+    {{ ref("int_overgrad__students") }} as ovg
+    on e.salesforce_contact_id = ovg.external_student_id
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="ovg") }}
+left join
+    {{ ref("int_powerschool__ada_term_pivot") }} as ada
+    on e.studentid = ada.studentid
+    and e.academic_year = ada.academic_year
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="ada") }}
+left join
+    {{ ref("int_powerschool__ada_term_pivot") }} as adapy
+    on e.studentid = adapy.studentid
+    and e.academic_year = (adapy.academic_year + 1)
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="adapy") }}
+left join
+    {{ ref("int_powerschool__gpa_cumulative") }} as gc
+    on e.studentid = gc.studentid
+    and e.schoolid = gc.schoolid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="gc") }}
+left join
+    next_year_school as ny
+    on e.student_number = ny.student_number
+    and e.academic_year = ny.academic_year
+left join
+    graduation_pathway_m as mc
+    on e.students_dcid = mc.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="mc") }}
+left join
+    finalsite_enrollment_type_calc as fs
+    on e.academic_year = fs.academic_year
+    and e.student_number = fs.student_number
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="fs") }}
+left join
+    {{ ref("base_powerschool__course_enrollments") }} as sip
+    on e.student_number = sip.students_student_number
+    and e.academic_year = sip.cc_academic_year
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="sip") }}
+    and sip.courses_course_number = 'SEM01099G1'
+    and sip.rn_course_number_year = 1
+    and not sip.is_dropped_section
+left join es_grad as eg on e.student_number = eg.student_number and eg.rn = 1
+>>>>>>> main

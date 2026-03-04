@@ -2,15 +2,25 @@ from dagster import ScheduleDefinition
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf._google.directory.assets import (
-    google_directory_nonpartitioned_assets,
     google_directory_role_assignments_create,
     google_directory_user_create,
     google_directory_user_update,
+    orgunits,
+    role_assignments,
+    roles,
+    users,
+)
+
+google_directory_users_schedule = ScheduleDefinition(
+    name=f"{users.key.to_python_identifier()}_schedule",
+    target=users,
+    cron_schedule="0 8,12,16 * * *",
+    execution_timezone=str(LOCAL_TIMEZONE),
 )
 
 google_directory_nonpartitioned_asset_schedule = ScheduleDefinition(
     name=f"{CODE_LOCATION}__google__directory__nonpartitioned_asset_job_schedule",
-    target=google_directory_nonpartitioned_assets,
+    target=[orgunits, role_assignments, roles, users],
     cron_schedule="30 1 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
@@ -36,4 +46,5 @@ schedules = [
     google_directory_nonpartitioned_asset_schedule,
     google_directory_role_assignments_create_schedule,
     google_directory_user_sync_schedule,
+    google_directory_users_schedule,
 ]

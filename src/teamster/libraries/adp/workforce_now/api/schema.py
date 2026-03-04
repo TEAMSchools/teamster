@@ -22,7 +22,8 @@ class CustomField(BaseModel):
     nameCode: Code
 
 
-class CodeField(CustomField, Code): ...
+class CodeField(CustomField, Code):
+    pass
 
 
 class DateField(CustomField):

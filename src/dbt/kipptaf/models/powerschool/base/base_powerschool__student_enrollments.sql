@@ -30,6 +30,7 @@ with
         group by studentid, _dbt_source_relation
     ),
 
+<<<<<<< HEAD
     esms_grad as (
         select
             _dbt_source_relation,
@@ -41,6 +42,11 @@ with
                 partition by _dbt_source_relation, student_number, school_level
                 order by exitdate desc
             ) as rn,
+=======
+            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
+
+            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
+>>>>>>> main
         from union_relations
     ),
 
@@ -79,6 +85,7 @@ with
     )
 
 select
+<<<<<<< HEAD
     ar.* except (lep_status),
 
     ns.abbreviation as entry_school_abbreviation,
@@ -130,6 +137,9 @@ select
     sp.is_counseling_services,
     sp.is_student_athlete,
     sp.is_tutoring,
+=======
+    ar.* except (lep_status, lunchstatus, spedlep, prevstudentid),
+>>>>>>> main
 
     /* regional differences */
     njs.districtcoderesident,
@@ -180,11 +190,22 @@ select
     if(sip.students_student_number is not null, true, false) as is_sipps,
 
     if(
+<<<<<<< HEAD
         /* starting SY26, HS uses weighted ADA */
         ar.school_level = 'HS' and ar.academic_year >= 2025,
         ada.ada_weighted_year,
         ada.ada_year
     ) as `ada`,
+=======
+        ar.region in ('Miami', 'Paterson'), ar.spedlep, sped.special_education_code
+    ) as special_education_code,
+
+    if(adb.latest_fafsa_date is null, 'No', 'Yes') as salesforce_contact_df_has_fafsa,
+
+    coalesce(
+        if(ar.region in ('Miami', 'Paterson'), ar.spedlep, sped.spedlep), 'No IEP'
+    ) as spedlep,
+>>>>>>> main
 
     case
         when ar._dbt_source_relation like '%kippmiami%'
@@ -208,6 +229,7 @@ select
     end as grad_iep_exempt_overall,
 
     case
+<<<<<<< HEAD
         when  -- starting SY26, HS uses weighted ADA
             ar.school_level = 'HS'
             and ar.academic_year >= 2025
@@ -220,6 +242,60 @@ select
         then true
     end as ada_above_or_at_80,
 from union_relations as ar
+=======
+        when ar.academic_year < {{ var("current_academic_year") }}
+        then ar.lunchstatus
+        when ar.region = 'Miami'
+        then ar.lunchstatus
+        when ar.rn_year = 1
+        then
+            case
+                when tpd.is_directly_certified
+                then 'Direct Certification'
+                when tpd.eligibility_determination_reason is null
+                then 'No Application'
+                else tpd.eligibility || ' - ' || tpd.eligibility_determination_reason
+            end
+    end as lunch_application_status,
+
+    case
+        when adb.college_match_display_gpa >= 3.50
+        then '3.50+'
+        when adb.college_match_display_gpa >= 3.00
+        then '3.00-3.49'
+        when adb.college_match_display_gpa >= 2.50
+        then '2.50-2.99'
+        when adb.college_match_display_gpa >= 2.00
+        then '2.00-2.49'
+        when adb.college_match_display_gpa < 2.00
+        then '<2.00'
+        else 'No GPA'
+    end as salesforce_contact_college_match_gpa_band,
+    if(
+        extract(
+            month
+            from coalesce(adb.actual_hs_graduation_date, adb.expected_hs_graduation)
+        )
+        < 10,
+        extract(
+            year
+            from coalesce(adb.actual_hs_graduation_date, adb.expected_hs_graduation)
+        ),
+        extract(
+            year
+            from coalesce(adb.actual_hs_graduation_date, adb.expected_hs_graduation)
+        )
+        + 1
+    ) as salesforce_graduation_year,
+
+    if(
+        ar.region = 'Paterson' and ar.academic_year <= 2024,
+        ar.prevstudentid,
+        ar.student_number
+    ) as pearson_local_student_identifier,
+
+from with_region as ar
+>>>>>>> main
 left join
     {{ ref("stg_powerschool__schools") }} as ns
     on ar.entry_schoolid = ns.school_number

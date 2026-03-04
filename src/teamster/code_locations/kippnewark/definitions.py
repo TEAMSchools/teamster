@@ -11,6 +11,7 @@ from teamster.code_locations.kippnewark import (
     DBT_PROJECT,
     _dbt,
     amplify,
+    asset_checks,
     couchdrop,
     deanslist,
     edplan,
@@ -61,6 +62,7 @@ defs = Definitions(
             titan,
         ]
     ),
+    asset_checks=asset_checks.freshness_checks,
     schedules=[
         *extracts.schedules,
         *deanslist.schedules,

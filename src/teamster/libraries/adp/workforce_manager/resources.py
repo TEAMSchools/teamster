@@ -26,7 +26,7 @@ class AdpWorkforceManagerResource(ConfigurableResource):
 
         self._authenticate(grant_type="password")
 
-    def _authenticate(self, grant_type):
+    def _authenticate(self, grant_type: str) -> None:
         self._session.headers["Content-Type"] = "application/x-www-form-urlencoded"
         self._session.headers.pop(
             "Authorization", ""
@@ -59,15 +59,13 @@ class AdpWorkforceManagerResource(ConfigurableResource):
         )
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential_jitter())
-    def _request(self, method, url, **kwargs):
+    def _request(self, method: str, url: str, **kwargs) -> Response:
         response = Response()
 
         try:
             response = self._session.request(method=method, url=url, **kwargs)
 
             response.raise_for_status()
-
-            return response
         except exceptions.HTTPError as e:
             self._log.exception(e)
 
@@ -77,16 +75,18 @@ class AdpWorkforceManagerResource(ConfigurableResource):
             else:
                 raise exceptions.HTTPError(response.text) from e
 
-    def _get_url(self, endpoint, *args):
+        return response
+
+    def _get_url(self, endpoint: str, *args: str) -> str:
         return f"{self._base_url}/{endpoint}" + ("/" + "/".join(args) if args else "")
 
-    def get(self, endpoint, *args, **kwargs):
+    def get(self, endpoint: str, *args: str, **kwargs) -> Response:
         url = self._get_url(*args, endpoint=endpoint)
         self._log.debug(f"GET: {url}")
 
         return self._request(method="GET", url=url, **kwargs)
 
-    def post(self, endpoint, *args, **kwargs):
+    def post(self, endpoint: str, *args: str, **kwargs) -> Response:
         url = self._get_url(*args, endpoint=endpoint)
         self._log.debug(f"POST: {url}")
 

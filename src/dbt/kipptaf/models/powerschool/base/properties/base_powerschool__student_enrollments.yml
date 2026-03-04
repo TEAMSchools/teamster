@@ -427,6 +427,7 @@ models:
         data_type: string
       - name: is_counseling_services
         data_type: int64
+<<<<<<< HEAD
       - name: is_sipps
         data_type: boolean
       - name: is_student_athlete
@@ -471,3 +472,7 @@ models:
         data_type: string
       - name: es_graduated
         data_type: string
+=======
+      - name: pearson_local_student_identifier
+        data_type: int64
+>>>>>>> main

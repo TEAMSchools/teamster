@@ -17,6 +17,9 @@ select
     ai.commlog_type,
     ai.intervention_status,
     ai.intervention_status_required_int,
+    ai.is_ca_exception,
+
+    if(co.ada <= .90, true, false) as is_chronic_absence,
 from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_students__attendance_interventions") }} as ai

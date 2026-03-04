@@ -7,7 +7,8 @@ select
         phonenumberpriorityorder,
         phonetypecodesetid,
         whencreated,
-        whenmodified
+        whenmodified,
+        source_file_name
     ),
 
     cast(ispreferred as int) as ispreferred,

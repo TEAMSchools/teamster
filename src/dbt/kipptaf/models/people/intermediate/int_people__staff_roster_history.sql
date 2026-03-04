@@ -110,7 +110,12 @@ with
             on w.worker_id__id_value = en.adp_associate_id
             and en.is_active
         /* after transistion from Dayforce */
-        where w.effective_date_end >= '2021-01-01'
+        where
+            w.effective_date_end >= '2021-01-01'
+            and coalesce(w.organizational_unit__home__business_unit__name, '')
+            != 'KIPP Paterson'
+            and coalesce(w.organizational_unit__assigned__business_unit__name, '')
+            != 'KIPP Paterson'
 
         union all
 
@@ -326,6 +331,7 @@ left join
     {{ ref("stg_adp_workforce_now__pension_and_benefits_enrollments") }} as pbe
     on w.position_id = pbe.position_id
     and pbe.enrollment_status = 'Active'
+    and pbe.rn_enrollment_recent = 1
     and pbe.plan_name in (
         'NJ Pension - DCRP:Eligible Employees(Prudential Financial)',
         'NJ Pension - PERS:Eligible Employees(NJ Pension)',
