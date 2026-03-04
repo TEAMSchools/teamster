@@ -255,3 +255,5 @@ models:
         data_type: boolean
       - name: rn_application_school
         data_type: int64
+      - name: overgrad_urm_grad_rate
+        data_type: string
