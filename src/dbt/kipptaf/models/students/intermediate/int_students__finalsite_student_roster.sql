@@ -313,6 +313,7 @@ select
     x.status_group_name,
     x.status_group_value,
     x.grouped_status_order,
+    x.grouped_status_timeframe,
 
     cast(a.aligned_enrollment_academic_year as string)
     || '-'
