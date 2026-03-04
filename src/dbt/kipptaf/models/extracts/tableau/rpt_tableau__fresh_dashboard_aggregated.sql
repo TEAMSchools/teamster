@@ -79,6 +79,8 @@ with
         select
             enrollment_academic_year,
             finalsite_id,
+            enrollment_academic_year_enrollment_type,
+            ps_enroll_status,
             grouped_status,
             grouped_status_order,
             grouped_status_start_date,
@@ -100,6 +102,8 @@ with
         select
             enrollment_academic_year,
             finalsite_id,
+            enrollment_academic_year_enrollment_type,
+            ps_enroll_status,
             grouped_status,
             grouped_status_order,
             grouped_status_start_date,
@@ -118,14 +122,37 @@ with
         select enrollment_academic_year, finalsite_id,
 
         from days_in_status
-        where grouped_status = 'Enrolled'
+        where
+            grouped_status = 'Enrolled'
+            and enrollment_academic_year_enrollment_type = 'New'
+
+        union all
+
+        select enrollment_academic_year, finalsite_id,
+
+        from days_in_status
+        where
+            ps_enroll_status = 0
+            and enrollment_academic_year_enrollment_type = 'Returning'
+    ),
+
+    currently_enrollment_in_progress as (
+        select enrollment_academic_year, finalsite_id,
+
+        from days_in_status
+        where grouped_status = 'Enrollment in Progress'
     ),
 
     conversion_grouping_numerator as (
         select enrollment_academic_year, finalsite_id, grouped_status,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where grouped_status = 'Offers to Accepted Num'
+        where
+            grouped_status in (
+                'Offers to Accepted Num',
+                'Accepted to Enroll Num',
+                'Offers to Enrolled Num'
+            )
     )
 
 -- currently waitlisted
@@ -580,7 +607,8 @@ where
 
 union all
 
--- offers to accepted ever
+-- offers to accepted ever, accepted ever to currently enrolled, offers ever to
+-- currently enrolled
 select
     s.academic_year,
     s.org,
@@ -633,121 +661,4 @@ left join
     and f.finalsite_id = c.finalsite_id
 where
     s.goal_type = 'Conversion'
-    and s.goal_name = 'Offers to Accepted'
-    and s.academic_year = {{ var("current_academic_year") + 1 }}
-
-union all
-
--- accepted ever to currently enrolled
-select
-    s.academic_year,
-    s.org,
-    s.region,
-    s.school_level,
-    s.schoolid,
-    s.school,
-    s.grade_level,
-    s.goal_granularity,
-    s.goal_type,
-    s.goal_name,
-    s.goal_value,
-
-    f.aligned_enrollment_academic_year,
-    f.aligned_enrollment_academic_year_display,
-    f.enrollment_academic_year,
-    f.enrollment_academic_year_display,
-    f.finalsite_id,
-    f.powerschool_student_number,
-    f.first_name,
-    f.last_name,
-    f.grade_level as student_grade_level,
-    f.aligned_enrollment_academic_year_grade_level,
-    f.grouped_status,
-    f.self_contained,
-    f.enrollment_academic_year_enrollment_type,
-    f.is_enrolled_fdos,
-    f.is_enrolled_oct01,
-    f.is_enrolled_oct15,
-    f.aligned_enrollment_type,
-
-    null as grouped_status_order,
-    null as grouped_status_start_date,
-    null as grouped_status_end_date,
-    null as days_in_grouped_status,
-
-    c.finalsite_id as goal_name_value,
-
-from scaffold as s
-left join
-    {{ ref("int_tableau__finalsite_student_scaffold") }} as f
-    on s.academic_year = f.enrollment_academic_year
-    and s.region = f.region
-    and s.school = f.school
-    and s.grade_level = f.grade_level
-    and s.goal_type = f.grouped_status
-left join
-    currently_enrolled as c
-    on f.enrollment_academic_year = c.enrollment_academic_year
-    and f.finalsite_id = c.finalsite_id
-where
-    s.goal_type = 'Conversion'
-    and s.goal_name = 'Accepted to Enrolled'
-    and s.academic_year = {{ var("current_academic_year") + 1 }}
-
-union all
-
--- offers ever to currently enrolled 
-select
-    s.academic_year,
-    s.org,
-    s.region,
-    s.school_level,
-    s.schoolid,
-    s.school,
-    s.grade_level,
-    s.goal_granularity,
-    s.goal_type,
-    s.goal_name,
-    s.goal_value,
-
-    f.aligned_enrollment_academic_year,
-    f.aligned_enrollment_academic_year_display,
-    f.enrollment_academic_year,
-    f.enrollment_academic_year_display,
-    f.finalsite_id,
-    f.powerschool_student_number,
-    f.first_name,
-    f.last_name,
-    f.grade_level as student_grade_level,
-    f.aligned_enrollment_academic_year_grade_level,
-    f.grouped_status,
-    f.self_contained,
-    f.enrollment_academic_year_enrollment_type,
-    f.is_enrolled_fdos,
-    f.is_enrolled_oct01,
-    f.is_enrolled_oct15,
-    f.aligned_enrollment_type,
-
-    null as grouped_status_order,
-    null as grouped_status_start_date,
-    null as grouped_status_end_date,
-    null as days_in_grouped_status,
-
-    c.finalsite_id as goal_name_value,
-
-from scaffold as s
-left join
-    {{ ref("int_tableau__finalsite_student_scaffold") }} as f
-    on s.academic_year = f.enrollment_academic_year
-    and s.region = f.region
-    and s.school = f.school
-    and s.grade_level = f.grade_level
-    and s.goal_type = f.grouped_status
-left join
-    currently_enrolled as c
-    on f.enrollment_academic_year = c.enrollment_academic_year
-    and f.finalsite_id = c.finalsite_id
-where
-    s.goal_type = 'Conversion'
-    and s.goal_name = 'Offers to Enrolled'
     and s.academic_year = {{ var("current_academic_year") + 1 }}
