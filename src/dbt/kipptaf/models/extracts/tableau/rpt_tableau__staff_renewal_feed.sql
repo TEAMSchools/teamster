@@ -176,10 +176,10 @@ with
             on s.academic_year = ap.campaign_academic_year
             and b.employee_number = ap.subject_employee_number
         left join
-            {{ ref("stg_people__renewal_letter_mapping") }} as rlm
-            on rlm.entity = s.ny_entity
-            and rlm.department = s.ny_dept
-            and rlm.jobs = s.ny_title
+            {{ ref("stg_google_sheets__people__renewal_letter_mapping") }} as rlm
+            on s.ny_entity = rlm.entity
+            and s.ny_dept = rlm.department
+            and s.ny_title = rlm.jobs
     )
 
 select
@@ -236,7 +236,7 @@ select
                     ''
                 ),
                 '&entry.1059490956=',
-                coalesce(salary_modification_explanation, ''),
+                coalesce(replace(salary_modification_explanation, '%', ' percent'), ''),
                 '&entry.1601656476=',
                 coalesce(add_comp_name_1, ''),
                 '&entry.298530295=',

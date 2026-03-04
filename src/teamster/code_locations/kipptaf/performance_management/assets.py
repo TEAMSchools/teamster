@@ -2,6 +2,7 @@ import numpy
 import pandas
 from dagster import (
     AssetExecutionContext,
+    AssetKey,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Output,
@@ -10,12 +11,11 @@ from dagster import (
 )
 from dagster_gcp import BigQueryResource
 from dagster_shared import check
-from google.cloud.bigquery import DatasetReference
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 
-from teamster.code_locations.kipptaf import CODE_LOCATION
+from teamster.code_locations.kipptaf import CODE_LOCATION, CURRENT_FISCAL_YEAR
 from teamster.code_locations.kipptaf.performance_management.schema import (
     OBSERVATION_DETAILS_SCHEMA,
     OUTLIER_DETECTION_SCHEMA,
@@ -80,9 +80,7 @@ def get_pca(df: pandas.DataFrame):
     principal_components = pca.fit_transform(X=df[FIT_TRANSFORM_COLUMNS])
 
     pca_df = pandas.DataFrame(
-        data=principal_components,
-        # trunk-ignore(pyright/reportArgumentType)
-        columns=["pc1", "pc2"],
+        data=principal_components, columns=pandas.Index(["pc1", "pc2"])
     )
 
     df = pandas.merge(left=df, right=pca_df, left_index=True, right_index=True)
@@ -101,8 +99,7 @@ def get_dbscan(df):
 
     clusters = outlier_detection.fit_predict(X=df[["pc1", "pc2"]])
 
-    # trunk-ignore(pyright/reportArgumentType)
-    cluster_df = pandas.DataFrame(data=clusters, columns=["cluster"])
+    cluster_df = pandas.DataFrame(data=clusters, columns=pandas.Index(["cluster"]))
 
     df = pandas.merge(left=df, right=cluster_df, left_index=True, right_index=True)
 
@@ -117,8 +114,7 @@ def get_isolation_forest(df: pandas.DataFrame):
 
     outliers = model.predict(X=df[FIT_TRANSFORM_COLUMNS])
 
-    # trunk-ignore(pyright/reportArgumentType)
-    tree_df = pandas.DataFrame(data=outliers, columns=["tree_outlier"])
+    tree_df = pandas.DataFrame(data=outliers, columns=pandas.Index(["tree_outlier"]))
 
     df = pandas.merge(left=df, right=tree_df, left_index=True, right_index=True)
 
@@ -127,11 +123,14 @@ def get_isolation_forest(df: pandas.DataFrame):
 
 @asset(
     key=[CODE_LOCATION, "performance_management", "outlier_detection"],
+    deps=[AssetKey(["kipptaf", "extracts", "rpt_python__manager_pm_averages"])],
     io_manager_key="io_manager_gcs_avro",
     group_name="performance_management",
     partitions_def=MultiPartitionsDefinition(
         {
-            "academic_year": StaticPartitionsDefinition(["2023", "2024"]),
+            "academic_year": StaticPartitionsDefinition(
+                [str(year) for year in range(2023, CURRENT_FISCAL_YEAR.fiscal_year)]
+            ),
             "term": StaticPartitionsDefinition(["PM1", "PM2", "PM3"]),
         }
     ),
@@ -149,15 +148,12 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
     with db_bigquery.get_client() as bq:
         bq_client = bq
 
-    dataset_ref = DatasetReference(
-        project=bq_client.project, dataset_id="kipptaf_extracts"
+    query = bq.query(
+        query="select * from kipptaf_extracts.rpt_python__manager_pm_averages",
+        project=bq_client.project,
     )
 
-    rows = bq_client.list_rows(
-        table=dataset_ref.table("rpt_python__manager_pm_averages")
-    )
-
-    df_global: pandas.DataFrame = rows.to_dataframe()
+    df_global: pandas.DataFrame = query.to_dataframe()
 
     df_global.dropna(inplace=True)
     df_global.reset_index(inplace=True, drop=True)
@@ -216,8 +212,7 @@ def outlier_detection(context: AssetExecutionContext, db_bigquery: BigQueryResou
         how="left",
         left_on=["observer_employee_number", "academic_year", "form_term"],
         right_on=["observer_employee_number", "academic_year", "form_term"],
-        # trunk-ignore(pyright/reportArgumentType)
-        suffixes=["_current", "_global"],
+        suffixes=("_current", "_global"),
     )
 
     data = df_current.to_dict(orient="records")

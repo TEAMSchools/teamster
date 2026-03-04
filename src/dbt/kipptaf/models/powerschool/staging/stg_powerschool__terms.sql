@@ -4,6 +4,7 @@
             source("kippnewark_powerschool", "stg_powerschool__terms"),
             source("kippcamden_powerschool", "stg_powerschool__terms"),
             source("kippmiami_powerschool", "stg_powerschool__terms"),
+            source("kipppaterson_powerschool", "stg_powerschool__terms"),
         ]
     )
 }}

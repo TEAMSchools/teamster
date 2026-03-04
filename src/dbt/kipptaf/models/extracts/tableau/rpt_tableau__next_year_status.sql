@@ -1,7 +1,7 @@
 select
     co.student_number,
     co.state_studentnumber,
-    co.lastfirst,
+    co.student_name as lastfirst,
     co.enroll_status,
     co.cohort,
     co.academic_year,
@@ -34,5 +34,5 @@ select
     replace(
         concat(co.street, '+', co.city, '+', co.state, '+', co.zip), ' ', '+'
     ) as gmaps_address,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 where co.rn_undergrad = 1 and co.enroll_status in (0, -1)

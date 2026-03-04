@@ -46,20 +46,23 @@ class PowerSchoolEnrollmentResource(ConfigurableResource):
 
         return self._parse_response(response)
 
-    def get_all_records(self, endpoint, *args, **kwargs) -> list[dict]:
+    def list(self, endpoint, **kwargs) -> list[dict]:
         page = 1
         all_records = []
-        kwargs["params"] = {"pagesize": self.page_size}
+
+        params = {"pagesize": self.page_size}
 
         while True:
-            kwargs["params"].update({"page": page})
+            params.update({"page": page})
 
-            meta_data, records = self.get(endpoint, *args, **kwargs).values()
+            metadata, records = self.get(
+                endpoint=endpoint, params=params, **kwargs
+            ).values()
 
-            self._log.debug(meta_data)
+            self._log.debug(metadata)
             all_records.extend(records)
 
-            if page == meta_data["pageCount"]:
+            if page == metadata["pageCount"]:
                 break
             else:
                 page += 1

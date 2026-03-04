@@ -9,12 +9,10 @@ def build_iready_sftp_asset(
     remote_file_regex,
     avro_schema,
     start_fiscal_year: int,
-    current_fiscal_year: int,
+    end_fiscal_year: int,
     op_tags=None,
 ):
-    partition_keys = [
-        str(y - 1) for y in range(start_fiscal_year, current_fiscal_year + 1)
-    ]
+    partition_keys = [str(y - 1) for y in range(start_fiscal_year, end_fiscal_year + 1)]
 
     return build_sftp_file_asset(
         asset_key=asset_key,

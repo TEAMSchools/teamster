@@ -1,8 +1,11 @@
 packages:
-  - package: dbt-labs/dbt_external_tables
-    version: 0.11.1
-  - package: dbt-labs/dbt_utils
-    version: 1.3.0
-  - package: dbt-labs/codegen
-    version: 0.13.1
-sha1_hash: 9589304c75f46c1453c3af3ffbdbc99764e89d7e
+  - name: dbt_external_tables
+    package: dbt-labs/dbt_external_tables
+    version: 0.12.0
+  - name: dbt_utils
+    package: dbt-labs/dbt_utils
+    version: 1.3.3
+  - name: codegen
+    package: dbt-labs/codegen
+    version: 0.14.0
+sha1_hash: 2d84b2d9c4f956ef6a91df819dc9d6f047acdcca

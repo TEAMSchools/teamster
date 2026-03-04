@@ -1,0 +1,89 @@
+models:
+  - name: rpt_gsheets__kippfwd_collab_roster
+    columns:
+      - name: "`Salesforce ID`"
+        data_type: string
+      - name: "`SIS ID`"
+        data_type: int64
+      - name: "`College Counselor`"
+        data_type: string
+      - name: "`First Name`"
+        data_type: string
+      - name: "`Last Name`"
+        data_type: string
+      - name: "`Current Enrolled High School`"
+        data_type: string
+      - name: "`Student Cell Phone`"
+        data_type: string
+      - name: "`Personal Email Address`"
+        data_type: string
+      - name: "`Primary Parent Name`"
+        data_type: string
+      - name: "`Primary Parent Cell Phone`"
+        data_type: string
+      - name: "`Primary Parent Email`"
+        data_type: string
+      - name: "`Mailing Address`"
+        data_type: string
+      - name: "`IEP`"
+        data_type: boolean
+      - name: "`504 Plan`"
+        data_type: boolean
+      - name: "`FAFSA Complete`"
+        data_type: string
+      - name: "`HESAA Complete`"
+        data_type: string
+      - name: "`EFC Actual`"
+        data_type: numeric
+      - name: expected_hs_grad_date
+        data_type: date
+      - name: college_match_display_gpa
+        data_type: numeric
+      - name: highest_act_score
+        data_type: numeric
+      - name: application_id
+        data_type: string
+      - name: application_name
+        data_type: string
+      - name: matriculation_decision
+        data_type: string
+      - name: "`CCDM Complete`"
+        data_type: int64
+      - name: application_account_name
+        data_type: string
+      - name: application_type
+        data_type: string
+      - name: intended_degree_type
+        data_type: string
+      - name: unmet_need
+        data_type: numeric
+      - name: pell_grant
+        data_type: numeric
+      - name: tag
+        data_type: numeric
+      - name: parent_plus_loan
+        data_type: numeric
+      - name: stafford_loan_subsidized
+        data_type: numeric
+      - name: stafford_loan_unsubsidized
+        data_type: numeric
+      - name: other_private_loan
+        data_type: numeric
+      - name: total_loan_amount
+        data_type: numeric
+      - name: hs_gpa_bands
+        data_type: string
+      - name: is_undermatch
+        data_type: boolean
+      - name: state_grant
+        data_type: numeric
+      - name: ccr_period
+        data_type: string
+      - name: ccr_teacher
+        data_type: string
+      - name: powerschool_contact_1_email_current
+        data_type: string
+      - name: powerschool_contact_1_phone_mobile
+        data_type: string
+      - name: powerschool_contact_1_phone_primary
+        data_type: string

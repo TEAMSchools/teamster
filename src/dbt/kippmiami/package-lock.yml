@@ -1,12 +1,21 @@
 packages:
   - local: ../deanslist
+    name: deanslist
+  - local: ../finalsite
+    name: finalsite
   - local: ../iready
+    name: iready
   - local: ../powerschool
+    name: powerschool
   - local: ../renlearn
-  - package: dbt-labs/dbt_external_tables
-    version: 0.11.1
-  - package: dbt-labs/codegen
-    version: 0.13.1
-  - package: dbt-labs/dbt_utils
-    version: 1.3.0
-sha1_hash: 0d8c55805158322f989c7b4ea61d1d6aaa5db0d1
+    name: renlearn
+  - name: dbt_external_tables
+    package: dbt-labs/dbt_external_tables
+    version: 0.12.0
+  - name: codegen
+    package: dbt-labs/codegen
+    version: 0.14.0
+  - name: dbt_utils
+    package: dbt-labs/dbt_utils
+    version: 1.3.3
+sha1_hash: 9534114be55a0f65f42138b739f95e5220f106ea

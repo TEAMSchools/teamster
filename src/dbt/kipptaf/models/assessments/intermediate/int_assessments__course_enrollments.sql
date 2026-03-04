@@ -1,5 +1,3 @@
-{{ config(materialized="table") }}
-
 with
     enrollments_union as (
         /* K-12 enrollments */
@@ -10,6 +8,7 @@ with
             ce.cc_dateenrolled,
             ce.cc_dateleft,
             ce.illuminate_subject_area,
+            ce.discipline,
             ce.is_foundations,
 
             co.region,
@@ -47,6 +46,7 @@ with
             co.exitdate as cc_dateleft,
 
             'Writing' as illuminate_subject_area,
+            'ELA' as discipline,
             false as is_foundations,
 
             co.region,

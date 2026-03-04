@@ -1,9 +1,12 @@
 {{
     dbt_utils.union_relations(
         relations=[
-            source("kippnewark_powerschool", model.name),
-            source("kippcamden_powerschool", model.name),
-            source("kippmiami_powerschool", model.name),
+            source("kippnewark_powerschool", "int_powerschool__district_entry_date"),
+            source("kippcamden_powerschool", "int_powerschool__district_entry_date"),
+            source("kippmiami_powerschool", "int_powerschool__district_entry_date"),
+            source(
+                "kipppaterson_powerschool", "int_powerschool__district_entry_date"
+            ),
         ]
     )
 }}

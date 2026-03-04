@@ -3,14 +3,29 @@
 git config pull.rebase false # specify how to reconcile divergent branches (merge)
 git config push.autoSetupRemote true
 
-# add gcloud gpg key
-curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg || true
-echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+# rm broken yarn key
+sudo rm /etc/apt/sources.list.d/yarn.list
 
-# update/install apt packages
+# import the Google Cloud public key
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg |
+  sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg ||
+  true
+
+# add the gcloud CLI distribution URI as a package source
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" |
+  sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+
+# update/install base apt packages
 sudo apt-get -y --no-install-recommends update &&
   sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install bash-completion google-cloud-cli &&
+  sudo apt-get -y --no-install-recommends install \
+    apt-transport-https \
+    bash-completion \
+    ca-certificates \
+    curl \
+    gnupg \
+    google-cloud-cli \
+    sshpass &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
@@ -34,26 +49,17 @@ op inject -f --in-file=.devcontainer/tpl/deanslist_api_key_map_yaml.tpl \
   sudo mv -f env/deanslist_api_key_map_yaml \
     /etc/secret-volume/deanslist_api_key_map_yaml
 
-op inject -f --in-file=.devcontainer/tpl/gcloud_dagster_service_account.json.tpl \
-  --out-file=env/gcloud_dagster_service_account.json &&
-  sudo mv -f env/gcloud_dagster_service_account.json \
-    /etc/secret-volume/gcloud_dagster_service_account.json
-
 op inject -f --in-file=.devcontainer/tpl/id_rsa_egencia.tpl \
   --out-file=env/id_rsa_egencia &&
   sudo mv -f env/id_rsa_egencia /etc/secret-volume/id_rsa_egencia
-
-op inject -f --in-file=.devcontainer/tpl/dbt_cloud.yml.tpl \
-  --out-file=env/dbt_cloud.yml &&
-  sudo mv -f env/dbt_cloud.yml /home/vscode/.dbt/dbt_cloud.yml
 
 op inject -f --in-file=.devcontainer/tpl/powerschool_ssh_password.txt.tpl \
   --out-file=env/powerschool_ssh_password.txt &&
   sudo mv -f env/powerschool_ssh_password.txt /etc/secret-volume/powerschool_ssh_password.txt
 
-# auth gcloud
-gcloud auth activate-service-account \
-  --key-file=/etc/secret-volume/gcloud_dagster_service_account.json
+# set up trunk
+chmod +x /workspaces/teamster/trunk
+/workspaces/teamster/trunk install
 
 # install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh || true
@@ -61,24 +67,50 @@ curl -LsSf https://astral.sh/uv/install.sh | sh || true
 # install dependencies
 uv tool install datamodel-code-generator
 uv tool install dagster-dg
-uv sync --frozen
+uv sync
 
-# prepare dbt projects
-uv run dagster-dbt project prepare-and-package \
-  --file src/teamster/code_locations/kippcamden/__init__.py
-uv run dagster-dbt project prepare-and-package \
-  --file src/teamster/code_locations/kippmiami/__init__.py
-uv run dagster-dbt project prepare-and-package \
-  --file src/teamster/code_locations/kippnewark/__init__.py
-uv run dagster-dbt project prepare-and-package \
-  --file src/teamster/code_locations/kipptaf/__init__.py
+# install dbt projects
+uv run dbt deps --project-dir=src/dbt/amplify
+uv run dbt parse --project-dir=src/dbt/amplify
 
-# install dbt deps for packages
 uv run dbt deps --project-dir=src/dbt/deanslist
+uv run dbt parse --project-dir=src/dbt/deanslist
+
 uv run dbt deps --project-dir=src/dbt/edplan
+uv run dbt parse --project-dir=src/dbt/edplan
+
+uv run dbt deps --project-dir=src/dbt/finalsite
+uv run dbt parse --project-dir=src/dbt/finalsite
+
 uv run dbt deps --project-dir=src/dbt/iready
+uv run dbt parse --project-dir=src/dbt/iready
+
 uv run dbt deps --project-dir=src/dbt/overgrad
+uv run dbt parse --project-dir=src/dbt/overgrad
+
+uv run dbt parse --project-dir=src/dbt/pearson
 uv run dbt deps --project-dir=src/dbt/pearson
+
 uv run dbt deps --project-dir=src/dbt/powerschool
+uv run dbt parse --project-dir=src/dbt/powerschool
+
 uv run dbt deps --project-dir=src/dbt/renlearn
+uv run dbt parse --project-dir=src/dbt/renlearn
+
 uv run dbt deps --project-dir=src/dbt/titan
+uv run dbt parse --project-dir=src/dbt/titan
+
+uv run dbt deps --project-dir=src/dbt/kippcamden
+uv run dbt parse --project-dir=src/dbt/kippcamden
+
+uv run dbt deps --project-dir=src/dbt/kippmiami
+uv run dbt parse --project-dir=src/dbt/kippmiami
+
+uv run dbt deps --project-dir=src/dbt/kippnewark
+uv run dbt parse --project-dir=src/dbt/kippnewark
+
+uv run dbt deps --project-dir=src/dbt/kipppaterson
+uv run dbt parse --project-dir=src/dbt/kipppaterson
+
+uv run dbt deps --project-dir=src/dbt/kipptaf
+uv run dbt parse --project-dir=src/dbt/kipptaf

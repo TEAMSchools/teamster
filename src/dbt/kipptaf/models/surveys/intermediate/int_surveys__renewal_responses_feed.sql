@@ -21,11 +21,11 @@ with
             ra.approval_level,
 
             safe_cast(
-                regexp_extract(fr.answer, r'\((\d{6})\)') as integer
+                regexp_extract(fr.answer, r'\((\d{6})\)') as int
             ) as subject_employee_number,
         from {{ ref("int_surveys__survey_responses") }} as fr
         left join
-            {{ ref("stg_people__renewal_approvers") }} as ra
+            {{ ref("stg_google_sheets__people__renewal_approvers") }} as ra
             on fr.respondent_email = ra.approver_email
             and fr.academic_year = ra.academic_year
         where fr.survey_title = 'Renewal Approval Tool Processing'
@@ -185,6 +185,7 @@ with
 
 select
     *,
+
     case
         when rn_approval = 1
         then 'Valid Approval'

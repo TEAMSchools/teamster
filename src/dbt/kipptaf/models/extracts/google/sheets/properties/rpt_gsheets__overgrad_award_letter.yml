@@ -1,0 +1,49 @@
+models:
+  - name: rpt_gsheets__overgrad_award_letter
+    columns:
+      - name: student_id
+        data_type: string
+      - name: graduation_year
+        data_type: int64
+      - name: college_name
+        data_type: string
+      - name: nces_id
+        data_type: int64
+      - name: award_letter__books_and_supplies
+        data_type: float64
+      - name: award_letter__federal_direct_subsidized_loan
+        data_type: float64
+      - name: award_letter__federal_direct_unsubsidized_loan
+        data_type: float64
+      - name: award_letter__seog
+        data_type: float64
+      - name: award_letter__grants_and_scholarships
+        data_type: float64
+      - name: award_letter__grants_from_state
+        data_type: float64
+      - name: award_letter__housing_and_meals
+        data_type: float64
+      - name: award_letter__net_cost
+        data_type: float64
+      - name: award_letter__other_scholarships
+        data_type: float64
+      - name: out_of_pocket_total
+        data_type: float64
+      - name: award_letter__parent_plus_loan
+        data_type: float64
+      - name: award_letter__federal_pell_grant
+        data_type: float64
+      - name: award_letter__private_loan
+        data_type: float64
+      - name: award_letter__cost_of_attendance
+        data_type: float64
+      - name: award_letter__loans
+        data_type: float64
+      - name: award_letter__unmet_need
+        data_type: float64
+      - name: award_letter__unmet_need_with_max_family_contribution
+        data_type: float64
+      - name: award_letter__work_study
+        data_type: float64
+      - name: student
+        data_type: string

@@ -1,4 +1,4 @@
-{%- set filtered_columns = dbt_utils.get_filtered_columns_in_relation(
+{% set filtered_columns = dbt_utils.get_filtered_columns_in_relation(
     from=source("edplan", "src_edplan__njsmart_powerschool"),
     except=[
         "_dagster_partition_fiscal_year",
@@ -9,23 +9,20 @@
         "first_name",
         "last_name",
     ],
-) -%}
+) %}
 
-{%- set surrogate_key_field_list = [
-    "state_studentnumber.double_value",
-    "state_studentnumber.long_value",
-] -%}
+{% set surrogate_key_field_list = ["state_studentnumber"] %}
 
-{%- for item in filtered_columns -%}
-    {%- if item != "state_studentnumber" -%}
+{% for item in filtered_columns %}
+    {% if item != "state_studentnumber" %}
         {{ surrogate_key_field_list.append(item) or "" }}
-    {%- endif -%}
-{%- endfor -%}
+    {% endif %}
+{% endfor %}
 
 with
+    -- trunk-ignore(sqlfluff/ST03)
     staging as (
         select
-            student_number,
             nj_se_earlyintervention,
             nj_se_parentalconsentobtained,
             ti_serv_counseling,
@@ -37,8 +34,12 @@ with
             _dagster_partition_fiscal_year as fiscal_year,
 
             _dagster_partition_fiscal_year - 1 as academic_year,
+
+            safe_cast(student_number as int) as student_number,
             safe_cast(nj_se_delayreason as int) as nj_se_delayreason,
             safe_cast(nj_se_placement as int) as nj_se_placement,
+            safe_cast(state_studentnumber as int) as state_studentnumber,
+
             safe_cast(nj_timeinregularprogram as numeric) as nj_timeinregularprogram,
 
             parse_date('%m/%d/%Y', nj_se_eligibilityddate) as nj_se_eligibilityddate,
@@ -57,13 +58,8 @@ with
                 '%m/%d/%Y', nj_se_consenttoimplementdate
             ) as nj_se_consenttoimplementdate,
 
-            coalesce(
-                state_studentnumber.long_value,
-                safe_cast(state_studentnumber.double_value as int)
-            ) as state_studentnumber,
-
             right(
-                '0' || safe_cast(safe_cast(special_education as int) as string), 2
+                concat('0', regexp_extract(special_education, r'(\d+)\.?')), 2
             ) as special_education,
 
             {{ dbt_utils.generate_surrogate_key(field_list=surrogate_key_field_list) }}
@@ -72,15 +68,16 @@ with
     ),
 
     deduplicate as (
-        select
-            *,
-
-            row_number() over (
-                partition by row_hash, fiscal_year order by effective_date asc
-            ) as rn_row_year_asc,
-        from staging
+        {{
+            dbt_utils.deduplicate(
+                relation="staging",
+                partition_by="row_hash, fiscal_year",
+                order_by="effective_date asc",
+            )
+        }}
     )
 
+-- trunk-ignore(sqlfluff/AM04)
 select
     *,
 
@@ -150,4 +147,3 @@ select
         date(fiscal_year, 6, 30)
     ) as effective_end_date,
 from deduplicate
-where rn_row_year_asc = 1

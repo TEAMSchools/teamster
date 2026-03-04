@@ -1,12 +1,5 @@
-version: 2
 models:
   - name: stg_powerschool_enrollment__submission_records
-    config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{
-        source("powerschool_enrollment",
-        "src_powerschool_enrollment__submission_records") | replace("`", "")
-        }}')
     columns:
       - name: external_student_id
         data_type: string
@@ -19,8 +12,6 @@ models:
       - name: school
         data_type: string
       - name: grade
-        data_type: string
-      - name: tags
         data_type: string
       - name: data_item_key
         data_type: string
@@ -46,3 +37,5 @@ models:
         data_type: int64
       - name: data_item_value
         data_type: string
+      - name: tags
+        data_type: array<string>

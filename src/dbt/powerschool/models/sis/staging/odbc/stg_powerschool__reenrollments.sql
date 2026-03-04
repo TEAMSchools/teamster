@@ -1,0 +1,29 @@
+select
+    * except (
+        `type`,
+        custom,
+        dcid,
+        enrollmentcode,
+        fteid,
+        fulltimeequiv_obsolete,
+        grade_level,
+        id,
+        membershipshare,
+        schoolid,
+        studentid,
+        tuitionpayer
+    ),
+
+    /* column transformations */
+    dcid.int_value as dcid,
+    id.int_value as id,
+    studentid.int_value as studentid,
+    schoolid.int_value as schoolid,
+    grade_level.int_value as grade_level,
+    type.int_value as `type`,
+    enrollmentcode.int_value as enrollmentcode,
+    fulltimeequiv_obsolete.double_value as fulltimeequiv_obsolete,
+    membershipshare.double_value as membershipshare,
+    tuitionpayer.int_value as tuitionpayer,
+    fteid.int_value as fteid,
+from {{ source("powerschool_odbc", "src_powerschool__reenrollments") }}

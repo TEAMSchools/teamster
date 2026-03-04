@@ -1,13 +1,12 @@
-version: 2
 models:
   - name: stg_schoolmint_grow__observations
-    config:
-      pre_hook:
-        CALL BQ.REFRESH_EXTERNAL_METADATA_CACHE('{{ source("schoolmint_grow",
-        "src_schoolmint_grow__observations") | replace("`", "") }}')
     columns:
       - name: observation_id
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: name
         data_type: string
       - name: assign_action_step_widget_text
@@ -86,114 +85,6 @@ models:
         data_type: string
       - name: tag_notes_1_notes
         data_type: string
-      - name: tag_notes_1_tags
-        data_type: string
-      - name: tag_notes_2_notes
-        data_type: string
-      - name: tag_notes_2_tags
-        data_type: string
-      - name: tag_notes_3_notes
-        data_type: string
-      - name: tag_notes_3_tags
-        data_type: string
-      - name: tag_notes_4_notes
-        data_type: string
-      - name: tag_notes_4_tags
-        data_type: string
-      - name: comments
-        data_type: string
-      - name: event_log
-        data_type: string
-      - name: files
-        data_type: string
-      - name: list_two_column_a
-        data_type: string
-      - name: list_two_column_a_paired
-        data_type: string
-      - name: list_two_column_b
-        data_type: string
-      - name: list_two_column_b_paired
-        data_type: string
-      - name: meetings
-        data_type: string
-      - name: tags
-        data_type: string
-      - name: attachments
-        data_type: record
-      - name: attachments.creator
-        data_type: string
-      - name: attachments.file
-        data_type: string
-      - name: attachments.id
-        data_type: string
-      - name: attachments.private
-        data_type: boolean
-      - name: attachments.resource
-        data_type: string
-      - name: attachments.created
-        data_type: string
-      - name: attachments._id
-        data_type: string
-      - name: magic_notes
-        data_type: record
-      - name: magic_notes.column
-        data_type: string
-      - name: magic_notes.shared
-        data_type: boolean
-      - name: magic_notes.text
-        data_type: string
-      - name: magic_notes.created
-        data_type: string
-      - name: magic_notes._id
-        data_type: string
-      - name: observation_scores
-        data_type: record
-      - name: observation_scores.measurement
-        data_type: string
-      - name: observation_scores.measurementgroup
-        data_type: string
-      - name: observation_scores.valuetext
-        data_type: string
-      - name: observation_scores.percentage
-        data_type: float64
-      - name: observation_scores.valuescore
-        data_type: int64
-      - name: observation_scores.lastmodified
-        data_type: string
-      - name: observation_scores.checkboxes
-        data_type: record
-      - name: observation_scores.checkboxes.label
-        data_type: string
-      - name: observation_scores.checkboxes.value
-        data_type: boolean
-      - name: observation_scores.textboxes
-        data_type: record
-      - name: observation_scores.textboxes.key
-        data_type: string
-      - name: observation_scores.textboxes.label
-        data_type: string
-      - name: observation_scores.textboxes.value
-        data_type: string
-      - name: video_notes
-        data_type: record
-      - name: video_notes.text
-        data_type: string
-      - name: video_notes.createdonmillisecond
-        data_type: int64
-      - name: video_notes.creator
-        data_type: string
-      - name: video_notes.shared
-        data_type: boolean
-      - name: video_notes.timestamp
-        data_type: string
-      - name: video_notes._id
-        data_type: string
-      - name: videos
-        data_type: record
-      - name: videos.video
-        data_type: string
-      - name: videos.includevideotimestamps
-        data_type: boolean
       - name: archived_at
         data_type: timestamp
       - name: created
@@ -214,9 +105,52 @@ models:
         data_type: timestamp
       - name: observed_at_date_local
         data_type: date
-      - name: glows
+      - name: list_two_column_a_str
         data_type: string
-      - name: grows
+      - name: list_two_column_b_str
         data_type: string
       - name: academic_year
         data_type: int64
+      - name: magic_notes_text
+        data_type: string
+      - name: tag_notes_1_tags
+        data_type: array<string>
+      - name: tag_notes_2_notes
+        data_type: string
+      - name: tag_notes_2_tags
+        data_type: array<string>
+      - name: tag_notes_3_notes
+        data_type: string
+      - name: tag_notes_3_tags
+        data_type: array<string>
+      - name: tag_notes_4_notes
+        data_type: string
+      - name: tag_notes_4_tags
+        data_type: array<string>
+      - name: comments
+        data_type: array<string>
+      - name: event_log
+        data_type: array<string>
+      - name: files
+        data_type: array<string>
+      - name: list_two_column_a
+        data_type: array<string>
+      - name: list_two_column_a_paired
+        data_type: array<string>
+      - name: list_two_column_b
+        data_type: array<string>
+      - name: list_two_column_b_paired
+        data_type: array<string>
+      - name: meetings
+        data_type: array<string>
+      - name: tags
+        data_type: array<string>
+      - name: observation_scores
+        data_type: |
+          array<struct<measurement string, measurementGroup string, valueText string, percentage float64, valueScore int64, lastModified string, checkboxes array<struct<label string, value boolean>>, textBoxes array<struct<key string, label string, value string>>>>
+      # - name: attachments
+      #   data_type: array
+      # - name: video_notes
+      #   data_type: array
+      # - name: videos
+      #   data_type: array

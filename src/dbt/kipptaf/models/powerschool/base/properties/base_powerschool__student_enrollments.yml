@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: base_powerschool__student_enrollments
+    # config:
+    #   materialized: table
     description: |
       This view is a complete enrollment history of all students with enrollments in
       PowerSchool.
@@ -11,33 +12,24 @@ models:
       It also includes all key demographic data for students and student identifiers.
       Current enrollment records come from `stg_powerschool__students` and previous
       enrollments come from `stg_powerschool__reenrollments`.
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - _dbt_source_relation
-            - student_number
-            - academic_year
-            - entrydate
-          config:
-            severity: warn
-            store_failures: true
     columns:
+      - name: student_number
+        data_type: int64
+        description: |
+          Unique student identifier. Source: `stg_powerschool__students`.
+          For students registered during and after the 18-19 school year, the 
+          student_number is 6 digits in length, with the first digit indicating the 
+          student's region:
+            - 1 = Newark
+            - 2 = Camden
+            - 3 = Miami
+            - 4 = Paterson
       - name: _dbt_source_relation
         data_type: string
       - name: studentid
         data_type: int64
       - name: students_dcid
         data_type: int64
-      - name: student_number
-        data_type: int64
-        description: |
-          Unique student identifier. Source: `stg_powerschool__students`.
-          For students registered during and after the 2018-19 school year, the 
-          student_number is 6 digits in length, with the first digit indicating the 
-          student's region:
-            1. Newark
-            2. Camden
-            3. Miami
       - name: reenrollments_dcid
         data_type: int64
       - name: grade_level
@@ -402,3 +394,7 @@ models:
         data_type: string
       - name: lunch_application_status
         data_type: string
+      - name: graduation_year
+        data_type: int64
+      - name: pearson_local_student_identifier
+        data_type: int64

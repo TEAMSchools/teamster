@@ -23,6 +23,29 @@ with
             ) as days_after_termination,
         from {{ ref("int_people__staff_roster") }}
         where home_department_name != 'Data' or home_department_name is null
+
+        union all
+
+        select
+            employee_id as powerschool_teacher_number,
+            given_name,
+            sn as family_name_1,
+            physical_delivery_office_name as home_work_location_name,
+            powerschool_school_id as home_work_location_powerschool_school_id,
+            department as home_department_name,
+
+            null as birth_date,
+            null as worker_termination_date,
+
+            sam_account_name,
+            mail,
+
+            'Active' as assignment_status,
+
+            dagster_code_location as home_work_location_dagster_code_location,
+
+            0 as days_after_termination,
+        from {{ ref("int_people__temp_staff") }}
     ),
 
     users_union as (
@@ -34,19 +57,24 @@ with
             sr.home_work_location_name,
             sr.home_work_location_powerschool_school_id,
             sr.home_department_name,
-            sr.birth_date,
             sr.worker_termination_date,
             sr.sam_account_name,
             sr.mail,
             sr.assignment_status,
             sr.home_work_location_dagster_code_location,
             sr.days_after_termination,
+
+            coalesce(sr.birth_date, ucf.dob) as birth_date,
         from staff_roster as sr
         inner join
             {{ ref("stg_powerschool__users") }} as u
             on sr.powerschool_teacher_number = u.teachernumber
             and sr.home_work_location_powerschool_school_id = u.homeschoolid
             and sr.home_work_location_dagster_code_location = u.dagster_code_location
+        left join
+            {{ ref("stg_powerschool__userscorefields") }} as ucf
+            on u.dcid = ucf.usersdcid
+            and {{ union_dataset_join_clause(left_alias="u", right_alias="ucf") }}
         /* import terminated staff up to 2 weeks after termination date */
         where sr.days_after_termination <= 14
 
@@ -60,13 +88,13 @@ with
             sr.home_work_location_name,
             sr.home_work_location_powerschool_school_id,
             sr.home_department_name,
-            sr.birth_date,
             sr.worker_termination_date,
             sr.sam_account_name,
             sr.mail,
             sr.assignment_status,
             sr.home_work_location_dagster_code_location,
             sr.days_after_termination,
+            sr.birth_date,
         from staff_roster as sr
         left join
             {{ ref("stg_powerschool__users") }} as u

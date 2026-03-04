@@ -1,46 +1,151 @@
--- trunk-ignore(sqlfluff/ST06)
+with
+    deanslist_notes as (
+        select
+            ktc.contact_id,
+
+            c.call_date,
+
+            if(c.call_status = 'Completed', 'Successful', 'Outreach') as `status`,
+
+            -- do not use this for years prior to 2025
+            case
+                concat(cast(extract(month from c.call_date) as string), c.reason)
+                when '8KF: AS'
+                then 'AS1'
+                when '9KF: AS'
+                then 'AS1'
+                when '10KF: AS'
+                then 'AS2'
+                when '11KF: AS'
+                then 'AS3'
+                when '12KF: AS'
+                then 'AS4'
+                when '1KF: AS'
+                then 'AS5'
+                when '2KF: AS'
+                then 'AS6'
+                when '3KF: AS'
+                then 'AS7'
+                when '4KF: AS'
+                then 'AS8'
+                when '5KF: AS'
+                then 'AS9'
+                when '6KF: AS'
+                then 'AS10'
+                when '7KF: AS'
+                then 'AS11'
+                else c.reason
+            end as `subject`,
+
+            case
+                c.call_type
+                when 'P'
+                then 'Call'
+                when 'VC'
+                then 'Call'
+                when 'IP'
+                then 'In Person'
+                when 'SMS'
+                then 'Text'
+                when 'E'
+                then 'Email'
+                when 'L'
+                then 'Mail (Letter/Postcard)'
+            end as `type`,
+
+            coalesce({{ parse_html("c.topic") }}, 'Blank') as topic,
+            coalesce({{ parse_html("c.response") }}, 'Blank') as response,
+
+            {{
+                date_to_fiscal_year(
+                    date_field="call_date_time", start_month=7, year_source="start"
+                )
+            }} as academic_year,
+
+        from {{ ref("int_kippadb__roster") }} as ktc
+        inner join
+            {{ ref("int_deanslist__comm_log") }} as c
+            on ktc.student_number = c.student_school_id
+            and regexp_contains(c.reason, r'^KF:')
+        /* record not fixable on SF by either UI or data loader */
+        where c.record_id != 14846967 and ktc.contact_advising_provider is null
+    ),
+
+    rem_notes as (
+        select
+            salesforce_id,
+            `subject`,
+            contact_date,
+            `status`,
+            `type`,
+
+            coalesce(comments, 'Blank') as comments,
+            coalesce(next_steps, 'Blank') as next_steps,
+
+        from {{ ref("stg_google_sheets__kippfwd__rem_notes") }}
+    ),
+
+    salesforce_notes as (
+        select
+            id,
+            contact,
+            `subject`,
+            `date`,
+            `status`,
+            `type`,
+
+            coalesce({{ parse_html("comments") }}, 'Blank') as comments,
+            coalesce({{ parse_html("next_steps") }}, 'Blank') as next_steps,
+
+        from {{ ref("stg_kippadb__contact_note") }}
+        where
+            academic_year = {{ var("current_academic_year") }}
+            /* record not fixable on SF by either UI or data loader */
+            and id != 'a0LQg00000SOadzMAD'
+    )
+
 select
-    -- trunk-ignore-begin(sqlfluff/RF05)
-    ktc.contact_currently_enrolled_school as `Currently Enrolled School`,
-    ktc.last_name as `Last Name`,
-    ktc.first_name as `First Name`,
-    ktc.contact_id as `Salesforce ID`,
-    ktc.ktc_cohort as `HS Cohort`,
+    d.contact_id as contact__c,
+    d.subject as subject__c,
+    d.call_date as date__c,
+    d.status as status__c,
+    d.type as type__c,
 
-    format_date('%m/%d/%Y', s.dob) as `Birthdate`,
+    if(d.topic = 'Blank', null, d.topic) as comments__c,
+    if(d.response = 'Blank', null, d.response) as next_steps__c,
 
-    c.reason as `Subject`,
-    c.topic as `Comments`,
-    c.response as `Next Steps`,
-    c.record_id as dlcall_log_id,
+from deanslist_notes as d
+left join
+    salesforce_notes as s
+    on d.contact_id = s.contact
+    and d.subject = s.subject
+    and d.topic = s.comments
+    and d.response = s.next_steps
+    and d.call_date = s.date
+    and d.status = s.status
+    and d.type = s.type
+where d.academic_year = {{ var("current_academic_year") }} and s.subject is null
 
-    format_date('%m/%d/%Y', c.call_date_time) as `Contact Date`,
+union all
 
-    if(c.call_status = 'Completed', 'Successful', 'Outreach') as `Status`,
+select
+    r.salesforce_id as contact__c,
+    r.subject as subject__c,
+    r.contact_date as date__c,
+    r.status as status__c,
+    r.type as type__c,
 
-    case
-        c.call_type
-        when 'P'
-        then 'Call'
-        when 'VC'
-        then 'Call'
-        when 'IP'
-        then 'In Person'
-        when 'SMS'
-        then 'Text'
-        when 'E'
-        then 'Email'
-        when 'L'
-        then 'Mail (Letter/Postcard)'
-    end as `Type`,
+    if(r.comments = 'Blank', null, r.comments) as comments__c,
+    if(r.next_steps = 'Blank', null, r.next_steps) as next_steps__c,
 
-    null as `Category`,
-    null as `Current Category Ranking`,
--- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("int_kippadb__roster") }} as ktc
-inner join
-    {{ ref("stg_powerschool__students") }} as s on ktc.student_number = s.student_number
-inner join
-    {{ ref("stg_deanslist__comm_log") }} as c
-    on c.student_school_id = ktc.student_number
-    and regexp_contains(c.reason, r'^KF:')
+from rem_notes as r
+left join
+    salesforce_notes as s
+    on r.salesforce_id = s.contact
+    and r.subject = s.subject
+    and r.comments = s.comments
+    and r.next_steps = s.next_steps
+    and r.contact_date = s.date
+    and r.status = s.status
+    and r.type = s.type
+where s.subject is null

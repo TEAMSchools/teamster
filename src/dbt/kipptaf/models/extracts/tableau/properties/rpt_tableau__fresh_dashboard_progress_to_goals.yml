@@ -1,0 +1,43 @@
+models:
+  - name: rpt_tableau__fresh_dashboard_progress_to_goals
+    config:
+      enabled: false
+    columns:
+      - name: aligned_enrollment_academic_year
+        data_type: int64
+      - name: org
+        data_type: string
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: finalsite_id
+        data_type: string
+      - name: latest_status
+        data_type: string
+      - name: enrollment_type
+        data_type: string
+      - name: self_contained
+        data_type: string
+      - name: row_type
+        data_type: string
+      - name: student_count
+        data_type: int64
+      - name: seat_target
+        data_type: numeric
+      - name: fdos_target
+        data_type: numeric
+      - name: budget_target
+        data_type: numeric
+      - name: new_student_target
+        data_type: numeric
+      - name: re_enroll_projection
+        data_type: numeric
+      - name: granularity
+        data_type: string

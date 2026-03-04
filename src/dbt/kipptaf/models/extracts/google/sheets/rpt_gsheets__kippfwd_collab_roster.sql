@@ -139,6 +139,13 @@ select
     end as is_undermatch,
 
     fa.state_grant,
+
+    ce.teacher_lastfirst as ccr_teacher,
+    ce.sections_external_expression as ccr_period,
+
+    ktc.powerschool_contact_1_phone_mobile,
+    ktc.powerschool_contact_1_email_current,
+    ktc.powerschool_contact_1_phone_primary,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_kippadb__roster") }} as ktc
 left join
@@ -155,3 +162,10 @@ left join
     financial_aid_recent as fa
     on ei.ugrad_enrollment_id = fa.enrollment
     and fa.rn_award = 1
+left join
+    {{ ref("base_powerschool__course_enrollments") }} as ce
+    on ktc.student_number = ce.students_student_number
+    and ce.cc_academic_year = {{ var("current_academic_year") }}
+    and ce.courses_course_name like 'College and Career%'
+    and ce.rn_course_number_year = 1
+    and not ce.is_dropped_section

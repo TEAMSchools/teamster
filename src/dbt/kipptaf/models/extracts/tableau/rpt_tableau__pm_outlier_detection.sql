@@ -50,7 +50,7 @@ with
             timestamp(rt.end_date) as end_date_timestamp,
         from {{ ref("stg_performance_management__outlier_detection") }} as od
         inner join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on od.academic_year = rt.academic_year
             and od.form_term = rt.code
             and rt.type in ('PM', 'PMS')
@@ -159,6 +159,7 @@ inner join
     on sd.observer_employee_number = srh.employee_number
     and sd.end_date_timestamp
     between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
+    and srh.primary_indicator
 inner join
     score_aggs as sa
     on sd.observer_employee_number = sa.observer_employee_number

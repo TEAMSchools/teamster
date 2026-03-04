@@ -144,12 +144,6 @@ assets:
     file_config:
       stem: deanslist_finalgrades
       suffix: json.gz
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              memory: 2.0Gi
   - query_config:
       type: schema
       value:
@@ -159,9 +153,3 @@ assets:
     file_config:
       stem: deanslist_mod_standards
       suffix: json.gz
-    op_tags:
-      dagster-k8s/config:
-        container_config:
-          resources:
-            requests:
-              memory: 2.0Gi

@@ -19,7 +19,7 @@ with
         select tae.ticket_id, tae.event_field_name, lower(u.email) as field_value,
         from {{ ref("stg_zendesk__ticket_audits__events") }} as tae
         left join
-            {{ source("zendesk", "users") }} as u
+            {{ ref("stg_zendesk__users") }} as u
             on tae.event_value = safe_cast(u.id as string)
         where tae.event_type = 'Create' and tae.event_field_name = 'assignee_id'
     )
@@ -29,7 +29,6 @@ select
     t.created_at,
     t.status as ticket_status,
     t.subject as ticket_subject,
-    concat('https://teamschools.zendesk.com/agent/tickets/', t.id) as ticket_url,
 
     cf.category,
     cf.tech_tier,
@@ -67,6 +66,8 @@ select
     oad.job_title as orig_assignee_job,
     oad.home_department_name as orig_assignee_dept,
 
+    concat('https://teamschools.zendesk.com/agent/tickets/', t.id) as ticket_url,
+
     {{ date_diff_weekday("gu.max_created_at", "t.created_at") }}
     as weekdays_created_to_last_group,
     {{ date_diff_weekday("tm.solved_at", "t.created_at") }}
@@ -78,8 +79,8 @@ select
 from {{ source("zendesk", "tickets") }} as t
 left join
     {{ ref("int_zendesk__tickets__custom_fields_pivot") }} as cf on t.id = cf.ticket_id
-left join {{ source("zendesk", "users") }} as s on t.submitter_id = s.id
-left join {{ source("zendesk", "users") }} as a on t.assignee_id = a.id
+left join {{ ref("stg_zendesk__users") }} as s on t.submitter_id = s.id
+left join {{ ref("stg_zendesk__users") }} as a on t.assignee_id = a.id
 left join {{ source("zendesk", "groups") }} as g on t.group_id = g.id
 left join {{ ref("stg_zendesk__ticket_metrics") }} as tm on t.id = tm.ticket_id
 left join group_updated as gu on t.id = gu.ticket_id

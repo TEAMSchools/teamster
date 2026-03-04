@@ -1,0 +1,11 @@
+models:
+  - name: stg_powerschool__student_email
+    columns:
+      - name: student_number
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: email
+        data_type: string

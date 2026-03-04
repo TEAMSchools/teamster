@@ -1,0 +1,17 @@
+models:
+  - name: int_deanslist__incidents__actions
+    config:
+      enabled: false
+    columns:
+      - name: incident_id
+        data_type: int64
+      - name: action_name
+        data_type: string
+      - name: point_value
+        data_type: string
+      - name: said
+        data_type: int64
+      - name: action_id
+        data_type: int64
+      - name: source_id
+        data_type: int64

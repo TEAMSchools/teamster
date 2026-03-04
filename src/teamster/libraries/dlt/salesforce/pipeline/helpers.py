@@ -1,82 +1,94 @@
-"""Salesforce source helpers"""
+# """Salesforce source helpers"""
 
-from typing import Iterable
+# from typing import Iterable
 
+<<<<<<< HEAD
 import pendulum
 from dlt.common.typing import TDataItem
 from simple_salesforce.api import Salesforce
+=======
+# import pendulum
+# from dlt.common.typing import TDataItem
+# from simple_salesforce.api import Salesforce, SFType
+>>>>>>> main
 
-from teamster.libraries.dlt.salesforce.pipeline.settings import IS_PRODUCTION
+# from teamster.libraries.dlt.salesforce.pipeline.settings import IS_PRODUCTION
 
 
-def get_records(
-    sf: Salesforce,
-    sobject: str,
-    last_state: str | None = None,
-    replication_key: str | None = None,
-) -> Iterable[TDataItem]:
-    """
-    Retrieves records from Salesforce for a specified sObject.
+# def get_records(
+#     sf: Salesforce,
+#     sobject: str,
+#     last_state: str | None = None,
+#     replication_key: str | None = None,
+# ) -> Iterable[TDataItem]:
+#     """
+#     Retrieves records from Salesforce for a specified sObject.
 
-    Args:
-        sf (Salesforce): An instance of the Salesforce API client.
-        sobject (str): The name of the sObject to retrieve records from.
-        last_state (str, optional): The last known state for incremental loading.
-            Defaults to None.
-        replication_key (str, optional): The replication key for incremental loading.
-            Defaults to None.
+#     Args:
+#         sf (Salesforce): An instance of the Salesforce API client.
+#         sobject (str): The name of the sObject to retrieve records from.
+#         last_state (str, optional): The last known state for incremental loading.
+#             Defaults to None.
+#         replication_key (str, optional): The replication key for incremental loading.
+#             Defaults to None.
 
-    Yields:
-        Dict[TDataItem]: A dictionary representing a record from the Salesforce sObject.
-    """
+#     Yields:
+#         Dict[TDataItem]: A dictionary representing a record from the Salesforce sObject.
+#     """
 
+<<<<<<< HEAD
     # Get all fields for the sobject
     desc = getattr(sf, sobject).describe()
+=======
+#     s_object: SFType = getattr(sf, sobject)
 
-    # Salesforce returns compound fields as separate fields, so we need to filter them
-    # out
-    compound_fields = {
-        f["compoundFieldName"]
-        for f in desc["fields"]
-        if f["compoundFieldName"] is not None
-    } - {"Name"}
+#     # Get all fields for the sobject
+#     desc = s_object.describe()
+>>>>>>> main
 
-    # Salesforce returns datetime fields as timestamps, so we need to convert them
-    date_fields = {
-        f["name"] for f in desc["fields"] if f["type"] in ("datetime",) and f["name"]
-    }
+#     # Salesforce returns compound fields as separate fields, so we need to filter them
+#     # out
+#     compound_fields = {
+#         f["compoundFieldName"]
+#         for f in desc["fields"]
+#         if f["compoundFieldName"] is not None
+#     } - {"Name"}
 
-    # If no fields are specified, use all fields except compound fields
-    fields = [f["name"] for f in desc["fields"] if f["name"] not in compound_fields]
+#     # Salesforce returns datetime fields as timestamps, so we need to convert them
+#     date_fields = {
+#         f["name"] for f in desc["fields"] if f["type"] in ("datetime",) and f["name"]
+#     }
 
-    # Generate a predicate to filter records by the replication key
-    predicate, order_by, n_records = "", "", 0
+#     # If no fields are specified, use all fields except compound fields
+#     fields = [f["name"] for f in desc["fields"] if f["name"] not in compound_fields]
 
-    if replication_key:
-        if last_state:
-            predicate = f"WHERE {replication_key} > {last_state}"
+#     # Generate a predicate to filter records by the replication key
+#     predicate, order_by, n_records = "", "", 0
 
-        order_by = f"ORDER BY {replication_key} ASC"
+#     if replication_key:
+#         if last_state:
+#             predicate = f"WHERE {replication_key} > {last_state}"
 
-    # trunk-ignore(bandit/B608)
-    query = f"SELECT {', '.join(fields)} FROM {sobject} {predicate} {order_by}"
+#         order_by = f"ORDER BY {replication_key} ASC"
 
-    if not IS_PRODUCTION:
-        query += " LIMIT 100"
+#     query = f"SELECT {', '.join(fields)} FROM {sobject} {predicate} {order_by}"
 
-    # Query all records in batches
-    for page in getattr(sf.bulk, sobject).query_all(query, lazy_operation=True):
-        for record in page:
-            # Strip out the attributes field
-            record.pop("attributes", None)
+#     if not IS_PRODUCTION:
+#         query += " LIMIT 100"
 
-            for field in date_fields:
-                # Convert Salesforce timestamps to ISO 8601
-                if record.get(field):
-                    record[field] = pendulum.from_timestamp(
-                        record[field] / 1000,
-                    ).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+#     # Query all records in batches
+#     for page in getattr(sf.bulk, sobject).query_all(query, lazy_operation=True):
+#         for record in page:
+#             # Strip out the attributes field
+#             record.pop("attributes", None)
 
-        yield from page
+#             for field in date_fields:
+#                 # Convert Salesforce timestamps to ISO 8601
+#                 if record.get(field):
+#                     record[field] = pendulum.from_timestamp(
+#                         record[field] / 1000,
+#                     ).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
-        n_records += len(page)
+#         yield from page
+
+#         n_records += len(page)

@@ -1,4 +1,4 @@
-from typing import Generator
+"""from typing import Generator
 
 from dagster import (
     DynamicPartitionsDefinition,
@@ -90,3 +90,4 @@ schedules = [
     adp_wfm_daily_partition_asset_job_schedule,
     adp_wfm_dynamic_partition_schedule,
 ]
+"""

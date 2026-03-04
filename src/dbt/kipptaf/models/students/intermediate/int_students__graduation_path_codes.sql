@@ -1,5 +1,3 @@
-{{- config(materialized="table") -}}
-
 with
     students as (
         select
@@ -10,24 +8,32 @@ with
             e.state_studentnumber,
             e.salesforce_id,
             e.grade_level,
+            e.enroll_status,
             e.cohort,
             e.discipline,
             e.powerschool_credittype,
-
+            e.met_fafsa_requirement as has_fafsa,
             /* this is not their final code, but it is used to calculate their final 
             code */
-            u.values_column as ps_grad_path_code,
+            e.ps_grad_path_code,
+
+            case
+                when e.ps_grad_path_code in ('M', 'N')
+                then true
+                when e.ps_grad_path_code in ('O', 'P')
+                then false
+            end as pre_met_pathway_cutoff,
 
             /* needed to join on transfer njgpa scores */
             safe_cast(e.state_studentnumber as int) as state_studentnumber_int,
 
-            if(e.has_fafsa = 'Yes', true, false) as has_fafsa,
+            if(e.ps_grad_path_code = 'M', true, false) as pre_attempted_njgpa_subject,
 
             /* this is the date we start holding 11th graders accountable to 
             fulfilling the NJGPA test requirement */
             if(
                 current_date('{{ var("local_timezone") }}')
-                < date({{ var("current_academic_year") + 1 }}, 05, 31),
+                < date({{ var("current_academic_year") + 1 }}, 06, 05),
                 false,
                 true
             ) as njgpa_season_11th,
@@ -41,21 +47,8 @@ with
                 true
             ) as fafsa_season_12th,
 
-            case
-                when u.values_column in ('M', 'N')
-                then true
-                when u.values_column in ('O', 'P')
-                then false
-            end as pre_met_pathway_cutoff,
-
         from {{ ref("int_extracts__student_enrollments_subjects") }} as e
-        left join
-            {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as u
-            on e.students_dcid = u.studentsdcid
-            and e.discipline = u.discipline
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="u") }}
-            and u.value_type = 'Graduation Pathway'
-        where e.region != 'Miami' and grade_level >= 8 and rn_undergrad = 1
+        where e.rn_undergrad = 1 and e.region != 'Miami' and e.grade_level >= 8
     ),
 
     scores as (
@@ -68,6 +61,7 @@ with
             x.testcode as subject_area,
             x.test_name as pathway_option,
             x.discipline,
+
         from students as s
         inner join
             {{ ref("int_powerschool__state_assessments_transfer_scores") }} as x
@@ -85,6 +79,7 @@ with
             n.testcode as subject_area,
             n.assessment_name as pathway_option,
             n.discipline,
+
         from students as s
         inner join
             {{ ref("stg_pearson__njgpa") }} as n
@@ -131,6 +126,7 @@ with
             s.state_studentnumber,
             s.salesforce_id,
             s.grade_level,
+            s.enroll_status,
             s.cohort,
             s.discipline,
             s.powerschool_credittype,
@@ -139,9 +135,9 @@ with
             s.njgpa_season_11th,
             s.fafsa_season_12th,
 
-            c.type as pathway_option,
-            c.subject as score_type,
-            c.code as pathway_code,
+            c.pathway_option,
+            c.score_type,
+            c.pathway_code,
             c.cutoff,
 
             p.scale_score,
@@ -150,20 +146,21 @@ with
             if(p.scale_score >= c.cutoff, true, false) as met_pathway_cutoff,
 
             if(nj.attempted_njgpa_ela is not null, true, false) as attempted_njgpa_ela,
+
             if(
                 nj.attempted_njgpa_math is not null, true, false
             ) as attempted_njgpa_math,
+
         from students as s
         left join attempted_subject_njgpa as nj on s.student_number = nj.student_number
         left join
-            {{ ref("stg_reporting__promo_status_cutoffs") }} as c
+            {{ ref("stg_google_sheets__student_graduation_path_cutoffs") }} as c
             on s.cohort = c.cohort
             and s.discipline = c.discipline
-            and c.`domain` = 'Graduation Pathway'
         left join
             scores as p
-            on c.type = p.pathway_option
-            and c.subject = p.score_type
+            on c.pathway_option = p.pathway_option
+            and c.score_type = p.score_type
             and s.student_number = p.student_number
         where
             s.ps_grad_path_code is null
@@ -179,6 +176,7 @@ with
             s.state_studentnumber,
             s.salesforce_id,
             s.grade_level,
+            s.enroll_status,
             s.cohort,
             s.discipline,
             s.powerschool_credittype,
@@ -228,15 +226,15 @@ with
             s.pre_met_pathway_cutoff as met_pathway_cutoff,
 
             case
-                when s.discipline = 'ELA' and s.ps_grad_path_code = 'M'
-                then true
+                when s.ps_grad_path_code = 'M'
+                then s.pre_attempted_njgpa_subject
                 when nj.attempted_njgpa_ela is not null
                 then true
             end as attempted_njgpa_ela,
 
             case
-                when s.discipline = 'Math' and s.ps_grad_path_code = 'M'
-                then true
+                when s.ps_grad_path_code = 'M'
+                then s.pre_attempted_njgpa_subject
                 when nj.attempted_njgpa_math is not null
                 then true
             end as attempted_njgpa_math,
@@ -275,6 +273,7 @@ with
             max(met_sat) as met_sat,
             max(met_psat10) as met_psat10,
             max(met_psat_nmsqt) as met_psat_nmsqt,
+
         from
             lookup_table pivot (
                 max(met_pathway_cutoff)
@@ -307,9 +306,9 @@ with
             and u.discipline = s.discipline
     ),
 
-    met_subject as (
-        /* calculating if the student met the discipline overall, regardless of how 
+    /* calculating if the student met the discipline overall, regardless of how 
         they  did it, assuming they took the njgpa */
+    met_subject as (
         select student_number, max(ela) as met_ela, max(math) as met_math,
         from
             unpivot_calcs_ps_code pivot (
@@ -365,6 +364,7 @@ with
             l.state_studentnumber,
             l.salesforce_id,
             l.grade_level,
+            l.enroll_status,
             l.cohort,
             l.discipline,
             l.powerschool_credittype,
@@ -398,6 +398,7 @@ with
             row_number() over (
                 partition by l.student_number, l.score_type order by l.scale_score desc
             ) as rn_highest,
+
         from lookup_table as l
         left join
             unpivot_calcs as u
@@ -465,9 +466,10 @@ select
     row_number() over (
         partition by r.student_number, r.discipline order by r.pathway_option
     ) as rn_discipline_distinct,
+
 from roster as r
 left join
-    {{ ref("stg_reporting__graduation_paths_combos") }} as g
+    {{ ref("stg_google_sheets__student_graduation_path_combos") }} as g
     on r.grade_level = g.grade_level
     and r.has_fafsa = g.has_fafsa
     and r.njgpa_season_11th = g.njgpa_season_11th
@@ -476,3 +478,4 @@ left join
     and r.attempted_njgpa_math = g.attempted_njgpa_math
     and r.met_ela = g.met_ela
     and r.met_math = g.met_math
+where r.enroll_status = 0

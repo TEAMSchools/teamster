@@ -1,5 +1,9 @@
 from pydantic import BaseModel
 
+"""
+API assets
+"""
+
 
 class Date(BaseModel):
     date: str | None = None
@@ -316,6 +320,7 @@ class RosterAssignment(BaseModel):
 
 class Roster(BaseModel):
     Active: str | None = None
+    AttScanVisible: str | None = None
     CollectHW: str | None = None
     CourseNumber: str | None = None
     GradeLevels: str | None = None
@@ -504,12 +509,26 @@ class Student(BaseModel):
     CustomFields: list[CustomField | None] | None = None
 
 
-class ReconcileAttendance(BaseModel):
+class DFFStats(BaseModel):
+    StudentCount: int | None = None
+    StudentWithGuardianCount: int | None = None
+
+
+"""
+SFTP assets
+"""
+
+
+class SFTPFile(BaseModel):
+    source_file_name: str | None = None
+
+
+class ReconcileAttendance(SFTPFile):
     attendancebehavior: str | None = None
     attendancedate: str | None = None
     schoolname: str | None = None
     studentfirst: str | None = None
-    studentid: int | None = None
+    studentid: str | None = None
     studentlast: str | None = None
     submittedat: str | None = None
     submittedfn: str | None = None
@@ -517,25 +536,20 @@ class ReconcileAttendance(BaseModel):
     unnamed_9: str | None = None
 
 
-class ReconcileSuspensions(BaseModel):
+class ReconcileSuspensions(SFTPFile):
     attendancebehavior: str | None = None
     attendancedate: str | None = None
     conend: str | None = None
     consequence: str | None = None
     constart: str | None = None
-    dlincidentid: int | None = None
-    dlpenaltyid: int | None = None
+    dlincidentid: str | None = None
+    dlpenaltyid: str | None = None
     schoolname: str | None = None
     studentfirst: str | None = None
-    studentid: int | None = None
+    studentid: str | None = None
     studentlast: str | None = None
     submittedat: str | None = None
     submittedfn: str | None = None
     submittedln: str | None = None
     unnamed_13: str | None = None
     unnamed_14: str | None = None
-
-
-class DFFStats(BaseModel):
-    StudentCount: int | None = None
-    StudentWithGuardianCount: int | None = None
