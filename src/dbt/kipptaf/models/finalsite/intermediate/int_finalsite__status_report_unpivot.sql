@@ -62,10 +62,10 @@ select
 
     'KTAF' as org,
 
-    t.type,
+    t.`type`,
     t.code,
-    t.name,
-    t.start_date,
+    t.`name`,
+    t.`start_date`,
     t.end_date,
 
     coalesce(x.powerschool_school_id, 0) as schoolid,
