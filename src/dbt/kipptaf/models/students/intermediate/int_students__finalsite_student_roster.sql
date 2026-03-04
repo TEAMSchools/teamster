@@ -1,5 +1,5 @@
 with
-    pre_rollover as (
+    pre_fs_rollover as (
         select
             f.enrollment_academic_year,
             f.enrollment_academic_year_display,
@@ -20,11 +20,11 @@ with
             f.status_start_date,
 
             f.next_academic_year as aligned_enrollment_academic_year,
-            f.`type`,
-            f.code,
-            f.`name`,
-            f.`start_date`,
-            f.end_date,
+            f.reporting_type,
+            f.reporting_code,
+            f.reporting_season,
+            f.reporting_start_date,
+            f.reporting_end_date,
 
             e1.enroll_status as ps_enroll_status,
             e1.region as ps_region,
@@ -51,10 +51,10 @@ with
             on f.enrollment_academic_year - 1 = e2.academic_year
             and f.finalsite_enrollment_id = e2.infosnap_id
             and e2.rn_year = 1
-        where f.name = 'Pre FS Rollover'
+        where f.reporting_season = 'Pre FS Rollover'
     ),
 
-    post_rollover_custom_enroll_year as (
+    post_fs_rollover as (
         select
             f.current_academic_year,
             f.next_academic_year,
@@ -70,11 +70,11 @@ with
             f.detailed_status,
             f.status_order,
             f.status_start_date,
-            f.`type`,
-            f.code,
-            f.`name`,
-            f.`start_date`,
-            f.end_date,
+            f.reporting_type,
+            f.reporting_code,
+            f.reporting_season,
+            f.reporting_start_date,
+            f.reporting_end_date,
 
             f.next_academic_year as aligned_enrollment_academic_year,
 
@@ -110,10 +110,10 @@ with
             on f.enrollment_academic_year - 1 = e.academic_year
             and f.finalsite_enrollment_id = e.infosnap_id
             and e.rn_year = 1
-        where f.name = 'After FS Rollover'
+        where f.reporting_season = 'After FS Rollover'
     ),
 
-    post_rollover_aligned_enroll_year as (
+    post_ps_rollover as (
         select
             f.enrollment_academic_year,
             f.enrollment_academic_year_display,
@@ -132,11 +132,11 @@ with
             f.detailed_status,
             f.status_order,
             f.status_start_date,
-            f.`type`,
-            f.code,
-            f.`name`,
-            f.`start_date`,
-            f.end_date,
+            f.reporting_type,
+            f.reporting_code,
+            f.reporting_season,
+            f.reporting_start_date,
+            f.reporting_end_date,
 
             f.next_academic_year as aligned_enrollment_academic_year,
 
@@ -165,7 +165,7 @@ with
             on f.enrollment_academic_year - 2 = e2.academic_year
             and f.finalsite_enrollment_id = e2.infosnap_id
             and e2.rn_year = 1
-        where f.name = 'After PS Rollover'
+        where f.reporting_season = 'After PS Rollover'
     ),
 
     appended_rosters as (
@@ -196,50 +196,13 @@ with
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
-            `type`,
-            code,
-            `name`,
-            `start_date`,
-            end_date,
+            reporting_type,
+            reporting_code,
+            reporting_season,
+            reporting_start_date,
+            reporting_end_date,
 
-        from pre_rollover
-
-        union all
-
-        select
-            enrollment_academic_year,
-            enrollment_academic_year_display,
-            aligned_enrollment_academic_year,
-            current_academic_year,
-            next_academic_year,
-            org,
-            region,
-            schoolid,
-            school,
-            finalsite_enrollment_id,
-            powerschool_student_number,
-            first_name,
-            last_name,
-            grade_level,
-            enrollment_academic_year_enrollment_type,
-            self_contained,
-            detailed_status,
-            status_order,
-            status_start_date,
-            ps_enroll_status,
-            ps_region,
-            ps_school,
-            ps_grade_level,
-            is_enrolled_fdos,
-            is_enrolled_oct01,
-            is_enrolled_oct15,
-            `type`,
-            code,
-            `name`,
-            `start_date`,
-            end_date,
-
-        from post_rollover_custom_enroll_year
+        from pre_fs_rollover
 
         union all
 
@@ -270,13 +233,50 @@ with
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
-            `type`,
-            code,
-            `name`,
-            `start_date`,
-            end_date,
+            reporting_type,
+            reporting_code,
+            reporting_season,
+            reporting_start_date,
+            reporting_end_date,
 
-        from post_rollover_aligned_enroll_year
+        from post_fs_rollover
+
+        union all
+
+        select
+            enrollment_academic_year,
+            enrollment_academic_year_display,
+            aligned_enrollment_academic_year,
+            current_academic_year,
+            next_academic_year,
+            org,
+            region,
+            schoolid,
+            school,
+            finalsite_enrollment_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
+            grade_level,
+            enrollment_academic_year_enrollment_type,
+            self_contained,
+            detailed_status,
+            status_order,
+            status_start_date,
+            ps_enroll_status,
+            ps_region,
+            ps_school,
+            ps_grade_level,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+            reporting_type,
+            reporting_code,
+            reporting_season,
+            reporting_start_date,
+            reporting_end_date,
+
+        from post_ps_rollover
     )
 
 select
@@ -330,4 +330,6 @@ inner join
     on a.enrollment_academic_year = x.enrollment_academic_year
     and a.enrollment_academic_year_enrollment_type = x.enrollment_type
     and a.detailed_status = x.detailed_status
-where current_date('{{ var("local_timezone") }}') between a.start_date and a.end_date
+where
+    current_date('{{ var("local_timezone") }}')
+    between a.reporting_start_date and a.reporting_end_date
