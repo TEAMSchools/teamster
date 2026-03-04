@@ -30,7 +30,7 @@ with
         from {{ ref("stg_kippadb__gpa") }}
         where
             record_type_id in (
-                select id,
+                select id
                 from {{ ref("stg_kippadb__record_type") }}
                 where `name` = 'Cumulative College'
             )
@@ -541,7 +541,7 @@ select
         when c.contact_college_match_display_gpa >= 2.50
         then '2.50-2.99'
         when c.contact_college_match_display_gpa >= 2.00
-        then '2.00-2.50'
+        then '2.00-2.49'
         when c.contact_college_match_display_gpa < 2.00
         then '<2.00'
     end as hs_gpa_bands,
@@ -664,7 +664,7 @@ select
             and ar.n_68_plus_ecc_submitted >= 2
             and ar.n_meets_full_need_68plus_ecc_ea_ed_submitted >= 1
         then 1
-        -- when cf.best_guess_pathway = '4-year' and
+        -- additional pathway-based conditions could be added here if needed
         else 0
     end as is_submitted_quality_bar_int,
 
