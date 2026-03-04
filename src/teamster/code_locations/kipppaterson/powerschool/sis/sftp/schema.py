@@ -30,6 +30,7 @@ from teamster.libraries.powerschool.sis.sftp.schema import (
     SNJRenX,
     SNJStuX,
     SPEnrollments,
+    StoredGrades,
     StudentContactAssoc,
     StudentContactDetail,
     StudentCoreFields,
@@ -37,6 +38,7 @@ from teamster.libraries.powerschool.sis.sftp.schema import (
     Students,
     TermBins,
     Terms,
+    U_StudentsUserFields,
     Users,
 )
 
@@ -154,8 +156,16 @@ TERMS_SCHEMA = json.loads(py_avro_schema.generate(py_type=Terms, options=options
 
 USERS_SCHEMA = json.loads(py_avro_schema.generate(py_type=Users, options=options))
 
+STOREDGRADES_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=StoredGrades, options=options)
+)
+
 STUDENT_EMAIL_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=StudentEmail, options=options)
+)
+
+U_STUDENTSUSERFIELDS_SCHEMA = json.loads(
+    py_avro_schema.generate(py_type=U_StudentsUserFields, options=options)
 )
 
 SCHEMAS = {
@@ -186,6 +196,7 @@ SCHEMAS = {
     "schoolstaff": SCHOOLSTAFF_SCHEMA,
     "sections": SECTIONS_SCHEMA,
     "spenrollments": SPENROLLMENTS_SCHEMA,
+    "storedgrades": STOREDGRADES_SCHEMA,
     "student_email": STUDENT_EMAIL_SCHEMA,
     "studentcontactassoc": STUDENTCONTACTASSOC_SCHEMA,
     "studentcontactdetail": STUDENTCONTACTDETAIL_SCHEMA,
@@ -193,5 +204,6 @@ SCHEMAS = {
     "students": STUDENTS_SCHEMA,
     "termbins": TERMBINS_SCHEMA,
     "terms": TERMS_SCHEMA,
+    "u_studentsuserfields": U_STUDENTSUSERFIELDS_SCHEMA,
     "users": USERS_SCHEMA,
 }
