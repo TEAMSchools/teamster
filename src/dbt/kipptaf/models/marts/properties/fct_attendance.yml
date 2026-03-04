@@ -59,7 +59,7 @@ models:
         data_type: string
 
       - name: rolling_avg_daily_attendance
-        data_type: FLOAT64
+        data_type: float64
 
       - name: is_chronic_absentee_ytd
-        data_type: INT64
+        data_type: int64
