@@ -1,4 +1,20 @@
 with
+    iready_diagnostic as (
+        select * from {{ ref("int_topline__iready_diagnostic_weekly") }}
+    ),
+
+    dibels_pm as (select * from {{ ref("int_topline__dibels_pm_weekly") }}),
+
+    college_matriculation as (
+        select * from {{ ref("int_topline__college_matriculation_weekly") }}
+    ),
+
+    state_assessments as (
+        select * from {{ ref("int_topline__state_assessments_weekly") }}
+    ),
+
+    enrollments as (select * from {{ ref("int_extracts__student_enrollments_weeks") }}),
+
     multilayer_metrics as (
         /* K-8 Reading & Math */
         select
@@ -24,7 +40,7 @@ with
             is_proficient as metric_value,
 
             'i-Ready Diagnostic' as indicator,
-        from {{ ref("int_topline__iready_diagnostic_weekly") }}
+        from iready_diagnostic
 
         union all
 
@@ -52,7 +68,7 @@ with
             is_bfb_stretch_growth_int as metric_value,
 
             'i-Ready B/FB Meeting Stretch Growth' as indicator,
-        from {{ ref("int_topline__iready_diagnostic_weekly") }}
+        from iready_diagnostic
     ),
 
     metric_union as (
@@ -109,7 +125,7 @@ with
             null as denominator,
 
             met_pm_round_overall_criteria as metric_value,
-        from {{ ref("int_topline__dibels_pm_weekly") }}
+        from dibels_pm
 
         union all
 
@@ -127,7 +143,7 @@ with
             null as denominator,
 
             completed_test_round_int as metric_value,
-        from {{ ref("int_topline__dibels_pm_weekly") }}
+        from dibels_pm
 
         union all
 
@@ -217,7 +233,7 @@ with
             null as denominator,
 
             is_proficient_int as metric_value,
-        from {{ ref("int_topline__state_assessments_weekly") }}
+        from state_assessments
         where region != 'Miami'
 
         union all
@@ -236,7 +252,7 @@ with
             null as denominator,
 
             is_proficient_int as metric_value,
-        from {{ ref("int_topline__state_assessments_weekly") }}
+        from state_assessments
         where region = 'Miami' and test_round = 'PM3'
 
         union all
@@ -255,7 +271,7 @@ with
             null as denominator,
 
             is_proficient_int as metric_value,
-        from {{ ref("int_topline__state_assessments_weekly") }}
+        from state_assessments
         where region = 'Miami'
 
         union all
@@ -275,7 +291,7 @@ with
             null as denominator,
 
             if(is_enrolled_week, 1, 0) as metric_value,
-        from {{ ref("int_extracts__student_enrollments_weeks") }}
+        from enrollments
 
         union all
 
@@ -293,7 +309,7 @@ with
             null as denominator,
 
             if(is_enrolled_week, 1, 0) as metric_value,
-        from {{ ref("int_extracts__student_enrollments_weeks") }}
+        from enrollments
         where not is_self_contained and not is_out_of_district
 
         union all
@@ -508,7 +524,7 @@ with
             null as denominator,
 
             if(is_submitted_ba, 1, 0) as metric_value,
-        from {{ ref("int_topline__college_matriculation_weekly") }}
+        from college_matriculation
 
         union all
 
@@ -526,7 +542,7 @@ with
             null as denominator,
 
             if(is_accepted_ba, 1, 0) as metric_value,
-        from {{ ref("int_topline__college_matriculation_weekly") }}
+        from college_matriculation
 
         union all
 
@@ -544,7 +560,7 @@ with
             null as denominator,
 
             if(is_matriculated_ba, 1, 0) as metric_value,
-        from {{ ref("int_topline__college_matriculation_weekly") }}
+        from college_matriculation
 
         union all
 
@@ -562,7 +578,7 @@ with
             null as denominator,
 
             is_submitted_quality_bar_4yr_int as metric_value,
-        from {{ ref("int_topline__college_matriculation_weekly") }}
+        from college_matriculation
     )
 
 select
@@ -582,7 +598,7 @@ select
     mu.numerator,
     mu.denominator,
     mu.metric_value,
-from {{ ref("int_extracts__student_enrollments_weeks") }} as co
+from enrollments as co
 left join
     metric_union as mu
     on co.student_number = mu.student_number
