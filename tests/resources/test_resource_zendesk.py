@@ -142,7 +142,6 @@ def test_zendesk_create_or_update_many():
         print(f"{len(running_jobs)} jobs running...")
         if len(running_jobs) == 30:
             print("Jobs queue full...")
-            pass
         elif payload is not None:
             post_response = zendesk.post(
                 resource="users/create_or_update_many", json={"users": payload}

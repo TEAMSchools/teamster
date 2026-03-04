@@ -1,5 +1,24 @@
 models:
   - name: int_powerschool__ps_enrollment_all
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - entrydate
+          config:
+            severity: warn
+            store_failures: true
+            where: schoolid != 999999
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - exitdate
+          config:
+            severity: warn
+            store_failures: true
+            where: schoolid != 999999
     columns:
       - name: studentid
         data_type: int64

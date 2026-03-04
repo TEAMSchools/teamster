@@ -77,7 +77,11 @@ FILLER_FIELD = Field(
 )
 
 
-class PSAT(BaseModel):
+class SFTPFile(BaseModel):
+    source_file_name: str | None = None
+
+
+class PSAT(SFTPFile):
     address_city: str | None = None
     address_country: str | None = None
     address_county: str | None = None
@@ -381,7 +385,7 @@ class PSAT(BaseModel):
     filler: str | None = FILLER_FIELD
 
 
-class AP(BaseModel):
+class AP(SFTPFile):
     ai_code: str | None = None
     ai_country_code: str | None = None
     ai_institution_name: str | None = None
@@ -631,7 +635,7 @@ class AP(BaseModel):
     filler: str | None = FILLER_FIELD
 
 
-class SAT(BaseModel):
+class SAT(SFTPFile):
     activity_participation: str | None = None
     activity1_10th: str | None = None
     activity1_11th: str | None = None

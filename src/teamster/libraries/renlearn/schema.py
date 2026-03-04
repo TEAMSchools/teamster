@@ -1,7 +1,11 @@
 from pydantic import BaseModel
 
 
-class RenLearningCore(BaseModel):
+class SFTPFile(BaseModel):
+    source_file_name: str | None = None
+
+
+class RenLearningCore(SFTPFile):
     AmericanIndianOrAlaskaNative: str | None = None
     Asian: str | None = None
     BirthDate: str | None = None
@@ -166,7 +170,7 @@ class Star(RenLearningCore):
     LexileRange: str | None = None
 
 
-class StarDashboardStandard(BaseModel):
+class StarDashboardStandard(SFTPFile):
     AssessmentID: str | None = None
     CompletedDate: str | None = None
     CompletedDateLocal: str | None = None
@@ -190,7 +194,7 @@ class StarDashboardStandard(BaseModel):
     StudentUserID: str | None = None
 
 
-class StarSkillArea(BaseModel):
+class StarSkillArea(SFTPFile):
     AssessmentID: str | None = None
     CompletedDate: str | None = None
     CompletedDateLocal: str | None = None
@@ -209,7 +213,7 @@ class StarSkillArea(BaseModel):
     StudentUserID: str | None = None
 
 
-class FastStar(BaseModel):
+class FastStar(SFTPFile):
     AchievementLevel: str | None = None
     Assess_Num: str | None = None
     Assess_Status: str | None = None
