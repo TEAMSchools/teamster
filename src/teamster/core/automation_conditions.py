@@ -26,14 +26,17 @@ def _patched_get_dep_keys(
     permanently corrupting the asset graph's dependency information.
     """
     dep_keys = set(asset_graph.get(key).parent_entity_keys)
+
     if self.allow_selection is not None:
         dep_keys &= self.allow_selection.resolve(asset_graph, allow_missing=True)
+
     if self.ignore_selection is not None:
         dep_keys -= self.ignore_selection.resolve(asset_graph, allow_missing=True)
+
     return dep_keys
 
 
-DepsAutomationCondition._get_dep_keys = _patched_get_dep_keys  # type: ignore[assignment]
+DepsAutomationCondition._get_dep_keys = _patched_get_dep_keys
 
 
 def _external_source_selection() -> AssetSelection:
@@ -43,8 +46,7 @@ def _external_source_selection() -> AssetSelection:
 
 
 def _build_any_ancestor_updated(
-    max_depth: int = _MAX_VIEW_DEPTH,
-    view_selection: AssetSelection | None = None,
+    max_depth: int = _MAX_VIEW_DEPTH, view_selection: AssetSelection | None = None
 ) -> DepsAutomationCondition:
     """Detect updates in ancestor assets through intermediate views.
 
@@ -60,8 +62,10 @@ def _build_any_ancestor_updated(
 
     for _ in range(max_depth):
         recurse = AutomationCondition.any_deps_match(condition)
+
         if view_selection is not None:
             recurse = recurse.allow(view_selection)
+
         condition = AutomationCondition.any_deps_updated() | recurse
 
     return AutomationCondition.any_deps_match(condition)

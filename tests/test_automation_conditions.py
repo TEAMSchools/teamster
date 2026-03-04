@@ -11,7 +11,6 @@ from dagster import (
 )
 
 from teamster.core.automation_conditions import (
-    _VIEW_SELECTION,
     dbt_table_automation_condition,
     dbt_view_automation_condition,
 )
@@ -370,10 +369,9 @@ class TestKipptafDbtAssets:
         table_keys = {s.key for s in table_specs}
 
         assert view_keys.isdisjoint(table_keys), (
-            f"No asset should be tagged as both view and table"
+            "No asset should be tagged as both view and table"
         )
 
-        all_keys = {s.key for s in all_dbt_assets.specs}
         tagged_keys = view_keys | table_keys
         untagged = {
             s.key
@@ -386,7 +384,9 @@ class TestKipptafDbtAssets:
             f"{len(tagged_keys)} tagged vs {len(untagged)} other"
         )
 
-    def test_table_view_table_chain_in_kipptaf(self, all_dbt_assets, specs_by_key):
+    def test_table_view_table_chain_exists_in_kipptaf(
+        self, all_dbt_assets, specs_by_key
+    ):
         """Find and validate a real table→view→table chain in kipptaf.
 
         Searches the asset graph for a table whose dep is a view whose dep
@@ -429,3 +429,447 @@ class TestKipptafDbtAssets:
                 break
 
         assert chain_found, "No table→view→table chain found in kipptaf dbt assets"
+
+
+class TestKipptafChainTopologies:
+    """Integration tests using real kipptaf dbt model topologies.
+
+    Each test mirrors a real dependency chain found in the kipptaf manifest,
+    using stub @asset functions with matching keys, tags, and conditions
+    derived from the CustomDagsterDbtTranslator.
+    """
+
+    @pytest.fixture(scope="class")
+    def manifest(self):
+        import json
+
+        from teamster.code_locations.kipptaf import DBT_PROJECT
+
+        return json.loads(DBT_PROJECT.manifest_path.read_text())
+
+    @pytest.fixture(scope="class")
+    def translator(self):
+        from teamster.libraries.dbt.dagster_dbt_translator import (
+            CustomDagsterDbtTranslator,
+        )
+
+        return CustomDagsterDbtTranslator(code_location="kipptaf")
+
+    @pytest.fixture(scope="class")
+    def nodes_by_name(self, manifest):
+        return {props["name"]: props for props in manifest["nodes"].values()}
+
+    def test_kipptaf_view_not_requested_on_upstream_update(
+        self, translator, nodes_by_name
+    ):
+        """Real topology: stg_smartrecruiters__applications (table) →
+        rpt_tableau__smartrecruiters (view).
+
+        View should NOT be requested when the upstream table is updated.
+        """
+        upstream_props = nodes_by_name["stg_smartrecruiters__applications"]
+        view_props = nodes_by_name["rpt_tableau__smartrecruiters"]
+
+        @asset(
+            key=["kipptaf", "stg_smartrecruiters__applications"],
+            tags=translator.get_tags(upstream_props),
+        )
+        def stg_smartrecruiters__applications():
+            return 1
+
+        @asset(
+            key=["kipptaf", "rpt_tableau__smartrecruiters"],
+            deps=[stg_smartrecruiters__applications],
+            automation_condition=translator.get_automation_condition(view_props),
+            tags=translator.get_tags(view_props),
+        )
+        def rpt_tableau__smartrecruiters():
+            return 2
+
+        instance = DagsterInstance.ephemeral()
+        all_assets = [stg_smartrecruiters__applications, rpt_tableau__smartrecruiters]
+        defs = Definitions(assets=all_assets)
+
+        materialize(assets=all_assets, instance=instance)
+        result = evaluate_automation_conditions(defs=defs, instance=instance)
+        assert result.total_requested == 0
+
+        materialize(
+            assets=[stg_smartrecruiters__applications],
+            instance=instance,
+            selection=[stg_smartrecruiters__applications],
+        )
+        result = evaluate_automation_conditions(
+            defs=defs, instance=instance, cursor=result.cursor
+        )
+        assert (
+            result.get_num_requested(
+                AssetKey(["kipptaf", "rpt_tableau__smartrecruiters"])
+            )
+            == 0
+        )
+
+    def test_kipptaf_table_requested_on_upstream_update(
+        self, translator, nodes_by_name
+    ):
+        """Real topology: stg_renlearn__star (table) →
+        int_topline__star_assessment_weekly (table).
+
+        Downstream table should be requested when upstream table is updated.
+        """
+        upstream_props = nodes_by_name["stg_renlearn__star"]
+        downstream_props = nodes_by_name["int_topline__star_assessment_weekly"]
+
+        @asset(
+            key=["kipptaf", "stg_renlearn__star"],
+            tags=translator.get_tags(upstream_props),
+        )
+        def stg_renlearn__star():
+            return 1
+
+        @asset(
+            key=["kipptaf", "int_topline__star_assessment_weekly"],
+            deps=[stg_renlearn__star],
+            automation_condition=translator.get_automation_condition(downstream_props),
+            tags=translator.get_tags(downstream_props),
+        )
+        def int_topline__star_assessment_weekly():
+            return 2
+
+        instance = DagsterInstance.ephemeral()
+        all_assets = [stg_renlearn__star, int_topline__star_assessment_weekly]
+        defs = Definitions(assets=all_assets)
+
+        materialize(assets=all_assets, instance=instance)
+        result = evaluate_automation_conditions(defs=defs, instance=instance)
+
+        materialize(
+            assets=[stg_renlearn__star],
+            instance=instance,
+            selection=[stg_renlearn__star],
+        )
+        result = evaluate_automation_conditions(
+            defs=defs, instance=instance, cursor=result.cursor
+        )
+        assert (
+            result.get_num_requested(
+                AssetKey(["kipptaf", "int_topline__star_assessment_weekly"])
+            )
+            == 1
+        )
+
+    def test_kipptaf_table_view_table_chain(self, translator, nodes_by_name):
+        """Real topology: int_extracts__student_enrollments_subjects (table) →
+        int_extracts__student_enrollments_subjects_weeks (view) →
+        int_topline__star_assessment_weekly (table).
+
+        View should NOT be requested; downstream table SHOULD be requested.
+        """
+        source_props = nodes_by_name["int_extracts__student_enrollments_subjects"]
+        view_props = nodes_by_name["int_extracts__student_enrollments_subjects_weeks"]
+        target_props = nodes_by_name["int_topline__star_assessment_weekly"]
+
+        @asset(
+            key=["kipptaf", "int_extracts__student_enrollments_subjects"],
+            tags=translator.get_tags(source_props),
+        )
+        def int_extracts__student_enrollments_subjects():
+            return 1
+
+        @asset(
+            key=["kipptaf", "int_extracts__student_enrollments_subjects_weeks"],
+            deps=[int_extracts__student_enrollments_subjects],
+            automation_condition=translator.get_automation_condition(view_props),
+            tags=translator.get_tags(view_props),
+        )
+        def int_extracts__student_enrollments_subjects_weeks():
+            return 2
+
+        @asset(
+            key=["kipptaf", "int_topline__star_assessment_weekly"],
+            deps=[int_extracts__student_enrollments_subjects_weeks],
+            automation_condition=translator.get_automation_condition(target_props),
+            tags=translator.get_tags(target_props),
+        )
+        def int_topline__star_assessment_weekly():
+            return 3
+
+        instance = DagsterInstance.ephemeral()
+        all_assets = [
+            int_extracts__student_enrollments_subjects,
+            int_extracts__student_enrollments_subjects_weeks,
+            int_topline__star_assessment_weekly,
+        ]
+        defs = Definitions(assets=all_assets)
+
+        materialize(assets=all_assets, instance=instance)
+        result = evaluate_automation_conditions(defs=defs, instance=instance)
+        assert result.total_requested == 0
+
+        materialize(
+            assets=[int_extracts__student_enrollments_subjects],
+            instance=instance,
+            selection=[int_extracts__student_enrollments_subjects],
+        )
+        result = evaluate_automation_conditions(
+            defs=defs, instance=instance, cursor=result.cursor
+        )
+        assert (
+            result.get_num_requested(
+                AssetKey(
+                    ["kipptaf", "int_extracts__student_enrollments_subjects_weeks"]
+                )
+            )
+            == 0
+        )
+        assert (
+            result.get_num_requested(
+                AssetKey(["kipptaf", "int_topline__star_assessment_weekly"])
+            )
+            == 1
+        )
+
+    def test_kipptaf_double_view_chain(self, translator, nodes_by_name):
+        """Real topology: int_extracts__student_enrollments_subjects (table) →
+        int_students__dibels_participation_roster (view) →
+        int_amplify__pm_met_criteria (view) →
+        int_topline__dibels_pm_weekly (table).
+
+        Both views should NOT be requested; target table SHOULD be requested.
+        """
+        source_props = nodes_by_name["int_extracts__student_enrollments_subjects"]
+        view_a_props = nodes_by_name["int_students__dibels_participation_roster"]
+        view_b_props = nodes_by_name["int_amplify__pm_met_criteria"]
+        target_props = nodes_by_name["int_topline__dibels_pm_weekly"]
+
+        @asset(
+            key=["kipptaf", "int_extracts__student_enrollments_subjects"],
+            tags=translator.get_tags(source_props),
+        )
+        def int_extracts__student_enrollments_subjects():
+            return 1
+
+        @asset(
+            key=["kipptaf", "int_students__dibels_participation_roster"],
+            deps=[int_extracts__student_enrollments_subjects],
+            automation_condition=translator.get_automation_condition(view_a_props),
+            tags=translator.get_tags(view_a_props),
+        )
+        def int_students__dibels_participation_roster():
+            return 2
+
+        @asset(
+            key=["kipptaf", "int_amplify__pm_met_criteria"],
+            deps=[int_students__dibels_participation_roster],
+            automation_condition=translator.get_automation_condition(view_b_props),
+            tags=translator.get_tags(view_b_props),
+        )
+        def int_amplify__pm_met_criteria():
+            return 3
+
+        @asset(
+            key=["kipptaf", "int_topline__dibels_pm_weekly"],
+            deps=[int_amplify__pm_met_criteria],
+            automation_condition=translator.get_automation_condition(target_props),
+            tags=translator.get_tags(target_props),
+        )
+        def int_topline__dibels_pm_weekly():
+            return 4
+
+        instance = DagsterInstance.ephemeral()
+        all_assets = [
+            int_extracts__student_enrollments_subjects,
+            int_students__dibels_participation_roster,
+            int_amplify__pm_met_criteria,
+            int_topline__dibels_pm_weekly,
+        ]
+        defs = Definitions(assets=all_assets)
+
+        materialize(assets=all_assets, instance=instance)
+        result = evaluate_automation_conditions(defs=defs, instance=instance)
+
+        materialize(
+            assets=[int_extracts__student_enrollments_subjects],
+            instance=instance,
+            selection=[int_extracts__student_enrollments_subjects],
+        )
+        result = evaluate_automation_conditions(
+            defs=defs, instance=instance, cursor=result.cursor
+        )
+
+        assert (
+            result.get_num_requested(
+                AssetKey(["kipptaf", "int_students__dibels_participation_roster"])
+            )
+            == 0
+        )
+        assert (
+            result.get_num_requested(
+                AssetKey(["kipptaf", "int_amplify__pm_met_criteria"])
+            )
+            == 0
+        )
+        assert (
+            result.get_num_requested(
+                AssetKey(["kipptaf", "int_topline__dibels_pm_weekly"])
+            )
+            == 1
+        )
+
+    def test_kipptaf_update_propagates_through_view_between_tables(
+        self, translator, nodes_by_name
+    ):
+        """Real topology: stg_powerschool__terms (table) →
+        int_extracts__student_enrollments_subjects (table) →
+        int_extracts__student_enrollments_subjects_weeks (view) →
+        int_topline__star_assessment_weekly (table).
+
+        When source table is updated, middle table and downstream table should
+        be requested; view should NOT be requested.
+        """
+        source_props = nodes_by_name["stg_powerschool__terms"]
+        middle_props = nodes_by_name["int_extracts__student_enrollments_subjects"]
+        view_props = nodes_by_name["int_extracts__student_enrollments_subjects_weeks"]
+        target_props = nodes_by_name["int_topline__star_assessment_weekly"]
+
+        @asset(
+            key=["kipptaf", "stg_powerschool__terms"],
+            tags=translator.get_tags(source_props),
+        )
+        def stg_powerschool__terms():
+            return 1
+
+        @asset(
+            key=["kipptaf", "int_extracts__student_enrollments_subjects"],
+            deps=[stg_powerschool__terms],
+            automation_condition=translator.get_automation_condition(middle_props),
+            tags=translator.get_tags(middle_props),
+        )
+        def int_extracts__student_enrollments_subjects():
+            return 2
+
+        @asset(
+            key=["kipptaf", "int_extracts__student_enrollments_subjects_weeks"],
+            deps=[int_extracts__student_enrollments_subjects],
+            automation_condition=translator.get_automation_condition(view_props),
+            tags=translator.get_tags(view_props),
+        )
+        def int_extracts__student_enrollments_subjects_weeks():
+            return 3
+
+        @asset(
+            key=["kipptaf", "int_topline__star_assessment_weekly"],
+            deps=[int_extracts__student_enrollments_subjects_weeks],
+            automation_condition=translator.get_automation_condition(target_props),
+            tags=translator.get_tags(target_props),
+        )
+        def int_topline__star_assessment_weekly():
+            return 4
+
+        instance = DagsterInstance.ephemeral()
+        all_assets = [
+            stg_powerschool__terms,
+            int_extracts__student_enrollments_subjects,
+            int_extracts__student_enrollments_subjects_weeks,
+            int_topline__star_assessment_weekly,
+        ]
+        defs = Definitions(assets=all_assets)
+
+        materialize(assets=all_assets, instance=instance)
+        result = evaluate_automation_conditions(defs=defs, instance=instance)
+        assert result.total_requested == 0
+
+        materialize(
+            assets=[stg_powerschool__terms],
+            instance=instance,
+            selection=[stg_powerschool__terms],
+        )
+        result = evaluate_automation_conditions(
+            defs=defs, instance=instance, cursor=result.cursor
+        )
+
+        assert (
+            result.get_num_requested(
+                AssetKey(["kipptaf", "int_extracts__student_enrollments_subjects"])
+            )
+            == 1
+        )
+        assert (
+            result.get_num_requested(
+                AssetKey(
+                    ["kipptaf", "int_extracts__student_enrollments_subjects_weeks"]
+                )
+            )
+            == 0
+        )
+        assert (
+            result.get_num_requested(
+                AssetKey(["kipptaf", "int_topline__star_assessment_weekly"])
+            )
+            == 1
+        )
+
+    def test_kipptaf_view_requested_on_code_version_change(
+        self, translator, nodes_by_name
+    ):
+        """Real topology: stg_smartrecruiters__applications (table) →
+        rpt_tableau__smartrecruiters (view).
+
+        View should be requested when its code version changes.
+        """
+        upstream_props = nodes_by_name["stg_smartrecruiters__applications"]
+        view_props = nodes_by_name["rpt_tableau__smartrecruiters"]
+
+        @asset(
+            key=["kipptaf", "stg_smartrecruiters__applications"],
+            tags=translator.get_tags(upstream_props),
+        )
+        def stg_smartrecruiters__applications():
+            return 1
+
+        @asset(
+            key=["kipptaf", "rpt_tableau__smartrecruiters"],
+            deps=[stg_smartrecruiters__applications],
+            automation_condition=translator.get_automation_condition(view_props),
+            code_version="1",
+            tags=translator.get_tags(view_props),
+        )
+        def rpt_tableau__smartrecruiters():
+            return 2
+
+        instance = DagsterInstance.ephemeral()
+        all_assets = [stg_smartrecruiters__applications, rpt_tableau__smartrecruiters]
+        defs = Definitions(assets=all_assets)
+
+        materialize(assets=all_assets, instance=instance)
+        result = evaluate_automation_conditions(defs=defs, instance=instance)
+        assert (
+            result.get_num_requested(
+                AssetKey(["kipptaf", "rpt_tableau__smartrecruiters"])
+            )
+            == 0
+        )
+
+        # Simulate code version change
+        @asset(
+            key=["kipptaf", "rpt_tableau__smartrecruiters"],
+            deps=[stg_smartrecruiters__applications],
+            automation_condition=translator.get_automation_condition(view_props),
+            code_version="2",
+            tags=translator.get_tags(view_props),
+        )
+        def rpt_tableau__smartrecruiters_v2():
+            return 2
+
+        defs_v2 = Definitions(
+            assets=[stg_smartrecruiters__applications, rpt_tableau__smartrecruiters_v2]
+        )
+        result = evaluate_automation_conditions(
+            defs=defs_v2, instance=instance, cursor=result.cursor
+        )
+        assert (
+            result.get_num_requested(
+                AssetKey(["kipptaf", "rpt_tableau__smartrecruiters"])
+            )
+            == 1
+        )
