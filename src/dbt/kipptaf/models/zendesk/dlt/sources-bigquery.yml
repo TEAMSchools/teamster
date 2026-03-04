@@ -1,0 +1,66 @@
+version: 2
+
+sources:
+  - name: zendesk
+    schema: dagster_kipptaf_dlt_zendesk_support
+    tables:
+      - name: tickets
+        meta:
+          dagster:
+            group: zendesk
+            asset_key:
+              - kipptaf
+              - dlt
+              - zendesk
+              - support
+              - tickets
+      - name: groups
+        meta:
+          dagster:
+            group: zendesk
+            asset_key:
+              - kipptaf
+              - dlt
+              - zendesk
+              - support
+              - groups
+      - name: ticket_events
+        meta:
+          dagster:
+            group: zendesk
+            asset_key:
+              - kipptaf
+              - dlt
+              - zendesk
+              - support
+              - ticket_events
+      - name: ticket_events__child_events
+        meta:
+          dagster:
+            group: zendesk
+            asset_key:
+              - kipptaf
+              - dlt
+              - zendesk
+              - support
+              - ticket_events__child_events
+      - name: ticket_metrics
+        meta:
+          dagster:
+            group: zendesk
+            asset_key:
+              - kipptaf
+              - dlt
+              - zendesk
+              - support
+              - ticket_metrics
+      - name: users
+        meta:
+          dagster:
+            group: zendesk
+            asset_key:
+              - kipptaf
+              - dlt
+              - zendesk
+              - support
+              - users

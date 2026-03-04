@@ -1,6 +1,6 @@
 from datetime import date
 
-from dagster import AssetExecutionContext, AssetKey
+from dagster import AssetExecutionContext
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
@@ -19,15 +19,13 @@ class IlluminateDagsterDltTranslator(DagsterDltTranslator):
         asset_spec = super().get_asset_spec(data)
 
         asset_spec = asset_spec.replace_attributes(
-            key=AssetKey(
-                [
-                    self.code_location,
-                    "dlt",
-                    "illuminate",
-                    data.resource.explicit_args["schema"],
-                    data.resource.explicit_args["table"],
-                ]
-            ),
+            key=[
+                self.code_location,
+                "dlt",
+                "illuminate",
+                data.resource.explicit_args["schema"],
+                data.resource.explicit_args["table"],
+            ],
             deps=[],
         )
 

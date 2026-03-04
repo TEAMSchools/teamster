@@ -254,7 +254,19 @@ models:
       +schema: topline
     zendesk:
       +schema: zendesk
+<<<<<<< HEAD
+      airbyte:
+        +enabled: false
+        staging:
+          +materialized: table
+      archive:
+        +enabled: false
+      dlt:
+        staging:
+          +materialized: table
+=======
       staging:
         +materialized: table
         +contract:
           enforced: true
+>>>>>>> main
