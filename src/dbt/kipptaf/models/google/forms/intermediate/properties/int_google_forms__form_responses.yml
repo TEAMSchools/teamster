@@ -1,5 +1,7 @@
 models:
   - name: int_google_forms__form_responses
+    config:
+      materialized: table
     columns:
       - name: form_id
         data_type: string

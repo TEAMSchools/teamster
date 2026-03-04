@@ -1,5 +1,7 @@
 models:
   - name: int_performance_management__observations
+    config:
+      materialized: table
     columns:
       - name: observation_id
         data_type: string

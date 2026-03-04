@@ -10,7 +10,7 @@ from dagster._core.definitions.declarative_automation.operators.dep_operators im
     DepsAutomationCondition,
 )
 
-_MAX_VIEW_DEPTH = 5
+_MAX_VIEW_DEPTH = 3
 _VIEW_SELECTION = AssetSelection.tag("dagster/materialized", "view")
 
 
