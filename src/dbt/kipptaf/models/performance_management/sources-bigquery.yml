@@ -1,6 +1,8 @@
 sources:
   - name: performance_management
     schema: "{{ project_name }}_performance_management"
+    config:
+      enabled: false
     tables:
       - name: stg_performance_management__observation_details_archive
         config:

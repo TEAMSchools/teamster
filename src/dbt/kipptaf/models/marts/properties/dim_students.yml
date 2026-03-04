@@ -7,7 +7,7 @@ models:
         tests:
           - unique:
               config:
-                severity: warn
+                severity: Warn
                 store_failures: true
 
       - name: student_number
@@ -55,6 +55,9 @@ models:
       - name: is_enrolled_oct01
         data_type: boolean
 
+      - name: is_enrolled_recent
+        data_type: boolean
+
       - name: is_retained_year
         data_type: boolean
 
@@ -82,5 +85,5 @@ models:
       - name: ms_attended
         data_type: string
 
-      - name: nj_overall_student_tier
+      - name: student_tier
         data_type: string
