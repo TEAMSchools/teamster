@@ -24,6 +24,8 @@ with
                 regexp_replace(replace(fs_status_field, '_', ' '), r'\s+[Dd]ate$', '')
             ) as detailed_status,
 
+            cast(left(_dagster_partition_key, 4) as int) as file_year,
+
         from
             {{ ref("stg_finalsite__status_report") }} unpivot (
                 status_start_date for fs_status_field in (
@@ -59,6 +61,12 @@ select
     u.*,
 
     'KTAF' as org,
+
+    t.type,
+    t.code,
+    t.name,
+    t.start_date,
+    t.end_date,
 
     coalesce(x.powerschool_school_id, 0) as schoolid,
     coalesce(x.abbreviation, 'No School Assigned') as school,
@@ -119,3 +127,8 @@ from unpivot_data as u
 left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
     on u.assigned_school = x.name
+left join
+    {{ ref("stg_google_sheets__reporting__terms") }} as t
+    on u.file_year = t.academic_year
+    and u.region = t.region
+    and t.type = 'SRE'
