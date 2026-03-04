@@ -330,6 +330,7 @@ inner join
     on a.enrollment_academic_year = x.enrollment_academic_year
     and a.enrollment_academic_year_enrollment_type = x.enrollment_type
     and a.detailed_status = x.detailed_status
+    and x.valid_detailed_status
 where
     current_date('{{ var("local_timezone") }}')
     between a.reporting_start_date and a.reporting_end_date

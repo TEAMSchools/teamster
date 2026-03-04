@@ -123,6 +123,12 @@ select
         then 24
     end as status_order,
 
+    if(
+        current_date('{{ var("local_timezone") }}') between t.start_date and t.end_date,
+        true,
+        false
+    ) as active_season,
+
 from unpivot_data as u
 left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
