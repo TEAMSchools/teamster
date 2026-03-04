@@ -1,48 +1,417 @@
-/* PART 1: THE STUDENTS (Actuals) */
-select
-    'Student' as row_type,
-    r.latest_schoolid,
-    r.latest_school,
-    r.latest_grade_level,
-    r.region,
-    r.finalsite_student_id,
-    r.latest_status,
-    1 as student_count,
-    null as seat_target,
-    null as fdos_target,
+with
+    data_stack_school as (
+        /* PART 1A: THE STUDENTS (Actuals) for NEW students with aligned enroll type
+          Need only one row per student */
+        select distinct
+            r.aligned_enrollment_academic_year,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.finalsite_id,
+            r.latest_status,
+            r.aligned_enrollment_type as enrollment_type,
+            r.self_contained,
 
-    r.last_name || ', ' || r.first_name as student_name,
-    case
-        when grade_level >= 9
-        then 'HS'
-        when grade_level >= 5
-        then 'MS'
-        when grade_level >= 0
-        then 'ES'
-    end as school_level,
-from {{ ref("int_students__finalsite_student_roster") }} as r
-where r.latest_status = 'Enrolled'
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
+        where
+            r.latest_status in ('Enrolled', 'Enrollment In Progress')
+            and r.aligned_enrollment_type = 'New'
+
+        union all
+
+        /* PART 1A: THE STUDENTS (Actuals) for Returning students with aligned enroll
+           type who are enrolled in PS. Need only one row per student */
+        select distinct
+            r.aligned_enrollment_academic_year,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.finalsite_id,
+            r.latest_status,
+            r.aligned_enrollment_type as enrollment_type,
+            r.self_contained,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on r.finalsite_id = e.infosnap_id
+            and e.academic_year = {{ var("current_academic_year") }}
+            and e.enroll_status = 0
+            and e.rn_year = 1
+        where r.aligned_enrollment_type = 'Returning'
+
+        union all
+
+        /* PART 1B: THE STUDENTS (Actuals) for NEW students with regular enroll type
+          who are enrolled in PS. Need only one row per student */
+        select distinct
+            r.aligned_enrollment_academic_year,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.finalsite_id,
+            r.latest_status,
+            r.enrollment_academic_year_enrollment_type as enrollment_type,
+            r.self_contained,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
+        where
+            r.latest_status in ('Enrolled', 'Enrollment In Progress')
+            and r.aligned_enrollment_type = 'New'
+
+        union all
+
+        /* PART 1B: THE STUDENTS (Actuals) for Returning students with regular enroll
+          type who are enrolled in PS. Need only one row per student */
+        select distinct
+            r.aligned_enrollment_academic_year,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.finalsite_id,
+            r.latest_status,
+            r.enrollment_academic_year_enrollment_type as enrollment_type,
+            r.self_contained,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on r.finalsite_id = e.infosnap_id
+            and e.academic_year = {{ var("current_academic_year") }}
+            and e.enroll_status = 0
+            and e.rn_year = 1
+        where r.aligned_enrollment_type = 'Returning'
+
+        union all
+
+        /* PART 2: THE GOALS (Targets) */
+        select
+            gs.enrollment_academic_year as aligned_enrollment_academic_year,
+            gs.region,
+            gs.schoolid,
+            gs.school,
+
+            null as finalsite_id,
+
+            'Goal Record' as latest_status,
+            null as enrollment_type,
+            'NA' as self_contained,
+            'Goal' as row_type,
+
+            0 as student_count,
+
+            gs.goal_value as seat_target,
+
+            gf.goal_value as fdos_target,
+
+            gb.goal_value as budget_target,
+
+            gn.goal_value as new_student_target,
+
+            ge.goal_value as re_enroll_projection,
+
+        from {{ ref("stg_google_sheets__finalsite__goals") }} as gs
+        left join
+            {{ ref("stg_google_sheets__finalsite__goals") }} as gf
+            on gs.schoolid = gf.schoolid
+            and gs.goal_granularity = gf.goal_granularity
+            and gf.goal_name = 'FDOS Target'
+        left join
+            {{ ref("stg_google_sheets__finalsite__goals") }} as gb
+            on gs.schoolid = gb.schoolid
+            and gs.goal_granularity = gb.goal_granularity
+            and gb.goal_name = 'Budget Target'
+        left join
+            {{ ref("stg_google_sheets__finalsite__goals") }} as gn
+            on gs.schoolid = gn.schoolid
+            and gs.goal_granularity = gn.goal_granularity
+            and gn.goal_name = 'New Student Target'
+        left join
+            {{ ref("stg_google_sheets__finalsite__goals") }} as ge
+            on gs.schoolid = ge.schoolid
+            and gs.goal_granularity = ge.goal_granularity
+            and ge.goal_name = 'Re-Enroll Projection'
+        where gs.goal_name = 'Seat Target' and gs.goal_granularity = 'School'
+    ),
+
+    data_stack_school_grade_level as (
+        /* PART 1A: THE STUDENTS (Actuals) for NEW students with aligned enroll type
+          Need only one row per student */
+        select distinct
+            r.aligned_enrollment_academic_year,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.grade_level,
+            r.finalsite_id,
+            r.latest_status,
+            r.aligned_enrollment_type as enrollment_type,
+            r.self_contained,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
+        where
+            r.latest_status in ('Enrolled', 'Enrollment In Progress')
+            and r.aligned_enrollment_type = 'New'
+
+        union all
+
+        /* PART 1A: THE STUDENTS (Actuals) for Returning students with aligned enroll
+           type who are enrolled in PS. Need only one row per student */
+        select distinct
+            r.aligned_enrollment_academic_year,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.grade_level,
+            r.finalsite_id,
+            r.latest_status,
+            r.aligned_enrollment_type as enrollment_type,
+            r.self_contained,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on r.finalsite_id = e.infosnap_id
+            and e.academic_year = {{ var("current_academic_year") }}
+            and e.enroll_status = 0
+            and e.rn_year = 1
+        where r.aligned_enrollment_type = 'Returning'
+
+        union all
+
+        /* PART 1B: THE STUDENTS (Actuals) for NEW students with regular enroll type
+          who are enrolled in PS. Need only one row per student */
+        select distinct
+            r.aligned_enrollment_academic_year,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.grade_level,
+            r.finalsite_id,
+            r.latest_status,
+            r.enrollment_academic_year_enrollment_type as enrollment_type,
+            r.self_contained,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
+        where
+            r.latest_status in ('Enrolled', 'Enrollment In Progress')
+            and r.aligned_enrollment_type = 'New'
+
+        union all
+
+        /* PART 1B: THE STUDENTS (Actuals) for Returning students with regular enroll
+          type who are enrolled in PS. Need only one row per student */
+        select distinct
+            r.aligned_enrollment_academic_year,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.grade_level,
+            r.finalsite_id,
+            r.latest_status,
+            r.enrollment_academic_year_enrollment_type as enrollment_type,
+            r.self_contained,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as r
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on r.finalsite_id = e.infosnap_id
+            and e.academic_year = {{ var("current_academic_year") }}
+            and e.enroll_status = 0
+            and e.rn_year = 1
+        where r.aligned_enrollment_type = 'Returning'
+
+        union all
+        /* PART 2: THE GOALS (Targets) */
+        select
+            gs.enrollment_academic_year as aligned_enrollment_academic_year,
+            gs.region,
+            gs.schoolid,
+            gs.school,
+            null as grade_level,
+
+            null as finalsite_id,
+
+            'Goal Record' as latest_status,
+            null as enrollment_type,
+            'NA' as self_contained,
+            'Goal' as row_type,
+
+            0 as student_count,
+
+            gs.goal_value as seat_target,
+
+            gf.goal_value as fdos_target,
+
+            null as budget_target,
+
+            gn.goal_value as new_student_target,
+
+            ge.goal_value as re_enroll_projection,
+
+        from {{ ref("stg_google_sheets__finalsite__goals") }} as gs
+        left join
+            {{ ref("stg_google_sheets__finalsite__goals") }} as gf
+            on gs.schoolid = gf.schoolid
+            and gs.grade_level = gf.grade_level
+            and gs.goal_granularity = gf.goal_granularity
+            and gf.goal_name = 'FDOS Target'
+        left join
+            {{ ref("stg_google_sheets__finalsite__goals") }} as gn
+            on gs.schoolid = gn.schoolid
+            and gs.grade_level = gn.grade_level
+            and gs.goal_granularity = gn.goal_granularity
+            and gn.goal_name = 'New Student Target'
+        left join
+            {{ ref("stg_google_sheets__finalsite__goals") }} as ge
+            on gs.schoolid = ge.schoolid
+            and gs.grade_level = ge.grade_level
+            and gs.goal_granularity = ge.goal_granularity
+            and ge.goal_name = 'Re-Enroll Projection'
+        where
+            gs.goal_name = 'Seat Target' and gs.goal_granularity = 'School/Grade Level'
+    )
+
+select
+    s.academic_year as aligned_enrollment_academic_year,
+    s.org,
+    s.region,
+    'NA' as school_level,
+    s.schoolid,
+    s.school,
+    null as grade_level,
+
+    d.finalsite_id,
+    d.latest_status,
+    d.enrollment_type,
+    d.self_contained,
+    d.row_type,
+    d.student_count,
+    d.seat_target,
+    d.fdos_target,
+    d.budget_target,
+    d.new_student_target,
+    d.re_enroll_projection,
+
+    'School' as granularity,
+
+from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
+left join
+    data_stack_school as d
+    on s.academic_year = d.aligned_enrollment_academic_year
+    and s.region = d.region
+    and s.schoolid = d.schoolid
+where s.academic_year = {{ var("current_academic_year") + 1 }} and s.grade_level = -1
 
 union all
 
-/* PART 2: THE GOALS (Targets) */
 select
-    'Goal' as row_type,
-    gs.schoolid as latest_schoolid,
-    gs.school as latest_school,
-    gs.grade_level as latest_grade_level,
-    gs.region,
-    null as finalsite_student_id,
-    'Goal Record' as latest_status,
-    0 as student_count,
-    gs.goal_value as seat_target,
-    gf.goal_value as fdos_target,
-    null as student_name,
-    gs.school_level,
-from {{ ref("stg_google_sheets__finalsite__goals") }} as gs
+    s.academic_year as aligned_enrollment_academic_year,
+    s.org,
+    s.region,
+    s.school_level,
+    s.schoolid,
+    s.school,
+    s.grade_level,
+
+    d.finalsite_id,
+    d.latest_status,
+    d.enrollment_type,
+    d.self_contained,
+    d.row_type,
+    d.student_count,
+    d.seat_target,
+    d.fdos_target,
+    d.budget_target,
+    d.new_student_target,
+    d.re_enroll_projection,
+
+    'School/Grade Level' as granularity,
+
+from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
 left join
-    {{ ref("stg_google_sheets__finalsite__goals") }} as gf
-    on gs.schoolid = gf.schoolid
-    and gs.grade_level = gf.grade_level
-    and gf.goal_name = 'FDOS Target'
-where gs.goal_name = 'Seat Target'
+    data_stack_school_grade_level as d
+    on s.academic_year = d.aligned_enrollment_academic_year
+    and s.region = d.region
+    and s.schoolid = d.schoolid
+where s.academic_year = {{ var("current_academic_year") + 1 }} and s.grade_level != -1
