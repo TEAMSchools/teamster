@@ -1,5 +1,3 @@
-{{- config(enabled=false) -}}
-
 select
     gsa_id,
     group_id,

@@ -27,8 +27,14 @@ with
             a.home_department_name,
         from ticket_audit_create as tac
         left join
+<<<<<<< HEAD
             {{ ref("int_people__staff_roster") }} as a
             on tac.assignee_email = a.user_principal_name
+=======
+            {{ ref("stg_zendesk__users") }} as u
+            on tae.event_value = safe_cast(u.id as string)
+        where tae.event_type = 'Create' and tae.event_field_name = 'assignee_id'
+>>>>>>> main
     )
 
 select
@@ -36,6 +42,7 @@ select
     t.created_at,
     t.status as ticket_status,
     t.subject as ticket_subject,
+<<<<<<< HEAD
     t.category,
     t.tech_tier,
     t.location,
@@ -43,6 +50,18 @@ select
     t.submitter_name,
     t.assignee_name as assignee,
     t.group_name as last_group,
+=======
+
+    cf.category,
+    cf.tech_tier,
+    cf.location,
+
+    s.name as submitter_name,
+
+    a.name as assignee,
+
+    g.name as last_group,
+>>>>>>> main
 
     tm.assignee_updated_at,
     tm.initially_assigned_at,
@@ -69,6 +88,8 @@ select
     a.home_work_location_name as assignee_primary_site,
     a.home_business_unit_name as assignee_legal_entity,
 
+    concat('https://teamschools.zendesk.com/agent/tickets/', t.id) as ticket_url,
+
     {{ date_diff_weekday("gu.max_created_at", "t.created_at") }}
     as weekdays_created_to_last_group,
     {{ date_diff_weekday("tm.solved_at", "t.created_at") }}
@@ -77,7 +98,16 @@ select
     as weekdays_created_to_first_assigned,
     {{ date_diff_weekday("tm.assignee_updated_at", "t.created_at") }}
     as weekdays_created_to_last_assigned,
+<<<<<<< HEAD
 from {{ ref("int_zendesk__tickets") }} as t
+=======
+from {{ source("zendesk", "tickets") }} as t
+left join
+    {{ ref("int_zendesk__tickets__custom_fields_pivot") }} as cf on t.id = cf.ticket_id
+left join {{ ref("stg_zendesk__users") }} as s on t.submitter_id = s.id
+left join {{ ref("stg_zendesk__users") }} as a on t.assignee_id = a.id
+left join {{ source("zendesk", "groups") }} as g on t.group_id = g.id
+>>>>>>> main
 left join {{ ref("stg_zendesk__ticket_metrics") }} as tm on t.id = tm.ticket_id
 left join group_updated as gu on t.id = gu.ticket_id
 left join original_value as ov on t.id = ov.ticket_id

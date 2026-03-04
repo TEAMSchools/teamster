@@ -2,11 +2,11 @@ from dagster import (
     AssetsDefinition,
     DynamicPartitionsDefinition,
     EnvVar,
-    _check,
     instance_for_test,
     materialize,
 )
 from dagster._core.events import StepMaterializationData
+from dagster_shared import check
 
 from teamster.core.resources import get_io_manager_gcs_avro
 from teamster.libraries.overgrad.resources import OvergradResource
@@ -33,11 +33,11 @@ def _test_asset(
 
     asset_materialization_event = result.get_asset_materialization_events()[0]
 
-    event_specific_data = _check.inst(
+    event_specific_data = check.inst(
         asset_materialization_event.event_specific_data, StepMaterializationData
     )
 
-    records = _check.inst(
+    records = check.inst(
         event_specific_data.materialization.metadata["record_count"].value, int
     )
 
@@ -49,12 +49,6 @@ def _test_asset(
 
     assert extras is not None
     assert extras.text == ""
-
-
-def test_schools_kippcamden():
-    from teamster.code_locations.kippcamden.overgrad.assets import schools
-
-    _test_asset(asset=schools, code_location="KIPPCAMDEN")
 
 
 def test_admissions_kippcamden():
@@ -79,12 +73,6 @@ def test_students_kippcamden():
     from teamster.code_locations.kippcamden.overgrad.assets import students
 
     _test_asset(asset=students, code_location="KIPPCAMDEN")
-
-
-def test_schools_kippnewark():
-    from teamster.code_locations.kippnewark.overgrad.assets import schools
-
-    _test_asset(asset=schools, code_location="KIPPNEWARK")
 
 
 def test_admissions_kippnewark():
@@ -115,13 +103,13 @@ def test_universities_kipptaf():
     from teamster.code_locations.kipptaf.overgrad.assets import universities
 
     partition_key = "4372"
-    partitions_def = _check.inst(
+    partitions_def = check.inst(
         obj=universities.partitions_def, ttype=DynamicPartitionsDefinition
     )
 
     with instance_for_test() as instance:
         instance.add_dynamic_partitions(
-            partitions_def_name=_check.not_none(value=partitions_def.name),
+            partitions_def_name=check.not_none(value=partitions_def.name),
             partition_keys=[partition_key],
         )
 

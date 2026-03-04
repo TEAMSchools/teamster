@@ -1,5 +1,3 @@
-{{- config(enabled=false) -}}
-
 select
     -- trunk-ignore-begin(sqlfluff/RF05)
     employee_number as `Employee ID`,

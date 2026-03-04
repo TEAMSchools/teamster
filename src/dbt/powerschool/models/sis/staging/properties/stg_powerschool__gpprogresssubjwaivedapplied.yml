@@ -1,0 +1,6 @@
+models:
+  - name: stg_powerschool__gpprogresssubjwaivedapplied
+    config:
+      enabled: false
+      contract:
+        enforced: false

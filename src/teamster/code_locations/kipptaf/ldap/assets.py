@@ -7,11 +7,6 @@ user_person = build_ldap_asset(
     search_base="dc=teamschools,dc=kipp,dc=org",
     search_filter="(&(objectClass=user)(objectCategory=person))",
     schema=USER_PERSON_SCHEMA,
-    op_tags={
-        "dagster-k8s/config": {
-            "container_config": {"resources": {"requests": {"memory": "1.0Gi"}}}
-        }
-    },
 )
 
 group = build_ldap_asset(

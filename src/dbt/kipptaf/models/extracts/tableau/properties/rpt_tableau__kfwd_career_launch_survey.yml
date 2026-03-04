@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__kfwd_career_launch_survey
     columns:
@@ -57,6 +56,8 @@ models:
       - name: is_basta
         data_type: boolean
       - name: is_braven
+        data_type: boolean
+      - name: is_backrs
         data_type: boolean
       - name: is_kippnj_internship
         data_type: boolean
@@ -144,3 +145,9 @@ models:
         data_type: boolean
       - name: rn_respondent
         data_type: int64
+      - name: es_graduated
+        data_type: string
+      - name: tier
+        data_type: string
+      - name: advising_provider
+        data_type: string

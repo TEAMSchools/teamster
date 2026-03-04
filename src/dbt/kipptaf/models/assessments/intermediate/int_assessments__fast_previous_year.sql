@@ -7,6 +7,7 @@ with
 
             pp.student_id,
             pp.assessment_subject,
+            pp.discipline,
             pp.scale_score as prev_pm3_scale,
             pp.achievement_level as prev_pm3_achievement_level,
             pp.achievement_level_int as prev_pm3_level_int,
@@ -32,7 +33,7 @@ with
             and (co.academic_year - 1) = pp.academic_year
             and pp.administration_window = 'PM3'
         left join
-            {{ ref("stg_assessments__iready_crosswalk") }} as cw
+            {{ ref("stg_google_sheets__iready__crosswalk") }} as cw
             on pp.assessment_subject = cw.test_name
             and pp.assessment_grade = cw.grade_level
             and pp.scale_score between cw.scale_low and cw.scale_high
@@ -47,6 +48,7 @@ select
     py.grade_level,
     py.student_id,
     py.assessment_subject,
+    py.discipline,
     py.prev_pm3_scale,
     py.prev_pm3_achievement_level,
     py.prev_pm3_level_int,
@@ -60,6 +62,10 @@ select
 
     cw2.scale_low as scale_for_proficiency,
 
+    if(
+        cw2.scale_low - py.prev_pm3_scale <= 0, null, cw2.scale_low - py.prev_pm3_scale
+    ) as scale_points_to_proficiency_pm3,
+
     case
         when py.prev_pm3_level_int = 5 and cw4.sublevel_number = 8
         then null
@@ -70,13 +76,10 @@ select
         else cw1.scale_low - py.prev_pm3_scale
     end as scale_points_to_growth_pm3,
 
-    if(
-        cw2.scale_low - py.prev_pm3_scale <= 0, null, cw2.scale_low - py.prev_pm3_scale
-    ) as scale_points_to_proficiency_pm3,
 from prev_year as py
 /* gets FL sublevels & scale for growth */
 left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cw1
+    {{ ref("stg_google_sheets__iready__crosswalk") }} as cw1
     on py.assessment_subject = cw1.test_name
     and py.grade_level = cw1.grade_level
     and (py.prev_pm3_sublevel_number + 1) = cw1.sublevel_number
@@ -84,7 +87,7 @@ left join
     and cw1.destination_system = 'FL'
 /* gets proficient scale score */
 left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cw2
+    {{ ref("stg_google_sheets__iready__crosswalk") }} as cw2
     on py.assessment_subject = cw2.test_name
     and py.grade_level = cw2.grade_level
     and cw2.source_system = 'FAST_NEW'
@@ -92,7 +95,7 @@ left join
     and cw2.sublevel_number = 6
 /* gets growth scale for students scoring 3 or 4 */
 left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cw3
+    {{ ref("stg_google_sheets__iready__crosswalk") }} as cw3
     on py.assessment_subject = cw3.test_name
     and py.grade_level = cw3.grade_level
     and py.prev_pm3_sublevel_number = cw3.sublevel_number
@@ -100,7 +103,7 @@ left join
     and cw3.destination_system = 'FL'
 /* gets current year level for past year test */
 left join
-    {{ ref("stg_assessments__iready_crosswalk") }} as cw4
+    {{ ref("stg_google_sheets__iready__crosswalk") }} as cw4
     on py.assessment_subject = cw4.test_name
     and py.grade_level = cw4.grade_level
     and py.prev_pm3_scale between cw4.scale_low and cw4.scale_high

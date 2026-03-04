@@ -4,8 +4,8 @@ from urllib.parse import urlparse
 import fastavro
 from dagster import Any, InputContext, MultiPartitionKey, OutputContext
 from dagster._utils.backoff import backoff
-from dagster._utils.cached_method import cached_method
 from dagster_gcp.gcs import GCSPickleIOManager, PickledObjectGCSIOManager
+from dagster_shared.utils.cached_method import cached_method
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
 from google.cloud.storage import Bucket
 from upath import UPath
@@ -14,30 +14,34 @@ from teamster.core.utils.classes import FiscalYear
 
 
 class GCSUPathIOManager(PickledObjectGCSIOManager):
-    def _parse_datetime_partition_value(self, partition_value: str):
-        datetime_formats = iter(["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S%z", "%m/%d/%Y"])
-        while True:
+    def _parse_datetime_partition_value(self, partition_value: str) -> datetime | None:
+        datetime_formats = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S%z", "%m/%d/%Y"]
+
+        for fmt in datetime_formats:
             try:
-                return datetime.strptime(partition_value, next(datetime_formats))
+                return datetime.strptime(partition_value, fmt)
             except ValueError:
-                pass
+                continue
+
+        return None
 
     def _get_hive_partition(
         self, partition_value: str, partition_key: str = "key"
     ) -> str:
-        try:
-            datetime = self._parse_datetime_partition_value(partition_value)
-            return "/".join(
-                [
-                    "_dagster_partition_fiscal_year="
-                    + str(FiscalYear(datetime=datetime, start_month=7).fiscal_year),
-                    f"_dagster_partition_date={datetime.date().isoformat()}",
-                    f"_dagster_partition_hour={datetime.strftime('%H')}",
-                    f"_dagster_partition_minute={datetime.strftime('%M')}",
-                ]
-            )
-        except StopIteration:
+        dt = self._parse_datetime_partition_value(partition_value)
+
+        if dt is None:
             return f"_dagster_partition_{partition_key}={partition_value}"
+
+        return "/".join(
+            [
+                "_dagster_partition_fiscal_year="
+                + str(FiscalYear(datetime=dt, start_month=7).fiscal_year),
+                f"_dagster_partition_date={dt.date().isoformat()}",
+                f"_dagster_partition_hour={dt.strftime('%H')}",
+                f"_dagster_partition_minute={dt.strftime('%M')}",
+            ]
+        )
 
     def _formatted_multipartitioned_path(self, partition_key: MultiPartitionKey) -> str:
         ordered_dimension_keys = []
@@ -100,8 +104,8 @@ class AvroGCSIOManager(GCSUPathIOManager):
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
         blob = self.bucket_obj.blob(blob_name=str(path))
 
-        # trunk-ignore(pyright/reportCallIssue)
         with blob.open(mode="rb") as fo:
+            # trunk-ignore(pyright/reportArgumentType)
             reader = fastavro.reader(fo=fo)
 
             records = [record for record in reader]
@@ -189,3 +193,5 @@ class GCSIOManager(GCSPickleIOManager):
                 client=self.gcs.get_client(),
                 prefix=self.gcs_prefix,
             )
+        else:
+            return None

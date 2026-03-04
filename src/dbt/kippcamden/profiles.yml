@@ -3,7 +3,7 @@ kippcamden:
   outputs:
     kippcamden:
       type: bigquery
-      method: service-account
-      project: teamster-332318
       schema: kippcamden
-      keyfile: /etc/secret-volume/dbt_user_creds_json
+      threads: 40
+      method: oauth
+      project: teamster-332318

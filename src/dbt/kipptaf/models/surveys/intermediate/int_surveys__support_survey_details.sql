@@ -18,7 +18,7 @@ with
             {{ ref("stg_ldap__user_person") }} as up
             on fr.respondent_email = up.google_email
         left join
-            {{ ref("stg_reporting__terms") }} as rt
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on fr.last_submitted_date_local between rt.start_date and rt.end_date
             and rt.type = 'SURVEY'
             and rt.code in ('SUP1', 'SUP2')
@@ -108,9 +108,15 @@ select
     eh.home_work_location_name as respondent_primary_site,
     eh.race_ethnicity_reporting,
     eh.gender_identity as gender,
-from {{ ref("stg_surveys__cmo_engagement_regional_survey_detail_archive") }} as sda
+
+from
+    {{
+        source(
+            "surveys", "stg_surveys__cmo_engagement_regional_survey_detail_archive"
+        )
+    }} as sda
 inner join
-    {{ ref("stg_google_forms__form_items_extension") }} as fi
+    {{ ref("stg_google_sheets__google_forms__form_items_extension") }} as fi
     on sda.question_shortname = fi.abbreviation
     and fi.form_id = '1YdgXFZE1yjJa-VfpclZrBtxvW0w4QvxNrvbDUBxIiWI'
 left join

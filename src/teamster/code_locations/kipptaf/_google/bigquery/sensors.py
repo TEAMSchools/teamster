@@ -5,6 +5,7 @@ from dagster import (
     AssetSpec,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     sensor,
 )
 from dagster_gcp import BigQueryResource
@@ -33,34 +34,35 @@ def bigquery_table_modified_sensor(
     cursor: dict = json.loads(context.cursor or "{}")
 
     with db_bigquery.get_client() as bq:
-        bq = bq
+        for assets_def in asset_selection:
+            python_identifier = assets_def.key.to_python_identifier()
 
-    for assets_def in asset_selection:
-        python_identifier = assets_def.key.to_python_identifier()
+            cursor_modified_timestamp = cursor.get(python_identifier, 0)
 
-        cursor_modified_timestamp = cursor.get(python_identifier, 0)
+            table_ref = TableReference(
+                dataset_ref=DatasetReference(
+                    project=GCS_PROJECT_NAME,
+                    dataset_id=assets_def.metadata["dataset_id"],
+                ),
+                table_id=assets_def.metadata["table_id"],
+            )
 
-        table_ref = TableReference(
-            dataset_ref=DatasetReference(
-                project=GCS_PROJECT_NAME, dataset_id=assets_def.metadata["dataset_id"]
-            ),
-            table_id=assets_def.metadata["table_id"],
-        )
+            table = bq.get_table(table=table_ref)
 
-        table = bq.get_table(table=table_ref)
+            if table.modified is None:
+                continue
+            else:
+                table_modified_timestamp = table.modified.timestamp()
 
-        if table.modified is None:
-            continue
-        else:
-            table_modified_timestamp = table.modified.timestamp()
-
-        if table_modified_timestamp > cursor_modified_timestamp:
-            context.log.info(msg=f"{assets_def.key}:\t{table_modified_timestamp}")
-            asset_events.append(AssetMaterialization(asset_key=assets_def.key))
-            cursor[python_identifier] = table_modified_timestamp
+            if table_modified_timestamp > cursor_modified_timestamp:
+                context.log.info(msg=f"{assets_def.key}:\t{table_modified_timestamp}")
+                asset_events.append(AssetMaterialization(asset_key=assets_def.key))
+                cursor[python_identifier] = table_modified_timestamp
 
     if asset_events:
         return SensorResult(asset_events=asset_events, cursor=json.dumps(obj=cursor))
+    else:
+        return SkipReason()
 
 
 sensors = [

@@ -21,11 +21,17 @@ def main() -> None:
 
     module_args = []
     for m in args.modules:
-        module_args.extend(f"-m teamster.code_locations.{m}.definitions".split())
+        module_args.append(f"--module-name=teamster.code_locations.{m}.definitions")
 
     # trunk-ignore(bandit/B603)
     subprocess.run(
-        args=["dagster", "dev", *module_args],
+        args=[
+            "dagster",
+            "dev",
+            "--code-server-log-level=debug",
+            "--log-level=debug",
+            *module_args,
+        ],
         env={
             **os.environ,
             "PATH": os.environ["PATH"] + ":/workspaces/teamster/.venv/bin",

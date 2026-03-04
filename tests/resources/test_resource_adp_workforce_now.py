@@ -3,11 +3,12 @@ import pathlib
 
 from dagster import build_resources
 
-from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_NOW_RESOURCE
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
 
 
 def get_adp_wfn_resource() -> AdpWorkforceNowResource:
+    from teamster.code_locations.kipptaf.resources import ADP_WORKFORCE_NOW_RESOURCE
+
     with build_resources(
         resources={"adp_wfn": ADP_WORKFORCE_NOW_RESOURCE}
     ) as resources:
@@ -32,11 +33,7 @@ def _test_get_worker(aoid: str | None = None, as_of_date: str | None = None):
         "$select": ",".join(
             [
                 "workers/associateOID",
-                "workers/workerID",
-                "workers/workerDates",
-                "workers/workerStatus",
                 "workers/businessCommunication",
-                "workers/workAssignments",
                 "workers/customFieldGroup",
                 "workers/languageCode",
                 "workers/person/birthDate",
@@ -53,16 +50,20 @@ def _test_get_worker(aoid: str | None = None, as_of_date: str | None = None):
                 "workers/person/militaryStatusCode",
                 "workers/person/preferredName",
                 "workers/person/raceCode",
+                "workers/workAssignments",
+                "workers/workerDates",
+                "workers/workerID",
+                "workers/workerStatus",
             ]
         ),
     }
 
     if aoid is not None:
         data = adp_wfn.get(endpoint=f"hr/v2/workers/{aoid}", params=params).json()
-        filepath = pathlib.Path(f"env/test/adp/{aoid}.json")
+        filepath = pathlib.Path(f"env/test/adp/workers/{aoid}.json")
     else:
         data = adp_wfn.get_records(endpoint="hr/v2/workers", params=params)
-        filepath = pathlib.Path("env/test/adp/workers.json")
+        filepath = pathlib.Path("env/test/adp/workers/workers.json")
 
     filepath.parent.mkdir(parents=True, exist_ok=True)
 
@@ -70,7 +71,7 @@ def _test_get_worker(aoid: str | None = None, as_of_date: str | None = None):
 
 
 def test_get_worker():
-    _test_get_worker(aoid="G3ASWDTVJ0WVY5R9")
+    _test_get_worker(aoid="G3J18W59P8K8W9R9", as_of_date="07/02/2025")
 
 
 def test_get_worker_list():
@@ -86,5 +87,27 @@ def test_get_worker_list():
         _test_get_worker(**kwargs)
 
 
-def test_get_workers():
-    _test_get_worker(as_of_date="")
+def test_get_workers_meta():
+    adp_wfn = get_adp_wfn_resource()
+
+    data = adp_wfn.get(endpoint="hr/v2/workers/meta").json()
+    filepath = pathlib.Path("env/test/adp/workers/meta.json")
+
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+
+    json.dump(obj=data, fp=filepath.open(mode="w"))
+
+
+def test_get_talent_associate_memberships():
+    aoid = "G550F72Q44ZGT3QT"
+
+    adp_wfn = get_adp_wfn_resource()
+
+    data = adp_wfn.get(
+        endpoint=f"/talent/v2/associates/{aoid}/associate-memberships"
+    ).json()
+    filepath = pathlib.Path("env/test/adp/talent/associate-memberships.json")
+
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+
+    json.dump(obj=data, fp=filepath.open(mode="w"))

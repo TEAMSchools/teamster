@@ -1,0 +1,4 @@
+models:
+  - name: int_schoolmint_grow__users__roles
+    config:
+      enabled: false

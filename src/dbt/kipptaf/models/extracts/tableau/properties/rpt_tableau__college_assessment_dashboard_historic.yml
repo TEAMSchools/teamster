@@ -1,6 +1,7 @@
-version: 2
 models:
   - name: rpt_tableau__college_assessment_dashboard_historic
+    config:
+      enabled: false
     columns:
       - name: academic_year
         data_type: int64
@@ -46,6 +47,8 @@ models:
         data_type: numeric
       - name: college_match_gpa_bands
         data_type: string
+      - name: graduation_year
+        data_type: int64
       - name: courses_course_name
         data_type: string
       - name: teacher_lastfirst
@@ -79,13 +82,13 @@ models:
       - name: response_type_description
         data_type: string
       - name: points
-        data_type: float64
+        data_type: numeric
       - name: percent_correct
-        data_type: float64
+        data_type: numeric
       - name: total_subjects_tested
         data_type: int64
       - name: raw_score
-        data_type: float64
+        data_type: numeric
       - name: scale_score
         data_type: float64
       - name: rn_highest

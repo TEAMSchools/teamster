@@ -1,0 +1,43 @@
+models:
+  - name: stg_powerschool__gpprogresssubject
+    columns:
+      - name: id
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: gpnodeid
+        data_type: int64
+      - name: isadvancedplan
+        data_type: int64
+      - name: issinglesitting
+        data_type: int64
+      - name: issummation
+        data_type: int64
+      - name: nodetype
+        data_type: int64
+      - name: isgroupsatisfied
+        data_type: int64
+      - name: istestgroupwaived
+        data_type: int64
+      - name: mingpamet
+        data_type: int64
+      - name: testnodepassed
+        data_type: int64
+      - name: studentsdcid
+        data_type: int64
+      - name: appliedwaivedcredits
+        data_type: float64
+      - name: earnedcredits
+        data_type: float64
+      - name: enrolledcredits
+        data_type: float64
+      - name: requestedcredits
+        data_type: float64
+      - name: requiredcredits
+        data_type: float64
+      - name: waivedcredits
+        data_type: float64
+      - name: nodegpa
+        data_type: float64

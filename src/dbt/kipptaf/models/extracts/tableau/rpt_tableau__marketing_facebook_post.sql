@@ -1,5 +1,3 @@
-{{ config(enabled=false) }}
-
 select
     ph.id,
     ph.page_id,

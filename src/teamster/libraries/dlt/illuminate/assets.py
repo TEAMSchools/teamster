@@ -41,7 +41,6 @@ def filter_date_taken_callback(query: Select, table: TableClause):
 
 def build_illuminate_dlt_assets(
     sql_database_credentials: ConnectionStringCredentials,
-    dlt_credentials: dict,
     code_location: str,
     schema: str,
     table_name: str,
@@ -80,8 +79,6 @@ def build_illuminate_dlt_assets(
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):
-        yield from dlt.run(
-            context=context, credentials=dlt_credentials, write_disposition="replace"
-        )
+        yield from dlt.run(context=context, write_disposition="replace")
 
     return _assets

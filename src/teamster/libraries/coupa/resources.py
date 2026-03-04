@@ -1,4 +1,5 @@
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext, _check
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
+from dagster_shared import check
 from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
 from requests import Response
@@ -19,10 +20,11 @@ class CoupaResource(ConfigurableResource):
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._service_root = f"https://{self.instance_url}"
-        self._log = _check.not_none(value=context.log)
+        self._log = check.not_none(value=context.log)
 
         # instantiate client
         self._session = OAuth2Session(
+            # trunk-ignore(pyright/reportArgumentType)
             client=BackendApplicationClient(client_id=self.client_id, scope=self.scope)
         )
 
@@ -53,16 +55,16 @@ class CoupaResource(ConfigurableResource):
             self._log.error(response.text)
             raise e
 
-    def get(self, resource: str, id: int | None = None, **kwargs):
+    def get(self, resource: str, id: int | None = None, **kwargs) -> Response:
         return self._request(method="GET", resource=resource, id=id, **kwargs)
 
-    def put(self, resource: str, id: int, **kwargs):
+    def put(self, resource: str, id: int, **kwargs) -> Response:
         return self._request(method="PUT", resource=resource, id=id, **kwargs)
 
-    def post(self, resource: str, **kwargs):
+    def post(self, resource: str, **kwargs) -> Response:
         return self._request(method="POST", resource=resource, **kwargs)
 
-    def list(self, resource, **kwargs):
+    def list(self, resource: str, **kwargs) -> list[dict]:
         all_data = []
         offset = 0
 

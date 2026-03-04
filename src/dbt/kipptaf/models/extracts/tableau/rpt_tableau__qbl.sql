@@ -1,14 +1,13 @@
-{{ config(enabled=False) }}
 -- K-8
 select
     co.academic_year,
     co.student_number,
     co.state_studentnumber,
-    co.lastfirst as student_name,
+    co.student_name,
     co.advisory_name,
     co.region,
     co.school_level,
-    co.school_abbreviation,
+    co.school as school_abbreviation,
     co.grade_level,
     co.spedlep as iep_status,
 
@@ -38,12 +37,11 @@ select
     ag.region_goal,
     ag.organization_goal,
 
-    sf.bucket_two,
-    sf.state_test_proficiency,
-    sf.is_tutoring as tutoring_nj,
-    sf.nj_student_tier,
-
-    lc.head_of_school_preferred_name_lastfirst as head_of_school,
+    co.bucket_two,
+    co.state_test_proficiency,
+    co.is_tutoring as tutoring_nj,
+    co.nj_student_tier,
+    co.hos as head_of_school,
 
     case
         when asr.is_mastery then 1 when not asr.is_mastery then 0
@@ -76,11 +74,12 @@ select
                 order by asr.administered_at desc
             )
     end as rn_test_subject_term,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_assessments__response_rollup") }} as asr
     on co.student_number = asr.powerschool_student_number
     and co.academic_year = asr.academic_year
+    and co.illuminate_subject_area = asr.subject_area
     and asr.module_type in ('CRQ', 'MQQ', 'QA')
     and asr.response_type in ('overall', 'standard')
     and not asr.is_replacement
@@ -93,7 +92,7 @@ left join
     and not enr.is_dropped_section
     and enr.rn_student_year_illuminate_subject_desc = 1
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as ps
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as ps
     on asr.subject_area = ps.illuminate_subject_area
     and asr.academic_year = ps.academic_year
     and co.grade_level = ps.grade_level
@@ -105,21 +104,14 @@ left join
     and co.schoolid = ag.school_id
     and co.grade_level = ag.grade_level
     and asr.subject_area = ag.illuminate_subject_area
-left join
-    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-    on sf.student_number = co.student_number
-    and sf.academic_year = co.academic_year
-    and asr.subject_area = sf.illuminate_subject_area
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as lc
-    on co.schoolid = lc.home_work_location_powerschool_school_id
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
-    and (co.grade_level between 0 and 8)
     and co.enroll_status = 0
-    and co.region != 'Miami'
     and not co.is_self_contained
+    and co.region != 'Miami'
+    and co.grade_level between 0 and 8
+
 union all
 
 -- HS
@@ -127,11 +119,11 @@ select
     co.academic_year,
     co.student_number,
     co.state_studentnumber,
-    co.lastfirst as student_name,
+    co.student_name,
     co.advisory_name,
     co.region,
     co.school_level,
-    co.school_abbreviation,
+    co.school as school_abbreviation,
     co.grade_level,
     co.spedlep as iep_status,
 
@@ -161,12 +153,11 @@ select
     ag.region_goal,
     ag.organization_goal,
 
-    sf.bucket_two,
-    sf.state_test_proficiency,
-    sf.is_tutoring as tutoring_nj,
-    sf.nj_student_tier,
-
-    lc.head_of_school_preferred_name_lastfirst as head_of_school,
+    co.bucket_two,
+    co.state_test_proficiency,
+    co.is_tutoring as tutoring_nj,
+    co.nj_student_tier,
+    co.hos as head_of_school,
 
     case
         when asr.is_mastery then 1 when not asr.is_mastery then 0
@@ -188,11 +179,12 @@ select
                 order by asr.administered_at desc
             )
     end as rn_test_subject_term,
-from {{ ref("base_powerschool__student_enrollments") }} as co
+from {{ ref("int_extracts__student_enrollments") }} as co
 inner join
     {{ ref("int_assessments__response_rollup") }} as asr
     on co.student_number = asr.powerschool_student_number
     and co.academic_year = asr.academic_year
+    and co.illuminate_subject_area = asr.subject_area
     and asr.module_type in ('UQ', 'EX')
     and asr.response_type in ('overall', 'standard')
     and not asr.is_replacement
@@ -205,7 +197,7 @@ left join
     and not enr.is_dropped_section
     and enr.rn_student_year_illuminate_subject_desc = 1
 left join
-    {{ ref("stg_assessments__qbls_power_standards") }} as ps
+    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as ps
     on asr.subject_area = ps.illuminate_subject_area
     and asr.academic_year = ps.academic_year
     and asr.term_administered = ps.term_name
@@ -219,18 +211,10 @@ left join
     on asr.academic_year = ag.academic_year
     and co.schoolid = ag.school_id
     and asr.subject_area = ag.illuminate_subject_area
-left join
-    {{ ref("int_extracts__student_enrollments_subjects") }} as sf
-    on sf.student_number = co.student_number
-    and sf.academic_year = co.academic_year
-    and asr.subject_area = sf.illuminate_subject_area
-left join
-    {{ ref("int_people__leadership_crosswalk") }} as lc
-    on co.schoolid = lc.home_work_location_powerschool_school_id
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1
-    and (co.grade_level between 9 and 12)
     and co.enroll_status = 0
-    and co.region != 'Miami'
     and not co.is_self_contained
+    and co.region != 'Miami'
+    and co.grade_level between 9 and 12

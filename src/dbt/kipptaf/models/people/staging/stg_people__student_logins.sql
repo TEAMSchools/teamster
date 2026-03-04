@@ -1,30 +1,10 @@
--- depends_on: {{ ref("stg_powerschool__students") }}
--- depends_on: {{ source("people", "src_people__student_logins_archive") }}
-{{-
-    config(
-        materialized="incremental",
-        incremental_strategy="merge",
-        unique_key="student_number",
-        merge_update_columns=["default_password"],
-    )
--}}
-
-{%- if execute -%}
-    {%- if flags.FULL_REFRESH -%}
-        {{
-            exceptions.raise_compiler_error(
-                (
-                    "Full refresh is not allowed for this model. "
-                    "Exclude it from the run via the argument '--exclude model_name'."
-                )
-            )
-        }}
-    {%- endif -%}
-{%- endif -%}
-
-{% if env_var("DBT_CLOUD_ENVIRONMENT_TYPE", "") == "dev" %}
+/* depends_on: {{ ref("stg_powerschool__students") }} */
+/* depends_on: {{ source("people", "src_people__student_logins") }} */
+-- trunk-ignore(sqlfluff/LT05)
+/* depends_on: {{ source("google_sheets", "src_google_sheets__people__student_logins_archive") }} */
+{% if env_var("DBT_CLOUD_ENVIRONMENT_TYPE", "") in ["dev", "staging"] %}
     select student_number, username, default_password, google_email,
-    from kipptaf_people.stg_people__student_logins
+    from {{ source("people", "src_people__student_logins") }}
 {% elif is_incremental() %}
     with
         components as (
@@ -53,10 +33,11 @@
                 and first_name is not null
                 and last_name is not null
                 and enroll_status = 0
+                and _dbt_source_relation not like '%kipppaterson%'
         ),
 
         username_options as (
-            {# powerschool usernames are capped @ 20 chars #}
+            /* powerschool usernames are capped @ 20 chars  */
             select
                 student_number,
 
@@ -187,5 +168,10 @@
         default_password,
 
         username || '@teamstudents.org' as google_email,
-    from {{ source("people", "src_people__student_logins_archive") }}
+    from
+        {{
+            source(
+                "google_sheets", "src_google_sheets__people__student_logins_archive"
+            )
+        }}
 {% endif %}

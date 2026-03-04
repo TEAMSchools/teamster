@@ -11,9 +11,9 @@ from dagster import (
     OpExecutionContext,
     Output,
     StaticPartitionsDefinition,
-    _check,
     asset,
 )
+from dagster_shared import check
 from numpy import nan
 from pandas import read_csv
 from slugify import slugify
@@ -51,11 +51,11 @@ def build_adp_wfm_asset(
     )
     def _asset(context: OpExecutionContext, adp_wfm: AdpWorkforceManagerResource):
         asset = context.assets_def
-        partition_key = _check.inst(context.partition_key, MultiPartitionKey)
+        partition_key = check.inst(context.partition_key, MultiPartitionKey)
 
         symbolic_id = partition_key.keys_by_dimension["symbolic_id"]
 
-        symbolic_period_response = _check.not_none(
+        symbolic_period_response = check.not_none(
             adp_wfm.get(endpoint="v1/commons/symbolicperiod")
         )
 
@@ -65,7 +65,7 @@ def build_adp_wfm_asset(
             if sp["symbolicId"] == symbolic_id
         ][0]
 
-        hyperfind_response = _check.not_none(
+        hyperfind_response = check.not_none(
             adp_wfm.get(endpoint="v1/commons/hyperfind")
         )
 
@@ -79,7 +79,7 @@ def build_adp_wfm_asset(
             f"Executing {report_name}:\n{symbolic_period_record}\n{hyperfind_record}"
         )
 
-        report_execution_response = _check.not_none(
+        report_execution_response = check.not_none(
             adp_wfm.post(
                 endpoint=f"v1/platform/reports/{report_name}/execute",
                 json={
@@ -107,7 +107,7 @@ def build_adp_wfm_asset(
         report_execution_id = report_execution_response_json["id"]
 
         while True:
-            report_executions_response = _check.not_none(
+            report_executions_response = check.not_none(
                 adp_wfm.get(endpoint="v1/platform/report_executions")
             )
 
@@ -129,7 +129,7 @@ def build_adp_wfm_asset(
             elif status_qualifier == "Completed":
                 context.log.info(f"Downloading {report_name}")
 
-                file_response = _check.not_none(
+                file_response = check.not_none(
                     adp_wfm.get(
                         endpoint=(
                             f"v1/platform/report_executions/{report_execution_id}/file"

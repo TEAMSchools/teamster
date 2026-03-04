@@ -1,37 +1,50 @@
-select
-    sr.externalstudentid as external_student_id,
-    sr.firstname as first_name,
-    sr.lastname as last_name,
-    sr.status,
-    sr.school,
-    sr.grade,
+with
+    submission_records as (
+        select
+            externalstudentid as external_student_id,
+            firstname as first_name,
+            lastname as last_name,
+            `status`,
+            school,
+            grade,
 
-    sr.tags,
+            /* repeated */
+            tags,
+
+            /* repeated records */
+            dataitems,
+
+            cast(_dagster_partition_key as int) as published_action_id,
+            cast(id as int) as id,
+            cast(`imported` as datetime) as `imported`,
+            cast(`started` as datetime) as `started`,
+            cast(submitted as datetime) as submitted,
+
+            cast(cast(dateofbirth as datetime) as date) as date_of_birth,
+
+            nullif(externalfamilyid, '') as external_family_id,
+            nullif(household, '') as household,
+            nullif(enrollstatus, '') as enroll_status,
+        from
+            {{
+                source(
+                    "powerschool_enrollment",
+                    "src_powerschool_enrollment__submission_records",
+                )
+            }}
+    )
+
+select
+    sr.* except (dataitems),
 
     di.key as data_item_key,
 
-    safe_cast(sr._dagster_partition_key as int) as published_action_id,
-    safe_cast(sr.id as int) as id,
+    nullif(di.value, '') as data_item_value,
 
-    nullif(sr.externalfamilyid, '') as external_family_id,
-    nullif(sr.household, '') as household,
-    nullif(sr.enrollstatus, '') as enroll_status,
-
-    date(sr.dateofbirth) as date_of_birth,
-    datetime(sr.imported) as `imported`,
-    datetime(sr.started) as `started`,
-    datetime(sr.submitted) as submitted,
     {{
         date_to_fiscal_year(
-            date_field="datetime(sr.submitted)", start_month=7, year_source="start"
+            date_field="sr.submitted", start_month=7, year_source="start"
         )
     }} as academic_year,
-
-    nullif(di.value, '') as data_item_value,
-from
-    {{
-        source(
-            "powerschool_enrollment", "src_powerschool_enrollment__submission_records"
-        )
-    }} as sr
+from submission_records as sr
 cross join unnest(sr.dataitems) as di

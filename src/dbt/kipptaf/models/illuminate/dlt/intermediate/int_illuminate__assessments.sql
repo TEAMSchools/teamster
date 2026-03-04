@@ -9,11 +9,16 @@ select
 
     pbs.description as performance_band_set_description,
 
-    ds.code_translation as scope,
-
     dsa.code_translation as subject_area,
 
     a.academic_year - 1 as academic_year_clean,
+
+    if(
+        ds.code_translation in ('Cumulative Review Quizzes', 'Cold Read Quizzes')
+        and a.is_grade_k_1,
+        'Checkpoint',
+        ds.code_translation
+    ) as scope,
 from {{ ref("stg_illuminate__dna_assessments__assessments") }} as a
 inner join {{ ref("stg_illuminate__public__users") }} as u on a.user_id = u.user_id
 inner join

@@ -1,5 +1,3 @@
-version: 2
-
 sources:
   - name: adp_workforce_now
     schema: |
@@ -18,10 +16,11 @@ sources:
             enable_logical_types: true
             hive_partition_uri_prefix:
               "{{ var('cloud_storage_uri_base') }}/adp/workforce_now/workers/"
-        meta:
-          dagster:
-            asset_key:
-              - kipptaf
-              - adp
-              - workforce_now
-              - workers
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - adp
+                - workforce_now
+                - workers

@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__schoolmint_grow_goals
     columns:
@@ -47,6 +46,8 @@ models:
       - name: strand_name
         data_type: string
       - name: bucket_name
+        data_type: string
+      - name: goal_type_name
         data_type: string
       - name: assignment_id
         data_type: string

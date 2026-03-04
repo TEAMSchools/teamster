@@ -13,10 +13,10 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
-    _check,
     define_asset_job,
     sensor,
 )
+from dagster_shared import check
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -63,7 +63,7 @@ def build_iready_sftp_sensor(
         for asset in asset_selection:
             asset_identifier = asset.key.to_python_identifier()
             metadata_by_key = asset.metadata_by_key[asset.key]
-            partitions_def = _check.not_none(value=asset.partitions_def)
+            partitions_def = check.not_none(value=asset.partitions_def)
             context.log.info(asset_identifier)
 
             last_run = cursor.get(asset_identifier, 0)
@@ -79,12 +79,12 @@ def build_iready_sftp_sensor(
                 (f, path)
                 for f, path in files
                 if pattern.match(string=path)
-                and _check.not_none(value=f.st_mtime) > last_run
-                and _check.not_none(value=f.st_size) > 0
+                and check.not_none(value=f.st_mtime) > last_run
+                and check.not_none(value=f.st_size) > 0
             ]
 
             for f, path in file_matches:
-                match = _check.not_none(value=pattern.match(string=path))
+                match = check.not_none(value=pattern.match(string=path))
 
                 group_dict = match.groupdict()
 
@@ -112,8 +112,11 @@ def build_iready_sftp_sensor(
 
                 cursor[asset_identifier] = now_timestamp
 
+        item_getter_key = itemgetter("job_name", "partition_key")
+
         for (job_name, partition_key), group in groupby(
-            iterable=run_request_kwargs, key=itemgetter("job_name", "partition_key")
+            iterable=sorted(run_request_kwargs, key=item_getter_key),
+            key=item_getter_key,
         ):
             run_requests.append(
                 RunRequest(

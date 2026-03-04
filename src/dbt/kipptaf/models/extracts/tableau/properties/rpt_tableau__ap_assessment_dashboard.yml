@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__ap_assessment_dashboard
     columns:
@@ -52,21 +51,29 @@ models:
         data_type: string
       - name: ap_course_subject
         data_type: string
-      - name: administration_round
+      - name: test_name
         data_type: string
-      - name: test_date
-        data_type: date
-      - name: scale_score
+      - name: test_subject
+        data_type: string
+      - name: exam_score
         data_type: numeric
-      - name: rn_highest
-        data_type: int64
-      - name: sped
-        data_type: int64
+      - name: irregularity_code_1
+        data_type: string
+      - name: irregularity_code_2
+        data_type: string
+      - name: data_source
+        data_type: string
+      - name: ps_ap_course_subject_code
+        data_type: string
       - name: ap_course_name
         data_type: string
+      - name: course_name
+        data_type: string
+      - name: test_subject_area
+        data_type: string
+      - name: sped
+        data_type: int64
       - name: expected_scope
         data_type: string
       - name: expected_test_type
-        data_type: string
-      - name: test_subject_area
         data_type: string

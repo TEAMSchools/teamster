@@ -2,12 +2,8 @@ name: kippmiami
 version: 1.0.0
 config-version: 2
 
-# This setting configures which profile dbt uses for this project.
 profile: kippmiami
 
-# These configurations specify where dbt should look for different types of files.
-# The `source-paths` config, for example, states that models in this project can be
-# found in the models/ directory. You probably won't need to change these!
 model-paths: [models]
 analysis-paths: [analyses]
 test-paths: [tests]
@@ -15,101 +11,169 @@ seed-paths: [seeds]
 macro-paths: [macros]
 snapshot-paths: [snapshots]
 
-target-path: target # directory which will store compiled SQL files
-clean-targets: # directories to be removed by `dbt clean`
+target-path: target
+clean-targets:
   - target
   - dbt_packages
 
 vars:
   local_timezone: America/New_York
-  current_academic_year: 2024
-  current_fiscal_year: 2025
+  current_academic_year: 2025
+  current_fiscal_year: 2026
   cloud_storage_uri_base: gs://teamster-kippmiami/dagster/kippmiami
+  powerschool_external_location_root: gs://teamster-kippmiami/dagster/kippmiami/powerschool
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
 
-# Configuring models
-# Full documentation: https://docs.getdbt.com/docs/configuring-models
 models:
   kippmiami:
     extracts:
       +schema: extracts
+      +contract:
+        enforced: true
     fldoe:
       +schema: fldoe
       +materialized: table
+      staging:
+        +contract:
+          enforced: true
+    powerschool:
+      +materialized: table
+      +schema: powerschool
+      sis:
+        staging:
+          +contract:
+            enforced: true
   deanslist:
     +materialized: table
+    staging:
+      stg_deanslist__followups:
+        +enabled: false
   iready:
     +materialized: table
+    staging:
+      stg_iready__instructional_usage_data:
+        +enabled: false
   powerschool:
     +materialized: table
-    staging:
-      stg_powerschool__s_nj_crs_x:
-        +enabled: false
-      stg_powerschool__s_nj_ren_x:
-        +enabled: false
-      stg_powerschool__s_nj_stu_x:
-        +enabled: false
-      stg_powerschool__s_nj_usr_x:
-        +enabled: false
-      stg_powerschool__u_def_ext_students:
-        +enabled: false
-      stg_powerschool__u_storedgrades_de:
-        +enabled: false
-      stg_powerschool__studentrace:
-        +enabled: false
-      stg_powerschool__gpnode:
-        +enabled: false
-      stg_powerschool__gpprogresssubject:
-        +enabled: false
-      stg_powerschool__gpprogresssubjectwaived:
-        +enabled: false
-      stg_powerschool__gpversion:
-        +enabled: false
-      stg_powerschool__gradplan:
-        +enabled: false
-      stg_powerschool__gpstudentwaiver:
-        +enabled: false
-      stg_powerschool__period:
-        +enabled: false
-      stg_powerschool__sced_code_mapping:
-        +enabled: false
+    sis:
+      staging:
+        sftp:
+          +enabled: false
+        odbc:
+          +enabled: true
+          stg_powerschool__gpnode:
+            +enabled: false
+          stg_powerschool__gpprogresssubject:
+            +enabled: false
+          stg_powerschool__gpprogresssubjectearned:
+            +enabled: false
+          stg_powerschool__gpprogresssubjectenrolled:
+            +enabled: false
+          stg_powerschool__s_nj_crs_x:
+            +enabled: false
+          stg_powerschool__s_nj_ren_x:
+            +enabled: false
+          stg_powerschool__s_nj_stu_x:
+            +enabled: false
+          stg_powerschool__s_stu_x:
+            +enabled: false
+          stg_powerschool__studentrace:
+            +enabled: false
+          stg_powerschool__gpprogresssubjectrequested:
+            +enabled: false
+          stg_powerschool__gpprogresssubjectwaived:
+            +enabled: false
+          stg_powerschool__gpprogresssubjwaivedapplied:
+            +enabled: false
+          stg_powerschool__gpselectedcrs:
+            +enabled: false
+          stg_powerschool__gpselectedcrtype:
+            +enabled: false
+          stg_powerschool__gpselector:
+            +enabled: false
+          stg_powerschool__gpstudentwaiver:
+            +enabled: false
+          stg_powerschool__gptarget:
+            +enabled: false
+          stg_powerschool__gpversion:
+            +enabled: false
+          stg_powerschool__gradplan:
+            +enabled: false
+          stg_powerschool__period:
+            +enabled: false
+          stg_powerschool__prefs:
+            +enabled: false
+          stg_powerschool__s_nj_usr_x:
+            +enabled: false
+          stg_powerschool__sced_code_mapping:
+            +enabled: false
+          stg_powerschool__u_def_ext_students:
+            +enabled: false
+          stg_powerschool__u_storedgrades_de:
+            +enabled: false
   renlearn:
     +materialized: table
+    staging:
+      stg_renlearn__accelerated_reader:
+        +enabled: false
+      stg_renlearn__star_skill_area:
+        +enabled: false
 
 sources:
   powerschool:
-    powerschool:
-      src_powerschool__s_nj_crs_x:
-        +enabled: false
-      src_powerschool__s_nj_ren_x:
-        +enabled: false
-      src_powerschool__s_nj_stu_x:
-        +enabled: false
-      src_powerschool__s_nj_usr_x:
-        +enabled: false
-      src_powerschool__u_def_ext_students:
-        +enabled: false
-      src_powerschool__u_storedgrades_de:
-        +enabled: false
-      src_powerschool__studentrace:
-        +enabled: false
-      src_powerschool__gpnode:
-        +enabled: false
-      src_powerschool__gpprogresssubject:
-        +enabled: false
-      src_powerschool__gpprogresssubjectwaived:
-        +enabled: false
-      src_powerschool__gpversion:
-        +enabled: false
-      src_powerschool__gradplan:
-        +enabled: false
-      src_powerschool__gpstudentwaiver:
-        +enabled: false
-      src_powerschool__period:
-        +enabled: false
-      src_powerschool__sced_code_mapping:
-        +enabled: false
-  iready:
-    iready:
-      src_iready__diagnostic_and_instruction:
-        +enabled: false
+    sis:
+      staging:
+        sftp:
+          +enabled: false
+        odbc:
+          powerschool_odbc:
+            src_powerschool__gpnode:
+              +enabled: false
+            src_powerschool__gpprogresssubject:
+              +enabled: false
+            src_powerschool__gpprogresssubjectearned:
+              +enabled: false
+            src_powerschool__gpprogresssubjectenrolled:
+              +enabled: false
+            src_powerschool__s_nj_crs_x:
+              +enabled: false
+            src_powerschool__s_nj_ren_x:
+              +enabled: false
+            src_powerschool__s_nj_stu_x:
+              +enabled: false
+            src_powerschool__s_stu_x:
+              +enabled: false
+            src_powerschool__studentrace:
+              +enabled: false
+            src_powerschool__gpprogresssubjectrequested:
+              +enabled: false
+            src_powerschool__gpprogresssubjectwaived:
+              +enabled: false
+            src_powerschool__gpprogresssubjwaivedapplied:
+              +enabled: false
+            src_powerschool__gpselectedcrs:
+              +enabled: false
+            src_powerschool__gpselectedcrtype:
+              +enabled: false
+            src_powerschool__gpselector:
+              +enabled: false
+            src_powerschool__gpstudentwaiver:
+              +enabled: false
+            src_powerschool__gptarget:
+              +enabled: false
+            src_powerschool__gpversion:
+              +enabled: false
+            src_powerschool__gradplan:
+              +enabled: false
+            src_powerschool__period:
+              +enabled: false
+            src_powerschool__prefs:
+              +enabled: false
+            src_powerschool__s_nj_usr_x:
+              +enabled: false
+            src_powerschool__sced_code_mapping:
+              +enabled: false
+            src_powerschool__u_def_ext_students:
+              +enabled: false
+            src_powerschool__u_storedgrades_de:
+              +enabled: false

@@ -2,16 +2,17 @@ with
     source as (
         -- trunk-ignore(sqlfluff/ST06)
         select
-            state_student_identifier,
             last_or_surname,
             first_name,
             date_of_birth,
-            scale_score,
             performance_level,
             test_name,
             testing_school,
             accountable_school,
-            local_student_identifier,
+
+            cast(local_student_identifier as int) as local_student_identifier,
+            cast(scale_score as int) as scale_score,
+            cast(state_student_identifier as int) as state_student_identifier,
 
             upper(_dagster_partition_test_type) as test_type,
 

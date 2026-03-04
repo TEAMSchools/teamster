@@ -15,6 +15,10 @@ with
                         "kippmiami_powerschool",
                         "base_powerschool__course_enrollments",
                     ),
+                    source(
+                        "kipppaterson_powerschool",
+                        "base_powerschool__course_enrollments",
+                    ),
                 ]
             )
         }}
@@ -45,6 +49,10 @@ select
     csc.illuminate_subject_area,
     csc.is_foundations,
     csc.is_advanced_math,
+    csc.exclude_from_gradebook,
+    csc.discipline,
+
+    initcap(regexp_extract(ur._dbt_source_relation, r'kipp(\w+)_')) as region,
 
     if(cx.ap_course_subject is not null, true, false) as is_ap_course,
 
@@ -59,5 +67,5 @@ left join
     on ur.courses_dcid = cx.coursesdcid
     and {{ union_dataset_join_clause(left_alias="ur", right_alias="cx") }}
 left join
-    {{ ref("stg_assessments__course_subject_crosswalk") }} as csc
+    {{ ref("stg_google_sheets__assessments__course_subject_crosswalk") }} as csc
     on ur.cc_course_number = csc.powerschool_course_number

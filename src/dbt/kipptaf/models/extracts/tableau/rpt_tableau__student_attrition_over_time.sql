@@ -1,68 +1,46 @@
-{{ config(enabled=False) }}
-
 with
-    attrition_dates as (
+    prev_year as (
         select
-            date_day,
+            student_number,
 
-            {{
-                date_to_fiscal_year(
-                    date_field="date_day", start_month=10, year_source="start"
-                )
-            }} as attrition_year,
-        from
-            unnest(
-                generate_date_array(
-                    '2002-07-01', date({{ var("current_academic_year") + 1 }}, 6, 30)
-                )
-            ) as date_day
+            academic_year + 1 as academic_year,
+
+            max(is_enrolled_oct01) as is_enrolled_oct01_prev,
+        from {{ ref("int_extracts__student_enrollments") }}
+        group by student_number, academic_year
     )
 
 select
-    y1.student_number,
-    y1.lastfirst,
-    y1.academic_year as `year`,
-    y1.school_level,
-    y1.reporting_schoolid,
-    y1.grade_level,
-    y1.entrydate,
-    y1.exitdate as y1_exitdate,
+    co.academic_year,
+    co.student_number,
+    co.student_name,
+    co.region,
+    co.school,
+    co.grade_level,
+    co.ethnicity,
+    co.gender,
+    co.year_in_network,
+    co.exit_code_kf,
+    co.exit_code_ts,
+    co.is_retained_year,
+    co.is_retained_ever,
+    co.cohort,
+    co.boy_status,
+    co.is_self_contained,
+    co.is_out_of_district,
+    co.iep_status,
+    co.ml_status,
+    co.week_start_monday,
+    co.week_end_sunday,
+    co.week_number_academic_year,
+    co.quarter,
 
-    s.exitdate,
-    s.exitcode,
-    s.exitcomment,
-
-    d.date_day as `date`,
-
-    y2.entrydate as y2_entrydate,
-
-    regexp_extract(y1._dbt_source_relation, r'(kipp\w+)_') as db_name,
-
-    case
-        /* graduates != attrition */
-        when y1.exitcode = 'G1'
-        then 0.0
-        /* handles re-enrollments during the school year */
-        when s.exitdate >= y1.exitdate and s.exitdate >= d.date_day
-        then 0.0
-        /* was not enrolled on 10/1 next year */
-        when y1.exitdate <= d.date_day and y2.entrydate is null
-        then 1.0
-        else 0.0
-    end as is_attrition,
-from {{ ref("base_powerschool__student_enrollments") }} as y1
+    if(co.week_start_monday between co.entrydate and co.exitdate, 0, 1) as is_attrition,
+from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 inner join
-    {{ ref("stg_powerschool__students") }} as s
-    on y1.student_number = s.student_number
-    and {{ union_dataset_join_clause(left_alias="y1", right_alias="s") }}
-left join
-    {{ ref("base_powerschool__student_enrollments") }} as y2
-    on y1.student_number = y2.student_number
-    and y1.academic_year = (y2.academic_year - 1)
-    and date(y2.academic_year, 10, 1) between y2.entrydate and y2.exitdate
-    and {{ union_dataset_join_clause(left_alias="y1", right_alias="y2") }}
-inner join
-    attrition_dates as d
-    on y1.academic_year = d.attrition_year
-    and d.date_day <= current_datetime('{{ var("local_timezone") }}')
-where date(y1.academic_year, 10, 1) between y1.entrydate and y1.exitdate
+    prev_year as py
+    on co.student_number = py.student_number
+    and co.academic_year = py.academic_year
+    and py.is_enrolled_oct01_prev
+where
+    co.academic_year >= {{ var("current_academic_year") - 2 }} and co.grade_level != 99

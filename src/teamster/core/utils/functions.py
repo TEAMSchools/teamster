@@ -1,15 +1,19 @@
+import csv
 import re
+from collections.abc import Iterator, Mapping
 from datetime import datetime, timezone
-from typing import Mapping
+from io import StringIO
 
-from dagster import MultiPartitionKey, _check
+from dagster import MultiPartitionKey
+from dagster_shared import check
+from slugify import slugify
 
 from teamster.core.utils.classes import FiscalYear
 
 
-def regex_pattern_replace(pattern: str, replacements: Mapping[str, str]):
+def regex_pattern_replace(pattern: str, replacements: Mapping[str, str]) -> str:
     for group in re.findall(r"\(\?P<\w+>[\w\+\-\.\[\]\{\}\/\\\|]*\)", pattern):
-        match = _check.not_none(
+        match = check.not_none(
             value=re.search(pattern=r"(?<=<)(\w+)(?=>)", string=group)
         )
 
@@ -20,50 +24,50 @@ def regex_pattern_replace(pattern: str, replacements: Mapping[str, str]):
     return pattern
 
 
-def parse_partition_key(partition_key, dimension=None):
-    try:
-        date_formats = iter(
-            [
-                "%Y-%m-%dT%H:%M:%S.%f%z",
-                "%Y-%m-%dT%H:%M:%S%z",
-                "%Y-%m-%dT%H:%M:%S.%fZ",
-                "%Y-%m-%dT%H:%M:%SZ",
-                "%Y-%m-%d",
-            ]
-        )
+def _try_parse_datetime(value: str) -> datetime | None:
+    date_formats = [
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S.%fZ",
+        "%Y-%m-%dT%H:%M:%SZ",
+        "%Y-%m-%d",
+    ]
 
-        while True:
-            try:
-                partition_key_parsed = datetime.strptime(
-                    partition_key, next(date_formats)
-                )
+    for fmt in date_formats:
+        try:
+            return datetime.strptime(value, fmt)
+        except ValueError:
+            continue
 
-                # save resync file with current timestamp
-                if partition_key_parsed == datetime.fromtimestamp(
-                    timestamp=0, tz=timezone.utc
-                ):
-                    partition_key_parsed = datetime.now(timezone.utc)
+    return None
 
-                break
-            except ValueError:
-                partition_key_parsed = None
 
-        pk_fiscal_year = FiscalYear(datetime=partition_key_parsed, start_month=7)
+def parse_partition_key(partition_key: str, dimension: str | None = None) -> list[str]:
+    partition_key_parsed = _try_parse_datetime(partition_key)
 
-        return [
-            f"_dagster_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
-            f"_dagster_partition_date={partition_key_parsed.date().isoformat()}",
-            f"_dagster_partition_hour={partition_key_parsed.strftime('%H')}",
-            f"_dagster_partition_minute={partition_key_parsed.strftime('%M')}",
-        ]
-    except StopIteration:
+    if partition_key_parsed is None:
         if dimension is not None:
             return [f"_dagster_partition_{dimension}={partition_key}"]
         else:
             return [f"_dagster_partition_key={partition_key}"]
 
+    # save resync file with current timestamp
+    if partition_key_parsed == datetime.fromtimestamp(timestamp=0, tz=timezone.utc):
+        partition_key_parsed = datetime.now(timezone.utc)
 
-def get_partition_key_path(partition_key, path):
+    pk_fiscal_year = FiscalYear(datetime=partition_key_parsed, start_month=7)
+
+    return [
+        f"_dagster_partition_fiscal_year={pk_fiscal_year.fiscal_year}",
+        f"_dagster_partition_date={partition_key_parsed.date().isoformat()}",
+        f"_dagster_partition_hour={partition_key_parsed.strftime('%H')}",
+        f"_dagster_partition_minute={partition_key_parsed.strftime('%M')}",
+    ]
+
+
+def get_partition_key_path(
+    partition_key: str | MultiPartitionKey, path: list[str]
+) -> list[str]:
     if isinstance(partition_key, MultiPartitionKey):
         for dimension, key in partition_key.keys_by_dimension.items():
             path.extend(parse_partition_key(partition_key=key, dimension=dimension))
@@ -75,6 +79,79 @@ def get_partition_key_path(partition_key, path):
     return path
 
 
-def partition_key_to_vars(partition_key):
+def partition_key_to_vars(
+    partition_key: str | MultiPartitionKey,
+) -> dict[str, str]:
     path = get_partition_key_path(partition_key=partition_key, path=[])
     return {"partition_path": "/".join(path)}
+
+
+def chunk(obj: list, size: int) -> Iterator[list]:
+    """https://stackoverflow.com/a/312464
+    Yield successive chunks from list object.
+    """
+
+    for i in range(0, len(obj), size):
+        yield obj[i : i + size]
+
+
+def dict_reader_to_records(
+    dict_reader: csv.DictReader,
+    slugify_cols: bool = True,
+    slugify_replacements: list[list[str]] | None = None,
+    file_path: str | None = None,
+) -> list[dict[str, str | None]]:
+    if slugify_replacements is None:
+        slugify_replacements = []
+
+    if slugify_cols:
+        dict_reader.fieldnames = [
+            slugify(text=text, separator="_", replacements=slugify_replacements)
+            for text in check.not_none(value=dict_reader.fieldnames)
+        ]
+
+    records = [
+        {key: (value if value != "" else None) for key, value in row.items()}
+        for row in dict_reader
+    ]
+
+    if file_path is not None:
+        source_file_name = file_path.split("/")[-1]
+
+        for row in records:
+            row["source_file_name"] = source_file_name
+
+    return records
+
+
+def csv_string_to_records(
+    csv_string: str,
+    slugify_cols: bool = True,
+    slugify_replacements: list[list[str]] | None = None,
+) -> list[dict[str, str | None]]:
+    return dict_reader_to_records(
+        dict_reader=csv.DictReader(f=StringIO(csv_string)),
+        slugify_cols=slugify_cols,
+        slugify_replacements=slugify_replacements,
+        file_path=None,
+    )
+
+
+def file_to_records(
+    file_path: str,
+    encoding: str = "utf-8",
+    delimiter: str = ",",
+    slugify_cols: bool = True,
+    slugify_replacements: list[list[str]] | None = None,
+) -> list[dict[str, str | None]]:
+    with open(file=file_path, encoding=encoding, mode="r") as f:
+        dict_reader = csv.DictReader(f=f, delimiter=delimiter)
+
+        records = dict_reader_to_records(
+            dict_reader=dict_reader,
+            slugify_cols=slugify_cols,
+            slugify_replacements=slugify_replacements,
+            file_path=file_path,
+        )
+
+    return records

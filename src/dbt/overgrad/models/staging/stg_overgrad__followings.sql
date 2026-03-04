@@ -1,11 +1,5 @@
 select
-    id,
-    created_at,
-    updated_at,
-    rank,
-    academic_fit,
-    probability_of_acceptance,
-    added_by,
+    * except (student, university),
 
     student.id as student__id,
     student.external_student_id as student__external_student_id,

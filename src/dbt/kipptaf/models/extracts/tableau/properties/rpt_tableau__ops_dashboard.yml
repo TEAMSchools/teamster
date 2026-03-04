@@ -1,4 +1,3 @@
-version: 2
 models:
   - name: rpt_tableau__ops_dashboard
     columns:
@@ -143,4 +142,8 @@ models:
       - name: is_enrolled_oct01_next
         data_type: boolean
       - name: is_enrolled_oct15_next
+        data_type: boolean
+      - name: is_retained_ever
+        data_type: boolean
+      - name: is_retained_year
         data_type: boolean

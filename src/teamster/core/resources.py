@@ -1,21 +1,26 @@
 import os
 
-from dagster import EnvVar, _check
-from dagster_dbt import DbtCliResource
+from dagster import EnvVar
+from dagster_dbt import DbtCliResource, DbtProject
+from dagster_dlt import DagsterDltResource
 from dagster_gcp import BigQueryResource, GCSResource
-from dagster_slack import SlackResource
+from dagster_shared import check
 
 from teamster import GCS_PROJECT_NAME
 from teamster.core.io_managers.gcs import GCSIOManager
 from teamster.libraries.deanslist.resources import DeansListResource
+from teamster.libraries.google.drive.resources import GoogleDriveResource
+from teamster.libraries.google.forms.resources import GoogleFormsResource
+from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 from teamster.libraries.overgrad.resources import OvergradResource
-from teamster.libraries.powerschool.sis.resources import PowerSchoolODBCResource
+from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
+from teamster.libraries.zendesk.resources import ZendeskResource
 
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
 
-def get_io_manager_gcs_pickle(code_location):
+def get_io_manager_gcs_pickle(code_location: str) -> GCSIOManager:
     if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
         code_location = "test"
 
@@ -24,7 +29,7 @@ def get_io_manager_gcs_pickle(code_location):
     )
 
 
-def get_io_manager_gcs_avro(code_location, test=False):
+def get_io_manager_gcs_avro(code_location: str, test: bool = False) -> GCSIOManager:
     if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
         code_location = "test"
         test = True
@@ -37,7 +42,7 @@ def get_io_manager_gcs_avro(code_location, test=False):
     )
 
 
-def get_io_manager_gcs_file(code_location, test=False):
+def get_io_manager_gcs_file(code_location: str, test: bool = False) -> GCSIOManager:
     if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
         code_location = "test"
         test = True
@@ -50,7 +55,7 @@ def get_io_manager_gcs_file(code_location, test=False):
     )
 
 
-def get_dbt_cli_resource(dbt_project, test=False):
+def get_dbt_cli_resource(dbt_project: DbtProject, test: bool = False) -> DbtCliResource:
     if test:
         return DbtCliResource(
             project_dir=dbt_project, dbt_executable="/workspaces/teamster/.venv/bin/dbt"
@@ -59,10 +64,10 @@ def get_dbt_cli_resource(dbt_project, test=False):
         return DbtCliResource(project_dir=dbt_project)
 
 
-def get_powerschool_ssh_resource():
+def get_powerschool_ssh_resource() -> SSHResource:
     return SSHResource(
         remote_host=EnvVar("PS_SSH_HOST"),
-        remote_port=int(_check.not_none(value=EnvVar("PS_SSH_PORT").get_value())),
+        remote_port=int(check.not_none(value=EnvVar("PS_SSH_PORT").get_value())),
         username=EnvVar("PS_SSH_USERNAME"),
         tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
     )
@@ -81,11 +86,24 @@ DB_POWERSCHOOL = PowerSchoolODBCResource(
 DEANSLIST_RESOURCE = DeansListResource(
     subdomain=EnvVar("DEANSLIST_SUBDOMAIN"),
     api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
+    request_timeout=90.0,
 )
+
+DLT_RESOURCE = DagsterDltResource()
+
+GOOGLE_DRIVE_RESOURCE = GoogleDriveResource()
+
+GOOGLE_FORMS_RESOURCE = GoogleFormsResource()
+
+GOOGLE_SHEETS_RESOURCE = GoogleSheetsResource()
 
 OVERGRAD_RESOURCE = OvergradResource(api_key=EnvVar("OVERGRAD_API_KEY"), page_limit=100)
 
-SLACK_RESOURCE = SlackResource(token=EnvVar("SLACK_TOKEN"))
+ZENDESK_RESOURCE = ZendeskResource(
+    subdomain=EnvVar("ZENDESK_SUBDOMAIN"),
+    email=EnvVar("ZENDESK_EMAIL"),
+    token=EnvVar("ZENDESK_TOKEN"),
+)
 
 SSH_COUCHDROP = SSHResource(
     remote_host=EnvVar("COUCHDROP_SFTP_HOST"),
@@ -120,4 +138,11 @@ SSH_TITAN = SSHResource(
     remote_port=22,
     username=EnvVar("TITAN_SFTP_USERNAME"),
     password=EnvVar("TITAN_SFTP_PASSWORD"),
+)
+
+SSH_RESOURCE_AMPLIFY = SSHResource(
+    remote_host=EnvVar("AMPLIFY_SFTP_HOST"),
+    remote_port=22,
+    username=EnvVar("AMPLIFY_SFTP_USERNAME"),
+    password=EnvVar("AMPLIFY_SFTP_PASSWORD"),
 )
