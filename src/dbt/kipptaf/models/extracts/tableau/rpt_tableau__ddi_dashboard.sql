@@ -191,7 +191,7 @@ with
         group by employee_number, week_start_monday
     )
 
-/* ES/MS assessments */
+/* ES/MS + HS assessments */
 select
     co.student_number,
     co.student_name,
@@ -261,137 +261,54 @@ select
     g.region_goal,
     g.organization_goal,
 
-    coalesce(
-        ip.total_iready_lessons_passed_reading, 0
+    if(
+        co.grade_level <= 8,
+        coalesce(ip.total_iready_lessons_passed_reading, 0),
+        null
     ) as total_iready_lessons_passed_reading,
-    coalesce(
-        ip.total_iready_lessons_passed_math, 0
+    if(
+        co.grade_level <= 8,
+        coalesce(ip.total_iready_lessons_passed_math, 0),
+        null
     ) as total_iready_lessons_passed_math,
 
     if(qbls.qbl is not null, true, false) as is_qbl,
 
-    coalesce(ip.is_pass_2_lessons_int_reading, 0) as is_passed_iready_2plus_reading_int,
-    coalesce(ip.is_pass_4_lessons_int_reading, 0) as is_passed_iready_4plus_reading_int,
-    coalesce(ip.is_pass_2_lessons_int_math, 0) as is_passed_iready_2plus_math_int,
-    coalesce(ip.is_pass_4_lessons_int_math, 0) as is_passed_iready_4plus_math_int,
+    if(
+        co.grade_level <= 8, coalesce(ip.is_pass_2_lessons_int_reading, 0), null
+    ) as is_passed_iready_2plus_reading_int,
+    if(
+        co.grade_level <= 8, coalesce(ip.is_pass_4_lessons_int_reading, 0), null
+    ) as is_passed_iready_4plus_reading_int,
+    if(
+        co.grade_level <= 8, coalesce(ip.is_pass_2_lessons_int_math, 0), null
+    ) as is_passed_iready_2plus_math_int,
+    if(
+        co.grade_level <= 8, coalesce(ip.is_pass_4_lessons_int_math, 0), null
+    ) as is_passed_iready_4plus_math_int,
 from identifiers as co
 left join
     {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
     on co.academic_year = qbls.academic_year
     and co.term = qbls.term_name
     and co.region = qbls.region
-    and co.grade_level = qbls.grade_level
+    and (co.grade_level = qbls.grade_level or co.grade_level between 9 and 12)
     and co.response_type_code = qbls.standard_code
     and co.subject_area = qbls.illuminate_subject_area
     and qbls.qbl is not null
 left join
     {{ ref("int_assessments__academic_goals") }} as g
     on co.schoolid = g.school_id
-    and co.grade_level = g.grade_level
+    and (co.grade_level = g.grade_level or co.grade_level between 9 and 12)
     and co.academic_year = g.academic_year
     and co.subject_area = g.illuminate_subject_area
 left join
     iready_pivot as ip
-    on co.student_number = ip.student_id
+    on co.grade_level <= 8
+    and co.student_number = ip.student_id
     and co.academic_year = ip.academic_year_int
     and co.week_start_monday = ip.week_start_monday
-where co.grade_level between 0 and 8
-
-union all
-
-/* HS assessments */
-select
-    co.student_number,
-    co.student_name,
-    co.academic_year,
-    co.schoolid,
-    co.school,
-    co.region,
-    co.grade_level,
-    co.enroll_status,
-    co.cohort,
-    co.school_level,
-    co.gender,
-    co.ethnicity,
-    co.year_in_network,
-    co.is_self_contained,
-    co.week_start_monday,
-    co.week_end_sunday,
-    co.days_in_session,
-    co.term,
-    co.title,
-    co.subject_area,
-    co.administered_at,
-    co.module_type,
-    co.module_code,
-    co.date_taken,
-    co.response_type,
-    co.response_type_code,
-    co.response_type_description,
-    co.response_type_root_description,
-    co.percent_correct,
-    co.is_mastery,
-    co.performance_band_label_number,
-    co.performance_band_label,
-    co.is_replacement,
-    co.standard_domain,
-    co.course_section,
-    co.course_name,
-    co.course_number,
-    co.course_credittype,
-    co.course_teachernumber,
-    co.course_teacher_name,
-    co.is_foundations,
-    co.homeroom_section,
-    co.homeroom_teachernumber,
-    co.homeroom_teacher_name,
-    co.head_of_school,
-    co.ml_status,
-    co.status_504,
-    co.self_contained_status,
-    co.iep_status,
-    co.gifted_and_talented,
-    co.is_current_week,
-    co.assessment_id,
-    co.is_mastery_int,
-    co.is_complete,
-    co.dibels_most_recent_composite,
-    co.state_test_proficiency,
-    co.is_exempt_iready,
-    co.nj_student_tier,
-    co.is_sipps,
-    co.is_low_25_fl,
-
-    qbls.qbl,
-
-    g.grade_goal,
-    g.school_goal,
-    g.region_goal,
-    g.organization_goal,
-
-    null as total_iready_lessons_passed_reading,
-    null as total_iready_lessons_passed_math,
-
-    if(qbls.qbl is not null, true, false) as is_qbl,
-
-    null as is_passed_iready_2plus_reading_int,
-    null as is_passed_iready_4plus_reading_int,
-    null as is_passed_iready_2plus_math_int,
-    null as is_passed_iready_4plus_math_int,
-from identifiers as co
-left join
-    {{ ref("stg_google_sheets__assessments__qbls_power_standards") }} as qbls
-    on co.academic_year = qbls.academic_year
-    and co.term = qbls.term_name
-    and co.region = qbls.region
-    and co.response_type_code = qbls.standard_code
-    and co.subject_area = qbls.illuminate_subject_area
-left join
-    {{ ref("int_assessments__academic_goals") }} as g
-    on co.schoolid = g.school_id
-    and co.academic_year = g.academic_year
-    and co.subject_area = g.illuminate_subject_area
-where co.grade_level between 9 and 12
+where co.grade_level between 0 and 12
 
 union all
 

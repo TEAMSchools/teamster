@@ -1,5 +1,7 @@
 models:
   - name: rpt_tableau__assessment_dashboard
+    config:
+      materialized: table
     columns:
       - name: student_number
         data_type: int64
