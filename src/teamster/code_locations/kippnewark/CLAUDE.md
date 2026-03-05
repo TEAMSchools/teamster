@@ -14,21 +14,21 @@ GCS bucket: `teamster-kippnewark`
 
 ## Active Integrations
 
-| Module                  | Type          | Trigger                                                            |
-| ----------------------- | ------------- | ------------------------------------------------------------------ |
-| `_dbt`                  | dbt assets    | schedule (code-version, every 10min) + `AutomationConditionSensor` |
-| `powerschool`           | ODBC assets   | sensor (`build_powerschool_asset_sensor`)                          |
-| `amplify` (mclass sftp) | SFTP assets   | sensor (`build_amplify_mclass_sftp_sensor`)                        |
-| `deanslist`             | API assets    | schedule (nightly)                                                 |
-| `edplan`                | SFTP asset    | sensor (`build_edplan_sftp_sensor`)                                |
-| `finalsite`             | API assets    | `AutomationConditionSensor`                                        |
-| `iready`                | SFTP assets   | sensor (`build_iready_sftp_sensor`)                                |
-| `overgrad`              | API assets    | schedule                                                           |
-| `pearson`               | SFTP assets   | `AutomationConditionSensor`                                        |
-| `renlearn`              | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)                              |
-| `titan`                 | SFTP assets   | sensor (`build_titan_sftp_sensor`)                                 |
-| `extracts`              | BigQuery→SFTP | schedule                                                           |
-| `couchdrop`             | sensor only   | sensor (Google Drive watcher)                                      |
+| Module                  | Type          | Trigger                                     |
+| ----------------------- | ------------- | ------------------------------------------- |
+| `_dbt`                  | dbt assets    | `AutomationConditionSensor`                 |
+| `powerschool`           | ODBC assets   | sensor (`build_powerschool_asset_sensor`)   |
+| `amplify` (mclass sftp) | SFTP assets   | sensor (`build_amplify_mclass_sftp_sensor`) |
+| `deanslist`             | API assets    | schedule (nightly)                          |
+| `edplan`                | SFTP asset    | sensor (`build_edplan_sftp_sensor`)         |
+| `finalsite`             | API assets    | `AutomationConditionSensor`                 |
+| `iready`                | SFTP assets   | sensor (`build_iready_sftp_sensor`)         |
+| `overgrad`              | API assets    | schedule                                    |
+| `pearson`               | SFTP assets   | `AutomationConditionSensor`                 |
+| `renlearn`              | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)       |
+| `titan`                 | SFTP assets   | sensor (`build_titan_sftp_sensor`)          |
+| `extracts`              | BigQuery→SFTP | schedule                                    |
+| `couchdrop`             | sensor only   | sensor (Google Drive watcher)               |
 
 Newark is the most complete school code location — it uses every available
 integration.
@@ -36,12 +36,6 @@ integration.
 ## PowerSchool Configuration
 
 Uses **ODBC** (live Oracle tunnel). Config YAMLs under `powerschool/config/`.
-
-## dbt Schedule
-
-Newark uses `build_dbt_code_version_schedule()` (every 10 minutes) in addition
-to the `AutomationConditionSensor`. This triggers dbt runs whenever compiled SQL
-changes, covering re-deployments without upstream data changes.
 
 ## Asset Checks
 

@@ -16,7 +16,7 @@ GCS bucket: `teamster-kipptaf`
 
 | Module                   | Assets                                             | Schedules                  | Sensors                 |
 | ------------------------ | -------------------------------------------------- | -------------------------- | ----------------------- |
-| `_dbt`                   | 4 asset groups (see below)                         | code-version schedule      | —                       |
+| `_dbt`                   | 4 asset groups (see below)                         | —                          | —                       |
 | `_dlt`                   | Illuminate (active), Salesforce/Zendesk (disabled) | daily + hourly             | —                       |
 | `_google`                | Directory, Forms, AppSheet specs, Sheets specs     | directory, forms           | bigquery, forms, sheets |
 | `adp`                    | payroll SFTP + WFN API + WFM                       | WFN + WFM schedules        | WFN + payroll sensors   |
