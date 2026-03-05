@@ -16,7 +16,9 @@ with
             status_group_name,
             status_group_value,
 
-            concat(enrollment_year_extract, reporting_season) as enroll_extract_season,
+            concat(
+                enrollment_year_extract, ' ', reporting_season
+            ) as enroll_extract_season,
 
         from
             {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} unpivot (
