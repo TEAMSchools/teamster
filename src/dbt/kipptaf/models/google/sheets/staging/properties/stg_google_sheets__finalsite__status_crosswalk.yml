@@ -3,6 +3,8 @@ models:
     columns:
       - name: enrollment_year_extract
         data_type: string
+      - name: reporting_season
+        data_type: string
       - name: enrollment_type
         data_type: string
       - name: detailed_status
