@@ -13,7 +13,4 @@ select distinct
 
     {{ dbt_utils.generate_surrogate_key(["location_clean_name"]) }} as locations_key,
 from {{ ref("int_people__location_crosswalk") }}
-where
-    not location_is_campus
-    and not location_is_pathways
-    and location_clean_name <> 'KIPP Whittier Elementary'
+where and not location_is_pathways and location_clean_name <> 'KIPP Whittier Elementary'
