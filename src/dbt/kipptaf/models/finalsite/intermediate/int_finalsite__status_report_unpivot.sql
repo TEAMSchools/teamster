@@ -20,6 +20,8 @@ with
             fs_status_field,
             status_start_date,
 
+            cast(left(_dagster_partition_key, 4) as int) as file_year,
+
             initcap(
                 regexp_replace(replace(fs_status_field, '_', ' '), r'\s+[Dd]ate$', '')
             ) as detailed_status,
@@ -57,6 +59,12 @@ with
 
 select
     u.*,
+
+    t.type as reporting_type,
+    t.code as reporting_code,
+    t.name as reporting_season,
+    t.start_date as reporting_start_date,
+    t.end_date as reporting_end_date,
 
     'KTAF' as org,
 
@@ -115,7 +123,18 @@ select
         then 24
     end as status_order,
 
+    if(
+        current_date('{{ var("local_timezone") }}') between t.start_date and t.end_date,
+        true,
+        false
+    ) as active_season,
+
 from unpivot_data as u
 left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
     on u.assigned_school = x.name
+left join
+    {{ ref("stg_google_sheets__reporting__terms") }} as t
+    on u.file_year = t.academic_year
+    and u.region = t.region
+    and t.type = 'SRE'
