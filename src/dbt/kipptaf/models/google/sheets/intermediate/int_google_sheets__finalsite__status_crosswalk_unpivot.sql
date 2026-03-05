@@ -1,44 +1,25 @@
-with
-    transformations as (
-        select
-            enrollment_year_extract,
-            enrollment_academic_year,
-            enrollment_academic_year_display,
-            reporting_season,
-            enrollment_type,
-            detailed_status,
-            detailed_status_ranking,
-            detailed_status_branched_ranking,
-            valid_detailed_status,
-            fs_status_field,
-            qa_flag,
-
-            status_group_name,
-            status_group_value,
-
-            concat(
-                enrollment_year_extract, ' ', reporting_season
-            ) as enroll_extract_season,
-
-        from
-            {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} unpivot (
-                status_group_value for status_group_name in (
-                    status_enrollment,
-                    status_group_numerator,
-                    status_group_denominator,
-                    conversion_metric_numerator_1,
-                    conversion_metric_numerator_2,
-                    conversion_metric_numerator_3,
-                    conversion_metric_denominator
-                )
-            )
-    )
-
 select
-    *,
+    enrollment_year_extract,
+    enrollment_academic_year,
+    enrollment_academic_year_display,
+    reporting_season,
+    enrollment_type,
+    detailed_status,
+    detailed_status_ranking,
+    detailed_status_branched_ranking,
+    valid_detailed_status,
+    fs_status_field,
+    qa_flag,
+
+    status_group_name,
+    status_group_value,
+
+    concat(
+        enrollment_year_extract, ' ', reporting_season, ' ', status_group_value
+    ) as enroll_extract_season_group,
 
     case
-        enroll_extract_season
+        status_group_value
         when 'Inquiries'
         then 1
         when 'Applications'
@@ -74,4 +55,15 @@ select
         else 'Current'
     end as grouped_status_timeframe,
 
-from transformations
+from
+    {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} unpivot (
+        status_group_value for status_group_name in (
+            status_enrollment,
+            status_group_numerator,
+            status_group_denominator,
+            conversion_metric_numerator_1,
+            conversion_metric_numerator_2,
+            conversion_metric_numerator_3,
+            conversion_metric_denominator
+        )
+    )

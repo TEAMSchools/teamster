@@ -40,9 +40,7 @@ models:
         data_type: string
       - name: status_group_value
         data_type: string
-      - name: status_group_value
-        data_type: string
-      - name: enroll_extract_season
+      - name: enroll_extract_season_group
         data_type: string
       - name: grouped_status_timeframe
         data_type: string
