@@ -1,5 +1,7 @@
 with
-    actual_enroll_type as (
+    /* this cte uses the current year file to report on current year students and next
+       year students and is valid during pre fs rollover season for a region */
+    pre_fs_rollover as (
         select
             f.enrollment_academic_year,
             f.enrollment_academic_year_display,
@@ -14,20 +16,23 @@ with
             f.first_name,
             f.last_name,
             f.grade_level,
+            f.birthdate,
+            f.gender,
             f.self_contained,
             f.detailed_status,
             f.status_order,
             f.status_start_date,
 
-            f.next_academic_year as aligned_enrollment_academic_year,
+            f.reporting_type,
+            f.reporting_code,
+            f.reporting_season,
+            f.reporting_start_date,
+            f.reporting_end_date,
 
             e1.enroll_status as ps_enroll_status,
             e1.region as ps_region,
             e1.school as ps_school,
             e1.grade_level as ps_grade_level,
-            e1.is_enrolled_fdos,
-            e1.is_enrolled_oct01,
-            e1.is_enrolled_oct15,
 
             if(
                 e2.next_year_enrollment_type is null,
@@ -46,61 +51,8 @@ with
             on f.enrollment_academic_year - 1 = e2.academic_year
             and f.finalsite_enrollment_id = e2.infosnap_id
             and e2.rn_year = 1
-        -- fixing the value for now - will remove once a better data model is created
-        where f.enrollment_academic_year <= 2026
+        where f.reporting_season = 'Pre FS Rollover'
     )
 
-select
-    f.aligned_enrollment_academic_year,
-    f.enrollment_academic_year,
-    f.enrollment_academic_year_display,
-    f.current_academic_year,
-    f.next_academic_year,
-    f.org,
-    f.region,
-    f.schoolid,
-    f.school,
-    f.finalsite_enrollment_id,
-    f.powerschool_student_number,
-    f.first_name,
-    f.last_name,
-    f.grade_level,
-    f.self_contained,
-    f.detailed_status,
-    f.status_order,
-    f.status_start_date,
-    f.enrollment_academic_year_enrollment_type,
-    f.ps_enroll_status,
-    f.ps_region,
-    f.ps_school,
-    f.ps_grade_level,
-    f.is_enrolled_fdos,
-    f.is_enrolled_oct01,
-    f.is_enrolled_oct15,
-
-    x.status_group_name,
-    x.status_group_value,
-
-    cast(f.aligned_enrollment_academic_year as string)
-    || '-'
-    || right(
-        cast(f.aligned_enrollment_academic_year + 1 as string), 2
-    ) as aligned_enrollment_academic_year_display,
-
-    first_value(f.detailed_status) over (
-        partition by f.enrollment_academic_year, f.finalsite_enrollment_id
-        order by f.status_start_date desc
-    ) as latest_status,
-
-    if(
-        f.enrollment_academic_year = f.current_academic_year,
-        f.grade_level + 1,
-        f.grade_level
-    ) as aligned_enrollment_academic_year_grade_level,
-
-from actual_enroll_type as f
-inner join
-    {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as x
-    on f.enrollment_academic_year = x.enrollment_academic_year
-    and f.enrollment_academic_year_enrollment_type = x.enrollment_type
-    and f.detailed_status = x.detailed_status
+select *,
+from pre_fs_rollover
