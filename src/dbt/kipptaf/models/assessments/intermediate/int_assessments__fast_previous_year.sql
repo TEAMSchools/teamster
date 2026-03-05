@@ -2,6 +2,7 @@ with
     fte_survey_availability as (
         select
             academic_year,
+
             countif(survey_2 is not null) > 0 as has_fte2_data,
             countif(survey_3 is not null) > 0 as has_fte3_data,
         from {{ ref("int_fldoe__fte_pivot") }}
@@ -15,6 +16,7 @@ with
             co.grade_level,
 
             pp.student_id,
+            pp.assessment_grade,
             pp.assessment_subject,
             pp.discipline,
             pp.scale_score as prev_pm3_scale,
@@ -23,6 +25,14 @@ with
 
             cw.sublevel_name as prev_pm3_sublevel_name,
             cw.sublevel_number as prev_pm3_sublevel_number,
+
+            case
+                when fa.has_fte3_data
+                then co.is_fldoe_fte_all
+                when fa.has_fte2_data
+                then co.is_fldoe_fte_2
+                else co.enroll_status = 0
+            end as is_valid_dynamic,
 
             round(
                 rank() over (
@@ -36,10 +46,11 @@ with
                 4
             ) as fldoe_percentile_rank,
         from {{ ref("base_powerschool__student_enrollments") }} as co
+        inner join fte_survey_availability as fa on co.academic_year = fa.academic_year
         inner join
             {{ ref("stg_fldoe__fast") }} as pp
             on co.fleid = pp.student_id
-            and (co.academic_year - 1) = pp.academic_year
+            and co.academic_year = (pp.academic_year + 1)
             and pp.administration_window = 'PM3'
         left join
             {{ ref("stg_google_sheets__iready__crosswalk") }} as cw
@@ -53,38 +64,21 @@ with
 
     dynamic_prev_year as (
         select
-            co.academic_year,
-            co.student_number,
-            pp.assessment_subject,
+            student_number,
+            academic_year,
+            assessment_subject,
+
             round(
                 rank() over (
-                    partition by
-                        pp.academic_year, pp.assessment_grade, pp.assessment_subject
-                    order by pp.scale_score asc
+                    partition by academic_year, assessment_grade, assessment_subject
+                    order by prev_pm3_scale asc
                 ) / count(*) over (
-                    partition by
-                        pp.academic_year, pp.assessment_grade, pp.assessment_subject
+                    partition by academic_year, assessment_grade, assessment_subject
                 ),
                 4
             ) as fldoe_dynamic_percentile_rank,
-        from {{ ref("base_powerschool__student_enrollments") }} as co
-        inner join
-            {{ ref("stg_fldoe__fast") }} as pp
-            on co.fleid = pp.student_id
-            and (co.academic_year - 1) = pp.academic_year
-            and pp.administration_window = 'PM3'
-        inner join fte_survey_availability as fa on co.academic_year = fa.academic_year
-        where
-            co.rn_year = 1
-            and co.region = 'Miami'
-            and co.grade_level != 99
-            and case
-                when fa.has_fte3_data
-                then co.is_fldoe_fte_all
-                when fa.has_fte2_data
-                then co.is_fldoe_fte_2
-                else co.enroll_status = 0
-            end
+        from prev_year
+        where is_valid_dynamic
     )
 
 select
@@ -100,6 +94,7 @@ select
     py.prev_pm3_sublevel_name,
     py.prev_pm3_sublevel_number,
     py.fldoe_percentile_rank,
+
     dp.fldoe_dynamic_percentile_rank,
 
     cw1.scale_low as scale_for_growth,
