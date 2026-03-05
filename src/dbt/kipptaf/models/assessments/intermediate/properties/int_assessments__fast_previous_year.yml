@@ -1,5 +1,14 @@
 models:
   - name: int_assessments__fast_previous_year
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - assessment_subject
+          config:
+            store_failures: true
     columns:
       - name: student_number
         data_type: int64
@@ -35,3 +44,5 @@ models:
         data_type: int64
       - name: scale_points_to_proficiency_pm3
         data_type: int64
+      - name: fldoe_dynamic_percentile_rank
+        data_type: float64
