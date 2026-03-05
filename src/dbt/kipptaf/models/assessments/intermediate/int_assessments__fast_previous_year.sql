@@ -1,4 +1,14 @@
 with
+    fte_survey_availability as (
+        select
+            academic_year,
+
+            countif(survey_2 is not null) > 0 as has_fte2_data,
+            countif(survey_3 is not null) > 0 as has_fte3_data,
+        from {{ ref("int_fldoe__fte_pivot") }}
+        group by academic_year
+    ),
+
     prev_year as (
         select
             co.academic_year,
@@ -6,6 +16,7 @@ with
             co.grade_level,
 
             pp.student_id,
+            pp.assessment_grade,
             pp.assessment_subject,
             pp.discipline,
             pp.scale_score as prev_pm3_scale,
@@ -14,6 +25,14 @@ with
 
             cw.sublevel_name as prev_pm3_sublevel_name,
             cw.sublevel_number as prev_pm3_sublevel_number,
+
+            case
+                when fa.has_fte3_data
+                then co.is_fldoe_fte_all
+                when fa.has_fte2_data
+                then co.is_fldoe_fte_2
+                else co.enroll_status = 0
+            end as is_valid_dynamic,
 
             round(
                 rank() over (
@@ -27,10 +46,11 @@ with
                 4
             ) as fldoe_percentile_rank,
         from {{ ref("base_powerschool__student_enrollments") }} as co
+        inner join fte_survey_availability as fa on co.academic_year = fa.academic_year
         inner join
             {{ ref("stg_fldoe__fast") }} as pp
             on co.fleid = pp.student_id
-            and (co.academic_year - 1) = pp.academic_year
+            and co.academic_year = (pp.academic_year + 1)
             and pp.administration_window = 'PM3'
         left join
             {{ ref("stg_google_sheets__iready__crosswalk") }} as cw
@@ -40,6 +60,25 @@ with
             and cw.source_system = 'FAST_NEW'
             and cw.destination_system = 'FL'
         where co.rn_year = 1 and co.region = 'Miami' and co.grade_level != 99
+    ),
+
+    dynamic_prev_year as (
+        select
+            student_number,
+            academic_year,
+            assessment_subject,
+
+            round(
+                rank() over (
+                    partition by academic_year, assessment_grade, assessment_subject
+                    order by prev_pm3_scale asc
+                ) / count(*) over (
+                    partition by academic_year, assessment_grade, assessment_subject
+                ),
+                4
+            ) as fldoe_dynamic_percentile_rank,
+        from prev_year
+        where is_valid_dynamic
     )
 
 select
@@ -55,6 +94,8 @@ select
     py.prev_pm3_sublevel_name,
     py.prev_pm3_sublevel_number,
     py.fldoe_percentile_rank,
+
+    dp.fldoe_dynamic_percentile_rank,
 
     cw1.scale_low as scale_for_growth,
     cw1.sublevel_name as sublevel_for_growth,
@@ -109,3 +150,9 @@ left join
     and py.prev_pm3_scale between cw4.scale_low and cw4.scale_high
     and cw4.source_system = 'FAST_NEW'
     and cw4.destination_system = 'FL'
+/* gets dynamic (FTE-aware) percentile rank */
+left join
+    dynamic_prev_year as dp
+    on py.student_number = dp.student_number
+    and py.academic_year = dp.academic_year
+    and py.assessment_subject = dp.assessment_subject

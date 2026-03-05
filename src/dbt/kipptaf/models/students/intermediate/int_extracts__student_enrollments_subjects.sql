@@ -292,7 +292,7 @@ select
         b.bucket in ('Bucket 1', 'Bucket 2', 'Bucket 3'), b.bucket, 'Bucket 4'
     ) as nj_student_tier,
 
-    if(fp.fldoe_percentile_rank < .255, true, false) as is_low_25_fl,
+    if(fp.fldoe_dynamic_percentile_rank < .255, true, false) as is_low_25_fl,
 
     case
         when

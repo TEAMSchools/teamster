@@ -12,47 +12,63 @@
 
 ![Photograph taken in 1960. Upload from http://www.fortepan.hu/?lang=en&img=20566, part of Commons:Batch_uploading/Fortepan.HU](https://github.com/user-attachments/assets/2ca95e50-106c-4cce-a8e3-2ffb234adf94)
 
-Next-gen data orchestration
+Next-gen data orchestration for KIPP TEAM & Family Schools
 
-## Features
+## Overview
 
-### Dagster
+Teamster is a data engineering platform built on **Dagster** (orchestration),
+**dbt** (transformations), and **Google BigQuery** (warehouse), with Google
+Cloud Storage (GCS) as the intermediate storage layer.
 
-Dagster is our data orchestrator. Every ETL step takes place here.
+All source code lives under `src/`:
 
-[Dagster Cloud](https://kipptaf.dagster.cloud/) is a hosted front-end for our
-Dagster servers where you can observe and run integration jobs.
+- `src/teamster/` — Dagster project powering data orchestration
+- `src/dbt/` — dbt projects organized by school network and data source
 
-Dagster hosts multiple "code locations", one for each of our business units,
-including a separate one for our CMO:
+## Dagster
 
-- kippnewark
-- kippcamden
-- kippmiami
-- kipptaf
+Dagster is our data orchestrator. Every ETL step runs here.
 
-Each code location hosts and runs the code and configurations for each
-respective business unit. Behind-the-scenes, these are containers run on Google
-Cloud Kubernetes. Each code location has it's own respective jobs, schedules,
-sensors, and assets.
+[Dagster Cloud](https://kipptaf.dagster.cloud/) is the hosted front-end where
+you can observe and run integration jobs.
 
-### dbt & Github
+There is one code location per school network:
 
-Before you merge:
+- `kipptaf` — network-wide (CMO); the largest code location
+- `kippnewark`
+- `kippcamden`
+- `kippmiami`
+- `kipppaterson`
 
-1. Ensure dbt build runs successfully on your branch
-2. Format your SQL changes in dbt
-3. Ensure the Dagster build action runs successfully
+Each code location runs in its own container on Google Cloud Kubernetes and owns
+its jobs, schedules, sensors, and assets.
 
-### Google Cloud Platform
+## dbt
+
+dbt projects are organized as either school-network projects or shared
+source-system projects:
+
+- **School networks** (`kipptaf`, `kippnewark`, `kippcamden`, `kippmiami`,
+  `kipppaterson`) — contain staging, intermediate, mart, and extract models.
+  `kipptaf` is the primary analytics layer and the only project dbt Cloud is
+  configured to run.
+- **Source systems** (`powerschool`, `deanslist`, `iready`, etc.) — shared
+  projects installed as dbt package dependencies across multiple school
+  networks.
+
+## Google Cloud Platform
 
 - [Private GKE Autopilot](https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters#public_cp)
   cluster
-- [Cloud NAT](https://cloud.google.com/nat/docs/gke-example#create-nat) provided
-  static external IP for the cluster
+- [Cloud NAT](https://cloud.google.com/nat/docs/gke-example#create-nat) for
+  static external IP
 - [Google Artifact Registry](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images)
-- Google Cloud services access prodivded by
-  [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to)
+  for Docker images
+- [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to)
+  for Google Cloud service access
 - GitHub Actions for CI/CD
 
-### Airbyte
+## Airbyte
+
+Airbyte is used for select data ingestion pipelines managed via the
+`dagster-airbyte` integration.
