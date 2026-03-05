@@ -42,9 +42,6 @@ select
     if(se.enroll_status = 0, 1, 0) as student_allowwebaccess,
     if(se.enroll_status = 0, 1, 0) as allowwebaccess,
     if(se.is_retained_year, 1, 0) as retained_tf,
-    if(
-        se.lepbegindate is not null and se.lependdate is null, 1, 0
-    ) as s_nj_stu_x__lep_tf,
 
     if(
         s.student_web_password is not null, null, se.student_web_password
@@ -75,6 +72,10 @@ select
         when se.grade_level = 12 and se.has_fafsa = 'Yes'
         then 'C'
     end as s_stu_x__fafsa,
+
+    if(
+        se.lepbegindate is not null and se.lependdate is null, 1, 0
+    ) as s_nj_stu_x__lep_tf,
 
 from {{ ref("int_extracts__student_enrollments") }} as se
 left join
