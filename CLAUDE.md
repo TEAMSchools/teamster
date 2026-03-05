@@ -24,8 +24,15 @@ Always use them before doing relevant work:
 - **`/dbt:using-dbt-for-analytics-engineering`** — Use when building or
   modifying dbt models, writing tests, or debugging dbt errors
 - **`/dbt:running-dbt-commands`** — Use when running dbt CLI commands
+- **`/dbt:adding-dbt-unit-test`** — Use when adding unit tests for a dbt model
+- **`/dbt:troubleshooting-dbt-job-errors`** — Use when diagnosing dbt job
+  failures or unclear error messages
+- **`/dbt:fetching-dbt-docs`** — Use when looking up dbt features or
+  documentation
 - **`/dignified-python`** — Use when writing or reviewing Python code for
   production quality standards
+- **`/simplify`** — Use after making changes to review code for reuse, quality,
+  and efficiency
 
 ## Commands
 
@@ -73,36 +80,75 @@ trunk fmt
 
 ### Repository Structure
 
-```
+Each code location and library directory contains its own `CLAUDE.md` with
+context specific to that module (active integrations, resource instances, asset
+groups, etc.). Read the relevant `CLAUDE.md` before working in a specific code
+location or library.
+
+```text
 src/
-  teamster/          # Dagster project (Python package)
-    __init__.py      # GCS_PROJECT_NAME constant
-    core/            # Shared infrastructure
-      resources.py   # Shared resource instances (BigQuery, GCS, SSH, dbt, IO managers)
-      io_managers/   # Custom GCS IO managers (pickle, avro, file)
-      utils/         # Utility classes (FiscalYear, partitions, JSON encoder)
-    libraries/       # Reusable asset builders and resource definitions
-      powerschool/   # PowerSchool SIS (ODBC via Oracle) and enrollment
-      dbt/           # dbt asset builder (build_dbt_assets)
-      google/        # Google Drive, Forms, Sheets resources
-      ssh/           # SSH tunnel resource
-      deanslist/     # Deanslist API resource
-      ... (one subpackage per integration)
-    code_locations/  # Per-school Dagster definitions
-      kipptaf/       # TAF (network-wide): the largest code location
-      kippnewark/
-      kippcamden/
-      kippmiami/
-      kipppaterson/
-  dbt/               # dbt projects (one per data source or school network)
-    kipptaf/         # Main network-wide dbt project
-    kippnewark/      # School-specific dbt project
+  teamster/               # Dagster project (Python package)
+    __init__.py           # GCS_PROJECT_NAME constant
+    core/                 # Shared infrastructure (CLAUDE.md)
+      resources.py        # Shared resource instances (BigQuery, GCS, SSH, dbt, IO managers)
+      io_managers/        # Custom GCS IO managers (pickle, avro, file)
+      utils/              # Utility classes (FiscalYear, partitions, JSON encoder)
+    libraries/            # Reusable asset builders and resource definitions
+      adp/                # ADP Workforce Now + WFM (CLAUDE.md)
+      airbyte/            # Airbyte Cloud (CLAUDE.md)
+      alchemer/           # Alchemer survey API (CLAUDE.md)
+      amplify/            # Amplify reading platform (CLAUDE.md)
+      collegeboard/       # College Board SFTP (CLAUDE.md)
+      couchdrop/          # CouchDrop SFTP sensor (CLAUDE.md)
+      coupa/              # Coupa procurement API (CLAUDE.md)
+      dayforce/           # Dayforce HCM (CLAUDE.md)
+      dbt/                # dbt asset builder: build_dbt_assets (CLAUDE.md)
+      deanslist/          # Deanslist API (CLAUDE.md)
+      dlt/                # DLT pipeline assets (CLAUDE.md)
+      edplan/             # EdPlan SFTP (CLAUDE.md)
+      email/              # Email/SMTP (CLAUDE.md)
+      extracts/           # BigQuery→SFTP extract assets (CLAUDE.md)
+      finalsite/          # Finalsite CMS (CLAUDE.md)
+      fivetran/           # Fivetran connectors (CLAUDE.md)
+      fldoe/              # Florida DOE (CLAUDE.md)
+      google/             # Google Drive, Forms, Sheets, Directory (CLAUDE.md)
+      iready/             # iReady assessment platform (CLAUDE.md)
+      knowbe4/            # KnowBe4 security training API (CLAUDE.md)
+      ldap/               # LDAP directory (CLAUDE.md)
+      level_data/         # LevelData Grow API (CLAUDE.md)
+      nsc/                # National Student Clearinghouse SFTP (CLAUDE.md)
+      overgrad/           # Overgrad college counseling API (CLAUDE.md)
+      pearson/            # Pearson assessments (CLAUDE.md)
+      performance_management/ # PM SFTP assets (CLAUDE.md)
+      powerschool/        # PowerSchool SIS (ODBC via Oracle) and enrollment (CLAUDE.md)
+      renlearn/           # Renaissance Learning (CLAUDE.md)
+      sftp/               # Generic SFTP resource (CLAUDE.md)
+      smartrecruiters/    # SmartRecruiters ATS API (CLAUDE.md)
+      ssh/                # SSH tunnel resource (CLAUDE.md)
+      tableau/            # Tableau Server (CLAUDE.md)
+      titan/              # Titan school nutrition (CLAUDE.md)
+    code_locations/       # Per-school Dagster definitions
+      kipptaf/            # TAF (network-wide): the largest code location (CLAUDE.md)
+      kippnewark/         # (CLAUDE.md)
+      kippcamden/         # (CLAUDE.md)
+      kippmiami/          # (CLAUDE.md)
+      kipppaterson/       # (CLAUDE.md)
+  dbt/                    # dbt projects (one per data source or school network)
+    kipptaf/              # Main network-wide dbt project (CLAUDE.md)
+    kippnewark/           # School-specific dbt project
     kippcamden/
     kippmiami/
     kipppaterson/
-    powerschool/     # Source-system dbt projects (shared)
+    amplify/              # Source-system dbt projects
     deanslist/
-    ... (one project per data source)
+    edplan/
+    finalsite/
+    iready/
+    overgrad/
+    pearson/
+    powerschool/
+    renlearn/
+    titan/
 ```
 
 ### Key Architectural Patterns
@@ -110,6 +156,8 @@ src/
 **Code Location Pattern**: Each school network has a `code_locations/<name>/`
 directory with:
 
+- `CLAUDE.md` — module-specific context (active integrations, resources, asset
+  groups); read this before working in a code location
 - `__init__.py` — defines `CODE_LOCATION`, `LOCAL_TIMEZONE`,
   `CURRENT_FISCAL_YEAR`, `DBT_PROJECT`
 - `definitions.py` — the `Definitions` object wiring all assets, schedules,
@@ -157,3 +205,22 @@ Kubernetes with secrets mounted at `/etc/secret-volume`.
   project
 - Fiscal year starts July 1; `current_academic_year` and `current_fiscal_year`
   vars are set in `dbt_project.yml`
+
+**Model quality requirements** (enforced in all dbt projects):
+
+| Layer                     | Contract | Uniqueness test                                                            |
+| ------------------------- | -------- | -------------------------------------------------------------------------- |
+| Staging (`stg_`)          | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
+| Intermediate (`int_`)     | —        | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
+| Extracts / Marts (`rpt_`) | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
+
+Contract enforcement on extracts/marts is critical: these models feed external
+tools via dbt [exposures](https://docs.getdbt.com/reference/exposure-properties)
+(Tableau, PowerSchool, Google Sheets, etc.) and unguarded schema changes will
+break those downstream consumers.
+
+**Exposures**: Every external tool consuming kipptaf data must have a dbt
+exposure in `src/dbt/kipptaf/models/exposures/` listing all `depends_on` models.
+Tableau workbooks with scheduled refreshes additionally require `asset.metadata`
+with the workbook LSID (`id`) and `cron_schedule`. See
+`src/dbt/kipptaf/CLAUDE.md` for the full YAML reference.
