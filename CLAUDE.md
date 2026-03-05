@@ -10,6 +10,23 @@ Camden, and Paterson, NJ & Miami, FL) built on **Dagster** (orchestration),
 **dbt** (transformations), and **Google BigQuery** (warehouse), with Google
 Cloud Storage (GCS) as the intermediate storage layer.
 
+## Skills
+
+This project has specialized skills that provide deep framework knowledge.
+Always use them before doing relevant work:
+
+- **`/dagster-expert`** — Use before any Dagster task: creating assets,
+  schedules, sensors, resources, debugging pipeline issues, or understanding
+  definitions
+- **`/dagster-integrations`** — Use when working with `dagster-dbt`,
+  `dagster-dlt`, `dagster-gcp`, `dagster-k8s`, `dagster-airbyte`, or other
+  `dagster-*` packages
+- **`/dbt:using-dbt-for-analytics-engineering`** — Use when building or
+  modifying dbt models, writing tests, or debugging dbt errors
+- **`/dbt:running-dbt-commands`** — Use when running dbt CLI commands
+- **`/dignified-python`** — Use when writing or reviewing Python code for
+  production quality standards
+
 ## Commands
 
 ### Development
