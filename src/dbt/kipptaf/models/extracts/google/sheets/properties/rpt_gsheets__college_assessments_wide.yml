@@ -1,10 +1,9 @@
 models:
   - name: rpt_gsheets__college_assessments_wide
+    config:
+      contract:
+        enforced: true
     columns:
-      - name: region
-        data_type: string
-      - name: school
-        data_type: string
       - name: student_number
         data_type: int64
       - name: salesforce_id
@@ -15,15 +14,17 @@ models:
         data_type: string
       - name: student_last_name
         data_type: string
-      - name: grade_level
-        data_type: int64
       - name: student_email
         data_type: string
-      - name: enroll_status
+      - name: region
         data_type: string
-      - name: ktc_cohort
+      - name: school
+        data_type: string
+      - name: grade_level
         data_type: int64
       - name: graduation_year
+        data_type: int64
+      - name: ktc_cohort
         data_type: int64
       - name: year_in_network
         data_type: int64
@@ -39,25 +40,101 @@ models:
         data_type: numeric
       - name: college_match_gpa_bands
         data_type: string
-      - name: ccr_course
-        data_type: string
       - name: ccr_teacher_name
         data_type: string
       - name: ccr_section
         data_type: string
+      - name: psat89_count_lifetime
+        data_type: int64
+      - name: psatnmsqt_count_lifetime
+        data_type: int64
+      - name: sat_count_lifetime
+        data_type: int64
+      - name: psat10_count_lifetime
+        data_type: int64
       - name: sat_total_superscore
         data_type: numeric
       - name: sat_ebrw_highest
         data_type: numeric
       - name: sat_math_highest
         data_type: numeric
-      - name: test_type
+      - name: earliest_sat_total
+        data_type: numeric
+      - name: latest_psat_total
+        data_type: numeric
+      - name: latest_psat_score_type
         data_type: string
-      - name: test_date
+      - name: latest_psat_date
         data_type: date
-      - name: ebrw
+      - name: g12_sat_total_fall
         data_type: numeric
-      - name: math
+      - name: g12_sat_total_fall_growth_from_first_sat
         data_type: numeric
-      - name: combined
+      - name: g12_sat_total_fall_growth_from_psat
+        data_type: numeric
+      - name: g12_sat_total_growth_fall
+        data_type: numeric
+      - name: g12_sat_ebrw_fall
+        data_type: numeric
+      - name: g12_sat_math_fall
+        data_type: numeric
+      - name: g12_sat_total_winter
+        data_type: numeric
+      - name: g12_sat_total_winter_growth_from_first_sat
+        data_type: numeric
+      - name: g12_sat_total_winter_growth_from_psat
+        data_type: numeric
+      - name: g12_sat_total_growth_winter
+        data_type: numeric
+      - name: g12_sat_ebrw_winter
+        data_type: numeric
+      - name: g12_sat_math_winter
+        data_type: numeric
+      - name: g11_sat_total_winter
+        data_type: numeric
+      - name: g11_sat_total_winter_growth_from_first_sat
+        data_type: numeric
+      - name: g11_sat_total_winter_growth_from_psat
+        data_type: numeric
+      - name: g11_sat_total_growth_winter
+        data_type: numeric
+      - name: g11_sat_ebrw_winter
+        data_type: numeric
+      - name: g11_sat_math_winter
+        data_type: numeric
+      - name: g11_sat_total_spring
+        data_type: numeric
+      - name: g11_sat_total_spring_growth_from_first_sat
+        data_type: numeric
+      - name: g11_sat_total_spring_growth_from_psat
+        data_type: numeric
+      - name: g11_sat_total_growth_spring
+        data_type: numeric
+      - name: g11_sat_ebrw_spring
+        data_type: numeric
+      - name: g11_sat_math_spring
+        data_type: numeric
+      - name: g10_psatnmsqt_total
+        data_type: numeric
+      - name: g10_psatnmsqt_ebrw
+        data_type: numeric
+      - name: g10_psatnmsqt_math
+        data_type: numeric
+      - name: g10_psat10_total
+        data_type: numeric
+      - name: g10_psat10_ebrw
+        data_type: numeric
+      - name: g10_psat10_math
+        data_type: numeric
+      - name: g9_psat89_total
+        data_type: numeric
+      - name: g9_psat89_ebrw
+        data_type: numeric
+      - name: g9_psat89_math
+        data_type: numeric
+      - name: psat89_to_psat10_total_growth
+        data_type: numeric
+      - name: psat89_to_psat10_ebrw_growth
+        data_type: numeric
+      - name: psat89_to_psat10_math_growth
         data_type: numeric
