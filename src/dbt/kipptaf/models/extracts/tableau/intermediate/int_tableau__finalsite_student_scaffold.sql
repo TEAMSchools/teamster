@@ -1,12 +1,8 @@
 with
     cleaned_data as (
         select
-            aligned_enrollment_academic_year,
-            aligned_enrollment_academic_year_display,
             enrollment_academic_year,
             enrollment_academic_year_display,
-            current_academic_year,
-            next_academic_year,
             org,
             region,
             schoolid,
@@ -16,7 +12,7 @@ with
             last_name,
             grade_level,
             self_contained,
-            enrollment_academic_year_enrollment_type,
+            enrollment_type,
             status_group_value as grouped_status,
             grouped_status_order,
             grouped_status_timeframe,
@@ -30,19 +26,13 @@ with
             is_enrolled_oct15,
             latest_status,
 
-            if(latest_status = detailed_status, true, false) as latest_detailed_match,
-
             'All' as aligned_enrollment_type,
+
+            if(latest_status = detailed_status, true, false) as latest_detailed_match,
 
             if(
                 status_group_value in ('Inquiries', 'Applications'), region, school
             ) as school,
-
-            if(
-                enrollment_academic_year = {{ var("current_academic_year") }},
-                grade_level + 1,
-                grade_level
-            ) as aligned_enrollment_academic_year_grade_level,
 
             max(status_start_date) over (
                 partition by
@@ -64,12 +54,8 @@ with
     )
 
 select
-    aligned_enrollment_academic_year,
-    aligned_enrollment_academic_year_display,
     enrollment_academic_year,
     enrollment_academic_year_display,
-    current_academic_year,
-    next_academic_year,
     org,
     region,
     schoolid,
@@ -79,9 +65,8 @@ select
     first_name,
     last_name,
     grade_level,
-    aligned_enrollment_academic_year_grade_level,
     self_contained,
-    enrollment_academic_year_enrollment_type,
+    enrollment_type,
     grouped_status,
     ps_enroll_status,
     ps_grade_level,
@@ -102,12 +87,8 @@ where grouped_status_timeframe = 'Ever' and not qa_flag
 union all
 
 select
-    aligned_enrollment_academic_year,
-    aligned_enrollment_academic_year_display,
     enrollment_academic_year,
     enrollment_academic_year_display,
-    current_academic_year,
-    next_academic_year,
     org,
     region,
     schoolid,
@@ -117,9 +98,8 @@ select
     first_name,
     last_name,
     grade_level,
-    aligned_enrollment_academic_year_grade_level,
     self_contained,
-    enrollment_academic_year_enrollment_type,
+    enrollment_type,
     grouped_status,
     ps_enroll_status,
     ps_grade_level,
