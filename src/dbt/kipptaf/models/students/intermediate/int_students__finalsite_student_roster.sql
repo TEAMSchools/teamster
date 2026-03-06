@@ -54,6 +54,7 @@ with
 
             2025 as enrollment_academic_year,
             '2025-26' as enrollment_academic_year_display,
+            '2025_26' as _dagster_partition_key,
 
             c.ps_org as org,
             c.ps_region as region,
@@ -91,6 +92,7 @@ with
 
             f.enrollment_academic_year,
             f.enrollment_academic_year_display,
+            f._dagster_partition_key,
 
             f.org,
             f.region,
@@ -133,6 +135,7 @@ with
 
             f.enrollment_academic_year,
             f.enrollment_academic_year_display,
+            f._dagster_partition_key,
 
             f.org,
             f.region,
@@ -158,5 +161,62 @@ with
             and e.rn_year = 1
     )
 
-select *,
-from roster
+select
+    r.enrollment_academic_year,
+    r.enrollment_academic_year_display,
+    r.org,
+    r.region,
+    r.school,
+    r.finalsite_enrollment_id,
+    r.powerschool_student_number,
+    r.first_name,
+    r.last_name,
+    r.grade_level,
+    r.self_contained,
+    r.gender,
+    r.birthdate,
+    r.is_enrolled_fdos,
+    r.is_enrolled_oct01,
+    r.is_enrolled_oct15,
+    r.enrollment_type,
+    r.detailed_status,
+    r.status_start_date,
+    r.status_order,
+    r.reporting_season,
+
+    x.status_group_name,
+    x.status_group_value,
+    x.grouped_status_order,
+    x.grouped_status_timeframe,
+    x.qa_flag,
+
+    t.type as reporting_type,
+    t.code as reporting_code,
+    t.start_date as reporting_start_date,
+    t.end_date as reporting_end_date,
+
+    if(
+        current_date('{{ var("local_timezone") }}') between t.start_date and t.end_date,
+        true,
+        false
+    ) as active_season,
+
+    first_value(r.detailed_status) over (
+        partition by r.enrollment_academic_year, r.finalsite_enrollment_id
+        order by r.status_start_date desc
+    ) as latest_status,
+
+from roster as r
+inner join
+    {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as x
+    on r._dagster_partition_key = x._dagster_partition_key
+    and r.reporting_season = x.reporting_season
+    and r.enrollment_type = x.enrollment_type
+    and r.detailed_status = x.detailed_status
+    and x.valid_detailed_status
+left join
+    {{ ref("stg_google_sheets__reporting__terms") }} as t
+    on r.enrollment_academic_year = t.academic_year
+    and r.region = t.region
+    and r.reporting_season = t.name
+    and t.type = 'SRE'
