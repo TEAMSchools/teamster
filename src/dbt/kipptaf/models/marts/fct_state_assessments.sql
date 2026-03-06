@@ -41,7 +41,9 @@ with
             end as test_code,
 
         from {{ ref("int_pearson__all_assessments") }}
-        where testscalescore is not null
+        where
+            academic_year >= {{ var("current_academic_year") - 7 }}
+            and testscalescore is not null
 
         union all
 
@@ -98,6 +100,9 @@ select
     `subject`,
     test_code,
 
-    {{ dbt_utils.generate_surrogate_key(["state_id", "academic_year", "test_code"]) }}
-    as state_assessments_key,
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["state_id", "academic_year", "admin", "subject"]
+        )
+    }} as state_assessments_key,
 from state_assessment_union
