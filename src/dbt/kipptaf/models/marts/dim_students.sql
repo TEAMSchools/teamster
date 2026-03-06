@@ -8,6 +8,7 @@ with
 
 select
     se.student_number,
+    se.state_studentnumber,
     se.entrydate as enrollment_start_date,
     se.exitdate as enrollment_end_date,
     se.academic_year,
@@ -16,7 +17,6 @@ select
     se.lep_status,
     se.status_504,
     se.gender,
-
     se.gifted_and_talented,
     se.enroll_status,
     se.cohort_primary,
