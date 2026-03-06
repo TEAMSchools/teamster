@@ -6,6 +6,7 @@ with
 
             e.district as ps_org,
             e.region as ps_region,
+            e.schoolid as ps_schoolid,
             e.school as ps_school,
             e.grade_level as ps_grade_level,
 
@@ -15,12 +16,12 @@ with
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
             on f.finalsite_enrollment_id = e.infosnap_id
-            -- must hardcode year to avoid issues when 2026 becomes current year
+            -- TODO: must hardcode year to avoid issues when 2026 becomes current year
             and e.academic_year = 2025
             and e.enroll_status = 0
             and e.rn_year = 1
-        /* have to hardcode year so that it doesnt get dropped when PS gets rolled
-           over and next year becomes current year */
+        /* TODO: have to hardcode year so that it doesnt get dropped when PS gets
+           rolled over and next year becomes current year */
         where f._dagster_partition_key = '2026_27' and f.active_school_year_int = 2026
     ),
 
@@ -34,7 +35,7 @@ with
             on f.finalsite_enrollment_id = c.finalsite_enrollment_id
         where
             f._dagster_partition_key = '2026_27'
-            /* hardcoding year because new student counts are only accurate on the
+            /* TODO: hardcoding year because new student counts are only accurate on the
                2026 years (the 2025 file has 2026 data but it stopped adding students
                when the rollover happened) */
             and f.active_school_year_int = 2026
@@ -61,6 +62,7 @@ with
 
             c.ps_org as org,
             c.ps_region as region,
+            c.ps_schoolid as schoolid,
             c.ps_school as school,
             c.ps_grade_level as grade_level,
 
@@ -76,9 +78,9 @@ with
         inner join
             current_students as c
             on f.finalsite_enrollment_id = c.finalsite_enrollment_id
-        /* the 2026 file shows accurate 2025 student data counts, but wrong grades,
-           and wrong school, the correct grades and schools exist on the 2025 file,but
-           it has become obsolete because it is not updating new students. im
+        /* TODO: the 2026 file shows accurate 2025 student data counts, but wrong
+           grades, and wrong school, the correct grades and schools exist on the 2025
+           file,but it has become obsolete because it is not updating new students. im
            attempting to create fake 2025 finalsite rows for returning students, hence
            why all the hardcoding here */
         where f.file_year = 2026
@@ -104,6 +106,7 @@ with
 
             f.org,
             f.region,
+            f.schoolid,
             f.school,
             f.grade_level,
 
@@ -124,7 +127,7 @@ with
             on f.enrollment_academic_year = e.academic_year
             and f.finalsite_enrollment_id = e.infosnap_id
             and e.rn_year = 1
-        /* only the 2026 file contains the correct data for returning students in
+        /* TODO: only the 2026 file contains the correct data for returning students in
            2026. cant use vars because when PS rollover, 2026 will no longer be next
            year. it will become current */
         where f.file_year = 2026
@@ -150,6 +153,7 @@ with
 
             f.org,
             f.region,
+            f.schoolid,
             f.school,
             f.grade_level,
 
@@ -177,6 +181,7 @@ select
     r.enrollment_academic_year_display,
     r.org,
     r.region,
+    r.schoolid,
     r.school,
     r.finalsite_enrollment_id,
     r.powerschool_student_number,
