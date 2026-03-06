@@ -41,8 +41,8 @@ with
                     waitlisted_date,
                     denied_date,
                     accepted_date,
-                    did_not_enroll_date,
                     assigned_school_date,
+                    did_not_enroll_date,
                     campus_transfer_requested_date,
                     parent_declined_date,
                     enrollment_in_progress_date,
@@ -116,6 +116,7 @@ select
         then 23
         when 'summer_withdraw_date'
         then 24
+        else 0
     end as status_order,
 
 from unpivot_data as u

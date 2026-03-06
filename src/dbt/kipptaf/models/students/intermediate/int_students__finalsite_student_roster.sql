@@ -159,6 +159,19 @@ with
             on f.enrollment_academic_year = e.academic_year
             and f.finalsite_enrollment_id = e.infosnap_id
             and e.rn_year = 1
+        where f.file_year = 2026
+    ),
+
+    roster_with_status as (
+        select
+            *,
+
+            first_value(detailed_status) over (
+                partition by enrollment_academic_year, finalsite_enrollment_id
+                order by status_start_date desc
+            ) as latest_status,
+
+        from roster
     )
 
 select
@@ -201,12 +214,9 @@ select
         false
     ) as active_season,
 
-    first_value(r.detailed_status) over (
-        partition by r.enrollment_academic_year, r.finalsite_enrollment_id
-        order by r.status_start_date desc
-    ) as latest_status,
+    r.latest_status,
 
-from roster as r
+from roster_with_status as r
 inner join
     {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as x
     on r._dagster_partition_key = x._dagster_partition_key
