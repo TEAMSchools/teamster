@@ -18,10 +18,6 @@ with
             status_group_value as grouped_status,
             grouped_status_order,
             grouped_status_timeframe,
-            qa_flag,
-            ps_grade_level,
-            ps_school,
-            ps_region,
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
@@ -43,15 +39,17 @@ with
             ) as grouped_status_start_date,
 
         from {{ ref("int_students__finalsite_student_roster") }}
-        qualify
-            row_number() over (
-                partition by
-                    enrollment_academic_year,
-                    finalsite_enrollment_id,
-                    status_group_value
-                order by grouped_status_order asc
+        where not qa_flag
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="cleaned_data",
+                partition_by="enrollment_academic_year, finalsite_id, grouped_status",
+                order_by="grouped_status_start_date desc",
             )
-            = 1
+        }}
     )
 
 select
@@ -71,9 +69,6 @@ select
     self_contained,
     enrollment_type,
     grouped_status,
-    ps_grade_level,
-    ps_school,
-    ps_region,
     is_enrolled_fdos,
     is_enrolled_oct01,
     is_enrolled_oct15,
@@ -84,7 +79,7 @@ select
     grouped_status_start_date,
 
 from cleaned_data
-where grouped_status_timeframe = 'Ever' and not qa_flag
+where grouped_status_timeframe = 'Ever'
 
 union all
 
@@ -105,9 +100,6 @@ select
     self_contained,
     enrollment_type,
     grouped_status,
-    ps_grade_level,
-    ps_school,
-    ps_region,
     is_enrolled_fdos,
     is_enrolled_oct01,
     is_enrolled_oct15,
@@ -118,4 +110,4 @@ select
     grouped_status_start_date,
 
 from cleaned_data
-where grouped_status_timeframe = 'Current' and latest_detailed_match and not qa_flag
+where grouped_status_timeframe = 'Current' and latest_detailed_match
