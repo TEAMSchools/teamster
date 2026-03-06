@@ -372,6 +372,7 @@ class TestKipptafDbtAssets:
             "No asset should be tagged as both view and table"
         )
 
+        all_keys = {s.key for s in all_dbt_assets.specs}
         tagged_keys = view_keys | table_keys
         untagged = {
             s.key
@@ -383,6 +384,8 @@ class TestKipptafDbtAssets:
             f"Most assets should be tagged view or table: "
             f"{len(tagged_keys)} tagged vs {len(untagged)} other"
         )
+
+        assert tagged_keys | untagged == all_keys
 
     def test_table_view_table_chain_exists_in_kipptaf(
         self, all_dbt_assets, specs_by_key
@@ -459,6 +462,13 @@ class TestKipptafChainTopologies:
     def nodes_by_name(self, manifest):
         return {props["name"]: props for props in manifest["nodes"].values()}
 
+    def _get_node(self, nodes_by_name: dict, name: str) -> dict:
+        if name not in nodes_by_name:
+            pytest.skip(
+                f"Model '{name}' not found in kipptaf manifest (may have been renamed or removed)"
+            )
+        return nodes_by_name[name]
+
     def test_kipptaf_view_not_requested_on_upstream_update(
         self, translator, nodes_by_name
     ):
@@ -467,8 +477,10 @@ class TestKipptafChainTopologies:
 
         View should NOT be requested when the upstream table is updated.
         """
-        upstream_props = nodes_by_name["stg_smartrecruiters__applications"]
-        view_props = nodes_by_name["rpt_tableau__smartrecruiters"]
+        upstream_props = self._get_node(
+            nodes_by_name, "stg_smartrecruiters__applications"
+        )
+        view_props = self._get_node(nodes_by_name, "rpt_tableau__smartrecruiters")
 
         @asset(
             key=["kipptaf", "stg_smartrecruiters__applications"],
@@ -517,8 +529,10 @@ class TestKipptafChainTopologies:
 
         Downstream table should be requested when upstream table is updated.
         """
-        upstream_props = nodes_by_name["stg_renlearn__star"]
-        downstream_props = nodes_by_name["int_topline__star_assessment_weekly"]
+        upstream_props = self._get_node(nodes_by_name, "stg_renlearn__star")
+        downstream_props = self._get_node(
+            nodes_by_name, "int_topline__star_assessment_weekly"
+        )
 
         @asset(
             key=["kipptaf", "stg_renlearn__star"],
@@ -565,9 +579,15 @@ class TestKipptafChainTopologies:
 
         View should NOT be requested; downstream table SHOULD be requested.
         """
-        source_props = nodes_by_name["int_extracts__student_enrollments_subjects"]
-        view_props = nodes_by_name["int_extracts__student_enrollments_subjects_weeks"]
-        target_props = nodes_by_name["int_topline__star_assessment_weekly"]
+        source_props = self._get_node(
+            nodes_by_name, "int_extracts__student_enrollments_subjects"
+        )
+        view_props = self._get_node(
+            nodes_by_name, "int_extracts__student_enrollments_subjects_weeks"
+        )
+        target_props = self._get_node(
+            nodes_by_name, "int_topline__star_assessment_weekly"
+        )
 
         @asset(
             key=["kipptaf", "int_extracts__student_enrollments_subjects"],
@@ -637,10 +657,14 @@ class TestKipptafChainTopologies:
 
         Both views should NOT be requested; target table SHOULD be requested.
         """
-        source_props = nodes_by_name["int_extracts__student_enrollments_subjects"]
-        view_a_props = nodes_by_name["int_students__dibels_participation_roster"]
-        view_b_props = nodes_by_name["int_amplify__pm_met_criteria"]
-        target_props = nodes_by_name["int_topline__dibels_pm_weekly"]
+        source_props = self._get_node(
+            nodes_by_name, "int_extracts__student_enrollments_subjects"
+        )
+        view_a_props = self._get_node(
+            nodes_by_name, "int_students__dibels_participation_roster"
+        )
+        view_b_props = self._get_node(nodes_by_name, "int_amplify__pm_met_criteria")
+        target_props = self._get_node(nodes_by_name, "int_topline__dibels_pm_weekly")
 
         @asset(
             key=["kipptaf", "int_extracts__student_enrollments_subjects"],
@@ -727,10 +751,16 @@ class TestKipptafChainTopologies:
         When source table is updated, middle table and downstream table should
         be requested; view should NOT be requested.
         """
-        source_props = nodes_by_name["stg_powerschool__terms"]
-        middle_props = nodes_by_name["int_extracts__student_enrollments_subjects"]
-        view_props = nodes_by_name["int_extracts__student_enrollments_subjects_weeks"]
-        target_props = nodes_by_name["int_topline__star_assessment_weekly"]
+        source_props = self._get_node(nodes_by_name, "stg_powerschool__terms")
+        middle_props = self._get_node(
+            nodes_by_name, "int_extracts__student_enrollments_subjects"
+        )
+        view_props = self._get_node(
+            nodes_by_name, "int_extracts__student_enrollments_subjects_weeks"
+        )
+        target_props = self._get_node(
+            nodes_by_name, "int_topline__star_assessment_weekly"
+        )
 
         @asset(
             key=["kipptaf", "stg_powerschool__terms"],
@@ -817,8 +847,10 @@ class TestKipptafChainTopologies:
 
         View should be requested when its code version changes.
         """
-        upstream_props = nodes_by_name["stg_smartrecruiters__applications"]
-        view_props = nodes_by_name["rpt_tableau__smartrecruiters"]
+        upstream_props = self._get_node(
+            nodes_by_name, "stg_smartrecruiters__applications"
+        )
+        view_props = self._get_node(nodes_by_name, "rpt_tableau__smartrecruiters")
 
         @asset(
             key=["kipptaf", "stg_smartrecruiters__applications"],
