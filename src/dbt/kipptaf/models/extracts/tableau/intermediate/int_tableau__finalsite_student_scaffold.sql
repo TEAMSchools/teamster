@@ -11,13 +11,14 @@ with
             first_name,
             last_name,
             grade_level,
+            gender,
+            birthdate,
             self_contained,
             enrollment_type,
             status_group_value as grouped_status,
             grouped_status_order,
             grouped_status_timeframe,
             qa_flag,
-            ps_enroll_status,
             ps_grade_level,
             ps_school,
             ps_region,
@@ -48,7 +49,7 @@ with
                     enrollment_academic_year,
                     finalsite_enrollment_id,
                     status_group_value
-                order by grouped_status_order
+                order by grouped_status_order asc
             )
             = 1
     )
@@ -65,10 +66,11 @@ select
     first_name,
     last_name,
     grade_level,
+    gender,
+    birthdate,
     self_contained,
     enrollment_type,
     grouped_status,
-    ps_enroll_status,
     ps_grade_level,
     ps_school,
     ps_region,
@@ -98,10 +100,11 @@ select
     first_name,
     last_name,
     grade_level,
+    gender,
+    birthdate,
     self_contained,
     enrollment_type,
     grouped_status,
-    ps_enroll_status,
     ps_grade_level,
     ps_school,
     ps_region,
