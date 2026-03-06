@@ -744,6 +744,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__fresh_dashboard_aggregated")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
