@@ -36,6 +36,7 @@ def _patched_get_dep_keys(
     return dep_keys
 
 
+# TODO: remove when dagster > 1.9.12 fixes _get_dep_keys
 DepsAutomationCondition._get_dep_keys = _patched_get_dep_keys
 
 
@@ -60,7 +61,7 @@ def _build_any_ancestor_updated(
     """
     condition = AutomationCondition.any_deps_updated()
 
-    for _ in range(max_depth):
+    for _ in range(max_depth - 1):
         recurse = AutomationCondition.any_deps_match(condition)
 
         if view_selection is not None:
