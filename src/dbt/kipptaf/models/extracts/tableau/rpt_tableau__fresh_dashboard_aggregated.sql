@@ -79,8 +79,7 @@ with
         select
             enrollment_academic_year,
             finalsite_id,
-            enrollment_academic_year_enrollment_type,
-            ps_enroll_status,
+            enrollment_type,
             grouped_status,
             grouped_status_order,
             grouped_status_start_date,
@@ -102,8 +101,7 @@ with
         select
             enrollment_academic_year,
             finalsite_id,
-            enrollment_academic_year_enrollment_type,
-            ps_enroll_status,
+            enrollment_type,
             grouped_status,
             grouped_status_order,
             grouped_status_start_date,
@@ -122,18 +120,14 @@ with
         select enrollment_academic_year, finalsite_id,
 
         from days_in_status
-        where
-            grouped_status = 'Enrolled'
-            and enrollment_academic_year_enrollment_type = 'New'
+        where grouped_status = 'Enrolled' and enrollment_type = 'New'
 
         union all
 
         select enrollment_academic_year, finalsite_id,
 
         from days_in_status
-        where
-            ps_enroll_status = 0
-            and enrollment_academic_year_enrollment_type = 'Returning'
+        where enrollment_type = 'Returning'
     ),
 
     currently_enrollment_in_progress as (
@@ -169,8 +163,6 @@ select
     s.goal_name,
     s.goal_value,
 
-    f.aligned_enrollment_academic_year,
-    f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
     f.finalsite_id,
@@ -178,10 +170,11 @@ select
     f.first_name,
     f.last_name,
     f.grade_level as student_grade_level,
-    f.aligned_enrollment_academic_year_grade_level,
+    f.birthdate,
+    f.gender,
     f.grouped_status,
     f.self_contained,
-    f.enrollment_academic_year_enrollment_type,
+    f.enrollment_type,
     f.is_enrolled_fdos,
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
@@ -220,8 +213,6 @@ select
     s.goal_name,
     s.goal_value,
 
-    f.aligned_enrollment_academic_year,
-    f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
     f.finalsite_id,
@@ -229,10 +220,11 @@ select
     f.first_name,
     f.last_name,
     f.grade_level as student_grade_level,
-    f.aligned_enrollment_academic_year_grade_level,
+    f.birthdate,
+    f.gender,
     f.grouped_status,
     f.self_contained,
-    f.enrollment_academic_year_enrollment_type,
+    f.enrollment_type,
     f.is_enrolled_fdos,
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
@@ -270,8 +262,6 @@ select
     s.goal_name,
     s.goal_value,
 
-    f.aligned_enrollment_academic_year,
-    f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
     f.finalsite_id,
@@ -279,10 +269,11 @@ select
     f.first_name,
     f.last_name,
     f.grade_level as student_grade_level,
-    f.aligned_enrollment_academic_year_grade_level,
+    f.birthdate,
+    f.gender,
     f.grouped_status,
     f.self_contained,
-    f.enrollment_academic_year_enrollment_type,
+    f.enrollment_type,
     f.is_enrolled_fdos,
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
@@ -326,8 +317,6 @@ select
     s.goal_name,
     s.goal_value,
 
-    f.aligned_enrollment_academic_year,
-    f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
     f.finalsite_id,
@@ -335,10 +324,11 @@ select
     f.first_name,
     f.last_name,
     f.grade_level as student_grade_level,
-    f.aligned_enrollment_academic_year_grade_level,
+    f.birthdate,
+    f.gender,
     f.grouped_status,
     f.self_contained,
-    f.enrollment_academic_year_enrollment_type,
+    f.enrollment_type,
     f.is_enrolled_fdos,
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
@@ -382,8 +372,6 @@ select
     s.goal_name,
     s.goal_value,
 
-    f.aligned_enrollment_academic_year,
-    f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
     f.finalsite_id,
@@ -391,10 +379,11 @@ select
     f.first_name,
     f.last_name,
     f.grade_level as student_grade_level,
-    f.aligned_enrollment_academic_year_grade_level,
+    f.birthdate,
+    f.gender,
     f.grouped_status,
     f.self_contained,
-    f.enrollment_academic_year_enrollment_type,
+    f.enrollment_type,
     f.is_enrolled_fdos,
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
@@ -441,8 +430,6 @@ select
     s.goal_name,
     s.goal_value,
 
-    f.aligned_enrollment_academic_year,
-    f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
     f.finalsite_id,
@@ -450,10 +437,11 @@ select
     f.first_name,
     f.last_name,
     f.grade_level as student_grade_level,
-    f.aligned_enrollment_academic_year_grade_level,
+    f.birthdate,
+    f.gender,
     f.grouped_status,
     f.self_contained,
-    f.enrollment_academic_year_enrollment_type,
+    f.enrollment_type,
     f.is_enrolled_fdos,
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
@@ -501,8 +489,6 @@ select
     s.goal_name,
     s.goal_value,
 
-    f.aligned_enrollment_academic_year,
-    f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
     f.finalsite_id,
@@ -510,10 +496,11 @@ select
     f.first_name,
     f.last_name,
     f.grade_level as student_grade_level,
-    f.aligned_enrollment_academic_year_grade_level,
+    f.birthdate,
+    f.gender,
     f.grouped_status,
     f.self_contained,
-    f.enrollment_academic_year_enrollment_type,
+    f.enrollment_type,
     f.is_enrolled_fdos,
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
@@ -561,8 +548,6 @@ select
     s.goal_name,
     s.goal_value,
 
-    f.aligned_enrollment_academic_year,
-    f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
     f.finalsite_id,
@@ -570,10 +555,11 @@ select
     f.first_name,
     f.last_name,
     f.grade_level as student_grade_level,
-    f.aligned_enrollment_academic_year_grade_level,
+    f.birthdate,
+    f.gender,
     f.grouped_status,
     f.self_contained,
-    f.enrollment_academic_year_enrollment_type,
+    f.enrollment_type,
     f.is_enrolled_fdos,
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
@@ -622,8 +608,6 @@ select
     s.goal_name,
     s.goal_value,
 
-    f.aligned_enrollment_academic_year,
-    f.aligned_enrollment_academic_year_display,
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
     f.finalsite_id,
@@ -631,10 +615,11 @@ select
     f.first_name,
     f.last_name,
     f.grade_level as student_grade_level,
-    f.aligned_enrollment_academic_year_grade_level,
+    f.birthdate,
+    f.gender,
     f.grouped_status,
     f.self_contained,
-    f.enrollment_academic_year_enrollment_type,
+    f.enrollment_type,
     f.is_enrolled_fdos,
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
