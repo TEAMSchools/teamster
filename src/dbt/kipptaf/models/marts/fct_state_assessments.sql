@@ -10,6 +10,10 @@ select
     is_proficient,
     testperformancelevel_text as performance_band,
     test_grade,
+    lep_status as state_lep_status,
+    is_504 as state_is_504,
+    iep_status as state_iep_status,
+    race_ethnicity as state_race_ethnicity,
 
     'Actual' as results_type,
 
@@ -33,19 +37,14 @@ select
     end as test_code,
 
 from {{ ref("int_pearson__all_assessments") }}
-where
-    {# can i get rid of this? #}
-    academic_year >= {{ var("current_academic_year") - 7 }}
-    and testscalescore is not null
+where and testscalescore is not null
 
 union all
 
 select
     _dbt_source_relation,
     academic_year,
-
     null as localstudentidentifier,
-
     student_id as state_id,
     assessment_name,
     discipline,
@@ -53,14 +52,20 @@ select
     performance_level as performance_band_level,
     is_proficient,
     achievement_level as performance_band,
-
     cast(assessment_grade as int) as test_grade,
+    null as lep_status,
+    null as is_504,
+    null as iep_status,
+    null as race_ethnicity,
 
     'Actual' as results_type,
 
     administration_window as `admin`,
+
     season,
+
     assessment_subject as `subject`,
+
     test_code,
 
 from {{ ref("int_fldoe__all_assessments") }}
