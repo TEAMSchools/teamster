@@ -44,16 +44,16 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             .get("automation_condition", {})
         )
 
-        ignore_selection = AssetSelection.keys(
-            *automation_condition_config.get("ignore", {}).get("keys", [])
-        )
-
         if not automation_condition_config.get("enabled", True):
             return None
 
         materialized = dbt_resource_props.get("config", {}).get("materialized", "view")
 
-        if materialized == "view":
+        ignore_selection = AssetSelection.keys(
+            *automation_condition_config.get("ignore", {}).get("keys", [])
+        )
+
+        if materialized in ["view", "ephemeral"]:
             return dbt_view_automation_condition(ignore_selection=ignore_selection)
         else:
             return dbt_table_automation_condition(ignore_selection=ignore_selection)
