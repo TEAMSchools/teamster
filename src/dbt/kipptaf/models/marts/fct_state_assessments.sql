@@ -102,7 +102,7 @@ select
 
     {{
         dbt_utils.generate_surrogate_key(
-            ["state_id", "academic_year", "admin", "subject"]
+            ["_dbt_source_relation", "state_id", "academic_year", "admin", "subject"]
         )
     }} as state_assessments_key,
 from state_assessment_union
