@@ -746,7 +746,6 @@ exposures:
       - ref("rpt_tableau__fresh_dashboard_progress_to_goals")
       - ref("rpt_tableau__fresh_dashboard_qc")
     config:
-      enabled: true
       meta:
         dagster:
           kinds:
