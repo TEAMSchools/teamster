@@ -3,6 +3,21 @@ models:
     config:
       contract:
         enabled: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - school
+              - grade_level
+              - goal_granularity
+              - goal_type
+              - goal_name
+              - goal_name_value
+              - finalsite_id
+              - enrollment_type
+              - grouped_status_order
     columns:
       - name: academic_year
         data_type: int64
