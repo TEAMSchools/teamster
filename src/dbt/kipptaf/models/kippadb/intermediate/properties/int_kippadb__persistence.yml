@@ -1,5 +1,14 @@
 models:
   - name: int_kippadb__persistence
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - persistence_year
+              - semester
+          config:
+            store_failures: true
     columns:
       - name: student_number
         data_type: int64
@@ -69,5 +78,13 @@ models:
         data_type: float64
       - name: progress_multiplier_6yr
         data_type: float64
+      - name: cumulative_semesters_enrolled
+        data_type: int64
+      - name: is_6yr_graduate_any
+        data_type: boolean
+      - name: is_6yr_graduate_ba
+        data_type: boolean
+      - name: is_6yr_graduate_aa
+        data_type: boolean
       - name: es_graduated
         data_type: string
