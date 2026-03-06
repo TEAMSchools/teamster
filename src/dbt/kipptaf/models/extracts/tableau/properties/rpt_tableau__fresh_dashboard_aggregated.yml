@@ -2,7 +2,7 @@ models:
   - name: rpt_tableau__fresh_dashboard_aggregated
     config:
       contract:
-        enabled: true
+        enforced: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -17,6 +17,7 @@ models:
               - goal_name_value
               - finalsite_id
               - enrollment_type
+              - grouped_status
               - grouped_status_order
     columns:
       - name: academic_year
