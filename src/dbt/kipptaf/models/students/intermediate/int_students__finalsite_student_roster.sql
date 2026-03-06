@@ -34,6 +34,9 @@ with
             on f.finalsite_enrollment_id = c.finalsite_enrollment_id
         where
             f._dagster_partition_key = '2026_27'
+            /* hardcoding year because new student counts are only accurate on the
+               2026 years (the 2025 file has 2026 data but it stopped adding students
+               when the rollover happened) */
             and f.active_school_year_int = 2026
             and c.finalsite_enrollment_id is null
     ),
@@ -73,6 +76,11 @@ with
         inner join
             current_students as c
             on f.finalsite_enrollment_id = c.finalsite_enrollment_id
+        /* the 2026 file shows accurate 2025 student data counts, but wrong grades,
+           and wrong school, the correct grades and schools exist on the 2025 file,but
+           it has become obsolete because it is not updating new students. im
+           attempting to create fake 2025 finalsite rows for returning students, hence
+           why all the hardcoding here */
         where f.file_year = 2026
 
         union all
@@ -116,6 +124,9 @@ with
             on f.enrollment_academic_year = e.academic_year
             and f.finalsite_enrollment_id = e.infosnap_id
             and e.rn_year = 1
+        /* only the 2026 file contains the correct data for returning students in
+           2026. cant use vars because when PS rollover, 2026 will no longer be next
+           year. it will become current */
         where f.file_year = 2026
 
         union all
