@@ -147,6 +147,7 @@ select
     p.prev_pm3_sublevel_name,
     p.prev_pm3_sublevel_number,
     p.fldoe_percentile_rank,
+    p.fldoe_dynamic_percentile_rank,
     p.scale_for_growth as scale_for_growth_prev_pm3,
     p.sublevel_for_growth as sublevel_for_growth_prev_pm3,
     p.sublevel_number_for_growth as sublevel_number_for_growth_prev_pm3,
@@ -163,7 +164,7 @@ select
 
     round(ir.lessons_passed / ir.total_lessons, 2) as pct_passed,
 
-    if(p.fldoe_percentile_rank < .255, true, false) as is_low_25,
+    if(p.fldoe_dynamic_percentile_rank < .255, true, false) as is_low_25,
 
     if(
         not co.is_retained_year
