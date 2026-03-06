@@ -1,5 +1,18 @@
 models:
   - name: int_google_forms__form_responses
+    config:
+      materialized: table
+    # TODO: figure out uniqueness
+    # data_tests:
+    #   - dbt_utils.unique_combination_of_columns:
+    #       arguments:
+    #         combination_of_columns:
+    #           - form_id
+    #           - item_id
+    #           - response_id
+    #           - text_value
+    #       config:
+    #         store_failures: true
     columns:
       - name: form_id
         data_type: string

@@ -1,5 +1,15 @@
 models:
   - name: int_performance_management__observations
+    config:
+      materialized: table
+    # TODO: add unique test
+    # data_tests:
+    #   - dbt_utils.unique_combination_of_columns:
+    #       arguments:
+    #         combination_of_columns:
+    #           - ...
+    #       config:
+    #         store_failures: true
     columns:
       - name: observation_id
         data_type: string

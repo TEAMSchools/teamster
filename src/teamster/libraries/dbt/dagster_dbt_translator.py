@@ -4,10 +4,10 @@ from typing import Any
 from dagster import AssetKey, AssetSelection, AutomationCondition
 from dagster_dbt import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
-# from teamster.core.automation_conditions import (
-#     dbt_table_automation_condition,
-#     dbt_view_automation_condition,
-# )
+from teamster.core.automation_conditions import (
+    dbt_table_automation_condition,
+    dbt_view_automation_condition,
+)
 
 
 class CustomDagsterDbtTranslator(DagsterDbtTranslator):
@@ -17,6 +17,11 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         self.code_location = code_location
 
         super().__init__(settings)
+
+    def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
+        tags = super().get_tags(dbt_resource_props)
+        materialized = dbt_resource_props.get("config", {}).get("materialized", "view")
+        return {**tags, "dagster/materialized": materialized}
 
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         asset_key = super().get_asset_key(dbt_resource_props)
@@ -39,46 +44,19 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             .get("automation_condition", {})
         )
 
+        if not automation_condition_config.get("enabled", True):
+            return None
+
+        materialized = dbt_resource_props.get("config", {}).get("materialized", "view")
+
         ignore_selection = AssetSelection.keys(
             *automation_condition_config.get("ignore", {}).get("keys", [])
         )
 
-        if not automation_condition_config.get("enabled", True):
-            return None
-
-        # materialized = dbt_resource_props.get("config", {}).get("materialized", "view")
-
-        # if materialized == "view":
-        #     return dbt_view_automation_condition(ignore_selection=ignore_selection)
-        # elif materialized == "table":
-        #     return dbt_table_automation_condition(ignore_selection=ignore_selection)
-        # else:
-        """forked from AutomationCondition.eager()
-        - add code_version_changed()
-        - add ignore external assets
-        - replace since_last_handled() to allow initial_evaluation()
-        - add ignore on any_deps_updated()
-        """
-        return (
-            AutomationCondition.in_latest_time_window()
-            & (
-                AutomationCondition.newly_missing()
-                | AutomationCondition.any_deps_updated().ignore(ignore_selection)
-                | AutomationCondition.code_version_changed()
-            ).since(
-                AutomationCondition.newly_requested()
-                | AutomationCondition.newly_updated()
-            )
-            & ~AutomationCondition.any_deps_missing().ignore(
-                ignore_selection
-                | (
-                    AssetSelection.all(include_sources=True)
-                    - AssetSelection.all(include_sources=False)
-                )
-            )
-            & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
-            & ~AutomationCondition.in_progress()
-        )
+        if materialized in ["view", "ephemeral"]:
+            return dbt_view_automation_condition(ignore_selection=ignore_selection)
+        else:
+            return dbt_table_automation_condition(ignore_selection=ignore_selection)
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         group = super().get_group_name(dbt_resource_props)
