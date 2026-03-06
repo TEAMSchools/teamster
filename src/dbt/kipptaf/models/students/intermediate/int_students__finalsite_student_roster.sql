@@ -169,6 +169,9 @@ with
         inner join
             next_year_students_new_only as n
             on f.finalsite_enrollment_id = n.finalsite_enrollment_id
+        /* no filter_year is needed here because it is an inner join, and
+           _dagster_partition_key (the equivalent of filter_year) was already used on
+           the next_year_students_new_only cte */
         left join
             {{ ref("int_extracts__student_enrollments") }} as e
             on f.enrollment_academic_year = e.academic_year
