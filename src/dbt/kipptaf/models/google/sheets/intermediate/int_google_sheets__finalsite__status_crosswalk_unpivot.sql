@@ -1,7 +1,5 @@
 select
-    enrollment_year_extract,
-    enrollment_academic_year,
-    enrollment_academic_year_display,
+    _dagster_partition_key,
     reporting_season,
     enrollment_type,
     detailed_status,
@@ -13,10 +11,6 @@ select
 
     status_group_name,
     status_group_value,
-
-    concat(
-        enrollment_year_extract, ' ', reporting_season, ' ', status_group_value
-    ) as enroll_extract_season_group,
 
     case
         status_group_value
