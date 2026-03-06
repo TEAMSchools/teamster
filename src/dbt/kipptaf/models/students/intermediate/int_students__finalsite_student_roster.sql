@@ -70,6 +70,8 @@ with
             on f.finalsite_enrollment_id = c.finalsite_enrollment_id
         where f.file_year = 2026
 
+        union all
+
         -- returning students 2026
         select
             f.finalsite_enrollment_id,
@@ -91,6 +93,10 @@ with
             f.school,
             f.grade_level,
 
+            e.is_enrolled_fdos,
+            e.is_enrolled_oct01,
+            e.is_enrolled_oct15,
+
             c.enrollment_type,
 
             'Post PS Rollover' as reporting_season,
@@ -99,6 +105,11 @@ with
         inner join
             current_students as c
             on f.finalsite_enrollment_id = c.finalsite_enrollment_id
+        left join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on f.enrollment_academic_year = e.academic_year
+            and f.finalsite_enrollment_id = e.infosnap_id
+            and e.rn_year = 1
         where f.file_year = 2026
 
         union all
@@ -124,6 +135,10 @@ with
             f.school,
             f.grade_level,
 
+            e.is_enrolled_fdos,
+            e.is_enrolled_oct01,
+            e.is_enrolled_oct15,
+
             n.enrollment_type,
 
             'All' as reporting_season,
@@ -132,6 +147,11 @@ with
         inner join
             next_year_students_new_only as n
             on f.finalsite_enrollment_id = n.finalsite_enrollment_id
+        left join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on f.enrollment_academic_year = e.academic_year
+            and f.finalsite_enrollment_id = e.infosnap_id
+            and e.rn_year = 1
     )
 
 select *,
