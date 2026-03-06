@@ -1,0 +1,67 @@
+select
+    _dbt_source_relation,
+    academic_year,
+    localstudentidentifier,
+    statestudentidentifier as state_id,
+    assessment_name,
+    discipline,
+    testscalescore as score,
+    testperformancelevel as performance_band_level,
+    is_proficient,
+    testperformancelevel_text as performance_band,
+    test_grade,
+
+    'Actual' as results_type,
+
+    if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
+
+    if(`period` = 'FallBlock', 'Fall', `period`) as season,
+
+    if(
+        `subject` = 'English Language Arts/Literacy', 'English Language Arts', `subject`
+    ) as `subject`,
+
+    case
+        testcode
+        when 'SC05'
+        then 'SCI05'
+        when 'SC08'
+        then 'SCI08'
+        when 'SC11'
+        then 'SCI11'
+        else testcode
+    end as test_code,
+
+from {{ ref("int_pearson__all_assessments") }}
+where
+    {# can i get rid of this? #}
+    academic_year >= {{ var("current_academic_year") - 7 }}
+    and testscalescore is not null
+
+union all
+
+select
+    _dbt_source_relation,
+    academic_year,
+
+    null as localstudentidentifier,
+
+    student_id as state_id,
+    assessment_name,
+    discipline,
+    scale_score as score,
+    performance_level as performance_band_level,
+    is_proficient,
+    achievement_level as performance_band,
+
+    cast(assessment_grade as int) as test_grade,
+
+    'Actual' as results_type,
+
+    administration_window as `admin`,
+    season,
+    assessment_subject as `subject`,
+    test_code,
+
+from {{ ref("int_fldoe__all_assessments") }}
+where scale_score is not null
