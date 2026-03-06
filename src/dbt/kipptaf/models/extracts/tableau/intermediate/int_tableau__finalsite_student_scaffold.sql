@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
     cleaned_data as (
         select
             enrollment_academic_year,
@@ -78,7 +79,7 @@ select
     grouped_status_timeframe,
     grouped_status_start_date,
 
-from cleaned_data
+from deduplicate
 where grouped_status_timeframe = 'Ever'
 
 union all
@@ -109,5 +110,5 @@ select
     grouped_status_timeframe,
     grouped_status_start_date,
 
-from cleaned_data
+from deduplicate
 where grouped_status_timeframe = 'Current' and latest_detailed_match
