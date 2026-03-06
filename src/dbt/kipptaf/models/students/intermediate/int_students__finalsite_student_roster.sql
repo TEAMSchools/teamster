@@ -4,10 +4,10 @@ with
         select
             f.finalsite_enrollment_id,
 
-            e.district as ps_district,
-            e.ps_region,
-            e.ps_school,
-            e.ps_grade_level,
+            e.district as ps_org,
+            e.region as ps_region,
+            e.school as ps_school,
+            e.grade_level as ps_grade_level,
 
             'Returning' as enrollment_type,
 
@@ -55,10 +55,14 @@ with
             2025 as enrollment_academic_year,
             '2025-26' as enrollment_academic_year_display,
 
+            c.ps_org as org,
             c.ps_region as region,
-            c.ps_district as org,
             c.ps_school as school,
             c.ps_grade_level as grade_level,
+
+            null as is_enrolled_fdos,
+            null as is_enrolled_oct01,
+            null as is_enrolled_oct15,
 
             c.enrollment_type,
 
@@ -88,8 +92,8 @@ with
             f.enrollment_academic_year,
             f.enrollment_academic_year_display,
 
-            f.region,
             f.org,
+            f.region,
             f.school,
             f.grade_level,
 
@@ -130,8 +134,8 @@ with
             f.enrollment_academic_year,
             f.enrollment_academic_year_display,
 
-            f.region,
             f.org,
+            f.region,
             f.school,
             f.grade_level,
 
