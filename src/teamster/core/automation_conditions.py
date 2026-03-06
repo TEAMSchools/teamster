@@ -40,10 +40,9 @@ def _patched_get_dep_keys(
 DepsAutomationCondition._get_dep_keys = _patched_get_dep_keys
 
 
-def _external_source_selection() -> AssetSelection:
-    return AssetSelection.all(include_sources=True) - AssetSelection.all(
-        include_sources=False
-    )
+_EXTERNAL_SOURCE_SELECTION = AssetSelection.all(
+    include_sources=True
+) - AssetSelection.all(include_sources=False)
 
 
 def _build_any_ancestor_updated(
@@ -91,7 +90,7 @@ def dbt_view_automation_condition(
             AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
         )
         & ~AutomationCondition.any_deps_missing().ignore(
-            ignore_selection | _external_source_selection()
+            ignore_selection | _EXTERNAL_SOURCE_SELECTION
         )
         & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
         & ~AutomationCondition.in_progress()
@@ -120,7 +119,7 @@ def dbt_table_automation_condition(
             AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
         )
         & ~AutomationCondition.any_deps_missing().ignore(
-            ignore_selection | _external_source_selection()
+            ignore_selection | _EXTERNAL_SOURCE_SELECTION
         )
         & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
         & ~AutomationCondition.in_progress()
