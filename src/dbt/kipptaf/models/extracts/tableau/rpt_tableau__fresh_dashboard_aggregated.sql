@@ -46,6 +46,7 @@ with
         where grouped_status_order != 0 and enrollment_type = 'New'
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     days_in_status as (
         select
             enrollment_academic_year,
