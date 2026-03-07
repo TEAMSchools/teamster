@@ -1,6 +1,5 @@
 with
     scaffold as (
-        -- join for region/grade level
         select
             b.academic_year,
             b.org,
