@@ -95,7 +95,7 @@ with
             and enrollment_type = 'New'
     )
 
--- currently waitlisted
+-- current statuses
 select
     s.academic_year,
     s.org,
@@ -129,6 +129,7 @@ select
 
     f.grouped_status_order,
     f.grouped_status_start_date,
+    f.grouped_status_timeframe,
     null as grouped_status_end_date,
     null as days_in_grouped_status,
 
@@ -139,7 +140,8 @@ left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
     on s.academic_year = f.enrollment_academic_year
     and s.region = f.region
+    and s.schoolid = f.schoolid
     and s.grade_level = f.grade_level
     and s.goal_type = f.grouped_status
-    and f.latest_status = 'Waitlisted'
-where s.goal_type = 'Waitlisted'
+    and s.goal_name = f.latest_status
+    and f.grouped_status_timeframe = 'Current'

@@ -20,6 +20,8 @@ models:
               - enrollment_type
               - grouped_status
               - grouped_status_order
+              - grouped_status_timeframe
+              - latest_status
     columns:
       - name: academic_year
         data_type: int64
@@ -57,6 +59,8 @@ models:
         data_type: string
       - name: student_grade_level
         data_type: int64
+      - name: enroll_status
+        data_type: int64
       - name: grade_level
         data_type: int64
       - name: gender
@@ -79,6 +83,8 @@ models:
         data_type: string
       - name: grouped_status_order
         data_type: int64
+      - name: grouped_status_timeframe
+        data_type: string
       - name: grouped_status_start_date
         data_type: date
       - name: grouped_status_end_date
