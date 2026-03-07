@@ -1,7 +1,7 @@
 models:
   - name: rpt_tableau__fresh_dashboard_aggregated
     config:
-      enabled: false
+      enabled: true
       contract:
         enforced: true
     data_tests:
