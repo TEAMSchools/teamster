@@ -65,7 +65,7 @@ with
             c.ps_region as region,
             c.ps_schoolid as schoolid,
             c.ps_school as school,
-            c.ps_grade_level as grade_level,            
+            c.ps_grade_level as grade_level,
 
             null as is_enrolled_fdos,
             null as is_enrolled_oct01,
