@@ -66,6 +66,7 @@ with
         from add_group_status_end_date
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     currently_enrolled as (
         select enrollment_academic_year, finalsite_id,
 
@@ -73,6 +74,7 @@ with
         where grouped_status = 'Enrolled' and latest_status = 'Enrolled'
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     currently_enrollment_in_progress as (
         select enrollment_academic_year, finalsite_id,
 
@@ -82,6 +84,7 @@ with
             and latest_status = 'Enrollment In Progress'
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     conversion_grouping_numerator as (
         select enrollment_academic_year, finalsite_id, grouped_status,
 
