@@ -124,6 +124,7 @@ select
     f.birthdate,
     f.gender,
     f.grouped_status,
+    f.latest_status,
     f.self_contained,
     f.enrollment_type,
     f.is_enrolled_fdos,
