@@ -6,18 +6,17 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - enrollment_academic_year
+              - _dagster_partition_key
+              - reporting_season
               - enrollment_type
               - detailed_status
               - status_group_name
           config:
             store_failures: true
     columns:
-      - name: enrollment_year_extract
+      - name: _dagster_partition_key
         data_type: string
-      - name: enrollment_academic_year
-        data_type: int64
-      - name: enrollment_academic_year_display
+      - name: reporting_season
         data_type: string
       - name: enrollment_type
         data_type: string
