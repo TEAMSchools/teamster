@@ -27,6 +27,7 @@ with
         select
             enrollment_academic_year,
             finalsite_id,
+            enroll_status,
             enrollment_type,
             grouped_status,
             grouped_status_order,
@@ -49,6 +50,7 @@ with
         select
             enrollment_academic_year,
             finalsite_id,
+            enroll_status,
             enrollment_type,
             grouped_status,
             grouped_status_order,
