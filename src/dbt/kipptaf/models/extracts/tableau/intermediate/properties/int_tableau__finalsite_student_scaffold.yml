@@ -1,7 +1,7 @@
 models:
   - name: int_tableau__finalsite_student_scaffold
     config:
-      materialized: table 
+      materialized: table
       contract:
         enforced: true
     data_tests:

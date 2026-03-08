@@ -84,7 +84,7 @@ where
 
 union all
 
--- current status: all pending offers
+-- current status: all pending offers, inquiries, apps, offers
 select
     s.academic_year,
     s.org,
@@ -141,7 +141,6 @@ left join
 where s.goal_type in ('Pending Offers', 'Inquiries', 'Applications', 'Offers')
 
 union all
-
 
 -- benchmark conversions
 select
