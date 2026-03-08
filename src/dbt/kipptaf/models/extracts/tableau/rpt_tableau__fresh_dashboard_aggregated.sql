@@ -59,7 +59,6 @@ with
         where grouped_status_order != 0 and enrollment_type = 'New'
     ),
 
-    -- trunk-ignore(sqlfluff/ST03)
     days_in_status as (
         select
             enrollment_academic_year,
@@ -163,7 +162,7 @@ select
 
 from scaffold as s
 left join
-    kipptaf_tableau.int_tableau__finalsite_student_scaffold as f
+    {{ ref("int_tableau__finalsite_student_scaffold") }} as f
     on s.academic_year = f.enrollment_academic_year
     and s.region = f.region
     and s.schoolid = f.schoolid
