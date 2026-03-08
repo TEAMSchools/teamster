@@ -153,49 +153,6 @@ with
 
         from deduplicate
         where grouped_status_timeframe = 'Current'
-
-        union all
-
-        -- regular current
-        select
-            d.enrollment_academic_year,
-            d.enrollment_academic_year_display,
-            d.org,
-            d.region,
-            d.schoolid,
-            d.school,
-            d.finalsite_id,
-            d.powerschool_student_number,
-            d.first_name,
-            d.last_name,
-            d.grade_level,
-            d.enroll_status,
-            d.gender,
-            d.birthdate,
-            d.self_contained,
-            d.enrollment_type,
-            d.grouped_status,
-            d.is_enrolled_fdos,
-            d.is_enrolled_oct01,
-            d.is_enrolled_oct15,
-            d.latest_status,
-            d.aligned_enrollment_type,
-            d.grouped_status_order,
-            d.grouped_status_timeframe,
-            d.grouped_status_start_date,
-
-            grouped_status_expand as goal_name,
-
-            d.grouped_status as goal_type,
-
-        from deduplicate as d
-        cross join
-            unnest(
-                ['<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days']
-            ) as grouped_status_expand
-        where
-            d.grouped_status_timeframe = 'Current'
-            and d.grouped_status = 'Pending Offers'
     ),
 
     add_group_status_end_date as (
@@ -239,6 +196,84 @@ with
             ) as days_in_grouped_status,
 
         from add_group_status_end_date
+    ),
+
+    final_roster as (
+        select
+            enrollment_academic_year,
+            enrollment_academic_year_display,
+            org,
+            region,
+            schoolid,
+            school,
+            finalsite_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
+            grade_level,
+            enroll_status,
+            gender,
+            birthdate,
+            self_contained,
+            enrollment_type,
+            grouped_status,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+            latest_status,
+            aligned_enrollment_type,
+            grouped_status_order,
+            grouped_status_timeframe,
+            grouped_status_start_date,
+
+            goal_type,
+
+            goal_name,
+
+        from roster
+
+        union all
+
+        -- moved here to not include these expanded goal types in days in status calc
+        select
+            d.enrollment_academic_year,
+            d.enrollment_academic_year_display,
+            d.org,
+            d.region,
+            d.schoolid,
+            d.school,
+            d.finalsite_id,
+            d.powerschool_student_number,
+            d.first_name,
+            d.last_name,
+            d.grade_level,
+            d.enroll_status,
+            d.gender,
+            d.birthdate,
+            d.self_contained,
+            d.enrollment_type,
+            d.grouped_status,
+            d.is_enrolled_fdos,
+            d.is_enrolled_oct01,
+            d.is_enrolled_oct15,
+            d.latest_status,
+            d.aligned_enrollment_type,
+            d.grouped_status_order,
+            d.grouped_status_timeframe,
+            d.grouped_status_start_date,
+
+            d.grouped_status as goal_type,
+
+            grouped_status_expand as goal_name,
+
+        from deduplicate as d
+        cross join
+            unnest(
+                ['<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days']
+            ) as grouped_status_expand
+        where
+            d.grouped_status_timeframe = 'Current'
+            and d.grouped_status = 'Pending Offers'
     )
 
 -- mantain pending offers general
@@ -274,7 +309,7 @@ select
     d.grouped_status_end_date,
     d.days_in_grouped_status,
 
-from roster as r
+from final_roster as r
 left join
     days_in_grouped_status_calc as d
     on r.enrollment_academic_year = d.enrollment_academic_year
