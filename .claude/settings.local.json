@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(python -m pytest tests/ -x -q)",
+      "Read(//home/vscode/.claude/plugins/cache/dagster/**)",
+      "WebFetch(domain:github.com)",
+      "Bash(find:*)",
+      "Bash(grep:*)"
+    ]
+  },
+  "enabledPlugins": {
+    "dagster-expert@dagster": true,
+    "dagster-integrations@dagster": true,
+    "dignified-python@dagster": true,
+    "dbt@dbt-agent-marketplace": true
+  }
+}

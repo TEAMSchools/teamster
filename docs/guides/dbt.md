@@ -89,14 +89,19 @@
 3. Update `src/dbt/kipptaf/models/google/sheets/sources-drive.yml`. Update the
    `sheet_range` attribute with the new named range.
 
-4. Make your changes to the sheet.
+4. Make your changes to the END of the sheet. Inserting columns between existing
+   ones will break production. Columns can safely be rearranged after your
+   changes are merged.
 
 5. If necessary, update column definitions on the source YAML.
 
 6. Update the external source definition
 
    ```sh
-   dbt run-operation stage_external_sources --vars "{'ext_full_refresh': 'true'}" --args "select: [model name(s)]"
+   dbt run-operation stage_external_sources \
+      --vars="{'ext_full_refresh': 'true'}" \
+      --args="select: [model name(s)]" \
+      --target=staging
    ```
 
 7. Update the data contract for your staging file

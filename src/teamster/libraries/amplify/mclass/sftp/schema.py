@@ -1,7 +1,11 @@
 from pydantic import BaseModel
 
 
-class PMStudentSummary(BaseModel):
+class SFTPFile(BaseModel):
+    source_file_name: str | None = None
+
+
+class PMStudentSummary(SFTPFile):
     school_year: str | None = None
     state: str | None = None
     multi_district_organization_name: str | None = None
@@ -52,7 +56,7 @@ class PMStudentSummary(BaseModel):
     additional_student_id_sisid: str | None = None
 
 
-class BenchmarkStudentSummary(BaseModel):
+class BenchmarkStudentSummary(SFTPFile):
     school_year: str | None = None
     state: str | None = None
     multi_district_organization_name: str | None = None

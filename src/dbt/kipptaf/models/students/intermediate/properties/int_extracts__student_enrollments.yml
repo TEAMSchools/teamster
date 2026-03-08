@@ -23,6 +23,9 @@ models:
                 values:
                   - No issues
               config:
+                where:
+                  grade_level != 99 and academic_year = {{
+                  var('current_academic_year')}}
                 severity: warn
                 store_failures: true
       - name: _dbt_source_relation
@@ -209,6 +212,8 @@ models:
         data_type: string
       - name: next_year_schoolid
         data_type: int64
+      - name: finalsite_student_id
+        data_type: string
       - name: grad_iep_exempt_status_overall
         data_type: string
         data_tests:
@@ -226,7 +231,11 @@ models:
         data_type: string
       - name: guardian_email
         data_type: string
+      - name: finalsite_enrollment_type
+        data_type: string
       - name: academic_year_display
+        data_type: string
+      - name: next_year_enrollment_history
         data_type: string
       - name: iep_status
         data_type: string

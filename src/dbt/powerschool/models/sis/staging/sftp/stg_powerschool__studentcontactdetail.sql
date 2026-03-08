@@ -15,7 +15,8 @@ select
         studentcontactassocid,
         studentcontactdetailid,
         whencreated,
-        whenmodified
+        whenmodified,
+        source_file_name
     ),
 
     cast(confidentialcommflag as int) as confidentialcommflag,

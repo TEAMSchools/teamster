@@ -9,8 +9,6 @@ with
 
             t.yearid,
             t.academic_year,
-            t.semester,
-            t.abbreviation as `quarter`,
 
             date_add(cd.week_start_date, interval 1 day) as week_start_monday,
             date_add(cd.week_end_date, interval 1 day) as week_end_sunday,
@@ -18,6 +16,9 @@ with
             min(cd.date_value) as school_week_start_date,
             max(cd.date_value) as school_week_end_date,
             count(cd.date_value) as date_count,
+
+            max(t.semester) as semester,
+            max(t.abbreviation) as `quarter`,
         from {{ ref("stg_powerschool__calendar_day") }} as cd
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
@@ -40,9 +41,7 @@ with
             cd.week_end_date,
             sch.school_level,
             t.yearid,
-            t.academic_year,
-            t.semester,
-            t.abbreviation
+            t.academic_year
     ),
 
     window_calcs as (

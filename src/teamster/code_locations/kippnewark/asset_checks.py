@@ -12,7 +12,7 @@ titan_asset_selection = [
 titan_freshness_checks = build_last_update_freshness_checks(
     assets=titan_asset_selection,
     lower_bound_delta=timedelta(minutes=30),
-    deadline_cron="30 11 * * *",
+    deadline_cron="30 23 * * *",
     timezone=str(LOCAL_TIMEZONE),
 )
 

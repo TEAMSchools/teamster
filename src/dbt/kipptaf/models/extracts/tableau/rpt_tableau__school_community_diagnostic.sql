@@ -101,17 +101,18 @@ left join
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber
+    and srh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and sr.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 where
-    sr.survey_title in (
+    sr.question_shortname like '%scd%'
+    and sr.survey_title in (
         'Engagement & Support Surveys',
         'KIPP NJ & KIPP Miami Family Survey',
         'School Community Diagnostic Student Survey',
         'School Community Diagnostic Staff Survey',
         'KIPP Miami Re-Commitment Form & Family School Community Diagnostic'
     )
-    and sr.question_shortname like '%scd%'
 
 union all
 
@@ -119,12 +120,16 @@ union all
 select
     'PowerSchool' as survey_id,
     'PowerSchool Family School Community Diagnostic' as survey_title,
+
     sr.external_student_id as survey_response_id,
     sr.data_item_key as question_shortname,
+
     safe_cast(sr.submitted as timestamp) as date_submitted,
+
     sr.academic_year,
 
     qc.question_text,
+
     ac.response_string as answer_text,
     ac.response_int as answer_value,
 
@@ -143,8 +148,8 @@ select
 from {{ ref("stg_powerschool_enrollment__submission_records") }} as sr
 left join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
-    on rt.name = 'PowerSchool Family School Community Diagnostic'
-    and sr.submitted between rt.start_date and rt.end_date
+    on sr.submitted between rt.start_date and rt.end_date
+    and rt.name = 'PowerSchool Family School Community Diagnostic'
 left join
     {{ ref("int_extracts__student_enrollments") }} as se
     on sr.external_student_id = safe_cast(se.student_number as string)

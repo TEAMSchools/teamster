@@ -138,3 +138,7 @@ sources:
               +enabled: false
             src_powerschool__u_def_ext_students:
               +enabled: false
+  titan:
+    titan:
+      src_titan__income_form_data:
+        +enabled: false
