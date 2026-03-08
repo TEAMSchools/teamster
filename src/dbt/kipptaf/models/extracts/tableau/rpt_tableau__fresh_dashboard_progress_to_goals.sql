@@ -32,7 +32,7 @@ with
 
         -- PART 1A: THE STUDENTS (Actuals) by aligned enroll        type
         select
-            academic_year,
+            enrollment_academic_year,
             region,
             schoolid,
             school,
@@ -116,7 +116,7 @@ with
     )
 
 select
-    s.academic_year as aligned_enrollment_academic_year,
+    s.academic_year,
     s.org,
     s.region,
     'NA' as school_level,
@@ -141,6 +141,6 @@ select
 from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
 left join
     data_stack as d
-    on s.academic_year = d.aligned_enrollment_academic_year
+    on s.academic_year = d.enrollment_academic_year
     and s.region = d.region
     and s.schoolid = d.schoolid

@@ -2,8 +2,20 @@ models:
   - name: rpt_tableau__fresh_dashboard_progress_to_goals
     config:
       enabled: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - aligned_enrollment_academic_year
+              - region
+              - schoolid
+              - finalsite_id
+              - enrollment_type
+              - row_type
+          config:
+            store_failures: true
     columns:
-      - name: aligned_enrollment_academic_year
+      - name: enrollment_academic_year
         data_type: int64
       - name: org
         data_type: string
