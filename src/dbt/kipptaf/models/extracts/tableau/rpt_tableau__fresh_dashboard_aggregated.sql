@@ -38,72 +38,7 @@ with
             and b.schoolid = g.schoolid
             and b.grade_level = g.grade_level
         where g.goal_type != 'Enrollment'
-    ),
-
-    add_group_status_end_date as (
-        select
-            enrollment_academic_year,
-            finalsite_id,
-            enroll_status,
-            enrollment_type,
-            grouped_status,
-            grouped_status_order,
-            grouped_status_start_date,
-
-            lead(grouped_status_start_date, 1, current_date('America/New_York')) over (
-                partition by finalsite_id, enrollment_academic_year
-                order by grouped_status_start_date asc, grouped_status_order asc
-            ) as grouped_status_end_date,
-
-        from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where grouped_status_order != 0 and enrollment_type = 'New'
-    ),
-
-    days_in_status as (
-        select
-            enrollment_academic_year,
-            finalsite_id,
-            enroll_status,
-            enrollment_type,
-            grouped_status,
-            grouped_status_order,
-            grouped_status_start_date,
-            grouped_status_end_date,
-
-            if(
-                grouped_status_end_date = grouped_status_start_date,
-                1,
-                date_diff(grouped_status_end_date, grouped_status_start_date, day)
-            ) as days_in_grouped_status,
-
-        from add_group_status_end_date
-    ),
-
-    pending_offers_categories as (
-        select
-            enrollment_academic_year,
-            finalsite_id,
-            enroll_status,
-            enrollment_type,
-            grouped_status,
-            grouped_status_order,
-            grouped_status_start_date,
-            grouped_status_end_date,
-            days_in_grouped_status,
-
-            case
-                when days_in_grouped_status <= 4
-                then '<= 4 Days'
-                when days_in_grouped_status between 5 and 10
-                then '>= 5 & <= 10 Days'
-                when days_in_grouped_status > 10
-                then '> 10 Days'
-            end as goal_name,
-
-        from days_in_status
-        where grouped_status = 'Pending Offers'
-
-    ),
+    )
 
     currently_enrolled as (
         -- trailing comma is an internally required syntax
@@ -175,10 +110,10 @@ select
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
 
-    d.grouped_status_order,
-    d.grouped_status_start_date,
-    d.grouped_status_end_date,
-    d.days_in_grouped_status,
+    f.grouped_status_order,
+    f.grouped_status_start_date,
+    f.grouped_status_end_date,
+    f.days_in_grouped_status,
 
     null as goal_name_value,
 
@@ -192,11 +127,6 @@ left join
     and s.goal_type = f.latest_status
     and s.goal_name = f.latest_status
     and s.grouped_status_timeframe = f.grouped_status_timeframe
-left join
-    days_in_status as d
-    on f.enrollment_academic_year = d.enrollment_academic_year
-    and f.finalsite_id = d.finalsite_id
-    and f.grouped_status = d.grouped_status
 where
     s.grouped_status_timeframe = 'Current'
     and s.goal_name in ('Waitlisted', 'Deferred', 'Pending Offers')
@@ -237,12 +167,12 @@ select
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
 
-    d.grouped_status_order,
-    d.grouped_status_start_date,
-    d.grouped_status_end_date,
-    d.days_in_grouped_status,
+    f.grouped_status_order,
+    f.grouped_status_start_date,
+    f.grouped_status_end_date,
+    f.days_in_grouped_status,
 
-    d.finalsite_id as goal_name_value,
+    null as goal_name_value,
 
 from scaffold as s
 left join
@@ -254,11 +184,6 @@ left join
     and s.goal_type = f.grouped_status
     and s.goal_name = f.grouped_status
     and s.grouped_status_timeframe = f.grouped_status_timeframe
-left join
-    days_in_status as d
-    on f.enrollment_academic_year = d.enrollment_academic_year
-    and f.finalsite_id = d.finalsite_id
-    and f.grouped_status = d.grouped_status
 where s.grouped_status_timeframe = 'Current' and s.goal_name = 'Pending Offers'
 
 union all
