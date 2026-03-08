@@ -165,4 +165,4 @@ cross join unnest(['>= 4 Days', '>= 5 & <= 10 Days', '> 10 Days']) as pending_of
 where
     d.grouped_status_timeframe = 'Current'
     and d.latest_detailed_match
-    and d.grouped_status = 'Pending Ofers'
+    and d.grouped_status = 'Pending Offers'
