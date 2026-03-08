@@ -237,6 +237,42 @@ with
             and e.grouped_status = e.grouped_status
     )
 
+-- mantain pending offers general
+select
+    enrollment_academic_year,
+    enrollment_academic_year_display,
+    org,
+    region,
+    schoolid,
+    school,
+    finalsite_id,
+    powerschool_student_number,
+    first_name,
+    last_name,
+    grade_level,
+    enroll_status,
+    gender,
+    birthdate,
+    self_contained,
+    enrollment_type,
+    grouped_status,
+    is_enrolled_fdos,
+    is_enrolled_oct01,
+    is_enrolled_oct15,
+    latest_status,
+    aligned_enrollment_type,
+    grouped_status_order,
+    grouped_status_timeframe,
+    grouped_status_start_date,
+    grouped_status_end_date,
+    days_in_grouped_status,
+    goal_name,
+
+from days_in_grouped_status_calc
+
+union all
+
+-- timed pending offers
 select
     enrollment_academic_year,
     enrollment_academic_year_display,
@@ -267,15 +303,13 @@ select
     days_in_grouped_status,
 
     case
-        when grouped_status = 'Pending Offers' and days_in_grouped_status <= 4
+        when days_in_grouped_status <= 4
         then '<= 4 Days'
-        when
-            grouped_status = 'Pending Offers'
-            and days_in_grouped_status between 5 and 10
+        when days_in_grouped_status between 5 and 10
         then '>= 5 & <= 10 Days'
-        when grouped_status = 'Pending Offers' and days_in_grouped_status > 10
+        when days_in_grouped_status > 10
         then '> 10 Days'
-        else goal_name
     end as goal_name,
 
 from days_in_grouped_status_calc
+where grouped_status = 'Pending Offers'
