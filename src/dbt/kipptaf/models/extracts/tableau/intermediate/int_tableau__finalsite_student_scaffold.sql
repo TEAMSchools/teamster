@@ -276,7 +276,7 @@ with
             and d.grouped_status = 'Pending Offers'
     )
 
--- mantain pending offers general
+-- maintain pending offers general
 select
     r.enrollment_academic_year,
     r.enrollment_academic_year_display,

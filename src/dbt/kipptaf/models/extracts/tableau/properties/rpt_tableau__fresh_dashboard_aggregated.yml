@@ -15,7 +15,6 @@ models:
               - goal_granularity
               - goal_type
               - goal_name
-              - goal_name_value
               - finalsite_id
               - enrollment_type
               - grouped_status
@@ -93,5 +92,3 @@ models:
         data_type: date
       - name: days_in_grouped_status
         data_type: int64
-      - name: goal_name_value
-        data_type: string
