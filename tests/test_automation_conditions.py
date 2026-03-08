@@ -238,6 +238,55 @@ def test_update_propagates_through_view_between_tables():
     assert result.get_num_requested(AssetKey("downstream_table")) == 1
 
 
+def test_view_requested_on_execution_failure():
+    """Views SHOULD be requested when their last execution failed."""
+
+    @asset(tags=_TABLE_TAG)
+    def upstream_table():
+        return 1
+
+    @asset(
+        key="my_view",
+        deps=[upstream_table],
+        automation_condition=_get_view_condition(),
+        tags=_VIEW_TAG,
+    )
+    def my_view_ok():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [upstream_table, my_view_ok]
+    defs = Definitions(assets=all_assets)
+
+    # Initial materialization succeeds
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.get_num_requested(AssetKey("my_view")) == 0
+
+    # Redefine the view to raise an error
+    @asset(
+        key="my_view",
+        deps=[upstream_table],
+        automation_condition=_get_view_condition(),
+        tags=_VIEW_TAG,
+    )
+    def my_view_fails():
+        raise Exception("intentional failure")
+
+    defs_fail = Definitions(assets=[upstream_table, my_view_fails])
+    materialize(
+        assets=[my_view_fails],
+        instance=instance,
+        selection=[my_view_fails],
+        raise_on_error=False,
+    )
+
+    result = evaluate_automation_conditions(
+        defs=defs_fail, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_view")) == 1
+
+
 def test_view_requested_on_code_version_change():
     """Views SHOULD be requested when their code version changes."""
 

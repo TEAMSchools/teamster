@@ -71,8 +71,8 @@ All asset factories that yield Avro output call both of these.
 
 Two dbt-specific `AutomationCondition` builders:
 
-- `dbt_view_automation_condition()` — for VIEW models: only re-runs on
-  `newly_missing` or `code_version_changed`
+- `dbt_view_automation_condition()` — for VIEW models: re-runs on
+  `newly_missing`, `code_version_changed`, or `execution_failed`
 - `dbt_table_automation_condition()` — for TABLE models: also triggers on
   upstream data changes, including through intermediate views via
   `_build_any_ancestor_updated()` (recursive `any_deps_match` up to 5 levels)

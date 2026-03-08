@@ -80,14 +80,19 @@ def dbt_view_automation_condition(
     need re-materialization when:
     - Initially missing (newly_missing)
     - SQL code changes (code_version_changed)
+    - Last execution failed (execution_failed)
     """
     return (
         AutomationCondition.in_latest_time_window()
         & (
-            AutomationCondition.newly_missing()
-            | AutomationCondition.code_version_changed()
-        ).since(
-            AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
+            (
+                AutomationCondition.newly_missing()
+                | AutomationCondition.code_version_changed()
+            ).since(
+                AutomationCondition.newly_requested()
+                | AutomationCondition.newly_updated()
+            )
+            | AutomationCondition.execution_failed()
         )
         & ~AutomationCondition.any_deps_missing().ignore(
             ignore_selection | _EXTERNAL_SOURCE_SELECTION
