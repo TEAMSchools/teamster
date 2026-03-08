@@ -121,7 +121,7 @@ with
     )
 
 -- current statuses with latest
-select distinct
+select
     s.academic_year,
     s.org,
     s.region,
