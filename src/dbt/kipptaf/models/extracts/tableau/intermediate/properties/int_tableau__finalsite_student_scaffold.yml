@@ -14,6 +14,7 @@ models:
               - grouped_status_order
               - grouped_status_timeframe
               - goal_name
+          store_failures: true
     columns:
       - name: enrollment_academic_year
         data_type: int64
