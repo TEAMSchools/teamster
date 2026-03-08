@@ -222,12 +222,12 @@ select
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
 
-    c.grouped_status_order,
-    c.grouped_status_start_date,
-    c.grouped_status_end_date,
-    c.days_in_grouped_status,
+    f.grouped_status_order,
+    f.grouped_status_start_date,
+    f.grouped_status_end_date,
+    f.days_in_grouped_status,
 
-    c.finalsite_id as goal_name_value,
+    null as goal_name_value,
 
 from scaffold as s
 left join
@@ -239,12 +239,6 @@ left join
     and s.goal_type = f.grouped_status
     and s.goal_name = f.goal_name
     and s.grouped_status_timeframe = f.grouped_status_timeframe
-left join
-    pending_offers_categories as c
-    on f.enrollment_academic_year = c.enrollment_academic_year
-    and f.finalsite_id = c.finalsite_id
-    and f.grouped_status = c.grouped_status
-    and f.goal_name = c.goal_name
 where
     s.grouped_status_timeframe = 'Current'
     and s.goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
