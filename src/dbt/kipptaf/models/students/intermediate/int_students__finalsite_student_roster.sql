@@ -9,6 +9,7 @@ with
             e.schoolid as ps_schoolid,
             e.school as ps_school,
             e.grade_level as ps_grade_level,
+            e.enroll_status as ps_enroll_status,
 
             'Returning' as enrollment_type,
 
@@ -69,6 +70,7 @@ with
             null as is_enrolled_fdos,
             null as is_enrolled_oct01,
             null as is_enrolled_oct15,
+            c.ps_enroll_status as enroll_status,
 
             c.enrollment_type,
 
@@ -113,6 +115,7 @@ with
             e.is_enrolled_fdos,
             e.is_enrolled_oct01,
             e.is_enrolled_oct15,
+            e.enroll_status,
 
             c.enrollment_type,
 
@@ -160,6 +163,7 @@ with
             e.is_enrolled_fdos,
             e.is_enrolled_oct01,
             e.is_enrolled_oct15,
+            e.enroll_status,
 
             n.enrollment_type,
 
@@ -197,6 +201,7 @@ select
     r.is_enrolled_fdos,
     r.is_enrolled_oct01,
     r.is_enrolled_oct15,
+    r.enroll_status,
     r.enrollment_type,
     r.detailed_status,
     r.status_start_date,
