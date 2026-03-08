@@ -2,6 +2,8 @@ models:
   - name: rpt_tableau__fresh_dashboard_progress_to_goals
     config:
       enabled: true
+      contract:
+        enforced: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
