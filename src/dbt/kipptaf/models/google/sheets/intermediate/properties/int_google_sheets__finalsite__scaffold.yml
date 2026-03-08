@@ -1,0 +1,5 @@
+models:
+  - name: int_google_sheets__finalsite__scaffold
+    config:
+      contract:
+        enforced: false
