@@ -1,5 +1,5 @@
 models:
-  - name: rpt_tableau__fresh_dashboard_aggregated
+  - name: rpt_tableau__fresh_dashboard_conversion
     config:
       contract:
         enforced: false
