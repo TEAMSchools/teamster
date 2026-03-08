@@ -20,8 +20,12 @@ with
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
         where
-            goal_type = 'Conversion'
-            and grouped_status_timeframe = 'Ever'
+            goal_name in (
+                'Accepted to Enrolled Num',
+                'Offers to Accepted Num',
+                'Offers to Enrolled Num'
+            )
+            and grouped_status_timeframe = 'Current'
             and enrollment_type = 'New'
     )
 
