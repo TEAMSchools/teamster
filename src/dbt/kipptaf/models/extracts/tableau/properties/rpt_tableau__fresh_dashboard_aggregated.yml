@@ -21,6 +21,7 @@ models:
               - grouped_status_order
               - grouped_status_timeframe
               - latest_status
+              - goal_name_value
           config:
             store_failures: true
     columns:
