@@ -131,9 +131,13 @@ with
             and latest_status = 'Enrollment In Progress'
     ),
 
-    -- trunk-ignore(sqlfluff/ST03)
     conversion_grouping_numerator as (
-        select enrollment_academic_year, finalsite_id, grouped_status,
+        select
+            enrollment_academic_year,
+            finalsite_id,
+            grouped_status,
+
+            regexp_replace(grouped_status, r' Num$', '') as goal_name,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
         where
@@ -439,4 +443,5 @@ left join
     conversion_grouping_numerator as c
     on f.enrollment_academic_year = c.enrollment_academic_year
     and f.finalsite_id = c.finalsite_id
+    and f.goal_name = c.goal_name
 where s.grouped_status_timeframe = 'Ever' and s.goal_type = 'Conversion'
