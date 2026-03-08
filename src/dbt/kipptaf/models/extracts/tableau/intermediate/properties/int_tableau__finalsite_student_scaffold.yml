@@ -64,3 +64,5 @@ models:
         data_type: string
       - name: grouped_status_start_date
         data_type: date
+      - name: goal_name
+        data_type: string
