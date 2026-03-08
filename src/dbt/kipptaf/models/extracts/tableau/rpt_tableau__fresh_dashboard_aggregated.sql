@@ -38,7 +38,7 @@ with
             and b.schoolid = g.schoolid
             and b.grade_level = g.grade_level
         where g.goal_type != 'Enrollment'
-    )
+    ),
 
     currently_enrolled as (
         -- trailing comma is an internally required syntax
