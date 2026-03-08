@@ -439,6 +439,7 @@ left join
     and s.schoolid = f.schoolid
     and s.grade_level = f.grade_level
     and s.goal_name = f.grouped_status
+    and s.grouped_status_timeframe = f.grouped_status_timeframe
 left join
     conversion_grouping_numerator as c
     on f.enrollment_academic_year = c.enrollment_academic_year
