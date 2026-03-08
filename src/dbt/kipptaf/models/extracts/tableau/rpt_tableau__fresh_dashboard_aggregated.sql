@@ -432,11 +432,11 @@ left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
     on s.academic_year = f.enrollment_academic_year
     and s.region = f.region
-    and s.school = f.school
+    and s.schoolid = f.schoolid
     and s.grade_level = f.grade_level
-    and s.goal_type = f.grouped_status
+    and s.goal_name = f.grouped_status
 left join
     conversion_grouping_numerator as c
     on f.enrollment_academic_year = c.enrollment_academic_year
     and f.finalsite_id = c.finalsite_id
-where s.goal_type = 'Conversion'
+where s.grouped_status_timeframe = 'Ever' and s.goal_type = 'Conversion'
