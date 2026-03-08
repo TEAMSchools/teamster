@@ -41,7 +41,7 @@ with
     ),
 
     currently_enrolled as (
-        -- trailing comma is an internally required syntax
+        -- my data engineer requires trailing commas is an internally required syntax
         select enrollment_academic_year, finalsite_id,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
@@ -49,7 +49,7 @@ with
     ),
 
     currently_enrollment_in_progress as (
-        -- trailing comma is an internally required syntax
+        -- my data engineer requires trailing commas is an internally required syntax
         select enrollment_academic_year, finalsite_id,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
