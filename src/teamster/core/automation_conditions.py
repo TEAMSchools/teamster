@@ -76,18 +76,38 @@ def dbt_view_automation_condition(
 ) -> AutomationCondition:
     """Automation condition for dbt VIEW models.
 
-    Views are computed on read and don't store physical data, so they only
-    need re-materialization when:
-    - Initially missing (newly_missing)
-    - SQL code changes (code_version_changed)
+    Fork of AutomationCondition.eager() adapted for views, which are computed
+    on read and don't store physical data.
+
+    Changes from eager():
+    - Removed any_deps_updated: views don't need re-materialization when
+      upstream data changes, only when their own definition changes.
+    - Added code_version_changed: detects SQL code changes from dbt deploys.
+      Uses its own .since(newly_updated) so it only resets after successful
+      materialization, not on request — the signal isn't lost if the run
+      fails or never executes.
+    - Added execution_failed: retries views whose last execution failed,
+      evaluated outside .since() so it fires every tick until resolved.
+    - Filtered any_deps_missing: ignores external source assets (which have
+      no materialization records) and configured ignore_selection to prevent
+      them from permanently blocking downstream automation.
+    - Filtered any_deps_in_progress: ignores configured ignore_selection.
+    - Omitted initial_evaluation from .since() reset: it fires on the same
+      tick as newly_missing, suppressing it permanently since newly_missing
+      is event-like and never re-fires.
     """
+    _since_last_handled = (
+        AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
+    )
+
     return (
         AutomationCondition.in_latest_time_window()
         & (
-            AutomationCondition.newly_missing()
-            | AutomationCondition.code_version_changed()
-        ).since(
-            AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
+            AutomationCondition.newly_missing().since(_since_last_handled)
+            | AutomationCondition.code_version_changed().since(
+                AutomationCondition.newly_updated()
+            )
+            | AutomationCondition.execution_failed()
         )
         & ~AutomationCondition.any_deps_missing().ignore(
             ignore_selection | _EXTERNAL_SOURCE_SELECTION
@@ -102,21 +122,44 @@ def dbt_table_automation_condition(
 ) -> AutomationCondition:
     """Automation condition for dbt TABLE models.
 
-    Tables store physical data and must be re-materialized when upstream
-    data changes. Uses nested any_deps_match to detect upstream table
-    updates through intermediate views that aren't re-materialized.
+    Fork of AutomationCondition.eager() adapted for tables, which store
+    physical data and must be re-materialized when upstream data changes.
+
+    Changes from eager():
+    - Added ancestor lookthrough: uses recursive any_deps_match (up to
+      _MAX_VIEW_DEPTH levels) to detect upstream table updates through
+      intermediate views that aren't re-materialized.
+    - Added code_version_changed: detects SQL code changes from dbt deploys.
+      Uses its own .since(newly_updated) so it only resets after successful
+      materialization, not on request — the signal isn't lost if the run
+      fails or never executes.
+    - Filtered any_deps_missing: ignores external source assets (which have
+      no materialization records) and configured ignore_selection to prevent
+      them from permanently blocking downstream automation.
+    - Filtered any_deps_updated and ancestor lookthrough: ignores configured
+      ignore_selection.
+    - Filtered any_deps_in_progress: ignores configured ignore_selection.
+    - Omitted initial_evaluation from .since() reset: it fires on the same
+      tick as newly_missing, suppressing it permanently since newly_missing
+      is event-like and never re-fires.
     """
+    _since_last_handled = (
+        AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
+    )
+
     return (
         AutomationCondition.in_latest_time_window()
         & (
-            AutomationCondition.newly_missing()
-            | AutomationCondition.any_deps_updated().ignore(ignore_selection)
-            | _build_any_ancestor_updated(view_selection=_VIEW_SELECTION).ignore(
-                ignore_selection
+            (
+                AutomationCondition.newly_missing()
+                | AutomationCondition.any_deps_updated().ignore(ignore_selection)
+                | _build_any_ancestor_updated(view_selection=_VIEW_SELECTION).ignore(
+                    ignore_selection
+                )
+            ).since(_since_last_handled)
+            | AutomationCondition.code_version_changed().since(
+                AutomationCondition.newly_updated()
             )
-            | AutomationCondition.code_version_changed()
-        ).since(
-            AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
         )
         & ~AutomationCondition.any_deps_missing().ignore(
             ignore_selection | _EXTERNAL_SOURCE_SELECTION

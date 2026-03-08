@@ -5,7 +5,9 @@
       "Bash(ls:*)",
       "Bash(python -m pytest tests/ -x -q)",
       "Read(//home/vscode/.claude/plugins/cache/dagster/**)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(find:*)",
+      "Bash(grep:*)"
     ]
   },
   "enabledPlugins": {
