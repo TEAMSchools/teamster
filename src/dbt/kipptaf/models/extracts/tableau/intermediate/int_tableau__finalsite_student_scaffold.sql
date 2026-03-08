@@ -161,7 +161,7 @@ select
     pending_offers_cat as goal_name,
 
 from deduplicate as d
-cross join unnest(['>= 4 Days', '>= 5 & <= 10 Days', '> 10 Days']) as pending_offers_cat
+cross join unnest(['<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days']) as pending_offers_cat
 where
     d.grouped_status_timeframe = 'Current'
     and d.latest_detailed_match
