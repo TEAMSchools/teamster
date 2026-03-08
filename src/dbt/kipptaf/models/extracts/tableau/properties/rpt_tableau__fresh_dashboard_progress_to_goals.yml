@@ -18,6 +18,7 @@ models:
               - row_type
           config:
             store_failures: true
+            enabled: false
     columns:
       - name: academic_year
         data_type: int64
