@@ -14,6 +14,22 @@ with
             g.goal_name,
             g.goal_value,
 
+            case
+                when
+                    g.goal_name in (
+                        'Inquiries',
+                        'Applications',
+                        'Offers',
+                        'Assigned School',
+                        'Accepted',
+                        'Offers to Accepted',
+                        'Accepted to Enrolled',
+                        'Offers to Enrolled'
+                    )
+                then 'Ever'
+                else 'Current'
+            end as grouped_status_timeframe,
+
         from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as b
         inner join
             {{ ref("stg_google_sheets__finalsite__goals") }} as g
@@ -21,6 +37,7 @@ with
             and b.region = g.region
             and b.schoolid = g.schoolid
             and b.grade_level = g.grade_level
+        where g.goal_type != 'Enrollment'
     ),
 
     add_group_status_end_date as (
@@ -33,11 +50,7 @@ with
             grouped_status_order,
             grouped_status_start_date,
 
-            lead(
-                grouped_status_start_date,
-                1,
-                current_date('{{ var("local_timezone") }}')
-            ) over (
+            lead(grouped_status_start_date, 1, current_date('America/New_York')) over (
                 partition by finalsite_id, enrollment_academic_year
                 order by grouped_status_start_date asc, grouped_status_order asc
             ) as grouped_status_end_date,
@@ -46,7 +59,6 @@ with
         where grouped_status_order != 0 and enrollment_type = 'New'
     ),
 
-    -- trunk-ignore(sqlfluff/ST03)
     days_in_status as (
         select
             enrollment_academic_year,
@@ -65,6 +77,14 @@ with
             ) as days_in_grouped_status,
 
         from add_group_status_end_date
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03)
+    currently_accepted as (
+        -- grouped status is made of multiple detailed status. need 1 row
+        select distinct enrollment_academic_year, finalsite_id,
+        from {{ ref("int_tableau__finalsite_student_scaffold") }}
+        where grouped_status = 'Currently Accepted'
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
@@ -99,7 +119,7 @@ with
             and enrollment_type = 'New'
     )
 
--- current statuses
+-- current statuses with latest
 select
     s.academic_year,
     s.org,
@@ -112,6 +132,7 @@ select
     s.goal_type,
     s.goal_name,
     s.goal_value,
+    s.grouped_status_timeframe,
 
     f.enrollment_academic_year,
     f.enrollment_academic_year_display,
@@ -132,11 +153,10 @@ select
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
 
-    f.grouped_status_order,
-    f.grouped_status_start_date,
-    f.grouped_status_timeframe,
-    null as grouped_status_end_date,
-    null as days_in_grouped_status,
+    d.grouped_status_order,
+    d.grouped_status_start_date,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
 
     null as goal_name_value,
 
@@ -147,6 +167,14 @@ left join
     and s.region = f.region
     and s.schoolid = f.schoolid
     and s.grade_level = f.grade_level
-    and s.goal_type = f.grouped_status
+    and s.goal_type = f.latest_status
     and s.goal_name = f.latest_status
-    and f.grouped_status_timeframe = 'Current'
+    and s.grouped_status_timeframe = f.grouped_status_timeframe
+left join
+    days_in_status as d
+    on f.enrollment_academic_year = d.enrollment_academic_year
+    and f.finalsite_id = d.finalsite_id
+    and f.grouped_status = d.grouped_status
+where
+    s.grouped_status_timeframe = 'Current'
+    and s.goal_name in ('Waitlisted', 'Deferred', 'Pending Offers')
