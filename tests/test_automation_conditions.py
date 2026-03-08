@@ -90,6 +90,97 @@ def test_table_requested_on_upstream_update():
     assert result.get_num_requested(AssetKey("downstream_table")) == 1
 
 
+def test_table_code_version_change_without_intermediate_materialization():
+    """Tables should detect code_version_changed even when the table was
+    requested but never actually materialized between version changes.
+
+    Same bug as the view variant: .since(newly_requested) resets the gate
+    when the table is requested, and if materialization never happens before
+    the next code version change, the event is lost.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def upstream_table():
+        return 1
+
+    @asset(
+        key="my_table",
+        deps=[upstream_table],
+        automation_condition=_get_table_condition(),
+        code_version="1",
+        tags=_TABLE_TAG,
+    )
+    def my_table_v1():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [upstream_table, my_table_v1]
+    defs = Definitions(assets=all_assets)
+
+    # Initial materialization
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.get_num_requested(AssetKey("my_table")) == 0
+
+    # Code version changes to "2", table is requested
+    @asset(
+        key="my_table",
+        deps=[upstream_table],
+        automation_condition=_get_table_condition(),
+        code_version="2",
+        tags=_TABLE_TAG,
+    )
+    def my_table_v2():
+        return 2
+
+    defs_v2 = Definitions(assets=[upstream_table, my_table_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_table")) == 1
+
+    # Table is NOT materialized; code version changes to "3"
+    @asset(
+        key="my_table",
+        deps=[upstream_table],
+        automation_condition=_get_table_condition(),
+        code_version="3",
+        tags=_TABLE_TAG,
+    )
+    def my_table_v3():
+        return 2
+
+    defs_v3 = Definitions(assets=[upstream_table, my_table_v3])
+    result = evaluate_automation_conditions(
+        defs=defs_v3, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_table")) == 1
+
+
+def test_table_not_blocked_by_external_source_asset():
+    """Tables should NOT be blocked by unmaterialized external source assets."""
+    from dagster import AssetSpec, SourceAsset
+
+    external_source = SourceAsset(key="external_feed")
+
+    @asset(
+        deps=[AssetSpec("external_feed")],
+        automation_condition=_get_table_condition(),
+        code_version="1",
+        tags=_TABLE_TAG,
+    )
+    def my_table():
+        return 1
+
+    instance = DagsterInstance.ephemeral()
+    defs = Definitions(assets=[external_source, my_table])
+
+    # Table is newly_missing, should be requested despite external source
+    # never having been materialized or observed
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.get_num_requested(AssetKey("my_table")) == 1
+
+
 def test_table_view_table_chain():
     """Core test: Table -> View -> Table chain.
 
@@ -323,6 +414,382 @@ def test_view_requested_on_code_version_change():
         return 2
 
     defs_v2 = Definitions(assets=[upstream_table, my_view_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_view")) == 1
+
+
+def test_view_not_blocked_by_external_source_asset():
+    """Views should NOT be blocked by unmaterialized external source assets.
+
+    Without .ignore(_EXTERNAL_SOURCE_SELECTION) on the any_deps_missing guard,
+    an external source asset (SourceAsset) that has never been materialized or
+    observed would cause any_deps_missing() to be true, permanently blocking
+    downstream automation.
+
+    This test verifies the ignore is still necessary by testing both:
+    - The current condition (with ignore) works correctly
+    - eager() (without ignore) would block the view
+    """
+    from dagster import AssetSpec, SourceAsset
+
+    external_source = SourceAsset(key="external_feed")
+
+    @asset(
+        deps=[AssetSpec("external_feed")],
+        automation_condition=_get_view_condition(),
+        code_version="1",
+        tags=_VIEW_TAG,
+    )
+    def my_view():
+        return 1
+
+    instance = DagsterInstance.ephemeral()
+    defs = Definitions(assets=[external_source, my_view])
+
+    # Initial: view is newly_missing, should be requested despite
+    # external_feed never having been materialized or observed
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.get_num_requested(AssetKey("my_view")) == 1
+
+
+def test_view_blocked_by_external_source_without_ignore():
+    """Confirms that eager() (no source ignore) WOULD block on external sources.
+
+    This is the counter-test: using AutomationCondition.eager() which has
+    unfiltered any_deps_missing(), the view should be blocked when the
+    external source has no materialization/observation records.
+    """
+    from dagster import AssetSpec, SourceAsset
+
+    external_source = SourceAsset(key="external_feed")
+
+    @asset(
+        deps=[AssetSpec("external_feed")],
+        automation_condition=AutomationCondition.eager(),
+        tags=_VIEW_TAG,
+    )
+    def my_view():
+        return 1
+
+    instance = DagsterInstance.ephemeral()
+    defs = Definitions(assets=[external_source, my_view])
+
+    # eager() has unfiltered any_deps_missing — external source blocks the view
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.get_num_requested(AssetKey("my_view")) == 0
+
+
+def test_view_code_version_change_after_failed_materialization():
+    """Views should still detect code_version_changed after a failed materialization.
+
+    Scenario:
+    1. View materialized with code_version="1" — success
+    2. View is re-run and FAILS
+    3. execution_failed triggers re-request, succeeds
+    4. Code version changes to "2"
+    5. code_version_changed should detect this and request the view
+
+    This tests whether the .since() reset from the recovery materialization
+    (newly_updated) properly allows code_version_changed to fire on the
+    next evaluation.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def upstream_table():
+        return 1
+
+    @asset(
+        key="my_view",
+        deps=[upstream_table],
+        automation_condition=_get_view_condition(),
+        code_version="1",
+        tags=_VIEW_TAG,
+    )
+    def my_view_v1():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [upstream_table, my_view_v1]
+    defs = Definitions(assets=all_assets)
+
+    # Step 1: Initial materialization succeeds
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.get_num_requested(AssetKey("my_view")) == 0
+
+    # Step 2: View execution fails
+    @asset(
+        key="my_view",
+        deps=[upstream_table],
+        automation_condition=_get_view_condition(),
+        code_version="1",
+        tags=_VIEW_TAG,
+    )
+    def my_view_fails():
+        raise Exception("intentional failure")
+
+    defs_fail = Definitions(assets=[upstream_table, my_view_fails])
+    materialize(
+        assets=[my_view_fails],
+        instance=instance,
+        selection=[my_view_fails],
+        raise_on_error=False,
+    )
+
+    # Step 3: execution_failed should trigger re-request
+    result = evaluate_automation_conditions(
+        defs=defs_fail, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_view")) == 1
+
+    # Simulate recovery: re-materialize successfully with code_version="1"
+    materialize(assets=[my_view_v1], instance=instance, selection=[my_view_v1])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_view")) == 0
+
+    # Step 4-5: Code version changes to "2" — should be requested
+    @asset(
+        key="my_view",
+        deps=[upstream_table],
+        automation_condition=_get_view_condition(),
+        code_version="2",
+        tags=_VIEW_TAG,
+    )
+    def my_view_v2():
+        return 2
+
+    defs_v2 = Definitions(assets=[upstream_table, my_view_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_view")) == 1
+
+
+def test_view_code_version_change_without_intermediate_materialization():
+    """Views should detect code_version_changed even when the view was
+    requested but never actually materialized between version changes.
+
+    Scenario:
+    1. View materialized with code_version="1" — success
+    2. Code version changes to "2"
+    3. Evaluation: view is requested (code_version_changed fires)
+    4. View is NOT materialized (request was made but mat didn't happen)
+    5. Code version changes to "3"
+    6. Evaluation: view should still be requested
+
+    This tests whether newly_requested resetting .since() prevents
+    code_version_changed from firing on subsequent evaluations when the
+    view was never actually materialized with the new code.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def upstream_table():
+        return 1
+
+    @asset(
+        key="my_view",
+        deps=[upstream_table],
+        automation_condition=_get_view_condition(),
+        code_version="1",
+        tags=_VIEW_TAG,
+    )
+    def my_view_v1():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [upstream_table, my_view_v1]
+    defs = Definitions(assets=all_assets)
+
+    # Step 1: Initial materialization
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.get_num_requested(AssetKey("my_view")) == 0
+
+    # Step 2-3: Code version changes to "2", view is requested
+    @asset(
+        key="my_view",
+        deps=[upstream_table],
+        automation_condition=_get_view_condition(),
+        code_version="2",
+        tags=_VIEW_TAG,
+    )
+    def my_view_v2():
+        return 2
+
+    defs_v2 = Definitions(assets=[upstream_table, my_view_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_view")) == 1
+
+    # Step 4: View is NOT materialized (simulating request without execution)
+    # Step 5-6: Code version changes to "3", should still be requested
+    @asset(
+        key="my_view",
+        deps=[upstream_table],
+        automation_condition=_get_view_condition(),
+        code_version="3",
+        tags=_VIEW_TAG,
+    )
+    def my_view_v3():
+        return 2
+
+    defs_v3 = Definitions(assets=[upstream_table, my_view_v3])
+    result = evaluate_automation_conditions(
+        defs=defs_v3, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_view")) == 1
+
+
+def test_view_code_version_change_detected_after_second_materialization():
+    """Views should detect code_version_changed across multiple
+    materialize-then-change cycles.
+
+    Scenario:
+    1. View materialized with code_version="1"
+    2. Code changes to "2" → requested and materialized
+    3. Code changes to "3" → should be requested again
+
+    This ensures the .since() properly resets and re-fires across
+    consecutive code version changes that are each followed by
+    successful materializations.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def upstream_table():
+        return 1
+
+    @asset(
+        key="my_view",
+        deps=[upstream_table],
+        automation_condition=_get_view_condition(),
+        code_version="1",
+        tags=_VIEW_TAG,
+    )
+    def my_view_v1():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [upstream_table, my_view_v1]
+    defs_v1 = Definitions(assets=all_assets)
+
+    # Cycle 1: materialize v1
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs_v1, instance=instance)
+    assert result.get_num_requested(AssetKey("my_view")) == 0
+
+    # Cycle 2: change to v2, request and materialize
+    @asset(
+        key="my_view",
+        deps=[upstream_table],
+        automation_condition=_get_view_condition(),
+        code_version="2",
+        tags=_VIEW_TAG,
+    )
+    def my_view_v2():
+        return 2
+
+    defs_v2 = Definitions(assets=[upstream_table, my_view_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_view")) == 1
+
+    # Materialize with v2
+    materialize(assets=[my_view_v2], instance=instance, selection=[my_view_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_view")) == 0
+
+    # Cycle 3: change to v3 — should be requested
+    @asset(
+        key="my_view",
+        deps=[upstream_table],
+        automation_condition=_get_view_condition(),
+        code_version="3",
+        tags=_VIEW_TAG,
+    )
+    def my_view_v3():
+        return 2
+
+    defs_v3 = Definitions(assets=[upstream_table, my_view_v3])
+    result = evaluate_automation_conditions(
+        defs=defs_v3, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_view")) == 1
+
+
+def test_view_code_version_change_blocked_by_missing_deps_then_unblocked():
+    """code_version_changed should fire once deps become available, even if
+    the code version changed while deps were missing.
+
+    Scenario:
+    1. View materialized with code_version="1" (upstream present)
+    2. New upstream dep is added (missing — never materialized)
+    3. Code version changes to "2"
+    4. Evaluation: code_version_changed is true BUT any_deps_missing blocks
+    5. Missing dep is materialized
+    6. Evaluation: code_version_changed should still be detected
+
+    This tests whether the .since() mechanism preserves the
+    code_version_changed state across ticks where the request was blocked
+    by an external guard (any_deps_missing).
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def upstream_a():
+        return 1
+
+    @asset(
+        key="my_view",
+        deps=[upstream_a],
+        automation_condition=_get_view_condition(),
+        code_version="1",
+        tags=_VIEW_TAG,
+    )
+    def my_view_v1():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    defs = Definitions(assets=[upstream_a, my_view_v1])
+
+    # Step 1: Materialize everything
+    materialize(assets=[upstream_a, my_view_v1], instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.get_num_requested(AssetKey("my_view")) == 0
+
+    # Step 2-3: Add a new upstream dep and change code version
+    @asset(tags=_TABLE_TAG)
+    def upstream_b():
+        return 10
+
+    @asset(
+        key="my_view",
+        deps=[upstream_a, upstream_b],
+        automation_condition=_get_view_condition(),
+        code_version="2",
+        tags=_VIEW_TAG,
+    )
+    def my_view_v2():
+        return 2
+
+    defs_v2 = Definitions(assets=[upstream_a, upstream_b, my_view_v2])
+
+    # Step 4: upstream_b is missing → should block the request
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_view")) == 0
+
+    # Step 5: Materialize the missing dep
+    materialize(assets=[upstream_b], instance=instance, selection=[upstream_b])
+
+    # Step 6: Now code_version_changed should fire
     result = evaluate_automation_conditions(
         defs=defs_v2, instance=instance, cursor=result.cursor
     )
