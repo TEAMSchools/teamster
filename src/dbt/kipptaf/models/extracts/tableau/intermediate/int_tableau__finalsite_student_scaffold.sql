@@ -318,3 +318,48 @@ left join
     and r.grouped_status = d.grouped_status
     and r.goal_type = d.goal_type
     and r.goal_name = d.goal_name
+where r.goal_name not in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
+
+union all
+-- ensure pending offers timeframes have day in status
+select
+    r.enrollment_academic_year,
+    r.enrollment_academic_year_display,
+    r.org,
+    r.region,
+    r.schoolid,
+    r.school,
+    r.finalsite_id,
+    r.powerschool_student_number,
+    r.first_name,
+    r.last_name,
+    r.grade_level,
+    r.enroll_status,
+    r.gender,
+    r.birthdate,
+    r.self_contained,
+    r.enrollment_type,
+    r.grouped_status,
+    r.is_enrolled_fdos,
+    r.is_enrolled_oct01,
+    r.is_enrolled_oct15,
+    r.latest_status,
+    r.aligned_enrollment_type,
+    r.grouped_status_order,
+    r.grouped_status_timeframe,
+    r.grouped_status_start_date,
+    r.goal_name,
+    r.goal_type,
+
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
+from final_roster as r
+left join
+    days_in_grouped_status_calc as d
+    on r.enrollment_academic_year = d.enrollment_academic_year
+    and r.finalsite_id = d.finalsite_id
+    and r.enrollment_type = d.enrollment_type
+    and r.grouped_status = d.grouped_status
+    and r.goal_type = d.goal_type
+where r.goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
