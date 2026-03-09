@@ -1,12 +1,16 @@
 models:
   - name: stg_finalsite__status_report
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - finalsite_enrollment_id
+              - _dagster_partition_key
+          config:
+            store_failures: true
     columns:
       - name: finalsite_enrollment_id
         data_type: string
-        data_tests:
-          - unique:
-              config:
-                store_failures: true
       - name: _dagster_partition_key
         data_type: string
       - name: academic_hold_date

@@ -1,9 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -c \":*)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
       "Bash(python -m pytest tests/ -x -q)",
-      "Read(//home/vscode/.claude/plugins/cache/dagster/dignified-python/0.0.8/**)",
+      "Read(/workspaces/teamster/src/**)",
+      "Read(~/.claude/plugins/cache/dagster/**)",
+      "WebFetch(domain:docs.dagster.io)",
       "WebFetch(domain:github.com)"
     ]
   },
@@ -12,5 +18,19 @@
     "dagster-integrations@dagster": true,
     "dignified-python@dagster": true,
     "dbt@dbt-agent-marketplace": true
+  },
+  "extraKnownMarketplaces": {
+    "dagster-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dagster-io/skills"
+      }
+    },
+    "dbt-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dbt-labs/dbt-agent-skills"
+      }
+    }
   }
 }

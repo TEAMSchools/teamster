@@ -1,0 +1,44 @@
+models:
+  - name: int_tableau__finalsite_ptg_goals_scaffold
+    config:
+      contract:
+        enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - enrollment_academic_year
+              - region
+              - schoolid
+              - grade_level
+              - goal_granularity
+              - enrollment_type
+          config:
+            store_failures: true
+    columns:
+      - name: enrollment_academic_year
+        data_type: int64
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: goal_granularity
+        data_type: string
+      - name: goal_type
+        data_type: string
+      - name: enrollment_type
+        data_type: string
+      - name: seat_target
+        data_type: numeric
+      - name: fdos_target
+        data_type: numeric
+      - name: budget_target
+        data_type: numeric
+      - name: new_student_target
+        data_type: numeric
+      - name: re_enroll_projection
+        data_type: numeric

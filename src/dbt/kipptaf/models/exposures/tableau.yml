@@ -643,7 +643,7 @@ exposures:
             - tableau
           asset:
             metadata:
-              id: fe22c405-9f4e-4930-a3cd-8bc3679c5614
+              id: 0982565d-e986-4d75-a826-63f181560fab
   - name: state_testing_analysis_tool
     label: State Testing Analysis Tool
     type: dashboard
@@ -744,9 +744,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__fresh_dashboard_aggregated")
       - ref("rpt_tableau__fresh_dashboard_progress_to_goals")
-      - ref("rpt_tableau__fresh_dashboard_qc")
     config:
-      enabled: false
       meta:
         dagster:
           kinds:
@@ -754,3 +752,4 @@ exposures:
           asset:
             metadata:
               id: 0decd81d-f1c0-464a-bf2f-3546af11d47c
+              cron_schedule: 0 5 * * *

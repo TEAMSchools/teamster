@@ -44,6 +44,7 @@ on:
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
+      - "!**/*.md"
   pull_request:
     paths:
       - .github/workflows/dagster-cloud-deploy.yaml
@@ -59,6 +60,7 @@ on:
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
       - src/teamster/libraries/edplan/**
+      - src/teamster/libraries/google/drive/resources.py
       - src/teamster/libraries/iready/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
@@ -67,6 +69,7 @@ on:
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
+      - "!**/*.md"
     types:
       - opened
       - synchronize
@@ -75,6 +78,7 @@ on:
 
 jobs:
   dagster-cloud-deploy:
+    if: ${{ !github.event.pull_request.draft }}
     uses: ./.github/workflows/dagster-cloud-deploy.yaml
     with:
       code-location: kippnewark

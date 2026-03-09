@@ -1,7 +1,6 @@
 select
-    enrollment_year_extract,
-    enrollment_academic_year,
-    enrollment_academic_year_display,
+    _dagster_partition_key,
+    reporting_season,
     enrollment_type,
     detailed_status,
     detailed_status_ranking,

@@ -1,16 +1,23 @@
 models:
   - name: int_students__finalsite_student_roster
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - enrollment_academic_year
+              - finalsite_enrollment_id
+              - enrollment_type
+              - detailed_status
+              - status_start_date
+              - reporting_season
+              - status_group_value
+              - grouped_status_timeframe
+              - active_season
     columns:
-      - name: aligned_enrollment_academic_year
-        data_type: int64
       - name: enrollment_academic_year
         data_type: int64
       - name: enrollment_academic_year_display
         data_type: string
-      - name: current_academic_year
-        data_type: int64
-      - name: next_academic_year
-        data_type: int64
       - name: org
         data_type: string
       - name: region
@@ -31,49 +38,47 @@ models:
         data_type: int64
       - name: self_contained
         data_type: string
-      - name: detailed_status
+      - name: gender
         data_type: string
-      - name: status_order
-        data_type: int64
-      - name: status_start_date
+      - name: birthdate
         data_type: date
-      - name: enrollment_academic_year_enrollment_type
-        data_type: string
-      - name: ps_enroll_status
-        data_type: int64
-      - name: ps_region
-        data_type: string
-      - name: ps_school
-        data_type: string
-      - name: ps_grade_level
-        data_type: int64
       - name: is_enrolled_fdos
         data_type: boolean
       - name: is_enrolled_oct01
         data_type: boolean
       - name: is_enrolled_oct15
         data_type: boolean
-      - name: detailed_status_branched_ranking
+      - name: enroll_status
         data_type: int64
-      - name: valid_detailed_status
-        data_type: boolean
+      - name: enrollment_type
+        data_type: string
+      - name: detailed_status
+        data_type: string
+      - name: status_start_date
+        data_type: date
+      - name: status_order
+        data_type: int64
+      - name: reporting_season
+        data_type: string
+      - name: status_group_name
+        data_type: string
+      - name: status_group_value
+        data_type: string
+      - name: grouped_status_order
+        data_type: int64
+      - name: grouped_status_timeframe
+        data_type: string
       - name: qa_flag
         data_type: boolean
-      - name: status_group_numerator
+      - name: reporting_type
         data_type: string
-      - name: status_group_denominator
+      - name: reporting_code
         data_type: string
-      - name: conversion_metric_numerator
-        data_type: string
-      - name: conversion_metric_denominator
-        data_type: string
-      - name: sre_academic_year_start
+      - name: reporting_start_date
         data_type: date
-      - name: sre_academic_year_end
+      - name: reporting_end_date
         data_type: date
-      - name: aligned_enrollment_academic_year_display
-        data_type: string
+      - name: active_season
+        data_type: boolean
       - name: latest_status
         data_type: string
-      - name: aligned_enrollment_academic_year_grade_level
-        data_type: int64

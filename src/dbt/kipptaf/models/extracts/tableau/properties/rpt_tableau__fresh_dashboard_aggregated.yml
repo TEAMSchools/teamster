@@ -1,7 +1,28 @@
 models:
   - name: rpt_tableau__fresh_dashboard_aggregated
     config:
-      enabled: false
+      contract:
+        enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - school
+              - grade_level
+              - goal_granularity
+              - goal_type
+              - goal_name
+              - finalsite_id
+              - enrollment_type
+              - grouped_status
+              - grouped_status_order
+              - grouped_status_timeframe
+              - latest_status
+              - goal_name_value
+          config:
+            store_failures: true
     columns:
       - name: academic_year
         data_type: int64
@@ -25,9 +46,7 @@ models:
         data_type: string
       - name: goal_value
         data_type: numeric
-      - name: aligned_enrollment_academic_year
-        data_type: int64
-      - name: aligned_enrollment_academic_year_display
+      - name: grouped_status_timeframe
         data_type: string
       - name: enrollment_academic_year
         data_type: int64
@@ -43,13 +62,19 @@ models:
         data_type: string
       - name: student_grade_level
         data_type: int64
-      - name: aligned_enrollment_academic_year_grade_level
+      - name: enroll_status
         data_type: int64
+      - name: birthdate
+        data_type: date
+      - name: gender
+        data_type: string
       - name: grouped_status
+        data_type: string
+      - name: latest_status
         data_type: string
       - name: self_contained
         data_type: string
-      - name: enrollment_academic_year_enrollment_type
+      - name: enrollment_type
         data_type: string
       - name: is_enrolled_fdos
         data_type: boolean

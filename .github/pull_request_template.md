@@ -11,7 +11,15 @@
 - [ ] If this is a same-day request, please flag that in the #data-team Slack
 - [ ] Update **due date** and **assignee** on the
       [TEAMster Asana Project](https://app.asana.com/0/1205971774138578/1205971926225838)
-- [ ] Run <kbd>Format</kbd> on all modified files
+- [ ] Run <kbd>trunk fmt</kbd> on all modified files
+
+### Dagster
+
+- [ ] Run `uv run dagster definitions validate` for any modified code location
+- [ ] New assets follow the `[code_location, integration, table_name]` key
+      pattern and use the appropriate IO manager (`pickle`, `avro`, or `file`)
+- [ ] New integrations include both a `libraries/<integration>/assets.py`
+      factory function and a `config/assets-*.yaml` in the code location
 
 ### dbt
 
@@ -74,7 +82,7 @@
       that use regional datasets
 - [ ] Do not use `group by` without any aggregations when you mean to use
       `distinct`
-- [ ] All `distinct` usage must be accompanied by an comment explaining it's
+- [ ] All `distinct` usage must be accompanied by a comment explaining its
       necessity
 - [ ] Do not use `order by` for `select` statements. That should be done in the
       reporting layer.

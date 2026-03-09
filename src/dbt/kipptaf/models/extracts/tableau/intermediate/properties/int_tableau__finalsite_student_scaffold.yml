@@ -1,20 +1,30 @@
 models:
   - name: int_tableau__finalsite_student_scaffold
     config:
-      enabled: false
+      materialized: table
+      contract:
+        enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - enrollment_academic_year
+              - finalsite_id
+              - enrollment_type
+              - grouped_status
+              - grouped_status_order
+              - grouped_status_timeframe
+              - goal_name
+              - goal_type
+              - grouped_status_start_date
+              - grouped_status_end_date
+          config:
+            store_failures: true
     columns:
-      - name: aligned_enrollment_academic_year
-        data_type: int64
-      - name: aligned_enrollment_academic_year_display
-        data_type: string
       - name: enrollment_academic_year
         data_type: int64
       - name: enrollment_academic_year_display
         data_type: string
-      - name: current_academic_year
-        data_type: int64
-      - name: next_academic_year
-        data_type: int64
       - name: org
         data_type: string
       - name: region
@@ -33,11 +43,15 @@ models:
         data_type: string
       - name: grade_level
         data_type: int64
-      - name: aligned_enrollment_academic_year_grade_level
+      - name: enroll_status
         data_type: int64
+      - name: gender
+        data_type: string
+      - name: birthdate
+        data_type: date
       - name: self_contained
         data_type: string
-      - name: enrollment_academic_year_enrollment_type
+      - name: enrollment_type
         data_type: string
       - name: grouped_status
         data_type: string
@@ -53,5 +67,15 @@ models:
         data_type: string
       - name: grouped_status_order
         data_type: int64
+      - name: grouped_status_timeframe
+        data_type: string
       - name: grouped_status_start_date
         data_type: date
+      - name: goal_name
+        data_type: string
+      - name: goal_type
+        data_type: string
+      - name: grouped_status_end_date
+        data_type: date
+      - name: days_in_grouped_status
+        data_type: int64

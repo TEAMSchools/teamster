@@ -1,7 +1,9 @@
 models:
   - name: stg_google_sheets__finalsite__status_crosswalk
     columns:
-      - name: enrollment_year_extract
+      - name: _dagster_partition_key
+        data_type: string
+      - name: reporting_season
         data_type: string
       - name: enrollment_type
         data_type: string
@@ -11,8 +13,6 @@ models:
         data_type: int64
       - name: detailed_status_branched_ranking
         data_type: int64
-      - name: detailed_status
-        data_type: string
       - name: valid_detailed_status
         data_type: boolean
       - name: fs_status_field
@@ -32,8 +32,4 @@ models:
       - name: conversion_metric_numerator_3
         data_type: string
       - name: conversion_metric_denominator
-        data_type: string
-      - name: enrollment_academic_year
-        data_type: int64
-      - name: enrollment_academic_year_display
         data_type: string
