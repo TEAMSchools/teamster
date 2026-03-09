@@ -55,6 +55,13 @@ PowerSchool, and performance management data. Includes snapshots
 **Extracts layer** (`models/extracts/`): Outbound data feeds. Subdirectories map
 to destination systems. All models have `contract: enforced: true`.
 
+**`extracts/powerschool/`** is a special case: `rpt_powerschool__autocomm_*`
+models define a consistent export file format shared across all regions. They
+are **not** extracted here — regional dbt projects (`kippnewark`, `kippcamden`,
+`kippmiami`) each source from these models and filter to their own data, then
+push to their respective PowerSchool instance. Therefore `extracts/powerschool/`
+has no dbt exposure in kipptaf; exposures live in the regional projects.
+
 **Disabled integrations**: Several integrations are fully disabled at the
 project level (ACT, ADP Workforce Manager, Alchemer, Dayforce, Facebook,
 Instagram, ADP Payroll SFTP, Coupa Fivetran). See `dbt_project.yml`.
@@ -121,6 +128,15 @@ can omit the `asset` block entirely — just the `kinds: [tableau]` is sufficien
 Exposure files live in `models/exposures/` grouped by tool: `tableau.yml`,
 `google-sheets.yml`, `google-appsheet.yml`, etc.
 
+## Legacy `base_` Prefix
+
+Some models carry a `base_` prefix (e.g. `base_powerschool__*`). This is legacy
+dbt guidance for lightweight join models that lived alongside `stg_` models in
+the staging folder. **`base_` is considered outdated** — all `base_` models are
+planned for renaming to `int_` (tracked in
+[#2541](https://github.com/TEAMSchools/teamster/issues/2541)). Do not create new
+`base_` models; use `int_` instead.
+
 ## Model Conventions
 
 **All staging models must**:
@@ -135,7 +151,15 @@ Exposure files live in `models/exposures/` grouped by tool: `tableau.yml`,
 1. Have a uniqueness test — either a single-column `unique:` test or a
    multi-column `dbt_utils.unique_combination_of_columns` test
 
-**All extracts/marts models must**:
+**`rpt_` models** are analyst-built reporting views that serve as the data
+source for external reporting tools (Tableau, Google Sheets, PowerSchool, etc.).
+They live in `models/extracts/` and are distinct from the data mart layer.
+
+**`dim_*` / `fct_*` models** are dimensional data mart models being built for
+use with a semantic layer. They live in `models/marts/`. This layer is actively
+being developed.
+
+**All `rpt_` and `dim_*`/`fct_*` models must**:
 
 1. Have `contract: enforced: true` — these are the last stop before data reaches
    an external reporting tool (Tableau, PowerSchool, Google Sheets, etc.).

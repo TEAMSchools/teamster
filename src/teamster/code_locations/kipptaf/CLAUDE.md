@@ -25,7 +25,6 @@ GCS bucket: `teamster-kipptaf`
 | `coupa`                  | API assets                                         | schedule                   | —                       |
 | `deanslist`              | API assets                                         | —                          | sensor                  |
 | `extracts`               | BigQuery→SFTP                                      | schedule                   | —                       |
-| `fivetran`               | asset specs (commented out)                        | —                          | —                       |
 | `knowbe4`                | API assets                                         | schedule                   | —                       |
 | `ldap`                   | LDAP assets                                        | schedule                   | sensor                  |
 | `level_data`             | Grow API assets                                    | schedule                   | —                       |
@@ -67,6 +66,17 @@ Aggregates all Google Workspace integrations into a single importable module:
 - `bigquery` — sensor that watches BigQuery job completions
 - `drive` — sensor for Drive file events
 
+## Tableau Workbook Scheduling
+
+`tableau/schedules.py` dynamically builds `extract_refresh_schedules` from
+`workbook_refresh_assets`: a `ScheduleDefinition` is created for each workbook
+asset whose metadata contains a `cron_schedule` key. The criterion is **"does
+Dagster own this workbook's refresh trigger?"** — if yes, set `cron_schedule` in
+the exposure's `asset.metadata`; if the workbook is refreshed by another system
+(e.g. Tableau Server's built-in schedule), omit it.
+
+See `src/dbt/kipptaf/CLAUDE.md` for the full exposure YAML reference.
+
 ## `surveys` Module
 
 Pure op-based pipeline (no assets): queries BigQuery for pending survey
@@ -86,5 +96,6 @@ and several SSH resources.
 
 ## Disabled Integrations
 
-`alchemer` (schema only, assets commented out), `dayforce` (schema only),
-`fivetran` (`__init__.py` is fully commented out).
+`adp` WFM schedules are disabled (see `adp/workforce_manager/schedules.py`).
+Reusable library code for `alchemer`, `dayforce`, and `fivetran` is preserved
+under `src/teamster/libraries/` for future use.

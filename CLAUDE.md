@@ -236,8 +236,8 @@ Kubernetes with secrets mounted at `/etc/secret-volume`.
 
 ### dbt Project Conventions
 
-- Models follow `stg_` (staging), `int_` (intermediate), `rpt_` (report/extract)
-  prefixes
+- Models follow `stg_` (staging), `int_` (intermediate), `rpt_` (reporting views
+  / extracts), `dim_*` / `fct_*` (data mart) prefixes
 - `src/dbt/kipptaf/` is the primary analytics project; school-specific projects
   (`kippnewark`, etc.) contain school-specific extracts
 - dbt packages are vendored into `dbt_packages/` subdirectories within each
@@ -247,11 +247,16 @@ Kubernetes with secrets mounted at `/etc/secret-volume`.
 
 **Model quality requirements** (enforced in all dbt projects):
 
-| Layer                     | Contract | Uniqueness test                                                            |
-| ------------------------- | -------- | -------------------------------------------------------------------------- |
-| Staging (`stg_`)          | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-| Intermediate (`int_`)     | —        | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-| Extracts / Marts (`rpt_`) | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
+| Layer                         | Contract | Uniqueness test                                                            |
+| ----------------------------- | -------- | -------------------------------------------------------------------------- |
+| Staging (`stg_`)              | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
+| Intermediate (`int_`)         | —        | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
+| Reporting views (`rpt_`)      | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
+| Data mart (`dim_*` / `fct_*`) | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
+
+**`base_` prefix**: Legacy — do not use. Existing `base_` models are being
+renamed to `int_` (see
+[#2541](https://github.com/TEAMSchools/teamster/issues/2541)).
 
 Contract enforcement on extracts/marts is critical: these models feed external
 tools via dbt [exposures](https://docs.getdbt.com/reference/exposure-properties)
