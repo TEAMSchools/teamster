@@ -50,6 +50,7 @@ on:
       - src/teamster/core/**
       - src/teamster/libraries/adp/**
       - src/teamster/libraries/airbyte/**
+      - src/teamster/libraries/collegeboard/**
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/coupa/**
       - src/teamster/libraries/dbt/**
@@ -57,6 +58,7 @@ on:
       - src/teamster/libraries/dlt/**
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/google/**
+      - src/teamster/libraries/knowbe4/**
       - src/teamster/libraries/ldap/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/performance_management/**

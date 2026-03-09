@@ -62,9 +62,9 @@ Aggregates all Google Workspace integrations into a single importable module:
 
 - `appsheet` / `sheets` — produce `AssetSpec`s (external, sensor-driven)
 - `directory` — user/group provisioning ops + assets
-- `forms` — Google Forms response assets
+- `forms` — Google Forms response assets; sensor lists forms from Drive and
+  triggers runs
 - `bigquery` — sensor that watches BigQuery job completions
-- `drive` — sensor for Drive file events
 
 ## Tableau Workbook Scheduling
 

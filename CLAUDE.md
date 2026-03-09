@@ -157,6 +157,7 @@ src/
       ssh/                # SSH tunnel resource (CLAUDE.md)
       tableau/            # Tableau Server (CLAUDE.md)
       titan/              # Titan school nutrition (CLAUDE.md)
+      zendesk/            # Zendesk support platform (CLAUDE.md)
     code_locations/       # Per-school Dagster definitions
       kipptaf/            # TAF (network-wide): the largest code location (CLAUDE.md)
       kippnewark/         # (CLAUDE.md)
