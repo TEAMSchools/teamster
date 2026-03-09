@@ -16,7 +16,12 @@ with
     ),
 
     conversion_grouping_numerator as (
-        select enrollment_academic_year, finalsite_id, goal_type, goal_name,
+        select
+            enrollment_academic_year,
+            finalsite_id,
+
+            'Conversion' as goal_type,
+            regexp_replace(goal_name, r' Num$', '') as goal_name,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
         where
@@ -196,16 +201,13 @@ left join
     conversion_grouping_numerator as c
     on f.enrollment_academic_year = c.enrollment_academic_year
     and f.finalsite_id = c.finalsite_id
-    and f.goal_name = c.goal_name
     and f.goal_type = c.goal_type
-where
-    s.grouped_status_timeframe = 'Ever'
-    and s.goal_type != 'Assigned School'
-    and s.goal_type = 'Conversion'
+    and f.goal_name = c.goal_name
+where s.grouped_status_timeframe = 'Ever' and s.goal_type = 'Conversion'
 
 union all
 
--- overall conversion - enrolled / enrollment in progress
+-- overall conversion - enrolled
 select
     s.academic_year,
     s.org,
@@ -261,4 +263,5 @@ left join
     and f.finalsite_id = c.finalsite_id
     and f.goal_type = c.goal_type
     and f.goal_name = c.goal_name
+    and c.latest_status = 'Enrolled'
 where s.grouped_status_timeframe = 'Ever' and s.goal_type = 'Assigned School'
