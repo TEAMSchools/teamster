@@ -68,6 +68,7 @@ on:
 
 jobs:
   dagster-cloud-deploy:
+    if: ${{ !github.event.pull_request.draft }}
     uses: ./.github/workflows/dagster-cloud-deploy.yaml
     with:
       code-location: kippcamden
