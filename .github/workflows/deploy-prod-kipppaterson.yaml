@@ -25,6 +25,7 @@ on:
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/finalsite/**
+      - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/sftp/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
@@ -41,6 +42,7 @@ on:
       - src/teamster/libraries/couchdrop/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/finalsite/**
+      - src/teamster/libraries/pearson/**
       - src/teamster/libraries/powerschool/sis/sftp/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**

@@ -20,13 +20,13 @@ GCS bucket: `teamster-kipptaf`
 | `dlt`                    | Illuminate (active), Salesforce/Zendesk (disabled) | daily + hourly             | —                       |
 | `google`                 | Directory, Forms, AppSheet specs, Sheets specs     | directory, forms           | bigquery, forms, sheets |
 | `adp`                    | payroll SFTP + WFN API (WFM disabled)              | WFN schedule               | WFN + payroll sensors   |
-| `airbyte`                | asset specs                                        | schedule                   | —                       |
+| `airbyte`                | asset specs                                        | schedule                   | disabled                |
 | `collegeboard`           | SFTP assets                                        | —                          | —                       |
 | `coupa`                  | API assets                                         | schedule                   | —                       |
 | `deanslist`              | API assets                                         | —                          | sensor                  |
 | `extracts`               | BigQuery→SFTP                                      | schedule                   | —                       |
 | `knowbe4`                | API assets                                         | schedule                   | —                       |
-| `ldap`                   | LDAP assets                                        | schedule                   | sensor                  |
+| `ldap`                   | LDAP assets                                        | schedule                   | disabled                |
 | `level_data`             | Grow API assets                                    | schedule                   | —                       |
 | `nsc`                    | SFTP assets                                        | —                          | —                       |
 | `overgrad`               | API assets                                         | —                          | —                       |
