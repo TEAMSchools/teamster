@@ -226,8 +226,7 @@ select
     ) as active_season,
 
     first_value(r.detailed_status) over (
-        partition by r.enrollment_academic_year, r.finalsite_enrollment_id
-        order by r.status_start_date desc
+        partition by r.finalsite_enrollment_id order by r.status_start_date desc
     ) as latest_status,
 
 from roster as r
