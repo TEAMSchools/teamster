@@ -1,31 +1,24 @@
 models:
-  - name: rpt_tableau__fresh_dashboard_progress_to_goals
+  - name: int_tableau__finalsite_ptg_goals_scaffold
     config:
-      enabled: true
       contract:
         enforced: true
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - academic_year
+              - enrollment_academic_year
               - region
               - schoolid
-              - finalsite_id
               - grade_level
-              - latest_status
+              - goal_granularity
               - enrollment_type
-              - row_type
           config:
             store_failures: true
     columns:
-      - name: academic_year
+      - name: enrollment_academic_year
         data_type: int64
-      - name: org
-        data_type: string
       - name: region
-        data_type: string
-      - name: school_level
         data_type: string
       - name: schoolid
         data_type: int64
@@ -33,20 +26,12 @@ models:
         data_type: string
       - name: grade_level
         data_type: int64
+      - name: goal_granularity
+        data_type: string
+      - name: goal_type
+        data_type: string
       - name: enrollment_type
         data_type: string
-      - name: finalsite_id
-        data_type: string
-      - name: latest_status
-        data_type: string
-      - name: student_enrollment_type
-        data_type: string
-      - name: self_contained
-        data_type: string
-      - name: row_type
-        data_type: string
-      - name: student_count
-        data_type: int64
       - name: seat_target
         data_type: numeric
       - name: fdos_target
