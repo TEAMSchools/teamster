@@ -1,27 +1,7 @@
 with
-    survey_reconciliation_raw as (
-        select response_id, item_title, text_value, create_timestamp,
-        from {{ ref("int_google_forms__form_responses") }}
-        where
-            form_id = '1oUBls4Kaj0zcbQyeWowe8Es1BFqunolAPEamzT6enQs'
-            and item_title in ('Survey response ID', 'Salesforce contact ID')
-    ),
-
     survey_reconciliation as (
-        select
-            survey_response_id,
-            sf_contact_id,
-
-            row_number() over (
-                partition by survey_response_id order by create_timestamp desc
-            ) as rn_response_id,
-        from
-            survey_reconciliation_raw pivot (
-                max(text_value) for item_title in (
-                    'Survey response ID' as survey_response_id,
-                    'Salesforce contact ID' as sf_contact_id
-                )
-            )
+        select *
+        from {{ ref("int_surveys__kfwd_career_launch_reconciliation") }}
     ),
 
     programs as (
@@ -140,10 +120,7 @@ with
             and e.type not in ('High School', 'Middle School')
             and e.status = 'Graduated'
         left join {{ ref("stg_kippadb__account") }} as a on e.school = a.id
-        left join
-            survey_reconciliation as sr
-            on r.contact_id = sr.sf_contact_id
-            and sr.rn_response_id = 1
+        left join survey_reconciliation as sr on r.contact_id = sr.sf_contact_id
         left join programs as p on r.contact_id = p.student
         where
             r.ktc_status in ('HSG', 'TAF')
@@ -152,53 +129,7 @@ with
     ),
 
     survey_union as (
-        select
-            ri.response_date_submitted,
-            ri.respondent_salesforce_id,
-
-            'Alchemer survey' as survey_title,
-            sr.question_short_name,
-            sr.response_string_value,
-
-            cast(ri.survey_id as string) as survey_id,
-            cast(ri.response_id as string) as response_id,
-            lower(ri.respondent_user_principal_name) as respondent_user_principal_name,
-        from {{ source("surveys", "int_surveys__response_identifiers") }} as ri
-        inner join
-            {{ source("alchemer", "base_alchemer__survey_results") }} as sr
-            on ri.survey_id = sr.survey_id
-            and ri.response_id = sr.response_id
-        where ri.survey_id = 6734664  /* 'KIPP Forward Career Launch Survey' */
-
-        union all
-
-        select
-            safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
-            null as respondent_salesforce_id,
-            'Google Form v1' as survey_title,
-            fr.item_abbreviation as question_short_name,
-            fr.text_value as response_string_value,
-            cast(fr.form_id as string) as survey_id,
-            cast(fr.response_id as string) as response_id,
-            lower(fr.respondent_email) as respondent_user_principal_name,
-        from {{ ref("int_google_forms__form_responses") }} as fr
-        /* 'KIPP Forward Career Launch Survey - OLD' */
-        where fr.form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
-
-        union all
-
-        select
-            safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
-            null as respondent_salesforce_id,
-            'Google Form v2' as survey_title,
-            fr.item_abbreviation as question_short_name,
-            fr.text_value as response_string_value,
-            cast(fr.form_id as string) as survey_id,
-            cast(fr.response_id as string) as response_id,
-            lower(fr.respondent_email) as respondent_user_principal_name,
-        from {{ ref("int_google_forms__form_responses") }} as fr
-        /* 'KIPP Forward Career Launch Survey' */
-        where fr.form_id = '1c4SLP61YIVnUUvRl_IUdFuLXdtI1Vsq9OE3Jrz3HR0U'
+        select * from {{ ref("int_surveys__kfwd_career_launch_responses") }}
     ),
 
     survey_pivot as (

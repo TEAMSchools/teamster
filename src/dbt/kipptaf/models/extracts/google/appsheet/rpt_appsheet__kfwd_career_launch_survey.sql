@@ -1,27 +1,6 @@
 with
-    survey_reconciliation_raw as (
-        select response_id, item_title, text_value, create_timestamp,
-        from {{ ref("int_google_forms__form_responses") }}
-        where
-            form_id = '1oUBls4Kaj0zcbQyeWowe8Es1BFqunolAPEamzT6enQs'
-            and item_title in ('Survey response ID', 'Salesforce contact ID')
-    ),
-
     survey_reconciliation as (
-        select
-            survey_response_id,
-            sf_contact_id,
-
-            row_number() over (
-                partition by survey_response_id order by create_timestamp desc
-            ) as rn_response_id,
-        from
-            survey_reconciliation_raw pivot (
-                max(text_value) for item_title in (
-                    'Survey response ID' as survey_response_id,
-                    'Salesforce contact ID' as sf_contact_id
-                )
-            )
+        select * from {{ ref("int_surveys__kfwd_career_launch_reconciliation") }}
     ),
 
     current_enrollment as (
@@ -33,32 +12,7 @@ with
     ),
 
     survey_union as (
-        select
-            ri.response_date_submitted,
-            cast(ri.response_id as string) as response_id,
-            lower(ri.respondent_user_principal_name) as respondent_user_principal_name,
-        from {{ source("surveys", "int_surveys__response_identifiers") }} as ri
-        where ri.survey_id = 6734664  /* 'KIPP Forward Career Launch Survey' */
-
-        union all
-
-        select
-            safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
-            cast(fr.response_id as string) as response_id,
-            lower(fr.respondent_email) as respondent_user_principal_name,
-        from {{ ref("int_google_forms__form_responses") }} as fr
-        /* 'KIPP Forward Career Launch Survey - OLD' */
-        where fr.form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
-
-        union all
-
-        select
-            safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
-            cast(fr.response_id as string) as response_id,
-            lower(fr.respondent_email) as respondent_user_principal_name,
-        from {{ ref("int_google_forms__form_responses") }} as fr
-        /* 'KIPP Forward Career Launch Survey' */
-        where fr.form_id = '1c4SLP61YIVnUUvRl_IUdFuLXdtI1Vsq9OE3Jrz3HR0U'
+        select * from {{ ref("int_surveys__kfwd_career_launch_responses") }}
     ),
 
     roster as (
@@ -78,10 +32,7 @@ with
 
             sr.survey_response_id as reconciliation_response_id,
         from {{ ref("int_kippadb__roster") }} as r
-        left join
-            survey_reconciliation as sr
-            on r.contact_id = sr.sf_contact_id
-            and sr.rn_response_id = 1
+        left join survey_reconciliation as sr on r.contact_id = sr.sf_contact_id
         where
             r.ktc_status in ('HSG', 'TAF')
             and r.ktc_cohort <= {{ var("current_academic_year") }}

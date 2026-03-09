@@ -1,0 +1,11 @@
+models:
+  - name: int_surveys__kfwd_career_launch_reconciliation
+    columns:
+      - name: survey_response_id
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: sf_contact_id
+        data_type: string
