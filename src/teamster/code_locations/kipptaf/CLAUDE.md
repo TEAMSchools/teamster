@@ -19,7 +19,7 @@ GCS bucket: `teamster-kipptaf`
 | `dbt`                    | 4 asset groups (see below)                         | —                          | —                       |
 | `dlt`                    | Illuminate (active), Salesforce/Zendesk (disabled) | daily + hourly             | —                       |
 | `google`                 | Directory, Forms, AppSheet specs, Sheets specs     | directory, forms           | bigquery, forms, sheets |
-| `adp`                    | payroll SFTP + WFN API + WFM                       | WFN + WFM schedules        | WFN + payroll sensors   |
+| `adp`                    | payroll SFTP + WFN API (WFM disabled)              | WFN schedule               | WFN + payroll sensors   |
 | `airbyte`                | asset specs                                        | schedule                   | —                       |
 | `collegeboard`           | SFTP assets                                        | —                          | —                       |
 | `coupa`                  | API assets                                         | schedule                   | —                       |

@@ -263,8 +263,10 @@ tools via dbt [exposures](https://docs.getdbt.com/reference/exposure-properties)
 (Tableau, PowerSchool, Google Sheets, etc.) and unguarded schema changes will
 break those downstream consumers.
 
-**Exposures**: Every external tool consuming kipptaf data must have a dbt
-exposure in `src/dbt/kipptaf/models/exposures/` listing all `depends_on` models.
-Tableau workbooks with scheduled refreshes additionally require `asset.metadata`
-with the workbook LSID (`id`) and `cron_schedule`. See
-`src/dbt/kipptaf/CLAUDE.md` for the full YAML reference.
+**Exposures**: Every external tool consuming data from a dbt project must have a
+dbt exposure in that project's `models/exposures/` directory listing all
+`depends_on` models. School-specific projects (`kippnewark`, `kippcamden`,
+`kippmiami`) require exposures for their PowerSchool extracts. Tableau workbooks
+with scheduled refreshes additionally require `asset.metadata` with the workbook
+LSID (`id`) and `cron_schedule`. See `src/dbt/kipptaf/CLAUDE.md` for the full
+YAML reference.
