@@ -107,8 +107,9 @@ exposures:
             - tableau # or: googlesheets, powerschool, etc.
 ```
 
-**Tableau workbooks** that refresh on a schedule must also include the workbook
-LSID (`id`) and a `cron_schedule` under `asset.metadata`:
+**Tableau workbooks** may include the workbook LSID (`id`) under
+`asset.metadata` to link the exposure to a specific Tableau Server workbook. Add
+`cron_schedule` only when Dagster owns the refresh trigger:
 
 ```yaml
 config:
@@ -118,12 +119,16 @@ config:
         - tableau
       asset:
         metadata:
-          id: <tableau-workbook-lsid-uuid>
-          cron_schedule: "0 7 * * *" # omit if no scheduled refresh
+          id: <tableau-workbook-lsid-uuid> # always include if known
+          cron_schedule: "0 7 * * *" # only if Dagster manages the refresh
 ```
 
-Tableau workbooks without a scheduled refresh (or not yet configured for one)
-can omit the `asset` block entirely — just the `kinds: [tableau]` is sufficient.
+- `id` only → workbook is tracked in the asset graph but refreshed externally
+- `id` + `cron_schedule` → Dagster owns the refresh schedule
+- neither → workbook exposure with no asset-level metadata
+
+Tableau workbooks with no metadata at all can omit the `asset` block entirely —
+just the `kinds: [tableau]` is sufficient.
 
 Exposure files live in `models/exposures/` grouped by tool: `tableau.yml`,
 `google-sheets.yml`, `google-appsheet.yml`, etc.

@@ -268,6 +268,6 @@ break those downstream consumers.
 dbt exposure in that project's `models/exposures/` directory listing all
 `depends_on` models. School-specific projects (`kippnewark`, `kippcamden`,
 `kippmiami`) require exposures for their PowerSchool extracts. Tableau workbooks
-with scheduled refreshes additionally require `asset.metadata` with the workbook
-LSID (`id`) and `cron_schedule`. See `src/dbt/kipptaf/CLAUDE.md` for the full
-YAML reference.
+may include `asset.metadata` with the workbook LSID (`id`); add `cron_schedule`
+only when Dagster manages the refresh. See `src/dbt/kipptaf/CLAUDE.md` for the
+full YAML reference.
