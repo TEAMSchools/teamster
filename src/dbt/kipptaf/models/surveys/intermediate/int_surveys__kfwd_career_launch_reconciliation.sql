@@ -20,4 +20,6 @@ with
 
 select survey_response_id, sf_contact_id,
 from pivoted
-qualify row_number() over (partition by survey_response_id order by create_timestamp desc) = 1
+qualify
+    row_number() over (partition by survey_response_id order by create_timestamp desc)
+    = 1
