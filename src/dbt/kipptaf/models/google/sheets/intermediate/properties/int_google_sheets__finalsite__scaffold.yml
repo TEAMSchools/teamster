@@ -1,7 +1,6 @@
 models:
-  - name: rpt_tableau__fresh_dashboard_progress_to_goals
+  - name: int_google_sheets__finalsite__scaffold
     config:
-      enabled: true
       contract:
         enforced: true
     data_tests:
@@ -11,14 +10,14 @@ models:
               - academic_year
               - region
               - schoolid
-              - finalsite_id
               - grade_level
-              - latest_status
-              - enrollment_type
-              - row_type
+              - goal_granularity
+              - goal_type
+              - goal_name
+              - goal_value
+              - grouped_status_timeframe
           config:
             store_failures: true
-            enabled: false
     columns:
       - name: academic_year
         data_type: int64
@@ -26,33 +25,21 @@ models:
         data_type: string
       - name: region
         data_type: string
-      - name: school_level
-        data_type: string
       - name: schoolid
         data_type: int64
       - name: school
         data_type: string
       - name: grade_level
         data_type: int64
-      - name: finalsite_id
+      - name: school_level
         data_type: string
-      - name: latest_status
+      - name: goal_granularity
         data_type: string
-      - name: enrollment_type
+      - name: goal_type
         data_type: string
-      - name: self_contained
+      - name: goal_name
         data_type: string
-      - name: row_type
+      - name: goal_value
+        data_type: numeric
+      - name: grouped_status_timeframe
         data_type: string
-      - name: student_count
-        data_type: int64
-      - name: seat_target
-        data_type: numeric
-      - name: fdos_target
-        data_type: numeric
-      - name: budget_target
-        data_type: numeric
-      - name: new_student_target
-        data_type: numeric
-      - name: re_enroll_projection
-        data_type: numeric
