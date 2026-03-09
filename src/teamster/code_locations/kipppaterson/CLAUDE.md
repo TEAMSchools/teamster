@@ -16,8 +16,8 @@ GCS bucket: `teamster-kipppaterson`
 
 | Module                   | Type                      | Trigger                                     |
 | ------------------------ | ------------------------- | ------------------------------------------- |
-| `_dbt`                   | dbt assets                | `AutomationConditionSensor`                 |
-| `powerschool` (sis/sftp) | SFTP assets via Couchdrop | `AutomationConditionSensor`                 |
+| `dbt`                    | dbt assets                | `AutomationConditionSensor`                 |
+| `powerschool` (sis/sftp) | SFTP assets via Couchdrop | sensor (`couchdrop_sftp_sensor`)            |
 | `amplify` (mclass sftp)  | SFTP assets               | sensor (`build_amplify_mclass_sftp_sensor`) |
 | `finalsite`              | API assets                | `AutomationConditionSensor`                 |
 | `pearson`                | SFTP assets               | `AutomationConditionSensor`                 |
@@ -41,7 +41,10 @@ Consequences:
 ## No Asset Checks, No Schedules
 
 Paterson has no freshness checks and no data-pull schedules. All ingestion is
-sensor-driven (Couchdrop file drop detection) or `AutomationConditionSensor`.
+sensor-driven (`couchdrop_sftp_sensor` for PowerSchool,
+`build_amplify_mclass_sftp_sensor` for Amplify). `AutomationConditionSensor`
+handles any assets with an automation condition defined (e.g. `finalsite`,
+`pearson`).
 
 ## Resources
 

@@ -2,7 +2,7 @@ from dagster import DagsterInstance, build_schedule_context
 
 
 def test_schedule():
-    from teamster.code_locations.kipptaf._google.forms.schedules import (
+    from teamster.code_locations.kipptaf.google.forms.schedules import (
         google_forms_asset_job_schedule,
     )
 

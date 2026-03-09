@@ -57,13 +57,13 @@ def _test_asset(asset: AssetsDefinition):
 
 
 def test_asset_google_directory_orgunits():
-    from teamster.code_locations.kipptaf._google.directory.assets import orgunits
+    from teamster.code_locations.kipptaf.google.directory.assets import orgunits
 
     _test_asset(orgunits)
 
 
 def test_asset_google_directory_role_assignments():
-    from teamster.code_locations.kipptaf._google.directory.assets import (
+    from teamster.code_locations.kipptaf.google.directory.assets import (
         role_assignments,
     )
 
@@ -71,19 +71,19 @@ def test_asset_google_directory_role_assignments():
 
 
 def test_asset_google_directory_roles():
-    from teamster.code_locations.kipptaf._google.directory.assets import roles
+    from teamster.code_locations.kipptaf.google.directory.assets import roles
 
     _test_asset(roles)
 
 
 def test_asset_google_directory_users():
-    from teamster.code_locations.kipptaf._google.directory.assets import users
+    from teamster.code_locations.kipptaf.google.directory.assets import users
 
     _test_asset(users)
 
 
 def test_asset_google_directory_role_assignments_create():
-    from teamster.code_locations.kipptaf._google.directory.assets import (
+    from teamster.code_locations.kipptaf.google.directory.assets import (
         google_directory_role_assignments_create,
     )
     from teamster.core.resources import BIGQUERY_RESOURCE

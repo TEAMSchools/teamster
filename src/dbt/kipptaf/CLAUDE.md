@@ -55,6 +55,13 @@ PowerSchool, and performance management data. Includes snapshots
 **Extracts layer** (`models/extracts/`): Outbound data feeds. Subdirectories map
 to destination systems. All models have `contract: enforced: true`.
 
+**`extracts/powerschool/`** is a special case: `rpt_powerschool__autocomm_*`
+models define a consistent export file format shared across all regions. They
+are **not** extracted here — regional dbt projects (`kippnewark`, `kippcamden`,
+`kippmiami`) each source from these models and filter to their own data, then
+push to their respective PowerSchool instance. Therefore `extracts/powerschool/`
+has no dbt exposure in kipptaf; exposures live in the regional projects.
+
 **Disabled integrations**: Several integrations are fully disabled at the
 project level (ACT, ADP Workforce Manager, Alchemer, Dayforce, Facebook,
 Instagram, ADP Payroll SFTP, Coupa Fivetran). See `dbt_project.yml`.
@@ -100,8 +107,9 @@ exposures:
             - tableau # or: googlesheets, powerschool, etc.
 ```
 
-**Tableau workbooks** that refresh on a schedule must also include the workbook
-LSID (`id`) and a `cron_schedule` under `asset.metadata`:
+**Tableau workbooks** may include the workbook LSID (`id`) under
+`asset.metadata` to link the exposure to a specific Tableau Server workbook. Add
+`cron_schedule` only when Dagster owns the refresh trigger:
 
 ```yaml
 config:
@@ -111,15 +119,28 @@ config:
         - tableau
       asset:
         metadata:
-          id: <tableau-workbook-lsid-uuid>
-          cron_schedule: "0 7 * * *" # omit if no scheduled refresh
+          id: <tableau-workbook-lsid-uuid> # always include if known
+          cron_schedule: "0 7 * * *" # only if Dagster manages the refresh
 ```
 
-Tableau workbooks without a scheduled refresh (or not yet configured for one)
-can omit the `asset` block entirely — just the `kinds: [tableau]` is sufficient.
+- `id` only → workbook is tracked in the asset graph but refreshed externally
+- `id` + `cron_schedule` → Dagster owns the refresh schedule
+- neither → workbook exposure with no asset-level metadata
+
+Tableau workbooks with no metadata at all can omit the `asset` block entirely —
+just the `kinds: [tableau]` is sufficient.
 
 Exposure files live in `models/exposures/` grouped by tool: `tableau.yml`,
 `google-sheets.yml`, `google-appsheet.yml`, etc.
+
+## Legacy `base_` Prefix
+
+Some models carry a `base_` prefix (e.g. `base_powerschool__*`). This is legacy
+dbt guidance for lightweight join models that lived alongside `stg_` models in
+the staging folder. **`base_` is considered outdated** — all `base_` models are
+planned for renaming to `int_` (tracked in
+[#2541](https://github.com/TEAMSchools/teamster/issues/2541)). Do not create new
+`base_` models; use `int_` instead.
 
 ## Model Conventions
 
@@ -135,7 +156,15 @@ Exposure files live in `models/exposures/` grouped by tool: `tableau.yml`,
 1. Have a uniqueness test — either a single-column `unique:` test or a
    multi-column `dbt_utils.unique_combination_of_columns` test
 
-**All extracts/marts models must**:
+**`rpt_` models** are analyst-built reporting views that serve as the data
+source for external reporting tools (Tableau, Google Sheets, PowerSchool, etc.).
+They live in `models/extracts/` and are distinct from the data mart layer.
+
+**`dim_*` / `fct_*` models** are dimensional data mart models being built for
+use with a semantic layer. They live in `models/marts/`. This layer is actively
+being developed.
+
+**All `rpt_` and `dim_*`/`fct_*` models must**:
 
 1. Have `contract: enforced: true` — these are the last stop before data reaches
    an external reporting tool (Tableau, PowerSchool, Google Sheets, etc.).
