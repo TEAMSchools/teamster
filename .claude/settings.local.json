@@ -3,13 +3,14 @@
     "allow": [
       "Bash(cat:*)",
       "Bash(find:*)",
+      "Bash(git add:*)",
       "Bash(grep:*)",
       "Bash(ls:*)",
       "Bash(python -m pytest tests/ -x -q)",
-      "Read(//home/vscode/.claude/plugins/cache/dagster/**)",
+      "Read(/workspaces/teamster/src/**)",
+      "Read(~/.claude/plugins/cache/dagster/**)",
       "WebFetch(domain:docs.dagster.io)",
-      "WebFetch(domain:github.com)",
-      "Bash(git add:*)"
+      "WebFetch(domain:github.com)"
     ]
   },
   "enabledPlugins": {
