@@ -37,7 +37,7 @@ class GrowResource(ConfigurableResource):
             }
         )
 
-    def _get_access_token(self):
+    def _get_access_token(self) -> dict:
         oauth = OAuth2Session(client=BackendApplicationClient(client_id=self.client_id))
 
         return oauth.fetch_token(
@@ -46,12 +46,12 @@ class GrowResource(ConfigurableResource):
             client_secret=self.client_secret,
         )
 
-    def _get_url(self, endpoint, *args):
+    def _get_url(self, endpoint: str, *args: str) -> str:
         return f"{self._base_url}/external/{endpoint}" + (
             "/" + "/".join(args) if args else ""
         )
 
-    def _request(self, method, url, **kwargs) -> Response:
+    def _request(self, method: str, url: str, **kwargs) -> Response:
         response = self._session.request(method=method, url=url, **kwargs)
 
         try:
@@ -61,7 +61,7 @@ class GrowResource(ConfigurableResource):
             self._log.error(msg=response.text)
             raise Exception(response.text) from e
 
-    def get(self, endpoint, *args, **kwargs) -> dict:
+    def get(self, endpoint: str, *args: str, **kwargs) -> dict:
         url = self._get_url(endpoint, *args)
         params = copy.deepcopy(self._default_params)
 
@@ -97,10 +97,10 @@ class GrowResource(ConfigurableResource):
 
                 count = response_json["count"]
 
-                try:
+                if "data" in response_json:
                     data.extend(response_json["data"])
-                except KeyError as e:
-                    self._log.exception(msg=e)
+                else:
+                    self._log.error(msg="Missing 'data' key in response")
                     break
 
                 len_data = len(data)
@@ -121,19 +121,19 @@ class GrowResource(ConfigurableResource):
             else:
                 return response
 
-    def post(self, endpoint, *args, **kwargs) -> dict:
+    def post(self, endpoint: str, *args: str, **kwargs) -> dict:
         url = self._get_url(endpoint, *args)
 
         self._log.debug(f"POST: {url}")
         return self._request(method="POST", url=url, **kwargs).json()
 
-    def put(self, endpoint, *args, **kwargs) -> dict:
+    def put(self, endpoint: str, *args: str, **kwargs) -> dict:
         url = self._get_url(endpoint, *args)
 
         self._log.debug(f"PUT: {url}")
         return self._request(method="PUT", url=url, **kwargs).json()
 
-    def delete(self, endpoint, *args):
+    def delete(self, endpoint: str, *args: str) -> dict:
         url = self._get_url(endpoint, *args)
 
         self._log.debug(f"DELETE: {url}")

@@ -41,7 +41,7 @@ class CouchdropResource(ConfigurableResource):
             self._log.error(response.text)
             raise e
 
-    def get(self, resource: str, id: str | int | None = None, **kwargs):
+    def get(self, resource: str, id: str | int | None = None, **kwargs) -> Response:
         return self._request("GET", resource, id, **kwargs)
 
     def put(
@@ -50,19 +50,19 @@ class CouchdropResource(ConfigurableResource):
         id: str | int | None = None,
         data: dict | None = None,
         **kwargs,
-    ):
+    ) -> Response:
         if data is None:
             data = {}
 
         return self._request("PUT", resource, id, data=data, **kwargs)
 
-    def post(self, resource: str, data: dict | None = None, **kwargs):
+    def post(self, resource: str, data: dict | None = None, **kwargs) -> Response:
         if data is None:
             data = {}
 
         return self._request("POST", resource, data=data, **kwargs)
 
-    def delete(self, resource: str, id: str | int | None = None, **kwargs):
+    def delete(self, resource: str, id: str | int | None = None, **kwargs) -> Response:
         return self._request("DELETE", resource, id, **kwargs)
 
     def ls_r(

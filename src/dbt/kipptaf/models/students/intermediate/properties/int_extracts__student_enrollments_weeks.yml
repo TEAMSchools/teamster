@@ -197,15 +197,6 @@ models:
         data_type: int64
       - name: grad_iep_exempt_status_overall
         data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - Not Grad IEP Exempt
-                  - "Yes"
-              config:
-                severity: warn
-                store_failures: true
       - name: district
         data_type: string
       - name: region_school_level
@@ -240,13 +231,5 @@ models:
         data_type: boolean
       - name: fafsa_status_mismatch_category
         data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - No issues
-              config:
-                severity: warn
-                store_failures: true
       - name: region_official_name
         data_type: string

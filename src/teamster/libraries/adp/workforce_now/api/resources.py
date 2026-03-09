@@ -31,8 +31,8 @@ class AdpWorkforceNowResource(ConfigurableResource):
         self._session.cert = (self.cert_filepath, self.key_filepath)
 
         # authorize client
-        # trunk-ignore(bandit/B106)
         token_dict = self._session.fetch_token(
+            # trunk-ignore(bandit/B106)
             token_url="https://accounts.adp.com/auth/oauth/v2/token",
             auth=HTTPBasicAuth(username=self.client_id, password=self.client_secret),
         )
@@ -44,7 +44,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
         if not self.masked:
             self._session.headers["Accept"] = "application/json;masked=false"
 
-    def _request(self, method, url, **kwargs) -> Response:
+    def _request(self, method: str, url: str, **kwargs) -> Response:
         response = self._session.request(method=method, url=url, **kwargs)
 
         try:
@@ -64,14 +64,16 @@ class AdpWorkforceNowResource(ConfigurableResource):
             self._log.error(msg=response_json)
             raise Exception(response_json) from e
 
-    def post(self, endpoint, subresource, verb, payload):
+    def post(
+        self, endpoint: str, subresource: str, verb: str, payload: dict
+    ) -> Response:
         return self._request(
             method="POST",
             url=f"{self._service_root}/{endpoint}.{subresource}.{verb}",
             json=payload,
         )
 
-    def get(self, endpoint, params: dict | None = None):
+    def get(self, endpoint: str, params: dict | None = None) -> Response:
         if params is None:
             params = {}
 
@@ -79,7 +81,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
             method="GET", url=f"{self._service_root}/{endpoint}", params=params
         )
 
-    def get_records(self, endpoint, params: dict | None = None) -> list[dict]:
+    def get_records(self, endpoint: str, params: dict | None = None) -> list[dict]:
         page_size = 100
         all_records = []
 

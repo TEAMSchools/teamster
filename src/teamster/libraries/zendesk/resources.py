@@ -46,7 +46,7 @@ class ZendeskResource(ConfigurableResource):
             self._log.error(response.text)
             raise e
 
-    def get(self, resource: str, id: str | int | None = None, **kwargs):
+    def get(self, resource: str, id: str | int | None = None, **kwargs) -> Response:
         return self._request("GET", resource, id, **kwargs)
 
     def put(
@@ -55,22 +55,22 @@ class ZendeskResource(ConfigurableResource):
         id: str | int | None = None,
         json: dict | None = None,
         **kwargs,
-    ):
+    ) -> Response:
         if json is None:
             json = {}
 
         return self._request("PUT", resource, id, json=json, **kwargs)
 
-    def post(self, resource: str, json: dict | None = None, **kwargs):
+    def post(self, resource: str, json: dict | None = None, **kwargs) -> Response:
         if json is None:
             json = {}
 
         return self._request("POST", resource, json=json, **kwargs)
 
-    def delete(self, resource: str, id: str | int | None = None, **kwargs):
+    def delete(self, resource: str, id: str | int | None = None, **kwargs) -> Response:
         return self._request("DELETE", resource, id, **kwargs)
 
-    def list(self, resource, **kwargs) -> list[dict]:
+    def list(self, resource: str, **kwargs) -> list[dict]:
         params = {"page[size]": self.page_size} | kwargs.get("params", {})
 
         all_data = []
@@ -84,7 +84,7 @@ class ZendeskResource(ConfigurableResource):
             else:
                 return all_data
 
-    def handle_limit_exceeded(self, limit_header_reset_time):
+    def handle_limit_exceeded(self, limit_header_reset_time: float) -> bool:
         wait_time = limit_header_reset_time - time.time() + 1  # Add 1 second buffer
 
         print(f"Rate limit exceeded. Waiting for {wait_time} seconds...")
@@ -92,34 +92,27 @@ class ZendeskResource(ConfigurableResource):
 
         return False
 
-    def handle_rate_limits(self, response: Response):
+    def handle_rate_limits(self, response: Response) -> bool:
         rate_limit_remaining = response.headers.get("ratelimit-remaining")
+
+        if not rate_limit_remaining:
+            return False
+
+        if int(rate_limit_remaining) <= 0:
+            return self.handle_limit_exceeded(
+                float(response.headers.get("ratelimit-reset", "60"))
+            )
+
         rate_limit_endpoint: str = response.headers.get(
             "Zendesk-RateLimit-Endpoint", ""
         )
 
-        rate_limit_reset: int = int(response.headers.get("ratelimit-reset", "60"))
+        if not rate_limit_endpoint:
+            return True
 
-        endpoint_remaining = int(rate_limit_endpoint.split(";")[1].split("=")[1])
-        endpoint_limit_reset_seconds = int(
-            rate_limit_endpoint.split(";")[2].split("=")[1]
-        )
+        parts = rate_limit_endpoint.split(";")
 
-        if rate_limit_remaining:
-            account_remaining = int(rate_limit_remaining)
+        if int(parts[1].split("=")[1]) > 0:
+            return True
 
-            if account_remaining > 0:
-                if rate_limit_endpoint:
-                    if endpoint_remaining > 0:
-                        return True
-                    else:
-                        # Endpoint-specific limit exceeded; stop making more calls
-                        return self.handle_limit_exceeded(endpoint_limit_reset_seconds)
-                else:
-                    # No endpoint-specific limit
-                    return True
-            else:
-                # Account-wide limit exceeded
-                return self.handle_limit_exceeded(rate_limit_reset)
-        else:
-            return False
+        return self.handle_limit_exceeded(int(parts[2].split("=")[1]))

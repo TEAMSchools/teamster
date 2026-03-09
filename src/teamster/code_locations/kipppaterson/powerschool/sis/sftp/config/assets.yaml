@@ -26,6 +26,7 @@ assets:
   - asset_name: schoolstaff
   - asset_name: sections
   - asset_name: spenrollments
+  - asset_name: storedgrades
   - asset_name: student_email
   - asset_name: studentcontactassoc
   - asset_name: studentcontactdetail
@@ -34,6 +35,6 @@ assets:
   - asset_name: termbins
   - asset_name: terms
   - asset_name: users
+  - asset_name: u_studentsuserfields
   # - asset_name: u_clg_et_stu
   # - asset_name: u_clg_et_stu_alt
-  # - asset_name: u_studentsuserfields

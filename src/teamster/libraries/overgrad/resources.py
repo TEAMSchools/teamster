@@ -3,7 +3,7 @@ import time
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from pydantic import PrivateAttr
-from requests import Session
+from requests import Response, Session
 from requests.exceptions import HTTPError
 
 
@@ -21,7 +21,7 @@ class OvergradResource(ConfigurableResource):
         self._log = check.not_none(value=context.log)
         self._session.headers["ApiKey"] = self.api_key
 
-    def _get_url(self, path, *args):
+    def _get_url(self, path: str, *args: str) -> str:
         versioned_url = f"{self._base_url}/{self.api_version}"
 
         if args:
@@ -30,7 +30,7 @@ class OvergradResource(ConfigurableResource):
             return f"{versioned_url}/{path}"
 
     # TODO: use exponential backoff
-    def _request(self, method, url, **kwargs):
+    def _request(self, method: str, url: str, **kwargs) -> Response:
         response = self._session.request(
             method=method, url=url, timeout=self.request_timeout, **kwargs
         )
@@ -43,13 +43,13 @@ class OvergradResource(ConfigurableResource):
             self._log.exception(e)
             raise HTTPError(response.text) from e
 
-    def get(self, path, *args, **kwargs):
+    def get(self, path: str, *args: str, **kwargs) -> Response:
         url = self._get_url(path, *args)
         self._log.debug(f"GET: {url}")
 
         return self._request(method="GET", url=url, **kwargs)
 
-    def list(self, path, *args, **kwargs):
+    def list(self, path: str, *args: str, **kwargs) -> list[dict]:
         kwargs["params"] = {"limit": self.page_limit}
 
         page = 1

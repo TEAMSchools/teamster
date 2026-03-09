@@ -12,7 +12,7 @@ with
             sections_section_number,
             teacher_lastfirst,
         from {{ ref("base_powerschool__course_enrollments") }}
-        where cc_course_number = 'HR' and not is_dropped_course
+        where cc_course_number like 'HR%' and not is_dropped_course
     ),
 
     deduplicate as (

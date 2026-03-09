@@ -27,10 +27,6 @@ with
                 true,
                 false
             ) as is_successful,
-
-            if(
-                student_school_id is not null and reason not like 'Att: Unknown%', 1, 0
-            ) as is_successful_int,
         from completed_calls
         where rn_date = 1
     )
@@ -44,6 +40,7 @@ select
     commlog_topic,
     commlog_type,
     commlog_status,
+    is_successful,
 
     {{ dbt_utils.generate_surrogate_key(["student_number", "commlog_date"]) }}
     as commlog_key,

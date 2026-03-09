@@ -14,12 +14,17 @@ Here are some resources to help you get started with open source contributions:
 
 ## Project structure
 
-All of our source code is located under the `src/` directory.
+All source code is in the `src/` directory.
 
-`src/teamster/` contains all of our Dagster code, which powers our data
-orchestration.
+`src/teamster/` contains all Dagster code, organized as:
 
-`src/dbt/` contains all of our dbt code, which is organized by
+- `core/` — shared resources, IO managers, and utilities
+- `libraries/` — reusable asset builders and resource definitions (one
+  subpackage per integration)
+- `code_locations/` — per-school Dagster definitions (`kipptaf`, `kippnewark`,
+  `kippcamden`, `kippmiami`, `kipppaterson`)
+
+`src/dbt/` contains all dbt code, organized by
 [project](https://docs.getdbt.com/docs/build/projects).
 
 ### dbt Projects
@@ -32,9 +37,91 @@ views that aggregate regional tables as well as CMO-specific data. This is the
 configurations that ensure their data is loaded into their respective datasets.
 
 Other projects (e.g. `powerschool`, `deanslist`, `iready`) contain code for
-systems that is used across multiple regions. Keeping these projects as
-installable dependencies allows us to maintain the code in one place and use it
-across as many projects as needed.
+systems used across multiple regions. Keeping these projects as installable
+dependencies allows the code to be maintained in one place and shared across
+projects.
+
+### Model conventions
+
+Models follow standard prefixes reflecting their layer in the data flow.
+
+#### Staging (`stg_`)
+
+Modular building blocks from source data.
+
+- File naming: `stg_{source}__{entity}.sql`
+- **`contract: enforced: true`** — required on all staging models
+- **Uniqueness test** — required: either a single-column `unique:` test or
+  `dbt_utils.unique_combination_of_columns` for composite keys
+
+#### Intermediate (`int_`)
+
+Layers of logic with clear and specific purposes, preparing staging models to
+join into the entities we want.
+
+- Folder structure: subdirectories by area of business concern
+- File naming: `int_{business_concern}__{entity}_{verb}.sql`
+  - Business concerns: `assessments`, `surveys`, `people`
+  - Verbs: `pivot`, `unpivot`, `rollup`
+- **Uniqueness test** — required: either a single-column `unique:` test or
+  `dbt_utils.unique_combination_of_columns` for composite keys
+
+#### Marts / Extracts (`rpt_`)
+
+Wide, rich views of the entities our organization cares about, or extracts
+consumed by reporting tools and applications.
+
+- **`contract: enforced: true`** — required on all marts and extract models.
+  These are the last stop before data reaches an external reporting tool
+  (Tableau, PowerSchool, Google Sheets, etc.). Schema changes break downstream
+  [exposures](https://docs.getdbt.com/reference/exposure-properties) and must be
+  made deliberately.
+- **Uniqueness test** — required: either a single-column `unique:` test or
+  `dbt_utils.unique_combination_of_columns` for composite keys
+
+### Exposures
+
+Every external tool that consumes our data must have a
+[dbt exposure](https://docs.getdbt.com/reference/exposure-properties) defined in
+the consuming project (typically `src/dbt/kipptaf/models/exposures/`). Exposures
+make the dependency graph explicit and power Dagster asset lineage.
+
+**All exposures** require a `name`, `label`, `type`, `owner`, `depends_on`
+(listing every model the tool uses), and a `url` linking to the external
+tool/workbook/sheet:
+
+```yaml
+exposures:
+  - name: exposure_name_snake_case
+    label: Human Readable Title
+    type: dashboard | application | analysis
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__some_model")
+    url: https://...
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau # or: googlesheets, powerschool, etc.
+```
+
+**Tableau dashboards** that refresh on a schedule must additionally include the
+Tableau workbook LSID and a `cron_schedule` under `asset.metadata`. Workbooks
+without a scheduled refresh can omit the `asset` block:
+
+```yaml
+config:
+  meta:
+    dagster:
+      kinds:
+        - tableau
+      asset:
+        metadata:
+          id: <tableau-workbook-lsid-uuid>
+          cron_schedule: "0 7 * * *" # omit entirely if no scheduled refresh
+```
 
 ## Account setup
 
@@ -64,9 +151,9 @@ credentials**.
 dbt will create a development "branch" of the database for every user, and it
 will name datasets using a prefix that is unique to you.
 
-By default, this is your username, but please prefix it with an underscore ( `_`
-) to avoid cluttering up our BigQuery navigation. BigQuery will hide any
-datasets that begin with an underscore from the left nav.
+By default, this is your username, but please prefix it with an underscore (`_`)
+to avoid cluttering up our BigQuery navigation. BigQuery will hide any datasets
+that begin with an underscore from the left nav.
 
 ![Alt text](images/dbt_cloud/development_credentials.png)
 
@@ -74,9 +161,8 @@ datasets that begin with an underscore from the left nav.
 
 <!-- adapted from https://docs.getdbt.com/docs/cloud/dbt-cloud-ide/lint-format#format-sql -->
 
-To format our SQL code, we use [sqlfmt](https://sqlfmt.com/), an uncompromising
-SQL query formatter that provides one way to format SQL and works with Jinja
-templating.
+To format SQL code, we use [sqlfmt](https://sqlfmt.com/), an uncompromising SQL
+query formatter that works with Jinja templating.
 
 To confirm that dbt Cloud is set up to use sqlfmt:
 
@@ -85,58 +171,12 @@ To confirm that dbt Cloud is set up to use sqlfmt:
 2. Open a `.sql` file and click on the **Code Quality** tab.
 3. Click on the <kbd>&lt;/&gt; Config</kbd> button on the right side of the
    console.
-4. In the code quality tool config pop-up, you have the option to select
-   **sqlfluff** or **sqlfmt**.
-5. To format your code, select the `sqlfmt` radio button.
-6. Once selected, go to the console section (located below the File editor) and
-   select the <kbd>Format</kbd> button.
-7. This button auto-formats your code in the File editor. Once you've
-   auto-formatted, you'll see a message confirming the outcome.
+4. In the code quality tool config pop-up, select the `sqlfmt` radio button.
+5. Go to the console section (below the file editor) and click
+   <kbd>Format</kbd>.
+6. This auto-formats your code in the file editor.
 
 ## Make Changes
-
-### Folder structure & file names
-
-Folder structure is extremely important in dbt. It should reflect how the data
-flows, step-by-step, from a wide variety of source-conformed models into fewer,
-richer business-conformed models.
-
-Creating a consistent pattern of file naming is crucial in dbt. File names
-**must be unique** and correspond to the name of the model when selected and
-created in the warehouse.
-
-We recommend putting as much clear information into the file name as possible,
-including a prefix for the layer the model exists in, important grouping
-information, and specific information about the entity or transformation in the
-model.
-
-#### Staging
-
-Modular building blocks from source data
-
-- Folder structure: ...
-- File naming convention: `stg_{source}__{entity}.sql`
-
-#### Intermediate
-
-Layers of logic with clear and specific purposes, preparing our staging models
-to join into the entities we want
-
-- Folder structure: subdirectories by area of business concern
-- File naming: `int_{business concern}__{entity}_{verb}.sql`
-  - business concerns:
-    - `assessments`
-    - `surveys`
-    - `people`
-  - verbs:
-    - `pivot`
-    - `unpivot`
-    - `rollup`
-
-#### Marts
-
-bringing together our modular pieces into a wide, rich vision of the entities
-our organization cares about
 
 ### Create a branch
 
@@ -161,8 +201,7 @@ When you're finished making changes, create a
    ![Create a pull request on GitHub](images/dbt_cloud/create_pull_request.png)
 2. On the GitHub page that pops up, click "Create pull request"
    ![Alt text](images/github/create_pull_request.png)
-3. Fill in the "Summary & Motivation" section of the pull request template and
-   click "Create pull request".
+3. Fill in the pull request template and click "Create pull request".
 
 ## Code review
 
@@ -184,32 +223,35 @@ code changes submitted:
 | `docs/`                            | [Data Team](https://github.com/orgs/TEAMSchools/teams/data-team)                     |
 | All other directories              | [Admins](https://github.com/orgs/TEAMSchools/teams/admins)                           |
 
-A series of automatic checks will then run on the code that you submitted.
+A series of automatic checks will then run on the submitted code.
 
-### Resolving merge confilcts
+### Resolving merge conflicts
 
-If you run into any merge issues, checkout this
+If you run into merge issues, see this
 [git tutorial](https://github.com/skills/resolve-merge-conflicts) to help you
 resolve merge conflicts and other issues.
 
 ### Trunk
 
-[Trunk](https://trunk.io/) is a tool that runs multiple "linters" that check for
-common errors and enforces style.
+[Trunk](https://trunk.io/) runs multiple linters that check for common errors
+and enforce style.
 
-| Language | Linter(s)                                                  |
-| -------- | ---------------------------------------------------------- |
-| SQL      | [SQLFluff](https://docs.sqlfluff.com/en/stable/rules.html) |
-| Python   | [Ruff](https://docs.astral.sh/ruff/rules/)                 |
+| Language | Linter(s)                                                                                   |
+| -------- | ------------------------------------------------------------------------------------------- |
+| SQL      | [SQLFluff](https://docs.sqlfluff.com/en/stable/rules.html), [sqlfmt](https://sqlfmt.com/)   |
+| Python   | [Ruff](https://docs.astral.sh/ruff/rules/), [Pyright](https://github.com/microsoft/pyright) |
 
-??? question "What if I can't fix the issue?"
+Run locally with:
 
-    Find another place to work!
+```bash
+trunk check
+trunk fmt
+```
 
 ### dbt Cloud
 
-dbt Cloud will create branch a dataset for your pull request on BigQuery and
-attempt to build the modified files.
+dbt Cloud will create a branch dataset for your pull request on BigQuery and
+attempt to build modified files.
 
 If there are any issues with your code, the check will fail, and you can find
 the reasons by:
@@ -223,19 +265,18 @@ the reasons by:
 ![Alt text](images/dbt_cloud/deploy_run_build.png)
 
 - We may ask for changes to be made before a PR can be merged, either using
-  [suggested changes](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/incorporating-feedback-in-your-pull-request)
+  [suggested changes](https://docs.github.com/en/github/collaborating-with-pull-requests/incorporating-feedback-in-your-pull-request)
   or pull request comments. You can apply suggested changes directly through the
-  UI. You can make any other changes in your fork, then commit them to your
-  branch.
+  UI, or make other changes in your branch and commit them.
 - As you update your PR and apply changes, mark each conversation as
-  [resolved](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/commenting-on-a-pull-request#resolving-conversations).
+  [resolved](https://docs.github.com/en/github/collaborating-with-pull-requests/commenting-on-a-pull-request#resolving-conversations).
 
 ## Your PR is merged
 
-Congratulations :tada::tada: :sparkles:
+Congratulations!
 
-Once your PR is merged...
+Once your PR is merged:
 
-- GitHub updates Dagster
+- GitHub triggers a Dagster deployment
 - Dagster scans for code changes every 5 minutes
-- Dagster will launch a run to update all changed models
+- Dagster launches a run to update all changed models

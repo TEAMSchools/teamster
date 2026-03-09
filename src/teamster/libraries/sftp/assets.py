@@ -1,7 +1,6 @@
 import os
 import re
 import zipfile
-from typing import Sequence
 
 from dagster import (
     AssetExecutionContext,
@@ -55,7 +54,7 @@ def extract_pdf_to_dict(stream: str, pdf_row_pattern: str):
 
 
 def build_sftp_file_asset(
-    asset_key: Sequence[str],
+    asset_key: list[str],
     remote_dir_regex: str,
     remote_file_regex: str,
     ssh_resource_key: str,

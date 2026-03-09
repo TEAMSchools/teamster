@@ -1,48 +1,282 @@
-/* PART 1: THE STUDENTS (Actuals) */
-select
-    'Student' as row_type,
-    r.latest_schoolid,
-    r.latest_school,
-    r.grade_level,
-    r.region,
-    r.finalsite_student_id,
-    r.latest_status,
-    1 as student_count,
-    null as seat_target,
-    null as fdos_target,
+with
+    data_stack_school as (
+        -- PART 1A: THE STUDENTS (Actuals) by enroll type
+        select
+            enrollment_academic_year,
+            region,
+            schoolid,
+            school,
+            finalsite_id,
+            -1 as grade_level,
+            latest_status,
+            self_contained,
+            enroll_status,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
 
-    r.last_name || ', ' || r.first_name as student_name,
-    case
-        when grade_level >= 9
-        then 'HS'
-        when grade_level >= 5
-        then 'MS'
-        when grade_level >= 0
-        then 'ES'
-    end as school_level,
-from {{ ref("int_students__finalsite_student_roster") }} as r
-where r.latest_status = 'Enrolled'
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+            enrollment_type,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }}
+        where
+            latest_status = 'Enrolled'
+            and grouped_status = latest_status
+            /* hardcoded year because when we roll over academic year on PS, using the
+               var next_year will be 2027 */
+            and enrollment_academic_year = 2026
+
+        union all
+
+        -- PART 1B: THE STUDENTS (Actuals) by aligned enroll type
+        select
+            enrollment_academic_year,
+            region,
+            schoolid,
+            school,
+            finalsite_id,
+            -1 as grade_level,
+            latest_status,
+            self_contained,
+            enroll_status,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+            aligned_enrollment_type as enrollment_type,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }}
+        where
+            latest_status = 'Enrolled'
+            and grouped_status = latest_status
+            /* hardcoded year because when we roll over academic year on PS, using the
+               var next_year will be 2027 */
+            and enrollment_academic_year = 2026
+
+        union all
+
+        -- PART 2: THE GOALS (Targets) - School
+        select
+            enrollment_academic_year,
+            region,
+            schoolid,
+            school,
+
+            null as finalsite_id,
+            grade_level,
+
+            'Goal Record' as latest_status,
+            'NA' as self_contained,
+            null as enroll_status,
+            null as is_enrolled_fdos,
+            null as is_enrolled_oct01,
+            null as is_enrolled_oct15,
+
+            'Goal' as row_type,
+
+            0 as student_count,
+
+            seat_target,
+            fdos_target,
+            budget_target,
+            new_student_target,
+            re_enroll_projection,
+
+            enrollment_type,
+
+        from {{ ref("int_tableau__finalsite_ptg_goals_scaffold") }}
+        where goal_granularity = 'School'
+    ),
+
+    data_stack_school_grade as (
+        -- PART 1A: THE STUDENTS (Actuals) by enroll type
+        select
+            enrollment_academic_year,
+            region,
+            schoolid,
+            school,
+            finalsite_id,
+            grade_level,
+            latest_status,
+            self_contained,
+            enroll_status,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+            enrollment_type,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }}
+        where
+            latest_status = 'Enrolled'
+            and grouped_status = latest_status
+            /* hardcoded year because when we roll over academic year on PS, using the
+               var next_year will be 2027 */
+            and enrollment_academic_year = 2026
+
+        union all
+
+        -- PART 1B: THE STUDENTS (Actuals) by aligned enroll type
+        select
+            enrollment_academic_year,
+            region,
+            schoolid,
+            school,
+            finalsite_id,
+            grade_level,
+            latest_status,
+            self_contained,
+            enroll_status,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+
+            'Student' as row_type,
+
+            1 as student_count,
+
+            null as seat_target,
+            null as fdos_target,
+            null as budget_target,
+            null as new_student_target,
+            null as re_enroll_projection,
+
+            aligned_enrollment_type as enrollment_type,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }}
+        where
+            latest_status = 'Enrolled'
+            and grouped_status = latest_status
+            /* hardcoded year because when we roll over academic year on PS, using the
+               var next_year will be 2027 */
+            and enrollment_academic_year = 2026
+
+        union all
+
+        -- PART 2: THE GOALS (Targets) - School
+        select
+            enrollment_academic_year,
+            region,
+            schoolid,
+            school,
+
+            null as finalsite_id,
+            grade_level,
+
+            'Goal Record' as latest_status,
+            'NA' as self_contained,
+            null as enroll_status,
+            null as is_enrolled_fdos,
+            null as is_enrolled_oct01,
+            null as is_enrolled_oct15,
+
+            'Goal' as row_type,
+
+            0 as student_count,
+
+            seat_target,
+            fdos_target,
+            budget_target,
+            new_student_target,
+            re_enroll_projection,
+
+            enrollment_type,
+
+        from {{ ref("int_tableau__finalsite_ptg_goals_scaffold") }}
+        where goal_granularity = 'School/Grade Level'
+    )
+
+select
+    s.academic_year,
+    s.org,
+    s.region,
+    s.school_level,
+    s.schoolid,
+    s.school,
+    s.grade_level,
+    s.enrollment_type,
+
+    d.finalsite_id,
+    d.latest_status,
+    d.enrollment_type as student_enrollment_type,
+    d.self_contained,
+    d.row_type,
+    d.student_count,
+    d.seat_target,
+    d.fdos_target,
+    d.budget_target,
+    d.new_student_target,
+    d.re_enroll_projection,
+
+from {{ ref("int_tableau__finalsite_ptg_school_scaffold") }} as s
+left join
+    data_stack_school as d
+    on s.academic_year = d.enrollment_academic_year
+    and s.region = d.region
+    and s.schoolid = d.schoolid
+    and s.grade_level = d.grade_level
+    and s.enrollment_type = d.enrollment_type
+where s.grade_level = -1
 
 union all
 
-/* PART 2: THE GOALS (Targets) */
 select
-    'Goal' as row_type,
-    gs.schoolid as latest_schoolid,
-    gs.school as latest_school,
-    gs.grade_level,
-    gs.region,
-    null as finalsite_student_id,
-    'Goal Record' as latest_status,
-    0 as student_count,
-    gs.goal_value as seat_target,
-    gf.goal_value as fdos_target,
-    null as student_name,
-    gs.school_level,
-from {{ ref("stg_google_sheets__finalsite__goals") }} as gs
+    s.academic_year,
+    s.org,
+    s.region,
+    s.school_level,
+    s.schoolid,
+    s.school,
+    s.grade_level,
+    s.enrollment_type,
+
+    d.finalsite_id,
+    d.latest_status,
+    d.enrollment_type as student_enrollment_type,
+    d.self_contained,
+    d.row_type,
+    d.student_count,
+    d.seat_target,
+    d.fdos_target,
+    d.budget_target,
+    d.new_student_target,
+    d.re_enroll_projection,
+
+from {{ ref("int_tableau__finalsite_ptg_school_scaffold") }} as s
 left join
-    {{ ref("stg_google_sheets__finalsite__goals") }} as gf
-    on gs.schoolid = gf.schoolid
-    and gs.grade_level = gf.grade_level
-    and gf.goal_name = 'FDOS Target'
-where gs.goal_name = 'Seat Target'
+    data_stack_school_grade as d
+    on s.academic_year = d.enrollment_academic_year
+    and s.region = d.region
+    and s.schoolid = d.schoolid
+    and s.grade_level = d.grade_level
+    and s.enrollment_type = d.enrollment_type
+where s.grade_level != -1 and s.schoolid != 0

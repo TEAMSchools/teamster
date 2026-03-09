@@ -1,7 +1,13 @@
-from dagster import AssetCheckResult, AssetCheckSeverity, AssetCheckSpec, MetadataValue
+from dagster import (
+    AssetCheckResult,
+    AssetCheckSeverity,
+    AssetCheckSpec,
+    AssetKey,
+    MetadataValue,
+)
 
 
-def build_check_spec_avro_schema_valid(asset):
+def build_check_spec_avro_schema_valid(asset: str | list[str]) -> AssetCheckSpec:
     return AssetCheckSpec(
         name="avro_schema_valid",
         asset=asset,
@@ -12,7 +18,9 @@ def build_check_spec_avro_schema_valid(asset):
     )
 
 
-def check_avro_schema_valid(asset_key, records, schema):
+def check_avro_schema_valid(
+    asset_key: AssetKey, records: list[dict], schema: dict
+) -> AssetCheckResult:
     record_fields = set().union([k for r in records for k in r.keys()])
     schema_fields = set(field["name"] for field in schema["fields"])
 

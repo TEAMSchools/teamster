@@ -2,7 +2,7 @@ import json
 
 import py_avro_schema
 
-from teamster.libraries.finalsite.schema import StatusReport
+from teamster.libraries.finalsite.sftp.schema import StatusReport
 
 pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
 

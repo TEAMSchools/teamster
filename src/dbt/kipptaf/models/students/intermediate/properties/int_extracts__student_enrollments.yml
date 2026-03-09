@@ -235,7 +235,7 @@ models:
         data_type: string
       - name: academic_year_display
         data_type: string
-      - name: next_year_enrollment_type
+      - name: next_year_enrollment_history
         data_type: string
       - name: iep_status
         data_type: string

@@ -156,6 +156,10 @@ select
     count(distinct co.student_number) over (
         partition by co.schoolid, co.week_start_monday
     ) as school_enrollment_by_week,
+
+    count(distinct if(co.iep_status = 'Has IEP', co.student_number, null)) over (
+        partition by co.schoolid, co.week_start_monday
+    ) as school_iep_enrollment_by_week,
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 left join
     behavior_aggregation as b

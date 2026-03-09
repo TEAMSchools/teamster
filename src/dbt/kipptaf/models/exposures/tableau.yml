@@ -736,3 +736,20 @@ exposures:
           asset:
             metadata:
               id: 61c1e07d-778e-40a8-81ad-327f3951c8e2
+  - name: fresh_dashboard
+    label: FRESH Dashboard
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__fresh_dashboard_aggregated")
+      - ref("rpt_tableau__fresh_dashboard_progress_to_goals")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: 0decd81d-f1c0-464a-bf2f-3546af11d47c
+              cron_schedule: 0 5 * * *

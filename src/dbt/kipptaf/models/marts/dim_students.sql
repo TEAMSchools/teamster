@@ -1,10 +1,6 @@
 with
     overall_filters as (
-        select
-            academic_year,
-            student_number,
-
-            max(nj_student_tier) as nj_overall_student_tier,
+        select academic_year, student_number, max(nj_student_tier) as student_tier,
         from {{ ref("int_extracts__student_enrollments_subjects") }}
         where rn_year = 1 and academic_year >= {{ var("current_academic_year") - 1 }}
         group by academic_year, student_number
@@ -20,7 +16,7 @@ select
     se.lep_status,
     se.status_504,
     se.gender,
-    se.ethnicity,
+
     se.gifted_and_talented,
     se.enroll_status,
     se.cohort_primary,
@@ -37,7 +33,27 @@ select
     se.grade_level,
     se.ms_attended,
 
-    ov.nj_overall_student_tier,
+    ov.student_tier,
+
+    case
+        when se.ethnicity = 'B'
+        then 'Black/African American'
+        when se.ethnicity = 'H'
+        then 'Hispanic or Latino'
+        when se.ethnicity = 'T'
+        then 'Two or More Races'
+        when se.ethnicity = 'W'
+        then 'White'
+        when se.ethnicity = 'I'
+        then 'American Indian or Alaska Native'
+        when se.ethnicity = 'A'
+        then 'Asian'
+        when se.ethnicity = 'P'
+        then 'Native Hawaiian or Other Pacific Islander'
+        when se.ethnicity = 'N'
+        then 'Not Hispanic or Latino'
+        else 'Not Listed'
+    end as ethnicity,
 
     {{ dbt_utils.generate_surrogate_key(["se.student_number", "se.entrydate"]) }}
     as student_enrollments_key,

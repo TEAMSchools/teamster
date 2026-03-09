@@ -19,6 +19,7 @@ permissions: read-all
 jobs:
   trunk_check:
     name: Trunk Check Runner
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       checks: write # For trunk to post annotations

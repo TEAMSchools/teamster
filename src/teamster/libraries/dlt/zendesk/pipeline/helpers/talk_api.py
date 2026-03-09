@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from enum import Enum
-from typing import Any, Iterator
+from typing import Any
 
 from dlt.common.typing import DictStrStr, TDataItems, TSecretValue
 from dlt.sources.helpers.requests import client

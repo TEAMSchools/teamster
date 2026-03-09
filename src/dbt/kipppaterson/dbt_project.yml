@@ -22,9 +22,16 @@ vars:
   current_fiscal_year: 2026
   cloud_storage_uri_base: gs://teamster-kipppaterson/dagster/kipppaterson
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
-  powerschool_external_location_root: gs://teamster-kipppaterson/dagster/kipppaterson/powerschool/sis/sftp
 
 models:
+  kipppaterson:
+    powerschool:
+      +materialized: table
+      +schema: powerschool
+      sis:
+        staging:
+          +contract:
+            enforced: true
   amplify:
     dds:
       +enabled: false
@@ -111,8 +118,6 @@ models:
           stg_powerschool__s_stu_x:
             +enabled: false
           stg_powerschool__sectionteacher:
-            +enabled: false
-          stg_powerschool__storedgrades:
             +enabled: false
           stg_powerschool__studentrace:
             +enabled: false
@@ -206,8 +211,6 @@ sources:
               +enabled: false
             src_powerschool__sectionteacher:
               +enabled: false
-            src_powerschool__storedgrades:
-              +enabled: false
             src_powerschool__studentrace:
               +enabled: false
             src_powerschool__studenttest:
@@ -227,8 +230,6 @@ sources:
             src_powerschool__u_clg_et_stu_alt:
               +enabled: false
             src_powerschool__u_def_ext_students:
-              +enabled: false
-            src_powerschool__u_studentsuserfields:
               +enabled: false
             src_powerschool__u_storedgrades_de:
               +enabled: false

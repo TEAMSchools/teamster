@@ -16,12 +16,12 @@ from dagster._core.events import HandledOutputData
 from dagster_shared import check
 from pydantic import BaseModel
 
-from teamster.core.resources import get_io_manager_gcs_avro, get_io_manager_gcs_file
-
 
 def build_test_asset_avro(
     name, partitions_def=None, output_schema=None, output_data=None
 ):
+    from teamster.core.resources import get_io_manager_gcs_avro
+
     if output_data is None:
 
         class TestSchema(BaseModel):
@@ -42,6 +42,8 @@ def build_test_asset_avro(
 
 
 def build_test_asset_file(name, partitions_def=None):
+    from teamster.core.resources import get_io_manager_gcs_file
+
     @asset(
         key=["staging", "test", name],
         partitions_def=partitions_def,

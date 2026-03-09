@@ -1,6 +1,6 @@
 import time
 
-from dagster import ConfigurableResource, DagsterLogManager
+from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import HTTPError, Response, Session
@@ -15,7 +15,7 @@ class KnowBe4Resource(ConfigurableResource):
     _session: Session = PrivateAttr(default_factory=Session)
     _log: DagsterLogManager = PrivateAttr()
 
-    def setup_for_execution(self, context):
+    def setup_for_execution(self, context: InitResourceContext) -> None:
         self._log = check.not_none(value=context.log)
         self._service_root = self._service_root.format(self.server)
         self._session.headers["Authorization"] = f"Bearer {self.api_key}"
@@ -40,10 +40,10 @@ class KnowBe4Resource(ConfigurableResource):
             self._log.error(response.text)
             raise e
 
-    def get(self, resource: str, id: int | None = None, **kwargs):
+    def get(self, resource: str, id: int | None = None, **kwargs) -> Response:
         return self._request(method="GET", resource=resource, id=id, **kwargs)
 
-    def list(self, resource, **kwargs):
+    def list(self, resource: str, **kwargs) -> list[dict]:
         params = {"per_page": self.page_size} | kwargs.get("params", {})
 
         all_data = []

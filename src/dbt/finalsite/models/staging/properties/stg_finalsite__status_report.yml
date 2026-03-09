@@ -1,57 +1,137 @@
 models:
   - name: stg_finalsite__status_report
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - finalsite_enrollment_id
+              - _dagster_partition_key
+          config:
+            store_failures: true
     columns:
-      - name: finalsite_student_id
+      - name: finalsite_enrollment_id
         data_type: string
-      - name: enrollment_year
+      - name: _dagster_partition_key
         data_type: string
-      - name: status
+      - name: academic_hold_date
+        data_type: date
+      - name: academic_hold_timestamp
+        data_type: timestamp
+      - name: accepted_date
+        data_type: date
+      - name: accepted_timestamp
+        data_type: timestamp
+      - name: active_school_year
         data_type: string
-      - name: last_name
+      - name: active_school_year_int
+        data_type: int64
+      - name: applicant_date
+        data_type: date
+      - name: applicant_timestamp
+        data_type: timestamp
+      - name: application_complete_date
+        data_type: date
+      - name: application_complete_timestamp
+        data_type: timestamp
+      - name: application_grade
         data_type: string
+      - name: application_withdrawn_date
+        data_type: date
+      - name: application_withdrawn_timestamp
+        data_type: timestamp
+      - name: assigned_school
+        data_type: string
+      - name: assigned_school_date
+        data_type: date
+      - name: assigned_school_timestamp
+        data_type: timestamp
+      - name: birthdate
+        data_type: date
+      - name: campus_transfer_requested_date
+        data_type: date
+      - name: campus_transfer_requested_timestamp
+        data_type: timestamp
+      - name: deferred_date
+        data_type: date
+      - name: deferred_timestamp
+        data_type: timestamp
+      - name: denied_date
+        data_type: date
+      - name: denied_timestamp
+        data_type: timestamp
+      - name: did_not_enroll_date
+        data_type: date
+      - name: did_not_enroll_timestamp
+        data_type: timestamp
+      - name: enrolled_date
+        data_type: date
+      - name: enrolled_timestamp
+        data_type: timestamp
+      - name: enrollment_in_progress_date
+        data_type: date
+      - name: enrollment_in_progress_timestamp
+        data_type: timestamp
+      - name: enrollment_type
+        data_type: string
+      - name: financial_hold_date
+        data_type: date
+      - name: financial_hold_timestamp
+        data_type: timestamp
       - name: first_name
         data_type: string
-      - name: grade_level_name
+      - name: gender
         data_type: string
-      - name: school
+      - name: inactive_inquiry_date
+        data_type: date
+      - name: inactive_inquiry_timestamp
+        data_type: timestamp
+      - name: inquiry_completed_date
+        data_type: date
+      - name: inquiry_completed_timestamp
+        data_type: timestamp
+      - name: inquiry_date
+        data_type: date
+      - name: inquiry_timestamp
+        data_type: timestamp
+      - name: last_name
         data_type: string
+      - name: mid_year_withdrawal_date
+        data_type: date
+      - name: mid_year_withdrawal_timestamp
+        data_type: timestamp
+      - name: never_attended_date
+        data_type: date
+      - name: never_attended_timestamp
+        data_type: timestamp
+      - name: not_enrolling_date
+        data_type: date
+      - name: not_enrolling_timestamp
+        data_type: timestamp
+      - name: parent_declined_date
+        data_type: date
+      - name: parent_declined_timestamp
+        data_type: timestamp
       - name: powerschool_student_number
         data_type: int64
-      - name: status_start_date
+      - name: ready_for_lottery_date
         data_type: date
-      - name: enrollment_academic_year
-        data_type: int64
-      - name: grade_level
-        data_type: int64
-      - name: detailed_status
-        data_type: string
-      - name: status_end_date
-        data_type: date
-      - name: days_in_status
-        data_type: int64
-      - name: sre_academic_year
-        data_type: int64
-      - name: enrollment_academic_year_display
-        data_type: string
-      - name: sre_academic_year_start
-        data_type: date
-      - name: sre_academic_year_end
-        data_type: date
-      - name: rn
-        data_type: int64
-      - name: enrollment_type_raw
-        data_type: string
-      - name: latest_powerschool_student_number
-        data_type: int64
-      - name: latest_school
-        data_type: string
-      - name: status_end_timestamp
+      - name: ready_for_lottery_timestamp
         data_type: timestamp
-      - name: status_order
-        data_type: int64
-      - name: status_start_timestamp
+      - name: retained_date
+        data_type: date
+      - name: retained_timestamp
         data_type: timestamp
-      - name: extract_year
+      - name: review_in_progress_date
+        data_type: date
+      - name: review_in_progress_timestamp
+        data_type: timestamp
+      - name: self_contained
         data_type: string
-      - name: extract_datetime
-        data_type: datetime
+      - name: summer_withdraw_date
+        data_type: date
+      - name: summer_withdraw_timestamp
+        data_type: timestamp
+      - name: waitlisted_date
+        data_type: date
+      - name: waitlisted_timestamp
+        data_type: timestamp

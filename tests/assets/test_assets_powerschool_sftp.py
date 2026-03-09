@@ -267,9 +267,26 @@ def test_powerschool_users_kipppaterson():
     _test_asset(assets=assets, selection="kipppaterson/powerschool/sis/sftp/users")
 
 
+def test_powerschool_storedgrades_kipppaterson():
+    from teamster.code_locations.kipppaterson.powerschool.sis.sftp.assets import assets
+
+    _test_asset(
+        assets=assets, selection="kipppaterson/powerschool/sis/sftp/storedgrades"
+    )
+
+
 def test_powerschool_student_email_kipppaterson():
     from teamster.code_locations.kipppaterson.powerschool.sis.sftp.assets import assets
 
     _test_asset(
         assets=assets, selection="kipppaterson/powerschool/sis/sftp/student_email"
+    )
+
+
+def test_powerschool_u_studentsuserfields_kipppaterson():
+    from teamster.code_locations.kipppaterson.powerschool.sis.sftp.assets import assets
+
+    _test_asset(
+        assets=assets,
+        selection="kipppaterson/powerschool/sis/sftp/u_studentsuserfields",
     )

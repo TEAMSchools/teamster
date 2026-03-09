@@ -1,93 +1,365 @@
 with
-    xwalk as (
+    -- trunk-ignore(sqlfluff/ST03)
+    cleaned_data as (
         select
-            r.enrollment_academic_year,
-            r.enrollment_academic_year_display,
-            r.sre_academic_year_start,
-            r.sre_academic_year_end,
-            r.org,
-            r.region,
-            r.finalsite_student_id,
-            r.grade_level,
-            r.enrollment_year_enrollment_type,
+            enrollment_academic_year,
+            enrollment_academic_year_display,
+            org,
+            region,
+            schoolid,
+            finalsite_enrollment_id as finalsite_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
+            grade_level,
+            enroll_status,
+            gender,
+            birthdate,
+            self_contained,
+            enrollment_type,
+            status_group_value as grouped_status,
+            grouped_status_order,
+            grouped_status_timeframe,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+            latest_status,
 
-            x.overall_status,
-            x.funnel_status,
-            x.status_category,
-            x.offered_status,
-            x.offered_status_detailed,
-            x.detailed_status_ranking,
-            x.detailed_status_branched_ranking,
-            x.detailed_status,
+            'All' as aligned_enrollment_type,
 
-            calendar_day,
-            -- trunk-ignore(sqlfluff/LT01)
-            date_trunc(calendar_day, week(monday)) as sre_academic_year_wk_start_monday,
+            if(latest_status = detailed_status, true, false) as latest_detailed_match,
 
-            date_add(
-                -- trunk-ignore(sqlfluff/LT01)
-                date_trunc(calendar_day, week(monday)), interval 6 day
-            ) as sre_academic_year_wk_end_sunday,
+            if(
+                status_group_value in ('Inquiries', 'Applications'), region, school
+            ) as school,
 
-        from {{ ref("int_students__finalsite_student_roster") }} as r
-        inner join
-            {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
-            on r.enrollment_academic_year = x.enrollment_academic_year
-            and r.enrollment_year_enrollment_type = x.enrollment_type
+            max(status_start_date) over (
+                partition by
+                    enrollment_academic_year,
+                    finalsite_enrollment_id,
+                    status_group_value
+            ) as grouped_status_start_date,
+
+        from {{ ref("int_students__finalsite_student_roster") }}
+        where not qa_flag
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="cleaned_data",
+                partition_by="enrollment_academic_year, finalsite_id, grouped_status",
+                order_by="grouped_status_start_date desc",
+            )
+        }}
+    ),
+
+    roster as (
+        -- ever statuses
+        select
+            enrollment_academic_year,
+            enrollment_academic_year_display,
+            org,
+            region,
+            schoolid,
+            school,
+            finalsite_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
+            grade_level,
+            enroll_status,
+            gender,
+            birthdate,
+            self_contained,
+            enrollment_type,
+            grouped_status,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+            latest_status,
+            aligned_enrollment_type,
+            grouped_status_order,
+            grouped_status_timeframe,
+            grouped_status_start_date,
+
+            case
+                grouped_status
+                when 'Applications'
+                then 'App Target'
+                when 'Assigned School'
+                then 'Overall Conversion'
+                when 'Offers'
+                then 'Offers Target'
+                else grouped_status
+            end as goal_name,
+
+            case
+                when
+                    grouped_status in (
+                        'Accepted to Enrolled',
+                        'Offers to Accepted',
+                        'Offers to Enrolled'
+                    )
+                then 'Conversion'
+                else grouped_status
+            end as goal_type,
+
+        from deduplicate
+        where grouped_status_timeframe = 'Ever'
+
+        union all
+
+        -- regular current
+        select
+            enrollment_academic_year,
+            enrollment_academic_year_display,
+            org,
+            region,
+            schoolid,
+            school,
+            finalsite_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
+            grade_level,
+            enroll_status,
+            gender,
+            birthdate,
+            self_contained,
+            enrollment_type,
+            grouped_status,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+            latest_status,
+            aligned_enrollment_type,
+            grouped_status_order,
+            grouped_status_timeframe,
+            grouped_status_start_date,
+
+            grouped_status as goal_name,
+
+            case
+                when
+                    grouped_status in (
+                        'Accepted to Enrolled',
+                        'Offers to Accepted',
+                        'Offers to Enrolled'
+                    )
+                then 'Conversion'
+                else grouped_status
+            end as goal_type,
+
+        from deduplicate
+        where grouped_status_timeframe = 'Current'
+    ),
+
+    add_group_status_end_date as (
+        select
+            enrollment_academic_year,
+            finalsite_id,
+            enroll_status,
+            enrollment_type,
+            goal_type,
+            goal_name,
+            grouped_status,
+            grouped_status_order,
+            grouped_status_start_date,
+
+            lead(grouped_status_start_date, 1, current_date('America/New_York')) over (
+                partition by finalsite_id, enrollment_academic_year
+                order by grouped_status_start_date asc, grouped_status_order asc
+            ) as grouped_status_end_date,
+
+        from roster
+        where grouped_status_order != 0 and enrollment_type = 'New'
+    ),
+
+    days_in_grouped_status_calc as (
+        select
+            enrollment_academic_year,
+            finalsite_id,
+            enroll_status,
+            enrollment_type,
+            goal_type,
+            goal_name,
+            grouped_status,
+            grouped_status_order,
+            grouped_status_start_date,
+            grouped_status_end_date,
+
+            if(
+                grouped_status_end_date = grouped_status_start_date,
+                1,
+                date_diff(grouped_status_end_date, grouped_status_start_date, day)
+            ) as days_in_grouped_status,
+
+        from add_group_status_end_date
+    ),
+
+    final_roster as (
+        select
+            enrollment_academic_year,
+            enrollment_academic_year_display,
+            org,
+            region,
+            schoolid,
+            school,
+            finalsite_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
+            grade_level,
+            enroll_status,
+            gender,
+            birthdate,
+            self_contained,
+            enrollment_type,
+            grouped_status,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+            latest_status,
+            aligned_enrollment_type,
+            grouped_status_order,
+            grouped_status_timeframe,
+            grouped_status_start_date,
+
+            goal_type,
+
+            goal_name,
+
+        from roster
+
+        union all
+
+        -- moved here to not include these expanded goal types in days in status calc
+        select
+            d.enrollment_academic_year,
+            d.enrollment_academic_year_display,
+            d.org,
+            d.region,
+            d.schoolid,
+            d.school,
+            d.finalsite_id,
+            d.powerschool_student_number,
+            d.first_name,
+            d.last_name,
+            d.grade_level,
+            d.enroll_status,
+            d.gender,
+            d.birthdate,
+            d.self_contained,
+            d.enrollment_type,
+            d.grouped_status,
+            d.is_enrolled_fdos,
+            d.is_enrolled_oct01,
+            d.is_enrolled_oct15,
+            d.latest_status,
+            d.aligned_enrollment_type,
+            d.grouped_status_order,
+            d.grouped_status_timeframe,
+            d.grouped_status_start_date,
+
+            d.grouped_status as goal_type,
+
+            grouped_status_expand as goal_name,
+
+        from deduplicate as d
         cross join
             unnest(
-                generate_date_array(
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(r.sre_academic_year_start, week(monday)),
-                    -- trunk-ignore(sqlfluff/LT01)
-                    date_trunc(r.sre_academic_year_end, week(monday)),
-                    interval 1 day
-                )
-            ) as calendar_day
+                ['<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days']
+            ) as grouped_status_expand
+        where
+            d.grouped_status_timeframe = 'Current'
+            and d.grouped_status = 'Pending Offers'
     )
 
+-- maintain pending offers general
 select
-    x.*,
+    r.enrollment_academic_year,
+    r.enrollment_academic_year_display,
+    r.org,
+    r.region,
+    r.schoolid,
+    r.school,
+    r.finalsite_id,
+    r.powerschool_student_number,
+    r.first_name,
+    r.last_name,
+    r.grade_level,
+    r.enroll_status,
+    r.gender,
+    r.birthdate,
+    r.self_contained,
+    r.enrollment_type,
+    r.grouped_status,
+    r.is_enrolled_fdos,
+    r.is_enrolled_oct01,
+    r.is_enrolled_oct15,
+    r.latest_status,
+    r.aligned_enrollment_type,
+    r.grouped_status_order,
+    r.grouped_status_timeframe,
+    r.grouped_status_start_date,
+    r.goal_name,
+    r.goal_type,
 
-    r.org as student_org,
-    r.region as student_region,
-    r.latest_region as student_latest_region,
-    r.schoolid as student_schoolid,
-    r.latest_schoolid as student_latest_schoolid,
-    r.school as student_school,
-    r.latest_school as student_latest_school,
-    r.finalsite_student_id as student_finalsite_student_id,
-    r.last_name as student_last_name,
-    r.first_name as student_first_name,
-    r.grade_level as student_grade_level,
-    r.enrollment_year_enrollment_type as student_enrollment_year_enrollment_type,
-    r.detailed_status as student_detailed_status,
-    r.status_start_date,
-    r.status_end_date,
-    r.days_in_status,
-    r.student_applicant_ops,
-    r.student_offered_ops,
-    r.student_pending_offer_ops,
-    r.student_overall_conversion_ops,
-    r.student_offers_to_accepted_num,
-    r.student_offers_to_accepted_den,
-    r.student_accepted_to_enrolled_num,
-    r.student_accepted_to_enrolled_den,
-    r.student_offers_to_enrolled_num,
-    r.student_offers_to_enrolled_den,
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
 
-    row_number() over (
-        partition by
-            x.enrollment_academic_year,
-            x.finalsite_student_id,
-            x.sre_academic_year_wk_start_monday
-        order by x.calendar_day desc
-    ) as weekly_scaffold,
-
-from xwalk as x
+from final_roster as r
 left join
-    {{ ref("int_students__finalsite_student_roster") }} as r
-    on x.enrollment_academic_year = r.enrollment_academic_year
-    and x.finalsite_student_id = r.finalsite_student_id
-    and x.detailed_status = r.detailed_status
-    and x.calendar_day between r.status_start_date and r.status_end_date
+    days_in_grouped_status_calc as d
+    on r.enrollment_academic_year = d.enrollment_academic_year
+    and r.finalsite_id = d.finalsite_id
+    and r.enrollment_type = d.enrollment_type
+    and r.grouped_status = d.grouped_status
+    and r.goal_type = d.goal_type
+    and r.goal_name = d.goal_name
+where r.goal_name not in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
+
+union all
+-- ensure pending offers timeframes have day in status
+select
+    r.enrollment_academic_year,
+    r.enrollment_academic_year_display,
+    r.org,
+    r.region,
+    r.schoolid,
+    r.school,
+    r.finalsite_id,
+    r.powerschool_student_number,
+    r.first_name,
+    r.last_name,
+    r.grade_level,
+    r.enroll_status,
+    r.gender,
+    r.birthdate,
+    r.self_contained,
+    r.enrollment_type,
+    r.grouped_status,
+    r.is_enrolled_fdos,
+    r.is_enrolled_oct01,
+    r.is_enrolled_oct15,
+    r.latest_status,
+    r.aligned_enrollment_type,
+    r.grouped_status_order,
+    r.grouped_status_timeframe,
+    r.grouped_status_start_date,
+    r.goal_name,
+    r.goal_type,
+
+    d.grouped_status_end_date,
+    d.days_in_grouped_status,
+
+from final_roster as r
+left join
+    days_in_grouped_status_calc as d
+    on r.enrollment_academic_year = d.enrollment_academic_year
+    and r.finalsite_id = d.finalsite_id
+    and r.enrollment_type = d.enrollment_type
+    and r.grouped_status = d.grouped_status
+    and r.goal_type = d.goal_type
+where r.goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')

@@ -2,4 +2,95 @@ models:
   - name: rpt_tableau__fresh_dashboard_aggregated
     config:
       contract:
-        enforced: false
+        enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - school
+              - grade_level
+              - goal_granularity
+              - goal_type
+              - goal_name
+              - finalsite_id
+              - enrollment_type
+              - grouped_status
+              - grouped_status_order
+              - grouped_status_timeframe
+              - latest_status
+              - goal_name_value
+          config:
+            store_failures: true
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: org
+        data_type: string
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: goal_granularity
+        data_type: string
+      - name: goal_type
+        data_type: string
+      - name: goal_name
+        data_type: string
+      - name: goal_value
+        data_type: numeric
+      - name: grouped_status_timeframe
+        data_type: string
+      - name: enrollment_academic_year
+        data_type: int64
+      - name: enrollment_academic_year_display
+        data_type: string
+      - name: finalsite_id
+        data_type: string
+      - name: powerschool_student_number
+        data_type: int64
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: student_grade_level
+        data_type: int64
+      - name: enroll_status
+        data_type: int64
+      - name: birthdate
+        data_type: date
+      - name: gender
+        data_type: string
+      - name: grouped_status
+        data_type: string
+      - name: latest_status
+        data_type: string
+      - name: self_contained
+        data_type: string
+      - name: enrollment_type
+        data_type: string
+      - name: is_enrolled_fdos
+        data_type: boolean
+      - name: is_enrolled_oct01
+        data_type: boolean
+      - name: is_enrolled_oct15
+        data_type: boolean
+      - name: aligned_enrollment_type
+        data_type: string
+      - name: grouped_status_order
+        data_type: int64
+      - name: grouped_status_start_date
+        data_type: date
+      - name: grouped_status_end_date
+        data_type: date
+      - name: days_in_grouped_status
+        data_type: int64
+      - name: goal_name_value
+        data_type: string

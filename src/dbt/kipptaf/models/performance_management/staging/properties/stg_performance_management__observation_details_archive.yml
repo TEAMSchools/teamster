@@ -3,7 +3,6 @@ models:
     config:
       contract:
         enforced: true
-      # enabled: false
     columns:
       - name: employee_number
         data_type: int64

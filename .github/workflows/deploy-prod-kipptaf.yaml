@@ -38,6 +38,7 @@ on:
       - src/teamster/libraries/smartrecruiters/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/tableau/**
+      - "!**/*.md"
   pull_request:
     paths:
       - .github/workflows/dagster-cloud-deploy.yaml
@@ -65,6 +66,7 @@ on:
       - src/teamster/libraries/smartrecruiters/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/tableau/**
+      - "!**/*.md"
     types:
       - opened
       - synchronize

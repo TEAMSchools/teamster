@@ -45,6 +45,8 @@ view_count_per_view = build_sftp_folder_asset(
     ],
     group_name="tableau",
     kinds={"python", "task"},
+    pool="tableau_pat_session_limit",
+    op_tags={"dagster/priority": "-1"},
 )
 def tableau_teacher_gradebook_group_sync(
     context: AssetExecutionContext,

@@ -85,5 +85,5 @@ models:
       - name: ms_attended
         data_type: string
 
-      - name: nj_overall_student_tier
+      - name: student_tier
         data_type: string

@@ -2,7 +2,14 @@ from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from google import auth
 from google.auth.credentials import Credentials
-from gspread import Client, SpreadsheetNotFound, authorize, service_account, utils
+from gspread import (
+    Client,
+    Spreadsheet,
+    SpreadsheetNotFound,
+    authorize,
+    service_account,
+    utils,
+)
 from pydantic import PrivateAttr
 
 
@@ -30,7 +37,7 @@ class GoogleSheetsResource(ConfigurableResource):
                 credentials=check.inst(obj=credentials, ttype=Credentials)
             )
 
-    def open(self, **kwargs):
+    def open(self, **kwargs) -> Spreadsheet | None:
         kwargs_keys = kwargs.keys()
 
         if "title" in kwargs_keys:
@@ -42,7 +49,7 @@ class GoogleSheetsResource(ConfigurableResource):
         else:
             return None
 
-    def open_or_create_sheet(self, **kwargs):
+    def open_or_create_sheet(self, **kwargs) -> Spreadsheet | None:
         try:
             spreadsheet = self.open(**kwargs)
         except SpreadsheetNotFound as e:
@@ -54,5 +61,5 @@ class GoogleSheetsResource(ConfigurableResource):
         return spreadsheet
 
     @staticmethod
-    def rowcol_to_a1(row, col):
+    def rowcol_to_a1(row: int, col: int) -> str:
         return utils.rowcol_to_a1(row=row, col=col)
