@@ -12,7 +12,7 @@ on:
 
 jobs:
   claude-review:
-    if: github.actor != 'dependabot[bot]'
+    if: github.actor != 'dependabot[bot]' && !github.event.pull_request.draft
 
     runs-on: ubuntu-latest
     permissions:
@@ -31,14 +31,19 @@ jobs:
         id: claude-review
         uses: anthropics/claude-code-action@v1
         with:
+          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
+          # or https://code.claude.com/docs/en/cli-reference for available options
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
-          plugin_marketplaces: https://github.com/anthropics/claude-code.git
+          plugin_marketplaces: |
+            https://github.com/anthropics/claude-code.git
+            https://github.com/dbt-labs/dbt-agent-skills.git
+            https://github.com/dagster-io/skills.git
           plugins: code-review@claude-code-plugins
           track_progress: true
           prompt:
             "/code-review:code-review ${{ github.repository }}/pull/${{
             github.event.pull_request.number }}"
           allowed_bots: dbt-cloud
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
+          include_fix_links: false
+          use_sticky_comment: true

@@ -70,9 +70,39 @@ uv run pytest tests/assets/test_assets_dbt.py
 
 ### Linting
 
+Linting is managed via [Trunk](https://trunk.io). Configuration lives in
+`.trunk/trunk.yaml` (enabled linters) and `.trunk/config/` (per-linter config
+files).
+
+Enabled linters:
+
+| Linter           | Config file                        | Scope                        |
+| ---------------- | ---------------------------------- | ---------------------------- |
+| `ruff`           | `.trunk/config/ruff.toml`          | Python (`src/teamster/`)     |
+| `pyright`        | `.trunk/config/pyrightconfig.json` | Python (excl. `dlt_sources`) |
+| `isort`          | `.trunk/config/.isort.cfg`         | Python                       |
+| `bandit`         | `.trunk/config/.bandit`            | Python                       |
+| `sqlfluff`       | `.trunk/config/.sqlfluff`          | SQL (`src/dbt/`)             |
+| `sqlfmt`         | —                                  | SQL (`src/dbt/`)             |
+| `prettier`       | `.trunk/config/.prettierrc.yaml`   | YAML, JSON, Markdown, etc.   |
+| `yamllint`       | `.trunk/config/.yamllint`          | YAML                         |
+| `markdownlint`   | `.trunk/config/.markdownlint.yaml` | Markdown                     |
+| `hadolint`       | `.trunk/config/.hadolint.yaml`     | Dockerfiles                  |
+| `shellcheck`     | `.trunk/config/.shellcheckrc`      | Shell scripts                |
+| `shfmt`          | —                                  | Shell scripts                |
+| `actionlint`     | —                                  | GitHub Actions workflows     |
+| `taplo`          | —                                  | TOML                         |
+| `gitleaks`       | —                                  | Secrets scanning             |
+| `osv-scanner`    | —                                  | Dependency vulnerabilities   |
+| `oxipng`         | —                                  | PNG optimization             |
+| `svgo`           | `.trunk/config/svgo.config.js`     | SVG optimization             |
+| `git-diff-check` | —                                  | Merge conflict markers       |
+
 ```bash
-# Trunk is used for linting (ruff, pyright)
+# Check all files
 trunk check
+
+# Auto-format all files
 trunk fmt
 ```
 
