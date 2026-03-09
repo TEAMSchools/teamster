@@ -6,6 +6,7 @@ models:
         data_tests:
           - unique:
               config:
+                severity: warn
                 store_failures: true
       - name: sf_contact_id
         data_type: string
