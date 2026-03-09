@@ -1,7 +1,6 @@
 with
     survey_reconciliation as (
-        select *
-        from {{ ref("int_surveys__kfwd_career_launch_reconciliation") }}
+        select * from {{ ref("int_surveys__kfwd_career_launch_reconciliation") }}
     ),
 
     programs as (

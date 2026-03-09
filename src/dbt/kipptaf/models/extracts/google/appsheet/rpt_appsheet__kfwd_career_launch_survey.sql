@@ -7,8 +7,7 @@ with
         select student, pursuing_degree_type, major,
         from {{ ref("stg_kippadb__enrollment") }}
         where type not in ('High School', 'Middle School')
-        qualify
-            row_number() over (partition by student order by start_date desc) = 1
+        qualify row_number() over (partition by student order by start_date desc) = 1
     ),
 
     survey_union as (
