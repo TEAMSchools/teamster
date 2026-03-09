@@ -6,7 +6,7 @@ from teamster.core.resources import GOOGLE_DRIVE_RESOURCE, GOOGLE_FORMS_RESOURCE
 
 
 def test_google_forms_responses_sensor():
-    from teamster.code_locations.kipptaf._google.forms.sensors import (
+    from teamster.code_locations.kipptaf.google.forms.sensors import (
         google_forms_responses_sensor,
     )
 

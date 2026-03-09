@@ -183,6 +183,15 @@ src/
 
 ### Key Architectural Patterns
 
+**Subdirectory naming convention**: Within a code location, subdirectory names
+signal the type of integration:
+
+- `dbt/`, `dlt/`, `google/` — framework-integrated modules (Dagster-native
+  integrations with lifecycle managed by a Dagster library, e.g. `dagster-dbt`,
+  `dagster-dlt`)
+- `powerschool/`, `deanslist/`, etc. — direct integrations (custom asset
+  builders in `src/teamster/libraries/`)
+
 **Code Location Pattern**: Each school network has a `code_locations/<name>/`
 directory with:
 
@@ -193,9 +202,9 @@ directory with:
 - `definitions.py` — the `Definitions` object wiring all assets, schedules,
   sensors, resources
 - `resources.py` — code-location-specific resource instances
-- `_dbt/` — dbt asset definitions (loads manifest, builds `dbt_assets`)
-- `_dlt/` — DLT pipeline assets
-- `_google/` — Google Workspace assets
+- `dbt/` — dbt asset definitions (loads manifest, builds `dbt_assets`)
+- `dlt/` — DLT pipeline assets
+- `google/` — Google Workspace assets
 - Per-integration subdirectories (e.g., `powerschool/`, `deanslist/`)
 
 **Library + Config Pattern**: Integrations follow a two-layer pattern:

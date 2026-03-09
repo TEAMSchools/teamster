@@ -16,7 +16,7 @@ GCS bucket: `teamster-kipppaterson`
 
 | Module                   | Type                      | Trigger                                     |
 | ------------------------ | ------------------------- | ------------------------------------------- |
-| `_dbt`                   | dbt assets                | `AutomationConditionSensor`                 |
+| `dbt`                    | dbt assets                | `AutomationConditionSensor`                 |
 | `powerschool` (sis/sftp) | SFTP assets via Couchdrop | `AutomationConditionSensor`                 |
 | `amplify` (mclass sftp)  | SFTP assets               | sensor (`build_amplify_mclass_sftp_sensor`) |
 | `finalsite`              | API assets                | `AutomationConditionSensor`                 |

@@ -16,9 +16,9 @@ GCS bucket: `teamster-kipptaf`
 
 | Module                   | Assets                                             | Schedules                  | Sensors                 |
 | ------------------------ | -------------------------------------------------- | -------------------------- | ----------------------- |
-| `_dbt`                   | 4 asset groups (see below)                         | —                          | —                       |
-| `_dlt`                   | Illuminate (active), Salesforce/Zendesk (disabled) | daily + hourly             | —                       |
-| `_google`                | Directory, Forms, AppSheet specs, Sheets specs     | directory, forms           | bigquery, forms, sheets |
+| `dbt`                    | 4 asset groups (see below)                         | —                          | —                       |
+| `dlt`                    | Illuminate (active), Salesforce/Zendesk (disabled) | daily + hourly             | —                       |
+| `google`                 | Directory, Forms, AppSheet specs, Sheets specs     | directory, forms           | bigquery, forms, sheets |
 | `adp`                    | payroll SFTP + WFN API + WFM                       | WFN + WFM schedules        | WFN + payroll sensors   |
 | `airbyte`                | asset specs                                        | schedule                   | —                       |
 | `collegeboard`           | SFTP assets                                        | —                          | —                       |
@@ -39,7 +39,7 @@ GCS bucket: `teamster-kipptaf`
 | `zendesk`                | assets                                             | schedule                   | —                       |
 | `couchdrop`              | sensor only                                        | —                          | sensor                  |
 
-## dbt Asset Groups (`_dbt/assets.py`)
+## dbt Asset Groups (`dbt/assets.py`)
 
 Kipptaf splits dbt into **four separate asset groups** with different resource
 requirements and selection criteria:
@@ -52,12 +52,12 @@ requirements and selection criteria:
 | `adp_payroll_dbt_assets`  | `source:adp_payroll+` | —                                               | Partitioned by payroll file |
 
 `core_dbt_assets` is the one used by `TableauServerResource` dependencies
-(imported as `core_dbt_assets` from `kipptaf._dbt.assets`).
+(imported as `core_dbt_assets` from `kipptaf.dbt.assets`).
 
 `asset_specs` also includes dbt **exposure** asset specs (non-Tableau exposures
 only) built from the manifest.
 
-## `_google` Sub-module
+## `google` Sub-module
 
 Aggregates all Google Workspace integrations into a single importable module:
 
