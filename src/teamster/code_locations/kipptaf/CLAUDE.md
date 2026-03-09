@@ -96,6 +96,6 @@ and several SSH resources.
 
 ## Disabled Integrations
 
-`adp` WFM schedules are disabled (see `adp/workforce_manager/schedules.py`).
-Reusable library code for `alchemer`, `dayforce`, and `fivetran` is preserved
+`adp` WFM is not integrated (no schedules or assets). Reusable library code for
+`alchemer`, `dayforce`, `fivetran`, and `adp/workforce_manager` is preserved
 under `src/teamster/libraries/` for future use.
