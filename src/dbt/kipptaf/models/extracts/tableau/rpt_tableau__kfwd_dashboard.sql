@@ -783,8 +783,8 @@ left join
     and sv.academic_year = ay.academic_year
 left join ba_semesters_enrolled as ba on c.contact_id = ba.sf_contact_id
 left join military as mil on c.contact_id = mil.contact and mil.rn_enlistment = 1
-left join military_scores as ms c.contact_id = ms.contact and ms.military_score = 1
-left join military_pt as mpt c.contact_id = mpt.contact and mpt.military_pt = 1
+left join military_scores as ms c.contact_id = ms.contact and ms.rn_military_score = 1
+left join military_pt as mpt c.contact_id = mpt.contact and mpt.rn_military_pt = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null

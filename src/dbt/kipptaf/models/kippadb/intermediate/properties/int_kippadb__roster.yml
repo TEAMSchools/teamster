@@ -663,3 +663,46 @@ models:
         data_type: string
       - name: es_graduated
         data_type: string
+      - name: afqt_score
+        data_type: numeric
+      - name: physical_training_requirement_passed
+        data_type: string
+      - name: qualified_air_force
+        data_type: boolean
+      - name: qualified_army
+        data_type: boolean
+      - name: qualified_coast_guard
+        data_type: boolean
+      - name: qualified_marine_corps
+        data_type: boolean
+      - name: qualified_navy
+        data_type: boolean
+      - name: total_qualified_military_branches
+        data_type: numeric
+      - name: military_status
+        data_type: string
+      - name: military_branch
+        data_type: string
+      - name: meps_location
+        data_type: string
+      - name: meps_start_date
+        data_type: date
+      - name: meps_end_date
+        data_type: date
+      - name: delayed_entry_enlistment_program_dep
+        data_type: string
+      - name: bmt_start_date
+        data_type: date
+      - name: bmt_end_date
+        data_type: date
+      - name: ineligible_for_military_enlistment
+        data_type: string
+      - name: military_discharge_type
+        data_type: string
+      - name: military_discharge_date
+        data_type: date
+      - name: intent_to_enlist
+        data_type: boolean
+      - name: cte_military_interest
+        data_type: string
+     
