@@ -14,29 +14,29 @@ GCS bucket: `teamster-kipptaf`
 
 ## Active Integrations
 
-| Module                   | Assets                                             | Schedules                  | Sensors                 |
-| ------------------------ | -------------------------------------------------- | -------------------------- | ----------------------- |
-| `dbt`                    | 4 asset groups (see below)                         | —                          | —                       |
-| `dlt`                    | Illuminate (active), Salesforce/Zendesk (disabled) | daily + hourly             | —                       |
-| `google`                 | Directory, Forms, AppSheet specs, Sheets specs     | directory, forms           | bigquery, forms, sheets |
-| `adp`                    | payroll SFTP + WFN API (WFM disabled)              | WFN schedule               | WFN + payroll sensors   |
-| `airbyte`                | asset specs                                        | schedule                   | disabled                |
-| `collegeboard`           | SFTP assets                                        | —                          | —                       |
-| `coupa`                  | API assets                                         | schedule                   | —                       |
-| `deanslist`              | API assets                                         | —                          | sensor                  |
-| `extracts`               | BigQuery→SFTP                                      | schedule                   | —                       |
-| `knowbe4`                | API assets                                         | schedule                   | —                       |
-| `ldap`                   | LDAP assets                                        | schedule                   | disabled                |
-| `level_data`             | Grow API assets                                    | schedule                   | —                       |
-| `nsc`                    | SFTP assets                                        | —                          | —                       |
-| `overgrad`               | API assets                                         | —                          | —                       |
-| `performance_management` | SFTP assets                                        | —                          | —                       |
-| `powerschool`            | enrollment API                                     | schedule                   | —                       |
-| `smartrecruiters`        | report assets                                      | schedule                   | —                       |
-| `surveys`                | op-based email job                                 | schedule (Mon/Wed/Fri 9am) | —                       |
-| `tableau`                | workbook refresh assets                            | schedule                   | —                       |
-| `zendesk`                | assets                                             | schedule                   | —                       |
-| `couchdrop`              | sensor only                                        | —                          | sensor                  |
+| Module                   | Assets                                                    | Schedules                  | Sensors                 |
+| ------------------------ | --------------------------------------------------------- | -------------------------- | ----------------------- |
+| `dbt`                    | 4 asset groups (see below)                                | —                          | —                       |
+| `dlt`                    | Illuminate (active), Salesforce (WIP), Zendesk (disabled) | daily + hourly             | —                       |
+| `google`                 | Directory, Forms, AppSheet specs, Sheets specs            | directory, forms           | bigquery, forms, sheets |
+| `adp`                    | payroll SFTP + WFN API (WFM disabled)                     | WFN schedule               | WFN + payroll sensors   |
+| `airbyte`                | asset specs                                               | schedule                   | disabled                |
+| `collegeboard`           | SFTP assets                                               | —                          | —                       |
+| `coupa`                  | API assets                                                | schedule                   | —                       |
+| `deanslist`              | API assets                                                | —                          | sensor                  |
+| `extracts`               | BigQuery→SFTP                                             | schedule                   | —                       |
+| `knowbe4`                | API assets                                                | schedule                   | —                       |
+| `ldap`                   | LDAP assets                                               | schedule                   | disabled                |
+| `level_data`             | Grow API assets                                           | schedule                   | —                       |
+| `nsc`                    | SFTP assets                                               | —                          | —                       |
+| `overgrad`               | API assets                                                | —                          | —                       |
+| `performance_management` | SFTP assets                                               | —                          | —                       |
+| `powerschool`            | enrollment API                                            | schedule                   | —                       |
+| `smartrecruiters`        | report assets                                             | schedule                   | —                       |
+| `surveys`                | op-based email job                                        | schedule (Mon/Wed/Fri 9am) | —                       |
+| `tableau`                | workbook refresh assets                                   | schedule                   | —                       |
+| `zendesk`                | assets                                                    | schedule                   | —                       |
+| `couchdrop`              | sensor only                                               | —                          | sensor                  |
 
 ## dbt Asset Groups (`dbt/assets.py`)
 
