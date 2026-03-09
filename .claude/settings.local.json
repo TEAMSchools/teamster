@@ -8,7 +8,8 @@
       "Bash(python -m pytest tests/ -x -q)",
       "Read(//home/vscode/.claude/plugins/cache/dagster/**)",
       "WebFetch(domain:docs.dagster.io)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(git add:*)"
     ]
   },
   "enabledPlugins": {
