@@ -20,8 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write
+      issues: write
       id-token: write
       actions: read # Required for Claude to read CI results on PRs
     steps:
@@ -35,6 +35,11 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          plugin_marketplaces: |
+            https://github.com/anthropics/claude-code.git
+            https://github.com/dbt-labs/dbt-agent-skills.git
+            https://github.com/dagster-io/skills.git
 
           # This is an optional setting that allows Claude to read CI results on PRs
           additional_permissions: |

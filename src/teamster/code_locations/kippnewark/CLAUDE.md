@@ -16,7 +16,7 @@ GCS bucket: `teamster-kippnewark`
 
 | Module                  | Type          | Trigger                                     |
 | ----------------------- | ------------- | ------------------------------------------- |
-| `_dbt`                  | dbt assets    | `AutomationConditionSensor`                 |
+| `dbt`                   | dbt assets    | `AutomationConditionSensor`                 |
 | `powerschool`           | ODBC assets   | sensor (`build_powerschool_asset_sensor`)   |
 | `amplify` (mclass sftp) | SFTP assets   | sensor (`build_amplify_mclass_sftp_sensor`) |
 | `deanslist`             | API assets    | schedule (nightly)                          |

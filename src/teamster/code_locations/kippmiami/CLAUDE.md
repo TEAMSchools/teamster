@@ -16,7 +16,7 @@ GCS bucket: `teamster-kippmiami`
 
 | Module        | Type          | Trigger                                   |
 | ------------- | ------------- | ----------------------------------------- |
-| `_dbt`        | dbt assets    | `AutomationConditionSensor`               |
+| `dbt`         | dbt assets    | `AutomationConditionSensor`               |
 | `powerschool` | ODBC assets   | sensor (`build_powerschool_asset_sensor`) |
 | `deanslist`   | API assets    | schedule (nightly)                        |
 | `finalsite`   | API assets    | `AutomationConditionSensor`               |

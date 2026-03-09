@@ -157,6 +157,7 @@ src/
       ssh/                # SSH tunnel resource (CLAUDE.md)
       tableau/            # Tableau Server (CLAUDE.md)
       titan/              # Titan school nutrition (CLAUDE.md)
+      zendesk/            # Zendesk support platform (CLAUDE.md)
     code_locations/       # Per-school Dagster definitions
       kipptaf/            # TAF (network-wide): the largest code location (CLAUDE.md)
       kippnewark/         # (CLAUDE.md)
@@ -183,6 +184,15 @@ src/
 
 ### Key Architectural Patterns
 
+**Subdirectory naming convention**: Within a code location, subdirectory names
+signal the type of integration:
+
+- `dbt/`, `dlt/`, `google/` — framework-integrated modules (Dagster-native
+  integrations with lifecycle managed by a Dagster library, e.g. `dagster-dbt`,
+  `dagster-dlt`)
+- `powerschool/`, `deanslist/`, etc. — direct integrations (custom asset
+  builders in `src/teamster/libraries/`)
+
 **Code Location Pattern**: Each school network has a `code_locations/<name>/`
 directory with:
 
@@ -193,9 +203,9 @@ directory with:
 - `definitions.py` — the `Definitions` object wiring all assets, schedules,
   sensors, resources
 - `resources.py` — code-location-specific resource instances
-- `_dbt/` — dbt asset definitions (loads manifest, builds `dbt_assets`)
-- `_dlt/` — DLT pipeline assets
-- `_google/` — Google Workspace assets
+- `dbt/` — dbt asset definitions (loads manifest, builds `dbt_assets`)
+- `dlt/` — DLT pipeline assets
+- `google/` — Google Workspace assets
 - Per-integration subdirectories (e.g., `powerschool/`, `deanslist/`)
 
 **Library + Config Pattern**: Integrations follow a two-layer pattern:
@@ -227,8 +237,8 @@ Kubernetes with secrets mounted at `/etc/secret-volume`.
 
 ### dbt Project Conventions
 
-- Models follow `stg_` (staging), `int_` (intermediate), `rpt_` (report/extract)
-  prefixes
+- Models follow `stg_` (staging), `int_` (intermediate), `rpt_` (reporting views
+  / extracts), `dim_*` / `fct_*` (data mart) prefixes
 - `src/dbt/kipptaf/` is the primary analytics project; school-specific projects
   (`kippnewark`, etc.) contain school-specific extracts
 - dbt packages are vendored into `dbt_packages/` subdirectories within each
@@ -238,19 +248,26 @@ Kubernetes with secrets mounted at `/etc/secret-volume`.
 
 **Model quality requirements** (enforced in all dbt projects):
 
-| Layer                     | Contract | Uniqueness test                                                            |
-| ------------------------- | -------- | -------------------------------------------------------------------------- |
-| Staging (`stg_`)          | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-| Intermediate (`int_`)     | —        | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-| Extracts / Marts (`rpt_`) | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
+| Layer                         | Contract | Uniqueness test                                                            |
+| ----------------------------- | -------- | -------------------------------------------------------------------------- |
+| Staging (`stg_`)              | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
+| Intermediate (`int_`)         | —        | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
+| Reporting views (`rpt_`)      | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
+| Data mart (`dim_*` / `fct_*`) | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
+
+**`base_` prefix**: Legacy — do not use. Existing `base_` models are being
+renamed to `int_` (see
+[#2541](https://github.com/TEAMSchools/teamster/issues/2541)).
 
 Contract enforcement on extracts/marts is critical: these models feed external
 tools via dbt [exposures](https://docs.getdbt.com/reference/exposure-properties)
 (Tableau, PowerSchool, Google Sheets, etc.) and unguarded schema changes will
 break those downstream consumers.
 
-**Exposures**: Every external tool consuming kipptaf data must have a dbt
-exposure in `src/dbt/kipptaf/models/exposures/` listing all `depends_on` models.
-Tableau workbooks with scheduled refreshes additionally require `asset.metadata`
-with the workbook LSID (`id`) and `cron_schedule`. See
-`src/dbt/kipptaf/CLAUDE.md` for the full YAML reference.
+**Exposures**: Every external tool consuming data from a dbt project must have a
+dbt exposure in that project's `models/exposures/` directory listing all
+`depends_on` models. School-specific projects (`kippnewark`, `kippcamden`,
+`kippmiami`) require exposures for their PowerSchool extracts. Tableau workbooks
+may include `asset.metadata` with the workbook LSID (`id`); add `cron_schedule`
+only when Dagster manages the refresh. See `src/dbt/kipptaf/CLAUDE.md` for the
+full YAML reference.
