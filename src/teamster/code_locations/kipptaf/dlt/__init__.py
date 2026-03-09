@@ -1,17 +1,11 @@
-from teamster.code_locations.kipptaf.dlt.illuminate.assets import (
-    assets as illuminate_assets,
-)
-from teamster.code_locations.kipptaf.dlt.illuminate.schedules import schedules
-
-# from teamster.code_locations.kipptaf.dlt.salesforce.assets import (
-#     assets as salesforce_assets,
-# )
-# from teamster.code_locations.kipptaf.dlt.zendesk.assets import assets as zendesk_assets
+from teamster.code_locations.kipptaf.dlt import illuminate
 
 assets = [
-    *illuminate_assets,
-    # *zendesk_assets,
-    # salesforce_assets,
+    *illuminate.assets,
+]
+
+schedules = [
+    *illuminate.schedules,
 ]
 
 __all__ = [
