@@ -20,16 +20,15 @@ with
             r.contact_first_name as first_name,
             r.contact_last_name as last_name,
             r.ktc_cohort,
-            lower(r.contact_email) as sf_email,
-            lower(r.contact_secondary_email) as sf_secondary_email,
             r.contact_currently_enrolled_school as currently_enrolled_school,
             r.contact_current_college_cumulative_gpa as current_college_cumulative_gpa,
             r.contact_mobile_phone as primary_phone,
             r.contact_home_phone as secondary_phone,
             r.contact_advising_provider as advising_provider,
             r.contact_expected_college_graduation as expected_college_grad_date,
-
             sr.survey_response_id as reconciliation_response_id,
+            lower(r.contact_email) as sf_email,
+            lower(r.contact_secondary_email) as sf_secondary_email,
         from {{ ref("int_kippadb__roster") }} as r
         left join survey_reconciliation as sr on r.contact_id = sr.sf_contact_id
         where
@@ -67,8 +66,8 @@ select
     r.secondary_phone,
     r.advising_provider,
     r.expected_college_grad_date,
-    coalesce(ss.survey_response_count, 0) as survey_response_count,
     ss.latest_survey_date,
+    coalesce(ss.survey_response_count, 0) as survey_response_count,
 from roster as r
 left join current_enrollment as ce on r.contact_id = ce.student
 left join survey_stats as ss on r.contact_id = ss.contact_id
