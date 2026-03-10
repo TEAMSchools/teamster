@@ -50,7 +50,10 @@ def dbt_run(project: str, *args: str, target_path: str | None = None) -> None:
         **os.environ,
         "PATH": os.environ["PATH"] + ":/workspaces/teamster/.venv/bin",
         # Ensure Jinja env_var() checks resolve to prod schema names.
+        # GITHUB_USER must be cleared so sources using it as a schema prefix
+        # (e.g. zz_{{ env_var('GITHUB_USER') }}_kipptaf_*) resolve correctly.
         "DBT_CLOUD_ENVIRONMENT_TYPE": "prod",
+        "GITHUB_USER": "",
     }
     cmd = ["dbt", *args, f"--project-dir=src/dbt/{project}", "--target=prod"]
     if target_path:
