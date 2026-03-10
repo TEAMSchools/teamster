@@ -275,6 +275,7 @@ sources:
       - name: contact_history
         identifier: ContactHistory
         config:
+          enabled: false
           meta:
             dagster:
               group: kippadb
@@ -285,6 +286,7 @@ sources:
       - name: aid_line_item
         identifier: Aid_Line_Item__c
         config:
+          enabled: false
           meta:
             dagster:
               group: kippadb
