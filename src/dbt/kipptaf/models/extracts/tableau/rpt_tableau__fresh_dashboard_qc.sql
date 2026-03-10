@@ -12,7 +12,7 @@ with
 
             if(e.infosnap_id is null, true, false) as flag_value,
 
-        from {{ ref("int_students__finalsite_student_roster") }} as f
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as f
         left join
             {{ ref("int_extracts__student_enrollments") }} as e
             on f.enrollment_academic_year - 1 = e.academic_year
@@ -38,7 +38,7 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join
-            {{ ref("int_students__finalsite_student_roster") }} as f
+            {{ ref("int_tableau__finalsite_student_scaffold") }} as f
             on e.academic_year + 1 = f.enrollment_academic_year
             and e.infosnap_id = f.finalsite_enrollment_id
         /* hardcoded year because finalsite academic years do not sync with ps

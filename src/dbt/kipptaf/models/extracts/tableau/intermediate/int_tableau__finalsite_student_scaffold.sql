@@ -28,7 +28,6 @@ with
             x.status_group_value,
             x.grouped_status_order,
             x.grouped_status_timeframe,
-            x.qa_flag,
 
             'All' as aligned_enrollment_type,
 
@@ -45,8 +44,8 @@ with
             and x.valid_detailed_status
         /* hardcoding years here to ensure the correct file from FS is being used
            (these change by region at different dates) */
-        where r.enrollment_academic_year = 2026 and r.file_year = 2026 and not qa_flag
-    )
+        where r.enrollment_academic_year = 2026 and r.file_year = 2026 and not x.qa_flag
+    ),
 
     -- trunk-ignore(sqlfluff/ST03)
     cleaned_data as (
@@ -120,9 +119,6 @@ with
             self_contained,
             enrollment_type,
             grouped_status,
-            is_enrolled_fdos,
-            is_enrolled_oct01,
-            is_enrolled_oct15,
             latest_status,
             aligned_enrollment_type,
             grouped_status_order,
@@ -175,9 +171,6 @@ with
             self_contained,
             enrollment_type,
             grouped_status,
-            is_enrolled_fdos,
-            is_enrolled_oct01,
-            is_enrolled_oct15,
             latest_status,
             aligned_enrollment_type,
             grouped_status_order,
