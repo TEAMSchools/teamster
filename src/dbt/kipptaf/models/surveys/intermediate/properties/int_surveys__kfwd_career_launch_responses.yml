@@ -2,10 +2,11 @@ models:
   - name: int_surveys__kfwd_career_launch_responses
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - survey_id
-            - response_id
-            - question_short_name
+          arguments:
+            combination_of_columns:
+              - survey_id
+              - response_id
+              - question_short_name
           config:
             severity: warn
             store_failures: true
