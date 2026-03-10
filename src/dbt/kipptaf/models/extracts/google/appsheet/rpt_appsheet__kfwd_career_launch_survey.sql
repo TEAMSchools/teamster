@@ -1,17 +1,9 @@
 with
-    survey_reconciliation as (
-        select *, from {{ ref("int_surveys__kfwd_career_launch_reconciliation") }}
-    ),
-
     current_enrollment as (
         select student, pursuing_degree_type, major,
         from {{ ref("stg_kippadb__enrollment") }}
         where type not in ('High School', 'Middle School')
         qualify row_number() over (partition by student order by start_date desc) = 1
-    ),
-
-    survey_union as (
-        select *, from {{ ref("int_surveys__kfwd_career_launch_responses") }}
     ),
 
     roster as (
@@ -26,25 +18,31 @@ with
             r.contact_home_phone as secondary_phone,
             r.contact_advising_provider as advising_provider,
             r.contact_expected_college_graduation as expected_college_grad_date,
+
             sr.survey_response_id as reconciliation_response_id,
+
             lower(r.contact_email) as sf_email,
             lower(r.contact_secondary_email) as sf_secondary_email,
         from {{ ref("int_kippadb__roster") }} as r
-        left join survey_reconciliation as sr on r.contact_id = sr.sf_contact_id
+        left join
+            {{ ref("int_surveys__kfwd_career_launch_reconciliation") }} as sr
+            on r.contact_id = sr.sf_contact_id
         where
             r.ktc_status in ('HSG', 'TAF')
-            and r.ktc_cohort <= {{ var("current_academic_year") }}
             and r.contact_id is not null
+            and r.ktc_cohort <= {{ var("current_academic_year") }}
     ),
 
     survey_stats as (
         select
             r.contact_id,
+
             count(distinct su.response_id) as survey_response_count,
+
             max(su.response_date_submitted) as latest_survey_date,
         from roster as r
         inner join
-            survey_union as su
+            {{ ref("int_surveys__kfwd_career_launch_responses") }} as su
             on r.sf_email = su.respondent_user_principal_name
             or r.sf_secondary_email = su.respondent_user_principal_name
             or r.reconciliation_response_id = su.response_id
@@ -60,13 +58,16 @@ select
     r.sf_secondary_email as secondary_email,
     r.currently_enrolled_school,
     r.current_college_cumulative_gpa,
-    ce.pursuing_degree_type,
-    ce.major,
     r.primary_phone,
     r.secondary_phone,
     r.advising_provider,
     r.expected_college_grad_date,
+
+    ce.pursuing_degree_type,
+    ce.major,
+
     ss.latest_survey_date,
+
     coalesce(ss.survey_response_count, 0) as survey_response_count,
 from roster as r
 left join current_enrollment as ce on r.contact_id = ce.student

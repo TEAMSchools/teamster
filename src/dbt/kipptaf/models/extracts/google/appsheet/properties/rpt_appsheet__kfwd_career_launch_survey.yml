@@ -9,8 +9,8 @@ models:
         data_tests:
           - unique:
               config:
-                severity: warn
                 store_failures: true
+                severity: warn # NOTE: currently failing
       - name: first_name
         data_type: string
       - name: last_name
