@@ -255,14 +255,18 @@ Kubernetes with secrets mounted at `/etc/secret-volume`.
 | Reporting views (`rpt_`)      | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
 | Data mart (`dim_*` / `fct_*`) | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
 
+`contract: enforced: true` and `materialized: table` are set at the **directory
+level** in `dbt_project.yml` for all integration `staging/` directories, and
+`contract: enforced: true` for `extracts/` and `marts/`. Do not repeat these
+per-model — they are already inherited. Contract enforcement is critical for
+extracts/marts: these models feed external tools via dbt
+[exposures](https://docs.getdbt.com/reference/exposure-properties) (Tableau,
+PowerSchool, Google Sheets, etc.) and unguarded schema changes will break
+downstream consumers.
+
 **`base_` prefix**: Legacy — do not use. Existing `base_` models are being
 renamed to `int_` (see
 [#2541](https://github.com/TEAMSchools/teamster/issues/2541)).
-
-Contract enforcement on extracts/marts is critical: these models feed external
-tools via dbt [exposures](https://docs.getdbt.com/reference/exposure-properties)
-(Tableau, PowerSchool, Google Sheets, etc.) and unguarded schema changes will
-break those downstream consumers.
 
 **Exposures**: Every external tool consuming data from a dbt project must have a
 dbt exposure in that project's `models/exposures/` directory listing all
