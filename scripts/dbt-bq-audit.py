@@ -173,6 +173,8 @@ def get_bq_objects(
     for dataset_id in sorted(datasets):
         try:
             for table in client.list_tables(f"{bq_project}.{dataset_id}"):
+                if table.table_id.startswith("_dlt_"):
+                    continue
                 bq_objects[(dataset_id, table.table_id)] = BqObject(
                     project=bq_project,
                     dataset=dataset_id,
