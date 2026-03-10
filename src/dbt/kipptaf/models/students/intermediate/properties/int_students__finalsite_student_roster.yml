@@ -14,6 +14,8 @@ models:
               - grouped_status_timeframe
               - active_season
     columns:
+      - name: file_year
+        data_type: int64
       - name: enrollment_academic_year
         data_type: int64
       - name: enrollment_academic_year_display

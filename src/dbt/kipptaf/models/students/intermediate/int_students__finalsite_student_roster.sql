@@ -46,6 +46,7 @@ with
     roster as (
         -- returning students 2025
         select
+            f.file_year,
             f.finalsite_enrollment_id,
             f.powerschool_student_number,
             f.first_name,
@@ -91,6 +92,7 @@ with
 
         -- returning students 2026
         select
+            f.file_year,
             f.finalsite_enrollment_id,
             f.powerschool_student_number,
             f.first_name,
@@ -139,6 +141,7 @@ with
 
         -- new students
         select
+            f.file_year,
             f.finalsite_enrollment_id,
             f.powerschool_student_number,
             f.first_name,
@@ -184,6 +187,7 @@ with
     )
 
 select
+    r.file_year,
     r.enrollment_academic_year,
     r.enrollment_academic_year_display,
     r.org,
