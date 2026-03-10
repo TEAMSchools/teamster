@@ -6,7 +6,7 @@ asset_key_prefix = f"{CODE_LOCATION}/dlt/illuminate"
 
 illuminate_dlt_hourly_asset_job_schedule = ScheduleDefinition(
     name=f"{CODE_LOCATION}__dlt__illuminate__hourly_asset_job_schedule",
-    cron_schedule=["0 0 * * *", "0 17 * * *", "0 14 * * 3", "0 15 * * 5"],
+    cron_schedule=["0 0 * * *", "0 17 * * *", "0 10 * * 3", "0 14 * * 3", "0 15 * * 5"],
     execution_timezone=str(LOCAL_TIMEZONE),
     target=[
         f"{asset_key_prefix}/dna_assessments/agg_student_responses",

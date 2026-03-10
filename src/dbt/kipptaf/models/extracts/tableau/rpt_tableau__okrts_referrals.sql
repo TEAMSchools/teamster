@@ -198,7 +198,7 @@ select
             left(dli.category, 2) in ('SW', 'SS')
             or left(dli.category, 3) in ('SSC', 'SSW')
         then 'Social Work'
-        when left(dli.category, 2) = 'TX'
+        when (left(dli.category, 2) = 'TX' or dli.category like 'Documentation%')
         then 'Non-Behavioral'
         when left(dli.category, 2) = 'TB'
         then 'Bus Referral (Miami)'

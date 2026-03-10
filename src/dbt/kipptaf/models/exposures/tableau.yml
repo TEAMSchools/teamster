@@ -392,6 +392,7 @@ exposures:
               cron_schedule:
                 - 0 1 * * *
                 - 40 14 * * 3
+                - 00 11 * * 3
                 - 0 16 * * 5
                 - 0 18 * * *
   - name: apm_dashboard
