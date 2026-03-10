@@ -7,8 +7,9 @@ code in this repository.
 
 **Alchemer** (formerly SurveyGizmo) survey platform integration.
 
-**Note**: The asset factory (`build_alchemer_assets`) is currently fully
-commented out in `assets.py`. Only the resource and schema are active.
+**Note**: Both the asset factory (`build_alchemer_assets`) in `assets.py` and
+the resource class (`AlchemerResource`) in `resources.py` are disabled
+(commented out). Only the schema and sensor are active.
 
 ## Files
 

@@ -6,7 +6,7 @@ code in this repository.
 ## Purpose
 
 Core library for wrapping dbt projects as Dagster assets. Every code location's
-`_dbt/assets.py` calls `build_dbt_assets()` from here.
+`dbt/assets.py` calls `build_dbt_assets()` from here.
 
 ## Files
 
@@ -43,6 +43,6 @@ Produces a schedule that runs only the dbt assets whose compiled SQL has changed
 since their last materialization (compares `code_versions_by_key` against
 `get_latest_materialization_code_versions`).
 
-> **Note**: `dbt_code_version_schedule` is defined in `_dbt/schedules.py` for
-> `kippnewark`, `kippcamden`, and `kippmiami`, but is **not wired into any
-> `definitions.py`** — it is currently dead code in all code locations.
+> **Note**: `dbt_code_version_schedule` was previously defined in
+> `dbt/schedules.py` for `kippnewark`, `kippcamden`, and `kippmiami` but was
+> never wired into any `definitions.py` and has since been deleted.

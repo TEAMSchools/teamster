@@ -1,29 +1,4 @@
 with
-    survey_reconciliation_raw as (
-        select response_id, item_title, text_value, create_timestamp,
-        from {{ ref("int_google_forms__form_responses") }}
-        where
-            form_id = '1oUBls4Kaj0zcbQyeWowe8Es1BFqunolAPEamzT6enQs'
-            and item_title in ('Survey response ID', 'Salesforce contact ID')
-    ),
-
-    survey_reconciliation as (
-        select
-            survey_response_id,
-            sf_contact_id,
-
-            row_number() over (
-                partition by survey_response_id order by create_timestamp desc
-            ) as rn_response_id,
-        from
-            survey_reconciliation_raw pivot (
-                max(text_value) for item_title in (
-                    'Survey response ID' as survey_response_id,
-                    'Salesforce contact ID' as sf_contact_id
-                )
-            )
-    ),
-
     programs as (
         select
             p.student,
@@ -43,6 +18,7 @@ with
             max(if(a.name = 'Project BASTA', true, false)) as is_basta,
             max(if(a.name = 'Braven', true, false)) as is_braven,
             max(if(a.name = 'Backrs', true, false)) as is_backrs,
+
             max(
                 if(
                     a.name in ('KIPP New Jersey - Camden', 'KIPP New Jersey - Newark'),
@@ -57,8 +33,7 @@ with
         where
             p.internship_or_program_type = 'College Program'
             and p.application_status not in ('Not Matched', 'Wait-listed')
-        group by all
-
+        group by p.student
     ),
 
     roster as (
@@ -97,10 +72,30 @@ with
 
             p.college_programs,
 
+            lower(r.contact_email) as sf_email,
+            lower(r.contact_secondary_email) as sf_secondary_email,
+
             coalesce(p.is_basta, false) as is_basta,
             coalesce(p.is_braven, false) as is_braven,
             coalesce(p.is_backrs, false) as is_backrs,
             coalesce(p.is_kippnj_internship, false) as is_kippnj_internship,
+
+            extract(
+                month from r.contact_expected_college_graduation
+            ) as expected_grad_date_month,
+            extract(
+                year from r.contact_expected_college_graduation
+            ) as expected_grad_date_year,
+            extract(month from e.actual_end_date) as actual_end_date_month,
+            extract(year from e.actual_end_date) as actual_end_date_year,
+
+            if(
+                e.status = 'Graduated',
+                row_number() over (
+                    partition by e.student order by e.actual_end_date asc
+                ),
+                1
+            ) as rn_graduated,
 
             case
                 when r.contact_college_match_display_gpa >= 3.50
@@ -115,24 +110,6 @@ with
                 then '<2.00'
             end as hs_gpa_bands,
 
-            lower(r.contact_email) as sf_email,
-            lower(r.contact_secondary_email) as sf_secondary_email,
-            extract(
-                month from r.contact_expected_college_graduation
-            ) as expected_grad_date_month,
-            extract(
-                year from r.contact_expected_college_graduation
-            ) as expected_grad_date_year,
-
-            extract(month from e.actual_end_date) as actual_end_date_month,
-            extract(year from e.actual_end_date) as actual_end_date_year,
-            if(
-                e.status = 'Graduated',
-                row_number() over (
-                    partition by e.student order by e.actual_end_date asc
-                ),
-                1
-            ) as rn_graduated,
         from {{ ref("int_kippadb__roster") }} as r
         left join
             {{ ref("stg_kippadb__enrollment") }} as e
@@ -141,64 +118,13 @@ with
             and e.status = 'Graduated'
         left join {{ ref("stg_kippadb__account") }} as a on e.school = a.id
         left join
-            survey_reconciliation as sr
+            {{ ref("int_surveys__kfwd_career_launch_reconciliation") }} as sr
             on r.contact_id = sr.sf_contact_id
-            and sr.rn_response_id = 1
         left join programs as p on r.contact_id = p.student
         where
             r.ktc_status in ('HSG', 'TAF')
             and r.ktc_cohort <= {{ var("current_academic_year") }}
             and r.contact_id is not null
-    ),
-
-    survey_union as (
-        select
-            ri.response_date_submitted,
-            ri.respondent_salesforce_id,
-
-            'Alchemer survey' as survey_title,
-            sr.question_short_name,
-            sr.response_string_value,
-
-            cast(ri.survey_id as string) as survey_id,
-            cast(ri.response_id as string) as response_id,
-            lower(ri.respondent_user_principal_name) as respondent_user_principal_name,
-        from {{ source("surveys", "int_surveys__response_identifiers") }} as ri
-        inner join
-            {{ source("alchemer", "base_alchemer__survey_results") }} as sr
-            on ri.survey_id = sr.survey_id
-            and ri.response_id = sr.response_id
-        where ri.survey_id = 6734664  /* 'KIPP Forward Career Launch Survey' */
-
-        union all
-
-        select
-            safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
-            null as respondent_salesforce_id,
-            'Google Form v1' as survey_title,
-            fr.item_abbreviation as question_short_name,
-            fr.text_value as response_string_value,
-            cast(fr.form_id as string) as survey_id,
-            cast(fr.response_id as string) as response_id,
-            lower(fr.respondent_email) as respondent_user_principal_name,
-        from {{ ref("int_google_forms__form_responses") }} as fr
-        /* 'KIPP Forward Career Launch Survey - OLD' */
-        where fr.form_id = '1qfXBcMxp9712NEnqOZS2S-Zm_SAvXRi_UndXxYZUZho'
-
-        union all
-
-        select
-            safe_cast(fr.last_submitted_time as timestamp) as response_date_submitted,
-            null as respondent_salesforce_id,
-            'Google Form v2' as survey_title,
-            fr.item_abbreviation as question_short_name,
-            fr.text_value as response_string_value,
-            cast(fr.form_id as string) as survey_id,
-            cast(fr.response_id as string) as response_id,
-            lower(fr.respondent_email) as respondent_user_principal_name,
-        from {{ ref("int_google_forms__form_responses") }} as fr
-        /* 'KIPP Forward Career Launch Survey' */
-        where fr.form_id = '1c4SLP61YIVnUUvRl_IUdFuLXdtI1Vsq9OE3Jrz3HR0U'
     ),
 
     survey_pivot as (
@@ -229,14 +155,14 @@ with
             linkedin_link,
             not_pursuing_plan,
             reenrollment,
-            role,
+            `role`,
             satisfied_program,
             search_focus,
 
             coalesce(annual_income, annual_income_alt) as annual_income,
             coalesce(benefits, benefits_alt) as benefits,
         from
-            survey_union pivot (
+            {{ ref("int_surveys__kfwd_career_launch_responses") }} pivot (
                 max(response_string_value) for question_short_name in (
                     'after_grad',
                     'alumni_dob',
@@ -251,7 +177,6 @@ with
                     'complete_program',
                     'debt_amount',
                     'debt_binary',
-                    'email',
                     'first_name',
                     'grad_school_major',
                     'grad_school_name',
@@ -267,47 +192,116 @@ with
                     'search_focus'
                 )
             )
+    ),
+
+    survey_clean as (
+        select
+            *,
+
+            cast(
+                replace(
+                    case
+                        when annual_income like '%-%'
+                        then regexp_extract(annual_income, r'\$([0-9,]+) -')
+                        when annual_income like '%or more%'
+                        then regexp_extract(annual_income, r'\$([0-9,]+) or more')
+                        else regexp_extract(annual_income, r'\$([0-9,]+)')
+                    end,
+                    ',',
+                    ''
+                ) as float64
+            ) as annual_income_clean,
+        from survey_pivot
     )
 
 select
-    r.*,
+    r.contact_id,
+    r.sf_first_name,
+    r.sf_last_name,
+    r.sf_lastfirst,
+    r.contact_kipp_ms_graduate,
+    r.contact_kipp_hs_graduate,
+    r.contact_kipp_hs_class,
+    r.college_match_display_gpa,
+    r.kipp_region_name,
+    r.contact_description,
+    r.contact_gender,
+    r.contact_ethnicity,
+    r.expected_college_grad_date,
+    r.actual_college_grad_date,
+    r.current_kipp_student,
+    r.contact_owner_name,
+    r.pursuing_degree_type,
+    r.type,
+    r.start_date,
+    r.actual_end_date,
+    r.major,
+    r.status,
+    r.ecc,
+    r.institution,
+    r.reconciliation_response_id,
+    r.college_programs,
+    r.is_basta,
+    r.is_braven,
+    r.is_backrs,
+    r.is_kippnj_internship,
+    r.hs_gpa_bands,
+    r.sf_email,
+    r.sf_secondary_email,
+    r.expected_grad_date_month,
+    r.expected_grad_date_year,
+    r.actual_end_date_month,
+    r.actual_end_date_year,
+    r.rn_graduated,
+    r.es_graduated,
+    r.tier,
+    r.advising_provider,
 
-    sp.*,
-
-    case
-        when sp.annual_income like '%-%'
-        then
-            cast(
-                replace(
-                    regexp_extract(sp.annual_income, r'\$([0-9,]+) -'), ',', ''
-                ) as float64
-            )
-        when sp.annual_income like '%or more%'
-        then
-            cast(
-                replace(
-                    regexp_extract(sp.annual_income, r'\$([0-9,]+) or more'), ',', ''
-                ) as float64
-            )
-        else
-            cast(
-                replace(
-                    regexp_extract(sp.annual_income, r'\$([0-9,]+)'), ',', ''
-                ) as float64
-            )
-    end as annual_income_clean,
+    sp.survey_id,
+    sp.survey_title,
+    sp.response_id,
+    sp.response_date_submitted,
+    sp.respondent_user_principal_name,
+    sp.after_grad,
+    sp.alumni_dob,
+    sp.alumni_email,
+    sp.alumni_phone,
+    sp.cell_number,
+    sp.company,
+    sp.complete_program,
+    sp.debt_amount,
+    sp.debt_binary,
+    sp.first_name,
+    sp.grad_school_major,
+    sp.grad_school_name,
+    sp.highest_level_of_education,
+    sp.job_sat,
+    sp.last_name,
+    sp.linkedin,
+    sp.linkedin_link,
+    sp.not_pursuing_plan,
+    sp.reenrollment,
+    sp.role,
+    sp.satisfied_program,
+    sp.search_focus,
+    sp.annual_income,
+    sp.benefits,
+    sp.annual_income_clean,
 
     if(
         r.actual_end_date_month < 7,
         concat('Spring ', r.expected_grad_date_year),
         concat('Fall ', r.expected_grad_date_year)
     ) as season_label_expected,
+
     if(
         r.actual_end_date_month < 7,
         concat('Spring ', r.actual_end_date_year),
         concat('Fall ', r.actual_end_date_year)
     ) as season_label,
+
     if(r.contact_id is null, true, false) as is_unmatched_response,
+
     if(
         r.contact_id is not null,
         row_number() over (
@@ -317,7 +311,7 @@ select
     ) as rn_respondent,
 from roster as r
 full join
-    survey_pivot as sp
+    survey_clean as sp
     on r.rn_graduated = 1
     and (
         r.sf_email = sp.respondent_user_principal_name

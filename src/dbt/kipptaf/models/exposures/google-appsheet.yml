@@ -51,3 +51,15 @@ exposures:
         dagster:
           kinds:
             - google
+  - name: kfwd_career_launch_app
+    label: KIPP Forward Career Launch App
+    type: application
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_appsheet__kfwd_career_launch_survey")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - google

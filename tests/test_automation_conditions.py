@@ -806,7 +806,7 @@ class TestKipptafDbtAssets:
 
     @pytest.fixture(scope="class")
     def all_dbt_assets(self):
-        from teamster.code_locations.kipptaf._dbt.assets import all_dbt_assets
+        from teamster.code_locations.kipptaf.dbt.assets import all_dbt_assets
 
         return all_dbt_assets
 
