@@ -14,10 +14,9 @@
     ]
   },
   "enabledPlugins": {
-    "dagster-expert@dagster": true,
-    "dagster-integrations@dagster": true,
     "dignified-python@dagster": true,
-    "dbt@dbt-agent-marketplace": true
+    "dbt@dbt-agent-marketplace": true,
+    "dagster-expert@dagster": true
   },
   "extraKnownMarketplaces": {
     "dagster-skills": {
