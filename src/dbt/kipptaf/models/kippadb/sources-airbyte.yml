@@ -272,3 +272,23 @@ sources:
                 - kipptaf
                 - kippadb
                 - Counseling_Case__c
+      - name: contact_history
+        identifier: ContactHistory
+        config:
+          meta:
+            dagster:
+              group: kippadb
+              asset_key:
+                - kipptaf
+                - kippadb
+                - ContactHistory
+      - name: aid_line_item
+        identifier: Aid_Line_Item__c
+        config:
+          meta:
+            dagster:
+              group: kippadb
+              asset_key:
+                - kipptaf
+                - kippadb
+                - Aid_Line_Item__c
