@@ -2,6 +2,7 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #   "google-cloud-bigquery",
+#   "tabulate",
 # ]
 # ///
 
@@ -16,6 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from google.cloud import bigquery
+from tabulate import tabulate
 
 OUTPUT_DIR = Path("scripts/script_output")
 
@@ -51,6 +53,8 @@ def dbt_run(project: str, *args: str, target_path: str | None = None) -> None:
     cmd = ["dbt", *args, f"--project-dir=src/dbt/{project}", "--target=prod"]
     env = {
         **os.environ,
+        # Hardcoded because Path(sys.executable).parent points to uv's ephemeral
+        # Python, not the project venv.
         "PATH": os.environ["PATH"] + ":/workspaces/teamster/.venv/bin",
         # Ensure Jinja env_var() checks resolve to prod schema names.
         # GITHUB_USER must be cleared so sources using it as a schema prefix
@@ -66,9 +70,30 @@ def dbt_run(project: str, *args: str, target_path: str | None = None) -> None:
     subprocess.run(args=cmd, env=env, check=True)
 
 
+def deps_needed(project: str) -> bool:
+    """Return True if dbt deps must be run for the project.
+
+    Compares the mtime of dbt_packages/ against packages.yml: if packages.yml
+    is newer (or dbt_packages/ is missing), the installed packages are stale.
+    """
+    project_dir = Path("src/dbt") / project
+
+    packages_file = project_dir / "packages.yml"
+    packages_dir = project_dir / "dbt_packages"
+
+    if not packages_dir.exists():
+        return True
+
+    if not packages_file.exists():
+        return False
+
+    return packages_file.stat().st_mtime > packages_dir.stat().st_mtime
+
+
 def load_manifest(project: str) -> dict:
     with tempfile.TemporaryDirectory() as target_path:
-        dbt_run(project, "deps")
+        if deps_needed(project):
+            dbt_run(project, "deps")
         dbt_run(project, "parse", target_path=target_path)
 
         path = Path(target_path) / "manifest.json"
@@ -149,7 +174,8 @@ def collect_relations(manifests: list[dict]) -> dict[tuple[str, str], DbtRelatio
     external sources (DLT, Airbyte) whose dataset names don't follow the
     kipp* prefix convention (e.g. dagster_kipptaf_dlt_*).
 
-    Sources do not overwrite models when the same relation appears in both.
+    First definition wins: models, sources, and disabled nodes do not overwrite
+    an already-registered relation across manifests.
     """
     relations: dict[tuple[str, str], DbtRelation] = {}
 
@@ -162,15 +188,16 @@ def collect_relations(manifests: list[dict]) -> dict[tuple[str, str], DbtRelatio
 
             key, alias, materialization = parsed
 
-            relations[key] = DbtRelation(
-                database=node["database"],
-                schema=key[0],
-                alias=alias,
-                resource_type=node["resource_type"],
-                materialization=materialization,
-                enabled=True,
-                unique_id=node_id,
-            )
+            if key not in relations:
+                relations[key] = DbtRelation(
+                    database=node["database"],
+                    schema=key[0],
+                    alias=alias,
+                    resource_type=node["resource_type"],
+                    materialization=materialization,
+                    enabled=True,
+                    unique_id=node_id,
+                )
 
         for node_id, node in manifest["sources"].items():
             parsed = _parse_node(node)
@@ -253,31 +280,6 @@ def drop_statement(obj: BqObject) -> str:
     obj_type = "VIEW" if obj.table_type == "VIEW" else "TABLE"
 
     return f"DROP {obj_type} IF EXISTS `{obj.project}`.`{obj.dataset}`.`{obj.name}`;"
-
-
-def fmt_md_table(rows: list[dict], headers: list[tuple[str, str]]) -> str:
-    keys = [k for k, _ in headers]
-    labels = [lbl for _, lbl in headers]
-
-    widths = [len(lbl) for lbl in labels]
-    rendered = [[row.get(k, "") for k in keys] for row in rows]
-
-    for cells in rendered:
-        for i, val in enumerate(cells):
-            widths[i] = max(widths[i], len(val))
-
-    def fmt_row(values: list[str]) -> str:
-        return (
-            "| " + " | ".join(v.ljust(widths[i]) for i, v in enumerate(values)) + " |"
-        )
-
-    lines = [
-        fmt_row(labels),
-        "| " + " | ".join("-" * w for w in widths) + " |",
-        *[fmt_row(cells) for cells in rendered],
-    ]
-
-    return "\n".join(lines)
 
 
 def main() -> None:
@@ -364,18 +366,20 @@ def main() -> None:
             }
         )
 
-    headers = [
-        ("object", "BigQuery Object"),
-        ("status", "Status"),
-        ("bq_type", "BQ Type"),
-        ("dbt_type", "dbt Type"),
-    ]
+    headers = {
+        "object": "BigQuery Object",
+        "status": "Status",
+        "bq_type": "BQ Type",
+        "dbt_type": "dbt Type",
+    }
 
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     audit_path = OUTPUT_DIR / "bq-audit.md"
 
-    audit_path.write_text(fmt_md_table(rows, headers) + "\n", encoding="utf-8")
+    audit_path.write_text(
+        tabulate(rows, headers=headers, tablefmt="github") + "\n", encoding="utf-8"
+    )
     print(f"wrote {audit_path}")
 
     if sorted_untracked:
