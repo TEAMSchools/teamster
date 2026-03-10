@@ -11,6 +11,7 @@ with
             first_name,
             last_name,
             grade_level,
+            enrollment_type,
             self_contained,
             gender,
             birthdate,

@@ -13,7 +13,7 @@ with
     )
 
 select
-    * except (first_name),
+    * except (first_name, enrollment_type),
 
     initcap(first_name) as first_name,
 
@@ -27,8 +27,7 @@ select
         cast(regexp_extract(application_grade, r'\d+') as int)
     ) as grade_level,
 
-    {{ var("current_academic_year") }} as current_academic_year,
-    {{ var("current_academic_year") }} + 1 as next_academic_year,
+    if(enrollment_type is null, 'New', enrollment_type) as enrollment_type,
 
 from union_relations
 where
