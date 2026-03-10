@@ -123,8 +123,10 @@ def collect_relations(manifests: list[dict]) -> dict[tuple[str, str], DbtRelatio
             )
 
         for node_id, node in manifest["sources"].items():
+            key = relation_key(node)
+            if key is None:
+                continue
             alias = node.get("identifier") or node["name"]
-            key = relation_key(node) or (node["schema"].strip(), alias)
             if key not in relations:
                 relations[key] = DbtRelation(
                     database=node["database"],
@@ -147,8 +149,10 @@ def collect_relations(manifests: list[dict]) -> dict[tuple[str, str], DbtRelatio
                     continue
                 alias = node.get("alias") or node["name"]
             elif node["resource_type"] == "source":
+                key = relation_key(node)
+                if key is None:
+                    continue
                 alias = node.get("identifier") or node["name"]
-                key = relation_key(node) or (node["schema"].strip(), alias)
                 materialization = "source"
             else:
                 continue
@@ -169,22 +173,17 @@ def collect_relations(manifests: list[dict]) -> dict[tuple[str, str], DbtRelatio
 def get_bq_objects(
     client: bigquery.Client, bq_project: str, datasets: set[str]
 ) -> dict[tuple[str, str], BqObject]:
+    existing_datasets = {d.dataset_id for d in client.list_datasets()}
     bq_objects: dict[tuple[str, str], BqObject] = {}
-    for dataset_id in sorted(datasets):
-        try:
-            for table in client.list_tables(f"{bq_project}.{dataset_id}"):
-                if table.table_id.startswith("_dlt_"):
-                    continue
-                bq_objects[(dataset_id, table.table_id)] = BqObject(
-                    project=bq_project,
-                    dataset=dataset_id,
-                    name=table.table_id,
-                    table_type=table.table_type,
-                )
-        except Exception as e:
-            print(
-                f"Warning: could not list tables in {dataset_id}: {e}",
-                file=sys.stderr,
+    for dataset_id in sorted(datasets & existing_datasets):
+        for table in client.list_tables(f"{bq_project}.{dataset_id}"):
+            if table.table_id.startswith("_dlt_"):
+                continue
+            bq_objects[(dataset_id, table.table_id)] = BqObject(
+                project=bq_project,
+                dataset=dataset_id,
+                name=table.table_id,
+                table_type=table.table_type,
             )
     return bq_objects
 
