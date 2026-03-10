@@ -16,10 +16,6 @@ with
             r.self_contained,
             r.gender,
             r.birthdate,
-            r.is_enrolled_fdos,
-            r.is_enrolled_oct01,
-            r.is_enrolled_oct15,
-            r.enroll_status,
             r.detailed_status,
             r.status_start_date,
             r.status_order,
@@ -35,16 +31,17 @@ with
                 partition by r.finalsite_enrollment_id order by r.status_start_date desc
             ) as latest_status,
 
-        from roster as r
+        from {{ ref("int_finalsite__status_report_unpivot") }} as r
         inner join
             {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as x
             on r._dagster_partition_key = x._dagster_partition_key
             and r.enrollment_type = x.enrollment_type
             and r.detailed_status = x.detailed_status
             and x.valid_detailed_status
+            and not x.qa_flag
         /* hardcoding years here to ensure the correct file from FS is being used
            (these change by region at different dates) */
-        where r.enrollment_academic_year = 2026 and r.file_year = 2026 and not x.qa_flag
+        where r.enrollment_academic_year = 2026 and r.file_year = 2026
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
@@ -55,12 +52,11 @@ with
             org,
             region,
             schoolid,
-            finalsite_enrollment_id as finalsite_id,
+            finalsite_id,
             powerschool_student_number,
             first_name,
             last_name,
             grade_level,
-            enroll_status,
             gender,
             birthdate,
             self_contained,
@@ -68,9 +64,6 @@ with
             status_group_value as grouped_status,
             grouped_status_order,
             grouped_status_timeframe,
-            is_enrolled_fdos,
-            is_enrolled_oct01,
-            is_enrolled_oct15,
             latest_status,
 
             if(latest_status = detailed_status, true, false) as latest_detailed_match,
@@ -322,7 +315,6 @@ select
     r.first_name,
     r.last_name,
     r.grade_level,
-    r.enroll_status,
     r.gender,
     r.birthdate,
     r.self_contained,
@@ -339,6 +331,7 @@ select
     d.grouped_status_end_date,
     d.days_in_grouped_status,
 
+    e.enroll_status,
     e.is_enrolled_fdos,
     e.is_enrolled_oct01,
     e.is_enrolled_oct15,
@@ -373,7 +366,6 @@ select
     r.first_name,
     r.last_name,
     r.grade_level,
-    r.enroll_status,
     r.gender,
     r.birthdate,
     r.self_contained,
@@ -390,6 +382,7 @@ select
     d.grouped_status_end_date,
     d.days_in_grouped_status,
 
+    e.enroll_status,
     e.is_enrolled_fdos,
     e.is_enrolled_oct01,
     e.is_enrolled_oct15,
