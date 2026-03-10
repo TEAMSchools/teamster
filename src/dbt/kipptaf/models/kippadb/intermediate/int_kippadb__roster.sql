@@ -67,7 +67,7 @@ with
 
     military_scores as (
         select
-            contact as contact,
+            contact,
             date as military_test_date,
             afqt_score,
             qualified_air_force,
@@ -85,7 +85,7 @@ with
 
     military_pt as (
         select
-            contact as contact,
+            contact,
             date as military_pt_date,
             physical_training_requirement_passed,
             row_number() over (
