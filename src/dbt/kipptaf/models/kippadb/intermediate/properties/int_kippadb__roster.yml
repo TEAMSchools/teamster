@@ -705,4 +705,3 @@ models:
         data_type: boolean
       - name: cte_military_interest
         data_type: string
-     
