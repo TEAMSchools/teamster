@@ -67,30 +67,29 @@ with
 
     military_scores as (
         select
-            contact_c as contact,
-            date__c as military_test_date,
-            afqt_score__c as afqt_score,
-            qualified_air_force__c as qualified_air_force,
-            qualified_army__c as qualified_army,
-            qualified_coast_guard__c as qualified_coast_guard,
-            qualified_marine_corps__c as qualified_marine_corps,
-            qualified_navy__c as qualified_navy,
-            total_qualified_military_branches__c as total_qualified_military_branches,
+            contact as contact,
+            date as military_test_date,
+            afqt_score,
+            qualified_air_force,
+            qualified_army,
+            qualified_coast_guard,
+            qualified_marine_corps,
+            qualified_navy,
+            total_qualified_military_branches,
 
             row_number() over (
-                partition by contact order by military_test_date desc
+                partition by contact order by date desc
             ) as rn_military_score,
         from {{ ref("int_kippadb__standardized_test") }}
     ),
 
     military_pt as (
         select
-            contact_c as contact,
-            date__c as military_pt_date,
-            physical_training_requirement_passed__c
-            as physical_training_requirement_passed,
+            contact as contact,
+            date as military_pt_date,
+            physical_training_requirement_passed,
             row_number() over (
-                partition by contact order by military_test_date desc
+                partition by contact order by date desc
             ) as rn_military_pt,
         from {{ ref("int_kippadb__standardized_test") }}
     ),
@@ -194,14 +193,13 @@ with
             mil.discharge_type as military_discharge_type,
             mil.discharge_date as military_discharge_date,
 
-            ms.afqt_score__c as afqt_score,
-            ms.qualified_air_force__c as qualified_air_force,
-            ms.qualified_army__c as qualified_army,
-            ms.qualified_coast_guard__c as qualified_coast_guard,
-            ms.qualified_marine_corps__c as qualified_marine_corps,
-            ms.qualified_navy__c as qualified_navy,
-            ms.total_qualified_military_branches__c
-            as total_qualified_military_branches,
+            ms.afqt_score,
+            ms.qualified_air_force,
+            ms.qualified_army,
+            ms.qualified_coast_guard,
+            ms.qualified_marine_corps,
+            ms.qualified_navy,
+            ms.total_qualified_military_branches,
 
             mpt.physical_training_requirement_passed,
 
@@ -285,9 +283,11 @@ with
         left join
             military as mil on c.contact_id = mil.contact and mil.rn_enlistment = 1
         left join
-            military_scores as ms c.contact_id = ms.contact and ms.rn_military_score = 1
+            military_scores as ms
+            on c.contact_id = ms.contact
+            and ms.rn_military_score = 1
         left join
-            military_pt as mpt c.contact_id = mpt.contact and mpt.rn_military_pt = 1
+            military_pt as mpt on c.contact_id = mpt.contact and mpt.rn_military_pt = 1
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 

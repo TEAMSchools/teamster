@@ -586,4 +586,6 @@ models:
       - name: total_qualified_military_branches
         data_type: numeric
       - name: physical_training_requirement_passed
+        data_type: string
+      - name: afqt_score
         data_type: numeric

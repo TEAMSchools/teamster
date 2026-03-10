@@ -7,7 +7,6 @@ select
     subject__c as `subject`,
     scoring_irregularity__c as scoring_irregularity,
     physical_training_requirement_passed__c as physical_training_requirement_passed,
-    afqt_score__c as afqt_score,
     qualified_air_force__c as qualified_air_force,
     qualified_army__c as qualified_army,
     qualified_coast_guard__c as qualified_coast_guard,
