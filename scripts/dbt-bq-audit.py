@@ -103,10 +103,13 @@ def collect_relations(manifests: list[dict]) -> dict[tuple[str, str], DbtRelatio
 
     for manifest in manifests:
         for node_id, node in manifest["nodes"].items():
-            if node["resource_type"] != "model":
-                continue
-            materialization = node["config"].get("materialized", "table")
-            if materialization == "ephemeral":
+            if node["resource_type"] == "model":
+                materialization = node["config"].get("materialized", "table")
+                if materialization == "ephemeral":
+                    continue
+            elif node["resource_type"] == "snapshot":
+                materialization = "snapshot"
+            else:
                 continue
             key = relation_key(node)
             if key is None or not key[0].startswith("kipp"):
@@ -116,7 +119,7 @@ def collect_relations(manifests: list[dict]) -> dict[tuple[str, str], DbtRelatio
                 database=node["database"],
                 schema=key[0],
                 alias=alias,
-                resource_type="model",
+                resource_type=node["resource_type"],
                 materialization=materialization,
                 enabled=True,
                 unique_id=node_id,
@@ -144,6 +147,12 @@ def collect_relations(manifests: list[dict]) -> dict[tuple[str, str], DbtRelatio
             if node["resource_type"] == "model":
                 if materialization == "ephemeral":
                     continue
+                key = relation_key(node)
+                if key is None or not key[0].startswith("kipp"):
+                    continue
+                alias = node.get("alias") or node["name"]
+            elif node["resource_type"] == "snapshot":
+                materialization = "snapshot"
                 key = relation_key(node)
                 if key is None or not key[0].startswith("kipp"):
                     continue
