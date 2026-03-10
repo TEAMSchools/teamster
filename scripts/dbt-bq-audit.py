@@ -5,7 +5,6 @@
 # ]
 # ///
 
-import argparse
 import json
 import os
 import pathlib
@@ -15,6 +14,8 @@ import tempfile
 from dataclasses import dataclass
 
 from google.cloud import bigquery
+
+OUTPUT_DIR = pathlib.Path("audit")
 
 
 @dataclass
@@ -33,14 +34,22 @@ class BqObject:
     project: str
     dataset: str
     name: str
-    table_type: str  # TABLE or VIEW
+    table_type: str
+
+
+def find_kipp_projects() -> list[str]:
+    return sorted(
+        p.name
+        for p in pathlib.Path("src/dbt").iterdir()
+        if p.is_dir() and p.name.startswith("kipp")
+    )
 
 
 def dbt_run(project: str, *args: str, target_path: str | None = None) -> None:
     env = {
         **os.environ,
         "PATH": os.environ["PATH"] + ":/workspaces/teamster/.venv/bin",
-        # Unset dev flag so Jinja env_var() checks resolve to prod schema names.
+        # Ensure Jinja env_var() checks resolve to prod schema names.
         "DBT_CLOUD_ENVIRONMENT_TYPE": "prod",
     }
     cmd = ["dbt", *args, f"--project-dir=src/dbt/{project}", "--target=prod"]
@@ -74,73 +83,82 @@ def relation_key(node: dict) -> tuple[str, str] | None:
     return parts[1], parts[2]
 
 
-def get_dbt_relations(manifest: dict) -> dict[tuple[str, str], DbtRelation]:
-    """Returns dict keyed by (dataset, table) for all non-ephemeral models and sources."""
-    project_name = manifest["metadata"]["project_name"]
+def collect_relations(manifests: list[dict]) -> dict[tuple[str, str], DbtRelation]:
+    """Build combined dbt relations from all project manifests.
+
+    Models: included if their schema starts with "kipp", covering both
+    first-party models and packaged source-system models (e.g. powerschool)
+    materialized into school-specific datasets.
+
+    Sources: all sources from all manifests are included. This covers
+    external sources (DLT, Airbyte) whose dataset names don't follow the
+    kipp* prefix convention (e.g. dagster_kipptaf_dlt_*).
+
+    Sources do not overwrite models when the same relation appears in both.
+    """
     relations: dict[tuple[str, str], DbtRelation] = {}
 
-    for node_id, node in manifest["nodes"].items():
-        if node["resource_type"] != "model":
-            continue
-        if node["package_name"] != project_name:
-            continue
-        materialization = node["config"].get("materialized", "table")
-        if materialization == "ephemeral":
-            continue
-        key = relation_key(node)
-        if key is None:
-            continue
-        alias = node.get("alias") or node["name"]
-        relations[key] = DbtRelation(
-            database=node["database"],
-            schema=key[0],
-            alias=alias,
-            resource_type="model",
-            materialization=materialization,
-            enabled=True,
-            unique_id=node_id,
-        )
-
-    for node_id, node in manifest["sources"].items():
-        alias = node.get("identifier") or node["name"]
-        # External sources have relation_name=null; fall back to schema+identifier.
-        # schema.strip() handles trailing newlines from YAML block scalars.
-        key = relation_key(node) or (node["schema"].strip(), alias)
-        relations[key] = DbtRelation(
-            database=node["database"],
-            schema=key[0],
-            alias=alias,
-            resource_type="source",
-            materialization="source",
-            enabled=True,
-            unique_id=node_id,
-        )
-
-    for node_id, node_list in manifest["disabled"].items():
-        node = node_list[0]
-        if node["package_name"] != project_name:
-            continue
-        materialization = node["config"].get("materialized", "table")
-        if node["resource_type"] == "model":
+    for manifest in manifests:
+        for node_id, node in manifest["nodes"].items():
+            if node["resource_type"] != "model":
+                continue
+            materialization = node["config"].get("materialized", "table")
             if materialization == "ephemeral":
                 continue
+            key = relation_key(node)
+            if key is None or not key[0].startswith("kipp"):
+                continue
             alias = node.get("alias") or node["name"]
-        elif node["resource_type"] == "source":
-            alias = node.get("identifier") or node["name"]
-            materialization = "source"
-        else:
-            continue
-        key = relation_key(node) or (node["schema"].strip(), alias)
-        if key not in relations:
             relations[key] = DbtRelation(
                 database=node["database"],
                 schema=key[0],
                 alias=alias,
-                resource_type=node["resource_type"],
+                resource_type="model",
                 materialization=materialization,
-                enabled=False,
+                enabled=True,
                 unique_id=node_id,
             )
+
+        for node_id, node in manifest["sources"].items():
+            alias = node.get("identifier") or node["name"]
+            key = relation_key(node) or (node["schema"].strip(), alias)
+            if key not in relations:
+                relations[key] = DbtRelation(
+                    database=node["database"],
+                    schema=key[0],
+                    alias=alias,
+                    resource_type="source",
+                    materialization="source",
+                    enabled=True,
+                    unique_id=node_id,
+                )
+
+        for node_id, node_list in manifest["disabled"].items():
+            node = node_list[0]
+            materialization = node["config"].get("materialized", "table")
+            if node["resource_type"] == "model":
+                if materialization == "ephemeral":
+                    continue
+                key = relation_key(node)
+                if key is None or not key[0].startswith("kipp"):
+                    continue
+                alias = node.get("alias") or node["name"]
+            elif node["resource_type"] == "source":
+                alias = node.get("identifier") or node["name"]
+                key = relation_key(node) or (node["schema"].strip(), alias)
+                materialization = "source"
+            else:
+                continue
+            if key not in relations:
+                relations[key] = DbtRelation(
+                    database=node["database"],
+                    schema=key[0],
+                    alias=alias,
+                    resource_type=node["resource_type"],
+                    materialization=materialization,
+                    enabled=False,
+                    unique_id=node_id,
+                )
 
     return relations
 
@@ -148,7 +166,6 @@ def get_dbt_relations(manifest: dict) -> dict[tuple[str, str], DbtRelation]:
 def get_bq_objects(
     client: bigquery.Client, bq_project: str, datasets: set[str]
 ) -> dict[tuple[str, str], BqObject]:
-    """Returns dict keyed by (dataset, table_name) for all BQ tables/views."""
     bq_objects: dict[tuple[str, str], BqObject] = {}
     for dataset_id in sorted(datasets):
         try:
@@ -173,7 +190,6 @@ def drop_statement(obj: BqObject) -> str:
 
 
 def fmt_md_table(rows: list[dict], headers: list[tuple[str, str]]) -> str:
-    """Render a markdown table. headers is list of (key, label) pairs."""
     keys = [k for k, _ in headers]
     labels = [lbl for _, lbl in headers]
     widths = [len(lbl) for lbl in labels]
@@ -195,45 +211,27 @@ def fmt_md_table(rows: list[dict], headers: list[tuple[str, str]]) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Audit dbt models against BigQuery objects"
-    )
-    parser.add_argument("project", help="dbt project name (e.g. kipptaf)")
-    parser.add_argument(
-        "--bq-project",
-        help="BigQuery project ID (default: read from manifest nodes)",
-    )
-    args = parser.parse_args()
+    projects = find_kipp_projects()
+    print(f"projects: {', '.join(projects)}", file=sys.stderr)
 
-    manifest = load_manifest(args.project)
+    manifests = []
+    bq_project = None
+    for project in projects:
+        print(f"parsing {project}...", file=sys.stderr)
+        manifest = load_manifest(project)
+        manifests.append(manifest)
+        if bq_project is None:
+            for node in {**manifest["nodes"], **manifest["sources"]}.values():
+                if node.get("database"):
+                    bq_project = node["database"]
+                    break
 
-    bq_project = args.bq_project
-    if not bq_project:
-        for node in {**manifest["nodes"], **manifest["sources"]}.values():
-            if node["resource_type"] in ("model", "source"):
-                bq_project = node["database"]
-                break
     if not bq_project:
         print("Error: could not determine BigQuery project ID.", file=sys.stderr)
         sys.exit(1)
 
-    dbt_relations = get_dbt_relations(manifest)
-
-    # Derive the target schema prefix from the manifest: all models this project
-    # materializes will share a common prefix (e.g. "kipptaf_"). Datasets from
-    # other dbt projects (e.g. "kippmiami_fldoe") won't match.
-    model_schemas = [
-        r.schema for r in dbt_relations.values() if r.resource_type == "model"
-    ]
-    target_prefix = os.path.commonprefix(model_schemas).rstrip("_")
-
-    # Only scan datasets where this project materializes models AND whose name
-    # starts with the derived target schema prefix.
-    datasets = {
-        schema
-        for (schema, _), relation in dbt_relations.items()
-        if relation.resource_type == "model" and schema.startswith(target_prefix)
-    }
+    dbt_relations = collect_relations(manifests)
+    datasets = {schema for schema, _ in dbt_relations}
 
     client = bigquery.Client(project=bq_project)
     bq_objects = get_bq_objects(client, bq_project, datasets)
@@ -290,12 +288,15 @@ def main() -> None:
         ("bq_type", "BQ Type"),
         ("dbt_type", "dbt Type"),
     ]
-    audit_path = pathlib.Path(f"{args.project}-audit.md")
+
+    OUTPUT_DIR.mkdir(exist_ok=True)
+
+    audit_path = OUTPUT_DIR / "bq-audit.md"
     audit_path.write_text(fmt_md_table(rows, headers) + "\n")
     print(f"wrote {audit_path}")
 
     if untracked:
-        drops_path = pathlib.Path(f"{args.project}-drops.sql")
+        drops_path = OUTPUT_DIR / "bq-drops.sql"
         drops_path.write_text(
             "\n".join(
                 drop_statement(obj)
