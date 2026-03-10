@@ -1,0 +1,14 @@
+exposures:
+  - name: powerschool_autocomm
+    label: PowerSchool AutoComm
+    type: application
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_powerschool__autocomm_students")
+      - ref("rpt_powerschool__autocomm_teachers")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - powerschool

@@ -19,3 +19,9 @@ and `archived` filters to the API.
 OAuth2 `BackendApplicationClient` session against `grow-api.leveldata.com`.
 Paginates via `skip`/`limit` params. Default response limit is 100 records per
 page.
+
+## Notes
+
+`grow/ops.py` was deleted — the `grow_user_update_op` and
+`grow_school_update_op` ops it contained are superseded by the `grow_user_sync`
+asset.

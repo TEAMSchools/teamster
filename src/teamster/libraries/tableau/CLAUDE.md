@@ -14,13 +14,13 @@ complete.
 Produces an asset that:
 
 1. Declares upstream `deps` from `get_asset_key_for_model()` (referencing
-   `core_dbt_assets` from `kipptaf._dbt`)
+   `core_dbt_assets` from `kipptaf.dbt`)
 2. Calls `tableau._server.workbooks.get_by_id()` to trigger a workbook refresh
 3. Uses the `tableau_pat_session_limit` pool to prevent concurrent PAT session
    exhaustion
 
 **Important**: This factory imports directly from
-`teamster.code_locations.kipptaf._dbt.assets` — it is tightly coupled to the
+`teamster.code_locations.kipptaf.dbt.assets` — it is tightly coupled to the
 `kipptaf` code location and cannot be used for other code locations.
 
 Asset metadata, kinds, and label come from the workbook's dbt
