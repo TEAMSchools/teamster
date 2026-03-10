@@ -19,6 +19,14 @@ from pathlib import Path
 from google.cloud import bigquery
 from tabulate import tabulate
 
+_DROP_TYPE_MAP = {
+    "VIEW": "VIEW",
+    "MATERIALIZED_VIEW": "MATERIALIZED VIEW",
+    "EXTERNAL": "EXTERNAL TABLE",
+    "SNAPSHOT": "SNAPSHOT TABLE",
+    "TABLE": "TABLE",
+}
+
 OUTPUT_DIR = Path("scripts/script_output")
 
 
@@ -53,9 +61,9 @@ def dbt_run(project: str, *args: str, target_path: str | None = None) -> None:
     cmd = ["dbt", *args, f"--project-dir=src/dbt/{project}", "--target=prod"]
     env = {
         **os.environ,
-        # Hardcoded because Path(sys.executable).parent points to uv's ephemeral
-        # Python, not the project venv.
-        "PATH": os.environ["PATH"] + ":/workspaces/teamster/.venv/bin",
+        "PATH": (
+            os.environ["PATH"] + f":{Path(__file__).parent.parent / '.venv' / 'bin'}"
+        ),
         # Ensure Jinja env_var() checks resolve to prod schema names.
         # GITHUB_USER must be cleared so sources using it as a schema prefix
         # (e.g. zz_{{ env_var('GITHUB_USER') }}_kipptaf_*) resolve correctly.
@@ -277,7 +285,7 @@ def get_bq_objects(
 
 
 def drop_statement(obj: BqObject) -> str:
-    obj_type = "VIEW" if obj.table_type == "VIEW" else "TABLE"
+    obj_type = _DROP_TYPE_MAP.get(obj.table_type, "TABLE")
 
     return f"DROP {obj_type} IF EXISTS `{obj.project}`.`{obj.dataset}`.`{obj.name}`;"
 
@@ -297,6 +305,7 @@ def main() -> None:
         manifests.append(manifest)
 
         if bq_project is None:
+            # NOTE: assumes single GCP project
             for node in itertools.chain(
                 manifest["nodes"].values(), manifest["sources"].values()
             ):
