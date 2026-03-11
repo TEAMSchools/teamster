@@ -61,6 +61,7 @@ with
             birthdate,
             self_contained,
             enrollment_type,
+            aligned_enrollment_type,
             status_group_value as grouped_status,
             grouped_status_order,
             grouped_status_timeframe,
@@ -73,10 +74,7 @@ with
             ) as school,
 
             max(status_start_date) over (
-                partition by
-                    enrollment_academic_year,
-                    finalsite_enrollment_id,
-                    status_group_value
+                partition by enrollment_academic_year, finalsite_id, status_group_value
             ) as grouped_status_start_date,
 
         from latest_status
@@ -106,7 +104,6 @@ with
             first_name,
             last_name,
             grade_level,
-            enroll_status,
             gender,
             birthdate,
             self_contained,
@@ -158,7 +155,6 @@ with
             first_name,
             last_name,
             grade_level,
-            enroll_status,
             gender,
             birthdate,
             self_contained,
@@ -191,7 +187,6 @@ with
         select
             enrollment_academic_year,
             finalsite_id,
-            enroll_status,
             enrollment_type,
             goal_type,
             goal_name,
@@ -212,7 +207,6 @@ with
         select
             enrollment_academic_year,
             finalsite_id,
-            enroll_status,
             enrollment_type,
             goal_type,
             goal_name,
@@ -243,7 +237,6 @@ with
             first_name,
             last_name,
             grade_level,
-            enroll_status,
             gender,
             birthdate,
             self_contained,
@@ -276,7 +269,6 @@ with
             d.first_name,
             d.last_name,
             d.grade_level,
-            d.enroll_status,
             d.gender,
             d.birthdate,
             d.self_contained,
