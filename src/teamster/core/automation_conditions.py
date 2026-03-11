@@ -160,6 +160,7 @@ def dbt_table_automation_condition(
             | AutomationCondition.code_version_changed().since(
                 AutomationCondition.newly_updated()
             )
+            | AutomationCondition.execution_failed()
         )
         & ~AutomationCondition.any_deps_missing().ignore(
             ignore_selection | _EXTERNAL_SOURCE_SELECTION
