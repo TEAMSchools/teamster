@@ -1,0 +1,48 @@
+models:
+  - name: rpt_gsheets__nsc_enrollment_new
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - student__c
+            - school__c
+            - start_date__c
+          config:
+            store_failures: true
+    columns:
+      - name: student__c
+        data_type: string
+        description: Salesforce Contact ID of the KIPP alum.
+      - name: school__c
+        data_type: string
+        description: Salesforce Account ID of the college or university.
+      - name: start_date__c
+        data_type: date
+        description: Date the enrollment began (first day of the academic year).
+      - name: actual_end_date__c
+        data_type: date
+        description: Date the enrollment ended per NSC data.
+      - name: attending_status__c
+        data_type: string
+        description: >
+          Current NSC enrollment status code for the most recent term of this
+          enrollment year (e.g. F = Full-time, H = Half-time).
+      - name: status__c
+        data_type: string
+        description: >
+          Derived enrollment outcome: Graduated (any term shows graduation),
+          Withdrew (any term shows withdrawal), or Attending.
+      - name: pursuing_degree_type__c
+        data_type: string
+        description: >
+          Degree type mapped from NSC two-year/four-year classification:
+          "Bachelor's (4-year)" or "Associate's (2 year)".
+      - name: source__c
+        data_type: string
+        description: Data source identifier; always 'NSC' for this model.
+      - name: created_for_nsc_data__c
+        data_type: boolean
+        description:
+          Flag indicating this enrollment record was created from NSC data.
+      - name: nsc_verified__c
+        data_type: boolean
+        description: Flag indicating this enrollment has been verified by NSC.
