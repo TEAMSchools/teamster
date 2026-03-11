@@ -35,6 +35,7 @@ left join
       enrollments that span an academic year boundary (e.g. Fall+Spring).
     */
     and n.enrollment_begin
-    between date_sub(e.start_date, interval 180 day)
-    and date_add(e.start_date, interval 180 day)
+    between date_sub(e.start_date, interval 180 day) and date_add(
+        e.start_date, interval 180 day
+    )
 where e.id is null

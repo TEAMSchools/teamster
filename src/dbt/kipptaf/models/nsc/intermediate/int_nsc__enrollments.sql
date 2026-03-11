@@ -72,9 +72,7 @@ with
                 case
                     when prev_enrollment_end is null
                     then 1
-                    when
-                        date_diff(enrollment_begin, prev_enrollment_end, day)
-                        > 200
+                    when date_diff(enrollment_begin, prev_enrollment_end, day) > 200
                     then 1
                     else 0
                 end
@@ -98,12 +96,12 @@ select
     countif(enrollment_status = 'W') > 0 as any_withdrawn,
 
     /* most recent semester's status fields */
-    array_agg(
-        enrollment_status order by enrollment_begin desc limit 1
-    )[offset(0)] as current_enrollment_status,
-    array_agg(
-        two_year_four_year order by enrollment_begin desc limit 1
-    )[offset(0)] as current_two_year_four_year,
+    array_agg(enrollment_status order by enrollment_begin desc limit 1)[
+        offset(0)
+    ] as current_enrollment_status,
+    array_agg(two_year_four_year order by enrollment_begin desc limit 1)[
+        offset(0)
+    ] as current_two_year_four_year,
 
 from enrollment_groups
 group by contact_id, account_id, enrollment_group
