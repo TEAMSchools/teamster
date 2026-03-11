@@ -28,7 +28,8 @@ with
             'All' as aligned_enrollment_type,
 
             first_value(r.detailed_status) over (
-                partition by r.finalsite_enrollment_id order by r.status_start_date desc
+                partition by r.finalsite_enrollment_id
+                order by r.status_start_date desc, r.status_order desc
             ) as latest_status,
 
         from {{ ref("int_finalsite__status_report_unpivot") }} as r
