@@ -80,8 +80,7 @@ inner join
 where
     not e.do_not_overwrite_with_nsc_data
     and (
-        n.enrollment_end != e.actual_end_date
-        or (n.enrollment_end is not null and e.actual_end_date is null)
-        or n.derived_status != e.status
-        or n.current_enrollment_status != e.attending_status
+        n.enrollment_end is distinct from e.actual_end_date
+        or n.derived_status is distinct from e.status
+        or n.current_enrollment_status is distinct from e.attending_status
     )

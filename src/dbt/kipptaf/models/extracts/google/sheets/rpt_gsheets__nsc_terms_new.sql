@@ -41,6 +41,7 @@ select
     e.id as enrollment__c,
     n.enrollment_begin as term_start_date__c,
     n.enrollment_end as term_end_date__c,
+    /* NSC term data has a single status field; Salesforce stores it in both */
     n.enrollment_status as term_enrollment_status__c,
     n.enrollment_status as term_attending_status__c,
 
