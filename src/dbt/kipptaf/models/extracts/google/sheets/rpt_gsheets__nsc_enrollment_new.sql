@@ -52,14 +52,13 @@ select
     n.account_id as school__c,
     n.enrollment_begin as start_date__c,
     n.enrollment_end as actual_end_date__c,
+    n.current_enrollment_status as attending_status__c,
 
     case
         when n.any_graduated then 'Graduated'
         when n.any_withdrawn then 'Withdrew'
         else 'Attending'
     end as status__c,
-
-    n.current_enrollment_status as attending_status__c,
 
     case n.current_two_year_four_year
         when '4-year' then "Bachelor's (4-year)"

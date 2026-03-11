@@ -17,9 +17,9 @@ models:
         data_type: date
       - name: actual_end_date__c
         data_type: date
-      - name: status__c
-        data_type: string
       - name: attending_status__c
+        data_type: string
+      - name: status__c
         data_type: string
       - name: pursuing_degree_type__c
         data_type: string
