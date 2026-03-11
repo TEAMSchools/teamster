@@ -85,9 +85,10 @@ columns:
 # multi-column uniqueness (when no single column is unique)
 data_tests:
   - dbt_utils.unique_combination_of_columns:
-      combination_of_columns:
-        - column_a
-        - column_b
+      arguments:
+        combination_of_columns:
+          - column_a
+          - column_b
       config:
         store_failures: true
 ```
