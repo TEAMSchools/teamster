@@ -20,9 +20,6 @@ with
             end as enrollment_type,
 
         from {{ ref("stg_google_sheets__finalsite__goals") }}
-        /* hardcoding year to avoid issues when PS rollsover and next year because
-           current year */
-        where goal_type = 'Enrollment' and enrollment_academic_year = 2026
     )
 
 select

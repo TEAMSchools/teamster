@@ -144,8 +144,11 @@ with
 
             enrollment_type,
 
-        from {{ ref("int_tableau__finalsite_ptg_goals_scaffold") }}
-        where goal_granularity = 'School'
+        from {{ ref("int_google_sheets__finalsite__goals_pivot") }}
+        where
+            goal_granularity = 'School'
+            and goal_type = 'Enrollment'
+            and enrollment_academic_year = 2026
     ),
 
     data_stack_school_grade as (
@@ -242,8 +245,11 @@ with
 
             enrollment_type,
 
-        from {{ ref("int_tableau__finalsite_ptg_goals_scaffold") }}
-        where goal_granularity = 'School/Grade Level'
+        from {{ ref("int_google_sheets__finalsite__goals_pivot") }}
+        where
+            goal_granularity = 'School/Grade Level'
+            and goal_type = 'Enrollment'
+            and enrollment_academic_year = 2026
     )
 
 select
