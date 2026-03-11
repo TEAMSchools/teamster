@@ -1,5 +1,5 @@
 with
-    latest_status as (
+    latest_status_calc as (
         select
             r.enrollment_academic_year,
             r.enrollment_academic_year_display,
@@ -77,7 +77,7 @@ with
                 partition by enrollment_academic_year, finalsite_id, status_group_value
             ) as grouped_status_start_date,
 
-        from latest_status
+        from latest_status_calc
     ),
 
     deduplicate as (
