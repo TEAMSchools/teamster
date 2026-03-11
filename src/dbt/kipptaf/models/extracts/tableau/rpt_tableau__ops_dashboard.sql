@@ -106,6 +106,7 @@ select
     se.is_enrolled_y1,
     se.is_enrolled_oct01,
     se.is_enrolled_oct15,
+    se.is_enrolled_mar15,
     se.is_enrolled_recent,
     se.track,
     se.exit_code_kf,

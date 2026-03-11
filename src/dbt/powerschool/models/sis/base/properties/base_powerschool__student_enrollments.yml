@@ -103,6 +103,8 @@ models:
         data_type: boolean
       - name: is_enrolled_oct15
         data_type: boolean
+      - name: is_enrolled_mar15
+        data_type: boolean
       - name: is_enrolled_recent
         data_type: boolean
       - name: is_retained_ever
