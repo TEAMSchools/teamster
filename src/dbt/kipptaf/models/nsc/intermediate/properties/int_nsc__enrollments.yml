@@ -1,0 +1,53 @@
+models:
+  - name: int_nsc__enrollments
+    description: >
+      Collapses NSC semester-level rows into continuous enrollment periods using
+      a gaps-and-islands approach. Consecutive semesters at the same institution
+      are merged into a single enrollment; a gap of more than 200 days between
+      a semester's end and the next semester's begin signals a new enrollment
+      (summer break ≈ 90 days; a missing semester ≈ 270 days).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - contact_id
+            - account_id
+            - enrollment_group
+          config:
+            store_failures: true
+    columns:
+      - name: contact_id
+        data_type: string
+        description: Salesforce Contact ID of the KIPP alum.
+      - name: account_id
+        data_type: string
+        description: Salesforce Account ID of the college or university.
+      - name: enrollment_group
+        data_type: int64
+        description: >
+          Monotonically increasing integer assigned per continuous enrollment
+          period within a (contact, institution) pair. Increments each time a
+          gap > 200 days is detected between consecutive semesters.
+      - name: enrollment_begin
+        data_type: date
+        description: First day of the earliest semester in this enrollment period.
+      - name: enrollment_end
+        data_type: date
+        description: Last day of the latest semester in this enrollment period.
+      - name: any_graduated
+        data_type: boolean
+        description: True if any NSC semester row within this enrollment shows graduation.
+      - name: any_withdrawn
+        data_type: boolean
+        description: >
+          True if any NSC semester row within this enrollment has status 'W'
+          (Withdrawn).
+      - name: current_enrollment_status
+        data_type: string
+        description: >
+          NSC enrollment status code from the most recent semester in this
+          enrollment period (e.g. F = Full-time, H = Half-time, W = Withdrawn).
+      - name: current_two_year_four_year
+        data_type: string
+        description: >
+          Two-year/four-year classification from the most recent semester in
+          this enrollment period.

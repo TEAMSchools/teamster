@@ -1,58 +1,9 @@
 with
-    nsc_with_account as (
-        select
-            n.contact_id,
-            n.enrollment_begin,
-            n.enrollment_end,
-            n.enrollment_status,
-            n.graduated,
-            n.two_year_four_year,
-
-            x.account_id,
-
-            extract(year from n.enrollment_begin) as enrollment_begin_year,
-
-            row_number() over (
-                partition by
-                    n.contact_id, x.account_id, extract(year from n.enrollment_begin)
-                order by n.enrollment_begin desc
-            ) as rn_recent,
-
-        from {{ ref("stg_nsc__student_tracker") }} as n
-        inner join
-            {{ ref("stg_google_sheets__kippadb__nsc_crosswalk") }} as x
-            on n.college_code_branch = x.college_code_nsc
-            and x.rn_college_code_nsc = 1
-        where n.record_found_y_n = 'Y'
-    ),
-
-    nsc_enrollment as (
-        select
-            contact_id,
-            account_id,
-            enrollment_begin_year,
-
-            min(enrollment_begin) as enrollment_begin,
-            max(enrollment_end) as enrollment_end,
-
-            /* any_graduated: if any NSC row for this enrollment shows graduation */
-            countif(graduated = 'Y') > 0 as any_graduated,
-            /* any_withdrawn: W is the NSC single-character code for Withdrawn */
-            countif(enrollment_status = 'W') > 0 as any_withdrawn,
-
-            max(
-                if(rn_recent = 1, enrollment_status, null)
-            ) as current_enrollment_status,
-
-        from nsc_with_account
-        group by contact_id, account_id, enrollment_begin_year
-    ),
-
     nsc_enrollment_derived as (
         select
             contact_id,
             account_id,
-            enrollment_begin_year,
+            enrollment_begin,
             enrollment_end,
             current_enrollment_status,
 
@@ -64,7 +15,7 @@ with
                 else 'Attending'
             end as derived_status,
 
-        from nsc_enrollment
+        from {{ ref("int_nsc__enrollments") }}
     )
 
 select
@@ -80,7 +31,13 @@ inner join
     {{ ref("stg_kippadb__enrollment") }} as e
     on n.contact_id = e.student
     and n.account_id = e.school
-    and n.enrollment_begin_year = e.start_date_year
+    /*
+      Match on date proximity (±180 days) rather than calendar year to handle
+      enrollments that span an academic year boundary (e.g. Fall+Spring).
+    */
+    and n.enrollment_begin
+    between date_sub(e.start_date, interval 180 day)
+    and date_add(e.start_date, interval 180 day)
 where
     not e.do_not_overwrite_with_nsc_data
     and (
