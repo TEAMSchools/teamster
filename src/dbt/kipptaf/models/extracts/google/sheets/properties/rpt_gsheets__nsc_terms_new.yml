@@ -1,0 +1,40 @@
+models:
+  - name: rpt_gsheets__nsc_terms_new
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - enrollment__c
+            - term_start_date__c
+          config:
+            store_failures: true
+    columns:
+      - name: enrollment__c
+        data_type: string
+        description: Salesforce Enrollment__c record ID this term belongs to.
+      - name: term_start_date__c
+        data_type: date
+        description: Start date of the enrollment term per NSC data.
+      - name: term_end_date__c
+        data_type: date
+        description: End date of the enrollment term per NSC data.
+      - name: term_enrollment_status__c
+        data_type: string
+        description: NSC enrollment status code for this term (e.g. F, H, L, W).
+      - name: term_attending_status__c
+        data_type: string
+        description: >
+          NSC enrollment status for this term, mirrored from
+          term_enrollment_status__c. Salesforce stores the same value in both
+          term status fields.
+      - name: term_season__c
+        data_type: string
+        description: >
+          Academic season derived from term start month: Fall (Aug–Dec), Spring
+          (Jan–May), or Summer.
+      - name: year__c
+        data_type: int64
+        description: >
+          Fiscal year (July–June) corresponding to the term start date.
+      - name: verified_by_nsc__c
+        data_type: boolean
+        description: Flag indicating this term record was verified by NSC.

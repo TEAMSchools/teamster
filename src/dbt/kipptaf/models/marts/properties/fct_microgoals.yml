@@ -9,7 +9,7 @@ models:
         data_type: string
 
       - name: assignment_date
-        data_type: date
+        data_type: timestamp
 
       - name: creator_name
         data_type: string

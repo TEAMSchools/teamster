@@ -23,7 +23,7 @@ with
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
         /* hardcoding year to avoid issues when PS rollsover and next year because
            current year */
-        where s.academic_year = 2026 and s.grade_level = -1
+        where s.grade_level = -1
 
         union all
 
@@ -47,7 +47,7 @@ with
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
         /* hardcoding year to avoid issues when PS rollsover and next year because
            current year */
-        where s.academic_year = 2026 and s.grade_level != -1 and s.schoolid != 0
+        where s.grade_level != -1 and s.schoolid != 0
     ),
 
     data_stack_school as (

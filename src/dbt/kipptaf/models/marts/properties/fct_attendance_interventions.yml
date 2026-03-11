@@ -32,7 +32,7 @@ models:
         data_type: string
 
       - name: commlog_date
-        data_type: date
+        data_type: timestamp
 
       - name: commlog_status
         data_type: string

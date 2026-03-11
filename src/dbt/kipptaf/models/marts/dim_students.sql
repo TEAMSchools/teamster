@@ -9,8 +9,8 @@ with
 select
     se.student_number,
     se.state_studentnumber,
-    se.entrydate as enrollment_start_date,
-    se.exitdate as enrollment_end_date,
+    cast(se.entrydate as timestamp) as enrollment_start_date,
+    cast(se.exitdate as timestamp) as enrollment_end_date,
     se.academic_year,
     se.schoolid as school_id,
     se.iep_status,

@@ -224,6 +224,25 @@ with
         from add_group_status_end_date
     ),
 
+    filter_days_in_status as (
+        select
+            * except (goal_name),
+
+            case
+                when goal_name = 'Pending Offers' and days_in_grouped_status <= 4
+                then '<= 4 Days'
+                when
+                    goal_name = 'Pending Offers'
+                    and days_in_grouped_status between 5 and 10
+                then '>= 5 & <= 10 Days'
+                when goal_name = 'Pending Offers' and days_in_grouped_status > 10
+                then '> 10 Days'
+                else goal_name
+            end as goal_name,
+
+        from days_in_grouped_status_calc
+    ),
+
     final_roster as (
         select
             enrollment_academic_year,
@@ -330,7 +349,7 @@ select
 
 from final_roster as r
 left join
-    days_in_grouped_status_calc as d
+    filter_days_in_status as d
     on r.enrollment_academic_year = d.enrollment_academic_year
     and r.finalsite_id = d.finalsite_id
     and r.enrollment_type = d.enrollment_type
@@ -381,7 +400,7 @@ select
 
 from final_roster as r
 left join
-    days_in_grouped_status_calc as d
+    filter_days_in_status as d
     on r.enrollment_academic_year = d.enrollment_academic_year
     and r.finalsite_id = d.finalsite_id
     and r.enrollment_type = d.enrollment_type

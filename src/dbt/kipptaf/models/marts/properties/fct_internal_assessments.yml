@@ -70,7 +70,7 @@ models:
         description: ""
 
       - name: date_taken
-        data_type: date
+        data_type: timestamp
         description: ""
 
       - name: points
@@ -90,7 +90,7 @@ models:
         description: ""
 
       - name: administered_at
-        data_type: date
+        data_type: timestamp
         description: ""
 
       - name: performance_band_set_id

@@ -14,7 +14,7 @@ models:
         data_type: int64
 
       - name: attendance_date
-        data_type: date
+        data_type: timestamp
 
       - name: academic_year
         data_type: int64

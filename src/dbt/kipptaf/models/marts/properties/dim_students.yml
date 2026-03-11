@@ -17,10 +17,10 @@ models:
         data_type: string
 
       - name: enrollment_start_date
-        data_type: date
+        data_type: timestamp
 
       - name: enrollment_end_date
-        data_type: date
+        data_type: timestamp
 
       - name: academic_year
         data_type: int64
