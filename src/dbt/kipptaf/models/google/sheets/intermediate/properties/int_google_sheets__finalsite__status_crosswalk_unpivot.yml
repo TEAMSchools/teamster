@@ -7,7 +7,6 @@ models:
           arguments:
             combination_of_columns:
               - _dagster_partition_key
-              - reporting_season
               - enrollment_type
               - detailed_status
               - status_group_name
@@ -15,8 +14,6 @@ models:
             store_failures: true
     columns:
       - name: _dagster_partition_key
-        data_type: string
-      - name: reporting_season
         data_type: string
       - name: enrollment_type
         data_type: string

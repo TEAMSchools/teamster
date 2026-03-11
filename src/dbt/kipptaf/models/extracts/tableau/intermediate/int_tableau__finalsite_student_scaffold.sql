@@ -1,4 +1,49 @@
 with
+    latest_status_calc as (
+        select
+            r.enrollment_academic_year,
+            r.enrollment_academic_year_display,
+            r.org,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.finalsite_enrollment_id as finalsite_id,
+            r.powerschool_student_number,
+            r.first_name,
+            r.last_name,
+            r.grade_level,
+            r.enrollment_type,
+            r.self_contained,
+            r.gender,
+            r.birthdate,
+            r.detailed_status,
+            r.status_start_date,
+            r.status_order,
+
+            x.status_group_name,
+            x.status_group_value,
+            x.grouped_status_order,
+            x.grouped_status_timeframe,
+
+            'All' as aligned_enrollment_type,
+
+            first_value(r.detailed_status) over (
+                partition by r.finalsite_enrollment_id order by r.status_start_date desc
+            ) as latest_status,
+
+        from {{ ref("int_finalsite__status_report_unpivot") }} as r
+        inner join
+            {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as x
+            on r._dagster_partition_key = x._dagster_partition_key
+            and r.enrollment_type = x.enrollment_type
+            and r.detailed_status = x.detailed_status
+            and x.valid_detailed_status
+            and not x.qa_flag
+        /* hardcoding years here to ensure the correct file from FS is being used
+           (these change by region at different dates) */
+        where r.enrollment_academic_year = 2026 and r.file_year = 2026
+    ),
+
     -- trunk-ignore(sqlfluff/ST03)
     cleaned_data as (
         select
@@ -7,25 +52,20 @@ with
             org,
             region,
             schoolid,
-            finalsite_enrollment_id as finalsite_id,
+            finalsite_id,
             powerschool_student_number,
             first_name,
             last_name,
             grade_level,
-            enroll_status,
             gender,
             birthdate,
             self_contained,
             enrollment_type,
+            aligned_enrollment_type,
             status_group_value as grouped_status,
             grouped_status_order,
             grouped_status_timeframe,
-            is_enrolled_fdos,
-            is_enrolled_oct01,
-            is_enrolled_oct15,
             latest_status,
-
-            'All' as aligned_enrollment_type,
 
             if(latest_status = detailed_status, true, false) as latest_detailed_match,
 
@@ -34,21 +74,17 @@ with
             ) as school,
 
             max(status_start_date) over (
-                partition by
-                    enrollment_academic_year,
-                    finalsite_enrollment_id,
-                    status_group_value
+                partition by enrollment_academic_year, finalsite_id, status_group_value
             ) as grouped_status_start_date,
 
-        from {{ ref("int_students__finalsite_student_roster") }}
-        where not qa_flag
+        from latest_status_calc
     ),
 
     deduplicate as (
         {{
             dbt_utils.deduplicate(
                 relation="cleaned_data",
-                partition_by="enrollment_academic_year, finalsite_id, grouped_status",
+                partition_by="finalsite_id, grouped_status",
                 order_by="grouped_status_start_date desc",
             )
         }}
@@ -68,15 +104,11 @@ with
             first_name,
             last_name,
             grade_level,
-            enroll_status,
             gender,
             birthdate,
             self_contained,
             enrollment_type,
             grouped_status,
-            is_enrolled_fdos,
-            is_enrolled_oct01,
-            is_enrolled_oct15,
             latest_status,
             aligned_enrollment_type,
             grouped_status_order,
@@ -123,15 +155,11 @@ with
             first_name,
             last_name,
             grade_level,
-            enroll_status,
             gender,
             birthdate,
             self_contained,
             enrollment_type,
             grouped_status,
-            is_enrolled_fdos,
-            is_enrolled_oct01,
-            is_enrolled_oct15,
             latest_status,
             aligned_enrollment_type,
             grouped_status_order,
@@ -159,7 +187,6 @@ with
         select
             enrollment_academic_year,
             finalsite_id,
-            enroll_status,
             enrollment_type,
             goal_type,
             goal_name,
@@ -168,7 +195,7 @@ with
             grouped_status_start_date,
 
             lead(grouped_status_start_date, 1, current_date('America/New_York')) over (
-                partition by finalsite_id, enrollment_academic_year
+                partition by finalsite_id
                 order by grouped_status_start_date asc, grouped_status_order asc
             ) as grouped_status_end_date,
 
@@ -180,7 +207,6 @@ with
         select
             enrollment_academic_year,
             finalsite_id,
-            enroll_status,
             enrollment_type,
             goal_type,
             goal_name,
@@ -211,15 +237,11 @@ with
             first_name,
             last_name,
             grade_level,
-            enroll_status,
             gender,
             birthdate,
             self_contained,
             enrollment_type,
             grouped_status,
-            is_enrolled_fdos,
-            is_enrolled_oct01,
-            is_enrolled_oct15,
             latest_status,
             aligned_enrollment_type,
             grouped_status_order,
@@ -247,15 +269,11 @@ with
             d.first_name,
             d.last_name,
             d.grade_level,
-            d.enroll_status,
             d.gender,
             d.birthdate,
             d.self_contained,
             d.enrollment_type,
             d.grouped_status,
-            d.is_enrolled_fdos,
-            d.is_enrolled_oct01,
-            d.is_enrolled_oct15,
             d.latest_status,
             d.aligned_enrollment_type,
             d.grouped_status_order,
@@ -289,15 +307,11 @@ select
     r.first_name,
     r.last_name,
     r.grade_level,
-    r.enroll_status,
     r.gender,
     r.birthdate,
     r.self_contained,
     r.enrollment_type,
     r.grouped_status,
-    r.is_enrolled_fdos,
-    r.is_enrolled_oct01,
-    r.is_enrolled_oct15,
     r.latest_status,
     r.aligned_enrollment_type,
     r.grouped_status_order,
@@ -309,6 +323,11 @@ select
     d.grouped_status_end_date,
     d.days_in_grouped_status,
 
+    e.enroll_status,
+    e.is_enrolled_fdos,
+    e.is_enrolled_oct01,
+    e.is_enrolled_oct15,
+
 from final_roster as r
 left join
     days_in_grouped_status_calc as d
@@ -318,6 +337,11 @@ left join
     and r.grouped_status = d.grouped_status
     and r.goal_type = d.goal_type
     and r.goal_name = d.goal_name
+left join
+    {{ ref("int_extracts__student_enrollments") }} as e
+    on r.enrollment_academic_year = e.academic_year
+    and r.finalsite_id = e.infosnap_id
+    and e.rn_year = 1
 where r.goal_name not in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
 
 union all
@@ -334,15 +358,11 @@ select
     r.first_name,
     r.last_name,
     r.grade_level,
-    r.enroll_status,
     r.gender,
     r.birthdate,
     r.self_contained,
     r.enrollment_type,
     r.grouped_status,
-    r.is_enrolled_fdos,
-    r.is_enrolled_oct01,
-    r.is_enrolled_oct15,
     r.latest_status,
     r.aligned_enrollment_type,
     r.grouped_status_order,
@@ -354,6 +374,11 @@ select
     d.grouped_status_end_date,
     d.days_in_grouped_status,
 
+    e.enroll_status,
+    e.is_enrolled_fdos,
+    e.is_enrolled_oct01,
+    e.is_enrolled_oct15,
+
 from final_roster as r
 left join
     days_in_grouped_status_calc as d
@@ -362,4 +387,9 @@ left join
     and r.enrollment_type = d.enrollment_type
     and r.grouped_status = d.grouped_status
     and r.goal_type = d.goal_type
+left join
+    {{ ref("int_extracts__student_enrollments") }} as e
+    on r.enrollment_academic_year = e.academic_year
+    and r.finalsite_id = e.infosnap_id
+    and e.rn_year = 1
 where r.goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
