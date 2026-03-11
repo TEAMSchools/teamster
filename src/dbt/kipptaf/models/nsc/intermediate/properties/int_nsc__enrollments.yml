@@ -6,6 +6,14 @@ models:
       are merged into a single enrollment; a gap of more than 200 days between
       a semester's end and the next semester's begin signals a new enrollment
       (summer break ≈ 90 days; a missing semester ≈ 270 days).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - contact_id
+            - account_id
+            - enrollment_group
+          config:
+            store_failures: true
     columns:
       - name: contact_id
         data_type: string
