@@ -40,7 +40,9 @@ with
             /* any_withdrawn: W is the NSC single-character code for Withdrawn */
             countif(enrollment_status = 'W') > 0 as any_withdrawn,
 
-            max(if(rn_recent = 1, enrollment_status, null)) as current_enrollment_status,
+            max(
+                if(rn_recent = 1, enrollment_status, null)
+            ) as current_enrollment_status,
 
         from nsc_with_account
         group by contact_id, account_id, enrollment_begin_year
@@ -55,8 +57,10 @@ with
             current_enrollment_status,
 
             case
-                when any_graduated then 'Graduated'
-                when any_withdrawn then 'Withdrew'
+                when any_graduated
+                then 'Graduated'
+                when any_withdrawn
+                then 'Withdrew'
                 else 'Attending'
             end as derived_status,
 

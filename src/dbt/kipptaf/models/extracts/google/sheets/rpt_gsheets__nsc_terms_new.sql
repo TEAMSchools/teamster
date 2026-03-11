@@ -46,8 +46,10 @@ select
     n.enrollment_status as term_attending_status__c,
 
     case
-        when extract(month from n.enrollment_begin) between 8 and 12 then 'Fall'
-        when extract(month from n.enrollment_begin) between 1 and 5 then 'Spring'
+        when extract(month from n.enrollment_begin) between 8 and 12
+        then 'Fall'
+        when extract(month from n.enrollment_begin) between 1 and 5
+        then 'Spring'
         else 'Summer'
     end as term_season__c,
 
