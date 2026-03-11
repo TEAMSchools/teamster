@@ -17,7 +17,6 @@ with
                     n.contact_id, x.account_id, extract(year from n.enrollment_begin)
                 order by n.enrollment_begin desc
             ) as rn_recent,
-
         from {{ ref("stg_nsc__student_tracker") }} as n
         inner join
             {{ ref("stg_google_sheets__kippadb__nsc_crosswalk") }} as x
@@ -46,7 +45,6 @@ with
             max(
                 if(rn_recent = 1, two_year_four_year, null)
             ) as current_two_year_four_year,
-
         from nsc_with_account
         group by contact_id, account_id, enrollment_begin_year
     )
@@ -57,6 +55,10 @@ select
     n.enrollment_begin as start_date__c,
     n.enrollment_end as actual_end_date__c,
     n.current_enrollment_status as attending_status__c,
+
+    'NSC' as source__c,
+    true as created_for_nsc_data__c,
+    true as nsc_verified__c,
 
     case
         when n.any_graduated
@@ -73,11 +75,6 @@ select
         when '2-year'
         then "Associate's (2 year)"
     end as pursuing_degree_type__c,
-
-    'NSC' as source__c,
-    true as created_for_nsc_data__c,
-    true as nsc_verified__c,
-
 from nsc_enrollment as n
 left join
     {{ ref("stg_kippadb__enrollment") }} as e
