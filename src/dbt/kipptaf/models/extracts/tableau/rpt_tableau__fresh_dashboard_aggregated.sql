@@ -41,6 +41,7 @@ with
         where
             goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
             and enrollment_type = 'New'
+            and grouped_status_timeframe = 'Current'
     )
 
 -- latest status: deferred and waitlisted

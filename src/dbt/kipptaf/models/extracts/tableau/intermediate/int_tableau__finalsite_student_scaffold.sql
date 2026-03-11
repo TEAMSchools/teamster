@@ -40,8 +40,8 @@ with
             and r.detailed_status = x.detailed_status
             and x.valid_detailed_status
             and not x.qa_flag
-        /* hardcoding years here to ensure the correct file from FS is being used
-           (these change by region at different dates) */
+        /* hardcoding year here to ensure the correct enrollment academic year from FS
+           is being used. the status_crosswalk is set to one year only */
         where r.enrollment_academic_year = 2026
     ),
 
