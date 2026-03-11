@@ -3,9 +3,6 @@
 git config pull.rebase false # specify how to reconcile divergent branches (merge)
 git config push.autoSetupRemote true
 
-# rm broken yarn key
-sudo rm /etc/apt/sources.list.d/yarn.list
-
 # install extra apt packages
 sudo apt-get -y install --no-install-recommends sshpass &&
   sudo apt-get -y clean &&
