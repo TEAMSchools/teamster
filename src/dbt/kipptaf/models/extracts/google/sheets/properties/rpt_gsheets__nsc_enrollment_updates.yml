@@ -23,7 +23,8 @@ models:
           (e.g. F = Full-time, H = Half-time).
       - name: nsc_verified__c
         data_type: boolean
-        description: NSC verification flag; always true for records in this model.
+        description:
+          NSC verification flag; always true for records in this model.
       - name: date_last_verified__c
         data_type: date
         description: Date this record was last verified against NSC data.

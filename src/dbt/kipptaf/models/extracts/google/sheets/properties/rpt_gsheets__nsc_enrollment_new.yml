@@ -41,7 +41,8 @@ models:
         description: Data source identifier; always 'NSC' for this model.
       - name: created_for_nsc_data__c
         data_type: boolean
-        description: Flag indicating this enrollment record was created from NSC data.
+        description:
+          Flag indicating this enrollment record was created from NSC data.
       - name: nsc_verified__c
         data_type: boolean
         description: Flag indicating this enrollment has been verified by NSC.

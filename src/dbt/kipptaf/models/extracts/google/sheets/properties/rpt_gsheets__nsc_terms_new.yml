@@ -29,8 +29,8 @@ models:
       - name: term_season__c
         data_type: string
         description: >
-          Academic season derived from term start month: Fall (Aug–Dec),
-          Spring (Jan–May), or Summer.
+          Academic season derived from term start month: Fall (Aug–Dec), Spring
+          (Jan–May), or Summer.
       - name: year__c
         data_type: int64
         description: >
