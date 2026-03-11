@@ -234,7 +234,7 @@ with
                 when
                     goal_name = 'Pending Offers'
                     and days_in_grouped_status between 5 and 10
-                then '>= 5 Days & <= 10 Days'
+                then '>= 5 & <= 10 Days'
                 when goal_name = 'Pending Offers' and days_in_grouped_status > 10
                 then '> 10 Days'
                 else goal_name
