@@ -312,15 +312,41 @@ with
         left join
             {{ ref("int_kippadb__enrollment_pivot") }} as eis
             on r.contact_id = eis.student
+    ),
+
+    enrollment_by_semester as (
+        select
+            student_number,
+            persistence_year,
+            semester,
+
+            max(coalesce(is_persisting_int, 0)) as was_enrolled,
+        from persistence_union
+        group by student_number, persistence_year, semester
+    ),
+
+    cumulative_enrollment as (
+        select
+            student_number,
+            persistence_year,
+            semester,
+
+            sum(was_enrolled) over (
+                partition by student_number
+                order by persistence_year asc, semester asc
+                rows between unbounded preceding and current row
+            ) as cumulative_semesters_enrolled,
+        from enrollment_by_semester
     )
 
 select
     p.student_number,
     p.sf_contact_id,
+    p.persistence_year,
+    p.semester,
     p.ktc_cohort,
     p.es_graduated,
     p.academic_year,
-    p.persistence_year,
     p.enrollment_id,
     p.pursuing_degree_type,
     p.enrollment_status,
@@ -332,7 +358,6 @@ select
     p.adjusted_6_year_minority_graduation_rate,
     p.hs_account_name,
     p.ecc_pursuing_degree_type,
-    p.semester,
     p.is_ecc,
     p.is_ecc_ba,
     p.is_ecc_aa,
@@ -348,11 +373,14 @@ select
     gps.cumulative_credits_earned as cumulative_credits_earned_semester,
     gps.gpa as cumulative_gpa_semester,
 
+    ce.cumulative_semesters_enrolled,
+
     coalesce(
         gpr.credits_required_for_graduation,
         p.credits_required_enrollment,
         p.credits_required_account
     ) as credits_required_for_graduation_recent,
+
     coalesce(
         gps.credits_required_for_graduation,
         p.credits_required_enrollment,
@@ -362,18 +390,39 @@ select
     dense_rank() over (
         partition by p.student_number order by p.persistence_year asc, p.semester asc
     ) as n_semester,
-    dense_rank() over (
-        partition by p.student_number order by p.persistence_year asc, p.semester asc
-    )
-    * .125 as progress_multiplier_4yr,
-    round(
+
+    (
         dense_rank() over (
             partition by p.student_number
             order by p.persistence_year asc, p.semester asc
         )
-        * .083,
+        * 0.125
+    ) as progress_multiplier_4yr,
+
+    round(
+        (
+            dense_rank() over (
+                partition by p.student_number
+                order by p.persistence_year asc, p.semester asc
+            )
+            * 0.083
+        ),
         3
     ) as progress_multiplier_6yr,
+
+    logical_or(p.persistence_status = 'Graduated') over (
+        partition by p.student_number
+    ) as is_6yr_graduate_any,
+
+    logical_or(
+        p.persistence_status = 'Graduated'
+        and p.pursuing_degree_type = "Bachelor's (4-year)"
+    ) over (partition by p.student_number) as is_6yr_graduate_ba,
+
+    logical_or(
+        p.persistence_status = 'Graduated'
+        and p.pursuing_degree_type = "Associate's (2 year)"
+    ) over (partition by p.student_number) as is_6yr_graduate_aa,
 from persistence_union as p
 left join
     gpa_enrollment_recent as gpr
@@ -385,3 +434,8 @@ left join
     and p.academic_year = gps.academic_year
     and p.semester = gps.semester
     and gps.rn_transcript_date_year_semester_recent = 1
+left join
+    cumulative_enrollment as ce
+    on p.student_number = ce.student_number
+    and p.persistence_year = ce.persistence_year
+    and p.semester = ce.semester
