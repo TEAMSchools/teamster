@@ -6,26 +6,9 @@ git config push.autoSetupRemote true
 # rm broken yarn key
 sudo rm /etc/apt/sources.list.d/yarn.list
 
-# import the Google Cloud public key
-curl https://packages.cloud.google.com/apt/doc/apt-key.gpg |
-  sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg ||
-  true
-
-# add the gcloud CLI distribution URI as a package source
-echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" |
-  sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-
-# update/install base apt packages
-sudo apt-get -y --no-install-recommends update &&
-  sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install \
-    apt-transport-https \
-    bash-completion \
-    ca-certificates \
-    curl \
-    gnupg \
-    google-cloud-cli \
-    sshpass &&
+# install extra apt packages
+sudo apt-get -y install --no-install-recommends sshpass &&
+  sudo apt-get -y clean &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
@@ -69,48 +52,35 @@ uv tool install datamodel-code-generator
 uv tool install dagster-dg
 uv sync
 
-# install dbt projects
-uv run dbt deps --project-dir=src/dbt/amplify
-uv run dbt parse --project-dir=src/dbt/amplify
-
-uv run dbt deps --project-dir=src/dbt/deanslist
-uv run dbt parse --project-dir=src/dbt/deanslist
-
-uv run dbt deps --project-dir=src/dbt/edplan
-uv run dbt parse --project-dir=src/dbt/edplan
-
-uv run dbt deps --project-dir=src/dbt/finalsite
-uv run dbt parse --project-dir=src/dbt/finalsite
-
-uv run dbt deps --project-dir=src/dbt/iready
-uv run dbt parse --project-dir=src/dbt/iready
-
-uv run dbt deps --project-dir=src/dbt/overgrad
-uv run dbt parse --project-dir=src/dbt/overgrad
-
-uv run dbt parse --project-dir=src/dbt/pearson
-uv run dbt deps --project-dir=src/dbt/pearson
-
-uv run dbt deps --project-dir=src/dbt/powerschool
-uv run dbt parse --project-dir=src/dbt/powerschool
-
-uv run dbt deps --project-dir=src/dbt/renlearn
-uv run dbt parse --project-dir=src/dbt/renlearn
-
-uv run dbt deps --project-dir=src/dbt/titan
-uv run dbt parse --project-dir=src/dbt/titan
-
-uv run dbt deps --project-dir=src/dbt/kippcamden
-uv run dbt parse --project-dir=src/dbt/kippcamden
-
-uv run dbt deps --project-dir=src/dbt/kippmiami
-uv run dbt parse --project-dir=src/dbt/kippmiami
-
-uv run dbt deps --project-dir=src/dbt/kippnewark
-uv run dbt parse --project-dir=src/dbt/kippnewark
-
-uv run dbt deps --project-dir=src/dbt/kipppaterson
-uv run dbt parse --project-dir=src/dbt/kipppaterson
-
-uv run dbt deps --project-dir=src/dbt/kipptaf
-uv run dbt parse --project-dir=src/dbt/kipptaf
+# bootstrap dbt projects
+(uv run dbt deps --project-dir=src/dbt/amplify &&
+  uv run dbt parse --project-dir=src/dbt/amplify) &
+(uv run dbt deps --project-dir=src/dbt/deanslist &&
+  uv run dbt parse --project-dir=src/dbt/deanslist) &
+(uv run dbt deps --project-dir=src/dbt/edplan &&
+  uv run dbt parse --project-dir=src/dbt/edplan) &
+(uv run dbt deps --project-dir=src/dbt/finalsite &&
+  uv run dbt parse --project-dir=src/dbt/finalsite) &
+(uv run dbt deps --project-dir=src/dbt/iready &&
+  uv run dbt parse --project-dir=src/dbt/iready) &
+(uv run dbt deps --project-dir=src/dbt/overgrad &&
+  uv run dbt parse --project-dir=src/dbt/overgrad) &
+(uv run dbt deps --project-dir=src/dbt/pearson &&
+  uv run dbt parse --project-dir=src/dbt/pearson) &
+(uv run dbt deps --project-dir=src/dbt/powerschool &&
+  uv run dbt parse --project-dir=src/dbt/powerschool) &
+(uv run dbt deps --project-dir=src/dbt/renlearn &&
+  uv run dbt parse --project-dir=src/dbt/renlearn) &
+(uv run dbt deps --project-dir=src/dbt/titan &&
+  uv run dbt parse --project-dir=src/dbt/titan) &
+(uv run dbt deps --project-dir=src/dbt/kippcamden &&
+  uv run dbt parse --project-dir=src/dbt/kippcamden) &
+(uv run dbt deps --project-dir=src/dbt/kippmiami &&
+  uv run dbt parse --project-dir=src/dbt/kippmiami) &
+(uv run dbt deps --project-dir=src/dbt/kippnewark &&
+  uv run dbt parse --project-dir=src/dbt/kippnewark) &
+(uv run dbt deps --project-dir=src/dbt/kipppaterson &&
+  uv run dbt parse --project-dir=src/dbt/kipppaterson) &
+(uv run dbt deps --project-dir=src/dbt/kipptaf &&
+  uv run dbt parse --project-dir=src/dbt/kipptaf) &
+wait
