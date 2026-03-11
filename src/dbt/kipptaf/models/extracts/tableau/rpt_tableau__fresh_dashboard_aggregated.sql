@@ -11,7 +11,7 @@ with
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
         where
             grouped_status = latest_status
-            and latest_status in ('Enrolled', 'Enrollment In Progress')
+            and latest_status = 'Enrolled'
             and grouped_status_timeframe = 'Current'
     ),
 
@@ -263,5 +263,4 @@ left join
     and f.finalsite_id = c.finalsite_id
     and f.goal_type = c.goal_type
     and f.goal_name = c.goal_name
-    and c.latest_status = 'Enrolled'
 where s.grouped_status_timeframe = 'Ever' and s.goal_type = 'Assigned School'
