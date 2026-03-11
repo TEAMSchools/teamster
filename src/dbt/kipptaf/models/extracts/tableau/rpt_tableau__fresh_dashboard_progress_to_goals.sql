@@ -28,12 +28,7 @@ with
             enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where
-            latest_status = 'Enrolled'
-            and grouped_status = latest_status
-            /* hardcoded year because when we roll over academic year on PS, using the
-               var next_year will be 2027 */
-            and enrollment_academic_year = 2026
+        where latest_status = 'Enrolled' and grouped_status = latest_status
 
         union all
 
@@ -65,12 +60,7 @@ with
             aligned_enrollment_type as enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where
-            latest_status = 'Enrolled'
-            and grouped_status = latest_status
-            /* hardcoded year because when we roll over academic year on PS, using the
-               var next_year will be 2027 */
-            and enrollment_academic_year = 2026
+        where latest_status = 'Enrolled' and grouped_status = latest_status
 
         union all
 
@@ -136,12 +126,7 @@ with
             enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where
-            latest_status = 'Enrolled'
-            and grouped_status = latest_status
-            /* hardcoded year because when we roll over academic year on PS, using the
-               var next_year will be 2027 */
-            and enrollment_academic_year = 2026
+        where latest_status = 'Enrolled' and grouped_status = latest_status
 
         union all
 
@@ -173,12 +158,7 @@ with
             aligned_enrollment_type as enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where
-            latest_status = 'Enrolled'
-            and grouped_status = latest_status
-            /* hardcoded year because when we roll over academic year on PS, using the
-               var next_year will be 2027 */
-            and enrollment_academic_year = 2026
+        where latest_status = 'Enrolled' and grouped_status = latest_status
 
         union all
 

@@ -27,7 +27,7 @@ select
         cast(regexp_extract(application_grade, r'\d+') as int)
     ) as grade_level,
 
-    if(enrollment_type is null, 'New', enrollment_type) as enrollment_type,
+    initcap(if(enrollment_type is null, 'New', enrollment_type)) as enrollment_type,
 
 from union_relations
 where
