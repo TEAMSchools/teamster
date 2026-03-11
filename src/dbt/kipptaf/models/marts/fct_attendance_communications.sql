@@ -14,7 +14,7 @@ with
     final as (
         select
             student_school_id as student_number,
-            call_date as commlog_date,
+            cast(call_date as timestamp) as commlog_date,
             educator_name as commlog_staff_name,
             reason as commlog_reason,
             response as commlog_notes,
