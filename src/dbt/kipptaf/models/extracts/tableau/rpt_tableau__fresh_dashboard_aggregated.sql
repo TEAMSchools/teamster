@@ -82,7 +82,7 @@ select
     f.grouped_status_end_date,
     f.days_in_grouped_status,
 
-    null as goal_name_value,
+    f.finalsite_id as goal_name_value,
 
 from {{ ref("int_google_sheets__finalsite__scaffold") }} as s
 left join
@@ -139,7 +139,7 @@ select
 
     if(
         f.goal_name in ('Pending Offers', 'Inquiries', 'Applications', 'Offers'),
-        null,
+        f.finalsite_id,
         n.finalsite_id
     ) as goal_name_value,
 
