@@ -32,6 +32,15 @@ with
             )
             and grouped_status_timeframe = 'Current'
             and enrollment_type = 'New'
+    ),
+
+    pending_offers_by_day_numerator as (
+        select enrollment_academic_year, finalsite_id, goal_type, goal_name,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }}
+        where
+            goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
+            and enrollment_type = 'New'
     )
 
 -- latest status: deferred and waitlisted
@@ -130,7 +139,7 @@ select
     if(
         f.goal_name in ('Pending Offers', 'Inquiries', 'Applications', 'Offers'),
         null,
-        f.finalsite_id
+        n.finalsite_id
     ) as goal_name_value,
 
 from {{ ref("int_google_sheets__finalsite__scaffold") }} as s
@@ -143,6 +152,12 @@ left join
     and s.goal_type = f.goal_type
     and s.goal_name = f.goal_name
     and s.grouped_status_timeframe = f.grouped_status_timeframe
+left join
+    pending_offers_by_day_numerator as n
+    on f.enrollment_academic_year = n.enrollment_academic_year
+    and f.finalsite_id = n.finalsite_id
+    and f.goal_type = n.goal_type
+    and f.goal_name = n.goal_name
 where s.goal_type in ('Pending Offers', 'Inquiries', 'Applications', 'Offers')
 
 union all

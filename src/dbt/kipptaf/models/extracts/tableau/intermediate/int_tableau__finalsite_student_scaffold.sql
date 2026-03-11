@@ -42,7 +42,7 @@ with
             and not x.qa_flag
         /* hardcoding years here to ensure the correct file from FS is being used
            (these change by region at different dates) */
-        where r.enrollment_academic_year = 2026 and r.file_year = 2026
+        where r.enrollment_academic_year = 2026
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
@@ -75,7 +75,7 @@ with
             ) as school,
 
             max(status_start_date) over (
-                partition by enrollment_academic_year, finalsite_id, status_group_value
+                partition by finalsite_id, status_group_value
             ) as grouped_status_start_date,
 
         from latest_status_calc
