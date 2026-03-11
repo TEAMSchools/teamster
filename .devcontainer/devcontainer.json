@@ -3,8 +3,9 @@
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers-extra/features/claude-code:1": {},
+    "ghcr.io/devcontainers-extra/features/uv:1.0.2": {},
     "ghcr.io/itsmechlark/features/1password:1": {},
+    "ghcr.io/devcontainers-extra/features/claude-code:1": {},
     "ghcr.io/jajera/features/gcloud-cli:1": {}
   },
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
