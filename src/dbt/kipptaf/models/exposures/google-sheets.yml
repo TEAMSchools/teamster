@@ -700,6 +700,7 @@ exposures:
     type: application
     owner:
       name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1PewWVfF1sKijeW0cDAlwWvVYJ1IdW2JFVx3Z8sf_HN8/
     depends_on:
       - ref("rpt_gsheets__nsc_enrollment_new")
     config:
@@ -713,6 +714,7 @@ exposures:
     type: application
     owner:
       name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1PewWVfF1sKijeW0cDAlwWvVYJ1IdW2JFVx3Z8sf_HN8/
     depends_on:
       - ref("rpt_gsheets__nsc_enrollment_updates")
     config:
@@ -726,6 +728,7 @@ exposures:
     type: application
     owner:
       name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1PewWVfF1sKijeW0cDAlwWvVYJ1IdW2JFVx3Z8sf_HN8/
     depends_on:
       - ref("rpt_gsheets__nsc_terms_new")
     config:
