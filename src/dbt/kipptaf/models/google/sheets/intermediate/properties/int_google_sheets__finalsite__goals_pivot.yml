@@ -1,5 +1,5 @@
 models:
-  - name: int_tableau__finalsite_ptg_goals_scaffold
+  - name: int_google_sheets__finalsite__goals_pivot
     config:
       contract:
         enforced: true
@@ -11,6 +11,7 @@ models:
               - region
               - schoolid
               - grade_level
+              - goal_type
               - goal_granularity
               - enrollment_type
           config:
