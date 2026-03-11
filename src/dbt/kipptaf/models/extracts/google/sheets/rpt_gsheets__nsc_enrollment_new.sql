@@ -5,6 +5,10 @@ select
     n.enrollment_end as actual_end_date__c,
     n.current_enrollment_status as attending_status__c,
 
+    'NSC' as source__c,
+    true as created_for_nsc_data__c,
+    true as nsc_verified__c,
+
     case
         when n.any_graduated
         then 'Graduated'
@@ -20,11 +24,6 @@ select
         when '2-year'
         then "Associate's (2 year)"
     end as pursuing_degree_type__c,
-
-    'NSC' as source__c,
-    true as created_for_nsc_data__c,
-    true as nsc_verified__c,
-
 from {{ ref("int_nsc__enrollments") }} as n
 left join
     {{ ref("stg_kippadb__enrollment") }} as e
