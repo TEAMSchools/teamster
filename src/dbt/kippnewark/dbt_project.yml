@@ -177,3 +177,7 @@ sources:
         +enabled: false
       src_renlearn__star_skill_area:
         +enabled: false
+  titan:
+    titan:
+      src_titan__income_form_data:
+        +enabled: false

@@ -3,8 +3,6 @@ models:
     columns:
       - name: _dagster_partition_key
         data_type: string
-      - name: reporting_season
-        data_type: string
       - name: enrollment_type
         data_type: string
       - name: detailed_status
@@ -31,5 +29,7 @@ models:
         data_type: string
       - name: conversion_metric_numerator_3
         data_type: string
-      - name: conversion_metric_denominator
+      - name: conversion_metric_denominator_1
+        data_type: string
+      - name: conversion_metric_denominator_2
         data_type: string

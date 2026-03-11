@@ -62,9 +62,10 @@ are **not** extracted here — regional dbt projects (`kippnewark`, `kippcamden`
 push to their respective PowerSchool instance. Therefore `extracts/powerschool/`
 has no dbt exposure in kipptaf; exposures live in the regional projects.
 
-**Disabled integrations**: Several integrations are fully disabled at the
-project level (ACT, ADP Workforce Manager, Alchemer, Dayforce, Facebook,
-Instagram, ADP Payroll SFTP, Coupa Fivetran). See `dbt_project.yml`.
+**Disabled integrations**: The following are fully disabled at the project level
+via `+enabled: false` in `dbt_project.yml`: ACT, ADP Workforce Manager, ADP
+Workforce Now Fivetran, Alchemer, Coupa Fivetran, Dayforce, Facebook, Illuminate
+Fivetran, Instagram.
 
 ## Key Variables
 
@@ -144,11 +145,56 @@ planned for renaming to `int_` (tracked in
 
 ## Model Conventions
 
+### dbt_project.yml — inherited defaults
+
+These settings are applied at the directory level and **must not be repeated
+per-model** unless overriding:
+
+| Directory / pattern                    | `materialized` | `contract: enforced`        |
+| -------------------------------------- | -------------- | --------------------------- |
+| All integration `staging/`             | `table`        | `true`                      |
+| `extracts/`                            | (view default) | `true`                      |
+| `marts/`                               | (view default) | `true`                      |
+| `illuminate/dlt/staging/repositories/` | `table`        | `false` (explicit override) |
+
+**Schema overrides**: `extracts/tableau/` sets `+schema: tableau`, so
+`rpt_tableau__*` models land in `kipptaf_tableau`, not `kipptaf_extracts`.
+`extracts/` itself uses `+schema: extracts`.
+
+**`reporting/`** (`+schema: reporting`) has no contract or materialization
+defaults set — it is a separate layer from `extracts/` and is not where `rpt_`
+models live.
+
+### Documentation
+
+Column-level documentation belongs in the model's properties YAML as a
+`description:` field, not as inline SQL comments. Inline comments in SQL are
+appropriate for non-obvious query logic (e.g. explaining a join condition or a
+filter), not for describing what a column means.
+
+### SQL antipatterns to avoid
+
+- **`GROUP BY ALL`**: Never use in production models. Always list grouping
+  columns explicitly so the query is self-documenting and resilient to upstream
+  column changes.
+- **`SELECT *` in the final SELECT of an `rpt_` or mart model**: Always list
+  columns explicitly, even though `contract: enforced: true` catches mismatches
+  at run time. Wildcards obscure column sourcing, create ambiguity in joins
+  where both sides may share a column name, and make the contract declaration
+  the only readable spec. Pass-through CTEs (`select * from ref(...)`) are fine.
+- **Filter conditions in `ON` vs `WHERE`**: For `INNER JOIN` and `LEFT JOIN`,
+  row-filter conditions on the preserved table belong in `WHERE`, not `ON`.
+  Putting them in `ON` is misleading — for inner joins the result is the same
+  but intent is hidden; for left joins it silently changes semantics (a filter
+  on the right table in `ON` keeps non-matching left rows, whereas in `WHERE` it
+  eliminates them). For `FULL JOIN`, conditions in `ON` that reference one side
+  are intentional and cannot be moved to `WHERE` without changing behavior.
+
+### Per-layer requirements
+
 **All staging models must**:
 
-1. Have `contract: enforced: true` (set at the directory level in
-   `dbt_project.yml` or per-model in the properties YAML)
-2. Have a uniqueness test — either a single-column `unique:` test or a
+1. Have a uniqueness test — either a single-column `unique:` test or a
    multi-column `dbt_utils.unique_combination_of_columns` test
 
 **All intermediate models must**:
@@ -166,10 +212,7 @@ being developed.
 
 **All `rpt_` and `dim_*`/`fct_*` models must**:
 
-1. Have `contract: enforced: true` — these are the last stop before data reaches
-   an external reporting tool (Tableau, PowerSchool, Google Sheets, etc.).
-   Schema changes break downstream exposures and must be made deliberately.
-2. Have a uniqueness test — either a single-column `unique:` test or a
+1. Have a uniqueness test — either a single-column `unique:` test or a
    multi-column `dbt_utils.unique_combination_of_columns` test:
 
 ```yaml

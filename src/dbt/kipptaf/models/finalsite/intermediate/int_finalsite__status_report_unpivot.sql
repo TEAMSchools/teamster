@@ -2,8 +2,6 @@ with
     unpivot_data as (
         select
             _dagster_partition_key,
-            current_academic_year,
-            next_academic_year,
             region,
             assigned_school,
             finalsite_enrollment_id,
@@ -11,6 +9,7 @@ with
             first_name,
             last_name,
             grade_level,
+            enrollment_type,
             self_contained,
             gender,
             birthdate,
