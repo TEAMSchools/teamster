@@ -30,7 +30,7 @@ models:
         data_type: string
 
       - name: pay_date
-        data_type: date
+        data_type: timestamp
 
       - name: check_voucher_number
         data_type: string
