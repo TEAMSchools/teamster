@@ -1,0 +1,31 @@
+models:
+  - name: rpt_gsheets__nsc_enrollment_new
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - student__c
+            - school__c
+            - start_date__c
+          config:
+            store_failures: true
+    columns:
+      - name: student__c
+        data_type: string
+      - name: school__c
+        data_type: string
+      - name: start_date__c
+        data_type: date
+      - name: actual_end_date__c
+        data_type: date
+      - name: status__c
+        data_type: string
+      - name: attending_status__c
+        data_type: string
+      - name: pursuing_degree_type__c
+        data_type: string
+      - name: source__c
+        data_type: string
+      - name: created_for_nsc_data__c
+        data_type: boolean
+      - name: nsc_verified__c
+        data_type: boolean

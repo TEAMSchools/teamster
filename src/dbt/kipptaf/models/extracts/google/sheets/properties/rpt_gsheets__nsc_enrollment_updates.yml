@@ -1,0 +1,20 @@
+models:
+  - name: rpt_gsheets__nsc_enrollment_updates
+    data_tests:
+      - unique:
+          column_name: id
+          config:
+            store_failures: true
+    columns:
+      - name: id
+        data_type: string
+      - name: actual_end_date__c
+        data_type: date
+      - name: status__c
+        data_type: string
+      - name: attending_status__c
+        data_type: string
+      - name: nsc_verified__c
+        data_type: boolean
+      - name: date_last_verified__c
+        data_type: date
