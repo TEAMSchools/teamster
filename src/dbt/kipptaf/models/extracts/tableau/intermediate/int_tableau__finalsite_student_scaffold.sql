@@ -27,7 +27,9 @@ with
             'All' as aligned_enrollment_type,
 
             if(
-                x.status_group_value in ('Inquiries', 'Applications'), region, school
+                x.status_group_value in ('Inquiries', 'Applications'),
+                r.region,
+                r.school
             ) as school,
 
             first_value(r.detailed_status) over (
