@@ -3,10 +3,10 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, ready_for_review]
-    paths:
-      - "!uv.lock"
-      - "!trunk.yaml"
-      - "!package-lock.yml"
+    paths-ignore:
+      - uv.lock
+      - trunk.yaml
+      - package-lock.yml
 
 jobs:
   claude-review:

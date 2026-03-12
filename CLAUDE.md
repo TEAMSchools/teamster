@@ -34,7 +34,17 @@ Always use them before doing relevant work:
 - **`/simplify`** — Use after making changes to review code for reuse, quality,
   and efficiency
 
+## Working Conventions
+
+- **Python execution**: Always use `uv run` — never bare `python` or `python3`.
+  The project environment is managed by uv.
+- **Git commits**: Only commit when explicitly asked. Do not commit
+  automatically after completing a fix or change.
+
 ## Commands
+
+The `scripts/` directory contains project utilities (doc generation, migrations,
+etc.) in lieu of a Makefile. Run them with `uv run scripts/<name>.py`.
 
 ### Development
 
@@ -110,6 +120,26 @@ trunk fmt
 `.trunk/config/.sqlfluff`. Key enforced rules: BigQuery dialect, trailing commas
 **required** in SELECT clauses, single quotes for literals, max line length 88.
 Do not flag code that follows these rules.
+
+## Documentation
+
+Two documentation systems serve different audiences — do not conflate them:
+
+- **dbt YAML** (properties files + exposures) — how analysts document models,
+  columns, tests, and external tool dependencies. Required for all dbt model
+  changes; enforced by the PR template checklist.
+- **MkDocs site** (`docs/`) — how engineers document infrastructure patterns,
+  architecture, and operational guides. Update when making engineering-level
+  changes:
+  - New integration → update `docs/reference/adding-an-integration.md` and the
+    code location's `CLAUDE.md`
+  - New or changed schedule/sensor → regenerate the automations catalog:
+    `uv run scripts/gen-automations-doc.py`
+  - New core pattern (IO manager behavior, automation condition, partitioning) →
+    update the relevant `docs/reference/` page
+
+Analysts adding or editing SQL models do not need to touch `docs/` — dbt YAML is
+the documentation mechanism for that work.
 
 ## Architecture
 

@@ -1,107 +1,120 @@
 # dbt
 
-## Adding a Google Sheets source to dbt
+## Adding a Google Sheets source
 
-1. Create your sheet
+1. Create your sheet in
    [Data Integration / Google Sheets / In](https://drive.google.com/drive/folders/18acMCDHzrU_yTFSFd46f7b7iGadIzWmr).
 
-2. Add a **named range**. This should encompass the entirety of the tab.
+2. Add a **named range** covering the entire data tab (header row + data).
 
 3. Update `src/dbt/kipptaf/models/google/sheets/sources-drive.yml`. Add a new
-   entry under the `tables` attribute. Use the example below, replacing the
-   variables with your specific sheet's information.
+   entry under `tables`:
 
-   | Variable              | Description                                                     |
-   | --------------------- | --------------------------------------------------------------- |
-   | **SOURCE_NAME**       | The name of the collection for your source tables               |
-   | **SOURCE_TABLE_NAME** | The name of the source table, as it will appear in the database |
-   | **SHEET_URL**         | The full URL of the Google Sheet, including `https://...`       |
-   | **NAMED_RANGE**       | The name of the range you defined in step 2.                    |
+   | Variable              | Description                                  |
+   | --------------------- | -------------------------------------------- |
+   | **SOURCE_NAME**       | Collection name for your source tables       |
+   | **SOURCE_TABLE_NAME** | Table name as it will appear in BigQuery     |
+   | **SHEET_URL**         | Full URL of the Google Sheet (`https://...`) |
+   | **NAMED_RANGE**       | The named range defined in step 2            |
 
    ```yaml
    sources:
      - name: ...
        tables:
          ...
-         - name: src_google_sheets__{SOURCE NAME}__{SOURCE TABLE NAME}
+         - name: src_google_sheets__{SOURCE_NAME}__{SOURCE_TABLE_NAME}
            external:
              options:
                format: GOOGLE_SHEETS
                uris:
-                 - {SHEET URL}
-               sheet_range: {NAMED RANGE}
+                 - {SHEET_URL}
+               sheet_range: {NAMED_RANGE}
                skip_leading_rows: 1
            meta:
              dagster:
                asset_key:
                  - kipptaf
-                 - {SOURCE NAME}
-                 - {SOURCE TABLE NAME}
+                 - {SOURCE_NAME}
+                 - {SOURCE_TABLE_NAME}
    ```
 
-4. Update the external source definition
+4. Stage the external source definition:
 
-   ```sh
-   dbt run-operation stage_external_sources --vars "{'ext_full_refresh': 'true'}" --args "select: [model name(s)]"
+   ```bash
+   uv run dbt run-operation stage_external_sources \
+     --vars "{'ext_full_refresh': 'true'}" \
+     --args 'select: [model_name]'
    ```
 
-5. Create a staging model. Create a simple `select *` statement--this will help
-   catch unexpected changes to the table schema--and add any calculated fields
-   you require.
+5. Create a staging model. A simple `select *` is the starting point — it
+   surfaces unexpected schema changes. Add any calculated fields you need:
 
    ```sql
-   select *, spam + 1 as eggs, from {{ source("{SOURCE NAME}", "{SOURCE TABLE NAME}") }}
+   select
+       *,
+       spam + 1 as eggs,
+   from {{ source("{SOURCE_NAME}", "{SOURCE_TABLE_NAME}") }}
    ```
 
-6. Create a corresponding properties file for the staging model
+6. Generate the properties file scaffold:
 
-   File name: `../properties/STAGING_MODEL_NAME.yml`
+   ```bash
+   uv run dbt run-operation generate_model_yaml \
+     --args '{"model_names": ["{STAGING_MODEL_NAME}"]}'
+   ```
 
-   | Variable         | Description                                                                                              |
-   | ---------------- | -------------------------------------------------------------------------------------------------------- |
-   | `models[].name`  | The exact name of your staging model                                                                     |
-   | `columns[].name` | Column names are case-sensitive                                                                          |
-   | `data_type`      | [BigQuery Data Type Reference](https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types) |
+   Save the output as `../properties/{STAGING_MODEL_NAME}.yml`. Staging models
+   inherit `contract: enforced: true` from `dbt_project.yml`, so every column
+   must have a `data_type`:
 
    ```yaml
    models:
-     - name: {STAGING MODEL NAME}
+     - name: { STAGING_MODEL_NAME }
        columns:
-         - name: {COLUMN NAME 1}
-           data_type: {COLUMN TYPE 1}
-         - name: {COLUMN NAME 2}
-           data_type: {COLUMN TYPE 2}
-         ...
-         - name: {COLUMN NAME N}
-           data_type: {COLUMN TYPE N}
+         - name: column_name
+           data_type: string # see BigQuery data type reference
    ```
 
-7. Build your staging model
+   See the
+   [BigQuery data type reference](https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types)
+   for valid type names.
+
+7. Build and validate:
+
+   ```bash
+   uv run dbt build --select {STAGING_MODEL_NAME}
+   ```
+
+   A successful build confirms the contract is satisfied and all column types
+   are correct.
 
 ## Updating a Google Sheets source
 
-1. Duplicate the tab that you are modifying. If you will only be adding columns
-   to the end of the sheet, you can skip this step.
+1. Duplicate the tab you are modifying. Skip this step only if you are adding
+   columns to the **end** of the sheet — inserting columns between existing ones
+   will break production.
 
-2. Create a new named range. Use the same name but suffixed with something to
-   make it unique (e.g. `_new`, `_v2`)
+2. Create a new named range using the same name with a suffix (e.g. `_v2`).
 
-3. Update `src/dbt/kipptaf/models/google/sheets/sources-drive.yml`. Update the
-   `sheet_range` attribute with the new named range.
+3. Update `src/dbt/kipptaf/models/google/sheets/sources-drive.yml` — change
+   `sheet_range` to the new named range.
 
-4. Make your changes to the END of the sheet. Inserting columns between existing
-   ones will break production. Columns can safely be rearranged after your
-   changes are merged.
+4. Make your changes to the **end** of the sheet. Columns can be rearranged
+   after the PR merges.
 
-5. If necessary, update column definitions on the source YAML.
+5. If you added or renamed columns, update the source YAML and the staging
+   model's properties file with the new column definitions.
 
-6. Update the external source definition
+6. Stage the updated source:
 
-   ```sh
-   dbt run-operation stage_external_sources \
-      --vars="{'ext_full_refresh': 'true'}" \
-      --args="select: [model name(s)]" \
-      --target=staging
+   ```bash
+   uv run dbt run-operation stage_external_sources \
+     --vars "{'ext_full_refresh': 'true'}" \
+     --args 'select: [model_name]'
    ```
 
-7. Update the data contract for your staging file
+7. Rebuild and verify the contract still passes:
+
+   ```bash
+   uv run dbt build --select {STAGING_MODEL_NAME}
+   ```
