@@ -6,7 +6,6 @@ with
             r.org,
             r.region,
             r.schoolid,
-            r.school,
             r.finalsite_enrollment_id as finalsite_id,
             r.powerschool_student_number,
             r.first_name,
@@ -27,8 +26,15 @@ with
 
             'All' as aligned_enrollment_type,
 
+            if(
+                x.status_group_value in ('Inquiries', 'Applications'),
+                r.region,
+                r.school
+            ) as school,
+
             first_value(r.detailed_status) over (
-                partition by r.finalsite_enrollment_id order by r.status_start_date desc
+                partition by r.finalsite_enrollment_id
+                order by r.status_start_date desc, r.status_order desc
             ) as latest_status,
 
         from {{ ref("int_finalsite__status_report_unpivot") }} as r
@@ -39,19 +45,20 @@ with
             and r.detailed_status = x.detailed_status
             and x.valid_detailed_status
             and not x.qa_flag
-        /* hardcoding years here to ensure the correct file from FS is being used
-           (these change by region at different dates) */
-        where r.enrollment_academic_year = 2026 and r.file_year = 2026
+        /* hardcoding year here to ensure the correct enrollment academic year from FS
+           is being used. the status_crosswalk is set to one year only */
+        where r.enrollment_academic_year = 2026
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
-    cleaned_data as (
+    start_dates as (
         select
             enrollment_academic_year,
             enrollment_academic_year_display,
             org,
             region,
             schoolid,
+            school,
             finalsite_id,
             powerschool_student_number,
             first_name,
@@ -67,14 +74,8 @@ with
             grouped_status_timeframe,
             latest_status,
 
-            if(latest_status = detailed_status, true, false) as latest_detailed_match,
-
-            if(
-                status_group_value in ('Inquiries', 'Applications'), region, school
-            ) as school,
-
             max(status_start_date) over (
-                partition by enrollment_academic_year, finalsite_id, status_group_value
+                partition by finalsite_id, status_group_value
             ) as grouped_status_start_date,
 
         from latest_status_calc
@@ -83,7 +84,7 @@ with
     deduplicate as (
         {{
             dbt_utils.deduplicate(
-                relation="cleaned_data",
+                relation="start_dates",
                 partition_by="finalsite_id, grouped_status",
                 order_by="grouped_status_start_date desc",
             )
@@ -116,17 +117,6 @@ with
             grouped_status_start_date,
 
             case
-                grouped_status
-                when 'Applications'
-                then 'App Target'
-                when 'Assigned School'
-                then 'Overall Conversion'
-                when 'Offers'
-                then 'Offers Target'
-                else grouped_status
-            end as goal_name,
-
-            case
                 when
                     grouped_status in (
                         'Accepted to Enrolled',
@@ -136,6 +126,15 @@ with
                 then 'Conversion'
                 else grouped_status
             end as goal_type,
+
+            case
+                grouped_status
+                when 'Applications'
+                then 'App Target'
+                when 'Offers'
+                then 'Offers Target'
+                else grouped_status
+            end as goal_name,
 
         from deduplicate
         where grouped_status_timeframe = 'Ever'
@@ -166,18 +165,18 @@ with
             grouped_status_timeframe,
             grouped_status_start_date,
 
-            grouped_status as goal_name,
-
             case
                 when
                     grouped_status in (
-                        'Accepted to Enrolled',
-                        'Offers to Accepted',
-                        'Offers to Enrolled'
+                        'Accepted to Enrolled Num',
+                        'Offers to Accepted Num',
+                        'Offers to Enrolled Num'
                     )
                 then 'Conversion'
                 else grouped_status
             end as goal_type,
+
+            grouped_status as goal_name,
 
         from deduplicate
         where grouped_status_timeframe = 'Current'
@@ -224,6 +223,25 @@ with
         from add_group_status_end_date
     ),
 
+    filter_days_in_status as (
+        select
+            * except (goal_name),
+
+            case
+                when goal_name = 'Pending Offers' and days_in_grouped_status <= 4
+                then '<= 4 Days'
+                when
+                    goal_name = 'Pending Offers'
+                    and days_in_grouped_status between 5 and 10
+                then '>= 5 & <= 10 Days'
+                when goal_name = 'Pending Offers' and days_in_grouped_status > 10
+                then '> 10 Days'
+                else goal_name
+            end as goal_name,
+
+        from days_in_grouped_status_calc
+    ),
+
     final_roster as (
         select
             enrollment_academic_year,
@@ -241,12 +259,9 @@ with
             birthdate,
             self_contained,
             enrollment_type,
-            grouped_status,
             latest_status,
             aligned_enrollment_type,
-            grouped_status_order,
             grouped_status_timeframe,
-            grouped_status_start_date,
 
             goal_type,
 
@@ -273,12 +288,9 @@ with
             d.birthdate,
             d.self_contained,
             d.enrollment_type,
-            d.grouped_status,
             d.latest_status,
             d.aligned_enrollment_type,
-            d.grouped_status_order,
             d.grouped_status_timeframe,
-            d.grouped_status_start_date,
 
             d.grouped_status as goal_type,
 
@@ -311,16 +323,12 @@ select
     r.birthdate,
     r.self_contained,
     r.enrollment_type,
-    r.grouped_status,
     r.latest_status,
     r.aligned_enrollment_type,
-    r.grouped_status_order,
     r.grouped_status_timeframe,
-    r.grouped_status_start_date,
     r.goal_name,
     r.goal_type,
 
-    d.grouped_status_end_date,
     d.days_in_grouped_status,
 
     e.enroll_status,
@@ -330,11 +338,10 @@ select
 
 from final_roster as r
 left join
-    days_in_grouped_status_calc as d
+    filter_days_in_status as d
     on r.enrollment_academic_year = d.enrollment_academic_year
     and r.finalsite_id = d.finalsite_id
     and r.enrollment_type = d.enrollment_type
-    and r.grouped_status = d.grouped_status
     and r.goal_type = d.goal_type
     and r.goal_name = d.goal_name
 left join
@@ -362,16 +369,12 @@ select
     r.birthdate,
     r.self_contained,
     r.enrollment_type,
-    r.grouped_status,
     r.latest_status,
     r.aligned_enrollment_type,
-    r.grouped_status_order,
     r.grouped_status_timeframe,
-    r.grouped_status_start_date,
     r.goal_name,
     r.goal_type,
 
-    d.grouped_status_end_date,
     d.days_in_grouped_status,
 
     e.enroll_status,
@@ -380,13 +383,13 @@ select
     e.is_enrolled_oct15,
 
 from final_roster as r
-left join
-    days_in_grouped_status_calc as d
+inner join
+    filter_days_in_status as d
     on r.enrollment_academic_year = d.enrollment_academic_year
     and r.finalsite_id = d.finalsite_id
     and r.enrollment_type = d.enrollment_type
-    and r.grouped_status = d.grouped_status
     and r.goal_type = d.goal_type
+    and r.goal_name = d.goal_name
 left join
     {{ ref("int_extracts__student_enrollments") }} as e
     on r.enrollment_academic_year = e.academic_year

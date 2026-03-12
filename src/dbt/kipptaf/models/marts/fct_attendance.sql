@@ -1,6 +1,6 @@
 select
     student_number,
-    calendardate as attendance_date,
+    cast(calendardate as timestamp) as attendance_date,
     academic_year,
     membershipvalue as membership_value,
     attendancevalue as is_present,

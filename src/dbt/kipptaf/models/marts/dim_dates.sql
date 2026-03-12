@@ -21,16 +21,16 @@ with
 select
     date_timestamp,
     date_datetime_local,
-    date_local as date_day,
+    cast(date_local as timestamp) as date_day,
 
-    date_trunc(date_local, week) as week_start_date,
-    last_day(date_local, week) as week_end_date,
-
-    -- trunk-ignore(sqlfluff/LT01)
-    date_trunc(date_local, week(monday)) as week_start_monday,
+    cast(date_trunc(date_local, week) as timestamp) as week_start_date,
+    cast(last_day(date_local, week) as timestamp) as week_end_date,
 
     -- trunk-ignore(sqlfluff/LT01)
-    last_day(date_local, week(monday)) as week_end_sunday,
+    cast(date_trunc(date_local, week(monday)) as timestamp) as week_start_monday,
+
+    -- trunk-ignore(sqlfluff/LT01)
+    cast(last_day(date_local, week(monday)) as timestamp) as week_end_sunday,
 
     {{
         date_to_fiscal_year(

@@ -695,6 +695,48 @@ exposures:
           kinds:
             - googlesheets
 
+  - name: rpt_gsheets__nsc_enrollment_new
+    label: NSC Enrollment New Records
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1PewWVfF1sKijeW0cDAlwWvVYJ1IdW2JFVx3Z8sf_HN8/
+    depends_on:
+      - ref("rpt_gsheets__nsc_enrollment_new")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
+
+  - name: rpt_gsheets__nsc_enrollment_updates
+    label: NSC Enrollment Updates
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1PewWVfF1sKijeW0cDAlwWvVYJ1IdW2JFVx3Z8sf_HN8/
+    depends_on:
+      - ref("rpt_gsheets__nsc_enrollment_updates")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
+
+  - name: rpt_gsheets__nsc_terms_new
+    label: NSC Terms New Records
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1PewWVfF1sKijeW0cDAlwWvVYJ1IdW2JFVx3Z8sf_HN8/
+    depends_on:
+      - ref("rpt_gsheets__nsc_terms_new")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
+
   # - name: hro_2425_renewal_workbook_data_team_workspace
   #   label: HRO 24-25 Renewal Workbook - Data Team Workspace
   #   type: application
