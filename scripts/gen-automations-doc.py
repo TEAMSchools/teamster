@@ -72,7 +72,7 @@ def _asset_targets(jobs: list, asset_graph, code_location: str) -> str:
             continue
         try:
             all_keys |= selection.resolve(asset_graph)
-        except Exception:
+        except Exception:  # nosec B110
             pass
 
     if not all_keys:

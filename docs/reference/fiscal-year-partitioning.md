@@ -42,7 +42,7 @@ Most source system assets (PowerSchool, Deanslist, iReady, etc.) use
 partition keys like `2025-09-01`, which the `GCSIOManager` decomposes into
 Hive-style paths:
 
-```
+```text
 _dagster_partition_fiscal_year=2026/
   _dagster_partition_date=2025-09-01/
     _dagster_partition_hour=00/
@@ -55,7 +55,7 @@ _dagster_partition_fiscal_year=2026/
 Some assets use `StaticPartitionsDefinition` for a fixed set of values (e.g.
 school IDs, report types). These produce paths like:
 
-```
+```text
 _dagster_partition_key=<value>/data
 ```
 

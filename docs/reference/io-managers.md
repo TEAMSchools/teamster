@@ -27,7 +27,7 @@ external tables can read them directly.
 **Date/datetime partition keys** are decomposed into fiscal year, date, hour,
 and minute components:
 
-```
+```text
 teamster-<code_location>/
   <asset_key>/
     _dagster_partition_fiscal_year=YYYY/
@@ -39,7 +39,7 @@ teamster-<code_location>/
 
 **Non-date partition keys** use a single key component:
 
-```
+```text
 teamster-<code_location>/
   <asset_key>/
     _dagster_partition_key=<value>/

@@ -43,8 +43,6 @@ Set `assets[*].metadata.cron_schedule` to a cron string (single schedule) or a
 list of strings (multiple ticks). Use [crontab guru](https://crontab.guru/) as a
 reference.
 
-<!-- prettier-ignore-start -->
-<!-- trunk-ignore(markdownlint/MD046) -->
 ```yaml
 - name: My Tableau Workbook
   deps:
@@ -61,16 +59,12 @@ reference.
       - 0 0 * * *
       - 0 12 * * *
 ```
-<!-- prettier-ignore-end -->
 
 To disable a schedule, comment out the `cron_schedule` key:
 
-<!-- prettier-ignore-start -->
-<!-- trunk-ignore(markdownlint/MD046) -->
 ```yaml
 - name: My Tableau Workbook
   metadata:
     id: 0n371m37-h34c-702w-h0p1-4y3dm2831v3d
     # cron_schedule: 0 2 * * *
 ```
-<!-- prettier-ignore-end -->

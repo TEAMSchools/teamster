@@ -5,7 +5,7 @@ that separates reusable asset logic from per-school configuration.
 
 ## Pattern overview
 
-```
+```text
 src/teamster/libraries/<integration>/assets.py   ← reusable factory function
 src/teamster/code_locations/<school>/
   <integration>/
