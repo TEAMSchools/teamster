@@ -1,35 +1,12 @@
 # Getting Started
 
-## Tools
-
-### Collaboration
-
-- Asana
-- 1Password
-- GitHub
-
-### Analytics Engineering
-
-- dbt Cloud
-- BigQuery
-- Tableau
-
-### Data Engineering
-
-- Dagster
-- dlt
-- Airbyte
-- VS Code (with
-  [Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers))
-
 ## Account Setup
 
 ### GitHub
 
-To contribute on GitHub, you must be a member of our
-[Data Team](https://github.com/orgs/TEAMSchools/teams/data-team), and your
-ability to approve and merge pull requests depends on your membership in one of
-these subgroups:
+To contribute, you must be a member of our
+[Data Team](https://github.com/orgs/TEAMSchools/teams/data-team). Your ability
+to approve and merge pull requests depends on your subgroup:
 
 - [Analytics Engineers](https://github.com/orgs/TEAMSchools/teams/analytics-engineers)
 - [Data Engineers](https://github.com/orgs/TEAMSchools/teams/data-engineers)
@@ -37,43 +14,80 @@ these subgroups:
 
 ### Google Workspace
 
-To access our BigQuery project and its datasets, you must be a member of our
+To access our BigQuery project and its datasets, you must be a member of the
 **TEAMster Analysts KTAF** Google security group.
 
 ### dbt Cloud
 
 #### Development dataset
 
-When you first login to dbt Cloud, you will be asked to set up **Development
-credentials**.
+dbt Cloud creates a personal development dataset in BigQuery for each user,
+named using your username as a prefix. Please prefix yours with an underscore
+(`_`) — BigQuery hides datasets starting with `_` from the left nav, keeping the
+project list readable.
 
-dbt will create a development "branch" of the database for every user, and it
-will name datasets using a prefix that is unique to you.
-
-By default, this is your username, but please prefix it with an underscore (`_`)
-to avoid cluttering up our BigQuery navigation. BigQuery will hide any datasets
-that begin with an underscore from the left nav.
-
-![Alt text](images/dbt_cloud/development_credentials.png)
+Set this in **Account settings → Credentials → Development credentials**.
 
 #### sqlfmt
 
 <!-- adapted from https://docs.getdbt.com/docs/cloud/dbt-cloud-ide/lint-format#format-sql -->
 
-To format SQL code, we use [sqlfmt](https://sqlfmt.com/), an uncompromising SQL
-query formatter that works with Jinja templating.
+We use [sqlfmt](https://sqlfmt.com/) for SQL formatting. To enable it in dbt
+Cloud:
 
-To confirm that dbt Cloud is set up to use sqlfmt:
+1. Open a `.sql` file on a development branch.
+2. Click the **Code Quality** tab in the console, then **`</> Config`**.
+3. Select the `sqlfmt` radio button.
+4. Click **Format** to auto-format the file.
 
-1. Make sure you're on a development branch. Formatting isn't available on main
-   or read-only branches.
-2. Open a `.sql` file and click on the **Code Quality** tab.
-3. Click on the <kbd>&lt;/&gt; Config</kbd> button on the right side of the
-   console.
-4. In the code quality tool config pop-up, select the `sqlfmt` radio button.
-5. Go to the console section (below the file editor) and click
-   <kbd>Format</kbd>.
-6. This auto-formats your code in the file editor.
+## GitHub Codespaces
+
+The devcontainer is pre-configured for
+[GitHub Codespaces](https://github.com/features/codespaces) — no local setup
+required.
+
+### Creating a Codespace
+
+1. On the repository page, click **Code → Codespaces → Create codespace on
+   main** (or your branch).
+2. Select the **4-core / 16 GB** machine type.
+3. Wait for the container to finish building. `postCreate.sh` runs
+   automatically: installs dependencies, bootstraps all dbt projects
+   (`dbt deps` + `dbt parse` in parallel), and injects secrets from 1Password.
+   First creation takes a few minutes.
+
+### After the Codespace opens
+
+**Dismiss extension prompts** — all required extensions are already configured
+in `devcontainer.json`; dismiss any install prompts VS Code shows.
+
+**Authenticate to Google** — credentials are not persisted across sessions:
+
+```bash
+bash .devcontainer/scripts/gcloud-auth-application-default-login.sh
+```
+
+**Authenticate Claude Code** — pre-installed; log in once per session:
+
+```bash
+claude auth login
+```
+
+**Wait for dbt Power User to finish parsing** — the extension parses all
+projects in the background, which pegs CPU and makes the extension unresponsive
+until complete. Use `htop` to monitor; wait for CPU to settle before using the
+extension. This is also the most common cause of "extension not responding"
+errors.
+
+**Reload the window** once background processes finish
+(<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> → **Developer: Reload Window**)
+for a clean editor state.
+
+### Subsequent sessions
+
+`postStart.sh` runs automatically on resume (updates uv, syncs dependencies).
+Re-run the Google and Claude Code auth steps above — credentials are not
+persisted.
 
 ## Local Development
 
@@ -103,9 +117,9 @@ uv run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kipptaf/__init__.py
 ```
 
-### Linting
+### Linting and formatting
 
-[Trunk](https://trunk.io/) is used for linting and formatting:
+[Trunk](https://trunk.io/) runs all linters:
 
 ```bash
 trunk check   # lint
@@ -129,64 +143,3 @@ uv run pytest tests/test_dagster_definitions.py
 # Run asset-specific tests (require env vars / external connections)
 uv run pytest tests/assets/test_assets_dbt.py
 ```
-
-## GitHub Codespaces
-
-The devcontainer is pre-configured for
-[GitHub Codespaces](https://github.com/features/codespaces), giving you a
-fully-provisioned cloud environment without any local setup.
-
-### Creating a Codespace
-
-1. On the repository's GitHub page, click **Code → Codespaces → Create codespace
-   on main** (or your branch).
-2. Select the **4-core / 16 GB** machine type — the dbt bootstrap and Dagster
-   webserver each need headroom.
-3. Wait for the container to finish building. `postCreate.sh` runs automatically
-   and installs all dependencies, runs `dbt deps` + `dbt parse` for every dbt
-   project in parallel, and injects secrets from 1Password. This takes a few
-   minutes on first creation.
-
-### After the Codespace opens
-
-**Dismiss extension prompts** — VS Code may offer to install recommended
-extensions; these are already configured in `devcontainer.json`, so you can
-safely dismiss the prompts.
-
-**Authenticate to Google** — application-default credentials are not persisted
-between Codespace sessions. Run:
-
-```bash
-bash .devcontainer/scripts/gcloud-auth-application-default-login.sh
-```
-
-Follow the browser prompt to grant BigQuery, Drive, and Cloud Platform access.
-
-**Authenticate Claude Code** — Claude Code is pre-installed. Log in once per
-session:
-
-```bash
-claude auth login
-```
-
-**Wait for dbt Power User to finish parsing** — the dbt Power User extension
-parses all projects in the background after the window opens. This pegs CPU and
-makes the extension unresponsive until complete. Monitor with `htop` and wait
-for CPU to settle before using the extension. High CPU is also the most common
-cause of "extension not responding" errors.
-
-**Reload the window** for a clean editor state after all background processes
-finish:
-
-1. Open the Command Palette: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>
-2. Run **Developer: Reload Window**
-
-### Subsequent sessions
-
-`postStart.sh` runs automatically each time the Codespace resumes — it updates
-uv and syncs dependencies. Re-run the Google and Claude Code auth steps above,
-as credentials are not persisted across sessions.
-
-## Helpful Tools
-
-- [RegExr](https://regexr.com/)
