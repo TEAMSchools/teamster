@@ -106,6 +106,11 @@ trunk check
 trunk fmt
 ```
 
+**SQL style**: Before writing, reviewing, or commenting on SQL, read
+`.trunk/config/.sqlfluff`. Key enforced rules: BigQuery dialect, trailing commas
+**required** in SELECT clauses, single quotes for literals, max line length 88.
+Do not flag code that follows these rules.
+
 ## Architecture
 
 ### Repository Structure
