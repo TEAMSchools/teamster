@@ -21,8 +21,6 @@ with
             {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
             on s.schoolid = x.powerschool_school_id
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
-        /* hardcoding year to avoid issues when PS rollsover and next year because
-           current year */
         where s.grade_level = -1
 
         union all
@@ -45,8 +43,6 @@ with
 
         from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
-        /* hardcoding year to avoid issues when PS rollsover and next year because
-           current year */
         where s.grade_level != -1 and s.schoolid != 0
     ),
 
@@ -79,7 +75,7 @@ with
             enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and grouped_status = latest_status
+        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
 
         union all
 
@@ -111,7 +107,7 @@ with
             aligned_enrollment_type as enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and grouped_status = latest_status
+        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
 
         union all
 
@@ -180,7 +176,7 @@ with
             enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and grouped_status = latest_status
+        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
 
         union all
 
@@ -212,7 +208,7 @@ with
             aligned_enrollment_type as enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and grouped_status = latest_status
+        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
 
         union all
 
