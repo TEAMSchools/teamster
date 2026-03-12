@@ -79,7 +79,10 @@ with
             null as potentialcrhrs_core,
             null as gpa_points_core,
             null as unweighted_grade_points,
+<<<<<<< HEAD:src/dbt/powerschool/models/intermediate/int_powerschool__gpa_cumulative.sql
+=======
 
+>>>>>>> main:src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_cumulative.sql
             fg.y1_grade_points_unweighted as unweighted_grade_points_projected,
         from {{ ref("base_powerschool__final_grades") }} as fg
         inner join
