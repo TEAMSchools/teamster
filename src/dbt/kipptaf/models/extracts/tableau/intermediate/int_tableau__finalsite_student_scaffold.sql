@@ -131,8 +131,6 @@ with
                 grouped_status
                 when 'Applications'
                 then 'App Target'
-                when 'Assigned School'
-                then 'Overall Conversion'
                 when 'Offers'
                 then 'Offers Target'
                 else grouped_status
