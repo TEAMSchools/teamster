@@ -11,11 +11,13 @@
 - [ ] If this is a same-day request, please flag that in the #data-team Slack
 - [ ] Update **due date** and **assignee** on the
       [TEAMster Asana Project](https://app.asana.com/0/1205971774138578/1205971926225838)
-- [ ] Run `trunk check` and `trunk fmt` on all modified files
+- [ ] Run `trunk fmt` on all modified files
 
 ### Dagster
 
 - [ ] Run `uv run dagster definitions validate` for any modified code location
+- [ ] Run `uv run pytest tests/test_dagster_definitions.py` for any modified
+      code location
 - [ ] New integrations follow the
       [Library + Config pattern](https://teamschools.github.io/teamster/reference/adding-an-integration/)
       with the correct asset key format and IO manager
@@ -27,11 +29,19 @@
 - [ ] Include (or update) an
       [exposure](https://teamschools.github.io/teamster/reference/dbt-conventions/#exposures)
       for all models consumed by a dashboard, analysis, or application
-- [ ] SQL follows
-      [dbt SQL conventions](https://teamschools.github.io/teamster/reference/dbt-conventions/#sql-conventions)
+- [ ] **Breaking change?** Renaming or removing columns in a contracted model
+      (`stg_`, `rpt_`, mart) will break downstream exposures. Coordinate with
+      affected teams before merging.
 - [ ] If adding a new external source, run `stage_external_sources` before
       building — see
       [SQL conventions](https://teamschools.github.io/teamster/reference/dbt-conventions/#sql-conventions)
+
+### Docs
+
+- [ ] If adding or changing a schedule or sensor, regenerate the automations
+      catalog: `uv run scripts/gen-automations-doc.py`
+- [ ] If adding a new integration to a code location, update that location's
+      `CLAUDE.md`
 
 ### CI checks
 
