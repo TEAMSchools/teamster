@@ -33,6 +33,20 @@
       building — see
       [SQL conventions](https://teamschools.github.io/teamster/reference/dbt-conventions/#sql-conventions)
 
+### CI checks
+
+- [ ] **Trunk** — passes. If it fails, run `trunk check` and `trunk fmt`
+      locally, fix any issues, and push again.
+- [ ] **dbt Cloud** — passes. If it fails: click **Details** on the check →
+      expand **Invoke `dbt build ...`** → **Debug Logs**.
+- [ ] **Dagster Cloud** — passes or not triggered (only runs when relevant paths
+      change and the PR is not a draft). If it fails: check the **Actions** tab
+      for the workflow run logs. Re-run failed jobs if the failure looks
+      transient; otherwise check the **Dagster Cloud** branch deployment for
+      error details.
+- [ ] **Claude Code Review** — review the automated comment. Note: Claude is not
+      a blocking check and its feedback may contain errors; use your judgement.
+
 ## Troubleshooting
 
 - [SqlFluff Rules Reference](https://docs.sqlfluff.com/en/stable/rules.html)
