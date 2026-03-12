@@ -33,16 +33,22 @@ GitHub automatically assigns default reviewers based on the files changed:
 
 ### Automated checks
 
-Two checks run on every PR:
+Several checks run automatically on every non-draft PR:
 
-**Trunk** — lints Python and SQL. If it fails, run `trunk check` and `trunk fmt`
-locally to reproduce and fix the issues.
+**Trunk** — lints Python and SQL. Note: Pyright is excluded from the CI check;
+run `trunk check` locally to catch type errors before pushing. Fix any failures
+with `trunk check` and `trunk fmt`.
 
-**dbt Cloud** — builds modified models in a branch dataset. If it fails:
+**dbt Cloud** — builds modified dbt models in a branch dataset on BigQuery. If
+it fails, click **Details** on the failing check, expand **Invoke
+`dbt build ...`**, and select **Debug Logs**.
 
-1. Click **Details** on the failing check.
-2. Expand **Invoke `dbt build ...`**.
-3. Select **Debug Logs**.
+**Dagster Cloud** — builds Docker images for any affected code locations and
+creates a branch deployment. Triggered only when relevant source paths change.
+Skipped on draft PRs.
+
+**Claude Code Review** — posts an automated code review comment when the PR is
+opened or marked ready for review.
 
 ### Merge conflicts
 
@@ -54,8 +60,6 @@ As you address review feedback, mark each conversation as
 
 ## After Merge
 
-Once your PR merges:
-
-- GitHub triggers a Dagster deployment
-- Dagster scans for code changes every 5 minutes
-- Dagster launches a run to update all changed models
+Once your PR merges to `main`, GitHub Actions rebuilds Docker images for any
+affected code locations and deploys them to Dagster Cloud production. Your
+changes are live once the deploy workflow completes.
