@@ -796,6 +796,82 @@ def test_view_code_version_change_blocked_by_missing_deps_then_unblocked():
     assert result.get_num_requested(AssetKey("my_view")) == 1
 
 
+def test_table_requested_when_dep_updates_between_request_and_completion():
+    """Regression test for dagster-io/dagster#33587.
+
+    AnyDepsUpdatedSinceSelf uses storage-id comparison instead of the tick-based
+    SinceCondition, so it correctly detects that a dep update (storage_id Y)
+    occurred after the downstream's last materialization (storage_id X < Y) —
+    even when both events fall within the same evaluation tick window.
+
+    Mirrors a production event observed around 3:00 AM on kipptaf:
+
+        2:57:06 AM  sensor evaluates; sees earlier dep update → requests kipptaf run
+        2:57:21 AM  kipppaterson dep updates again (run still in progress)
+        2:59:55 AM  kipptaf run completes (storage_id X)
+        3:00:26 AM  kipppaterson dep updates a third time (storage_id Y > X)
+        3:00:44 AM  sensor evaluates → should request re-run
+
+    Previously, SinceCondition's tick-based state machine would apply
+    (prev ∪ trigger) − reset = {} → 0 requested, silently swallowing the
+    3:00:26 dep update.  With AnyDepsUpdatedSinceSelf, the condition checks
+    storage_id(Y) > storage_id(X) and correctly returns 1 requested.
+
+    Step-by-step (test simulation):
+    1. Materialize all → evaluate (tick 1) → 0 requested
+    2. Materialize upstream → evaluate (tick 2) → 1 requested (run triggered)
+    3. [between ticks] Materialize upstream AGAIN (storage_id T3)
+    4. [between ticks] Materialize downstream (storage_id T4 > T3)
+    5. Evaluate (tick 3) → 1 requested   ← fixed by AnyDepsUpdatedSinceSelf
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def upstream():
+        return 1
+
+    @asset(
+        deps=[upstream],
+        automation_condition=_get_table_condition(),
+        tags=_TABLE_TAG,
+    )
+    def downstream():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [upstream, downstream]
+    defs = Definitions(assets=all_assets)
+
+    # Tick 1: initial materialize — no requests needed
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # Tick 2: upstream materializes → downstream requested (run triggered)
+    materialize(assets=[upstream], instance=instance, selection=[upstream])
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("downstream")) == 1
+
+    # Between tick 2 and tick 3:
+    # Upstream materializes AGAIN (storage_id T3).
+    materialize(assets=[upstream], instance=instance, selection=[upstream])
+    # Downstream run completes (storage_id T4 > T3).
+    # The upstream's storage_id T3 is LOWER than the downstream's T4,
+    # so this particular update is "covered" by the downstream's run.
+    materialize(assets=[downstream], instance=instance, selection=[downstream])
+    # Upstream materializes a THIRD time (storage_id T5 > T4).
+    # This update is strictly newer than the downstream's completion.
+    materialize(assets=[upstream], instance=instance, selection=[upstream])
+
+    # Tick 3: AnyDepsUpdatedSinceSelf sees upstream storage_id T5 > downstream
+    # storage_id T4 → correctly requests a re-run.
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("downstream")) == 1
+
+
 class TestKipptafDbtAssets:
     """Integration tests using the real kipptaf dbt manifest.
 
