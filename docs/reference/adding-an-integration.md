@@ -86,3 +86,51 @@ Asset keys follow the pattern `[code_location, integration, table_name]`, e.g.
 `kippnewark/powerschool/students`. The `CustomDagsterDbtTranslator` in
 `libraries/dbt/dagster_dbt_translator.py` automatically prefixes dbt asset keys
 with the code location name.
+
+## SFTP assets
+
+SFTP-based ingestion uses three factory functions from
+`teamster.libraries.sftp.assets`, all of which write Avro records to GCS via
+`io_manager_gcs_avro`:
+
+| Factory                      | Use case                                                      |
+| ---------------------------- | ------------------------------------------------------------- |
+| `build_sftp_file_asset()`    | Matches a single file; raises if multiple files match         |
+| `build_sftp_archive_asset()` | Downloads a zip archive and extracts one file                 |
+| `build_sftp_folder_asset()`  | Collects all matching files in a folder and concatenates rows |
+
+All three share the same core parameters: `asset_key`, `remote_dir_regex`,
+`remote_file_regex`, `ssh_resource_key`, `avro_schema`, and optionally
+`partitions_def`.
+
+### Partition key substitution
+
+Named regex groups in `remote_dir_regex` and `remote_file_regex` are replaced
+with partition key dimension values at runtime. For multi-partition assets, each
+dimension name maps to a named group in the regex.
+
+For example, an asset partitioned by `fiscal_year` with
+`remote_dir_regex = r"/reports/(?P<fiscal_year>\d{4})/"` resolves the directory
+to `/reports/2026/` when materializing the `2026` partition.
+
+## Asset checks (Avro schema validation)
+
+Every SFTP and API asset should declare an Avro schema validity check using the
+two helpers in `teamster.core.asset_checks`:
+
+```python
+from teamster.core.asset_checks import (
+    build_check_spec_avro_schema_valid,
+    check_avro_schema_valid,
+)
+
+# In the factory — declare the check spec alongside the asset
+check_specs = [build_check_spec_avro_schema_valid(asset_key)]
+
+# In the asset body — run the check after yielding output
+yield check_avro_schema_valid(asset_key, records, avro_schema)
+```
+
+The check **warns** (does not fail) when records contain fields not present in
+the Avro schema. This surfaces schema drift in the Dagster UI without blocking
+downstream assets.

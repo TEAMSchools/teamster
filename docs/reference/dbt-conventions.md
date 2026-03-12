@@ -46,6 +46,20 @@ consumed by reporting tools and applications.
 - **`DISTINCT` requires a comment** explaining why it is necessary.
 - **No `ORDER BY` in `SELECT` statements** — ordering belongs in the reporting
   layer, not in dbt models.
+- **No `GROUP BY ALL`** — never use in production models. Always list grouping
+  columns explicitly; `GROUP BY ALL` obscures intent and breaks silently when
+  upstream columns are added or removed.
+- **No `SELECT *` in the final `SELECT` of `rpt_` or mart models** — list
+  columns explicitly. Wildcards obscure column sourcing, create ambiguity when
+  both sides of a join share a column name, and leave the contract declaration
+  as the only readable spec. Pass-through CTEs (`select * from ref(...)`) are
+  fine.
+- **Filter conditions: `ON` vs `WHERE`** — row-filter conditions on the
+  preserved table belong in `WHERE`, not `ON`. For `INNER JOIN` the result is
+  identical but intent is hidden; for `LEFT JOIN`, a filter in `ON` keeps
+  non-matching left rows whereas `WHERE` eliminates them — a silent semantic
+  change. Exception: for `FULL JOIN`, conditions in `ON` that reference only one
+  side are intentional and cannot be moved to `WHERE`.
 - **New external sources** — before building, stage them first:
 
   ```bash
@@ -53,6 +67,23 @@ consumed by reporting tools and applications.
     --vars "{'ext_full_refresh': 'true'}" \
     --args 'select: [model_name]'
   ```
+
+## kipptaf schema layout
+
+`dbt_project.yml` applies directory-level `+schema` overrides that determine
+which BigQuery dataset a model lands in. These are inherited — do not repeat
+them per-model unless you are overriding:
+
+| Directory           | BigQuery dataset    |
+| ------------------- | ------------------- |
+| `extracts/tableau/` | `kipptaf_tableau`   |
+| `extracts/`         | `kipptaf_extracts`  |
+| `reporting/`        | `kipptaf_reporting` |
+| Everything else     | `kipptaf`           |
+
+!!! note `reporting/` is a separate layer with no contract or materialization
+defaults — it is **not** where `rpt_` models live. `rpt_` models live in
+`extracts/`.
 
 ## Model properties file
 

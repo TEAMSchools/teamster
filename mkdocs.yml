@@ -40,6 +40,7 @@ nav:
       - Adding an Integration: reference/adding-an-integration.md
       - Fiscal Year & Partitioning: reference/fiscal-year-partitioning.md
       - Automations: reference/automations.md
+      - Automation Conditions: reference/automation-conditions.md
   - Guides:
       - Dagster: guides/dagster.md
       - dbt: guides/dbt.md

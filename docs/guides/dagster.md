@@ -21,7 +21,40 @@ user-provisioning scripts. Typically, they indicate an issue on the vendor side
 or something that will require a manual intervention (e.g. a rehire uses their
 work email as their personal email on ADP) or a code change. Log them on Asana.
 
+## dbt external sources
+
+When `build_dbt_assets()` runs, it automatically stages any external sources
+upstream of the selected assets before executing `dbt build`. This means:
+
+- **No Dagster code changes are needed when adding a new external source.** Add
+  the source to your dbt project's YAML and it will be staged automatically on
+  the next run.
+- For external sources using a BigLake `connection_name`, the metadata cache is
+  also refreshed automatically.
+
+To stage sources manually (e.g. after adding a new one locally):
+
+```bash
+uv run dbt run-operation stage_external_sources \
+  --vars "{'ext_full_refresh': 'true'}" \
+  --args 'select: [model_name]'
+```
+
 ## Tableau Workbooks
+
+### Ownership: Dagster-scheduled vs externally-scheduled
+
+Before adding a `cron_schedule` to a Tableau workbook exposure, decide whether
+**Dagster owns the refresh trigger**:
+
+- **Dagster owns it** → add `cron_schedule` to the exposure's `asset.metadata`.
+  Dagster will create a schedule and manage the refresh.
+- **Tableau Server (or another system) owns it** → omit `cron_schedule`. The
+  workbook still appears in the Dagster asset graph (via the `id` metadata) but
+  its refresh is not managed by Dagster.
+
+Do not set `cron_schedule` for workbooks that are already scheduled in Tableau
+Server — this would cause double-refreshes.
 
 ### How to manage Tableau refresh schedules
 

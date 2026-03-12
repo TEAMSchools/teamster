@@ -49,5 +49,16 @@ teamster-<code_location>/
 **Multi-partition keys** concatenate all dimensions, sorted alphabetically by
 dimension name.
 
-!!! note "Resync signal" The epoch timestamp (`1970-01-01`) is treated as a
-resync signal and replaced with the current timestamp at write time.
+## Resync signal
+
+The epoch timestamp `1970-01-01` is treated as a full-refresh trigger. When the
+`GCSIOManager` writes a partition with this key, it replaces the timestamp with
+the current time, effectively writing to a fresh path.
+
+**How to use it**: To force a complete refresh of a partitioned asset without
+deleting existing GCS data, materialize the asset using `1970-01-01` as the
+partition key. The IO manager writes to a new timestamped path; downstream
+BigQuery external tables pick up the new data on the next query.
+
+This is the standard pattern for assets where the upstream API does not support
+incremental queries and a periodic full reload is required.
