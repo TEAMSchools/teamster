@@ -31,6 +31,8 @@ nav:
   - Contributing:
       - Workflow: CONTRIBUTING.md
       - Code of Conduct: CODE_OF_CONDUCT.md
+      - Support: SUPPORT.md
+      - Security: SECURITY.md
   - Reference:
       - Architecture: reference/architecture.md
       - dbt Conventions: reference/dbt-conventions.md
