@@ -125,6 +125,21 @@ select
 
     right(rt.code, 1) as round_number,
 
+    case
+        when wc.overall_relative_placement_int <= 2
+        then 'Below/Far Below'
+        when wc.overall_relative_placement_int = 3
+        then 'Approaching'
+        when wc.overall_relative_placement_int >= 4
+        then 'At/Above'
+    end as iready_proficiency,
+
+    if(
+        cwp.scale_low - wc.most_recent_overall_scale_score <= 0,
+        0,
+        cwp.scale_low - wc.most_recent_overall_scale_score
+    ) as scale_points_to_proficiency,
+
     round(
         wc.most_recent_diagnostic_gain / wc.annual_typical_growth_measure, 2
     ) as progress_to_typical,
@@ -132,12 +147,6 @@ select
     round(
         wc.most_recent_diagnostic_gain / wc.annual_stretch_growth_measure, 2
     ) as progress_to_stretch,
-
-    if(
-        cwp.scale_low - wc.most_recent_overall_scale_score <= 0,
-        0,
-        cwp.scale_low - wc.most_recent_overall_scale_score
-    ) as scale_points_to_proficiency,
 
     row_number() over (
         partition by
@@ -148,6 +157,7 @@ select
             rt.name
         order by wc.completion_date desc
     ) as rn_subj_round,
+
 from window_calcs as wc
 left join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
