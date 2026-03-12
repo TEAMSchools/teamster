@@ -10,7 +10,7 @@ with
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
         where
-            grouped_status = latest_status
+            goal_type = 'Enrolled'
             and latest_status = 'Enrolled'
             and grouped_status_timeframe = 'Current'
     ),
@@ -19,29 +19,15 @@ with
         select
             enrollment_academic_year,
             finalsite_id,
+            goal_type,
 
-            'Conversion' as goal_type,
             regexp_replace(goal_name, r' Num$', '') as goal_name,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
         where
-            goal_name in (
-                'Accepted to Enrolled Num',
-                'Offers to Accepted Num',
-                'Offers to Enrolled Num'
-            )
+            goal_type = 'Conversion'
             and grouped_status_timeframe = 'Current'
             and enrollment_type = 'New'
-    ),
-
-    pending_offers_by_day_numerator as (
-        select enrollment_academic_year, finalsite_id, goal_type, goal_name,
-
-        from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where
-            goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
-            and enrollment_type = 'New'
-            and grouped_status_timeframe = 'Current'
     )
 
 -- latest status: deferred and waitlisted
@@ -69,7 +55,6 @@ select
     f.enroll_status,
     f.birthdate,
     f.gender,
-    f.grouped_status,
     f.latest_status,
     f.self_contained,
     f.enrollment_type,
@@ -77,9 +62,6 @@ select
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
-    f.grouped_status_order,
-    f.grouped_status_start_date,
-    f.grouped_status_end_date,
     f.days_in_grouped_status,
 
     f.finalsite_id as goal_name_value,
@@ -99,7 +81,7 @@ where
 
 union all
 
--- current status: all pending offers, inquiries, apps, offers
+-- all pending offers, inquiries, apps, offers
 select
     s.academic_year,
     s.org,
@@ -124,7 +106,6 @@ select
     f.enroll_status,
     f.birthdate,
     f.gender,
-    f.grouped_status,
     f.latest_status,
     f.self_contained,
     f.enrollment_type,
@@ -132,16 +113,9 @@ select
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
-    f.grouped_status_order,
-    f.grouped_status_start_date,
-    f.grouped_status_end_date,
     f.days_in_grouped_status,
 
-    if(
-        f.goal_name in ('Pending Offers', 'Inquiries', 'Applications', 'Offers'),
-        f.finalsite_id,
-        n.finalsite_id
-    ) as goal_name_value,
+    f.finalsite_id as goal_name_value,
 
 from {{ ref("int_google_sheets__finalsite__scaffold") }} as s
 left join
@@ -153,12 +127,6 @@ left join
     and s.goal_type = f.goal_type
     and s.goal_name = f.goal_name
     and s.grouped_status_timeframe = f.grouped_status_timeframe
-left join
-    pending_offers_by_day_numerator as n
-    on f.enrollment_academic_year = n.enrollment_academic_year
-    and f.finalsite_id = n.finalsite_id
-    and f.goal_type = n.goal_type
-    and f.goal_name = n.goal_name
 where s.goal_type in ('Pending Offers', 'Inquiries', 'Applications', 'Offers')
 
 union all
@@ -188,7 +156,6 @@ select
     f.enroll_status,
     f.birthdate,
     f.gender,
-    f.grouped_status,
     f.latest_status,
     f.self_contained,
     f.enrollment_type,
@@ -196,9 +163,6 @@ select
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
-    f.grouped_status_order,
-    f.grouped_status_start_date,
-    f.grouped_status_end_date,
     f.days_in_grouped_status,
 
     c.finalsite_id as goal_name_value,
@@ -248,7 +212,6 @@ select
     f.enroll_status,
     f.birthdate,
     f.gender,
-    f.grouped_status,
     f.latest_status,
     f.self_contained,
     f.enrollment_type,
@@ -256,9 +219,6 @@ select
     f.is_enrolled_oct01,
     f.is_enrolled_oct15,
     f.aligned_enrollment_type,
-    f.grouped_status_order,
-    f.grouped_status_start_date,
-    f.grouped_status_end_date,
     f.days_in_grouped_status,
 
     c.finalsite_id as goal_name_value,
