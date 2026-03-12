@@ -38,6 +38,57 @@ consumed by reporting tools and applications.
 - **Uniqueness test** — required: either a single-column `unique:` test or
   `dbt_utils.unique_combination_of_columns` for composite keys
 
+## SQL conventions
+
+- **Use `union_dataset_join_clause()`** for any query that joins models using
+  regional datasets.
+- **No `GROUP BY` without aggregation** — use `DISTINCT` instead.
+- **`DISTINCT` requires a comment** explaining why it is necessary.
+- **No `ORDER BY` in `SELECT` statements** — ordering belongs in the reporting
+  layer, not in dbt models.
+- **New external sources** — before building, stage them first:
+
+  ```bash
+  uv run dbt run-operation stage_external_sources \
+    --vars "{'ext_full_refresh': 'true'}" \
+    --args 'select: [model_name]'
+  ```
+
+## Model properties file
+
+Every model must have a corresponding `[model_name].yml` properties file.
+Generate the scaffold with:
+
+```bash
+uv run dbt run-operation generate_model_yaml \
+  --args '{"model_names": ["model_name"]}'
+```
+
+Then save the console output as the `.yml` file and fill it in:
+
+```yaml
+models:
+  - name: model_name
+    config:
+      contract:
+        enforced: false # keep false while building; remove this line before merging
+    columns: # required for contracted models
+      - name: column_name
+        data_type: string | int64 | date | ... # required for contracted models
+        data_tests: # optional column-level tests
+          - not_null
+          - accepted_values:
+              values: [...]
+    data_tests: # optional model-level tests
+      - dbt_utils.unique_combination_of_columns: # use for composite keys
+          arguments:
+            combination_of_columns:
+              - column_a
+              - column_b
+          config:
+            store_failures: true
+```
+
 ## Exposures
 
 Every external tool that consumes our data must have a
@@ -53,17 +104,19 @@ tool/workbook/sheet:
 exposures:
   - name: exposure_name_snake_case
     label: Human Readable Title
-    type: dashboard | application | analysis
+    type: dashboard | notebook | analysis | ml | application
     owner:
       name: Data Team
     depends_on:
       - ref("rpt_tableau__some_model")
-    url: https://...
+      - ref("another_model")
+    url: https://... # optional
     config:
       meta:
         dagster:
           kinds:
             - tableau # or: googlesheets, powerschool, etc.
+            - ... # additional kinds
 ```
 
 **Tableau dashboards** that refresh on a schedule must additionally include the

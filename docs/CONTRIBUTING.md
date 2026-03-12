@@ -24,12 +24,15 @@ Once a PR is opened, [Zapier](https://zapier.com/) creates a task for it in our
 
 GitHub automatically assigns default reviewers based on the files changed:
 
-| Filepath                           | Default approvers                                                                    |
-| ---------------------------------- | ------------------------------------------------------------------------------------ |
-| `src/dbt/kipptaf/models/extracts/` | [Analytics Engineers](https://github.com/orgs/TEAMSchools/teams/analytics-engineers) |
-| `src/teamster/`                    | [Data Engineers](https://github.com/orgs/TEAMSchools/teams/data-engineers)           |
-| `docs/`                            | [Data Team](https://github.com/orgs/TEAMSchools/teams/data-team)                     |
-| All other directories              | [Admins](https://github.com/orgs/TEAMSchools/teams/admins)                           |
+| Filepath                            | Default approvers                                                                    |
+| ----------------------------------- | ------------------------------------------------------------------------------------ |
+| `src/dbt/kipptaf/models/extracts/`  | [Analytics Engineers](https://github.com/orgs/TEAMSchools/teams/analytics-engineers) |
+| `src/dbt/kipptaf/models/marts/`     | [Analytics Engineers](https://github.com/orgs/TEAMSchools/teams/analytics-engineers) |
+| `src/dbt/kipptaf/models/metrics/`   | [Analytics Engineers](https://github.com/orgs/TEAMSchools/teams/analytics-engineers) |
+| `src/dbt/kipptaf/models/exposures/` | [Analytics Engineers](https://github.com/orgs/TEAMSchools/teams/analytics-engineers) |
+| `src/teamster/`                     | [Data Engineers](https://github.com/orgs/TEAMSchools/teams/data-engineers)           |
+| `docs/`                             | [Data Team](https://github.com/orgs/TEAMSchools/teams/data-team)                     |
+| All other directories               | [Admins](https://github.com/orgs/TEAMSchools/teams/admins)                           |
 
 ### Automated checks
 
