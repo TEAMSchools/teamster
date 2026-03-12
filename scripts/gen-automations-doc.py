@@ -105,7 +105,7 @@ def _format_paths(paths: list[str]) -> str:
     else:
         all_parts = [p.rstrip("*").rstrip("/").split("/") for p in collapsed]
         common: list[str] = []
-        for segments in zip(*all_parts):
+        for segments in zip(*all_parts, strict=False):
             if len(set(segments)) == 1:
                 common.append(segments[0])
             else:
