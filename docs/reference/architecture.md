@@ -42,8 +42,9 @@ per-model unless overriding:
 | `reporting/`        | `kipptaf_reporting` |
 | Everything else     | `kipptaf`           |
 
-!!! note `reporting/` has no contract or materialization defaults — it is
-**not** where `rpt_` models live. `rpt_` models live in `extracts/`.
+!!! note
+
+    `reporting/` has no contract or materialization defaults — it is **not** where `rpt_` models live. `rpt_` models live in `extracts/`.
 
 ### kipptaf dbt asset groups
 

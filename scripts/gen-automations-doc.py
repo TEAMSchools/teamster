@@ -19,6 +19,7 @@ from pathlib import Path
 
 from cron_descriptor import Options, get_description
 
+# Suppress Dagster/dbt startup noise so script output stays readable
 logging.disable(logging.CRITICAL)
 warnings.filterwarnings("ignore")
 
