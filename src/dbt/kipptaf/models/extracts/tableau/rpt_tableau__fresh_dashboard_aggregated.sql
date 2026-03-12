@@ -168,4 +168,3 @@ left join
     and f.goal_type = c.goal_type
     and f.goal_name = c.goal_name
 where s.grouped_status_timeframe = 'Ever' and s.goal_type = 'Conversion'
-
