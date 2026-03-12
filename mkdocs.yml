@@ -10,9 +10,9 @@ copyright: Copyright &copy; KIPP TEAM & Family Schools
 
 theme:
   name: material
-  favicon: images/horse-variant.svg
+  favicon: images/truck.svg
+  logo: images/truck.svg
   icon:
-    logo: material/horse-variant
     repo: fontawesome/brands/github
   features:
     - content.action.edit
