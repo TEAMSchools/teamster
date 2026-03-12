@@ -59,8 +59,33 @@ def _cron_display(cron: str | list[str]) -> str:
 def _interval_display(seconds: int | None) -> str:
     if seconds is None:
         return "—"
-    minutes = seconds // 60
-    return f"{minutes} min"
+    if seconds < 60:
+        return f"{seconds} sec"
+    return f"{seconds // 60} min"
+
+
+def _asset_targets(jobs: list, asset_graph, code_location: str) -> str:
+    all_keys: set = set()
+    for job in jobs:
+        selection = getattr(job, "selection", None)
+        if selection is None:
+            continue
+        try:
+            all_keys |= selection.resolve(asset_graph)
+        except Exception:
+            pass
+
+    if not all_keys:
+        return "—"
+
+    paths = sorted(
+        "/".join(k.path[1:]) if k.path[0] == code_location else "/".join(k.path)
+        for k in all_keys
+    )
+    if len(paths) > 5:
+        shown = ", ".join(f"`{p}`" for p in paths[:5])
+        return f"{shown} + {len(paths) - 5} more"
+    return ", ".join(f"`{p}`" for p in paths)
 
 
 def _row(*cells: str) -> str:
@@ -87,7 +112,13 @@ def generate() -> None:
             continue
 
         schedules = sorted(defs.schedules or [], key=lambda s: s.name)
-        sensors = sorted(defs.sensors or [], key=lambda s: s.name)
+        sensors = [
+            s
+            for s in sorted(defs.sensors or [], key=lambda s: s.name)
+            if not s.name.endswith("__automation_condition_sensor")
+        ]
+
+        asset_graph = defs.resolve_asset_graph()
 
         lines += [f"## {code_location}", ""]
         if description:
@@ -97,13 +128,19 @@ def generate() -> None:
             lines += [
                 "### Schedules",
                 "",
-                _row("Schedule", "Runs", "Description"),
-                _row("---", "---", "---"),
+                _row("Schedule", "Runs", "Assets", "Description"),
+                _row("---", "---", "---", "---"),
             ]
             for sched in schedules:
                 desc = getattr(sched, "description", None) or "—"
+                assets = _asset_targets([sched.job], asset_graph, code_location)
                 lines.append(
-                    _row(f"`{sched.name}`", _cron_display(sched.cron_schedule), desc)
+                    _row(
+                        f"`{sched.name}`",
+                        _cron_display(sched.cron_schedule),
+                        assets,
+                        desc,
+                    )
                 )
             lines.append("")
 
@@ -111,13 +148,18 @@ def generate() -> None:
             lines += [
                 "### Sensors",
                 "",
-                _row("Sensor", "Min interval", "Description"),
-                _row("---", "---", "---"),
+                _row("Sensor", "Min interval", "Assets", "Description"),
+                _row("---", "---", "---", "---"),
             ]
             for sensor in sensors:
                 interval = _interval_display(sensor.minimum_interval_seconds)
                 desc = getattr(sensor, "description", None) or "—"
-                lines.append(_row(f"`{sensor.name}`", interval, desc))
+                try:
+                    jobs = sensor.jobs
+                except Exception:
+                    jobs = []
+                assets = _asset_targets(jobs, asset_graph, code_location)
+                lines.append(_row(f"`{sensor.name}`", interval, assets, desc))
             lines.append("")
 
         lines += ["---", ""]
