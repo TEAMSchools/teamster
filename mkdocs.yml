@@ -31,6 +31,9 @@ nav:
   - Contributing:
       - Workflow: CONTRIBUTING.md
       - Code of Conduct: CODE_OF_CONDUCT.md
+  - Reference:
+      - Architecture: reference/architecture.md
+      - dbt Conventions: reference/dbt-conventions.md
   - Guides:
       - Dagster: guides/dagster.md
       - dbt: guides/dbt.md
