@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from typing import Any
 
-from dagster import AssetKey, AssetSelection, AutomationCondition
+from dagster import AssetKey, AutomationCondition
 from dagster_dbt import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 from teamster.core.automation_conditions import (
@@ -49,14 +49,10 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
 
         materialized = dbt_resource_props.get("config", {}).get("materialized", "view")
 
-        ignore_selection = AssetSelection.keys(
-            *automation_condition_config.get("ignore", {}).get("keys", [])
-        )
-
         if materialized in ["view", "ephemeral"]:
-            return dbt_view_automation_condition(ignore_selection=ignore_selection)
+            return dbt_view_automation_condition()
         else:
-            return dbt_table_automation_condition(ignore_selection=ignore_selection)
+            return dbt_table_automation_condition()
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         group = super().get_group_name(dbt_resource_props)
