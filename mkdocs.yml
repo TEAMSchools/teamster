@@ -2,6 +2,11 @@
 # https://squidfunk.github.io/mkdocs-material/setup/
 
 site_name: teamster
+site_description: Data engineering platform for KIPP TEAM & Family Schools
+repo_url: https://github.com/TEAMSchools/teamster
+repo_name: TEAMSchools/teamster
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; KIPP TEAM & Family Schools
 
 theme:
   name: material
@@ -10,17 +15,27 @@ theme:
     logo: material/horse-variant
     repo: fontawesome/brands/github
   features:
+    - content.action.edit
+    - content.code.copy
     - navigation.instant
+    - navigation.sections
     - navigation.tabs
-
-repo_url: https://github.com/TEAMSchools/teamster
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - toc.follow
 
 nav:
   - Home: README.md
-  - Contributing: CONTRIBUTING.md
+  - Getting Started: getting-started.md
+  - Contributing:
+      - Workflow: CONTRIBUTING.md
+      - Code of Conduct: CODE_OF_CONDUCT.md
   - Guides:
       - Dagster: guides/dagster.md
       - dbt: guides/dbt.md
+  - Troubleshooting:
+      - Dagster: troubleshooting/dagster.md
 
 markdown_extensions:
   - admonition
