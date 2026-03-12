@@ -68,23 +68,6 @@ consumed by reporting tools and applications.
     --args 'select: [model_name]'
   ```
 
-## kipptaf schema layout
-
-`dbt_project.yml` applies directory-level `+schema` overrides that determine
-which BigQuery dataset a model lands in. These are inherited — do not repeat
-them per-model unless you are overriding:
-
-| Directory           | BigQuery dataset    |
-| ------------------- | ------------------- |
-| `extracts/tableau/` | `kipptaf_tableau`   |
-| `extracts/`         | `kipptaf_extracts`  |
-| `reporting/`        | `kipptaf_reporting` |
-| Everything else     | `kipptaf`           |
-
-!!! note `reporting/` is a separate layer with no contract or materialization
-defaults — it is **not** where `rpt_` models live. `rpt_` models live in
-`extracts/`.
-
 ## Model properties file
 
 Every model must have a corresponding `[model_name].yml` properties file.

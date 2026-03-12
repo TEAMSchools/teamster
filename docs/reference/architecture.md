@@ -29,6 +29,22 @@ systems used across multiple regions. Keeping these projects as installable
 dependencies allows the code to be maintained in one place and shared across
 projects.
 
+### kipptaf schema layout
+
+`dbt_project.yml` applies directory-level `+schema` overrides that control which
+BigQuery dataset a model lands in. These are inherited — do not repeat them
+per-model unless overriding:
+
+| Directory           | BigQuery dataset    |
+| ------------------- | ------------------- |
+| `extracts/tableau/` | `kipptaf_tableau`   |
+| `extracts/`         | `kipptaf_extracts`  |
+| `reporting/`        | `kipptaf_reporting` |
+| Everything else     | `kipptaf`           |
+
+!!! note `reporting/` has no contract or materialization defaults — it is
+**not** where `rpt_` models live. `rpt_` models live in `extracts/`.
+
 ### kipptaf dbt asset groups
 
 `kipptaf` splits dbt into four separate `@dbt_assets` groups with different
