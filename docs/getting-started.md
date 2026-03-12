@@ -130,6 +130,63 @@ uv run pytest tests/test_dagster_definitions.py
 uv run pytest tests/assets/test_assets_dbt.py
 ```
 
+## GitHub Codespaces
+
+The devcontainer is pre-configured for
+[GitHub Codespaces](https://github.com/features/codespaces), giving you a
+fully-provisioned cloud environment without any local setup.
+
+### Creating a Codespace
+
+1. On the repository's GitHub page, click **Code → Codespaces → Create codespace
+   on main** (or your branch).
+2. Select the **4-core / 16 GB** machine type — the dbt bootstrap and Dagster
+   webserver each need headroom.
+3. Wait for the container to finish building. `postCreate.sh` runs automatically
+   and installs all dependencies, runs `dbt deps` + `dbt parse` for every dbt
+   project in parallel, and injects secrets from 1Password. This takes a few
+   minutes on first creation.
+
+### After the Codespace opens
+
+**Dismiss extension prompts** — VS Code may offer to install recommended
+extensions; these are already configured in `devcontainer.json`, so you can
+safely dismiss the prompts.
+
+**Authenticate to Google** — application-default credentials are not persisted
+between Codespace sessions. Run:
+
+```bash
+bash .devcontainer/scripts/gcloud-auth-application-default-login.sh
+```
+
+Follow the browser prompt to grant BigQuery, Drive, and Cloud Platform access.
+
+**Authenticate Claude Code** — Claude Code is pre-installed. Log in once per
+session:
+
+```bash
+claude auth login
+```
+
+**Wait for dbt Power User to finish parsing** — the dbt Power User extension
+parses all projects in the background after the window opens. This pegs CPU and
+makes the extension unresponsive until complete. Monitor with `htop` and wait
+for CPU to settle before using the extension. High CPU is also the most common
+cause of "extension not responding" errors.
+
+**Reload the window** for a clean editor state after all background processes
+finish:
+
+1. Open the Command Palette: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>
+2. Run **Developer: Reload Window**
+
+### Subsequent sessions
+
+`postStart.sh` runs automatically each time the Codespace resumes — it updates
+uv and syncs dependencies. Re-run the Google and Claude Code auth steps above,
+as credentials are not persisted across sessions.
+
 ## Helpful Tools
 
 - [RegExr](https://regexr.com/)
