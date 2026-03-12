@@ -65,9 +65,10 @@ with
         where category = 'Military Specific Occupations'
     ),
 
-    military_scores as (
+    military_testing as (
         select
             contact,
+            test_type,
             date as military_test_date,
             afqt_score,
             qualified_air_force,
@@ -76,22 +77,13 @@ with
             qualified_marine_corps,
             qualified_navy,
             total_qualified_military_branches,
-
-            row_number() over (
-                partition by contact order by date desc
-            ) as rn_military_score,
-        from {{ ref("int_kippadb__standardized_test") }}
-    ),
-
-    military_pt as (
-        select
-            contact,
-            date as military_pt_date,
             physical_training_requirement_passed,
+
             row_number() over (
-                partition by contact order by date desc
-            ) as rn_military_pt,
+                partition by contact, test_type order by date desc
+            ) as rn_military_testing,
         from {{ ref("int_kippadb__standardized_test") }}
+        where test_type in ('ASVAB', 'Military Physical Training')
     ),
 
     roster as (
@@ -283,11 +275,15 @@ with
         left join
             military as mil on c.contact_id = mil.contact and mil.rn_enlistment = 1
         left join
-            military_scores as ms
+            military_testing as ms
             on c.contact_id = ms.contact
-            and ms.rn_military_score = 1
+            and ms.test_type = 'ASVAB'
+            and ms.rn_military_testing = 1
         left join
-            military_pt as mpt on c.contact_id = mpt.contact and mpt.rn_military_pt = 1
+            military_testing as mpt
+            on c.contact_id = mpt.contact
+            and mpt.test_type = 'Military Physical Training'
+            and mpt.rn_military_testing = 1
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 
