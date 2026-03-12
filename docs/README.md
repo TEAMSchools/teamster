@@ -12,7 +12,7 @@
 
 ![Photograph taken in 1960. Upload from http://www.fortepan.hu/?lang=en&img=20566, part of Commons:Batch_uploading/Fortepan.HU](https://github.com/user-attachments/assets/2ca95e50-106c-4cce-a8e3-2ffb234adf94)
 
-**Next-gen data orchestration for KIPP TEAM & Family Schools**
+## Next-gen data orchestration for KIPP TEAM & Family Schools
 
 Teamster is the data engineering platform powering analytics and reporting
 across KIPP Newark, Camden, Miami, and Paterson. It ingests data from 30+ source
