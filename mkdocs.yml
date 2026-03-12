@@ -36,6 +36,10 @@ nav:
   - Reference:
       - Architecture: reference/architecture.md
       - dbt Conventions: reference/dbt-conventions.md
+      - IO Managers: reference/io-managers.md
+      - Adding an Integration: reference/adding-an-integration.md
+      - Fiscal Year & Partitioning: reference/fiscal-year-partitioning.md
+      - Automations: reference/automations.md
   - Guides:
       - Dagster: guides/dagster.md
       - dbt: guides/dbt.md

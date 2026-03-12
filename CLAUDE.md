@@ -36,6 +36,12 @@ Always use them before doing relevant work:
 
 ## Commands
 
+All Python commands must be run via `uv run` — never bare `python` or `python3`.
+The project environment is managed by uv.
+
+The `scripts/` directory contains project utilities (doc generation, migrations,
+etc.) in lieu of a Makefile. Run them with `uv run scripts/<name>.py`.
+
 ### Development
 
 ```bash
