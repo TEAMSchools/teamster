@@ -1,12 +1,11 @@
 {
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
   "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers-extra/features/uv:1.0.2": {},
-    "ghcr.io/itsmechlark/features/1password:1": {},
+    "ghcr.io/devcontainers/features/common-utils:latest": {},
+    "ghcr.io/devcontainers/features/github-cli:latest": {},
+    "ghcr.io/itsmechlark/features/1password:latest": {},
     "ghcr.io/stu-bell/devcontainer-features/claude-code:latest": {},
-    "ghcr.io/jajera/features/gcloud-cli:1": {}
+    "ghcr.io/jajera/features/gcloud-cli:latest": {}
   },
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
   "postStartCommand": "bash .devcontainer/scripts/postStart.sh",
