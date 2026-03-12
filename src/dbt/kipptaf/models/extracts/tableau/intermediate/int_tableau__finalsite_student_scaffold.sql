@@ -267,7 +267,7 @@ with
 
             goal_name,
 
-        from roster as r
+        from roster
 
         union all
 
