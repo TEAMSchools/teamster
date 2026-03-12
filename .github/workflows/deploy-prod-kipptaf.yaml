@@ -41,7 +41,7 @@ on:
       - src/teamster/libraries/surveys/**
       - src/teamster/libraries/tableau/**
       - src/teamster/libraries/zendesk/**
-      - "!**/*.md"
+      - "!**/CLAUDE.md"
   pull_request:
     paths:
       - .github/workflows/dagster-cloud-deploy.yaml
@@ -74,7 +74,7 @@ on:
       - src/teamster/libraries/surveys/**
       - src/teamster/libraries/tableau/**
       - src/teamster/libraries/zendesk/**
-      - "!**/*.md"
+      - "!**/CLAUDE.md"
     types:
       - opened
       - synchronize
