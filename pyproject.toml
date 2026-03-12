@@ -38,8 +38,8 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["dagster-webserver", "pytest>=8.3.4"]
-docs = ["cron-descriptor>=1.4", "mkdocs-material>=9.7.5"]
+dev = ["cron-descriptor>=1.4", "dagster-webserver", "pytest>=8.3.4"]
+docs = ["mkdocs-material>=9.7.5"]
 
 [build-system]
 requires = ["hatchling"]

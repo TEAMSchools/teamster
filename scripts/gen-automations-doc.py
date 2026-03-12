@@ -13,6 +13,7 @@ Usage:
 
 import logging
 import warnings
+from collections import defaultdict
 from importlib import import_module
 from pathlib import Path
 
@@ -44,6 +45,8 @@ _CRON_ALIASES = {
 _DESCRIPTOR_OPTIONS = Options()
 _DESCRIPTOR_OPTIONS.use_24hour_time_format = False
 
+_EXTRACT_KINDS = {"task", "tableau"}
+
 
 def _describe_cron(cron: str) -> str:
     expanded = _CRON_ALIASES.get(cron, cron)
@@ -64,7 +67,58 @@ def _interval_display(seconds: int | None) -> str:
     return f"{seconds // 60} min"
 
 
-def _asset_targets(jobs: list, asset_graph, code_location: str) -> str:
+def _collapse_siblings(parent: str, leaves: list[str]) -> list[str]:
+    """Collapse repository_* siblings into a single wildcard entry."""
+    if sum(1 for leaf in leaves if leaf.startswith("repository_")) < 2:
+        return [f"{parent}/{leaf}" if parent else leaf for leaf in leaves]
+
+    result: list[str] = []
+    repo_added = False
+    for leaf in leaves:
+        if leaf.startswith("repository_"):
+            if not repo_added:
+                result.append(f"{parent}/repository_*" if parent else "repository_*")
+                repo_added = True
+        else:
+            result.append(f"{parent}/{leaf}" if parent else leaf)
+    return result
+
+
+def _format_paths(paths: list[str]) -> str:
+    """Format a list of asset paths with repository_* collapsing and common prefix stripping."""
+    if not paths:
+        return ""
+
+    groups: dict[str, list[str]] = defaultdict(list)
+    for path in paths:
+        parent, _, leaf = path.rpartition("/")
+        groups[parent].append(leaf)
+
+    collapsed: list[str] = []
+    for parent, leaves in sorted(groups.items()):
+        collapsed.extend(_collapse_siblings(parent, sorted(leaves)))
+
+    if len(collapsed) == 1:
+        _, _, leaf = collapsed[0].rpartition("/")
+        if leaf:
+            collapsed = [leaf]
+    else:
+        all_parts = [p.rstrip("*").rstrip("/").split("/") for p in collapsed]
+        common: list[str] = []
+        for segments in zip(*all_parts):
+            if len(set(segments)) == 1:
+                common.append(segments[0])
+            else:
+                break
+        if common:
+            strip = len("/".join(common)) + 1
+            collapsed = [p[strip:] for p in collapsed]
+
+    return ", ".join(f"`{p}`" for p in collapsed)
+
+
+def _resolve_assets(jobs: list, asset_graph, code_location: str) -> tuple[str, str]:
+    """Resolve asset selections and return (regular_assets, extract_assets) display strings."""
     all_keys: set = set()
     for job in jobs:
         selection = getattr(job, "selection", None)
@@ -76,16 +130,21 @@ def _asset_targets(jobs: list, asset_graph, code_location: str) -> str:
             pass
 
     if not all_keys:
-        return "—"
+        return "—", ""
 
-    paths = sorted(
-        "/".join(k.path[1:]) if k.path[0] == code_location else "/".join(k.path)
-        for k in all_keys
+    def _path(k) -> str:
+        return "/".join(k.path[1:]) if k.path[0] == code_location else "/".join(k.path)
+
+    regular = sorted(
+        _path(k) for k in all_keys if not asset_graph.get(k).kinds & _EXTRACT_KINDS
     )
-    if len(paths) > 5:
-        shown = ", ".join(f"`{p}`" for p in paths[:5])
-        return f"{shown} + {len(paths) - 5} more"
-    return ", ".join(f"`{p}`" for p in paths)
+    extracts = sorted(
+        _path(k).removeprefix("extracts/")
+        for k in all_keys
+        if asset_graph.get(k).kinds & _EXTRACT_KINDS
+    )
+
+    return _format_paths(regular) or "—", _format_paths(extracts)
 
 
 def _row(*cells: str) -> str:
@@ -124,42 +183,63 @@ def generate() -> None:
         if description:
             lines += [description, ""]
 
-        if schedules:
+        extract_entries: list[tuple[str, str, str]] = []  # (name, runs, assets)
+        sched_rows: list[tuple[str, str, str]] = []
+        sensor_rows: list[tuple[str, str, str]] = []
+
+        for sched in schedules:
+            runs = _cron_display(sched.cron_schedule)
+            assets, extracts = _resolve_assets([sched.job], asset_graph, code_location)
+            if extracts:
+                extract_entries.append((sched.name, runs, extracts))
+            if assets != "—":
+                sched_rows.append((sched.name, runs, assets))
+
+        for sensor in sensors:
+            interval = _interval_display(sensor.minimum_interval_seconds)
+            try:
+                jobs = sensor.jobs
+            except (
+                Exception
+            ):  # sensor.jobs raises DagsterInvalidDefinitionError when no jobs attached
+                jobs = []
+            assets, extracts = _resolve_assets(jobs, asset_graph, code_location)
+            if extracts:
+                extract_entries.append((sensor.name, interval, extracts))
+            if assets != "—":
+                sensor_rows.append((sensor.name, interval, assets))
+
+        if sched_rows:
             lines += [
                 "### Schedules",
                 "",
-                _row("Schedule", "Runs", "Assets", "Description"),
-                _row("---", "---", "---", "---"),
+                _row("Schedule", "Runs", "Assets"),
+                _row("---", "---", "---"),
             ]
-            for sched in schedules:
-                desc = getattr(sched, "description", None) or "—"
-                assets = _asset_targets([sched.job], asset_graph, code_location)
-                lines.append(
-                    _row(
-                        f"`{sched.name}`",
-                        _cron_display(sched.cron_schedule),
-                        assets,
-                        desc,
-                    )
-                )
+            for name, runs, assets in sched_rows:
+                lines.append(_row(f"`{name}`", runs, assets))
             lines.append("")
 
-        if sensors:
+        if sensor_rows:
             lines += [
                 "### Sensors",
                 "",
-                _row("Sensor", "Min interval", "Assets", "Description"),
-                _row("---", "---", "---", "---"),
+                _row("Sensor", "Min interval", "Assets"),
+                _row("---", "---", "---"),
             ]
-            for sensor in sensors:
-                interval = _interval_display(sensor.minimum_interval_seconds)
-                desc = getattr(sensor, "description", None) or "—"
-                try:
-                    jobs = sensor.jobs
-                except Exception:
-                    jobs = []
-                assets = _asset_targets(jobs, asset_graph, code_location)
-                lines.append(_row(f"`{sensor.name}`", interval, assets, desc))
+            for name, interval, assets in sensor_rows:
+                lines.append(_row(f"`{name}`", interval, assets))
+            lines.append("")
+
+        if extract_entries:
+            lines += [
+                "### Extracts",
+                "",
+                _row("Automation", "Runs", "Assets"),
+                _row("---", "---", "---"),
+            ]
+            for name, runs, extracts in sorted(extract_entries):
+                lines.append(_row(f"`{name}`", runs, extracts))
             lines.append("")
 
         lines += ["---", ""]
@@ -168,7 +248,7 @@ def generate() -> None:
     while lines and lines[-1] in ("---", ""):
         lines.pop()
 
-    OUTPUT.write_text("\n".join(lines) + "\n")
+    OUTPUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"✓ Written {OUTPUT}")
 
 

@@ -34,10 +34,14 @@ Always use them before doing relevant work:
 - **`/simplify`** — Use after making changes to review code for reuse, quality,
   and efficiency
 
-## Commands
+## Working Conventions
 
-All Python commands must be run via `uv run` — never bare `python` or `python3`.
-The project environment is managed by uv.
+- **Python execution**: Always use `uv run` — never bare `python` or `python3`.
+  The project environment is managed by uv.
+- **Git commits**: Only commit when explicitly asked. Do not commit
+  automatically after completing a fix or change.
+
+## Commands
 
 The `scripts/` directory contains project utilities (doc generation, migrations,
 etc.) in lieu of a Makefile. Run them with `uv run scripts/<name>.py`.

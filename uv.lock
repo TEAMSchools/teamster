@@ -3622,11 +3622,11 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "cron-descriptor" },
     { name = "dagster-webserver" },
     { name = "pytest" },
 ]
 docs = [
-    { name = "cron-descriptor" },
     { name = "mkdocs-material" },
 ]
 
@@ -3663,13 +3663,11 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "cron-descriptor", specifier = ">=1.4" },
     { name = "dagster-webserver" },
     { name = "pytest", specifier = ">=8.3.4" },
 ]
-docs = [
-    { name = "cron-descriptor", specifier = ">=1.4" },
-    { name = "mkdocs-material", specifier = ">=9.7.5" },
-]
+docs = [{ name = "mkdocs-material", specifier = ">=9.7.5" }]
 
 [[package]]
 name = "tenacity"
