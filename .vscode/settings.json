@@ -59,10 +59,6 @@
     "UV_LINK_MODE": "copy",
     "UV_RESOLUTION": "highest"
   },
-  "yaml.customTags": [
-    "!!python/name:material.extensions.emoji.twemoji scalar",
-    "!!python/name:material.extensions.emoji.to_svg scalar"
-  ],
   "yaml.schemas": {
     "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/dbt_project-latest.json": "src/dbt/**/dbt_project.yml",
     "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/selectors-latest.json": "src/dbt/**/selectors.yml",
