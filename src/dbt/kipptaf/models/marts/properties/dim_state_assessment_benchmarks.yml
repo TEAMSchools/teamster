@@ -1,0 +1,41 @@
+models:
+  - name: dim_state_assessment_benchmarks
+
+    columns:
+      - name: state_assessment_benchmarks_key
+        data_type: string
+        tests:
+          - unique:
+              config:
+                severity: Warn
+                store_failures: true
+
+      - name: academic_year
+        data_type: int64
+
+      - name: test_name
+        data_type: string
+
+      - name: test_code
+        data_type: string
+
+      - name: region
+        data_type: string
+
+      - name: city_percent_proficient
+        data_type: float64
+
+      - name: state_percent_proficient
+        data_type: float64
+
+      - name: neighborhood_schools_percent_proficient
+        data_type: float64
+
+      - name: city_total_students
+        data_type: float64
+
+      - name: state_total_students
+        data_type: float64
+
+      - name: neighborhood_schools_total_students
+        data_type: float64
