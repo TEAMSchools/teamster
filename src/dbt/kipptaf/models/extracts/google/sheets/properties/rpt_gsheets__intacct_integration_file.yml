@@ -1,10 +1,5 @@
 models:
   - name: rpt_gsheets__intacct_integration_file
-    config:
-      meta:
-        dagster:
-          automation_condition:
-            enabled: false
     columns:
       - name: JOURNAL
         data_type: string

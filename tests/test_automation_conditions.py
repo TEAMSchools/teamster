@@ -1419,3 +1419,129 @@ class TestKipptafChainTopologies:
             )
             == 1
         )
+
+
+def test_intacct_extract_not_triggered_by_people_update():
+    """adp_payroll_date_group_code_csv should NOT trigger when
+    int_people__staff_roster_history updates.
+
+    The extract's Dagster dep is wired directly to
+    stg_adp_payroll__general_ledger_file (TABLE), bypassing
+    rpt_gsheets__intacct_integration_file (VIEW). People table changes are
+    therefore invisible to the extract's automation condition.
+    """
+    from dagster import StaticPartitionsDefinition
+
+    _PARTITIONS = StaticPartitionsDefinition(["2024-01-01", "2024-01-02"])
+
+    @asset(tags=_TABLE_TAG)
+    def int_people__staff_roster_history():
+        return 1
+
+    @asset(partitions_def=_PARTITIONS, tags=_TABLE_TAG)
+    def stg_adp_payroll__general_ledger_file():
+        return 2
+
+    # VIEW: depends on both tables, no automation condition (mirrors enabled: false)
+    @asset(
+        deps=[stg_adp_payroll__general_ledger_file, int_people__staff_roster_history],
+        partitions_def=_PARTITIONS,
+        tags=_VIEW_TAG,
+    )
+    def rpt_gsheets__intacct_integration_file():
+        return 3
+
+    # Extract dep bypasses the VIEW to the staging TABLE directly
+    @asset(
+        deps=[stg_adp_payroll__general_ledger_file],
+        partitions_def=_PARTITIONS,
+        automation_condition=AutomationCondition.eager(),
+    )
+    def adp_payroll_date_group_code_csv():
+        return 4
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [
+        int_people__staff_roster_history,
+        stg_adp_payroll__general_ledger_file,
+        rpt_gsheets__intacct_integration_file,
+        adp_payroll_date_group_code_csv,
+    ]
+    defs = Definitions(assets=all_assets)
+
+    # Stable baseline: materialize everything
+    materialize(
+        assets=[int_people__staff_roster_history],
+        instance=instance,
+        selection=[int_people__staff_roster_history],
+    )
+    for pk in ["2024-01-01", "2024-01-02"]:
+        materialize(
+            assets=[
+                stg_adp_payroll__general_ledger_file,
+                adp_payroll_date_group_code_csv,
+            ],
+            instance=instance,
+            partition_key=pk,
+        )
+
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # Update people table — should NOT cascade to the extract
+    materialize(
+        assets=[int_people__staff_roster_history],
+        instance=instance,
+        selection=[int_people__staff_roster_history],
+    )
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("adp_payroll_date_group_code_csv")) == 0
+
+
+def test_intacct_extract_partition_aware_on_payroll_update():
+    """Updating one partition of stg_adp_payroll__general_ledger_file triggers
+    only the matching partition of adp_payroll_date_group_code_csv, not all
+    partitions.
+    """
+    from dagster import StaticPartitionsDefinition
+
+    _PARTITIONS = StaticPartitionsDefinition(["2024-01-01", "2024-01-02"])
+
+    @asset(partitions_def=_PARTITIONS, tags=_TABLE_TAG)
+    def stg_adp_payroll__general_ledger_file():
+        return 1
+
+    @asset(
+        deps=[stg_adp_payroll__general_ledger_file],
+        partitions_def=_PARTITIONS,
+        automation_condition=AutomationCondition.eager(),
+    )
+    def adp_payroll_date_group_code_csv():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [stg_adp_payroll__general_ledger_file, adp_payroll_date_group_code_csv]
+    defs = Definitions(assets=all_assets)
+
+    # Stable baseline: materialize all partitions
+    for pk in ["2024-01-01", "2024-01-02"]:
+        materialize(assets=all_assets, instance=instance, partition_key=pk)
+
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # Update only the "2024-01-01" partition of the staging table
+    materialize(
+        assets=[stg_adp_payroll__general_ledger_file],
+        instance=instance,
+        partition_key="2024-01-01",
+    )
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    # Exactly 1 partition requested — not both
+    assert result.get_num_requested(AssetKey("adp_payroll_date_group_code_csv")) == 1
