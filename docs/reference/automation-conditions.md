@@ -1,8 +1,10 @@
 # Automation Conditions
 
-Teamster uses two custom `AutomationCondition` builders in
+Teamster uses three custom `AutomationCondition` builders in
 `teamster.core.automation_conditions` that replace Dagster's default
-`AutomationCondition.eager()` for dbt assets.
+`AutomationCondition.eager()` for dbt assets. All three share a common skeleton
+(`_build_dbt_condition`) and differ only in what triggers a materialization
+request beyond `newly_missing`.
 
 ## VIEW vs TABLE
 
@@ -30,6 +32,51 @@ For `materialized: table` models. Triggers on everything above, plus:
 
 The recursive traversal means a table asset will re-run when any upstream table
 materializes, even if the direct dependency is a chain of views.
+
+## `union_relations` views
+
+Views that use the `union_relations` macro are a special case. Unlike regular
+views, their compiled SQL resolves column lists at run time — the macro expands
+upstream table columns into an explicit `SELECT` with `UNION ALL`. If an
+upstream regional table adds or removes a column and the view is not re-run, its
+compiled SQL becomes stale.
+
+Importantly, `code_version_changed` does **not** catch this. Dagster derives
+`code_version` from a SHA1 of the model's `raw_code` (the Jinja source), not the
+compiled SQL. When the `union_relations` macro produces different output because
+upstream schemas changed, the raw source file hasn't changed, so the code
+version stays the same.
+
+### `dbt_union_relations_automation_condition()`
+
+A third condition that sits between view and table. Triggers on everything in
+the view condition, plus:
+
+- **Ancestor code version changes** — recursive `code_version_changed` detection
+  through intermediate views (up to 10 levels). When an upstream model's raw SQL
+  changes (e.g., a staging model adds a column after a deploy), the view re-runs
+  so the `union_relations` macro recompiles with the updated column set.
+
+Unlike the table condition, this does **not** trigger on upstream data changes
+(`any_deps_updated`). Re-materializing views on every upstream data refresh
+would waste Dagster credits and Kubernetes resources. Only code deploys that
+change upstream model definitions trigger a re-run.
+
+The `CustomDagsterDbtTranslator` **auto-detects** these views by checking for
+`"union_relations"` in the model's `raw_code`.
+
+To manually override the condition type for any model, set
+`meta.dagster.automation_condition.type` in the dbt model's config:
+
+```yaml
+models:
+  - name: my_model
+    config:
+      meta:
+        dagster:
+          automation_condition:
+            type: table # or "view"
+```
 
 ## Non-dbt partitioned assets
 

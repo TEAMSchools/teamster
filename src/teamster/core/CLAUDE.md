@@ -69,14 +69,19 @@ All asset factories that yield Avro output call both of these.
 
 ### `automation_conditions.py`
 
-Two dbt-specific `AutomationCondition` builders:
+Three dbt-specific `AutomationCondition` builders, all sharing a common skeleton
+via `_build_dbt_condition()`:
 
 - `dbt_view_automation_condition()` — for VIEW models: re-runs on
   `newly_missing`, `code_version_changed`, or `execution_failed`. Intentionally
   omits `any_deps_updated` since views are computed on read.
+- `dbt_union_relations_automation_condition()` — for views using the
+  `union_relations` macro: adds recursive ancestor `code_version_changed`
+  detection (but NOT `any_deps_updated`) to the view condition. Triggers only on
+  code deploys that change upstream model definitions, not on data refreshes.
 - `dbt_table_automation_condition()` — for TABLE models: also triggers on
   upstream data changes, including through intermediate views via
-  `_build_any_ancestor_updated()` (recursive `any_deps_match` up to 5 levels)
+  `_build_any_ancestor_updated()` (recursive `any_deps_match` up to 10 levels)
 
 **Unsynced badge behavior**: Dagster's "unsynced" indicator is driven by its
 data versioning system, not the automation condition. When an upstream table
