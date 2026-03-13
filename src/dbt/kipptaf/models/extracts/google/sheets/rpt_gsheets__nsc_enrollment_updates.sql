@@ -46,3 +46,8 @@ where
         or n.derived_status is distinct from e.status
         or n.current_enrollment_status is distinct from e.attending_status
     )
+qualify
+    row_number() over (
+        partition by e.id
+        order by abs(date_diff(n.enrollment_begin, e.start_date, day))
+    ) = 1

@@ -17,7 +17,7 @@ models:
         description: Salesforce Account ID of the college or university.
       - name: start_date__c
         data_type: date
-        description: Date the enrollment began (first day of the academic year).
+        description: First day of the earliest semester in this NSC enrollment period.
       - name: actual_end_date__c
         data_type: date
         description: Date the enrollment ended per NSC data.

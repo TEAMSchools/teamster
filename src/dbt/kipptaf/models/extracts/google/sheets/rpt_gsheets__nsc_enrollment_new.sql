@@ -20,9 +20,9 @@ select
     case
         n.current_two_year_four_year
         when '4-year'
-        then "Bachelor's (4-year)"
+        then 'Bachelor''s (4-year)'
         when '2-year'
-        then "Associate's (2 year)"
+        then 'Associate''s (2 year)'
     end as pursuing_degree_type__c,
 from {{ ref("int_nsc__enrollments") }} as n
 left join
