@@ -16,6 +16,7 @@ with
             base_remuneration_annual_rate_amount as salary,
             employee_number,
             powerschool_teacher_number,
+            worker_id,
             languages_spoken,
             race_ethnicity_reporting,
             gender_identity,
@@ -67,7 +68,11 @@ with
 
     managers as (select distinct reports_to_employee_number, from roster),
 
-    years_experience as (select *, from {{ ref("int_people__years_experience") }})
+    years_experience as (select *, from {{ ref("int_people__years_experience") }}),
+
+    memberships as (
+        select *, from {{ ref("int_adp_workforce_now__employee_memberships_by_year") }}
+    )
 
 select
     cast(r.effective_date_start as timestamp) as marts_effective_date_start,
@@ -114,6 +119,9 @@ select
         false
     ) as is_manager,
 
+    em.is_leader_development_program,
+    em.is_teacher_development_program,
+
     lag(r.salary) over (
         partition by r.employee_number order by r.effective_date_start
     ) as previous_salary,
@@ -154,3 +162,7 @@ left join
     years_experience as ye
     on r.employee_number = ye.employee_number
     and r.academic_year = ye.academic_year
+left join
+    memberships as em
+    on r.worker_id = em.associate_id
+    and r.academic_year = em.academic_year

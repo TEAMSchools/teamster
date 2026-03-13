@@ -1,5 +1,6 @@
 select
     o.observation_id,
+    o.rubric_id,
     o.rubric_name,
     o.observation_score,
     o.glows,
@@ -18,6 +19,7 @@ select
     o.overall_tier,
     o.observation_notes,
 
+    os.measurement as measurement_id,
     os.value_score as row_score,
     os.value_text as measurement_dropdown_selection,
     os.text_box_value_clean as measurement_comments,
@@ -46,6 +48,7 @@ union all
 
 select
     observation_id,
+    rubric_id,
     rubric_name,
     score as observation_score,
     glows,
@@ -64,6 +67,8 @@ select
     overall_tier,
 
     null as observation_notes,
+
+    cast(null as string) as measurement_id,
 
     value_score as row_score,
 

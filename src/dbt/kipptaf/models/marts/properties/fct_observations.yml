@@ -1,0 +1,128 @@
+models:
+  - name: fct_observations
+
+    description: >
+      One row per observation. Covers all published observations from SchoolMint
+      Grow (2024+) and the pre-2024 archive. Foreign keys resolve teacher and
+      observer context at the observed_at date via dim_staff, and the PM cycle
+      via dim_terms.
+
+    columns:
+      - name: observation_key
+        data_type: string
+        description: Surrogate key on observation_id.
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+
+      - name: observation_id
+        data_type: string
+        description: Natural key from SchoolMint Grow.
+
+      - name: rubric_id
+        data_type: string
+        description: >
+          Degenerate dimension — the SchoolMint Grow rubric used for this
+          observation. Nullable for archive rows where rubric IDs were not
+          captured.
+
+      - name: rubric_name
+        data_type: string
+        description: Display name of the rubric at the time of the observation.
+
+      - name: observed_at
+        data_type: date
+        description: Local date the observation was conducted.
+
+      - name: academic_year
+        data_type: int64
+        description: >
+          Fiscal year in which the observation was conducted (July 1 – June 30).
+          E.g. 2025 = SY 2024–25.
+
+      - name: observation_type
+        data_type: string
+        description: Full display name of the observation type.
+
+      - name: observation_type_abbreviation
+        data_type: string
+        description: Short code for the observation type (PMS, PMC, TR, WT, PM).
+
+      - name: observation_score
+        data_type: float64
+        description: Numeric score for this observation on the rubric scale.
+
+      - name: overall_tier
+        data_type: float64
+        description: Performance tier derived from observation_score (1–4).
+
+      - name: glows
+        data_type: string
+        description: Free-text coach notes on areas of strength.
+
+      - name: grows
+        data_type: string
+        description: Free-text coach notes on areas for improvement.
+
+      - name: locked
+        data_type: boolean
+        description: Whether the observation has been locked in SchoolMint Grow.
+
+      - name: observation_notes
+        data_type: string
+        description: Additional notes from the observer (magic notes field).
+
+      - name: etr_score
+        data_type: float64
+        description: >
+          Excellent Teaching Rubric sub-score. Populated for archive rows only;
+          null for 2024+ observations.
+
+      - name: so_score
+        data_type: float64
+        description: >
+          Self & Others sub-score. Populated for archive rows only; null for
+          2024+ observations.
+
+      - name: final_score
+        data_type: float64
+        description: >
+          Average of PM2 and PM3 observation scores for the academic year.
+          Sourced from int_performance_management__overall_scores.
+
+      - name: final_tier
+        data_type: int64
+        description: Performance tier derived from final_score (1–4).
+
+      - name: is_published
+        data_type: boolean
+        description: >
+          Always true — unpublished observations are filtered out upstream.
+          Retained for semantic clarity.
+
+      - name: staff_history_key
+        data_type: string
+        description: >
+          FK → dim_staff. Resolves to the teacher's SCD Type 2 record at
+          observed_at. Nullable when the teacher is not found in staff history.
+
+      - name: observer_staff_history_key
+        data_type: string
+        description: >
+          FK → dim_staff. Resolves to the observer's SCD Type 2 record at
+          observed_at. Nullable when the observer is not found in staff history.
+
+      - name: terms_key
+        data_type: string
+        description: >
+          FK → dim_terms. Resolves the PM cycle (PMS/PMC/TR) that contains this
+          observation. Null for archive rows (observation_type_abbreviation =
+          'PM') and for observation types without a corresponding term.
+
+      - name: pm_round_eligible
+        data_type: boolean
+        description: >
+          Whether the teacher is eligible for this PM round. Null when terms_key
+          is null (archive/unmatched observations). Based on TiR status, hire
+          dates, recent leave, and regional rules.

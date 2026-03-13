@@ -1,0 +1,51 @@
+models:
+  - name: fct_observation_scores
+
+    description: >
+      One row per (observation_id, measurement). The finest grain in the PM
+      observation data — each row is a single rubric measurement score within an
+      observation. Joins to fct_observations for observation context and to
+      dim_observation_rubric_measurement for rubric structure context.
+
+    columns:
+      - name: observation_score_key
+        data_type: string
+        description: >
+          Surrogate key on (observation_id, measurement_key_value). Unique per
+          observation × measurement row.
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+
+      - name: observation_key
+        data_type: string
+        description: FK → fct_observations (surrogate on observation_id).
+
+      - name: observation_id
+        data_type: string
+        description: Natural key from SchoolMint Grow.
+
+      - name: measurement_id
+        data_type: string
+        description: >
+          SchoolMint Grow measurement identifier. Populated for 2024+
+          observations; null for archive rows.
+
+      - name: rubric_measurement_key
+        data_type: string
+        description: >
+          FK → dim_observation_rubric_measurement. Resolved by joining on
+          rubric_id + measurement_name + strand_name. Null when the lookup fails
+          (archive rows where rubric IDs were not captured).
+
+      - name: row_score
+        data_type: float64
+        description:
+          Numeric score for this specific measurement within the observation.
+
+      - name: measurement_comments
+        data_type: string
+        description: >
+          Observer free-text comments for this measurement, with HTML tags
+          stripped.

@@ -1,0 +1,63 @@
+models:
+  - name: dim_observation_rubric_measurement
+
+    description: >
+      The 3-level rubric → strand → measurement hierarchy from SchoolMint Grow.
+      Grain is one row per (rubric_id, measurement_group_id, measurement_id).
+      Stable reference data used to enrich observation score facts and support
+      rubric-structure analysis independent of observations.
+
+    columns:
+      - name: rubric_measurement_key
+        data_type: string
+        description: >
+          Surrogate key on (rubric_id, measurement_group_id, measurement_id).
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+
+      - name: rubric_id
+        data_type: string
+        description: SchoolMint Grow rubric identifier.
+
+      - name: rubric_name
+        data_type: string
+        description: Display name of the rubric.
+
+      - name: rubric_scale_min
+        data_type: float64
+        description: Minimum numeric score on the rubric scale.
+
+      - name: rubric_scale_max
+        data_type: float64
+        description: Maximum numeric score on the rubric scale.
+
+      - name: measurement_group_id
+        data_type: string
+        description: SchoolMint Grow measurement group (strand) identifier.
+
+      - name: strand_name
+        data_type: string
+        description: Display name of the strand (measurement group).
+
+      - name: measurement_group_weight
+        data_type: float64
+        description: Weight of the strand within the rubric scoring.
+
+      - name: measurement_id
+        data_type: string
+        description: SchoolMint Grow measurement identifier.
+
+      - name: measurement_name
+        data_type: string
+        description: Display name of the individual measurement.
+
+      - name: measurement_description
+        data_type: string
+        description:
+          Full HTML description of the measurement from SchoolMint Grow.
+
+      - name: measurement_weight
+        data_type: float64
+        description: Weight of the measurement within the strand.
