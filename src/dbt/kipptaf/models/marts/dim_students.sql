@@ -25,6 +25,8 @@ select
     se.grade_level,
     se.ms_attended,
 
+    -- max grade_level across all enrollment years; equivalent to most recent for
+    -- normal progressors, and reflects highest grade attained for retained students
     max(se.grade_level) over (
         partition by se.student_number
     ) as most_recent_grade_level,

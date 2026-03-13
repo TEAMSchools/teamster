@@ -4,6 +4,9 @@ models:
     columns:
       - name: student_course_enrollments_key
         data_type: string
+        description:
+          Surrogate key on (_dbt_source_relation, student_number, academic_year,
+          discipline).
         tests:
           - unique:
               config:
@@ -12,36 +15,60 @@ models:
 
       - name: _dbt_source_relation
         data_type: string
+        description:
+          Source system identifier distinguishing NJ and Miami PowerSchool
+          instances.
 
       - name: academic_year
         data_type: int64
+        description: Academic year of the course enrollment (fiscal year start).
 
       - name: student_number
         data_type: int64
+        description: PowerSchool student number.
 
       - name: discipline
         data_type: string
+        description:
+          Subject discipline mapped from PowerSchool credit type (ELA, Math,
+          Science, Civics).
 
       - name: teachernumber
         data_type: string
+        description: Teacher's PowerSchool employee number.
 
       - name: teacher_name
         data_type: string
+        description: Teacher full name (last, first).
 
       - name: course_number
         data_type: string
+        description: PowerSchool course number.
 
       - name: course_name
         data_type: string
+        description: Course name.
 
       - name: school
         data_type: string
+        description: School abbreviation from PowerSchool.
 
       - name: student_tier
         data_type: string
+        description: >
+          NJ intervention tier for this student and subject (ELA/Math only; NULL
+          for Science/Civics). Sourced from
+          int_extracts__student_enrollments_subjects for the current year.
 
       - name: is_tutoring
         data_type: boolean
+        description: >
+          Whether the student is enrolled in tutoring for this subject (ELA/Math
+          only; NULL for Science/Civics).
 
       - name: iready_proficiency_eoy
         data_type: string
+        description: >
+          Prior year iReady end-of-year proficiency level for this subject
+          (ELA/Math only). Reflects the student's EOY standing going into the
+          current state test window.

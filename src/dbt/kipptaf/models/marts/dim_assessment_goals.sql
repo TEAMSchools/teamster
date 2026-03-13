@@ -15,7 +15,13 @@ select
 
     {{
         dbt_utils.generate_surrogate_key(
-            ["academic_year", "school_id", "state_assessment_code"]
+            [
+                "academic_year",
+                "school_id",
+                "state_assessment_code",
+                "grade_level",
+                "illuminate_subject_area",
+            ]
         )
     }} as assessment_goals_key,
 

@@ -4,6 +4,8 @@ models:
     columns:
       - name: state_assessment_benchmarks_key
         data_type: string
+        description:
+          Surrogate key on (academic_year, test_name, test_code, region).
         tests:
           - unique:
               config:
@@ -12,30 +14,42 @@ models:
 
       - name: academic_year
         data_type: int64
+        description: Academic year the benchmarks apply to.
 
       - name: test_name
         data_type: string
+        description: State assessment test name (e.g. NJSLA, NJGPA).
 
       - name: test_code
         data_type: string
+        description: State assessment test code (e.g. ELA05, ALG1).
 
       - name: region
         data_type: string
+        description:
+          Network region the comparison applies to (Newark, Camden, Miami,
+          Paterson).
 
       - name: city_percent_proficient
         data_type: float64
+        description: City-wide percent proficient on this assessment.
 
       - name: state_percent_proficient
         data_type: float64
+        description: State-wide percent proficient on this assessment.
 
       - name: neighborhood_schools_percent_proficient
         data_type: float64
+        description: Neighborhood schools percent proficient on this assessment.
 
       - name: city_total_students
-        data_type: float64
+        data_type: int64
+        description: Total students tested city-wide.
 
       - name: state_total_students
-        data_type: float64
+        data_type: int64
+        description: Total students tested state-wide.
 
       - name: neighborhood_schools_total_students
-        data_type: float64
+        data_type: int64
+        description: Total students tested at neighborhood schools.
