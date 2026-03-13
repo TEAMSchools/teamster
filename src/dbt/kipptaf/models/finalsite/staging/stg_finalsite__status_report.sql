@@ -33,5 +33,5 @@ from union_relations
 where
     finalsite_enrollment_id not in (
         select x.finalsite_student_id,
-        from {{ ref("stg_google_sheets__finalsite__exclude_ids") }} as x
+        from {{ ref("int_google_sheets__finalsite__exclude_ids") }} as x
     )
