@@ -71,3 +71,8 @@ Containers: Rebuild Container**. Note that a full rebuild re-runs `dbt deps` and
 ## dbt Power User
 
 See [Troubleshooting dbt → dbt Power User](dbt.md#dbt-power-user-extension).
+
+---
+
+**See also:** [Getting Started](../getting-started.md) ·
+[Troubleshooting dbt](dbt.md) · [Troubleshooting Dagster](dagster.md)

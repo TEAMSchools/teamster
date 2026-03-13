@@ -82,8 +82,10 @@ New to the project? Start here:
 
 ## 🗺️ Guides & Troubleshooting
 
-| Topic                                         | Description                              |
-| --------------------------------------------- | ---------------------------------------- |
-| [Dagster Guide](guides/dagster.md)            | Practical Dagster tips for this codebase |
-| [dbt Guide](guides/dbt.md)                    | Practical dbt tips for this codebase     |
-| [Troubleshooting](troubleshooting/dagster.md) | Common issues and fixes                  |
+| Topic                                                  | Description                                            |
+| ------------------------------------------------------ | ------------------------------------------------------ |
+| [Dagster Guide](guides/dagster.md)                     | Tableau scheduling, backfills, branch deployments      |
+| [Google Sheets & Forms](guides/google-sheets.md)       | Adding and updating Google Sheets sources              |
+| [Troubleshooting: Dagster](troubleshooting/dagster.md) | Pipeline failures, partitions, unsynced views          |
+| [Troubleshooting: dbt](troubleshooting/dbt.md)         | Contract violations, compilation errors, test failures |
+| [Troubleshooting: VS Code](troubleshooting/vscode.md)  | Interpreter, secrets, Trunk, container issues          |

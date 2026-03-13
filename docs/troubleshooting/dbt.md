@@ -91,3 +91,9 @@ the lineage panel.
 **Extension not activating** — confirm `innoverio.vscode-dbt-power-user` is
 installed. In the devcontainer it is installed automatically; outside the
 devcontainer you must install it manually.
+
+---
+
+**See also:** [dbt Conventions](../reference/dbt-conventions.md) ·
+[Google Sheets & Forms](../guides/google-sheets.md) ·
+[Troubleshooting VS Code](vscode.md)

@@ -45,7 +45,7 @@ nav:
   - Automations: reference/automations.md
   - Guides:
       - Dagster: guides/dagster.md
-      - dbt: guides/dbt.md
+      - Google Sheets & Forms: guides/google-sheets.md
   - Troubleshooting:
       - Dagster: troubleshooting/dagster.md
       - dbt: troubleshooting/dbt.md

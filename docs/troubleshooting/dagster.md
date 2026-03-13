@@ -44,3 +44,9 @@ View assets may show as **Unsynced** in the Dagster UI after an upstream table
 materializes. This is expected — see
 [Automation Conditions](../reference/automation-conditions.md#the-unsynced-indicator)
 for the explanation.
+
+---
+
+**See also:** [Architecture](../reference/architecture.md) ·
+[Automation Conditions](../reference/automation-conditions.md) ·
+[Dagster Guide](../guides/dagster.md)

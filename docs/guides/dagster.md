@@ -68,3 +68,54 @@ To disable a schedule, comment out the `cron_schedule` key:
     id: 0n371m37-h34c-702w-h0p1-4y3dm2831v3d
     # cron_schedule: 0 2 * * *
 ```
+
+## Backfilling partitions
+
+To re-run a range of historical partitions (e.g. after a bug fix or schema
+change):
+
+1. Navigate to the asset in [Dagster Cloud](https://kipptaf.dagster.cloud/).
+2. Click the **Partitions** tab.
+3. Select the partition range you need — use **Shift+click** to select a range.
+4. Click **Materialize selected**.
+
+For a single failed partition, filter by **Failed** status first, then
+materialize only those.
+
+!!! note
+
+    Backfilling many partitions at once can saturate the Kubernetes pod pool.
+    For large backfills (50+ partitions), materialize in batches or coordinate
+    with the data engineering team.
+
+## Re-materializing assets
+
+To force a single asset to re-run regardless of its current state:
+
+1. Click the asset in the asset graph or asset catalog.
+2. Click **Materialize** (top right).
+3. To also re-run all downstream assets, click the dropdown arrow next to
+   **Materialize** and choose **Materialize with downstream**.
+
+## Branch deployments
+
+Every PR that touches Python or Dagster config automatically creates a
+[branch deployment](https://kipptaf.dagster.cloud/br/) — an isolated Dagster
+environment running your branch's code against the `teamster-test` GCS bucket.
+
+Use branch deployments to:
+
+- Verify new assets materialize without errors before merging
+- Check that definition changes (new schedules, sensors, resources) load
+  correctly — run **Reload definitions** in the branch deployment UI
+
+Branch deployments are torn down automatically when the PR is closed.
+
+## Monitoring a run in progress
+
+1. Go to **Runs** in the left nav.
+2. Click the active run.
+3. Use the **Gantt** view to see which steps are running, queued, or failed.
+4. Click any step to see its logs inline.
+5. For dbt steps, click **Raw compute logs** to see the full dbt output
+   including model-level errors.
