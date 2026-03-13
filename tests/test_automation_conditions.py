@@ -911,8 +911,8 @@ class TestKipptafDbtAssets:
         """Views using union_relations should get dbt_union_relations_automation_condition.
 
         union_relations views have compiled SQL that locks columns at run time.
-        They need dep-aware refresh (direct deps only, no recursive ancestor
-        lookthrough) so they re-run when upstream tables are re-materialized.
+        They need recursive ancestor code_version_changed detection so they
+        re-run when upstream model SQL changes after a deploy.
         """
         from teamster.libraries.dbt.dagster_dbt_translator import (
             CustomDagsterDbtTranslator,
