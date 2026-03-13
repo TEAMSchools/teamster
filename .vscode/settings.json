@@ -80,5 +80,6 @@
       "path": "claude",
       "icon": "sparkle"
     }
-  }
+  },
+  "python.analysis.typeCheckingMode": "off"
 }

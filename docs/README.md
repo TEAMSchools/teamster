@@ -1,4 +1,4 @@
-# teamster
+# teamster 🚛
 
 [![kipptaf](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kipptaf.yaml/badge.svg)](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kipptaf.yaml)
 [![kippnewark](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kippnewark.yaml/badge.svg)](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kippnewark.yaml)
@@ -12,63 +12,74 @@
 
 ![Photograph taken in 1960. Upload from http://www.fortepan.hu/?lang=en&img=20566, part of Commons:Batch_uploading/Fortepan.HU](https://github.com/user-attachments/assets/2ca95e50-106c-4cce-a8e3-2ffb234adf94)
 
-Next-gen data orchestration for KIPP TEAM & Family Schools
+## Next-gen data orchestration for KIPP TEAM & Family Schools
 
-## Overview
+Teamster is the data engineering platform powering analytics and reporting
+across KIPP Newark, Camden, Miami, and Paterson. It ingests data from 30+ source
+systems, transforms it through dbt, and delivers it to Tableau, Google Sheets,
+PowerSchool, and other consumers — all orchestrated by Dagster.
 
-Teamster is a data engineering platform built on **Dagster** (orchestration),
-**dbt** (transformations), and **Google BigQuery** (warehouse), with Google
-Cloud Storage (GCS) as the intermediate storage layer.
+- 🎻 **Dagster** — orchestrates every ETL step across five code locations, one
+  per school network;
+  [observe and run pipelines in Dagster Cloud](https://kipptaf.dagster.cloud/)
+- 🔧 **dbt** — transforms raw source data into staging, intermediate, mart, and
+  extract models in **Google BigQuery**
+- 🚿 **dlt** — loads data from API sources into BigQuery alongside dbt
+- 🔀 **Airbyte** — managed connector pipelines for select integrations
+- 🪣 **Google Cloud Storage** — intermediate storage layer between pipeline
+  steps
+- ☸️ **Google Kubernetes Engine** — runs each code location in its own container
+  in production
+- ⚙️ **GitHub Actions** — CI/CD for building and deploying code locations
+- 📊 **Tableau** — primary BI consumer; Dagster manages workbook extract
+  refreshes
 
-All source code lives under `src/`:
+## 📖 Background
 
-- `src/teamster/` — Dagster project powering data orchestration
-- `src/dbt/` — dbt projects organized by school network and data source
+KIPP's data infrastructure was previously a patchwork of Python scripts, cron
+jobs, stored procedures, Fivetran, and Selenium automation spread across
+multiple databases. Synchronous scheduling meant a slow pull from one system
+would cascade into downstream failures. A single data engineer spent more time
+firefighting than building.
 
-## Dagster
+Teamster replaced all of it with a unified, asset-based platform. The results:
 
-Dagster is our data orchestrator. Every ETL step runs here.
+- ⚡ Pipeline development time dropped from **weeks to days**
+- 🎫 Data-related support tickets fell **30% year-over-year**
+- 🧑‍💻 Analysts gained Git, SQL, and DevOps skills through shared PR workflows
+- 🔔 Real-time Slack alerts replaced reactive debugging
 
-[Dagster Cloud](https://kipptaf.dagster.cloud/) is the hosted front-end where
-you can observe and run integration jobs.
+> "The visibility into the pipelines is a game changer. We know as soon as
+> something fails and why."
 
-There is one code location per school network:
+Read the full story in the
+[Dagster case study](https://dagster.io/customers/kipp-case-study).
 
-- `kipptaf` — network-wide (CMO); the largest code location
-- `kippnewark`
-- `kippcamden`
-- `kippmiami`
-- `kipppaterson`
+## 🚀 Get started
 
-Each code location runs in its own container on Google Cloud Kubernetes and owns
-its jobs, schedules, sensors, and assets.
+New to the project? Start here:
 
-## dbt
+1. [Getting Started](getting-started.md) — account setup, Codespaces, local dev
+2. [Architecture](reference/architecture.md) — how the code is organized
+3. [Contributing](CONTRIBUTING.md) — workflow and PR guidelines
 
-dbt projects are organized as either school-network projects or shared
-source-system projects:
+## 📚 Reference
 
-- **School networks** (`kipptaf`, `kippnewark`, `kippcamden`, `kippmiami`,
-  `kipppaterson`) — contain staging, intermediate, mart, and extract models.
-  `kipptaf` is the primary analytics layer and the only project dbt Cloud is
-  configured to run.
-- **Source systems** (`powerschool`, `deanslist`, `iready`, etc.) — shared
-  projects installed as dbt package dependencies across multiple school
-  networks.
+| Topic                                                               | Description                                          |
+| ------------------------------------------------------------------- | ---------------------------------------------------- |
+| [Automations](reference/automations.md)                             | All schedules and sensors across every code location |
+| [Automation Conditions](reference/automation-conditions.md)         | How asset auto-materialization works                 |
+| [Adding an Integration](reference/adding-an-integration.md)         | Step-by-step guide for new data sources              |
+| [dbt Conventions](reference/dbt-conventions.md)                     | Model naming, contracts, and testing standards       |
+| [IO Managers](reference/io-managers.md)                             | How intermediate data is stored in GCS               |
+| [Fiscal Year & Partitioning](reference/fiscal-year-partitioning.md) | Partition strategy for historical loads              |
 
-## Google Cloud Platform
+## 🗺️ Guides & Troubleshooting
 
-- [Private GKE Autopilot](https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters#public_cp)
-  cluster
-- [Cloud NAT](https://cloud.google.com/nat/docs/gke-example#create-nat) for
-  static external IP
-- [Google Artifact Registry](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images)
-  for Docker images
-- [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to)
-  for Google Cloud service access
-- GitHub Actions for CI/CD
-
-## Airbyte
-
-Airbyte is used for select data ingestion pipelines managed via the
-`dagster-airbyte` integration.
+| Topic                                                  | Description                                            |
+| ------------------------------------------------------ | ------------------------------------------------------ |
+| [Dagster Guide](guides/dagster.md)                     | Tableau scheduling, backfills, branch deployments      |
+| [Google Sheets & Forms](guides/google-sheets.md)       | Adding and updating Google Sheets sources              |
+| [Troubleshooting: Dagster](troubleshooting/dagster.md) | Pipeline failures, partitions, unsynced views          |
+| [Troubleshooting: dbt](troubleshooting/dbt.md)         | Contract violations, compilation errors, test failures |
+| [Troubleshooting: VS Code](troubleshooting/vscode.md)  | Interpreter, secrets, Trunk, container issues          |

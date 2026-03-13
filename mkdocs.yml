@@ -1,26 +1,58 @@
+# yaml-language-server: $schema=
 # https://www.mkdocs.org/user-guide/configuration/
 # https://squidfunk.github.io/mkdocs-material/setup/
 
 site_name: teamster
+site_description: Data engineering platform for KIPP TEAM & Family Schools
+repo_url: https://github.com/TEAMSchools/teamster
+repo_name: TEAMSchools/teamster
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; KIPP TEAM & Family Schools
 
 theme:
   name: material
-  favicon: images/horse-variant.svg
+  favicon: images/truck.svg
+  logo: images/truck.svg
   icon:
-    logo: material/horse-variant
     repo: fontawesome/brands/github
   features:
+    - content.action.edit
+    - content.code.copy
     - navigation.instant
+    - navigation.sections
     - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - toc.follow
 
-repo_url: https://github.com/TEAMSchools/teamster
+hooks:
+  - docs/hooks.py
 
 nav:
   - Home: README.md
-  - Contributing: CONTRIBUTING.md
+  - Getting Started: getting-started.md
+  - Contributing:
+      - Workflow: CONTRIBUTING.md
+      - Code of Conduct: CODE_OF_CONDUCT.md
+      - Support: SUPPORT.md
+      - Security: SECURITY.md
+  - Reference:
+      - Architecture: reference/architecture.md
+      - Adding an Integration: reference/adding-an-integration.md
+      - IO Managers: reference/io-managers.md
+      - Fiscal Year & Partitioning: reference/fiscal-year-partitioning.md
+      - dbt Conventions: reference/dbt-conventions.md
+      - Automation Conditions: reference/automation-conditions.md
+  - Automations: reference/automations.md
   - Guides:
       - Dagster: guides/dagster.md
-      - dbt: guides/dbt.md
+      - Google Sheets & Forms: guides/google-sheets.md
+  - Troubleshooting:
+      - Dagster: troubleshooting/dagster.md
+      - dbt: troubleshooting/dbt.md
+      - VS Code: troubleshooting/vscode.md
 
 markdown_extensions:
   - admonition

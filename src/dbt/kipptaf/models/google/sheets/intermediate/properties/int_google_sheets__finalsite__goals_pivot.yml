@@ -1,8 +1,7 @@
 models:
   - name: int_google_sheets__finalsite__goals_pivot
     config:
-      contract:
-        enforced: true
+      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

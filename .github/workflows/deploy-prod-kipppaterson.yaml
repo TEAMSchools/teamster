@@ -29,7 +29,7 @@ on:
       - src/teamster/libraries/powerschool/sis/sftp/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
-      - "!**/*.md"
+      - "!**/CLAUDE.md"
   pull_request:
     paths:
       - .github/workflows/dagster-cloud-deploy.yaml
@@ -46,7 +46,7 @@ on:
       - src/teamster/libraries/powerschool/sis/sftp/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
-      - "!**/*.md"
+      - "!**/CLAUDE.md"
     types:
       - opened
       - synchronize
