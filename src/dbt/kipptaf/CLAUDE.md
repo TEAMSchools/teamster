@@ -152,7 +152,8 @@ dbt projects. The following are **kipptaf-specific** additions.
 ### `dbt_project.yml` — inherited defaults
 
 These settings are applied at the directory level and **must not be repeated
-per-model** unless overriding:
+per-model** unless overriding. When reviewing model YAML files, do not flag the
+absence of these settings — they are intentionally inherited.
 
 | Directory / pattern                    | `materialized` | `contract: enforced`        |
 | -------------------------------------- | -------------- | --------------------------- |

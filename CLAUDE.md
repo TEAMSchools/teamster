@@ -32,8 +32,9 @@ Always use them before doing relevant work:
 
 ## Working Conventions
 
-- **Python execution**: Always use `uv run` — never bare `python` or `python3`.
-  The project environment is managed by uv.
+- **Python execution**: Always use `uv run` — never bare `python` or `python3`,
+  including inline one-liners (`uv run python -c "..."`, not
+  `python3 -c "..."`). The project environment is managed by uv.
 - **Git commits**: Do not commit proactively — ask first when a change is
   complete, tests are passing, and it is ready to commit, then commit if
   confirmed. Commits should have descriptive messages following the
