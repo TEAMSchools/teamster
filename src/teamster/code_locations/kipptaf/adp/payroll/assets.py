@@ -23,7 +23,7 @@ GENERAL_LEDGER_FILE_PARTITIONS_DEF = MultiPartitionsDefinition(
 )
 
 general_ledger_file = build_sftp_file_asset(
-    asset_key=asset_key.path,
+    asset_key=list(asset_key.path),
     remote_dir_regex=r"/teamster-kipptaf/couchdrop/adp/payroll",
     remote_file_regex=r"(?:ADP|adp)_[Pp]ayroll_(?P<date>\d+)_(?P<group_code>\w+)\.csv",
     ssh_resource_key="ssh_couchdrop",
