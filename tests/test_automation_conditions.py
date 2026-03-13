@@ -14,6 +14,7 @@ from dagster import (
 
 from teamster.core.automation_conditions import (
     dbt_table_automation_condition,
+    dbt_union_relations_automation_condition,
     dbt_view_automation_condition,
 )
 
@@ -838,6 +839,18 @@ class TestKipptafDbtAssets:
         assert len(view_specs) > 0, "Expected at least one view model"
         assert len(table_specs) > 0, "Expected at least one table model"
 
+    @pytest.fixture(scope="class")
+    def manifest(self):
+        import json
+
+        from teamster.code_locations.kipptaf import DBT_PROJECT
+
+        return json.loads(DBT_PROJECT.manifest_path.read_text())
+
+    @pytest.fixture(scope="class")
+    def nodes_by_name(self, manifest):
+        return {props["name"]: props for props in manifest["nodes"].values()}
+
     def test_most_views_have_automation_condition(self, view_specs):
         """Most view models should have an automation condition assigned.
 
@@ -893,6 +906,54 @@ class TestKipptafDbtAssets:
         )
 
         assert tagged_keys | untagged == all_keys
+
+    def test_union_relations_views_get_union_relations_condition(self, nodes_by_name):
+        """Views using union_relations should get dbt_union_relations_automation_condition.
+
+        union_relations views have compiled SQL that locks columns at run time.
+        They need dep-aware refresh (direct deps only, no recursive ancestor
+        lookthrough) so they re-run when upstream tables are re-materialized.
+        """
+        from teamster.libraries.dbt.dagster_dbt_translator import (
+            CustomDagsterDbtTranslator,
+        )
+
+        translator = CustomDagsterDbtTranslator(code_location="kipptaf")
+        union_relations_condition = dbt_union_relations_automation_condition()
+        view_condition = dbt_view_automation_condition()
+
+        union_relation_views = [
+            (name, props)
+            for name, props in nodes_by_name.items()
+            if props.get("config", {}).get("materialized") == "view"
+            and "union_relations" in props.get("raw_code", "")
+        ]
+
+        assert len(union_relation_views) >= 37, (
+            f"Expected at least 37 union_relations views, found {len(union_relation_views)}. "
+            f"If views were removed, update this threshold."
+        )
+
+        for name, props in union_relation_views:
+            condition = translator.get_automation_condition(props)
+            assert condition == union_relations_condition, (
+                f"{name} is a union_relations view but did not get "
+                f"union_relations condition"
+            )
+
+        # Verify non-union_relations views still get view condition
+        regular_views = [
+            (name, props)
+            for name, props in nodes_by_name.items()
+            if props.get("config", {}).get("materialized") == "view"
+            and "union_relations" not in props.get("raw_code", "")
+        ]
+        for name, props in regular_views[:5]:
+            condition = translator.get_automation_condition(props)
+            if condition is not None:
+                assert condition == view_condition, (
+                    f"{name} is a regular view but got non-view condition"
+                )
 
     def test_table_view_table_chain_exists_in_kipptaf(self, all_specs, specs_by_key):
         """Find and validate a real table→view→table chain in kipptaf.
@@ -1656,3 +1717,141 @@ def test_intacct_extract_all_partitions_on_mapping_update():
     )
     # All 2 partitions requested — fan-out from non-partitioned dep
     assert result.get_num_requested(AssetKey("adp_payroll_date_group_code_csv")) == 2
+
+
+def _get_union_relations_condition() -> AutomationCondition:
+    return dbt_union_relations_automation_condition()
+
+
+def test_union_relations_view_not_triggered_by_upstream_data_update():
+    """union_relations views should NOT refresh on upstream data-only updates.
+
+    Unlike dbt_table_automation_condition, the union_relations condition does
+    not include any_deps_updated. Re-materializing views on every upstream data
+    refresh wastes Dagster credits and Kubernetes resources.
+
+    Simulates: regional_table (table) → union_relations_view (view with
+    union_relations condition). Materializing regional_table (data update,
+    same code version) should NOT trigger the union_relations view.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def regional_table():
+        return 1
+
+    @asset(
+        deps=[regional_table],
+        automation_condition=_get_union_relations_condition(),
+        tags=_VIEW_TAG,
+    )
+    def union_relations_view():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [regional_table, union_relations_view]
+    defs = Definitions(assets=all_assets)
+
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # Data-only update (same code version) — should NOT trigger
+    materialize(assets=[regional_table], instance=instance, selection=[regional_table])
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("union_relations_view")) == 0
+
+
+def test_union_relations_view_triggered_by_upstream_code_version_change():
+    """union_relations views SHOULD refresh when an upstream dep's code version
+    changes (e.g., a staging model adds a new column after a deploy).
+
+    Simulates: regional_table (table, code_version="1") → union_relations_view.
+    When regional_table's code version changes to "2", the union_relations view
+    should be requested so the macro recompiles with the updated column set.
+    """
+
+    @asset(tags=_TABLE_TAG, code_version="1")
+    def regional_table():
+        return 1
+
+    @asset(
+        deps=[regional_table],
+        automation_condition=_get_union_relations_condition(),
+        tags=_VIEW_TAG,
+    )
+    def union_relations_view():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [regional_table, union_relations_view]
+    defs = Definitions(assets=all_assets)
+
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # Simulate deploy: upstream code version changes
+    @asset(key="regional_table", tags=_TABLE_TAG, code_version="2")
+    def regional_table_v2():
+        return 1
+
+    defs_v2 = Definitions(assets=[regional_table_v2, union_relations_view])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("union_relations_view")) == 1
+
+
+def test_union_relations_view_triggered_by_ancestor_code_version_change():
+    """union_relations views should detect code version changes through
+    intermediate views (recursive lookthrough).
+
+    Simulates: staging_table (table, code_version="1") → intermediate_view
+    (view) → union_relations_view. When staging_table's code version changes,
+    the union_relations view should be requested even though the intermediate
+    view sits between them.
+    """
+
+    @asset(tags=_TABLE_TAG, code_version="1")
+    def staging_table():
+        return 1
+
+    @asset(
+        deps=[staging_table],
+        automation_condition=_get_view_condition(),
+        tags=_VIEW_TAG,
+    )
+    def intermediate_view():
+        return 2
+
+    @asset(
+        deps=[intermediate_view],
+        automation_condition=_get_union_relations_condition(),
+        tags=_VIEW_TAG,
+    )
+    def union_relations_view():
+        return 3
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [staging_table, intermediate_view, union_relations_view]
+    defs = Definitions(assets=all_assets)
+
+    materialize(assets=all_assets, instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # Simulate deploy: ancestor code version changes
+    @asset(key="staging_table", tags=_TABLE_TAG, code_version="2")
+    def staging_table_v2():
+        return 1
+
+    defs_v2 = Definitions(
+        assets=[staging_table_v2, intermediate_view, union_relations_view]
+    )
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("union_relations_view")) == 1
