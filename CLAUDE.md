@@ -35,7 +35,14 @@ Always use them before doing relevant work:
 - **Python execution**: Always use `uv run` — never bare `python` or `python3`.
   The project environment is managed by uv.
 - **Git commits**: Do not commit proactively — ask first when a change is
-  complete and ready to commit, then commit if confirmed.
+  complete, tests are passing, and it is ready to commit, then commit if
+  confirmed. Commits should have descriptive messages following the
+  [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/) format.
+  Avoid checkpoint-style messages (`save`, `oops`, `update`, etc.).
+- **Branch naming**: `<author>/<commit-type>/<brief-description>` (e.g.,
+  `cbini/feat/salesforce-alumni-tracking`). Use `claude` as the author prefix
+  for AI-assisted branches.
+- **Pull requests**: Squash merge.
 - **GitHub issues**: Do not open issues proactively — ask first when something
   warrants one, then open it if confirmed. Use `gh issue create` (not the web
   UI). Label it with a
@@ -54,6 +61,9 @@ etc.) in lieu of a Makefile. Run them with `uv run scripts/<name>.py`.
 ```bash
 # Install dependencies
 uv sync --frozen
+
+# Inject 1Password secrets (required for Dagster development, not needed for SQL-only work)
+.devcontainer/scripts/inject-secrets.sh
 
 # Run Dagster webserver locally
 uv run dagster dev
