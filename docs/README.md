@@ -1,3 +1,9 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
 # teamster 🚛
 
 [![kipptaf](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kipptaf.yaml/badge.svg)](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kipptaf.yaml)

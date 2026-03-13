@@ -61,6 +61,18 @@ If your branch has conflicts with `main`, see
 As you address review feedback, mark each conversation as
 [resolved](https://docs.github.com/en/github/collaborating-with-pull-requests/commenting-on-a-pull-request#resolving-conversations).
 
+## Reverting a merged commit
+
+If a merged PR introduced a regression, revert via git rather than manually
+editing files:
+
+```bash
+git revert <commit-sha>  # SHA is on the PR page or in git log
+```
+
+This creates a new revert commit that undoes the change while preserving
+history. Open a PR with the revert commit as you would any other change.
+
 ## After Merge
 
 Once your PR merges to `main`, GitHub Actions rebuilds Docker images for any

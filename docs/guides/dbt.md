@@ -88,6 +88,16 @@
    A successful build confirms the contract is satisfied and all column types
    are correct.
 
+### Verifying a Google Sheets source against production
+
+Use `scripts/dbt-sxs.py` to run a model against both your dev dataset and
+production side-by-side, making it easy to spot regressions before merging:
+
+```bash
+uv run scripts/dbt-sxs.py kipptaf \
+  --select google_sheets.src_google_sheets__kippfwd_expected_assessments
+```
+
 ## Updating a Google Sheets source
 
 1. Duplicate the tab you are modifying. Skip this step only if you are adding
@@ -118,3 +128,24 @@
    ```bash
    uv run dbt build --select {STAGING_MODEL_NAME}
    ```
+
+## Adding a Google Form source
+
+Google Forms feed data into Teamster via a linked Google Sheet (Forms
+automatically appends responses to a connected sheet). Once the response sheet
+exists, follow the
+[Adding a Google Sheets source](#adding-a-google-sheets-source) steps — the form
+sheet is treated identically to any other Google Sheet source.
+
+The model config must include the `google_sheet` tag so Dagster assigns it to
+the correct asset group:
+
+```yaml
+models:
+  - name: stg_google_sheets__{source_name}__{table_name}
+    config:
+      contract:
+        enforced: true
+      tags: google_sheet
+    columns: ...
+```

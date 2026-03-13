@@ -40,8 +40,24 @@ consumed by reporting tools and applications.
 
 ## SQL conventions
 
-- **Use `union_dataset_join_clause()`** for any query that joins models using
-  regional datasets.
+- **Use `union_dataset_join_clause()`** for any query that joins two CTEs built
+  from unioned regional datasets. Pass the CTE aliases to prevent cross-region
+  row matching:
+
+  ```sql
+  {{ union_dataset_join_clause(left_alias="left_cte", right_alias="right_cte") }}
+
+  -- expands to:
+  regexp_extract(left_cte._dbt_source_relation, r'(kipp\w+)_')
+      = regexp_extract(right_cte._dbt_source_relation, r'(kipp\w+)_')
+  ```
+
+  To extract a human-readable region label from `_dbt_source_relation`:
+
+  ```sql
+  initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region
+  ```
+
 - **No `GROUP BY` without aggregation** — use `DISTINCT` instead.
 - **`DISTINCT` requires a comment** explaining why it is necessary.
 - **No `ORDER BY` in `SELECT` statements** — ordering belongs in the reporting
@@ -60,6 +76,27 @@ consumed by reporting tools and applications.
   non-matching left rows whereas `WHERE` eliminates them — a silent semantic
   change. Exception: for `FULL JOIN`, conditions in `ON` that reference only one
   side are intentional and cannot be moved to `WHERE`.
+- **Timezone-aware today** — use `{{ var("local_timezone") }}` so `current_date`
+  reflects Eastern time rather than UTC:
+
+  ```sql
+  current_date('{{ var("local_timezone") }}')
+  ```
+
+- **Removing diacritical marks** — to normalize names with accented characters:
+
+  ```sql
+  regexp_replace(normalize(name_col, NFD), r'\pM', '')
+  ```
+
+- **Time travel** — query a table as it existed at a point in time:
+
+  ```sql
+  select *
+  from my_table
+  for system_time as of timestamp('2025-08-22 23:59:59')
+  ```
+
 - **New external sources** — before building, stage them first:
 
   ```bash
@@ -68,17 +105,55 @@ consumed by reporting tools and applications.
     --args 'select: [model_name]'
   ```
 
+### `ref()` and `source()`
+
+Use `ref()` to reference other dbt models; use `source()` for raw source tables
+declared in a `sources:` YAML file:
+
+```sql
+{{ ref("stg_amplify__benchmark_student_summary") }}
+{{ source("amplify", "src_amplify__benchmark_student_summary") }}
+```
+
+### BigQuery scalar functions
+
+Shared UDFs in the `functions` dataset:
+
+| Function                                     | Returns                                             |
+| -------------------------------------------- | --------------------------------------------------- |
+| `functions.current_academic_year()`          | Current academic year integer                       |
+| `functions.date_to_sy(date_col)`             | Academic year of a given date                       |
+| `functions.region_join(left_col, right_col)` | Boolean equivalent of `union_dataset_join_clause()` |
+
+```sql
+select
+    functions.current_academic_year() as academic_year,
+    functions.date_to_sy(att_date) as att_academic_year,
+from my_table
+where
+    functions.region_join(co._dbt_source_relation, gpa._dbt_source_relation)
+```
+
 ## Model properties file
 
-Every model must have a corresponding `[model_name].yml` properties file.
-Generate the scaffold with:
+Every model must have a corresponding `[model_name].yml` properties file. Use
+the `scripts/dbt-yaml.py` wrapper to generate and update model YAML — it handles
+column ordering and data type inference automatically:
+
+```bash
+uv run scripts/dbt-yaml.py --select stg_my_model kipptaf
+# add --dev to target your personal dev dataset instead of prod
+```
+
+Or generate the raw scaffold manually and save the console output as the `.yml`
+file:
 
 ```bash
 uv run dbt run-operation generate_model_yaml \
   --args '{"model_names": ["model_name"]}'
 ```
 
-Then save the console output as the `.yml` file and fill it in:
+Fill in the scaffold:
 
 ```yaml
 models:

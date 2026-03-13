@@ -65,6 +65,30 @@ Assets with multiple partition dimensions (e.g. date × school) use
 `MultiPartitionsDefinition`. The `GCSIOManager` concatenates all dimensions
 sorted alphabetically by dimension name.
 
+## `date_to_fiscal_year()` dbt macro
+
+Use this macro in SQL to compute a fiscal year from a date column:
+
+```sql
+{{
+    date_to_fiscal_year(
+        date_field="entry_date", start_month=7, year_source="start"
+    )
+}} as academic_year
+```
+
+- `year_source="start"` — returns the calendar year the fiscal year **starts**
+  in (e.g. a date in July 2025 → `2025`)
+- `year_source="end"` — returns the calendar year the fiscal year **ends** in
+  (e.g. a date in July 2025 → `2026`)
+
+## Checking whether an asset is incremental
+
+On an asset's detail page in Dagster Cloud, the **Metadata** tab shows a
+`partition_column` key. If the value is `null`, the asset runs as a full
+overnight refresh rather than an incremental update. A non-null value is the
+column name used to filter rows for the current partition.
+
 ## `current_fiscal_year` and `current_academic_year`
 
 Each code location's `__init__.py` defines `CURRENT_FISCAL_YEAR` (an `int`).

@@ -1,3 +1,8 @@
+---
+hide:
+  - navigation
+---
+
 # Automations Catalog
 
 All schedules and sensors across every Dagster code location. All times use the
