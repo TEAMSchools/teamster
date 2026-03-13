@@ -745,6 +745,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__fresh_dashboard_aggregated")
       - ref("rpt_tableau__fresh_dashboard_progress_to_goals")
+      - ref("int_tableau__finalsite_student_scaffold")
     config:
       meta:
         dagster:

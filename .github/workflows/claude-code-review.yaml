@@ -3,12 +3,10 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, ready_for_review]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+    paths-ignore:
+      - uv.lock
+      - trunk.yaml
+      - package-lock.yml
 
 jobs:
   claude-review:

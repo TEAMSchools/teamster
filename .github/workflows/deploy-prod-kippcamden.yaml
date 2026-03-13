@@ -38,7 +38,7 @@ on:
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
-      - "!**/*.md"
+      - "!**/CLAUDE.md"
   pull_request:
     paths:
       - .github/workflows/dagster-cloud-deploy.yaml
@@ -60,7 +60,7 @@ on:
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - src/teamster/libraries/titan/**
-      - "!**/*.md"
+      - "!**/CLAUDE.md"
     types:
       - opened
       - synchronize

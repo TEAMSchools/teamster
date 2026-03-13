@@ -4,7 +4,7 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v1.7.5
+      ref: v1.7.6
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
@@ -68,6 +68,10 @@ lint:
         - .k8s/**/values.yaml
       linters:
         - ALL
+    - paths:
+        - mkdocs.yml
+      linters:
+        - prettier
   definitions:
     - name: ruff
       commands:

@@ -1,5 +1,7 @@
 models:
   - name: int_deanslist__incidents__custom_fields__pivot
+    config:
+      materialized: table
     columns:
       - name: incident_id
         data_type: int64

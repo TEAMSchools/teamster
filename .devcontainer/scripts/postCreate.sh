@@ -4,7 +4,8 @@ git config pull.rebase false # specify how to reconcile divergent branches (merg
 git config push.autoSetupRemote true
 
 # install extra apt packages
-sudo apt-get -y install --no-install-recommends sshpass &&
+sudo apt-get update -y &&
+  sudo apt-get -y install --no-install-recommends sshpass &&
   sudo apt-get -y clean &&
   sudo rm -rf /var/lib/apt/lists/*
 
@@ -18,6 +19,10 @@ source ./.devcontainer/scripts/inject-secrets.sh
 # set up trunk
 chmod +x /workspaces/teamster/trunk
 /workspaces/teamster/trunk install
+
+# install uv -- ignoring feature bc it doesn't allow self update
+# trunk-ignore(shellcheck/SC2312)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # install dependencies
 uv tool install datamodel-code-generator

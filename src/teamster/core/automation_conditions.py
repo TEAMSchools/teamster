@@ -10,7 +10,7 @@ from dagster._core.definitions.declarative_automation.operators.dep_operators im
     DepsAutomationCondition,
 )
 
-_MAX_VIEW_DEPTH = 3
+_MAX_VIEW_DEPTH = 10
 _VIEW_SELECTION = AssetSelection.tag("dagster/materialized", "view")
 
 
@@ -71,9 +71,7 @@ def _build_any_ancestor_updated(
     return AutomationCondition.any_deps_match(condition)
 
 
-def dbt_view_automation_condition(
-    ignore_selection: AssetSelection,
-) -> AutomationCondition:
+def dbt_view_automation_condition() -> AutomationCondition:
     """Automation condition for dbt VIEW models.
 
     Fork of AutomationCondition.eager() adapted for views, which are computed
@@ -89,9 +87,8 @@ def dbt_view_automation_condition(
     - Added execution_failed: retries views whose last execution failed,
       evaluated outside .since() so it fires every tick until resolved.
     - Filtered any_deps_missing: ignores external source assets (which have
-      no materialization records) and configured ignore_selection to prevent
-      them from permanently blocking downstream automation.
-    - Filtered any_deps_in_progress: ignores configured ignore_selection.
+      no materialization records) to prevent them from permanently blocking
+      downstream automation.
     - Omitted initial_evaluation from .since() reset: it fires on the same
       tick as newly_missing, suppressing it permanently since newly_missing
       is event-like and never re-fires.
@@ -109,17 +106,13 @@ def dbt_view_automation_condition(
             )
             | AutomationCondition.execution_failed()
         )
-        & ~AutomationCondition.any_deps_missing().ignore(
-            ignore_selection | _EXTERNAL_SOURCE_SELECTION
-        )
-        & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
+        & ~AutomationCondition.any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)
+        & ~AutomationCondition.any_deps_in_progress()
         & ~AutomationCondition.in_progress()
     )
 
 
-def dbt_table_automation_condition(
-    ignore_selection: AssetSelection,
-) -> AutomationCondition:
+def dbt_table_automation_condition() -> AutomationCondition:
     """Automation condition for dbt TABLE models.
 
     Fork of AutomationCondition.eager() adapted for tables, which store
@@ -134,11 +127,8 @@ def dbt_table_automation_condition(
       materialization, not on request — the signal isn't lost if the run
       fails or never executes.
     - Filtered any_deps_missing: ignores external source assets (which have
-      no materialization records) and configured ignore_selection to prevent
-      them from permanently blocking downstream automation.
-    - Filtered any_deps_updated and ancestor lookthrough: ignores configured
-      ignore_selection.
-    - Filtered any_deps_in_progress: ignores configured ignore_selection.
+      no materialization records) to prevent them from permanently blocking
+      downstream automation.
     - Omitted initial_evaluation from .since() reset: it fires on the same
       tick as newly_missing, suppressing it permanently since newly_missing
       is event-like and never re-fires.
@@ -152,19 +142,15 @@ def dbt_table_automation_condition(
         & (
             (
                 AutomationCondition.newly_missing()
-                | AutomationCondition.any_deps_updated().ignore(ignore_selection)
-                | _build_any_ancestor_updated(view_selection=_VIEW_SELECTION).ignore(
-                    ignore_selection
-                )
+                | AutomationCondition.any_deps_updated()
+                | _build_any_ancestor_updated(view_selection=_VIEW_SELECTION)
             ).since(_since_last_handled)
             | AutomationCondition.code_version_changed().since(
                 AutomationCondition.newly_updated()
             )
             | AutomationCondition.execution_failed()
         )
-        & ~AutomationCondition.any_deps_missing().ignore(
-            ignore_selection | _EXTERNAL_SOURCE_SELECTION
-        )
-        & ~AutomationCondition.any_deps_in_progress().ignore(ignore_selection)
+        & ~AutomationCondition.any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)
+        & ~AutomationCondition.any_deps_in_progress()
         & ~AutomationCondition.in_progress()
     )

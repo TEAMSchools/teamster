@@ -1,7 +1,6 @@
 import pytest
 from dagster import (
     AssetKey,
-    AssetSelection,
     AutomationCondition,
     DagsterInstance,
     Definitions,
@@ -15,17 +14,16 @@ from teamster.core.automation_conditions import (
     dbt_view_automation_condition,
 )
 
-_EMPTY_SELECTION = AssetSelection.assets()
 _VIEW_TAG = {"dagster/materialized": "view"}
 _TABLE_TAG = {"dagster/materialized": "table"}
 
 
 def _get_view_condition() -> AutomationCondition:
-    return dbt_view_automation_condition(ignore_selection=_EMPTY_SELECTION)
+    return dbt_view_automation_condition()
 
 
 def _get_table_condition() -> AutomationCondition:
-    return dbt_table_automation_condition(ignore_selection=_EMPTY_SELECTION)
+    return dbt_table_automation_condition()
 
 
 def test_view_not_requested_on_upstream_update():

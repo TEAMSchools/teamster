@@ -8,7 +8,7 @@
       "Bash(ls:*)",
       "Bash(python -m pytest tests/ -x -q)",
       "Read(/workspaces/teamster/src/**)",
-      "Read(~/.claude/plugins/cache/dagster/**)",
+      "Read(~/.claude/plugins/**)",
       "WebFetch(domain:docs.dagster.io)",
       "WebFetch(domain:github.com)"
     ]

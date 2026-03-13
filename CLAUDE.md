@@ -18,9 +18,6 @@ Always use them before doing relevant work:
 - **`/dagster-expert`** — Use before any Dagster task: creating assets,
   schedules, sensors, resources, debugging pipeline issues, or understanding
   definitions
-- **`/dagster-integrations`** — Use when working with `dagster-dbt`,
-  `dagster-dlt`, `dagster-gcp`, `dagster-k8s`, `dagster-airbyte`, or other
-  `dagster-*` packages
 - **`/dbt:using-dbt-for-analytics-engineering`** — Use when building or
   modifying dbt models, writing tests, or debugging dbt errors
 - **`/dbt:running-dbt-commands`** — Use when running dbt CLI commands
@@ -29,18 +26,44 @@ Always use them before doing relevant work:
   failures or unclear error messages
 - **`/dbt:fetching-dbt-docs`** — Use when looking up dbt features or
   documentation
-- **`/dignified-python`** — Use when writing or reviewing Python code for
-  production quality standards
-- **`/simplify`** — Use after making changes to review code for reuse, quality,
-  and efficiency
+- **`/dignified-python`** + **`/simplify`** — Run together after substantial
+  Python changes to enforce production quality standards and review for reuse,
+  quality, and efficiency. Skip for minor or isolated edits.
+
+## Working Conventions
+
+- **Python execution**: Always use `uv run` — never bare `python` or `python3`.
+  The project environment is managed by uv.
+- **Git commits**: Do not commit proactively — ask first when a change is
+  complete, tests are passing, and it is ready to commit, then commit if
+  confirmed. Commits should have descriptive messages following the
+  [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/) format.
+  Avoid checkpoint-style messages (`save`, `oops`, `update`, etc.).
+- **Branch naming**: `<author>/<commit-type>/<brief-description>` (e.g.,
+  `cbini/feat/salesforce-alumni-tracking`). Use `claude` as the author prefix
+  for AI-assisted branches.
+- **Pull requests**: Squash merge.
+- **GitHub issues**: Do not open issues proactively — ask first when something
+  warrants one, then open it if confirmed. Use `gh issue create` (not the web
+  UI). Label it with a
+  [conventional commit type](https://www.conventionalcommits.org/en/v1.0.0/)
+  (`feat`, `fix`, `docs`, `refactor`, `chore`, etc.), any related source systems
+  (e.g., `adp`, `powerschool`, `deanslist`), and `dagster` and/or `dbt` when
+  applicable.
 
 ## Commands
+
+The `scripts/` directory contains project utilities (doc generation, migrations,
+etc.) in lieu of a Makefile. Run them with `uv run scripts/<name>.py`.
 
 ### Development
 
 ```bash
 # Install dependencies
 uv sync --frozen
+
+# Inject 1Password secrets (required for Dagster development, not needed for SQL-only work)
+.devcontainer/scripts/inject-secrets.sh
 
 # Run Dagster webserver locally
 uv run dagster dev
@@ -105,6 +128,31 @@ trunk check
 # Auto-format all files
 trunk fmt
 ```
+
+**SQL style**: Before writing, reviewing, or commenting on SQL, read
+`.trunk/config/.sqlfluff`. Key enforced rules: BigQuery dialect, trailing commas
+**required** in SELECT clauses, single quotes for literals, max line length 88.
+Do not flag code that follows these rules.
+
+## Documentation
+
+Two documentation systems serve different audiences — do not conflate them:
+
+- **dbt YAML** (properties files + exposures) — how analysts document models,
+  columns, tests, and external tool dependencies. Required for all dbt model
+  changes; enforced by the PR template checklist.
+- **MkDocs site** (`docs/`) — how engineers document infrastructure patterns,
+  architecture, and operational guides. Update when making engineering-level
+  changes:
+  - New integration → update `docs/reference/adding-an-integration.md` and the
+    code location's `CLAUDE.md`
+  - New or changed schedule/sensor → regenerate the automations catalog:
+    `uv run scripts/gen-automations-doc.py`
+  - New core pattern (IO manager behavior, automation condition, partitioning) →
+    update the relevant `docs/reference/` page
+
+Analysts adding or editing SQL models do not need to touch `docs/` — dbt YAML is
+the documentation mechanism for that work.
 
 ## Architecture
 
@@ -246,32 +294,11 @@ Kubernetes with secrets mounted at `/etc/secret-volume`.
 - Fiscal year starts July 1; `current_academic_year` and `current_fiscal_year`
   vars are set in `dbt_project.yml`
 
-**Model quality requirements** (enforced in all dbt projects):
-
-| Layer                         | Contract | Uniqueness test                                                            |
-| ----------------------------- | -------- | -------------------------------------------------------------------------- |
-| Staging (`stg_`)              | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-| Intermediate (`int_`)         | —        | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-| Reporting views (`rpt_`)      | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-| Data mart (`dim_*` / `fct_*`) | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-
-`contract: enforced: true` and `materialized: table` are set at the **directory
-level** in `dbt_project.yml` for all integration `staging/` directories, and
-`contract: enforced: true` for `extracts/` and `marts/`. Do not repeat these
-per-model — they are already inherited. Contract enforcement is critical for
-extracts/marts: these models feed external tools via dbt
-[exposures](https://docs.getdbt.com/reference/exposure-properties) (Tableau,
-PowerSchool, Google Sheets, etc.) and unguarded schema changes will break
-downstream consumers.
-
-**`base_` prefix**: Legacy — do not use. Existing `base_` models are being
-renamed to `int_` (see
-[#2541](https://github.com/TEAMSchools/teamster/issues/2541)).
+For model quality requirements (contract enforcement, uniqueness tests, SQL
+antipatterns), see `src/dbt/CLAUDE.md`. For kipptaf-specific inherited defaults
+and exposure YAML reference, see `src/dbt/kipptaf/CLAUDE.md`.
 
 **Exposures**: Every external tool consuming data from a dbt project must have a
 dbt exposure in that project's `models/exposures/` directory listing all
 `depends_on` models. School-specific projects (`kippnewark`, `kippcamden`,
-`kippmiami`) require exposures for their PowerSchool extracts. Tableau workbooks
-may include `asset.metadata` with the workbook LSID (`id`); add `cron_schedule`
-only when Dagster manages the refresh. See `src/dbt/kipptaf/CLAUDE.md` for the
-full YAML reference.
+`kippmiami`) require exposures for their PowerSchool extracts.
