@@ -122,6 +122,20 @@ models:
         description:
           The teammates immediate prior job title to the one listed in this row.
 
+      - name: is_leader_development_program
+        data_type: boolean
+        description: >
+          Indicator for whether the teammate is enrolled in a leader development
+          program (LDP) for this academic year, sourced from ADP membership
+          data.
+
+      - name: is_teacher_development_program
+        data_type: boolean
+        description: >
+          Indicator for whether the teammate is enrolled in a teacher
+          development program (TDP) for this academic year, sourced from ADP
+          membership data.
+
       - name: marts_effective_date_end
         data_type: timestamp
         description:
