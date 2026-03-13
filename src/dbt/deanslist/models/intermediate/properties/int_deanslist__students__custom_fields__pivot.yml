@@ -1,5 +1,7 @@
 models:
   - name: int_deanslist__students__custom_fields__pivot
+    config:
+      materialized: table
     columns:
       - name: student_school_id
         data_type: string

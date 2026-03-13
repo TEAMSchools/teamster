@@ -1,5 +1,7 @@
 models:
   - name: int_powerschool__category_grades_pivot
+    config:
+      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
