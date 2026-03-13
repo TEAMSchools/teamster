@@ -27,6 +27,9 @@ theme:
     - search.suggest
     - toc.follow
 
+hooks:
+  - docs/hooks.py
+
 nav:
   - Home: README.md
   - Getting Started: getting-started.md
