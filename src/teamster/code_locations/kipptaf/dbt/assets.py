@@ -58,8 +58,6 @@ google_sheet_dbt_assets = build_dbt_assets(
     },
 )
 
-all_dbt_assets = [core_dbt_assets, adp_payroll_dbt_assets, google_sheet_dbt_assets]
-
 asset_specs = [
     AssetSpec(
         key=[CODE_LOCATION, "dbt", "exposures", exposure["label"]],

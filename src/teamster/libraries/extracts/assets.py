@@ -10,6 +10,7 @@ from io import StringIO
 from dagster import (
     AssetExecutionContext,
     AssetKey,
+    AssetsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     asset,
@@ -155,7 +156,7 @@ def build_bigquery_query_sftp_asset(
     op_tags: dict[str, str] | None = None,
     partitions_def=None,
     automation_condition=None,
-    deps: list | None = None,
+    deps: list[AssetKey | AssetsDefinition] | None = None,
 ):
     query_type = query_config["type"]
     query_value = query_config["value"]

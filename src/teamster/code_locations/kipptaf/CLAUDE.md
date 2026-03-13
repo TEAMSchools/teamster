@@ -49,9 +49,6 @@ requirements and selection criteria:
 | `google_sheet_dbt_assets` | `tag:google_sheet`    | —                                      | Separate to isolate brittle gsheet deps       |
 | `adp_payroll_dbt_assets`  | `source:adp_payroll+` | —                                      | Partitioned by payroll file; cannot be merged |
 
-`all_dbt_assets` is a flat list of all three groups, used only in `asset_specs`
-for resolving exposure dep keys via `dagster_dbt_translator.get_asset_key`.
-
 `core_dbt_assets` is the one used by `TableauServerResource` dependencies
 (imported as `core_dbt_assets` from `kipptaf.dbt.assets`).
 

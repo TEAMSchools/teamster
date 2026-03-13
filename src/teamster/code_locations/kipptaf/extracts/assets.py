@@ -123,7 +123,17 @@ intacct_extract = build_bigquery_query_sftp_asset(
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
     automation_condition=AutomationCondition.eager(),
     deps=[
-        AssetKey([CODE_LOCATION, "adp_payroll", "stg_adp_payroll__general_ledger_file"])
+        AssetKey(
+            [CODE_LOCATION, "adp_payroll", "stg_adp_payroll__general_ledger_file"]
+        ),
+        AssetKey([CODE_LOCATION, "extracts", "rpt_gsheets__intacct_integration_file"]),
+        AssetKey(
+            [
+                CODE_LOCATION,
+                "google_sheets",
+                "stg_google_sheets__finance__payroll_code_mapping",
+            ]
+        ),
     ],
 )
 
