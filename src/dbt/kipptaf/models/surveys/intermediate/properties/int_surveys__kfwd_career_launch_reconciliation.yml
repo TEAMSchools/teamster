@@ -1,5 +1,7 @@
 models:
   - name: int_surveys__kfwd_career_launch_reconciliation
+    config:
+      materialized: table
     columns:
       - name: survey_response_id
         data_type: string
