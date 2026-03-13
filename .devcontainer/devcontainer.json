@@ -23,6 +23,7 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "Anthropic.claude-code",
         "innoverio.vscode-dbt-power-user",
         "trunk.io",
         "ms-python.python",
