@@ -294,32 +294,11 @@ Kubernetes with secrets mounted at `/etc/secret-volume`.
 - Fiscal year starts July 1; `current_academic_year` and `current_fiscal_year`
   vars are set in `dbt_project.yml`
 
-**Model quality requirements** (enforced in all dbt projects):
-
-| Layer                         | Contract | Uniqueness test                                                            |
-| ----------------------------- | -------- | -------------------------------------------------------------------------- |
-| Staging (`stg_`)              | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-| Intermediate (`int_`)         | —        | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-| Reporting views (`rpt_`)      | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-| Data mart (`dim_*` / `fct_*`) | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-
-`contract: enforced: true` and `materialized: table` are set at the **directory
-level** in `dbt_project.yml` for all integration `staging/` directories, and
-`contract: enforced: true` for `extracts/` and `marts/`. Do not repeat these
-per-model — they are already inherited. Contract enforcement is critical for
-extracts/marts: these models feed external tools via dbt
-[exposures](https://docs.getdbt.com/reference/exposure-properties) (Tableau,
-PowerSchool, Google Sheets, etc.) and unguarded schema changes will break
-downstream consumers.
-
-**`base_` prefix**: Legacy — do not use. Existing `base_` models are being
-renamed to `int_` (see
-[#2541](https://github.com/TEAMSchools/teamster/issues/2541)).
+For model quality requirements (contract enforcement, uniqueness tests, SQL
+antipatterns), see `src/dbt/CLAUDE.md`. For kipptaf-specific inherited defaults
+and exposure YAML reference, see `src/dbt/kipptaf/CLAUDE.md`.
 
 **Exposures**: Every external tool consuming data from a dbt project must have a
 dbt exposure in that project's `models/exposures/` directory listing all
 `depends_on` models. School-specific projects (`kippnewark`, `kippcamden`,
-`kippmiami`) require exposures for their PowerSchool extracts. Tableau workbooks
-may include `asset.metadata` with the workbook LSID (`id`); add `cron_schedule`
-only when Dagster manages the refresh. See `src/dbt/kipptaf/CLAUDE.md` for the
-full YAML reference.
+`kippmiami`) require exposures for their PowerSchool extracts.
