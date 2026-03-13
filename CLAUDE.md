@@ -18,9 +18,6 @@ Always use them before doing relevant work:
 - **`/dagster-expert`** — Use before any Dagster task: creating assets,
   schedules, sensors, resources, debugging pipeline issues, or understanding
   definitions
-- **`/dagster-integrations`** — Use when working with `dagster-dbt`,
-  `dagster-dlt`, `dagster-gcp`, `dagster-k8s`, `dagster-airbyte`, or other
-  `dagster-*` packages
 - **`/dbt:using-dbt-for-analytics-engineering`** — Use when building or
   modifying dbt models, writing tests, or debugging dbt errors
 - **`/dbt:running-dbt-commands`** — Use when running dbt CLI commands
@@ -29,17 +26,23 @@ Always use them before doing relevant work:
   failures or unclear error messages
 - **`/dbt:fetching-dbt-docs`** — Use when looking up dbt features or
   documentation
-- **`/dignified-python`** — Use when writing or reviewing Python code for
-  production quality standards
-- **`/simplify`** — Use after making changes to review code for reuse, quality,
-  and efficiency
+- **`/dignified-python`** + **`/simplify`** — Run together after substantial
+  Python changes to enforce production quality standards and review for reuse,
+  quality, and efficiency. Skip for minor or isolated edits.
 
 ## Working Conventions
 
 - **Python execution**: Always use `uv run` — never bare `python` or `python3`.
   The project environment is managed by uv.
-- **Git commits**: Only commit when explicitly asked. Do not commit
-  automatically after completing a fix or change.
+- **Git commits**: Do not commit proactively — ask first when a change is
+  complete and ready to commit, then commit if confirmed.
+- **GitHub issues**: Do not open issues proactively — ask first when something
+  warrants one, then open it if confirmed. Use `gh issue create` (not the web
+  UI). Label it with a
+  [conventional commit type](https://www.conventionalcommits.org/en/v1.0.0/)
+  (`feat`, `fix`, `docs`, `refactor`, `chore`, etc.), any related source systems
+  (e.g., `adp`, `powerschool`, `deanslist`), and `dagster` and/or `dbt` when
+  applicable.
 
 ## Commands
 
