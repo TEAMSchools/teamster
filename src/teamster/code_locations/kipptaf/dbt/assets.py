@@ -1,7 +1,6 @@
 import json
 
 from dagster import AssetSpec
-from dagster_dbt import get_asset_key_for_model
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, DBT_PROJECT
 from teamster.code_locations.kipptaf.adp.payroll.assets import (
@@ -13,10 +12,6 @@ from teamster.libraries.dbt.dagster_dbt_translator import CustomDagsterDbtTransl
 manifest = json.loads(s=DBT_PROJECT.manifest_path.read_text())
 
 dagster_dbt_translator = CustomDagsterDbtTranslator(code_location=CODE_LOCATION)
-
-all_dbt_assets = build_dbt_assets(
-    manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
-)
 
 core_dbt_assets = build_dbt_assets(
     manifest=manifest,
@@ -32,20 +27,7 @@ core_dbt_assets = build_dbt_assets(
     },
 )
 
-google_sheet_dbt_assets = build_dbt_assets(
-    manifest=manifest,
-    dagster_dbt_translator=dagster_dbt_translator,
-    name=f"{CODE_LOCATION}__dbt_assets__google_sheets",
-    select="tag:google_sheet",
-    op_tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "2000m"}}
-            }
-        }
-    },
-)
-
+# partitioned -- cannot be combined with rest of dbt assets
 adp_payroll_dbt_assets = build_dbt_assets(
     manifest=manifest,
     dagster_dbt_translator=dagster_dbt_translator,
@@ -61,11 +43,34 @@ adp_payroll_dbt_assets = build_dbt_assets(
     },
 )
 
+# gsheets can be brittle -- separate to avoid messing with downstream asset health
+google_sheet_dbt_assets = build_dbt_assets(
+    manifest=manifest,
+    dagster_dbt_translator=dagster_dbt_translator,
+    name=f"{CODE_LOCATION}__dbt_assets__google_sheets",
+    select="tag:google_sheet",
+    op_tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "2000m"}}
+            }
+        }
+    },
+)
+
+all_dbt_assets = [core_dbt_assets, adp_payroll_dbt_assets, google_sheet_dbt_assets]
+
 asset_specs = [
     AssetSpec(
         key=[CODE_LOCATION, "dbt", "exposures", exposure["label"]],
         deps=[
-            get_asset_key_for_model(dbt_assets=[all_dbt_assets], model_name=ref["name"])
+            dagster_dbt_translator.get_asset_key(
+                next(
+                    node
+                    for node in manifest["nodes"].values()
+                    if node["name"] == ref["name"]
+                )
+            )
             for ref in exposure["refs"]
         ],
         metadata={"url": exposure.get("url")},
