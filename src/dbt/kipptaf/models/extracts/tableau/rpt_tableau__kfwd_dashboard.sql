@@ -667,8 +667,6 @@ select
     coalesce(ei.ecc_adjusted_6_year_minority_graduation_rate, 0) as urm_ecc_school,
 
     if(ba.n_ba_enrolled_semesters >= 5, true, false) as is_enrolled_ba_5_semesters,
-
-    if(c.intent)
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
