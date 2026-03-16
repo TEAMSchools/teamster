@@ -169,7 +169,6 @@ with
             wa.workertimeprofile.timeservicesupervisor.workerid.idvalue
             as worker_time_profile__time_service_supervisor__worker_id__id_value,
 
-            -- trunk-ignore-begin(sqlfluff/LT05)
             wa.workertimeprofile.timeservicesupervisor.reportstoworkername.formattedname
             as
             worker_time_profile__time_service_supervisor__reports_to_worker_name__formatted_name,
@@ -180,7 +179,6 @@ with
             worker_time_profile__time_service_supervisor__reports_to_worker_name__given_name,
             wa.workertimeprofile.timeservicesupervisor.reportstoworkername.middlename as
             worker_time_profile__time_service_supervisor__reports_to_worker_name__middle_name,
-            -- trunk-ignore-end(sqlfluff/LT05)
             wa.workertypecode.codevalue as worker_type_code__code_value,
             wa.workertypecode.longname as worker_type_code__long_name,
             wa.workertypecode.shortname as worker_type_code__short_name,
