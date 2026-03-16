@@ -212,29 +212,6 @@ with
         from {{ ref("int_kippadb__persistence") }}
         where rn_enrollment_year = 1 and pursuing_degree_type = "Bachelor's (4-year)"
         group by sf_contact_id
-    ),
-
-    military as (
-        select
-            contact,
-            `status`,
-            category as job_industry,
-            military_branch,
-            meps_location,
-            meps_start_date,
-            meps_end_date,
-            delayed_entry_enlistment_program_dep,
-            `start_date`,
-            end_date,
-            ineligible_for_military_enlistment,
-            discharge_type,
-            discharge_date,
-
-            row_number() over (
-                partition by contact order by start_date desc
-            ) as rn_enlistment,
-        from {{ ref("stg_kippadb__employment") }}
-        where category = 'Military Specific Occupations'
     )
 
 select
@@ -297,6 +274,8 @@ select
     c.ktc_status,
     c.es_graduated,
     c.contact_highest_sat_score as highest_sat_score,
+    c.contact_intent_to_enlist as intent_to_enlist,
+    c.contact_cte_military_interest as cte_military_interest,
 
     ay.academic_year,
 
@@ -513,17 +492,25 @@ select
 
     ba.n_ba_enrolled_semesters,
 
-    mil.`status` as military_status,
-    mil.military_branch,
-    mil.meps_location,
-    mil.meps_start_date,
-    mil.meps_end_date,
-    mil.delayed_entry_enlistment_program_dep,
-    mil.`start_date` as bmt_start_date,
-    mil.end_date as bmt_end_date,
-    mil.ineligible_for_military_enlistment,
-    mil.discharge_type as military_discharge_type,
-    mil.discharge_date as military_discharge_date,
+    c.military_status,
+    c.military_branch,
+    c.meps_location,
+    c.meps_start_date,
+    c.meps_end_date,
+    c.delayed_entry_enlistment_program_dep,
+    c.bmt_start_date,
+    c.bmt_end_date,
+    c.ineligible_for_military_enlistment,
+    c.military_discharge_type,
+    c.military_discharge_date,
+    c.afqt_score,
+    c.qualified_air_force,
+    c.qualified_army,
+    c.qualified_coast_guard,
+    c.qualified_marine_corps,
+    c.qualified_navy,
+    c.total_qualified_military_branches,
+    c.physical_training_requirement_passed,
 
     if(
         c.contact_kipp_region_name = 'KIPP Miami' and c.ktc_status like 'TAF%',
@@ -740,7 +727,6 @@ left join
     on sv.contact = c.contact_id
     and sv.academic_year = ay.academic_year
 left join ba_semesters_enrolled as ba on c.contact_id = ba.sf_contact_id
-left join military as mil on c.contact_id = mil.contact and mil.rn_enlistment = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null

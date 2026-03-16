@@ -42,6 +42,50 @@ with
         where regexp_contains(`subject`, r'Tier\s\d$')
     ),
 
+    military as (
+        select
+            contact,
+            `status`,
+            category as job_industry,
+            military_branch,
+            meps_location,
+            meps_start_date,
+            meps_end_date,
+            delayed_entry_enlistment_program_dep,
+            `start_date`,
+            end_date,
+            ineligible_for_military_enlistment,
+            discharge_type,
+            discharge_date,
+
+            row_number() over (
+                partition by contact order by start_date desc
+            ) as rn_enlistment,
+        from {{ ref("stg_kippadb__employment") }}
+        where category = 'Military Specific Occupations'
+    ),
+
+    military_testing as (
+        select
+            contact,
+            test_type,
+            date as military_test_date,
+            afqt_score,
+            qualified_air_force,
+            qualified_army,
+            qualified_coast_guard,
+            qualified_marine_corps,
+            qualified_navy,
+            total_qualified_military_branches,
+            physical_training_requirement_passed,
+
+            row_number() over (
+                partition by contact, test_type order by date desc
+            ) as rn_military_testing,
+        from {{ ref("int_kippadb__standardized_test") }}
+        where test_type in ('ASVAB', 'Military Physical Training')
+    ),
+
     roster as (
         select
             se._dbt_source_relation as exit_db_name,
@@ -129,6 +173,28 @@ with
 
             t.tier,
 
+            mil.`status` as military_status,
+            mil.military_branch,
+            mil.meps_location,
+            mil.meps_start_date,
+            mil.meps_end_date,
+            mil.delayed_entry_enlistment_program_dep,
+            mil.`start_date` as bmt_start_date,
+            mil.end_date as bmt_end_date,
+            mil.ineligible_for_military_enlistment,
+            mil.discharge_type as military_discharge_type,
+            mil.discharge_date as military_discharge_date,
+
+            ms.afqt_score,
+            ms.qualified_air_force,
+            ms.qualified_army,
+            ms.qualified_coast_guard,
+            ms.qualified_marine_corps,
+            ms.qualified_navy,
+            ms.total_qualified_military_branches,
+
+            mpt.physical_training_requirement_passed,
+
             concat(
                 os.assigned_counselor__last_name,
                 ', ',
@@ -206,6 +272,18 @@ with
             on se.student_number = d.student_number
             and {{ union_dataset_join_clause(left_alias="se", right_alias="d") }}
         left join tier as t on se.salesforce_id = t.contact and t.rn_tier_recent = 1
+        left join
+            military as mil on c.contact_id = mil.contact and mil.rn_enlistment = 1
+        left join
+            military_testing as ms
+            on c.contact_id = ms.contact
+            and ms.test_type = 'ASVAB'
+            and ms.rn_military_testing = 1
+        left join
+            military_testing as mpt
+            on c.contact_id = mpt.contact
+            and mpt.test_type = 'Military Physical Training'
+            and mpt.rn_military_testing = 1
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 

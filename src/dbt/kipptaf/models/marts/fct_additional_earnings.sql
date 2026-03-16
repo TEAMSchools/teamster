@@ -19,7 +19,7 @@ select
     employee_number,
     file_number_pay_statements,
     gross_pay,
-    pay_date,
+    cast(pay_date as timestamp) as pay_date,
     payroll_company_code,
     position_id,
     position_status,

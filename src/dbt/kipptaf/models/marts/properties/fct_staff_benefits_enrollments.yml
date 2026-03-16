@@ -18,13 +18,13 @@ models:
         data_type: string
 
       - name: effective_date
-        data_type: date
+        data_type: timestamp
 
       - name: enrollment_end_date
-        data_type: date
+        data_type: timestamp
 
       - name: enrollment_start_date
-        data_type: date
+        data_type: timestamp
 
       - name: enrollment_status
         data_type: string

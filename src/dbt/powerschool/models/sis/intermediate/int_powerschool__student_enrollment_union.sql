@@ -259,6 +259,9 @@ select
     if(
         date(academic_year, 10, 15) between entrydate and exitdate, true, false
     ) as is_enrolled_oct15,
+    if(
+        date(academic_year, 3, 15) between entrydate and exitdate, true, false
+    ) as is_enrolled_mar15,
 
     case
         when yearid = yearid_prev

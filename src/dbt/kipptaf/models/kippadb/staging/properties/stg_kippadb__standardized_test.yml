@@ -87,3 +87,19 @@ models:
         data_type: numeric
       - name: academic_year
         data_type: int64
+      - name: afqt_score
+        data_type: numeric
+      - name: physical_training_requirement_passed
+        data_type: string
+      - name: qualified_air_force
+        data_type: boolean
+      - name: qualified_army
+        data_type: boolean
+      - name: qualified_coast_guard
+        data_type: boolean
+      - name: qualified_marine_corps
+        data_type: boolean
+      - name: qualified_navy
+        data_type: boolean
+      - name: total_qualified_military_branches
+        data_type: numeric

@@ -1,0 +1,30 @@
+models:
+  - name: rpt_gsheets__nsc_enrollment_updates
+    data_tests:
+      - unique:
+          column_name: id
+          config:
+            store_failures: true
+    columns:
+      - name: id
+        data_type: string
+        description: Salesforce Enrollment__c record ID to be updated.
+      - name: actual_end_date__c
+        data_type: date
+        description: Updated enrollment end date sourced from NSC data.
+      - name: status__c
+        data_type: string
+        description: >
+          Updated derived enrollment outcome: Graduated, Withdrew, or Attending.
+      - name: attending_status__c
+        data_type: string
+        description: >
+          Updated current NSC enrollment status code for the most recent term
+          (e.g. F = Full-time, H = Half-time).
+      - name: nsc_verified__c
+        data_type: boolean
+        description:
+          NSC verification flag; always true for records in this model.
+      - name: date_last_verified__c
+        data_type: date
+        description: Date this record was last verified against NSC data.

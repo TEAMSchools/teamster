@@ -92,6 +92,7 @@ models:
       +schema: deanslist
       sftp:
         staging:
+          +materialized: table
           +contract:
             enforced: true
     edplan:

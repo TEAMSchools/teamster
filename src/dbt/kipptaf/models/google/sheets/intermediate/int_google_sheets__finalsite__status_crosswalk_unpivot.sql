@@ -1,7 +1,5 @@
 select
-    enrollment_year_extract,
-    enrollment_academic_year,
-    enrollment_academic_year_display,
+    _dagster_partition_key,
     enrollment_type,
     detailed_status,
     detailed_status_ranking,
@@ -59,6 +57,7 @@ from
             conversion_metric_numerator_1,
             conversion_metric_numerator_2,
             conversion_metric_numerator_3,
-            conversion_metric_denominator
+            conversion_metric_denominator_1,
+            conversion_metric_denominator_2
         )
     )

@@ -1,12 +1,7 @@
 models:
   - name: int_people__staff_roster_history
     config:
-      meta:
-        dagster:
-          automation_condition:
-            ignore:
-              keys:
-                - kipptaf/surveys/int_surveys__staff_information_survey_pivot
+      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

@@ -1,6 +1,6 @@
 import pathlib
 
-from dagster import config_from_files
+from dagster import AssetKey, AutomationCondition, config_from_files
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.payroll.assets import (
@@ -121,6 +121,20 @@ intacct_extract = build_bigquery_query_sftp_asset(
     file_config={"stem": "adp_payroll_{date}_{group_code}", "suffix": "csv"},
     destination_config={"name": "couchdrop", "path": "/data-team/accounting/intacct"},
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
+    automation_condition=AutomationCondition.eager(),
+    deps=[
+        AssetKey(
+            [CODE_LOCATION, "adp_payroll", "stg_adp_payroll__general_ledger_file"]
+        ),
+        AssetKey([CODE_LOCATION, "extracts", "rpt_gsheets__intacct_integration_file"]),
+        AssetKey(
+            [
+                CODE_LOCATION,
+                "google_sheets",
+                "stg_google_sheets__finance__payroll_code_mapping",
+            ]
+        ),
+    ],
 )
 
 littlesis_extract = build_bigquery_query_sftp_asset(

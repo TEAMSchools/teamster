@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# inject 1Password secrets into .env
-op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env
+# inject 1Password secrets
+source ./.devcontainer/scripts/inject-secrets.sh
 
-uv self update
-uv tool upgrade datamodel-code-generator dagster-dg
-uv sync
+uv self update # reliable enough to not pin a version
+uv tool upgrade --all
+uv sync --frozen

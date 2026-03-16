@@ -70,7 +70,7 @@ with
     years_experience as (select *, from {{ ref("int_people__years_experience") }})
 
 select
-    r.effective_date_start as marts_effective_date_start,
+    cast(r.effective_date_start as timestamp) as marts_effective_date_start,
     r.assignment_status,
     r.assignment_status_reason,
     r.employee_number,
@@ -122,14 +122,16 @@ select
         partition by r.employee_number order by r.effective_date_start
     ) as previous_job_title,
 
-    coalesce(
-        date_sub(
-            lead(r.effective_date_start) over (
-                partition by r.employee_number order by r.effective_date_start
+    cast(
+        coalesce(
+            date_sub(
+                lead(r.effective_date_start) over (
+                    partition by r.employee_number order by r.effective_date_start
+                ),
+                interval 1 day
             ),
-            interval 1 day
-        ),
-        '9999-12-31'
+            '9999-12-31'
+        ) as timestamp
     ) as marts_effective_date_end,
 
     {{

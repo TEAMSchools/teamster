@@ -17,7 +17,7 @@ with
             gu.internal_id_int as employee_number,
 
             a.assignment_id,
-            a.created_date_local as assignment_date,
+            cast(a.created_date_local as timestamp) as assignment_date,
             a.creator_name,
 
             m.tag_name as goal_name,

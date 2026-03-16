@@ -7,3 +7,8 @@ assets = [
 schedules = [
     *enrollment.schedules,
 ]
+
+__all__ = [
+    "assets",
+    "schedules",
+]
