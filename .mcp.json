@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "bigquery": {
+      "command": "/usr/local/bin/toolbox",
+      "args": ["--prebuilt", "bigquery", "--stdio"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json",
+        "BIGQUERY_PROJECT": "teamster-332318"
+      }
+    },
+    "dbt": {
+      "command": "dbt-mcp",
+      "args": [],
+      "env": {
+        "DBT_PROJECT_DIR": "/workspaces/teamster/src/dbt/kipptaf",
+        "DBT_PATH": "/workspaces/teamster/.venv/bin/dbt"
+      }
+    }
+  }
+}
