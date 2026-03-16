@@ -106,6 +106,14 @@ data_tests:
 - **`GROUP BY ALL`**: Always list grouping columns explicitly.
 - **`SELECT *` in the final SELECT of `rpt_` or mart models**: Always list
   columns explicitly. Pass-through CTEs (`select * from ref(...)`) are fine.
+- **`SELECT *` from models that use `dbt_utils.star()`**: When a base model
+  generates its columns via `dbt_utils.star()`, its schema is determined at dbt
+  run time from the BigQuery relation — not from the SQL source. Selecting `c.*`
+  from such a model makes downstream column lists invisible and YAML properties
+  drift silently. Instead, enumerate columns explicitly from
+  `INFORMATION_SCHEMA.COLUMNS` and keep YAML in sync (see
+  [#3431](https://github.com/TEAMSchools/teamster/issues/3431),
+  [#3461](https://github.com/TEAMSchools/teamster/issues/3461)).
 - **Filter conditions in `ON` vs `WHERE`**: Row-filter conditions on the
   preserved table belong in `WHERE`, not `ON` (except `FULL JOIN`).
 

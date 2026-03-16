@@ -180,3 +180,36 @@ They live in `models/extracts/` and are distinct from the data mart layer.
 **`dim_*` / `fct_*` models** are dimensional data mart models being built for
 use with a semantic layer. They live in `models/marts/`. This layer is actively
 being developed.
+
+### Selecting from models that use `dbt_utils.star()`
+
+Several `base_` models (e.g. `base_kippadb__contact`, `base_powerschool__*`)
+generate their columns via `dbt_utils.star()`, which reads the BigQuery relation
+schema at dbt run time — not from the SQL source. This means:
+
+- The model's actual columns are only knowable from BigQuery, not from the SQL
+  file
+- YAML property files for these models drift silently unless actively maintained
+- Selecting `c.*` from them in downstream models makes the downstream column
+  list invisible — you won't notice when columns are added, renamed, or removed
+
+**Rule**: When joining a `dbt_utils.star()` model, enumerate columns explicitly.
+Get the authoritative list from `INFORMATION_SCHEMA.COLUMNS`:
+
+```sql
+select column_name
+from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
+where table_name = '<model_name>'
+order by ordinal_position
+```
+
+Then list them in your `SELECT` and update the YAML properties to match.
+
+**Note on `union_relations` views**: Views using the `union_relations` macro
+have a related but distinct problem — the macro compiles to an explicit column
+list at dbt run time, so stale compiled SQL won't pick up new upstream columns
+until re-materialized. This is handled automatically by
+`dbt_union_relations_automation_condition()` (see PR
+[#3440](https://github.com/TEAMSchools/teamster/pull/3440)). The guidance above
+applies to non-`union_relations` models where you are joining a star-generated
+base model directly.
