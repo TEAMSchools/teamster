@@ -82,8 +82,10 @@ with
             student_number,
 
             if(
-                sum(date_diff(exitdate, entrydate, day)) >= 7, 'Returning', 'New'
-            ) as next_year_enrollment_type,
+                sum(date_diff(exitdate, entrydate, day)) >= 7,
+                'Previously Enrolled',
+                'NTK'
+            ) as next_year_enrollment_history,
 
         from {{ ref("base_powerschool__student_enrollments") }}
         where grade_level != 99
@@ -177,8 +179,8 @@ select
     || right(cast(e.academic_year + 1 as string), 2) as academic_year_display,
 
     if(
-        e.grade_level = 99, null, fs.next_year_enrollment_type
-    ) as next_year_enrollment_type,
+        e.grade_level = 99, null, fs.next_year_enrollment_history
+    ) as next_year_enrollment_history,
 
     if(ovg.fafsa_opt_out is not null, 'Yes', 'No') as overgrad_fafsa_opt_out,
 

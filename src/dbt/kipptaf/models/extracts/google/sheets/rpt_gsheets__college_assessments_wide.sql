@@ -1,19 +1,39 @@
 with
-    final as (
+    scores as (
         select
-            e.region,
-            e.schoolid,
-            e.school,
+            student_number,
+            unique_test_admin_id,
+            scale_score as score,
+
+            'Scale Score' as score_category,
+
+        from {{ ref("int_tableau__college_assessment_roster_scores") }}
+
+        union all
+
+        select
+            student_number,
+            unique_test_admin_id,
+            total_growth_score_change as score,
+
+            'Score Change' as score_category,
+
+        from {{ ref("int_tableau__college_assessment_roster_scores") }}
+    ),
+    roster as (
+        select
             e.student_number,
             e.salesforce_id,
             e.student_name,
             e.student_first_name,
             e.student_last_name,
-            e.grade_level,
             e.student_email,
-            e.enroll_status_string as enroll_status,
-            e.ktc_cohort,
+            e.region,
+            e.school,
+            e.grade_level,
+            e.enroll_status,
             e.graduation_year,
+            e.ktc_cohort,
             e.year_in_network,
             e.iep_status,
             e.grad_iep_exempt_status_overall,
@@ -22,11 +42,12 @@ with
             e.college_match_gpa,
             e.college_match_gpa_bands,
 
-            sc.scope,
-            sc.subject_area,
-            sc.test_date,
-            sc.score_type,
-            sc.scale_score,
+            ea.expected_admin_season_order,
+            ea.expected_score_type,
+            ea.expected_admin_season,
+            ea.expected_grade_level,
+
+            a.score,
 
             ss.superscore as sat_total_superscore,
 
@@ -34,13 +55,23 @@ with
 
             hm.max_scale_score as sat_math_highest,
 
-            coalesce(c.courses_course_name, 'No Data') as ccr_course,
             coalesce(c.teacher_lastfirst, 'No Data') as ccr_teacher_name,
             coalesce(c.sections_external_expression, 'No Data') as ccr_section,
+
+            coalesce(p.psat89_count_lifetime, 0) as psat89_count_lifetime,
+            coalesce(p.psat10_count_lifetime, 0) as psat10_count_lifetime,
+            coalesce(p.psatnmsqt_count_lifetime, 0) as psatnmsqt_count_lifetime,
+            coalesce(p.sat_count_lifetime, 0) as sat_count_lifetime,
         from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            {{ ref("stg_google_sheets__kippfwd__expected_assessments") }} as ea
+            on e.region = ea.expected_region
+            and ea.rn = 1
         left join
-            {{ ref("int_assessments__college_assessment") }} as sc
-            on e.student_number = sc.student_number
+            scores as a
+            on e.student_number = a.student_number
+            and ea.expected_unique_test_admin_id = a.unique_test_admin_id
+            and ea.expected_score_category = a.score_category
         left join
             {{ ref("int_assessments__college_assessment") }} as ss
             on e.student_number = ss.student_number
@@ -71,89 +102,435 @@ with
                 'College and Career III',
                 'College and Career II'
             )
+        left join
+            {{ ref("int_students__college_assessment_participation_roster") }} as p
+            on e.student_number = p.student_number
+            and p.rn_lifetime = 1
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.graduation_year >= {{ var("current_academic_year") + 1 }}
             and e.school_level = 'HS'
             and e.rn_year = 1
-            and sc.score_type not in (
-                'psat10_reading',
-                'psat10_math_test',
-                'sat_reading_test_score',
-                'sat_math_test_score'
-            )
-            and sc.test_type != 'ACT'
-            and e.enroll_status_string = 'Currently Enrolled'
+            and not e.is_out_of_district
+            and e.enroll_status = 0
+            and ea.expected_admin_season_order is not null
     ),
-
-    tests_long as (
+    first_sat as (
+        select school_specific_id as student_number, min(`date`) as first_sat_date,
+        from {{ ref("int_kippadb__standardized_test_unpivot") }}
+        where score_type = 'sat_total_score' and `date` is not null
+        group by school_specific_id
+    ),
+    earliest_sat as (
+        select s.school_specific_id as student_number, s.score as earliest_sat_total,
+        from {{ ref("int_kippadb__standardized_test_unpivot") }} as s
+        inner join
+            first_sat as f
+            on s.school_specific_id = f.student_number
+            and s.`date` = f.first_sat_date
+        where s.score_type = 'sat_total_score'
+        qualify
+            row_number() over (partition by s.school_specific_id order by s.score desc)
+            = 1
+    ),
+    latest_psat_before_first_sat as (
         select
-            region,
-            schoolid,
-            school,
-            student_number,
-            salesforce_id,
-            student_name,
-            student_first_name,
-            student_last_name,
-            grade_level,
-            student_email,
-            enroll_status,
-            ktc_cohort,
-            graduation_year,
-            year_in_network,
-            iep_status,
-            grad_iep_exempt_status_overall,
-            cumulative_y1_gpa,
-            cumulative_y1_gpa_projected,
-            college_match_gpa,
-            college_match_gpa_bands,
-            ccr_course,
-            ccr_teacher_name,
-            ccr_section,
-
-            sat_total_superscore,
-            sat_ebrw_highest,
-            sat_math_highest,
-
-            scope as test_type,
-            test_date,
-            subject_area as test_subject,
-            scale_score,
-        from final
+            p.powerschool_student_number as student_number,
+            p.score as latest_psat_total,
+            p.score_type as psat_score_type,
+            p.latest_psat_date as psat_date,
+        from {{ ref("int_collegeboard__psat_unpivot") }} as p
+        inner join
+            first_sat as f
+            on p.powerschool_student_number = f.student_number
+            and p.latest_psat_date < f.first_sat_date
+        where p.score_type in ('psat89_total', 'psat10_total', 'psatnmsqt_total')
+        qualify
+            row_number() over (
+                partition by p.powerschool_student_number
+                order by p.latest_psat_date desc
+            )
+            = 1
     )
-
 select
-    region,
-    school,
-    student_number,
-    salesforce_id,
-    student_name,
-    student_first_name,
-    student_last_name,
-    grade_level,
-    student_email,
-    ktc_cohort,
-    enroll_status,
-    graduation_year,
-    year_in_network,
-    iep_status,
-    grad_iep_exempt_status_overall,
-    cumulative_y1_gpa,
-    cumulative_y1_gpa_projected,
-    college_match_gpa,
-    college_match_gpa_bands,
-    ccr_course,
-    ccr_teacher_name,
-    ccr_section,
-    sat_total_superscore,
-    sat_ebrw_highest,
-    sat_math_highest,
-    test_type,
-    test_date,
-    ebrw,
-    math,
-    combined,
-from
-    tests_long
-    pivot (max(scale_score) for lower(test_subject) in ('ebrw', 'math', 'combined'))
+    r.student_number,
+    r.salesforce_id,
+    r.student_name,
+    r.student_first_name,
+    r.student_last_name,
+    r.student_email,
+    r.region,
+    r.school,
+    r.grade_level,
+    r.graduation_year,
+    r.ktc_cohort,
+    r.year_in_network,
+    r.iep_status,
+    r.grad_iep_exempt_status_overall,
+    r.cumulative_y1_gpa,
+    r.cumulative_y1_gpa_projected,
+    r.college_match_gpa,
+    r.college_match_gpa_bands,
+    max(r.ccr_teacher_name) as ccr_teacher_name,
+    max(r.ccr_section) as ccr_section,
+    max(r.psat89_count_lifetime) as psat89_count_lifetime,
+    max(r.psat10_count_lifetime) as psat10_count_lifetime,
+    max(r.psatnmsqt_count_lifetime) as psatnmsqt_count_lifetime,
+    max(r.sat_count_lifetime) as sat_count_lifetime,
+    max(r.sat_total_superscore) as sat_total_superscore,
+    max(r.sat_ebrw_highest) as sat_ebrw_highest,
+    max(r.sat_math_highest) as sat_math_highest,
+    es.earliest_sat_total,
+    lp.latest_psat_total,
+    lp.psat_score_type as latest_psat_score_type,
+    lp.psat_date as latest_psat_date,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score'
+                and r.expected_admin_season = 'Fall'
+                and r.expected_grade_level = 12
+            then r.score
+        end
+    ) as g12_sat_total_fall,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score'
+                and r.expected_admin_season = 'Fall'
+                and r.expected_grade_level = 12
+            then r.score
+        end
+    )
+    - es.earliest_sat_total as g12_sat_total_fall_growth_from_first_sat,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score'
+                and r.expected_admin_season = 'Fall'
+                and r.expected_grade_level = 12
+            then r.score
+        end
+    )
+    - lp.latest_psat_total as g12_sat_total_fall_growth_from_psat,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score_growth'
+                and r.expected_admin_season = 'Fall'
+                and r.expected_grade_level = 12
+            then r.score
+        end
+    ) as g12_sat_total_growth_fall,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_ebrw'
+                and r.expected_admin_season = 'Fall'
+                and r.expected_grade_level = 12
+            then r.score
+        end
+    ) as g12_sat_ebrw_fall,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_math'
+                and r.expected_admin_season = 'Fall'
+                and r.expected_grade_level = 12
+            then r.score
+        end
+    ) as g12_sat_math_fall,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score'
+                and r.expected_admin_season = 'Winter'
+                and r.expected_grade_level = 12
+            then r.score
+        end
+    ) as g12_sat_total_winter,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score'
+                and r.expected_admin_season = 'Winter'
+                and r.expected_grade_level = 12
+            then r.score
+        end
+    )
+    - es.earliest_sat_total as g12_sat_total_winter_growth_from_first_sat,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score'
+                and r.expected_admin_season = 'Winter'
+                and r.expected_grade_level = 12
+            then r.score
+        end
+    )
+    - lp.latest_psat_total as g12_sat_total_winter_growth_from_psat,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score_growth'
+                and r.expected_admin_season = 'Winter'
+                and r.expected_grade_level = 12
+            then r.score
+        end
+    ) as g12_sat_total_growth_winter,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_ebrw'
+                and r.expected_admin_season = 'Winter'
+                and r.expected_grade_level = 12
+            then r.score
+        end
+    ) as g12_sat_ebrw_winter,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_math'
+                and r.expected_admin_season = 'Winter'
+                and r.expected_grade_level = 12
+            then r.score
+        end
+    ) as g12_sat_math_winter,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score'
+                and r.expected_admin_season = 'Winter'
+                and r.expected_grade_level = 11
+            then r.score
+        end
+    ) as g11_sat_total_winter,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score'
+                and r.expected_admin_season = 'Winter'
+                and r.expected_grade_level = 11
+            then r.score
+        end
+    )
+    - es.earliest_sat_total as g11_sat_total_winter_growth_from_first_sat,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score'
+                and r.expected_admin_season = 'Winter'
+                and r.expected_grade_level = 11
+            then r.score
+        end
+    )
+    - lp.latest_psat_total as g11_sat_total_winter_growth_from_psat,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score_growth'
+                and r.expected_admin_season = 'Winter'
+                and r.expected_grade_level = 11
+            then r.score
+        end
+    ) as g11_sat_total_growth_winter,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_ebrw'
+                and r.expected_admin_season = 'Winter'
+                and r.expected_grade_level = 11
+            then r.score
+        end
+    ) as g11_sat_ebrw_winter,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_math'
+                and r.expected_admin_season = 'Winter'
+                and r.expected_grade_level = 11
+            then r.score
+        end
+    ) as g11_sat_math_winter,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score'
+                and r.expected_admin_season = 'Spring'
+                and r.expected_grade_level = 11
+            then r.score
+        end
+    ) as g11_sat_total_spring,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score'
+                and r.expected_admin_season = 'Spring'
+                and r.expected_grade_level = 11
+            then r.score
+        end
+    )
+    - es.earliest_sat_total as g11_sat_total_spring_growth_from_first_sat,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score'
+                and r.expected_admin_season = 'Spring'
+                and r.expected_grade_level = 11
+            then r.score
+        end
+    )
+    - lp.latest_psat_total as g11_sat_total_spring_growth_from_psat,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_total_score_growth'
+                and r.expected_admin_season = 'Spring'
+                and r.expected_grade_level = 11
+            then r.score
+        end
+    ) as g11_sat_total_growth_spring,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_ebrw'
+                and r.expected_admin_season = 'Spring'
+                and r.expected_grade_level = 11
+            then r.score
+        end
+    ) as g11_sat_ebrw_spring,
+    max(
+        case
+            when
+                r.expected_score_type = 'sat_math'
+                and r.expected_admin_season = 'Spring'
+                and r.expected_grade_level = 11
+            then r.score
+        end
+    ) as g11_sat_math_spring,
+    max(
+        case
+            when
+                r.expected_score_type = 'psatnmsqt_total'
+                and r.expected_grade_level = 10
+            then r.score
+        end
+    ) as g10_psatnmsqt_total,
+    max(
+        case
+            when
+                r.expected_score_type = 'psatnmsqt_ebrw' and r.expected_grade_level = 10
+            then r.score
+        end
+    ) as g10_psatnmsqt_ebrw,
+    max(
+        case
+            when
+                r.expected_score_type = 'psatnmsqt_math_section'
+                and r.expected_grade_level = 10
+            then r.score
+        end
+    ) as g10_psatnmsqt_math,
+    max(
+        case
+            when r.expected_score_type = 'psat10_total' and r.expected_grade_level = 10
+            then r.score
+        end
+    ) as g10_psat10_total,
+    max(
+        case
+            when r.expected_score_type = 'psat10_ebrw' and r.expected_grade_level = 10
+            then r.score
+        end
+    ) as g10_psat10_ebrw,
+    max(
+        case
+            when
+                r.expected_score_type = 'psat10_math_section'
+                and r.expected_grade_level = 10
+            then r.score
+        end
+    ) as g10_psat10_math,
+    max(
+        case
+            when r.expected_score_type = 'psat89_total' and r.expected_grade_level = 9
+            then r.score
+        end
+    ) as g9_psat89_total,
+    max(
+        case
+            when r.expected_score_type = 'psat89_ebrw' and r.expected_grade_level = 9
+            then r.score
+        end
+    ) as g9_psat89_ebrw,
+    max(
+        case
+            when
+                r.expected_score_type = 'psat89_math_section'
+                and r.expected_grade_level = 9
+            then r.score
+        end
+    ) as g9_psat89_math,
+    max(
+        case
+            when r.expected_score_type = 'psat10_total' and r.expected_grade_level = 10
+            then r.score
+        end
+    ) - max(
+        case
+            when r.expected_score_type = 'psat89_total' and r.expected_grade_level = 9
+            then r.score
+        end
+    ) as psat89_to_psat10_total_growth,
+    max(
+        case
+            when r.expected_score_type = 'psat10_ebrw' and r.expected_grade_level = 10
+            then r.score
+        end
+    ) - max(
+        case
+            when r.expected_score_type = 'psat89_ebrw' and r.expected_grade_level = 9
+            then r.score
+        end
+    ) as psat89_to_psat10_ebrw_growth,
+    max(
+        case
+            when
+                r.expected_score_type = 'psat10_math_section'
+                and r.expected_grade_level = 10
+            then r.score
+        end
+    ) - max(
+        case
+            when
+                r.expected_score_type = 'psat89_math_section'
+                and r.expected_grade_level = 9
+            then r.score
+        end
+    ) as psat89_to_psat10_math_growth
+from roster as r
+left join earliest_sat as es on r.student_number = es.student_number
+left join latest_psat_before_first_sat as lp on r.student_number = lp.student_number
+group by
+    r.student_number,
+    r.salesforce_id,
+    r.student_name,
+    r.student_first_name,
+    r.student_last_name,
+    r.student_email,
+    r.region,
+    r.school,
+    r.grade_level,
+    r.graduation_year,
+    r.ktc_cohort,
+    r.year_in_network,
+    r.iep_status,
+    r.grad_iep_exempt_status_overall,
+    r.cumulative_y1_gpa,
+    r.cumulative_y1_gpa_projected,
+    r.college_match_gpa,
+    r.college_match_gpa_bands,
+    es.earliest_sat_total,
+    lp.latest_psat_total,
+    lp.psat_score_type,
+    lp.psat_date

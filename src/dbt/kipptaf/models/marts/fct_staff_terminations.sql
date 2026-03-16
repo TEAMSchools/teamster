@@ -62,7 +62,9 @@ with
 
             tr.termination_status,
             tr.termination_reason,
-            tr.termination_effective_date,
+            cast(
+                tr.termination_effective_date as timestamp
+            ) as termination_effective_date,
 
             if(tr.employee_number is null, false, true) as is_termination,
         from annual_roster as ar

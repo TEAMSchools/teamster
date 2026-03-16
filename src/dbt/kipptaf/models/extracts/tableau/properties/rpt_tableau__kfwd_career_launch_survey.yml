@@ -1,5 +1,17 @@
 models:
   - name: rpt_tableau__kfwd_career_launch_survey
+    config:
+      contract:
+        enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - contact_id
+              - response_id
+          config:
+            store_failures: true
+            severity: warn # NOTE: currently failing
     columns:
       - name: contact_id
         data_type: string

@@ -1,0 +1,43 @@
+models:
+  - name: rpt_appsheet__kfwd_career_launch_survey
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: contact_id
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+                severity: warn # NOTE: currently failing
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: ktc_cohort
+        data_type: int64
+      - name: primary_email
+        data_type: string
+      - name: secondary_email
+        data_type: string
+      - name: currently_enrolled_school
+        data_type: string
+      - name: current_college_cumulative_gpa
+        data_type: numeric
+      - name: pursuing_degree_type
+        data_type: string
+      - name: major
+        data_type: string
+      - name: primary_phone
+        data_type: string
+      - name: secondary_phone
+        data_type: string
+      - name: advising_provider
+        data_type: string
+      - name: expected_college_grad_date
+        data_type: date
+      - name: survey_response_count
+        data_type: int64
+      - name: latest_survey_date
+        data_type: timestamp

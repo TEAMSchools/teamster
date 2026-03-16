@@ -667,6 +667,19 @@ exposures:
         dagster:
           kinds:
             - googlesheets
+  - name: rpt_gsheets__college_assessments_wide
+    label: College Assessments Wide
+    type: analysis
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1gmYyGYxtlnh_DiTAphjUoJQv1hNiYwUABliSXe6AuYk
+    depends_on:
+      - ref("rpt_gsheets__college_assessments_wide")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
 
   - name: rpt_gsheets__nj_state_test_roster
     label: NJ State Test Roster
@@ -676,6 +689,48 @@ exposures:
     url: https://docs.google.com/spreadsheets/d/1wuty2F5ngtxXKF_gUKb2UmcSAs8cZTlgEiIOZZIwDro/
     depends_on:
       - ref("rpt_gsheets__nj_state_test_roster")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
+
+  - name: rpt_gsheets__nsc_enrollment_new
+    label: NSC Enrollment New Records
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1PewWVfF1sKijeW0cDAlwWvVYJ1IdW2JFVx3Z8sf_HN8/
+    depends_on:
+      - ref("rpt_gsheets__nsc_enrollment_new")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
+
+  - name: rpt_gsheets__nsc_enrollment_updates
+    label: NSC Enrollment Updates
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1PewWVfF1sKijeW0cDAlwWvVYJ1IdW2JFVx3Z8sf_HN8/
+    depends_on:
+      - ref("rpt_gsheets__nsc_enrollment_updates")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
+
+  - name: rpt_gsheets__nsc_terms_new
+    label: NSC Terms New Records
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1PewWVfF1sKijeW0cDAlwWvVYJ1IdW2JFVx3Z8sf_HN8/
+    depends_on:
+      - ref("rpt_gsheets__nsc_terms_new")
     config:
       meta:
         dagster:

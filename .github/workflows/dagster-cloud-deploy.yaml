@@ -47,6 +47,7 @@ permissions:
 
 jobs:
   prerun:
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     outputs:
       result: ${{ steps.prerun.outputs.result }}

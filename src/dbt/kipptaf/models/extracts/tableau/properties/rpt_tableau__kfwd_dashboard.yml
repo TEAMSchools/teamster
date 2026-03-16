@@ -569,3 +569,23 @@ models:
         data_type: string
       - name: military_discharge_date
         data_type: date
+      - name: intent_to_enlist
+        data_type: boolean
+      - name: cte_military_interest
+        data_type: string
+      - name: qualified_air_force
+        data_type: boolean
+      - name: qualified_army
+        data_type: boolean
+      - name: qualified_coast_guard
+        data_type: boolean
+      - name: qualified_marine_corps
+        data_type: boolean
+      - name: qualified_navy
+        data_type: boolean
+      - name: total_qualified_military_branches
+        data_type: numeric
+      - name: physical_training_requirement_passed
+        data_type: string
+      - name: afqt_score
+        data_type: numeric

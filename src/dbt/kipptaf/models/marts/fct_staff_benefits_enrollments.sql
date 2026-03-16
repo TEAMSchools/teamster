@@ -1,9 +1,9 @@
 select
     coverage_level,
-    effective_date,
+    cast(effective_date as timestamp) as effective_date,
     employee_number,
-    enrollment_end_date,
-    enrollment_start_date,
+    cast(enrollment_end_date as timestamp) as enrollment_end_date,
+    cast(enrollment_start_date as timestamp) as enrollment_start_date,
     enrollment_status,
     plan_name,
     plan_type,

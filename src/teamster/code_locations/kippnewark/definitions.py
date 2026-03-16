@@ -9,10 +9,10 @@ from dagster_k8s import k8s_job_executor
 from teamster.code_locations.kippnewark import (
     CODE_LOCATION,
     DBT_PROJECT,
-    _dbt,
     amplify,
     asset_checks,
     couchdrop,
+    dbt,
     deanslist,
     edplan,
     extracts,
@@ -48,7 +48,7 @@ defs = Definitions(
     executor=k8s_job_executor,
     assets=load_assets_from_modules(
         modules=[
-            _dbt,
+            dbt,
             amplify,
             extracts,
             deanslist,

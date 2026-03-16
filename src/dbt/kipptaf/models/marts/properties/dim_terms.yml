@@ -19,10 +19,10 @@ models:
         data_type: string
 
       - name: term_start_date
-        data_type: date
+        data_type: timestamp
 
       - name: term_end_date
-        data_type: date
+        data_type: timestamp
 
       - name: academic_year
         data_type: int64
@@ -46,7 +46,7 @@ models:
         data_type: string
 
       - name: lockbox_date
-        data_type: date
+        data_type: timestamp
 
       - name: is_current
         data_type: boolean

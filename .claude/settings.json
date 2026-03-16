@@ -1,0 +1,75 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh issue:*)",
+      "Bash(gh pr:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
+      "Bash(trunk check:*)",
+      "Bash(trunk fmt:*)",
+      "Bash(uv run dagster:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv run scripts:*)",
+      "Bash(uv tool list:*)",
+      "Bash(uv tool run:*)",
+      "Read(/workspaces/teamster/**)",
+      "Read(~/.claude/plugins/**)",
+      "WebFetch(domain:docs.dagster.io)",
+      "WebFetch(domain:github.com)",
+      "mcp__bigquery__*"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "trunk fmt {changed_files}",
+            "statusMessage": "Auto-formatting with Trunk",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'if [[ \"{file_path}\" =~ (\\.env|\\.ssh|secrets\\.json|credentials\\.json|\\.pem$|\\.key$|secret-volume|inject-secrets) ]]; then echo \"❌ Cannot access sensitive file: {file_path}\"; exit 1; fi'",
+            "statusMessage": "Checking if file is safe to access..."
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "dignified-python@dagster": true,
+    "dbt@dbt-agent-marketplace": true,
+    "dagster-expert@dagster": true,
+    "superpowers@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "dagster-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dagster-io/skills"
+      }
+    },
+    "dbt-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dbt-labs/dbt-agent-skills"
+      }
+    }
+  }
+}

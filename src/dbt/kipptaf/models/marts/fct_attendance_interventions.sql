@@ -6,7 +6,7 @@ select
     days_absent_unexcused,
     commlog_notes,
     commlog_topic,
-    commlog_date,
+    cast(commlog_date as timestamp) as commlog_date,
     commlog_status,
     commlog_type,
     commlog_staff_name,

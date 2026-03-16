@@ -5,7 +5,7 @@ from dagster_shared import check
 
 
 def _test_dlt_assets(selection):
-    from teamster.code_locations.kipptaf._dlt import assets
+    from teamster.code_locations.kipptaf.dlt import assets
 
     result = materialize(
         assets=assets, selection=selection, resources={"dlt": DagsterDltResource()}

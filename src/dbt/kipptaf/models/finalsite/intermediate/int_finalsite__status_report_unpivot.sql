@@ -1,8 +1,7 @@
 with
     unpivot_data as (
         select
-            current_academic_year,
-            next_academic_year,
+            _dagster_partition_key,
             region,
             assigned_school,
             finalsite_enrollment_id,
@@ -10,6 +9,7 @@ with
             first_name,
             last_name,
             grade_level,
+            enrollment_type,
             self_contained,
             gender,
             birthdate,
@@ -19,6 +19,8 @@ with
 
             fs_status_field,
             status_start_date,
+
+            cast(left(_dagster_partition_key, 4) as int) as file_year,
 
             initcap(
                 regexp_replace(replace(fs_status_field, '_', ' '), r'\s+[Dd]ate$', '')
