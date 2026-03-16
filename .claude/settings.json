@@ -1,9 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add:*)",
       "Bash(gh issue:*)",
       "Bash(gh pr:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
       "Bash(trunk check:*)",
       "Bash(trunk fmt:*)",
       "Bash(uv run dagster:*)",
