@@ -103,7 +103,32 @@ with
     )
 
 select
-    *,
+    _dbt_source_relation,
+    academic_year,
+    yearid,
+    schoolid,
+    student_number,
+    students_dcid,
+    studentid,
+    grade_level,
+    grade_level_prev,
+    dob,
+    `ada`,
+    cy_unweighted_term_q1,
+    cy_weighted_term_q1,
+    cy_unweighted_s1_ada,
+    cy_weighted_s1_ada,
+    py_y1_unweighted_ada,
+    py_y1_weighted_ada,
+    cy_q1_gpa,
+    cy_s1_gpa,
+    cy_y1_gpa,
+    py_y1_gpa,
+    py_credits,
+    met_py_credits,
+    met_cy_credits,
+    is_first_time_ninth,
+    is_age_eligible,
 
     case
         when not is_age_eligible

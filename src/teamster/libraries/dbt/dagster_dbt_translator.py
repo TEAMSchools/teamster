@@ -6,6 +6,7 @@ from dagster_dbt import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 from teamster.core.automation_conditions import (
     dbt_table_automation_condition,
+    dbt_union_relations_automation_condition,
     dbt_view_automation_condition,
 )
 
@@ -47,7 +48,20 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         if not automation_condition_config.get("enabled", True):
             return None
 
+        condition_type = automation_condition_config.get("type")
+        if condition_type == "table":
+            return dbt_table_automation_condition()
+        if condition_type == "view":
+            return dbt_view_automation_condition()
+
         materialized = dbt_resource_props.get("config", {}).get("materialized", "view")
+
+        # union_relations views need dep-aware refresh: their compiled SQL
+        # resolves columns at run time via the macro and becomes stale when
+        # upstream tables are re-materialized with schema changes
+        raw_code = dbt_resource_props.get("raw_code", "")
+        if materialized == "view" and "union_relations" in raw_code:
+            return dbt_union_relations_automation_condition()
 
         if materialized in ["view", "ephemeral"]:
             return dbt_view_automation_condition()

@@ -84,11 +84,16 @@ Resources are defined in two places:
 
 ## Automation Conditions
 
-Defined in `core/automation_conditions.py`. Two dbt-specific builders:
+Defined in `core/automation_conditions.py`. Three dbt-specific builders sharing
+a common skeleton (`_build_dbt_condition`):
 
 - **`dbt_view_automation_condition()`** — triggers on `code_version_changed`,
   `newly_missing`, or `execution_failed`. Intentionally omits `any_deps_updated`
   since views are computed on read.
+- **`dbt_union_relations_automation_condition()`** — for views using the
+  `union_relations` macro. Adds recursive ancestor `code_version_changed`
+  detection (but NOT `any_deps_updated`) to the view condition. Triggers only on
+  code deploys, not data refreshes.
 - **`dbt_table_automation_condition()`** — also triggers on upstream data
   changes, including through intermediate views (recursive lookthrough up to 10
   levels).

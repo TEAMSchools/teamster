@@ -13,6 +13,14 @@ from dagster._core.definitions.declarative_automation.operators.dep_operators im
 _MAX_VIEW_DEPTH = 10
 _VIEW_SELECTION = AssetSelection.tag("dagster/materialized", "view")
 
+_EXTERNAL_SOURCE_SELECTION = AssetSelection.all(
+    include_sources=True
+) - AssetSelection.all(include_sources=False)
+
+_SINCE_LAST_HANDLED = (
+    AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
+)
+
 
 def _patched_get_dep_keys(
     self: DepsAutomationCondition,
@@ -40,19 +48,55 @@ def _patched_get_dep_keys(
 DepsAutomationCondition._get_dep_keys = _patched_get_dep_keys
 
 
-_EXTERNAL_SOURCE_SELECTION = AssetSelection.all(
-    include_sources=True
-) - AssetSelection.all(include_sources=False)
+def _build_dbt_condition(
+    *extra_triggers: AutomationCondition,
+) -> AutomationCondition:
+    """Build a dbt automation condition with the shared structure.
+
+    All three dbt conditions (view, union_relations, table) share the same
+    skeleton — they differ only in what additional triggers (beyond
+    newly_missing) cause a materialization request.
+
+    The shared structure is a fork of AutomationCondition.eager() with:
+    - code_version_changed on its own .since(newly_updated) so it only resets
+      after successful materialization, not on request
+    - execution_failed outside .since() so it fires every tick until resolved
+    - any_deps_missing ignoring external source assets
+    - initial_evaluation omitted from .since() reset to avoid suppressing
+      newly_missing permanently
+    """
+    triggers: AutomationCondition = AutomationCondition.newly_missing()
+    for trigger in extra_triggers:
+        triggers = triggers | trigger
+
+    return (
+        AutomationCondition.in_latest_time_window()
+        & (
+            triggers.since(_SINCE_LAST_HANDLED)
+            | AutomationCondition.code_version_changed().since(
+                AutomationCondition.newly_updated()
+            )
+            | AutomationCondition.execution_failed()
+        )
+        & ~AutomationCondition.any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)
+        & ~AutomationCondition.any_deps_in_progress()
+        & ~AutomationCondition.in_progress()
+    )
 
 
 def _build_any_ancestor_updated(
     max_depth: int = _MAX_VIEW_DEPTH, view_selection: AssetSelection | None = None
-) -> DepsAutomationCondition:
-    """Detect updates in ancestor assets through intermediate views.
+) -> AutomationCondition:
+    """Detect updates in ancestor assets, including through intermediate views.
+
+    Covers all depths:
+    - Direct deps: any_deps_updated() detects when a direct dep is updated
+    - Ancestors through views: recursive any_deps_match (up to max_depth
+      levels) detects when a grandparent+ asset is updated through a chain
+      of intermediate views that weren't re-materialized
 
     For a chain like Table_A -> View_1 -> ... -> View_N -> Table_B,
-    this condition on Table_B detects when Table_A is updated, even though
-    the intermediate views were not re-materialized.
+    this condition on Table_B detects when Table_A is updated.
 
     If view_selection is provided, recursion only follows deps matching that
     selection (i.e., views), stopping at the nearest table boundary. This
@@ -68,89 +112,78 @@ def _build_any_ancestor_updated(
 
         condition = AutomationCondition.any_deps_updated() | recurse
 
+    return AutomationCondition.any_deps_updated() | AutomationCondition.any_deps_match(
+        condition
+    )
+
+
+def _build_any_ancestor_code_version_changed(
+    max_depth: int = _MAX_VIEW_DEPTH,
+) -> AutomationCondition:
+    """Detect code version changes in ancestor assets.
+
+    For a chain like Table_A -> View_1 -> ... -> View_N -> union_view, this
+    detects when Table_A's raw SQL changes (e.g., a column is added to a
+    staging model), even through intermediate views.
+
+    Unlike _build_any_ancestor_updated, this does NOT restrict recursion with
+    view_selection. code_version_changed() is self-referential (checks the
+    asset's own code version), not dep-relative like any_deps_updated().
+    Restricting to view deps would filter out the table whose code version
+    actually changed.
+    """
+    condition = AutomationCondition.code_version_changed()
+
+    for _ in range(max_depth - 1):
+        condition = (
+            AutomationCondition.code_version_changed()
+            | AutomationCondition.any_deps_match(condition)
+        )
+
     return AutomationCondition.any_deps_match(condition)
 
 
 def dbt_view_automation_condition() -> AutomationCondition:
     """Automation condition for dbt VIEW models.
 
-    Fork of AutomationCondition.eager() adapted for views, which are computed
-    on read and don't store physical data.
+    Views are computed on read and don't store physical data. Only re-runs
+    when the view's own definition changes — NOT on upstream data changes.
 
-    Changes from eager():
-    - Removed any_deps_updated: views don't need re-materialization when
-      upstream data changes, only when their own definition changes.
-    - Added code_version_changed: detects SQL code changes from dbt deploys.
-      Uses its own .since(newly_updated) so it only resets after successful
-      materialization, not on request — the signal isn't lost if the run
-      fails or never executes.
-    - Added execution_failed: retries views whose last execution failed,
-      evaluated outside .since() so it fires every tick until resolved.
-    - Filtered any_deps_missing: ignores external source assets (which have
-      no materialization records) to prevent them from permanently blocking
-      downstream automation.
-    - Omitted initial_evaluation from .since() reset: it fires on the same
-      tick as newly_missing, suppressing it permanently since newly_missing
-      is event-like and never re-fires.
+    Triggers: newly_missing, code_version_changed, execution_failed.
     """
-    _since_last_handled = (
-        AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
-    )
+    return _build_dbt_condition()
 
-    return (
-        AutomationCondition.in_latest_time_window()
-        & (
-            AutomationCondition.newly_missing().since(_since_last_handled)
-            | AutomationCondition.code_version_changed().since(
-                AutomationCondition.newly_updated()
-            )
-            | AutomationCondition.execution_failed()
-        )
-        & ~AutomationCondition.any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)
-        & ~AutomationCondition.any_deps_in_progress()
-        & ~AutomationCondition.in_progress()
-    )
+
+def dbt_union_relations_automation_condition() -> AutomationCondition:
+    """Automation condition for dbt views using the union_relations macro.
+
+    These views have compiled SQL that resolves column lists at run time.
+    Because code_version is a SHA1 of raw_code (the Jinja source), not
+    compiled SQL, the view's own code_version_changed won't fire when the
+    macro output changes due to upstream schema changes.
+
+    Adds recursive ancestor code_version_changed detection: when an upstream
+    model's raw SQL changes after a deploy, this view re-runs so the macro
+    recompiles with the updated column set.
+
+    Does NOT trigger on upstream data changes (any_deps_updated) to avoid
+    unnecessary Dagster credit and Kubernetes resource costs.
+    """
+    return _build_dbt_condition(_build_any_ancestor_code_version_changed())
 
 
 def dbt_table_automation_condition() -> AutomationCondition:
     """Automation condition for dbt TABLE models.
 
-    Fork of AutomationCondition.eager() adapted for tables, which store
-    physical data and must be re-materialized when upstream data changes.
+    Tables store physical data and must re-materialize when upstream changes.
 
-    Changes from eager():
-    - Added ancestor lookthrough: uses recursive any_deps_match (up to
-      _MAX_VIEW_DEPTH levels) to detect upstream table updates through
-      intermediate views that aren't re-materialized.
-    - Added code_version_changed: detects SQL code changes from dbt deploys.
-      Uses its own .since(newly_updated) so it only resets after successful
-      materialization, not on request — the signal isn't lost if the run
-      fails or never executes.
-    - Filtered any_deps_missing: ignores external source assets (which have
-      no materialization records) to prevent them from permanently blocking
-      downstream automation.
-    - Omitted initial_evaluation from .since() reset: it fires on the same
-      tick as newly_missing, suppressing it permanently since newly_missing
-      is event-like and never re-fires.
+    Adds ancestor update detection: recursive any_deps_match (up to
+    _MAX_VIEW_DEPTH levels) detects upstream table updates through
+    intermediate views that aren't re-materialized.
+
+    Triggers: newly_missing, any_deps_updated (direct + through views),
+    code_version_changed, execution_failed.
     """
-    _since_last_handled = (
-        AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
-    )
-
-    return (
-        AutomationCondition.in_latest_time_window()
-        & (
-            (
-                AutomationCondition.newly_missing()
-                | AutomationCondition.any_deps_updated()
-                | _build_any_ancestor_updated(view_selection=_VIEW_SELECTION)
-            ).since(_since_last_handled)
-            | AutomationCondition.code_version_changed().since(
-                AutomationCondition.newly_updated()
-            )
-            | AutomationCondition.execution_failed()
-        )
-        & ~AutomationCondition.any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)
-        & ~AutomationCondition.any_deps_in_progress()
-        & ~AutomationCondition.in_progress()
+    return _build_dbt_condition(
+        _build_any_ancestor_updated(view_selection=_VIEW_SELECTION)
     )

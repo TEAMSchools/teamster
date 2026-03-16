@@ -33,7 +33,14 @@ Customizes asset key and automation condition generation:
   `meta.dagster.asset_key` is already set.
 - **Automation condition**: A forked version of `AutomationCondition.eager()`
   that also triggers on `code_version_changed()`, ignores external source assets
-  from dep-missing checks, and allows initial evaluation.
+  from dep-missing checks, and allows initial evaluation. Views using
+  `union_relations` are auto-detected (via `raw_code` inspection) and assigned
+  `dbt_union_relations_automation_condition()` — a third condition that adds
+  recursive ancestor `code_version_changed` detection (but not
+  `any_deps_updated`) to the view condition. This re-runs the view only when
+  upstream model SQL changes after a deploy, not on data-only refreshes. The
+  condition type can also be overridden manually via
+  `meta.dagster.automation_condition.type: table|view`.
 - **Group name**: Falls back to the dbt package name (for cross-project refs)
   then the first FQN segment after the project name.
 
