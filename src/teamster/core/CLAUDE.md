@@ -76,7 +76,8 @@ Two dbt-specific `AutomationCondition` builders:
   omits `any_deps_updated` since views are computed on read.
 - `dbt_table_automation_condition()` — for TABLE models: also triggers on
   upstream data changes, including through intermediate views via
-  `_build_any_ancestor_updated()` (recursive `any_deps_match` up to 5 levels)
+  `_build_any_ancestor_updated()` (recursive `any_deps_match` up to
+  `_MAX_VIEW_DEPTH` levels, currently 10)
 
 **Unsynced badge behavior**: Dagster's "unsynced" indicator is driven by its
 data versioning system, not the automation condition. When an upstream table

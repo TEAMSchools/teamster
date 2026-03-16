@@ -5,6 +5,7 @@ code in this repository.
 
 ## Purpose
 
-Avro schemas for the internal **Performance Management** system data (staff
-observation scores, coaching records) ingested via SFTP or API. The asset is
-built in the `kipptaf` code location's `performance_management` module.
+Schema-only library — Avro schemas for the internal **Performance Management**
+system data (staff observation scores, coaching records) ingested via SFTP. The
+asset is built using `sftp.build_sftp_file_asset()` in the `kipptaf` code
+location.
