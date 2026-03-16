@@ -125,5 +125,5 @@ models:
         data_type: int64
       - name: rn_stu_school_start
         data_type: int64
-      - name: overgrad_urm_grad_rate
+      - name: og_urm
         data_type: string
