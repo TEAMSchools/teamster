@@ -163,6 +163,10 @@ absence of these settings — they are intentionally inherited.
 | `marts/`                               | (view default) | `true`                      |
 | `illuminate/dlt/staging/repositories/` | `table`        | `false` (explicit override) |
 
+**Disabled illuminate repository models**: Repositories 365, 413, and 428 are
+disabled in `models/illuminate/dlt/staging/repositories/properties.yml`. Check
+this file before adding new `ref()` calls to `int_illuminate__repository_data`.
+
 **Schema overrides**: `extracts/tableau/` sets `+schema: tableau`, so
 `rpt_tableau__*` models land in `kipptaf_tableau`, not `kipptaf_extracts`.
 `extracts/` itself uses `+schema: extracts`.

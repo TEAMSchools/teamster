@@ -111,6 +111,12 @@ trunk fmt
 **required** in SELECT clauses, single quotes for literals, max line length 88.
 Do not flag code that follows these rules.
 
+### BigQuery MCP Queries
+
+The BigQuery MCP tool truncates results at 50 rows. When querying
+`INFORMATION_SCHEMA.COLUMNS` for tables with >50 columns, paginate with
+`WHERE ordinal_position > N` to get all rows.
+
 ## Documentation
 
 Two documentation systems serve different audiences — do not conflate them:

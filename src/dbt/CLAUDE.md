@@ -114,8 +114,27 @@ data_tests:
   `INFORMATION_SCHEMA.COLUMNS` and keep YAML in sync (see
   [#3431](https://github.com/TEAMSchools/teamster/issues/3431),
   [#3461](https://github.com/TEAMSchools/teamster/issues/3461)).
+- **`dbt_utils.get_relations_by_prefix`**: Do not use. It queries the BigQuery
+  catalog at compile time to discover tables, which fails in dbt Cloud CI
+  (`--defer`) because the PR schema is empty. Use `dbt_utils.union_relations`
+  with explicit `ref()` calls instead.
 - **Filter conditions in `ON` vs `WHERE`**: Row-filter conditions on the
   preserved table belong in `WHERE`, not `ON` (except `FULL JOIN`).
+
+### SQL column ordering in SELECT clauses
+
+Columns within a SELECT must follow this order:
+
+1. Column enumerations (plain refs), grouped by source table in join order,
+   separated by a blank line between each table's group
+2. Simple functions (`coalesce(...)`, simple `if(...)`)
+3. Nested functions
+4. Logicals (`if(condition, true, false)`)
+5. Case statements
+6. Window functions (`row_number() over (...)`)
+
+When a SELECT reads from a single table/CTE, do not prefix columns with the
+alias.
 
 ### Documentation
 
