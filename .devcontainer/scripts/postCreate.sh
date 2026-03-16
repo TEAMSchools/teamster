@@ -31,8 +31,16 @@ uv tool install dbt-mcp
 uv sync --frozen
 
 # install MCP toolbox
-curl -O https://storage.googleapis.com/genai-toolbox/v0.29.0/linux/amd64/toolbox
-echo "8cb1cacbbaccf0940926643482d20e3b02efba80d1c93eafb4342079b1ebee95  toolbox" | sha256sum -c -
+curl --fail -O https://storage.googleapis.com/genai-toolbox/v0.29.0/linux/amd64/toolbox ||
+  {
+    echo "❌ MCP toolbox download failed"
+    exit 1
+  }
+echo "8cb1cacbbaccf0940926643482d20e3b02efba80d1c93eafb4342079b1ebee95  toolbox" | sha256sum -c - ||
+  {
+    echo "❌ MCP toolbox checksum mismatch"
+    exit 1
+  }
 chmod +x toolbox
 sudo mv toolbox /usr/local/bin/
 

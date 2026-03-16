@@ -8,8 +8,10 @@
       "Bash(trunk fmt:*)",
       "Bash(uv run dagster:*)",
       "Bash(uv run pytest:*)",
-      "Bash(uv tool:*)",
-      "Read(/workspaces/teamster/src/**)",
+      "Bash(uv run scripts:*)",
+      "Bash(uv tool list:*)",
+      "Bash(uv tool run:*)",
+      "Read(/workspaces/teamster/**)",
       "Read(~/.claude/plugins/**)",
       "WebFetch(domain:docs.dagster.io)",
       "WebFetch(domain:github.com)",
@@ -32,12 +34,12 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "Read|Edit|Write",
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'if [[ \"{file_path}\" =~ (\\.env|\\.ssh|secrets\\.json|credentials\\.json|\\.pem$|\\.key$|secret-volume|inject-secrets) ]]; then echo \"❌ Cannot edit sensitive file: {file_path}\"; exit 1; fi'",
-            "statusMessage": "Checking if file is safe to edit..."
+            "command": "bash -c 'if [[ \"{file_path}\" =~ (\\.env|\\.ssh|secrets\\.json|credentials\\.json|\\.pem$|\\.key$|secret-volume|inject-secrets) ]]; then echo \"❌ Cannot access sensitive file: {file_path}\"; exit 1; fi'",
+            "statusMessage": "Checking if file is safe to access..."
           }
         ]
       }

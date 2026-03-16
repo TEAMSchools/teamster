@@ -4,12 +4,12 @@
       "command": "/usr/local/bin/toolbox",
       "args": ["--prebuilt", "bigquery", "--stdio"],
       "env": {
-        "GOOGLE_APPLICATION_CREDENTIALS": "/home/vscode/.config/gcloud/application_default_credentials.json",
+        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json",
         "BIGQUERY_PROJECT": "teamster-332318"
       }
     },
     "dbt": {
-      "command": "/home/vscode/.local/bin/dbt-mcp",
+      "command": "dbt-mcp",
       "args": [],
       "env": {
         "DBT_PROJECT_DIR": "/workspaces/teamster/src/dbt/kipptaf",
