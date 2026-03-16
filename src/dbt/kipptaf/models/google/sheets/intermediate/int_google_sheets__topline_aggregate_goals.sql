@@ -1,5 +1,21 @@
 select
-    g.*,
+    g.layer,
+    g.topline_indicator,
+    g.goal_type,
+    g.entity,
+    g.schoolid,
+    g.grade_low,
+    g.grade_high,
+    g.org_level,
+    g.has_goal,
+    g.aggregation_type,
+    g.goal_direction,
+    g.goal,
+    g.aggregation_hash,
+    g.indicator_display,
+    g.discipline,
+    g.aggregation_data_type,
+    g.grade_band,
 
     case
         when g.layer = 'Outstanding Teammates' and g.org_level = 'org'

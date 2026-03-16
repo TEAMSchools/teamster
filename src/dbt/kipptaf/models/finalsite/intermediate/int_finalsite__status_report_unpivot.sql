@@ -58,7 +58,24 @@ with
     )
 
 select
-    u.*,
+    u._dagster_partition_key,
+    u.region,
+    u.assigned_school,
+    u.finalsite_enrollment_id,
+    u.powerschool_student_number,
+    u.first_name,
+    u.last_name,
+    u.grade_level,
+    u.enrollment_type,
+    u.self_contained,
+    u.gender,
+    u.birthdate,
+    u.enrollment_academic_year,
+    u.enrollment_academic_year_display,
+    u.fs_status_field,
+    u.status_start_date,
+    u.file_year,
+    u.detailed_status,
 
     'KTAF' as org,
 
