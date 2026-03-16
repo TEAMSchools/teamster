@@ -68,9 +68,9 @@ with
         from {{ source("kippadb", "enrollment") }} as e
         left join
             {{ ref("stg_google_sheets__kippadb__nsc_crosswalk") }} as n
-            on id = n.account_id
+            on e.id = n.account_id
             and n.rn_account = 1
-        where not isdeleted
+        where not e.isdeleted
     )
 
 select
