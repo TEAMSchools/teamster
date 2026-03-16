@@ -14,8 +14,10 @@ select
     asr.raw_score,
     asr.raw_score_mastered,
     asr.raw_score_possible,
+
     arg.performance_band_set_id,
     arg.sort_order,
+
     rg.label,
 from {{ ref("stg_illuminate__dna_assessments__agg_student_responses_group") }} as asr
 inner join

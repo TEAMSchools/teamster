@@ -50,6 +50,7 @@ select
     st.qualified_marine_corps,
     st.qualified_navy,
     st.total_qualified_military_branches,
+
     c.school_specific_id,
 from {{ ref("stg_kippadb__standardized_test") }} as st
 inner join {{ ref("stg_kippadb__contact") }} as c on st.contact = c.id

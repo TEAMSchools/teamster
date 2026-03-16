@@ -18,6 +18,7 @@ select
     ldap.idauto_status,
     ldap.sn,
     ldap.title,
+
     lc.powerschool_school_id,
     lc.dagster_code_location,
 from {{ ref("stg_ldap__user_person") }} as ldap
