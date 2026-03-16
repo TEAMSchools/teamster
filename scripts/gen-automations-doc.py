@@ -154,6 +154,11 @@ def _row(*cells: str) -> str:
 
 def generate() -> None:
     lines = [
+        "---",
+        "hide:",
+        "  - navigation",
+        "---",
+        "",
         "# Automations Catalog",
         "",
         "All schedules and sensors across every Dagster code location.",

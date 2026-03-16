@@ -27,11 +27,33 @@ Required resources at runtime:
 
 ## Parameters
 
-| Parameter            | Purpose                                                         |
-| -------------------- | --------------------------------------------------------------- |
-| `query_config`       | `{"type": "text"\|"file"\|"schema", "value": ...}`              |
-| `file_config`        | `{"stem": ..., "suffix": "csv"\|"json"\|"json.gz"\|"tsv", ...}` |
-| `destination_config` | `{"name": "<ssh_key_suffix>", "path": "<remote_dir>"}`          |
+| Parameter              | Purpose                                                              |
+| ---------------------- | -------------------------------------------------------------------- |
+| `query_config`         | `{"type": "text"\|"file"\|"schema", "value": ...}`                   |
+| `file_config`          | `{"stem": ..., "suffix": "csv"\|"json"\|"json.gz"\|"tsv", ...}`      |
+| `destination_config`   | `{"name": "<ssh_key_suffix>", "path": "<remote_dir>"}`               |
+| `partitions_def`       | Optional `PartitionsDefinition`; asset is unpartitioned by default   |
+| `automation_condition` | Optional override; defaults to `None` (no condition)                 |
+| `deps`                 | Optional explicit dep list; overrides the default table-name dep key |
 
 File stems support `{today}` and `{now}` substitutions (and partition dimension
 names for partitioned assets).
+
+## Overriding deps and automation_condition
+
+By default the asset's only Dagster dep is inferred from `query_config` — the
+BigQuery table name becomes `AssetKey([code_location, "extracts", table_name])`.
+
+Pass explicit `deps` to wire in additional upstream assets (e.g., a staging
+table that is the true data source) or to bypass intermediate VIEW assets that
+would otherwise fan out cross-partition updates. Pass `automation_condition` to
+enable reactive triggering (typically `AutomationCondition.eager()`).
+
+Example — `intacct_extract` deps rationale:
+
+- `stg_adp_payroll__general_ledger_file` (TABLE, partitioned) — partition-aware;
+  updates one partition at a time
+- `rpt_gsheets__intacct_integration_file` (VIEW, same partitions) — partition-
+  aware; triggers when the VIEW model code changes
+- `stg_google_sheets__finance__payroll_code_mapping` (TABLE, non-partitioned) —
+  fans out to ALL extract partitions when the mapping table refreshes

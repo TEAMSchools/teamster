@@ -31,6 +31,21 @@ For `materialized: table` models. Triggers on everything above, plus:
 The recursive traversal means a table asset will re-run when any upstream table
 materializes, even if the direct dependency is a chain of views.
 
+## Non-dbt partitioned assets
+
+Non-dbt assets (e.g., BigQuery→SFTP extracts) use `AutomationCondition.eager()`
+directly when they need reactive triggering. Two important behaviors when a
+partitioned asset has mixed dep types:
+
+- **Partitioned dep** (same `PartitionsDefinition`): updating partition `X`
+  triggers only partition `X` of the downstream asset.
+- **Non-partitioned dep**: any update fans out to **all** partitions of the
+  downstream asset.
+
+This means wiring a non-partitioned lookup table as a dep is intentional but has
+cost — every refresh of that table triggers a full re-extract across all
+partitions. Design accordingly.
+
 ## The "Unsynced" indicator
 
 When an upstream table materializes, directly-dependent view assets show as

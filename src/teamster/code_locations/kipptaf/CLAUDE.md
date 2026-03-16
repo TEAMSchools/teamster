@@ -16,7 +16,7 @@ GCS bucket: `teamster-kipptaf`
 
 | Module                   | Assets                                                    | Schedules                  | Sensors                 |
 | ------------------------ | --------------------------------------------------------- | -------------------------- | ----------------------- |
-| `dbt`                    | 4 asset groups (see below)                                | —                          | —                       |
+| `dbt`                    | 3 asset groups (see below)                                | —                          | —                       |
 | `dlt`                    | Illuminate (active), Salesforce (WIP), Zendesk (disabled) | daily + hourly             | —                       |
 | `google`                 | Directory, Forms, AppSheet specs, Sheets specs            | directory, forms           | bigquery, forms, sheets |
 | `adp`                    | payroll SFTP + WFN API (WFM disabled)                     | WFN schedule               | WFN + payroll sensors   |
@@ -40,15 +40,14 @@ GCS bucket: `teamster-kipptaf`
 
 ## dbt Asset Groups (`dbt/assets.py`)
 
-Kipptaf splits dbt into **four separate asset groups** with different resource
+Kipptaf splits dbt into **three separate asset groups** with different resource
 requirements and selection criteria:
 
-| Asset variable            | `select`              | `exclude`                                       | Notes                       |
-| ------------------------- | --------------------- | ----------------------------------------------- | --------------------------- |
-| `core_dbt_assets`         | `fqn:*`               | `source:adp_payroll+ tag:google_sheet extracts` | Main run, 2000m CPU         |
-| `reporting_dbt_assets`    | `extracts`            | `source:adp_payroll+`                           | Reporting extracts, 1750m   |
-| `google_sheet_dbt_assets` | `tag:google_sheet`    | —                                               | Google Sheet-tagged models  |
-| `adp_payroll_dbt_assets`  | `source:adp_payroll+` | —                                               | Partitioned by payroll file |
+| Asset variable            | `select`              | `exclude`                              | Notes                                         |
+| ------------------------- | --------------------- | -------------------------------------- | --------------------------------------------- |
+| `core_dbt_assets`         | `fqn:*`               | `source:adp_payroll+ tag:google_sheet` | Main run, 2000m CPU                           |
+| `google_sheet_dbt_assets` | `tag:google_sheet`    | —                                      | Separate to isolate brittle gsheet deps       |
+| `adp_payroll_dbt_assets`  | `source:adp_payroll+` | —                                      | Partitioned by payroll file; cannot be merged |
 
 `core_dbt_assets` is the one used by `TableauServerResource` dependencies
 (imported as `core_dbt_assets` from `kipptaf.dbt.assets`).

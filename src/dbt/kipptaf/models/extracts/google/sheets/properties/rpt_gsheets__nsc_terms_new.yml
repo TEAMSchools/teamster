@@ -2,9 +2,10 @@ models:
   - name: rpt_gsheets__nsc_terms_new
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - enrollment__c
-            - term_start_date__c
+          arguments:
+            combination_of_columns:
+              - enrollment__c
+              - term_start_date__c
           config:
             store_failures: true
     columns:

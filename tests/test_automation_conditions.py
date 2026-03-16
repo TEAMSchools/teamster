@@ -1,9 +1,12 @@
 import pytest
 from dagster import (
     AssetKey,
+    AssetSpec,
     AutomationCondition,
     DagsterInstance,
     Definitions,
+    SourceAsset,
+    StaticPartitionsDefinition,
     asset,
     evaluate_automation_conditions,
     materialize,
@@ -157,8 +160,6 @@ def test_table_code_version_change_without_intermediate_materialization():
 
 def test_table_not_blocked_by_external_source_asset():
     """Tables should NOT be blocked by unmaterialized external source assets."""
-    from dagster import AssetSpec, SourceAsset
-
     external_source = SourceAsset(key="external_feed")
 
     @asset(
@@ -430,8 +431,6 @@ def test_view_not_blocked_by_external_source_asset():
     - The current condition (with ignore) works correctly
     - eager() (without ignore) would block the view
     """
-    from dagster import AssetSpec, SourceAsset
-
     external_source = SourceAsset(key="external_feed")
 
     @asset(
@@ -459,8 +458,6 @@ def test_view_blocked_by_external_source_without_ignore():
     unfiltered any_deps_missing(), the view should be blocked when the
     external source has no materialization/observation records.
     """
-    from dagster import AssetSpec, SourceAsset
-
     external_source = SourceAsset(key="external_feed")
 
     @asset(
@@ -804,40 +801,36 @@ class TestKipptafDbtAssets:
 
     @pytest.fixture(scope="class")
     def all_dbt_assets(self):
-        from teamster.code_locations.kipptaf.dbt.assets import all_dbt_assets
+        from teamster.code_locations.kipptaf.dbt.assets import assets
 
-        return all_dbt_assets
-
-    @pytest.fixture(scope="class")
-    def specs_by_key(self, all_dbt_assets):
-        return {s.key: s for s in all_dbt_assets.specs}
+        return assets
 
     @pytest.fixture(scope="class")
-    def view_specs(self, all_dbt_assets):
-        return [
-            s
-            for s in all_dbt_assets.specs
-            if s.tags.get("dagster/materialized") == "view"
-        ]
+    def all_specs(self, all_dbt_assets):
+        return [s for asset_def in all_dbt_assets for s in asset_def.specs]
 
     @pytest.fixture(scope="class")
-    def table_specs(self, all_dbt_assets):
-        return [
-            s
-            for s in all_dbt_assets.specs
-            if s.tags.get("dagster/materialized") == "table"
-        ]
+    def specs_by_key(self, all_specs):
+        return {s.key: s for s in all_specs}
 
-    def test_all_models_tagged_with_materialized(self, all_dbt_assets):
+    @pytest.fixture(scope="class")
+    def view_specs(self, all_specs):
+        return [s for s in all_specs if s.tags.get("dagster/materialized") == "view"]
+
+    @pytest.fixture(scope="class")
+    def table_specs(self, all_specs):
+        return [s for s in all_specs if s.tags.get("dagster/materialized") == "table"]
+
+    def test_all_models_tagged_with_materialized(self, all_specs):
         """Every dbt model spec should have a dagster/materialized tag."""
-        for spec in all_dbt_assets.specs:
+        for spec in all_specs:
             assert "dagster/materialized" in spec.tags, (
                 f"{spec.key} missing dagster/materialized tag"
             )
 
-    def test_materialized_tag_values(self, view_specs, table_specs, all_dbt_assets):
+    def test_materialized_tag_values(self, view_specs, table_specs, all_specs):
         """The materialized tag should only contain known dbt materialization values."""
-        all_values = {s.tags["dagster/materialized"] for s in all_dbt_assets.specs}
+        all_values = {s.tags["dagster/materialized"] for s in all_specs}
         known = {"view", "table", "incremental", "ephemeral", "seed", "snapshot"}
         assert all_values <= known, (
             f"Unexpected materialized values: {all_values - known}"
@@ -872,7 +865,7 @@ class TestKipptafDbtAssets:
         )
 
     def test_view_selection_matches_view_tagged_specs(
-        self, all_dbt_assets, view_specs, table_specs
+        self, all_specs, view_specs, table_specs
     ):
         """The dagster/materialized tag should cleanly separate views from tables.
 
@@ -886,11 +879,11 @@ class TestKipptafDbtAssets:
             "No asset should be tagged as both view and table"
         )
 
-        all_keys = {s.key for s in all_dbt_assets.specs}
+        all_keys = {s.key for s in all_specs}
         tagged_keys = view_keys | table_keys
         untagged = {
             s.key
-            for s in all_dbt_assets.specs
+            for s in all_specs
             if s.tags.get("dagster/materialized") not in ("view", "table")
         }
 
@@ -901,9 +894,7 @@ class TestKipptafDbtAssets:
 
         assert tagged_keys | untagged == all_keys
 
-    def test_table_view_table_chain_exists_in_kipptaf(
-        self, all_dbt_assets, specs_by_key
-    ):
+    def test_table_view_table_chain_exists_in_kipptaf(self, all_specs, specs_by_key):
         """Find and validate a real table→view→table chain in kipptaf.
 
         Searches the asset graph for a table whose dep is a view whose dep
@@ -911,7 +902,7 @@ class TestKipptafDbtAssets:
         """
         chain_found = False
 
-        for spec in all_dbt_assets.specs:
+        for spec in all_specs:
             if spec.tags.get("dagster/materialized") != "table":
                 continue
 
@@ -1419,3 +1410,249 @@ class TestKipptafChainTopologies:
             )
             == 1
         )
+
+
+def test_intacct_extract_not_triggered_by_people_update():
+    """adp_payroll_date_group_code_csv should NOT trigger when
+    int_people__staff_roster_history updates.
+
+    The extract's deps are stg_adp_payroll__general_ledger_file (TABLE),
+    rpt_gsheets__intacct_integration_file (VIEW), and
+    stg_google_sheets__finance__payroll_code_mapping (TABLE). People table
+    changes are not in that dep set and therefore invisible to the extract's
+    automation condition.
+    """
+    _PARTITIONS = StaticPartitionsDefinition(["2024-01-01", "2024-01-02"])
+
+    @asset(tags=_TABLE_TAG)
+    def int_people__staff_roster_history():
+        return 1
+
+    @asset(partitions_def=_PARTITIONS, tags=_TABLE_TAG)
+    def stg_adp_payroll__general_ledger_file():
+        return 2
+
+    @asset(tags=_TABLE_TAG)
+    def stg_google_sheets__finance__payroll_code_mapping():
+        return 3
+
+    # VIEW: depends on both tables but is NOT a direct dep of the extract
+    @asset(
+        deps=[stg_adp_payroll__general_ledger_file, int_people__staff_roster_history],
+        partitions_def=_PARTITIONS,
+        tags=_VIEW_TAG,
+    )
+    def rpt_gsheets__intacct_integration_file():
+        return 4
+
+    # Extract deps: staging TABLE + VIEW + mapping TABLE (but NOT people TABLE)
+    @asset(
+        deps=[
+            stg_adp_payroll__general_ledger_file,
+            rpt_gsheets__intacct_integration_file,
+            stg_google_sheets__finance__payroll_code_mapping,
+        ],
+        partitions_def=_PARTITIONS,
+        automation_condition=AutomationCondition.eager(),
+    )
+    def adp_payroll_date_group_code_csv():
+        return 5
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [
+        int_people__staff_roster_history,
+        stg_adp_payroll__general_ledger_file,
+        stg_google_sheets__finance__payroll_code_mapping,
+        rpt_gsheets__intacct_integration_file,
+        adp_payroll_date_group_code_csv,
+    ]
+    defs = Definitions(assets=all_assets)
+
+    # Stable baseline: materialize everything
+    materialize(
+        assets=[
+            int_people__staff_roster_history,
+            stg_google_sheets__finance__payroll_code_mapping,
+        ],
+        instance=instance,
+        selection=[
+            int_people__staff_roster_history,
+            stg_google_sheets__finance__payroll_code_mapping,
+        ],
+    )
+    for pk in ["2024-01-01", "2024-01-02"]:
+        materialize(
+            assets=[
+                stg_adp_payroll__general_ledger_file,
+                rpt_gsheets__intacct_integration_file,
+                adp_payroll_date_group_code_csv,
+            ],
+            instance=instance,
+            partition_key=pk,
+        )
+
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # Update people table — should NOT cascade to the extract
+    materialize(
+        assets=[int_people__staff_roster_history],
+        instance=instance,
+        selection=[int_people__staff_roster_history],
+    )
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("adp_payroll_date_group_code_csv")) == 0
+
+
+def test_intacct_extract_partition_aware_on_payroll_update():
+    """Updating one partition of stg_adp_payroll__general_ledger_file triggers
+    only the matching partition of adp_payroll_date_group_code_csv, not all
+    partitions.
+    """
+    _PARTITIONS = StaticPartitionsDefinition(["2024-01-01", "2024-01-02"])
+
+    @asset(partitions_def=_PARTITIONS, tags=_TABLE_TAG)
+    def stg_adp_payroll__general_ledger_file():
+        return 1
+
+    @asset(partitions_def=_PARTITIONS, tags=_VIEW_TAG)
+    def rpt_gsheets__intacct_integration_file():
+        return 2
+
+    @asset(tags=_TABLE_TAG)
+    def stg_google_sheets__finance__payroll_code_mapping():
+        return 3
+
+    @asset(
+        deps=[
+            stg_adp_payroll__general_ledger_file,
+            rpt_gsheets__intacct_integration_file,
+            stg_google_sheets__finance__payroll_code_mapping,
+        ],
+        partitions_def=_PARTITIONS,
+        automation_condition=AutomationCondition.eager(),
+    )
+    def adp_payroll_date_group_code_csv():
+        return 4
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [
+        stg_adp_payroll__general_ledger_file,
+        rpt_gsheets__intacct_integration_file,
+        stg_google_sheets__finance__payroll_code_mapping,
+        adp_payroll_date_group_code_csv,
+    ]
+    defs = Definitions(assets=all_assets)
+
+    # Stable baseline: materialize all partitions + mapping table
+    materialize(
+        assets=[stg_google_sheets__finance__payroll_code_mapping],
+        instance=instance,
+        selection=[stg_google_sheets__finance__payroll_code_mapping],
+    )
+    for pk in ["2024-01-01", "2024-01-02"]:
+        materialize(
+            assets=[
+                stg_adp_payroll__general_ledger_file,
+                rpt_gsheets__intacct_integration_file,
+                adp_payroll_date_group_code_csv,
+            ],
+            instance=instance,
+            partition_key=pk,
+        )
+
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # Update only the "2024-01-01" partition of the staging table
+    materialize(
+        assets=[stg_adp_payroll__general_ledger_file],
+        instance=instance,
+        partition_key="2024-01-01",
+    )
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    # Exactly 1 partition requested — not both
+    assert result.get_num_requested(AssetKey("adp_payroll_date_group_code_csv")) == 1
+
+
+def test_intacct_extract_all_partitions_on_mapping_update():
+    """Updating stg_google_sheets__finance__payroll_code_mapping (non-partitioned)
+    fans out to ALL partitions of adp_payroll_date_group_code_csv.
+
+    The mapping table is non-partitioned; when it updates, eager() on the
+    partitioned extract treats it as a cross-partition dependency change and
+    requests every partition.
+    """
+    _PARTITIONS = StaticPartitionsDefinition(["2024-01-01", "2024-01-02"])
+
+    @asset(partitions_def=_PARTITIONS, tags=_TABLE_TAG)
+    def stg_adp_payroll__general_ledger_file():
+        return 1
+
+    @asset(partitions_def=_PARTITIONS, tags=_VIEW_TAG)
+    def rpt_gsheets__intacct_integration_file():
+        return 2
+
+    @asset(tags=_TABLE_TAG)
+    def stg_google_sheets__finance__payroll_code_mapping():
+        return 3
+
+    @asset(
+        deps=[
+            stg_adp_payroll__general_ledger_file,
+            rpt_gsheets__intacct_integration_file,
+            stg_google_sheets__finance__payroll_code_mapping,
+        ],
+        partitions_def=_PARTITIONS,
+        automation_condition=AutomationCondition.eager(),
+    )
+    def adp_payroll_date_group_code_csv():
+        return 4
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [
+        stg_adp_payroll__general_ledger_file,
+        rpt_gsheets__intacct_integration_file,
+        stg_google_sheets__finance__payroll_code_mapping,
+        adp_payroll_date_group_code_csv,
+    ]
+    defs = Definitions(assets=all_assets)
+
+    # Stable baseline: materialize all partitions + mapping table
+    materialize(
+        assets=[stg_google_sheets__finance__payroll_code_mapping],
+        instance=instance,
+        selection=[stg_google_sheets__finance__payroll_code_mapping],
+    )
+    for pk in ["2024-01-01", "2024-01-02"]:
+        materialize(
+            assets=[
+                stg_adp_payroll__general_ledger_file,
+                rpt_gsheets__intacct_integration_file,
+                adp_payroll_date_group_code_csv,
+            ],
+            instance=instance,
+            partition_key=pk,
+        )
+
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # Update the non-partitioned mapping table
+    materialize(
+        assets=[stg_google_sheets__finance__payroll_code_mapping],
+        instance=instance,
+        selection=[stg_google_sheets__finance__payroll_code_mapping],
+    )
+
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor
+    )
+    # All 2 partitions requested — fan-out from non-partitioned dep
+    assert result.get_num_requested(AssetKey("adp_payroll_date_group_code_csv")) == 2

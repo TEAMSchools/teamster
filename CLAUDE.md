@@ -32,8 +32,9 @@ Always use them before doing relevant work:
 
 ## Working Conventions
 
-- **Python execution**: Always use `uv run` — never bare `python` or `python3`.
-  The project environment is managed by uv.
+- **Python execution**: Always use `uv run` — never bare `python` or `python3`,
+  including inline one-liners (`uv run python -c "..."`, not
+  `python3 -c "..."`). The project environment is managed by uv.
 - **Git commits**: Do not commit proactively — ask first when a change is
   complete, tests are passing, and it is ready to commit, then commit if
   confirmed. Commits should have descriptive messages following the
@@ -93,33 +94,9 @@ uv run pytest tests/assets/test_assets_dbt.py
 
 ### Linting
 
-Linting is managed via [Trunk](https://trunk.io). Configuration lives in
-`.trunk/trunk.yaml` (enabled linters) and `.trunk/config/` (per-linter config
-files).
-
-Enabled linters:
-
-| Linter           | Config file                        | Scope                        |
-| ---------------- | ---------------------------------- | ---------------------------- |
-| `ruff`           | `.trunk/config/ruff.toml`          | Python (`src/teamster/`)     |
-| `pyright`        | `.trunk/config/pyrightconfig.json` | Python (excl. `dlt_sources`) |
-| `isort`          | `.trunk/config/.isort.cfg`         | Python                       |
-| `bandit`         | `.trunk/config/.bandit`            | Python                       |
-| `sqlfluff`       | `.trunk/config/.sqlfluff`          | SQL (`src/dbt/`)             |
-| `sqlfmt`         | —                                  | SQL (`src/dbt/`)             |
-| `prettier`       | `.trunk/config/.prettierrc.yaml`   | YAML, JSON, Markdown, etc.   |
-| `yamllint`       | `.trunk/config/.yamllint`          | YAML                         |
-| `markdownlint`   | `.trunk/config/.markdownlint.yaml` | Markdown                     |
-| `hadolint`       | `.trunk/config/.hadolint.yaml`     | Dockerfiles                  |
-| `shellcheck`     | `.trunk/config/.shellcheckrc`      | Shell scripts                |
-| `shfmt`          | —                                  | Shell scripts                |
-| `actionlint`     | —                                  | GitHub Actions workflows     |
-| `taplo`          | —                                  | TOML                         |
-| `gitleaks`       | —                                  | Secrets scanning             |
-| `osv-scanner`    | —                                  | Dependency vulnerabilities   |
-| `oxipng`         | —                                  | PNG optimization             |
-| `svgo`           | `.trunk/config/svgo.config.js`     | SVG optimization             |
-| `git-diff-check` | —                                  | Merge conflict markers       |
+Linting is managed via [Trunk](https://trunk.io) and enforced by a pre-commit
+hook. See `.trunk/trunk.yaml` for the full list of enabled linters and
+`.trunk/config/` for per-linter configuration files.
 
 ```bash
 # Check all files
@@ -294,32 +271,11 @@ Kubernetes with secrets mounted at `/etc/secret-volume`.
 - Fiscal year starts July 1; `current_academic_year` and `current_fiscal_year`
   vars are set in `dbt_project.yml`
 
-**Model quality requirements** (enforced in all dbt projects):
-
-| Layer                         | Contract | Uniqueness test                                                            |
-| ----------------------------- | -------- | -------------------------------------------------------------------------- |
-| Staging (`stg_`)              | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-| Intermediate (`int_`)         | —        | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-| Reporting views (`rpt_`)      | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-| Data mart (`dim_*` / `fct_*`) | required | `unique:` on a single column, or `dbt_utils.unique_combination_of_columns` |
-
-`contract: enforced: true` and `materialized: table` are set at the **directory
-level** in `dbt_project.yml` for all integration `staging/` directories, and
-`contract: enforced: true` for `extracts/` and `marts/`. Do not repeat these
-per-model — they are already inherited. Contract enforcement is critical for
-extracts/marts: these models feed external tools via dbt
-[exposures](https://docs.getdbt.com/reference/exposure-properties) (Tableau,
-PowerSchool, Google Sheets, etc.) and unguarded schema changes will break
-downstream consumers.
-
-**`base_` prefix**: Legacy — do not use. Existing `base_` models are being
-renamed to `int_` (see
-[#2541](https://github.com/TEAMSchools/teamster/issues/2541)).
+For model quality requirements (contract enforcement, uniqueness tests, SQL
+antipatterns), see `src/dbt/CLAUDE.md`. For kipptaf-specific inherited defaults
+and exposure YAML reference, see `src/dbt/kipptaf/CLAUDE.md`.
 
 **Exposures**: Every external tool consuming data from a dbt project must have a
 dbt exposure in that project's `models/exposures/` directory listing all
 `depends_on` models. School-specific projects (`kippnewark`, `kippcamden`,
-`kippmiami`) require exposures for their PowerSchool extracts. Tableau workbooks
-may include `asset.metadata` with the workbook LSID (`id`); add `cron_schedule`
-only when Dagster manages the refresh. See `src/dbt/kipptaf/CLAUDE.md` for the
-full YAML reference.
+`kippmiami`) require exposures for their PowerSchool extracts.
