@@ -41,7 +41,8 @@ from those packages at run time. School-specific PowerSchool data is sourced
 from multiple `sources-kipp*.yml` files.
 
 **Marts layer** (`models/marts/`): Dimensional models (`dim_*`, `fct_*`) used by
-Tableau. All have `contract: enforced: true`. Key models:
+Tableau and the **Cube** semantic layer. All have `contract: enforced: true`.
+Key models:
 
 - `dim_students`, `dim_staff`, `dim_locations`, `dim_terms`, `dim_dates`,
   `dim_seats`
