@@ -111,11 +111,13 @@ the documentation mechanism for that work.
 
 ## Architecture
 
-**Before working on Dagster code**, read `src/teamster/CLAUDE.md` for
-architecture, library patterns, and code location structure.
+**IMPORTANT — you MUST read the relevant CLAUDE.md files before doing any work.
+Do NOT skip this step, even if you think you can answer from source code
+alone.**
 
-**Before working on dbt models**, read `src/dbt/CLAUDE.md` for project
-structure, model conventions, and SQL standards.
+- Working on **Dagster code** → read `src/teamster/CLAUDE.md` first
+- Working on **dbt models** → read `src/dbt/CLAUDE.md` first
+- Working in **any subdirectory** → read that directory's CLAUDE.md first
 
-Each subdirectory has its own CLAUDE.md — read it before modifying code in that
-directory.
+These files contain conventions, antipatterns, and architectural decisions that
+are not discoverable from source code.
