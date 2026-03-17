@@ -10,62 +10,6 @@ Camden, and Paterson, NJ & Miami, FL) built on **Dagster** (orchestration),
 **dbt** (transformations), and **Google BigQuery** (warehouse), with Google
 Cloud Storage (GCS) as the intermediate storage layer.
 
-## Skills
-
-This project has specialized skills that provide deep framework knowledge.
-Always use them before doing relevant work:
-
-### Framework Skills
-
-- **`/dagster-expert`** — Use before any Dagster task: creating assets,
-  schedules, sensors, resources, debugging pipeline issues, or understanding
-  definitions
-- **`/dbt:using-dbt-for-analytics-engineering`** — Use when building or
-  modifying dbt models, writing tests, or debugging dbt errors
-- **`/dbt:running-dbt-commands`** — Use when running dbt CLI commands
-- **`/dbt:adding-dbt-unit-test`** — Use when adding unit tests for a dbt model
-- **`/dbt:troubleshooting-dbt-job-errors`** — Use when diagnosing dbt job
-  failures or unclear error messages
-- **`/dbt:fetching-dbt-docs`** — Use when looking up dbt features or
-  documentation
-- **`/dignified-python`** + **`/simplify`** — Run together after substantial
-  Python changes to enforce production quality standards and review for reuse,
-  quality, and efficiency. Skip for minor or isolated edits.
-
-### Superpowers (general development workflows)
-
-- **`/superpowers:test-driven-development`** — Use when implementing any feature
-  or bugfix, before writing implementation code
-- **`/superpowers:systematic-debugging`** — Use when encountering any bug, test
-  failure, or unexpected behavior, before proposing fixes
-- **`/superpowers:writing-plans`** — Use when given a spec or requirements for a
-  multi-step task, before touching code
-- **`/superpowers:executing-plans`** — Use when executing a written
-  implementation plan in a separate session with review checkpoints
-- **`/superpowers:verification-before-completion`** — Use before claiming work
-  is complete or fixed, before committing or opening PRs; run verification
-  commands and confirm output before making success claims
-- **`/superpowers:requesting-code-review`** — Use when completing tasks or
-  implementing major features, before merging
-- **`/superpowers:receiving-code-review`** — Use when receiving code review
-  feedback, before implementing suggestions
-- **`/superpowers:dispatching-parallel-agents`** — Use when facing 2+
-  independent problems (e.g. multiple unrelated bugs) that can run
-  _concurrently_ with no shared state, no plan required, and no review gates
-- **`/superpowers:finishing-a-development-branch`** — Use when implementation is
-  complete and all tests pass, to decide how to integrate the work
-- **`/superpowers:subagent-driven-development`** — Use when executing a written
-  implementation plan in the current session; agents run _sequentially_ one task
-  at a time, with a two-stage spec + quality review after each
-- **`/superpowers:using-git-worktrees`** — Use when starting feature work that
-  needs isolation from the current workspace
-
-### CLAUDE.md Maintenance
-
-- **`/claude-md-management:claude-md-improver`** — Use when asked to audit,
-  improve, or update CLAUDE.md files; scans all CLAUDE.md files, scores quality,
-  and makes targeted improvements
-
 ## Working Conventions
 
 - **Python execution**: Always use `uv run` — never bare `python` or `python3`,
@@ -130,17 +74,8 @@ uv run pytest tests/assets/test_assets_dbt.py
 
 ### Linting
 
-Linting is managed via [Trunk](https://trunk.io) and enforced by a pre-commit
-hook. See `.trunk/trunk.yaml` for the full list of enabled linters and
+See `.trunk/trunk.yaml` for the full list of enabled linters and
 `.trunk/config/` for per-linter configuration files.
-
-```bash
-# Check all files
-trunk check
-
-# Auto-format all files
-trunk fmt
-```
 
 **SQL style**: Before writing, reviewing, or commenting on SQL, read
 `.trunk/config/.sqlfluff`. Key enforced rules: BigQuery dialect, trailing commas
@@ -175,149 +110,11 @@ the documentation mechanism for that work.
 
 ## Architecture
 
-### Repository Structure
+**Before working on Dagster code**, read `src/teamster/CLAUDE.md` for
+architecture, library patterns, and code location structure.
 
-Each code location and library directory contains its own `CLAUDE.md` with
-context specific to that module (active integrations, resource instances, asset
-groups, etc.). Read the relevant `CLAUDE.md` before working in a specific code
-location or library.
+**Before working on dbt models**, read `src/dbt/CLAUDE.md` for project
+structure, model conventions, and SQL standards.
 
-```text
-src/
-  teamster/               # Dagster project (Python package)
-    __init__.py           # GCS_PROJECT_NAME constant
-    core/                 # Shared infrastructure (CLAUDE.md)
-      resources.py        # Shared resource instances (BigQuery, GCS, SSH, dbt, IO managers)
-      io_managers/        # Custom GCS IO managers (pickle, avro, file)
-      utils/              # Utility classes (FiscalYear, partitions, JSON encoder)
-    libraries/            # Reusable asset builders and resource definitions
-      adp/                # ADP Workforce Now + WFM (CLAUDE.md)
-      airbyte/            # Airbyte Cloud (CLAUDE.md)
-      alchemer/           # Alchemer survey API (CLAUDE.md)
-      amplify/            # Amplify reading platform (CLAUDE.md)
-      collegeboard/       # College Board SFTP (CLAUDE.md)
-      couchdrop/          # CouchDrop SFTP sensor (CLAUDE.md)
-      coupa/              # Coupa procurement API (CLAUDE.md)
-      dayforce/           # Dayforce HCM (CLAUDE.md)
-      dbt/                # dbt asset builder: build_dbt_assets (CLAUDE.md)
-      deanslist/          # Deanslist API (CLAUDE.md)
-      dlt/                # DLT pipeline assets (CLAUDE.md)
-      edplan/             # EdPlan SFTP (CLAUDE.md)
-      email/              # Email/SMTP (CLAUDE.md)
-      extracts/           # BigQuery→SFTP extract assets (CLAUDE.md)
-      finalsite/          # Finalsite CMS (CLAUDE.md)
-      fivetran/           # Fivetran connectors (CLAUDE.md)
-      fldoe/              # Florida DOE (CLAUDE.md)
-      google/             # Google Drive, Forms, Sheets, Directory (CLAUDE.md)
-      iready/             # iReady assessment platform (CLAUDE.md)
-      knowbe4/            # KnowBe4 security training API (CLAUDE.md)
-      ldap/               # LDAP directory (CLAUDE.md)
-      level_data/         # LevelData Grow API (CLAUDE.md)
-      nsc/                # National Student Clearinghouse SFTP (CLAUDE.md)
-      overgrad/           # Overgrad college counseling API (CLAUDE.md)
-      pearson/            # Pearson assessments (CLAUDE.md)
-      performance_management/ # PM SFTP assets (CLAUDE.md)
-      powerschool/        # PowerSchool SIS (ODBC via Oracle) and enrollment (CLAUDE.md)
-      renlearn/           # Renaissance Learning (CLAUDE.md)
-      sftp/               # Generic SFTP resource (CLAUDE.md)
-      smartrecruiters/    # SmartRecruiters ATS API (CLAUDE.md)
-      ssh/                # SSH tunnel resource (CLAUDE.md)
-      tableau/            # Tableau Server (CLAUDE.md)
-      titan/              # Titan school nutrition (CLAUDE.md)
-      zendesk/            # Zendesk support platform (CLAUDE.md)
-    code_locations/       # Per-school Dagster definitions
-      kipptaf/            # TAF (network-wide): the largest code location (CLAUDE.md)
-      kippnewark/         # (CLAUDE.md)
-      kippcamden/         # (CLAUDE.md)
-      kippmiami/          # (CLAUDE.md)
-      kipppaterson/       # (CLAUDE.md)
-  dbt/                    # dbt projects (one per data source or school network)
-    kipptaf/              # Main network-wide dbt project (CLAUDE.md)
-    kippnewark/           # School-specific dbt project
-    kippcamden/
-    kippmiami/
-    kipppaterson/
-    amplify/              # Source-system dbt projects
-    deanslist/
-    edplan/
-    finalsite/
-    iready/
-    overgrad/
-    pearson/
-    powerschool/
-    renlearn/
-    titan/
-```
-
-### Key Architectural Patterns
-
-**Subdirectory naming convention**: Within a code location, subdirectory names
-signal the type of integration:
-
-- `dbt/`, `dlt/`, `google/` — framework-integrated modules (Dagster-native
-  integrations with lifecycle managed by a Dagster library, e.g. `dagster-dbt`,
-  `dagster-dlt`)
-- `powerschool/`, `deanslist/`, etc. — direct integrations (custom asset
-  builders in `src/teamster/libraries/`)
-
-**Code Location Pattern**: Each school network has a `code_locations/<name>/`
-directory with:
-
-- `CLAUDE.md` — module-specific context (active integrations, resources, asset
-  groups); read this before working in a code location
-- `__init__.py` — defines `CODE_LOCATION`, `LOCAL_TIMEZONE`,
-  `CURRENT_FISCAL_YEAR`, `DBT_PROJECT`
-- `definitions.py` — the `Definitions` object wiring all assets, schedules,
-  sensors, resources
-- `resources.py` — code-location-specific resource instances
-- `dbt/` — dbt asset definitions (loads manifest, builds `dbt_assets`)
-- `dlt/` — DLT pipeline assets
-- `google/` — Google Workspace assets
-- Per-integration subdirectories (e.g., `powerschool/`, `deanslist/`)
-
-**Library + Config Pattern**: Integrations follow a two-layer pattern:
-
-1. `src/teamster/libraries/<integration>/assets.py` —
-   `build_<integration>_asset()` factory function
-2. `src/teamster/code_locations/<school>/<integration>/config/assets-*.yaml` —
-   YAML files listing asset parameters
-3. `src/teamster/code_locations/<school>/<integration>/assets.py` — calls the
-   factory with `config_from_files()` for each YAML
-
-**dbt Projects**: Each dbt project in `src/dbt/` corresponds to either a school
-network (`kipptaf`, `kippnewark`, etc.) or a data source (`powerschool`,
-`deanslist`, `renlearn`, etc.). School projects use `ref()` to pull from source
-projects. The `kipptaf` project is the main analytics layer with staging,
-intermediate, mart, and extract models.
-
-**IO Managers**: Assets store intermediate data to GCS buckets named
-`teamster-<code_location>`. Branch deployments automatically redirect to
-`teamster-test`. Three IO managers exist: `pickle` (default), `avro`, and
-`file`.
-
-**Asset Keys**: Follow the pattern `[code_location, integration, table_name]`
-(e.g., `kippnewark/powerschool/students`).
-
-**Dagster Cloud deployment**: Each code location has a `dagster-cloud.yaml` and
-is built as a separate Docker image using `CODE_LOCATION` build arg. Deployed to
-Kubernetes with secrets mounted at `/etc/secret-volume`.
-
-### dbt Project Conventions
-
-- Models follow `stg_` (staging), `int_` (intermediate), `rpt_` (reporting views
-  / extracts), `dim_*` / `fct_*` (data mart) prefixes
-- `src/dbt/kipptaf/` is the primary analytics project; school-specific projects
-  (`kippnewark`, etc.) contain school-specific extracts
-- dbt packages are vendored into `dbt_packages/` subdirectories within each
-  project
-- Fiscal year starts July 1; `current_academic_year` and `current_fiscal_year`
-  vars are set in `dbt_project.yml`
-
-For model quality requirements (contract enforcement, uniqueness tests, SQL
-antipatterns), see `src/dbt/CLAUDE.md`. For kipptaf-specific inherited defaults
-and exposure YAML reference, see `src/dbt/kipptaf/CLAUDE.md`.
-
-**Exposures**: Every external tool consuming data from a dbt project must have a
-dbt exposure in that project's `models/exposures/` directory listing all
-`depends_on` models. School-specific projects (`kippnewark`, `kippcamden`,
-`kippmiami`) require exposures for their PowerSchool extracts.
+Each subdirectory has its own CLAUDE.md — read it before modifying code in that
+directory.

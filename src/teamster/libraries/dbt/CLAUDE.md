@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/dbt/`
 
 Core library for wrapping dbt projects as Dagster assets. Every code location's
 `dbt/assets.py` calls `build_dbt_assets()` from here.

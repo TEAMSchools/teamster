@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/kippmiami/`
 
 School-specific dbt project for **KIPP Miami** schools (Florida). The only
 school project with Florida-specific state data (`fldoe`). Produces school-level

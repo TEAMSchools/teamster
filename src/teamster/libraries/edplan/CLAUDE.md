@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/edplan/`
 
 Sensor and schema for **EdPlan** (special education / IEP management) SFTP
 ingestion. The asset itself is built via `sftp.build_sftp_file_asset()`.

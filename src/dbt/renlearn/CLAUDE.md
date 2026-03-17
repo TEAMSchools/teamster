@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/renlearn/`
 
 Source-system staging project for **Renaissance Learning** (Accelerated Reader
 and STAR assessments). Staging-only project.

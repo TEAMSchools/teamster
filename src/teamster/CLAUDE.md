@@ -1,8 +1,5 @@
 # CLAUDE.md — `src/teamster/`
 
-This file provides guidance to Claude Code (claude.ai/code) when working with
-the Dagster Python package in this directory.
-
 ## Overview
 
 ```text
@@ -84,34 +81,15 @@ Resources are defined in two places:
 
 ## Automation Conditions
 
-Defined in `core/automation_conditions.py`. Three dbt-specific builders sharing
-a common skeleton (`_build_dbt_condition`):
-
-- **`dbt_view_automation_condition()`** — triggers on `code_version_changed`,
-  `newly_missing`, or `execution_failed`. Intentionally omits `any_deps_updated`
-  since views are computed on read.
-- **`dbt_union_relations_automation_condition()`** — for views using the
-  `union_relations` macro. Adds recursive ancestor `code_version_changed`
-  detection (but NOT `any_deps_updated`) to the view condition. Triggers only on
-  code deploys, not data refreshes.
-- **`dbt_table_automation_condition()`** — also triggers on upstream data
-  changes, including through intermediate views (recursive lookthrough up to 10
-  levels).
-
-Non-dbt assets use `AutomationCondition.eager()` or sensor/schedule triggers.
+See `core/CLAUDE.md` for automation condition builders
+(`dbt_view_automation_condition`, `dbt_union_relations_automation_condition`,
+`dbt_table_automation_condition`). Non-dbt assets use
+`AutomationCondition.eager()` or sensor/schedule triggers.
 
 ## IO Managers
 
-Three GCS IO manager modes (all in `core/io_managers/gcs.py`):
-
-| Mode     | Use case                       | Output format          |
-| -------- | ------------------------------ | ---------------------- |
-| `pickle` | Default IO manager             | Pickled Python objects |
-| `avro`   | SFTP/API assets                | Fastavro container     |
-| `file`   | Paginated Deanslist, raw files | Raw bytes              |
-
-All use Hive-style partitioned GCS paths
-(`_dagster_partition_date=YYYY-MM-DD/data`).
+See `core/CLAUDE.md` for IO manager details (three modes: default, avro, file).
+All use Hive-style partitioned GCS paths.
 
 ## Common Patterns
 

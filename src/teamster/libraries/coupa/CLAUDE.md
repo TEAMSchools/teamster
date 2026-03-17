@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/coupa/`
 
 Dagster asset factory and resource for **Coupa** (procurement/spend management
 platform).

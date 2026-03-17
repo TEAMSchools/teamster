@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/nsc/`
 
 Schema-only library — Avro schemas for **National Student Clearinghouse (NSC)**
 college enrollment verification data ingested via SFTP. The asset is built using

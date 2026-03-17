@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/performance_management/`
 
 Schema-only library — Avro schemas for the internal **Performance Management**
 system data (staff observation scores, coaching records). Two assets are built

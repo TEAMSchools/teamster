@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/ssh/`
 
 Extended SSH/SFTP resource used by every SFTP-based integration. Wraps
 `dagster-ssh`'s `SSHResource` with two extra capabilities:

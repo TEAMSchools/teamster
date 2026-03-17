@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/finalsite/`
 
 Source-system staging project for **Finalsite** (school website and
 communications platform). Staging-only project with no intermediate layer.

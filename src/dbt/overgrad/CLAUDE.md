@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/overgrad/`
 
 Source-system staging project for **Overgrad** (college counseling and
 application tracking platform). Produces staging and intermediate models.

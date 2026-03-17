@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/deanslist/`
 
 Source-system staging project for **Deanslist** (behavior management, homework
 tracking, and student support platform). Produces staging and intermediate

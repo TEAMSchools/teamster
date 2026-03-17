@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/kippcamden/`
 
 School-specific dbt project for **KIPP New Jersey - Camden** schools. Combines
 local PowerSchool staging with cross-project references to produce school-level

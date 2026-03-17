@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/renlearn/`
 
 Sensor and schema for **Renaissance Learning** (STAR/Accelerated Reader) SFTP
 ingestion. The asset itself is built via `sftp.build_sftp_file_asset()`.
