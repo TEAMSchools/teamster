@@ -60,7 +60,6 @@ def _build_dbt_condition(
     The shared structure is a fork of AutomationCondition.eager() with:
     - code_version_changed on its own .since(newly_updated) so it only resets
       after successful materialization, not on request
-    - execution_failed outside .since() so it fires every tick until resolved
     - any_deps_missing ignoring external source assets
     - initial_evaluation omitted from .since() reset to avoid suppressing
       newly_missing permanently
@@ -76,7 +75,6 @@ def _build_dbt_condition(
             | AutomationCondition.code_version_changed().since(
                 AutomationCondition.newly_updated()
             )
-            | AutomationCondition.execution_failed()
         )
         & ~AutomationCondition.any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)
         & ~AutomationCondition.any_deps_in_progress()
@@ -149,7 +147,7 @@ def dbt_view_automation_condition() -> AutomationCondition:
     Views are computed on read and don't store physical data. Only re-runs
     when the view's own definition changes — NOT on upstream data changes.
 
-    Triggers: newly_missing, code_version_changed, execution_failed.
+    Triggers: newly_missing, code_version_changed.
     """
     return _build_dbt_condition()
 
@@ -182,7 +180,7 @@ def dbt_table_automation_condition() -> AutomationCondition:
     intermediate views that aren't re-materialized.
 
     Triggers: newly_missing, any_deps_updated (direct + through views),
-    code_version_changed, execution_failed.
+    code_version_changed.
     """
     return _build_dbt_condition(
         _build_any_ancestor_updated(view_selection=_VIEW_SELECTION)
