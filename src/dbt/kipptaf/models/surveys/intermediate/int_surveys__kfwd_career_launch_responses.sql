@@ -62,7 +62,7 @@ union all
 
 /* KIPP Forward Career Launch Survey - Bulk Add */
 select
-    cast(date_added as timestamp) as response_date_submitted,
+    null as response_date_submitted,
     contact_id as respondent_salesforce_id,
 
     'Bulk Add' as survey_title,

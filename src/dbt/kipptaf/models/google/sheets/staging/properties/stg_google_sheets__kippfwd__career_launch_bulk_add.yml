@@ -17,7 +17,5 @@ models:
         data_type: string
       - name: company
         data_type: string
-      - name: date_added
-        data_type: date
       - name: benefits
         data_type: string
