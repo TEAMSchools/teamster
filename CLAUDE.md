@@ -111,13 +111,13 @@ the documentation mechanism for that work.
 
 ## Architecture
 
-**IMPORTANT — you MUST read the relevant CLAUDE.md files before doing any work.
-Do NOT skip this step, even if you think you can answer from source code
-alone.**
+**IMPORTANT — you MUST read the relevant CLAUDE.md files before doing any work:
+reading, explaining, reviewing, or modifying code. Do NOT skip this step, even
+if you think you can answer from source code alone.**
 
-- Working on **Dagster code** → read `src/teamster/CLAUDE.md` first
-- Working on **dbt models** → read `src/dbt/CLAUDE.md` first
-- Working in **any subdirectory** → read that directory's CLAUDE.md first
+- **Dagster code** (reading or editing) → read `src/teamster/CLAUDE.md` first
+- **dbt models** (reading or editing) → read `src/dbt/CLAUDE.md` first
+- **Any subdirectory** → read that directory's CLAUDE.md first
 
 These files contain conventions, antipatterns, and architectural decisions that
 are not discoverable from source code.
