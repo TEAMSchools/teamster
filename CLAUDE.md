@@ -75,7 +75,9 @@ uv run pytest tests/assets/test_assets_dbt.py
 ### Linting
 
 See `.trunk/trunk.yaml` for the full list of enabled linters and
-`.trunk/config/` for per-linter configuration files.
+`.trunk/config/` for per-linter configuration files. **Before committing**, run
+`trunk check` on changed files and fix any issues — the pre-commit hook will
+reject commits with linter errors.
 
 **SQL style**: Before writing, reviewing, or commenting on SQL, read
 `.trunk/config/.sqlfluff`. Key enforced rules: BigQuery dialect, trailing commas
