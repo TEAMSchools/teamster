@@ -143,43 +143,50 @@ with
 
         -- regular current
         select
-            enrollment_academic_year,
-            enrollment_academic_year_display,
-            org,
-            region,
-            schoolid,
-            school,
-            finalsite_id,
-            powerschool_student_number,
-            first_name,
-            last_name,
-            grade_level,
-            gender,
-            birthdate,
-            self_contained,
-            enrollment_type,
-            grouped_status,
-            latest_status,
-            aligned_enrollment_type,
-            grouped_status_order,
-            grouped_status_timeframe,
-            grouped_status_start_date,
+            r.enrollment_academic_year,
+            r.enrollment_academic_year_display,
+            r.org,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.finalsite_id,
+            r.powerschool_student_number,
+            r.first_name,
+            r.last_name,
+            r.grade_level,
+            r.gender,
+            r.birthdate,
+            r.self_contained,
+            r.enrollment_type,
+            r.grouped_status,
+            r.latest_status,
+            r.aligned_enrollment_type,
+            r.grouped_status_order,
+            r.grouped_status_timeframe,
+            r.grouped_status_start_date,
 
             case
                 when
-                    grouped_status in (
+                    r.grouped_status in (
                         'Accepted to Enrolled Num',
                         'Offers to Accepted Num',
                         'Offers to Enrolled Num'
                     )
                 then 'Conversion'
-                else grouped_status
+                else r.grouped_status
             end as goal_type,
 
-            grouped_status as goal_name,
+            r.grouped_status as goal_name,
 
-        from deduplicate
-        where grouped_status_timeframe = 'Current'
+        from roster as r
+        inner join
+            {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as u
+            on r.enrollment_academic_year = u.file_year
+            and r.enrollment_type = u.enrollment_type
+            and r.grouped_status_timeframe = u.grouped_status_timeframe
+            and r.latest_status = u.detailed_status
+            and r.grouped_status = u.status_group_value
+        order by r.grouped_status_timeframe
     ),
 
     add_group_status_end_date as (
