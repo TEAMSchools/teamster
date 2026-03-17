@@ -307,7 +307,8 @@ select
         r.contact_id is not null,
         row_number() over (
             partition by r.contact_id
-            order by if(sp.survey_id = 'bulk_add', 0, 1), sp.response_date_submitted desc
+            order by
+                if(sp.survey_id = 'bulk_add', 0, 1), sp.response_date_submitted desc
         ),
         null
     ) as rn_respondent,

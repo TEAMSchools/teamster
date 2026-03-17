@@ -71,7 +71,7 @@ select
     response_string_value,
 
     'bulk_add' as survey_id,
-    {{ dbt_utils.generate_surrogate_key(['contact_id']) }} as response_id,
+    {{ dbt_utils.generate_surrogate_key(["contact_id"]) }} as response_id,
     null as respondent_user_principal_name,
 from
     {{ ref("stg_google_sheets__kippfwd__career_launch_bulk_add") }} unpivot (
