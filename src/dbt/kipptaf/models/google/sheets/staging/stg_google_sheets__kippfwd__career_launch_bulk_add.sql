@@ -7,6 +7,7 @@ select
     salary,
     company,
 
+    cast(date_added as date) as date_added,
     cast(job_satisfaction as string) as job_satisfaction,
     cast(benefits as string) as benefits,
 from {{ source("google_sheets", "src_google_sheets__kippfwd__career_launch_bulk_add") }}

@@ -57,3 +57,32 @@ select
     lower(fr.respondent_email) as respondent_user_principal_name,
 from {{ ref("int_google_forms__form_responses") }} as fr
 where fr.form_id = '1c4SLP61YIVnUUvRl_IUdFuLXdtI1Vsq9OE3Jrz3HR0U'
+
+union all
+
+/* KIPP Forward Career Launch Survey - Bulk Add */
+select
+    cast(date_added as timestamp) as response_date_submitted,
+    contact_id as respondent_salesforce_id,
+
+    'Bulk Add' as survey_title,
+
+    question_short_name,
+    response_string_value,
+
+    'bulk_add' as survey_id,
+    {{ dbt_utils.generate_surrogate_key(['contact_id']) }} as response_id,
+    null as respondent_user_principal_name,
+from
+    {{ ref("stg_google_sheets__kippfwd__career_launch_bulk_add") }} unpivot (
+        response_string_value for question_short_name in (
+            email as 'alumni_email',
+            cell_phone as 'cell_number',
+            education_level as 'highest_level_of_education',
+            post_grad_plan as 'after_grad',
+            salary as 'annual_income',
+            job_satisfaction as 'job_sat',
+            company as 'company',
+            benefits as 'benefits'
+        )
+    )
