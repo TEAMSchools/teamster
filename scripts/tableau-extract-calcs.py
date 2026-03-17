@@ -41,30 +41,70 @@ def extract_twb_bytes_from_bytes(raw: bytes) -> bytes:
         return zf.read(twb_name)
 
 
-def parse_calculated_fields(twb_bytes: bytes) -> list[dict]:
-    """Return user-created calculated fields from .twb XML bytes."""
-    root = ET.fromstring(twb_bytes)
+def _is_internal(column) -> bool:
+    name = column.get("name", "")
+    caption = column.get("caption", "")
+    return not caption or name.startswith("[:") or name == "[Number of Records]"
+
+
+def _extract_fields(datasource) -> list[dict]:
     fields = []
-
-    for column in root.iter("column"):
+    for column in datasource.findall("column"):
         calc = column.find("calculation[@class='tableau']")
-        if calc is None:
+        if calc is None or _is_internal(column):
             continue
-
-        name = column.get("name", "")
-        caption = column.get("caption", "")
-
-        # skip Tableau internals
-        if not caption or name.startswith("[:") or name == "[Number of Records]":
-            continue
-
         fields.append(
             {
-                "name": caption,
+                "name": column.get("caption"),
                 "datatype": column.get("datatype", "unknown"),
                 "formula": calc.get("formula", ""),
             }
         )
+    return fields
+
+
+def list_datasources(twb_bytes: bytes) -> list[dict]:
+    """
+    Return unique datasources with calc counts, deduplicated by caption.
+    Only the first occurrence of each caption is kept (subsequent copies are
+    per-worksheet duplicates with no calcs). Skips 'Parameters'.
+    """
+    root = ET.fromstring(twb_bytes)
+    seen: set[str] = set()
+    sources = []
+    for ds in root.findall(".//datasources/datasource"):
+        caption = ds.get("caption") or ds.get("name", "")
+        if caption == "Parameters" or caption in seen:
+            continue
+        seen.add(caption)
+        sources.append({"caption": caption, "n_calcs": len(_extract_fields(ds))})
+    return sources
+
+
+def parse_calculated_fields(
+    twb_bytes: bytes, datasource: str | None = None
+) -> list[dict]:
+    """
+    Return user-created calculated fields from .twb XML bytes.
+
+    If datasource is given, restrict to the first datasource whose caption
+    contains that string (case-insensitive). Otherwise returns fields from
+    all non-Parameters datasources (deduplicated).
+    """
+    root = ET.fromstring(twb_bytes)
+    seen: set[str] = set()
+    fields = []
+
+    for ds in root.findall(".//datasources/datasource"):
+        caption = ds.get("caption") or ds.get("name", "")
+        if caption == "Parameters" or caption in seen:
+            continue
+        seen.add(caption)
+
+        if datasource and datasource.lower() not in caption.lower():
+            continue
+
+        fields.extend(_extract_fields(ds))
 
     return fields
 
@@ -197,6 +237,18 @@ def get_depends_on_from_exposure(exposure: dict) -> list[str]:
 # ── Output ──────────────────────────────────────────────────────────────────
 
 
+def print_datasource_picker(sources: list[dict], workbook_label: str) -> None:
+    print(f"\n## Data sources in: {workbook_label}\n")
+    print(f"  {'Data Source':<55} Calcs")
+    print(f"  {'-' * 55} -----")
+    for s in sources:
+        print(f"  {s['caption']:<55} {s['n_calcs']}")
+    print(
+        "\nRe-run with --datasource / -d to filter to one source, e.g.:\n"
+        "  ... -d 'gradebook_gpa_cumulative'\n"
+    )
+
+
 def print_results(
     fields: list[dict],
     workbook_label: str,
@@ -277,6 +329,15 @@ def main() -> None:
     )
 
     parser.add_argument(
+        "--datasource",
+        "-d",
+        metavar="NAME",
+        help=(
+            "Filter to a specific data source (case-insensitive substring match "
+            "on the datasource caption). Omit to see a list of available sources."
+        ),
+    )
+    parser.add_argument(
         "--list-only",
         action="store_true",
         help="Print exposure metadata only — no download or file parsing",
@@ -289,7 +350,10 @@ def main() -> None:
     # ── Local file mode ──────────────────────────────────────────────────
     if args.file:
         twb_bytes = extract_twb_bytes(args.file)
-        fields = parse_calculated_fields(twb_bytes)
+        if not args.datasource:
+            print_datasource_picker(list_datasources(twb_bytes), args.file.stem)
+            return
+        fields = parse_calculated_fields(twb_bytes, args.datasource)
         print_results(fields, args.file.stem)
         return
 
@@ -321,7 +385,10 @@ def main() -> None:
         token, site_id = get_auth_token(args.server, args.site, args.username)
         raw = download_workbook_by_id(args.server, site_id, workbook_id, token)
         twb_bytes = extract_twb_bytes_from_bytes(raw)
-        fields = parse_calculated_fields(twb_bytes)
+        if not args.datasource:
+            print_datasource_picker(list_datasources(twb_bytes), workbook_label)
+            return
+        fields = parse_calculated_fields(twb_bytes, args.datasource)
         print_results(fields, workbook_label, depends_on)
         return
 
@@ -336,7 +403,10 @@ def main() -> None:
         )
         raw = download_workbook_by_id(args.server, site_id, workbook_id, token)
         twb_bytes = extract_twb_bytes_from_bytes(raw)
-        fields = parse_calculated_fields(twb_bytes)
+        if not args.datasource:
+            print_datasource_picker(list_datasources(twb_bytes), args.workbook)
+            return
+        fields = parse_calculated_fields(twb_bytes, args.datasource)
         print_results(fields, args.workbook)
 
 
