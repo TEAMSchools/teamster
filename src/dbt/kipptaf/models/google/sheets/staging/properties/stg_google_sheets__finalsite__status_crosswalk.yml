@@ -1,5 +1,14 @@
 models:
   - name: stg_google_sheets__finalsite__status_crosswalk
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dagster_partition_key
+              - enrollment_type
+              - detailed_status
+          config:
+            store_failures: true
     columns:
       - name: _dagster_partition_key
         data_type: string
@@ -33,3 +42,5 @@ models:
         data_type: string
       - name: conversion_metric_denominator_2
         data_type: string
+      - name: file_year
+        data_type: int64
