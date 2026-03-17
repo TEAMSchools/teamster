@@ -210,6 +210,12 @@ The always-loaded reduction (~2,575 tokens) benefits every conversation. Changes
 - **Cross-domain tasks** (Dagster + dbt in one session): Claude needs to read 2
   subdirectory files. This is a ~3-second cost vs having the information
   always-loaded. Acceptable trade-off.
+- **Cross-project pointer for star() guidance**: The `src/dbt/CLAUDE.md` star()
+  entry points to `src/dbt/kipptaf/CLAUDE.md` — a cross-project reference that
+  breaks the parent→child hierarchy. Accepted because star() models are
+  primarily a kipptaf concern, and duplicating the guidance back into the dbt
+  root is the exact redundancy this design eliminates. Claude can read arbitrary
+  file paths, so the pointer works in practice.
 
 ## Validation
 
