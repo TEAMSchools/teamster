@@ -84,7 +84,7 @@ delegates architecture to subdirectory files.
 
 #### Target structure of the top-level CLAUDE.md
 
-```
+```text
 # CLAUDE.md
 ## Project Overview           (3 lines -- who, what, tech stack)
 ## Working Conventions         (unchanged -- uv run, git, branches, PRs, issues)

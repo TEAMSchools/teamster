@@ -18,6 +18,8 @@ documentation-only (no code, no tests).
 
 ---
 
+## Tasks
+
 ### Task 1: Restructure top-level CLAUDE.md into lean router
 
 This is the highest-impact change — removes ~199 lines and ~2,550 tokens from
