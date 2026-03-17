@@ -72,6 +72,9 @@ def parse_calculated_fields(twb_bytes: bytes) -> list[dict]:
 # ── Tableau Server REST API ─────────────────────────────────────────────────
 
 
+_JSON_HEADERS = {"Accept": "application/json", "Content-Type": "application/json"}
+
+
 def signin_pat(server: str, site: str, token_name: str, pat: str) -> tuple[str, str]:
     """Return (token, site_id) using Personal Access Token auth."""
     url = f"{server}/api/{TABLEAU_API_VERSION}/auth/signin"
@@ -82,7 +85,7 @@ def signin_pat(server: str, site: str, token_name: str, pat: str) -> tuple[str, 
             "site": {"contentUrl": site},
         }
     }
-    resp = requests.post(url, json=payload, timeout=30)
+    resp = requests.post(url, json=payload, headers=_JSON_HEADERS, timeout=30)
     resp.raise_for_status()
     data = resp.json()
     return data["credentials"]["token"], data["credentials"]["site"]["id"]
@@ -100,7 +103,7 @@ def signin_password(
             "site": {"contentUrl": site},
         }
     }
-    resp = requests.post(url, json=payload, timeout=30)
+    resp = requests.post(url, json=payload, headers=_JSON_HEADERS, timeout=30)
     resp.raise_for_status()
     data = resp.json()
     return data["credentials"]["token"], data["credentials"]["site"]["id"]
@@ -150,7 +153,7 @@ def find_workbook_id_by_name(
     url = f"{server}/api/{TABLEAU_API_VERSION}/sites/{site_id}/workbooks"
     resp = requests.get(
         url,
-        headers={"x-tableau-auth": token},
+        headers={**_JSON_HEADERS, "x-tableau-auth": token},
         params={"filter": f"name:eq:{workbook_name}"},
         timeout=30,
     )
