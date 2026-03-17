@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/kipppaterson/`
 
 School-specific dbt project for **KIPP New Jersey - Paterson** schools. The most
 limited school project — PowerSchool only, with a narrower set of enabled models

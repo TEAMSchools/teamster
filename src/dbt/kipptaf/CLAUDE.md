@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/kipptaf/`
 
 The **primary network-wide analytics project** for KIPP TEAM & Family (TAF).
 This is the most complex dbt project — it aggregates data from all source-system
@@ -134,15 +129,6 @@ just the `kinds: [tableau]` is sufficient.
 
 Exposure files live in `models/exposures/` grouped by tool: `tableau.yml`,
 `google-sheets.yml`, `google-appsheet.yml`, etc.
-
-## Legacy `base_` Prefix
-
-Some models carry a `base_` prefix (e.g. `base_powerschool__*`). This is legacy
-dbt guidance for lightweight join models that lived alongside `stg_` models in
-the staging folder. **`base_` is considered outdated** — all `base_` models are
-planned for renaming to `int_` (tracked in
-[#2541](https://github.com/TEAMSchools/teamster/issues/2541)). Do not create new
-`base_` models; use `int_` instead.
 
 ## Model Conventions
 

@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/ldap/`
 
 Dagster asset and resource for **LDAP/Active Directory** — used to sync staff
 directory data (user accounts, group memberships, role assignments) from the

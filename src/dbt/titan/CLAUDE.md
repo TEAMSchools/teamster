@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/titan/`
 
 Source-system staging project for **Titan K12** (school meals / nutrition
 management platform). Staging-only project.

@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/iready/`
 
 Source-system staging project for **i-Ready** (diagnostic and instructional
 platform for reading and math). Produces staging and intermediate models.

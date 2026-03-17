@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/couchdrop/`
 
 Integration for **Couchdrop** — an SFTP gateway that mirrors files to Google
 Drive. Rather than polling the SFTP server directly, the sensor watches the

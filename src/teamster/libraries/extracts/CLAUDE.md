@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/extracts/`
 
 Factory for outbound data extract assets that query BigQuery and deliver files
 to SFTP destinations. Used by the `extracts` module in code locations.

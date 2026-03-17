@@ -36,7 +36,8 @@ curl --fail -O https://storage.googleapis.com/genai-toolbox/v0.29.0/linux/amd64/
     echo "❌ MCP toolbox download failed"
     exit 1
   }
-echo "8cb1cacbbaccf0940926643482d20e3b02efba80d1c93eafb4342079b1ebee95  toolbox" | sha256sum -c - ||
+echo "8cb1cacbbaccf0940926643482d20e3b02efba80d1c93eafb4342079b1ebee95  toolbox" |
+  sha256sum -c - ||
   {
     echo "❌ MCP toolbox checksum mismatch"
     exit 1

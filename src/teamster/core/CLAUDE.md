@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/core/`
 
 Shared infrastructure used by every code location and library. Nothing here is
 integration-specific — it is the foundation all other modules build on.

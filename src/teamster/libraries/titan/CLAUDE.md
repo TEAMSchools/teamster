@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/titan/`
 
 Asset factory, sensor, and schema for **Titan K12** (school meals / nutrition
 management) SFTP ingestion.

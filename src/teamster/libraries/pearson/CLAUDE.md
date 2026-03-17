@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/pearson/`
 
 Avro schemas for **Pearson** state assessment data (PARCC, NJGPA) ingested via
 SFTP. Used by NJ school code locations. The asset is built using

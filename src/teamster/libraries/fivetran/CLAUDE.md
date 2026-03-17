@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/fivetran/`
 
 Fivetran integration helpers for representing Fivetran-synced BigQuery tables as
 Dagster `AssetSpec`s (external assets, not materialized by Dagster).

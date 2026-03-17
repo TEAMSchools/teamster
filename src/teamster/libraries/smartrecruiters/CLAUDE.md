@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/smartrecruiters/`
 
 Dagster asset factory and resource for **SmartRecruiters** (recruiting/ATS
 platform). Assets fetch pre-built reports via the SmartRecruiters Reporting API.
