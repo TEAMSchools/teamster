@@ -178,7 +178,7 @@ with
 
             r.grouped_status as goal_name,
 
-        from roster as r
+        from deduplicate as r
         inner join
             {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as u
             on r.enrollment_academic_year = u.file_year
