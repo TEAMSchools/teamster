@@ -15,6 +15,8 @@ Cloud Storage (GCS) as the intermediate storage layer.
 This project has specialized skills that provide deep framework knowledge.
 Always use them before doing relevant work:
 
+### Framework Skills
+
 - **`/dagster-expert`** — Use before any Dagster task: creating assets,
   schedules, sensors, resources, debugging pipeline issues, or understanding
   definitions
@@ -32,8 +34,8 @@ Always use them before doing relevant work:
 
 ### Superpowers (general development workflows)
 
-- **`/superpowers:test-driven-development`** — Use when implementing any
-  feature or bugfix, before writing implementation code
+- **`/superpowers:test-driven-development`** — Use when implementing any feature
+  or bugfix, before writing implementation code
 - **`/superpowers:systematic-debugging`** — Use when encountering any bug, test
   failure, or unexpected behavior, before proposing fixes
 - **`/superpowers:writing-plans`** — Use when given a spec or requirements for a
@@ -47,12 +49,14 @@ Always use them before doing relevant work:
   implementing major features, before merging
 - **`/superpowers:receiving-code-review`** — Use when receiving code review
   feedback, before implementing suggestions
-- **`/superpowers:dispatching-parallel-agents`** — Use when facing 2+ independent
-  tasks that can be worked on without shared state or sequential dependencies
+- **`/superpowers:dispatching-parallel-agents`** — Use when facing 2+
+  independent problems (e.g. multiple unrelated bugs) that can run
+  _concurrently_ with no shared state, no plan required, and no review gates
 - **`/superpowers:finishing-a-development-branch`** — Use when implementation is
   complete and all tests pass, to decide how to integrate the work
-- **`/superpowers:subagent-driven-development`** — Use when executing
-  implementation plans with independent tasks in the current session
+- **`/superpowers:subagent-driven-development`** — Use when executing a written
+  implementation plan in the current session; agents run _sequentially_ one task
+  at a time, with a two-stage spec + quality review after each
 - **`/superpowers:using-git-worktrees`** — Use when starting feature work that
   needs isolation from the current workspace
 

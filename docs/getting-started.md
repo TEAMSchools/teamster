@@ -63,8 +63,9 @@ required.
 
 ### After the Codespace opens
 
-**Dismiss extension prompts** — all required extensions are already configured
-in `devcontainer.json`; dismiss any install prompts VS Code shows.
+**Dismiss VS Code extension prompts** — all required extensions are already
+configured in `devcontainer.json`; dismiss any extension install prompts VS Code
+shows.
 
 **Authenticate to Google** — credentials are not persisted across sessions:
 
@@ -77,6 +78,15 @@ bash .devcontainer/scripts/gcloud-auth-application-default-login.sh
 ```bash
 claude auth login
 ```
+
+**Install Claude Code plugins** — after authenticating, Claude Code will prompt
+you to install plugins configured for this project. Choose **Install for this
+project** for each prompt. If any prompts don't appear, install manually:
+
+1. Open the Claude Code panel and click the grid (plugin marketplace) icon.
+2. Find any plugin listed in `.claude/settings.json` under `enabledPlugins` that
+   is missing from the **Installed** tab.
+3. Click **Install**, then choose **Install for this project**.
 
 **Wait for dbt Power User to finish parsing** — the extension parses all
 projects in the background, which pegs CPU and makes the extension unresponsive
