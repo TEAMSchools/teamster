@@ -186,6 +186,7 @@ with
             and r.grouped_status_timeframe = u.grouped_status_timeframe
             and r.latest_status = u.detailed_status
             and r.grouped_status = u.status_group_value
+        where r.grouped_status_timeframe = 'Current'
     ),
 
     add_group_status_end_date as (
