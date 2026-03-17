@@ -310,7 +310,7 @@ def run_interactive() -> None:
     # ── Step 1: pick an exposure ─────────────────────────────────────────
     data = yaml.safe_load(EXPOSURES_PATH.read_text())
     exposures = data.get("exposures", [])
-    exposure_names = [e["name"] for e in exposures]
+    exposure_names = sorted(e["name"] for e in exposures)
     chosen_exposure_name = _pick(
         "Which Tableau workbook? (exposure name)", exposure_names
     )
