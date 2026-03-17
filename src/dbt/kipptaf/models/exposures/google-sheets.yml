@@ -777,3 +777,17 @@ exposures:
   #   url: https://docs.google.com/spreadsheets/d/1aeeF4klM4lmxdqIcdcoq0K65gfn3qTJLZY8Ym8OFRWA
   #   depends_on:
   #     - ref("base_people__staff_roster")
+
+  - name: kippfwd_career_launch_bulk_add
+    label: KIPPfwd Career Launch Bulk Add
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1E1XfD05PSplIrnSnByER6GoXvFv3hzACtyO9m8FcSrY/
+    depends_on:
+      - ref("stg_google_sheets__kippfwd__career_launch_bulk_add")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
