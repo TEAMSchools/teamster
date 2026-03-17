@@ -12,6 +12,7 @@ import getpass
 import io
 import os
 import pathlib
+import sys
 import zipfile
 
 import defusedxml.ElementTree as ET
@@ -275,6 +276,78 @@ def print_results(
     print(f"\nTotal: {len(fields)} calculated fields\n")
 
 
+# ── Interactive mode ─────────────────────────────────────────────────────────
+
+
+def _pick(prompt: str, options: list[str]) -> str:
+    """Print a numbered list and return the chosen item."""
+    print(f"\n{prompt}")
+    for i, opt in enumerate(options, 1):
+        print(f"  {i:>2}. {opt}")
+    while True:
+        raw = input("\nEnter number or name: ").strip()
+        if raw.isdigit():
+            idx = int(raw) - 1
+            if 0 <= idx < len(options):
+                return options[idx]
+        else:
+            matches = [o for o in options if raw.lower() in o.lower()]
+            if len(matches) == 1:
+                return matches[0]
+            if len(matches) > 1:
+                print(f"  Ambiguous — matched: {matches}")
+                continue
+        print(
+            f"  Invalid choice. Enter a number (1–{len(options)}) or a name substring."
+        )
+
+
+def run_interactive() -> None:
+    """Guided prompt sequence when the script is run with no arguments."""
+    print("\nTableau → dbt upstream extractor")
+    print("=" * 40)
+
+    # ── Step 1: pick an exposure ─────────────────────────────────────────
+    data = yaml.safe_load(EXPOSURES_PATH.read_text())
+    exposures = data.get("exposures", [])
+    exposure_names = [e["name"] for e in exposures]
+    chosen_exposure_name = _pick(
+        "Which Tableau workbook? (exposure name)", exposure_names
+    )
+    exposure = next(e for e in exposures if e["name"] == chosen_exposure_name)
+    workbook_label = exposure.get("label", chosen_exposure_name)
+    workbook_id = get_workbook_id_from_exposure(exposure)
+    depends_on = get_depends_on_from_exposure(exposure)
+
+    if not workbook_id:
+        raise SystemExit(
+            f"\nExposure {chosen_exposure_name!r} has no workbook ID in tableau.yml.\n"
+            "Ask a data engineer to add the Tableau LSID to the exposure config."
+        )
+
+    # ── Step 2: authenticate & download ─────────────────────────────────
+    server = os.environ.get("TABLEAU_SERVER_ADDRESS")
+    site = os.environ.get("TABLEAU_SITE_ID", "")
+    if not server:
+        server = input("\nTableau Server URL: ").strip()
+
+    print(f"\nConnecting to {server} …")
+    token, site_id = get_auth_token(server, site, username=None)
+    print("Downloading workbook …")
+    raw = download_workbook_by_id(server, site_id, workbook_id, token)
+    twb_bytes = extract_twb_bytes_from_bytes(raw)
+
+    # ── Step 3: pick a datasource ────────────────────────────────────────
+    sources = list_datasources(twb_bytes)
+    source_labels = [f"{s['caption']}  ({s['n_calcs']} calcs)" for s in sources]
+    chosen_label = _pick("Which data source?", source_labels)
+    chosen_caption = sources[source_labels.index(chosen_label)]["caption"]
+
+    # ── Step 4: extract and print ────────────────────────────────────────
+    fields = parse_calculated_fields(twb_bytes, chosen_caption)
+    print_results(fields, workbook_label, depends_on)
+
+
 # ── Main ────────────────────────────────────────────────────────────────────
 
 
@@ -283,6 +356,10 @@ def main() -> None:
         description="Extract calculated fields from a Tableau workbook.",
         add_help=True,
     )
+
+    if len(sys.argv) == 1:
+        run_interactive()
+        return
 
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument(

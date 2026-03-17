@@ -1,163 +1,174 @@
 # /tableau-upstream
 
 Guide the user through moving Tableau calculated fields upstream into a dbt
-model. Follow these steps exactly, in order.
+model. Drive the whole workflow through chat — the user should not need to know
+any CLI flags.
 
 ---
 
-## Step 1 — Get the workbook content
+## Step 1 — Pick a workbook
 
-Ask the user: do you have a local `.twbx`/`.twb` file accessible in the
-container, or should we pull it from Tableau Server using an exposure name?
+Read `src/dbt/kipptaf/models/exposures/tableau.yml` and extract all exposure
+names and labels. Present them as a numbered list and ask the user to pick one:
 
-**If local file:**
+> Here are the Tableau workbooks tracked in dbt:
+>
+> 1. Dashboard A Label (`exposure_name_a`)
+> 2. Dashboard B Label (`exposure_name_b`) …
+>
+> Which workbook do you want to work with?
 
-```bash
-uv run scripts/tableau-extract-calcs.py --file path/to/workbook.twbx
-```
-
-**If pulling by exposure name (recommended — uses workbook ID from
-tableau.yml):**
-
-```bash
-uv run scripts/tableau-extract-calcs.py \
-  --exposure <exposure_name> \
-  --server <tableau-server-url> \
-  --site <site-name> \
-  --username <email>
-```
-
-The exposure name is the snake_case key from
-`src/dbt/kipptaf/models/exposures/tableau.yml` (e.g.
-`gradebook_and_gpa_dashboard`). Use `--list-only` first to confirm the exposure
-resolves correctly before downloading.
-
-**If the exposure has no workbook ID yet:**
-
-```bash
-uv run scripts/tableau-extract-calcs.py \
-  --workbook "Exact Workbook Name on Server" \
-  --server <tableau-server-url> \
-  --site <site-name> \
-  --username <email>
-```
-
-Ask the user to paste the full script output before continuing.
+Wait for the user's answer before continuing.
 
 ---
 
-## Step 2 — Identify the target dbt model(s)
+## Step 2 — List data sources
 
-- If `--exposure` was used, the script printed the `depends_on` model list — use
-  those models directly.
-- Otherwise ask: which `rpt_tableau__*` model should receive the new columns?
+Run the extraction script in datasource-picker mode:
 
-For each target model:
+```bash
+uv run scripts/tableau-extract-calcs.py --exposure <chosen_exposure_name>
+```
 
-1. Read the SQL file:
-   `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__<name>.sql`
-2. Read the YAML properties file:
-   `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__<name>.yml`
-3. Note any columns already present — skip calculated fields that are already
-   there.
-4. Note if the model has `enabled: false` in the YAML config — flag this to the
-   user and ask if they want to re-enable it.
-5. Note any duplicate column entries in the YAML — plan to clean those up.
+The script prints a table of unique data sources and their calc counts. Present
+the list to the user and ask which one they want to analyze:
+
+> This workbook has the following data sources:
+>
+> 1. \<datasource caption A\> — N calcs
+> 2. \<datasource caption B\> — N calcs …
+>
+> Which data source contains the calculations you want to move upstream?
+
+Wait for the user's answer before continuing.
 
 ---
 
-## Step 3 — Translate each calculated field to BigQuery SQL
+## Step 3 — Extract calculated fields
 
-For each calculated field in the script output that is not already in the model:
+Run the script filtered to the chosen datasource (use a substring of the caption
+— the `-d` flag does a case-insensitive match):
+
+```bash
+uv run scripts/tableau-extract-calcs.py --exposure <name> -d <datasource_substring>
+```
+
+Show the user how many fields were found and the full table. Then ask:
+
+> Found **N calculated fields** in \<datasource\>. Here they are: [show the > >
+>
+> > markdown table from the script output]
+>
+> Which of these do you want to move upstream into dbt? You can say "all of
+> them" or name specific ones.
+
+Wait for the user's answer before continuing.
+
+---
+
+## Step 4 — Identify the target dbt model
+
+The script output includes the `depends_on` list from the exposure. The
+datasource caption also contains the model name — e.g. a caption like
+`rpt_tableau__some_model (kipptaf_tableau)` maps to the model
+`rpt_tableau__some_model`.
+
+Read the model's files:
+
+- SQL: `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__<name>.sql`
+- YAML:
+  `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__<name>.yml`
+
+Note:
+
+- Which columns already exist (skip those)
+- Whether the model is `enabled: false` (flag to user, ask if they want to
+  re-enable)
+- Any duplicate column entries in the YAML (clean up while editing)
+
+---
+
+## Step 5 — Translate and confirm each field
+
+For each field the user wants to move, propose the BigQuery SQL translation and
+show it to the user before writing anything:
+
+> **\<Field Name\>** (`<datatype>`):
+>
+> Tableau formula: `<original formula>`
+>
+> Proposed SQL: `<translated expression>`
+>
+> Does this look right? Any changes?
 
 **Common Tableau → BigQuery SQL translations:**
 
-| Tableau                                          | BigQuery SQL                                                         |
-| ------------------------------------------------ | -------------------------------------------------------------------- |
-| `IF condition THEN x ELSEIF y THEN z ELSE w END` | `CASE WHEN condition THEN x WHEN y THEN z ELSE w END`                |
-| `ISNULL([Field])`                                | `[Field] IS NULL`                                                    |
-| `ZN([Field])`                                    | `COALESCE([Field], 0)`                                               |
-| `[Field Name]` reference                         | column name already in the model (map by matching caption to column) |
-| `STR([Field])`                                   | `CAST([Field] AS STRING)`                                            |
-| `INT([Field])`                                   | `CAST([Field] AS INT64)`                                             |
-| `FLOAT([Field])`                                 | `CAST([Field] AS FLOAT64)`                                           |
-| `TODAY()`                                        | `CURRENT_DATE()`                                                     |
-| `NOW()`                                          | `CURRENT_TIMESTAMP()`                                                |
-| `DATEADD('day', N, [Date])`                      | `DATE_ADD([Date], INTERVAL N DAY)`                                   |
-| `DATEDIFF('day', [Start], [End])`                | `DATE_DIFF([End], [Start], DAY)`                                     |
-| `DATETRUNC('month', [Date])`                     | `DATE_TRUNC([Date], MONTH)`                                          |
-| `DATEPART('year', [Date])`                       | `EXTRACT(YEAR FROM [Date])`                                          |
-| `LEN([Field])`                                   | `LENGTH([Field])`                                                    |
-| `CONTAINS([Field], 'x')`                         | `[Field] LIKE '%x%'`                                                 |
-| `IIF(cond, x, y)`                                | `IF(cond, x, y)`                                                     |
-
-Confirm each translation with the user before writing it to the file.
-
----
-
-## Step 4 — Update the model files
-
-**SQL file** — add new columns to the `SELECT` clause:
-
-- Place new columns after existing ones, before the `from` clause
-- Use trailing commas (required by `.sqlfluff` — the comma goes at the END of
-  each line, not the start)
-- Follow the column ordering convention from `src/dbt/CLAUDE.md`:
-  1. Plain column refs (grouped by source table)
-  2. Simple functions (`coalesce`, `if`)
-  3. Nested functions
-  4. Logicals
-  5. `CASE` statements
-  6. Window functions
-
-**YAML properties file** — add corresponding entries:
-
-- Add `- name: <column_name>` + `data_type: <bigquery_type>` for each new column
-- While editing, remove any duplicate column entries you identified in Step 2
-- BigQuery type mapping from Tableau datatypes:
-  - `string` → `string`
-  - `integer` → `int64`
-  - `real` → `float64`
-  - `boolean` → `boolean`
-  - `date` → `date`
-  - `datetime` → `datetime`
+| Tableau                     | BigQuery SQL                         |
+| --------------------------- | ------------------------------------ |
+| `IF … ELSEIF … ELSE … END`  | `CASE WHEN … THEN … ELSE … END`      |
+| `ISNULL([x])`               | `x IS NULL`                          |
+| `ZN([x])`                   | `COALESCE(x, 0)`                     |
+| `STR([x])`                  | `CAST(x AS STRING)`                  |
+| `INT([x])`                  | `CAST(x AS INT64)`                   |
+| `FLOAT([x])`                | `CAST(x AS FLOAT64)`                 |
+| `TODAY()`                   | `CURRENT_DATE()`                     |
+| `NOW()`                     | `CURRENT_TIMESTAMP()`                |
+| `DATEADD('day', N, [d])`    | `DATE_ADD(d, INTERVAL N DAY)`        |
+| `DATEDIFF('day', [a], [b])` | `DATE_DIFF(b, a, DAY)`               |
+| `DATETRUNC('month', [d])`   | `DATE_TRUNC(d, MONTH)`               |
+| `DATEPART('year', [d])`     | `EXTRACT(YEAR FROM d)`               |
+| `LEN([x])`                  | `LENGTH(x)`                          |
+| `CONTAINS([x], 'y')`        | `x LIKE '%y%'`                       |
+| `IIF(cond, a, b)`           | `IF(cond, a, b)`                     |
+| `USERNAME()`                | _(skip — Tableau-only)_              |
+| `{FIXED …}`                 | _(flag to user — LOD, needs review)_ |
+| `[Parameters].[…]`          | _(skip — parameter, Tableau-only)_   |
 
 ---
 
-## Step 5 — Validate
+## Step 6 — Update the model files
 
-Run `dbt show` to preview the model output:
+After all translations are confirmed:
+
+**SQL file** — add new columns to the `SELECT` before the `from` clause:
+
+- Trailing commas (comma at END of each line, per `.sqlfluff`)
+- Column ordering from `src/dbt/CLAUDE.md`: plain refs → simple functions →
+  nested functions → logicals → CASE statements → window functions
+
+**YAML properties file** — add one entry per new column:
+
+- `- name: <column_name>`
+- `data_type: <bigquery_type>` (string → string, integer → int64, real →
+  float64, boolean → boolean, date → date, datetime → datetime)
+- Remove any duplicate column entries found in Step 4
+
+---
+
+## Step 7 — Validate
 
 ```bash
 uv run dagster-dbt project prepare-and-package \
   --file src/teamster/code_locations/kipptaf/__init__.py
 ```
 
-Then via the dbt MCP tool or terminal:
+Then via dbt MCP or terminal:
 
-```
+```bash
 dbt show --select <model_name> --limit 5 --project-dir src/dbt/kipptaf
 ```
 
-Check that:
-
-- New columns appear in the output
-- Values look correct (no unexpected nulls, correct data types)
-- No SQL compilation errors
-
-If the model was `enabled: false`, remind the user to update the YAML config
-before running.
+Confirm new columns appear and values look correct.
 
 ---
 
-## Step 6 — Summarise changes
+## Step 8 — Summary and next steps
 
 Report back:
 
-- Which model(s) were updated
-- How many columns were added and their names
-- Any columns skipped (already existed)
-- Any YAML duplicates cleaned up
+- Model(s) updated and columns added
+- Columns skipped (already existed, Tableau-only, or LOD expressions flagged for
+  discussion)
+- YAML duplicates cleaned up
 - Whether the model needs to be re-enabled
-- Next step: if the exposure `depends_on` list needs updating (e.g. to add a
-  newly enabled model), note that and offer to update `tableau.yml`
+- If the exposure `depends_on` needs updating, offer to do it
