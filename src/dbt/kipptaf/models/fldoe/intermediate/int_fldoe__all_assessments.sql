@@ -40,7 +40,20 @@ with
     )
 
 select
-    fl.*,
+    fl._dbt_source_relation,
+    fl.test_code,
+    fl.academic_year,
+    fl.administration_window,
+    fl.season,
+    fl.discipline,
+    fl.assessment_subject,
+    fl.scale_score,
+    fl.achievement_level,
+    fl.is_proficient,
+    fl.assessment_grade,
+    fl.performance_level,
+    fl.student_id,
+    fl.assessment_name,
 
     cw1.sublevel_number,
     cw1.sublevel_name,

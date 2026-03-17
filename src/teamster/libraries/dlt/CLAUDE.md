@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/dlt/`
 
 DLT (data load tool) pipeline assets for source systems that use the
 `dagster-dlt` integration. Each sub-library wraps a DLT source + custom

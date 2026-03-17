@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/powerschool/`
 
 Source-system staging project for **PowerSchool SIS** data. Produces clean,
 contract-enforced staging models consumed by all school-specific dbt projects

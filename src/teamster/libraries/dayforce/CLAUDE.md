@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/dayforce/`
 
 Avro schemas for **Dayforce** (Ceridian HCM) SFTP file drops. This integration
 is currently disabled (`+enabled: false` in `kipptaf/dbt_project.yml`). The

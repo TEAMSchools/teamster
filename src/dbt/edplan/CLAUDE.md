@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/edplan/`
 
 Source-system staging project for **EdPlan** (special education / IEP management
 platform). Produces staging and intermediate models consumed by NJ school

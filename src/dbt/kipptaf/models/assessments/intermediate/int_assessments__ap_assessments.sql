@@ -38,7 +38,16 @@ with
     )
 
 select
-    *,
+    academic_year,
+    powerschool_student_number,
+    test_subject,
+    exam_score,
+    test_name,
+    ps_ap_course_subject_code,
+    ap_course_name,
+    `data_source`,
+    irregularity_code_1,
+    irregularity_code_2,
 
     row_number() over (
         partition by powerschool_student_number, ap_course_name order by exam_score desc

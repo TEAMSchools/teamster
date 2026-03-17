@@ -1,4 +1,28 @@
 {
+  "extraKnownMarketplaces": {
+    "dagster-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dagster-io/skills"
+      }
+    },
+    "dbt-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dbt-labs/dbt-agent-skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "dignified-python@dagster": true,
+    "dbt@dbt-agent-marketplace": true,
+    "dagster-expert@dagster": true,
+    "superpowers@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true
+  },
   "permissions": {
     "allow": [
       "Bash(gh issue:*)",
@@ -47,29 +71,5 @@
         ]
       }
     ]
-  },
-  "enabledPlugins": {
-    "dignified-python@dagster": true,
-    "dbt@dbt-agent-marketplace": true,
-    "dagster-expert@dagster": true,
-    "superpowers@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true
-  },
-  "extraKnownMarketplaces": {
-    "dagster-skills": {
-      "source": {
-        "source": "github",
-        "repo": "dagster-io/skills"
-      }
-    },
-    "dbt-agent-skills": {
-      "source": {
-        "source": "github",
-        "repo": "dbt-labs/dbt-agent-skills"
-      }
-    }
   }
 }

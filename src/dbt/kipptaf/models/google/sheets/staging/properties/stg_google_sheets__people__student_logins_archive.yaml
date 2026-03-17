@@ -1,0 +1,11 @@
+models:
+  - name: stg_google_sheets__people__student_logins_archive
+    columns:
+      - name: Default_Password
+        data_type: STRING
+      - name: Student_Number
+        data_type: INT64
+      - name: Username
+        data_type: STRING
+      - name: google_email
+        data_type: STRING

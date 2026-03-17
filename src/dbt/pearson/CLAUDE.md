@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/pearson/`
 
 Source-system staging project for **Pearson** state assessments — specifically
 PARCC and NJGPA (New Jersey) standardized tests. Staging-only project.

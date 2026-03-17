@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/collegeboard/`
 
 Schema-only library — Avro schemas for **College Board** assessment data (SAT,
 AP, PSAT) ingested via SFTP. The asset is built using

@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/tableau/`
 
 Dagster asset factory and resource for **Tableau Server** workbook refresh.
 Assets represent Tableau workbooks that are refreshed after upstream dbt models

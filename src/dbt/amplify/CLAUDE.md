@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/amplify/`
 
 Source-system staging project for **Amplify** reading assessments. Covers two
 product lines with different ingestion paths:

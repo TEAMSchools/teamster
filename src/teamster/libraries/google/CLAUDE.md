@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/google/`
 
 Google Workspace integrations. Four separate sub-libraries, each with distinct
 responsibilities:

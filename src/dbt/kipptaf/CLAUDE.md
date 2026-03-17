@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/kipptaf/`
 
 The **primary network-wide analytics project** for KIPP TEAM & Family (TAF).
 This is the most complex dbt project — it aggregates data from all source-system
@@ -135,15 +130,6 @@ just the `kinds: [tableau]` is sufficient.
 Exposure files live in `models/exposures/` grouped by tool: `tableau.yml`,
 `google-sheets.yml`, `google-appsheet.yml`, etc.
 
-## Legacy `base_` Prefix
-
-Some models carry a `base_` prefix (e.g. `base_powerschool__*`). This is legacy
-dbt guidance for lightweight join models that lived alongside `stg_` models in
-the staging folder. **`base_` is considered outdated** — all `base_` models are
-planned for renaming to `int_` (tracked in
-[#2541](https://github.com/TEAMSchools/teamster/issues/2541)). Do not create new
-`base_` models; use `int_` instead.
-
 ## Model Conventions
 
 See `src/dbt/CLAUDE.md` for shared per-layer requirements (contract enforcement,
@@ -163,6 +149,10 @@ absence of these settings — they are intentionally inherited.
 | `marts/`                               | (view default) | `true`                      |
 | `illuminate/dlt/staging/repositories/` | `table`        | `false` (explicit override) |
 
+**Disabled illuminate repository models**: Repositories 365, 413, and 428 are
+disabled in `models/illuminate/dlt/staging/repositories/properties.yml`. Check
+this file before adding new `ref()` calls to `int_illuminate__repository_data`.
+
 **Schema overrides**: `extracts/tableau/` sets `+schema: tableau`, so
 `rpt_tableau__*` models land in `kipptaf_tableau`, not `kipptaf_extracts`.
 `extracts/` itself uses `+schema: extracts`.
@@ -180,3 +170,36 @@ They live in `models/extracts/` and are distinct from the data mart layer.
 **`dim_*` / `fct_*` models** are dimensional data mart models being built for
 use with a semantic layer. They live in `models/marts/`. This layer is actively
 being developed.
+
+### Selecting from models that use `dbt_utils.star()`
+
+Several `base_` models (e.g. `base_kippadb__contact`, `base_powerschool__*`)
+generate their columns via `dbt_utils.star()`, which reads the BigQuery relation
+schema at dbt run time — not from the SQL source. This means:
+
+- The model's actual columns are only knowable from BigQuery, not from the SQL
+  file
+- YAML property files for these models drift silently unless actively maintained
+- Selecting `c.*` from them in downstream models makes the downstream column
+  list invisible — you won't notice when columns are added, renamed, or removed
+
+**Rule**: When joining a `dbt_utils.star()` model, enumerate columns explicitly.
+Get the authoritative list from `INFORMATION_SCHEMA.COLUMNS`:
+
+```sql
+select column_name
+from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
+where table_name = '<model_name>'
+order by ordinal_position
+```
+
+Then list them in your `SELECT` and update the YAML properties to match.
+
+**Note on `union_relations` views**: Views using the `union_relations` macro
+have a related but distinct problem — the macro compiles to an explicit column
+list at dbt run time, so stale compiled SQL won't pick up new upstream columns
+until re-materialized. This is handled automatically by
+`dbt_union_relations_automation_condition()` (see PR
+[#3440](https://github.com/TEAMSchools/teamster/pull/3440)). The guidance above
+applies to non-`union_relations` models where you are joining a star-generated
+base model directly.

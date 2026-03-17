@@ -239,6 +239,8 @@ models:
         data_type: boolean
       - name: is_strong_oos_option
         data_type: boolean
+      - name: is_matriculated_ba
+        data_type: boolean
       - name: is_early_action_decision
         data_type: boolean
       - name: is_submitted_aa

@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/fldoe/`
 
 Avro schemas for **Florida Department of Education (FLDOE)** assessment data
 (FSA, EOC, Science) ingested via SFTP. Used only by the `kippmiami` code
