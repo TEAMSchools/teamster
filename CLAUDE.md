@@ -30,6 +30,38 @@ Always use them before doing relevant work:
   Python changes to enforce production quality standards and review for reuse,
   quality, and efficiency. Skip for minor or isolated edits.
 
+### Superpowers (general development workflows)
+
+- **`/superpowers:test-driven-development`** — Use when implementing any
+  feature or bugfix, before writing implementation code
+- **`/superpowers:systematic-debugging`** — Use when encountering any bug, test
+  failure, or unexpected behavior, before proposing fixes
+- **`/superpowers:writing-plans`** — Use when given a spec or requirements for a
+  multi-step task, before touching code
+- **`/superpowers:executing-plans`** — Use when executing a written
+  implementation plan in a separate session with review checkpoints
+- **`/superpowers:verification-before-completion`** — Use before claiming work
+  is complete or fixed, before committing or opening PRs; run verification
+  commands and confirm output before making success claims
+- **`/superpowers:requesting-code-review`** — Use when completing tasks or
+  implementing major features, before merging
+- **`/superpowers:receiving-code-review`** — Use when receiving code review
+  feedback, before implementing suggestions
+- **`/superpowers:dispatching-parallel-agents`** — Use when facing 2+ independent
+  tasks that can be worked on without shared state or sequential dependencies
+- **`/superpowers:finishing-a-development-branch`** — Use when implementation is
+  complete and all tests pass, to decide how to integrate the work
+- **`/superpowers:subagent-driven-development`** — Use when executing
+  implementation plans with independent tasks in the current session
+- **`/superpowers:using-git-worktrees`** — Use when starting feature work that
+  needs isolation from the current workspace
+
+### CLAUDE.md Maintenance
+
+- **`/claude-md-management:claude-md-improver`** — Use when asked to audit,
+  improve, or update CLAUDE.md files; scans all CLAUDE.md files, scores quality,
+  and makes targeted improvements
+
 ## Working Conventions
 
 - **Python execution**: Always use `uv run` — never bare `python` or `python3`,
