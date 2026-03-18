@@ -99,6 +99,27 @@ models:
           int_overgrad__admissions on student contact ID and
           stg_kippadb__account.nces_id =
           int_overgrad__admissions.university__ipeds_id.
+      - name: n_overgrad_1st_choice
+        data_type: int64
+        description: >
+          Count of colleges this student has marked #1 Choice in Overgrad.
+          Values > 1 indicate the student has tagged multiple schools as their
+          top choice.
+      - name: n_overgrad_2nd_choice
+        data_type: int64
+        description: Count of colleges this student has marked #2 Choice in Overgrad.
+      - name: n_overgrad_3rd_choice
+        data_type: int64
+        description: Count of colleges this student has marked #3 Choice in Overgrad.
+      - name: has_duplicate_overgrad_1st_choice
+        data_type: boolean
+        description: True if the student has marked more than one college as #1 Choice in Overgrad.
+      - name: has_duplicate_overgrad_2nd_choice
+        data_type: boolean
+        description: True if the student has marked more than one college as #2 Choice in Overgrad.
+      - name: has_duplicate_overgrad_3rd_choice
+        data_type: boolean
+        description: True if the student has marked more than one college as #3 Choice in Overgrad.
       - name: is_4yr
         data_type: boolean
         description: >
