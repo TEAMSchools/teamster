@@ -11,7 +11,6 @@
   "editor.wordWrapColumn": 88,
   "git.confirmSync": false,
   "git.ignoreRebaseWarning": true,
-  "githubPullRequests.ignoredPullRequestBranches": ["main"],
   "python.createEnvironment.trigger": "off",
   "python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python",
   "python.envFile": "${workspaceFolder}/env/.env",
@@ -36,14 +35,16 @@
     "**/.trunk/*logs/": true,
     "**/.trunk/*notifications/": true,
     "**/.trunk/*out/": true,
-    "**/.trunk/*plugins/": true
+    "**/.trunk/*plugins/": true,
+    "**/dbt_packages/": true
   },
   "files.watcherExclude": {
     "**/.trunk/*actions/": true,
     "**/.trunk/*logs/": true,
     "**/.trunk/*notifications/": true,
     "**/.trunk/*out/": true,
-    "**/.trunk/*plugins/": true
+    "**/.trunk/*plugins/": true,
+    "**/dbt_packages/**": true
   },
   "[jsonc]": {
     "editor.defaultFormatter": "trunk.io"
@@ -59,6 +60,10 @@
     "UV_LINK_MODE": "copy",
     "UV_RESOLUTION": "highest"
   },
+  "yaml.customTags": [
+    "tag:yaml.org,2002:python/name:material.extensions.emoji.twemoji scalar",
+    "tag:yaml.org,2002:python/name:material.extensions.emoji.to_svg scalar"
+  ],
   "yaml.schemas": {
     "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/dbt_project-latest.json": "src/dbt/**/dbt_project.yml",
     "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/selectors-latest.json": "src/dbt/**/selectors.yml",
