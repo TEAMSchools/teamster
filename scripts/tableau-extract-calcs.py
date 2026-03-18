@@ -195,7 +195,16 @@ def get_auth_token(server: str, site: str, username: str | None) -> tuple[str, s
     Prefers PAT from TABLEAU_TOKEN_NAME + TABLEAU_PERSONAL_ACCESS_TOKEN env
     vars. Falls back to username/password (prompts via getpass) when --username
     is supplied and PAT env vars are absent.
+
+    Raises SystemExit if the server URL is not HTTPS — credentials must never
+    be sent over a plain HTTP connection.
     """
+    if not server.lower().startswith("https://"):
+        raise SystemExit(
+            f"Refusing to send credentials over a non-HTTPS connection: {server!r}\n"
+            "Ensure TABLEAU_SERVER_ADDRESS (or --server) starts with https://."
+        )
+
     token_name = os.environ.get("TABLEAU_TOKEN_NAME")
     pat = os.environ.get("TABLEAU_PERSONAL_ACCESS_TOKEN")
 
@@ -210,6 +219,15 @@ def get_auth_token(server: str, site: str, username: str | None) -> tuple[str, s
         "No auth credentials found. Either set TABLEAU_TOKEN_NAME and "
         "TABLEAU_PERSONAL_ACCESS_TOKEN environment variables, or pass --username."
     )
+
+
+def signout(server: str, site_id: str, token: str) -> None:
+    """Invalidate the Tableau Server session token (best-effort)."""
+    url = f"{server}/api/{TABLEAU_API_VERSION}/auth/signout"
+    try:
+        requests.post(url, headers={"x-tableau-auth": token}, timeout=10)
+    except requests.RequestException:
+        pass
 
 
 def download_workbook_by_id(
@@ -229,11 +247,14 @@ def find_workbook_id_by_name(
     server: str, site_id: str, workbook_name: str, token: str
 ) -> str:
     """Look up a workbook's ID by name via the REST API."""
+    # Colons and commas are Tableau filter syntax delimiters — strip them to
+    # prevent filter injection from user-supplied workbook names.
+    safe_name = workbook_name.replace(":", "").replace(",", "")
     url = f"{server}/api/{TABLEAU_API_VERSION}/sites/{site_id}/workbooks"
     resp = requests.get(
         url,
         headers={**_JSON_HEADERS, "x-tableau-auth": token},
-        params={"filter": f"name:eq:{workbook_name}"},
+        params={"filter": f"name:eq:{safe_name}"},
         timeout=30,
     )
     resp.raise_for_status()
@@ -371,8 +392,11 @@ def run_interactive() -> None:
 
     print(f"\nConnecting to {server} …")
     token, site_id = get_auth_token(server, site, username=None)
-    print("Downloading workbook …")
-    raw = download_workbook_by_id(server, site_id, workbook_id, token)
+    try:
+        print("Downloading workbook …")
+        raw = download_workbook_by_id(server, site_id, workbook_id, token)
+    finally:
+        signout(server, site_id, token)
     twb_bytes = extract_twb_bytes_from_bytes(raw)
 
     # ── Step 3: pick a datasource ────────────────────────────────────────
@@ -498,7 +522,10 @@ def main() -> None:
             parser.error("--server is required (or set TABLEAU_SERVER_ADDRESS env var)")
 
         token, site_id = get_auth_token(args.server, args.site, args.username)
-        raw = download_workbook_by_id(args.server, site_id, workbook_id, token)
+        try:
+            raw = download_workbook_by_id(args.server, site_id, workbook_id, token)
+        finally:
+            signout(args.server, site_id, token)
         twb_bytes = extract_twb_bytes_from_bytes(raw)
         if not args.datasource:
             print_datasource_picker(list_datasources(twb_bytes), workbook_label)
@@ -513,10 +540,13 @@ def main() -> None:
             parser.error("--server is required (or set TABLEAU_SERVER_ADDRESS env var)")
 
         token, site_id = get_auth_token(args.server, args.site, args.username)
-        workbook_id = find_workbook_id_by_name(
-            args.server, site_id, args.workbook, token
-        )
-        raw = download_workbook_by_id(args.server, site_id, workbook_id, token)
+        try:
+            workbook_id = find_workbook_id_by_name(
+                args.server, site_id, args.workbook, token
+            )
+            raw = download_workbook_by_id(args.server, site_id, workbook_id, token)
+        finally:
+            signout(args.server, site_id, token)
         twb_bytes = extract_twb_bytes_from_bytes(raw)
         if not args.datasource:
             print_datasource_picker(list_datasources(twb_bytes), args.workbook)
