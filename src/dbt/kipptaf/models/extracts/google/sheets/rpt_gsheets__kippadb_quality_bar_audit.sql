@@ -14,6 +14,15 @@ with
         from {{ ref("int_kippadb__roster") }}
     ),
 
+    overgrad_top_choice as (
+        select
+            student__external_student_id,
+            university_name,
+            top_choice_schools,
+        from {{ ref("int_overgrad__admissions") }}
+        where top_choice_schools is not null
+    ),
+
     `rollup` as (
         select
             applicant,
@@ -77,6 +86,7 @@ select
     a.meets_full_need,
     a.is_strong_oos_option as is_strong_oos,
     a.is_early_action_decision,
+    og.top_choice_schools as overgrad_top_choice,
 
     -- per-app quality bar component flags
     a.account_type in ('Public 4 yr', 'Private 4 yr') as is_4yr,
@@ -146,4 +156,8 @@ select
 from {{ ref("base_kippadb__application") }} as a
 inner join roster as r on a.applicant = r.contact_id
 inner join `rollup` as ro on a.applicant = ro.applicant
+left join
+    overgrad_top_choice as og
+    on a.applicant = og.student__external_student_id
+    and a.account_name = og.university_name
 where a.application_submission_status in ('Wishlist', 'Submitted')

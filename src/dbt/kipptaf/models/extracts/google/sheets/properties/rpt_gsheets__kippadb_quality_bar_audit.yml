@@ -86,6 +86,12 @@ models:
       - name: is_early_action_decision
         data_type: boolean
         description: True if application_admission_type is Early Action or Early Decision
+      - name: overgrad_top_choice
+        data_type: string
+        description: >
+          Student's self-reported Overgrad choice rank for this college
+          (#1 Choice, #2 Choice, #3 Choice, or null if not ranked). Joined
+          from int_overgrad__admissions on student and university name.
       - name: is_4yr
         data_type: boolean
         description: >
