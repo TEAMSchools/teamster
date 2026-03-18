@@ -164,7 +164,7 @@ All joins are INNER. All FK columns in `students_assessments_responses`
 (`field_id`, `response_id`, `version_id`) are NOT NULL per the Illuminate
 schema, so INNER joins are safe and correct — no rows are dropped due to nulls.
 
-```
+```sql
 students_assessments_responses (sar)
   INNER JOIN responses (r)         on sar.response_id = r.response_id
   INNER JOIN field_responses (fr)  on sar.field_id = fr.field_id
