@@ -11,8 +11,7 @@ Used in `int_extracts__student_enrollments` and downstream academic models.
 
 ### Standard GPA Categories
 
-Applied to cumulative and term GPA fields (e.g., `cumulative_gpa`,
-`term_gpa`).
+Applied to cumulative and term GPA fields (e.g., `cumulative_gpa`, `term_gpa`).
 
 | Rank | Category Name | Min (inclusive) | Max (exclusive) |
 | ---- | ------------- | --------------- | --------------- |
@@ -22,6 +21,6 @@ Applied to cumulative and term GPA fields (e.g., `cumulative_gpa`,
 | 2    | 2.00–2.49     | 2.00            | 2.50            |
 | 1    | Below 2.00    | 0.00            | 2.00            |
 
-> **Note**: Add any additional GPA category sets (e.g., weighted GPA, AP GPA)
-> as separate subsections here, following the same table format. Include which
+> **Note**: Add any additional GPA category sets (e.g., weighted GPA, AP GPA) as
+> separate subsections here, following the same table format. Include which
 > fields and models each set applies to.
