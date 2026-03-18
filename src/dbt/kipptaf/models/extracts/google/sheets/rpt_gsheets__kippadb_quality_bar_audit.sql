@@ -14,7 +14,7 @@ with
         from {{ ref("int_kippadb__roster") }}
     ),
 
-    rollup as (
+    `rollup` as (
         select
             applicant,
             n_wishlist,
@@ -51,7 +51,7 @@ with
 select
     -- student identity
     r.contact_id,
-    ro.student_number,
+    r.student_number,
     r.first_name,
     r.last_name,
     r.contact_owner_name as counselor,
@@ -145,5 +145,5 @@ select
     end as wishlist_quality_bar_tier,
 from {{ ref("base_kippadb__application") }} as a
 inner join roster as r on a.applicant = r.contact_id
-inner join rollup as ro on a.applicant = ro.applicant
+inner join `rollup` as ro on a.applicant = ro.applicant
 where a.application_submission_status in ('Wishlist', 'Submitted')
