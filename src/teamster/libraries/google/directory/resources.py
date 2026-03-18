@@ -148,7 +148,7 @@ class GoogleDirectoryResource(ConfigurableResource):
         """Paginate through all pages of a Directory API list endpoint.
 
         Retries each page request on transient ``HttpError`` (e.g. 503) using
-        exponential backoff before raising.
+        fixed-delay backoff before raising.
 
         Args:
             api_name: Resource name on the Directory API client (e.g.
