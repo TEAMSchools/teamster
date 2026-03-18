@@ -85,7 +85,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
     _resource: discovery.Resource = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
-    _exceptions: list[tuple] = PrivateAttr(default=[])
+    _exceptions: list[tuple] = PrivateAttr(default_factory=list)
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         """Initialize the Directory API client before asset execution.
@@ -180,7 +180,7 @@ class GoogleDirectoryResource(ConfigurableResource):
             )
 
             next_page_token = response.get("nextPageToken")
-            data.extend(response[response_data_key])
+            data.extend(response.get(response_data_key, []))
 
             self._log.debug(f"Retrieved {len(data)} records")
 
@@ -329,7 +329,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
         Args:
             **kwargs: Forwarded to ``_list``. ``customer`` defaults to
-                ``self.customer_id``. Page size capped at 100 (API maximum).
+                ``self.customer_id``. Page size defaults to 100 (API maximum).
 
         Returns:
             List of role resource dicts.

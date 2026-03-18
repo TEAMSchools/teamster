@@ -186,6 +186,20 @@ def test_batch_insert_users_collects_exception_from_failed_request():
     assert "a@b.com" in exceptions[0]
 
 
+def test_batch_insert_users_collects_all_exceptions_from_multi_failure_batch():
+    # Regression: old callback reset self._exceptions on every invocation, so
+    # only the last exception per batch was ever collected.
+    resource, mock_api = _make_resource()
+    err1 = _http_error(409, b"Conflict")
+    err2 = _http_error(409, b"Conflict")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [[(None, err1), (None, err2)]]
+    )
+    users = [{"primaryEmail": "a@b.com"}, {"primaryEmail": "b@b.com"}]
+    exceptions = resource.batch_insert_users(users)
+    assert len(exceptions) == 2
+
+
 def test_batch_insert_users_sleeps_between_batches_not_after_last():
     resource, mock_api = _make_resource()
     # 11 users → 2 batches (10 + 1); sleep should fire exactly once
