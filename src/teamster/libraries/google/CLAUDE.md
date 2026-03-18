@@ -30,7 +30,17 @@ as `None`. Type both as `X | None`.
 **Unit testing**: To mock the API without live credentials, set
 `resource._resource = MagicMock()` and target
 `mock_resource.<api>.return_value.list.return_value.execute`. Patch
-`dagster._utils.backoff.time.sleep` to suppress retry delays.
+`dagster._utils.backoff.time.sleep` to suppress retry delays in `_list`. To test
+batch methods, set `mock_api.new_batch_http_request.side_effect` to a factory
+that captures the `callback` kwarg and calls it inside `execute()` — see
+`_make_batch_side_effect()` in
+`tests/resources/test_resource_google_directory.py`. Patch
+`teamster.libraries.google.directory.resources.time.sleep` (not the backoff
+path) to suppress inter-batch delays.
+
+**Empty-page responses**: Some API endpoints return `{}` instead of
+`{"users": []}` for pages with no items. Use `response.get(key, [])`, not
+`response[key]`.
 
 **`schema.py`**: Pydantic models (`User`, `OrgUnits`, `Role`, `RoleAssignment`,
 `Group`, `Member`) mirroring the Google Directory API response shapes. Code
