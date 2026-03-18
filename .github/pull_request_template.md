@@ -4,6 +4,11 @@
 
 [//]: # "When merged, this pull request will..."
 
+## AI Assistance
+
+- [ ] If Claude Code authored or co-authored this PR, briefly note what was
+      AI-assisted vs. human-directed in the summary above
+
 ## Self-review
 
 ### General
@@ -12,6 +17,9 @@
 - [ ] Update **due date** and **assignee** on the
       [TEAMster Asana Project](https://app.asana.com/0/1205971774138578/1205971926225838)
 - [ ] Run `trunk fmt` on all modified files
+- [ ] Review the **Claude Code Review** comment posted on this PR. Address valid
+      feedback; dismiss false positives with a brief reply explaining why.
+      (Claude is advisory — use your judgement, but don't ignore it.)
 
 ### Dagster
 
@@ -41,21 +49,20 @@
 - [ ] If adding or changing a schedule or sensor, regenerate the automations
       catalog: `uv run scripts/gen-automations-doc.py`
 - [ ] If adding a new integration to a code location, update that location's
-      `CLAUDE.md`
+      `CLAUDE.md` by running `/claude-md-management:revise-claude-md`
 
 ### CI checks
 
 - [ ] **Trunk** — passes. If it fails, run `trunk check` and `trunk fmt`
       locally, fix any issues, and push again.
 - [ ] **dbt Cloud** — passes. If it fails: click **Details** on the check →
-      expand **Invoke `dbt build ...`** → **Debug Logs**.
+      expand **Invoke `dbt build ...`** → **Debug Logs**. Or tag **Claude** on
+      the PR with the error details.
 - [ ] **Dagster Cloud** — passes or not triggered (only runs when relevant paths
       change and the PR is not a draft). If it fails: check the **Actions** tab
       for the workflow run logs. Re-run failed jobs if the failure looks
       transient; otherwise check the **Dagster Cloud** branch deployment for
-      error details.
-- [ ] **Claude Code Review** — review the automated comment. Note: Claude is not
-      a blocking check and its feedback may contain errors; use your judgement.
+      error details. Or tag **Claude** on the PR for help.
 
 ## Troubleshooting
 
