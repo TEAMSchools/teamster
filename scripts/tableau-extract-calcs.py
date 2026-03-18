@@ -226,8 +226,11 @@ def signout(server: str, site_id: str, token: str) -> None:
     url = f"{server}/api/{TABLEAU_API_VERSION}/auth/signout"
     try:
         requests.post(url, headers={"x-tableau-auth": token}, timeout=10)
-    except requests.RequestException:
-        pass
+    except requests.RequestException as exc:
+        # Best-effort sign-out: a failure here does not affect the script output
+        # and should not mask earlier errors. Enable TABLEAU_DEBUG to surface it.
+        if os.environ.get("TABLEAU_DEBUG"):
+            print(f"signout failed (ignored): {exc}", file=sys.stderr)
 
 
 def download_workbook_by_id(
