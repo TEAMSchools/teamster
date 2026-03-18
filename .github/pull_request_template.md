@@ -11,17 +11,19 @@
 
 ## Self-review
 
+> Complete only the sections relevant to your changes.
+
 ### General
 
-- [ ] If this is a same-day request, please flag that in the #data-team Slack
+- If this is a same-day request, please flag that in the #data-team Slack
+- Run `trunk fmt` on all modified files before pushing to avoid CI failures
 - [ ] Update **due date** and **assignee** on the
       [TEAMster Asana Project](https://app.asana.com/0/1205971774138578/1205971926225838)
-- [ ] Run `trunk fmt` on all modified files
 - [ ] Review the **Claude Code Review** comment posted on this PR. Address valid
       feedback; dismiss false positives with a brief reply explaining why.
       (Claude is advisory — use your judgement, but don't ignore it.)
 
-### Dagster
+### Dagster _(skip if no Dagster changes)_
 
 - [ ] Run `uv run dagster definitions validate` for any modified code location
 - [ ] Run `uv run pytest tests/test_dagster_definitions.py` for any modified
@@ -30,7 +32,7 @@
       [Library + Config pattern](https://teamschools.github.io/teamster/reference/adding-an-integration/)
       with the correct asset key format and IO manager
 
-### dbt
+### dbt _(skip if no dbt changes)_
 
 - [ ] Include a `[model_name].yml` properties file for all new models — see
       [dbt Conventions](https://teamschools.github.io/teamster/reference/dbt-conventions/#model-properties-file)
@@ -39,19 +41,20 @@
       for all models consumed by a dashboard, analysis, or application
 - [ ] **Breaking change?** Renaming or removing columns in a contracted model
       (`stg_`, `rpt_`, mart) will break downstream exposures. Coordinate with
-      affected teams before merging.
+      affected teams before merging and document your rollback plan in the
+      summary above.
 - [ ] If adding a new external source, run `stage_external_sources` before
       building — see
       [SQL conventions](https://teamschools.github.io/teamster/reference/dbt-conventions/#sql-conventions)
 
-### Docs
+### Docs _(skip if no schedule, sensor, or integration changes)_
 
 - [ ] If adding or changing a schedule or sensor, regenerate the automations
       catalog: `uv run scripts/gen-automations-doc.py`
 - [ ] If adding a new integration to a code location, update that location's
       `CLAUDE.md` by running `/claude-md-management:revise-claude-md`
 
-### CI checks
+## CI checks
 
 - [ ] **Trunk** — passes. If it fails, run `trunk check` and `trunk fmt`
       locally, fix any issues, and push again.
