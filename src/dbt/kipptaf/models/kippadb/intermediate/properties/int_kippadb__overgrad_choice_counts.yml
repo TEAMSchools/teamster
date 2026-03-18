@@ -1,0 +1,35 @@
+models:
+  - name: int_kippadb__overgrad_choice_counts
+    description: >
+      Student-level rollup of Overgrad top-choice school rankings. One row per
+      student. Counts how many schools the student has tagged as #1, #2, or #3
+      Choice in Overgrad, and flags students who have tagged more than one school
+      with the same rank (a data quality issue).
+    columns:
+      - name: contact_id
+        data_type: string
+        description: >
+          Salesforce contact ID (sourced from student__external_student_id in
+          Overgrad admissions records).
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: n_overgrad_1st_choice
+        data_type: int64
+        description: Count of schools this student has tagged as #1 Choice in Overgrad.
+      - name: n_overgrad_2nd_choice
+        data_type: int64
+        description: Count of schools this student has tagged as #2 Choice in Overgrad.
+      - name: n_overgrad_3rd_choice
+        data_type: int64
+        description: Count of schools this student has tagged as #3 Choice in Overgrad.
+      - name: has_duplicate_overgrad_1st_choice
+        data_type: boolean
+        description: True if the student has tagged more than one school as #1 Choice.
+      - name: has_duplicate_overgrad_2nd_choice
+        data_type: boolean
+        description: True if the student has tagged more than one school as #2 Choice.
+      - name: has_duplicate_overgrad_3rd_choice
+        data_type: boolean
+        description: True if the student has tagged more than one school as #3 Choice.
