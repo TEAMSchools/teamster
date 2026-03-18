@@ -66,29 +66,21 @@ models:
       - name: hos
         data_type: string
       - name: cumulative_y1_gpa
-        data_type: numeric
+        data_type: float64
       - name: cumulative_y1_gpa_unweighted
-        data_type: numeric
+        data_type: float64
       - name: cumulative_y1_gpa_projected
-        data_type: numeric
+        data_type: float64
       - name: cumulative_y1_gpa_projected_s1
-        data_type: numeric
+        data_type: float64
       - name: cumulative_y1_gpa_projected_s1_unweighted
-        data_type: numeric
+        data_type: float64
       - name: cumulative_y1_gpa_projected_unweighted
-        data_type: float
+        data_type: float64
       - name: core_cumulative_y1_gpa
         data_type: float64
-      - name: cumulative_y1_gpa
-        data_type: float64
-      - name: cumulative_y1_gpa_projected
-        data_type: float64
-      - name: cumulative_y1_gpa_projected_s1
-        data_type: float64
-      - name: cumulative_y1_gpa_projected_s1_unweighted
-        data_type: float64
-      - name: cumulative_y1_gpa_unweighted
-        data_type: float64
+      - name: student_slideback
+        data_type: boolean
       - name: most_recent_ada
         data_type: float64
       - name: most_recent_grade_level
