@@ -18,7 +18,13 @@ names and labels. Present them as a numbered list and ask the user to pick one:
 >
 > Which workbook do you want to work with?
 
-Wait for the user's answer before continuing.
+Wait for the user's answer. **Validate the response:** if the user enters a
+number outside the range 1–N or a name that doesn't match any exposure, reply:
+
+> That number isn't in the list (valid choices are 1–N). Which workbook do you
+> want to work with?
+
+Re-prompt until a valid selection is made.
 
 ---
 
@@ -40,7 +46,14 @@ the list to the user and ask which one they want to analyze:
 >
 > Which data source contains the calculations you want to move upstream?
 
-Wait for the user's answer before continuing.
+Wait for the user's answer. **Validate the response:** if the user enters a
+number outside the range 1–N (where N is the number of data sources listed), or
+a name that does not match any datasource, reply:
+
+> That number isn't in the list (valid choices are 1–N). Which data source do
+> you want to work with?
+
+Re-prompt until a valid selection is made.
 
 ---
 
@@ -123,6 +136,12 @@ show it to the user before writing anything:
 | `USERNAME()`                | _(skip — Tableau-only)_              |
 | `{FIXED …}`                 | _(flag to user — LOD, needs review)_ |
 | `[Parameters].[…]`          | _(skip — parameter, Tableau-only)_   |
+
+**Bare string literals that look like org/entity names** (e.g. `"KTAF"`,
+`"KIPP"`, `"Newark"`) are often hardcoded substitutes for a real column. Before
+marking these as SKIP, check `int_extracts__student_enrollments` for a
+`district` or equivalent column. If one exists upstream but is missing from the
+extract model, propose adding it instead of replicating the literal.
 
 ---
 
