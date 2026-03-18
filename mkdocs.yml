@@ -32,12 +32,6 @@ hooks:
 
 nav:
   - Home: README.md
-  - Getting Started: getting-started.md
-  - Contributing:
-      - Workflow: CONTRIBUTING.md
-      - Code of Conduct: CODE_OF_CONDUCT.md
-      - Support: SUPPORT.md
-      - Security: SECURITY.md
   - Reference:
       - Architecture: reference/architecture.md
       - Adding an Integration: reference/adding-an-integration.md
@@ -45,14 +39,15 @@ nav:
       - Fiscal Year & Partitioning: reference/fiscal-year-partitioning.md
       - dbt Conventions: reference/dbt-conventions.md
       - Automation Conditions: reference/automation-conditions.md
-  - Automations: reference/automations.md
   - Guides:
+      - Getting Started: getting-started.md
       - Dagster: guides/dagster.md
       - Google Sheets & Forms: guides/google-sheets.md
   - Troubleshooting:
       - Dagster: troubleshooting/dagster.md
       - dbt: troubleshooting/dbt.md
       - VS Code: troubleshooting/vscode.md
+  - Automations: reference/automations.md
 
 markdown_extensions:
   - admonition
