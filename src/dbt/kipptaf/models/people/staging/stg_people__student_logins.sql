@@ -162,11 +162,13 @@
     from
         {{
             source(
-                "google_sheets", "src_google_sheets__people__student_logins_archive"
+                "google_sheets",
+                "stg_google_sheets__people__student_logins_archive",
             )
         }}
 {% endif %}
 
     -- depends_on: {{ ref("stg_powerschool__students") }}
-    -- depends_on: {{ ref("stg_google_sheets__people__student_logins_archive") }}
+    -- trunk-ignore(sqlfluff/LT05)
+    -- depends_on: {{ source("google_sheets", "stg_google_sheets__people__student_logins_archive") }}
     -- depends_on: {{ source("people", "src_people__student_logins") }}
