@@ -15,10 +15,7 @@ with
     ),
 
     overgrad_top_choice as (
-        select
-            student__external_student_id,
-            university__ipeds_id,
-            top_choice_schools,
+        select student__external_student_id, university__ipeds_id, top_choice_schools,
         from {{ ref("int_overgrad__admissions") }}
         where top_choice_schools is not null
     ),
