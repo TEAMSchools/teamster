@@ -1,7 +1,16 @@
+"""Pydantic models mirroring Google Admin SDK Directory API response shapes.
+
+These models are consumed by code locations to generate Avro schemas via
+``py_avro_schema.generate()``. See the API reference at
+https://developers.google.com/admin-sdk/directory/reference/rest
+"""
+
 from pydantic import BaseModel
 
 
 class DirectoryBaseModel(BaseModel):
+    """Base model for Directory API resources that include ``kind`` and ``etag``."""
+
     kind: str | None = None
     etag: str | None = None
 
@@ -61,6 +70,8 @@ class OrganizationUnit(DirectoryBaseModel):
 
 
 class OrgUnits(DirectoryBaseModel):
+    """Top-level wrapper returned by the orgunits.list endpoint."""
+
     organizationUnits: list[OrganizationUnit | None] | None = None
 
 
@@ -114,6 +125,8 @@ class StudentAttributes(BaseModel):
 
 
 class CustomSchemas(BaseModel):
+    """Custom schema fields attached to a user. Keyed by schema name."""
+
     Student_attributes: StudentAttributes | None = None
 
 

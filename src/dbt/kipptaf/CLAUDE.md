@@ -27,6 +27,32 @@ models/
   exposures/         # dbt exposures (Tableau, etc.)
 ```
 
+## Source File Conventions
+
+Each integration with external table sources uses two source files:
+
+- **`sources-external.yml`** — BigQuery external tables (GCS Avro or Google
+  Sheets). Uses a dev-prefixed schema expression so dev/staging environments
+  point to isolated schemas.
+- **`sources-bigquery.yml`** — Native BQ tables. Uses a plain
+  `"{{ project_name }}_<integration>"` schema (no dev prefix), always pointing
+  to production. Used for frozen archive tables whose staging models have been
+  disabled.
+
+Both files use the same `name:` under `sources:` — dbt merges the table lists at
+parse time.
+
+**Archive table pattern**: When a staging or intermediate model is retired but
+its data must be preserved, disable the model (`config: enabled: false` in its
+properties YAML), add a BQ-native entry in `sources-bigquery.yml` pointing to
+the schema where the model was materialized, and update downstream `ref()` calls
+to `source()`. See `google/sheets/sources-bigquery.yml` and
+`performance_management/sources-bigquery.yml` for examples.
+
+**Shared-spreadsheet risk**: Google Sheets sources that share a spreadsheet URI
+all trigger together when Dagster detects any tab change. Archive tabs on shared
+sheets must be decoupled by converting to BQ-native sources (see above).
+
 ## Key Architectural Notes
 
 **Cross-project refs**: This project references all source-system packages

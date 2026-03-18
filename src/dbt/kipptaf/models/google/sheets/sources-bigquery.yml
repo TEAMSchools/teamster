@@ -1,0 +1,24 @@
+sources:
+  - name: google_sheets
+    schema: kipptaf_google_sheets
+    tables:
+      - name: stg_google_sheets__people__employee_numbers_archive
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - employee_numbers_archive
+      - name: stg_google_sheets__people__student_logins_archive
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - student_logins_archive

@@ -134,6 +134,7 @@ with
             response_id,
             response_date_submitted,
             respondent_user_principal_name,
+            respondent_salesforce_id,
 
             /* pivot cols */
             after_grad,
@@ -305,7 +306,10 @@ select
     if(
         r.contact_id is not null,
         row_number() over (
-            partition by r.contact_id order by sp.response_date_submitted desc
+            partition by r.contact_id
+            order by
+                /* bulk_add wins; intended only for alumni with no survey response */
+                if(sp.survey_id = 'bulk_add', 0, 1), sp.response_date_submitted desc
         ),
         null
     ) as rn_respondent,
@@ -317,4 +321,5 @@ full join
         r.sf_email = sp.respondent_user_principal_name
         or r.sf_secondary_email = sp.respondent_user_principal_name
         or r.reconciliation_response_id = sp.response_id
+        or r.contact_id = sp.respondent_salesforce_id
     )

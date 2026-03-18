@@ -667,6 +667,10 @@ select
     coalesce(ei.ecc_adjusted_6_year_minority_graduation_rate, 0) as urm_ecc_school,
 
     if(ba.n_ba_enrolled_semesters >= 5, true, false) as is_enrolled_ba_5_semesters,
+
+    coalesce(
+        ogc.has_duplicate_overgrad_1st_choice, false
+    ) as has_duplicate_overgrad_1st_choice,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
@@ -726,6 +730,8 @@ left join
     on sv.contact = c.contact_id
     and sv.academic_year = ay.academic_year
 left join ba_semesters_enrolled as ba on c.contact_id = ba.sf_contact_id
+left join
+    {{ ref("int_overgrad__choice_counts") }} as ogc on c.contact_id = ogc.contact_id
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null

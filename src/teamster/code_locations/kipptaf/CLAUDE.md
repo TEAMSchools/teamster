@@ -90,6 +90,20 @@ and several SSH resources.
 `asset_checks.py` defines freshness checks on ADP WFN people models (deadline
 1:15am, 45-minute window).
 
+## Illuminate DLT Schedule Split
+
+Illuminate DLT assets are split across two schedules in
+`dlt/illuminate/schedules.py`:
+
+- **Hourly** (`illuminate_dlt_hourly_asset_job_schedule`): high-frequency
+  `dna_assessments` tables that change as teachers grade and students test (e.g.
+  `agg_student_responses*`, `students_assessments`)
+- **Daily** (`illuminate_dlt_daily_asset_job_schedule`): reference/lookup tables
+  and `dna_repositories` (e.g. `performance_bands`, `reporting_groups`,
+  `fields`, individual repository tables)
+
+New DLT assets must be assigned to the appropriate schedule.
+
 ## Disabled Integrations
 
 `adp` WFM is not integrated (no schedules or assets). Reusable library code for

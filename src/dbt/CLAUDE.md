@@ -70,6 +70,9 @@ CLAUDE.md files reference this section rather than repeating it.
 **All intermediate models must**:
 
 1. Have a uniqueness test
+2. Not be consumed directly by external tools or reports — a reporting view
+   (`rpt_*`) must always sit between an intermediate model and an external
+   consumer, buffering external dependencies from internal schema evolution
 
 **All `rpt_`, `dim_*`, and `fct_*` models must**:
 
@@ -100,6 +103,10 @@ data_tests:
 
 ### SQL antipatterns to avoid
 
+- **Soft-delete filters**: Apply soft-delete exclusion filters in the **staging
+  model** (`WHERE deleted_at IS NULL`, `WHERE NOT _fivetran_deleted`, etc.), not
+  in intermediate JOIN `ON` clauses. Deleted rows should never reach downstream
+  models.
 - **`GROUP BY ALL`**: Always list grouping columns explicitly.
 - **`SELECT *` in the final SELECT of `rpt_` or mart models**: Always list
   columns explicitly. Pass-through CTEs (`select * from ref(...)`) are fine.
@@ -111,7 +118,10 @@ data_tests:
   (`--defer`) because the PR schema is empty. Use `dbt_utils.union_relations`
   with explicit `ref()` calls instead.
 - **Filter conditions in `ON` vs `WHERE`**: Row-filter conditions on the
-  preserved table belong in `WHERE`, not `ON` (except `FULL JOIN`).
+  preserved table belong in `WHERE`, not `ON` (except `FULL JOIN`). For example,
+  in `FROM a INNER JOIN b ON a.id = b.id AND b.deleted_at IS NULL`, the
+  `b.deleted_at IS NULL` filter is on the joined table (`b`) and belongs in
+  `ON`. A filter on the driving table (`a`) would belong in `WHERE`.
 
 ### SQL column ordering in SELECT clauses
 

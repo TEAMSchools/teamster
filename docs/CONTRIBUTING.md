@@ -51,7 +51,11 @@ creates a branch deployment. Triggered only when relevant source paths change.
 Skipped on draft PRs.
 
 **Claude Code Review** — posts an automated code review comment when the PR is
-opened or marked ready for review.
+opened or marked ready for review. Review the comment and address valid
+feedback; dismiss false positives with a brief reply explaining why. Claude is
+advisory — use your judgement, but don't ignore it. You can also tag **Claude**
+in a PR comment to ask it to investigate a CI failure or answer questions about
+the change.
 
 ### Merge conflicts
 
