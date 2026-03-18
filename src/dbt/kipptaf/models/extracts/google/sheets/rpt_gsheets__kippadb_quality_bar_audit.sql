@@ -19,6 +19,8 @@ with
             student__external_student_id,
             university__ipeds_id,
             top_choice_schools,
+
+            safe_cast(university__ipeds_id as string) as university_ipeds_id_str,
         from {{ ref("int_overgrad__admissions") }}
         where top_choice_schools is not null
     ),
@@ -160,5 +162,5 @@ left join {{ ref("stg_kippadb__account") }} as acc on a.school = acc.id
 left join
     overgrad_top_choice as og
     on a.applicant = og.student__external_student_id
-    and safe_cast(acc.nces_id as int64) = og.university__ipeds_id
+    and acc.nces_id = og.university_ipeds_id_str
 where a.application_submission_status in ('Wishlist', 'Submitted')
