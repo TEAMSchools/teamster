@@ -9,6 +9,7 @@ on:
       - .github/workflows/mkdocs-gh-deploy.yaml
       - docs/**
       - mkdocs.yml
+      - "!docs/superpowers/**"
 
 permissions:
   contents: write
