@@ -25,18 +25,6 @@ with
         where top_choice_schools is not null
     ),
 
-    overgrad_choice_counts as (
-        select
-            student__external_student_id,
-
-            countif(top_choice_schools = '#1 Choice') as n_overgrad_1st_choice,
-            countif(top_choice_schools = '#2 Choice') as n_overgrad_2nd_choice,
-            countif(top_choice_schools = '#3 Choice') as n_overgrad_3rd_choice,
-        from {{ ref("int_overgrad__admissions") }}
-        where top_choice_schools is not null
-        group by student__external_student_id
-    ),
-
     `rollup` as (
         select
             applicant,
@@ -105,9 +93,9 @@ select
     ogc.n_overgrad_1st_choice,
     ogc.n_overgrad_2nd_choice,
     ogc.n_overgrad_3rd_choice,
-    ogc.n_overgrad_1st_choice > 1 as has_duplicate_overgrad_1st_choice,
-    ogc.n_overgrad_2nd_choice > 1 as has_duplicate_overgrad_2nd_choice,
-    ogc.n_overgrad_3rd_choice > 1 as has_duplicate_overgrad_3rd_choice,
+    ogc.has_duplicate_overgrad_1st_choice,
+    ogc.has_duplicate_overgrad_2nd_choice,
+    ogc.has_duplicate_overgrad_3rd_choice,
 
     -- per-app quality bar component flags
     a.account_type in ('Public 4 yr', 'Private 4 yr') as is_4yr,
@@ -183,5 +171,5 @@ left join
     on a.applicant = og.student__external_student_id
     and acc.nces_id = og.university_ipeds_id_str
 left join
-    overgrad_choice_counts as ogc on a.applicant = ogc.student__external_student_id
+    {{ ref("int_overgrad__choice_counts") }} as ogc on a.applicant = ogc.contact_id
 where a.application_submission_status in ('Wishlist', 'Submitted')

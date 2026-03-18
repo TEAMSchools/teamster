@@ -589,3 +589,8 @@ models:
         data_type: string
       - name: afqt_score
         data_type: numeric
+      - name: has_duplicate_overgrad_1st_choice
+        data_type: boolean
+        description: >
+          True if the student has tagged more than one school as #1 Choice in
+          Overgrad. False if the student has no Overgrad top-choice data.
