@@ -17,7 +17,7 @@ with
     overgrad_top_choice as (
         select
             student__external_student_id,
-            university_name,
+            university__ipeds_id,
             top_choice_schools,
         from {{ ref("int_overgrad__admissions") }}
         where top_choice_schools is not null
@@ -156,8 +156,9 @@ select
 from {{ ref("base_kippadb__application") }} as a
 inner join roster as r on a.applicant = r.contact_id
 inner join `rollup` as ro on a.applicant = ro.applicant
+left join {{ ref("stg_kippadb__account") }} as acc on a.school = acc.id
 left join
     overgrad_top_choice as og
     on a.applicant = og.student__external_student_id
-    and a.account_name = og.university_name
+    and acc.nces_id = og.university__ipeds_id
 where a.application_submission_status in ('Wishlist', 'Submitted')

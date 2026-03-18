@@ -91,7 +91,8 @@ models:
         description: >
           Student's self-reported Overgrad choice rank for this college
           (#1 Choice, #2 Choice, #3 Choice, or null if not ranked). Joined
-          from int_overgrad__admissions on student and university name.
+          from int_overgrad__admissions on student contact ID and
+          stg_kippadb__account.nces_id = int_overgrad__admissions.university__ipeds_id.
       - name: is_4yr
         data_type: boolean
         description: >
