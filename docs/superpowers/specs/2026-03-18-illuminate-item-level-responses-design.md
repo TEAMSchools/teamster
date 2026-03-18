@@ -13,10 +13,12 @@ whether their response was correct.
 
 ## Scope
 
-Option A (staging + intermediate only). No reporting extract. Data volume at
-this grain is too large for Google Sheets or similar consumer-side pivoting —
-the intermediate model is the delivery artifact, to be consumed by downstream
-tooling as needed.
+Option A (staging + intermediate only). A reporting extract is deferred — the
+shape of the consumer-facing output is not yet determined. The intermediate
+model is an internal building block and should not be consumed directly by
+external tools or reports; a reporting view will be built on top of it when the
+presentation format is decided. That reporting view acts as a buffer between
+external dependencies and internal schema evolution.
 
 ## New Source Tables
 
@@ -59,11 +61,15 @@ referenced downstream.
 
 ### `students_assessments_responses`
 
-`students_assessments_responses` has no `date_taken` column (confirmed from the
-Illuminate schema — the table contains `student_assessment_response_id`,
+`build_illuminate_dlt_assets()` accepts an optional `filter_date_taken` boolean
+(default `False`) that adds a `WHERE date_taken <= '9999-12-31'` callback to
+handle PostgreSQL `infinity` date values that break psycopg. The existing
+`agg_student_responses` and `students_assessments` entries set this to `true`
+because they contain a `date_taken` column. `students_assessments_responses` has
+no `date_taken` column (its columns are `student_assessment_response_id`,
 `assessment_id`, `student_assessment_id`, `field_id`, `response_id`,
-`version_id`, `manual_score` only). `filter_date_taken` is therefore not needed
-and should not be set.
+`version_id`, `manual_score` only), so `filter_date_taken` does not apply and
+should not be set.
 
 `students_assessments_responses` is expected to be significantly larger than
 `agg_student_responses` because it is a finer grain (one row per question within
@@ -89,6 +95,20 @@ heavier `agg_student_responses_group` config rather than the lighter
 
 `responses`, `field_responses`, and `fields` get no special resource tags
 (small/medium tables, no `date_taken` columns).
+
+## Schedules
+
+`students_assessments_responses` is added to
+`illuminate_dlt_hourly_asset_job_schedule` alongside the other high-frequency
+`dna_assessments` assets (`agg_student_responses`,
+`agg_student_responses_group`, `agg_student_responses_standard`,
+`students_assessments`). Assessment response data changes throughout the day as
+teachers grade and students complete assessments.
+
+`responses`, `field_responses`, and `fields` are reference/lookup tables that
+change infrequently. They are added to `illuminate_dlt_daily_asset_job_schedule`
+alongside other reference tables (`performance_bands`, `reporting_groups`,
+`dna_repositories/fields`, etc.).
 
 ## Staging Models
 
@@ -120,10 +140,10 @@ assessment item fields).
 Properties YAML at
 `models/illuminate/dlt/intermediate/properties/int_illuminate__student_item_responses.yml`.
 
-**Materialization**: `table` (explicit override required — `dlt/intermediate/`
-has no directory-level default, so models there inherit the global view default;
-this model is high-cardinality and performs multi-table joins, making a view
-impractical).
+**Materialization**: view (global default — `dlt/intermediate/` has no
+directory-level materialization setting in `dbt_project.yml`, and the existing
+comparable models such as `int_illuminate__agg_student_responses` are all
+views). No override required; follow the existing pattern.
 
 **Grain**: one row per `student_assessment_response_id` (student × question ×
 assessment attempt).
@@ -144,12 +164,12 @@ students_assessments_responses (sar)
                                    AND sar.response_id = fr.response_id
                                    AND sar.version_id = fr.version_id
   INNER JOIN fields (f)            on sar.field_id = f.field_id
-WHERE f.deleted_at IS NULL
+                                   AND f.deleted_at IS NULL
 ```
 
-The `f.deleted_at IS NULL` filter belongs in `WHERE`, not `ON`, per project SQL
-conventions (row-filter conditions on the non-preserved side of a join belong in
-`WHERE`).
+`f.deleted_at IS NULL` belongs in the `ON` clause per project SQL conventions:
+row-filter conditions on the **preserved** table belong in `WHERE`; conditions
+on a joined (non-preserved) table belong in `ON`.
 
 ### Output Columns
 
@@ -170,7 +190,7 @@ conventions (row-filter conditions on the non-preserved side of a join belong in
 ### What is NOT in this model
 
 - Student responses for soft-deleted assessment items — excluded intentionally
-  by the `f.deleted_at IS NULL` WHERE filter
+  by the `f.deleted_at IS NULL` ON clause condition
 - Student demographics (name, grade level, local ID) — join to
   `stg_illuminate__dna_assessments__students_assessments` →
   `stg_illuminate__public__students` downstream
@@ -178,9 +198,10 @@ conventions (row-filter conditions on the non-preserved side of a join belong in
   `int_illuminate__agg_student_responses`
 - Question body text (`fields.body`) — available via join to
   `stg_illuminate__dna_assessments__fields` if needed downstream
-- `field_responses.choice` — the display label for the answer option is
-  intentionally excluded; `responses.response` carries the same information and
-  is the canonical answer text field
+- `field_responses.choice` — not yet confirmed whether this is equivalent to
+  `responses.response` or carries distinct information (e.g. a display label vs.
+  full response text). Must be validated against actual ingested data during
+  implementation before deciding whether to include it
 
 ## Out of Scope
 
@@ -188,5 +209,6 @@ conventions (row-filter conditions on the non-preserved side of a join belong in
   counts; left to consuming tools
 - `students_assessments_text_responses` (open-response/free-text answers) —
   separate table, different use case, not included
-- Reporting extract model (`rpt_gsheets__*`, `rpt_tableau__*`) — deferred; the
-  intermediate is the delivery artifact for now
+- Reporting extract model (`rpt_gsheets__*`, `rpt_tableau__*`) — deferred
+  pending determination of presentation format; will be built on top of the
+  intermediate when ready
