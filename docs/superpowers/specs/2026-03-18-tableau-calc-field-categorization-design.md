@@ -53,7 +53,7 @@ runtime — do not hardcode the list). The mart with the most matching column
 names wins. If two marts tie, pick the one whose name most closely resembles the
 formula's subject (e.g., `absences` → prefer `fct_attendance`).
 
-```
+```text
 ⚠ LOD — semantic layer candidate
    Formula: {FIXED [school_id] : SUM([absences])}
    Suggested mart: fct_attendance — add a pre-aggregated measure here,
@@ -62,7 +62,7 @@ formula's subject (e.g., `absences` → prefer `fct_attendance`).
 
 **Branch B — no confident match found:**
 
-```
+```text
 ⚠ LOD — semantic layer candidate
    Formula: {FIXED [student_id] : MAX([MAP Score])}
    No existing mart match found. A new fact table may be needed, e.g.:
@@ -83,7 +83,7 @@ candidate measures. It does not generate DDL.
 Accepts a model name (e.g. `rpt_tableau__gradebook_gpa_cumulative`). The script
 reads the model's YAML properties file at:
 
-```
+```text
 src/dbt/kipptaf/models/extracts/tableau/properties/<model>.yml
 ```
 
