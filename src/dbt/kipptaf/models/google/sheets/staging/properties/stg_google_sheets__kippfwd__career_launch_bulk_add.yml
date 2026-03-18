@@ -7,6 +7,9 @@ models:
           - unique:
               config:
                 store_failures: true
+          - not_null:
+              config:
+                store_failures: true
       - name: email
         data_type: string
       - name: cell_phone

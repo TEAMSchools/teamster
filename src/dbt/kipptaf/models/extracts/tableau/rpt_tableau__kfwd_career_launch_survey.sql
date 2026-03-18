@@ -308,6 +308,7 @@ select
         row_number() over (
             partition by r.contact_id
             order by
+                /* bulk_add wins; intended only for alumni with no survey response */
                 if(sp.survey_id = 'bulk_add', 0, 1), sp.response_date_submitted desc
         ),
         null
