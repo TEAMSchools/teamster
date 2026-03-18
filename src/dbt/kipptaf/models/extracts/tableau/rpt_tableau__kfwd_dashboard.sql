@@ -668,7 +668,9 @@ select
 
     if(ba.n_ba_enrolled_semesters >= 5, true, false) as is_enrolled_ba_5_semesters,
 
-    coalesce(ogc.has_duplicate_overgrad_1st_choice, false) as has_duplicate_overgrad_1st_choice,
+    coalesce(
+        ogc.has_duplicate_overgrad_1st_choice, false
+    ) as has_duplicate_overgrad_1st_choice,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student
