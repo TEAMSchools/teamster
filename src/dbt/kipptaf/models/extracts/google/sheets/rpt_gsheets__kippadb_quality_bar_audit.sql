@@ -59,6 +59,7 @@ with
         from {{ ref("int_kippadb__app_rollup") }}
     )
 
+-- trunk-ignore(sqlfluff/ST06)
 select
     -- student identity
     r.contact_id,
