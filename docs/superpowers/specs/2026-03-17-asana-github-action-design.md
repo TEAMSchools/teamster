@@ -95,7 +95,7 @@ without an assignee.
 
 A single `actions/github-script` step makes one `POST` request:
 
-```
+```text
 POST https://app.asana.com/api/1.0/tasks
 Authorization: Bearer <ASANA_PAT>
 ```
