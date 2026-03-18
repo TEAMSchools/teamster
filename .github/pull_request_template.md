@@ -15,7 +15,8 @@
 
 ### General
 
-- If this is a same-day request, please flag that in the #data-team Slack
+> If this is a same-day request, please flag that in the #data-team Slack
+
 - Run `trunk fmt` on all modified files before pushing to avoid CI failures
 - [ ] Update **due date** and **assignee** on the
       [TEAMster Asana Project](https://app.asana.com/0/1205971774138578/1205971926225838)
