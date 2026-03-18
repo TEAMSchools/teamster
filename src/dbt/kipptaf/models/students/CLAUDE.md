@@ -7,8 +7,6 @@ below, verify the SQL matches — flag any drift.
 
 ## GPA Categories
 
-Used in `int_extracts__student_enrollments` and downstream academic models.
-
 ### KTAF GPA Band — Weighted
 
 KIPP TAF internal cut-offs (4 bands). Applied to weighted GPA fields (max 5.33):
@@ -57,7 +55,3 @@ fields as KTAF GPA Band — Unweighted):
 | 3    | 2.50 to 2.99 | 2.50            | 2.99            |
 | 2    | 2.00 to 2.49 | 2.00            | 2.49            |
 | 1    | < 2.00       | 0.00            | 1.99            |
-
-> **Note**: Add any additional GPA band sets as separate subsections here,
-> following the same table format. Include which fields and models each applies
-> to.
