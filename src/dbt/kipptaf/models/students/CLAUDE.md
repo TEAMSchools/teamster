@@ -9,18 +9,55 @@ below, verify the SQL matches — flag any drift.
 
 Used in `int_extracts__student_enrollments` and downstream academic models.
 
-### Standard GPA Categories
+### KTAF GPA Band — Weighted
 
-Applied to cumulative and term GPA fields (e.g., `cumulative_gpa`, `term_gpa`).
+KIPP TAF internal cut-offs (4 bands). Applied to weighted GPA fields (max 5.33):
 
-| Rank | Category Name | Min (inclusive) | Max (exclusive) |
-| ---- | ------------- | --------------- | --------------- |
-| 5    | 3.50+         | 3.50            | 4.01            |
-| 4    | 3.00–3.49     | 3.00            | 3.50            |
-| 3    | 2.50–2.99     | 2.50            | 3.00            |
-| 2    | 2.00–2.49     | 2.00            | 2.50            |
-| 1    | Below 2.00    | 0.00            | 2.00            |
+- `cumulative_y1_gpa`
+- `cumulative_y1_gpa_projected`
+- `cumulative_y1_gpa_projected_s1`
+- `core_cumulative_y1_gpa`
 
-> **Note**: Add any additional GPA category sets (e.g., weighted GPA, AP GPA) as
-> separate subsections here, following the same table format. Include which
-> fields and models each set applies to.
+| Rank | Label        | Min (inclusive) | Max (inclusive) |
+| ---- | ------------ | --------------- | --------------- |
+| 4    | > 3.00       | 3.00            | 5.33            |
+| 3    | 2.50 to 2.99 | 2.50            | 2.99            |
+| 2    | 2.00 to 2.49 | 2.00            | 2.49            |
+| 1    | < 2.00       | 0.00            | 1.99            |
+
+### KTAF GPA Band — Unweighted
+
+KIPP TAF internal cut-offs (4 bands). Applied to unweighted GPA fields (max
+4.33):
+
+- `cumulative_y1_gpa_unweighted`
+- `cumulative_y1_gpa_projected_unweighted`
+- `cumulative_y1_gpa_projected_s1_unweighted`
+
+| Rank | Label        | Min (inclusive) | Max (inclusive) |
+| ---- | ------------ | --------------- | --------------- |
+| 4    | > 3.00       | 3.00            | 4.33            |
+| 3    | 2.50 to 2.99 | 2.50            | 2.99            |
+| 2    | 2.00 to 2.49 | 2.00            | 2.49            |
+| 1    | < 2.00       | 0.00            | 1.99            |
+
+### KIPP GPA Band
+
+KIPP Foundation cut-offs (5 bands). Applied to unweighted GPA fields only (same
+fields as KTAF GPA Band — Unweighted):
+
+- `cumulative_y1_gpa_unweighted`
+- `cumulative_y1_gpa_projected_unweighted`
+- `cumulative_y1_gpa_projected_s1_unweighted`
+
+| Rank | Label        | Min (inclusive) | Max (inclusive) |
+| ---- | ------------ | --------------- | --------------- |
+| 5    | 3.50 to 4.00 | 3.50            | 4.00            |
+| 4    | 3.00 to 3.49 | 3.00            | 3.49            |
+| 3    | 2.50 to 2.99 | 2.50            | 2.99            |
+| 2    | 2.00 to 2.49 | 2.00            | 2.49            |
+| 1    | < 2.00       | 0.00            | 1.99            |
+
+> **Note**: Add any additional GPA band sets as separate subsections here,
+> following the same table format. Include which fields and models each applies
+> to.

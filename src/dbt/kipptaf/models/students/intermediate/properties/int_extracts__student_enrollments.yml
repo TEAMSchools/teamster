@@ -538,6 +538,14 @@ models:
         data_type: boolean
       - name: is_sipps
         data_type: boolean
+      - name: student_slideback
+        data_type: boolean
+        description: >
+          True if a student's projected unweighted GPA
+          (cumulative_y1_gpa_projected_unweighted) has dropped to a lower KTAF
+          GPA band than their current unweighted GPA
+          (cumulative_y1_gpa_unweighted). False if bands are equal, improving,
+          or either GPA value is null.
       - name: enroll_status_string
         data_type: string
       - name: race_ethnicity

@@ -90,6 +90,35 @@ with
         from {{ ref("base_powerschool__student_enrollments") }}
         where grade_level != 99
         group by _dbt_source_relation, academic_year, student_number
+    ),
+
+    gpa_bands as (
+        select
+            *,
+
+            case
+                when cumulative_y1_gpa_unweighted >= 3.00
+                then 4
+                when cumulative_y1_gpa_unweighted >= 2.50
+                then 3
+                when cumulative_y1_gpa_unweighted >= 2.00
+                then 2
+                when cumulative_y1_gpa_unweighted < 2.00
+                then 1
+            end as cumulative_y1_gpa_unweighted_band,
+
+            case
+                when cumulative_y1_gpa_projected_unweighted >= 3.00
+                then 4
+                when cumulative_y1_gpa_projected_unweighted >= 2.50
+                then 3
+                when cumulative_y1_gpa_projected_unweighted >= 2.00
+                then 2
+                when cumulative_y1_gpa_projected_unweighted < 2.00
+                then 1
+            end as cumulative_y1_gpa_projected_unweighted_band,
+
+        from {{ ref("int_powerschool__gpa_cumulative") }}
     )
 
 select
@@ -240,6 +269,13 @@ select
 
     if(sip.students_student_number is not null, true, false) as is_sipps,
 
+    if(
+        gc.cumulative_y1_gpa_projected_unweighted_band
+        < gc.cumulative_y1_gpa_unweighted_band,
+        true,
+        false
+    ) as student_slideback,
+
     case
         e.enroll_status
         when -2
@@ -375,7 +411,7 @@ left join
     and e.academic_year = (adapy.academic_year + 1)
     and {{ union_dataset_join_clause(left_alias="e", right_alias="adapy") }}
 left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gc
+    gpa_bands as gc
     on e.studentid = gc.studentid
     and e.schoolid = gc.schoolid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="gc") }}
