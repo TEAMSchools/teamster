@@ -2,9 +2,9 @@ models:
   - name: rpt_gsheets__kippadb_quality_bar_audit
     description: >
       Application-level audit view for the college list quality bar. One row per
-      wishlist or submitted application. Surfaces the per-app attributes
-      (ECC rate, account type, NJ flag, meets-full-need, strong OOS, EA/ED) and
-      the student-level rollup counts that drive the quality bar CASE logic in
+      wishlist or submitted application. Surfaces the per-app attributes (ECC
+      rate, account type, NJ flag, meets-full-need, strong OOS, EA/ED) and the
+      student-level rollup counts that drive the quality bar CASE logic in
       int_kippadb__app_rollup. Allows stakeholders to verify which applications
       contribute to each quality bar component and understand why a student does
       or does not meet the bar.
@@ -35,8 +35,8 @@ models:
       - name: best_guess_pathway
         data_type: string
         description: >
-          Student's best guess postsecondary pathway (e.g. 4-year, 2-year,
-          CTE, Workforce). Primary driver of which quality bar tier applies.
+          Student's best guess postsecondary pathway (e.g. 4-year, 2-year, CTE,
+          Workforce). Primary driver of which quality bar tier applies.
       - name: is_ed_ea
         data_type: string
         description: >
@@ -45,7 +45,8 @@ models:
           GPA.
       - name: gpa
         data_type: numeric
-        description: Contact college-match display GPA, rounded to 2 decimal places
+        description:
+          Contact college-match display GPA, rounded to 2 decimal places
       - name: application_id
         data_type: string
         description: Salesforce application record ID
@@ -61,7 +62,8 @@ models:
           Private 2 yr, Non-profit). Used to classify 4-year vs AA/CTE apps.
       - name: account_billing_state
         data_type: string
-        description: State where the college is located. NJ apps count toward n_nj.
+        description:
+          State where the college is located. NJ apps count toward n_nj.
       - name: application_submission_status
         data_type: string
         description: Wishlist or Submitted
@@ -79,20 +81,24 @@ models:
         description: Adjusted 6-year minority graduation rate for this college
       - name: meets_full_need
         data_type: boolean
-        description: Whether the college meets 100% of demonstrated financial need
+        description:
+          Whether the college meets 100% of demonstrated financial need
       - name: is_strong_oos
         data_type: boolean
-        description: Whether the college is flagged as a strong out-of-state option
+        description:
+          Whether the college is flagged as a strong out-of-state option
       - name: is_early_action_decision
         data_type: boolean
-        description: True if application_admission_type is Early Action or Early Decision
+        description:
+          True if application_admission_type is Early Action or Early Decision
       - name: overgrad_top_choice
         data_type: string
         description: >
-          Student's self-reported Overgrad choice rank for this college
-          (#1 Choice, #2 Choice, #3 Choice, or null if not ranked). Joined
-          from int_overgrad__admissions on student contact ID and
-          stg_kippadb__account.nces_id = int_overgrad__admissions.university__ipeds_id.
+          Student's self-reported Overgrad choice rank for this college (#1
+          Choice, #2 Choice, #3 Choice, or null if not ranked). Joined from
+          int_overgrad__admissions on student contact ID and
+          stg_kippadb__account.nces_id =
+          int_overgrad__admissions.university__ipeds_id.
       - name: is_4yr
         data_type: boolean
         description: >
