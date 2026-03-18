@@ -427,7 +427,9 @@ class GoogleDirectoryResource(ConfigurableResource):
             self._log.exception(msg=(id, exception))
             self._exceptions.append((int(id) - 1, exception))
         else:
-            self._log.info(msg=" ".join([f"{k}={v}" for k, v in response.items()]))
+            self._log.info(
+                msg=" ".join([f"{k}={v}" for k, v in check.not_none(response).items()])
+            )
 
     def batch_insert_users(self, users: list[dict]) -> list[str]:
         """Create multiple users in batches of 10.
