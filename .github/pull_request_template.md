@@ -2,12 +2,12 @@
 
 ## Summary & Motivation
 
-[//]: # "When merged, this pull request will..."
+> "When merged, this pull request will..."
 
 ## AI Assistance
 
-- [ ] If Claude Code authored or co-authored this PR, briefly note what was
-      AI-assisted vs. human-directed in the summary above
+> If Claude Code authored or co-authored this PR, briefly note what was
+> AI-assisted vs. human-directed in the summary above
 
 ## Self-review
 
