@@ -3,8 +3,8 @@ models:
     description: >
       Student-level rollup of Overgrad top-choice school rankings. One row per
       student. Counts how many schools the student has tagged as #1, #2, or #3
-      Choice in Overgrad, and flags students who have tagged more than one school
-      with the same rank (a data quality issue).
+      Choice in Overgrad, and flags students who have tagged more than one
+      school with the same rank (a data quality issue).
     columns:
       - name: contact_id
         data_type: string
