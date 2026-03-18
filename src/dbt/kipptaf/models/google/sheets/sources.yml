@@ -1693,6 +1693,7 @@ sources:
               - https://docs.google.com/spreadsheets/d/1E1XfD05PSplIrnSnByER6GoXvFv3hzACtyO9m8FcSrY/
             sheet_range: career_launch_bulk_add_v1
             skip_leading_rows: 1
+        config:
           meta:
             dagster:
               asset_key:
