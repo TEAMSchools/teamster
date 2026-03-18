@@ -1,5 +1,5 @@
 models:
-  - name: int_kippadb__overgrad_choice_counts
+  - name: int_overgrad__choice_counts
     description: >
       Student-level rollup of Overgrad top-choice school rankings. One row per
       student. Counts how many schools the student has tagged as #1, #2, or #3
