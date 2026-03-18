@@ -23,6 +23,35 @@ Integrations follow a two-layer separation:
 This means adding a new school to an existing integration requires only YAML
 config and a few lines of Python in the code location — no library changes.
 
+## Python Standards
+
+`requires-python = ">=3.13"`. All library resource methods require return type
+annotations. Use built-in generics (`list[str]`, `dict[str, int]`), `X | None`
+for nullable params, and `_` for unused unpacked variables. Callable-returning
+functions annotate as `Callable[[], ReturnType]` (import from
+`collections.abc`).
+
+**kwargs forwarding**: When extracting a kwarg default before spreading
+`**kwargs`, always use `pop`, never `get` — `get` leaves the key in `kwargs`,
+causing `TypeError: got multiple values for keyword argument` if the caller
+passed it. `chunk()` from `core/utils/functions` returns `Iterator[list]`, not
+`list` — wrap in `list()` if `len()` or multiple passes are needed.
+
+**Docstrings (mkdocstrings-compatible)**:
+
+- First line must be a human-readable summary — never a raw URL. API reference
+  URLs go in the extended description as `[API reference](url)`.
+- All modules need a module-level docstring; mkdocstrings uses it as the page
+  intro.
+- Classes document configurable fields in `Attributes:`. Methods that propagate
+  exceptions document them in `Raises:`.
+- Private members (`_name`) are hidden by default — public API requires full
+  docstrings; private methods need only enough for internal comprehension.
+- Cross-references: `[text][full.module.path.ClassName.method]` for clickable
+  links within docs; backtick code renders as inline code but is not linked.
+- `Note:` and `Warning:` sections render as callout boxes — use for behavioral
+  gotchas (e.g. "errors are collected and returned, not raised").
+
 ## Library Categories
 
 Libraries fall into four patterns based on how they ingest data:

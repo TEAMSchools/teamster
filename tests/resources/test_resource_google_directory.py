@@ -1,8 +1,36 @@
 import json
+from unittest.mock import MagicMock, patch
 
+import httplib2
 from dagster import EnvVar, build_resources
+from googleapiclient.errors import HttpError
 
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
+
+
+def test_list_retries_on_503_mid_pagination():
+    resource = GoogleDirectoryResource(customer_id="C123")
+    resource._log = MagicMock()
+
+    mock_resource = MagicMock()
+    resource._resource = mock_resource
+
+    http_error = HttpError(
+        resp=httplib2.Response({"status": "503"}),
+        content=b"Service Unavailable",
+    )
+    mock_execute = mock_resource.users.return_value.list.return_value.execute
+    mock_execute.side_effect = [
+        {"users": [{"id": "u1"}], "nextPageToken": "token1"},
+        http_error,
+        {"users": [{"id": "u2"}]},
+    ]
+
+    with patch("dagster._utils.backoff.time.sleep"):
+        data = resource._list("users", customer="C123")
+
+    assert data == [{"id": "u1"}, {"id": "u2"}]
+    assert mock_execute.call_count == 3
 
 
 def get_google_directory_resource() -> GoogleDirectoryResource:

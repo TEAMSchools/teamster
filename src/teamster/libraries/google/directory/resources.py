@@ -1,4 +1,5 @@
 import time
+from collections.abc import Callable
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster._utils.backoff import backoff, exponential_delay_generator
@@ -13,8 +14,63 @@ from pydantic import PrivateAttr
 
 from teamster.core.utils.functions import chunk
 
+_TRANSIENT_HTTP_CODES: frozenset[int] = frozenset({429, 500, 502, 503, 504})
+
+
+class _TransientHttpError(errors.HttpError):
+    """``HttpError`` subclass raised only for retryable (5xx, 429) responses.
+
+    Used as the ``retry_on`` target for :func:`backoff` so that client errors
+    (4xx) propagate immediately instead of being retried.
+    """
+
+
+def _retryable_execute(request) -> Callable[[], dict]:
+    """Return a zero-arg callable that executes ``request`` and re-raises transient errors.
+
+    Calls ``request.execute()``. If an ``HttpError`` with a status code in
+    ``_TRANSIENT_HTTP_CODES`` (5xx, 429) is raised it is re-raised as
+    ``_TransientHttpError`` so that :func:`backoff` will retry it. All other
+    ``HttpError`` responses (4xx) are re-raised immediately.
+
+    Args:
+        request: Any object with an ``execute()`` method (Google API request or
+            ``BatchHttpRequest``).
+
+    Returns:
+        A zero-arg callable suitable for passing to :func:`backoff`.
+    """
+
+    def execute() -> dict:
+        try:
+            return request.execute()
+        except errors.HttpError as e:
+            if e.resp.status in _TRANSIENT_HTTP_CODES:
+                raise _TransientHttpError(e.resp, e.content) from e
+            raise
+
+    return execute
+
 
 class GoogleDirectoryResource(ConfigurableResource):
+    """Google Admin SDK Directory API resource.
+
+    Authenticates via service account with domain-wide delegation or Workload
+    Identity on GCE. Wraps the Admin SDK Directory API v1 with paginated list
+    helpers and batch mutation methods.
+
+    Attributes:
+        customer_id: Google Workspace customer ID (use ``"my_customer"`` for
+            the primary domain).
+        version: Directory API version. Defaults to ``"v1"``.
+        max_results: Default page size for list operations. Defaults to 500.
+        scopes: OAuth 2.0 scopes requested during authentication.
+        service_account_file_path: Path to a service account JSON key file.
+            If ``None``, Workload Identity (GCE/Cloud Run) is used instead.
+        delegated_account: Email of the Google Workspace admin to impersonate
+            via domain-wide delegation.
+    """
+
     customer_id: str
     version: str = "v1"
     max_results: int = 500
@@ -32,10 +88,23 @@ class GoogleDirectoryResource(ConfigurableResource):
     _exceptions: list[tuple] = PrivateAttr(default=[])
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
+        """Initialize the Directory API client before asset execution.
+
+        Selects one of two credential paths based on ``service_account_file_path``:
+
+        - **Service account key file** (local dev): loads credentials from the
+          JSON key file and impersonates ``delegated_account``.
+        - **Workload Identity** (GCE/Cloud Run): uses the instance's default
+          service account with IAM-based signing to obtain impersonated
+          credentials without a key file on disk.
+
+        Args:
+            context: Dagster resource init context; provides the logger.
+        """
         self._log = check.not_none(value=context.log)
 
         if self.service_account_file_path is not None:
-            credentials, project_id = load_credentials_from_file(
+            credentials, _ = load_credentials_from_file(
                 filename=self.service_account_file_path, scopes=self.scopes
             )
 
@@ -56,7 +125,6 @@ class GoogleDirectoryResource(ConfigurableResource):
 
             # Create OAuth 2.0 Service Account credentials using the IAM-based signer
             # and the bootstrap credential's service account email.
-            # trunk-ignore(bandit/B106)
             credentials = service_account.Credentials(
                 signer=Signer(
                     request=request,
@@ -64,6 +132,7 @@ class GoogleDirectoryResource(ConfigurableResource):
                     service_account_email=source_credentials.service_account_email,
                 ),
                 service_account_email=source_credentials.service_account_email,
+                # trunk-ignore(bandit/B106)
                 token_uri="https://accounts.google.com/o/oauth2/token",
                 scopes=self.scopes,
                 subject=self.delegated_account,
@@ -75,7 +144,25 @@ class GoogleDirectoryResource(ConfigurableResource):
             credentials=credentials,
         )
 
-    def _list(self, api_name: str, **kwargs):
+    def _list(self, api_name: str, **kwargs) -> list[dict]:
+        """Paginate through all pages of a Directory API list endpoint.
+
+        Retries each page request on transient ``HttpError`` (e.g. 503) using
+        exponential backoff before raising.
+
+        Args:
+            api_name: Resource name on the Directory API client (e.g.
+                ``"users"``, ``"groups"``).
+            **kwargs: Forwarded to the API's ``list()`` call. ``response_data_key``
+                (default: ``api_name``) and ``max_results`` (default:
+                ``self.max_results``) are consumed locally.
+
+        Returns:
+            Flat list of all records across all pages.
+
+        Raises:
+            HttpError: If all retry attempts are exhausted.
+        """
         data = []
         next_page_token = None
 
@@ -83,10 +170,13 @@ class GoogleDirectoryResource(ConfigurableResource):
         max_results = kwargs.pop("max_results", self.max_results)
 
         while True:
-            response = (
-                getattr(self._resource, api_name)()
-                .list(pageToken=next_page_token, maxResults=max_results, **kwargs)
-                .execute()
+            response = backoff(
+                fn=_retryable_execute(
+                    getattr(self._resource, api_name)().list(
+                        pageToken=next_page_token, maxResults=max_results, **kwargs
+                    )
+                ),
+                retry_on=(_TransientHttpError,),
             )
 
             next_page_token = response.get("nextPageToken")
@@ -105,7 +195,22 @@ class GoogleDirectoryResource(ConfigurableResource):
         org_unit_type: str | None = None,
         customer_id: str | None = None,
         **kwargs,
-    ):
+    ) -> dict:
+        """Retrieves a list of all organizational units for an account.
+
+        [API reference](https://developers.google.com/admin-sdk/directory/reference/rest/v1/orgunits/list)
+
+        Args:
+            org_unit_path: Full path or unique ID; returns children of that unit.
+            org_unit_type: ``"all"`` or ``"children"`` (immediate only).
+            customer_id: Defaults to ``self.customer_id``.
+
+        Returns:
+            OrgUnits response dict.
+
+        Raises:
+            HttpError: If the API request fails.
+        """
         if customer_id is None:
             customer_id = self.customer_id
 
@@ -121,7 +226,23 @@ class GoogleDirectoryResource(ConfigurableResource):
             .execute()
         )
 
-    def get_orgunit(self, org_unit_path: str, customer_id: str | None = None, **kwargs):
+    def get_orgunit(
+        self, org_unit_path: str, customer_id: str | None = None, **kwargs
+    ) -> dict:
+        """Retrieves an organizational unit.
+
+        [API reference](https://developers.google.com/admin-sdk/directory/reference/rest/v1/orgunits/get)
+
+        Args:
+            org_unit_path: Full path or unique ID of the org unit.
+            customer_id: Defaults to ``self.customer_id``.
+
+        Returns:
+            OrganizationalUnit resource dict.
+
+        Raises:
+            HttpError: If the API request fails.
+        """
         if customer_id is None:
             customer_id = self.customer_id
 
@@ -132,72 +253,205 @@ class GoogleDirectoryResource(ConfigurableResource):
             .execute()
         )
 
-    def list_users(self, **kwargs):
-        return self._list(
-            api_name="users",
-            customer=kwargs.get("customer", self.customer_id),
-            **kwargs,
-        )
+    def list_users(self, **kwargs) -> list[dict]:
+        """Retrieves a paginated list of either deleted users or all users in a domain.
 
-    def get_user(self, user_key: str, **kwargs):
+        [API reference](https://developers.google.com/admin-sdk/directory/reference/rest/v1/users/list)
+
+        Args:
+            **kwargs: Forwarded to ``_list``. ``customer`` defaults to
+                ``self.customer_id``.
+
+        Returns:
+            List of user resource dicts.
+
+        Raises:
+            HttpError: If all retry attempts are exhausted.
+        """
+        customer = kwargs.pop("customer", self.customer_id)
+        return self._list(api_name="users", customer=customer, **kwargs)
+
+    def get_user(self, user_key: str, **kwargs) -> dict:
+        """Retrieves a user.
+
+        [API reference](https://developers.google.com/admin-sdk/directory/reference/rest/v1/users/get)
+
+        Args:
+            user_key: Primary email, alias, or unique user ID.
+
+        Returns:
+            User resource dict.
+
+        Raises:
+            HttpError: If the API request fails.
+        """
         # trunk-ignore(pyright/reportAttributeAccessIssue)
         return self._resource.users().get(userKey=user_key, **kwargs).execute()
 
-    def list_groups(self, **kwargs):
-        return self._list(
-            api_name="groups",
-            customer=kwargs.get("customer", self.customer_id),
-            **kwargs,
-        )
+    def list_groups(self, **kwargs) -> list[dict]:
+        """Retrieves all groups of a domain or of a user given a userKey.
 
-    def list_members(self, group_key: str, **kwargs):
+        [API reference](https://developers.google.com/admin-sdk/directory/reference/rest/v1/groups/list)
+
+        Args:
+            **kwargs: Forwarded to ``_list``. ``customer`` defaults to
+                ``self.customer_id``.
+
+        Returns:
+            List of group resource dicts.
+
+        Raises:
+            HttpError: If all retry attempts are exhausted.
+        """
+        customer = kwargs.pop("customer", self.customer_id)
+        return self._list(api_name="groups", customer=customer, **kwargs)
+
+    def list_members(self, group_key: str, **kwargs) -> list[dict]:
+        """Retrieves a paginated list of all members in a group.
+
+        [API reference](https://developers.google.com/admin-sdk/directory/reference/rest/v1/members/list)
+
+        Args:
+            group_key: Group email, alias, or unique ID.
+
+        Returns:
+            List of member resource dicts.
+
+        Raises:
+            HttpError: If all retry attempts are exhausted.
+        """
         return self._list(api_name="members", groupKey=group_key, **kwargs)
 
-    def list_roles(self, **kwargs):
+    def list_roles(self, **kwargs) -> list[dict]:
+        """Retrieves a paginated list of all the roles in a domain.
+
+        [API reference](https://developers.google.com/admin-sdk/directory/reference/rest/v1/roles/list)
+
+        Args:
+            **kwargs: Forwarded to ``_list``. ``customer`` defaults to
+                ``self.customer_id``. Page size capped at 100 (API maximum).
+
+        Returns:
+            List of role resource dicts.
+
+        Raises:
+            HttpError: If all retry attempts are exhausted.
+        """
+        customer = kwargs.pop("customer", self.customer_id)
+        max_results = kwargs.pop("max_results", 100)
         return self._list(
             api_name="roles",
-            customer=kwargs.get("customer", self.customer_id),
-            max_results=kwargs.get("max_results", 100),
+            customer=customer,
+            max_results=max_results,
             response_data_key="items",
             **kwargs,
         )
 
-    def list_role_assignments(self, **kwargs):
+    def list_role_assignments(self, **kwargs) -> list[dict]:
+        """Retrieves a paginated list of all role assignments.
+
+        [API reference](https://developers.google.com/admin-sdk/directory/reference/rest/v1/roleAssignments/list)
+
+        Args:
+            **kwargs: Forwarded to ``_list``. ``customer`` defaults to
+                ``self.customer_id``. Page size defaults to 200.
+
+        Returns:
+            List of role assignment resource dicts.
+
+        Raises:
+            HttpError: If all retry attempts are exhausted.
+        """
+        customer = kwargs.pop("customer", self.customer_id)
+        max_results = kwargs.pop("max_results", 200)
         return self._list(
             api_name="roleAssignments",
-            customer=kwargs.get("customer", self.customer_id),
-            max_results=kwargs.get("max_results", 200),
+            customer=customer,
+            max_results=max_results,
             response_data_key="items",
             **kwargs,
         )
 
-    def insert_user(self, body: dict):
+    def insert_user(self, body: dict) -> dict:
+        """Creates a user.
+
+        [API reference](https://developers.google.com/admin-sdk/directory/reference/rest/v1/users/insert)
+
+        Args:
+            body: User resource dict.
+
+        Returns:
+            Created user resource dict.
+
+        Raises:
+            HttpError: If the API request fails.
+        """
         # trunk-ignore(pyright/reportAttributeAccessIssue)
         return self._resource.users().insert(body=body).execute()
 
-    def update_user(self, user_key: str, body: dict):
+    def update_user(self, user_key: str, body: dict) -> dict:
+        """Updates a user.
+
+        [API reference](https://developers.google.com/admin-sdk/directory/reference/rest/v1/users/update)
+
+        Args:
+            user_key: Primary email, alias, or unique user ID.
+            body: User resource dict with the fields to update.
+
+        Returns:
+            Updated user resource dict.
+
+        Raises:
+            HttpError: If the API request fails.
+        """
         # trunk-ignore(pyright/reportAttributeAccessIssue)
         return self._resource.users().update(userKey=user_key, body=body).execute()
 
-    def callback(self, id: str, response: dict, exception: Exception):
-        self._exceptions = []
+    def callback(
+        self, id: str, response: dict | None, exception: Exception | None
+    ) -> None:
+        """Callback for batch HTTP requests.
 
+        Called once per request by the batch executor. Logs the response or
+        exception; exceptions are appended to ``self._exceptions`` for later
+        inspection by the caller. The list must be reset by the caller before
+        each batch (not here — resetting in the callback would wipe earlier
+        results within the same batch).
+
+        Args:
+            id: 1-based string index of the request within the batch.
+            response: Response body dict; ``None`` when ``exception`` is set.
+            exception: Raised exception; ``None`` on success.
+        """
         if exception is not None:
             self._log.exception(msg=(id, exception))
             self._exceptions.append((int(id) - 1, exception))
         else:
             self._log.info(msg=" ".join([f"{k}={v}" for k, v in response.items()]))
 
-    def batch_insert_users(self, users: list[dict]):
+    def batch_insert_users(self, users: list[dict]) -> list[str]:
+        """Create multiple users in batches of 10.
+
+        Respects the 10-users-per-domain-per-second API limit. Each batch is
+        retried on transient errors (5xx, 429) with backoff.
+
+        Args:
+            users: User resource dicts to create.
+
+        Returns:
+            Error strings for any failed requests.
+        """
         exceptions = []
 
         # You cannot create more than 10 users per domain per second using the
         # Directory API
         # developers.google.com/admin-sdk/directory/v1/limits#api-limits-and-quotas
-        batches = chunk(obj=users, size=10)
+        batches = list(chunk(obj=users, size=10))
 
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")
+
+            self._exceptions = []
 
             # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(
@@ -208,22 +462,36 @@ class GoogleDirectoryResource(ConfigurableResource):
                 # trunk-ignore(pyright/reportAttributeAccessIssue)
                 batch_request.add(self._resource.users().insert(body=user))
 
-            backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
+            backoff(
+                fn=_retryable_execute(batch_request), retry_on=(_TransientHttpError,)
+            )
 
             exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
 
-            time.sleep(1)
+            if i < len(batches) - 1:
+                time.sleep(1)
 
         return exceptions
 
-    def batch_update_users(self, users: list[dict]):
+    def batch_update_users(self, users: list[dict]) -> list[str]:
+        """Update multiple users in batches of 40.
+
+        Args:
+            users: User resource dicts to update; each must include
+                ``primaryEmail``.
+
+        Returns:
+            Error strings for any failed requests.
+        """
         exceptions = []
 
         # Queries per minute per user == 2400 (40/sec)
-        batches = chunk(obj=users, size=40)
+        batches = list(chunk(obj=users, size=40))
 
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")
+
+            self._exceptions = []
 
             # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(
@@ -238,22 +506,36 @@ class GoogleDirectoryResource(ConfigurableResource):
                     )
                 )
 
-            backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
+            backoff(
+                fn=_retryable_execute(batch_request), retry_on=(_TransientHttpError,)
+            )
 
             exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
 
-            time.sleep(1)
+            if i < len(batches) - 1:
+                time.sleep(1)
 
         return exceptions
 
-    def batch_insert_members(self, members: list[dict]):
+    def batch_insert_members(self, members: list[dict]) -> list[str]:
+        """Add multiple members to groups in batches of 40.
+
+        Args:
+            members: Member resource dicts; each must include ``groupKey`` and
+                ``email``.
+
+        Returns:
+            Error strings for any failed requests.
+        """
         exceptions = []
 
         # Queries per minute per user == 2400 (40/sec)
-        batches = chunk(obj=members, size=40)
+        batches = list(chunk(obj=members, size=40))
 
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")
+
+            self._exceptions = []
 
             # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(
@@ -268,23 +550,40 @@ class GoogleDirectoryResource(ConfigurableResource):
                     )
                 )
 
-            backoff(fn=batch_request.execute, retry_on=(errors.HttpError,))
+            backoff(
+                fn=_retryable_execute(batch_request), retry_on=(_TransientHttpError,)
+            )
 
             exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
 
-            time.sleep(1)
+            if i < len(batches) - 1:
+                time.sleep(1)
 
         return exceptions
 
     def batch_insert_role_assignments(
         self, role_assignments: list[dict], customer: str | None = None
-    ):
+    ) -> list[str]:
+        """Create multiple role assignments in batches of 10.
+
+        Uses exponential backoff (rather than the default fixed delay) on
+        ``HttpError`` to handle quota exhaustion more gracefully.
+
+        Args:
+            role_assignments: Role assignment resource dicts.
+            customer: Defaults to ``self.customer_id``.
+
+        Returns:
+            Error strings for any failed requests.
+        """
         exceptions = []
 
-        batches = chunk(obj=role_assignments, size=10)
+        batches = list(chunk(obj=role_assignments, size=10))
 
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")
+
+            self._exceptions = []
 
             # trunk-ignore(pyright/reportAttributeAccessIssue)
             batch_request = self._resource.new_batch_http_request(
@@ -301,13 +600,14 @@ class GoogleDirectoryResource(ConfigurableResource):
                 )
 
             backoff(
-                fn=batch_request.execute,
-                retry_on=(errors.HttpError,),
+                fn=_retryable_execute(batch_request),
+                retry_on=(_TransientHttpError,),
                 delay_generator=exponential_delay_generator(),
             )
 
             exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
 
-            time.sleep(1)
+            if i < len(batches) - 1:
+                time.sleep(1)
 
         return exceptions

@@ -17,11 +17,32 @@ account with domain-wide delegation. Provides batch methods:
 `batch_insert_users()`, `batch_update_users()`, `batch_insert_members()`,
 `batch_insert_role_assignments()`.
 
-**`ops.py`**: Four ops for user/member/role provisioning:
-`google_directory_user_create_op`, `google_directory_user_update_op`,
-`google_directory_member_create_op`,
-`google_directory_role_assignment_create_op`. These are used in provisioning
-pipelines (not standalone assets).
+**Retry pattern**: All `.execute()` calls (both `_list` and batch methods) are
+wrapped via the module-level `_retryable_execute(request)` factory +
+`backoff(fn=..., retry_on=(_TransientHttpError,))`. Never use bare
+`errors.HttpError` — 4xx client errors must not be retried. Transient codes:
+`{429, 500, 502, 503, 504}`.
+
+**Batch callback signature**: Google's batch executor calls
+`callback(id, response, exception)` with exactly one of `response`/`exception`
+as `None`. Type both as `X | None`.
+
+**Unit testing**: To mock the API without live credentials, set
+`resource._resource = MagicMock()` and target
+`mock_resource.<api>.return_value.list.return_value.execute`. Patch
+`dagster._utils.backoff.time.sleep` to suppress retry delays.
+
+**`schema.py`**: Pydantic models (`User`, `OrgUnits`, `Role`, `RoleAssignment`,
+`Group`, `Member`) mirroring the Google Directory API response shapes. Code
+locations consume these via `py_avro_schema.generate()` to produce Avro schemas
+for IO manager output. `Group` and `Member` schemas are defined but currently
+unused (commented out in kipptaf).
+
+**`ops.py`**: Four legacy ops (`google_directory_user_create_op`,
+`google_directory_user_update_op`, `google_directory_member_create_op`,
+`google_directory_role_assignment_create_op`). **Not used anywhere** — this
+provisioning logic has been reimplemented as assets in
+`kipptaf/google/directory/assets.py`.
 
 ## `drive/`
 
