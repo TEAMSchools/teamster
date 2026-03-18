@@ -68,10 +68,6 @@ lint:
         - .k8s/**/values.yaml
       linters:
         - ALL
-    - paths:
-        - mkdocs.yml
-      linters:
-        - prettier
   definitions:
     - name: ruff
       commands:

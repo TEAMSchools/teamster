@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=
+# yaml-language-server: $schema= customTags=["tag:yaml.org,2002:python/name:material.extensions.emoji.twemoji scalar","tag:yaml.org,2002:python/name:material.extensions.emoji.to_svg scalar"]
 # https://www.mkdocs.org/user-guide/configuration/
 # https://squidfunk.github.io/mkdocs-material/setup/
 
