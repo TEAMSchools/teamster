@@ -94,7 +94,20 @@ with
 
     gpa_bands as (
         select
-            *,
+            _dbt_source_relation,
+            schoolid,
+            studentid,
+
+            cumulative_y1_gpa,
+            cumulative_y1_gpa_unweighted,
+            cumulative_y1_gpa_projected,
+            cumulative_y1_gpa_projected_s1,
+            cumulative_y1_gpa_projected_s1_unweighted,
+            cumulative_y1_gpa_projected_unweighted,
+            core_cumulative_y1_gpa,
+            earned_credits_cum,
+            earned_credits_cum_projected,
+            potential_credits_cum,
 
             case
                 when cumulative_y1_gpa_unweighted >= 3.00
@@ -228,7 +241,7 @@ select
     ) as self_contained_status,
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
-    -- added this temporarily because we dont have alignment on ids
+    /* temporary: Miami uses a different ID field until we have alignment on ids */
     if(
         e.region = 'Miami', e.state_studentnumber, null
     ) as secondary_state_studentnumber,
