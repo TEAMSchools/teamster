@@ -171,5 +171,6 @@ left join
     on a.applicant = og.student__external_student_id
     and acc.nces_id = og.university_ipeds_id_str
 left join
-    {{ ref("int_kippadb__overgrad_choice_counts") }} as ogc on a.applicant = ogc.contact_id
+    {{ ref("int_kippadb__overgrad_choice_counts") }} as ogc
+    on a.applicant = ogc.contact_id
 where a.application_submission_status in ('Wishlist', 'Submitted')
