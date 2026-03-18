@@ -128,6 +128,13 @@ All uniqueness tests use `config: store_failures: true`.
 
 Naming follows the existing convention: `stg_illuminate__<schema>__<table>`.
 
+`stg_illuminate__dna_assessments__fields` filters soft-deleted items at the
+staging layer (`WHERE deleted_at IS NULL`), consistent with other illuminate
+staging models (e.g. `stg_illuminate__dna_assessments__assessments`,
+`stg_illuminate__dna_repositories__repository_fields`). The other three new
+staging models are pass-through (`SELECT * FROM source`) — none of those source
+tables have a `deleted_at` column.
+
 Note: `stg_illuminate__dna_assessments__fields` is distinct from the existing
 `stg_illuminate__dna_repositories__repository_fields`, which covers a different
 table in a different schema with different columns (repository-level fields, not
@@ -164,12 +171,11 @@ students_assessments_responses (sar)
                                    AND sar.response_id = fr.response_id
                                    AND sar.version_id = fr.version_id
   INNER JOIN fields (f)            on sar.field_id = f.field_id
-                                   AND f.deleted_at IS NULL
 ```
 
-`f.deleted_at IS NULL` belongs in the `ON` clause per project SQL conventions:
-row-filter conditions on the **preserved** table belong in `WHERE`; conditions
-on a joined (non-preserved) table belong in `ON`.
+Soft-deleted assessment items are excluded upstream in
+`stg_illuminate__dna_assessments__fields` (`WHERE deleted_at IS NULL`), so no
+`deleted_at` filter is needed in the intermediate JOIN.
 
 ### Output Columns
 
@@ -189,8 +195,8 @@ on a joined (non-preserved) table belong in `ON`.
 
 ### What is NOT in this model
 
-- Student responses for soft-deleted assessment items — excluded intentionally
-  by the `f.deleted_at IS NULL` ON clause condition
+- Student responses for soft-deleted assessment items — excluded upstream by
+  `WHERE deleted_at IS NULL` in `stg_illuminate__dna_assessments__fields`
 - Student demographics (name, grade level, local ID) — join to
   `stg_illuminate__dna_assessments__students_assessments` →
   `stg_illuminate__public__students` downstream
