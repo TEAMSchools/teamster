@@ -1,4 +1,5 @@
 select
+    file_year,
     _dagster_partition_key,
     enrollment_type,
     detailed_status,
