@@ -75,6 +75,8 @@ models:
         data_type: numeric
       - name: cumulative_y1_gpa_projected_s1_unweighted
         data_type: numeric
+      - name: cumulative_y1_gpa_projected_unweighted
+        data_type: float
       - name: core_cumulative_y1_gpa
         data_type: float64
       - name: cumulative_y1_gpa

@@ -37,8 +37,10 @@ select
     cumulative_y1_gpa_projected,
     cumulative_y1_gpa_projected_s1,
     cumulative_y1_gpa_projected_s1_unweighted,
+    cumulative_y1_gpa_projected_unweighted,
     core_cumulative_y1_gpa,
     ada as most_recent_ada,
+
 from {{ ref("int_extracts__student_enrollments") }}
 where
     rn_undergrad = 1

@@ -160,6 +160,7 @@ select
     gc.cumulative_y1_gpa_projected,
     gc.cumulative_y1_gpa_projected_s1,
     gc.cumulative_y1_gpa_projected_s1_unweighted,
+    gc.cumulative_y1_gpa_projected_unweighted,
     gc.core_cumulative_y1_gpa,
     gc.earned_credits_cum,
     gc.earned_credits_cum_projected,
