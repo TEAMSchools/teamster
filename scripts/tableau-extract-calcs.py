@@ -12,6 +12,7 @@ import getpass
 import io
 import os
 import pathlib
+import re
 import sys
 import zipfile
 
@@ -48,17 +49,54 @@ def _is_internal(column) -> bool:
     return not caption or name.startswith("[:") or name == "[Number of Records]"
 
 
+_FIELD_REF_RE = re.compile(r"\[([^\]]+)\]")
+
+
+def _build_calc_name_map(datasource) -> dict[str, str]:
+    """
+    Return a mapping of internal Tableau name → human caption for all
+    Calculation_* and *(copy)_* columns in a datasource element.
+
+    These are cross-field references that Tableau resolves transparently in the
+    UI but stores as opaque IDs in the XML. Resolving them before display (and
+    before classification) means downstream code sees human-readable names.
+    """
+    name_map: dict[str, str] = {}
+    for column in datasource.findall("column"):
+        raw_name = column.get("name", "")
+        caption = column.get("caption", "")
+        name = raw_name.strip("[]")
+        if caption and (name.startswith("Calculation_") or "(copy)_" in name):
+            name_map[name] = caption
+    return name_map
+
+
+def _resolve_calc_refs(formula: str, name_map: dict[str, str]) -> str:
+    """
+    Replace [Calculation_*] and [*(copy)_*] references in a formula with
+    their human-readable captions. Unrecognised refs are left unchanged.
+    """
+
+    def _sub(m: re.Match) -> str:
+        key = m.group(1)
+        return f"[{name_map[key]}]" if key in name_map else m.group(0)
+
+    return _FIELD_REF_RE.sub(_sub, formula)
+
+
 def _extract_fields(datasource) -> list[dict]:
+    name_map = _build_calc_name_map(datasource)
     fields = []
     for column in datasource.findall("column"):
         calc = column.find("calculation[@class='tableau']")
         if calc is None or _is_internal(column):
             continue
+        formula = _resolve_calc_refs(calc.get("formula", ""), name_map)
         fields.append(
             {
                 "name": column.get("caption"),
                 "datatype": column.get("datatype", "unknown"),
-                "formula": calc.get("formula", ""),
+                "formula": formula,
             }
         )
     return fields

@@ -29,11 +29,189 @@ for lineage in the slash command (no new script dependencies).
 
 ## File Map
 
-| File                                          | Action | Responsibility                                                                                      |
-| --------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------- |
-| `scripts/tableau-extract-calcs.py`            | Modify | Add `--model`/`-m` flag, classification helpers, LOD mart-matching, grouped output                  |
-| `.claude/commands/tableau-upstream.md`        | Modify | Add categorized summary, output format preference, LOD/NEEDS WORK handling, Step 4b lineage tracing |
-| `tests/scripts/test_tableau_extract_calcs.py` | Create | Unit tests for all new pure helper functions                                                        |
+| File                                          | Action | Responsibility                                                                                                |
+| --------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------- |
+| `scripts/tableau-extract-calcs.py`            | Modify | Resolve internal calc IDs; add `--model`/`-m` flag, classification helpers, LOD mart-matching, grouped output |
+| `.claude/commands/tableau-upstream.md`        | Modify | Add categorized summary, output format preference, LOD/NEEDS WORK handling, Step 4b lineage tracing           |
+| `tests/scripts/test_tableau_extract_calcs.py` | Create | Unit tests for all new pure helper functions                                                                  |
+
+---
+
+## Task 0: Resolve internal calc ID references before classification
+
+**Files:**
+
+- Modify: `scripts/tableau-extract-calcs.py`
+- Modify: `tests/scripts/test_tableau_extract_calcs.py`
+
+Tableau stores cross-field references in the XML as opaque IDs
+(`[Calculation_747034629947629568]`, `[Field (copy)_1234567890]`). The Tableau
+UI resolves them transparently, but the raw XML shows only the ID. This task
+adds two helpers that resolve those IDs to human-readable captions _before_
+display and classification, so downstream code never sees opaque IDs.
+
+- [ ] **Step 1: Write failing tests**
+
+Add to `tests/scripts/test_tableau_extract_calcs.py`:
+
+```python
+import defusedxml.ElementTree as ET  # add to test file imports
+
+
+def _make_datasource(xml: str):
+    return ET.fromstring(xml)
+
+
+class TestBuildCalcNameMap:
+    def test_maps_calculation_id(self, script):
+        ds = _make_datasource(
+            "<datasource>"
+            "  <column name='[Calculation_123]' caption='My Metric' />"
+            "</datasource>"
+        )
+        result = script._build_calc_name_map(ds)
+        assert result == {"Calculation_123": "My Metric"}
+
+    def test_maps_copy_ref(self, script):
+        ds = _make_datasource(
+            "<datasource>"
+            "  <column name='[Base Field (copy)_456]' caption='Base Field' />"
+            "</datasource>"
+        )
+        result = script._build_calc_name_map(ds)
+        assert result == {"Base Field (copy)_456": "Base Field"}
+
+    def test_ignores_plain_columns(self, script):
+        ds = _make_datasource(
+            "<datasource>"
+            "  <column name='[student_id]' caption='Student ID' />"
+            "</datasource>"
+        )
+        result = script._build_calc_name_map(ds)
+        assert result == {}
+
+    def test_ignores_columns_without_caption(self, script):
+        ds = _make_datasource(
+            "<datasource>"
+            "  <column name='[Calculation_999]' />"
+            "</datasource>"
+        )
+        result = script._build_calc_name_map(ds)
+        assert result == {}
+
+
+class TestResolveCalcRefs:
+    def test_resolves_calculation_id(self, script):
+        result = script._resolve_calc_refs(
+            "IF [Calculation_123] THEN 'Y' ELSE 'N' END",
+            {"Calculation_123": "Excluded Flags"},
+        )
+        assert result == "IF [Excluded Flags] THEN 'Y' ELSE 'N' END"
+
+    def test_resolves_copy_ref(self, script):
+        result = script._resolve_calc_refs(
+            "[Score (copy)_456] / [Denominator (copy)_789]",
+            {"Score (copy)_456": "Score", "Denominator (copy)_789": "Denominator"},
+        )
+        assert result == "[Score] / [Denominator]"
+
+    def test_leaves_unknown_refs_unchanged(self, script):
+        result = script._resolve_calc_refs(
+            "[student_id] + [Calculation_999]",
+            {"Calculation_000": "Other"},
+        )
+        assert result == "[student_id] + [Calculation_999]"
+
+    def test_empty_name_map(self, script):
+        formula = "IF [Calculation_123] THEN 1 END"
+        assert script._resolve_calc_refs(formula, {}) == formula
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+```bash
+uv run pytest tests/scripts/test_tableau_extract_calcs.py::TestBuildCalcNameMap tests/scripts/test_tableau_extract_calcs.py::TestResolveCalcRefs -v
+```
+
+Expected: `AttributeError` for both missing functions.
+
+- [ ] **Step 3: Implement `_build_calc_name_map` and `_resolve_calc_refs`**
+
+Add after `_is_internal` in the `# ── XML extraction` section:
+
+```python
+import re  # add to top-level imports (alphabetical: after pathlib, before sys)
+
+_FIELD_REF_RE = re.compile(r"\[([^\]]+)\]")
+
+
+def _build_calc_name_map(datasource) -> dict[str, str]:
+    """
+    Return a mapping of internal Tableau name → human caption for all
+    Calculation_* and *(copy)_* columns in a datasource element.
+
+    These are cross-field references that Tableau resolves transparently in the
+    UI but stores as opaque IDs in the XML. Resolving them before display (and
+    before classification) means downstream code sees human-readable names.
+    """
+    name_map: dict[str, str] = {}
+    for column in datasource.findall("column"):
+        raw_name = column.get("name", "")
+        caption = column.get("caption", "")
+        name = raw_name.strip("[]")
+        if caption and (name.startswith("Calculation_") or "(copy)_" in name):
+            name_map[name] = caption
+    return name_map
+
+
+def _resolve_calc_refs(formula: str, name_map: dict[str, str]) -> str:
+    """
+    Replace [Calculation_*] and [*(copy)_*] references in a formula with
+    their human-readable captions. Unrecognised refs are left unchanged.
+    """
+
+    def _sub(m: re.Match) -> str:
+        key = m.group(1)
+        return f"[{name_map[key]}]" if key in name_map else m.group(0)
+
+    return _FIELD_REF_RE.sub(_sub, formula)
+```
+
+Update `_extract_fields` to build the map and resolve before appending:
+
+```python
+def _extract_fields(datasource) -> list[dict]:
+    name_map = _build_calc_name_map(datasource)
+    fields = []
+    for column in datasource.findall("column"):
+        calc = column.find("calculation[@class='tableau']")
+        if calc is None or _is_internal(column):
+            continue
+        formula = _resolve_calc_refs(calc.get("formula", ""), name_map)
+        fields.append(
+            {
+                "name": column.get("caption"),
+                "datatype": column.get("datatype", "unknown"),
+                "formula": formula,
+            }
+        )
+    return fields
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+```bash
+uv run pytest tests/scripts/test_tableau_extract_calcs.py -v
+```
+
+Expected: all tests pass.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add scripts/tableau-extract-calcs.py tests/scripts/test_tableau_extract_calcs.py
+git commit -m "feat: resolve Tableau internal calc IDs to human-readable names"
+```
 
 ---
 
