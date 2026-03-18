@@ -1687,3 +1687,20 @@ sources:
                 - sheets
                 - finalsite
                 - exclude_ids
+      - name: src_google_sheets__kippfwd__career_launch_bulk_add
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1E1XfD05PSplIrnSnByER6GoXvFv3hzACtyO9m8FcSrY/
+            sheet_range: career_launch_bulk_add_v1
+            skip_leading_rows: 1
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kfwd
+                - career_launch_bulk_add
