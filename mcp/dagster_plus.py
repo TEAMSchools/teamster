@@ -184,9 +184,11 @@ query GetStaleAssets {
     staleStatus
     staleCauses {
       key { path }
-      reason
+      partitionKey
       category
+      reason
       dependency { path }
+      dependencyPartitionKey
     }
   }
 }
@@ -199,32 +201,22 @@ query GetAssetConditionEvaluations($assetKey: AssetKeyInput!, $limit: Int!, $cur
       records {
         evaluationId
         timestamp
+        startTimestamp
+        endTimestamp
         numRequested
-        numSkipped
-        numDiscarded
         runIds
-        evaluation {
-          rootUniqueId
-          evaluationNodes {
-            uniqueId
-            childUniqueIds
-            ... on UnpartitionedAssetConditionEvaluationNode {
-              description
-              status
-              startTimestamp
-              endTimestamp
-            }
-            ... on PartitionedAssetConditionEvaluationNode {
-              description
-              numTrue
-              startTimestamp
-              endTimestamp
-            }
-            ... on SpecificPartitionAssetConditionEvaluationNode {
-              description
-              status
-            }
-          }
+        rootUniqueId
+        evaluationNodes {
+          uniqueId
+          userLabel
+          expandedLabel
+          startTimestamp
+          endTimestamp
+          numTrue
+          numCandidates
+          isPartitioned
+          childUniqueIds
+          operatorType
         }
       }
     }
@@ -427,11 +419,13 @@ async def list_tools() -> list[types.Tool]:
                 "properties": {
                     "category": {
                         "type": "string",
-                        "enum": ["CODE", "DATA"],
+                        "enum": ["CODE", "DATA", "DEPENDENCIES"],
                         "description": (
                             "Filter to a specific staleness category. "
                             "CODE = unsynced (code version changed); "
-                            "DATA = upstream data updated. Omit to return all stale assets."
+                            "DATA = upstream data updated; "
+                            "DEPENDENCIES = upstream dependency structure changed. "
+                            "Omit to return all stale assets."
                         ),
                     },
                     "group": {
