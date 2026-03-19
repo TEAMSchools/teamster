@@ -220,16 +220,13 @@ select
         partition by co.week_start_monday, co.schoolid
     ) as school_enrollment_by_week,
 
-    co.week_number_academic_year
-    <= max(
+    co.week_number_academic_year <= max(
         if(
             co.academic_year = {{ var("current_academic_year") }},
             co.week_number_academic_year,
             0
         )
-    ) over (
-        partition by co.schoolid
-    ) as is_week_ytd,
+    ) over (partition by co.schoolid) as is_week_ytd,
 
     max(if(dli.is_suspension, 1, 0)) over (
         partition by co.academic_year, co.student_number
