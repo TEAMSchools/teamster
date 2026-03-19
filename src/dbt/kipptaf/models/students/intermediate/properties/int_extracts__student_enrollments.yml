@@ -100,7 +100,7 @@ models:
         data_type: int64
       - name: is_enrolled_y1
         data_type: boolean
-      - name: is_enrolled_mar15
+      - name: is_enrolled_oct01
         data_type: boolean
       - name: is_enrolled_oct15
         data_type: boolean
@@ -513,17 +513,7 @@ models:
         data_type: string
       - name: next_year_schoolid
         data_type: int64
-      - name: district
-        data_type: string
-      - name: region_school_level
-        data_type: string
-      - name: guardian_email
-        data_type: string
-      - name: academic_year_display
-        data_type: string
-      - name: next_year_enrollment_history
-        data_type: string
-      - name: overgrad_fafsa_opt_out
+      - name: finalsite_student_id
         data_type: string
       - name: district
         data_type: string
