@@ -594,3 +594,6 @@ models:
         description: >
           True if the student has tagged more than one school as #1 Choice in
           Overgrad. False if the student has no Overgrad top-choice data.
+      - name: es_attended
+        data_type: string
+        

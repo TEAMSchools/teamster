@@ -149,6 +149,7 @@ with
             se.emergency_3_phone_primary
             as powerschool_emergency_contact_3_phone_primary,
             se.emergency_3_relationship as powerschool_emergency_contact_3_relationship,
+            se.es_attended,
 
             c.contact_school_specific_id,
             c.contact_id,
@@ -265,8 +266,6 @@ with
             ms.total_qualified_military_branches,
 
             mpt.physical_training_requirement_passed,
-
-            se.es_attended,
 
             concat(
                 os.assigned_counselor__last_name,
