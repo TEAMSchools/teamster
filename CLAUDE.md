@@ -101,7 +101,9 @@ Read the hook for the full pattern list. Key behavior:
   and **1Password CLI** (`op inject/read/vault/item`) — blocked in Bash.
 
 To modify `.devcontainer/scripts/` or `.claude/hooks/`, draft changes and
-present them to the user for manual application.
+present them to the user for manual application. Files under `.claude/` must be
+staged and committed manually — the hook blocks Bash commands that reference
+these paths.
 
 ## Documentation
 

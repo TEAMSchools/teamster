@@ -36,14 +36,7 @@ fi
 
 # 2. Hook self-protection — block modifications to hook config (allow reads)
 if echo "${normalized}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/)'; then
-  if [[ ${tool_name} == "Read" || ${tool_name} == "Grep" || ${tool_name} == "Glob" ]]; then
-    : # allow reads
-  elif [[ ${tool_name} == "Bash" ]]; then
-    # Only block Bash commands that write to hook config (not mere string mentions)
-    if echo "${normalized}" | grep -qE '(>|>>|cp |mv |rm |chmod |sed |awk |tee ).*\.claude/(settings\.json|settings\.local\.json|hooks/)'; then
-      deny
-    fi
-  else
+  if [[ ${tool_name} != "Read" && ${tool_name} != "Grep" && ${tool_name} != "Glob" ]]; then
     deny
   fi
 fi
