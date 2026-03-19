@@ -146,6 +146,7 @@ select
     co.week_start_monday,
     co.week_end_sunday,
     co.week_number_academic_year,
+    co.is_current_week_mon_sun,
     co.date_count as days_in_session,
     co.quarter as term,
 
@@ -213,8 +214,6 @@ select
         then null
         else 'Other'
     end as referral_tier,
-
-    co.is_current_week_mon_sun,
 
     count(distinct co.student_number) over (
         partition by co.week_start_monday, co.schoolid
