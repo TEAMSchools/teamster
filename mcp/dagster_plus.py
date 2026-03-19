@@ -20,7 +20,7 @@ import mcp.server.stdio
 import mcp.types as types
 from mcp.server import Server
 
-DAGSTER_CLOUD_API_TOKEN = os.environ.get("DAGSTER_CLOUD_AGENT_TOKEN", "")
+DAGSTER_CLOUD_API_TOKEN = os.environ.get("DAGSTER_CLOUD_API_TOKEN", "")
 DAGSTER_CLOUD_ORGANIZATION_ID = os.environ.get(
     "DAGSTER_CLOUD_ORGANIZATION_ID", "kipptaf"
 )
@@ -664,7 +664,11 @@ async def list_tools() -> list[types.Tool]:
                     },
                     "limit": {
                         "type": "integer",
-                        "description": "Max events to return per page (default 100, max 1000).",
+                        "description": (
+                            "Max events to fetch per page (default 100, max 1000). "
+                            "When filter_types is set, filtering happens client-side "
+                            "after fetching — increase limit to see more matching events."
+                        ),
                         "default": 100,
                     },
                     "filter_types": {

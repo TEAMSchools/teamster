@@ -36,6 +36,7 @@ COUPA_SFTP_HOST=op://Data Team/Coupa SFTP/host
 COUPA_SFTP_PASSWORD=op://Data Team/Coupa SFTP/password
 COUPA_SFTP_USERNAME=op://Data Team/Coupa SFTP/username
 DAGSTER_CLOUD_AGENT_TOKEN=op://Data Team/Dagster Cloud Agent/credential
+DAGSTER_CLOUD_API_TOKEN=op://Data Team/Dagster Cloud Agent/credential
 DEANSLIST_SFTP_HOST=op://Data Team/DeansList SFTP/host
 DEANSLIST_SFTP_PASSWORD=op://Data Team/DeansList SFTP/password
 DEANSLIST_SFTP_USERNAME=op://Data Team/DeansList SFTP/username
