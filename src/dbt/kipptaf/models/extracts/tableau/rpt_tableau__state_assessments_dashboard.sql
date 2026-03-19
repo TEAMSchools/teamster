@@ -371,21 +371,21 @@ left join
 left join
     schedules as m
     on a.academic_year = m.cc_academic_year
-    and a.localstudentidentifier = e.pearson_local_student_identifier
+    and a.localstudentidentifier = m.students_student_number
     and a.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="a", right_alias="m") }}
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on a.academic_year = sf.academic_year
     and a.discipline = sf.discipline
-    and a.localstudentidentifier = sf.student_number
+    and a.localstudentidentifier = sf.pearson_local_student_identifier
     and {{ union_dataset_join_clause(left_alias="a", right_alias="sf") }}
     and sf.rn_year = 1
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf2
     on a.academic_year = (sf2.academic_year - 1)
     and a.discipline = sf2.discipline
-    and a.localstudentidentifier = sf2.student_number
+    and a.localstudentidentifier = sf2.pearson_local_student_identifier
     and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
     and sf2.rn_year = 1
 
@@ -610,7 +610,7 @@ left join
 left join
     schedules as m
     on a.academic_year = m.cc_academic_year
-    and a.localstudentidentifier = e.pearson_local_student_identifier
+    and a.localstudentidentifier = m.students_student_number
     and a.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="a", right_alias="m") }}
 left join
