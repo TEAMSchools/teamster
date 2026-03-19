@@ -371,9 +371,9 @@ left join
 left join
     schedules as m
     on a.academic_year = m.cc_academic_year
-    and a.localstudentidentifier = m.students_student_number
     and a.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="a", right_alias="m") }}
+    and e.student_number = m.students_student_number
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on a.academic_year = sf.academic_year
