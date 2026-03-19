@@ -19,10 +19,6 @@ chmod 600 .devcontainer/tpl/*
 chmod 700 ./env
 sudo chmod 700 /etc/secret-volume
 
-# inject 1Password secrets
-source ./.devcontainer/scripts/inject-secrets.sh
-set +euo pipefail
-
 # set up trunk
 chmod +x /workspaces/teamster/trunk
 
