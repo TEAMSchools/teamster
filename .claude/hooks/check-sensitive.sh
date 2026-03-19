@@ -30,19 +30,19 @@ path=$(echo "${input}" | jq -r '
 normalized=$(echo "${path}" | sed -E 's#/\./#/#g; s#/[^/]+/\.\./#/#g')
 
 # 1. Sensitive file/directory patterns (case-insensitive)
-if echo "${normalized}" | grep -qiE '(^|[ /])(\.env|\.ssh|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/(tpl|scripts)/|\*\.(cer|key|pem)'; then
+if echo "${normalized}" | grep -qiE '(^|[ /])(\.env|\.ssh|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/tpl/|\*\.(cer|key|pem)'; then
   deny
 fi
 
 # 2. Hook self-protection — block modifications to hook config (allow reads)
-if echo "${normalized}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/)'; then
+if echo "${normalized}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/)|\.devcontainer/scripts/'; then
   if [[ ${tool_name} != "Read" && ${tool_name} != "Grep" && ${tool_name} != "Glob" ]]; then
     deny
   fi
 fi
 
 # 3. Environment variable / process memory leakage
-if echo "${normalized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bset\b|\bcompgen\b|/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|OP_SERVICE_ACCOUNT_TOKEN|OP_SERVICE|ACCOUNT_TOKEN'; then
+if echo "${normalized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bexport -p\b|\bcompgen\b|/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|OP_SERVICE_ACCOUNT_TOKEN|OP_SERVICE|ACCOUNT_TOKEN|\benv\b[[:space:]]'; then
   deny
 fi
 

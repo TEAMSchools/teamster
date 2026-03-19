@@ -94,9 +94,9 @@ A PreToolUse hook (`.claude/hooks/check-sensitive.sh`) guards sensitive paths.
 Read the hook for the full pattern list. Key behavior:
 
 - **Secret-containing paths** (`env/`, `secret-volume`, `.devcontainer/tpl/`,
-  `.devcontainer/scripts/`, credentials, certs) — all tools blocked.
-- **Hook self-protection** (`.claude/settings.json`, `.claude/hooks/`) —
-  Edit/Write/Bash blocked; Read/Grep/Glob allowed.
+  credentials, certs) — all tools blocked.
+- **Read-only paths** (`.claude/settings.json`, `.claude/hooks/`,
+  `.devcontainer/scripts/`) — Edit/Write/Bash blocked; Read/Grep/Glob allowed.
 - **Env leakage** (`printenv`, `/proc/*/environ`, `OP_SERVICE_ACCOUNT_TOKEN`)
   and **1Password CLI** (`op inject/read/vault/item`) — blocked in Bash.
 
