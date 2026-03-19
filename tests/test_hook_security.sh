@@ -306,6 +306,55 @@ expect_deny "MCP command field with env/" "mcp__bigquery__query" command "SELECT
 expect_allow "MCP sql field harmless" "mcp__bigquery__query" sql "SELECT 1 AS test"
 expect_allow "MCP command field harmless" "mcp__bigquery__query" command "SELECT 1"
 
+# ─── Nested MCP tool_input fields ─────────────────────────────────────────────
+echo ""
+echo -e "${YELLOW}Nested MCP tool_input fields${NC}"
+
+input_nested=$(jq -n '{tool_name: "mcp__bigquery__query", tool_input: {options: {query: "cat /proc/self/environ"}}}')
+if echo "${input_nested}" | bash "${HOOK}" >/dev/null 2>&1; then
+  FAIL=$((FAIL + 1))
+  ERRORS+="\n  ${RED}FAIL${NC} [should deny]: Nested MCP field with /proc"
+else
+  PASS=$((PASS + 1))
+  echo -e "  ${GREEN}PASS${NC} [deny]: Nested MCP field with /proc"
+fi
+
+input_arr=$(jq -n '{tool_name: "mcp__tool", tool_input: {commands: ["cat /proc/self/environ"]}}')
+if echo "${input_arr}" | bash "${HOOK}" >/dev/null 2>&1; then
+  FAIL=$((FAIL + 1))
+  ERRORS+="\n  ${RED}FAIL${NC} [should deny]: Nested array with /proc"
+else
+  PASS=$((PASS + 1))
+  echo -e "  ${GREEN}PASS${NC} [deny]: Nested array with /proc"
+fi
+
+input_nested_ok=$(jq -n '{tool_name: "mcp__bigquery__query", tool_input: {options: {query: "SELECT 1"}}}')
+if echo "${input_nested_ok}" | bash "${HOOK}" >/dev/null 2>&1; then
+  PASS=$((PASS + 1))
+  echo -e "  ${GREEN}PASS${NC} [allow]: Nested MCP field harmless"
+else
+  FAIL=$((FAIL + 1))
+  ERRORS+="\n  ${RED}FAIL${NC} [should allow]: Nested MCP field harmless"
+fi
+
+# ─── Python __import__ bypass ─────────────────────────────────────────────────
+echo ""
+echo -e "${YELLOW}Python __import__ bypass${NC}"
+
+expect_deny "__import__ os" Bash command "uv run python -c \"__import__('os').popen('id').read()\""
+expect_deny "__import__ subprocess" Bash command "uv run python -c \"__import__('subprocess').check_output(['id'])\""
+expect_deny "__import__ shutil" Bash command "uv run python -c \"__import__('shutil').copy('/tmp/a','/tmp/b')\""
+
+expect_allow "__import__ json (safe)" Bash command "uv run python -c \"__import__('json').dumps({'a': 1})\""
+expect_allow "__import__ math (safe)" Bash command "uv run python -c \"print(__import__('math').pi)\""
+
+# ─── /dev/fd/ bypass ─────────────────────────────────────────────────────────
+echo ""
+echo -e "${YELLOW}/dev/fd/ bypass${NC}"
+
+expect_deny "/dev/fd/ read" Read file_path "/dev/fd/3"
+expect_deny "/dev/fd/ in bash" Bash command "cat /dev/fd/3"
+
 # ─── Symlink bypass (Pattern 1 + symlink resolution) ─────────────────────────
 echo ""
 echo -e "${YELLOW}Symlink resolution${NC}"
@@ -373,6 +422,12 @@ if [[ -f ${OUTPUT_HOOK} ]]; then
   check_output "normal command output" clean "total 42\ndrwxr-xr-x 5 user user 4096 Mar 19 10:00 src"
   check_output "git log output" clean "abc1234 feat: add new feature"
   check_output "Python traceback" clean "Traceback (most recent call last):\n  File \"main.py\""
+  check_output "JWT token" warn "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0"
+  check_output "AWS access key" warn "AKIAIOSFODNN7EXAMPLE"
+  check_output "DB connection string" warn "postgres://admin:s3cret@db.example.com:5432/prod"
+  check_output "service account JSON" warn '{"type": "service_account", "project_id": "test"}'
+  check_output "GitHub PAT" warn "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
+  check_output "normal base64 (not JWT)" clean "eyJqdXN0IjoiZGF0YSJ9"
 
   echo ""
   echo -e "${YELLOW}PostToolUse: Read/Grep output scanning${NC}"

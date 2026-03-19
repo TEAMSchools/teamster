@@ -19,7 +19,7 @@ combined="${stdout} ${stderr} ${content} ${output}"
 # - op:// references (1Password secret URIs)
 # - Common secret key prefixes
 # - Private key headers
-if echo "${combined}" | grep -qiE 'op://|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+'; then
+if echo "${combined}" | grep -qiE 'op://|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|AKIA[0-9A-Z]{16}|(postgres|mysql|mongodb)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[ps]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}'; then
   echo '{"hookSpecificOutput": {"hookEventName": "PostToolUse", "warningMessage": "⚠️  Output may contain secret material — review before sharing"}}'
   exit 0
 fi

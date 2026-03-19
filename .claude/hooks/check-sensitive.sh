@@ -19,7 +19,7 @@ tool_name=$(echo "${input}" | jq -r '.tool_name')
 # Collect ALL string values from tool_input (covers MCP, NotebookEdit, any tool schema)
 # Excludes 'description' (metadata field that could cause false positives)
 path=$(echo "${input}" | jq -r '
-  [.tool_input | to_entries[] | select(.key != "description") | .value | strings] | join(" ")
+  [.tool_input | to_entries[] | select(.key != "description") | .value | .. | strings] | join(" ")
 ')
 
 # Normalize: collapse /./, resolve ../ traversals (multi-pass loop), resolve symlinks
@@ -77,7 +77,12 @@ if echo "${sanitized}" | grep -qiE '\bexec[[:space:]]*\(.*\bchr[[:space:]]*\(|\b
   deny
 fi
 
+# 5c. Python __import__ with sensitive modules (bypasses exec() requirement)
+if echo "${sanitized}" | grep -qiE '\b__import__[[:space:]]*\(.*\b(os|subprocess|shutil)\b'; then
+  deny
+fi
+
 # 6. Block broad /proc access (allow /proc/self/status read-only via exception if needed)
-if echo "${sanitized}" | grep -qE '/proc/[^[:space:]]*/'; then
+if echo "${sanitized}" | grep -qE '/proc/[^[:space:]]*/|/dev/fd/'; then
   deny
 fi
