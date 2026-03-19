@@ -90,20 +90,24 @@ The BigQuery MCP tool truncates results at 50 rows. When querying
 
 ### Secrets
 
-A PreToolUse hook (`.claude/hooks/check-sensitive.sh`) guards sensitive paths.
-Read the hook for the full pattern list. Key behavior:
+PreToolUse (`.claude/hooks/check-sensitive.sh`) and PostToolUse
+(`.claude/hooks/check-output.sh`) hooks guard secrets. All `mcp__*` tools are
+also hooked. Read the hooks for full patterns. Key behavior:
 
-- **Secret-containing paths** (`env/`, `secret-volume`, `.devcontainer/tpl/`,
-  credentials, certs) — all tools blocked.
+- **Secret paths** (`env/`, `secret-volume`, `.devcontainer/tpl/`, credentials,
+  `*.pem`/`*.key`/`*.cer`) — all tools blocked.
 - **Read-only paths** (`.claude/settings.json`, `.claude/hooks/`,
   `.devcontainer/scripts/`) — Edit/Write/Bash blocked; Read/Grep/Glob allowed.
-- **Env leakage** (`printenv`, `/proc/*/environ`, `OP_SERVICE_ACCOUNT_TOKEN`)
-  and **1Password CLI** (`op inject/read/vault/item`) — blocked in Bash.
+- **Env leakage** (`printenv`, `os.environ`, `set`, `typeset`, `/proc/*/`,
+  encoding-to-shell pipes, `OP_SERVICE_ACCOUNT_TOKEN`) and **1Password CLI**
+  (`op inject/read/vault/item`) — blocked in Bash.
+- **Output scanning** — Bash output checked for `op://` URIs, private key
+  headers, Google API key patterns.
 
 To modify `.devcontainer/scripts/` or `.claude/hooks/`, draft changes and
 present them to the user for manual application. Files under `.claude/` must be
 staged and committed manually — the hook blocks Bash commands that reference
-these paths.
+these paths. Hook regression tests: `bash tests/test_hook_security.sh`
 
 ## Documentation
 

@@ -59,7 +59,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Read|Edit|Write|Bash|Grep|Glob|NotebookEdit",
+        "matcher": "Read|Edit|Write|Bash|Grep|Glob|NotebookEdit|mcp__.*",
         "hooks": [
           {
             "type": "command",
@@ -70,6 +70,16 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-output.sh",
+            "statusMessage": "Scanning output for secret leakage..."
+          }
+        ]
+      },
       {
         "matcher": "Edit|Write",
         "hooks": [
