@@ -135,6 +135,9 @@ query GetRunLogs($runId: ID!, $afterCursor: String, $limit: Int) {
       cursor
       hasMore
     }
+    ... on RunNotFoundError {
+      message
+    }
     ... on PythonError {
       message
       stack
@@ -144,11 +147,11 @@ query GetRunLogs($runId: ID!, $afterCursor: String, $limit: Int) {
 """
 
 COMPUTE_LOGS_QUERY = """
-query GetComputeLogs($logKey: [String!]!, $ioType: ComputeIOType!, $cursor: String, $limit: Int) {
-  capturedLogs(logKey: $logKey, cursor: $cursor, limit: $limit, ioType: $ioType) {
-    data
+query GetComputeLogs($logKey: [String!]!, $cursor: String, $limit: Int) {
+  capturedLogs(logKey: $logKey, cursor: $cursor, limit: $limit) {
+    stdout
+    stderr
     cursor
-    downloadUrl
   }
 }
 """
@@ -371,9 +374,9 @@ async def list_tools() -> list[types.Tool]:
         types.Tool(
             name="get_run_compute_logs",
             description=(
-                "Get raw stdout or stderr compute logs for a step in a Dagster+ run. "
+                "Get raw stdout and stderr compute logs for a step in a Dagster+ run. "
                 "First use get_run_logs to find LogsCapturedEvent entries, which contain "
-                "the logKey needed here."
+                "the logKey needed here. Returns both stdout and stderr as separate fields."
             ),
             inputSchema={
                 "type": "object",
@@ -385,12 +388,6 @@ async def list_tools() -> list[types.Tool]:
                             "The logKey array from a LogsCapturedEvent, e.g. "
                             '["<run_id>", "compute_logs", "<step_key>"].'
                         ),
-                    },
-                    "io_type": {
-                        "type": "string",
-                        "enum": ["STDOUT", "STDERR"],
-                        "description": "Whether to fetch stdout or stderr.",
-                        "default": "STDERR",
                     },
                     "cursor": {
                         "type": "string",
@@ -542,7 +539,6 @@ async def call_tool(
                 COMPUTE_LOGS_QUERY,
                 {
                     "logKey": arguments["log_key"],
-                    "ioType": arguments.get("io_type", "STDERR"),
                     "cursor": arguments.get("cursor"),
                     "limit": arguments.get("limit", 50000),
                 },
