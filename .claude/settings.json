@@ -42,7 +42,8 @@
       "Read(~/.claude/plugins/**)",
       "WebFetch(domain:docs.dagster.io)",
       "WebFetch(domain:github.com)",
-      "mcp__bigquery__*"
+      "mcp__bigquery__*",
+      "mcp__dagster__*"
     ]
   },
   "hooks": {
@@ -61,12 +62,12 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Read|Edit|Write",
+        "matcher": "Read|Edit|Write|Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'if [[ \"{file_path}\" =~ (\\.env|\\.ssh|secrets\\.json|credentials\\.json|\\.pem$|\\.key$|secret-volume|inject-secrets) ]]; then echo \"❌ Cannot access sensitive file: {file_path}\"; exit 1; fi'",
-            "statusMessage": "Checking if file is safe to access..."
+            "command": "bash .claude/hooks/check-sensitive.sh",
+            "statusMessage": "Checking if path is safe to access..."
           }
         ]
       }
