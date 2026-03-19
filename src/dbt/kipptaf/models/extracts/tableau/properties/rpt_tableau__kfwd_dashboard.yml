@@ -596,4 +596,3 @@ models:
           Overgrad. False if the student has no Overgrad top-choice data.
       - name: es_attended
         data_type: string
-        
