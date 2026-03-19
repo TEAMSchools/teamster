@@ -49,13 +49,17 @@
   "hooks": {
     "SessionStart": [
       {
-        "type": "command",
-        "command": "sed -i '/OP_SERVICE_ACCOUNT_TOKEN/d' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sed -i '/OP_SERVICE_ACCOUNT_TOKEN/d' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true"
+          }
+        ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": "Read|Edit|Write|Bash|Grep|Glob",
+        "matcher": "Read|Edit|Write|Bash|Grep|Glob|NotebookEdit|mcp__.*",
         "hooks": [
           {
             "type": "command",
@@ -66,6 +70,16 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-output.sh",
+            "statusMessage": "Scanning output for secret leakage..."
+          }
+        ]
+      },
       {
         "matcher": "Edit|Write",
         "hooks": [

@@ -6,9 +6,11 @@ with
             first_name,
             last_name,
             contact_owner_name,
-            contact_currently_enrolled_school,
+            exit_school_name,
             best_guess_pathway,
             is_ed_ea,
+            contact_graduation_year,
+            ktc_cohort,
 
             round(contact_college_match_display_gpa, 2) as gpa,
         from {{ ref("int_kippadb__roster") }}
@@ -67,7 +69,9 @@ select
     r.first_name,
     r.last_name,
     r.contact_owner_name as counselor,
-    r.contact_currently_enrolled_school as high_school,
+    r.exit_school_name as school,
+    r.contact_graduation_year as graduation_year,
+    r.ktc_cohort as cohort,
 
     -- quality bar drivers
     r.best_guess_pathway,

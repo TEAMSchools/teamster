@@ -90,24 +90,24 @@ The BigQuery MCP tool truncates results at 50 rows. When querying
 
 ### Secrets
 
-A PreToolUse hook (`.claude/hooks/check-sensitive.sh`) blocks access to
-sensitive paths across Read/Edit/Write/Bash/Grep/Glob. Blocked patterns include:
-`.env`, `.ssh`, `.pem`, `.key`, `.cer`, `env/`, `secret-volume`,
-`.devcontainer/tpl/`, `.devcontainer/scripts/`, `*.cer`/`*.key`/`*.pem` globs,
-`printenv`/`declare -x`/`set`/`compgen`/`/proc/*/environ`,
-`op vault/item/read/document/inject`, and `OP_SERVICE_ACCOUNT_TOKEN` substrings
-(`OP_SERVICE`, `ACCOUNT_TOKEN`). The hook is self-protecting — it also blocks
-modifications to `.claude/settings.json` and `.claude/hooks/`. A `SessionStart`
-hook scrubs `OP_SERVICE_ACCOUNT_TOKEN` from shell snapshots. MCP servers fetch
-secrets via `op read`.
+PreToolUse (`.claude/hooks/check-sensitive.sh`) and PostToolUse
+(`.claude/hooks/check-output.sh`) hooks guard secrets. All `mcp__*` tools are
+also hooked. Read the hooks for full patterns. Key behavior:
 
-When testing the hook itself, write a temporary shell script to a non-protected
-path and run it — inline Bash commands containing sensitive path strings will be
-blocked by the hook.
+- **Secret paths** (`env/`, `secret-volume`, `.devcontainer/tpl/`, credentials,
+  `*.pem`/`*.key`/`*.cer`) — all tools blocked.
+- **Read-only paths** (`.claude/settings.json`, `.claude/hooks/`,
+  `.devcontainer/scripts/`) — Edit/Write/Bash blocked; Read/Grep/Glob allowed.
+- **Env leakage** (`printenv`, `os.environ`, `set`, `typeset`, `/proc/*/`,
+  encoding-to-shell pipes, `OP_SERVICE_ACCOUNT_TOKEN`) and **1Password CLI**
+  (`op inject/read/vault/item`) — blocked in Bash.
+- **Output scanning** — Bash output checked for `op://` URIs, private key
+  headers, Google API key patterns.
 
-To modify secret-handling scripts (`.devcontainer/scripts/`), draft the changes
-and present them to the user for manual application — the hook blocks all AI
-tool access to these files.
+To modify `.devcontainer/scripts/` or `.claude/hooks/`, draft changes and
+present them to the user for manual application. Files under `.claude/` must be
+staged and committed manually — the hook blocks Bash commands that reference
+these paths. Hook regression tests: `bash tests/test_hook_security.sh`
 
 ## Documentation
 
