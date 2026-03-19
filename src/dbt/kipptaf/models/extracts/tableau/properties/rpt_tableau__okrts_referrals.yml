@@ -121,8 +121,12 @@ models:
         data_type: float64
       - name: is_chronically_absent
         data_type: boolean
+      - name: is_current_week_mon_sun
+        data_type: boolean
       - name: school_enrollment_by_week
         data_type: int64
+      - name: is_week_ytd
+        data_type: boolean
       - name: is_suspended_y1_int
         data_type: int64
       - name: is_suspended_y1_oss_int
