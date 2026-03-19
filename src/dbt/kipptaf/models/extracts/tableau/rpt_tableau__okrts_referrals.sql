@@ -145,6 +145,7 @@ select
     co.self_contained_status,
     co.week_start_monday,
     co.week_end_sunday,
+    co.week_number_academic_year,
     co.date_count as days_in_session,
     co.quarter as term,
 

@@ -41,6 +41,8 @@ models:
         data_type: date
       - name: week_end_sunday
         data_type: date
+      - name: week_number_academic_year
+        data_type: int64
       - name: days_in_session
         data_type: int64
       - name: term
