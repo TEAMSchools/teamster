@@ -386,9 +386,9 @@ if [[ -f ${OUTPUT_HOOK} ]]; then
   echo ""
   echo -e "${YELLOW}PostToolUse: Output scanner (check-output.sh)${NC}"
 
-  # Unified helper: check_output <desc> <expect> [tool] <content>
-  # 3-arg form: check_output "desc" warn|clean "output"        (defaults to Bash)
-  # 4-arg form: check_output "desc" warn|clean Tool "output"
+  # Helper: check_output <desc> <expect> [tool] <content>
+  # 3-arg form: check_output "desc" deny|clean "output"        (defaults to Bash)
+  # 4-arg form: check_output "desc" deny|clean Tool "output"
   check_output() {
     local desc="$1" expect="$2" tool content_val
     if [[ $# -eq 3 ]]; then
@@ -401,17 +401,17 @@ if [[ -f ${OUTPUT_HOOK} ]]; then
     local input
     input=$(jq -n --arg tn "${tool}" --arg c "${content_val}" \
       '{tool_name: $tn, tool_output: {content: $c, stdout: $c, stderr: ""}}')
-    local result
-    result=$(echo "${input}" | bash "${OUTPUT_HOOK}" 2>&1)
-    local has_warning=false
-    if echo "${result}" | grep -q "warningMessage"; then
-      has_warning=true
+
+    if echo "${input}" | bash "${OUTPUT_HOOK}" >/dev/null 2>&1; then
+      local exited_ok=true
+    else
+      local exited_ok=false
     fi
 
-    if [[ ${expect} == "warn" && ${has_warning} == "true" ]]; then
+    if [[ ${expect} == "deny" && ${exited_ok} == "false" ]]; then
       PASS=$((PASS + 1))
-      echo -e "  ${GREEN}PASS${NC} [warn]: ${desc}"
-    elif [[ ${expect} == "clean" && ${has_warning} == "false" ]]; then
+      echo -e "  ${GREEN}PASS${NC} [deny]: ${desc}"
+    elif [[ ${expect} == "clean" && ${exited_ok} == "true" ]]; then
       PASS=$((PASS + 1))
       echo -e "  ${GREEN}PASS${NC} [clean]: ${desc}"
     else
@@ -420,53 +420,119 @@ if [[ -f ${OUTPUT_HOOK} ]]; then
     fi
   }
 
-  check_output "op:// reference in output" warn "op://vault/item/field"
+  check_output "op:// reference in output" deny "op://vault/item/field"
   # synthetic test fixture, not a real key
   # trunk-ignore(gitleaks/private-key)
-  check_output "private key header" warn "-----BEGIN RSA PRIVATE KEY-----"
-  check_output "EC private key" warn "-----BEGIN EC PRIVATE KEY-----"
-  check_output "OPENSSH private key" warn "-----BEGIN OPENSSH PRIVATE KEY-----"
+  check_output "private key header" deny "-----BEGIN RSA PRIVATE KEY-----"
+  check_output "EC private key" deny "-----BEGIN EC PRIVATE KEY-----"
+  check_output "OPENSSH private key" deny "-----BEGIN OPENSSH PRIVATE KEY-----"
   # synthetic test fixture, not a real key
   # trunk-ignore(gitleaks/gcp-api-key)
-  check_output "Google API key pattern" warn "AIzaSyA1234567890abcdefghijklmnopqrstuv"
-  check_output "Google OAuth token" warn "ya29.a0AfH6SMBx-example-token-value"
-  check_output "goog_ prefixed secret" warn "goog_AbCdEfGhIjKlMnOpQr"
+  check_output "Google API key pattern" deny "AIzaSyA1234567890abcdefghijklmnopqrstuv"
+  check_output "Google OAuth token" deny "ya29.a0AfH6SMBx-example-token-value"
+  check_output "goog_ prefixed secret" deny "goog_AbCdEfGhIjKlMnOpQr"
   check_output "normal command output" clean "total 42\ndrwxr-xr-x 5 user user 4096 Mar 19 10:00 src"
   check_output "git log output" clean "abc1234 feat: add new feature"
   check_output "Python traceback" clean "Traceback (most recent call last):\n  File \"main.py\""
-  check_output "JWT token" warn "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0"
-  check_output "AWS access key" warn "AKIAIOSFODNN7EXAMPLE"
-  check_output "DB connection string" warn "postgres://admin:s3cret@db.example.com:5432/prod"
-  check_output "service account JSON" warn '{"type": "service_account", "project_id": "test"}'
-  check_output "GitHub PAT" warn "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
+  check_output "JWT token" deny "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0"
+  check_output "AWS access key" deny "AKIAIOSFODNN7EXAMPLE"
+  check_output "DB connection string" deny "postgres://admin:s3cret@db.example.com:5432/prod"
+  check_output "service account JSON" deny '{"type": "service_account", "project_id": "test"}'
+  check_output "GitHub PAT" deny "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
   check_output "normal base64 (not JWT)" clean "eyJqdXN0IjoiZGF0YSJ9"
-  check_output "WebFetch with op://" warn WebFetch "config: op://vault/item/field"
+  check_output "WebFetch with op://" deny WebFetch "config: op://vault/item/field"
   # synthetic test fixture, not a real key
   # trunk-ignore(gitleaks/private-key)
-  check_output "WebSearch with private key" warn WebSearch "-----BEGIN RSA PRIVATE KEY-----"
+  check_output "WebSearch with private key" deny WebSearch "-----BEGIN RSA PRIVATE KEY-----"
   check_output "WebFetch normal content" clean WebFetch "<html><body>Hello</body></html>"
 
   echo ""
   echo -e "${YELLOW}PostToolUse: Read/Grep output scanning${NC}"
 
-  check_output "Read with op:// in content" warn Read "config: op://vault/item/field"
-  check_output "Grep with private key match" warn Grep "-----BEGIN RSA PRIVATE KEY-----"
+  check_output "Read with op:// in content" deny Read "config: op://vault/item/field"
+  check_output "Grep with private key match" deny Grep "-----BEGIN RSA PRIVATE KEY-----"
   check_output "Read normal file content" clean Read "def hello():\n    return 42"
   check_output "Grep normal match" clean Grep "import dagster"
 
-  # Verify non-Bash/Read/Grep tools are skipped (no warning even with secret content)
+  echo ""
+  echo -e "${YELLOW}PostToolUse: MCP tool output scanning${NC}"
+
+  check_output "MCP tool with op://" deny "mcp__bigquery__query" "op://vault/item/field"
+  check_output "MCP tool with private key" deny "mcp__dagster__get_run" "-----BEGIN RSA PRIVATE KEY-----"
+  check_output "MCP tool clean output" clean "mcp__bigquery__query" "rows_affected: 42"
+
+  # Verify non-scanned tools still pass (no deny even with secret content)
   input_skip=$(jq -n '{tool_name: "Write", tool_output: {content: "op://vault/item/field"}}')
-  result_skip=$(echo "${input_skip}" | bash "${OUTPUT_HOOK}" 2>&1)
-  if echo "${result_skip}" | grep -q "warningMessage"; then
-    FAIL=$((FAIL + 1))
-    ERRORS+="\n  ${RED}FAIL${NC} [should skip]: Write tool should not be scanned"
-  else
+  if echo "${input_skip}" | bash "${OUTPUT_HOOK}" >/dev/null 2>&1; then
     PASS=$((PASS + 1))
     echo -e "  ${GREEN}PASS${NC} [skip]: Write tool output not scanned"
+  else
+    FAIL=$((FAIL + 1))
+    ERRORS+="\n  ${RED}FAIL${NC} [should skip]: Write tool should not be scanned"
   fi
 else
   echo ""
   echo -e "  ${YELLOW}SKIP${NC}: ${OUTPUT_HOOK} not found"
+fi
+
+# ─── Pattern 5d: Python importlib bypass ────────────────────────────────────
+echo ""
+echo -e "${YELLOW}Pattern 5d: Python importlib bypass${NC}"
+
+expect_deny "importlib os" Bash command "uv run python -c \"import importlib; importlib.import_module('os').system('id')\""
+expect_deny "importlib subprocess" Bash command "uv run python -c \"import importlib; importlib.import_module('subprocess').run(['id'])\""
+expect_deny "importlib shutil" Bash command "uv run python -c \"import importlib; importlib.import_module('shutil').copy('a','b')\""
+expect_allow "importlib json (safe)" Bash command "uv run python -c \"import importlib; importlib.import_module('json').dumps({})\""
+
+# ─── Pattern 7: Shell variable expansion ────────────────────────────────────
+echo ""
+echo -e "${YELLOW}Pattern 7: Shell variable expansion${NC}"
+
+# test fixtures: $() must not expand — values are literal command strings for the hook
+# trunk-ignore-begin(shellcheck/SC2016)
+expect_deny 'echo $SECRET_TOKEN' Bash command 'echo $SECRET_TOKEN'
+expect_deny 'echo ${API_KEY}' Bash command 'echo ${API_KEY}'
+expect_deny 'echo $GOOGLE_APPLICATION_CREDENTIALS' Bash command 'echo $GOOGLE_APPLICATION_CREDENTIALS'
+expect_deny 'echo $DB_PASSWORD' Bash command 'echo $DB_PASSWORD'
+expect_deny '${!OP_*} indirect expansion' Bash command 'echo ${!OP_*}'
+expect_deny '${!SECRET_*} indirect expansion' Bash command 'echo ${!SECRET_*}'
+
+expect_allow 'echo $HOME (safe var)' Bash command 'echo $HOME'
+expect_allow 'echo $PATH (safe var)' Bash command 'echo $PATH'
+expect_allow 'echo $DAGSTER_HOME (safe var)' Bash command 'echo $DAGSTER_HOME'
+expect_allow 'echo $GOOGLE_CLOUD_PROJECT (safe var)' Bash command 'echo $GOOGLE_CLOUD_PROJECT'
+expect_allow 'echo $PWD (safe var)' Bash command 'echo $PWD'
+expect_allow 'echo $VIRTUAL_ENV (safe var)' Bash command 'echo $VIRTUAL_ENV'
+expect_allow 'echo $UV_LINK_MODE (safe var)' Bash command 'echo $UV_LINK_MODE'
+expect_allow 'echo $GITHUB_WORKSPACE (safe var)' Bash command 'echo $GITHUB_WORKSPACE'
+# trunk-ignore-end(shellcheck/SC2016)
+expect_allow '$? exit code' Bash command 'echo $?'
+expect_allow '$# arg count' Bash command 'echo $#'
+
+# ─── .git/hooks self-protection ──────────────────────────────────────────────
+echo ""
+echo -e "${YELLOW}.git/hooks self-protection${NC}"
+
+expect_deny "write to .git/hooks/" Write file_path ".git/hooks/pre-commit"
+expect_deny "bash cat .git/hooks/" Bash command "cat .git/hooks/pre-commit"
+expect_deny "edit .git/hooks/" Edit file_path ".git/hooks/pre-commit"
+expect_allow "read .git/hooks/" Read file_path ".git/hooks/pre-commit"
+expect_allow "grep in .git/hooks/" Grep path ".git/hooks/"
+
+# ─── PostToolUse deny behavior ──────────────────────────────────────────────
+if [[ -f ${OUTPUT_HOOK} ]]; then
+  echo ""
+  echo -e "${YELLOW}PostToolUse: deny behavior (exit 1)${NC}"
+
+  # Verify MCP tool output is now scanned
+  input_mcp=$(jq -n '{tool_name: "mcp__bigquery__query", tool_output: {content: "op://vault/item/field"}}')
+  if echo "${input_mcp}" | bash "${OUTPUT_HOOK}" >/dev/null 2>&1; then
+    FAIL=$((FAIL + 1))
+    ERRORS+="\n  ${RED}FAIL${NC} [should deny]: MCP tool output with op:// should be scanned"
+  else
+    PASS=$((PASS + 1))
+    echo -e "  ${GREEN}PASS${NC} [deny]: MCP tool output scanned"
+  fi
 fi
 
 # ─── Summary ─────────────────────────────────────────────────────────────────

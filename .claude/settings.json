@@ -71,7 +71,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|Read|Grep|WebFetch|WebSearch",
+        "matcher": "Bash|Read|Grep|WebFetch|WebSearch|mcp__.*",
         "hooks": [
           {
             "type": "command",

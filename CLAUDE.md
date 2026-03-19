@@ -101,24 +101,20 @@ scanned recursively. Read the hooks for full patterns. Key behavior:
 - **Secret paths** (`env/`, `secret-volume`, `.devcontainer/tpl/`, credentials,
   `*.pem`/`*.key`/`*.cer`) — all tools blocked.
 - **Read-only paths** (`.claude/settings.json`, `.claude/hooks/`,
-  `.claude/shell-snapshots/`, `.devcontainer/scripts/`) — Edit/Write/Bash
-  blocked; Read/Grep/Glob allowed.
+  `.claude/shell-snapshots/`, `.devcontainer/scripts/`, `.git/hooks/`) —
+  Edit/Write/Bash blocked; Read/Grep/Glob allowed.
 - **Content scanning** — Write `content` and Edit `new_string` are scanned, so
   test files with sensitive fixture strings must also be drafted for manual
   application.
-- **Env leakage** (`printenv`, `os.environ`, `getenv`, `set`, `typeset`,
-  `/proc/*/`, `/dev/fd/`, encoding-to-shell pipes, `OP_SERVICE_ACCOUNT_TOKEN`),
-  **1Password CLI** (`op inject/read/vault/item`), and **Python** (`exec()` with
-  `chr`/`join`/`bytes`/`base64.b64decode`/`codecs.decode`/`fromhex`;
-  `__import__` with `os`/`subprocess`/`shutil`) — blocked.
-- **Output scanning** — Bash/Read/Grep/WebFetch/WebSearch output checked for
-  `op://`, private keys, Google/AWS/GitHub keys, JWTs, DB connection strings,
-  service account JSON.
+- **Output scanning** — Bash/Read/Grep/WebFetch/WebSearch/MCP tool output denied
+  if it contains secret material (keys, tokens, connection strings).
 
 To modify `.devcontainer/scripts/` or `.claude/hooks/`, draft changes and
 present them to the user for manual application. Files under `.claude/` must be
 staged and committed manually — the hook blocks Bash commands that reference
-these paths. Hook regression tests: `bash tests/test_hook_security.sh`
+these paths. Content scanning also blocks Edit/Write on any file whose content
+mentions protected patterns (e.g., this CLAUDE.md) — draft those edits too. Hook
+regression tests: `bash tests/test_hook_security.sh`
 
 ## Documentation
 

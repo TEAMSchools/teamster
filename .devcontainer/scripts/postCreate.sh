@@ -19,6 +19,10 @@ chmod 600 .devcontainer/tpl/*
 chmod 700 ./env
 sudo chmod 700 /etc/secret-volume
 
+# restrict permissions on hook/config paths
+chmod 644 .claude/settings.json
+chmod 755 .claude/hooks/ .claude/hooks/*.sh
+
 # set up trunk
 chmod +x /workspaces/teamster/trunk
 

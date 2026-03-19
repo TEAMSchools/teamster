@@ -41,7 +41,7 @@ if echo "${sanitized}" | grep -qiE '(^|[ /])(\.env[.a-z]*|\.ssh|\.pem|\.key|\.ce
 fi
 
 # 2. Hook self-protection — block modifications to hook config and shell snapshots (allow reads)
-if echo "${sanitized}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/|shell-snapshots/)|\.devcontainer/scripts/'; then
+if echo "${sanitized}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/'; then
   if [[ ${tool_name} != "Read" && ${tool_name} != "Grep" && ${tool_name} != "Glob" ]]; then
     deny
   fi
@@ -82,7 +82,34 @@ if echo "${sanitized}" | grep -qiE '\b__import__[[:space:]]*\(.*\b(os|subprocess
   deny
 fi
 
+# 5d. Python importlib bypass (avoids __import__ check)
+if echo "${sanitized}" | grep -qiE '\bimportlib\b.*\b(os|subprocess|shutil)\b'; then
+  deny
+fi
+
 # 6. Block broad /proc access and /dev/fd/
 if echo "${sanitized}" | grep -qE '/proc/[^[:space:]]*/|/dev/fd/'; then
+  deny
+fi
+
+# 7. Shell variable expansion — block $UPPER_CASE broadly, allowlist known-safe vars
+# Block ${!prefix*} (indirect expansion that enumerates variable names)
+if echo "${sanitized}" | grep -qE '\$\{![^}]*\}'; then
+  deny
+fi
+# Strip allowed variable references, then deny if any $VAR remain
+safe='HOME|PATH|PWD|OLDPWD|USER|SHELL|TERM|LANG|LANGUAGE'
+safe+='|LC_[A-Z]+|HOSTNAME|SHLVL|LOGNAME|TZ|TMPDIR|EDITOR|VISUAL|PAGER|DISPLAY'
+safe+='|XDG_[A-Z_]+|PS[0-4]|IFS|PPID|UID|EUID|RANDOM|SECONDS|LINENO'
+safe+='|OSTYPE|MACHTYPE|HOSTTYPE|BASH_SOURCE|BASH_LINENO|BASH_REMATCH|BASHPID|BASH_VERSION|HISTSIZE|HISTCONTROL|COMP[A-Z_]*'
+safe+='|SHELLOPTS|BASHOPTS|DIRSTACK|PIPESTATUS|FUNCNAME|REPLY'
+safe+='|DAGSTER_HOME|DBT_PROFILES_DIR|DBT_PROJECT_DIR|DBT_CLOUD_ENVIRONMENT_TYPE|DBT_SEND_ANONYMOUS_USAGE_STATS'
+safe+='|GOOGLE_CLOUD_PROJECT|PYTHONDONTWRITEBYTECODE|PYTHONPATH|PYTHONHASHSEED'
+safe+='|TRUNK_TELEMETRY|UV_LINK_MODE|UV_RESOLUTION|UV_CACHE_DIR|VIRTUAL_ENV|NVM_DIR'
+safe+='|JAVA_HOME|GOPATH|GOROOT|CARGO_HOME|RUSTUP_HOME|NODE_PATH'
+safe+='|CI|GITHUB_WORKSPACE|GITHUB_REPOSITORY|GITHUB_REF|GITHUB_SHA|GITHUB_ACTIONS|GITHUB_ACTOR|GITHUB_OUTPUT|GITHUB_EVENT_NAME'
+safe+='|CODESPACES|CODESPACE_NAME|REMOTE_CONTAINERS'
+stripped=$(echo "${sanitized}" | sed -E "s/\\$\\{?(${safe})\\}?//g")
+if echo "${stripped}" | grep -qE '\$\{?[A-Z_][A-Z0-9_]+\}?'; then
   deny
 fi
