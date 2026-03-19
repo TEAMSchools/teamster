@@ -14,6 +14,7 @@ deny() {
 }
 
 input=$(cat)
+tool_name=$(echo "${input}" | jq -r '.tool_name')
 
 # Collect all fields that may contain paths: file_path, path, command, pattern
 path=$(echo "${input}" | jq -r '
@@ -29,13 +30,22 @@ path=$(echo "${input}" | jq -r '
 normalized=$(echo "${path}" | sed -E 's#/\./#/#g; s#/[^/]+/\.\./#/#g')
 
 # 1. Sensitive file/directory patterns (case-insensitive)
-if echo "${normalized}" | grep -qiE '(^|[ /])(\.env|\.ssh|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume|inject-secrets\.sh|postCreate\.sh|postStart\.sh)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/(tpl|scripts)/|\*\.(cer|key|pem)'; then
+if echo "${normalized}" | grep -qiE '(^|[ /])(\.env|\.ssh|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/(tpl|scripts)/|\*\.(cer|key|pem)'; then
   deny
 fi
 
-# 2. Hook self-protection — block modifications to hook config
+# 2. Hook self-protection — block modifications to hook config (allow reads)
 if echo "${normalized}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/)'; then
-  deny
+  if [[ ${tool_name} == "Read" || ${tool_name} == "Grep" || ${tool_name} == "Glob" ]]; then
+    : # allow reads
+  elif [[ ${tool_name} == "Bash" ]]; then
+    # Only block Bash commands that write to hook config (not mere string mentions)
+    if echo "${normalized}" | grep -qE '(>|>>|cp |mv |rm |chmod |sed |awk |tee ).*\.claude/(settings\.json|settings\.local\.json|hooks/)'; then
+      deny
+    fi
+  else
+    deny
+  fi
 fi
 
 # 3. Environment variable / process memory leakage
