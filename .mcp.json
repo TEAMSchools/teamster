@@ -1,5 +1,14 @@
 {
   "mcpServers": {
+    "dagster": {
+      "command": "uv",
+      "args": ["run", "--group", "mcp", "python", "mcp/dagster_plus.py"],
+      "env": {
+        "DAGSTER_CLOUD_API_TOKEN": "${DAGSTER_CLOUD_API_TOKEN}",
+        "DAGSTER_CLOUD_ORGANIZATION_ID": "kipptaf",
+        "DAGSTER_CLOUD_DEPLOYMENT": "prod"
+      }
+    },
     "bigquery": {
       "command": "/usr/local/bin/toolbox",
       "args": ["--prebuilt", "bigquery", "--stdio"],

@@ -40,6 +40,7 @@ dependencies = [
 [dependency-groups]
 dev = ["cron-descriptor>=1.4", "dagster-webserver", "pytest>=8.3.4"]
 docs = ["mkdocs-material>=9.7.5"]
+mcp = ["mcp>=1.0.0"]
 
 [build-system]
 requires = ["hatchling"]
