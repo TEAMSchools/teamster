@@ -176,6 +176,22 @@ query DaemonHealth {
 }
 """
 
+STALE_ASSETS_QUERY = """
+query GetStaleAssets {
+  assetNodes {
+    assetKey { path }
+    groupName
+    staleStatus
+    staleCauses {
+      key { path }
+      reason
+      category
+      dependency { path }
+    }
+  }
+}
+"""
+
 ASSET_CONDITION_EVALUATIONS_QUERY = """
 query GetAssetConditionEvaluations($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
   assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
@@ -398,6 +414,34 @@ async def list_tools() -> list[types.Tool]:
             },
         ),
         types.Tool(
+            name="list_stale_assets",
+            description=(
+                "List assets that have a stale (unsynced) status in Dagster+. "
+                "CODE category means the asset's code version changed since last "
+                "materialization (shown as 'unsynced' in the UI). DATA category means "
+                "an upstream asset has been updated. Returns each stale asset's key, "
+                "group, and the specific causes of staleness."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "category": {
+                        "type": "string",
+                        "enum": ["CODE", "DATA"],
+                        "description": (
+                            "Filter to a specific staleness category. "
+                            "CODE = unsynced (code version changed); "
+                            "DATA = upstream data updated. Omit to return all stale assets."
+                        ),
+                    },
+                    "group": {
+                        "type": "string",
+                        "description": "Filter to assets in this group name.",
+                    },
+                },
+            },
+        ),
+        types.Tool(
             name="get_asset_condition_evaluations",
             description=(
                 "Get automation condition evaluation history for an asset. "
@@ -514,6 +558,19 @@ async def call_tool(
                     type="text", text=json.dumps(data["capturedLogs"], indent=2)
                 )
             ]
+
+        elif name == "list_stale_assets":
+            data = gql(STALE_ASSETS_QUERY)
+            nodes = data["assetNodes"]
+            stale = [n for n in nodes if n.get("staleStatus") == "STALE"]
+            if group := arguments.get("group"):
+                stale = [n for n in stale if n.get("groupName") == group]
+            if category := arguments.get("category"):
+                stale = [
+                    n for n in stale
+                    if any(c.get("category") == category for c in n.get("staleCauses", []))
+                ]
+            return [types.TextContent(type="text", text=json.dumps(stale, indent=2))]
 
         elif name == "get_asset_condition_evaluations":
             asset_key_path = arguments["asset_key"].split("/")
