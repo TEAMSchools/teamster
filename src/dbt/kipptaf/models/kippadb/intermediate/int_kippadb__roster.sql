@@ -266,6 +266,8 @@ with
 
             mpt.physical_training_requirement_passed,
 
+            se.es_attended,
+
             concat(
                 os.assigned_counselor__last_name,
                 ', ',
