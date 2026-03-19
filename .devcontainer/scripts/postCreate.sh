@@ -34,7 +34,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv tool install datamodel-code-generator
 uv tool install dagster-dg
 uv tool install dbt-mcp
-uv sync --frozen
+uv sync --frozen --all-groups
 
 # install MCP toolbox
 curl --fail -O https://storage.googleapis.com/genai-toolbox/v0.29.0/linux/amd64/toolbox ||
