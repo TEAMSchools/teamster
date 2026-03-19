@@ -25,7 +25,6 @@ set +euo pipefail
 
 # set up trunk
 chmod +x /workspaces/teamster/trunk
-/workspaces/teamster/trunk install
 
 # install uv -- ignoring feature bc it doesn't allow self update
 curl -LsSf https://astral.sh/uv/install.sh | sh

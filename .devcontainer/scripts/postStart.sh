@@ -10,3 +10,6 @@ echo 'unset OP_SERVICE_ACCOUNT_TOKEN' >>/home/vscode/.profile
 uv self update # reliable enough to not pin a version
 uv tool upgrade --all
 uv sync --frozen --all-groups
+
+# install trunk tools
+/workspaces/teamster/trunk install
