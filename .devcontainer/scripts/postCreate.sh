@@ -13,6 +13,12 @@ sudo apt-get update -y &&
 mkdir -p ./env
 sudo mkdir -p /etc/secret-volume
 
+# restrict permissions on secrets-related paths
+chmod 755 .devcontainer/scripts/inject-secrets.sh
+chmod 600 .devcontainer/tpl/*
+chmod 700 ./env
+sudo chmod 700 /etc/secret-volume
+
 # inject 1Password secrets
 source ./.devcontainer/scripts/inject-secrets.sh
 
@@ -21,7 +27,6 @@ chmod +x /workspaces/teamster/trunk
 /workspaces/teamster/trunk install
 
 # install uv -- ignoring feature bc it doesn't allow self update
-# trunk-ignore(shellcheck/SC2312)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # install uv dependencies

@@ -88,6 +88,27 @@ The BigQuery MCP tool truncates results at 50 rows. When querying
 `INFORMATION_SCHEMA.COLUMNS` for tables with >50 columns, paginate with
 `WHERE ordinal_position > N` to get all rows.
 
+### Secrets
+
+A PreToolUse hook (`.claude/hooks/check-sensitive.sh`) blocks access to
+sensitive paths across Read/Edit/Write/Bash/Grep/Glob. Blocked patterns include:
+`.env`, `.ssh`, `.pem`, `.key`, `.cer`, `env/`, `secret-volume`,
+`.devcontainer/tpl/`, `.devcontainer/scripts/`, `*.cer`/`*.key`/`*.pem` globs,
+`printenv`/`declare -x`/`set`/`compgen`/`/proc/*/environ`,
+`op vault/item/read/document/inject`, and `OP_SERVICE_ACCOUNT_TOKEN` substrings
+(`OP_SERVICE`, `ACCOUNT_TOKEN`). The hook is self-protecting — it also blocks
+modifications to `.claude/settings.json` and `.claude/hooks/`. A `SessionStart`
+hook scrubs `OP_SERVICE_ACCOUNT_TOKEN` from shell snapshots. MCP servers fetch
+secrets via `op read`.
+
+When testing the hook itself, write a temporary shell script to a non-protected
+path and run it — inline Bash commands containing sensitive path strings will be
+blocked by the hook.
+
+To modify secret-handling scripts (`.devcontainer/scripts/`), draft the changes
+and present them to the user for manual application — the hook blocks all AI
+tool access to these files.
+
 ## Documentation
 
 Two documentation systems serve different audiences — do not conflate them:
