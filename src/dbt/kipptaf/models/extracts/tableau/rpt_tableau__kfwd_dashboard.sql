@@ -299,6 +299,7 @@ select
     c.qualified_navy,
     c.total_qualified_military_branches,
     c.physical_training_requirement_passed,
+    c.es_attended,
 
     ay.academic_year,
 
