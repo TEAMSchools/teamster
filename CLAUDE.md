@@ -20,7 +20,9 @@ Cloud Storage (GCS) as the intermediate storage layer.
 - **Branch naming**: `<author>/<commit-type>/<brief-description>` (e.g.,
   `cbini/feat/salesforce-alumni-tracking`). Use `claude` as the author prefix
   for AI-assisted branches.
-- **Pull requests**: Squash merge.
+- **Pull requests**: Squash merge. When opening a PR, use
+  `.github/pull_request_template.md` as the body — fill in the relevant sections
+  based on the changes.
 - **GitHub issues**: Do not open issues proactively — ask first when something
   warrants one, then open it if confirmed. Use `gh issue create` (not the web
   UI). Label it with a
