@@ -50,6 +50,8 @@ echo "8cb1cacbbaccf0940926643482d20e3b02efba80d1c93eafb4342079b1ebee95  toolbox"
 chmod +x toolbox
 sudo mv toolbox /usr/local/bin/
 
+export DBT_SEND_ANONYMOUS_USAGE_STATS=false
+
 # bootstrap dbt projects
 (uv run dbt deps --project-dir=src/dbt/amplify &&
   uv run dbt parse --project-dir=src/dbt/amplify) &
