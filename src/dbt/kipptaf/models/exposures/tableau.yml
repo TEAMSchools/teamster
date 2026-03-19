@@ -365,6 +365,7 @@ exposures:
       - ref("rpt_tableau__gradebook_es_comments")
       - ref("rpt_tableau__gradebook_gpa")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
