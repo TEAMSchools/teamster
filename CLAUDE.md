@@ -82,6 +82,10 @@ See `.trunk/trunk.yaml` for the full list of enabled linters and
 **required** in SELECT clauses, single quotes for literals, max line length 88.
 Do not flag code that follows these rules.
 
+**Shell style**: `shfmt` enforces tabs. Linter ignores use
+`# trunk-ignore(shellcheck/SCXXXX)` with a reason comment, not
+`# shellcheck disable=`.
+
 ### BigQuery MCP Queries
 
 The BigQuery MCP tool truncates results at 50 rows. When querying
@@ -91,18 +95,25 @@ The BigQuery MCP tool truncates results at 50 rows. When querying
 ### Secrets
 
 PreToolUse (`.claude/hooks/check-sensitive.sh`) and PostToolUse
-(`.claude/hooks/check-output.sh`) hooks guard secrets. All `mcp__*` tools are
-also hooked. Read the hooks for full patterns. Key behavior:
+(`.claude/hooks/check-output.sh`) hooks guard secrets. All tool_input fields are
+scanned recursively. Read the hooks for full patterns. Key behavior:
 
 - **Secret paths** (`env/`, `secret-volume`, `.devcontainer/tpl/`, credentials,
   `*.pem`/`*.key`/`*.cer`) — all tools blocked.
 - **Read-only paths** (`.claude/settings.json`, `.claude/hooks/`,
-  `.devcontainer/scripts/`) — Edit/Write/Bash blocked; Read/Grep/Glob allowed.
-- **Env leakage** (`printenv`, `os.environ`, `set`, `typeset`, `/proc/*/`,
-  encoding-to-shell pipes, `OP_SERVICE_ACCOUNT_TOKEN`) and **1Password CLI**
-  (`op inject/read/vault/item`) — blocked in Bash.
-- **Output scanning** — Bash output checked for `op://` URIs, private key
-  headers, Google API key patterns.
+  `.claude/shell-snapshots/`, `.devcontainer/scripts/`) — Edit/Write/Bash
+  blocked; Read/Grep/Glob allowed.
+- **Content scanning** — Write `content` and Edit `new_string` are scanned, so
+  test files with sensitive fixture strings must also be drafted for manual
+  application.
+- **Env leakage** (`printenv`, `os.environ`, `getenv`, `set`, `typeset`,
+  `/proc/*/`, `/dev/fd/`, encoding-to-shell pipes, `OP_SERVICE_ACCOUNT_TOKEN`),
+  **1Password CLI** (`op inject/read/vault/item`), and **Python** (`exec()` with
+  `chr`/`join`/`bytes`/`base64.b64decode`/`codecs.decode`/`fromhex`;
+  `__import__` with `os`/`subprocess`/`shutil`) — blocked.
+- **Output scanning** — Bash/Read/Grep/WebFetch/WebSearch output checked for
+  `op://`, private keys, Google/AWS/GitHub keys, JWTs, DB connection strings,
+  service account JSON.
 
 To modify `.devcontainer/scripts/` or `.claude/hooks/`, draft changes and
 present them to the user for manual application. Files under `.claude/` must be
