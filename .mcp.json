@@ -2,13 +2,7 @@
   "mcpServers": {
     "dagster": {
       "command": "uv",
-      "args": [
-        "run",
-        "--group",
-        "mcp",
-        "python",
-        "src/teamster/mcp/dagster_plus.py"
-      ],
+      "args": ["run", "--group", "mcp", "python", "mcp/dagster_plus.py"],
       "env": {
         "DAGSTER_CLOUD_API_TOKEN": "${DAGSTER_CLOUD_API_TOKEN}",
         "DAGSTER_CLOUD_ORGANIZATION_ID": "kipptaf",

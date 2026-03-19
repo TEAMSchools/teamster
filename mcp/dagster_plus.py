@@ -6,7 +6,7 @@ deployment via its GraphQL API.
 
 Requires the following environment variables:
 - DAGSTER_CLOUD_API_TOKEN: A Dagster+ user token or agent token
-- DAGSTER_CLOUD_ORGANIZATION_ID: The org slug (e.g. "teamschools")
+- DAGSTER_CLOUD_ORGANIZATION_ID: The org slug (e.g. "kipptaf")
 - DAGSTER_CLOUD_DEPLOYMENT: The deployment name (default: "prod")
 """
 
@@ -15,13 +15,14 @@ import os
 from typing import Any
 
 import httpx
+
 import mcp.server.stdio
 import mcp.types as types
 from mcp.server import Server
 
-DAGSTER_CLOUD_API_TOKEN = os.environ.get("DAGSTER_CLOUD_API_TOKEN", "")
+DAGSTER_CLOUD_API_TOKEN = os.environ.get("DAGSTER_CLOUD_AGENT_TOKEN", "")
 DAGSTER_CLOUD_ORGANIZATION_ID = os.environ.get(
-    "DAGSTER_CLOUD_ORGANIZATION_ID", "teamschools"
+    "DAGSTER_CLOUD_ORGANIZATION_ID", "kipptaf"
 )
 DAGSTER_CLOUD_DEPLOYMENT = os.environ.get("DAGSTER_CLOUD_DEPLOYMENT", "prod")
 
@@ -550,6 +551,7 @@ query GetBackfill($backfillId: String!) {
 # Tool definitions
 # ---------------------------------------------------------------------------
 
+
 @server.list_tools()
 async def list_tools() -> list[types.Tool]:
     return [
@@ -970,10 +972,9 @@ async def list_tools() -> list[types.Tool]:
 # Tool handlers
 # ---------------------------------------------------------------------------
 
+
 @server.call_tool()
-async def call_tool(
-    name: str, arguments: dict[str, Any]
-) -> list[types.TextContent]:
+async def call_tool(name: str, arguments: dict[str, Any]) -> list[types.TextContent]:
     try:
         if name == "list_runs":
             limit = min(arguments.get("limit", 20), 100)
@@ -985,9 +986,7 @@ async def call_tool(
             if statuses := arguments.get("statuses"):
                 filter_args["statuses"] = statuses
             if tags := arguments.get("tags"):
-                filter_args["tags"] = [
-                    {"key": k, "value": v} for k, v in tags.items()
-                ]
+                filter_args["tags"] = [{"key": k, "value": v} for k, v in tags.items()]
             if created_after := arguments.get("created_after"):
                 filter_args["createdAfter"] = created_after
             if created_before := arguments.get("created_before"):
@@ -1004,7 +1003,11 @@ async def call_tool(
                     "limit": limit,
                 },
             )
-            return [types.TextContent(type="text", text=json.dumps(data["runsOrError"], indent=2))]
+            return [
+                types.TextContent(
+                    type="text", text=json.dumps(data["runsOrError"], indent=2)
+                )
+            ]
 
         elif name == "get_run":
             data = gql(RUN_BY_ID_QUERY, {"runId": arguments["run_id"]})
@@ -1093,10 +1096,10 @@ async def call_tool(
                 stale = [n for n in stale if n.get("groupName") == group]
             if category := arguments.get("category"):
                 stale = [
-                    n for n in stale
+                    n
+                    for n in stale
                     if any(
-                        c.get("category") == category
-                        for c in n.get("staleCauses", [])
+                        c.get("category") == category for c in n.get("staleCauses", [])
                     )
                 ]
             return [types.TextContent(type="text", text=json.dumps(stale, indent=2))]
@@ -1114,7 +1117,11 @@ async def call_tool(
                 },
             )
             nodes = data["assetNodes"]
-            result = nodes[0] if nodes else {"assetKey": {"path": asset_key_path}, "assetMaterializations": []}
+            result = (
+                nodes[0]
+                if nodes
+                else {"assetKey": {"path": asset_key_path}, "assetMaterializations": []}
+            )
             return [types.TextContent(type="text", text=json.dumps(result, indent=2))]
 
         elif name == "get_asset_partition_statuses":
@@ -1172,7 +1179,9 @@ async def call_tool(
                 {
                     "name": arguments["name"],
                     "repositoryLocationName": arguments["repository_location_name"],
-                    "repositoryName": arguments.get("repository_name", "__repository__"),
+                    "repositoryName": arguments.get(
+                        "repository_name", "__repository__"
+                    ),
                     "limit": arguments.get("limit", 20),
                     "statuses": arguments.get("statuses") or None,
                 },
