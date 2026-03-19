@@ -19,14 +19,13 @@ with
             s.abbreviation as school,
 
             case
-                c.courses_credittype
-                when 'ENG'
+                when c.courses_credittype in ('ENG', 'ELA')
                 then 'ELA'
-                when 'MATH'
+                when c.courses_credittype in ('MATH', 'Math')
                 then 'Math'
-                when 'SCI'
+                when c.courses_credittype in ('SCI', 'Science')
                 then 'Science'
-                when 'SOC'
+                when c.courses_credittype = 'SOC'
                 then 'Civics'
             end as discipline,
 
@@ -38,7 +37,8 @@ with
             c.cc_academic_year = {{ var("current_academic_year") }}
             and c.rn_credittype_year = 1
             and not c.is_dropped_section
-            and c.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
+            and c.courses_credittype
+            in ('ENG', 'MATH', 'SCI', 'SOC', 'ELA', 'Math', 'Science')
     ),
 
     schedules as (
@@ -56,14 +56,13 @@ with
             c.teacher_name as teacher_name_current,
 
             case
-                e.courses_credittype
-                when 'ENG'
+                when e.courses_credittype in ('ENG', 'ELA')
                 then 'ELA'
-                when 'MATH'
+                when e.courses_credittype in ('MATH', 'Math')
                 then 'Math'
-                when 'SCI'
+                when e.courses_credittype in ('SCI', 'Science')
                 then 'Science'
-                when 'SOC'
+                when e.courses_credittype = 'SOC'
                 then 'Civics'
             end as discipline,
 
@@ -76,7 +75,8 @@ with
             e.cc_academic_year >= {{ var("current_academic_year") - 7 }}
             and e.rn_credittype_year = 1
             and not e.is_dropped_section
-            and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
+            and e.courses_credittype
+            in ('ENG', 'MATH', 'SCI', 'SOC', 'ELA', 'Math', 'Science')
     ),
 
     state_comps as (
