@@ -42,7 +42,7 @@ if echo "${normalized}" | grep -qE '\.claude/(settings\.json|settings\.local\.js
 fi
 
 # 3. Environment variable / process memory leakage
-if echo "${normalized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bexport -p\b|\bcompgen\b|/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|OP_SERVICE_ACCOUNT_TOKEN|OP_SERVICE|ACCOUNT_TOKEN|\benv\b[[:space:]]'; then
+if echo "${normalized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bexport -p\b|\bcompgen\b|/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|OP_SERVICE_ACCOUNT_TOKEN|OP_SERVICE|ACCOUNT_TOKEN|\benv\b'; then
   deny
 fi
 
