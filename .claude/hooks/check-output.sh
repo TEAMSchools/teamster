@@ -6,14 +6,10 @@ input=$(cat)
 tool_name=$(echo "${input}" | jq -r '.tool_name')
 
 # Scan output from tools that can return sensitive content
-[[ ! ${tool_name} =~ ^(Bash|Read|Grep)$ ]] && exit 0
+[[ ! ${tool_name} =~ ^(Bash|Read|Grep|WebFetch|WebSearch)$ ]] && exit 0
 
-# Extract text from all possible output fields (schema varies by tool)
-stdout=$(echo "${input}" | jq -r '.tool_output.stdout // ""')
-stderr=$(echo "${input}" | jq -r '.tool_output.stderr // ""')
-content=$(echo "${input}" | jq -r '.tool_output.content // ""')
-output=$(echo "${input}" | jq -r '.tool_output.output // ""')
-combined="${stdout} ${stderr} ${content} ${output}"
+# Extract all string values from tool_output (covers any output schema)
+combined=$(echo "${input}" | jq -r '[.tool_output | .. | strings] | join(" ")')
 
 # Look for patterns that indicate secret material in output
 # - op:// references (1Password secret URIs)

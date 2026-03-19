@@ -22,8 +22,8 @@ path=$(echo "${input}" | jq -r '
   [.tool_input | to_entries[] | select(.key != "description") | .value | .. | strings] | join(" ")
 ')
 
-# Normalize: collapse /./, resolve ../ traversals (multi-pass loop), resolve symlinks
-normalized=$(echo "${path}" | sed -E ':a; s#/\./#/#g; s#/[^/]+/\.\./#/#g; ta')
+# Normalize: collapse //, /./, resolve ../ traversals (multi-pass loop), resolve symlinks
+normalized=$(echo "${path}" | sed -E ':a; s#//+#/#g; s#/\./#/#g; s#/[^/]+/\.\./#/#g; ta')
 
 # Resolve symlinks on file_path to prevent symlink-based bypass
 file_path=$(echo "${input}" | jq -r '.tool_input.file_path // ""')
@@ -36,7 +36,7 @@ fi
 sanitized=${normalized//[\"\'\\]/}
 
 # 1. Sensitive file/directory patterns (case-insensitive)
-if echo "${sanitized}" | grep -qiE '(^|[ /])(\.env|\.ssh|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/tpl/|\*?\.(cer|key|pem)([ /]|$)'; then
+if echo "${sanitized}" | grep -qiE '(^|[ /])(\.env[.a-z]*|\.ssh|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/tpl/|\*?\.(cer|key|pem)([ /]|$)'; then
   deny
 fi
 
@@ -58,22 +58,22 @@ if echo "${sanitized}" | grep -qE '(^|[;&|][[:space:]]*)set([[:space:]]*$|[[:spa
 fi
 
 # 4. 1Password CLI escalation — prevent using a leaked token to access vault
-if echo "${sanitized}" | grep -qE '\bop (vault|item|read|document|inject)\b'; then
+if echo "${sanitized}" | grep -qE '\bop\b.*\b(vault|item|read|document|inject)\b'; then
   deny
 fi
 
 # 5. Encoding-based bypass detection (base64/hex piped, chained, or process-substituted)
-if echo "${normalized}" | grep -qiE 'base64[[:space:]]+-d.*(\||[;&]+).*(bash|sh|source)|\bxxd\b.*(\||[;&]+).*(bash|sh|source)|\bprintf[[:space:]]+.*\\x.*\|.*(bash|sh|source)'; then
+if echo "${normalized}" | grep -qiE 'base64[[:space:]]+(-d|--decode).*(\||[;&]+).*(bash|sh|source)|\bxxd\b.*(\||[;&]+).*(bash|sh|source)|\bprintf[[:space:]]+.*\\x.*\|.*(bash|sh|source)'; then
   deny
 fi
 
 # 5a. Reverse order: bash/sh consuming process substitution or here-string with decode
-if echo "${sanitized}" | grep -qiE '\b(bash|sh)\b.*<\(.*base64[[:space:]]+-d|\b(bash|sh)\b.*<<<.*base64[[:space:]]+-d|\b(bash|sh)\b.*<\(.*\bxxd\b'; then
+if echo "${sanitized}" | grep -qiE '\b(bash|sh)\b.*<\(.*base64[[:space:]]+(-d|--decode)|\b(bash|sh)\b.*<<<.*base64[[:space:]]+(-d|--decode)|\b(bash|sh)\b.*<\(.*\bxxd\b'; then
   deny
 fi
 
-# 5b. Python runtime string construction (exec with chr/join/bytes/base64/codecs)
-if echo "${sanitized}" | grep -qiE '\bexec[[:space:]]*\(.*\bchr[[:space:]]*\(|\bexec[[:space:]]*\(.*\.join[[:space:]]*\(|\bexec[[:space:]]*\(.*\bbytes[[:space:]]*\(|\bexec[[:space:]]*\(.*base64\.b64decode|\bexec[[:space:]]*\(.*codecs\.decode|\bexec[[:space:]]*\(.*\.fromhex'; then
+# 5b. Python runtime string construction (exec/eval with chr/join/bytes/base64/codecs)
+if echo "${sanitized}" | grep -qiE '\b(exec|eval)[[:space:]]*\(.*\bchr[[:space:]]*\(|\b(exec|eval)[[:space:]]*\(.*\.join[[:space:]]*\(|\b(exec|eval)[[:space:]]*\(.*\bbytes[[:space:]]*\(|\b(exec|eval)[[:space:]]*\(.*base64\.b64decode|\b(exec|eval)[[:space:]]*\(.*codecs\.decode|\b(exec|eval)[[:space:]]*\(.*\.fromhex'; then
   deny
 fi
 
@@ -82,7 +82,7 @@ if echo "${sanitized}" | grep -qiE '\b__import__[[:space:]]*\(.*\b(os|subprocess
   deny
 fi
 
-# 6. Block broad /proc access (allow /proc/self/status read-only via exception if needed)
+# 6. Block broad /proc access and /dev/fd/
 if echo "${sanitized}" | grep -qE '/proc/[^[:space:]]*/|/dev/fd/'; then
   deny
 fi

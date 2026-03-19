@@ -114,6 +114,9 @@ expect_deny "secrets.json" Read file_path "/tmp/secrets.json"
 expect_deny "credentials.json" Read file_path "/tmp/credentials.json"
 expect_deny "secret-volume" Read file_path "/etc/secret-volume/token"
 expect_deny ".devcontainer/tpl/" Read file_path ".devcontainer/tpl/.env.tpl"
+expect_deny ".env.local" Read file_path "/workspaces/teamster/.env.local"
+expect_deny ".env.production" Read file_path "/workspaces/teamster/.env.production"
+expect_deny ".env.backup" Read file_path "/workspaces/teamster/.env.backup"
 expect_deny "glob *.key" Glob pattern "*.key"
 expect_deny "glob *.pem" Glob pattern "*.pem"
 expect_deny "glob *.cer" Glob pattern "*.cer"
@@ -200,6 +203,8 @@ echo -e "${YELLOW}Pattern 4: 1Password CLI escalation${NC}"
 
 expect_deny "op vault list" Bash command "op vault list"
 expect_deny "op item get" Bash command "op item get 'DB Password'"
+expect_deny "op double-space vault" Bash command "op  vault list"
+expect_deny "op with flags before subcommand" Bash command "op --format json vault list"
 expect_deny "op read" Bash command "op read op://vault/item/field"
 expect_deny "op document get" Bash command "op document get abc123"
 expect_deny "op inject" Bash command "op inject -i template.env"
@@ -216,6 +221,8 @@ expect_deny "base64 -d piped to bash" Bash command 'echo cHJpbnRlbnY= | base64 -
 expect_deny "base64 -d piped to sh" Bash command 'echo cHJpbnRlbnY= | base64 -d | sh'
 expect_deny "xxd piped to bash" Bash command 'echo 7072696e74656e76 | xxd -r -p | bash'
 expect_deny "printf hex piped to bash" Bash command 'printf "\x70\x72\x69\x6e\x74\x65\x6e\x76" | bash'
+expect_deny "base64 --decode piped to bash" Bash command 'echo cHJpbnRlbnY= | base64 --decode | bash'
+expect_deny "base64 --decode two-step" Bash command 'base64 --decode payload.b64 > /tmp/x.sh && bash /tmp/x.sh'
 expect_deny "printf hex piped to source" Bash command 'printf "\x70\x72" | source /dev/stdin'
 
 expect_deny "base64 two-step via &&" Bash command 'base64 -d payload.b64 > /tmp/x.sh && bash /tmp/x.sh'
@@ -237,6 +244,7 @@ expect_deny "bash <(xxd)" Bash command 'bash <(echo 7072696e74656e76 | xxd -r -p
 # test fixture: $() must not expand — value is a literal command string for the hook
 # trunk-ignore(shellcheck/SC2016)
 expect_deny "bash <<< base64 -d" Bash command 'bash <<< "$(echo cHJpbnRlbnY= | base64 -d)"'
+expect_deny "bash <(base64 --decode)" Bash command 'bash <(echo cHJpbnRlbnY= | base64 --decode)'
 # test fixture: $() must not expand — value is a literal command string for the hook
 # trunk-ignore(shellcheck/SC2016)
 expect_deny "bash <<< base64 -d (unquoted)" Bash command 'bash <<< $(echo cHJpbnRlbnY= | base64 -d)'
@@ -247,6 +255,8 @@ expect_allow "bash <(echo hello)" Bash command 'bash <(echo "echo hello")'
 echo ""
 echo -e "${YELLOW}Pattern 5b: Python runtime string construction${NC}"
 
+expect_deny "python eval+chr construction" Bash command 'uv run python -c "eval(chr(112)+chr(114))"'
+expect_deny "python eval+join construction" Bash command "uv run python -c \"eval(''.join(['import',' os']))\""
 expect_deny "python exec+chr construction" Bash command 'uv run python -c "exec(chr(112)+chr(114))"'
 expect_deny "python exec+join construction" Bash command "uv run python -c \"exec(''.join(['import',' os']))\""
 expect_deny "python exec+bytes construction" Bash command 'uv run python -c "exec(bytes([112,114,105]).decode())"'
@@ -288,6 +298,8 @@ echo -e "${YELLOW}Shell snapshots self-protection${NC}"
 expect_deny "write to shell-snapshots" Write file_path "/home/vscode/.claude/shell-snapshots/snapshot.sh"
 expect_deny "bash cat shell-snapshots" Bash command "cat /home/vscode/.claude/shell-snapshots/snapshot-bash-123.sh"
 expect_allow "read shell-snapshots" Read file_path "/home/vscode/.claude/shell-snapshots/snapshot.sh"
+expect_deny "double-slash .claude//settings.json" Edit file_path ".claude//settings.json"
+expect_deny "double-slash .claude//hooks/" Bash command "cat .claude//hooks/check-sensitive.sh"
 
 # ─── Multi-level path traversal ──────────────────────────────────────────────
 echo ""
@@ -428,6 +440,11 @@ if [[ -f ${OUTPUT_HOOK} ]]; then
   check_output "service account JSON" warn '{"type": "service_account", "project_id": "test"}'
   check_output "GitHub PAT" warn "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
   check_output "normal base64 (not JWT)" clean "eyJqdXN0IjoiZGF0YSJ9"
+  check_output "WebFetch with op://" warn WebFetch "config: op://vault/item/field"
+  # synthetic test fixture, not a real key
+  # trunk-ignore(gitleaks/private-key)
+  check_output "WebSearch with private key" warn WebSearch "-----BEGIN RSA PRIVATE KEY-----"
+  check_output "WebFetch normal content" clean WebFetch "<html><body>Hello</body></html>"
 
   echo ""
   echo -e "${YELLOW}PostToolUse: Read/Grep output scanning${NC}"
