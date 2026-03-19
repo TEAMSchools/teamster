@@ -5,7 +5,7 @@
 
 input=$(cat)
 
-path=$(echo "${input}" | jq -r '(.tool_input.file_path // "") + " " + (.tool_input.command // "")')
+path=$(echo "${input}" | jq -r '(.tool_input.file_path // .tool_input.path // "") + " " + (.tool_input.command // "")')
 
 if echo "${path}" | grep -qE '(^|[ /])(\.(env|ssh|pem|key)|secrets\.json|credentials\.json|secret-volume)([ /]|$)'; then
   echo '{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "❌ Cannot access sensitive path"}}'
