@@ -29,7 +29,7 @@ models:
       - name: counselor
         data_type: string
         description: College counselor (contact owner)
-      - name: high_school
+      - name: school
         data_type: string
         description: Currently enrolled high school
       - name: best_guess_pathway
@@ -223,3 +223,7 @@ models:
           Short label identifying which quality bar tier applies to this student
           (e.g. 4yr_3.50plus, 4yr_3.00to3.49_ea, 2yr, cte_workforce). Use this
           to look up the exact thresholds that must be met.
+      - name: cohort
+        data_type: int64
+      - name: graduation_year
+        data_type: int64
