@@ -19,14 +19,13 @@ with
             s.abbreviation as school,
 
             case
-                c.courses_credittype
-                when 'ENG'
+                when c.courses_credittype in ('ENG', 'ELA')
                 then 'ELA'
-                when 'MATH'
+                when c.courses_credittype in ('MATH', 'Math')
                 then 'Math'
-                when 'SCI'
+                when c.courses_credittype in ('SCI', 'Science')
                 then 'Science'
-                when 'SOC'
+                when c.courses_credittype = 'SOC'
                 then 'Civics'
             end as discipline,
 
@@ -38,7 +37,8 @@ with
             c.cc_academic_year = {{ var("current_academic_year") }}
             and c.rn_credittype_year = 1
             and not c.is_dropped_section
-            and c.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
+            and c.courses_credittype
+            in ('ENG', 'MATH', 'SCI', 'SOC', 'ELA', 'Math', 'Science')
     ),
 
     schedules as (
@@ -56,14 +56,13 @@ with
             c.teacher_name as teacher_name_current,
 
             case
-                e.courses_credittype
-                when 'ENG'
+                when e.courses_credittype in ('ENG', 'ELA')
                 then 'ELA'
-                when 'MATH'
+                when e.courses_credittype in ('MATH', 'Math')
                 then 'Math'
-                when 'SCI'
+                when e.courses_credittype in ('SCI', 'Science')
                 then 'Science'
-                when 'SOC'
+                when e.courses_credittype = 'SOC'
                 then 'Civics'
             end as discipline,
 
@@ -76,7 +75,8 @@ with
             e.cc_academic_year >= {{ var("current_academic_year") - 7 }}
             and e.rn_credittype_year = 1
             and not e.is_dropped_section
-            and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
+            and e.courses_credittype
+            in ('ENG', 'MATH', 'SCI', 'SOC', 'ELA', 'Math', 'Science')
     ),
 
     state_comps as (
@@ -371,21 +371,21 @@ left join
 left join
     schedules as m
     on a.academic_year = m.cc_academic_year
-    and a.localstudentidentifier = e.pearson_local_student_identifier
     and a.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="a", right_alias="m") }}
+    and e.student_number = m.students_student_number
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on a.academic_year = sf.academic_year
     and a.discipline = sf.discipline
-    and a.localstudentidentifier = sf.student_number
+    and a.localstudentidentifier = sf.pearson_local_student_identifier
     and {{ union_dataset_join_clause(left_alias="a", right_alias="sf") }}
     and sf.rn_year = 1
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf2
     on a.academic_year = (sf2.academic_year - 1)
     and a.discipline = sf2.discipline
-    and a.localstudentidentifier = sf2.student_number
+    and a.localstudentidentifier = sf2.pearson_local_student_identifier
     and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
     and sf2.rn_year = 1
 
@@ -610,7 +610,7 @@ left join
 left join
     schedules as m
     on a.academic_year = m.cc_academic_year
-    and a.localstudentidentifier = e.pearson_local_student_identifier
+    and a.localstudentidentifier = m.students_student_number
     and a.discipline = m.discipline
     and {{ union_dataset_join_clause(left_alias="a", right_alias="m") }}
 left join

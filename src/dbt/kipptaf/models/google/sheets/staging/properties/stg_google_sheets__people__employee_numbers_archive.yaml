@@ -1,5 +1,7 @@
 models:
   - name: stg_google_sheets__people__employee_numbers_archive
+    config:
+      enabled: false
     columns:
       - name: ADP_Associate_ID
         data_type: string

@@ -42,10 +42,29 @@
       "Read(~/.claude/plugins/**)",
       "WebFetch(domain:docs.dagster.io)",
       "WebFetch(domain:github.com)",
-      "mcp__bigquery__*"
+      "mcp__bigquery__*",
+      "mcp__dagster__*"
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "sed -i '/OP_SERVICE_ACCOUNT_TOKEN/d' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write|Bash|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-sensitive.sh",
+            "statusMessage": "Checking if path is safe to access..."
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
@@ -55,18 +74,6 @@
             "command": "trunk fmt {changed_files}",
             "statusMessage": "Auto-formatting with Trunk",
             "async": true
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Read|Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'if [[ \"{file_path}\" =~ (\\.env|\\.ssh|secrets\\.json|credentials\\.json|\\.pem$|\\.key$|secret-volume|inject-secrets) ]]; then echo \"❌ Cannot access sensitive file: {file_path}\"; exit 1; fi'",
-            "statusMessage": "Checking if file is safe to access..."
           }
         ]
       }

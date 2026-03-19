@@ -1,5 +1,7 @@
 models:
   - name: stg_google_sheets__people__student_logins_archive
+    config:
+      enabled: false
     columns:
       - name: Default_Password
         data_type: STRING
