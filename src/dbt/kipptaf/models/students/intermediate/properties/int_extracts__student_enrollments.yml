@@ -104,7 +104,11 @@ models:
         data_type: boolean
       - name: is_enrolled_oct15
         data_type: boolean
+      - name: is_enrolled_mar15
+        data_type: boolean
       - name: is_enrolled_recent
+        data_type: boolean
+      - name: is_enrolled_fdos
         data_type: boolean
       - name: is_retained_year
         data_type: boolean
@@ -529,7 +533,7 @@ models:
         data_type: string
       - name: academic_year_display
         data_type: string
-      - name: next_year_enrollment_type
+      - name: next_year_enrollment_history
         data_type: string
       - name: overgrad_fafsa_opt_out
         data_type: string
@@ -568,6 +572,14 @@ models:
         data_type: boolean
       - name: is_sipps
         data_type: boolean
+      - name: student_slideback
+        data_type: boolean
+        description: >
+          True if a student's projected unweighted GPA
+          (cumulative_y1_gpa_projected_unweighted) has dropped to a lower KTAF
+          GPA band than their current unweighted GPA
+          (cumulative_y1_gpa_unweighted). False if bands are equal, improving,
+          or either GPA value is null.
       - name: enroll_status_string
         data_type: string
       - name: race_ethnicity
