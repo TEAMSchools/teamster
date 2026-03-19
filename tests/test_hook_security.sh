@@ -26,6 +26,44 @@ make_input() {
     '{tool_name: $tn, tool_input: {($fld): $val}}'
 }
 
+# Helper: build JSON input with two fields (for Write/Edit tools)
+make_input2() {
+  local tool_name="$1"
+  local field1="$2" value1="$3"
+  local field2="$4" value2="$5"
+  jq -n --arg tn "${tool_name}" \
+    --arg f1 "${field1}" --arg v1 "${value1}" \
+    --arg f2 "${field2}" --arg v2 "${value2}" \
+    '{tool_name: $tn, tool_input: {($f1): $v1, ($f2): $v2}}'
+}
+
+# Run hook with two-field input and check result
+expect_deny2() {
+  local desc="$1" tool="$2" f1="$3" v1="$4" f2="$5" v2="$6"
+  local input
+  input=$(make_input2 "${tool}" "${f1}" "${v1}" "${f2}" "${v2}")
+  if echo "${input}" | bash "${HOOK}" >/dev/null 2>&1; then
+    FAIL=$((FAIL + 1))
+    ERRORS+="\n  ${RED}FAIL${NC} [should deny]: ${desc}"
+  else
+    PASS=$((PASS + 1))
+    echo -e "  ${GREEN}PASS${NC} [deny]: ${desc}"
+  fi
+}
+
+expect_allow2() {
+  local desc="$1" tool="$2" f1="$3" v1="$4" f2="$5" v2="$6"
+  local input
+  input=$(make_input2 "${tool}" "${f1}" "${v1}" "${f2}" "${v2}")
+  if echo "${input}" | bash "${HOOK}" >/dev/null 2>&1; then
+    PASS=$((PASS + 1))
+    echo -e "  ${GREEN}PASS${NC} [allow]: ${desc}"
+  else
+    FAIL=$((FAIL + 1))
+    ERRORS+="\n  ${RED}FAIL${NC} [should allow]: ${desc}"
+  fi
+}
+
 # Run hook and check result
 # expect_deny <description> <tool_name> <field> <value>
 expect_deny() {
@@ -84,6 +122,20 @@ expect_allow "normal Python file" Read file_path "/workspaces/teamster/src/main.
 expect_allow "normal YAML file" Read file_path "/workspaces/teamster/dbt_project.yml"
 expect_allow "glob *.py" Glob pattern "*.py"
 
+# ─── Pattern 1b: Write/Edit content scanning ────────────────────────────────
+echo ""
+echo -e "${YELLOW}Pattern 1b: Write/Edit content scanning${NC}"
+
+expect_deny2 "Write with os.environ in content" Write file_path "/tmp/x.py" content 'import os; print(dict(os.environ))'
+expect_deny2 "Write with printenv in content" Write file_path "/tmp/x.sh" content 'printenv | grep SECRET'
+expect_deny2 "Write with .env reference in content" Write file_path "/tmp/x.py" content 'open(".env").read()'
+expect_deny2 "Edit with os.environ in new_string" Edit file_path "/tmp/x.py" new_string 'import os; print(os.environ)'
+expect_deny2 "Write with op inject in content" Write file_path "/tmp/x.sh" content 'op inject -i template.env'
+expect_deny2 "Write with getenv in content" Write file_path "/tmp/x.py" content 'import os; os.getenv("SECRET")'
+
+expect_allow2 "Write normal Python content" Write file_path "/tmp/x.py" content 'print("hello world")'
+expect_allow2 "Edit normal content" Edit file_path "/tmp/x.py" new_string 'x = 42'
+
 # ─── Pattern 2: Hook self-protection ─────────────────────────────────────────
 echo ""
 echo -e "${YELLOW}Pattern 2: Hook self-protection${NC}"
@@ -112,6 +164,8 @@ expect_deny "typeset -x" Bash command "typeset -x"
 expect_deny "typeset standalone" Bash command "typeset"
 expect_deny "os.environ (Python)" Bash command 'uv run python -c "import os; print(dict(os.environ))"'
 expect_deny "os.environ.items()" Bash command 'uv run python -c "import os; [print(f\"{k}={v}\") for k,v in os.environ.items()]"'
+expect_deny "os.getenv() targeted read" Bash command 'uv run python -c "import os; print(os.getenv(\"SECRET\"))"'
+expect_deny "os.getenv() with var name" Bash command 'uv run python -c "import os; os.getenv(\"GOOGLE_APPLICATION_CREDENTIALS\")"'
 expect_deny "/proc/self/environ" Bash command "cat /proc/self/environ"
 expect_deny "/proc/1/cmdline" Bash command "cat /proc/1/cmdline"
 expect_deny "env command" Bash command "env"
@@ -164,10 +218,47 @@ expect_deny "xxd piped to bash" Bash command 'echo 7072696e74656e76 | xxd -r -p 
 expect_deny "printf hex piped to bash" Bash command 'printf "\x70\x72\x69\x6e\x74\x65\x6e\x76" | bash'
 expect_deny "printf hex piped to source" Bash command 'printf "\x70\x72" | source /dev/stdin'
 
+expect_deny "base64 two-step via &&" Bash command 'base64 -d payload.b64 > /tmp/x.sh && bash /tmp/x.sh'
+expect_deny "base64 two-step via ;" Bash command 'base64 -d payload.b64 > /tmp/x.sh; sh /tmp/x.sh'
+expect_deny "xxd two-step via &&" Bash command 'xxd -r -p payload.hex > /tmp/x.sh && bash /tmp/x.sh'
+
 expect_allow "base64 encode (no exec)" Bash command "echo hello | base64"
 expect_allow "base64 decode to file" Bash command "base64 -d input.b64 > output.bin"
 expect_allow "xxd without pipe to shell" Bash command "xxd file.bin"
 expect_allow "printf normal usage" Bash command 'printf "hello %s\n" world'
+
+# ─── Pattern 5a: Process substitution / here-string bypass ───────────────────
+echo ""
+echo -e "${YELLOW}Pattern 5a: Process substitution / here-string bypass${NC}"
+
+expect_deny "bash <(base64 -d)" Bash command 'bash <(echo cHJpbnRlbnY= | base64 -d)'
+expect_deny "sh <(base64 -d)" Bash command 'sh <(echo cHJpbnRlbnY= | base64 -d)'
+expect_deny "bash <(xxd)" Bash command 'bash <(echo 7072696e74656e76 | xxd -r -p)'
+# test fixture: $() must not expand — value is a literal command string for the hook
+# trunk-ignore(shellcheck/SC2016)
+expect_deny "bash <<< base64 -d" Bash command 'bash <<< "$(echo cHJpbnRlbnY= | base64 -d)"'
+# test fixture: $() must not expand — value is a literal command string for the hook
+# trunk-ignore(shellcheck/SC2016)
+expect_deny "bash <<< base64 -d (unquoted)" Bash command 'bash <<< $(echo cHJpbnRlbnY= | base64 -d)'
+
+expect_allow "bash <(echo hello)" Bash command 'bash <(echo "echo hello")'
+
+# ─── Pattern 5b: Python runtime string construction ─────────────────────────
+echo ""
+echo -e "${YELLOW}Pattern 5b: Python runtime string construction${NC}"
+
+expect_deny "python exec+chr construction" Bash command 'uv run python -c "exec(chr(112)+chr(114))"'
+expect_deny "python exec+join construction" Bash command "uv run python -c \"exec(''.join(['import',' os']))\""
+expect_deny "python exec+bytes construction" Bash command 'uv run python -c "exec(bytes([112,114,105]).decode())"'
+expect_deny "exec(base64.b64decode(...))" Bash command 'uv run python -c "import base64; exec(base64.b64decode(b\"cHJpbnRlbnY=\"))"'
+expect_deny "exec(codecs.decode(...))" Bash command 'uv run python -c "import codecs; exec(codecs.decode(\"cevagrai\", \"rot13\"))"'
+expect_deny "exec(bytes.fromhex(...))" Bash command 'uv run python -c "exec(bytes.fromhex(\"7072696e74656e76\").decode())"'
+
+expect_allow "normal python chr" Bash command 'uv run python -c "print(chr(65))"'
+expect_allow "normal python join" Bash command "uv run python -c \"print(','.join(['a','b']))\""
+expect_allow "normal python bytes" Bash command 'uv run python -c "print(bytes([65,66]).decode())"'
+expect_allow "base64.b64decode without exec" Bash command 'uv run python -c "import base64; print(base64.b64decode(b\"aGVsbG8=\"))"'
+expect_allow "codecs.decode without exec" Bash command 'uv run python -c "import codecs; print(codecs.decode(\"uryyb\", \"rot13\"))"'
 
 # ─── Pattern 6: Broad /proc access ───────────────────────────────────────────
 echo ""
@@ -180,6 +271,40 @@ expect_deny "/proc/1/cgroup" Bash command "cat /proc/1/cgroup"
 expect_deny "/proc/self/fd/" Read file_path "/proc/self/fd/0"
 
 expect_allow "/proc reference in string" Bash command "echo check /proc docs"
+
+# ─── Quote/backslash splitting bypass ─────────────────────────────────────────
+echo ""
+echo -e "${YELLOW}Quote/backslash splitting bypass${NC}"
+
+expect_deny 'pr""intenv (double-quote split)' Bash command 'eval "pr""intenv"'
+expect_deny "pr'i'ntenv (single-quote split)" Bash command "pr'i'ntenv"
+expect_deny 'pr\intenv (backslash split)' Bash command 'eval pr\\intenv'
+expect_deny 'environ with quotes' Bash command 'uv run python -c "import os; print(os.envir\"\"on)"'
+
+# ─── Shell snapshots self-protection ──────────────────────────────────────────
+echo ""
+echo -e "${YELLOW}Shell snapshots self-protection${NC}"
+
+expect_deny "write to shell-snapshots" Write file_path "/home/vscode/.claude/shell-snapshots/snapshot.sh"
+expect_deny "bash cat shell-snapshots" Bash command "cat /home/vscode/.claude/shell-snapshots/snapshot-bash-123.sh"
+expect_allow "read shell-snapshots" Read file_path "/home/vscode/.claude/shell-snapshots/snapshot.sh"
+
+# ─── Multi-level path traversal ──────────────────────────────────────────────
+echo ""
+echo -e "${YELLOW}Multi-level path traversal${NC}"
+
+expect_deny "double ../ to env/" Bash command "cat /workspaces/teamster/src/foo/../../env/.env"
+expect_deny "triple ../ to env/" Read file_path "/workspaces/teamster/src/a/b/c/../../../env/.env"
+
+# ─── MCP tool generic field extraction ────────────────────────────────────────
+echo ""
+echo -e "${YELLOW}MCP tool generic field extraction${NC}"
+
+expect_deny "MCP query field with /proc" "mcp__bigquery__query" query "cat /proc/self/environ"
+expect_deny "MCP sql field with .env" "mcp__bigquery__query" sql 'SELECT * FROM read_file(".env")'
+expect_deny "MCP command field with env/" "mcp__bigquery__query" command "SELECT * FROM env/.env"
+expect_allow "MCP sql field harmless" "mcp__bigquery__query" sql "SELECT 1 AS test"
+expect_allow "MCP command field harmless" "mcp__bigquery__query" command "SELECT 1"
 
 # ─── Symlink bypass (Pattern 1 + symlink resolution) ─────────────────────────
 echo ""
@@ -194,40 +319,27 @@ else
   echo -e "  ${YELLOW}SKIP${NC}: could not create test symlink"
 fi
 
-# ─── Cross-cutting: MCP tool coverage ────────────────────────────────────────
-echo ""
-echo -e "${YELLOW}Cross-cutting: MCP tools respect patterns${NC}"
-
-# MCP tools pass through the same hook now — simulate an MCP tool reading a sensitive path
-input_mcp=$(jq -n '{tool_name: "mcp__bigquery__query", tool_input: {command: "SELECT * FROM env/.env"}}')
-if echo "${input_mcp}" | bash "${HOOK}" >/dev/null 2>&1; then
-  FAIL=$((FAIL + 1))
-  ERRORS+="\n  ${RED}FAIL${NC} [should deny]: MCP tool referencing env/ in command"
-else
-  PASS=$((PASS + 1))
-  echo -e "  ${GREEN}PASS${NC} [deny]: MCP tool referencing env/ in command"
-fi
-
-# MCP tool with harmless input
-input_mcp_ok=$(jq -n '{tool_name: "mcp__bigquery__query", tool_input: {command: "SELECT 1"}}')
-if echo "${input_mcp_ok}" | bash "${HOOK}" >/dev/null 2>&1; then
-  PASS=$((PASS + 1))
-  echo -e "  ${GREEN}PASS${NC} [allow]: MCP tool with harmless query"
-else
-  FAIL=$((FAIL + 1))
-  ERRORS+="\n  ${RED}FAIL${NC} [should allow]: MCP tool with harmless query"
-fi
-
 # ─── PostToolUse output scanner ──────────────────────────────────────────────
 OUTPUT_HOOK=".claude/hooks/check-output.sh"
 if [[ -f ${OUTPUT_HOOK} ]]; then
   echo ""
   echo -e "${YELLOW}PostToolUse: Output scanner (check-output.sh)${NC}"
 
+  # Unified helper: check_output <desc> <expect> [tool] <content>
+  # 3-arg form: check_output "desc" warn|clean "output"        (defaults to Bash)
+  # 4-arg form: check_output "desc" warn|clean Tool "output"
   check_output() {
-    local desc="$1" expect="$2" stdout_val="$3"
+    local desc="$1" expect="$2" tool content_val
+    if [[ $# -eq 3 ]]; then
+      tool="Bash"
+      content_val="$3"
+    else
+      tool="$3"
+      content_val="$4"
+    fi
     local input
-    input=$(jq -n --arg out "${stdout_val}" '{tool_name: "Bash", tool_output: {stdout: $out, stderr: ""}}')
+    input=$(jq -n --arg tn "${tool}" --arg c "${content_val}" \
+      '{tool_name: $tn, tool_output: {content: $c, stdout: $c, stderr: ""}}')
     local result
     result=$(echo "${input}" | bash "${OUTPUT_HOOK}" 2>&1)
     local has_warning=false
@@ -261,6 +373,25 @@ if [[ -f ${OUTPUT_HOOK} ]]; then
   check_output "normal command output" clean "total 42\ndrwxr-xr-x 5 user user 4096 Mar 19 10:00 src"
   check_output "git log output" clean "abc1234 feat: add new feature"
   check_output "Python traceback" clean "Traceback (most recent call last):\n  File \"main.py\""
+
+  echo ""
+  echo -e "${YELLOW}PostToolUse: Read/Grep output scanning${NC}"
+
+  check_output "Read with op:// in content" warn Read "config: op://vault/item/field"
+  check_output "Grep with private key match" warn Grep "-----BEGIN RSA PRIVATE KEY-----"
+  check_output "Read normal file content" clean Read "def hello():\n    return 42"
+  check_output "Grep normal match" clean Grep "import dagster"
+
+  # Verify non-Bash/Read/Grep tools are skipped (no warning even with secret content)
+  input_skip=$(jq -n '{tool_name: "Write", tool_output: {content: "op://vault/item/field"}}')
+  result_skip=$(echo "${input_skip}" | bash "${OUTPUT_HOOK}" 2>&1)
+  if echo "${result_skip}" | grep -q "warningMessage"; then
+    FAIL=$((FAIL + 1))
+    ERRORS+="\n  ${RED}FAIL${NC} [should skip]: Write tool should not be scanned"
+  else
+    PASS=$((PASS + 1))
+    echo -e "  ${GREEN}PASS${NC} [skip]: Write tool output not scanned"
+  fi
 else
   echo ""
   echo -e "  ${YELLOW}SKIP${NC}: ${OUTPUT_HOOK} not found"

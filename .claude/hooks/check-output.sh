@@ -1,16 +1,19 @@
 #!/bin/bash
-# PostToolUse hook: scans Bash tool output for patterns that look like leaked secrets.
+# PostToolUse hook: scans tool output for patterns that look like leaked secrets.
 # Defense-in-depth — catches secrets that slip past the PreToolUse hook.
 
 input=$(cat)
 tool_name=$(echo "${input}" | jq -r '.tool_name')
 
-# Only scan Bash output
-[[ ${tool_name} != "Bash" ]] && exit 0
+# Scan output from tools that can return sensitive content
+[[ ! ${tool_name} =~ ^(Bash|Read|Grep)$ ]] && exit 0
 
+# Extract text from all possible output fields (schema varies by tool)
 stdout=$(echo "${input}" | jq -r '.tool_output.stdout // ""')
 stderr=$(echo "${input}" | jq -r '.tool_output.stderr // ""')
-combined="${stdout} ${stderr}"
+content=$(echo "${input}" | jq -r '.tool_output.content // ""')
+output=$(echo "${input}" | jq -r '.tool_output.output // ""')
+combined="${stdout} ${stderr} ${content} ${output}"
 
 # Look for patterns that indicate secret material in output
 # - op:// references (1Password secret URIs)
