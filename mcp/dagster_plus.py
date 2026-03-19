@@ -176,6 +176,53 @@ query DaemonHealth {
 }
 """
 
+ASSET_CONDITION_EVALUATIONS_QUERY = """
+query GetAssetConditionEvaluations($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
+  assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
+    ... on AssetConditionEvaluationRecords {
+      records {
+        evaluationId
+        timestamp
+        numRequested
+        numSkipped
+        numDiscarded
+        runIds
+        evaluation {
+          rootUniqueId
+          evaluationNodes {
+            uniqueId
+            childUniqueIds
+            ... on UnpartitionedAssetConditionEvaluationNode {
+              description
+              status
+              startTimestamp
+              endTimestamp
+            }
+            ... on PartitionedAssetConditionEvaluationNode {
+              description
+              numTrue
+              startTimestamp
+              endTimestamp
+            }
+            ... on SpecificPartitionAssetConditionEvaluationNode {
+              description
+              status
+            }
+          }
+        }
+      }
+    }
+    ... on AutoMaterializeAssetEvaluationNeedsMigrationError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
+
 RUN_BY_ID_QUERY = """
 query GetRun($runId: ID!) {
   runOrError(runId: $runId) {
@@ -351,6 +398,37 @@ async def list_tools() -> list[types.Tool]:
             },
         ),
         types.Tool(
+            name="get_asset_condition_evaluations",
+            description=(
+                "Get automation condition evaluation history for an asset. "
+                "Shows why the daemon requested or skipped each materialization — "
+                "includes per-tick counts (requested/skipped/discarded) and the full "
+                "condition tree so you can see which sub-condition passed or failed."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "asset_key": {
+                        "type": "string",
+                        "description": (
+                            "The asset key as a slash-separated string, "
+                            'e.g. "my_group/my_asset" or "schema/table".'
+                        ),
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Number of evaluation records to return (default 10, max 50).",
+                        "default": 10,
+                    },
+                    "cursor": {
+                        "type": "string",
+                        "description": "Pagination cursor from a previous call.",
+                    },
+                },
+                "required": ["asset_key"],
+            },
+        ),
+        types.Tool(
             name="get_daemon_health",
             description=(
                 "Get the health status of all Dagster+ daemons (scheduler, sensor, "
@@ -434,6 +512,26 @@ async def call_tool(
             return [
                 types.TextContent(
                     type="text", text=json.dumps(data["capturedLogs"], indent=2)
+                )
+            ]
+
+        elif name == "get_asset_condition_evaluations":
+            asset_key_path = arguments["asset_key"].split("/")
+            limit = min(arguments.get("limit", 10), 50)
+            data = gql(
+                ASSET_CONDITION_EVALUATIONS_QUERY,
+                {
+                    "assetKey": {"path": asset_key_path},
+                    "limit": limit,
+                    "cursor": arguments.get("cursor"),
+                },
+            )
+            return [
+                types.TextContent(
+                    type="text",
+                    text=json.dumps(
+                        data["assetConditionEvaluationRecordsOrError"], indent=2
+                    ),
                 )
             ]
 
