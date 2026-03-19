@@ -5,7 +5,7 @@ from teamster.core.resources import BIGQUERY_RESOURCE
 
 
 def test_bigquery_table_sensor():
-    from teamster.code_locations.kipptaf._google.bigquery.sensors import (
+    from teamster.code_locations.kipptaf.google.bigquery.sensors import (
         bigquery_table_modified_sensor,
     )
 

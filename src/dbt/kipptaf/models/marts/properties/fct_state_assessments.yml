@@ -1,0 +1,95 @@
+models:
+  - name: fct_state_assessments
+    config:
+      contract:
+        enforced: true
+    description: ""
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+        description: ""
+
+      - name: academic_year
+        data_type: int64
+        description: ""
+
+      - name: localstudentidentifier
+        data_type: int64
+        description: ""
+
+      - name: state_id
+        data_type: string
+        description: ""
+
+      - name: assessment_name
+        data_type: string
+        description: ""
+
+      - name: discipline
+        data_type: string
+        description: ""
+
+      - name: score
+        data_type: numeric
+        description: ""
+
+      - name: performance_band_level
+        data_type: int64
+        description: ""
+
+      - name: is_proficient
+        data_type: boolean
+        description: ""
+
+      - name: performance_band
+        data_type: string
+        description: ""
+
+      - name: test_grade
+        data_type: int64
+        description: ""
+
+      - name: state_lep_status
+        data_type: boolean
+        description: ""
+
+      - name: state_is_504
+        data_type: boolean
+        description: ""
+
+      - name: state_iep_status
+        data_type: string
+        description: ""
+
+      - name: state_race_ethnicity
+        data_type: string
+        description: ""
+
+      - name: results_type
+        data_type: string
+        description: ""
+
+      - name: admin
+        data_type: string
+        description: ""
+
+      - name: season
+        data_type: string
+        description: ""
+
+      - name: subject
+        data_type: string
+        description: ""
+
+      - name: test_code
+        data_type: string
+        description: ""
+
+      - name: state_assessments_key
+        data_type: string
+        description: ""
+        tests:
+          - unique:
+              config:
+                severity: Warn
+                store_failures: true

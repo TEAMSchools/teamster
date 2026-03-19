@@ -14,7 +14,7 @@ models:
         data_type: int64
 
       - name: attendance_date
-        data_type: date
+        data_type: timestamp
 
       - name: academic_year
         data_type: int64
@@ -57,9 +57,3 @@ models:
 
       - name: attendance_code
         data_type: string
-
-      - name: rolling_avg_daily_attendance
-        data_type: float64
-
-      - name: is_chronic_absentee_ytd
-        data_type: int64

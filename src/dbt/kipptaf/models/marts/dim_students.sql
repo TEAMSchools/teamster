@@ -1,22 +1,14 @@
-with
-    overall_filters as (
-        select academic_year, student_number, max(nj_student_tier) as student_tier,
-        from {{ ref("int_extracts__student_enrollments_subjects") }}
-        where rn_year = 1 and academic_year >= {{ var("current_academic_year") - 1 }}
-        group by academic_year, student_number
-    )
-
 select
     se.student_number,
-    se.entrydate as enrollment_start_date,
-    se.exitdate as enrollment_end_date,
+    se.state_studentnumber,
+    cast(se.entrydate as timestamp) as enrollment_start_date,
+    cast(se.exitdate as timestamp) as enrollment_end_date,
     se.academic_year,
     se.schoolid as school_id,
     se.iep_status,
     se.lep_status,
     se.status_504,
     se.gender,
-
     se.gifted_and_talented,
     se.enroll_status,
     se.cohort_primary,
@@ -33,7 +25,11 @@ select
     se.grade_level,
     se.ms_attended,
 
-    ov.student_tier,
+    -- max grade_level across all enrollment years; equivalent to most recent for
+    -- normal progressors, and reflects highest grade attained for retained students
+    max(se.grade_level) over (
+        partition by se.student_number
+    ) as most_recent_grade_level,
 
     case
         when se.ethnicity = 'B'
@@ -58,8 +54,4 @@ select
     {{ dbt_utils.generate_surrogate_key(["se.student_number", "se.entrydate"]) }}
     as student_enrollments_key,
 from {{ ref("int_extracts__student_enrollments") }} as se
-left join
-    overall_filters as ov
-    on se.academic_year = ov.academic_year
-    and se.student_number = ov.student_number
 where se.entrydate is not null

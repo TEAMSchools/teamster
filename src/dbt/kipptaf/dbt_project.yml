@@ -92,6 +92,7 @@ models:
       +schema: deanslist
       sftp:
         staging:
+          +materialized: table
           +contract:
             enforced: true
     edplan:
@@ -118,6 +119,7 @@ models:
           dagster:
             group: google_appsheet
         staging:
+          +materialized: table
           +contract:
             enforced: true
       directory:

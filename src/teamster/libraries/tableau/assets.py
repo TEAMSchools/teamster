@@ -10,7 +10,7 @@ from dagster import (
 from dagster_dbt import get_asset_key_for_model
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf._dbt.assets import core_dbt_assets
+from teamster.code_locations.kipptaf.dbt.assets import core_dbt_assets
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,

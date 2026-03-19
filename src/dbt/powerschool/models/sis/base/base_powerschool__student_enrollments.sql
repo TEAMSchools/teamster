@@ -41,6 +41,7 @@ with
                 is_enrolled_y1,
                 is_enrolled_oct01,
                 is_enrolled_oct15,
+                is_enrolled_mar15,
                 is_enrolled_recent,
                 is_enrolled_fdos,
                 is_retained_year
@@ -61,6 +62,10 @@ with
             max(is_enrolled_oct15) over (
                 partition by studentid, yearid
             ) as is_enrolled_oct15,
+
+            max(is_enrolled_mar15) over (
+                partition by studentid, yearid
+            ) as is_enrolled_mar15,
 
             max(is_enrolled_recent) over (
                 partition by studentid, yearid

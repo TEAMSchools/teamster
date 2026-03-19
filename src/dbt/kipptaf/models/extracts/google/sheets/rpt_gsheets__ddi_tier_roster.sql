@@ -8,6 +8,7 @@ select
     spedlep as iep_status,
     iready_subject as `subject`,
     nj_student_tier,
+    is_low_25_fl,
     state_test_proficiency as njsla_previous_year,
     iready_proficiency_eoy as iready_eoy_previous_year,
 from {{ ref("int_extracts__student_enrollments_subjects") }}

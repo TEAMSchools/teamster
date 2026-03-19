@@ -15,7 +15,7 @@ models:
         data_type: string
 
       - name: termination_effective_date
-        data_type: date
+        data_type: timestamp
 
       - name: is_termination
         data_type: boolean

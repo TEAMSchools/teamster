@@ -3,7 +3,7 @@ from dagster_gcp import BigQueryResource
 from tableauserverclient import Pager
 
 from teamster.code_locations.kipptaf import CODE_LOCATION
-from teamster.code_locations.kipptaf._dbt.assets import manifest
+from teamster.code_locations.kipptaf.dbt.assets import manifest
 from teamster.code_locations.kipptaf.tableau.schema import VIEW_COUNT_PER_VIEW_SCHEMA
 from teamster.libraries.sftp.assets import build_sftp_folder_asset
 from teamster.libraries.tableau.assets import build_tableau_workbook_refresh_asset

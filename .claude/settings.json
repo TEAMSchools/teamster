@@ -1,0 +1,82 @@
+{
+  "extraKnownMarketplaces": {
+    "dagster-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dagster-io/skills"
+      }
+    },
+    "dbt-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dbt-labs/dbt-agent-skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "dignified-python@dagster": true,
+    "dbt@dbt-agent-marketplace": true,
+    "dagster-expert@dagster": true,
+    "superpowers@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(gh issue:*)",
+      "Bash(gh pr:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
+      "Bash(trunk check:*)",
+      "Bash(trunk fmt:*)",
+      "Bash(uv run dagster:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv run scripts:*)",
+      "Bash(uv tool list:*)",
+      "Bash(uv tool run:*)",
+      "Read(/workspaces/teamster/**)",
+      "Read(~/.claude/plugins/**)",
+      "WebFetch(domain:docs.dagster.io)",
+      "WebFetch(domain:github.com)",
+      "mcp__bigquery__*",
+      "mcp__dagster__*"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "sed -i '/OP_SERVICE_ACCOUNT_TOKEN/d' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write|Bash|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-sensitive.sh",
+            "statusMessage": "Checking if path is safe to access..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "trunk fmt {changed_files}",
+            "statusMessage": "Auto-formatting with Trunk",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}

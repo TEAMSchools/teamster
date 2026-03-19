@@ -569,3 +569,30 @@ models:
         data_type: string
       - name: military_discharge_date
         data_type: date
+      - name: intent_to_enlist
+        data_type: boolean
+      - name: cte_military_interest
+        data_type: string
+      - name: qualified_air_force
+        data_type: boolean
+      - name: qualified_army
+        data_type: boolean
+      - name: qualified_coast_guard
+        data_type: boolean
+      - name: qualified_marine_corps
+        data_type: boolean
+      - name: qualified_navy
+        data_type: boolean
+      - name: total_qualified_military_branches
+        data_type: numeric
+      - name: physical_training_requirement_passed
+        data_type: string
+      - name: afqt_score
+        data_type: numeric
+      - name: has_duplicate_overgrad_1st_choice
+        data_type: boolean
+        description: >
+          True if the student has tagged more than one school as #1 Choice in
+          Overgrad. False if the student has no Overgrad top-choice data.
+      - name: es_attended
+        data_type: string

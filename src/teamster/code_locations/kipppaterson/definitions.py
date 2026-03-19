@@ -9,9 +9,9 @@ from dagster_k8s import k8s_job_executor
 from teamster.code_locations.kipppaterson import (
     CODE_LOCATION,
     DBT_PROJECT,
-    _dbt,
     amplify,
     couchdrop,
+    dbt,
     finalsite,
     pearson,
     powerschool,
@@ -30,7 +30,7 @@ defs = Definitions(
     executor=k8s_job_executor,
     assets=load_assets_from_modules(
         modules=[
-            _dbt,
+            dbt,
             amplify,
             finalsite,
             pearson,

@@ -14,7 +14,7 @@ models:
                 store_failures: true
 
       - name: marts_effective_date_start
-        data_type: date
+        data_type: timestamp
         description:
           The start or valid from date of a change in the teammate's record.
 
@@ -123,7 +123,7 @@ models:
           The teammates immediate prior job title to the one listed in this row.
 
       - name: marts_effective_date_end
-        data_type: date
+        data_type: timestamp
         description:
           A calculated end date using the day before the next valid,
           non-duplicate work assignment or '9999-12-31' for current, ongoing

@@ -1,0 +1,229 @@
+models:
+  - name: rpt_gsheets__kippadb_quality_bar_audit
+    description: >
+      Application-level audit view for the college list quality bar. One row per
+      wishlist or submitted application. Surfaces the per-app attributes (ECC
+      rate, account type, NJ flag, meets-full-need, strong OOS, EA/ED) and the
+      student-level rollup counts that drive the quality bar CASE logic in
+      int_kippadb__app_rollup. Allows stakeholders to verify which applications
+      contribute to each quality bar component and understand why a student does
+      or does not meet the bar.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - contact_id
+            - application_id
+          config:
+            store_failures: true
+    columns:
+      - name: contact_id
+        data_type: string
+        description: Salesforce contact ID (applicant)
+      - name: student_number
+        data_type: int64
+        description: SIS student number
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: counselor
+        data_type: string
+        description: College counselor (contact owner)
+      - name: school
+        data_type: string
+        description: Currently enrolled high school
+      - name: best_guess_pathway
+        data_type: string
+        description: >
+          Student's best guess postsecondary pathway (e.g. 4-year, 2-year, CTE,
+          Workforce). Primary driver of which quality bar tier applies.
+      - name: is_ed_ea
+        data_type: string
+        description: >
+          Whether the student is applying Early Decision or Early Action
+          (Yes/No). Affects which 4-year quality bar tier applies at 3.00-3.49
+          GPA.
+      - name: gpa
+        data_type: numeric
+        description:
+          Contact college-match display GPA, rounded to 2 decimal places
+      - name: application_id
+        data_type: string
+        description: Salesforce application record ID
+      - name: application_name
+        data_type: string
+      - name: college_name
+        data_type: string
+        description: College/school account name
+      - name: account_type
+        data_type: string
+        description: >
+          Salesforce account type (e.g. Public 4 yr, Private 4 yr, Public 2 yr,
+          Private 2 yr, Non-profit). Used to classify 4-year vs AA/CTE apps.
+      - name: account_billing_state
+        data_type: string
+        description:
+          State where the college is located. NJ apps count toward n_nj.
+      - name: application_submission_status
+        data_type: string
+        description: Wishlist or Submitted
+      - name: application_admission_type
+        data_type: string
+        description: Regular Decision, Early Action, Early Decision, etc.
+      - name: application_status
+        data_type: string
+        description: Accepted, Denied, Waitlisted, etc. (null while pending)
+      - name: match_type
+        data_type: string
+        description: Likely Plus, Target, Reach, etc.
+      - name: ecc
+        data_type: numeric
+        description: Adjusted 6-year minority graduation rate for this college
+      - name: meets_full_need
+        data_type: boolean
+        description:
+          Whether the college meets 100% of demonstrated financial need
+      - name: is_strong_oos
+        data_type: boolean
+        description:
+          Whether the college is flagged as a strong out-of-state option
+      - name: is_early_action_decision
+        data_type: boolean
+        description:
+          True if application_admission_type is Early Action or Early Decision
+      - name: overgrad_top_choice
+        data_type: string
+        description: >
+          Student's self-reported Overgrad choice rank for this college (#1
+          Choice, #2 Choice, #3 Choice, or null if not ranked). Joined from
+          int_overgrad__admissions on student contact ID and
+          stg_kippadb__account.nces_id =
+          int_overgrad__admissions.university__ipeds_id.
+      - name: n_overgrad_1st_choice
+        data_type: int64
+        description: >
+          Count of colleges this student has marked #1 Choice in Overgrad.
+          Values > 1 indicate the student has tagged multiple schools as their
+          top choice.
+      - name: n_overgrad_2nd_choice
+        data_type: int64
+        description: Count of colleges this student has marked #2 Choice in Overgrad.
+      - name: n_overgrad_3rd_choice
+        data_type: int64
+        description: Count of colleges this student has marked #3 Choice in Overgrad.
+      - name: has_duplicate_overgrad_1st_choice
+        data_type: boolean
+        description: True if the student has marked more than one college as #1 Choice in Overgrad.
+      - name: has_duplicate_overgrad_2nd_choice
+        data_type: boolean
+        description: True if the student has marked more than one college as #2 Choice in Overgrad.
+      - name: has_duplicate_overgrad_3rd_choice
+        data_type: boolean
+        description: True if the student has marked more than one college as #3 Choice in Overgrad.
+      - name: is_4yr
+        data_type: boolean
+        description: >
+          True if account_type is Public 4 yr or Private 4 yr. Counts toward
+          n_4_year_wishlist.
+      - name: is_nj
+        data_type: boolean
+        description: >
+          True if account_billing_state = NJ. Counts toward n_nj_wishlist /
+          n_nj_submitted.
+      - name: is_aa_cte
+        data_type: boolean
+        description: >
+          True if account_type is Non-profit, NonProfit, Private, Private 2 yr,
+          or Public 2 yr. Counts toward n_aa_cte_wishlist / n_aa_cte_submitted.
+      - name: is_55plus_ecc
+        data_type: boolean
+        description: True if ECC >= 55. Counts toward n_55plus_ecc_wishlist.
+      - name: is_60plus_ecc
+        data_type: boolean
+        description: True if ECC >= 60. Counts toward n_60plus_ecc_wishlist.
+      - name: is_68plus_ecc
+        data_type: boolean
+        description: True if ECC >= 68. Counts toward n_68plus_ecc_wishlist.
+      - name: is_85plus_ecc
+        data_type: boolean
+        description: >
+          True if ECC >= 85. Relevant for EA/ED components
+          (n_meets_full_need_ea_ed_85ecc_wishlist,
+          n_meets_full_need_85plus_ecc_ea_ed_submitted).
+      - name: n_wishlist
+        data_type: int64
+        description: Total wishlist apps for this student
+      - name: n_4_year_wishlist
+        data_type: int64
+      - name: n_55plus_ecc_wishlist
+        data_type: int64
+      - name: n_60plus_ecc_wishlist
+        data_type: int64
+      - name: n_68plus_ecc_wishlist
+        data_type: int64
+      - name: n_nj_wishlist
+        data_type: int64
+      - name: n_meets_full_need_wishlist
+        data_type: int64
+      - name: n_strong_oos_wishlist
+        data_type: int64
+      - name: n_aa_cte_wishlist
+        data_type: int64
+      - name: n_68plus_ecc_ea_ed_wishlist
+        data_type: int64
+      - name: n_meets_full_need_ea_ed_wishlist
+        data_type: int64
+      - name: n_meets_full_need_ea_ed_85ecc_wishlist
+        data_type: int64
+      - name: n_submitted
+        data_type: int64
+        description: Total submitted apps for this student
+      - name: n_55_plus_ecc_submitted
+        data_type: int64
+      - name: n_60_plus_ecc_submitted
+        data_type: int64
+      - name: n_68_plus_ecc_submitted
+        data_type: int64
+      - name: n_nj_submitted
+        data_type: int64
+      - name: n_meets_full_need_submitted
+        data_type: int64
+      - name: n_strong_oos_submitted
+        data_type: int64
+      - name: n_aa_cte_submitted
+        data_type: int64
+      - name: n_68plus_ecc_ea_ed_submitted
+        data_type: int64
+      - name: n_85plus_ecc_ea_ed_submitted
+        data_type: int64
+      - name: n_meets_full_need_ea_ed_submitted
+        data_type: int64
+      - name: n_meets_full_need_68plus_ecc_ea_ed_submitted
+        data_type: int64
+      - name: n_meets_full_need_85plus_ecc_ea_ed_submitted
+        data_type: int64
+      - name: is_wishlist_quality_bar_int
+        data_type: int64
+        description: >
+          1 if the student's wishlist meets the quality bar for their BGP/GPA
+          tier, 0 otherwise. Matches the flag in int_kippadb__app_rollup.
+      - name: is_submitted_quality_bar_4yr_int
+        data_type: int64
+        description: >
+          1 if the student's submitted list meets the 4-year quality bar for
+          their BGP/GPA tier, 0 otherwise.
+      - name: is_submitted_quality_bar_ea_int
+        data_type: int64
+        description: >
+          1 if the student's submitted list meets the EA/ED quality bar
+          (independent of BGP tier), 0 otherwise.
+      - name: wishlist_quality_bar_tier
+        data_type: string
+        description: >
+          Short label identifying which quality bar tier applies to this student
+          (e.g. 4yr_3.50plus, 4yr_3.00to3.49_ea, 2yr, cte_workforce). Use this
+          to look up the exact thresholds that must be met.
+      - name: cohort
+        data_type: int64
+      - name: graduation_year
+        data_type: int64

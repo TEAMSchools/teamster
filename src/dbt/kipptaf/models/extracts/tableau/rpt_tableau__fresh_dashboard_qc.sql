@@ -1,68 +1,52 @@
 with
-    finalsite_roster as (
+    fs_vs_ps_record_match as (
         select
-            enrollment_academic_year,
-            org,
-            region,
-            school,
-            finalsite_enrollment_id,
-            powerschool_student_number,
-            last_name,
-            first_name,
-            grade_level,
-            ps_region,
-            ps_school,
-            ps_grade_level,
-            ps_enroll_status,
-            valid_detailed_status,
-            qa_flag,
+            f.enrollment_academic_year,
+            f.finalsite_enrollment_id,
 
-        from {{ ref("int_students__finalsite_student_roster") }}
-        where
-            powerschool_student_number is not null
-            and latest_status = 'Enrolled'
-            and detailed_status = 'Enrolled'
-            and status_start_date is not null
+            f.enrollment_type,
+
+            'FS vs PS' as flag_type,
+            'Enrollment Mismatch' as flag_name,
+            'Enrollment record exists on FS but not PS' as flag_description,
+
+            if(e.infosnap_id is null, true, false) as flag_value,
+
+        from {{ ref("int_tableau__finalsite_student_scaffold") }} as f
+        left join
+            {{ ref("int_extracts__student_enrollments") }} as e
+            on f.enrollment_academic_year - 1 = e.academic_year
+            and f.finalsite_enrollment_id = e.infosnap_id
+            and e.rn_year = 1
+        /* hardcoded year because finalsite academic years do not sync with ps
+           academic years during review time */
+        where f.enrollment_academic_year = 2026
+
+        union all
+
+        select
+            e.academic_year,
+            e.infosnap_id,
+
+            f.enrollment_type,
+
+            'PS vs FS' as flag_type,
+            'Enrollment Mismatch' as flag_name,
+            'Enrollment record exists on PS but not FS' as flag_description,
+
+            if(f.finalsite_enrollment_id is null, true, false) as flag_value,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        left join
+            {{ ref("int_tableau__finalsite_student_scaffold") }} as f
+            on e.academic_year + 1 = f.enrollment_academic_year
+            and e.infosnap_id = f.finalsite_enrollment_id
+        /* hardcoded year because finalsite academic years do not sync with ps
+           academic years during review time */
+        where f.enrollment_academic_year = 2026
     )
 
-select
-    e.region,
-    e.student_number,
-    e.student_name,
-    e.grade_level,
+select *,
 
-    if(
-        f.powerschool_student_number is null,
-        -- trunk-ignore(sqlfluff/LT05)
-        'Student is active on PS for the current academic year, but does not have an Enrolled status on FS for current academic year',
-        'PS to FS enrollment match'
-    ) as enrollment_match,
-
-from {{ ref("int_extracts__student_enrollments") }} as e
-left join
-    finalsite_roster as f
-    on e.student_number = f.powerschool_student_number
-    and e.academic_year = f.enrollment_academic_year
-where e.rn_year = 1 and e.enroll_status = 0 and f.enrollment_academic_year is not null
-
-union all
-
-select
-    f.region,
-    f.powerschool_student_number,
-    concat(f.last_name, ', ', f.first_name) as student_name,
-    f.grade_level,
-
-    if(
-        e.student_number is null,
-        -- trunk-ignore(sqlfluff/LT05)
-        'Student is tagged as Enrolled on FS for the current academic year, but is not actively enrolled on PS for current academic year',
-        'FS to PS enrollment match'
-    ) as enrollment_match,
-
-from finalsite_roster as f
-left join
-    {{ ref("int_extracts__student_enrollments") }} as e
-    on f.powerschool_student_number = e.student_number
-    and f.enrollment_academic_year = e.academic_year
-where e.rn_year = 1 and e.enroll_status = 0
+from fs_vs_ps_record_match
+where flag_value

@@ -100,7 +100,7 @@ models:
         data_type: int64
       - name: is_enrolled_y1
         data_type: boolean
-      - name: is_enrolled_oct01
+      - name: is_enrolled_mar15
         data_type: boolean
       - name: is_enrolled_oct15
         data_type: boolean
@@ -495,6 +495,8 @@ models:
         data_type: float64
       - name: cumulative_y1_gpa_projected_s1_unweighted
         data_type: float64
+      - name: cumulative_y1_gpa_projected_unweighted
+        data_type: float64
       - name: core_cumulative_y1_gpa
         data_type: float64
       - name: earned_credits_cum
@@ -507,7 +509,17 @@ models:
         data_type: string
       - name: next_year_schoolid
         data_type: int64
-      - name: finalsite_student_id
+      - name: district
+        data_type: string
+      - name: region_school_level
+        data_type: string
+      - name: guardian_email
+        data_type: string
+      - name: academic_year_display
+        data_type: string
+      - name: next_year_enrollment_history
+        data_type: string
+      - name: overgrad_fafsa_opt_out
         data_type: string
       - name: district
         data_type: string

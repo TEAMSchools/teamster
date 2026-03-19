@@ -3,114 +3,80 @@
 git config pull.rebase false # specify how to reconcile divergent branches (merge)
 git config push.autoSetupRemote true
 
-# rm broken yarn key
-sudo rm /etc/apt/sources.list.d/yarn.list
-
-# import the Google Cloud public key
-curl https://packages.cloud.google.com/apt/doc/apt-key.gpg |
-  sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg ||
-  true
-
-# add the gcloud CLI distribution URI as a package source
-echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" |
-  sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-
-# update/install base apt packages
-sudo apt-get -y --no-install-recommends update &&
-  sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install \
-    apt-transport-https \
-    bash-completion \
-    ca-certificates \
-    curl \
-    gnupg \
-    google-cloud-cli \
-    sshpass &&
+# install extra apt packages
+sudo apt-get update -y &&
+  sudo apt-get -y install --no-install-recommends sshpass &&
+  sudo apt-get -y clean &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
 mkdir -p ./env
 sudo mkdir -p /etc/secret-volume
 
-# inject 1Password secrets into .env
-op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env
-
-# save secrets to file
-op inject -f --in-file=.devcontainer/tpl/adp_wfn_api.cer.tpl \
-  --out-file=env/adp_wfn_api.cer &&
-  sudo mv -f env/adp_wfn_api.cer /etc/secret-volume/adp_wfn_api.cer
-
-op inject -f --in-file=.devcontainer/tpl/adp_wfn_api.key.tpl \
-  --out-file=env/adp_wfn_api.key &&
-  sudo mv -f env/adp_wfn_api.key /etc/secret-volume/adp_wfn_api.key
-
-op inject -f --in-file=.devcontainer/tpl/deanslist_api_key_map_yaml.tpl \
-  --out-file=env/deanslist_api_key_map_yaml &&
-  sudo mv -f env/deanslist_api_key_map_yaml \
-    /etc/secret-volume/deanslist_api_key_map_yaml
-
-op inject -f --in-file=.devcontainer/tpl/id_rsa_egencia.tpl \
-  --out-file=env/id_rsa_egencia &&
-  sudo mv -f env/id_rsa_egencia /etc/secret-volume/id_rsa_egencia
-
-op inject -f --in-file=.devcontainer/tpl/powerschool_ssh_password.txt.tpl \
-  --out-file=env/powerschool_ssh_password.txt &&
-  sudo mv -f env/powerschool_ssh_password.txt /etc/secret-volume/powerschool_ssh_password.txt
+# restrict permissions on secrets-related paths
+chmod 755 .devcontainer/scripts/inject-secrets.sh
+chmod 600 .devcontainer/tpl/*
+chmod 700 ./env
+sudo chmod 700 /etc/secret-volume
 
 # set up trunk
 chmod +x /workspaces/teamster/trunk
-/workspaces/teamster/trunk install
 
-# install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh || true
+# install uv -- ignoring feature bc it doesn't allow self update
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# install dependencies
+# install uv dependencies
 uv tool install datamodel-code-generator
 uv tool install dagster-dg
-uv sync
+uv tool install dbt-mcp
+uv sync --frozen --all-groups
 
-# install dbt projects
-uv run dbt deps --project-dir=src/dbt/amplify
-uv run dbt parse --project-dir=src/dbt/amplify
+# install MCP toolbox
+curl --fail -O https://storage.googleapis.com/genai-toolbox/v0.29.0/linux/amd64/toolbox ||
+  {
+    echo "❌ MCP toolbox download failed"
+    exit 1
+  }
+echo "8cb1cacbbaccf0940926643482d20e3b02efba80d1c93eafb4342079b1ebee95  toolbox" |
+  sha256sum -c - ||
+  {
+    echo "❌ MCP toolbox checksum mismatch"
+    exit 1
+  }
+chmod +x toolbox
+sudo mv toolbox /usr/local/bin/
 
-uv run dbt deps --project-dir=src/dbt/deanslist
-uv run dbt parse --project-dir=src/dbt/deanslist
+export DBT_SEND_ANONYMOUS_USAGE_STATS=false
 
-uv run dbt deps --project-dir=src/dbt/edplan
-uv run dbt parse --project-dir=src/dbt/edplan
-
-uv run dbt deps --project-dir=src/dbt/finalsite
-uv run dbt parse --project-dir=src/dbt/finalsite
-
-uv run dbt deps --project-dir=src/dbt/iready
-uv run dbt parse --project-dir=src/dbt/iready
-
-uv run dbt deps --project-dir=src/dbt/overgrad
-uv run dbt parse --project-dir=src/dbt/overgrad
-
-uv run dbt parse --project-dir=src/dbt/pearson
-uv run dbt deps --project-dir=src/dbt/pearson
-
-uv run dbt deps --project-dir=src/dbt/powerschool
-uv run dbt parse --project-dir=src/dbt/powerschool
-
-uv run dbt deps --project-dir=src/dbt/renlearn
-uv run dbt parse --project-dir=src/dbt/renlearn
-
-uv run dbt deps --project-dir=src/dbt/titan
-uv run dbt parse --project-dir=src/dbt/titan
-
-uv run dbt deps --project-dir=src/dbt/kippcamden
-uv run dbt parse --project-dir=src/dbt/kippcamden
-
-uv run dbt deps --project-dir=src/dbt/kippmiami
-uv run dbt parse --project-dir=src/dbt/kippmiami
-
-uv run dbt deps --project-dir=src/dbt/kippnewark
-uv run dbt parse --project-dir=src/dbt/kippnewark
-
-uv run dbt deps --project-dir=src/dbt/kipppaterson
-uv run dbt parse --project-dir=src/dbt/kipppaterson
-
-uv run dbt deps --project-dir=src/dbt/kipptaf
-uv run dbt parse --project-dir=src/dbt/kipptaf
+# bootstrap dbt projects
+(uv run dbt deps --project-dir=src/dbt/amplify &&
+  uv run dbt parse --project-dir=src/dbt/amplify) &
+(uv run dbt deps --project-dir=src/dbt/deanslist &&
+  uv run dbt parse --project-dir=src/dbt/deanslist) &
+(uv run dbt deps --project-dir=src/dbt/edplan &&
+  uv run dbt parse --project-dir=src/dbt/edplan) &
+(uv run dbt deps --project-dir=src/dbt/finalsite &&
+  uv run dbt parse --project-dir=src/dbt/finalsite) &
+(uv run dbt deps --project-dir=src/dbt/iready &&
+  uv run dbt parse --project-dir=src/dbt/iready) &
+(uv run dbt deps --project-dir=src/dbt/overgrad &&
+  uv run dbt parse --project-dir=src/dbt/overgrad) &
+(uv run dbt deps --project-dir=src/dbt/pearson &&
+  uv run dbt parse --project-dir=src/dbt/pearson) &
+(uv run dbt deps --project-dir=src/dbt/powerschool &&
+  uv run dbt parse --project-dir=src/dbt/powerschool) &
+(uv run dbt deps --project-dir=src/dbt/renlearn &&
+  uv run dbt parse --project-dir=src/dbt/renlearn) &
+(uv run dbt deps --project-dir=src/dbt/titan &&
+  uv run dbt parse --project-dir=src/dbt/titan) &
+(uv run dbt deps --project-dir=src/dbt/kippcamden &&
+  uv run dbt parse --project-dir=src/dbt/kippcamden) &
+(uv run dbt deps --project-dir=src/dbt/kippmiami &&
+  uv run dbt parse --project-dir=src/dbt/kippmiami) &
+(uv run dbt deps --project-dir=src/dbt/kippnewark &&
+  uv run dbt parse --project-dir=src/dbt/kippnewark) &
+(uv run dbt deps --project-dir=src/dbt/kipppaterson &&
+  uv run dbt parse --project-dir=src/dbt/kipppaterson) &
+(uv run dbt deps --project-dir=src/dbt/kipptaf &&
+  uv run dbt parse --project-dir=src/dbt/kipptaf) &
+wait

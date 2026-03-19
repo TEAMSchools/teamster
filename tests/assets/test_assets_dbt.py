@@ -22,7 +22,7 @@ def _test_dbt_assets(
 
 
 def test_dbt_assets_kippnewark():
-    from teamster.code_locations.kippnewark._dbt.assets import dbt_assets
+    from teamster.code_locations.kippnewark.dbt.assets import dbt_assets
 
     _test_dbt_assets(
         assets=[dbt_assets],
@@ -35,7 +35,7 @@ def test_dbt_assets_kippnewark():
 
 
 def test_dbt_assets_kipptaf():
-    from teamster.code_locations.kipptaf._dbt.assets import assets
+    from teamster.code_locations.kipptaf.dbt.assets import assets
 
     _test_dbt_assets(
         assets=assets,

@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 
 from dagster import (
     AddDynamicPartitionsRequest,
-    AssetKey,
     DynamicPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -22,16 +21,7 @@ from teamster.libraries.ssh.resources import SSHResource
 @sensor(
     name=f"{CODE_LOCATION}__adp__payroll__sftp_sensor",
     minimum_interval_seconds=(60 * 10),
-    target=[
-        general_ledger_file.key,
-        AssetKey(
-            [CODE_LOCATION, "adp_payroll", "stg_adp_payroll__general_ledger_file"]
-        ),
-        AssetKey([CODE_LOCATION, "extracts", "rpt_gsheets__intacct_integration_file"]),
-        AssetKey(
-            [CODE_LOCATION, "extracts", "couchdrop", "adp_payroll_date_group_code_csv"]
-        ),
-    ],
+    target=general_ledger_file,
 )
 def adp_payroll_sftp_sensor(
     context: SensorEvaluationContext, ssh_couchdrop: SSHResource

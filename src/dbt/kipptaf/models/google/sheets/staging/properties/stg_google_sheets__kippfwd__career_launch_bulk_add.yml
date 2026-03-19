@@ -1,0 +1,28 @@
+models:
+  - name: stg_google_sheets__kippfwd__career_launch_bulk_add
+    columns:
+      - name: contact_id
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+          - not_null:
+              config:
+                store_failures: true
+      - name: email
+        data_type: string
+      - name: cell_phone
+        data_type: string
+      - name: education_level
+        data_type: string
+      - name: post_grad_plan
+        data_type: string
+      - name: salary
+        data_type: string
+      - name: job_satisfaction
+        data_type: string
+      - name: company
+        data_type: string
+      - name: benefits
+        data_type: string

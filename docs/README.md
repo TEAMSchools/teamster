@@ -1,4 +1,4 @@
-# teamster
+# teamster 🚛
 
 [![kipptaf](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kipptaf.yaml/badge.svg)](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kipptaf.yaml)
 [![kippnewark](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kippnewark.yaml/badge.svg)](https://github.com/TEAMSchools/teamster/actions/workflows/deploy-prod-kippnewark.yaml)
@@ -7,52 +7,79 @@
 
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Trunk](https://img.shields.io/badge/trunk.io-enabled-brightgreen?logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0ZGRiIgc3Ryb2tlLXdpZHRoPSIxMSIgdmlld0JveD0iMCAwIDEwMSAxMDEiPjxwYXRoIGQ9Ik01MC41IDk1LjVhNDUgNDUgMCAxIDAtNDUtNDVtNDUtMzBhMzAgMzAgMCAwIDAtMzAgMzBtNDUgMGExNSAxNSAwIDAgMC0zMCAwIi8+PC9zdmc+)](https://trunk.io)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 ![Photograph taken in 1960. Upload from http://www.fortepan.hu/?lang=en&img=20566, part of Commons:Batch_uploading/Fortepan.HU](https://github.com/user-attachments/assets/2ca95e50-106c-4cce-a8e3-2ffb234adf94)
 
-Next-gen data orchestration
+## Next-gen data orchestration for KIPP TEAM & Family Schools
 
-## Features
+Teamster is the data engineering platform powering analytics and reporting
+across KIPP Newark, Camden, Miami, and Paterson. It ingests data from 30+ source
+systems, transforms it through dbt, and delivers it to Tableau, Google Sheets,
+PowerSchool, and other consumers — all orchestrated by Dagster.
 
-### Dagster
+- 🎻 **Dagster** — orchestrates every ETL step across five code locations, one
+  per school network;
+  [observe and run pipelines in Dagster Cloud](https://kipptaf.dagster.cloud/)
+- 🔧 **dbt** — transforms raw source data into staging, intermediate, mart, and
+  extract models in **Google BigQuery**
+- 🚿 **dlt** — loads data from API sources into BigQuery alongside dbt
+- 🔀 **Airbyte** — managed connector pipelines for select integrations
+- 🪣 **Google Cloud Storage** — intermediate storage layer between pipeline
+  steps
+- ☸️ **Google Kubernetes Engine** — runs each code location in its own container
+  in production
+- ⚙️ **GitHub Actions** — CI/CD for building and deploying code locations
+- 📊 **Tableau** — primary BI consumer; Dagster manages workbook extract
+  refreshes
 
-Dagster is our data orchestrator. Every ETL step takes place here.
+## 📖 Background
 
-[Dagster Cloud](https://kipptaf.dagster.cloud/) is a hosted front-end for our
-Dagster servers where you can observe and run integration jobs.
+KIPP's data infrastructure was previously a patchwork of Python scripts, cron
+jobs, stored procedures, Fivetran, and Selenium automation spread across
+multiple databases. Synchronous scheduling meant a slow pull from one system
+would cascade into downstream failures. A single data engineer spent more time
+firefighting than building.
 
-Dagster hosts multiple "code locations", one for each of our business units,
-including a separate one for our CMO:
+Teamster replaced all of it with a unified, asset-based platform. The results:
 
-- kippnewark
-- kippcamden
-- kippmiami
-- kipptaf
+- ⚡ Pipeline development time dropped from **weeks to days**
+- 🎫 Data-related support tickets fell **30% year-over-year**
+- 🧑‍💻 Analysts gained Git, SQL, and DevOps skills through shared PR workflows
+- 🔔 Real-time Slack alerts replaced reactive debugging
 
-Each code location hosts and runs the code and configurations for each
-respective business unit. Behind-the-scenes, these are containers run on Google
-Cloud Kubernetes. Each code location has it's own respective jobs, schedules,
-sensors, and assets.
+> "The visibility into the pipelines is a game changer. We know as soon as
+> something fails and why."
 
-### dbt & Github
+Read the full story in the
+[Dagster case study](https://dagster.io/customers/kipp-case-study).
 
-Before you merge:
+## 🚀 Get started
 
-1. Ensure dbt build runs successfully on your branch
-2. Format your SQL changes in dbt
-3. Ensure the Dagster build action runs successfully
+New to the project? Start here:
 
-### Google Cloud Platform
+1. [Getting Started](getting-started.md) — account setup, Codespaces, local dev
+2. [Architecture](reference/architecture.md) — how the code is organized
+3. [Contributing](CONTRIBUTING.md) — workflow and PR guidelines
 
-- [Private GKE Autopilot](https://cloud.google.com/kubernetes-engine/docs/how-to/private-clusters#public_cp)
-  cluster
-- [Cloud NAT](https://cloud.google.com/nat/docs/gke-example#create-nat) provided
-  static external IP for the cluster
-- [Google Artifact Registry](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images)
-- Google Cloud services access prodivded by
-  [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to)
-- GitHub Actions for CI/CD
+## 📚 Reference
 
-### Airbyte
+| Topic                                                               | Description                                          |
+| ------------------------------------------------------------------- | ---------------------------------------------------- |
+| [Automations](reference/automations.md)                             | All schedules and sensors across every code location |
+| [Automation Conditions](reference/automation-conditions.md)         | How asset auto-materialization works                 |
+| [Adding an Integration](reference/adding-an-integration.md)         | Step-by-step guide for new data sources              |
+| [dbt Conventions](reference/dbt-conventions.md)                     | Model naming, contracts, and testing standards       |
+| [IO Managers](reference/io-managers.md)                             | How intermediate data is stored in GCS               |
+| [Fiscal Year & Partitioning](reference/fiscal-year-partitioning.md) | Partition strategy for historical loads              |
+
+## 🗺️ Guides & Troubleshooting
+
+| Topic                                                  | Description                                            |
+| ------------------------------------------------------ | ------------------------------------------------------ |
+| [Dagster Guide](guides/dagster.md)                     | Tableau scheduling, backfills, branch deployments      |
+| [Google Sheets & Forms](guides/google-sheets.md)       | Adding and updating Google Sheets sources              |
+| [Troubleshooting: Dagster](troubleshooting/dagster.md) | Pipeline failures, partitions, unsynced views          |
+| [Troubleshooting: dbt](troubleshooting/dbt.md)         | Contract violations, compilation errors, test failures |
+| [Troubleshooting: VS Code](troubleshooting/vscode.md)  | Interpreter, secrets, Trunk, container issues          |

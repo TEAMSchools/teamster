@@ -1,8 +1,16 @@
 #!/bin/bash
 
-# inject 1Password secrets into .env
-op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env
+# inject 1Password secrets
+source ./.devcontainer/scripts/inject-secrets.sh
+set +euo pipefail
 
-uv self update
-uv tool upgrade datamodel-code-generator dagster-dg
-uv sync
+# Strip 1Password SA token from future shells — inject-secrets.sh has already run
+echo 'unset OP_SERVICE_ACCOUNT_TOKEN' >>/home/vscode/.bashrc
+echo 'unset OP_SERVICE_ACCOUNT_TOKEN' >>/home/vscode/.profile
+
+uv self update # reliable enough to not pin a version
+uv tool upgrade --all
+uv sync --frozen --all-groups
+
+# install trunk tools
+/workspaces/teamster/trunk install

@@ -242,7 +242,29 @@ with
     )
 
 select
-    *,
+    student_number,
+    administration_round,
+    academic_year,
+    test_date,
+    scope,
+    subject_area,
+    course_discipline,
+    score_type,
+    scale_score,
+    rn_highest,
+    salesforce_id,
+    is_overall_score,
+    is_subject_score,
+    running_max_scale_score,
+    surrogate_key,
+    n_overall_scores,
+    n_subject_scores,
+    strategy_case,
+    max_scale_score,
+    previous_total_score_change,
+    superscore,
+    avg_running_max_superscore,
+    sum_running_max_superscore,
 
     'Official' as test_type,
 
