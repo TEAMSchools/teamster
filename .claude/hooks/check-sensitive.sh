@@ -41,13 +41,23 @@ fi
 # Strip quotes and backslashes for keyword matching (defeats quote-splitting bypass)
 sanitized=${normalized//[\"\'\\]/}
 
+# Path-only fields for infrastructure-path rules (excludes content/new_string/old_string)
+path_only=$(echo "${input}" | jq -r '
+  [.tool_input.file_path, .tool_input.command, .tool_input.path] | map(select(. != null)) | join(" ")
+')
+path_only=$(echo "${path_only}" | sed -E ':a; s#//+#/#g; s#/\./#/#g; s#/[^/]+/\.\./#/#g; ta')
+if [[ -n ${file_path} && -e ${file_path} ]]; then
+  path_only="${path_only} $(readlink -f "${file_path}" 2>/dev/null || echo "${file_path}")"
+fi
+path_only=${path_only//[\"\'\\]/}
+
 # 1. Sensitive file/directory patterns (case-insensitive)
 if echo "${sanitized}" | grep -qiE '(^|[ /])(\.env[.a-z]*|\.ssh|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/tpl/|\*?\.(cer|key|pem)([ /]|$)'; then
   deny
 fi
 
 # 2. Hook self-protection — block modifications to hook config and shell snapshots (allow reads)
-if echo "${sanitized}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/|\.trunk/(trunk\.yaml|config/)'; then
+if echo "${path_only}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/|\.trunk/(trunk\.yaml|config/)'; then
   if [[ ${tool_name} != "Read" && ${tool_name} != "Grep" && ${tool_name} != "Glob" ]]; then
     deny
   fi
