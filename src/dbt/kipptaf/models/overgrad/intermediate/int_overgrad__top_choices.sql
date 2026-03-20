@@ -12,7 +12,7 @@ with
             ) as rn_choice_dedup,
         from {{ ref("int_overgrad__admissions") }}
         where top_choice_schools is not null
-    ),
+    )
 
 select
     rc.student__external_student_id as contact_id,
@@ -67,4 +67,5 @@ left join
     {{ ref("base_kippadb__application") }} as app
     on rc.student__external_student_id = app.applicant
     and acc.id = app.school
+    and app.rn_application_school = 1
 group by rc.student__external_student_id
