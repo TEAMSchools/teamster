@@ -196,11 +196,22 @@ uv run scripts/tableau-analyze-workbook.py --exposure <name>
 uv run scripts/tableau-analyze-workbook.py --file <path>
 ```
 
-If the workbook has multiple datasources, list them with field counts and ask
-which to analyze. Only one datasource per run.
+If the workbook has multiple datasources, list them all with field counts and
+ask which to start with. The script output is held in memory for the session —
+do not re-run the script when moving between datasources.
 
-If the same workbook needs multiple datasources analyzed, each run produces a
-separate report. Include a datasource slug in the filename to avoid collisions:
+Before listing datasources, check `docs/superpowers/star-schema-reports/` for
+existing reports matching the exposure name. If any are found, tell the analyst:
+
+> "I found existing reports for this workbook:
+>
+> - ✓ `<exposure>-<slug>-<date>.md`
+>
+> Remaining datasources: `rpt_tableau__foo`, `rpt_tableau__bar`. Pick up where
+> you left off?"
+
+Each datasource produces its own report file. Always include a datasource slug
+in the filename to avoid collisions:
 `<exposure-name>-<datasource-slug>-<YYYY-MM-DD>.md`.
 
 ### Step 3 — Read the reporting view
@@ -329,6 +340,20 @@ Tell the analyst:
 
 > "When you're ready to generate Cube measures for these fields, run
 > `/cube-measure-generator` and point it at this report file."
+
+If the workbook has additional datasources not yet analyzed, offer to continue:
+
+> "This workbook has N more datasource(s) not yet analyzed:
+>
+> - `rpt_tableau__foo` — 22 fields
+> - `rpt_tableau__bar` — 8 fields
+>
+> Continue to the next one, or stop here?"
+
+If the analyst continues, loop back to Step 3 with the next datasource. The
+script JSON is already in memory — do not re-run it. Each datasource gets its
+own report file and its own mart changes, applied and left unstaged
+independently.
 
 ---
 
