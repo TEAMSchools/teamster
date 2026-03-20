@@ -12,12 +12,17 @@ with
             c.students_student_number,
             c.courses_credittype,
             c.teachernumber,
-            c.discipline,
             c.teacher_lastfirst as teacher_name,
             c.courses_course_name as course_name,
             c.cc_course_number as course_number,
 
             s.abbreviation as school,
+
+            if(
+                c.courses_credittype = 'SOC' and c.region = 'Miami',
+                'Civics',
+                c.discipline
+            ) as discipline,
 
         from {{ ref("base_powerschool__course_enrollments") }} as c
         left join
@@ -36,7 +41,6 @@ with
             e.cc_academic_year,
             e.students_student_number,
             e.teachernumber,
-            e.discipline,
             e.teacher_lastfirst as teacher_name,
             e.courses_course_name as course_name,
             e.cc_course_number as course_number,
@@ -44,6 +48,12 @@ with
             c.school as school_current,
             c.teachernumber as teachernumber_current,
             c.teacher_name as teacher_name_current,
+
+            if(
+                e.courses_credittype = 'SOC' and e.region = 'Miami',
+                'Civics',
+                e.discipline
+            ) as discipline,
 
         from {{ ref("base_powerschool__course_enrollments") }} as e
         left join

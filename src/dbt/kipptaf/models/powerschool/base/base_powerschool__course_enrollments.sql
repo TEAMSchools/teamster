@@ -51,6 +51,10 @@ select
     csc.is_advanced_math,
     csc.discipline,
 
+    initcap(regexp_extract(ur._dbt_source_relation, r'kipp(\w+)_')) as region,
+
+    if(cx.ap_course_subject is not null, true, false) as is_ap_course,
+
     case
         when ur.courses_credittype in ('ENG', 'ELA')
         then 'ELA'
@@ -62,10 +66,6 @@ select
         then 'HR'
         else ur.courses_credittype
     end as courses_credittype,
-
-    initcap(regexp_extract(ur._dbt_source_relation, r'kipp(\w+)_')) as region,
-
-    if(cx.ap_course_subject is not null, true, false) as is_ap_course,
 
     row_number() over (
         partition by
