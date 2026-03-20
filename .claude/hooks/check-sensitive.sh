@@ -17,10 +17,16 @@ input=$(cat)
 tool_name=$(echo "${input}" | jq -r '.tool_name')
 
 # Collect ALL string values from tool_input (covers MCP, NotebookEdit, any tool schema)
-# Excludes 'description' (metadata field that could cause false positives)
-path=$(echo "${input}" | jq -r '
-  [.tool_input | to_entries[] | select(.key != "description") | .value | .. | strings] | join(" ")
-')
+# Excludes 'description' for Agent tool only (metadata field that causes false positives)
+if [[ ${tool_name} == "Agent" ]]; then
+  path=$(echo "${input}" | jq -r '
+    [.tool_input | to_entries[] | select(.key != "description") | .value | .. | strings] | join(" ")
+  ')
+else
+  path=$(echo "${input}" | jq -r '
+    [.tool_input | to_entries[] | .value | .. | strings] | join(" ")
+  ')
+fi
 
 # Normalize: collapse //, /./, resolve ../ traversals (multi-pass loop), resolve symlinks
 normalized=$(echo "${path}" | sed -E ':a; s#//+#/#g; s#/\./#/#g; s#/[^/]+/\.\./#/#g; ta')
@@ -115,9 +121,13 @@ if echo "${stripped}" | grep -qE '\$\{?[A-Z_][A-Z0-9_]+\}?'; then
   deny
 fi
 
-# 8. Block BigQuery write/export operations (data exfiltration prevention)
+# 8. Block BigQuery non-read operations (whitelist: only SELECT/SHOW/DESCRIBE allowed)
 if [[ ${tool_name} == mcp__bigquery__* ]]; then
-  if echo "${sanitized}" | grep -qiE '\bINSERT[[:space:]]+INTO\b|\bUPDATE[[:space:]]+[a-zA-Z`_].*[[:space:]]+SET\b|\bDELETE[[:space:]]+FROM\b|\bMERGE[[:space:]]+INTO\b|\bEXPORT[[:space:]]+DATA\b|\bCREATE[[:space:]]+(OR[[:space:]]+REPLACE[[:space:]]+)?TABLE\b'; then
+  if ! echo "${sanitized}" | grep -qiE '^\s*(SELECT|SHOW|DESCRIBE|WITH)\b'; then
+    deny
+  fi
+  # Also deny if read-looking queries contain embedded write statements
+  if echo "${sanitized}" | grep -qiE '\bINSERT[[:space:]]+INTO\b|\bUPDATE[[:space:]]+[a-zA-Z`_].*[[:space:]]+SET\b|\bDELETE[[:space:]]+FROM\b|\bMERGE[[:space:]]+INTO\b|\bEXPORT[[:space:]]+DATA\b|\bCREATE\b|\bDROP\b|\bALTER\b|\bGRANT\b|\bREVOKE\b|\bCALL\b'; then
     deny
   fi
 fi

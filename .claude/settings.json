@@ -53,7 +53,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sed -i -E '/(_SECRET|_TOKEN|_PASSWORD|_CREDENTIAL|PRIVATE_KEY|SERVICE_ACCOUNT|OP_SERVICE)/Id' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true"
+            "command": "sed -i -E '/(_SECRET|_TOKEN|_PASSWORD|_CREDENTIAL|_API_KEY|_APP_KEY|PRIVATE_KEY|SERVICE_ACCOUNT|OP_SERVICE)/Id' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true"
           }
         ]
       }
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sed -i -E '/(_SECRET|_TOKEN|_PASSWORD|_CREDENTIAL|PRIVATE_KEY|SERVICE_ACCOUNT|OP_SERVICE)/Id' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true",
+            "command": "sed -i -E '/(_SECRET|_TOKEN|_PASSWORD|_CREDENTIAL|_API_KEY|_APP_KEY|PRIVATE_KEY|SERVICE_ACCOUNT|OP_SERVICE)/Id' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true",
             "statusMessage": "Sanitizing shell snapshots..."
           }
         ]
