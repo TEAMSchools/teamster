@@ -25,7 +25,7 @@ with
     )
 
 select
-    ur.*,
+    ur.* except (courses_credittype),
 
     cx.ap_course_subject,
     cx.block_schedule_session,
@@ -51,6 +51,18 @@ select
     csc.is_advanced_math,
     csc.discipline,
 
+    case
+        when ur.courses_credittype in ('ENG', 'ELA')
+        then 'ELA'
+        when ur.courses_credittype in ('MATH', 'Math')
+        then 'MATH'
+        when ur.courses_credittype in ('SCI', 'Science')
+        then 'SCI'
+        when ur.courses_credittype in ('HR', 'Homeroom')
+        then 'HR'
+        else ur.courses_credittype
+    end as courses_credittype,
+
     initcap(regexp_extract(ur._dbt_source_relation, r'kipp(\w+)_')) as region,
 
     if(cx.ap_course_subject is not null, true, false) as is_ap_course,
@@ -60,6 +72,7 @@ select
             ur._dbt_source_relation, ur.cc_studyear, csc.illuminate_subject_area
         order by ur.cc_termid desc, ur.cc_dateenrolled desc, ur.cc_dateleft desc
     ) as rn_student_year_illuminate_subject_desc,
+
 from union_relations as ur
 left join
     {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
