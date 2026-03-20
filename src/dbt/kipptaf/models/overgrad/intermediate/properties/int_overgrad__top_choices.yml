@@ -1,5 +1,5 @@
 models:
-  - name: int_kippadb__overgrad_top_choices
+  - name: int_overgrad__top_choices
     description: >
       Student-level pivot of Overgrad top-choice school data, enriched with
       ECC and application outcomes from KIPPADB. One row per student.

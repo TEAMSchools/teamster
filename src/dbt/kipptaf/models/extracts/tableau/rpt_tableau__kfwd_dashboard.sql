@@ -739,7 +739,7 @@ left join ba_semesters_enrolled as ba on c.contact_id = ba.sf_contact_id
 left join
     {{ ref("int_overgrad__choice_counts") }} as ogc on c.contact_id = ogc.contact_id
 left join
-    {{ ref("int_kippadb__overgrad_top_choices") }} as otc on c.contact_id = otc.contact_id
+    {{ ref("int_overgrad__top_choices") }} as otc on c.contact_id = otc.contact_id
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
