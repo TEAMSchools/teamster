@@ -36,7 +36,7 @@ with
             e.cc_academic_year,
             e.students_student_number,
             e.teachernumber,
-            c.discipline,
+            e.discipline,
             e.teacher_lastfirst as teacher_name,
             e.courses_course_name as course_name,
             e.cc_course_number as course_number,
