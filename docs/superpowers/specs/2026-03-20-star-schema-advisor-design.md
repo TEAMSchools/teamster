@@ -237,6 +237,13 @@ Notes column for every "Already in marts" hit so the analyst can verify the
 match is semantically correct — a name match does not guarantee the same grain
 or join key.
 
+When processing a second or later datasource in the same session, mart files may
+already have been modified by Step 7 of an earlier datasource. The re-scan will
+pick these up naturally since edits are written to disk. Use a distinct note for
+these hits — **"Already in marts (promoted this session)"** — so the analyst can
+see what came from prior datasources vs what was already there before the
+session started.
+
 ### Step 5 — Classify every field
 
 Apply verdict rules to every field in the datasource JSON. Also check each
@@ -354,6 +361,26 @@ If the analyst continues, loop back to Step 3 with the next datasource. The
 script JSON is already in memory — do not re-run it. Each datasource gets its
 own report file and its own mart changes, applied and left unstaged
 independently.
+
+When all datasources in the workbook are complete, give a consolidated session
+summary before suggesting a `git diff`:
+
+> "All datasources analyzed. Here's everything changed this session:
+>
+> **Mart changes** (all left unstaged — review with `git diff` before staging):
+>
+> - `dim_locations`: added `school_name`, `grade_band`
+> - `fct_attendance`: added `is_present`, `membership_value`
+>
+> **New models drafted** (if any): `dim_grade_bands.sql` + YAML
+>
+> **Reports written** (commit these now):
+>
+> - `ops_dashboard-rpt-attendance-dashboard-2026-03-20.md`
+> - `ops_dashboard-rpt-ops-dashboard-2026-03-20.md`
+>
+> **Semantic layer fields queued across all datasources:** N fields total — run
+> `/cube-measure-generator` pointing at any report file when ready."
 
 ---
 
