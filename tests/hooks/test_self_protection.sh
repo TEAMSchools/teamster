@@ -58,4 +58,14 @@ expect_deny "bash cat trunk config" Bash command "cat .trunk/config/.sqlfluff"
 expect_allow "read trunk.yaml" Read file_path ".trunk/trunk.yaml"
 expect_allow "grep in trunk config" Grep path ".trunk/config/"
 
+# ─── Content mentioning protected paths (should be allowed) ──────────────────
+echo ""
+echo -e "${YELLOW}Content mentioning protected paths (not accessing them)${NC}"
+
+expect_allow2 "write file whose content mentions .claude/hooks/" Write file_path "docs/CLAUDE.md" content "See .claude/hooks/ for details"
+expect_allow2 "write file whose content mentions .trunk/config/" Write file_path "docs/CLAUDE.md" content "SQL rules in .trunk/config/.sqlfluff"
+expect_allow2 "write file whose content mentions .devcontainer/scripts/" Write file_path "docs/CLAUDE.md" content "Run .devcontainer/scripts/inject-secrets.sh"
+expect_allow2 "edit file whose new_string mentions .claude/hooks/" Edit file_path "docs/CLAUDE.md" new_string "Read .claude/hooks/check-sensitive.sh"
+expect_allow2 "write file whose content mentions .git/hooks/" Write file_path "docs/guide.md" content "Pre-commit runs via .git/hooks/pre-commit"
+
 print_summary "Self-Protection"
