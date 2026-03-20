@@ -365,6 +365,14 @@ select
     apps.account_type as application_account_type,
     apps.account_name as application_school_name,
 
+    otc.has_overgrad_1st_choice,
+    otc.overgrad_1st_choice_school_name,
+    otc.overgrad_2nd_choice_school_name,
+    otc.overgrad_3rd_choice_school_name,
+    otc.overgrad_1st_choice_ecc,
+    otc.overgrad_1st_choice_is_submitted,
+    otc.overgrad_1st_choice_is_accepted,
+
     ar.n_submitted,
     ar.n_accepted,
     ar.ecc_submitted_avg,
@@ -730,6 +738,8 @@ left join
 left join ba_semesters_enrolled as ba on c.contact_id = ba.sf_contact_id
 left join
     {{ ref("int_overgrad__choice_counts") }} as ogc on c.contact_id = ogc.contact_id
+left join
+    {{ ref("int_kippadb__overgrad_top_choices") }} as otc on c.contact_id = otc.contact_id
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
