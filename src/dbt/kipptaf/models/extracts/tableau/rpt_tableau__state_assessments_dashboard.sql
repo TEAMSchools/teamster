@@ -12,22 +12,12 @@ with
             c.students_student_number,
             c.courses_credittype,
             c.teachernumber,
+            c.discipline,
             c.teacher_lastfirst as teacher_name,
             c.courses_course_name as course_name,
             c.cc_course_number as course_number,
 
             s.abbreviation as school,
-
-            case
-                when c.courses_credittype in ('ENG', 'ELA')
-                then 'ELA'
-                when c.courses_credittype in ('MATH', 'Math')
-                then 'Math'
-                when c.courses_credittype in ('SCI', 'Science')
-                then 'Science'
-                when c.courses_credittype = 'SOC'
-                then 'Civics'
-            end as discipline,
 
         from {{ ref("base_powerschool__course_enrollments") }} as c
         left join
@@ -37,8 +27,7 @@ with
             c.cc_academic_year = {{ var("current_academic_year") }}
             and c.rn_credittype_year = 1
             and not c.is_dropped_section
-            and c.courses_credittype
-            in ('ENG', 'MATH', 'SCI', 'SOC', 'ELA', 'Math', 'Science')
+            and c.courses_credittype in ('ELA', 'MATH', 'SCI', 'SOC')
     ),
 
     schedules as (
@@ -47,6 +36,7 @@ with
             e.cc_academic_year,
             e.students_student_number,
             e.teachernumber,
+            c.discipline,
             e.teacher_lastfirst as teacher_name,
             e.courses_course_name as course_name,
             e.cc_course_number as course_number,
@@ -54,17 +44,6 @@ with
             c.school as school_current,
             c.teachernumber as teachernumber_current,
             c.teacher_name as teacher_name_current,
-
-            case
-                when e.courses_credittype in ('ENG', 'ELA')
-                then 'ELA'
-                when e.courses_credittype in ('MATH', 'Math')
-                then 'Math'
-                when e.courses_credittype in ('SCI', 'Science')
-                then 'Science'
-                when e.courses_credittype = 'SOC'
-                then 'Civics'
-            end as discipline,
 
         from {{ ref("base_powerschool__course_enrollments") }} as e
         left join
@@ -75,8 +54,7 @@ with
             e.cc_academic_year >= {{ var("current_academic_year") - 7 }}
             and e.rn_credittype_year = 1
             and not e.is_dropped_section
-            and e.courses_credittype
-            in ('ENG', 'MATH', 'SCI', 'SOC', 'ELA', 'Math', 'Science')
+            and e.courses_credittype in ('ELA', 'MATH', 'SCI', 'SOC')
     ),
 
     state_comps as (
