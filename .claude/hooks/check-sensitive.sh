@@ -53,7 +53,8 @@ if echo "${sanitized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bexport -p\b|\b
 fi
 
 # 3b. Catch `set` as a standalone command (dumps all vars), but not `set -flags`
-if echo "${sanitized}" | grep -qE '(^|[;&|][[:space:]]*)set([[:space:]]*$|[[:space:]]*[|>&])'; then
+# trunk-ignore(shellcheck/SC2016): regex contains literal $\( for matching $(set), not a command substitution
+if echo "${sanitized}" | grep -qE '(^|[;&|(`][[:space:]]*)set([[:space:]]*$|[[:space:]]*[|>&;)`])|\$\(set([[:space:]]|$|\))'; then
   deny
 fi
 
