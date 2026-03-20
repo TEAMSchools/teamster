@@ -360,6 +360,18 @@ expect_deny "__import__ shutil" Bash command "uv run python -c \"__import__('shu
 expect_allow "__import__ json (safe)" Bash command "uv run python -c \"__import__('json').dumps({'a': 1})\""
 expect_allow "__import__ math (safe)" Bash command "uv run python -c \"print(__import__('math').pi)\""
 
+# ─── Pattern 5c expanded: additional dangerous modules ───────────────────────
+echo ""
+echo -e "${YELLOW}Pattern 5c expanded: additional dangerous modules${NC}"
+
+expect_deny "__import__ pty" Bash command "uv run python -c \"__import__('pty').spawn('/bin/bash')\""
+expect_deny "__import__ ctypes" Bash command "uv run python -c \"__import__('ctypes').CDLL('libc.so.6')\""
+expect_deny "__import__ socket" Bash command "uv run python -c \"__import__('socket').socket()\""
+expect_deny "__import__ http" Bash command "uv run python -c \"__import__('http.client').HTTPConnection('x')\""
+expect_deny "__import__ urllib" Bash command "uv run python -c \"__import__('urllib.request').urlopen('http://x')\""
+expect_deny "__import__ multiprocessing" Bash command "uv run python -c \"__import__('multiprocessing').Process()\""
+expect_deny "__import__ signal" Bash command "uv run python -c \"__import__('signal').alarm(0)\""
+
 # ─── /dev/fd/ bypass ─────────────────────────────────────────────────────────
 echo ""
 echo -e "${YELLOW}/dev/fd/ bypass${NC}"
@@ -484,6 +496,10 @@ expect_deny "importlib subprocess" Bash command "uv run python -c \"import impor
 expect_deny "importlib shutil" Bash command "uv run python -c \"import importlib; importlib.import_module('shutil').copy('a','b')\""
 expect_allow "importlib json (safe)" Bash command "uv run python -c \"import importlib; importlib.import_module('json').dumps({})\""
 
+expect_deny "importlib pty" Bash command "uv run python -c \"import importlib; importlib.import_module('pty').spawn('/bin/bash')\""
+expect_deny "importlib ctypes" Bash command "uv run python -c \"import importlib; importlib.import_module('ctypes')\""
+expect_deny "importlib socket" Bash command "uv run python -c \"import importlib; importlib.import_module('socket')\""
+
 # ─── Pattern 7: Shell variable expansion ────────────────────────────────────
 echo ""
 echo -e "${YELLOW}Pattern 7: Shell variable expansion${NC}"
@@ -518,6 +534,26 @@ expect_deny "bash cat .git/hooks/" Bash command "cat .git/hooks/pre-commit"
 expect_deny "edit .git/hooks/" Edit file_path ".git/hooks/pre-commit"
 expect_allow "read .git/hooks/" Read file_path ".git/hooks/pre-commit"
 expect_allow "grep in .git/hooks/" Grep path ".git/hooks/"
+
+# ─── .trunk/ config self-protection ──────────────────────────────────────────
+echo ""
+echo -e "${YELLOW}.trunk/ config self-protection${NC}"
+
+expect_deny "edit trunk.yaml" Edit file_path ".trunk/trunk.yaml"
+expect_deny "write to trunk config/" Write file_path ".trunk/config/.sqlfluff"
+expect_deny "bash cat trunk config" Bash command "cat .trunk/config/.sqlfluff"
+expect_allow "read trunk.yaml" Read file_path ".trunk/trunk.yaml"
+expect_allow "grep in trunk config" Grep path ".trunk/config/"
+
+# ─── BigQuery DML/export block ───────────────────────────────────────────────
+echo ""
+echo -e "${YELLOW}BigQuery DML/export block${NC}"
+
+expect_deny "MCP BQ INSERT" "mcp__bigquery__query" sql "INSERT INTO dataset.table VALUES (1)"
+expect_deny "MCP BQ UPDATE" "mcp__bigquery__query" sql "UPDATE dataset.table SET col = 1"
+expect_deny "MCP BQ DELETE" "mcp__bigquery__query" sql "DELETE FROM dataset.table WHERE id = 1"
+expect_deny "MCP BQ EXPORT" "mcp__bigquery__query" sql "EXPORT DATA OPTIONS(uri='gs://bucket/file') AS SELECT *"
+expect_allow "MCP BQ SELECT" "mcp__bigquery__query" sql "SELECT * FROM dataset.table LIMIT 10"
 
 # ─── PostToolUse deny behavior ──────────────────────────────────────────────
 if [[ -f ${OUTPUT_HOOK} ]]; then

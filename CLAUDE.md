@@ -114,7 +114,9 @@ present them to the user for manual application. Files under `.claude/` must be
 staged and committed manually — the hook blocks Bash commands that reference
 these paths. Content scanning also blocks Edit/Write on any file whose content
 mentions protected patterns (e.g., this CLAUDE.md) — draft those edits too. Hook
-regression tests: `bash tests/test_hook_security.sh`
+regression tests: `bash tests/test_hook_security.sh`. The test file contains
+sensitive fixture strings that trigger content scanning, so edits to it must
+also be drafted for manual application.
 
 ## Documentation
 

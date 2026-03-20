@@ -41,7 +41,7 @@ if echo "${sanitized}" | grep -qiE '(^|[ /])(\.env[.a-z]*|\.ssh|\.pem|\.key|\.ce
 fi
 
 # 2. Hook self-protection — block modifications to hook config and shell snapshots (allow reads)
-if echo "${sanitized}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/'; then
+if echo "${sanitized}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/|\.trunk/(trunk\.yaml|config/)'; then
   if [[ ${tool_name} != "Read" && ${tool_name} != "Grep" && ${tool_name} != "Glob" ]]; then
     deny
   fi
@@ -78,12 +78,12 @@ if echo "${sanitized}" | grep -qiE '\b(exec|eval)[[:space:]]*\(.*\bchr[[:space:]
 fi
 
 # 5c. Python __import__ with sensitive modules (bypasses exec() requirement)
-if echo "${sanitized}" | grep -qiE '\b__import__[[:space:]]*\(.*\b(os|subprocess|shutil)\b'; then
+if echo "${sanitized}" | grep -qiE '\b__import__[[:space:]]*\(.*\b(os|subprocess|shutil|pty|ctypes|socket|http|urllib|multiprocessing|signal)\b'; then
   deny
 fi
 
 # 5d. Python importlib bypass (avoids __import__ check)
-if echo "${sanitized}" | grep -qiE '\bimportlib\b.*\b(os|subprocess|shutil)\b'; then
+if echo "${sanitized}" | grep -qiE '\bimportlib\b.*\b(os|subprocess|shutil|pty|ctypes|socket|http|urllib|multiprocessing|signal)\b'; then
   deny
 fi
 
@@ -112,4 +112,11 @@ safe+='|CODESPACES|CODESPACE_NAME|REMOTE_CONTAINERS'
 stripped=$(echo "${sanitized}" | sed -E "s/\\$\\{?(${safe})\\}?//g")
 if echo "${stripped}" | grep -qE '\$\{?[A-Z_][A-Z0-9_]+\}?'; then
   deny
+fi
+
+# 8. Block BigQuery write/export operations (data exfiltration prevention)
+if [[ ${tool_name} == mcp__bigquery__* ]]; then
+  if echo "${sanitized}" | grep -qiE '\b(INSERT|UPDATE|DELETE|MERGE|EXPORT|COPY)\b'; then
+    deny
+  fi
 fi

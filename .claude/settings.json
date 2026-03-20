@@ -25,8 +25,14 @@
   },
   "permissions": {
     "allow": [
-      "Bash(gh issue:*)",
-      "Bash(gh pr:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue status:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr status:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr diff:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git diff:*)",
@@ -52,7 +58,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sed -i '/OP_SERVICE_ACCOUNT_TOKEN/d' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true"
+            "command": "sed -i -E '/(_SECRET|_TOKEN|_PASSWORD|_CREDENTIAL|PRIVATE_KEY|SERVICE_ACCOUNT|OP_SERVICE)/Id' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true"
           }
         ]
       }
@@ -71,7 +77,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|Read|Grep|WebFetch|WebSearch|mcp__.*",
+        "matcher": "Bash|Read|Edit|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*",
         "hooks": [
           {
             "type": "command",
