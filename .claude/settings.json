@@ -34,16 +34,11 @@
       "Bash(gh pr checks:*)",
       "Bash(gh pr diff:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)",
       "Bash(git diff:*)",
       "Bash(git status:*)",
       "Bash(trunk check:*)",
       "Bash(trunk fmt:*)",
-      "Bash(uv run dagster:*)",
-      "Bash(uv run pytest:*)",
-      "Bash(uv run scripts:*)",
       "Bash(uv tool list:*)",
-      "Bash(uv tool run:*)",
       "Read(/workspaces/teamster/**)",
       "Read(~/.claude/plugins/**)",
       "WebFetch(domain:docs.dagster.io)",
@@ -64,6 +59,16 @@
       }
     ],
     "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sed -i -E '/(_SECRET|_TOKEN|_PASSWORD|_CREDENTIAL|PRIVATE_KEY|SERVICE_ACCOUNT|OP_SERVICE)/Id' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true",
+            "statusMessage": "Sanitizing shell snapshots..."
+          }
+        ]
+      },
       {
         "matcher": "Read|Edit|Write|Bash|Grep|Glob|NotebookEdit|WebFetch|WebSearch|mcp__.*",
         "hooks": [

@@ -554,6 +554,9 @@ expect_deny "MCP BQ UPDATE" "mcp__bigquery__query" sql "UPDATE dataset.table SET
 expect_deny "MCP BQ DELETE" "mcp__bigquery__query" sql "DELETE FROM dataset.table WHERE id = 1"
 expect_deny "MCP BQ EXPORT" "mcp__bigquery__query" sql "EXPORT DATA OPTIONS(uri='gs://bucket/file') AS SELECT *"
 expect_allow "MCP BQ SELECT" "mcp__bigquery__query" sql "SELECT * FROM dataset.table LIMIT 10"
+expect_deny "MCP BQ DELETE mid-string" "mcp__bigquery__query" sql "SELECT 1; DELETE FROM dataset.table"
+expect_deny "MCP BQ CREATE TABLE" "mcp__bigquery__query" sql "CREATE TABLE dataset.new_table AS SELECT *"
+expect_allow "MCP BQ column named delete_flag" "mcp__bigquery__query" sql "SELECT delete_flag, merge_count FROM dataset.table"
 
 # ─── PostToolUse deny behavior ──────────────────────────────────────────────
 if [[ -f ${OUTPUT_HOOK} ]]; then

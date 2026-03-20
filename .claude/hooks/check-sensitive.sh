@@ -116,7 +116,7 @@ fi
 
 # 8. Block BigQuery write/export operations (data exfiltration prevention)
 if [[ ${tool_name} == mcp__bigquery__* ]]; then
-  if echo "${sanitized}" | grep -qiE '\b(INSERT|UPDATE|DELETE|MERGE|EXPORT|COPY)\b'; then
+  if echo "${sanitized}" | grep -qiE '\bINSERT[[:space:]]+INTO\b|\bUPDATE[[:space:]]+[a-zA-Z`_].*[[:space:]]+SET\b|\bDELETE[[:space:]]+FROM\b|\bMERGE[[:space:]]+INTO\b|\bEXPORT[[:space:]]+DATA\b|\bCREATE[[:space:]]+(OR[[:space:]]+REPLACE[[:space:]]+)?TABLE\b'; then
     deny
   fi
 fi
