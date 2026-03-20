@@ -17,7 +17,9 @@ with
 select
     rc.student__external_student_id as contact_id,
 
-    max(if(rc.top_choice_schools = '#1 Choice', true, false)) as has_overgrad_1st_choice,
+    max(
+        if(rc.top_choice_schools = '#1 Choice', true, false)
+    ) as has_overgrad_1st_choice,
 
     max(
         case

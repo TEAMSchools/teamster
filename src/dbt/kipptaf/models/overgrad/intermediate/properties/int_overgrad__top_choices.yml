@@ -1,10 +1,10 @@
 models:
   - name: int_overgrad__top_choices
     description: >
-      Student-level pivot of Overgrad top-choice school data, enriched with
-      ECC and application outcomes from KIPPADB. One row per student.
-      When a student has tagged multiple schools with the same rank, the first
-      school alphabetically is used for all rank-specific columns.
+      Student-level pivot of Overgrad top-choice school data, enriched with ECC
+      and application outcomes from KIPPADB. One row per student. When a student
+      has tagged multiple schools with the same rank, the first school
+      alphabetically is used for all rank-specific columns.
     data_tests:
       - unique:
           column_name: contact_id
@@ -37,18 +37,18 @@ models:
       - name: overgrad_1st_choice_ecc
         data_type: numeric
         description: >
-          Adjusted 6-year minority graduation rate (ECC) for the student's
-          #1 Choice school, sourced from the KIPPADB account record matched
-          on IPEDS ID. Null if the school has no matching KIPPADB account.
+          Adjusted 6-year minority graduation rate (ECC) for the student's #1
+          Choice school, sourced from the KIPPADB account record matched on
+          IPEDS ID. Null if the school has no matching KIPPADB account.
       - name: overgrad_1st_choice_is_submitted
         data_type: boolean
         description: >
-          True if the student has a submitted KIPPADB application to their
-          #1 Choice school. False if a KIPPADB application exists but has not
-          been submitted. Null if no matching KIPPADB application record exists.
+          True if the student has a submitted KIPPADB application to their #1
+          Choice school. False if a KIPPADB application exists but has not been
+          submitted. Null if no matching KIPPADB application record exists.
       - name: overgrad_1st_choice_is_accepted
         data_type: boolean
         description: >
-          True if the student has an accepted KIPPADB application to their
-          #1 Choice school. False if a KIPPADB application exists but was not
+          True if the student has an accepted KIPPADB application to their #1
+          Choice school. False if a KIPPADB application exists but was not
           accepted. Null if no matching KIPPADB application record exists.
