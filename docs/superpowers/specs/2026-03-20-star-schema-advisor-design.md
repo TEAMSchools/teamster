@@ -315,7 +315,9 @@ exactly which files changed:
   based on the natural grain implied by the fields being promoted; propose the
   key columns to the analyst before writing
 - Draft the corresponding properties YAML with `contract: enforced: true` and a
-  `dbt_utils.unique_combination_of_columns` test on the surrogate key
+  simple `unique:` test on the surrogate key column (prefer this over
+  `dbt_utils.unique_combination_of_columns` — the surrogate key already encodes
+  the grain)
 - Surface the complete draft to the analyst for review before writing the file
 
 **Prepare manifest then validate:**
