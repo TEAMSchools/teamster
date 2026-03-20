@@ -49,7 +49,6 @@ select
     csc.illuminate_subject_area,
     csc.is_foundations,
     csc.is_advanced_math,
-    csc.exclude_from_gradebook,
     csc.discipline,
 
     initcap(regexp_extract(ur._dbt_source_relation, r'kipp(\w+)_')) as region,
