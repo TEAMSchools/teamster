@@ -1,10 +1,12 @@
 # Codespace Sandbox Hardening — Design Spec
 
-**Date:** 2026-03-20 **Status:** Draft
+**Date:** 2026-03-20 **Updated:** 2026-03-21 **Status:** Draft
 
 ## Overview
 
-Three hardening measures applied to the GitHub Codespaces dev container:
+Six hardening measures applied to the GitHub Codespaces dev environment:
+
+**OS-level (devcontainer):**
 
 1. **tmpfs for secrets** — `/etc/secret-volume` moves to RAM-backed tmpfs;
    secrets never touch disk
@@ -13,7 +15,20 @@ Three hardening measures applied to the GitHub Codespaces dev container:
 3. **Sudo removal** — sudo is available only during `postCreate` for the single
    privileged setup step; removed before the container is handed to the user
 
-A fourth code change relocates SFTP transient download files from `env/` to
+**Claude Code sandbox:**
+
+1. **Sandbox mode** — Claude Code's sandboxed bash tool enabled with
+   `enableWeakerNestedSandbox` (required because Codespaces blocks unprivileged
+   user namespaces); provides OS-level filesystem and network isolation for all
+   bash subprocesses
+2. **Hook restructuring** — `check-sensitive.sh` reorganized by tool type;
+   path-based rules removed from Bash (sandbox owns that) while command-pattern
+   rules retained (sandbox cannot cover these)
+3. **Output scanning relaxation** — `check-output.sh` no longer scans Edit/Write
+   output; Claude is the author of that content, not the reader, and sandbox
+   network filtering prevents exfiltration
+
+A seventh code change relocates SFTP transient download files from `env/` to
 `/tmp/dagster/`, a side effect of consolidating all secrets into
 `/etc/secret-volume`.
 
@@ -30,27 +45,46 @@ are accessible to any process with filesystem read access. Additionally, `sudo`
 remains available indefinitely, and the container retains capabilities useful
 only to attackers (raw sockets, process inspection, network admin).
 
+The hooks (`check-sensitive.sh`, `check-output.sh`) were originally the sole
+protection layer. They use regex pattern matching on tool inputs and outputs —
+effective but best-effort against obfuscation. This spec adds two reinforcing
+layers beneath them.
+
+### Three-layer protection model
+
+| Layer            | What it covers                           | Strengths                                        |
+| ---------------- | ---------------------------------------- | ------------------------------------------------ |
+| **Hooks**        | All Claude tools (file tools, Bash, MCP) | Covers Claude's own tool use, output scanning    |
+| **Sandbox**      | Bash subprocesses (filesystem + network) | OS-level enforcement, can't be bypassed by regex |
+| **OS hardening** | Container-level (tmpfs, caps, sudo)      | Protects secrets at rest, limits privilege       |
+
+Each rule lives in the strongest layer that covers it. Redundancy across layers
+is only justified when the primary layer is unreliable (e.g., weaker nested
+sandbox mode).
+
 These measures raise the bar against:
 
 - Prompt-injected or accidental secret exfiltration via disk reads
 - Privilege escalation via unrestricted sudo
 - Network-layer attacks via raw socket or interface manipulation
-
-The hooks (`check-sensitive.sh`, `check-output.sh`) remain the primary
-deterrent; this spec adds OS-level reinforcement.
+- Claude autonomously reading secrets via bash subprocesses
+- Data exfiltration via bash subprocess network access
 
 ---
 
 ## Change Inventory
 
-| File                                      | Change                                                                                                                                                             |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `.devcontainer/devcontainer.json`         | Add one tmpfs mount + four `--cap-drop` flags to `runArgs`                                                                                                         |
-| `.devcontainer/scripts/postCreate.sh`     | Add `chown`, `mkdir`, `sudo rm` at end; three symlinks: `secret-volume/ → /etc/secret-volume`, `env/.env → /etc/secret-volume/.env`, `dagster-tmp/ → /tmp/dagster` |
-| `.devcontainer/scripts/inject-secrets.sh` | Remove sudo block; write `.env` to `/etc/secret-volume/.env`                                                                                                       |
-| `src/teamster/libraries/sftp/assets.py`   | Replace `./env/` prefix with `/tmp/dagster/` in all three factory functions                                                                                        |
-| `.gitignore`                              | Add `secret-volume` and `dagster-tmp`                                                                                                                              |
-| _(audit)_                                 | Verify `grep -r 'env/\.env'` returns only the symlink and `.gitignore`; update any config that resolves symlinks to real paths                                     |
+| File                                      | Change                                                                                                                         |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `.devcontainer/devcontainer.json`         | Add one tmpfs mount + four `--cap-drop` flags to `runArgs`                                                                     |
+| `.devcontainer/scripts/postCreate.sh`     | Add `bubblewrap socat` to apt install; add `chown`, `mkdir`, `sudo rm` at end; three symlinks                                  |
+| `.devcontainer/scripts/inject-secrets.sh` | Remove sudo block; write `.env` to `/etc/secret-volume/.env`                                                                   |
+| `src/teamster/libraries/sftp/assets.py`   | Replace `./env/` prefix with `/tmp/dagster/` in all three factory functions                                                    |
+| `.gitignore`                              | Add `secret-volume` and `dagster-tmp`                                                                                          |
+| `.claude/settings.json`                   | Add `sandbox` configuration block                                                                                              |
+| `.claude/hooks/check-sensitive.sh`        | Restructure by tool type; remove path rules for Bash                                                                           |
+| `.claude/hooks/check-output.sh`           | Remove Edit and Write from matcher                                                                                             |
+| _(audit)_                                 | Verify `grep -r 'env/\.env'` returns only the symlink and `.gitignore`; update any config that resolves symlinks to real paths |
 
 ---
 
@@ -80,8 +114,16 @@ ln -sf /etc/secret-volume /workspaces/teamster/secret-volume
 ln -sf /etc/secret-volume/.env /workspaces/teamster/env/.env
 ```
 
-`env/.env` remains accessible at its existing path — existing code and tool
-configs that reference `env/.env` continue to work without changes.
+The dagster-tmp/ symlink is for SFTP transient files (see Section 4).
+
+```bash
+mkdir -p /tmp/dagster
+ln -sf /tmp/dagster /workspaces/teamster/dagster-tmp
+```
+
+`env/.env` remains accessible at its existing path — non-Claude processes
+(Dagster, dbt, shell scripts) that reference `env/.env` continue to work without
+changes. Claude's tool access remains hook-blocked regardless of the symlink.
 
 Both symlink names are added to `.gitignore`.
 
@@ -180,15 +222,19 @@ SFTP assets currently stage downloaded files at
 `./env/{asset_key}/{remote_path}`. With `env/` no longer a general-purpose
 staging directory, these move to `/tmp/dagster/{asset_key}/{remote_path}`.
 
-All three factory functions in `src/teamster/libraries/sftp/assets.py` are
-updated:
+Five `./env/` references across the three factory functions are updated:
+
+- `build_sftp_file_asset` — line 180 (`sftp_get` local path)
+- `build_sftp_archive_asset` — line 312 (`sftp_get` local path), line 334
+  (`zipfile.extract` output path), line 338 (extracted file path)
+- `build_sftp_folder_asset` — line 454 (`sftp_get` local path)
 
 ```python
 # before
-local_filepath=f"./env/{context.asset_key.to_user_string()}/{file_match}"
+f"./env/{context.asset_key.to_user_string()}/..."
 
 # after
-local_filepath=f"/tmp/dagster/{context.asset_key.to_user_string()}/{file_match}"
+f"/tmp/dagster/{context.asset_key.to_user_string()}/..."
 ```
 
 Files in `/tmp/dagster/` are disk-backed, persist for the container session, and
@@ -204,9 +250,201 @@ symlink itself and `.gitignore`.
 
 ---
 
+## 5. Claude Code Sandbox Configuration
+
+### Why weaker nested sandbox
+
+GitHub Codespaces blocks unprivileged user namespaces
+(`kernel.unprivileged_userns_clone` cannot be set). Bubblewrap's normal mode
+requires these namespaces. The `enableWeakerNestedSandbox` option runs
+bubblewrap without namespace isolation — filesystem restrictions are less
+strictly enforced at the OS level, but network proxy filtering still runs
+outside the sandbox and remains effective.
+
+The Codespace VM provides outer isolation (ephemeral environment, managed
+network), so the weaker sandbox adds meaningful protection despite reduced
+enforcement strength.
+
+### Sandbox mode
+
+Regular permissions mode (not auto-allow). Sandbox provides OS-level filesystem
+and network enforcement, but all bash commands still go through the existing
+permission flow. Git and gh write commands (push, pr create, issue create)
+remain unlisted in the allow rules and continue to prompt for approval.
+
+Auto-allow mode was rejected because it would auto-approve any sandboxed bash
+command, including `git push` if `github.com` is an allowed network domain —
+creating an exfiltration vector through a broad allowed domain.
+
+### Configuration
+
+Added to `.claude/settings.json`:
+
+```json
+{
+  "sandbox": {
+    "enabled": true,
+    "enableWeakerNestedSandbox": true,
+    "filesystem": {
+      "denyRead": [
+        "~/.ssh",
+        "~/.config/gcloud",
+        "~/.kube",
+        "/etc/secret-volume",
+        "./secret-volume",
+        "/proc/",
+        "/dev/fd/",
+        "./.devcontainer/tpl/",
+        "./env/"
+      ],
+      "denyWrite": [
+        "./.claude/settings.json",
+        "./.claude/settings.local.json",
+        "./.claude/hooks/",
+        "./.claude/shell-snapshots/",
+        "./.devcontainer/scripts/",
+        "./.git/hooks/",
+        "./.trunk/"
+      ]
+    }
+  }
+}
+```
+
+Sandbox path prefixes match any path that starts with the prefix string.
+Trailing slashes are recommended — `/proc/` matches `/proc/1/environ` but not a
+hypothetical `/processor` path. All listed paths use trailing slashes for
+directories and no trailing slash for leaf paths (`~/.ssh` matches
+`~/.ssh/id_rsa`).
+
+### Path coverage
+
+Sandbox `denyRead` and `denyWrite` use path prefixes, not globs. Pattern-based
+sensitive paths (`.env*`, `*.pem`, `*.key`, `*.cer`, `credentials.json`,
+`secrets.json`) cannot be expressed as sandbox paths and remain in the hooks for
+file tool protection.
+
+| Sandbox path           | What it protects                   |
+| ---------------------- | ---------------------------------- |
+| `~/.ssh`               | SSH keys and config                |
+| `~/.config/gcloud`     | gcloud credentials, ADC, tokens    |
+| `~/.kube`              | Kubernetes config and auth cache   |
+| `/etc/secret-volume`   | 1Password-injected secrets (tmpfs) |
+| `/proc/`               | Process memory, environ, cmdline   |
+| `/dev/fd/`             | File descriptor access             |
+| `./.devcontainer/tpl/` | Secret templates                   |
+| `./secret-volume`      | Symlink to `/etc/secret-volume`    |
+| `./env/`               | Symlink dir to secret-volume       |
+
+### Dependency
+
+Bubblewrap and socat must be added to the apt install in `postCreate.sh`:
+
+```bash
+sudo apt-get -y install --no-install-recommends sshpass bubblewrap socat
+```
+
+---
+
+## 6. Hook Restructuring
+
+### Design principle
+
+Each protection rule lives in one layer. The hooks shift focus to Claude's
+autonomous tool use (file tools, MCP) — the threat sandbox cannot cover. Bash
+subprocess filesystem access is delegated to the sandbox. Bash command-pattern
+rules stay in the hooks because they prevent secrets from entering Claude's
+context, which sandbox cannot help with.
+
+### check-sensitive.sh — new structure
+
+The flat list of regex rules is reorganized into three sections by tool type:
+
+**Section 1 — File tools** (Read, Edit, Write, Grep, Glob, NotebookEdit,
+WebFetch, WebSearch):
+
+- Rule 1: sensitive path patterns (`.env*`, `.ssh`, `.pem`, `.key`, `.cer`,
+  `credentials.json`, `secrets.json`, `secret-volume`, `.devcontainer/tpl/`)
+- Rule 1b: file-extension patterns scoped to `path_only`
+- Rule 2: self-protection — block writes to hook scripts, settings, config
+  (Edit/Write/NotebookEdit only; Read/Grep/Glob still allowed)
+
+**Section 2 — Bash only:**
+
+- Rule 3/3b/3c: env var leakage (`printenv`, `declare -x`, `export -p`, `set`,
+  `env`)
+- Rule 4: 1Password CLI escalation (`op vault/item/read/document/inject`)
+- Rule 5/5a-5d: encoding bypass detection (base64/xxd/printf piped to bash,
+  Python exec/eval with chr/join/bytes/base64/codecs, `__import__` and
+  `importlib` with sensitive modules)
+- Rule 7: `$UPPER_CASE` variable expansion blocking (including `${!prefix*}`
+  indirect expansion)
+
+**Section 3 — BigQuery MCP:**
+
+- Rule 8: read-only enforcement (only SELECT/SHOW/DESCRIBE/WITH; deny
+  INSERT/UPDATE/DELETE/CREATE/DROP/ALTER/GRANT/REVOKE/CALL/MERGE/EXPORT)
+
+Note: `mcp__bigquery__ask_data_insights` accepts natural language, not SQL. It
+is blocked by Rule 8 (input does not start with SELECT/SHOW/DESCRIBE/WITH) and
+is also absent from the permissions allow list. This double-gating is
+intentional — the tool generates and executes SQL internally without user
+review.
+
+### Rules removed
+
+- **Rule 6** (`/proc/*/`, `/dev/fd/`) — removed entirely. Sandbox `denyRead`
+  covers bash subprocesses. Claude's file tool permissions already restrict Read
+  to project dir and plugins dir, blocking `/proc/` access.
+
+### Rules removed from Bash scope (gated on verification)
+
+Rules 1, 1b, and 2 are removed from Bash scope only after automated testing
+confirms the weaker nested sandbox reliably blocks every listed `denyRead` and
+`denyWrite` path. If verification fails, these rules remain as defense-in-depth
+until sandbox enforcement is confirmed.
+
+- **Rule 1/1b** (sensitive file paths) — sandbox `denyRead` covers bash
+  subprocess reads of these paths at OS level
+- **Rule 2** (self-protection writes) — sandbox `denyWrite` covers bash
+  subprocess writes to these paths at OS level
+
+### check-output.sh — relaxed matcher
+
+The PostToolUse hook matcher changes from:
+
+```text
+Bash|Read|Edit|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*
+```
+
+to:
+
+```text
+Bash|Read|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*
+```
+
+**Edit removed.** (Write was never in the matcher.) Rationale: when Claude
+writes content via Edit, it is the author — the content already exists in
+Claude's context. Output scanning this tool only catches false positives (e.g.,
+documentation containing example secret patterns like `op://` URIs). Sandbox
+network filtering prevents exfiltration of any content Claude has in context via
+bash subprocesses.
+
+### No changes
+
+- SessionStart shell-snapshot sanitization hook
+- PreToolUse:Bash shell-snapshot sanitization hook
+- PostToolUse:Edit|Write trunk fmt hook
+- settings.json hook matchers (tool-type branching is inside the scripts)
+- Permissions block (existing allow list unchanged)
+
+---
+
 ## Testing & Verification
 
 After implementation, verify:
+
+**OS hardening (Sections 1-4):**
 
 1. `docker inspect <container>` shows the tmpfs mount on `/etc/secret-volume`
 2. `ls -la /etc/secret-volume` shows `vscode` ownership and mode `700`
@@ -218,16 +456,47 @@ After implementation, verify:
 6. Dagster loads env vars correctly
 7. An SFTP asset materialization writes to `/tmp/dagster/` and is accessible via
    `dagster-tmp/`
-8. Hook tests pass: `bash tests/hooks/run_all.sh`
+
+**Sandbox (Section 5):**
+
+1. `bwrap` runs in weaker nested mode without error (sandbox status visible via
+   `/sandbox` in Claude Code CLI)
+2. Bash commands inside sandbox cannot read `~/.config/gcloud`, `~/.ssh`,
+   `~/.kube`, `/etc/secret-volume`, `/proc/`
+3. Bash commands inside sandbox cannot write to `.claude/hooks/`,
+   `.claude/settings.json`, `.devcontainer/scripts/`, `.git/hooks/`, `.trunk/`
+4. Bash commands requiring non-allowed network domains fall back to permission
+   prompt
+5. **Verification gate for hook removal:** For each `denyRead` path, confirm
+   `cat <path>` inside sandbox returns permission denied. For each `denyWrite`
+   path, confirm `touch <path>/test` inside sandbox returns permission denied.
+   If any path is not blocked, retain Rules 1/1b/2 for Bash in the hooks.
+
+**Hooks (Section 6):**
+
+1. Hook regression tests pass: `bash tests/hooks/run_all.sh`
+2. File tools (Read, Grep) are still blocked from sensitive paths (`.env`,
+   `.ssh`, etc.)
+3. Edit/Write to `.md` files containing example secret patterns (e.g., `op://`)
+   no longer triggers output scanning false positives
+4. Bash command-pattern rules still block `printenv`, `set`, `env`, `op` CLI,
+   encoding bypasses, and `$VAR` expansion
+
+**Future improvement:** Add an automated sandbox smoke test script that verifies
+`bwrap` denies reads/writes to listed paths. The weaker nested sandbox has less
+strict enforcement, so automated regression testing would catch behavioral
+changes in future Claude Code versions.
 
 ---
 
 ## Non-Goals
 
 - Full kernel-level sandbox (seccomp, AppArmor) — not configurable in managed
-  Codespaces
-- Network egress firewalling — not available at the Codespaces platform level
+  Codespaces; `enableWeakerNestedSandbox` is the available trade-off
+- Sandbox auto-allow mode — rejected due to exfiltration risk via broad allowed
+  domains (see Section 5)
 - Secret injection without container rebuild — accepted limitation for
   file-based secrets
-- `pkexec`/`su` privilege escalation paths — not addressed; out of scope for a
-  single-user dev container
+- `pkexec`/`su` privilege escalation paths — `su` is present but requires root's
+  password (not set in the base image); `pkexec` is not installed. Neither is
+  addressed further; out of scope for a single-user dev container
