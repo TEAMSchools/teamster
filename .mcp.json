@@ -26,6 +26,13 @@
         "DBT_PROJECT_DIR": "/workspaces/teamster/src/dbt/kipptaf",
         "DBT_PATH": "/workspaces/teamster/.venv/bin/dbt"
       }
+    },
+    "gke": {
+      "command": "gke-mcp",
+      "args": [],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
+      }
     }
   }
 }
