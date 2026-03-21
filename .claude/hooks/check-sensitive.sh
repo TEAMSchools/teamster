@@ -43,7 +43,7 @@ sanitized=${normalized//[\"\'\\]/}
 
 # Path-only fields for infrastructure-path rules (excludes content/new_string/old_string)
 path_only=$(echo "${input}" | jq -r '
-  [.tool_input.file_path, .tool_input.command, .tool_input.path] | map(select(. != null)) | join(" ")
+  [.tool_input.file_path, .tool_input.command, .tool_input.path, .tool_input.pattern] | map(select(. != null)) | join(" ")
 ')
 path_only=$(echo "${path_only}" | sed -E ':a; s#//+#/#g; s#/\./#/#g; s#/[^/]+/\.\./#/#g; ta')
 if [[ -n ${file_path} && -e ${file_path} ]]; then
@@ -52,25 +52,37 @@ fi
 path_only=${path_only//[\"\'\\]/}
 
 # 1. Sensitive file/directory patterns (case-insensitive)
-if echo "${sanitized}" | grep -qiE '(^|[ /])(\.env[.a-z]*|\.ssh|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/tpl/|\*?\.(cer|key|pem)([ /]|$)'; then
+if echo "${sanitized}" | grep -qiE '\.env[.a-z]*|(^|[ /])(\.ssh|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/tpl/'; then
   deny
 fi
 
-# 2. Hook self-protection — block modifications to hook config and shell snapshots (allow reads)
-if echo "${path_only}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/|\.trunk/(trunk\.yaml|config/)'; then
+# 1b. File-extension patterns scoped to paths/commands only — avoids false-positives on
+#     Python attribute access (e.g. asset.key) in code content written via Edit/Write
+if echo "${path_only}" | grep -qiE '\*?\.(cer|key|pem)([ /]|$)'; then
+  deny
+fi
+
+# 2. Hook self-protection — block modifications to hook scripts and shell snapshots (allow reads)
+#    *.md files under .claude/hooks/ are allowed (documentation, not executable config)
+if echo "${path_only}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/[^[:space:]]*\.sh|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/|\.trunk/(trunk\.yaml|config/)'; then
   if [[ ${tool_name} != "Read" && ${tool_name} != "Grep" && ${tool_name} != "Glob" ]]; then
     deny
   fi
 fi
 
 # 3. Environment variable / process memory leakage
-if echo "${sanitized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bexport -p\b|\bcompgen\b|\btypeset([[:space:]]+-x|\b)|/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|OP_SERVICE_ACCOUNT_TOKEN|OP_SERVICE|ACCOUNT_TOKEN|\benviron\b|\benv\b|\bgetenv\b'; then
+if echo "${sanitized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bexport -p\b|\bcompgen\b|\btypeset([[:space:]]+-x|\b)|/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|OP_SERVICE_ACCOUNT_TOKEN|OP_SERVICE|ACCOUNT_TOKEN|\benviron\b|\bgetenv\b'; then
   deny
 fi
 
 # 3b. Catch `set` as a standalone command (dumps all vars), but not `set -flags`
 # trunk-ignore(shellcheck/SC2016): regex contains literal $\( for matching $(set), not a command substitution
 if echo "${sanitized}" | grep -qE '(^|[;&|(`][[:space:]]*)set([[:space:]]*$|[[:space:]]*[|>&;)`])|\$\(set([[:space:]]|$|\))'; then
+  deny
+fi
+
+# 3c. Standalone `env` shell command — scoped to path/command only (not file content)
+if echo "${path_only}" | grep -qiE '\benv\b'; then
   deny
 fi
 

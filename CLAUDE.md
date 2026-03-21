@@ -94,31 +94,10 @@ The BigQuery MCP tool truncates results at 50 rows. When querying
 
 ### Secrets
 
-PreToolUse (`.claude/hooks/check-sensitive.sh`) and PostToolUse
-(`.claude/hooks/check-output.sh`) hooks guard secrets. All tool_input fields are
-scanned recursively. Read the hooks for full patterns. Key behavior:
-
-- **Secret paths** (`env/`, `secret-volume`, `.devcontainer/tpl/`, credentials,
-  `*.pem`/`*.key`/`*.cer`) — all tools blocked.
-- **Read-only paths** (`.claude/settings.json`, `.claude/hooks/`,
-  `.claude/shell-snapshots/`, `.devcontainer/scripts/`, `.git/hooks/`) —
-  Edit/Write/Bash blocked; Read/Grep/Glob allowed.
-- **Content scanning** — Write `content` and Edit `new_string` are scanned, so
-  test files with sensitive fixture strings must also be drafted for manual
-  application. Uppercase `export VAR=value` assignments in `new_string` also
-  trigger the scanner — use lowercase shell locals (`var=value`) as a
-  workaround.
-- **Output scanning** — Bash/Read/Grep/WebFetch/WebSearch/MCP tool output denied
-  if it contains secret material (keys, tokens, connection strings).
-
-To modify `.devcontainer/scripts/` or `.claude/hooks/`, draft changes and
-present them to the user for manual application. Files under `.claude/` must be
-staged and committed manually — the hook blocks Bash commands that reference
-these paths. Content scanning also blocks Edit/Write on any file whose content
-mentions protected patterns (e.g., this CLAUDE.md) — draft those edits too. Hook
-regression tests: `bash tests/hooks/run_all.sh` (or individual suites in
-`tests/hooks/test_*.sh`). Test files contain sensitive fixture strings that
-trigger content scanning, so edits must be drafted for manual application.
+PreToolUse/PostToolUse hooks in `.claude/hooks/` guard sensitive paths and
+content. Read `.claude/hooks/README.md` for full behavior, and the hook scripts
+for exact patterns. Hook scripts and `.devcontainer/scripts/` must be drafted
+for manual application. Regression tests: `bash tests/hooks/run_all.sh`.
 
 ## Documentation
 
