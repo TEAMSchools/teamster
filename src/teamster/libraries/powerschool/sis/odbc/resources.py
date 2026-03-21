@@ -72,12 +72,15 @@ class PowerSchoolODBCResource(ConfigurableResource):
             elif isinstance(query, TextClause):
                 record_name = query.description
 
-            for name, type, _, _, _, _, _ in cursor.description:
-                columns.append(name.lower())
+            for col in cursor.description or []:
+                columns.append(col.name.lower())
                 fields.append(
                     {
-                        "name": name.lower(),
-                        "type": ["null", *ORACLE_AVRO_SCHEMA_TYPES.get(type.name, [])],
+                        "name": col.name.lower(),
+                        "type": [
+                            "null",
+                            *ORACLE_AVRO_SCHEMA_TYPES.get(col.type_code.name, []),
+                        ],
                         "default": None,
                     }
                 )
