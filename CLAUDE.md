@@ -102,6 +102,10 @@ commit messages containing sensitive path strings (e.g., `./env/`) also trigger
 the scanner — write the message to `/tmp/commit-msg.txt` and use
 `git commit -F /tmp/commit-msg.txt`.
 
+Documents containing sensitive path strings (specs, plans, hook docs) also
+trigger the scanner on Write/Bash — draft to `/tmp/` and have the user copy into
+place, or present content in chat for manual saving.
+
 ## Documentation
 
 Two documentation systems serve different audiences — do not conflate them:
