@@ -9,6 +9,9 @@ sudo apt-get update -y &&
   sudo apt-get -y clean &&
   sudo rm -rf /var/lib/apt/lists/*
 
+# install pyright for Claude Code LSP
+npm install -g pyright
+
 # create env folder
 mkdir -p ./env
 

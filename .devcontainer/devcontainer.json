@@ -4,7 +4,8 @@
     "ghcr.io/devcontainers/features/common-utils:latest": {},
     "ghcr.io/devcontainers/features/github-cli:latest": {},
     "ghcr.io/itsmechlark/features/1password:latest": {},
-    "ghcr.io/jajera/features/gcloud-cli:latest": {}
+    "ghcr.io/jajera/features/gcloud-cli:latest": {},
+    "ghcr.io/devcontainers/features/node:1": {}
   },
   "mounts": [
     "type=tmpfs,destination=/etc/secret-volume,tmpfs-mode=0700,tmpfs-size=10485760"

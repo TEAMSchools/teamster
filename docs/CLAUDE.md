@@ -69,7 +69,7 @@ Naming convention: `YYYY-MM-DD-<brief-description>.md` (e.g.,
 
 ## When to Update Docs
 
-Per the root CLAUDE.md, update docs for engineering-level changes:
+Update docs for engineering-level changes:
 
 - New integration → update `reference/adding-an-integration.md` and the code
   location's CLAUDE.md
