@@ -66,6 +66,12 @@ if echo "${path_only}" | grep -qiE '\*?\.(cer|key|pem)([ /]|$)'; then
   deny
 fi
 
+# 1c. High-risk proc/dev paths — kept in all-tools scope (sandbox covers Bash, but
+#     VSCode extension doesn't support sandbox and MCP inputs bypass it)
+if echo "${sanitized}" | grep -qE '/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|/dev/fd/'; then
+  deny
+fi
+
 # 2. Hook self-protection — block modifications to hook scripts and shell snapshots (allow reads)
 #    *.md files under .claude/hooks/ are allowed (documentation, not executable config)
 if echo "${path_only}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/[^[:space:]]*\.sh|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/|\.trunk/(trunk\.yaml|config/)'; then

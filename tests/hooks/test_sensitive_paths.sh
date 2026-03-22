@@ -51,6 +51,8 @@ expect_deny2 "Edit with os.environ in new_string" Edit file_path "/tmp/x.py" new
 expect_deny2 "Write with op inject in content" Write file_path "/tmp/x.sh" content 'op inject -i template.env'
 expect_allow2 "Write with getenv in content (Rule 3 is Bash-only)" Write file_path "/tmp/x.py" content 'import os; os.getenv("SECRET")'
 
+expect_allow2 "Write with op vault (Rule 4 is Bash-only)" Write file_path "/tmp/x.sh" content 'op vault list'
+
 expect_allow2 "Write normal Python content" Write file_path "/tmp/x.py" content 'print("hello world")'
 expect_allow2 "Edit normal content" Edit file_path "/tmp/x.py" new_string 'x = 42'
 

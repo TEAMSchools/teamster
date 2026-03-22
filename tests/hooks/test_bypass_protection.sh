@@ -131,4 +131,14 @@ expect_allow "Read file named printenv" Read file_path "/tmp/printenv-results.tx
 expect_allow "Read file named op-docs" Read file_path "/tmp/op-vault-docs.txt"
 expect_allow "Grep for printenv in code" Grep pattern "printenv"
 
+# ─── Rule 1c: High-risk proc/dev paths (all tools) ──────────────────────
+echo ""
+echo -e "${YELLOW}Rule 1c: High-risk proc/dev paths (all tools)${NC}"
+
+expect_deny "/proc/self/environ via Read" Read file_path "/proc/self/environ"
+expect_deny "/proc/self/cmdline via Read" Read file_path "/proc/self/cmdline"
+expect_deny "/proc/1/environ via Bash" Bash command "cat /proc/1/environ"
+expect_deny "/dev/fd/ via Read" Read file_path "/dev/fd/3"
+expect_deny "/dev/fd/ via Bash" Bash command "cat /dev/fd/3"
+
 print_summary "Bypass Detection"

@@ -1,4 +1,31 @@
 {
+  "sandbox": {
+    "enabled": true,
+    "enableWeakerNestedSandbox": true,
+    "filesystem": {
+      "denyRead": [
+        "~/.ssh",
+        "~/.config/gcloud",
+        "~/.config/op/",
+        "~/.kube",
+        "/etc/secret-volume",
+        "./secret-volume",
+        "/proc/",
+        "/dev/fd/",
+        "./.devcontainer/tpl/",
+        "./env/"
+      ],
+      "denyWrite": [
+        "./.claude/settings.json",
+        "./.claude/settings.local.json",
+        "./.claude/hooks/",
+        "./.claude/shell-snapshots/",
+        "./.devcontainer/scripts/",
+        "./.git/hooks/",
+        "./.trunk/"
+      ]
+    }
+  },
   "permissions": {
     "allow": [
       "Bash(gh issue view:*)",
@@ -87,7 +114,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|Read|Edit|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*",
+        "matcher": "Bash|Read|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*",
         "hooks": [
           {
             "type": "command",
