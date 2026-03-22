@@ -5,19 +5,17 @@ git config push.autoSetupRemote true
 
 # install extra apt packages
 sudo apt-get update -y &&
-  sudo apt-get -y install --no-install-recommends sshpass &&
+  sudo apt-get -y install --no-install-recommends sshpass bubblewrap socat &&
   sudo apt-get -y clean &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
 mkdir -p ./env
-sudo mkdir -p /etc/secret-volume
 
 # restrict permissions on secrets-related paths
 chmod 755 .devcontainer/scripts/inject-secrets.sh
 chmod 600 .devcontainer/tpl/*
 chmod 700 ./env
-sudo chmod 700 /etc/secret-volume
 
 # restrict permissions on hook/config paths
 chmod 644 .claude/settings.json
@@ -104,3 +102,18 @@ export DBT_SEND_ANONYMOUS_USAGE_STATS=false
 (uv run dbt deps --project-dir=src/dbt/kipptaf &&
   uv run dbt parse --project-dir=src/dbt/kipptaf) &
 wait
+
+# transfer tmpfs ownership to vscode
+sudo chown vscode:vscode /etc/secret-volume
+
+# inject secrets
+.devcontainer/scripts/inject-secrets.sh
+
+# create convenience symlinks
+ln -sf /etc/secret-volume /workspaces/teamster/secret-volume
+ln -sf /etc/secret-volume/.env /workspaces/teamster/env/.env
+mkdir -p /tmp/dagster
+ln -sf /tmp/dagster /workspaces/teamster/dagster-tmp
+
+# remove sudo — must be last privileged step
+sudo rm -f /usr/local/bin/sudo /usr/bin/sudo
