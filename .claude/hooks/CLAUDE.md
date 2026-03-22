@@ -31,7 +31,8 @@ directory. See `check-sensitive.sh` for the full pattern list.
 **High-risk proc/dev paths** (all tools blocked) — `/proc/*/environ`,
 `/proc/*/cmdline`, `/dev/fd/`.
 
-**Read-only paths** (Edit/Write/Bash blocked; Read/Grep/Glob allowed):
+**Read-only paths** — Edit/Write blocked by `permissions.deny` in
+`settings.json`; Bash blocked by hook Rule 2. Read/Grep/Glob allowed:
 
 - `check-sensitive.sh` and `check-output.sh` themselves
 - `.claude/settings.json`, `.claude/settings.local.json`,

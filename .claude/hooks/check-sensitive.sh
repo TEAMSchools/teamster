@@ -87,18 +87,15 @@ if echo "${no_content}" | grep -qE '/proc/[^[:space:]]*/environ|/proc/[^[:space:
   deny
 fi
 
-# 2. Hook self-protection — block modifications to hook scripts and shell snapshots (allow reads)
-#    *.md files under .claude/hooks/ are allowed (documentation, not executable config)
-if echo "${path_only}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/[^[:space:]]*\.sh|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/|\.trunk/(trunk\.yaml|config/)'; then
-  if [[ ${tool_name} != "Read" && ${tool_name} != "Grep" && ${tool_name} != "Glob" ]]; then
-    deny
-  fi
-fi
-
 # ═══════════════════════════════════════════════════════════════════
 # Section 2: Bash only — command-pattern protection
 # ═══════════════════════════════════════════════════════════════════
 if [[ ${tool_name} == "Bash" ]]; then
+
+  # 2. Protected paths — Edit/Write handled by permissions.deny; Bash blocked here
+  if echo "${path_only}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/[^[:space:]]*\.sh|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/|\.trunk/(trunk\.yaml|config/)'; then
+    deny
+  fi
 
   # 3. Environment variable / process memory leakage
   if echo "${sanitized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bexport -p\b|\bcompgen\b|\btypeset([[:space:]]+-x|\b)|/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|OP_SERVICE_ACCOUNT_TOKEN|OP_SERVICE|ACCOUNT_TOKEN|\benviron\b|\bgetenv\b'; then

@@ -1,9 +1,18 @@
 {
   "permissions": {
     "deny": [
-      "Read(/etc/secret-volume/**)",
-      "Read(/workspaces/teamster/.devcontainer/tpl/**)",
-      "Read(/workspaces/teamster/env/**)",
+      "Edit(/.claude/hooks/**)",
+      "Edit(/.claude/settings.json)",
+      "Edit(/.claude/settings.local.json)",
+      "Edit(/.claude/shell-snapshots/**)",
+      "Edit(/.devcontainer/scripts/**)",
+      "Edit(/.git/hooks/**)",
+      "Edit(/.trunk/**)",
+      "Read(//dev/fd/**)",
+      "Read(//etc/secret-volume/**)",
+      "Read(//proc/**)",
+      "Read(/.devcontainer/tpl/**)",
+      "Read(/env/**)",
       "Read(~/.kube/**)",
       "Read(~/.ssh/**)"
     ],
