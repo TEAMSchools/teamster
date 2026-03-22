@@ -534,58 +534,20 @@ automatically. Verify via `/sandbox` in the Claude Code CLI.
 
 ---
 
-### Task 10: Sandbox verification gate
+### Task 10: Sandbox verification gate — COMPLETED
 
-This task determines whether Rules 1/1b/2 can be removed from Bash scope.
-Requires the Claude Code CLI (`npm install -g @anthropic-ai/claude-code`).
+**Result:** Weaker nested sandbox provides **no enforcement**. Rules 1/1b/2
+remain for Bash.
 
-- [ ] **Step 1: Enable sandbox via CLI**
+Verified 2026-03-22 with hooks disabled:
 
-Run `claude` in terminal, then type `/sandbox` to confirm sandbox is active.
-
-- [ ] **Step 2: Test sandbox denyRead paths**
-
-In the Claude Code CLI, attempt to read each denied path via bash:
-
-```bash
-cat ~/.ssh/id_rsa
-cat ~/.config/gcloud/application_default_credentials.json
-cat ~/.kube/config
-cat /etc/secret-volume/.env
-cat /proc/self/environ
-cat /dev/fd/0
-cat .devcontainer/tpl/.env.tpl
-cat secret-volume/.env
-cat env/.env
-```
-
-Expected: all return "Permission denied" or similar sandbox error.
-
-- [ ] **Step 3: Test sandbox denyWrite paths**
-
-```bash
-touch .claude/settings.json.test
-touch .claude/hooks/test
-touch .devcontainer/scripts/test
-touch .git/hooks/test
-touch .trunk/test
-```
-
-Expected: all return "Permission denied" or similar sandbox error.
-
-- [ ] **Step 4: Record results and decide**
-
-If ALL paths are blocked → Rules 1/1b/2 can be removed from Bash scope in a
-follow-up PR.
-
-If ANY path is NOT blocked → Rules 1/1b/2 remain for Bash. Document which paths
-failed.
-
-- [ ] **Step 5: Run full hook test suite**
-
-Run: `bash tests/hooks/run_all.sh`
-
-Expected: all suites pass.
+- [x] **denyRead**: all paths readable — `/proc/self/environ` leaked full
+      environment including tokens and credentials
+- [x] **denyWrite**: all paths writable — `.claude/hooks/`, `.git/hooks/`, etc.
+- [x] **Network**: no proxy — `curl` connected directly to arbitrary hosts
+- [x] **Decision**: Rules 1/1b/2 remain for Bash. Hooks + permissions are the
+      only effective security layers.
+- [x] **Hook test suite**: 271 tests pass across 6 suites.
 
 ---
 

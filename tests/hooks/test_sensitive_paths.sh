@@ -40,21 +40,26 @@ expect_allow "normal YAML file" Read file_path "/workspaces/teamster/dbt_project
 expect_allow "glob *.py" Glob pattern "*.py"
 expect_deny ".environment (matches .env regex)" Read file_path "/workspaces/teamster/.environment"
 
-# ─── Pattern 1b: Write/Edit content scanning ────────────────────────────────
+# ─── Pattern 1b: Write/Edit content scanning to Pattern 1b: Content is not scanned by Rule 1 (path_only scoping) ────────────────────────────────
 echo ""
 echo -e "${YELLOW}Pattern 1b: Write/Edit content scanning${NC}"
 
-expect_deny2 "Write with os.environ in content" Write file_path "/tmp/x.py" content 'import os; print(dict(os.environ))'
+expect_allow2 "Write with os.environ in content" Write file_path "/tmp/x.py" content 'import os; print(dict(os.environ))'
 expect_allow2 "Write with printenv in content (Rule 3 is Bash-only)" Write file_path "/tmp/x.sh" content 'printenv | grep SECRET'
-expect_deny2 "Write with .env reference in content" Write file_path "/tmp/x.py" content 'open(".env").read()'
-expect_deny2 "Edit with os.environ in new_string" Edit file_path "/tmp/x.py" new_string 'import os; print(os.environ)'
-expect_deny2 "Write with op inject in content" Write file_path "/tmp/x.sh" content 'op inject -i template.env'
+expect_allow2 "Write with .env reference in content" Write file_path "/tmp/x.py" content 'open(".env").read()'
+expect_allow2 "Edit with os.environ in new_string" Edit file_path "/tmp/x.py" new_string 'import os; print(os.environ)'
+expect_allow2 "Write with op inject in content" Write file_path "/tmp/x.sh" content 'op inject -i template.env'
 expect_allow2 "Write with getenv in content (Rule 3 is Bash-only)" Write file_path "/tmp/x.py" content 'import os; os.getenv("SECRET")'
 
 expect_allow2 "Write with op vault (Rule 4 is Bash-only)" Write file_path "/tmp/x.sh" content 'op vault list'
 
 expect_allow2 "Write normal Python content" Write file_path "/tmp/x.py" content 'print("hello world")'
 expect_allow2 "Edit normal content" Edit file_path "/tmp/x.py" new_string 'x = 42'
+
+# Confirm docs mentioning sensitive paths are allowed
+expect_allow2 "Write docs mentioning secret-volume" Write file_path "/tmp/docs.md" content "Secrets at /etc/secret-volume"
+expect_allow2 "Write docs mentioning devcontainer tpl" Write file_path "/tmp/docs.md" content "Templates in .devcontainer/tpl/"
+expect_allow2 "Edit new_string mentioning .env" Edit file_path "/tmp/docs.md" new_string "Copy .env.example to .env"
 
 # ─── Quote/backslash splitting bypass ─────────────────────────────────────────
 echo ""

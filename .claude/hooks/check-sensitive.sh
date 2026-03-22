@@ -51,12 +51,27 @@ if [[ -n ${file_path} && -e ${file_path} ]]; then
 fi
 path_only=${path_only//[\"\'\\]/}
 
+# All fields except Write/Edit body content (content, new_string, old_string)
+# Used by Rules 1/1c: catches MCP sql/nested fields but skips doc content
+if [[ ${tool_name} == "Write" || ${tool_name} == "Edit" ]]; then
+  no_content=$(echo "${input}" | jq -r '
+    [.tool_input | to_entries[] | select(.key | test("^(content|new_string|old_string)$") | not) | .value | .. | strings] | join(" ")
+  ')
+  no_content=$(echo "${no_content}" | sed -E ':a; s#//+#/#g; s#/\./#/#g; s#/[^/]+/\.\./#/#g; ta')
+  if [[ -n ${file_path} && -e ${file_path} ]]; then
+    no_content="${no_content} $(readlink -f "${file_path}" 2>/dev/null || echo "${file_path}")"
+  fi
+  no_content=${no_content//[\"\'\\]/}
+else
+  no_content=${sanitized}
+fi
+
 # ═══════════════════════════════════════════════════════════════════
 # Section 1: All tools — path-based protection
 # ═══════════════════════════════════════════════════════════════════
 
 # 1. Sensitive file/directory patterns (case-insensitive)
-if echo "${sanitized}" | grep -qiE '\.env[.a-z]*|(^|[ /])(\.ssh|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/tpl/'; then
+if echo "${no_content}" | grep -qiE '\.env[.a-z]*|(^|[ /])(\.ssh|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/tpl/'; then
   deny
 fi
 
@@ -68,7 +83,7 @@ fi
 
 # 1c. High-risk proc/dev paths — kept in all-tools scope (sandbox covers Bash, but
 #     VSCode extension doesn't support sandbox and MCP inputs bypass it)
-if echo "${sanitized}" | grep -qE '/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|/dev/fd/'; then
+if echo "${no_content}" | grep -qE '/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|/dev/fd/'; then
   deny
 fi
 

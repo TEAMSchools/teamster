@@ -270,31 +270,43 @@ symlink itself and `.gitignore`.
 
 ## 5. Claude Code Sandbox Configuration
 
-### Why weaker nested sandbox
+### Weaker nested sandbox — verified ineffective
 
 GitHub Codespaces silently strips `--cap-add=SYS_ADMIN` (see Section 2), leaving
 `CAP_SYS_ADMIN` absent from the container's bounding set. Bubblewrap's full mode
 requires user namespaces, which the OCI seccomp filter gates on `CAP_SYS_ADMIN`.
-The `enableWeakerNestedSandbox` option runs bubblewrap without namespace
-isolation — filesystem restrictions are less strictly enforced at the OS level,
-but network proxy filtering still runs outside the sandbox and remains
-effective.
+The `enableWeakerNestedSandbox` option is configured as a fallback but provides
+**no effective enforcement** in this environment.
 
-The Codespace VM provides outer isolation (ephemeral environment, managed
-network), so the weaker sandbox adds meaningful protection despite reduced
-enforcement strength. Hooks provide a second layer of path protection for all
-Claude tools (not just bash).
+Verified empirically (2026-03-22) with hooks disabled:
 
-### Sandbox mode
+- **Filesystem**: all `denyRead` paths readable (including `/proc/self/environ`
+  which leaked tokens and credentials), all `denyWrite` paths writable
+- **Network**: no proxy detected — `curl` connected directly to arbitrary
+  external hosts without restriction
 
-Regular permissions mode (not auto-allow). Sandbox provides OS-level filesystem
-and network enforcement, but all bash commands still go through the existing
-permission flow. Git and gh write commands (push, pr create, issue create)
-remain unlisted in the allow rules and continue to prompt for approval.
+The sandbox configuration is retained because it is zero-cost and will activate
+automatically if Anthropic improves weaker mode enforcement or Codespaces begins
+honoring `--cap-add=SYS_ADMIN`.
+
+### Actual defense model
+
+The effective security layers in this Codespace are:
+
+1. **Permissions** (regular mode, not auto-allow) — the user approves or denies
+   each bash command before execution. This is the primary gate against novel
+   attacks.
+2. **Hooks** (`check-sensitive.sh`, `check-output.sh`) — auto-block known
+   dangerous patterns before the user sees them (sensitive paths, env leakage,
+   encoding bypasses, secret patterns in output). Hooks protect all tools, not
+   just Bash.
+3. **Sandbox** — no effective enforcement today; future upside only.
 
 Auto-allow mode was rejected because it would auto-approve any sandboxed bash
-command, including `git push` if `github.com` is an allowed network domain —
-creating an exfiltration vector through a broad allowed domain.
+command without user confirmation. Since the sandbox provides no filesystem or
+network enforcement, auto-allow would remove the only effective gate
+(permissions) — allowing unrestricted access to sensitive paths and arbitrary
+network hosts.
 
 ### Configuration
 
@@ -479,19 +491,12 @@ After implementation, verify:
 
 **Sandbox (Section 5):**
 
-1. `bwrap` runs in weaker nested mode without error (sandbox status visible via
-   `/sandbox` in Claude Code CLI)
-2. Bash commands inside sandbox cannot read `~/.config/gcloud`, `~/.ssh`,
-   `~/.kube`, `/etc/secret-volume`, `/proc/`
-3. Bash commands inside sandbox cannot write to `.claude/hooks/`,
-   `.claude/settings.json`, `.devcontainer/scripts/`, `.git/hooks/`, `.trunk/`
-4. Bash commands requiring non-allowed network domains fall back to permission
-   prompt
-5. **Verification gate for hook removal:** For each `denyRead` path, confirm
-   `cat <path>` inside sandbox returns permission denied. For each `denyWrite`
-   path, confirm `touch <path>/test` inside sandbox returns permission denied.
-   If any path is not blocked (likely in weaker mode), retain Rules 1/1b/2 for
-   Bash in the hooks.
+1. Weaker nested sandbox is configured but provides **no** filesystem or network
+   enforcement (verified 2026-03-22 with hooks disabled — all `denyRead` paths
+   readable, all `denyWrite` paths writable, no network proxy detected)
+2. **Verification gate result:** Rules 1/1b/2 **must remain** for Bash in the
+   hooks — the sandbox does not block any paths
+3. Permissions (regular mode) + hooks are the only effective security layers
 
 **Hooks (Section 6):**
 
@@ -503,12 +508,11 @@ After implementation, verify:
 4. Bash command-pattern rules still block `printenv`, `set`, `env`, `op` CLI,
    encoding bypasses, and `$VAR` expansion
 
-**Future improvement:** Add an automated sandbox smoke test script that verifies
-`bwrap` denies reads/writes to listed paths. The weaker nested sandbox has less
-strict enforcement, so automated regression testing would catch behavioral
-changes in future Claude Code versions. If Codespaces ever starts honoring
-`--cap-add=SYS_ADMIN`, the full sandbox can be enabled by adding it to
-`runArgs`.
+**Future improvement:** If Codespaces ever starts honoring
+`--cap-add=SYS_ADMIN`, re-run the verification gate to confirm full sandbox
+enforcement, then remove Rules 1/1b/2 from Bash scope in the hooks. Add an
+automated sandbox smoke test to catch behavioral changes in future Claude Code
+versions.
 
 ---
 
