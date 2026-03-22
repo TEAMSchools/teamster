@@ -36,7 +36,8 @@
     "**/.trunk/*notifications/": true,
     "**/.trunk/*out/": true,
     "**/.trunk/*plugins/": true,
-    "**/dbt_packages/": true
+    "**/dbt_packages/": true,
+    "**/target/**": true
   },
   "files.watcherExclude": {
     "**/.trunk/*actions/": true,
@@ -44,7 +45,8 @@
     "**/.trunk/*notifications/": true,
     "**/.trunk/*out/": true,
     "**/.trunk/*plugins/": true,
-    "**/dbt_packages/**": true
+    "**/dbt_packages/**": true,
+    "**/target/**": true
   },
   "[jsonc]": {
     "editor.defaultFormatter": "trunk.io"
