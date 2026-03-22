@@ -5,7 +5,7 @@ git config push.autoSetupRemote true
 
 # install extra apt packages
 sudo apt-get update -y &&
-  sudo apt-get -y install --no-install-recommends sshpass bubblewrap socat &&
+  sudo apt-get -y install --no-install-recommends sshpass &&
   sudo apt-get -y clean &&
   sudo rm -rf /var/lib/apt/lists/*
 
