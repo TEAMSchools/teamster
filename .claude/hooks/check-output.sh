@@ -6,7 +6,7 @@ input=$(cat)
 tool_name=$(echo "${input}" | jq -r '.tool_name')
 
 # Scan output from tools that can return sensitive content
-[[ ! ${tool_name} =~ ^(Bash|Read|Edit|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*)$ ]] && exit 0
+[[ ! ${tool_name} =~ ^(Bash|Read|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*)$ ]] && exit 0
 
 # Extract all string values from tool_output (covers any output schema)
 combined=$(echo "${input}" | jq -r '[.tool_output | .. | strings] | join(" ")')
