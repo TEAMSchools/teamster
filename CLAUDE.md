@@ -94,55 +94,15 @@ The BigQuery MCP tool truncates results at 50 rows. When querying
 
 ### Secrets
 
-PreToolUse/PostToolUse hooks in `.claude/hooks/` guard sensitive paths and
-content. Read `.claude/hooks/README.md` for full behavior, and the hook scripts
-for exact patterns. Hook scripts and `.devcontainer/scripts/` must be drafted
-for manual application. Regression tests: `bash tests/hooks/run_all.sh`. Git
-commit messages containing sensitive path strings (e.g., `./env/`) also trigger
-the scanner — write the message to `/tmp/commit-msg.txt` and use
-`git commit -F /tmp/commit-msg.txt`.
-
-Documents containing sensitive path strings (specs, plans, hook docs) also
-trigger the scanner on Write/Bash — draft to `/tmp/` and have the user copy into
-place, or present content in chat for manual saving.
-
-## Documentation
-
-Two documentation systems serve different audiences — do not conflate them:
-
-- **dbt YAML** (properties files + exposures) — how analysts document models,
-  columns, tests, and external tool dependencies. Required for all dbt model
-  changes; enforced by the PR template checklist.
-- **MkDocs site** (`docs/`) — how engineers document infrastructure patterns,
-  architecture, and operational guides. Update when making engineering-level
-  changes:
-  - New integration → update `docs/reference/adding-an-integration.md` and the
-    code location's `CLAUDE.md`
-  - New or changed schedule/sensor → regenerate the automations catalog:
-    `uv run scripts/gen-automations-doc.py`
-  - New core pattern (IO manager behavior, automation condition, partitioning) →
-    update the relevant `docs/reference/` page
-
-Analysts adding or editing SQL models do not need to touch `docs/` — dbt YAML is
-the documentation mechanism for that work.
+Hooks in `.claude/hooks/` guard sensitive paths and content. Read
+`.claude/hooks/README.md` before editing hook scripts, protected paths, or files
+containing sensitive strings. Regression tests: `bash tests/hooks/run_all.sh`.
 
 ## Codespace / GKE Setup Quirks
 
-- `gcloud components install` requires `sudo` in the codespace
-  (`/usr/local/share/google-cloud-sdk` is root-owned)
-- `kubectl` and `gke-gcloud-auth-plugin` must be installed via
-  `gcloud components install`, not apt
-- Helm should be installed to `~/.local/bin` with
-  `USE_SUDO=false HELM_INSTALL_DIR=~/.local/bin` to avoid `/usr/local/bin`
-  permission errors
-- `/usr/local/bin/helm` may exist with `rwxr-xr--` perms (not executable by
-  `vscode`) — check for a local copy with `[[ -x "${helm_dir}/helm" ]]`, not
-  `command -v helm`
-- Claude Code sandbox (`/sandbox`) is a CLI-only command — the VSCode extension
-  does not support it. Install the CLI separately:
-  `npm install -g @anthropic-ai/claude-code`
-- Unprivileged user namespaces are blocked in Codespaces — bubblewrap requires
-  `enableWeakerNestedSandbox: true` in sandbox config
+- `sudo` is removed at the end of `postCreate.sh` — tooling that needs root
+  (`gcloud components install`, Helm) is installed during setup. To add new
+  components, update `postCreate.sh` and rebuild the container
 
 ## Architecture
 

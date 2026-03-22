@@ -88,5 +88,6 @@ echo ""
 echo -e "${YELLOW}PostToolUse: Non-scanned tools${NC}"
 
 check_output "Write tool output not scanned" clean Write "op://vault/item/field"
+check_output "Edit tool output not scanned" clean Edit "op://vault/item/field"
 
 print_summary "Output Scanner"

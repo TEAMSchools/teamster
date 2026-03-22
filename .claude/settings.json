@@ -1,27 +1,30 @@
 {
-  "extraKnownMarketplaces": {
-    "dagster-skills": {
-      "source": {
-        "source": "github",
-        "repo": "dagster-io/skills"
-      }
-    },
-    "dbt-agent-skills": {
-      "source": {
-        "source": "github",
-        "repo": "dbt-labs/dbt-agent-skills"
-      }
+  "sandbox": {
+    "enabled": true,
+    "enableWeakerNestedSandbox": true,
+    "filesystem": {
+      "denyRead": [
+        "~/.ssh",
+        "~/.config/gcloud",
+        "~/.config/op/",
+        "~/.kube",
+        "/etc/secret-volume",
+        "./secret-volume",
+        "/proc/",
+        "/dev/fd/",
+        "./.devcontainer/tpl/",
+        "./env/"
+      ],
+      "denyWrite": [
+        "./.claude/settings.json",
+        "./.claude/settings.local.json",
+        "./.claude/hooks/",
+        "./.claude/shell-snapshots/",
+        "./.devcontainer/scripts/",
+        "./.git/hooks/",
+        "./.trunk/"
+      ]
     }
-  },
-  "enabledPlugins": {
-    "dignified-python@dagster": true,
-    "dbt@dbt-agent-marketplace": true,
-    "dagster-expert@dagster": true,
-    "superpowers@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true
   },
   "permissions": {
     "allow": [
@@ -111,7 +114,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|Read|Edit|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*",
+        "matcher": "Bash|Read|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*",
         "hooks": [
           {
             "type": "command",
@@ -132,5 +135,30 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "dignified-python@dagster": true,
+    "dbt@dbt-agent-marketplace": true,
+    "dagster-expert@dagster": true,
+    "superpowers@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "dagster-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dagster-io/skills"
+      }
+    },
+    "dbt-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dbt-labs/dbt-agent-skills"
+      }
+    }
   }
 }

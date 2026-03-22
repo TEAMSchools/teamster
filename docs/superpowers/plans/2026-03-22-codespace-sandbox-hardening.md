@@ -475,9 +475,16 @@ git commit -m "refactor: restructure check-sensitive.sh by tool type, remove Rul
 
 This task requires a container rebuild to test OS-level changes (Tasks 1, 5, 6).
 
-- [ ] **Step 1: Rebuild the codespace**
+> **Important:** `devcontainer.json` changes (`mounts`, `runArgs`) are applied
+> at container creation time and must be on the branch the Codespace is checked
+> out to. The rebuild will NOT pick up changes from the feature branch if the
+> Codespace is on `main`. Merge the PR first (or check out the feature branch),
+> then do a **Full Rebuild** from the VS Code command palette.
 
-The user rebuilds via VS Code command palette: `Codespaces: Rebuild Container`.
+- [ ] **Step 1: Merge PR and rebuild the codespace**
+
+Merge the PR to `main`, then rebuild via VS Code command palette:
+`Codespaces: Full Rebuild Container` (not just "Rebuild Container").
 
 - [ ] **Step 2: Verify tmpfs mount**
 

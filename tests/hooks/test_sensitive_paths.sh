@@ -45,11 +45,13 @@ echo ""
 echo -e "${YELLOW}Pattern 1b: Write/Edit content scanning${NC}"
 
 expect_deny2 "Write with os.environ in content" Write file_path "/tmp/x.py" content 'import os; print(dict(os.environ))'
-expect_deny2 "Write with printenv in content" Write file_path "/tmp/x.sh" content 'printenv | grep SECRET'
+expect_allow2 "Write with printenv in content (Rule 3 is Bash-only)" Write file_path "/tmp/x.sh" content 'printenv | grep SECRET'
 expect_deny2 "Write with .env reference in content" Write file_path "/tmp/x.py" content 'open(".env").read()'
 expect_deny2 "Edit with os.environ in new_string" Edit file_path "/tmp/x.py" new_string 'import os; print(os.environ)'
 expect_deny2 "Write with op inject in content" Write file_path "/tmp/x.sh" content 'op inject -i template.env'
-expect_deny2 "Write with getenv in content" Write file_path "/tmp/x.py" content 'import os; os.getenv("SECRET")'
+expect_allow2 "Write with getenv in content (Rule 3 is Bash-only)" Write file_path "/tmp/x.py" content 'import os; os.getenv("SECRET")'
+
+expect_allow2 "Write with op vault (Rule 4 is Bash-only)" Write file_path "/tmp/x.sh" content 'op vault list'
 
 expect_allow2 "Write normal Python content" Write file_path "/tmp/x.py" content 'print("hello world")'
 expect_allow2 "Edit normal content" Edit file_path "/tmp/x.py" new_string 'x = 42'
@@ -94,5 +96,13 @@ expect_deny_json "MCP description field with .env" \
 expect_allow_json "Agent description with env word" \
   "$(jq -n '{tool_name: "Agent", tool_input: {description: "check the environment setup", prompt: "list files"}}')"
 # trunk-ignore-end(shellcheck/SC2312)
+
+# ─── Bash path protection (retained pending verification gate) ──────
+echo ""
+echo -e "${YELLOW}Bash path protection (retained pending verification gate)${NC}"
+
+expect_deny "bash cat .env" Bash command "cat .env"
+expect_deny "bash cat secret-volume" Bash command "cat /etc/secret-volume/token"
+expect_deny "bash cat devcontainer tpl" Bash command "cat .devcontainer/tpl/template"
 
 print_summary "Sensitive Paths"
