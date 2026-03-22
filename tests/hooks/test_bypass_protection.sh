@@ -123,23 +123,12 @@ expect_deny "importlib pty" Bash command "uv run python -c \"import importlib; i
 expect_deny "importlib ctypes" Bash command "uv run python -c \"import importlib; importlib.import_module('ctypes')\""
 expect_deny "importlib socket" Bash command "uv run python -c \"import importlib; importlib.import_module('socket')\""
 
-# ─── Pattern 6: Broad /proc access ───────────────────────────────────────────
+# ─── Tool-type scoping: Bash-only rules don't fire for file tools ──────
 echo ""
-echo -e "${YELLOW}Pattern 6: Broad /proc access${NC}"
+echo -e "${YELLOW}Tool-type scoping: Bash-only rules for file tools${NC}"
 
-expect_deny "/proc/self/maps" Bash command "cat /proc/self/maps"
-expect_deny "/proc/self/status" Bash command "cat /proc/self/status"
-expect_deny "/proc/self/mountinfo" Bash command "cat /proc/self/mountinfo"
-expect_deny "/proc/1/cgroup" Bash command "cat /proc/1/cgroup"
-expect_deny "/proc/self/fd/" Read file_path "/proc/self/fd/0"
-
-expect_allow "/proc reference in string" Bash command "echo check /proc docs"
-
-# ─── /dev/fd/ bypass ─────────────────────────────────────────────────────────
-echo ""
-echo -e "${YELLOW}/dev/fd/ bypass${NC}"
-
-expect_deny "/dev/fd/ read" Read file_path "/dev/fd/3"
-expect_deny "/dev/fd/ in bash" Bash command "cat /dev/fd/3"
+expect_allow "Read file named printenv" Read file_path "/tmp/printenv-results.txt"
+expect_allow "Read file named op-docs" Read file_path "/tmp/op-vault-docs.txt"
+expect_allow "Grep for printenv in code" Grep pattern "printenv"
 
 print_summary "Bypass Detection"

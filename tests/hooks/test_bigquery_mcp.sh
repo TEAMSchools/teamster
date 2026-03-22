@@ -30,7 +30,7 @@ echo -e "${YELLOW}Nested MCP tool_input fields${NC}"
 expect_deny_json "Nested MCP field with /proc" \
   "$(jq -n '{tool_name: "mcp__bigquery__query", tool_input: {options: {query: "cat /proc/self/environ"}}}')"
 
-expect_deny_json "Nested array with /proc" \
+expect_allow_json "Nested array with /proc (Rule 6 removed; covered by sandbox denyRead)" \
   "$(jq -n '{tool_name: "mcp__tool", tool_input: {commands: ["cat /proc/self/environ"]}}')"
 
 expect_allow_json "Nested MCP field harmless" \
