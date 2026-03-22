@@ -57,24 +57,6 @@ echo "8cb1cacbbaccf0940926643482d20e3b02efba80d1c93eafb4342079b1ebee95  toolbox"
 chmod +x toolbox
 sudo mv toolbox /usr/local/bin/
 
-# install gke-mcp
-curl --fail -L \
-  https://github.com/GoogleCloudPlatform/gke-mcp/releases/download/v0.10.0/gke-mcp_Linux_x86_64.tar.gz \
-  -o /tmp/gke-mcp.tar.gz ||
-  {
-    echo "❌ gke-mcp download failed"
-    exit 1
-  }
-echo "93ade2e2fd73e767a9db407c4908e17871b54d222aebf570344f5a0535bd0868  /tmp/gke-mcp.tar.gz" |
-  sha256sum -c - ||
-  {
-    echo "❌ gke-mcp checksum mismatch"
-    exit 1
-  }
-tar --no-same-owner -xzf /tmp/gke-mcp.tar.gz -C /tmp gke-mcp
-sudo install -m 0755 /tmp/gke-mcp /usr/local/bin/
-rm /tmp/gke-mcp.tar.gz /tmp/gke-mcp
-
 export DBT_SEND_ANONYMOUS_USAGE_STATS=false
 
 # bootstrap dbt projects
