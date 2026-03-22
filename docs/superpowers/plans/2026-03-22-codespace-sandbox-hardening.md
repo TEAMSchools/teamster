@@ -47,7 +47,7 @@ target path and line numbers. The user copies it into place.
 
 ---
 
-### Task 1: devcontainer.json — tmpfs mount + capability drops
+### Task 1: devcontainer.json — tmpfs mount + capability drops (SYS_ADMIN retained for bwrap)
 
 **Files:**
 
@@ -65,9 +65,10 @@ Add `mounts` and `runArgs` keys. Insert after the `"features"` block (after line
 "runArgs": [
   "--cap-drop=NET_RAW",
   "--cap-drop=SYS_PTRACE",
-  "--cap-drop=SYS_ADMIN",
   "--cap-drop=NET_ADMIN"
 ],
+// NOTE: SYS_ADMIN is intentionally NOT dropped — required for bwrap
+// user namespace creation. See spec Section 2 for details.
 ```
 
 - [ ] **Step 2: Verify JSON is valid**
@@ -521,6 +522,14 @@ Expected: `.env` and any template-based secrets present with mode 600.
 Run: `bwrap --version`
 
 Expected: version string output.
+
+- [ ] **Step 8: Verify bubblewrap can create user namespaces**
+
+Run: `bwrap --ro-bind / / -- echo "bwrap works"`
+
+Expected: prints `bwrap works`. If this fails with "No permissions to create new
+namespace", `CAP_SYS_ADMIN` is missing from the bounding set — check that
+`--cap-drop=SYS_ADMIN` is NOT in `runArgs`.
 
 ---
 

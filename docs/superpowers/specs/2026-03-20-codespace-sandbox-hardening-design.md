@@ -1,6 +1,6 @@
 # Codespace Sandbox Hardening — Design Spec
 
-**Date:** 2026-03-20 **Updated:** 2026-03-21 **Status:** Draft
+**Date:** 2026-03-20 **Updated:** 2026-03-22 **Status:** Draft
 
 ## Overview
 
@@ -10,8 +10,8 @@ Six hardening measures applied to the GitHub Codespaces dev environment:
 
 1. **tmpfs for secrets** — `/etc/secret-volume` moves to RAM-backed tmpfs;
    secrets never touch disk
-2. **Capability drops** — four dangerous Linux capabilities dropped at container
-   start via `runArgs`
+2. **Capability drops** — three dangerous Linux capabilities dropped at
+   container start via `runArgs` (NET_RAW, SYS_PTRACE, NET_ADMIN)
 3. **Sudo removal** — sudo is available only during `postCreate` for the single
    privileged setup step; removed before the container is handed to the user
 
@@ -143,23 +143,37 @@ Both symlink names are added to `.gitignore`.
 "runArgs": [
   "--cap-drop=NET_RAW",
   "--cap-drop=SYS_PTRACE",
-  "--cap-drop=SYS_ADMIN",
   "--cap-drop=NET_ADMIN"
 ]
 ```
 
-| Cap          | What it removes                                                     |
-| ------------ | ------------------------------------------------------------------- |
-| `NET_RAW`    | Raw socket access — prevents packet sniffing and crafting           |
-| `SYS_PTRACE` | Process memory inspection — prevents reading other processes        |
-| `SYS_ADMIN`  | Broad system admin (mount, namespace, keyring) — highest-value drop |
-| `NET_ADMIN`  | Network config (iptables, interface management)                     |
+| Cap          | What it removes                                              |
+| ------------ | ------------------------------------------------------------ |
+| `NET_RAW`    | Raw socket access — prevents packet sniffing and crafting    |
+| `SYS_PTRACE` | Process memory inspection — prevents reading other processes |
+| `NET_ADMIN`  | Network config (iptables, interface management)              |
 
-`SYS_ADMIN` is absent from Docker's default non-privileged cap set already;
-dropping it explicitly guards against future `--privileged` drift.
+### Why SYS_ADMIN is NOT dropped
+
+`CAP_SYS_ADMIN` must remain in the bounding set for bubblewrap (bwrap) to
+function. The Docker/OCI default seccomp profile allows the `clone`/`unshare`
+syscalls with `CLONE_NEWUSER` **only when** `CAP_SYS_ADMIN` is present in the
+bounding set. Dropping it causes bwrap to fail with "No permissions to create
+new namespace", which completely disables the Claude Code sandbox.
+
+This was verified empirically: `kernel.unprivileged_userns_clone = 1` and
+`max_user_namespaces = 63954` in the Codespace kernel, but
+`unshare(CLONE_NEWUSER)` returns `EPERM` when `SYS_ADMIN` is absent due to the
+seccomp filter (`Seccomp: 2`, 1 active filter).
+
+The risk of retaining `SYS_ADMIN` is mitigated by:
+
+- sudo removal after postCreate (no root escalation path)
+- The sandbox itself restricts filesystem access for bash subprocesses
+- Hooks guard sensitive paths for all Claude tools
 
 No development workflow (uv, Python, Dagster, dbt, GCS/BigQuery API calls, SFTP,
-1Password CLI) requires any of these capabilities.
+1Password CLI) requires NET_RAW, SYS_PTRACE, or NET_ADMIN.
 
 ---
 
@@ -252,18 +266,17 @@ symlink itself and `.gitignore`.
 
 ## 5. Claude Code Sandbox Configuration
 
-### Why weaker nested sandbox
+### Sandbox mode selection
 
-GitHub Codespaces blocks unprivileged user namespaces
-(`kernel.unprivileged_userns_clone` cannot be set). Bubblewrap's normal mode
-requires these namespaces. The `enableWeakerNestedSandbox` option runs
-bubblewrap without namespace isolation — filesystem restrictions are less
-strictly enforced at the OS level, but network proxy filtering still runs
-outside the sandbox and remains effective.
+With `CAP_SYS_ADMIN` retained (see Section 2), bubblewrap can create user
+namespaces and the full sandbox mode should function. The
+`enableWeakerNestedSandbox` option is kept as a fallback — if the full sandbox
+fails for any reason (e.g., future Codespaces kernel changes), Claude Code falls
+back to weaker mode rather than disabling the sandbox entirely.
 
-The Codespace VM provides outer isolation (ephemeral environment, managed
-network), so the weaker sandbox adds meaningful protection despite reduced
-enforcement strength.
+In full sandbox mode, bubblewrap provides OS-level filesystem isolation for bash
+subprocesses, enforcing `denyRead` and `denyWrite` paths at the syscall level.
+Network proxy filtering runs outside the sandbox in both modes.
 
 ### Sandbox mode
 
@@ -459,8 +472,8 @@ After implementation, verify:
 
 **Sandbox (Section 5):**
 
-1. `bwrap` runs in weaker nested mode without error (sandbox status visible via
-   `/sandbox` in Claude Code CLI)
+1. `bwrap --ro-bind / / -- echo "bwrap works"` succeeds (confirms user namespace
+   creation is allowed by the kernel and seccomp profile)
 2. Bash commands inside sandbox cannot read `~/.config/gcloud`, `~/.ssh`,
    `~/.kube`, `/etc/secret-volume`, `/proc/`
 3. Bash commands inside sandbox cannot write to `.claude/hooks/`,
@@ -483,16 +496,16 @@ After implementation, verify:
    encoding bypasses, and `$VAR` expansion
 
 **Future improvement:** Add an automated sandbox smoke test script that verifies
-`bwrap` denies reads/writes to listed paths. The weaker nested sandbox has less
-strict enforcement, so automated regression testing would catch behavioral
-changes in future Claude Code versions.
+`bwrap` denies reads/writes to listed paths. Automated regression testing would
+catch behavioral changes in future Claude Code versions or Codespaces kernel
+updates.
 
 ---
 
 ## Non-Goals
 
-- Full kernel-level sandbox (seccomp, AppArmor) — not configurable in managed
-  Codespaces; `enableWeakerNestedSandbox` is the available trade-off
+- Custom seccomp profiles — not configurable in managed Codespaces; the default
+  OCI seccomp profile is used, which gates `CLONE_NEWUSER` on `CAP_SYS_ADMIN`
 - Sandbox auto-allow mode — rejected due to exfiltration risk via broad allowed
   domains (see Section 5)
 - Secret injection without container rebuild — accepted limitation for

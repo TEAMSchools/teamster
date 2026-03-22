@@ -32,6 +32,10 @@ curl -LsSf https://astral.sh/uv/install.sh -o /tmp/uv-install.sh &&
   sh /tmp/uv-install.sh &&
   rm /tmp/uv-install.sh
 
+# add uv to PATH for this shell session
+# trunk-ignore(shellcheck/SC1091): sourced file created at runtime by uv installer
+source "${HOME}/.local/bin/env"
+
 # install uv dependencies
 uv tool install datamodel-code-generator
 uv tool install dagster-dg

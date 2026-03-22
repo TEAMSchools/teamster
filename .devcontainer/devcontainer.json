@@ -13,7 +13,6 @@
   "runArgs": [
     "--cap-drop=NET_RAW",
     "--cap-drop=SYS_PTRACE",
-    "--cap-drop=SYS_ADMIN",
     "--cap-drop=NET_ADMIN"
   ],
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
