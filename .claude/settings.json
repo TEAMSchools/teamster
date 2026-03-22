@@ -1,31 +1,31 @@
 {
-  "sandbox": {
-    "enabled": true,
-    "enableWeakerNestedSandbox": true,
-    "filesystem": {
-      "denyRead": [
-        "~/.ssh",
-        "~/.config/gcloud",
-        "~/.config/op/",
-        "~/.kube",
-        "/etc/secret-volume",
-        "./secret-volume",
-        "/proc/",
-        "/dev/fd/",
-        "./.devcontainer/tpl/",
-        "./env/"
-      ],
-      "denyWrite": [
-        "./.claude/settings.json",
-        "./.claude/settings.local.json",
-        "./.claude/hooks/",
-        "./.claude/shell-snapshots/",
-        "./.devcontainer/scripts/",
-        "./.git/hooks/",
-        "./.trunk/"
-      ]
-    }
-  },
+  // "sandbox": {
+  //   "enabled": false,
+  //   "enableWeakerNestedSandbox": true,
+  //   "filesystem": {
+  //     "denyRead": [
+  //       "~/.ssh",
+  //       "~/.config/gcloud",
+  //       "~/.config/op/",
+  //       "~/.kube",
+  //       "/etc/secret-volume",
+  //       "./secret-volume",
+  //       "/proc/",
+  //       "/dev/fd/",
+  //       "./.devcontainer/tpl/",
+  //       "./env/"
+  //     ],
+  //     "denyWrite": [
+  //       "./.claude/settings.json",
+  //       "./.claude/settings.local.json",
+  //       "./.claude/hooks/",
+  //       "./.claude/shell-snapshots/",
+  //       "./.devcontainer/scripts/",
+  //       "./.git/hooks/",
+  //       "./.trunk/"
+  //     ]
+  //   }
+  // },
   "permissions": {
     "allow": [
       "Bash(gh issue view:*)",

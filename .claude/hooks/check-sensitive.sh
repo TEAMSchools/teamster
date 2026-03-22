@@ -71,7 +71,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════
 
 # 1. Sensitive file/directory patterns (case-insensitive)
-if echo "${no_content}" | grep -qiE '\.env[.a-z]*|(^|[ /])(\.ssh|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/tpl/'; then
+if echo "${no_content}" | grep -qiE '\.env[.a-z]*|(^|[ /])(\.ssh|\.kube|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/tpl/'; then
   deny
 fi
 
@@ -81,8 +81,8 @@ if echo "${path_only}" | grep -qiE '\*?\.(cer|key|pem)([ /]|$)'; then
   deny
 fi
 
-# 1c. High-risk proc/dev paths — kept in all-tools scope (sandbox covers Bash, but
-#     VSCode extension doesn't support sandbox and MCP inputs bypass it)
+# 1c. High-risk proc/dev paths — kept in all-tools scope (sandbox is ineffective
+#     in Codespaces; hooks are the sole enforcement layer)
 if echo "${no_content}" | grep -qE '/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|/dev/fd/'; then
   deny
 fi

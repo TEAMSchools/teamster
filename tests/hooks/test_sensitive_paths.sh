@@ -28,6 +28,13 @@ expect_deny "secrets.json" Read file_path "/tmp/secrets.json"
 expect_deny "credentials.json" Read file_path "/tmp/credentials.json"
 expect_deny "secret-volume" Read file_path "/etc/secret-volume/token"
 expect_deny ".devcontainer/tpl/" Read file_path ".devcontainer/tpl/.env.tpl"
+
+# .kube directory (kubeconfig contains cluster certs and auth tokens)
+expect_deny ".kube directory" Read file_path "/home/vscode/.kube/config"
+expect_deny ".kube subdirectory" Read file_path "/home/vscode/.kube/cache/discovery"
+expect_deny ".kube via Bash" Bash command "cat ~/.kube/config"
+expect_deny2 ".kube via Grep" Grep pattern "token" path "/home/vscode/.kube/"
+
 expect_deny ".env.local" Read file_path "/workspaces/teamster/.env.local"
 expect_deny ".env.production" Read file_path "/workspaces/teamster/.env.production"
 expect_deny ".env.backup" Read file_path "/workspaces/teamster/.env.backup"

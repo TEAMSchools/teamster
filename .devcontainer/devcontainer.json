@@ -13,7 +13,8 @@
   "runArgs": [
     "--cap-drop=NET_RAW",
     "--cap-drop=SYS_PTRACE",
-    "--cap-drop=NET_ADMIN"
+    "--cap-drop=NET_ADMIN",
+    "--cap-drop=DAC_OVERRIDE"
   ],
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
   "postStartCommand": "bash .devcontainer/scripts/postStart.sh",

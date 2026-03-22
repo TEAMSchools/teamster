@@ -26,7 +26,37 @@ hook system that:
 
 ### Architecture
 
-The system consists of three components:
+The original design envisioned a three-layer defense model:
+
+| Layer            | What it covers                           | Status                    |
+| ---------------- | ---------------------------------------- | ------------------------- |
+| **Hooks**        | All Claude tools (file tools, Bash, MCP) | Active — sole enforcement |
+| **Sandbox**      | Bash subprocesses (filesystem + network) | Disabled — non-functional |
+| **OS hardening** | Container-level (tmpfs, caps, sudo)      | Active                    |
+
+The sandbox layer was disabled after empirical verification (see
+[Phase 5](#evolution-and-lessons-learned)). Hooks and OS hardening are the
+effective security layers.
+
+#### OS Hardening
+
+Three container-level measures applied via `devcontainer.json` and
+`postCreate.sh`:
+
+1. **tmpfs for secrets** — `/etc/secret-volume` is a RAM-backed tmpfs mount (10
+   MB, mode 0700). Secrets never touch disk. Injected via 1Password
+   (`op inject`) with `umask 077` and `install -m 600` for all output files.
+   Template files are validated as non-symlinks before injection.
+2. **Capability drops** — `NET_RAW`, `SYS_PTRACE`, and `NET_ADMIN` dropped at
+   container start. Prevents packet sniffing, process memory inspection, and
+   network configuration changes.
+3. **Sudo removal** — `sudo` is available only during `postCreate` for one
+   privileged step (`chown` of the tmpfs mount), then permanently deleted. No
+   privilege escalation path exists for the container lifetime.
+
+#### Hook System
+
+The hook system consists of three components:
 
 #### 1. PreToolUse Hook — `check-sensitive.sh`
 
@@ -36,13 +66,13 @@ tool invocation JSON from stdin and applies eight pattern groups:
 
 | #    | Pattern Group                     | Purpose                                                                                                                                                                          |
 | ---- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | Sensitive file/directory patterns | Block `.env*`, `.ssh`, `*.pem/key/cer`, `secrets.json`, `credentials.json`, `secret-volume`, `.devcontainer/tpl/`                                                                |
+| 1    | Sensitive file/directory patterns | Block `.env*`, `.ssh`, `.kube`, `*.pem/key/cer`, `secrets.json`, `credentials.json`, `secret-volume`, `.devcontainer/tpl/`                                                       |
 | 2    | Hook self-protection              | Block Edit/Write/Bash on `.claude/settings.json`, `.claude/hooks/`, `.claude/shell-snapshots/`, `.devcontainer/scripts/`, `.git/hooks/`, `.trunk/` config — allow Read/Grep/Glob |
 | 3    | Environment variable leakage      | Block `printenv`, `declare -x`, `export -p`, `compgen`, `os.environ`, `os.getenv`, `/proc/*/environ`, bare `env`, bare `set` (not `set -flags`)                                  |
 | 4    | 1Password CLI escalation          | Block `op vault`, `op item`, `op read`, `op document`, `op inject`                                                                                                               |
 | 5    | Encoding-based bypass             | Block base64/xxd/printf piped to bash/sh/source, process substitution, Python exec/eval with chr/join/bytes/base64/codecs/fromhex                                                |
 | 5c/d | Python import bypass              | Block `__import__` and `importlib` with dangerous modules (os, subprocess, shutil, pty, ctypes, socket, http, urllib, multiprocessing, signal)                                   |
-| 6    | /proc and /dev/fd access          | Broad block on `/proc/*/` and `/dev/fd/`                                                                                                                                         |
+| 1c   | /proc and /dev/fd access          | Block `/proc/*/environ`, `/proc/*/cmdline`, `/dev/fd/` — scoped to `no_content` (all tools, path fields only)                                                                    |
 | 7    | Shell variable expansion          | Block `$UPPER_CASE` vars not on an allowlist of ~60 safe variables; block `${!prefix*}` indirect expansion                                                                       |
 | 8    | BigQuery DML/export block         | For `mcp__bigquery__*` tools: require SELECT/SHOW/DESCRIBE/WITH, deny INSERT/UPDATE/DELETE/MERGE/EXPORT/CREATE/DROP/ALTER/GRANT/REVOKE/CALL                                      |
 
@@ -61,11 +91,19 @@ Key design decisions in the PreToolUse hook:
 - **Allowlist over denylist for `$VAR`**: Rather than trying to enumerate every
   dangerous variable, we strip known-safe references and deny anything remaining
   that matches `$UPPER_CASE`.
+- **`no_content` scoping**: Rules 1 and 1c use a `no_content` variable that
+  excludes Write/Edit body fields (`content`, `new_string`, `old_string`). This
+  prevents false positives when writing documentation that references sensitive
+  paths (e.g., mentioning `.env` or `secret-volume` in a markdown file) while
+  maintaining full protection on `file_path`, `command`, MCP `sql`, and nested
+  `tool_input` fields. Rule 1b uses `path_only` (even narrower) to avoid false
+  positives on Python attribute access like `asset.key`.
 
 #### 2. PostToolUse Hook — `check-output.sh`
 
-Scans output from Bash, Read, Edit, Grep, NotebookEdit, WebFetch, WebSearch, and
-all MCP tools for patterns that indicate leaked secrets:
+Scans output from Bash, Read, Grep, NotebookEdit, WebFetch, WebSearch, and all
+MCP tools for patterns that indicate leaked secrets (Edit is excluded — it does
+not produce content that could contain secrets):
 
 - `op://` references (1Password URIs)
 - Private key headers (RSA, EC, OPENSSH)
@@ -93,8 +131,15 @@ The settings file ties the hooks together with:
   tools.
 - **PostToolUse (formatter)**: Runs `trunk fmt` asynchronously after Edit/Write.
 - **Permissions allowlist**: Scoped `Bash()` permissions for git/gh/trunk/uv,
-  `Read()` for the workspace and plugins, specific `WebFetch` domains, and MCP
-  tools.
+  `Read()` for the workspace and plugins, and MCP tools.
+
+**Sandbox disabled**: The Claude Code sandbox (bubblewrap) requires
+`CAP_SYS_ADMIN` for Linux user namespaces. GitHub Codespaces silently strips
+`--cap-add=SYS_ADMIN` from `devcontainer.json` `runArgs` — the capability never
+appears in the container's bounding set. `enableWeakerNestedSandbox` also
+provides no filesystem or network enforcement in Codespaces. The sandbox config
+in `settings.json` is commented out because it cannot function and would be
+misleading. **Hooks and permissions are the sole enforcement layers.**
 
 ### Test Suite
 
@@ -103,12 +148,12 @@ test files under `tests/hooks/`:
 
 | File                        | Tests | Coverage                                                                                                                                |
 | --------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `test_sensitive_paths.sh`   | 26    | File patterns, content scanning, quote bypass, path traversal, symlinks, Agent description scoping                                      |
-| `test_env_protection.sh`    | 40    | printenv/declare/export/compgen/typeset, os.environ, bare `set`, `$VAR` allowlist                                                       |
-| `test_bypass_protection.sh` | 48    | 1Password CLI, base64/xxd/printf encoding, process substitution, Python exec/eval construction, `__import__`, importlib, /proc, /dev/fd |
-| `test_output_scanner.sh`    | 27    | Secret pattern detection, tool-specific scanning, MCP output, high-entropy boundary (119/120/121 chars)                                 |
-| `test_bigquery_mcp.sh`      | 19    | Generic field extraction, nested fields, DML/DDL/export blocking                                                                        |
-| `test_self_protection.sh`   | 18    | Settings, hooks, shell-snapshots, .devcontainer/scripts, .git/hooks, .trunk config                                                      |
+| `test_sensitive_paths.sh`   | 49    | File patterns (incl. `.kube`), content scanning, quote bypass, path traversal, symlinks, Agent description scoping                      |
+| `test_env_protection.sh`    | 60    | printenv/declare/export/compgen/typeset, os.environ, bare `set`, `$VAR` allowlist                                                       |
+| `test_bypass_protection.sh` | 71    | 1Password CLI, base64/xxd/printf encoding, process substitution, Python exec/eval construction, `__import__`, importlib, /proc, /dev/fd |
+| `test_output_scanner.sh`    | 39    | Secret pattern detection, tool-specific scanning, MCP output, high-entropy boundary (119/120/121 chars)                                 |
+| `test_bigquery_mcp.sh`      | 27    | Generic field extraction, nested fields, DML/DDL/export blocking                                                                        |
+| `test_self_protection.sh`   | 29    | Settings, hooks, shell-snapshots, .devcontainer/scripts, .git/hooks, .trunk config                                                      |
 
 Supporting infrastructure:
 
@@ -118,7 +163,7 @@ Supporting infrastructure:
 - **`run_all.sh`**: Runner that discovers and executes all `test_*.sh` files,
   aggregating pass/fail counts.
 
-Total: ~178 test cases across the six suites.
+Total: 275 test cases across the six suites.
 
 ### Evolution and Lessons Learned
 
@@ -151,6 +196,36 @@ closed them:
 domain-focused suites with shared helpers, making it easier to run individual
 suites and maintain coverage as new patterns are added.
 
+**Phase 5 — Sandbox investigation and removal**: The original design placed
+filesystem and network enforcement in a bubblewrap sandbox layer, allowing hooks
+to be simplified (Rules 1/1b removed from Bash scope, Rule 6 removed entirely).
+This required `CAP_SYS_ADMIN` for user namespace creation. The investigation
+timeline:
+
+1. Added bubblewrap + socat to apt install, configured sandbox in settings.json
+2. Discovered `CAP_SYS_ADMIN` is not in Docker's default set — added
+   `--cap-add=SYS_ADMIN` to `runArgs`
+3. Discovered Codespaces silently strips `--cap-add=SYS_ADMIN` — verified via
+   `capsh --print` (standard Docker set only, no `cap_sys_admin`)
+4. Root cause: OCI seccomp filter gates `CLONE_NEWUSER` on `CAP_SYS_ADMIN`;
+   `unshare(CLONE_NEWUSER)` returns `EPERM`
+5. Fell back to `enableWeakerNestedSandbox` — ran a verification gate with hooks
+   disabled: all `denyRead` paths readable (including `/proc/self/environ` which
+   leaked tokens), all `denyWrite` paths writable, no network proxy detected
+6. Concluded sandbox provides zero enforcement; retained Rules 1/1b/2 for Bash,
+   re-added Rule 1c (renamed from Rule 6, scoped to `no_content`)
+7. Removed bubblewrap from apt install, commented out sandbox config in
+   settings.json to avoid a misleading safety claim
+
+`--privileged` mode would grant `CAP_SYS_ADMIN` but was rejected as
+disproportionate (grants all capabilities). Auto-allow mode was also rejected —
+since the sandbox provides no enforcement, auto-allow would remove the only
+effective gate (user permission prompts).
+
+**Phase 6 — Gap closure**: Added `.kube` to the sensitive path patterns (Rule 1)
+to protect kubeconfig files containing cluster CA certs and auth tokens. Updated
+documentation to reflect hooks and permissions as the sole enforcement layers.
+
 ### Known Limitations
 
 The hooks are explicitly best-effort, as documented in the script header:
@@ -165,12 +240,28 @@ Real security boundaries remain:
    which is injected at container start, not stored in files.
 3. **Shell snapshot sanitization**: Lines with secret-like variable names are
    stripped before Claude sees them.
+4. **Capability drops**: `NET_RAW`, `SYS_PTRACE`, `NET_ADMIN` removed at
+   container start — OS-level enforcement independent of hooks.
+5. **Sudo removal**: No privilege escalation path after container setup
+   completes.
 
 The hooks are a **deterrent and safety net**, not a sandbox. They catch
 accidental leakage and common attack patterns, but a determined adversary with
 full bash access could theoretically construct an undetectable bypass. The hooks
 raise the bar significantly while keeping the developer experience frictionless
 for legitimate operations.
+
+**No network egress restrictions**: The container can reach any external
+endpoint. Codespaces provides outer VM isolation (ephemeral environment, managed
+network), but there is no per-container network filtering. If secrets were
+leaked into Claude's context, there is no network-level barrier to exfiltration
+beyond the output scanner hook.
+
+**Sandbox non-functional**: bubblewrap requires `CAP_SYS_ADMIN` which Codespaces
+silently strips. The `enableWeakerNestedSandbox` fallback provides no filesystem
+or network enforcement. If Codespaces ever starts honoring
+`--cap-add=SYS_ADMIN`, the sandbox config can be re-enabled and the verification
+gate re-run to confirm enforcement before simplifying hook rules.
 
 ### Maintenance
 

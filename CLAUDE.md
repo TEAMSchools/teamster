@@ -95,14 +95,19 @@ The BigQuery MCP tool truncates results at 50 rows. When querying
 ### Secrets
 
 Hooks in `.claude/hooks/` guard sensitive paths and content. Read
-`.claude/hooks/README.md` before editing hook scripts, protected paths, or files
+`.claude/hooks/CLAUDE.md` before editing hook scripts, protected paths, or files
 containing sensitive strings. Regression tests: `bash tests/hooks/run_all.sh`.
+`.devcontainer/scripts/` is read-only (hooks block edits) — draft changes for
+manual application.
 
 ## Codespace / GKE Setup Quirks
 
 - `sudo` is removed at the end of `postCreate.sh` — tooling that needs root
   (`gcloud components install`, Helm) is installed during setup. To add new
   components, update `postCreate.sh` and rebuild the container
+- Codespaces silently strips `--cap-add` from `runArgs` — do not attempt
+  namespace-based sandboxing (bwrap, unshare). Hooks are the sole enforcement
+  layer for path-based access control
 
 ## Architecture
 
