@@ -94,11 +94,9 @@ The BigQuery MCP tool truncates results at 50 rows. When querying
 
 ### Secrets
 
-Hooks in `.claude/hooks/` guard sensitive paths and content. Read
-`.claude/hooks/CLAUDE.md` before editing hook scripts, protected paths, or files
-containing sensitive strings. Regression tests: `bash tests/hooks/run_all.sh`.
-`.devcontainer/scripts/` is read-only (hooks block edits) — draft changes for
-manual application.
+`permissions.deny` rules and hooks guard sensitive paths and content. Read
+`.claude/hooks/CLAUDE.md` before editing hooks, deny rules, protected paths, or
+`.claude/settings.json`. Regression tests: `bash tests/hooks/run_all.sh`.
 
 ## Codespace / GKE Setup Quirks
 

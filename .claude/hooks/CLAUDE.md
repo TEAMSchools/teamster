@@ -63,6 +63,17 @@ fire for Edit.
   manual application
 - Files under `.claude/` must be staged and committed manually
 
+## Settings file integrity
+
+Hooks and `permissions.deny` rules are defined in `.claude/settings.json`
+(JSONC). If the parser rejects the file, **all settings are silently ignored** —
+no hooks fire, no deny rules apply. Claude Code does not log a warning.
+
+- Keep `settings.json` as clean JSONC — avoid large commented-out blocks
+- Validate after edits: the file must parse as valid JSONC
+- Symptoms of a broken file: hooks stop firing, deny rules stop blocking, no
+  error messages
+
 ## Regression tests
 
 ```bash
