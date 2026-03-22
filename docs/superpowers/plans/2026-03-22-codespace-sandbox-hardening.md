@@ -47,7 +47,7 @@ target path and line numbers. The user copies it into place.
 
 ---
 
-### Task 1: devcontainer.json — tmpfs mount + capability drops (SYS_ADMIN retained for bwrap)
+### Task 1: devcontainer.json — tmpfs mount + capability changes (SYS_ADMIN added for bwrap)
 
 **Files:**
 
@@ -63,12 +63,13 @@ Add `mounts` and `runArgs` keys. Insert after the `"features"` block (after line
   "type=tmpfs,destination=/etc/secret-volume,tmpfs-mode=0700,tmpfs-size=10485760"
 ],
 "runArgs": [
+  "--cap-add=SYS_ADMIN",
   "--cap-drop=NET_RAW",
   "--cap-drop=SYS_PTRACE",
   "--cap-drop=NET_ADMIN"
 ],
-// NOTE: SYS_ADMIN is intentionally NOT dropped — required for bwrap
-// user namespace creation. See spec Section 2 for details.
+// NOTE: SYS_ADMIN is explicitly ADDED — Docker doesn't grant it by default,
+// but bwrap needs it in the bounding set for user namespace creation.
 ```
 
 - [ ] **Step 2: Verify JSON is valid**
@@ -529,7 +530,7 @@ Run: `bwrap --ro-bind / / -- echo "bwrap works"`
 
 Expected: prints `bwrap works`. If this fails with "No permissions to create new
 namespace", `CAP_SYS_ADMIN` is missing from the bounding set — check that
-`--cap-drop=SYS_ADMIN` is NOT in `runArgs`.
+`--cap-add=SYS_ADMIN` is present in `runArgs`.
 
 ---
 

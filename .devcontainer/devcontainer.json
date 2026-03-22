@@ -11,6 +11,7 @@
     "type=tmpfs,destination=/etc/secret-volume,tmpfs-mode=0700,tmpfs-size=10485760"
   ],
   "runArgs": [
+    "--cap-add=SYS_ADMIN",
     "--cap-drop=NET_RAW",
     "--cap-drop=SYS_PTRACE",
     "--cap-drop=NET_ADMIN"

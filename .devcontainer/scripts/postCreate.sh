@@ -116,11 +116,11 @@ sudo chown vscode:vscode /etc/secret-volume
 # inject secrets
 .devcontainer/scripts/inject-secrets.sh
 
-# create convenience symlinks
-ln -sf /etc/secret-volume /workspaces/teamster/secret-volume
-ln -sf /etc/secret-volume/.env /workspaces/teamster/env/.env
+# create convenience symlinks (-n: don't follow existing symlink-to-directory)
+ln -sfn /etc/secret-volume /workspaces/teamster/secret-volume
+ln -sfn /etc/secret-volume/.env /workspaces/teamster/env/.env
 mkdir -p /tmp/dagster
-ln -sf /tmp/dagster /workspaces/teamster/dagster-tmp
+ln -sfn /tmp/dagster /workspaces/teamster/dagster-tmp
 
 # remove sudo — must be last privileged step
 sudo rm -f /usr/local/bin/sudo /usr/bin/sudo

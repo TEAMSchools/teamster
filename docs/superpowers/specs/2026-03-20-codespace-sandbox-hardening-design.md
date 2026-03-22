@@ -141,32 +141,38 @@ Both symlink names are added to `.gitignore`.
 ```jsonc
 // devcontainer.json
 "runArgs": [
+  "--cap-add=SYS_ADMIN",
   "--cap-drop=NET_RAW",
   "--cap-drop=SYS_PTRACE",
   "--cap-drop=NET_ADMIN"
 ]
 ```
 
-| Cap          | What it removes                                              |
-| ------------ | ------------------------------------------------------------ |
-| `NET_RAW`    | Raw socket access — prevents packet sniffing and crafting    |
-| `SYS_PTRACE` | Process memory inspection — prevents reading other processes |
-| `NET_ADMIN`  | Network config (iptables, interface management)              |
+| Cap          | Effect                                                 |
+| ------------ | ------------------------------------------------------ |
+| `SYS_ADMIN`  | **Added** — required for bwrap user namespace creation |
+| `NET_RAW`    | Dropped — prevents packet sniffing and crafting        |
+| `SYS_PTRACE` | Dropped — prevents reading other processes' memory     |
+| `NET_ADMIN`  | Dropped — prevents iptables/interface management       |
 
-### Why SYS_ADMIN is NOT dropped
+### Why SYS_ADMIN must be explicitly added
 
-`CAP_SYS_ADMIN` must remain in the bounding set for bubblewrap (bwrap) to
-function. The Docker/OCI default seccomp profile allows the `clone`/`unshare`
-syscalls with `CLONE_NEWUSER` **only when** `CAP_SYS_ADMIN` is present in the
-bounding set. Dropping it causes bwrap to fail with "No permissions to create
-new namespace", which completely disables the Claude Code sandbox.
+`CAP_SYS_ADMIN` is **not** in Docker's default non-privileged capability set.
+Simply not dropping it (the initial approach) has no effect — it was never
+granted. It must be explicitly added via `--cap-add=SYS_ADMIN` for bubblewrap to
+create user namespaces.
 
-This was verified empirically: `kernel.unprivileged_userns_clone = 1` and
+The Docker/OCI default seccomp profile allows the `clone`/`unshare` syscalls
+with `CLONE_NEWUSER` **only when** `CAP_SYS_ADMIN` is present in the bounding
+set. Without it, bwrap fails with "No permissions to create new namespace",
+which completely disables the Claude Code sandbox.
+
+Verified empirically: `kernel.unprivileged_userns_clone = 1` and
 `max_user_namespaces = 63954` in the Codespace kernel, but
 `unshare(CLONE_NEWUSER)` returns `EPERM` when `SYS_ADMIN` is absent due to the
 seccomp filter (`Seccomp: 2`, 1 active filter).
 
-The risk of retaining `SYS_ADMIN` is mitigated by:
+The risk of adding `SYS_ADMIN` is mitigated by:
 
 - sudo removal after postCreate (no root escalation path)
 - The sandbox itself restricts filesystem access for bash subprocesses
