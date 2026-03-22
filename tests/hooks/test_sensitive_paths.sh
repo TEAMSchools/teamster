@@ -117,4 +117,19 @@ expect_deny "bash cat .env" Bash command "cat .env"
 expect_deny "bash cat secret-volume" Bash command "cat /etc/secret-volume/token"
 expect_deny "bash cat devcontainer tpl" Bash command "cat .devcontainer/tpl/template"
 
+# ─── Exit code regression: hooks must exit 0, not 1 ──────────────────────────
+# Claude Code treats exit 1 as a non-blocking error (tool still executes).
+# Only exit 0 with deny JSON on stdout is honored as a block.
+echo ""
+echo -e "${YELLOW}Exit code regression (PreToolUse must exit 0 on deny)${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2312): command substitution in function args is intentional
+expect_deny_exit0 "PreToolUse .env deny exits 0" "${HOOK}" \
+  "$(make_input Read file_path /workspaces/teamster/env/.env)"
+expect_deny_exit0 "PreToolUse secret-volume deny exits 0" "${HOOK}" \
+  "$(make_input Read file_path /etc/secret-volume/token)"
+expect_deny_exit0 "PreToolUse bash printenv deny exits 0" "${HOOK}" \
+  "$(make_input Bash command printenv)"
+# trunk-ignore-end(shellcheck/SC2312)
+
 print_summary "Sensitive Paths"

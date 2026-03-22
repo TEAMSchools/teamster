@@ -10,6 +10,18 @@ Two hooks guard secrets and sensitive paths:
 See each script for exact regex patterns. This document covers operational
 behavior.
 
+## Hook protocol
+
+Claude Code hooks communicate decisions via **stdout JSON + exit code 0**:
+
+- **Allow**: exit 0 with no output (or empty stdout)
+- **Deny**: exit 0 with
+  `{"hookSpecificOutput": {"permissionDecision": "deny", ...}}` on stdout
+
+**Exit 1 is a non-blocking error** — Claude Code logs it but executes the tool
+anyway. Never use `exit 1` to deny. Never write deny JSON to stderr (`>&2`). The
+regression test suite (`expect_deny_exit0`) enforces both invariants.
+
 ## What is blocked
 
 **Secret paths** (all tools blocked) — dotenv files, private key/cert files, SSH
@@ -58,4 +70,6 @@ bash tests/hooks/run_all.sh
 ```
 
 Individual suites are in `tests/hooks/test_*.sh`. Test files contain sensitive
-fixture strings — edits must be drafted for manual application.
+fixture strings (gitleaks ignores are required). The `expect_deny_exit0` helper
+in `helpers.sh` guards against the exit-code and stderr regressions described
+above.

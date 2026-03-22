@@ -90,4 +90,22 @@ echo -e "${YELLOW}PostToolUse: Non-scanned tools${NC}"
 check_output "Write tool output not scanned" clean Write "op://vault/item/field"
 check_output "Edit tool output not scanned" clean Edit "op://vault/item/field"
 
+# ─── Exit code regression: hooks must exit 0, not 1 ──────────────────────────
+# Claude Code treats exit 1 as a non-blocking error (output still shown).
+# Only exit 0 with deny JSON on stdout is honored as a block.
+echo ""
+echo -e "${YELLOW}PostToolUse: Exit code regression (must exit 0 on deny)${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2312): command substitution in function args is intentional
+expect_deny_exit0 "PostToolUse JWT deny exits 0" "${OUTPUT_HOOK}" \
+  "$(jq -n --arg c 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0' \
+    '{tool_name: "Read", tool_output: {content: $c, stdout: $c, stderr: ""}}')"
+expect_deny_exit0 "PostToolUse op:// deny exits 0" "${OUTPUT_HOOK}" \
+  "$(jq -n --arg c 'config: op://vault/item/field' \
+    '{tool_name: "Bash", tool_output: {content: $c, stdout: $c, stderr: ""}}')"
+expect_deny_exit0 "PostToolUse high-entropy deny exits 0" "${OUTPUT_HOOK}" \
+  "$(jq -n --arg c "$(printf 'A%.0s' {1..120})" \
+    '{tool_name: "Bash", tool_output: {content: $c, stdout: $c, stderr: ""}}')"
+# trunk-ignore-end(shellcheck/SC2312)
+
 print_summary "Output Scanner"

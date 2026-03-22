@@ -10,7 +10,7 @@
 
 deny() {
   echo '{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "❌ Cannot access sensitive path"}}'
-  exit 1
+  exit 0
 }
 
 input=$(cat)
