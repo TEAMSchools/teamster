@@ -6,6 +6,15 @@
     "ghcr.io/itsmechlark/features/1password:latest": {},
     "ghcr.io/jajera/features/gcloud-cli:latest": {}
   },
+  "mounts": [
+    "type=tmpfs,destination=/etc/secret-volume,tmpfs-mode=0700,tmpfs-size=10485760"
+  ],
+  "runArgs": [
+    "--cap-drop=NET_RAW",
+    "--cap-drop=SYS_PTRACE",
+    "--cap-drop=SYS_ADMIN",
+    "--cap-drop=NET_ADMIN"
+  ],
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
   "postStartCommand": "bash .devcontainer/scripts/postStart.sh",
   "containerEnv": {
