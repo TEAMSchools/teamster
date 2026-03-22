@@ -47,7 +47,7 @@ target path and line numbers. The user copies it into place.
 
 ---
 
-### Task 1: devcontainer.json — tmpfs mount + capability changes (SYS_ADMIN added for bwrap)
+### Task 1: devcontainer.json — tmpfs mount + capability drops
 
 **Files:**
 
@@ -63,13 +63,12 @@ Add `mounts` and `runArgs` keys. Insert after the `"features"` block (after line
   "type=tmpfs,destination=/etc/secret-volume,tmpfs-mode=0700,tmpfs-size=10485760"
 ],
 "runArgs": [
-  "--cap-add=SYS_ADMIN",
   "--cap-drop=NET_RAW",
   "--cap-drop=SYS_PTRACE",
   "--cap-drop=NET_ADMIN"
 ],
-// NOTE: SYS_ADMIN is explicitly ADDED — Docker doesn't grant it by default,
-// but bwrap needs it in the bounding set for user namespace creation.
+// NOTE: SYS_ADMIN is NOT added — Codespaces silently strips --cap-add=SYS_ADMIN.
+// bwrap runs in weaker nested sandbox mode. See spec Section 2.
 ```
 
 - [ ] **Step 2: Verify JSON is valid**
@@ -524,13 +523,14 @@ Run: `bwrap --version`
 
 Expected: version string output.
 
-- [ ] **Step 8: Verify bubblewrap can create user namespaces**
+- [ ] **Step 8: Confirm bwrap runs in weaker nested mode**
 
 Run: `bwrap --ro-bind / / -- echo "bwrap works"`
 
-Expected: prints `bwrap works`. If this fails with "No permissions to create new
-namespace", `CAP_SYS_ADMIN` is missing from the bounding set — check that
-`--cap-add=SYS_ADMIN` is present in `runArgs`.
+Expected: fails with "No permissions to create new namespace" — this is correct.
+Codespaces silently strips `--cap-add=SYS_ADMIN`, so full sandbox mode is
+unavailable. Claude Code falls back to `enableWeakerNestedSandbox` mode
+automatically. Verify via `/sandbox` in the Claude Code CLI.
 
 ---
 

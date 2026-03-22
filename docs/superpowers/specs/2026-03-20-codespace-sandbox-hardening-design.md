@@ -141,42 +141,40 @@ Both symlink names are added to `.gitignore`.
 ```jsonc
 // devcontainer.json
 "runArgs": [
-  "--cap-add=SYS_ADMIN",
   "--cap-drop=NET_RAW",
   "--cap-drop=SYS_PTRACE",
   "--cap-drop=NET_ADMIN"
 ]
 ```
 
-| Cap          | Effect                                                 |
-| ------------ | ------------------------------------------------------ |
-| `SYS_ADMIN`  | **Added** — required for bwrap user namespace creation |
-| `NET_RAW`    | Dropped — prevents packet sniffing and crafting        |
-| `SYS_PTRACE` | Dropped — prevents reading other processes' memory     |
-| `NET_ADMIN`  | Dropped — prevents iptables/interface management       |
+| Cap          | What it removes                                              |
+| ------------ | ------------------------------------------------------------ |
+| `NET_RAW`    | Raw socket access — prevents packet sniffing and crafting    |
+| `SYS_PTRACE` | Process memory inspection — prevents reading other processes |
+| `NET_ADMIN`  | Network config (iptables, interface management)              |
 
-### Why SYS_ADMIN must be explicitly added
+### Why SYS_ADMIN is not added
 
-`CAP_SYS_ADMIN` is **not** in Docker's default non-privileged capability set.
-Simply not dropping it (the initial approach) has no effect — it was never
-granted. It must be explicitly added via `--cap-add=SYS_ADMIN` for bubblewrap to
-create user namespaces.
+`CAP_SYS_ADMIN` is not in Docker's default non-privileged capability set and is
+required for bubblewrap's full sandbox mode (user namespace creation). However,
+**GitHub Codespaces silently strips `--cap-add=SYS_ADMIN`** from `runArgs` — the
+capability never appears in the container's bounding set regardless of
+configuration. This behavior is undocumented by GitHub.
 
-The Docker/OCI default seccomp profile allows the `clone`/`unshare` syscalls
-with `CLONE_NEWUSER` **only when** `CAP_SYS_ADMIN` is present in the bounding
-set. Without it, bwrap fails with "No permissions to create new namespace",
-which completely disables the Claude Code sandbox.
+Verified empirically (2026-03-22):
 
-Verified empirically: `kernel.unprivileged_userns_clone = 1` and
-`max_user_namespaces = 63954` in the Codespace kernel, but
-`unshare(CLONE_NEWUSER)` returns `EPERM` when `SYS_ADMIN` is absent due to the
-seccomp filter (`Seccomp: 2`, 1 active filter).
+- `kernel.unprivileged_userns_clone = 1` and `max_user_namespaces = 63954` in
+  the Codespace kernel
+- `--cap-add=SYS_ADMIN` in `runArgs` is silently ignored — `capsh --print` shows
+  the standard Docker default set with no `cap_sys_admin`
+- `unshare(CLONE_NEWUSER)` returns `EPERM` due to the seccomp filter
+  (`Seccomp: 2`, 1 active filter) gating `CLONE_NEWUSER` on `CAP_SYS_ADMIN`
+- `--privileged` mode reportedly works but grants all capabilities — rejected as
+  disproportionate
 
-The risk of adding `SYS_ADMIN` is mitigated by:
-
-- sudo removal after postCreate (no root escalation path)
-- The sandbox itself restricts filesystem access for bash subprocesses
-- Hooks guard sensitive paths for all Claude tools
+Consequence: bwrap runs in weaker nested sandbox mode (see Section 5). The
+Codespace VM provides outer isolation (ephemeral environment, managed network),
+so the weaker sandbox still adds meaningful protection.
 
 No development workflow (uv, Python, Dagster, dbt, GCS/BigQuery API calls, SFTP,
 1Password CLI) requires NET_RAW, SYS_PTRACE, or NET_ADMIN.
@@ -272,17 +270,20 @@ symlink itself and `.gitignore`.
 
 ## 5. Claude Code Sandbox Configuration
 
-### Sandbox mode selection
+### Why weaker nested sandbox
 
-With `CAP_SYS_ADMIN` retained (see Section 2), bubblewrap can create user
-namespaces and the full sandbox mode should function. The
-`enableWeakerNestedSandbox` option is kept as a fallback — if the full sandbox
-fails for any reason (e.g., future Codespaces kernel changes), Claude Code falls
-back to weaker mode rather than disabling the sandbox entirely.
+GitHub Codespaces silently strips `--cap-add=SYS_ADMIN` (see Section 2), leaving
+`CAP_SYS_ADMIN` absent from the container's bounding set. Bubblewrap's full mode
+requires user namespaces, which the OCI seccomp filter gates on `CAP_SYS_ADMIN`.
+The `enableWeakerNestedSandbox` option runs bubblewrap without namespace
+isolation — filesystem restrictions are less strictly enforced at the OS level,
+but network proxy filtering still runs outside the sandbox and remains
+effective.
 
-In full sandbox mode, bubblewrap provides OS-level filesystem isolation for bash
-subprocesses, enforcing `denyRead` and `denyWrite` paths at the syscall level.
-Network proxy filtering runs outside the sandbox in both modes.
+The Codespace VM provides outer isolation (ephemeral environment, managed
+network), so the weaker sandbox adds meaningful protection despite reduced
+enforcement strength. Hooks provide a second layer of path protection for all
+Claude tools (not just bash).
 
 ### Sandbox mode
 
@@ -478,8 +479,8 @@ After implementation, verify:
 
 **Sandbox (Section 5):**
 
-1. `bwrap --ro-bind / / -- echo "bwrap works"` succeeds (confirms user namespace
-   creation is allowed by the kernel and seccomp profile)
+1. `bwrap` runs in weaker nested mode without error (sandbox status visible via
+   `/sandbox` in Claude Code CLI)
 2. Bash commands inside sandbox cannot read `~/.config/gcloud`, `~/.ssh`,
    `~/.kube`, `/etc/secret-volume`, `/proc/`
 3. Bash commands inside sandbox cannot write to `.claude/hooks/`,
@@ -489,7 +490,8 @@ After implementation, verify:
 5. **Verification gate for hook removal:** For each `denyRead` path, confirm
    `cat <path>` inside sandbox returns permission denied. For each `denyWrite`
    path, confirm `touch <path>/test` inside sandbox returns permission denied.
-   If any path is not blocked, retain Rules 1/1b/2 for Bash in the hooks.
+   If any path is not blocked (likely in weaker mode), retain Rules 1/1b/2 for
+   Bash in the hooks.
 
 **Hooks (Section 6):**
 
@@ -502,16 +504,19 @@ After implementation, verify:
    encoding bypasses, and `$VAR` expansion
 
 **Future improvement:** Add an automated sandbox smoke test script that verifies
-`bwrap` denies reads/writes to listed paths. Automated regression testing would
-catch behavioral changes in future Claude Code versions or Codespaces kernel
-updates.
+`bwrap` denies reads/writes to listed paths. The weaker nested sandbox has less
+strict enforcement, so automated regression testing would catch behavioral
+changes in future Claude Code versions. If Codespaces ever starts honoring
+`--cap-add=SYS_ADMIN`, the full sandbox can be enabled by adding it to
+`runArgs`.
 
 ---
 
 ## Non-Goals
 
-- Custom seccomp profiles — not configurable in managed Codespaces; the default
-  OCI seccomp profile is used, which gates `CLONE_NEWUSER` on `CAP_SYS_ADMIN`
+- Full bwrap sandbox — requires `CAP_SYS_ADMIN`, which Codespaces silently
+  strips from `--cap-add`. `--privileged` would grant it but is
+  disproportionate. Weaker nested sandbox is the available trade-off
 - Sandbox auto-allow mode — rejected due to exfiltration risk via broad allowed
   domains (see Section 5)
 - Secret injection without container rebuild — accepted limitation for
