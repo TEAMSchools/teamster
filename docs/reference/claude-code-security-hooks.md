@@ -26,17 +26,19 @@ hook system that:
 
 ### Architecture
 
-The original design envisioned a three-layer defense model:
+The original design envisioned a three-layer defense model, extended with a
+fourth layer after sandbox removal:
 
-| Layer            | What it covers                           | Status                    |
-| ---------------- | ---------------------------------------- | ------------------------- |
-| **Hooks**        | All Claude tools (file tools, Bash, MCP) | Active — sole enforcement |
-| **Sandbox**      | Bash subprocesses (filesystem + network) | Disabled — non-functional |
-| **OS hardening** | Container-level (tmpfs, caps, sudo)      | Active                    |
+| Layer                  | What it covers                                  | Status                    |
+| ---------------------- | ----------------------------------------------- | ------------------------- |
+| **Hooks**              | All Claude tools (file tools, Bash, MCP)        | Active                    |
+| **`permissions.deny`** | Edit on infra paths; Read on system-level paths | Active                    |
+| **Sandbox**            | Bash subprocesses (filesystem + network)        | Disabled — non-functional |
+| **OS hardening**       | Container-level (tmpfs, caps, sudo)             | Active                    |
 
 The sandbox layer was disabled after empirical verification (see
-[Phase 5](#evolution-and-lessons-learned)). Hooks and OS hardening are the
-effective security layers.
+[Phase 5](#evolution-and-lessons-learned)). Hooks, `permissions.deny`, and OS
+hardening are the effective security layers.
 
 #### OS Hardening
 
@@ -62,19 +64,37 @@ The hook system consists of three components:
 
 A single bash script invoked before every tool call (Read, Edit, Write, Bash,
 Grep, Glob, NotebookEdit, WebFetch, WebSearch, and all MCP tools). It reads the
-tool invocation JSON from stdin and applies eight pattern groups:
+tool invocation JSON from stdin and applies pattern groups organized in three
+sections:
 
-| #    | Pattern Group                     | Purpose                                                                                                                                                                          |
-| ---- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | Sensitive file/directory patterns | Block `.env*`, `.ssh`, `.kube`, `*.pem/key/cer`, `secrets.json`, `credentials.json`, `secret-volume`, `.devcontainer/tpl/`                                                       |
-| 2    | Hook self-protection              | Block Edit/Write/Bash on `.claude/settings.json`, `.claude/hooks/`, `.claude/shell-snapshots/`, `.devcontainer/scripts/`, `.git/hooks/`, `.trunk/` config — allow Read/Grep/Glob |
-| 3    | Environment variable leakage      | Block `printenv`, `declare -x`, `export -p`, `compgen`, `os.environ`, `os.getenv`, `/proc/*/environ`, bare `env`, bare `set` (not `set -flags`)                                  |
-| 4    | 1Password CLI escalation          | Block `op vault`, `op item`, `op read`, `op document`, `op inject`                                                                                                               |
-| 5    | Encoding-based bypass             | Block base64/xxd/printf piped to bash/sh/source, process substitution, Python exec/eval with chr/join/bytes/base64/codecs/fromhex                                                |
-| 5c/d | Python import bypass              | Block `__import__` and `importlib` with dangerous modules (os, subprocess, shutil, pty, ctypes, socket, http, urllib, multiprocessing, signal)                                   |
-| 1c   | /proc and /dev/fd access          | Block `/proc/*/environ`, `/proc/*/cmdline`, `/dev/fd/` — scoped to `no_content` (all tools, path fields only)                                                                    |
-| 7    | Shell variable expansion          | Block `$UPPER_CASE` vars not on an allowlist of ~60 safe variables; block `${!prefix*}` indirect expansion                                                                       |
-| 8    | BigQuery DML/export block         | For `mcp__bigquery__*` tools: require SELECT/SHOW/DESCRIBE/WITH, deny INSERT/UPDATE/DELETE/MERGE/EXPORT/CREATE/DROP/ALTER/GRANT/REVOKE/CALL                                      |
+##### Section 1 — All tools, path-based
+
+| #   | Pattern Group                     | Purpose                                                                                                                                             |
+| --- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Sensitive file/directory patterns | Block `.env*`, `.ssh`, `.kube`, `*.pem/key/cer`, `secrets.json`, `credentials.json`, `secret-volume`, `.devcontainer/tpl/` — scoped to `no_content` |
+| 1b  | File-extension path patterns      | Block `*.cer/key/pem` — scoped to `path_only` to avoid false positives on Python attribute access (e.g., `asset.key`) in Edit/Write content         |
+| 1c  | High-risk proc/dev paths          | Block `/proc/*/environ`, `/proc/*/cmdline`, `/dev/fd/` — scoped to `no_content` (all tools)                                                         |
+
+##### Section 2 — Bash only, command-pattern
+
+| #   | Pattern Group               | Purpose                                                                                                               |
+| --- | --------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 2   | Hook self-protection        | Block Bash on Claude config, hooks, devcontainer scripts, git hooks, and Trunk config — allow Read/Grep/Glob          |
+| 3   | Env variable leakage        | Block `printenv`, `declare -x`, `export -p`, `compgen`, `typeset -x`, `os.environ`, `os.getenv`, `/proc/*/environ`    |
+| 3b  | Standalone `set`            | Block bare `set` command (dumps all shell variables); allow `set -flags`                                              |
+| 3c  | Standalone `env`            | Block bare `env` command (dumps environment); scoped to `path_only`                                                   |
+| 4   | 1Password CLI escalation    | Block `op vault`, `op item`, `op read`, `op document`, `op inject`                                                    |
+| 5   | Encoding-based bypass       | Block base64/xxd/printf piped to bash/sh/source; process substitution with decode; reverse bash consuming here-string |
+| 5b  | Python runtime construction | Block Python `exec`/`eval` with chr/join/bytes/base64/codecs/fromhex — catches runtime string assembly                |
+| 5c  | `__import__` bypass         | Block `__import__` with dangerous modules (os, subprocess, shutil, pty, ctypes, socket, http, urllib, etc.)           |
+| 5d  | `importlib` bypass          | Block `importlib` with same dangerous module list — avoids `__import__` check                                         |
+| 7   | Shell variable expansion    | Block `$UPPER_CASE` vars not on an allowlist of ~60 safe variables; block `${!prefix*}` indirect expansion            |
+
+##### Section 3 — BigQuery MCP
+
+| #   | Pattern Group             | Purpose                                                                                                                                     |
+| --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 8   | BigQuery DML/export block | For `mcp__bigquery__*` tools: require SELECT/SHOW/DESCRIBE/WITH; deny INSERT/UPDATE/DELETE/MERGE/EXPORT/CREATE/DROP/ALTER/GRANT/REVOKE/CALL |
 
 Key design decisions in the PreToolUse hook:
 
@@ -130,16 +150,25 @@ The settings file ties the hooks together with:
 - **PostToolUse (output scanner)**: Runs `check-output.sh` for content-producing
   tools.
 - **PostToolUse (formatter)**: Runs `trunk fmt` asynchronously after Edit/Write.
-- **Permissions allowlist**: Scoped `Bash()` permissions for git/gh/trunk/uv,
-  `Read()` for the workspace and plugins, and MCP tools.
+- **`permissions.deny`**: Blocks Edit on hook scripts, Claude settings files,
+  devcontainer scripts, git hooks, and all Trunk config
+  (`/.claude/hooks/**/*.sh`, `/.claude/settings.json`,
+  `/.claude/settings.local.json`, `/.devcontainer/scripts/**`, `/.git/hooks/**`,
+  `/.trunk/**`, `~/.claude/shell-snapshots/**`). Also blocks Read on
+  system-level sensitive paths (`//proc/**`, `//etc/secret-volume/**`,
+  `//dev/fd/**`, `/env/**`, `~/.ssh/**`, `~/.kube/**`). These are hard denies —
+  no hook involved.
+- **`permissions.allow`**: Scoped auto-approvals for git/gh/trunk read commands,
+  `Read()` for the workspace and plugins, BigQuery MCP, Dagster MCP, and GKE MCP
+  tools.
 
 **Sandbox disabled**: The Claude Code sandbox (bubblewrap) requires
 `CAP_SYS_ADMIN` for Linux user namespaces. GitHub Codespaces silently strips
 `--cap-add=SYS_ADMIN` from `devcontainer.json` `runArgs` — the capability never
 appears in the container's bounding set. `enableWeakerNestedSandbox` also
-provides no filesystem or network enforcement in Codespaces. The sandbox config
-in `settings.json` is commented out because it cannot function and would be
-misleading. **Hooks and permissions are the sole enforcement layers.**
+provides no filesystem or network enforcement in Codespaces. Sandbox
+configuration has been removed from `settings.json` entirely. **Hooks,
+`permissions.deny`, and OS hardening are the sole enforcement layers.**
 
 ### Test Suite
 
@@ -148,12 +177,12 @@ test files under `tests/hooks/`:
 
 | File                        | Tests | Coverage                                                                                                                                |
 | --------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `test_sensitive_paths.sh`   | 49    | File patterns (incl. `.kube`), content scanning, quote bypass, path traversal, symlinks, Agent description scoping                      |
+| `test_sensitive_paths.sh`   | 52    | File patterns (incl. `.kube`), content scanning, quote bypass, path traversal, symlinks, Agent description scoping                      |
 | `test_env_protection.sh`    | 60    | printenv/declare/export/compgen/typeset, os.environ, bare `set`, `$VAR` allowlist                                                       |
 | `test_bypass_protection.sh` | 71    | 1Password CLI, base64/xxd/printf encoding, process substitution, Python exec/eval construction, `__import__`, importlib, /proc, /dev/fd |
-| `test_output_scanner.sh`    | 39    | Secret pattern detection, tool-specific scanning, MCP output, high-entropy boundary (119/120/121 chars)                                 |
+| `test_output_scanner.sh`    | 42    | Secret pattern detection, tool-specific scanning, MCP output, high-entropy boundary (119/120/121 chars)                                 |
 | `test_bigquery_mcp.sh`      | 27    | Generic field extraction, nested fields, DML/DDL/export blocking                                                                        |
-| `test_self_protection.sh`   | 29    | Settings, hooks, shell-snapshots, .devcontainer/scripts, .git/hooks, .trunk config                                                      |
+| `test_self_protection.sh`   | 20    | Hook scripts and Claude config (Bash blocked by hook; Edit/Write blocked by `permissions.deny`)                                         |
 
 Supporting infrastructure:
 
@@ -163,11 +192,11 @@ Supporting infrastructure:
 - **`run_all.sh`**: Runner that discovers and executes all `test_*.sh` files,
   aggregating pass/fail counts.
 
-Total: 275 test cases across the six suites.
+Total: 272 test cases across the six suites.
 
 ### Evolution and Lessons Learned
 
-The work progressed through roughly four phases:
+The work progressed through roughly seven phases:
 
 **Phase 1 — Initial hardening**: Created the hook scripts, established the
 settings.json structure, and wrote the first CLAUDE.md documentation for the
@@ -223,8 +252,19 @@ since the sandbox provides no enforcement, auto-allow would remove the only
 effective gate (user permission prompts).
 
 **Phase 6 — Gap closure**: Added `.kube` to the sensitive path patterns (Rule 1)
-to protect kubeconfig files containing cluster CA certs and auth tokens. Updated
-documentation to reflect hooks and permissions as the sole enforcement layers.
+to protect kubeconfig files containing cluster CA certs and auth tokens.
+
+**Phase 7 — permissions.deny refactor**: Moved Edit/Write protection for
+infrastructure paths (hook scripts, Claude settings, devcontainer scripts, git
+hooks, Trunk config, shell snapshots) from hook Rule 2 into `permissions.deny`
+hard-deny rules. Hook Rule 2 now only covers Bash (which `permissions.deny`
+cannot block). Added `Read()` hard-deny rules for system-level paths (`/proc`,
+`/etc/secret-volume`, `/dev/fd`, `/env`, `~/.ssh`, `~/.kube`). Tightened
+`test_self_protection.sh` to reflect the dual-layer enforcement (hook tests for
+Bash, `permissions.deny` covers Edit/Write without needing hook tests). Removed
+sandbox config from `settings.json` entirely (was already non-functional;
+keeping commented-out config was misleading). Added standalone `env` block (Rule
+3c) and added GKE MCP tools to the permissions allow list.
 
 ### Known Limitations
 
@@ -259,9 +299,10 @@ beyond the output scanner hook.
 
 **Sandbox non-functional**: bubblewrap requires `CAP_SYS_ADMIN` which Codespaces
 silently strips. The `enableWeakerNestedSandbox` fallback provides no filesystem
-or network enforcement. If Codespaces ever starts honoring
-`--cap-add=SYS_ADMIN`, the sandbox config can be re-enabled and the verification
-gate re-run to confirm enforcement before simplifying hook rules.
+or network enforcement. Sandbox configuration has been fully removed from
+`settings.json`. If Codespaces ever starts honoring `--cap-add=SYS_ADMIN`, a
+sandbox can be re-added and a verification gate re-run to confirm enforcement
+before relaxing hook or `permissions.deny` rules.
 
 ### Maintenance
 
