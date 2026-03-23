@@ -26,13 +26,13 @@
   },
   "permissions": {
     "deny": [
-      "Edit(/.claude/hooks/**)",
+      "Edit(/.claude/hooks/**/*.sh)",
       "Edit(/.claude/settings.json)",
       "Edit(/.claude/settings.local.json)",
-      "Edit(/.claude/shell-snapshots/**)",
       "Edit(/.devcontainer/scripts/**)",
       "Edit(/.git/hooks/**)",
       "Edit(/.trunk/**)",
+      "Edit(~/.claude/shell-snapshots/**)",
       "Read(/.devcontainer/tpl/**)",
       "Read(//dev/fd/**)",
       "Read(//etc/secret-volume/**)",

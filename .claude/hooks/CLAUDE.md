@@ -61,8 +61,16 @@ fire for Edit.
 ## Modifying protected files
 
 - Hook scripts and `.devcontainer/scripts/`: draft changes, present to user for
-  manual application
+  manual application using complete code blocks (not diffs), with a file + line
+  number link, ordered top-to-bottom, commentary separate from the edits
 - Files under `.claude/` must be staged and committed manually
+
+## permissions.deny path prefixes
+
+Rules for project-root paths use `/` (e.g. `Edit(/.claude/hooks/**/*.sh)`).
+Rules for home-dir paths must use `~` (e.g.
+`Edit(~/.claude/shell-snapshots/**)`). Using `/` for a home-dir path silently
+fails — the rule never matches.
 
 ## Settings file integrity
 

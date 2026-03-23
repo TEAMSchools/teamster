@@ -14,53 +14,52 @@ deny() {
 }
 
 input=$(cat)
-tool_name=$(echo "${input}" | jq -r '.tool_name')
+tool_name=$(jq -r '.tool_name' <<<"${input}")
+
+# Normalize path strings: collapse //, /./, resolve ../
+_normalize() { sed -E ':a; s#//+#/#g; s#/\./#/#g; s#/[^/]+/\.\./#/#g; ta'; }
 
 # Collect ALL string values from tool_input (covers MCP, NotebookEdit, any tool schema)
-# Excludes 'description' for Agent tool only (metadata field that causes false positives)
 if [[ ${tool_name} == "Agent" ]]; then
-  path=$(echo "${input}" | jq -r '
+  path=$(jq -r '
     [.tool_input | to_entries[] | select(.key != "description") | .value | .. | strings] | join(" ")
-  ')
+  ' <<<"${input}")
 else
-  path=$(echo "${input}" | jq -r '
+  path=$(jq -r '
     [.tool_input | to_entries[] | .value | .. | strings] | join(" ")
-  ')
+  ' <<<"${input}")
 fi
 
-# Normalize: collapse //, /./, resolve ../ traversals (multi-pass loop), resolve symlinks
-normalized=$(echo "${path}" | sed -E ':a; s#//+#/#g; s#/\./#/#g; s#/[^/]+/\.\./#/#g; ta')
+normalized=$(echo "${path}" | _normalize)
 
-# Resolve symlinks on file_path to prevent symlink-based bypass
-file_path=$(echo "${input}" | jq -r '.tool_input.file_path // ""')
+# Resolve symlinks on file_path to prevent symlink-based bypass — cache result for reuse below
+file_path=$(jq -r '.tool_input.file_path // ""' <<<"${input}")
 if [[ -n ${file_path} && -e ${file_path} ]]; then
   resolved=$(readlink -f "${file_path}" 2>/dev/null || echo "${file_path}")
-  normalized="${normalized} ${resolved}"
+else
+  resolved=""
 fi
+[[ -n ${resolved} ]] && normalized="${normalized} ${resolved}"
 
 # Strip quotes and backslashes for keyword matching (defeats quote-splitting bypass)
 sanitized=${normalized//[\"\'\\]/}
 
 # Path-only fields for infrastructure-path rules (excludes content/new_string/old_string)
-path_only=$(echo "${input}" | jq -r '
+path_only=$(jq -r '
   [.tool_input.file_path, .tool_input.command, .tool_input.path, .tool_input.pattern] | map(select(. != null)) | join(" ")
-')
-path_only=$(echo "${path_only}" | sed -E ':a; s#//+#/#g; s#/\./#/#g; s#/[^/]+/\.\./#/#g; ta')
-if [[ -n ${file_path} && -e ${file_path} ]]; then
-  path_only="${path_only} $(readlink -f "${file_path}" 2>/dev/null || echo "${file_path}")"
-fi
+' <<<"${input}")
+path_only=$(echo "${path_only}" | _normalize)
+[[ -n ${resolved} ]] && path_only="${path_only} ${resolved}"
 path_only=${path_only//[\"\'\\]/}
 
 # All fields except Write/Edit body content (content, new_string, old_string)
 # Used by Rules 1/1c: catches MCP sql/nested fields but skips doc content
 if [[ ${tool_name} == "Write" || ${tool_name} == "Edit" ]]; then
-  no_content=$(echo "${input}" | jq -r '
+  no_content=$(jq -r '
     [.tool_input | to_entries[] | select(.key | test("^(content|new_string|old_string)$") | not) | .value | .. | strings] | join(" ")
-  ')
-  no_content=$(echo "${no_content}" | sed -E ':a; s#//+#/#g; s#/\./#/#g; s#/[^/]+/\.\./#/#g; ta')
-  if [[ -n ${file_path} && -e ${file_path} ]]; then
-    no_content="${no_content} $(readlink -f "${file_path}" 2>/dev/null || echo "${file_path}")"
-  fi
+  ' <<<"${input}")
+  no_content=$(echo "${no_content}" | _normalize)
+  [[ -n ${resolved} ]] && no_content="${no_content} ${resolved}"
   no_content=${no_content//[\"\'\\]/}
 else
   no_content=${sanitized}

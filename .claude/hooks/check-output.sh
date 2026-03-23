@@ -3,22 +3,22 @@
 # Defense-in-depth — catches secrets that slip past the PreToolUse hook.
 
 input=$(cat)
-tool_name=$(echo "${input}" | jq -r '.tool_name')
+tool_name=$(jq -r '.tool_name' <<<"${input}")
 
 # Scan output from tools that can return sensitive content
 [[ ! ${tool_name} =~ ^(Bash|Read|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*)$ ]] && exit 0
 
 # Extract all string values from tool_output (covers any output schema)
-combined=$(echo "${input}" | jq -r '[.tool_output | .. | strings] | join(" ")')
+combined=$(jq -r '[.tool_output | .. | strings] | join(" ")' <<<"${input}")
 
 # Attempt to decode and re-scan long base64 strings (catches encoded secrets)
 blobs=$(echo "${combined}" | grep -oE '[A-Za-z0-9+/]{40,}={0,2}' || true)
-# trunk-ignore(shellcheck/SC2312): read returns 1 at EOF to terminate the while loop — expected
-decoded=$(echo "${blobs}" | while read -r blob; do
-  echo "${blob}" | base64 -d 2>/dev/null || true
-done | tr -d '\0')
-if [[ -n ${decoded} ]]; then
-  combined="${combined} ${decoded}"
+if [[ -n ${blobs} ]]; then
+  # trunk-ignore(shellcheck/SC2312): read returns 1 at EOF to terminate the while loop — expected
+  decoded=$(echo "${blobs}" | while read -r blob; do
+    echo "${blob}" | base64 -d 2>/dev/null || true
+  done | tr -d '\0')
+  [[ -n ${decoded} ]] && combined="${combined} ${decoded}"
 fi
 
 # Look for patterns that indicate secret material in output

@@ -19,7 +19,7 @@ NC='\033[0m'
 
 # Helper: check if hook stdout contains a deny decision
 _is_deny() {
-  echo "$1" | grep -q '"permissionDecision"' && echo "$1" | grep -q '"deny"'
+  grep -q '"permissionDecision"' <<<"$1" && grep -q '"deny"' <<<"$1"
 }
 
 # Assert that a hook deny exits 0 with deny JSON on stdout (not exit 1/stderr).
@@ -179,15 +179,11 @@ check_output() {
     '{tool_name: $tn, tool_output: {content: $c, stdout: $c, stderr: ""}}')
 
   output=$(echo "${input}" | bash "${OUTPUT_HOOK}" 2>/dev/null)
-  local is_denied=false
-  if _is_deny "${output}"; then
-    is_denied=true
-  fi
 
-  if [[ ${expect} == "deny" && ${is_denied} == "true" ]]; then
+  if [[ ${expect} == "deny" ]] && _is_deny "${output}"; then
     PASS=$((PASS + 1))
     echo -e "  ${GREEN}PASS${NC} [deny]: ${desc}"
-  elif [[ ${expect} == "clean" && ${is_denied} == "false" ]]; then
+  elif [[ ${expect} == "clean" ]] && ! _is_deny "${output}"; then
     PASS=$((PASS + 1))
     echo -e "  ${GREEN}PASS${NC} [clean]: ${desc}"
   else
