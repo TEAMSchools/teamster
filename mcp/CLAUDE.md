@@ -91,3 +91,9 @@ changed queries against the schema source above.
 `get_asset_check_executions`, and `list_backfills` return a `cursor` field. Pass
 it back as `cursor` on the next call to page forward. Timestamp-based filtering
 is not supported by the API — paginate and filter client-side.
+
+## BigQuery MCP
+
+The BigQuery MCP tool truncates results at 50 rows. When querying
+`INFORMATION_SCHEMA.COLUMNS` for tables with >50 columns, paginate with
+`WHERE ordinal_position > N` to get all rows.

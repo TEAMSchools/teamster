@@ -148,3 +148,14 @@ Column-level documentation belongs in the model's properties YAML as a
 Existing `base_` models are being renamed to `int_`
 ([#2541](https://github.com/TEAMSchools/teamster/issues/2541)). Do not create
 new `base_` models.
+
+## SQL Style
+
+All SQL follows `.trunk/config/.sqlfluff`. Key enforced rules:
+
+- **Dialect**: BigQuery
+- **Trailing commas**: required in `SELECT` clauses
+- **String literals**: single quotes only (no double quotes)
+- **Line length**: 88 characters max
+
+Do not flag code that follows these rules.
