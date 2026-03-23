@@ -64,6 +64,8 @@ fire for Edit.
   manual application using complete code blocks (not diffs), with a file + line
   number link, ordered top-to-bottom, commentary separate from the edits
 - Files under `.claude/` must be staged and committed manually
+- When staging changes that include protected paths, use `git add -u` — naming
+  them explicitly in `git add <file>` triggers the hook and gets blocked
 
 ## permissions.deny path prefixes
 
