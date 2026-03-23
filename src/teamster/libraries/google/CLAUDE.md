@@ -23,6 +23,13 @@ wrapped via the module-level `_retryable_execute(request)` factory +
 `errors.HttpError` — 4xx client errors must not be retried. Transient codes:
 `{429, 500, 502, 503, 504}`.
 
+**409 conflict handling**: 409 is deliberately excluded from
+`_TRANSIENT_HTTP_CODES` because its meaning is method-specific: for
+`batch_insert_role_assignments` it means "entity already exists" (not
+retryable), but for `batch_update_users` it means "conflicting request, please
+try again" (retryable). User update 409s are retried individually via
+`_retry_update_user()` after a 1-second cooldown.
+
 **Batch callback signature**: Google's batch executor calls
 `callback(id, response, exception)` with exactly one of `response`/`exception`
 as `None`. Type both as `X | None`.
