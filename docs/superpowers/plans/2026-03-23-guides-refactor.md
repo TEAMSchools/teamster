@@ -121,11 +121,9 @@ updated.
   uv run pytest tests/assets/test_assets_dbt.py
   ```
 
-  ```
-
-  Note: The triple-backtick fences above are illustrative — write the actual fenced code blocks properly in the file (the outer wrapper here is just quoting). The file has no frontmatter.
-
-  ```
+  Note: The triple-backtick fences above are illustrative — write the actual
+  fenced code blocks properly in the file (the outer wrapper here is just
+  quoting). The file has no frontmatter.
 
 - [ ] **Step 2: Verify the file exists**
 
@@ -363,13 +361,13 @@ updated.
 
   In the `## Structure` section, replace:
 
-  ```
+  ```text
   getting-started.md       # Onboarding guide
   ```
 
   with the guides directory entries. The guides section currently lists:
 
-  ```
+  ```text
   guides/                  # Task-focused walkthroughs
     dagster.md
     google-sheets.md
@@ -377,7 +375,7 @@ updated.
 
   Replace with:
 
-  ```
+  ```text
   guides/                  # Task-focused walkthroughs
     index.md               # Account setup + guide routing table (section landing)
     codespaces.md
