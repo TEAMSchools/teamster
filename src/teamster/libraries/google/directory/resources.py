@@ -481,6 +481,8 @@ class GoogleDirectoryResource(ConfigurableResource):
 
         time.sleep(1)
 
+        # backoff handles transient 5xx/429 within this attempt; a second 409
+        # is deliberately not retried — it propagates as HttpError to the caller.
         backoff(
             fn=_retryable_execute(
                 # trunk-ignore(pyright/reportAttributeAccessIssue)
