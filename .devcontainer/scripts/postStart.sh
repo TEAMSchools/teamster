@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# inject 1Password secrets
-source ./.devcontainer/scripts/inject-secrets.sh
-set +euo pipefail
+# inject 1Password secrets — only strip token from future shells if inject succeeded
+if source ./.devcontainer/scripts/inject-secrets.sh; then
+  echo 'unset OP_SERVICE_ACCOUNT_TOKEN' >>/home/vscode/.bashrc
+  echo 'unset OP_SERVICE_ACCOUNT_TOKEN' >>/home/vscode/.profile
+fi
 
-# Strip 1Password SA token from future shells — inject-secrets.sh has already run
-echo 'unset OP_SERVICE_ACCOUNT_TOKEN' >>/home/vscode/.bashrc
-echo 'unset OP_SERVICE_ACCOUNT_TOKEN' >>/home/vscode/.profile
+set +euo pipefail
 
 uv self update # reliable enough to not pin a version
 uv tool upgrade --all
