@@ -92,9 +92,6 @@ export DBT_SEND_ANONYMOUS_USAGE_STATS=false
   uv run dbt parse --project-dir=src/dbt/kipptaf) &
 wait
 
-# transfer tmpfs ownership to vscode
-sudo chown vscode:vscode /etc/secret-volume
-
 # inject secrets
 .devcontainer/scripts/inject-secrets.sh
 

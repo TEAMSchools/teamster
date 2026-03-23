@@ -64,9 +64,10 @@ fire for Edit.
 
 - Hook scripts (`.claude/hooks/**/*.sh`), `.devcontainer/scripts/`, and
   `.claude/settings.json` / `.claude/settings.local.json`: draft changes,
-  present to user for manual application using complete code blocks (not diffs),
-  with a file + line number link, ordered top-to-bottom, commentary separate
-  from the edits
+  present to user for manual application using complete code blocks — show only
+  the final replacement block, never an old+new pair (which reads like a diff
+  and invites copy errors) — with a file + line number link, ordered
+  top-to-bottom, commentary separate from the edits
 - Those files must also be staged and committed manually
 - Other `.claude/` files (e.g. `CLAUDE.md` files) may be edited directly
 - When staging changes that include protected paths, use `git add -u` — naming

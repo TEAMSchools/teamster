@@ -8,7 +8,7 @@
     "ghcr.io/devcontainers/features/node:1": {}
   },
   "mounts": [
-    "type=tmpfs,destination=/etc/secret-volume,tmpfs-mode=0700,tmpfs-size=10485760"
+    "type=tmpfs,destination=/etc/secret-volume,tmpfs-mode=0700,tmpfs-size=10485760,uid=1000,gid=1000"
   ],
   "runArgs": [
     "--cap-drop=NET_RAW",
