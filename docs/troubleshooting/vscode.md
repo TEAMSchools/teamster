@@ -74,5 +74,5 @@ See [Troubleshooting dbt → dbt Power User](dbt.md#dbt-power-user-extension).
 
 ---
 
-**See also:** [Getting Started](../getting-started.md) ·
-[Troubleshooting dbt](dbt.md) · [Troubleshooting Dagster](dagster.md)
+**See also:** [Guides](../guides/) · [Troubleshooting dbt](dbt.md) ·
+[Troubleshooting Dagster](dagster.md)
