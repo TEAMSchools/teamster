@@ -513,6 +513,20 @@ models:
         data_type: boolean
       - name: application_school_name
         data_type: string
+      - name: has_overgrad_1st_choice
+        data_type: boolean
+      - name: overgrad_1st_choice_school_name
+        data_type: string
+      - name: overgrad_2nd_choice_school_name
+        data_type: string
+      - name: overgrad_3rd_choice_school_name
+        data_type: string
+      - name: overgrad_1st_choice_ecc
+        data_type: numeric
+      - name: overgrad_1st_choice_is_submitted
+        data_type: boolean
+      - name: overgrad_1st_choice_is_accepted
+        data_type: boolean
       - name: entry_school
         data_type: string
       - name: exit_school_name

@@ -30,6 +30,12 @@ Cloud Storage (GCS) as the intermediate storage layer.
   (`feat`, `fix`, `docs`, `refactor`, `chore`, etc.), any related source systems
   (e.g., `adp`, `powerschool`, `deanslist`), and `dagster` and/or `dbt` when
   applicable.
+- **Design specs**: After a spec is written and reviewed, follow this order:
+  1. Open a GitHub issue (`gh issue create`)
+  2. Create and link the branch
+     (`gh issue develop <number> --name <branch> --checkout`)
+  3. Commit the spec to that branch
+  4. Push the branch
 
 ## Commands
 
@@ -94,49 +100,18 @@ The BigQuery MCP tool truncates results at 50 rows. When querying
 
 ### Secrets
 
-PreToolUse (`.claude/hooks/check-sensitive.sh`) and PostToolUse
-(`.claude/hooks/check-output.sh`) hooks guard secrets. All tool_input fields are
-scanned recursively. Read the hooks for full patterns. Key behavior:
+`permissions.deny` rules and hooks guard sensitive paths and content. Read
+`.claude/hooks/CLAUDE.md` before editing hooks, deny rules, protected paths, or
+`.claude/settings.json`. Regression tests: `bash tests/hooks/run_all.sh`.
 
-- **Secret paths** (`env/`, `secret-volume`, `.devcontainer/tpl/`, credentials,
-  `*.pem`/`*.key`/`*.cer`) — all tools blocked.
-- **Read-only paths** (`.claude/settings.json`, `.claude/hooks/`,
-  `.claude/shell-snapshots/`, `.devcontainer/scripts/`, `.git/hooks/`) —
-  Edit/Write/Bash blocked; Read/Grep/Glob allowed.
-- **Content scanning** — Write `content` and Edit `new_string` are scanned, so
-  test files with sensitive fixture strings must also be drafted for manual
-  application.
-- **Output scanning** — Bash/Read/Grep/WebFetch/WebSearch/MCP tool output denied
-  if it contains secret material (keys, tokens, connection strings).
+## Codespace / GKE Setup Quirks
 
-To modify `.devcontainer/scripts/` or `.claude/hooks/`, draft changes and
-present them to the user for manual application. Files under `.claude/` must be
-staged and committed manually — the hook blocks Bash commands that reference
-these paths. Content scanning also blocks Edit/Write on any file whose content
-mentions protected patterns (e.g., this CLAUDE.md) — draft those edits too. Hook
-regression tests: `bash tests/hooks/run_all.sh` (or individual suites in
-`tests/hooks/test_*.sh`). Test files contain sensitive fixture strings that
-trigger content scanning, so edits must be drafted for manual application.
-
-## Documentation
-
-Two documentation systems serve different audiences — do not conflate them:
-
-- **dbt YAML** (properties files + exposures) — how analysts document models,
-  columns, tests, and external tool dependencies. Required for all dbt model
-  changes; enforced by the PR template checklist.
-- **MkDocs site** (`docs/`) — how engineers document infrastructure patterns,
-  architecture, and operational guides. Update when making engineering-level
-  changes:
-  - New integration → update `docs/reference/adding-an-integration.md` and the
-    code location's `CLAUDE.md`
-  - New or changed schedule/sensor → regenerate the automations catalog:
-    `uv run scripts/gen-automations-doc.py`
-  - New core pattern (IO manager behavior, automation condition, partitioning) →
-    update the relevant `docs/reference/` page
-
-Analysts adding or editing SQL models do not need to touch `docs/` — dbt YAML is
-the documentation mechanism for that work.
+- `sudo` is removed at the end of `postCreate.sh` — tooling that needs root
+  (`gcloud components install`, Helm) is installed during setup. To add new
+  components, update `postCreate.sh` and rebuild the container
+- Codespaces silently strips `--cap-add` from `runArgs` — do not attempt
+  namespace-based sandboxing (bwrap, unshare). Hooks are the sole enforcement
+  layer for path-based access control
 
 ## Architecture
 

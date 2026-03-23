@@ -177,7 +177,7 @@ def build_sftp_file_asset(
 
         local_filepath = ssh.sftp_get(
             remote_filepath=file_match,
-            local_filepath=f"./env/{context.asset_key.to_user_string()}/{file_match}",
+            local_filepath=f"/tmp/dagster/{context.asset_key.to_user_string()}/{file_match}",  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
         )
 
         if os.path.getsize(local_filepath) == 0:
@@ -309,7 +309,7 @@ def build_sftp_archive_asset(
 
         local_filepath = ssh.sftp_get(
             remote_filepath=file_match,
-            local_filepath=f"./env/{context.asset_key.to_user_string()}/{file_match}",
+            local_filepath=f"/tmp/dagster/{context.asset_key.to_user_string()}/{file_match}",  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
         )
 
         # exit if file is empty
@@ -331,12 +331,10 @@ def build_sftp_archive_asset(
         with zipfile.ZipFile(file=local_filepath) as zf:
             zf.extract(
                 member=archive_file_regex_composed,
-                path=f"./env/{context.asset_key.to_user_string()}",
+                path=f"/tmp/dagster/{context.asset_key.to_user_string()}",  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
             )
 
-        local_filepath = (
-            f"./env/{context.asset_key.to_user_string()}/{archive_file_regex_composed}"
-        )
+        local_filepath = f"/tmp/dagster/{context.asset_key.to_user_string()}/{archive_file_regex_composed}"  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
 
         if os.path.getsize(local_filepath) == 0:
             context.log.warning(msg=f"File is empty: {local_filepath}")
@@ -451,7 +449,7 @@ def build_sftp_folder_asset(
         for file in file_matches:
             local_filepath = ssh.sftp_get(
                 remote_filepath=file,
-                local_filepath=f"./env/{context.asset_key.to_user_string()}/{file}",
+                local_filepath=f"/tmp/dagster/{context.asset_key.to_user_string()}/{file}",  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
             )
 
             # skip if file is empty

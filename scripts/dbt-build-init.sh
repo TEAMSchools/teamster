@@ -1,16 +1,15 @@
 #!/bin/bash
 
-uv run scripts/dbt-sxs.py kippcamden
-uv run dbt build --full-refresh --project-dir=src/dbt/kippcamden/
+run_project() {
+  local project="$1"
+  uv run scripts/dbt-sxs.py "${project}"
+  uv run dbt build --full-refresh --project-dir="src/dbt/${project}/"
+}
 
-uv run scripts/dbt-sxs.py kippmiami
-uv run dbt build --full-refresh --project-dir=src/dbt/kippmiami/
+run_project kippcamden &
+run_project kippmiami &
+run_project kippnewark &
+run_project kipppaterson &
+wait
 
-uv run scripts/dbt-sxs.py kippnewark
-uv run dbt build --full-refresh --project-dir=src/dbt/kippnewark/
-
-uv run scripts/dbt-sxs.py kipppaterson
-uv run dbt build --full-refresh --project-dir=src/dbt/kipppaterson/
-
-uv run scripts/dbt-sxs.py kipptaf
-uv run dbt build --full-refresh --project-dir=src/dbt/kipptaf/
+run_project kipptaf

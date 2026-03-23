@@ -9,15 +9,16 @@ sudo apt-get update -y &&
   sudo apt-get -y clean &&
   sudo rm -rf /var/lib/apt/lists/*
 
+# install pyright for Claude Code LSP
+npm install -g pyright
+
 # create env folder
 mkdir -p ./env
-sudo mkdir -p /etc/secret-volume
 
 # restrict permissions on secrets-related paths
 chmod 755 .devcontainer/scripts/inject-secrets.sh
 chmod 600 .devcontainer/tpl/*
 chmod 700 ./env
-sudo chmod 700 /etc/secret-volume
 
 # restrict permissions on hook/config paths
 chmod 644 .claude/settings.json
@@ -27,7 +28,13 @@ chmod 755 .claude/hooks/ .claude/hooks/*.sh
 chmod +x /workspaces/teamster/trunk
 
 # install uv -- ignoring feature bc it doesn't allow self update
-curl -LsSf https://astral.sh/uv/install.sh | sh
+curl -LsSf https://astral.sh/uv/install.sh -o /tmp/uv-install.sh &&
+  sh /tmp/uv-install.sh &&
+  rm /tmp/uv-install.sh
+
+# add uv to PATH for this shell session
+# trunk-ignore(shellcheck/SC1091): sourced file created at runtime by uv installer
+source "${HOME}/.local/bin/env"
 
 # install uv dependencies
 uv tool install datamodel-code-generator
@@ -84,3 +91,18 @@ export DBT_SEND_ANONYMOUS_USAGE_STATS=false
 (uv run dbt deps --project-dir=src/dbt/kipptaf &&
   uv run dbt parse --project-dir=src/dbt/kipptaf) &
 wait
+
+# transfer tmpfs ownership to vscode
+sudo chown vscode:vscode /etc/secret-volume
+
+# inject secrets
+.devcontainer/scripts/inject-secrets.sh
+
+# create convenience symlinks (-n: don't follow existing symlink-to-directory)
+ln -sfn /etc/secret-volume /workspaces/teamster/secret-volume
+ln -sfn /etc/secret-volume/.env /workspaces/teamster/env/.env
+mkdir -p /tmp/dagster
+ln -sfn /tmp/dagster /workspaces/teamster/dagster-tmp
+
+# remove sudo — must be last privileged step
+sudo rm -f /usr/local/bin/sudo /usr/bin/sudo

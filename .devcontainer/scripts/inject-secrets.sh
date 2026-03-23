@@ -10,7 +10,7 @@ chmod 700 "${TMPDIR}"
 
 # cleanup on failure, interruption, or exit
 cleanup() {
-  rm -rf "${TMPDIR}" env/.env.tmp
+  rm -rf "${TMPDIR}"
 }
 trap cleanup ERR EXIT INT TERM HUP
 
@@ -37,13 +37,13 @@ if [[ -d /etc/secret-volume ]]; then
 fi
 
 # inject 1Password secrets into .env with empty-output check
-op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env.tmp
-if [[ ! -s env/.env.tmp ]]; then
+TMP_ENV="${TMPDIR}/.env.tmp"
+op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file="${TMP_ENV}"
+if [[ ! -s ${TMP_ENV} ]]; then
   echo "❌ op inject produced empty output for .env" >&2
   exit 1
 fi
-mv -f env/.env.tmp env/.env
-chmod 600 env/.env
+install -m 600 "${TMP_ENV}" /etc/secret-volume/.env
 
 # save secrets to file
 for tpl in adp_wfn_api.cer adp_wfn_api.key deanslist_api_key_map_yaml id_rsa_egencia powerschool_ssh_password.txt; do
@@ -57,7 +57,5 @@ for tpl in adp_wfn_api.cer adp_wfn_api.key deanslist_api_key_map_yaml id_rsa_ege
   fi
 
   # set explicit permissions and move into place
-  sudo chown root:root "${TMP_SECRET}"
-  sudo chmod 600 "${TMP_SECRET}"
-  sudo mv -f "${TMP_SECRET}" "/etc/secret-volume/${tpl}"
+  install -m 600 "${TMP_SECRET}" "/etc/secret-volume/${tpl}"
 done

@@ -1,0 +1,97 @@
+# Hooks
+
+Two hooks guard secrets and sensitive paths:
+
+- **`check-sensitive.sh`** — PreToolUse: blocks tool calls that touch sensitive
+  paths or write sensitive content
+- **`check-output.sh`** — PostToolUse: blocks tool results containing secret
+  material (keys, tokens, connection strings)
+
+See each script for exact regex patterns. This document covers operational
+behavior.
+
+## Hook protocol
+
+Claude Code hooks communicate decisions via **stdout JSON + exit code 0**:
+
+- **Allow**: exit 0 with no output (or empty stdout)
+- **Deny**: exit 0 with
+  `{"hookSpecificOutput": {"permissionDecision": "deny", ...}}` on stdout
+
+**Exit 1 is a non-blocking error** — Claude Code logs it but executes the tool
+anyway. Never use `exit 1` to deny. Never write deny JSON to stderr (`>&2`). The
+regression test suite (`expect_deny_exit0`) enforces both invariants.
+
+## What is blocked
+
+**Secret paths** (all tools blocked) — dotenv files, private key/cert files, SSH
+directory, secret-volume, credentials JSON files, devcontainer template
+directory. See `check-sensitive.sh` for the full pattern list.
+
+**High-risk proc/dev paths** (all tools blocked) — `/proc/*/environ`,
+`/proc/*/cmdline`, `/dev/fd/`.
+
+**Read-only paths** — Edit/Write blocked by `permissions.deny` in
+`settings.json`; Bash blocked by hook Rule 2. Read/Grep/Glob allowed:
+
+- `check-sensitive.sh` and `check-output.sh` themselves
+- `.claude/settings.json`, `.claude/settings.local.json`,
+  `.claude/shell-snapshots/`
+- `.devcontainer/scripts/`
+- `.git/hooks/`
+- `.trunk/trunk.yaml`, `.trunk/config/`
+
+Note: `*.md` files under `.claude/hooks/` (like this CLAUDE.md) are writable.
+
+**Bash-only rules** (do NOT fire for Read, Write, Edit, Grep, or Glob):
+
+- Environment variable / process memory leakage (`printenv`, `set`, `env`, etc.)
+- 1Password CLI commands (`op vault`, `op item`, etc.)
+- Encoding bypass attempts (base64-to-shell pipes, Python exec/eval obfuscation)
+- Shell variable expansion (`$UPPER_CASE` vars not on the safe list)
+
+**BigQuery MCP** — queries must start with SELECT/SHOW/DESCRIBE/WITH; embedded
+DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked.
+
+**Output scanning** (PostToolUse) — blocks tool results containing secret
+material (keys, tokens, connection strings, high-entropy strings). Fires for
+Bash, Read, Grep, NotebookEdit, WebFetch, WebSearch, and MCP tools. Does NOT
+fire for Edit.
+
+## Modifying protected files
+
+- Hook scripts and `.devcontainer/scripts/`: draft changes, present to user for
+  manual application using complete code blocks (not diffs), with a file + line
+  number link, ordered top-to-bottom, commentary separate from the edits
+- Files under `.claude/` must be staged and committed manually
+- When staging changes that include protected paths, use `git add -u` — naming
+  them explicitly in `git add <file>` triggers the hook and gets blocked
+
+## permissions.deny path prefixes
+
+Rules for project-root paths use `/` (e.g. `Edit(/.claude/hooks/**/*.sh)`).
+Rules for home-dir paths must use `~` (e.g.
+`Edit(~/.claude/shell-snapshots/**)`). Using `/` for a home-dir path silently
+fails — the rule never matches.
+
+## Settings file integrity
+
+Hooks and `permissions.deny` rules are defined in `.claude/settings.json`
+(JSONC). If the parser rejects the file, **all settings are silently ignored** —
+no hooks fire, no deny rules apply. Claude Code does not log a warning.
+
+- Keep `settings.json` as clean JSONC — avoid large commented-out blocks
+- Validate after edits: the file must parse as valid JSONC
+- Symptoms of a broken file: hooks stop firing, deny rules stop blocking, no
+  error messages
+
+## Regression tests
+
+```bash
+bash tests/hooks/run_all.sh
+```
+
+Individual suites are in `tests/hooks/test_*.sh`. Test files contain sensitive
+fixture strings (gitleaks ignores are required). The `expect_deny_exit0` helper
+in `helpers.sh` guards against the exit-code and stderr regressions described
+above.
