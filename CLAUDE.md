@@ -31,8 +31,9 @@ Cloud Storage (GCS) as the intermediate storage layer.
     [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/)
     format. Avoid checkpoint-style messages (`save`, `oops`, `update`, etc.).
   - Branch naming: `<author>/<commit-type>/<brief-description>` (e.g.,
-    `cbini/feat/salesforce-alumni-tracking`). Use `claude` as the author prefix
-    for AI-assisted branches.
+    `cbini/feat/salesforce-alumni-tracking`). For AI-assisted branches, prefix
+    the description with `claude-` (e.g.,
+    `cbini/feat/claude-salesforce-alumni-tracking`).
 
 - **GitHub**:
   - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as
