@@ -112,8 +112,16 @@ The BigQuery MCP tool truncates results at 50 rows. When querying
 - Codespaces silently strips `--cap-add` from `runArgs` — do not attempt
   namespace-based sandboxing (bwrap, unshare). Hooks are the sole enforcement
   layer for path-based access control
+- After a codespace rebuild, run
+  `.devcontainer/scripts/gcloud-auth-application-default-login.sh` to restore
+  Application Default Credentials (required for BigQuery MCP, dbt, and any
+  GCP-authenticated tooling)
 
 ## Architecture
+
+This file is a **router** — it contains project-wide conventions and commands,
+then routes to subdirectory CLAUDE.md files for domain-specific context. Keep
+domain-specific guidance in the nearest subdirectory CLAUDE.md, not here.
 
 **IMPORTANT — you MUST read the relevant CLAUDE.md files before doing any work:
 reading, explaining, reviewing, or modifying code. Do NOT skip this step, even

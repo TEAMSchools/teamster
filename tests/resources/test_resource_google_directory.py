@@ -237,6 +237,35 @@ def test_batch_update_users_collects_exception_from_failed_request():
     assert len(exceptions) == 1
 
 
+def test_batch_update_users_retries_409_conflict_and_succeeds():
+    resource, mock_api = _make_resource()
+    err = _http_error(409, b"Conflicting requests. Please try again")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [[(None, err)]]
+    )
+    mock_api.users.return_value.update.return_value.execute.return_value = {
+        "primaryEmail": "a@b.com"
+    }
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_update_users([{"primaryEmail": "a@b.com"}])
+    assert exceptions == []
+
+
+def test_batch_update_users_collects_exception_when_409_retry_also_fails():
+    resource, mock_api = _make_resource()
+    err = _http_error(409, b"Conflicting requests. Please try again")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [[(None, err)]]
+    )
+    mock_api.users.return_value.update.return_value.execute.side_effect = _http_error(
+        409, b"Conflicting requests. Please try again"
+    )
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_update_users([{"primaryEmail": "a@b.com"}])
+    assert len(exceptions) == 1
+    assert "a@b.com" in exceptions[0]
+
+
 # ── batch_insert_members ──────────────────────────────────────────────────────
 
 
