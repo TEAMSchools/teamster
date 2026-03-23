@@ -13,6 +13,17 @@ Cloud Storage (GCS) as the intermediate storage layer.
   including inline one-liners (`uv run python -c "..."`, not
   `python3 -c "..."`). The project environment is managed by uv.
 
+- **Memory vs CLAUDE.md**: Do not save instructions that should govern every
+  session in this project to memory — put them in CLAUDE.md instead. Memory is
+  for information not derivable from the codebase or not appropriate for
+  CLAUDE.md (e.g., user preferences, one-off context).
+
+- **Built-in tools over Bash**: NEVER use Bash for operations covered by a
+  dedicated tool — hooks will reject them. Use Read (not `cat`/`head`/`tail`),
+  Grep (not `grep`/`rg`), Glob (not `find`/`ls`), Edit (not `sed`/`awk`), Write
+  (not echo redirection). Bash is only for operations that have no dedicated
+  tool equivalent.
+
 - **Git**:
   - Do not commit proactively — ask first when a change is complete and tests
     are passing, then commit if confirmed.
