@@ -41,6 +41,7 @@ nav:
       - Automation Conditions: reference/automation-conditions.md
   - Guides:
       - Getting Started: getting-started.md
+      - Codespaces: guides/codespaces.md
       - Dagster: guides/dagster.md
       - Google Sheets & Forms: guides/google-sheets.md
   - Troubleshooting:

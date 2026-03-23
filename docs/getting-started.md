@@ -47,62 +47,7 @@ Cloud:
 
 ## GitHub Codespaces
 
-The devcontainer is pre-configured for
-[GitHub Codespaces](https://github.com/features/codespaces) — no local setup
-required.
-
-### Creating a Codespace
-
-1. On the repository page, click **Code → Codespaces → Create codespace on
-   main** (or your branch).
-2. Select the **4-core / 16 GB** machine type.
-3. Wait for the container to finish building. `postCreate.sh` runs
-   automatically: installs dependencies, bootstraps all dbt projects
-   (`dbt deps` + `dbt parse` in parallel), and injects secrets from 1Password.
-   First creation takes a few minutes.
-
-### After the Codespace opens
-
-**Dismiss VS Code extension prompts** — all required extensions are already
-configured in `devcontainer.json`; dismiss any extension install prompts VS Code
-shows.
-
-**Authenticate to Google** — credentials are not persisted across sessions:
-
-```bash
-bash .devcontainer/scripts/gcloud-auth-application-default-login.sh
-```
-
-**Authenticate Claude Code** — pre-installed; log in once per session:
-
-```bash
-claude auth login
-```
-
-**Install Claude Code plugins** — after authenticating, Claude Code will prompt
-you to install plugins configured for this project. Choose **Install for this
-project** for each prompt. If any prompts don't appear, install manually:
-
-1. Open the Claude Code panel and click the grid (plugin marketplace) icon.
-2. Find any plugin listed in `.claude/settings.json` under `enabledPlugins` that
-   is missing from the **Installed** tab.
-3. Click **Install**, then choose **Install for this project**.
-
-**Wait for dbt Power User to finish parsing** — the extension parses all
-projects in the background, which pegs CPU and makes the extension unresponsive
-until complete. Use `htop` to monitor; wait for CPU to settle before using the
-extension. This is also the most common cause of "extension not responding"
-errors.
-
-**Reload the window** once background processes finish
-(<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> → **Developer: Reload Window**)
-for a clean editor state.
-
-### Subsequent sessions
-
-`postStart.sh` runs automatically on resume (updates uv, syncs dependencies).
-Re-run the Google and Claude Code auth steps above — credentials are not
-persisted.
+See the [Codespaces guide](guides/codespaces.md) for full setup instructions.
 
 ## Local Development
 

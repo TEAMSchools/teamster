@@ -112,10 +112,10 @@ The BigQuery MCP tool truncates results at 50 rows. When querying
 - Codespaces silently strips `--cap-add` from `runArgs` — do not attempt
   namespace-based sandboxing (bwrap, unshare). Hooks are the sole enforcement
   layer for path-based access control
-- After a codespace rebuild, run
-  `.devcontainer/scripts/gcloud-auth-application-default-login.sh` to restore
-  Application Default Credentials (required for BigQuery MCP, dbt, and any
-  GCP-authenticated tooling)
+- After a codespace rebuild, the **Setup: Post-Build Init** VS Code task runs
+  automatically on folder open — it handles GCloud ADC, Claude auth, plugin
+  installation, and dbt dev dataset checks. Individual tasks are also available
+  via `Ctrl+Shift+P` → `Tasks: Run Task`
 
 ## Architecture
 
@@ -127,6 +127,8 @@ domain-specific guidance in the nearest subdirectory CLAUDE.md, not here.
 reading, explaining, reviewing, or modifying code. Do NOT skip this step, even
 if you think you can answer from source code alone.**
 
+- **VS Code tasks/scripts** (reading or editing) → read `.vscode/CLAUDE.md`
+  first
 - **Dagster code** (reading or editing) → read `src/teamster/CLAUDE.md` first
 - **dbt models** (reading or editing) → read `src/dbt/CLAUDE.md` first
 - **Any subdirectory** → read that directory's CLAUDE.md first
