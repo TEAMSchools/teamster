@@ -92,6 +92,10 @@ export DBT_SEND_ANONYMOUS_USAGE_STATS=false
   uv run dbt parse --project-dir=src/dbt/kipptaf) &
 wait
 
+# ensure secret-volume is writable by current user (tmpfs uid/gid mount options
+# require Docker 20.10+ and are not supported on all Codespaces hosts)
+sudo chown "$(id -u):$(id -g)" /etc/secret-volume
+
 # inject secrets
 .devcontainer/scripts/inject-secrets.sh
 
