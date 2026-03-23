@@ -30,6 +30,12 @@ Cloud Storage (GCS) as the intermediate storage layer.
   (`feat`, `fix`, `docs`, `refactor`, `chore`, etc.), any related source systems
   (e.g., `adp`, `powerschool`, `deanslist`), and `dagster` and/or `dbt` when
   applicable.
+- **Design specs**: After a spec is written and reviewed, follow this order:
+  1. Open a GitHub issue (`gh issue create`)
+  2. Create and link the branch
+     (`gh issue develop <number> --name <branch> --checkout`)
+  3. Commit the spec to that branch
+  4. Push the branch
 
 ## Commands
 
