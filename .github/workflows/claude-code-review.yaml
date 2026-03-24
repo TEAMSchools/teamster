@@ -7,6 +7,7 @@ on:
       - uv.lock
       - trunk.yaml
       - package-lock.yml
+      - "**/*.md"
 
 jobs:
   claude-review:
@@ -23,7 +24,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Run Claude Code Review
         id: claude-review
@@ -53,3 +54,4 @@ jobs:
           allowed_bots: dbt-cloud
           include_fix_links: false
           use_sticky_comment: true
+          claude_args: --model sonnet --max-turns 15
