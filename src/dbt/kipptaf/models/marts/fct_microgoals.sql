@@ -38,5 +38,7 @@ select
     goal_name,
     strand_name,
     bucket_name,
+
+    {{ dbt_utils.generate_surrogate_key(["assignment_id"]) }} as microgoals_key,
 from final
 where goal_name is not null
