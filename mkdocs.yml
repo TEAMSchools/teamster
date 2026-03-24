@@ -19,6 +19,7 @@ theme:
     - content.action.edit
     - content.code.copy
     - navigation.instant
+    - navigation.indexes
     - navigation.sections
     - navigation.tabs
     - navigation.tabs.sticky
@@ -32,6 +33,16 @@ hooks:
 
 nav:
   - Home: README.md
+  - Guides:
+      - guides/index.md
+      - Codespaces: guides/codespaces.md
+      - Local Development: guides/local-development.md
+      - Dagster: guides/dagster.md
+      - Google Sheets & Forms: guides/google-sheets.md
+  - Troubleshooting:
+      - Dagster: troubleshooting/dagster.md
+      - dbt: troubleshooting/dbt.md
+      - VS Code: troubleshooting/vscode.md
   - Reference:
       - Architecture: reference/architecture.md
       - Adding an Integration: reference/adding-an-integration.md
@@ -39,14 +50,6 @@ nav:
       - Fiscal Year & Partitioning: reference/fiscal-year-partitioning.md
       - dbt Conventions: reference/dbt-conventions.md
       - Automation Conditions: reference/automation-conditions.md
-  - Guides:
-      - Getting Started: getting-started.md
-      - Dagster: guides/dagster.md
-      - Google Sheets & Forms: guides/google-sheets.md
-  - Troubleshooting:
-      - Dagster: troubleshooting/dagster.md
-      - dbt: troubleshooting/dbt.md
-      - VS Code: troubleshooting/vscode.md
   - Automations: reference/automations.md
 
 markdown_extensions:

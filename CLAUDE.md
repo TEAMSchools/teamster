@@ -12,141 +12,91 @@ Cloud Storage (GCS) as the intermediate storage layer.
 - **Python execution**: Always use `uv run` — never bare `python` or `python3`,
   including inline one-liners (`uv run python -c "..."`, not
   `python3 -c "..."`). The project environment is managed by uv.
-- **Git commits**: Do not commit proactively — ask first when a change is
-  complete, tests are passing, and it is ready to commit, then commit if
-  confirmed. Commits should have descriptive messages following the
-  [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/) format.
-  Avoid checkpoint-style messages (`save`, `oops`, `update`, etc.).
-- **Branch naming**: `<author>/<commit-type>/<brief-description>` (e.g.,
-  `cbini/feat/salesforce-alumni-tracking`). Use `claude` as the author prefix
-  for AI-assisted branches.
-- **Pull requests**: Squash merge. When opening a PR, use
-  `.github/pull_request_template.md` as the body — fill in the relevant sections
-  based on the changes.
-- **GitHub issues**: Do not open issues proactively — ask first when something
-  warrants one, then open it if confirmed. Use `gh issue create` (not the web
-  UI). Label it with a
-  [conventional commit type](https://www.conventionalcommits.org/en/v1.0.0/)
-  (`feat`, `fix`, `docs`, `refactor`, `chore`, etc.), any related source systems
-  (e.g., `adp`, `powerschool`, `deanslist`), and `dagster` and/or `dbt` when
-  applicable.
 
-## Commands
+- **Memory vs CLAUDE.md**: Do not save instructions that should govern every
+  session in this project to memory — put them in CLAUDE.md instead. Memory is
+  for information not derivable from the codebase or not appropriate for
+  CLAUDE.md (e.g., user preferences, one-off context).
 
-The `scripts/` directory contains project utilities (doc generation, migrations,
-etc.) in lieu of a Makefile. Run them with `uv run scripts/<name>.py`.
+- **Built-in tools over Bash**: You have dedicated tools — use them instead of
+  shell equivalents. This is a hard rule, not a suggestion.
 
-### Development
+  | Instead of (Bash)                  | Use this tool                     |
+  | ---------------------------------- | --------------------------------- |
+  | `cat`, `head`, `tail`, `less`      | **Read**                          |
+  | `grep`, `rg`, `ag`, `ack`          | **Grep** (pattern/content search) |
+  | `find`, `fd`                       | **Glob**                          |
+  | `sed`, `awk`, inline patch scripts | **Edit**                          |
+  | `echo >`, `cat <<EOF >`, `tee`     | **Write**                         |
+  | `cp`                               | **Read** then **Write**           |
 
-```bash
-# Install dependencies
-uv sync --frozen
+  `ls` is the one exception — use it via Bash to list directory contents (Glob
+  matches patterns, not directory listings).
 
-# Inject 1Password secrets (required for Dagster development, not needed for SQL-only work)
-.devcontainer/scripts/inject-secrets.sh
+  Bash is **only** for commands that have no dedicated tool equivalent (e.g.,
+  `git`, `uv run`, `gh`, `docker`, `trunk`, `ls`). If you catch yourself typing
+  a shell command from the left column above — stop and use the tool instead.
 
-# Run Dagster webserver locally
-uv run dagster dev
+- **Git**:
+  - Do not commit proactively — ask first when a change is complete and tests
+    are passing, then commit if confirmed.
+  - Commit messages follow
+    [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/)
+    format. Avoid checkpoint-style messages (`save`, `oops`, `update`, etc.).
+  - Branch naming: `<author>/<commit-type>/<brief-description>` (e.g.,
+    `cbini/feat/salesforce-alumni-tracking`). For AI-assisted branches, prefix
+    the description with `claude-` (e.g.,
+    `cbini/feat/claude-salesforce-alumni-tracking`).
+  - **Staging protected paths**: Use bare `git add -u` (no path argument) —
+    naming protected paths explicitly (e.g., `git add .claude/settings.json`)
+    triggers the hook and gets blocked.
 
-# Validate Dagster definitions for a code location
-uv run dagster definitions validate -m teamster.code_locations.kipptaf.definitions
+- **GitHub**:
+  - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as
+    the PR body — fill in the relevant sections based on the changes.
+  - **Issues**: Do not open proactively — ask first. Use `gh issue create` (not
+    the web UI). Label with a
+    [conventional commit type](https://www.conventionalcommits.org/en/v1.0.0/)
+    (`feat`, `fix`, `docs`, `refactor`, `chore`, etc.), any related source
+    systems (e.g., `adp`, `powerschool`, `deanslist`), and `dagster` and/or
+    `dbt` when applicable.
+  - **Design specs**: After a spec is written and reviewed:
+    1. Open a GitHub issue (`gh issue create`)
+    2. Create and link the branch
+       (`gh issue develop <number> --name <branch> --checkout`)
+    3. Commit the spec to that branch
+    4. Push the branch
 
-# Prepare and package a dbt project (must be done before running dbt assets)
-uv run dagster-dbt project prepare-and-package --file src/teamster/code_locations/kipptaf/__init__.py
-```
+- **Claude CLI**: The `claude` binary is at
+  `~/.vscode-remote/extensions/anthropic.claude-code-*/resources/native-binary/claude`
+  and is not on `$PATH`, so it cannot be run via Bash. Run it manually in a
+  terminal.
 
-### Testing
-
-```bash
-# Run all tests
-uv run pytest
-
-# Run a single test file
-uv run pytest tests/test_dagster_definitions.py
-
-# Run a single test
-uv run pytest tests/test_dagster_definitions.py::test_definitions_kipptaf
-
-# Run asset-specific tests (require env vars / external connections)
-uv run pytest tests/assets/test_assets_dbt.py
-```
-
-### Linting
-
-See `.trunk/trunk.yaml` for the full list of enabled linters and
-`.trunk/config/` for per-linter configuration files. A pre-commit hook runs
-`trunk check` — if a commit is rejected, fix the reported issues and re-commit.
-
-**SQL style**: Before writing, reviewing, or commenting on SQL, read
-`.trunk/config/.sqlfluff`. Key enforced rules: BigQuery dialect, trailing commas
-**required** in SELECT clauses, single quotes for literals, max line length 88.
-Do not flag code that follows these rules.
-
-**Shell style**: `shfmt` enforces tabs. Linter ignores use
-`# trunk-ignore(shellcheck/SCXXXX)` with a reason comment, not
-`# shellcheck disable=`.
-
-### BigQuery MCP Queries
-
-The BigQuery MCP tool truncates results at 50 rows. When querying
-`INFORMATION_SCHEMA.COLUMNS` for tables with >50 columns, paginate with
-`WHERE ordinal_position > N` to get all rows.
-
-### Secrets
-
-PreToolUse (`.claude/hooks/check-sensitive.sh`) and PostToolUse
-(`.claude/hooks/check-output.sh`) hooks guard secrets. All tool_input fields are
-scanned recursively. Read the hooks for full patterns. Key behavior:
-
-- **Secret paths** (`env/`, `secret-volume`, `.devcontainer/tpl/`, credentials,
-  `*.pem`/`*.key`/`*.cer`) — all tools blocked.
-- **Read-only paths** (`.claude/settings.json`, `.claude/hooks/`,
-  `.claude/shell-snapshots/`, `.devcontainer/scripts/`, `.git/hooks/`) —
-  Edit/Write/Bash blocked; Read/Grep/Glob allowed.
-- **Content scanning** — Write `content` and Edit `new_string` are scanned, so
-  test files with sensitive fixture strings must also be drafted for manual
-  application.
-- **Output scanning** — Bash/Read/Grep/WebFetch/WebSearch/MCP tool output denied
-  if it contains secret material (keys, tokens, connection strings).
-
-To modify `.devcontainer/scripts/` or `.claude/hooks/`, draft changes and
-present them to the user for manual application. Files under `.claude/` must be
-staged and committed manually — the hook blocks Bash commands that reference
-these paths. Content scanning also blocks Edit/Write on any file whose content
-mentions protected patterns (e.g., this CLAUDE.md) — draft those edits too. Hook
-regression tests: `bash tests/hooks/run_all.sh` (or individual suites in
-`tests/hooks/test_*.sh`). Test files contain sensitive fixture strings that
-trigger content scanning, so edits must be drafted for manual application.
-
-## Documentation
-
-Two documentation systems serve different audiences — do not conflate them:
-
-- **dbt YAML** (properties files + exposures) — how analysts document models,
-  columns, tests, and external tool dependencies. Required for all dbt model
-  changes; enforced by the PR template checklist.
-- **MkDocs site** (`docs/`) — how engineers document infrastructure patterns,
-  architecture, and operational guides. Update when making engineering-level
-  changes:
-  - New integration → update `docs/reference/adding-an-integration.md` and the
-    code location's `CLAUDE.md`
-  - New or changed schedule/sensor → regenerate the automations catalog:
-    `uv run scripts/gen-automations-doc.py`
-  - New core pattern (IO manager behavior, automation condition, partitioning) →
-    update the relevant `docs/reference/` page
-
-Analysts adding or editing SQL models do not need to touch `docs/` — dbt YAML is
-the documentation mechanism for that work.
+- **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment. Do
+  not use linter-native disable syntax (e.g., `# shellcheck disable=`, `# noqa`,
+  `-- noqa`).
 
 ## Architecture
 
-**IMPORTANT — you MUST read the relevant CLAUDE.md files before doing any work:
-reading, explaining, reviewing, or modifying code. Do NOT skip this step, even
-if you think you can answer from source code alone.**
+This file is a **router** — it contains project-wide conventions, then routes to
+subdirectory CLAUDE.md files for domain-specific context. Keep domain-specific
+guidance in the nearest subdirectory CLAUDE.md, not here.
 
-- **Dagster code** (reading or editing) → read `src/teamster/CLAUDE.md` first
-- **dbt models** (reading or editing) → read `src/dbt/CLAUDE.md` first
-- **Any subdirectory** → read that directory's CLAUDE.md first
+**You MUST read the relevant CLAUDE.md file before doing any work in a
+subdirectory — reading, explaining, reviewing, or modifying code. Do NOT skip
+this step.**
 
-These files contain conventions, antipatterns, and architectural decisions that
-are not discoverable from source code.
+| Path                      | When                               |
+| ------------------------- | ---------------------------------- |
+| `src/teamster/CLAUDE.md`  | Dagster code                       |
+| `src/dbt/CLAUDE.md`       | dbt models                         |
+| `.vscode/CLAUDE.md`       | VS Code tasks/scripts              |
+| `.claude/CLAUDE.md`       | hooks, deny rules, protected paths |
+| `.devcontainer/CLAUDE.md` | Codespace setup                    |
+| `.k8s/CLAUDE.md`          | GKE setup                          |
+| `.trunk/CLAUDE.md`        | linting config                     |
+| `tests/CLAUDE.md`         | testing                            |
+| `scripts/CLAUDE.md`       | project utilities                  |
+| `mcp/CLAUDE.md`           | MCP servers/tools                  |
+| `docs/CLAUDE.md`          | MkDocs documentation site          |
+| Any subdirectory          | that directory's CLAUDE.md         |

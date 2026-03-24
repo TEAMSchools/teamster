@@ -59,7 +59,7 @@ Read the full story in the
 
 New to the project? Start here:
 
-1. [Getting Started](getting-started.md) — account setup, Codespaces, local dev
+1. [Guides](guides/index.md) — account setup and task-focused walkthroughs
 2. [Architecture](reference/architecture.md) — how the code is organized
 3. [Contributing](CONTRIBUTING.md) — workflow and PR guidelines
 

@@ -28,4 +28,8 @@ left join
     on sg.dcid = de.storedgradesdcid
     and {{ union_dataset_join_clause(left_alias="sg", right_alias="de") }}
     and de.de_course_name is not null
-where sg.course_name like '%(DE)' and sg.storecode = 'Y1'
+-- TODO: establish storecode policy for DE grades as institutions now submit
+-- twice yearly (fall → Q2, spring → ?). If spring grades land on Y1 in the
+-- same academic year, a student will have both Q2 and Y1 rows for the same
+-- course, causing duplicates. Consider a priority/fallback CTE at that point.
+where sg.course_name like '%(DE)' and sg.storecode in ('Y1', 'Q2')
