@@ -17,6 +17,7 @@ select
                 "plan_type",
                 "plan_name",
                 "coverage_level",
+                "position_id",
                 "enrollment_start_date",
             ]
         )
