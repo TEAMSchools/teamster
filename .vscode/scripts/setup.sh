@@ -6,6 +6,18 @@ SCRIPT_DIR="$(dirname "$0")"
 
 source "${SCRIPT_DIR}/shared/claude.sh"
 
+# VS Code opens the folder (triggering this task) while postCreate.sh or
+# postStart.sh may still be running. Wait for both to finish first.
+for script in postCreate.sh postStart.sh; do
+  if pgrep -f "${script}" >/dev/null 2>&1; then
+    echo "⏳ Waiting for ${script} to finish..."
+    while pgrep -f "${script}" >/dev/null 2>&1; do
+      sleep 5
+    done
+    echo -e "\033[1;32m✔ ${script} complete\033[0m"
+  fi
+done
+
 if [[ -z ${GITHUB_USER-} ]]; then
   GITHUB_USER=$(gh api user --jq .login 2>/dev/null)
   export GITHUB_USER

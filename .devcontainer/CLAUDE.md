@@ -11,7 +11,9 @@ Container configuration for Codespace and local development.
 - **Post-build VS Code task**: "Setup: Post-Build Init" runs automatically on
   folder open after a rebuild — handles GCloud ADC, Claude auth, plugin
   installation, and dbt dev dataset checks. Individual tasks available via
-  `Ctrl+Shift+P` → `Tasks: Run Task`
+  `Ctrl+Shift+P` → `Tasks: Run Task`. The task polls with `pgrep` until
+  `postCreate.sh`/`postStart.sh` finish — VS Code fires `folderOpen` before they
+  complete, so this guard is intentional; do not remove it.
 
 ## Secret Injection
 
@@ -19,8 +21,16 @@ Container configuration for Codespace and local development.
 environment. Required for Dagster development; not needed for SQL-only work. Run
 after container start if env vars or secrets are missing.
 
+- **Adding a new secret**: update **both** the symlink validation loop and the
+  injection `for` loop — omitting either silently skips the secret.
+
 ## Quirks
 
+- **`apt-get update` permission errors in `postCreate.sh`**: stale root-owned
+  files in `/var/lib/apt/lists/partial/` from the image build cause permission
+  denied errors; pre-clean with
+  `sudo rm -rf /var/lib/apt/lists/partial /var/cache/apt/archives/partial`
+  before running `apt-get update`
 - **`sudo` removed**: at the end of `postCreate.sh` — privileged setup (gcloud
   components, Helm) must go in `postCreate.sh`, not later. To add new
   components, update `postCreate.sh` and rebuild the container.
@@ -28,4 +38,11 @@ after container start if env vars or secrets are missing.
   `runArgs` — namespace-based sandboxing (bwrap, unshare) will not work. Hooks
   are the sole enforcement layer for path-based access control.
 - **Protected scripts**: `.devcontainer/scripts/` is read-only under hooks —
-  present changes as manual application blocks, not diffs.
+  present changes as manual application blocks, not diffs. `.vscode/scripts/` is
+  **not** hook-protected and can be edited directly.
+- **Machine-scoped VS Code settings**: devcontainer features auto-seed
+  `/home/vscode/.vscode-remote/data/Machine/settings.json` (e.g., wrong
+  `python.defaultInterpreterPath`, `ms-python.autopep8` as Python formatter).
+  Workspace settings override these at runtime, but warnings appear during
+  `postCreate` before the workspace loads. Patch this file early in
+  `postCreate.sh` via `jq` to suppress them.

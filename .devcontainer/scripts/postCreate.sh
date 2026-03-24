@@ -1,10 +1,20 @@
 #!/bin/bash
 
+# uninstall unwanted extensions seeded by devcontainer features
+code --uninstall-extension ms-python.autopep8 || true
+
+# override machine-scoped settings seeded by devcontainer features
+jq '. + {"python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python", "[python]": {"editor.defaultFormatter": "trunk.io"}}' \
+  /home/vscode/.vscode-remote/data/Machine/settings.json \
+  >/tmp/machine-settings.json &&
+  mv /tmp/machine-settings.json /home/vscode/.vscode-remote/data/Machine/settings.json
+
 git config pull.rebase false # specify how to reconcile divergent branches (merge)
 git config push.autoSetupRemote true
 
 # install extra apt packages
-sudo apt-get update -y &&
+sudo rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* &&
+  sudo apt-get update -y &&
   sudo apt-get -y install --no-install-recommends sshpass &&
   sudo apt-get -y clean &&
   sudo rm -rf /var/lib/apt/lists/*
@@ -94,7 +104,9 @@ wait
 
 # ensure secret-volume is writable by current user (tmpfs uid/gid mount options
 # require Docker 20.10+ and are not supported on all Codespaces hosts)
-sudo chown "$(id -u):$(id -g)" /etc/secret-volume
+_uid=$(id -u)
+_gid=$(id -g)
+sudo chown "${_uid}:${_gid}" /etc/secret-volume
 
 # inject secrets
 .devcontainer/scripts/inject-secrets.sh

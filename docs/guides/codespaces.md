@@ -24,7 +24,11 @@ rather than the browser editor.
 3. Wait for the container to finish building. `postCreate.sh` runs
    automatically: installs dependencies, bootstraps all dbt projects
    (`dbt deps` + `dbt parse` in parallel), and injects secrets from 1Password.
-   First creation takes a few minutes.
+   First creation takes a few minutes. VS Code may show a Python interpreter
+   warning during this phase — the base container image seeds a machine-scoped
+   setting pointing to `/usr/local/bin/python` before the project venv exists.
+   `postCreate.sh` overwrites that setting early in its run, so the warning is
+   transient and resolves on its own without any action needed.
 
 ## After the Codespace opens
 
@@ -36,8 +40,10 @@ rather than the browser editor.
     > Do you allow automatic tasks to run when you open this folder?"*
 
     **Click "Allow and Run".** This is required for the automated setup to work.
-    If you dismiss or deny this prompt, the setup task will not run and you will
-    need to configure everything manually.
+    If you dismiss or deny this prompt, the setup task will not run. To fix it,
+    add `"task.allowAutomaticTasks": "on"` to your local VS Code **User
+    Settings** (++ctrl+shift+p++ → **Open User Settings (JSON)**), then reopen
+    the Codespace.
 
 The **Setup: Post-Build Init** VS Code task runs automatically when the
 workspace opens. It walks you through each step in order:
