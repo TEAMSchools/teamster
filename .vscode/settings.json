@@ -81,7 +81,6 @@
     "editor.defaultFormatter": "trunk.io"
   },
   "claudeCode.preferredLocation": "sidebar",
-  "claudeCode.useTerminal": true,
   "terminal.integrated.profiles.linux": {
     "Claude Code": {
       "path": "claude",

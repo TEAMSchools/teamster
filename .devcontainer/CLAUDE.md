@@ -24,6 +24,17 @@ after container start if env vars or secrets are missing.
 - **Adding a new secret**: update **both** the symlink validation loop and the
   injection `for` loop — omitting either silently skips the secret.
 
+## Claude Code Auth in Codespaces
+
+- The CLI binary detects `op` on `$PATH` and tries to use it as a credential
+  backend — `OP_SERVICE_ACCOUNT_TOKEN` is set to a dummy value after secret
+  injection (`postStart.sh`) to make `op` fail fast instead of prompting
+- `CLAUDE_CODE_OAUTH_TOKEN` (not `ANTHROPIC_AUTH_TOKEN`) is the correct env var
+  for OAuth token auth — use as a personal Codespace secret to bypass credential
+  store entirely
+- GitHub Actions workflows use `claude_code_oauth_token` input (not
+  `anthropic_api_key`)
+
 ## Quirks
 
 - **`apt-get update` permission errors in `postCreate.sh`**: stale root-owned
