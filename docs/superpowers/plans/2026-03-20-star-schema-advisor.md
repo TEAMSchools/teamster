@@ -1405,7 +1405,7 @@ uv run dagster-dbt project prepare-and-package \
 
 Then via dbt MCP:
 
-```
+```text
 dbt show --select <model_name> --limit 5
 ```
 
@@ -1452,8 +1452,7 @@ When all datasources are complete, give a consolidated session summary:
 > **Semantic layer fields queued:** N fields total — run
 > `/cube-measure-generator` pointing at any report file when ready."
 
-````
-
+````markdown
 - [ ] **Step 2: Apply the file manually**
 
 Draft presented above — apply to `.claude/commands/star-schema-advisor.md`
@@ -1462,6 +1461,7 @@ manually (hook blocks Write on `.claude/` paths). Then stage and commit:
 ```bash
 git add .claude/commands/star-schema-advisor.md
 git commit -m "feat: add /star-schema-advisor slash command"
+```
 ````
 
 ---

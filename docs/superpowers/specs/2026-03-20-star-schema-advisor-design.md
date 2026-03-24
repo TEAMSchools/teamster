@@ -377,7 +377,7 @@ uv run dagster-dbt project prepare-and-package \
 
 Then validate data via dbt MCP:
 
-```
+```text
 dbt show --select <model_name> --limit 5
 ```
 
