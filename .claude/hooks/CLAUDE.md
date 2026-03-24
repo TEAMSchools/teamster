@@ -32,7 +32,9 @@ directory. See `check-sensitive.sh` for the full pattern list.
 `/proc/*/cmdline`, `/dev/fd/`.
 
 **Read-only paths** — Edit/Write blocked by `permissions.deny` in
-`settings.json`; Bash blocked by hook Rule 2. Read/Grep/Glob allowed:
+`settings.json`; Bash blocked entirely by hook Rule 2 — Bash commands (even
+read-only ones) can pipe or chain output past `check-output.sh`, whereas
+Read/Grep/Glob always run through it. Read/Grep/Glob allowed:
 
 - `check-sensitive.sh` and `check-output.sh` themselves
 - `.claude/settings.json`, `.claude/settings.local.json`,
@@ -60,12 +62,19 @@ fire for Edit.
 
 ## Modifying protected files
 
-- Hook scripts and `.devcontainer/scripts/`: draft changes, present to user for
-  manual application using complete code blocks (not diffs), with a file + line
-  number link, ordered top-to-bottom, commentary separate from the edits
-- Files under `.claude/` must be staged and committed manually
+- Hook scripts (`.claude/hooks/**/*.sh`), `.devcontainer/scripts/`, and
+  `.claude/settings.json` / `.claude/settings.local.json`: draft changes,
+  present to user for manual application using complete code blocks — show only
+  the final replacement block, never an old+new pair (which reads like a diff
+  and invites copy errors) — with a file + line number link, ordered
+  top-to-bottom, commentary separate from the edits
+- Those files must also be staged and committed manually
+- Other `.claude/` files (e.g. `CLAUDE.md` files) may be edited directly
 - When staging changes that include protected paths, use `git add -u` — naming
   them explicitly in `git add <file>` triggers the hook and gets blocked
+- Commit message bodies are scanned by the hook (it reads the full command
+  string) — avoid `env` as a standalone word and `$VAR` references in message
+  text; shorten the body if a commit is repeatedly blocked
 
 ## permissions.deny path prefixes
 
