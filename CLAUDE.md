@@ -34,6 +34,9 @@ Cloud Storage (GCS) as the intermediate storage layer.
     `cbini/feat/salesforce-alumni-tracking`). For AI-assisted branches, prefix
     the description with `claude-` (e.g.,
     `cbini/feat/claude-salesforce-alumni-tracking`).
+  - **Staging protected paths**: Use bare `git add -u` (no path argument) —
+    naming protected paths explicitly (e.g., `git add .claude/settings.json`)
+    triggers the hook and gets blocked.
 
 - **GitHub**:
   - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as
