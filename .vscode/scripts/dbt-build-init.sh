@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+# trunk-ignore(shellcheck/SC1091): sourced file created at runtime by uv installer
+source "${HOME}/.local/bin/env"
+
 PROJECT="${1:-all}"
 
 run_project() {

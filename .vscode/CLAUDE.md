@@ -10,8 +10,24 @@
   `gh api user --jq .login` and persist to `~/.bashrc`
 - Claude plugin state lives in `~/.claude/plugins/installed_plugins.json` — read
   with `jq` instead of parsing `claude plugins list` output
+- VS Code task shells do not inherit `~/.local/bin` in PATH — `uv` is not
+  available unless you `source "${HOME}/.local/bin/env"` first
 
 ## GCloud Auth
+
+### Access Model
+
+ADC in Codespaces works via user-impersonation of the service account
+`codespaces@teamster-332318.iam.gserviceaccount.com`. Access is managed through
+the `teamster-analysts@apps.teamschools.org` Google Group:
+
+- All group members are granted `roles/iam.serviceAccountTokenCreator` on the
+  SA, which allows them to impersonate it via `--impersonate-service-account`
+- The SA itself is a member of the group and therefore inherits the group's GCP
+  IAM roles directly (not just the token creator role)
+
+To grant a new developer access: add them to
+`teamster-analysts@apps.teamschools.org`.
 
 - To check if ADC is valid, use
   `gcloud auth application-default print-access-token`; `gcloud auth list` only
@@ -38,3 +54,6 @@
 - Check Claude auth with `"${CLAUDE}" auth status | grep -q '"loggedIn": true'`;
   flag-file guards for Claude auth are redundant and produce false "not logged
   in" errors when the flag is missing — check auth directly instead
+- On a fresh rebuild the Claude Code extension may not be installed when
+  `folderOpen` fires; `$CLAUDE` will be empty — poll for the binary rather than
+  silently skipping

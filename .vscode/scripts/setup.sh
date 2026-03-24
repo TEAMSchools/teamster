@@ -30,6 +30,22 @@ else
   echo -e "\033[1;32m✔ GCloud authenticated\033[0m"
 fi
 
+# On a fresh rebuild the Claude Code extension may still be installing when
+# this task fires. Poll until the binary appears (up to ~5 minutes).
+if [[ -z ${CLAUDE} ]]; then
+  echo "⏳ Waiting for Claude Code extension to install..."
+  _elapsed=0
+  while [[ -z ${CLAUDE} && ${_elapsed} -lt 300 ]]; do
+    sleep 5
+    _elapsed=$((_elapsed + 5))
+    CLAUDE=$(find ~/.vscode-remote/extensions/anthropic.claude-code-*/resources/native-binary/claude -type f 2>/dev/null | head -1) || true
+  done
+  if [[ -z ${CLAUDE} ]]; then
+    echo -e "\033[1;33m⚠ Claude Code extension not found — skipping Claude setup\033[0m"
+    echo -e "\033[1;33m  Install the extension and run the 'Claude: Login' task manually\033[0m"
+  fi
+fi
+
 if [[ -n ${CLAUDE} ]]; then
   if ! "${CLAUDE}" auth status 2>/dev/null | grep -q '"loggedIn": true'; then
     bash "${SCRIPT_DIR}/claude-login.sh"
