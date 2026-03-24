@@ -46,10 +46,9 @@ Read/Grep/Glob always run through it. Read/Grep/Glob allowed:
 Note: `*.md` files under `.claude/` (like this CLAUDE.md) are writable.
 
 **Claude CLI via Bash** — the `claude` binary lives under
-`~/.vscode-remote/extensions/` which triggers the sensitive path hook. Plugin
-and marketplace commands (`claude plugins install`,
-`claude plugins marketplace list`, etc.) cannot be run via Bash — the user must
-run them manually in a terminal.
+`~/.vscode-remote/extensions/` and is not on `$PATH`, so it cannot be run via
+Bash. Plugin and marketplace commands (`claude plugins install`,
+`claude plugins marketplace list`, etc.) must be run manually in a terminal.
 
 **Bash-only rules** (do NOT fire for Read, Write, Edit, Grep, or Glob):
 
