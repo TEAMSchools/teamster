@@ -70,7 +70,7 @@ this step.**
 | `src/teamster/CLAUDE.md`  | Dagster code                       |
 | `src/dbt/CLAUDE.md`       | dbt models                         |
 | `.vscode/CLAUDE.md`       | VS Code tasks/scripts              |
-| `.claude/hooks/CLAUDE.md` | hooks, deny rules, protected paths |
+| `.claude/CLAUDE.md`       | hooks, deny rules, protected paths |
 | `.devcontainer/CLAUDE.md` | Codespace setup                    |
 | `.k8s/CLAUDE.md`          | GKE setup                          |
 | `.trunk/CLAUDE.md`        | linting config                     |

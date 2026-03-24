@@ -43,7 +43,13 @@ Read/Grep/Glob always run through it. Read/Grep/Glob allowed:
 - `.git/hooks/`
 - `.trunk/trunk.yaml`, `.trunk/config/`
 
-Note: `*.md` files under `.claude/hooks/` (like this CLAUDE.md) are writable.
+Note: `*.md` files under `.claude/` (like this CLAUDE.md) are writable.
+
+**Claude CLI via Bash** — the `claude` binary lives under
+`~/.vscode-remote/extensions/` which triggers the sensitive path hook. Plugin
+and marketplace commands (`claude plugins install`,
+`claude plugins marketplace list`, etc.) cannot be run via Bash — the user must
+run them manually in a terminal.
 
 **Bash-only rules** (do NOT fire for Read, Write, Edit, Grep, or Glob):
 

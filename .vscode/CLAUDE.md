@@ -18,13 +18,16 @@
 ### Access Model
 
 ADC in Codespaces works via user-impersonation of the service account
-`codespaces@teamster-332318.iam.gserviceaccount.com`. Access is managed through
-the `teamster-analysts@apps.teamschools.org` Google Group:
+`codespaces@teamster-332318.iam.gserviceaccount.com`. Access is split into two
+independent layers:
 
-- All group members are granted `roles/iam.serviceAccountTokenCreator` on the
-  SA, which allows them to impersonate it via `--impersonate-service-account`
-- The SA itself is a member of the group and therefore inherits the group's GCP
-  IAM roles directly (not just the token creator role)
+- **Developer access**: all members of `teamster-analysts@apps.teamschools.org`
+  are granted `roles/iam.serviceAccountTokenCreator` on the SA, which allows
+  them to impersonate it via `--impersonate-service-account`
+- **SA permissions**: `codespaces@` has its own direct IAM bindings on the
+  project — it is **not** a member of `teamster-analysts@` and does not inherit
+  group roles. This prevents a self-impersonation loop and keeps the SA's
+  permissions explicitly auditable in IAM.
 
 To grant a new developer access: add them to
 `teamster-analysts@apps.teamschools.org`.
@@ -48,6 +51,15 @@ To grant a new developer access: add them to
   `--impersonate-service-account`
 - `gcloud auth application-default set-quota-project` fails with impersonated
   credentials — use `--billing-project` flag on the login command instead
+
+## Claude Plugins
+
+- `claude-plugins-official` must be listed in `.claude/settings.json`
+  `extraKnownMarketplaces` (pointing to `anthropics/claude-plugins-official`) so
+  `claude-install-plugins.sh` explicitly refreshes it via
+  `marketplace add --scope project` before installs run — omitting it causes
+  "Plugin not found in marketplace" errors for all `*@claude-plugins-official`
+  plugins
 
 ## Claude Auth
 
