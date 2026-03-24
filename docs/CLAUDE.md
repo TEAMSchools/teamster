@@ -9,7 +9,6 @@ guides, and infrastructure patterns. Analyst documentation lives in dbt YAML
 ```text
 docs/
   README.md                # Site homepage (nav/TOC hidden via hooks.py)
-  getting-started.md       # Onboarding guide
   CONTRIBUTING.md          # Development workflow and PR guidelines
   hooks.py                 # MkDocs hook: hides nav/TOC on homepage
   reference/               # Architectural patterns and operational guides
@@ -22,6 +21,9 @@ docs/
     automations.md         # GENERATED — do not edit manually
     claude-code-security-hooks.md  # Not in nav
   guides/                  # Task-focused walkthroughs
+    index.md               # Account setup + guide routing table (section landing)
+    codespaces.md
+    local-development.md
     dagster.md
     google-sheets.md
   troubleshooting/         # Diagnostic guides for common failures

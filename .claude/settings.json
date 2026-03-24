@@ -1,46 +1,5 @@
 {
-  "enabledPlugins": {
-    "claude-md-management@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "dagster-expert@dagster": true,
-    "dbt@dbt-agent-marketplace": true,
-    "dignified-python@dagster": true,
-    "pyright-lsp@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true
-  },
-  "extraKnownMarketplaces": {
-    "dagster-skills": {
-      "source": {
-        "source": "github",
-        "repo": "dagster-io/skills"
-      }
-    },
-    "dbt-agent-skills": {
-      "source": {
-        "source": "github",
-        "repo": "dbt-labs/dbt-agent-skills"
-      }
-    }
-  },
   "permissions": {
-    "deny": [
-      "Edit(/.claude/hooks/**/*.sh)",
-      "Edit(/.claude/settings.json)",
-      "Edit(/.claude/settings.local.json)",
-      "Edit(/.devcontainer/scripts/**)",
-      "Edit(/.git/hooks/**)",
-      "Edit(/.trunk/**)",
-      "Edit(~/.claude/shell-snapshots/**)",
-      "Read(/.devcontainer/tpl/**)",
-      "Read(//dev/fd/**)",
-      "Read(//etc/secret-volume/**)",
-      "Read(//proc/**)",
-      "Read(/env/**)",
-      "Read(~/.kube/**)",
-      "Read(~/.ssh/**)"
-    ],
     "allow": [
       "Bash(gh issue list:*)",
       "Bash(gh issue status:*)",
@@ -103,6 +62,23 @@
       "Read(**/secrets.json)",
       "Read(//workspaces/teamster/**)",
       "Read(~/.claude/plugins/**)"
+    ],
+    "deny": [
+      "Edit(/.claude/hooks/**/*.sh)",
+      "Edit(/.claude/settings.json)",
+      "Edit(/.claude/settings.local.json)",
+      "Edit(/.devcontainer/scripts/**)",
+      "Edit(/.git/hooks/**)",
+      "Edit(/.trunk/trunk.yaml)",
+      "Edit(/.trunk/config/**)",
+      "Edit(~/.claude/shell-snapshots/**)",
+      "Read(/.devcontainer/tpl/**)",
+      "Read(//dev/fd/**)",
+      "Read(//etc/secret-volume/**)",
+      "Read(//proc/**)",
+      "Read(/env/**)",
+      "Read(~/.kube/**)",
+      "Read(~/.ssh/**)"
     ]
   },
   "hooks": {
@@ -161,5 +137,48 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "dagster-expert@dagster": true,
+    "dbt@dbt-agent-marketplace": true,
+    "dignified-python@dagster": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "dagster-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dagster-io/skills"
+      }
+    },
+    "dbt-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dbt-labs/dbt-agent-skills"
+      }
+    },
+    "dagster": {
+      "source": {
+        "source": "github",
+        "repo": "dagster-io/skills"
+      }
+    },
+    "dbt-agent-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "dbt-labs/dbt-agent-skills"
+      }
+    }
   }
 }

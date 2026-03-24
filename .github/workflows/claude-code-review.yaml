@@ -34,14 +34,22 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
           plugin_marketplaces: |
-            https://github.com/anthropics/claude-code.git
+            https://github.com/anthropics/claude-plugins-official.git
             https://github.com/dbt-labs/dbt-agent-skills.git
             https://github.com/dagster-io/skills.git
-          plugins: code-review@claude-code-plugins
+          plugins: |
+            superpowers@claude-plugins-official
+            security-guidance@claude-plugins-official
+            dagster-expert@dagster
+            dignified-python@dagster
+            dbt@dbt-agent-marketplace
           track_progress: true
-          prompt:
-            "/code-review:code-review ${{ github.repository }}/pull/${{
-            github.event.pull_request.number }}"
+          prompt: >-
+            Use the superpowers:requesting-code-review skill to review ${{
+            github.repository }}/pull/${{ github.event.pull_request.number }}.
+            Apply dignified-python for Python standards, security-guidance for
+            security issues, dagster-expert for Dagster assets and pipelines,
+            and dbt for dbt models and transformations.
           allowed_bots: dbt-cloud
           include_fix_links: false
           use_sticky_comment: true
