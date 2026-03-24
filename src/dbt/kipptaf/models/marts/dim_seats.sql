@@ -17,6 +17,5 @@ select
     dbt_valid_from as effective_date_start,
     dbt_valid_to as effective_date_end,
 
-    {{ dbt_utils.generate_surrogate_key(["staffing_model_id", "dbt_valid_from"]) }}
-    as seats_key,
+    dbt_scd_id as seats_key,
 from {{ ref("snapshot_seat_tracker__seats") }}
