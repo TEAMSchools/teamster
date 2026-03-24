@@ -44,11 +44,30 @@ require it.
 cannot be imported with a normal `import` statement. Use `importlib.util` to
 load it by path. See Task 1 for the pattern.
 
-**Reference for auth and zip-extraction patterns:**
-`origin/claude/feat/tableau-upstream-tool:scripts/tableau-extract-calcs.py` —
-read this file before implementing Tasks 1 and 8. It contains the complete PAT
-authentication flow, `.twbx` zip extraction, and internal-field filtering logic
-to replicate exactly.
+**Auth and extraction patterns to implement** (the branch
+`origin/claude/feat/tableau-upstream-tool` will be deleted — use these
+descriptions directly):
+
+- **Auth**: prefer PAT via `TABLEAU_TOKEN_NAME` +
+  `TABLEAU_PERSONAL_ACCESS_TOKEN`; fall back to username/password via `getpass`
+  only when `--username` is passed and PAT vars are absent; raise `SystemExit`
+  with a clear message if neither is available. Enforce HTTPS — raise
+  `SystemExit` before sending credentials if the server URL does not start with
+  `https://`. Call signout in a `finally` block (swallow `RequestException`; log
+  to stderr when `TABLEAU_DEBUG` is set).
+- **Zip extraction from memory**: server-downloaded workbooks arrive as raw
+  `.twbx` bytes — wrap in `io.BytesIO`, open with `zipfile.ZipFile`, find the
+  first `.twb` entry, read without extracting to disk. For local files use
+  `zipfile.ZipFile(path)` for `.twbx` or `path.read_bytes()` for `.twb`.
+- **Datasource deduplication**: track seen captions in a `set`; skip duplicates
+  and the `"Parameters"` datasource (handled separately).
+- **Internal field filtering**: skip any `column` element where `caption` is
+  empty, `name` starts with `[:`, or `name` equals `[Number of Records]`.
+- **Calc name resolution**: build a map of `Calculation_*` / `*(copy)_*` IDs to
+  human captions; rewrite formula references via regex. Leave unrecognised refs
+  unchanged.
+- **Filter injection prevention**: strip `:` and `,` from user-supplied workbook
+  names before passing to Tableau REST API filter params.
 
 ---
 
@@ -511,11 +530,6 @@ git commit -m "feat(tableau): add field extraction with LOD detection"
 > ```
 >
 > Or examine a real workbook manually:
->
-> ```bash
-> git show origin/claude/feat/tableau-upstream-tool:scripts/tableau-extract-calcs.py \
->   | head -5  # for auth pattern, then fetch a workbook
-> ```
 >
 > The fixture below reflects the most common Tableau XML structure. If real
 > workbooks differ, update the fixture to match and adjust the XPath
@@ -1040,10 +1054,9 @@ git commit -m "feat(tableau): wire parse_workbook and complete JSON assembly"
 - Modify: `tests/scripts/test_tableau_analyze_workbook.py`
 
 > **Before implementing:** Read `src/teamster/libraries/tableau/resources.py` to
-> get the exact names of the authentication environment variables. The script
-> must use those same names. Also study
-> `origin/claude/feat/tableau-upstream-tool:scripts/tableau-extract-calcs.py`
-> for the complete Tableau REST API auth + workbook-download flow to replicate.
+> get the exact env var names (`TABLEAU_SERVER_ADDRESS`, `TABLEAU_SITE_ID`,
+> `TABLEAU_TOKEN_NAME`, `TABLEAU_PERSONAL_ACCESS_TOKEN`). Implement the auth and
+> download flow using the patterns described in the preamble above.
 
 - [ ] **Step 1: Write a failing test using a mock**
 
@@ -1101,9 +1114,8 @@ Expected: FAIL — `_fetch_from_server` raises `NotImplementedError`.
 
 - [ ] **Step 3: Implement `_fetch_from_server`**
 
-Replicate the auth + download flow from
-`origin/claude/feat/tableau-upstream-tool:scripts/tableau-extract-calcs.py`
-exactly. Key steps:
+Implement the auth + download flow using the patterns described in the preamble.
+Key steps:
 
 1. Load `EXPOSURES_PATH`, find the exposure by name, read its `meta.lsid`
 2. Read credentials from the environment variables defined in
@@ -1228,29 +1240,44 @@ before this session started).
 Include the matched mart name in the Notes column so the analyst can verify the
 grain.
 
+For fields that do **not** match by name, do a secondary check using the dbt MCP
+`get_node_details_dev` tool on the rpt model. Use the compiled SQL to find the
+source expression for each unmatched field. If it is a direct column reference
+(no calculation), check whether that upstream column name matches any mart
+column and flag the hit as **"Possible match — verify alias"** with the mart
+name and upstream column name. If it is a calculation, leave it unmatched — it
+likely belongs in the semantic layer.
+
 ---
 
 ## Step 5 — Classify every field
 
-Apply these rules to every field in the datasource JSON. Check `contains_lod`
-first — if `true`, classify as Recreate in BI regardless of other conditions.
+Apply these rules to every field in the datasource JSON.
 
-For fields that appear in multiple viz roles across worksheets, assign
-**Ambiguous — analyst decision** rather than guessing.
+For plain columns aggregated in viz, also add them to the Semantic Layer Queue —
+one entry per aggregation type. A column SUM'd in one sheet and AVG'd in another
+gets two queue entries, not an "Ambiguous" verdict. Reserve **Ambiguous** only
+for fields used as both a dimension AND a measure across worksheets.
 
-| Condition                                                            | Verdict                          |
-| -------------------------------------------------------------------- | -------------------------------- |
-| Column name matches an existing mart column                          | **Already in marts**             |
-| Plain column, dimension role in viz (rows/cols/filters/pages)        | **→ dim**                        |
-| Plain column, measure role in viz (SUM/AVG/COUNT/etc.)               | **→ fact**                       |
-| Calculated field, measure role in viz                                | **→ semantic layer**             |
-| Calculated field, dimension role (simple: date trunc, string concat) | **→ dim**                        |
-| Calculated field, dimension role (complex business logic)            | **→ semantic layer**             |
-| Plain or calculated field in both dimension and measure roles        | **Ambiguous — analyst decision** |
-| `contains_lod: true` OR standalone LOD expression                    | **Recreate in BI**               |
-| Parameter reference                                                  | **Recreate in BI**               |
-| Formula uses `USERNAME()` or other server-side function              | **Skip / investigate**           |
-| Formatting / display-only label                                      | **Extract-only / skip**          |
+For LOD fields (`contains_lod: true` or standalone LOD expressions), classify as
+**Semantic layer — review grain** and add to the LOD subsection of the Semantic
+Layer Queue. The analyst decides whether the logic belongs in dbt (pre-agg) or
+Cube (measure), or both.
+
+| Condition                                                            | Verdict                                             |
+| -------------------------------------------------------------------- | --------------------------------------------------- |
+| Column name matches an existing mart column                          | **Already in marts**                                |
+| Plain column, dimension role in viz (rows/cols/filters/pages)        | **→ dim**                                           |
+| Plain column, aggregated one way in viz                              | **→ fact** + queue Cube measure                     |
+| Plain column, aggregated multiple ways in viz                        | **→ fact** + queue one Cube measure per aggregation |
+| Calculated field, measure role in viz                                | **→ semantic layer**                                |
+| Calculated field, dimension role (simple: date trunc, string concat) | **→ dim**                                           |
+| Calculated field, dimension role (complex business logic)            | **→ semantic layer**                                |
+| Plain or calculated field in both dimension and measure roles        | **Ambiguous — analyst decision**                    |
+| `contains_lod: true` OR standalone LOD expression                    | **Semantic layer — review grain**                   |
+| Parameter reference                                                  | **Recreate in BI (dynamic filter)**                 |
+| Formula uses `USERNAME()` or other server-side function              | **Skip / investigate**                              |
+| Formatting / display-only label                                      | **Recreate in BI**                                  |
 
 ---
 
@@ -1305,15 +1332,42 @@ Then ask:
 | Field | Source Model | Viz Aggregation | Tableau Formula |
 | ----- | ------------ | --------------- | --------------- |
 
+### LOD Expressions — Analyst Review Required
+
+LOD expressions encode aggregation grain logic. For each, the analyst decides:
+push to dbt (pre-agg), Cube measure, or both.
+
+| Field | Formula | Grain | Recommended approach |
+| ----- | ------- | ----- | -------------------- |
+
 ---
 
 ## BI Migration Notes
 
 ### LOD Expressions
 
+> Full analyst review table is in `## Semantic Layer Queue` above. Raw formulas
+> only.
+
+| Field | Formula |
+| ----- | ------- |
+
 ### Parameters
 
+> Do not port values directly — recreate as dynamic user-facing filters in Cube.
+
+| Name | Datatype | Type | Tableau values (reference only) | Suggested Cube approach |
+| ---- | -------- | ---- | ------------------------------- | ----------------------- |
+
+### Display / Formatting Labels
+
+| Field | Tableau Formula |
+| ----- | --------------- |
+
 ### Skip / Investigate
+
+| Field | Reason |
+| ----- | ------ |
 ```
 
 ---
@@ -1354,6 +1408,12 @@ Then via dbt MCP:
 ```
 dbt show --select <model_name> --limit 5
 ```
+
+> **Note:** `dbt show` requires a live BigQuery connection (GCP credentials via
+> `.devcontainer/scripts/inject-secrets.sh`). `prepare-and-package` works
+> without credentials and should always be run. If credentials are unavailable,
+> skip `dbt show` and tell the analyst to run it manually after injecting
+> secrets.
 
 ---
 
