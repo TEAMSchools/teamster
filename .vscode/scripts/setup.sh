@@ -24,7 +24,7 @@ if [[ -z ${GITHUB_USER-} ]]; then
   grep -q "export GITHUB_USER=" ~/.bashrc || echo "export GITHUB_USER=${GITHUB_USER}" >>~/.bashrc
 fi
 
-if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" 2>/dev/null | grep -q .; then
+if ! gcloud auth application-default print-access-token >/dev/null 2>&1; then
   bash "${SCRIPT_DIR}/gcloud-application-default-login.sh"
 else
   echo -e "\033[1;32m✔ GCloud authenticated\033[0m"

@@ -13,6 +13,9 @@
 
 ## GCloud Auth
 
+- To check if ADC is valid, use
+  `gcloud auth application-default print-access-token`; `gcloud auth list` only
+  checks user accounts, not ADC — they're independent
 - `bq` CLI requires `gcloud auth login` (user credentials), not just ADC
 - Running `gcloud auth login` before `gcloud auth application-default login` in
   the same script causes "This app is blocked" errors — keep them separate
@@ -29,3 +32,9 @@
   `--impersonate-service-account`
 - `gcloud auth application-default set-quota-project` fails with impersonated
   credentials — use `--billing-project` flag on the login command instead
+
+## Claude Auth
+
+- Check Claude auth with `"${CLAUDE}" auth status | grep -q '"loggedIn": true'`;
+  flag-file guards for Claude auth are redundant and produce false "not logged
+  in" errors when the flag is missing — check auth directly instead

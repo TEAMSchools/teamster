@@ -9,11 +9,6 @@ if [[ -z ${CLAUDE} ]]; then
   exit 1
 fi
 
-if [[ ! -f ~/.cache/teamster/claude_auth_ok ]]; then
-  echo 'ERROR: Not logged in to Claude. Run the "Claude: Login" task first.'
-  exit 1
-fi
-
 SETTINGS='.claude/settings.json'
 
 echo '--- Adding extra marketplaces ---'
