@@ -1,22 +1,5 @@
 {
   "permissions": {
-    "deny": [
-      "Edit(/.claude/hooks/**/*.sh)",
-      "Edit(/.claude/settings.json)",
-      "Edit(/.claude/settings.local.json)",
-      "Edit(/.devcontainer/scripts/**)",
-      "Edit(/.git/hooks/**)",
-      "Edit(/.trunk/trunk.yaml)",
-      "Edit(/.trunk/config/**)",
-      "Edit(~/.claude/shell-snapshots/**)",
-      "Read(/.devcontainer/tpl/**)",
-      "Read(//dev/fd/**)",
-      "Read(//etc/secret-volume/**)",
-      "Read(//proc/**)",
-      "Read(/env/**)",
-      "Read(~/.kube/**)",
-      "Read(~/.ssh/**)"
-    ],
     "allow": [
       "Bash(gh issue list:*)",
       "Bash(gh issue status:*)",
@@ -79,6 +62,23 @@
       "Read(**/secrets.json)",
       "Read(//workspaces/teamster/**)",
       "Read(~/.claude/plugins/**)"
+    ],
+    "deny": [
+      "Edit(/.claude/hooks/**/*.sh)",
+      "Edit(/.claude/settings.json)",
+      "Edit(/.claude/settings.local.json)",
+      "Edit(/.devcontainer/scripts/**)",
+      "Edit(/.git/hooks/**)",
+      "Edit(/.trunk/trunk.yaml)",
+      "Edit(/.trunk/config/**)",
+      "Edit(~/.claude/shell-snapshots/**)",
+      "Read(/.devcontainer/tpl/**)",
+      "Read(//dev/fd/**)",
+      "Read(//etc/secret-volume/**)",
+      "Read(//proc/**)",
+      "Read(/env/**)",
+      "Read(~/.kube/**)",
+      "Read(~/.ssh/**)"
     ]
   },
   "hooks": {

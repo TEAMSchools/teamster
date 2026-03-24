@@ -72,6 +72,9 @@ fire for Edit.
 - Other `.claude/` files (e.g. `CLAUDE.md` files) may be edited directly
 - When staging changes that include protected paths, use `git add -u` — naming
   them explicitly in `git add <file>` triggers the hook and gets blocked
+- Commit message bodies are scanned by the hook (it reads the full command
+  string) — avoid `env` as a standalone word and `$VAR` references in message
+  text; shorten the body if a commit is repeatedly blocked
 
 ## permissions.deny path prefixes
 
