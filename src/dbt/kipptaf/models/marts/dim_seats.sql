@@ -14,6 +14,9 @@ select
     staffing_status,
     status_detail,
     mid_year_hire as is_mid_year_hire,
-    dbt_valid_from,
-    dbt_valid_to,
+    dbt_valid_from as effective_date_start,
+    dbt_valid_to as effective_date_end,
+
+    {{ dbt_utils.generate_surrogate_key(["staffing_model_id", "dbt_valid_from"]) }}
+    as seats_key,
 from {{ ref("snapshot_seat_tracker__seats") }}

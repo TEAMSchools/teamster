@@ -23,4 +23,10 @@ select
     payroll_company_code,
     position_id,
     position_status,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["employee_number", "pay_date", "additional_earnings_code", "gross_pay"]
+        )
+    }} as additional_earnings_key,
 from deduplicate

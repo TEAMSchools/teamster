@@ -2,6 +2,13 @@ models:
   - name: fct_staff_attrition
 
     columns:
+      - name: staff_attrition_key
+        data_type: string
+        tests:
+          - unique:
+              config:
+                store_failures: true
+
       - name: attrition_type
         data_type: string
 

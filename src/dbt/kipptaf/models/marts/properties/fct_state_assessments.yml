@@ -51,19 +51,31 @@ models:
 
       - name: state_lep_status
         data_type: boolean
-        description: ""
+        description: >
+          State-reported LEP status at time of testing. Sourced from the state
+          assessment file, not from KIPP's enrollment system. May differ from
+          `dim_students.lep_status`.
 
       - name: state_is_504
         data_type: boolean
-        description: ""
+        description: >
+          State-reported 504 status at time of testing. Sourced from the state
+          assessment file, not from KIPP's enrollment system. May differ from
+          `dim_students.status_504`.
 
       - name: state_iep_status
         data_type: string
-        description: ""
+        description: >
+          State-reported IEP status at time of testing. Sourced from the state
+          assessment file, not from KIPP's enrollment system. May differ from
+          `dim_students.iep_status`.
 
       - name: state_race_ethnicity
         data_type: string
-        description: ""
+        description: >
+          State-reported race/ethnicity at time of testing. Sourced from the
+          state assessment file, not from KIPP's enrollment system. May differ
+          from `dim_students.ethnicity`.
 
       - name: results_type
         data_type: string
