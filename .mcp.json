@@ -20,8 +20,8 @@
       }
     },
     "dbt": {
-      "command": "dbt-mcp",
-      "args": [],
+      "command": "uvx",
+      "args": ["dbt-mcp"],
       "env": {
         "DBT_PROJECT_DIR": "/workspaces/teamster/src/dbt/kipptaf",
         "DBT_PATH": "/workspaces/teamster/.venv/bin/dbt"

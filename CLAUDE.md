@@ -18,11 +18,24 @@ Cloud Storage (GCS) as the intermediate storage layer.
   for information not derivable from the codebase or not appropriate for
   CLAUDE.md (e.g., user preferences, one-off context).
 
-- **Built-in tools over Bash**: NEVER use Bash for operations covered by a
-  dedicated tool — hooks will reject them. Use Read (not `cat`/`head`/`tail`),
-  Grep (not `grep`/`rg`), Glob (not `find`/`ls`), Edit (not `sed`/`awk`), Write
-  (not echo redirection). Bash is only for operations that have no dedicated
-  tool equivalent.
+- **Built-in tools over Bash**: You have dedicated tools — use them instead of
+  shell equivalents. This is a hard rule, not a suggestion.
+
+  | Instead of (Bash)                  | Use this tool                     |
+  | ---------------------------------- | --------------------------------- |
+  | `cat`, `head`, `tail`, `less`      | **Read**                          |
+  | `grep`, `rg`, `ag`, `ack`          | **Grep** (pattern/content search) |
+  | `find`, `fd`                       | **Glob**                          |
+  | `sed`, `awk`, inline patch scripts | **Edit**                          |
+  | `echo >`, `cat <<EOF >`, `tee`     | **Write**                         |
+  | `cp`                               | **Read** then **Write**           |
+
+  `ls` is the one exception — use it via Bash to list directory contents (Glob
+  matches patterns, not directory listings).
+
+  Bash is **only** for commands that have no dedicated tool equivalent (e.g.,
+  `git`, `uv run`, `gh`, `docker`, `trunk`, `ls`). If you catch yourself typing
+  a shell command from the left column above — stop and use the tool instead.
 
 - **Git**:
   - Do not commit proactively — ask first when a change is complete and tests
