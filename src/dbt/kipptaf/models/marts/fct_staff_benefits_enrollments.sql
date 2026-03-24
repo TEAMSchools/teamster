@@ -12,7 +12,13 @@ select
 
     {{
         dbt_utils.generate_surrogate_key(
-            ["employee_number", "plan_type", "plan_name", "enrollment_start_date"]
+            [
+                "employee_number",
+                "plan_type",
+                "plan_name",
+                "coverage_level",
+                "enrollment_start_date",
+            ]
         )
     }} as staff_benefits_enrollments_key,
 from {{ ref("stg_adp_workforce_now__pension_and_benefits_enrollments") }}
