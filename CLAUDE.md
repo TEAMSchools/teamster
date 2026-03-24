@@ -33,6 +33,13 @@ Cloud Storage (GCS) as the intermediate storage layer.
   `ls` is the one exception — use it via Bash to list directory contents (Glob
   matches patterns, not directory listings).
 
+  **No exceptions for convenience** — piped shell commands (`grep | head`,
+  `ls | grep`), one-liner reads (`cat file`), copy operations (`cp`), in-place
+  substitutions (`sed -i`), and heredoc file creation (`cat <<EOF >`) are all
+  covered by the table above. Use the dedicated tool even when the shell version
+  feels simpler. The `ls` exception is strictly for plain directory listings —
+  `ls | grep` is a Glob, not an `ls`.
+
   Bash is **only** for commands that have no dedicated tool equivalent (e.g.,
   `git`, `uv run`, `gh`, `docker`, `trunk`, `ls`). If you catch yourself typing
   a shell command from the left column above — stop and use the tool instead.
