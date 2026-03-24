@@ -136,3 +136,16 @@ extract partition keys from named groups, emit `RunRequest`s grouped by
 
 **Fiscal year**: July 1 start. `FiscalYear` class and
 `FiscalYearPartitionsDefinition` in `core/utils/classes.py`.
+
+## Development Commands
+
+```bash
+# Start Dagster webserver locally (all code locations)
+uv run dagster dev
+
+# Validate Dagster definitions for a code location
+uv run dagster definitions validate -m teamster.code_locations.kipptaf.definitions
+
+# Prepare and package a dbt project (required before running dbt assets)
+uv run dagster-dbt project prepare-and-package --file src/teamster/code_locations/kipptaf/__init__.py
+```

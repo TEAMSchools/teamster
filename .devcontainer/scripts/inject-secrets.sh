@@ -4,38 +4,58 @@ set -euo pipefail
 # restrict permissions on output files
 umask 077
 
-# cleanup intermediate files on failure or interruption (#1)
-TMP_SECRET=""
-cleanup() {
-  rm -f env/.env.tmp
-  [[ -n ${TMP_SECRET} ]] && rm -f "${TMP_SECRET}"
-}
-trap cleanup ERR EXIT
+# create a private temp directory instead of using shared /tmp
+TMPDIR=$(mktemp -d)
+chmod 700 "${TMPDIR}"
 
-# inject 1Password secrets into .env with empty-output check (#6)
-op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env.tmp
-if [[ ! -s env/.env.tmp ]]; then
+# cleanup on failure, interruption, or exit
+cleanup() {
+  rm -rf "${TMPDIR}"
+}
+trap cleanup ERR EXIT INT TERM HUP
+
+# validate template files are not symlinks
+for tpl_file in .devcontainer/tpl/.env.tpl \
+  .devcontainer/tpl/adp_wfn_api.cer.tpl \
+  .devcontainer/tpl/adp_wfn_api.key.tpl \
+  .devcontainer/tpl/deanslist_api_key_map_yaml.tpl \
+  .devcontainer/tpl/id_rsa_egencia.tpl \
+  .devcontainer/tpl/powerschool_ssh_password.txt.tpl; do
+  if [[ -L ${tpl_file} ]]; then
+    echo "❌ ${tpl_file} is a symlink — aborting" >&2
+    exit 1
+  fi
+done
+
+# validate secret-volume directory permissions
+if [[ -d /etc/secret-volume ]]; then
+  perms=$(stat -c '%a' /etc/secret-volume)
+  if [[ ${perms} != "700" && ${perms} != "750" && ${perms} != "755" ]]; then
+    echo "❌ /etc/secret-volume has unexpected permissions: ${perms}" >&2
+    exit 1
+  fi
+fi
+
+# inject 1Password secrets into .env with empty-output check
+TMP_ENV="${TMPDIR}/.env.tmp"
+op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file="${TMP_ENV}"
+if [[ ! -s ${TMP_ENV} ]]; then
   echo "❌ op inject produced empty output for .env" >&2
   exit 1
 fi
-mv -f env/.env.tmp env/.env
+install -m 600 "${TMP_ENV}" /etc/secret-volume/.env
 
 # save secrets to file
 for tpl in adp_wfn_api.cer adp_wfn_api.key deanslist_api_key_map_yaml id_rsa_egencia powerschool_ssh_password.txt; do
-  # write to a user-writable temp file, then move into place with sudo
-  TMP_SECRET=$(mktemp "/tmp/${tpl}.XXXXXX")
+  TMP_SECRET="${TMPDIR}/${tpl}"
   op inject -f --in-file=".devcontainer/tpl/${tpl}.tpl" --out-file="${TMP_SECRET}"
 
-  # verify non-empty output (#6)
+  # verify non-empty output
   if [[ ! -s ${TMP_SECRET} ]]; then
     echo "❌ op inject produced empty output for ${tpl}" >&2
-    rm -f "${TMP_SECRET}"
     exit 1
   fi
 
-  # set explicit permissions and move into place (#3)
-  sudo chown root:root "${TMP_SECRET}"
-  sudo chmod 600 "${TMP_SECRET}"
-  sudo mv -f "${TMP_SECRET}" "/etc/secret-volume/${tpl}"
-  TMP_SECRET=""
+  # set explicit permissions and move into place
+  install -m 600 "${TMP_SECRET}" "/etc/secret-volume/${tpl}"
 done

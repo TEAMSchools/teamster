@@ -475,6 +475,22 @@ class GoogleDirectoryResource(ConfigurableResource):
 
         return exceptions
 
+    def _retry_update_user(self, user: dict) -> None:
+        """Retry a single user update after a 409 conflict response."""
+        self._log.info(msg=f"Retrying 409 conflict for {user['primaryEmail']}")
+
+        time.sleep(1)
+
+        # backoff handles transient 5xx/429 within this attempt; a second 409
+        # is deliberately not retried — it propagates as HttpError to the caller.
+        backoff(
+            fn=_retryable_execute(
+                # trunk-ignore(pyright/reportAttributeAccessIssue)
+                self._resource.users().update(userKey=user["primaryEmail"], body=user)
+            ),
+            retry_on=(_TransientHttpError,),
+        )
+
     def batch_update_users(self, users: list[dict]) -> list[str]:
         """Update multiple users in batches of 40.
 
@@ -512,7 +528,16 @@ class GoogleDirectoryResource(ConfigurableResource):
                 fn=_retryable_execute(batch_request), retry_on=(_TransientHttpError,)
             )
 
-            exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
+            for ix, e in self._exceptions:
+                user = batch[ix]
+
+                if isinstance(e, errors.HttpError) and e.resp.status == 409:
+                    try:
+                        self._retry_update_user(user)
+                    except errors.HttpError as retry_e:
+                        exceptions.append(f"{user} {retry_e}")
+                else:
+                    exceptions.append(f"{user} {e}")
 
             if i < len(batches) - 1:
                 time.sleep(1)

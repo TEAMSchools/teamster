@@ -1,7 +1,7 @@
 #!/bin/bash
 # Blocks access to sensitive files and paths.
 # Reads tool input as JSON from stdin (provided by Claude Code PreToolUse hooks).
-# Covers Read, Edit, Write (file_path), Bash (command), Grep/Glob (path, pattern) tools.
+# Scans ALL tool_input string fields to cover arbitrary tool schemas (MCP, etc.).
 #
 # Limitations: command-string checks are best-effort — bash is Turing-complete
 # so obfuscated commands (base64, variable indirection, eval, etc.) cannot be
@@ -10,40 +10,173 @@
 
 deny() {
   echo '{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": "❌ Cannot access sensitive path"}}'
-  exit 1
+  exit 0
 }
 
 input=$(cat)
+tool_name=$(jq -r '.tool_name' <<<"${input}")
 
-# Collect all fields that may contain paths: file_path, path, command, pattern
-path=$(echo "${input}" | jq -r '
-  [
-    (.tool_input.file_path // ""),
-    (.tool_input.path // ""),
-    (.tool_input.command // ""),
-    (.tool_input.pattern // "")
-  ] | map(select(. != "")) | join(" ")
-')
+# Normalize path strings: collapse //, /./, resolve ../
+_normalize() { sed -E ':a; s#//+#/#g; s#/\./#/#g; s#/[^/]+/\.\./#/#g; ta'; }
 
-# Normalize: collapse /./ and resolve simple ../ traversals for path fields
-normalized=$(echo "${path}" | sed -E 's#/\./#/#g; s#/[^/]+/\.\./#/#g')
+# Collect ALL string values from tool_input (covers MCP, NotebookEdit, any tool schema)
+if [[ ${tool_name} == "Agent" ]]; then
+  path=$(jq -r '
+    [.tool_input | to_entries[] | select(.key != "description") | .value | .. | strings] | join(" ")
+  ' <<<"${input}")
+else
+  path=$(jq -r '
+    [.tool_input | to_entries[] | .value | .. | strings] | join(" ")
+  ' <<<"${input}")
+fi
+
+normalized=$(echo "${path}" | _normalize)
+
+# Resolve symlinks on file_path to prevent symlink-based bypass — cache result for reuse below
+file_path=$(jq -r '.tool_input.file_path // ""' <<<"${input}")
+if [[ -n ${file_path} && -e ${file_path} ]]; then
+  resolved=$(readlink -f "${file_path}" 2>/dev/null || echo "${file_path}")
+else
+  resolved=""
+fi
+[[ -n ${resolved} ]] && normalized="${normalized} ${resolved}"
+
+# Strip quotes and backslashes for keyword matching (defeats quote-splitting bypass)
+sanitized=${normalized//[\"\'\\]/}
+
+# Path-only fields for infrastructure-path rules (excludes content/new_string/old_string)
+path_only=$(jq -r '
+  [.tool_input.file_path, .tool_input.command, .tool_input.path, .tool_input.pattern] | map(select(. != null)) | join(" ")
+' <<<"${input}")
+path_only=$(echo "${path_only}" | _normalize)
+[[ -n ${resolved} ]] && path_only="${path_only} ${resolved}"
+path_only=${path_only//[\"\'\\]/}
+
+# All fields except Write/Edit body content (content, new_string, old_string)
+# Used by Rules 1/1c: catches MCP sql/nested fields but skips doc content
+if [[ ${tool_name} == "Write" || ${tool_name} == "Edit" ]]; then
+  no_content=$(jq -r '
+    [.tool_input | to_entries[] | select(.key | test("^(content|new_string|old_string)$") | not) | .value | .. | strings] | join(" ")
+  ' <<<"${input}")
+  no_content=$(echo "${no_content}" | _normalize)
+  [[ -n ${resolved} ]] && no_content="${no_content} ${resolved}"
+  no_content=${no_content//[\"\'\\]/}
+else
+  no_content=${sanitized}
+fi
+
+# ═══════════════════════════════════════════════════════════════════
+# Section 1: All tools — path-based protection
+# ═══════════════════════════════════════════════════════════════════
 
 # 1. Sensitive file/directory patterns (case-insensitive)
-if echo "${normalized}" | grep -qiE '(^|[ /])(\.env|\.ssh|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume|inject-secrets\.sh|postCreate\.sh|postStart\.sh)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/(tpl|scripts)/|\*\.(cer|key|pem)'; then
+if echo "${no_content}" | grep -qiE '\.env[.a-z]*|(^|[ /])(\.ssh|\.kube|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/tpl/'; then
   deny
 fi
 
-# 2. Hook self-protection — block modifications to hook config
-if echo "${normalized}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/)'; then
+# 1b. File-extension patterns scoped to paths/commands only — avoids false-positives on
+#     Python attribute access (e.g. asset.key) in code content written via Edit/Write
+if echo "${path_only}" | grep -qiE '\*?\.(cer|key|pem)([ /]|$)'; then
   deny
 fi
 
-# 3. Environment variable / process memory leakage
-if echo "${normalized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bset\b|\bcompgen\b|/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|OP_SERVICE_ACCOUNT_TOKEN|OP_SERVICE|ACCOUNT_TOKEN'; then
+# 1c. High-risk proc/dev paths — kept in all-tools scope (sandbox is ineffective
+#     in Codespaces; hooks are the sole enforcement layer)
+if echo "${no_content}" | grep -qE '/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|/dev/fd/'; then
   deny
 fi
 
-# 4. 1Password CLI escalation — prevent using a leaked token to access vault
-if echo "${normalized}" | grep -qE '\bop (vault|item|read|document|inject)\b'; then
-  deny
+# ═══════════════════════════════════════════════════════════════════
+# Section 2: Bash only — command-pattern protection
+# ═══════════════════════════════════════════════════════════════════
+if [[ ${tool_name} == "Bash" ]]; then
+
+  # 2. Protected paths — Edit/Write handled by permissions.deny; Bash blocked here
+  if echo "${path_only}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/[^[:space:]]*\.sh|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/|\.trunk/(trunk\.yaml|config/)'; then
+    deny
+  fi
+
+  # 3. Environment variable / process memory leakage
+  if echo "${sanitized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bexport -p\b|\bcompgen\b|\btypeset([[:space:]]+-x|\b)|/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|OP_SERVICE_ACCOUNT_TOKEN|OP_SERVICE|ACCOUNT_TOKEN|\benviron\b|\bgetenv\b'; then
+    deny
+  fi
+
+  # 3b. Catch `set` as a standalone command (dumps all vars), but not `set -flags`
+  # trunk-ignore(shellcheck/SC2016): regex contains literal $\( for matching $(set), not a command substitution
+  if echo "${sanitized}" | grep -qE '(^|[;&|(`][[:space:]]*)set([[:space:]]*$|[[:space:]]*[|>&;)`])|\$\(set([[:space:]]|$|\))'; then
+    deny
+  fi
+
+  # 3c. Standalone `env` shell command — scoped to path/command only (not file content)
+  if echo "${path_only}" | grep -qiE '\benv\b'; then
+    deny
+  fi
+
+  # 4. 1Password CLI escalation — prevent using a leaked token to access vault
+  if echo "${sanitized}" | grep -qE '\bop\b.*\b(vault|item|read|document|inject)\b'; then
+    deny
+  fi
+
+  # 5. Encoding-based bypass detection (base64/hex piped, chained, or process-substituted)
+  if echo "${normalized}" | grep -qiE 'base64[[:space:]]+(-d|--decode).*(\||[;&]+).*(bash|sh|source)|\bxxd\b.*(\||[;&]+).*(bash|sh|source)|\bprintf[[:space:]]+.*\\x.*\|.*(bash|sh|source)'; then
+    deny
+  fi
+
+  # 5a. Reverse order: bash/sh consuming process substitution or here-string with decode
+  if echo "${sanitized}" | grep -qiE '\b(bash|sh)\b.*<\(.*base64[[:space:]]+(-d|--decode)|\b(bash|sh)\b.*<<<.*base64[[:space:]]+(-d|--decode)|\b(bash|sh)\b.*<\(.*\bxxd\b'; then
+    deny
+  fi
+
+  # 5b. Python runtime string construction (exec/eval with chr/join/bytes/base64/codecs)
+  if echo "${sanitized}" | grep -qiE '\b(exec|eval)[[:space:]]*\(.*\bchr[[:space:]]*\(|\b(exec|eval)[[:space:]]*\(.*\.join[[:space:]]*\(|\b(exec|eval)[[:space:]]*\(.*\bbytes[[:space:]]*\(|\b(exec|eval)[[:space:]]*\(.*base64\.b64decode|\b(exec|eval)[[:space:]]*\(.*codecs\.decode|\b(exec|eval)[[:space:]]*\(.*\.fromhex'; then
+    deny
+  fi
+
+  # 5c. Python __import__ with sensitive modules (bypasses exec() requirement)
+  if echo "${sanitized}" | grep -qiE '\b__import__[[:space:]]*\(.*\b(os|subprocess|shutil|pty|ctypes|socket|http|urllib|multiprocessing|signal)\b'; then
+    deny
+  fi
+
+  # 5d. Python importlib bypass (avoids __import__ check)
+  if echo "${sanitized}" | grep -qiE '\bimportlib\b.*\b(os|subprocess|shutil|pty|ctypes|socket|http|urllib|multiprocessing|signal)\b'; then
+    deny
+  fi
+
+  # 7. Shell variable expansion — block $UPPER_CASE broadly, allowlist known-safe vars
+  # Block ${!prefix*} (indirect expansion that enumerates variable names)
+  if echo "${sanitized}" | grep -qE '\$\{![^}]*\}'; then
+    deny
+  fi
+  # Strip allowed variable references, then deny if any $VAR remain
+  safe='HOME|PATH|PWD|OLDPWD|USER|SHELL|TERM|LANG|LANGUAGE'
+  safe+='|LC_[A-Z]+|HOSTNAME|SHLVL|LOGNAME|TZ|TMPDIR|EDITOR|VISUAL|PAGER|DISPLAY'
+  safe+='|XDG_[A-Z_]+|PS[0-4]|IFS|PPID|UID|EUID|RANDOM|SECONDS|LINENO'
+  safe+='|OSTYPE|MACHTYPE|HOSTTYPE|BASH_SOURCE|BASH_LINENO|BASH_REMATCH|BASHPID|BASH_VERSION|HISTSIZE|HISTCONTROL|COMP[A-Z_]*'
+  safe+='|SHELLOPTS|BASHOPTS|DIRSTACK|PIPESTATUS|FUNCNAME|REPLY'
+  safe+='|DAGSTER_HOME|DBT_PROFILES_DIR|DBT_PROJECT_DIR|DBT_CLOUD_ENVIRONMENT_TYPE|DBT_SEND_ANONYMOUS_USAGE_STATS'
+  safe+='|GOOGLE_CLOUD_PROJECT|PYTHONDONTWRITEBYTECODE|PYTHONPATH|PYTHONHASHSEED'
+  safe+='|TRUNK_TELEMETRY|UV_LINK_MODE|UV_RESOLUTION|UV_CACHE_DIR|VIRTUAL_ENV|NVM_DIR'
+  safe+='|JAVA_HOME|GOPATH|GOROOT|CARGO_HOME|RUSTUP_HOME|NODE_PATH'
+  safe+='|CI|GITHUB_WORKSPACE|GITHUB_REPOSITORY|GITHUB_REF|GITHUB_SHA|GITHUB_ACTIONS|GITHUB_ACTOR|GITHUB_OUTPUT|GITHUB_EVENT_NAME'
+  safe+='|CODESPACES|CODESPACE_NAME|REMOTE_CONTAINERS'
+  stripped=$(echo "${sanitized}" | sed -E "s/\\$\\{?(${safe})\\}?//g")
+  if echo "${stripped}" | grep -qE '\$\{?[A-Z_][A-Z0-9_]+\}?'; then
+    deny
+  fi
+
+fi
+
+# ═══════════════════════════════════════════════════════════════════
+# Section 3: BigQuery MCP — read-only enforcement
+# ═══════════════════════════════════════════════════════════════════
+
+# 8. Block BigQuery non-read operations (whitelist: only SELECT/SHOW/DESCRIBE allowed)
+if [[ ${tool_name} == mcp__bigquery__* ]]; then
+  if ! echo "${sanitized}" | grep -qiE '^\s*(SELECT|SHOW|DESCRIBE|WITH)\b'; then
+    deny
+  fi
+  # Also deny if read-looking queries contain embedded write statements
+  if echo "${sanitized}" | grep -qiE '\bINSERT[[:space:]]+INTO\b|\bUPDATE[[:space:]]+[a-zA-Z`_].*[[:space:]]+SET\b|\bDELETE[[:space:]]+FROM\b|\bMERGE[[:space:]]+INTO\b|\bEXPORT[[:space:]]+DATA\b|\bCREATE\b|\bDROP\b|\bALTER\b|\bGRANT\b|\bREVOKE\b|\bCALL\b'; then
+    deny
+  fi
 fi

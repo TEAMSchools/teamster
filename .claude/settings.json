@@ -1,61 +1,113 @@
 {
-  "extraKnownMarketplaces": {
-    "dagster-skills": {
-      "source": {
-        "source": "github",
-        "repo": "dagster-io/skills"
-      }
-    },
-    "dbt-agent-skills": {
-      "source": {
-        "source": "github",
-        "repo": "dbt-labs/dbt-agent-skills"
-      }
-    }
-  },
-  "enabledPlugins": {
-    "dignified-python@dagster": true,
-    "dbt@dbt-agent-marketplace": true,
-    "dagster-expert@dagster": true,
-    "superpowers@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true
-  },
   "permissions": {
     "allow": [
-      "Bash(gh issue:*)",
-      "Bash(gh pr:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue status:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr status:*)",
+      "Bash(gh pr view:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)",
       "Bash(git diff:*)",
       "Bash(git status:*)",
       "Bash(trunk check:*)",
       "Bash(trunk fmt:*)",
-      "Bash(uv run dagster:*)",
-      "Bash(uv run pytest:*)",
-      "Bash(uv run scripts:*)",
       "Bash(uv tool list:*)",
-      "Bash(uv tool run:*)",
-      "Read(/workspaces/teamster/**)",
+      "Edit(**/.env.*)",
+      "Edit(**/.env)",
+      "Edit(**/*.cer)",
+      "Edit(**/*.key)",
+      "Edit(**/*.pem)",
+      "Edit(**/credentials.json)",
+      "Edit(**/secrets.json)",
+      "mcp__bigquery__analyze_contribution",
+      "mcp__bigquery__execute_sql",
+      "mcp__bigquery__forecast",
+      "mcp__bigquery__get_dataset_info",
+      "mcp__bigquery__get_table_info",
+      "mcp__bigquery__list_dataset_ids",
+      "mcp__bigquery__list_table_ids",
+      "mcp__bigquery__search_catalog",
+      "mcp__dagster__get_asset_check_executions",
+      "mcp__dagster__get_asset_condition_evaluations",
+      "mcp__dagster__get_asset_materializations",
+      "mcp__dagster__get_asset_partition_statuses",
+      "mcp__dagster__get_backfill",
+      "mcp__dagster__get_captured_logs_metadata",
+      "mcp__dagster__get_daemon_health",
+      "mcp__dagster__get_run_compute_logs",
+      "mcp__dagster__get_run_logs",
+      "mcp__dagster__get_run",
+      "mcp__dagster__get_tick_history",
+      "mcp__dagster__list_backfills",
+      "mcp__dagster__list_code_locations",
+      "mcp__dagster__list_runs",
+      "mcp__dagster__list_stale_assets",
+      "mcp__gke__get_cluster",
+      "mcp__gke__get_gke_release_notes",
+      "mcp__gke__get_k8s_changelog",
+      "mcp__gke__get_log_schema",
+      "mcp__gke__list_clusters",
+      "mcp__gke__list_monitored_resource_descriptors",
+      "mcp__gke__list_recommendations",
+      "mcp__gke__query_logs",
+      "Read(**/.env.*)",
+      "Read(**/.env)",
+      "Read(**/*.cer)",
+      "Read(**/*.key)",
+      "Read(**/*.pem)",
+      "Read(**/credentials.json)",
+      "Read(**/secrets.json)",
+      "Read(//workspaces/teamster/**)",
       "Read(~/.claude/plugins/**)",
-      "WebFetch(domain:docs.dagster.io)",
-      "WebFetch(domain:github.com)",
-      "mcp__bigquery__*",
-      "mcp__dagster__*"
+      "Skill(claude-md-management:revise-claude-md)",
+      "Skill(claude-md-management:revise-claude-md:*)"
+    ],
+    "deny": [
+      "Edit(/.claude/hooks/**/*.sh)",
+      "Edit(/.claude/settings.json)",
+      "Edit(/.claude/settings.local.json)",
+      "Edit(/.devcontainer/scripts/**)",
+      "Edit(/.git/hooks/**)",
+      "Edit(/.trunk/trunk.yaml)",
+      "Edit(/.trunk/config/**)",
+      "Edit(~/.claude/shell-snapshots/**)",
+      "Read(/.devcontainer/tpl/**)",
+      "Read(//dev/fd/**)",
+      "Read(//etc/secret-volume/**)",
+      "Read(//proc/**)",
+      "Read(/env/**)",
+      "Read(~/.kube/**)",
+      "Read(~/.ssh/**)"
     ]
   },
+  "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
   "hooks": {
     "SessionStart": [
       {
-        "type": "command",
-        "command": "sed -i '/OP_SERVICE_ACCOUNT_TOKEN/d' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sed -i -E '/(_SECRET|_TOKEN|_PASSWORD|_CREDENTIAL|_API_KEY|_APP_KEY|PRIVATE_KEY|SERVICE_ACCOUNT|OP_SERVICE)/Id' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true"
+          }
+        ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": "Read|Edit|Write|Bash|Grep|Glob",
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sed -i -E '/(_SECRET|_TOKEN|_PASSWORD|_CREDENTIAL|_API_KEY|_APP_KEY|PRIVATE_KEY|SERVICE_ACCOUNT|OP_SERVICE)/Id' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true",
+            "statusMessage": "Sanitizing shell snapshots..."
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Edit|Write|Bash|Grep|Glob|NotebookEdit|WebFetch|WebSearch|mcp__.*",
         "hooks": [
           {
             "type": "command",
@@ -66,6 +118,16 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "Bash|Read|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-output.sh",
+            "statusMessage": "Scanning output for secret leakage..."
+          }
+        ]
+      },
       {
         "matcher": "Edit|Write",
         "hooks": [
@@ -78,5 +140,48 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "dagster-expert@dagster": true,
+    "dbt@dbt-agent-marketplace": true,
+    "dignified-python@dagster": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "dagster-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dagster-io/skills"
+      }
+    },
+    "dbt-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "dbt-labs/dbt-agent-skills"
+      }
+    },
+    "dagster": {
+      "source": {
+        "source": "github",
+        "repo": "dagster-io/skills"
+      }
+    },
+    "dbt-agent-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "dbt-labs/dbt-agent-skills"
+      }
+    }
   }
 }
