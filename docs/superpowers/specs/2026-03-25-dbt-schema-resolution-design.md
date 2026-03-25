@@ -23,21 +23,23 @@ developer workflows unreliable and error-prone.
 ### Target-Driven Architecture
 
 All schema resolution is controlled by `--target`, with three targets per
-project: `dev`, `staging`, `prod`. Two shared macros centralize the logic.
+project: `dev`, `staging`, `prod`. One shared macro centralizes source schema
+logic. Model output schemas are handled by dbt's built-in `generate_schema_name`
+default, which already produces the correct behavior when profiles carry the
+right `schema` prefix per target.
 
 ### Macros
 
 #### Placement strategy
 
-Macros live in the **5 school/network projects only** (kipptaf, kippnewark,
-kippcamden, kippmiami, kipppaterson). Source-system projects (amplify,
-deanslist, edplan, finalsite, iready, overgrad, pearson, powerschool, renlearn,
-titan) are consumed as dbt packages — their source files use
-`resolve_source_schema` at compile time, but the macro is resolved from the
-consuming project's namespace. This avoids dbt macro namespace collisions (if
-multiple packages each define `generate_schema_name`, dbt errors).
+The `resolve_source_schema` macro lives in the **5 school/network projects
+only** (kipptaf, kippnewark, kippcamden, kippmiami, kipppaterson). Source-system
+projects (amplify, deanslist, edplan, finalsite, iready, overgrad, pearson,
+powerschool, renlearn, titan) are consumed as dbt packages — their source files
+call `resolve_source_schema` at compile time, but the macro is resolved from the
+consuming project's namespace.
 
-Source-system projects do NOT get their own copy of either macro.
+Source-system projects do NOT get their own copy of the macro.
 
 #### `resolve_source_schema(base_schema)`
 
@@ -80,9 +82,12 @@ schema: |
 schema: "{{ resolve_source_schema('kippnewark_powerschool') }}"
 ```
 
-#### `generate_schema_name(custom_schema_name, node)`
+#### Model output schemas (no custom macro needed)
 
-Controls where models are written. Overrides the dbt default to produce:
+dbt's built-in `generate_schema_name` default produces
+`<target.schema>_<custom_schema>` (or just `<target.schema>` when no custom
+schema is set). Since the profile's `schema` field already carries the correct
+prefix per target, this produces the right output without any override:
 
 | Target    | custom_schema | Result                                 |
 | --------- | ------------- | -------------------------------------- |
@@ -93,29 +98,9 @@ Controls where models are written. Overrides the dbt default to produce:
 | `prod`    | `powerschool` | `kipptaf_powerschool`                  |
 | `prod`    | (none)        | `kipptaf`                              |
 
-Implementation — the macro receives `default_schema` (from the profile's
-`schema` field) and `custom_schema_name` (from `+schema` in `dbt_project.yml`).
-In prod, the profile schema is already the project name (e.g., `kipptaf`), so
-the default dbt behavior of `<default_schema>_<custom_schema>` produces the
-correct result. In dev/staging, the profile schema already carries the prefix,
-so the same concatenation works:
-
-```sql
-{% macro generate_schema_name(custom_schema_name, node) %}
-  {%- set default_schema = target.schema -%}
-  {%- if custom_schema_name is none -%}
-    {{ default_schema }}
-  {%- else -%}
-    {{ default_schema }}_{{ custom_schema_name }}
-  {%- endif -%}
-{% endmacro %}
-```
-
-This is equivalent to dbt's `generate_schema_name_for_env` built-in — the
-profile schema is the full prefix, and `+schema` is appended with an underscore.
-The key difference from the dbt default is that it does NOT concatenate
-`<default_schema>_<custom_schema>` only in prod — it does so uniformly across
-all targets.
+No `generate_schema_name` override is defined in any project. dbt ignores custom
+`generate_schema_name` macros in installed packages, so this also avoids
+namespace collision issues with source-system packages.
 
 ### Profiles
 
@@ -378,8 +363,7 @@ Source files currently use inline Jinja that checks `target.name`,
 
 #### Phase 1: Deploy macros and update profiles (backward-compatible)
 
-1. Add `resolve_source_schema` and `generate_schema_name` macros to the 5
-   school/network projects
+1. Add `resolve_source_schema` macro to the 5 school/network projects
 1. Update `.dbt/profiles.yml` — add `dev`/`staging`/`prod` targets alongside
    existing targets (do not remove old targets yet)
 1. Update shipped `src/dbt/<project>/profiles.yml` — add `dev` and `prod`
