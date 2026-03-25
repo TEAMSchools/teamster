@@ -10,7 +10,7 @@ models:
         tests:
           - unique:
               config:
-                severity: warn
+                severity: Warn
                 store_failures: true
 
       - name: _dbt_source_relation
