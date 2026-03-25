@@ -67,16 +67,17 @@ Cloud Storage (GCS) as the intermediate storage layer.
     (`feat`, `fix`, `docs`, `refactor`, `chore`, etc.), any related source
     systems (e.g., `adp`, `powerschool`, `deanslist`), and `dagster` and/or
     `dbt` when applicable.
-  - **Design specs**: After a spec is written and reviewed:
+  - **Design specs**: When a spec is first ready to commit:
     1. Open a GitHub issue (`gh issue create`)
     2. Create and link the branch
        (`gh issue develop <number> --name <branch> --checkout`)
     3. Commit the spec to that branch
     4. Push the branch
     5. Update the issue body with a hyperlink to the spec on the branch
-    - Spec documents must include a status table at the top with **Spec**,
-      **Plan**, and **Development** statuses (e.g., NOT STARTED, IN PROGRESS,
-      **APPROVED**, COMPLETE). Update statuses as work progresses.
+    - Spec and plan documents must include a status table at the top. Specs
+      track **Spec**, **Plan**, and **Development**; plans track **Plan** and
+      **Development**. Valid statuses: NOT STARTED, IN PROGRESS, IN REVIEW,
+      APPROVED, COMPLETE. Update as work progresses.
 
 - **Claude CLI**: The `claude` binary is at
   `~/.vscode-remote/extensions/anthropic.claude-code-*/resources/native-binary/claude`
