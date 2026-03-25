@@ -14,9 +14,9 @@ models/
 
 ## Cross-Project Usage
 
-Referenced by `kippnewark`, `kippcamden`, and `kipptaf`. School projects disable
-`stg_overgrad__followings` and `stg_overgrad__schools` (not available for all
-schools).
+Referenced by `kippnewark`, `kippcamden`, and `kipptaf`. District projects
+disable `stg_overgrad__followings` and `stg_overgrad__schools` (not available
+for all schools).
 
 ## Model Conventions
 

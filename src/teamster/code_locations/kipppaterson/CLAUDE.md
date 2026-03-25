@@ -22,7 +22,7 @@ GCS bucket: `teamster-kipppaterson`
 
 ## Critical Difference: PowerSchool via SFTP
 
-Paterson is the **only** school location that does **not** use a live Oracle
+Paterson is the **only** district location that does **not** use a live Oracle
 ODBC connection for PowerSchool. Instead, PowerSchool data arrives as CSV file
 drops on Couchdrop (Google Drive-backed SFTP). Assets are defined in
 `powerschool/sis/sftp/` and use `ssh_resource_key="ssh_couchdrop"`.

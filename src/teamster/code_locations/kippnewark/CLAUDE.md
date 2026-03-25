@@ -27,7 +27,7 @@ GCS bucket: `teamster-kippnewark`
 | `extracts`              | BigQuery→SFTP | schedule                                    |
 | `couchdrop`             | sensor only   | sensor (Google Drive watcher)               |
 
-Newark is the most complete school code location — it uses every available
+Newark is the most complete district code location — it uses every available
 integration.
 
 ## PowerSchool Configuration

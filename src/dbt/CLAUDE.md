@@ -4,14 +4,15 @@
 
 Fifteen dbt projects organized into three tiers:
 
-| Tier                  | Projects                                                                                                           | Purpose                                                     |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| **Source-system**     | `amplify`, `deanslist`, `edplan`, `finalsite`, `iready`, `overgrad`, `pearson`, `powerschool`, `renlearn`, `titan` | Clean and contract-enforce raw data from one source system  |
-| **School-specific**   | `kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`                                                            | Combine source packages for a single school network         |
-| **Network analytics** | `kipptaf`                                                                                                          | Cross-school marts, reporting, and extracts for the network |
+| Tier                  | Projects                                                                                                           | Purpose                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| **Source-system**     | `amplify`, `deanslist`, `edplan`, `finalsite`, `iready`, `overgrad`, `pearson`, `powerschool`, `renlearn`, `titan` | Clean and contract-enforce raw data from one source system    |
+| **District-specific** | `kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`                                                            | Combine source packages for a single district                 |
+| **Network analytics** | `kipptaf`                                                                                                          | Cross-district marts, reporting, and extracts for the network |
 
-Data flows **source → school → kipptaf**: source-system projects are consumed as
-local dbt packages by school projects, which are in turn sourced by `kipptaf`.
+Data flows **source → district → kipptaf**: source-system projects are consumed
+as local dbt packages by district projects, which are in turn sourced by
+`kipptaf`.
 
 ## Project Dependency Map
 
@@ -28,8 +29,8 @@ renlearn ─────┤
 titan ────────┘
 ```
 
-Not every school uses every source package. See each school project's CLAUDE.md
-for its active packages.
+Not every district uses every source package. See each district project's
+CLAUDE.md for its active packages.
 
 ## Shared Dependencies
 
@@ -39,14 +40,15 @@ All projects use:
   `generate_surrogate_key`, etc.
 - `dbt-labs/dbt_external_tables` — BigQuery external table staging
 
-School and network projects additionally use `dbt-labs/codegen`.
+District and network projects additionally use `dbt-labs/codegen`.
 
 ## Variable Override Pattern
 
 Source-system projects declare variables with null/zero defaults
 (`bigquery_external_connection_name: null`, `current_academic_year: 0`, etc.).
-Consuming school projects override these in their own `dbt_project.yml`. This
-allows the same source project code to work across multiple school deployments.
+Consuming district projects override these in their own `dbt_project.yml`. This
+allows the same source project code to work across multiple district
+deployments.
 
 ## External Table Pattern
 
@@ -101,27 +103,28 @@ data_tests:
         store_failures: true
 ```
 
-### SQL antipatterns to avoid
+### SQL conventions
 
-- **Soft-delete filters**: Apply soft-delete exclusion filters in the **staging
-  model** (`WHERE deleted_at IS NULL`, `WHERE NOT _fivetran_deleted`, etc.), not
-  in intermediate JOIN `ON` clauses. Deleted rows should never reach downstream
-  models.
-- **`GROUP BY ALL`**: Always list grouping columns explicitly.
-- **`SELECT *` in the final SELECT of `rpt_` or mart models**: Always list
-  columns explicitly. Pass-through CTEs (`select * from ref(...)`) are fine.
-- **`SELECT *` from models that use `dbt_utils.star()`**: See
-  `src/dbt/kipptaf/CLAUDE.md` for the full guidance on selecting from
-  star-generated models (includes `INFORMATION_SCHEMA.COLUMNS` query pattern).
-- **`dbt_utils.get_relations_by_prefix`**: Do not use. It queries the BigQuery
-  catalog at compile time to discover tables, which fails in dbt Cloud CI
-  (`--defer`) because the PR schema is empty. Use `dbt_utils.union_relations`
-  with explicit `ref()` calls instead.
-- **Filter conditions in `ON` vs `WHERE`**: Row-filter conditions on the
-  preserved table belong in `WHERE`, not `ON` (except `FULL JOIN`). For example,
-  in `FROM a INNER JOIN b ON a.id = b.id AND b.deleted_at IS NULL`, the
-  `b.deleted_at IS NULL` filter is on the joined table (`b`) and belongs in
-  `ON`. A filter on the driving table (`a`) would belong in `WHERE`.
+- **Soft-delete filters**: Apply in the **staging model**, not in downstream
+  `ON` clauses. Deleted rows should never reach intermediate or mart models.
+- **No `GROUP BY` without aggregation** — use `DISTINCT` instead. `DISTINCT`
+  requires a comment explaining why it is necessary.
+- **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
+  breaks silently when upstream columns change.
+- **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models.
+- **No `SELECT *` in final `SELECT` of `rpt_`/mart models** — list columns
+  explicitly. Pass-through CTEs (`select * from ref(...)`) are fine.
+- **`ON` vs `WHERE`** — row filters on the preserved table belong in `WHERE`,
+  not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
+  Exception: `FULL JOIN` conditions referencing one side stay in `ON`.
+- **`SELECT *` from `dbt_utils.star()` models** — see
+  `src/dbt/kipptaf/CLAUDE.md` for guidance (includes
+  `INFORMATION_SCHEMA.COLUMNS` query pattern).
+- **Timezone-aware today**:
+
+  ```sql
+  current_date('{{ var("local_timezone") }}')
+  ```
 
 ### SQL column ordering in SELECT clauses
 

@@ -1,15 +1,15 @@
 # CLAUDE.md — `dbt/kippnewark/`
 
-School-specific dbt project for **KIPP New Jersey - Newark** schools. Combines
+District-specific dbt project for **KIPP New Jersey - Newark** schools. Combines
 local PowerSchool staging with cross-project references to produce school-level
-extracts. This is the most complete NJ school project, including all available
+extracts. This is the most complete NJ district project, including all available
 source integrations.
 
 ## Model Structure
 
 ```text
 models/
-  powerschool/   # school-specific PowerSchool staging (refs powerschool package)
+  powerschool/   # district-specific PowerSchool staging (refs powerschool package)
     sis/staging/
   edplan/        # refs edplan package
   extracts/
