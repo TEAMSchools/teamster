@@ -20,6 +20,7 @@ with
             cast(a.created_date_local as timestamp) as assignment_date,
             a.creator_name,
 
+            m.tag_id,
             m.tag_name as goal_name,
             m.strand_name,
             m.bucket_name,
@@ -41,7 +42,7 @@ select
 
     {{
         dbt_utils.generate_surrogate_key(
-            ["employee_number", "assignment_id", "goal_name"]
+            ["employee_number", "assignment_id", "tag_id", "goal_name"]
         )
     }} as microgoals_key,
 from final

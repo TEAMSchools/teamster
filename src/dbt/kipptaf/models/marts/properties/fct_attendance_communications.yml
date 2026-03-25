@@ -7,7 +7,7 @@ models:
         tests:
           - unique:
               config:
-                severity: Warn
+                severity: warn
                 store_failures: true
 
       - name: student_number
