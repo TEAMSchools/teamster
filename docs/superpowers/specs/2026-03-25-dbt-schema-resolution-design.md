@@ -300,41 +300,49 @@ With inputs:
 ]
 ```
 
-### `dbt-sxs.py` Updates
+### External Source Staging Script
 
-The script currently sets `DBT_CLOUD_ENVIRONMENT_TYPE` as an env var. With the
-new target-driven approach, it should pass `--target` directly to the dbt
-command instead of relying on environment variables. The `--target` flag on the
-script already exists and maps to the dbt target.
+The existing `dbt-sxs.py` script currently passes `--target` to dbt but sets
+`DBT_CLOUD_ENVIRONMENT_TYPE` as an env var for schema resolution. With the new
+target-driven approach, `DBT_CLOUD_ENVIRONMENT_TYPE` is no longer used —
+`--target` controls schema resolution directly. The script's `--target` flag
+already passes through to the dbt command, so no behavioral change is needed;
+the env var injection is simply removed.
+
+The VS Code task calls this script. The script itself is not deprecated — it
+remains the mechanism for staging external sources.
 
 ## Developer Workflows
 
-### Most developers — modify existing kipptaf models
+### Modify existing kipptaf models
 
 1. Work on models with `--target dev` (default)
-2. Power User `--defer` resolves upstream `ref()` calls to prod manifest
-3. Only modified models build into `zz_<GITHUB_USER>_kipptaf_*`
+2. Power User `--defer` resolves upstream `ref()` calls to prod manifest — only
+   modified models build into `zz_<GITHUB_USER>_kipptaf_*`
 
-### Most developers — add/modify Google Sheets source
+### Add/modify an external source (e.g. Google Sheets)
 
 1. Modify source definition in `sources-external.yml`
-2. Run VS Code task "dbt: Stage External Sources" → pick `kipptaf` → `dev` →
-   enter source name
-3. Build/test the staging model locally with `--target dev`
-4. Run VS Code task again → pick `kipptaf` → `staging` → same source name (CI
+2. Run VS Code task "dbt: Stage External Sources" → pick project → `dev` → enter
+   source name
+3. Build/test the staging model locally with `--target dev` (no `--defer` — the
+   new/modified source is not in the prod manifest)
+4. Run VS Code task again → pick project → `staging` → same source name (CI
    prep)
 5. Open PR — CI validates against staging schema
 
-### You — new integration (new source + staging model)
+### New integration (new source + staging model)
 
 1. Add source + staging model definitions
-2. Run `dbt-sxs.py kipptaf --target dev --select new_source` to stage external
-   tables
-3. Build/test locally with `--target dev`
-4. Run `dbt-sxs.py kipptaf --target staging --select new_source` for CI
+2. Run VS Code task "dbt: Stage External Sources" → pick project → `dev` → enter
+   source name
+3. Build/test locally with `--target dev` (no `--defer` — new models are not in
+   the prod manifest yet)
+4. Run VS Code task again → pick project → `staging` → same source name (CI
+   prep)
 5. Open PR
 
-### You — cross-project (regional + kipptaf)
+### Cross-project development (regional + kipptaf)
 
 1. Develop regional project with `--target dev` → writes to
    `zz_<user>_kippnewark_*`
@@ -422,8 +430,10 @@ schema. This is acceptable since all development happens in Codespaces.
 Source-system projects (amplify, deanslist, etc.) currently have non-standard
 profiles in `.dbt/profiles.yml` with `schema: zz_dev` and region-specific
 targets. These are only used for local development (the projects are consumed as
-packages in prod). They get the same 3-target pattern for consistency, though
-only `dev` is typically used.
+packages in prod) and do not have shipped `src/dbt/<project>/profiles.yml`
+files. They get the same 3-target pattern (`dev`, `staging`, `prod`) for
+consistency — even though `staging` and `prod` are rarely needed, uniform naming
+simplifies documentation and Power User configuration.
 
 ### `dbt parse --target prod` in git hook
 
