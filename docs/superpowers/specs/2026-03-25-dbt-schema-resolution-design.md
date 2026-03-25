@@ -139,12 +139,14 @@ kipptaf:
       threads: 40
 ```
 
-Same pattern for all 15 dbt projects: `kipptaf`, `kippnewark`, `kippcamden`,
-`kippmiami`, `kipppaterson`, `amplify`, `deanslist`, `edplan`, `finalsite`,
-`iready`, `overgrad`, `pearson`, `powerschool`, `renlearn`, and `titan`.
+The 5 school/network projects (`kipptaf`, `kippnewark`, `kippcamden`,
+`kippmiami`, `kipppaterson`) get all three targets.
 
-The existing `integration_tests` profile is kept as-is (single `zz_dev` target)
-since it is not a shipped project.
+Source-system projects (`amplify`, `deanslist`, `edplan`, `finalsite`, `iready`,
+`overgrad`, `pearson`, `powerschool`, `renlearn`, `titan`) get a single `dev`
+target — the same pattern as `integration_tests`. They are consumed as packages
+in prod and never deployed standalone, so `staging` and `prod` targets are not
+needed.
 
 #### `src/dbt/<project>/profiles.yml` (shipped to Dagster)
 
@@ -268,7 +270,7 @@ A VS Code task with input prompts for project, target, and source selection:
 {
   "label": "dbt: Stage External Sources",
   "type": "shell",
-  "command": "uv run scripts/dbt-sxs.py ${input:dbtProject} --target ${input:dbtSxsTarget} --select ${input:dbtSourceSelect}",
+  "command": "uv run dbt run-operation stage_external_sources --project-dir src/dbt/${input:dbtProject} --target ${input:dbtSxsTarget} --vars '{\"ext_full_refresh\": \"true\", \"cloud_storage_uri_base\": \"gs://teamster-${input:dbtProject}/dagster/${input:dbtProject}\"}' --args 'select: ${input:dbtSourceSelect}'",
   "problemMatcher": []
 }
 ```
@@ -302,15 +304,11 @@ With inputs:
 
 ### External Source Staging Script
 
-The existing `dbt-sxs.py` script currently passes `--target` to dbt but sets
-`DBT_CLOUD_ENVIRONMENT_TYPE` as an env var for schema resolution. With the new
-target-driven approach, `DBT_CLOUD_ENVIRONMENT_TYPE` is no longer used —
-`--target` controls schema resolution directly. The script's `--target` flag
-already passes through to the dbt command, so no behavioral change is needed;
-the env var injection is simply removed.
-
-The VS Code task calls this script. The script itself is not deprecated — it
-remains the mechanism for staging external sources.
+`scripts/dbt-sxs.py` is deprecated. Its logic is replaced by the VS Code task,
+which calls `dbt run-operation stage_external_sources` directly with the
+appropriate `--target` and `--args` flags. The `DBT_CLOUD_ENVIRONMENT_TYPE` env
+var it previously set is no longer used — `--target` controls schema resolution
+directly.
 
 ## Developer Workflows
 
@@ -325,8 +323,9 @@ remains the mechanism for staging external sources.
 1. Modify source definition in `sources-external.yml`
 2. Run VS Code task "dbt: Stage External Sources" → pick project → `dev` → enter
    source name
-3. Build/test the staging model locally with `--target dev` (no `--defer` — the
-   new/modified source is not in the prod manifest)
+3. Build/test the staging model locally with `--target dev`. `--defer` can be
+   used — unchanged upstream models resolve to prod; the modified staging model
+   builds against the dev-prefixed source
 4. Run VS Code task again → pick project → `staging` → same source name (CI
    prep)
 5. Open PR — CI validates against staging schema
@@ -336,8 +335,9 @@ remains the mechanism for staging external sources.
 1. Add source + staging model definitions
 2. Run VS Code task "dbt: Stage External Sources" → pick project → `dev` → enter
    source name
-3. Build/test locally with `--target dev` (no `--defer` — new models are not in
-   the prod manifest yet)
+3. Build/test locally with `--target dev`. `--defer` can be used — existing
+   upstream `ref()` calls resolve to the prod manifest; only the new models
+   (absent from prod) build locally
 4. Run VS Code task again → pick project → `staging` → same source name (CI
    prep)
 5. Open PR
@@ -398,8 +398,9 @@ Source files currently use inline Jinja that checks `target.name`,
 1. Update dbt Cloud job target names (`default` → `staging`/`prod`)
 1. Update Staging environment dataset (`z_dev_kipptaf` → `zz_stg_kipptaf`)
 1. Remove old target names from `.dbt/profiles.yml`
-1. Remove `DBT_CLOUD_ENVIRONMENT_TYPE` env var from `.devcontainer/`,
-   `.vscode/settings.json`, and `dbt-sxs.py`
+1. Remove `DBT_CLOUD_ENVIRONMENT_TYPE` env var from `.devcontainer/` and
+   `.vscode/settings.json`
+1. Delete `scripts/dbt-sxs.py` and remove its entry from `scripts/CLAUDE.md`
 1. Set up `post-merge` git hook for prod manifest generation
 1. Configure Power User `--defer` in `.vscode/settings.json`
 1. Add VS Code task for staging external sources
@@ -427,13 +428,11 @@ schema. This is acceptable since all development happens in Codespaces.
 
 ### Source-system project profiles
 
-Source-system projects (amplify, deanslist, etc.) currently have non-standard
-profiles in `.dbt/profiles.yml` with `schema: zz_dev` and region-specific
-targets. These are only used for local development (the projects are consumed as
-packages in prod) and do not have shipped `src/dbt/<project>/profiles.yml`
-files. They get the same 3-target pattern (`dev`, `staging`, `prod`) for
-consistency — even though `staging` and `prod` are rarely needed, uniform naming
-simplifies documentation and Power User configuration.
+Source-system projects currently have non-standard profiles in
+`.dbt/profiles.yml` with `schema: zz_dev` and region-specific targets. These are
+simplified to a single `dev` target (matching the `integration_tests` pattern).
+Since they are consumed as packages in prod and never deployed standalone, no
+`staging` or `prod` target is needed.
 
 ### `dbt parse --target prod` in git hook
 
