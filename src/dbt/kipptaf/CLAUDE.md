@@ -229,3 +229,33 @@ until re-materialized. This is handled automatically by
 [#3440](https://github.com/TEAMSchools/teamster/pull/3440)). The guidance above
 applies to non-`union_relations` models where you are joining a star-generated
 base model directly.
+
+### Joining across union models — `union_dataset_join_clause`
+
+Many kipptaf models are `union_relations` views that combine data from multiple
+school projects (kippnewark, kippcamden, kippmiami, kipppaterson). Each row
+carries a `_dbt_source_relation` column, but the full value includes the schema
+and table name — so the same school's rows in two different union models will
+have **different** `_dbt_source_relation` values (e.g.
+`...kippnewark_powerschool.int_powerschool__gpa_cumulative` vs
+`...kippnewark_powerschool.base_powerschool__student_enrollments`).
+
+**Rule**: Never join union models on
+`_dbt_source_relation = _dbt_source_relation`. Always use the
+`union_dataset_join_clause` macro, which extracts the school code via regex:
+
+```sql
+-- correct
+inner join {{ ref("other_union_model") }} as b
+    on a.id = b.id
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="b") }}
+
+-- WRONG — will produce zero matches
+inner join {{ ref("other_union_model") }} as b
+    on a._dbt_source_relation = b._dbt_source_relation
+    and a.id = b.id
+```
+
+The macro is defined in `macros/utils.sql`. It calls `extract_code_location`,
+which runs `regexp_extract(alias._dbt_source_relation, r'(kipp\w+)_')` to
+isolate the school prefix.
