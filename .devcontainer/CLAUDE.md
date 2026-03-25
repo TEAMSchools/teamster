@@ -38,10 +38,11 @@ after container start if env vars or secrets are missing.
 ## Quirks
 
 - **`apt-get update` permission errors in `postCreate.sh`**: stale root-owned
-  files in `/var/lib/apt/lists/partial/` from the image build cause permission
+  directories in `/var/lib/apt/lists/` from the image build cause permission
   denied errors; pre-clean with
-  `sudo rm -rf /var/lib/apt/lists/partial /var/cache/apt/archives/partial`
-  before running `apt-get update`
+  `sudo apt-get clean && sudo rm -rf /var/lib/apt/lists` — remove the
+  directories entirely so `apt-get update` recreates them with correct
+  permissions
 - **`sudo` removed**: at the end of `postCreate.sh` — privileged setup (gcloud
   components, Helm) must go in `postCreate.sh`, not later. To add new
   components, update `postCreate.sh` and rebuild the container.

@@ -1,19 +1,25 @@
 #!/bin/bash
 
 # uninstall unwanted extensions seeded by devcontainer features
-code --uninstall-extension ms-python.autopep8 || true
+if command -v code &>/dev/null; then
+  code --uninstall-extension ms-python.autopep8 || true
+fi
 
 # override machine-scoped settings seeded by devcontainer features
+MACHINE_SETTINGS="/home/vscode/.vscode-remote/data/Machine/settings.json"
+mkdir -p "$(dirname "${MACHINE_SETTINGS}")"
+[[ -f ${MACHINE_SETTINGS} ]] || echo '{}' >"${MACHINE_SETTINGS}"
 jq '. + {"python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python", "[python]": {"editor.defaultFormatter": "trunk.io"}}' \
-  /home/vscode/.vscode-remote/data/Machine/settings.json \
+  "${MACHINE_SETTINGS}" \
   >/tmp/machine-settings.json &&
-  mv /tmp/machine-settings.json /home/vscode/.vscode-remote/data/Machine/settings.json
+  mv /tmp/machine-settings.json "${MACHINE_SETTINGS}"
 
 git config pull.rebase false # specify how to reconcile divergent branches (merge)
 git config push.autoSetupRemote true
 
 # install extra apt packages
-sudo rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* &&
+sudo apt-get clean &&
+  sudo rm -rf /var/lib/apt/lists &&
   sudo apt-get update -y &&
   sudo apt-get -y install --no-install-recommends sshpass &&
   sudo apt-get -y clean &&
