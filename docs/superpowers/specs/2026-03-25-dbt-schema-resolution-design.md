@@ -2,7 +2,7 @@
 
 |                 | Status      |
 | --------------- | ----------- |
-| **Spec**        | IN REVIEW   |
+| **Spec**        | APPROVED    |
 | **Plan**        | NOT STARTED |
 | **Development** | NOT STARTED |
 
