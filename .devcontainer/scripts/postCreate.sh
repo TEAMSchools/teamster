@@ -102,6 +102,10 @@ export DBT_SEND_ANONYMOUS_USAGE_STATS=false
   uv run dbt parse --project-dir=src/dbt/kipptaf) &
 wait
 
+# fix tmpfs permissions (Codespaces may override tmpfs-mode from mount config)
+sudo chmod 755 /etc/secret-volume
+sudo chown vscode:vscode /etc/secret-volume
+
 # inject secrets
 .devcontainer/scripts/inject-secrets.sh
 

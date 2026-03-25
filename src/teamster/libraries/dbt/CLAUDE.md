@@ -33,9 +33,7 @@ Customizes asset key and automation condition generation:
   `dbt_union_relations_automation_condition()` — a third condition that adds
   recursive ancestor `code_version_changed` detection (but not
   `any_deps_updated`) to the view condition. This re-runs the view only when
-  upstream model SQL changes after a deploy, not on data-only refreshes. The
-  condition type can also be overridden manually via
-  `meta.dagster.automation_condition.type: table|view`.
+  upstream model SQL changes after a deploy, not on data-only refreshes.
 - **Group name**: Falls back to the dbt package name (for cross-project refs)
   then the first FQN segment after the project name.
 

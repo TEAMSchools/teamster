@@ -4,8 +4,6 @@ models:
       meta:
         dagster:
           group: adp_payroll
-          automation_condition:
-            enabled: false
     columns:
       - name: journal
         data_type: string

@@ -21,8 +21,6 @@ sources:
         config:
           meta:
             dagster:
-              automation_condition:
-                enabled: false
               asset_key:
                 - kipptaf
                 - adp
