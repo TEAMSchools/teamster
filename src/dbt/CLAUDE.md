@@ -201,3 +201,22 @@ All SQL follows `.trunk/config/.sqlfluff`. Key enforced rules:
 - **Line length**: 88 characters max
 
 Do not flag code that follows these rules.
+
+## Package Macro Resolution
+
+Source-system projects are consumed as dbt packages by school projects. dbt
+ignores `generate_schema_name` overrides in installed packages — it must live in
+the consuming project. Custom macros (e.g., `resolve_source_schema`) ARE
+resolved from the consuming project's namespace when called from package source
+files.
+
+## Profiles Architecture
+
+Two `profiles.yml` files per school/network project:
+
+- **`.dbt/profiles.yml`** — local dev + dbt Cloud, multiple targets
+  (`dev`/`staging`/`prod`)
+- **`src/dbt/<project>/profiles.yml`** — shipped with code, used by Dagster
+
+Source-system projects only appear in `.dbt/profiles.yml` (not shipped to
+Dagster — they run as packages inside school projects).

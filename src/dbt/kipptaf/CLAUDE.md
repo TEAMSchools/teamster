@@ -134,15 +134,19 @@ config:
 | `cloud_storage_uri_base`            | `gs://teamster-kipptaf/dagster/kipptaf`                                  |
 | `bigquery_external_connection_name` | `projects/teamster-332318/locations/us/connections/biglake-teamster-gcs` |
 
-dbt Cloud project ID: `211862`.
+## dbt Cloud
 
-## Model Layer Distinctions
+This project is connected to dbt Cloud project ID `211862`. The `dbt-cloud`
+block in `dbt_project.yml` enables dbt Cloud CI/CD.
 
-- **`rpt_`** — analyst-built reporting views for external tools. Live in
-  `models/extracts/`.
-- **`dim_*` / `fct_*`** — dimensional marts for semantic layer. Live in
-  `models/marts/`. Actively being developed.
+### CI Chain
 
-Key marts: `dim_students`, `dim_staff`, `dim_locations`, `dim_terms`,
-`dim_dates`, `dim_seats`, `fct_attendance`, `fct_staff_attrition`,
-`fct_staff_terminations`, `fct_additional_earnings`, `fct_microgoals`.
+- PR opened → **Build Modified - CI** (defers to Staging, writes to
+  `dbt_cloud_pr_*`)
+- PR merged → **Parse - Staging** → triggers **Build Modified - Staging**
+  (defers to Production)
+- PR merged → **Parse - Production** (generates prod manifest)
+
+The "Target name" field in dbt Cloud job settings controls `target.name` in
+Jinja. Setting it to `"default"` means `target.name == 'default'` literally — it
+is not a placeholder.

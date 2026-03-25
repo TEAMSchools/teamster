@@ -49,3 +49,13 @@ since their last materialization (compares `code_versions_by_key` against
 > **Note**: `dbt_code_version_schedule` was previously defined in
 > `dbt/schedules.py` for `kippnewark`, `kippcamden`, and `kippmiami` but was
 > never wired into any `definitions.py` and has since been deleted.
+
+## `DbtCliResource` Parameters
+
+`DbtCliResource` accepts `target`, `state_path`, and `profiles_dir` in addition
+to `project_dir` and `dbt_executable`. The `target` param passes `--target` to
+all dbt CLI invocations.
+
+Note: `get_dbt_cli_resource(test=True)` is available but no caller currently
+passes it — all 5 code locations call `get_dbt_cli_resource(DBT_PROJECT)`
+without arguments.
