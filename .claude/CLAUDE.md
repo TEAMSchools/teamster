@@ -78,8 +78,10 @@ fire for Edit.
 - When staging changes that include protected paths, use `git add -u` — naming
   them explicitly in `git add <file>` triggers the hook and gets blocked
 - Commit message bodies are scanned by the hook (it reads the full command
-  string) — avoid `env` as a standalone word and `$VAR` references in message
-  text; shorten the body if a commit is repeatedly blocked
+  string) — avoid `env` as a standalone word, `$VAR` references, and sensitive
+  path strings (e.g. `secret-volume`, `.env`, `.cer`) in message text. The Bash
+  tool `description` field is scanned too — keep it generic. Shorten the body if
+  a commit is repeatedly blocked.
 
 ## permissions.deny path prefixes
 
