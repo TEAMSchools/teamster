@@ -55,7 +55,7 @@ Dagster `ConfigurableResource` config.
 
 The core request flow is:
 
-```
+```text
 _request(method, url, **kwargs)
   → _prepare_request(method, url, kwargs)   # hook: mutate before sending
   → _session.request(method, url, **kwargs)  # actual HTTP call
