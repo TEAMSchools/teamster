@@ -32,6 +32,10 @@ Cloud Storage (GCS) as the intermediate storage layer.
   Bash is only for commands with no dedicated tool (`git`, `uv run`, `gh`,
   `docker`, `trunk`, plain `ls`).
 
+- **Verify before claiming**: Do not extrapolate third-party tool behavior from
+  general knowledge — read the actual source. Proposed code must match the
+  discussion; do not present fixes that contradict what was just agreed on.
+
 - **Git**:
   - Commit messages follow
     [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/)
