@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# uninstall unwanted extensions seeded by devcontainer features
-if command -v code &>/dev/null; then
-  code --uninstall-extension ms-python.autopep8 || true
-fi
-
 # override machine-scoped settings seeded by devcontainer features
 MACHINE_SETTINGS="/home/vscode/.vscode-remote/data/Machine/settings.json"
 mkdir -p "$(dirname "${MACHINE_SETTINGS}")"
@@ -18,8 +13,7 @@ git config pull.rebase false # specify how to reconcile divergent branches (merg
 git config push.autoSetupRemote true
 
 # install extra apt packages
-sudo apt-get clean &&
-  sudo rm -rf /var/lib/apt/lists &&
+sudo rm -rf /var/lib/apt/lists /var/cache/apt/archives/partial &&
   sudo apt-get update -y &&
   sudo apt-get -y install --no-install-recommends sshpass &&
   sudo apt-get -y clean &&

@@ -37,12 +37,13 @@ after container start if env vars or secrets are missing.
 
 ## Quirks
 
-- **`apt-get update` permission errors in `postCreate.sh`**: stale root-owned
-  directories in `/var/lib/apt/lists/` from the image build cause permission
-  denied errors; pre-clean with
-  `sudo apt-get clean && sudo rm -rf /var/lib/apt/lists` — remove the
+- **`apt-get` permission errors in `postCreate.sh`**: stale root-owned
+  directories in `/var/lib/apt/lists/` and `/var/cache/apt/archives/partial/`
+  from the image build cause permission denied errors; pre-clean with
+  `sudo rm -rf /var/lib/apt/lists /var/cache/apt/archives/partial` — remove the
   directories entirely so `apt-get update` recreates them with correct
-  permissions
+  permissions. Do NOT use `apt-get clean` as the pre-clean step — it itself
+  fails on the stale permissions.
 - **`sudo` removed**: at the end of `postCreate.sh` — privileged setup (gcloud
   components, Helm) must go in `postCreate.sh`, not later. To add new
   components, update `postCreate.sh` and rebuild the container.
