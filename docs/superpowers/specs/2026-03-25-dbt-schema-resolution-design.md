@@ -253,6 +253,14 @@ available from the first session.
 
 Similar entries for regional projects as needed.
 
+> **Open question**: The Power User command palette exposes "Apply defer
+> configuration" — it is unclear whether this is a mandatory one-time setup step
+> or an optional activation command. This must be verified during
+> implementation. There is no confirmed interactive toggle for
+> `deferToProduction`; developers who need to disable defer (e.g., new
+> integration workflow) should run `dbt build --select <model>+` directly from
+> the terminal rather than using Power User's run button.
+
 ### VS Code Task: Stage External Sources
 
 A VS Code task with input prompts for project, target, and source selection:
