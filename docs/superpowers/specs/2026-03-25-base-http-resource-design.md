@@ -38,18 +38,34 @@ Dagster `ConfigurableResource` config.
 
 ### PrivateAttrs
 
+**`_session` typing:** The base class types `_session` as `Session`.
+OAuth2Session subclasses (Coupa, ADP WFN) assign an `OAuth2Session` in
+`_setup_session()` — this works at runtime since `OAuth2Session` extends
+`Session`, but pyright may flag it. Subclasses that need
+`OAuth2Session`-specific methods (e.g., `fetch_token()`) should use a typed
+property or cast rather than re-declaring the PrivateAttr.
+
 | Field       | Type                | Default                   | Purpose                               |
 | ----------- | ------------------- | ------------------------- | ------------------------------------- |
-| `_session`  | `Session`           | `default_factory=Session` | Shared HTTP session                   |
+| `_session`  | `Session`           | `default_factory=Session` | Shared HTTP session (see note below)  |
 | `_base_url` | `str`               | —                         | Set by subclass in `_setup_session()` |
 | `_log`      | `DagsterLogManager` | —                         | Assigned in `setup_for_execution()`   |
 
 ### Lifecycle
 
-- **`setup_for_execution(context)`** — assigns `_log`, calls `_setup_session()`.
-  Subclasses never override this; they override `_setup_session()` instead.
-- **`teardown_after_execution(context)`** — calls `_session.close()`. Subclasses
-  can call `super()` for additional cleanup.
+- **`setup_for_execution(context: InitResourceContext)`** — assigns `_log` via
+  `check.not_none(value=context.log)` (using `dagster_shared.check`, matching
+  existing resource convention), then calls `_setup_session()`. Subclasses never
+  override this; they override `_setup_session()` instead.
+- **`teardown_after_execution(context: InitResourceContext)`** — calls
+  `_session.close()`. This is net-new behavior (no existing resource implements
+  teardown), added to prevent session leaks. Subclasses can call `super()` for
+  additional cleanup.
+
+Note: if a tenacity retry is in-flight when Dagster cancels a run,
+`teardown_after_execution` will not interrupt it (same thread). At the current
+config (3 attempts, 60s max wait) this is acceptable — revisit if retry
+parameters grow more aggressive.
 
 ### Request Pipeline
 
