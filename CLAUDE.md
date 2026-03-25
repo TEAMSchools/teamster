@@ -79,6 +79,10 @@ Cloud Storage (GCS) as the intermediate storage layer.
   and is not on `$PATH`, so it cannot be run via Bash. Run it manually in a
   terminal.
 
+- **File links in responses**: Use relative paths with no leading slash; bare
+  line numbers in anchors with no `L` prefix. Example:
+  [.devcontainer/scripts/postCreate.sh:105-109](.devcontainer/scripts/postCreate.sh#105-109)
+
 - **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment. Do
   not use linter-native disable syntax (e.g., `# shellcheck disable=`, `# noqa`,
   `-- noqa`).
