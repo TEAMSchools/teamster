@@ -962,7 +962,7 @@ Manually trigger "Build Modified - Staging". Confirm:
 
 In `docs/superpowers/specs/2026-03-25-dbt-schema-resolution-design.md`, update:
 
-```
+```text
 | **Development** | COMPLETE |
 ```
 
