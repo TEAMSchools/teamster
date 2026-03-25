@@ -1,6 +1,6 @@
 # CLAUDE.md — `dbt/kippcamden/`
 
-School-specific dbt project for **KIPP New Jersey - Camden** schools. Combines
+District-specific dbt project for **KIPP New Jersey - Camden** schools. Combines
 local PowerSchool staging with cross-project references to produce school-level
 extracts.
 
@@ -8,7 +8,7 @@ extracts.
 
 ```text
 models/
-  powerschool/   # school-specific PowerSchool staging (refs powerschool package)
+  powerschool/   # district-specific PowerSchool staging (refs powerschool package)
     sis/staging/
   edplan/        # refs edplan package
   extracts/

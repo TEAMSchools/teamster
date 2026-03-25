@@ -2,7 +2,7 @@
 
 Dagster asset and resource for **LDAP/Active Directory** — used to sync staff
 directory data (user accounts, group memberships, role assignments) from the
-school network's AD instance.
+district's AD instance.
 
 ## Factory: `build_ldap_asset()`
 

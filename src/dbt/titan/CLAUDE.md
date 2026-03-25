@@ -14,7 +14,7 @@ models/
 ## Cross-Project Usage
 
 Referenced by `kippnewark`, `kippcamden`, and `kipptaf`. The model
-`stg_titan__income_form_data` is disabled in NJ school projects.
+`stg_titan__income_form_data` is disabled in NJ district projects.
 
 ## Model Conventions
 

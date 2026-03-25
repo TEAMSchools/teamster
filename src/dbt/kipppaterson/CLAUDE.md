@@ -1,21 +1,21 @@
 # CLAUDE.md — `dbt/kipppaterson/`
 
-School-specific dbt project for **KIPP New Jersey - Paterson** schools. The most
-limited school project — PowerSchool only, with a narrower set of enabled models
-compared to Newark and Camden.
+District-specific dbt project for **KIPP New Jersey - Paterson** schools. The
+most limited district project — PowerSchool only, with a narrower set of enabled
+models compared to Newark and Camden.
 
 ## Model Structure
 
 ```text
 models/
-  powerschool/   # school-specific PowerSchool staging (refs powerschool package)
+  powerschool/   # district-specific PowerSchool staging (refs powerschool package)
     sis/staging/
 ```
 
 PowerSchool data source: **SFTP** (`sftp.+enabled: true`,
 `odbc.+enabled: false`)
 
-This is the only NJ school using SFTP instead of ODBC for PowerSchool. Many
+This is the only NJ district using SFTP instead of ODBC for PowerSchool. Many
 gradebook-related models (GPA, category grades, assignments) are explicitly
 disabled.
 

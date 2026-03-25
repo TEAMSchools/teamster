@@ -61,7 +61,9 @@
       "Read(**/credentials.json)",
       "Read(**/secrets.json)",
       "Read(//workspaces/teamster/**)",
-      "Read(~/.claude/plugins/**)"
+      "Read(~/.claude/plugins/**)",
+      "Skill(claude-md-management:revise-claude-md)",
+      "Skill(claude-md-management:revise-claude-md:*)"
     ],
     "deny": [
       "Edit(/.claude/hooks/**/*.sh)",
@@ -81,6 +83,7 @@
       "Read(~/.ssh/**)"
     ]
   },
+  "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
   "hooks": {
     "SessionStart": [
       {

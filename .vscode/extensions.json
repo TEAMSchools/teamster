@@ -1,3 +1,7 @@
 {
-  "unwantedRecommendations": ["ms-python.autopep8"]
+  "unwantedRecommendations": [
+    "ms-python.autopep8",
+    "1Password.op-vscode",
+    "dbaeumer.vscode-eslint"
+  ]
 }

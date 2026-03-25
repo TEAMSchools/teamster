@@ -36,6 +36,7 @@
     "**/.trunk/*notifications/": true,
     "**/.trunk/*out/": true,
     "**/.trunk/*plugins/": true,
+    "**/.worktrees/": true,
     "**/dbt_packages/": true,
     "**/target/**": true
   },
@@ -45,6 +46,7 @@
     "**/.trunk/*notifications/": true,
     "**/.trunk/*out/": true,
     "**/.trunk/*plugins/": true,
+    "**/.worktrees/**": true,
     "**/dbt_packages/**": true,
     "**/target/**": true
   },
@@ -81,7 +83,6 @@
     "editor.defaultFormatter": "trunk.io"
   },
   "claudeCode.preferredLocation": "sidebar",
-  "claudeCode.useTerminal": true,
   "terminal.integrated.profiles.linux": {
     "Claude Code": {
       "path": "claude",

@@ -85,6 +85,10 @@ materializes, directly-dependent view assets are marked "unsynced" in the UI
 even though the automation condition correctly suppresses any run. There is no
 built-in Dagster API to suppress this per-asset.
 
+**Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
+ALL partitions on every materialization. To preserve per-partition triggering,
+the dep must itself be partitioned with the same `PartitionsDefinition`.
+
 ### `utils/classes.py`
 
 - `FiscalYear(datetime, start_month)` — computes `.fiscal_year` (int), `.start`

@@ -1,4 +1,5 @@
 import json
+import re
 
 from dagster import AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
@@ -82,10 +83,20 @@ def build_dbt_assets(
                     ],
                     manifest=manifest,
                     dagster_dbt_translator=dagster_dbt_translator,
+                    raise_on_error=False,
                 )
 
                 for event in refresh_external_metadata_cache.stream_raw_events():
                     context.log.info(msg=event)
+
+                if error := refresh_external_metadata_cache.get_error():
+                    if re.search(
+                        r"Another metadata cache refresh job with id [\w-]+ is ongoing for table",
+                        str(error),
+                    ):
+                        context.log.warning(msg=str(error))
+                    else:
+                        raise error
 
         # build models
         dbt_build = dbt_cli.cli(args=["build"], context=context)

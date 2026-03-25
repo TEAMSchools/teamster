@@ -7,7 +7,7 @@ teamster/
   __init__.py             # GCS_PROJECT_NAME = "teamster-332318"
   core/                   # Shared infrastructure (IO managers, resources, utils)
   libraries/              # Reusable asset builders, resources, and schemas
-  code_locations/         # Per-school Dagster definitions (kipptaf, kippnewark, etc.)
+  code_locations/         # Per-district Dagster definitions (kipptaf, kippnewark, etc.)
 ```
 
 ## Library + Code Location Pattern
@@ -16,11 +16,11 @@ Integrations follow a two-layer separation:
 
 1. **`libraries/<integration>/`** — reusable factory functions, resource
    classes, Avro schemas, and sensors. Never import from a code location.
-2. **`code_locations/<school>/<integration>/`** — calls the library factory with
-   school-specific YAML config via `config_from_files()`. Wires assets into the
-   code location's `definitions.py`.
+2. **`code_locations/<district>/<integration>/`** — calls the library factory
+   with district-specific YAML config via `config_from_files()`. Wires assets
+   into the code location's `definitions.py`.
 
-This means adding a new school to an existing integration requires only YAML
+This means adding a new district to an existing integration requires only YAML
 config and a few lines of Python in the code location — no library changes.
 
 ## Python Standards

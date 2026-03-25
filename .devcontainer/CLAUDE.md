@@ -24,16 +24,34 @@ after container start if env vars or secrets are missing.
 - **Adding a new secret**: update **both** the symlink validation loop and the
   injection `for` loop — omitting either silently skips the secret.
 
+## Claude Code Auth in Codespaces
+
+- The CLI binary detects `op` on `$PATH` and tries to use it as a credential
+  backend — `OP_SERVICE_ACCOUNT_TOKEN` is set to a dummy value after secret
+  injection (`postStart.sh`) to make `op` fail fast instead of prompting
+- `CLAUDE_CODE_OAUTH_TOKEN` (not `ANTHROPIC_AUTH_TOKEN`) is the correct env var
+  for OAuth token auth — use as a personal Codespace secret to bypass credential
+  store entirely
+- GitHub Actions workflows use `claude_code_oauth_token` input (not
+  `anthropic_api_key`)
+
 ## Quirks
 
-- **`apt-get update` permission errors in `postCreate.sh`**: stale root-owned
-  files in `/var/lib/apt/lists/partial/` from the image build cause permission
-  denied errors; pre-clean with
-  `sudo rm -rf /var/lib/apt/lists/partial /var/cache/apt/archives/partial`
-  before running `apt-get update`
+- **`apt-get` permission errors in `postCreate.sh`**: devcontainer features
+  (e.g., 1Password, gcloud-cli) run `apt-get update` during `docker build`,
+  leaving `/var/lib/apt/lists/partial/` owned by `_apt:root` — the sandbox user
+  apt drops privileges to for downloads. Do NOT `rm -rf` these directories;
+  recreated dirs default to `root:root`, which `_apt` can't write to. Instead,
+  fix ownership: `sudo chown _apt:root /var/lib/apt/lists/partial`. Do NOT use
+  `apt-get clean` either — it fails on the same stale permissions.
 - **`sudo` removed**: at the end of `postCreate.sh` — privileged setup (gcloud
   components, Helm) must go in `postCreate.sh`, not later. To add new
   components, update `postCreate.sh` and rebuild the container.
+- **`/etc/secret-volume` tmpfs permissions**: mounted `0777` (world-writable) so
+  `inject-secrets.sh` can write to it on every start without sudo. Individual
+  secret files are written `600` (owner-read-only), so only the `vscode` user
+  can read their contents. `uid`/`gid` mount options were not used — they are
+  not supported on all Codespaces hosts.
 - **`--cap-add` stripped**: Codespaces silently strips `--cap-add` from
   `runArgs` — namespace-based sandboxing (bwrap, unshare) will not work. Hooks
   are the sole enforcement layer for path-based access control.
