@@ -19,10 +19,10 @@ developer workflows unreliable and error-prone.
 
 1. Consistent schema resolution across all 15 dbt projects
 2. Safe defaults — developers cannot accidentally write to production
-3. Support `--defer` via dbt Power User for everyday development
-4. kipptaf developers can work off prod sources from regional datasets
-5. dbt Cloud CI validates PRs against staging datasets
-6. New integration development (including external sources) works in isolation
+3. Support `--defer` via dbt Power User for everyday development — unchanged
+   models resolve to prod, including regional source data
+4. dbt Cloud CI validates PRs against staging datasets
+5. New integration development (including external sources) works in isolation
 
 ## Design
 
