@@ -28,11 +28,12 @@ developer workflows unreliable and error-prone.
 
 ### Target-Driven Architecture
 
-All schema resolution is controlled by `--target`, with three targets per
-project: `dev`, `staging`, `prod`. One shared macro centralizes source schema
-logic. Model output schemas are handled by dbt's built-in `generate_schema_name`
-default, which already produces the correct behavior when profiles carry the
-right `schema` prefix per target.
+All schema resolution is controlled by `--target`. School/network projects get
+three targets (`dev`, `staging`, `prod`); source-system projects get a single
+`dev` target. One shared macro centralizes source schema logic. Model output
+schemas are handled by dbt's built-in `generate_schema_name` default, which
+already produces the correct behavior when profiles carry the right `schema`
+prefix per target.
 
 ### Macros
 
@@ -112,8 +113,9 @@ namespace collision issues with source-system packages.
 
 #### `.dbt/profiles.yml` (local dev + dbt Cloud)
 
-Three targets per project with consistent naming. Default target is `dev`
-(safe).
+School/network projects get three targets (`dev`, `staging`, `prod`). Default
+target is `dev` (safe). Source-system projects get a single `dev` target —
+matching the `integration_tests` pattern.
 
 ```yaml
 kipptaf:
@@ -297,18 +299,11 @@ With inputs:
   {
     "id": "dbtSourceSelect",
     "type": "promptString",
-    "description": "Source selection (e.g. google_sheets.my_source)"
+    "description": "Source selection (e.g. google_sheets.my_source). Use * to stage all sources.",
+    "default": "*"
   }
 ]
 ```
-
-### External Source Staging Script
-
-`scripts/dbt-sxs.py` is deprecated. Its logic is replaced by the VS Code task,
-which calls `dbt run-operation stage_external_sources` directly with the
-appropriate `--target` and `--args` flags. The `DBT_CLOUD_ENVIRONMENT_TYPE` env
-var it previously set is no longer used — `--target` controls schema resolution
-directly.
 
 ## Developer Workflows
 
@@ -397,7 +392,8 @@ Source files currently use inline Jinja that checks `target.name`,
 
 1. Update dbt Cloud job target names (`default` → `staging`/`prod`)
 1. Update Staging environment dataset (`z_dev_kipptaf` → `zz_stg_kipptaf`)
-1. Remove old target names from `.dbt/profiles.yml`
+1. Remove old target names from `.dbt/profiles.yml`; simplify source-system
+   profiles to single `dev` target
 1. Remove `DBT_CLOUD_ENVIRONMENT_TYPE` env var from `.devcontainer/` and
    `.vscode/settings.json`
 1. Delete `scripts/dbt-sxs.py` and remove its entry from `scripts/CLAUDE.md`
@@ -407,10 +403,11 @@ Source files currently use inline Jinja that checks `target.name`,
 
 ### Naming changes
 
-| Current pattern                            | New pattern        |
-| ------------------------------------------ | ------------------ |
-| `z_dev_<project>`                          | `zz_stg_<project>` |
-| Target name: project name (e.g. `kipptaf`) | Target name: `dev` |
+| Current pattern                            | New pattern                        |
+| ------------------------------------------ | ---------------------------------- |
+| `z_dev_<project>`                          | `zz_stg_<project>`                 |
+| Target name: project name (e.g. `kipptaf`) | Target name: `dev`                 |
+| Source-system: region-specific targets     | Source-system: single `dev` target |
 
 ### Cleanup
 
@@ -425,14 +422,6 @@ local dev, `GITHUB_USER` is set by the devcontainer. In dbt Cloud CI, the
 staging target is used (no `GITHUB_USER` needed). The risk is a developer
 outside the devcontainer with no `GITHUB_USER` — they get a shared `zz_dev_*`
 schema. This is acceptable since all development happens in Codespaces.
-
-### Source-system project profiles
-
-Source-system projects currently have non-standard profiles in
-`.dbt/profiles.yml` with `schema: zz_dev` and region-specific targets. These are
-simplified to a single `dev` target (matching the `integration_tests` pattern).
-Since they are consumed as packages in prod and never deployed standalone, no
-`staging` or `prod` target is needed.
 
 ### `dbt parse --target prod` in git hook
 
