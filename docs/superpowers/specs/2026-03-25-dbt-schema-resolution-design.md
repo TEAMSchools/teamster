@@ -1,5 +1,11 @@
 # dbt Schema Resolution Rework
 
+|                 | Status       |
+| --------------- | ------------ |
+| **Spec**        | **APPROVED** |
+| **Plan**        | NOT STARTED  |
+| **Development** | NOT STARTED  |
+
 ## Problem
 
 Schema logic is scattered across individual `sources*.yml` files with
