@@ -57,7 +57,7 @@ select
 
     case
         when ur.courses_credittype in ('ENG', 'ELA')
-        then 'ELA'
+        then 'ENG'
         when ur.courses_credittype in ('MATH', 'Math')
         then 'MATH'
         when ur.courses_credittype in ('SCI', 'Science')
