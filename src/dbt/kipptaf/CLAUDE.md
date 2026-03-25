@@ -2,9 +2,9 @@
 
 The **primary network-wide analytics project** for KIPP TEAM & Family (TAF).
 This is the most complex dbt project — it aggregates data from all source-system
-packages and all four school projects to produce network-level marts, reporting
-models, and extracts for downstream tools (Tableau, PowerSchool, Deanslist,
-Google Sheets, etc.).
+packages and all four district projects to produce network-level marts,
+reporting models, and extracts for downstream tools (Tableau, PowerSchool,
+Deanslist, Google Sheets, etc.).
 
 ## Model Structure
 
@@ -58,7 +58,7 @@ sheets must be decoupled by converting to BQ-native sources (see above).
 **Cross-project refs**: This project references all source-system packages
 (`powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`, `pearson`,
 `renlearn`, `titan`, `amplify`, `finalsite`, `overgrad`) and resolves models
-from those packages at run time. School-specific PowerSchool data is sourced
+from those packages at run time. District-specific PowerSchool data is sourced
 from multiple `sources-kipp*.yml` files.
 
 **Marts layer** (`models/marts/`): Dimensional models (`dim_*`, `fct_*`) used by

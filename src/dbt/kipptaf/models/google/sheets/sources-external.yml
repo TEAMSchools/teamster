@@ -885,7 +885,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
-            sheet_range: src_assessments__course_subject_crosswalk
+            sheet_range: src_assessments__course_subject_crosswalk_v2
             skip_leading_rows: 1
         columns:
           - name: PowerSchool_Course_Number
@@ -897,8 +897,6 @@ sources:
           - name: Is_Foundations
             data_type: boolean
           - name: Is_Advanced_Math
-            data_type: boolean
-          - name: Exclude_from_Gradebook
             data_type: boolean
           - name: Discipline
             data_type: string

@@ -1,14 +1,14 @@
 # CLAUDE.md — `dbt/kippmiami/`
 
-School-specific dbt project for **KIPP Miami** schools (Florida). The only
-school project with Florida-specific state data (`fldoe`). Produces school-level
-PowerSchool staging and extracts.
+District-specific dbt project for **KIPP Miami** schools (Florida). The only
+district project with Florida-specific state data (`fldoe`). Produces
+school-level PowerSchool staging and extracts.
 
 ## Model Structure
 
 ```text
 models/
-  powerschool/   # school-specific PowerSchool staging (refs powerschool package)
+  powerschool/   # district-specific PowerSchool staging (refs powerschool package)
     sis/staging/
   fldoe/         # Florida Department of Education assessment data
     staging/

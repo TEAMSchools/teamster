@@ -13,40 +13,32 @@ Cloud Storage (GCS) as the intermediate storage layer.
   including inline one-liners (`uv run python -c "..."`, not
   `python3 -c "..."`). The project environment is managed by uv.
 
-- **Memory vs CLAUDE.md**: Do not save instructions that should govern every
-  session in this project to memory — put them in CLAUDE.md instead. Memory is
-  for information not derivable from the codebase or not appropriate for
-  CLAUDE.md (e.g., user preferences, one-off context).
+- **Memory vs CLAUDE.md**: Rules and conventions go in CLAUDE.md, not memory.
+  Memory is only for non-obvious context not derivable from code (e.g., _why_ a
+  surprising design choice was made, user preferences).
 
-- **Built-in tools over Bash**: You have dedicated tools — use them instead of
-  shell equivalents. This is a hard rule, not a suggestion.
+- **Built-in tools over Bash**: **Never** use Bash for file I/O — use the
+  dedicated tool. No exceptions for convenience, pipes, or one-liners.
 
-  | Instead of (Bash)                  | Use this tool                     |
-  | ---------------------------------- | --------------------------------- |
-  | `cat`, `head`, `tail`, `less`      | **Read**                          |
-  | `grep`, `rg`, `ag`, `ack`          | **Grep** (pattern/content search) |
-  | `find`, `fd`                       | **Glob**                          |
-  | `sed`, `awk`, inline patch scripts | **Edit**                          |
-  | `echo >`, `cat <<EOF >`, `tee`     | **Write**                         |
-  | `cp`                               | **Read** then **Write**           |
+  | Bash (NEVER)                       | Tool (ALWAYS)    |
+  | ---------------------------------- | ---------------- |
+  | `cat`, `head`, `tail`, `less`      | **Read**         |
+  | `grep`, `rg`, `ag`, `ack`          | **Grep**         |
+  | `find`, `fd`, `ls \| grep`         | **Glob**         |
+  | `sed`, `awk`, inline patch scripts | **Edit**         |
+  | `echo >`, `cat <<EOF >`, `tee`     | **Write**        |
+  | `cp`                               | **Read + Write** |
 
-  `ls` is the one exception — use it via Bash to list directory contents (Glob
-  matches patterns, not directory listings).
-
-  Bash is **only** for commands that have no dedicated tool equivalent (e.g.,
-  `git`, `uv run`, `gh`, `docker`, `trunk`, `ls`). If you catch yourself typing
-  a shell command from the left column above — stop and use the tool instead.
+  Bash is only for commands with no dedicated tool (`git`, `uv run`, `gh`,
+  `docker`, `trunk`, plain `ls`).
 
 - **Git**:
-  - Do not commit proactively — ask first when a change is complete and tests
-    are passing, then commit if confirmed.
   - Commit messages follow
     [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/)
-    format. Avoid checkpoint-style messages (`save`, `oops`, `update`, etc.).
-  - Branch naming: `<author>/<commit-type>/<brief-description>` (e.g.,
-    `cbini/feat/salesforce-alumni-tracking`). For AI-assisted branches, prefix
-    the description with `claude-` (e.g.,
-    `cbini/feat/claude-salesforce-alumni-tracking`).
+    format.
+  - Branch naming: `<gh-username>/<commit-type>/<brief-description>`. Get the
+    username from `gh api user -q .login`. For AI-assisted branches, prefix the
+    description with `claude-`.
   - **Staging protected paths**: Use bare `git add -u` (no path argument) —
     naming protected paths explicitly (e.g., `git add .claude/settings.json`)
     triggers the hook and gets blocked.
@@ -54,23 +46,21 @@ Cloud Storage (GCS) as the intermediate storage layer.
 - **GitHub**:
   - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as
     the PR body — fill in the relevant sections based on the changes.
-  - **Issues**: Do not open proactively — ask first. Use `gh issue create` (not
-    the web UI). Label with a
+  - **Issues**: Use `gh issue create` (not the web UI). Label with a
     [conventional commit type](https://www.conventionalcommits.org/en/v1.0.0/)
     (`feat`, `fix`, `docs`, `refactor`, `chore`, etc.), any related source
     systems (e.g., `adp`, `powerschool`, `deanslist`), and `dagster` and/or
     `dbt` when applicable.
-  - **Design specs**: After a spec is written and reviewed:
-    1. Open a GitHub issue (`gh issue create`)
-    2. Create and link the branch
-       (`gh issue develop <number> --name <branch> --checkout`)
-    3. Commit the spec to that branch
-    4. Push the branch
+  - **Design specs**: Never commit specs to `main`. After a spec is reviewed:
+    1. `gh issue create`
+    2. `gh issue develop <number> --name <branch> --checkout`
+    3. Commit the spec to the new branch and push
 
-- **Claude CLI**: The `claude` binary is at
-  `~/.vscode-remote/extensions/anthropic.claude-code-*/resources/native-binary/claude`
-  and is not on `$PATH`, so it cannot be run via Bash. Run it manually in a
-  terminal.
+- **Claude CLI**: Not on `$PATH` — cannot be run via Bash. Use a terminal.
+
+- **File links in responses**: Use relative paths with no leading slash; bare
+  line numbers in anchors with no `L` prefix. Example:
+  [.devcontainer/scripts/postCreate.sh:105-109](.devcontainer/scripts/postCreate.sh#105-109)
 
 - **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment. Do
   not use linter-native disable syntax (e.g., `# shellcheck disable=`, `# noqa`,

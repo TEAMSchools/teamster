@@ -54,4 +54,4 @@ jobs:
           allowed_bots: dbt-cloud
           include_fix_links: false
           use_sticky_comment: true
-          claude_args: --model sonnet --max-turns 15
+          claude_args: --model sonnet

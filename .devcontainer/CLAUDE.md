@@ -38,13 +38,19 @@ after container start if env vars or secrets are missing.
 ## Quirks
 
 - **`apt-get update` permission errors in `postCreate.sh`**: stale root-owned
-  files in `/var/lib/apt/lists/partial/` from the image build cause permission
+  directories in `/var/lib/apt/lists/` from the image build cause permission
   denied errors; pre-clean with
-  `sudo rm -rf /var/lib/apt/lists/partial /var/cache/apt/archives/partial`
-  before running `apt-get update`
+  `sudo apt-get clean && sudo rm -rf /var/lib/apt/lists` — remove the
+  directories entirely so `apt-get update` recreates them with correct
+  permissions
 - **`sudo` removed**: at the end of `postCreate.sh` — privileged setup (gcloud
   components, Helm) must go in `postCreate.sh`, not later. To add new
   components, update `postCreate.sh` and rebuild the container.
+- **`/etc/secret-volume` tmpfs permissions**: mounted `0777` (world-writable) so
+  `inject-secrets.sh` can write to it on every start without sudo. Individual
+  secret files are written `600` (owner-read-only), so only the `vscode` user
+  can read their contents. `uid`/`gid` mount options were not used — they are
+  not supported on all Codespaces hosts.
 - **`--cap-add` stripped**: Codespaces silently strips `--cap-add` from
   `runArgs` — namespace-based sandboxing (bwrap, unshare) will not work. Hooks
   are the sole enforcement layer for path-based access control.
