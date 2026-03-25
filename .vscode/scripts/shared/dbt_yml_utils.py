@@ -225,8 +225,8 @@ def resolve_schema(sql_path: Path, repo_root: Path | None = None) -> str:
     dbt_src = repo_root / "src" / "dbt"
     try:
         rel = sql_path.relative_to(dbt_src)
-    except ValueError:
-        raise ValueError(f"{sql_path} is not under {dbt_src}")
+    except ValueError as err:
+        raise ValueError(f"{sql_path} is not under {dbt_src}") from err
 
     project_name = rel.parts[0]
     dbt_project_yml = dbt_src / project_name / "dbt_project.yml"
@@ -305,6 +305,7 @@ def query_column_types(
 
     try:
         client = bigquery.Client(project=project)
+        # trunk-ignore(bandit/B608): dataset/project are validated above with re.fullmatch
         query = (
             f"SELECT column_name, data_type "
             f"FROM `{project}`.{dataset}.INFORMATION_SCHEMA.COLUMNS "

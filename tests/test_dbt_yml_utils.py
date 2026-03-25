@@ -9,9 +9,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / ".vscode" / "scripts"))
 
-from shared import (
-    dbt_yml_utils,  # trunk-ignore(ruff/E402): sys.path insert required for shared module resolution
-)
+from shared import dbt_yml_utils
 
 # ---------------------------------------------------------------------------
 # TestStripJinja
