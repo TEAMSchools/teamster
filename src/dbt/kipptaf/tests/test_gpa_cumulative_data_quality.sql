@@ -27,9 +27,9 @@ with
         from {{ ref("int_powerschool__gpa_cumulative") }} as g
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as e
-            on g._dbt_source_relation = e._dbt_source_relation
-            and g.studentid = e.studentid
+            on g.studentid = e.studentid
             and g.schoolid = e.schoolid
+            and {{ union_dataset_join_clause(left_alias="g", right_alias="e") }}
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.enroll_status = 0

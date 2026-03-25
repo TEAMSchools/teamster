@@ -63,7 +63,13 @@
       "Read(//workspaces/teamster/**)",
       "Read(~/.claude/plugins/**)",
       "Skill(claude-md-management:revise-claude-md)",
-      "Skill(claude-md-management:revise-claude-md:*)"
+      "Skill(claude-md-management:revise-claude-md:*)",
+      "Bash(gh api:*)",
+      "Bash(gh pr:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "mcp__dbt__get_node_details_dev",
+      "Bash(uv run:*)"
     ],
     "deny": [
       "Edit(/.claude/hooks/**/*.sh)",
