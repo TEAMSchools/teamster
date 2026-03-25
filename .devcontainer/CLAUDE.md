@@ -39,13 +39,14 @@ after container start if env vars or secrets are missing.
 
 - **`apt-get` permission errors in `postCreate.sh`**: devcontainer features
   (e.g., 1Password, gcloud-cli) run `apt-get update` during `docker build`,
-  leaving `/var/lib/apt/lists/partial/` and `/var/cache/apt/archives/partial/`
-  owned by `_apt:root` — the sandbox user apt drops privileges to for downloads.
-  Do NOT `rm -rf` these directories; recreated dirs default to `root:root`,
-  which `_apt` can't write to. Instead, fix ownership on both:
-  `sudo chown _apt:root /var/cache/apt/archives/partial` and
-  `sudo chown _apt:root /var/lib/apt/lists/partial`. Do NOT use `apt-get clean`
-  either — it fails on the same stale permissions.
+  leaving stale files in `/var/lib/apt/lists/partial/` and
+  `/var/cache/apt/archives/partial/` baked into read-only Docker image layers.
+  The directories are already `0700 _apt:root` — `chown` is a no-op. The fix is
+  `sudo sh -c 'rm -f /var/lib/apt/lists/partial/* /var/cache/apt/archives/partial/*'`
+  before `apt-get update`. Must use `sudo sh -c '...'` because glob expansion
+  happens before `sudo` and `vscode` can't read `0700 _apt:root` directories. Do
+  NOT `rm -rf` the directories themselves; recreated dirs default to
+  `root:root`.
 - **`sudo` removed**: at the end of `postCreate.sh` — privileged setup (gcloud
   components, Helm) must go in `postCreate.sh`, not later. To add new
   components, update `postCreate.sh` and rebuild the container.
@@ -57,6 +58,12 @@ after container start if env vars or secrets are missing.
 - **`--cap-add` stripped**: Codespaces silently strips `--cap-add` from
   `runArgs` — namespace-based sandboxing (bwrap, unshare) will not work. Hooks
   are the sole enforcement layer for path-based access control.
+- **dbt Power User extension**: activates on
+  `workspaceContains:**/dbt_project.yml` and auto-runs `dbt deps` (controlled by
+  `dbt.installDepsOnProjectInitialization`, default `true`) and `dbt parse` (not
+  configurable) on startup. Risk: extension may activate before `uv sync`
+  installs dbt-core. If `dbt deps` runs in `postCreate.sh`, set
+  `dbt.installDepsOnProjectInitialization` to `false` to avoid duplicate work.
 - **Protected scripts**: `.devcontainer/scripts/` is read-only under hooks —
   present changes as manual application blocks, not diffs. `.vscode/scripts/` is
   **not** hook-protected and can be edited directly.

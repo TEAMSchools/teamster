@@ -14,8 +14,7 @@ git config push.autoSetupRemote true
 
 # install extra apt packages
 # fix apt sandbox permissions left by devcontainer feature builds
-sudo chown _apt:root /var/cache/apt/archives/partial 2>/dev/null || true
-sudo chown _apt:root /var/lib/apt/lists/partial 2>/dev/null || true
+sudo rm -f /var/lib/apt/lists/partial/* /var/cache/apt/archives/partial/* 2>/dev/null || true
 sudo apt-get update -y &&
   sudo apt-get -y install --no-install-recommends sshpass &&
   sudo apt-get -y clean &&
@@ -71,37 +70,22 @@ sudo mv toolbox /usr/local/bin/
 
 export DBT_SEND_ANONYMOUS_USAGE_STATS=false
 
-# bootstrap dbt projects
-(uv run dbt deps --project-dir=src/dbt/amplify &&
-  uv run dbt parse --project-dir=src/dbt/amplify) &
-(uv run dbt deps --project-dir=src/dbt/deanslist &&
-  uv run dbt parse --project-dir=src/dbt/deanslist) &
-(uv run dbt deps --project-dir=src/dbt/edplan &&
-  uv run dbt parse --project-dir=src/dbt/edplan) &
-(uv run dbt deps --project-dir=src/dbt/finalsite &&
-  uv run dbt parse --project-dir=src/dbt/finalsite) &
-(uv run dbt deps --project-dir=src/dbt/iready &&
-  uv run dbt parse --project-dir=src/dbt/iready) &
-(uv run dbt deps --project-dir=src/dbt/overgrad &&
-  uv run dbt parse --project-dir=src/dbt/overgrad) &
-(uv run dbt deps --project-dir=src/dbt/pearson &&
-  uv run dbt parse --project-dir=src/dbt/pearson) &
-(uv run dbt deps --project-dir=src/dbt/powerschool &&
-  uv run dbt parse --project-dir=src/dbt/powerschool) &
-(uv run dbt deps --project-dir=src/dbt/renlearn &&
-  uv run dbt parse --project-dir=src/dbt/renlearn) &
-(uv run dbt deps --project-dir=src/dbt/titan &&
-  uv run dbt parse --project-dir=src/dbt/titan) &
-(uv run dbt deps --project-dir=src/dbt/kippcamden &&
-  uv run dbt parse --project-dir=src/dbt/kippcamden) &
-(uv run dbt deps --project-dir=src/dbt/kippmiami &&
-  uv run dbt parse --project-dir=src/dbt/kippmiami) &
-(uv run dbt deps --project-dir=src/dbt/kippnewark &&
-  uv run dbt parse --project-dir=src/dbt/kippnewark) &
-(uv run dbt deps --project-dir=src/dbt/kipppaterson &&
-  uv run dbt parse --project-dir=src/dbt/kipppaterson) &
-(uv run dbt deps --project-dir=src/dbt/kipptaf &&
-  uv run dbt parse --project-dir=src/dbt/kipptaf) &
+# bootstrap dbt packages
+uv run dbt deps --project-dir=src/dbt/amplify &
+uv run dbt deps --project-dir=src/dbt/deanslist &
+uv run dbt deps --project-dir=src/dbt/edplan &
+uv run dbt deps --project-dir=src/dbt/finalsite &
+uv run dbt deps --project-dir=src/dbt/iready &
+uv run dbt deps --project-dir=src/dbt/overgrad &
+uv run dbt deps --project-dir=src/dbt/pearson &
+uv run dbt deps --project-dir=src/dbt/powerschool &
+uv run dbt deps --project-dir=src/dbt/renlearn &
+uv run dbt deps --project-dir=src/dbt/titan &
+uv run dbt deps --project-dir=src/dbt/kippcamden &
+uv run dbt deps --project-dir=src/dbt/kippmiami &
+uv run dbt deps --project-dir=src/dbt/kippnewark &
+uv run dbt deps --project-dir=src/dbt/kipppaterson &
+uv run dbt deps --project-dir=src/dbt/kipptaf &
 wait
 
 # fix tmpfs permissions (Codespaces may override tmpfs-mode from mount config)
