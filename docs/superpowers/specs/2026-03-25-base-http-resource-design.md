@@ -47,7 +47,7 @@ property or cast rather than re-declaring the PrivateAttr.
 
 | Field       | Type                | Default                   | Purpose                               |
 | ----------- | ------------------- | ------------------------- | ------------------------------------- |
-| `_session`  | `Session`           | `default_factory=Session` | Shared HTTP session (see note below)  |
+| `_session`  | `Session`           | `default_factory=Session` | Shared HTTP session (see note above)  |
 | `_base_url` | `str`               | —                         | Set by subclass in `_setup_session()` |
 | `_log`      | `DagsterLogManager` | —                         | Assigned in `setup_for_execution()`   |
 
@@ -73,12 +73,12 @@ The core request flow is:
 
 ```text
 _request(method, url, **kwargs)
-  → _prepare_request(method, url, kwargs)   # hook: mutate before sending
-  → _session.request(method, url, **kwargs)  # actual HTTP call
-  → response.raise_for_status()              # raise on 4xx/5xx
+  → method, url, kwargs = _prepare_request(method, url, kwargs)
+  → response = _session.request(method, url, **kwargs)
+  → response.raise_for_status()
   → return response
   on HTTPError:
-  → _handle_error(response, error)           # hook: react to failure
+  → _handle_error(response, error)
 ```
 
 #### `_request(method, url, **kwargs) -> Response`
