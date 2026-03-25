@@ -55,10 +55,11 @@ Cloud Storage (GCS) as the intermediate storage layer.
     (`feat`, `fix`, `docs`, `refactor`, `chore`, etc.), any related source
     systems (e.g., `adp`, `powerschool`, `deanslist`), and `dagster` and/or
     `dbt` when applicable.
-  - **Design specs**: Never commit specs to `main`. After a spec is reviewed:
-    1. `gh issue create`
-    2. `gh issue develop <number> --name <branch> --checkout`
-    3. Commit the spec to the new branch and push
+
+- **Design specs**: Never commit specs to `main`. After a spec is reviewed:
+  1. `gh issue create` (skip if issue already exists)
+  2. `gh issue develop <number> --name <branch> --checkout`
+  3. Commit the spec to the new branch and push
 
 - **Claude CLI**: Not on `$PATH` — cannot be run via Bash. Use a terminal.
 
