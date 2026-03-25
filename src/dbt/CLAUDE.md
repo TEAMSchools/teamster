@@ -79,6 +79,17 @@ CLAUDE.md files reference this section rather than repeating it.
 1. Have `contract: enforced: true`
 2. Have a uniqueness test
 
+**Extract YML auto-generation**: YML property files for `models/extracts/` are
+auto-synced on save (columns, data_types, column order). New extract models
+trigger a pre-commit check — run the generator script to create a complete YML
+before committing:
+
+    uv run .vscode/scripts/dbt-extracts-yml-generate.py <sql_file_path>
+
+The generator creates the YML with `contract: enforced: true`, all columns with
+`data_type` from BigQuery, and a `dbt_utils.unique_combination_of_columns` stub.
+Review and set the correct unique key columns before merging.
+
 ### Uniqueness test examples
 
 ```yaml

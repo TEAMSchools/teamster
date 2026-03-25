@@ -69,3 +69,18 @@ To grant a new developer access: add them to
 - On a fresh rebuild the Claude Code extension may not be installed when
   `folderOpen` fires; `$CLAUDE` will be empty — poll for the binary rather than
   silently skipping
+
+## dbt Extracts YML Sync
+
+Background task that auto-syncs YML property files when extract SQL files are
+saved. Watches `src/dbt/*/models/extracts/**/*.sql`.
+
+- **Requires** `"task.allowAutomaticTasks": "on"` in VS Code User Settings (same
+  requirement as "Setup: Post-Build Init")
+- On save: parses the first SELECT, queries BigQuery for data_types, syncs the
+  matching `properties/<model>.yml`
+- Only acts on files that already have a YML — new files are handled by the
+  pre-commit hook
+- Generator script:
+  `uv run .vscode/scripts/dbt-extracts-yml-generate.py <sql_path>`
+- Pre-commit hook (via Trunk) blocks commits with incomplete extract YMLs
