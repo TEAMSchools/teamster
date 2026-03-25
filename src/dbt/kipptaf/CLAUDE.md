@@ -104,6 +104,18 @@ Fivetran, Instagram.
 This project is connected to dbt Cloud project ID `211862`. The `dbt-cloud`
 block in `dbt_project.yml` enables dbt Cloud CI/CD.
 
+### CI Chain
+
+- PR opened → **Build Modified - CI** (defers to Staging, writes to
+  `dbt_cloud_pr_*`)
+- PR merged → **Parse - Staging** → triggers **Build Modified - Staging**
+  (defers to Production)
+- PR merged → **Parse - Production** (generates prod manifest)
+
+The "Target name" field in dbt Cloud job settings controls `target.name` in
+Jinja. Setting it to `"default"` means `target.name == 'default'` literally — it
+is not a placeholder.
+
 ## Exposures
 
 Every external tool that consumes kipptaf data **must have a dbt exposure**
