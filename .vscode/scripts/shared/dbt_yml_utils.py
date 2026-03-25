@@ -305,9 +305,8 @@ def query_column_types(
 
     try:
         client = bigquery.Client(project=project)
-        # trunk-ignore(bandit/B608): dataset/project are validated above with re.fullmatch
         query = (
-            f"SELECT column_name, data_type "
+            f"SELECT column_name, data_type "  # trunk-ignore(bandit/B608): dataset/project validated with re.fullmatch
             f"FROM `{project}`.{dataset}.INFORMATION_SCHEMA.COLUMNS "
             f"WHERE table_name = @table_name "
             f"ORDER BY ordinal_position"
