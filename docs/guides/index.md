@@ -42,9 +42,10 @@ Cloud:
 
 ## Guides
 
-| Guide                                     | Description                                                            |
-| ----------------------------------------- | ---------------------------------------------------------------------- |
-| [Codespaces](codespaces.md)               | Setting up and using GitHub Codespaces                                 |
-| [Local Development](local-development.md) | Installing dependencies, running Dagster locally, linting, and testing |
-| [Dagster](dagster.md)                     | Tableau scheduling, backfills, branch deployments, monitoring runs     |
-| [Google Sheets & Forms](google-sheets.md) | Adding and updating Google Sheets and Forms sources                    |
+| Guide                                       | Description                                                                 |
+| ------------------------------------------- | --------------------------------------------------------------------------- |
+| [Codespaces](codespaces.md)                 | Setting up and using GitHub Codespaces                                      |
+| [Local Development](local-development.md)   | Installing dependencies, running Dagster locally, linting, and testing      |
+| [Dagster](dagster.md)                       | Tableau scheduling, backfills, branch deployments, monitoring runs          |
+| [Google Sheets & Forms](google-sheets.md)   | Adding and updating Google Sheets and Forms sources                         |
+| [Claude Code & Superpowers](superpowers.md) | Using Claude Code's structured workflows for features, fixes, and refactors |
