@@ -13,8 +13,9 @@ git config pull.rebase false # specify how to reconcile divergent branches (merg
 git config push.autoSetupRemote true
 
 # install extra apt packages
-sudo rm -rf /var/lib/apt/lists /var/cache/apt/archives/partial &&
-  sudo apt-get update -y &&
+# fix apt sandbox permissions left by devcontainer feature builds
+sudo chown _apt:root /var/lib/apt/lists/partial 2>/dev/null || true
+sudo apt-get update -y &&
   sudo apt-get -y install --no-install-recommends sshpass &&
   sudo apt-get -y clean &&
   sudo rm -rf /var/lib/apt/lists/*

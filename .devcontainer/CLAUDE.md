@@ -37,13 +37,13 @@ after container start if env vars or secrets are missing.
 
 ## Quirks
 
-- **`apt-get` permission errors in `postCreate.sh`**: stale root-owned
-  directories in `/var/lib/apt/lists/` and `/var/cache/apt/archives/partial/`
-  from the image build cause permission denied errors; pre-clean with
-  `sudo rm -rf /var/lib/apt/lists /var/cache/apt/archives/partial` — remove the
-  directories entirely so `apt-get update` recreates them with correct
-  permissions. Do NOT use `apt-get clean` as the pre-clean step — it itself
-  fails on the stale permissions.
+- **`apt-get` permission errors in `postCreate.sh`**: devcontainer features
+  (e.g., 1Password, gcloud-cli) run `apt-get update` during `docker build`,
+  leaving `/var/lib/apt/lists/partial/` owned by `_apt:root` — the sandbox user
+  apt drops privileges to for downloads. Do NOT `rm -rf` these directories;
+  recreated dirs default to `root:root`, which `_apt` can't write to. Instead,
+  fix ownership: `sudo chown _apt:root /var/lib/apt/lists/partial`. Do NOT use
+  `apt-get clean` either — it fails on the same stale permissions.
 - **`sudo` removed**: at the end of `postCreate.sh` — privileged setup (gcloud
   components, Helm) must go in `postCreate.sh`, not later. To add new
   components, update `postCreate.sh` and rebuild the container.
