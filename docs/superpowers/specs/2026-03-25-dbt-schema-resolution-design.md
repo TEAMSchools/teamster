@@ -174,41 +174,30 @@ kipptaf:
 
 ### Dagster
 
-One change to `get_dbt_cli_resource` in `src/teamster/core/resources.py`.
-
-Currently, no caller passes `test=True` — all 5 code locations call
-`get_dbt_cli_resource(DBT_PROJECT)`. The factory needs to auto-detect the
-environment rather than relying on callers. The existing pattern in IO manager
-factories checks `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT`:
+One change to `get_dbt_cli_resource` in `src/teamster/core/resources.py`. The
+`test` parameter and hardcoded executable path are dead code (no caller passes
+`test=True`) and are removed. The factory detects Dagster Cloud prod via
+`DAGSTER_CLOUD_DEPLOYMENT_NAME`:
 
 ```python
-def get_dbt_cli_resource(dbt_project: DbtProject, test: bool = False) -> DbtCliResource:
-    is_branch = os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
-
-    if test or is_branch:
-        return DbtCliResource(
-            project_dir=dbt_project,
-            dbt_executable="/workspaces/teamster/.venv/bin/dbt",
-        )
-
-    if os.getenv("DAGSTER_CLOUD_DEPLOYMENT_NAME"):
-        # Dagster Cloud production — explicitly target prod
+def get_dbt_cli_resource(dbt_project: DbtProject) -> DbtCliResource:
+    if os.getenv("DAGSTER_CLOUD_DEPLOYMENT_NAME") and not os.getenv(
+        "DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT"
+    ):
         return DbtCliResource(project_dir=dbt_project, target="prod")
-
-    # Local dagster dev — use shipped profile default (dev)
     return DbtCliResource(project_dir=dbt_project)
 ```
 
-- **Dagster Cloud prod**: `DAGSTER_CLOUD_DEPLOYMENT_NAME` is set,
-  `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` is not `"1"` → `target="prod"`
-- **Branch deploy**: `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` is `"1"` → uses
-  profile default (`dev`) + test executable
-- **Local `dagster dev`**: no Dagster Cloud env vars → uses profile default
-  (`dev`) — safe
+| Context             | Behavior                   |
+| ------------------- | -------------------------- |
+| Dagster Cloud prod  | `target="prod"` (explicit) |
+| Branch deploy       | Profile default (`dev`)    |
+| Local `dagster dev` | Profile default (`dev`)    |
 
-Note: today, local `dagster dev` already writes to prod because the shipped
-profile default target points to the prod schema. This change fixes that by
-making the shipped profile default `dev`.
+Branch deploys and local dev are identical — both write to dev schemas.
+
+Note: today, local `dagster dev` writes to prod because the shipped profile
+default points to the prod schema. This change fixes that.
 
 No other Dagster code changes required — callers continue to call
 `get_dbt_cli_resource(DBT_PROJECT)` without arguments.
