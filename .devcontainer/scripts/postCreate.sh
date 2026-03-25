@@ -13,8 +13,6 @@ git config pull.rebase false # specify how to reconcile divergent branches (merg
 git config push.autoSetupRemote true
 
 # install extra apt packages
-# clean stale apt files baked into Docker image layers by devcontainer features
-sudo sh -c 'rm -f /var/lib/apt/lists/partial/* /var/cache/apt/archives/partial/*' 2>/dev/null || true
 sudo apt-get update -y &&
   sudo apt-get -y install --no-install-recommends sshpass &&
   sudo apt-get -y clean &&

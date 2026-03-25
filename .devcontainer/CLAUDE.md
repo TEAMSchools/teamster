@@ -37,16 +37,13 @@ after container start if env vars or secrets are missing.
 
 ## Quirks
 
-- **`apt-get` permission errors in `postCreate.sh`**: devcontainer features
-  (e.g., 1Password, gcloud-cli) run `apt-get update` during `docker build`,
-  leaving stale files in `/var/lib/apt/lists/partial/` and
-  `/var/cache/apt/archives/partial/` baked into read-only Docker image layers.
-  The directories are already `0700 _apt:root` — `chown` is a no-op. The fix is
-  `sudo sh -c 'rm -f /var/lib/apt/lists/partial/* /var/cache/apt/archives/partial/*'`
-  before `apt-get update`. Must use `sudo sh -c '...'` because glob expansion
-  happens before `sudo` and `vscode` can't read `0700 _apt:root` directories. Do
-  NOT `rm -rf` the directories themselves; recreated dirs default to
-  `root:root`.
+- **`apt-get` and `DAC_OVERRIDE`**: devcontainer features (1Password,
+  gcloud-cli) run `apt-get update` during `docker build`, leaving stale files in
+  `/var/lib/apt/lists/partial/` owned by `_apt:root` with mode `0700`.
+  `--cap-drop=DAC_OVERRIDE` in `runArgs` would prevent root from accessing these
+  directories at runtime — do NOT add it back. `DAC_OVERRIDE` is safe to keep
+  because `sudo` is removed at the end of `postCreate.sh`, making the capability
+  irrelevant after setup.
 - **`sudo` removed**: at the end of `postCreate.sh` — privileged setup (gcloud
   components, Helm) must go in `postCreate.sh`, not later. To add new
   components, update `postCreate.sh` and rebuild the container.
