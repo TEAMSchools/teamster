@@ -1,10 +1,10 @@
 # dbt Schema Resolution Rework
 
-|                 | Status       |
-| --------------- | ------------ |
-| **Spec**        | **APPROVED** |
-| **Plan**        | NOT STARTED  |
-| **Development** | NOT STARTED  |
+|                 | Status      |
+| --------------- | ----------- |
+| **Spec**        | IN REVIEW   |
+| **Plan**        | NOT STARTED |
+| **Development** | NOT STARTED |
 
 ## Problem
 
