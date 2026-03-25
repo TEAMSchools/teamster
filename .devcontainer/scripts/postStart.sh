@@ -16,4 +16,4 @@ uv tool upgrade --all
 uv sync --frozen --all-groups
 
 # install trunk tools
-/workspaces/teamster/trunk install
+/workspaces/teamster/trunk install --verbose
