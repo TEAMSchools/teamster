@@ -37,9 +37,15 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
           plugin_marketplaces: |
-            https://github.com/anthropics/claude-code.git
+            https://github.com/anthropics/claude-plugins-official.git
             https://github.com/dbt-labs/dbt-agent-skills.git
             https://github.com/dagster-io/skills.git
+          plugins: |
+            superpowers@claude-plugins-official
+            security-guidance@claude-plugins-official
+            dagster-expert@dagster
+            dignified-python@dagster
+            dbt@dbt-agent-marketplace
 
           # This is an optional setting that allows Claude to read CI results on PRs
           additional_permissions: |

@@ -51,6 +51,11 @@ Cloud Storage (GCS) as the intermediate storage layer.
     3. Commit the spec to that branch
     4. Push the branch
 
+- **Claude CLI**: The `claude` binary is at
+  `~/.vscode-remote/extensions/anthropic.claude-code-*/resources/native-binary/claude`
+  and is not on `$PATH`, so it cannot be run via Bash. Run it manually in a
+  terminal.
+
 - **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment. Do
   not use linter-native disable syntax (e.g., `# shellcheck disable=`, `# noqa`,
   `-- noqa`).
@@ -70,7 +75,7 @@ this step.**
 | `src/teamster/CLAUDE.md`  | Dagster code                       |
 | `src/dbt/CLAUDE.md`       | dbt models                         |
 | `.vscode/CLAUDE.md`       | VS Code tasks/scripts              |
-| `.claude/hooks/CLAUDE.md` | hooks, deny rules, protected paths |
+| `.claude/CLAUDE.md`       | hooks, deny rules, protected paths |
 | `.devcontainer/CLAUDE.md` | Codespace setup                    |
 | `.k8s/CLAUDE.md`          | GKE setup                          |
 | `.trunk/CLAUDE.md`        | linting config                     |
