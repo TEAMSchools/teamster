@@ -408,7 +408,9 @@ Source files currently use inline Jinja that checks `target.name`,
 
 ### Cleanup
 
-After migration, old `z_dev_*` datasets in BigQuery can be dropped.
+Before dropping old datasets, run full staging builds to confirm `zz_stg_*`
+datasets are fully populated and CI is healthy. Then drop old `z_dev_*` datasets
+from BigQuery.
 
 ## Risks
 
