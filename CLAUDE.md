@@ -73,6 +73,10 @@ Cloud Storage (GCS) as the intermediate storage layer.
        (`gh issue develop <number> --name <branch> --checkout`)
     3. Commit the spec to that branch
     4. Push the branch
+    5. Update the issue body with a hyperlink to the spec on the branch
+    - Spec documents must include a status table at the top with **Spec**,
+      **Plan**, and **Development** statuses (e.g., NOT STARTED, IN PROGRESS,
+      **APPROVED**, COMPLETE). Update statuses as work progresses.
 
 - **Claude CLI**: The `claude` binary is at
   `~/.vscode-remote/extensions/anthropic.claude-code-*/resources/native-binary/claude`
