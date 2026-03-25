@@ -14,7 +14,10 @@ Wraps `@dbt_assets` with two additional behaviors before running `dbt build`:
    `dbt run-operation stage_external_sources` to create/refresh BigLake external
    tables in BigQuery.
 2. **BigLake metadata refresh**: For external sources using a BigLake
-   `connection_name`, runs `dbt run-operation refresh_external_metadata_cache`.
+   `connection_name`, runs `dbt run-operation refresh_external_metadata_cache`
+   with `raise_on_error=False`. BigQuery rejects concurrent refresh jobs for the
+   same table, so the "already ongoing" error is matched by regex and logged as
+   a warning rather than failing the run.
 
 This means adding a new external source to a dbt project automatically triggers
 staging without any Dagster code changes.
