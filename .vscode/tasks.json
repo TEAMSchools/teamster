@@ -58,6 +58,21 @@
         "focus": true
       },
       "problemMatcher": []
+    },
+    {
+      "label": "dbt: Extracts YML Sync",
+      "type": "shell",
+      "command": "source \"${HOME}/.local/bin/env\" && uv run .vscode/scripts/dbt-extracts-yml-sync.py",
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "isBackground": true,
+      "presentation": {
+        "reveal": "never",
+        "panel": "dedicated",
+        "close": true
+      },
+      "problemMatcher": []
     }
   ],
   "inputs": [
