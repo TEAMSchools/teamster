@@ -52,6 +52,15 @@ To grant a new developer access: add them to
 - `gcloud auth application-default set-quota-project` fails with impersonated
   credentials — use `--billing-project` flag on the login command instead
 
+## dbt Power User Defer
+
+- Configure via `dbt.deferConfigPerProject` in `.vscode/settings.json` with
+  `manifestPathForDeferral` pointing to a separate `target/prod/` path
+- Generate the prod manifest without DB access:
+  `dbt parse --target prod --target-path target/prod --project-dir src/dbt/<project>`
+- "Apply defer configuration" command exists in the command palette — unclear if
+  mandatory for activation; verify during first setup
+
 ## Claude Plugins
 
 - `claude-plugins-official` must be listed in `.claude/settings.json`

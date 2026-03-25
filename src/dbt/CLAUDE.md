@@ -168,6 +168,19 @@ the consuming project. Custom macros (e.g., `resolve_source_schema`) ARE
 resolved from the consuming project's namespace when called from package source
 files.
 
+Running `dbt parse` directly against a standalone source-system project will
+fail if its source files call macros defined in consuming projects. This is
+expected — source-system projects are only compiled as packages.
+
+`stage_external_sources --args 'select: *'` stages all external sources;
+`--args 'select: source_name'` scopes to one source.
+
+## dbt Cloud
+
+- **"Target name" in job settings** controls `target.name` in Jinja exactly —
+  `"default"` is a literal string, not a placeholder. Set explicitly to
+  `"staging"` or `"prod"` for target-driven macro logic to work.
+
 ## Profiles Architecture
 
 Two `profiles.yml` files per school/network project:
