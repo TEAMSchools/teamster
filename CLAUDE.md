@@ -36,10 +36,9 @@ Cloud Storage (GCS) as the intermediate storage layer.
   - Commit messages follow
     [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/)
     format.
-  - Branch naming: `<author>/<commit-type>/<brief-description>` (e.g.,
-    `cbini/feat/salesforce-alumni-tracking`). For AI-assisted branches, prefix
-    the description with `claude-` (e.g.,
-    `cbini/feat/claude-salesforce-alumni-tracking`).
+  - Branch naming: `<gh-username>/<commit-type>/<brief-description>`. Get the
+    username from `gh api user -q .login`. For AI-assisted branches, prefix the
+    description with `claude-`.
   - **Staging protected paths**: Use bare `git add -u` (no path argument) —
     naming protected paths explicitly (e.g., `git add .claude/settings.json`)
     triggers the hook and gets blocked.
