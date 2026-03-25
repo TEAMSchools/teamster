@@ -253,6 +253,10 @@ available from the first session.
 
 Similar entries for regional projects as needed.
 
+`favorState: false` means Power User defers based on the prod manifest only — it
+does not skip models whose upstream deps have not changed. New models absent
+from the prod manifest are built locally as normal.
+
 > **Open question**: The Power User command palette exposes "Apply defer
 > configuration" — it is unclear whether this is a mandatory one-time setup step
 > or an optional activation command. This must be verified during
@@ -367,34 +371,60 @@ Source files currently use inline Jinja that checks `target.name`,
 `target.name`. Both old and new logic produce correct results for
 `--target prod` (bare schema), so prod is never at risk during migration.
 
-#### Phase 1: Deploy macros and update profiles (backward-compatible)
+#### Phase 1: Deploy macros, update profiles, and update dbt Cloud (backward-compatible)
+
+dbt Cloud target name changes must happen **before** source files are rewritten.
+After Phase 2, `resolve_source_schema` uses only `target.name` — if dbt Cloud
+still passes `target: default`, the `else` branch fires and CI reads from prod
+schemas instead of `zz_stg_*`.
 
 1. Add `resolve_source_schema` macro to the 5 school/network projects
 1. Update `.dbt/profiles.yml` — add `dev`/`staging`/`prod` targets alongside
    existing targets (do not remove old targets yet)
 1. Update shipped `src/dbt/<project>/profiles.yml` — add `dev` and `prod`
    targets, set default to `dev`
-1. Update `get_dbt_cli_resource` to pass `target="prod"` in Dagster Cloud
+1. Update `get_dbt_cli_resource` to pass `target="prod"` in Dagster Cloud;
+   remove dead `test` parameter
 1. Deploy Dagster — prod continues to work (explicit `target="prod"`)
+1. Update dbt Cloud job target names (`default` → `staging`/`prod`)
+1. Update Staging environment dataset (`z_dev_kipptaf` → `zz_stg_kipptaf`)
 
 #### Phase 2: Rewrite source files
 
-1. Replace inline Jinja in all source files with `resolve_source_schema()`
-   calls. There are approximately 60 source files across all 15 projects with
-   varying conditional patterns. A migration script or bulk find-and-replace
-   handles this since the output format is uniform.
+Scope includes all source files with inline Jinja — approximately 61 files
+across all 15 projects. This includes:
+
+- Source-system package source files
+  (`src/dbt/<source-system>/models/**/sources*.yml`)
+- School-project-resident source files that live directly in school projects
+  (e.g., `kippnewark/models/edplan/sources-drive.yml`,
+  `kippcamden/models/edplan/sources-drive.yml`,
+  `kippmiami/models/fldoe/sources.yml`)
+- Source files with no existing conditionals are left unchanged
+
+Note: after rewriting source-system package source files to call
+`resolve_source_schema`, running `dbt parse` or `dbt compile` directly against a
+standalone source-system project (e.g.,
+`dbt parse --project-dir src/dbt/powerschool`) will fail — the macro is not
+defined in that project's namespace. This is expected; source-system projects
+are only compiled as packages within school projects.
+
+Steps:
+
+1. Replace inline Jinja in all in-scope source files with
+   `resolve_source_schema()` calls
 1. Test locally with `--target dev` and `--target prod`
 
-#### Phase 3: Update dbt Cloud and clean up
+#### Phase 3: Clean up
 
-1. Update dbt Cloud job target names (`default` → `staging`/`prod`)
-1. Update Staging environment dataset (`z_dev_kipptaf` → `zz_stg_kipptaf`)
 1. Remove old target names from `.dbt/profiles.yml`; simplify source-system
    profiles to single `dev` target
 1. Remove `DBT_CLOUD_ENVIRONMENT_TYPE` env var from `.devcontainer/` and
    `.vscode/settings.json`
 1. Delete `scripts/dbt-sxs.py` and remove its entry from `scripts/CLAUDE.md`
-1. Set up `post-merge` git hook for prod manifest generation
+1. Set up `post-merge` git hook for prod manifest generation — install to
+   `.git/hooks/post-merge`; also wire into devcontainer `postStartCommand` so it
+   runs on Codespace creation
 1. Configure Power User `--defer` in `.vscode/settings.json`
 1. Add VS Code task for staging external sources
 
