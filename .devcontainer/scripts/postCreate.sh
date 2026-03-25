@@ -14,6 +14,7 @@ git config push.autoSetupRemote true
 
 # install extra apt packages
 # fix apt sandbox permissions left by devcontainer feature builds
+sudo chown _apt:root /var/cache/apt/archives/partial 2>/dev/null || true
 sudo chown _apt:root /var/lib/apt/lists/partial 2>/dev/null || true
 sudo apt-get update -y &&
   sudo apt-get -y install --no-install-recommends sshpass &&
