@@ -1,0 +1,26 @@
+models:
+  - name: stg_illuminate__dna_assessments__field_responses
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - field_id
+              - response_id
+              - version_id
+          config:
+            store_failures: true
+    columns:
+      - name: field_response_id
+        data_type: int64
+      - name: field_id
+        data_type: int64
+      - name: response_id
+        data_type: int64
+      - name: points
+        data_type: numeric
+      - name: choice
+        data_type: string
+      - name: rationale
+        data_type: string
+      - name: version_id
+        data_type: int64
