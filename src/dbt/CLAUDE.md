@@ -126,17 +126,18 @@ data_tests:
   current_date('{{ var("local_timezone") }}')
   ```
 
-### SQL column ordering in SELECT clauses
+### SQL column ordering in SELECT clauses (enforced by ST06)
 
-Columns within a SELECT must follow this order:
+Columns within a SELECT **must** follow this order — no interleaving:
 
 1. Column enumerations (plain refs), grouped by source table in join order,
    separated by a blank line between each table's group
-2. Simple functions (`coalesce(...)`, simple `if(...)`)
-3. Nested functions
-4. Logicals (`if(condition, true, false)`)
-5. Case statements
-6. Window functions (`row_number() over (...)`)
+2. Constants and literals
+3. Simple functions (`coalesce(...)`, simple `if(...)`)
+4. Nested functions
+5. Logicals (`if(condition, true, false)`)
+6. Case statements
+7. Window functions (`row_number() over (...)`)
 
 When a SELECT reads from a single table/CTE, do not prefix columns with the
 alias.
