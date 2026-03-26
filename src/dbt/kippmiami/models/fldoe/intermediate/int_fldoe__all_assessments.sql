@@ -44,6 +44,9 @@ select
     'Actual' as results_type,
     'KTAF FL' as district_state,
 
+    administration_window as `admin`,
+    assessment_subject as `subject`,
+
     if(
         assessment_name = 'science', 'Science', upper(assessment_name)
     ) as assessment_name,

@@ -45,7 +45,7 @@ with
                 then concat('MAT', regexp_extract(test_name, r'.{6}(.{2})'))
                 when test_name like '%ELA%'
                 then concat('ELA', regexp_extract(test_name, r'.{6}(.{2})'))
-            end as test_code,
+            end as aligned_test_code,
 
             case
                 when performance_level = 'Did Not Yet Meet Expectations'

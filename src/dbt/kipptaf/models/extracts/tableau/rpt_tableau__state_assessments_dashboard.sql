@@ -18,16 +18,11 @@ with
 
             s.abbreviation as school,
 
-            case
-                when c.courses_credittype in ('ENG', 'ELA')
-                then 'ELA'
-                when c.courses_credittype in ('MATH', 'Math')
-                then 'Math'
-                when c.courses_credittype in ('SCI', 'Science')
-                then 'Science'
-                when c.courses_credittype = 'SOC'
-                then 'Civics'
-            end as discipline,
+            if(
+                c.courses_credittype = 'SOC' and c.region = 'Miami',
+                'Civics',
+                c.discipline
+            ) as discipline,
 
         from {{ ref("base_powerschool__course_enrollments") }} as c
         left join
@@ -37,8 +32,7 @@ with
             c.cc_academic_year = {{ var("current_academic_year") }}
             and c.rn_credittype_year = 1
             and not c.is_dropped_section
-            and c.courses_credittype
-            in ('ENG', 'MATH', 'SCI', 'SOC', 'ELA', 'Math', 'Science')
+            and c.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
     ),
 
     schedules as (
@@ -55,16 +49,11 @@ with
             c.teachernumber as teachernumber_current,
             c.teacher_name as teacher_name_current,
 
-            case
-                when e.courses_credittype in ('ENG', 'ELA')
-                then 'ELA'
-                when e.courses_credittype in ('MATH', 'Math')
-                then 'Math'
-                when e.courses_credittype in ('SCI', 'Science')
-                then 'Science'
-                when e.courses_credittype = 'SOC'
-                then 'Civics'
-            end as discipline,
+            if(
+                e.courses_credittype = 'SOC' and e.region = 'Miami',
+                'Civics',
+                e.discipline
+            ) as discipline,
 
         from {{ ref("base_powerschool__course_enrollments") }} as e
         left join
@@ -75,8 +64,7 @@ with
             e.cc_academic_year >= {{ var("current_academic_year") - 7 }}
             and e.rn_credittype_year = 1
             and not e.is_dropped_section
-            and e.courses_credittype
-            in ('ENG', 'MATH', 'SCI', 'SOC', 'ELA', 'Math', 'Science')
+            and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
     ),
 
     state_comps as (
@@ -107,7 +95,7 @@ with
         where
             comparison_demographic_group = 'Total'
             and comparison_demographic_subgroup = 'All Students'
-        group by academic_year, test_name, test_code, region
+        group by academic_year, test_name, test_code, region, season
     ),
 
     assessment_scores as (
@@ -128,28 +116,12 @@ with
             race_ethnicity,
             test_grade,
 
-            'Actual' as results_type,
+            results_type,
 
-            if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
-
-            if(`period` = 'FallBlock', 'Fall', `period`) as season,
-
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as `subject`,
-
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as test_code,
+            `admin`,
+            season,
+            aligned_subject as `subject`,
+            aligned_test_code as test_code,
 
         from {{ ref("int_pearson__all_assessments") }}
         where
@@ -181,9 +153,9 @@ with
 
             'Actual' as results_type,
 
-            administration_window as `admin`,
+            `admin`,
             season,
-            assessment_subject as `subject`,
+            `subject`,
             test_code,
 
         from {{ ref("int_fldoe__all_assessments") }}
@@ -198,13 +170,42 @@ with
             cast(state_student_identifier as string) as state_id,
 
             test_type as assessment_name,
-            discipline,
+
+            case
+                when test_name like '%Mathematics%'
+                then 'Math'
+                when test_name in ('Algebra I', 'Geometry')
+                then 'Math'
+                else 'ELA'
+            end as discipline,
 
             scale_score as score,
-            performance_band_level,
-            is_proficient,
-            performance_level as performance_band,
 
+            case
+                when performance_level = 'Did Not Yet Meet Expectations'
+                then 1
+                when performance_level = 'Partially Met Expectations'
+                then 2
+                when performance_level = 'Approached Expectations'
+                then 3
+                when performance_level = 'Met Expectations'
+                then 4
+                when performance_level = 'Exceeded Expectations'
+                then 5
+                when performance_level = 'Not Yet Graduation Ready'
+                then 1
+                when performance_level = 'Graduation Ready'
+                then 2
+            end as performance_band_level,
+
+            if(
+                performance_level
+                in ('Met Expectations', 'Exceeded Expectations', 'Graduation Ready'),
+                true,
+                false
+            ) as is_proficient,
+
+            performance_level as performance_band,
             null as lep_status,
             null as is_504,
             null as iep_status,
@@ -215,10 +216,17 @@ with
             administration as `admin`,
             administration as season,
 
-            `subject`,
-            test_code,
+            case
+                when test_name like '%Mathematics%'
+                then 'Mathematics'
+                when test_name in ('Algebra I', 'Geometry')
+                then 'Mathematics'
+                else 'English Language Arts'
+            end as subject,
 
-        from {{ ref("stg_pearson__student_list_report") }}
+            aligned_test_code as test_code,
+
+        from {{ ref("int_pearson__student_list_report") }}
         where
             state_student_identifier is not null
             and administration = 'Spring'
