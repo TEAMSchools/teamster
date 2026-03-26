@@ -7,7 +7,11 @@ and staleness evaluation logic shared across assets, schedules, and sensors.
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from dagster import MonthlyPartitionsDefinition, TimeWindowPartitionsDefinition
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import text
+
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 
 
 def format_oracle_timestamp(timestamp: float, tz: ZoneInfo) -> str:
@@ -28,6 +32,46 @@ def format_oracle_timestamp(timestamp: float, tz: ZoneInfo) -> str:
         .replace(tzinfo=None)
         .isoformat(timespec="microseconds")
     )
+
+
+def get_partition_window(
+    partition_key: str, partitions_def: TimeWindowPartitionsDefinition
+) -> tuple[str, str]:
+    """Compute Oracle-compatible ISO timestamp bounds for a partition window.
+
+    Args:
+        partition_key: ISO date string for the partition start (e.g. '2024-07-01').
+        partitions_def: Dagster partitions definition (FiscalYear or Monthly).
+
+    Returns:
+        Tuple of (start_value, end_value) as timezone-naive ISO strings at
+        microsecond precision.
+
+    Raises:
+        TypeError: If partitions_def is not FiscalYearPartitionsDefinition or
+            MonthlyPartitionsDefinition.
+    """
+    partition_start = datetime.fromisoformat(partition_key)
+
+    if isinstance(partitions_def, FiscalYearPartitionsDefinition):
+        date_add = relativedelta(years=1)
+    elif isinstance(partitions_def, MonthlyPartitionsDefinition):
+        date_add = relativedelta(months=1)
+    else:
+        raise TypeError(
+            f"Unsupported partitions_def type: {type(partitions_def).__name__}"
+        )
+
+    partition_end = (partition_start + date_add - relativedelta(days=1)).replace(
+        hour=23, minute=59, second=59, microsecond=999999
+    )
+
+    start_value = partition_start.replace(tzinfo=None).isoformat(
+        timespec="microseconds"
+    )
+    end_value = partition_end.replace(tzinfo=None).isoformat(timespec="microseconds")
+
+    return start_value, end_value
 
 
 def get_query_text(

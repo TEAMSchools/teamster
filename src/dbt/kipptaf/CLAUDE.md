@@ -96,6 +96,14 @@ absence:
 Manager, ADP Workforce Now Fivetran, Alchemer, Coupa Fivetran, Dayforce,
 Facebook, Illuminate Fivetran, Instagram.
 
+## DLT Type Mapping
+
+DLT writes Postgres unbounded `numeric` as `decimal128(38, 18)` → BigQuery
+`BIGNUMERIC`. Staging contracts for DLT-sourced numeric columns must use
+`bignumeric`, not `numeric`. The `union_relations` macro in models like
+`int_illuminate__agg_student_responses` explicitly casts to `NUMERIC`,
+insulating downstream contracts from the type widening.
+
 ## Cross-Project Refs
 
 Sources models from: `powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`,

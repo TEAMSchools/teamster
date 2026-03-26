@@ -1,6 +1,16 @@
 """Unit tests for PowerSchool SIS ODBC utilities."""
 
-from teamster.libraries.powerschool.sis.odbc.utils import get_query_text
+from zoneinfo import ZoneInfo
+
+import pytest
+from dagster import MonthlyPartitionsDefinition
+
+from teamster.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.libraries.powerschool.sis.odbc.utils import (
+    format_oracle_timestamp,
+    get_partition_window,
+    get_query_text,
+)
 
 
 class TestGetQueryText:
@@ -33,11 +43,6 @@ class TestGetQueryText:
         assert "TO_TIMESTAMP('2025-06-30T23:59:59.999999'" in sql
 
 
-from zoneinfo import ZoneInfo
-
-from teamster.libraries.powerschool.sis.odbc.utils import format_oracle_timestamp
-
-
 class TestFormatOracleTimestamp:
     def test_formats_utc_timestamp(self):
         # 2024-07-01 12:00:00 UTC
@@ -61,3 +66,38 @@ class TestFormatOracleTimestamp:
         result = format_oracle_timestamp(ts, ZoneInfo("America/New_York"))
         assert "+" not in result
         assert "-04" not in result
+
+
+class TestGetPartitionWindow:
+    def test_fiscal_year_window(self):
+        partitions_def = FiscalYearPartitionsDefinition(
+            start_month=7, start_date="2023-07-01"
+        )
+        start, end = get_partition_window("2024-07-01", partitions_def)
+        assert start == "2024-07-01T00:00:00.000000"
+        assert end == "2025-06-30T23:59:59.999999"
+
+    def test_monthly_window(self):
+        partitions_def = MonthlyPartitionsDefinition(start_date="2024-01-01")
+        start, end = get_partition_window("2024-07-01", partitions_def)
+        assert start == "2024-07-01T00:00:00.000000"
+        assert end == "2024-07-31T23:59:59.999999"
+
+    def test_monthly_february_leap_year(self):
+        partitions_def = MonthlyPartitionsDefinition(start_date="2024-01-01")
+        start, end = get_partition_window("2024-02-01", partitions_def)
+        assert start == "2024-02-01T00:00:00.000000"
+        assert end == "2024-02-29T23:59:59.999999"
+
+    def test_monthly_february_non_leap_year(self):
+        partitions_def = MonthlyPartitionsDefinition(start_date="2023-01-01")
+        start, end = get_partition_window("2023-02-01", partitions_def)
+        assert start == "2023-02-01T00:00:00.000000"
+        assert end == "2023-02-28T23:59:59.999999"
+
+    def test_unsupported_type_raises_type_error(self):
+        from dagster import DailyPartitionsDefinition
+
+        partitions_def = DailyPartitionsDefinition(start_date="2024-01-01")
+        with pytest.raises(TypeError, match="Unsupported partitions_def type"):
+            get_partition_window("2024-07-01", partitions_def)
