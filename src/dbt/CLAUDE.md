@@ -107,19 +107,29 @@ data_tests:
 
 - **Soft-delete filters**: Apply in the **staging model**, not in downstream
   `ON` clauses. Deleted rows should never reach intermediate or mart models.
-- **No `GROUP BY` without aggregation** — use `DISTINCT` instead. `DISTINCT`
-  requires a comment explaining why it is necessary.
+- **No `GROUP BY` without aggregation** — use `DISTINCT` instead (see next rule
+  for deduplication constraints).
+- **No `SELECT DISTINCT` for deduplication** — use `dbt_utils.deduplicate()`
+  with an explicit `partition_by` and `order_by`. If `DISTINCT` is truly
+  unavoidable, it must include a `-- TODO:` comment explaining why and what
+  needs to be fixed upstream.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
   breaks silently when upstream columns change.
 - **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models.
 - **No `SELECT *` in final `SELECT` of `rpt_`/mart models** — list columns
-  explicitly. Pass-through CTEs (`select * from ref(...)`) are fine.
+  explicitly. Pass-through CTEs (`select * from ref(...)`) are fine. Get the
+  authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
+
+  ```sql
+  select column_name
+  from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
+  where table_name = '<model_name>'
+  order by ordinal_position
+  ```
+
 - **`ON` vs `WHERE`** — row filters on the preserved table belong in `WHERE`,
   not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
   Exception: `FULL JOIN` conditions referencing one side stay in `ON`.
-- **`SELECT *` from `dbt_utils.star()` models** — see
-  `src/dbt/kipptaf/CLAUDE.md` for guidance (includes
-  `INFORMATION_SCHEMA.COLUMNS` query pattern).
 - **Timezone-aware today**:
 
   ```sql
@@ -159,6 +169,8 @@ All SQL follows `.trunk/config/.sqlfluff`. Key enforced rules:
 
 - **Dialect**: BigQuery
 - **Trailing commas**: required in `SELECT` clauses
+- **Reserved words**: BigQuery reserved words as column names must be
+  backtick-quoted in SQL and have `quote: true` in properties YAML
 - **String literals**: single quotes only (no double quotes)
 - **Line length**: 88 characters max
 

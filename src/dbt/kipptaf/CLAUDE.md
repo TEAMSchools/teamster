@@ -63,14 +63,8 @@ Macro defined in `macros/utils.sql` — extracts school prefix via
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not
 SQL. YAML properties drift silently. **Rule**: enumerate columns explicitly when
-joining these models. Get the authoritative list:
-
-```sql
-select column_name
-from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
-where table_name = '<model_name>'
-order by ordinal_position
-```
+joining these models (see `INFORMATION_SCHEMA.COLUMNS` query in
+`src/dbt/CLAUDE.md`).
 
 `union_relations` views have a related issue (stale compiled SQL) but are
 handled automatically by `dbt_union_relations_automation_condition()`.
