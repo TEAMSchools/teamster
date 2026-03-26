@@ -349,7 +349,7 @@ def _evaluate_partition(
     ).metadata
 
     # Check 3: last partition modified count > 0
-    if partition_key == last_partition_key:
+    if partition_key == last_partition_key and partition_column is not None:
         timestamp = check.inst(
             obj=metadata["latest_materialization_timestamp"].value,
             ttype=float,

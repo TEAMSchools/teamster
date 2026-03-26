@@ -98,7 +98,7 @@ class PowerSchoolODBCResource(ConfigurableResource):
         batch_size: int = 1000,
         prefetch_rows: int = defaults.prefetchrows,
         array_size: int = defaults.arraysize,
-    ):
+    ) -> list[tuple] | pathlib.Path:
         """Execute a SQL query and return results in the requested format.
 
         Opens a cursor on the given connection, applies prefetch/array-size
@@ -123,55 +123,57 @@ class PowerSchoolODBCResource(ConfigurableResource):
         self._log.debug(f"Opening cursor on {connection.service_name}")
         cursor = connection.cursor()
 
-        cursor.prefetchrows = prefetch_rows
-        cursor.arraysize = array_size
+        try:
+            cursor.prefetchrows = prefetch_rows
+            cursor.arraysize = array_size
 
-        self._log.info(f"Executing query:\n{query}")
-        cursor.execute(statement=str(query))
+            self._log.info(f"Executing query:\n{query}")
+            cursor.execute(statement=str(query))
 
-        if output_format == "avro":
-            columns = []
-            fields = []
+            if output_format == "avro":
+                columns = []
+                fields = []
 
-            if isinstance(query, Select):
-                record_name = query.get_final_froms()[0].description
-            elif isinstance(query, TextClause):
-                record_name = query.description
+                if isinstance(query, Select):
+                    record_name = query.get_final_froms()[0].description
+                elif isinstance(query, TextClause):
+                    record_name = query.description
 
-            # trunk-ignore-begin(pyright): oracledb lacks type stubs; cursor.description elements are FetchInfo at runtime
-            for col_info in cursor.description or []:
-                col_name = col_info[0].lower()
-                col_type_name = col_info[1].name
+                # trunk-ignore-begin(pyright): oracledb lacks type stubs; cursor.description elements are FetchInfo at runtime
+                for col_info in cursor.description or []:
+                    col_name = col_info[0].lower()
+                    col_type_name = col_info[1].name
 
-                columns.append(col_name)
-                fields.append(
-                    {
-                        "name": col_name,
-                        "type": [
-                            "null",
-                            *ORACLE_AVRO_SCHEMA_TYPES.get(col_type_name, []),
-                        ],
-                        "default": None,
-                    }
+                    columns.append(col_name)
+                    fields.append(
+                        {
+                            "name": col_name,
+                            "type": [
+                                "null",
+                                *ORACLE_AVRO_SCHEMA_TYPES.get(col_type_name, []),
+                            ],
+                            "default": None,
+                        }
+                    )
+                # trunk-ignore-end(pyright)
+
+                cursor.rowfactory = lambda *args: dict(zip(columns, args, strict=False))
+
+                return self.result_to_avro(
+                    cursor=cursor,
+                    batch_size=batch_size,
+                    schema=fastavro.parse_schema(
+                        schema={
+                            "type": "record",
+                            "name": record_name,
+                            "fields": fields,
+                        }
+                    ),
                 )
-            # trunk-ignore-end(pyright)
-
-            cursor.rowfactory = lambda *args: dict(zip(columns, args, strict=False))
-
-            output = self.result_to_avro(
-                cursor=cursor,
-                batch_size=batch_size,
-                schema=fastavro.parse_schema(
-                    schema={"type": "record", "name": record_name, "fields": fields}
-                ),
-            )
-        else:
-            return [row for row in cursor.fetchall()]
-
-        self._log.debug("Closing cursor on connection")
-        cursor.close()
-
-        return output
+            else:
+                return list(cursor.fetchall())
+        finally:
+            cursor.close()
 
     def result_to_avro(
         self,
@@ -212,27 +214,25 @@ class PowerSchoolODBCResource(ConfigurableResource):
             )
 
         len_rows = 0
-        fo = data_filepath.open("a+b")
 
         self._log.info(f"Saving results to {data_filepath}")
-        while True:
-            rows = cursor.fetchmany(size=batch_size)
+        with data_filepath.open("a+b") as fo:
+            while True:
+                rows = cursor.fetchmany(size=batch_size)
 
-            if not rows:
-                break
+                if not rows:
+                    break
 
-            fastavro.writer(
-                fo=fo,
-                schema=schema,
-                records=rows,
-                codec="snappy",
-                strict_allow_default=True,
-            )
+                fastavro.writer(
+                    fo=fo,
+                    schema=schema,
+                    records=rows,
+                    codec="snappy",
+                    strict_allow_default=True,
+                )
 
-            len_rows += len(rows)
+                len_rows += len(rows)
 
-            self._log.info(f"Saved {len_rows} rows")
-
-        fo.close()
+                self._log.info(f"Saved {len_rows} rows")
 
         return data_filepath

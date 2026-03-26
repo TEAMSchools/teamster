@@ -158,9 +158,11 @@ def build_powerschool_table_asset(
 
         with file_path.open(mode="rb") as f:
             num_records = sum(block.num_records for block in block_reader(f))
-            digest = hash_bytestr_iter(
-                bytesiter=file_as_blockiter(file=f), hasher=hashlib.sha256()
-            )
+
+        digest = hash_bytestr_iter(
+            bytesiter=file_as_blockiter(file=file_path.open(mode="rb")),
+            hasher=hashlib.sha256(),
+        )
 
         return Output(
             value=file_path,
