@@ -12,7 +12,6 @@ with
             e.school_name,
             e.student_number,
             e.lastfirst,
-            e.enroll_status,
             e.grade_level,
             e.year_in_school,
         from {{ ref("int_powerschool__gpa_cumulative") }} as g

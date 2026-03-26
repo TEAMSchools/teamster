@@ -739,7 +739,7 @@ exposures:
 
   - name: rpt_gsheets__gpa_flags_report
     label: GPA Flags Report
-    type: application
+    type: analysis
     owner:
       name: Data Team
     url: https://docs.google.com/spreadsheets/d/1zJUjzKBmGLmx5ldEit-q8BukqDiNREp3ihzRwDnl0H4
