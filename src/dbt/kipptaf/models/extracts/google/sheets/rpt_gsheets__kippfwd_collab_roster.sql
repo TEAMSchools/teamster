@@ -169,3 +169,9 @@ left join
     and ce.courses_course_name like 'College and Career%'
     and ce.rn_course_number_year = 1
     and not ce.is_dropped_section
+left join
+    {{ ref("base_powerschool__student_enrollments") }} as se
+    on ktc.student_number = se.student_number
+    and se.academic_year = {{ var("current_academic_year") }}
+    and se.rn_year = 1
+    and se.enroll_status = 0
