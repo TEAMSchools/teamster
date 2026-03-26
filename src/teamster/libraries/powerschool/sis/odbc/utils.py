@@ -30,7 +30,7 @@ from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCRes
 @contextmanager
 def powerschool_connection(
     ssh_resource, db_resource, log
-) -> Generator[object, None, None]:
+) -> Generator[oracledb.Connection, None, None]:
     """Open an SSH tunnel and Oracle connection, with guaranteed cleanup.
 
     Opens the SSH tunnel first, then the database connection. On success,
