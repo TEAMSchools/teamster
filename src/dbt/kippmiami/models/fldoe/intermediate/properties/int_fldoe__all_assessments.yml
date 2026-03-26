@@ -21,9 +21,17 @@ models:
         data_type: boolean
       - name: assessment_grade
         data_type: string
+      - name: results_type
+        data_type: string
+      - name: district_state
+        data_type: string
       - name: performance_level
         data_type: int64
       - name: student_id
         data_type: string
       - name: assessment_name
+        data_type: string
+      - name: illuminate_subject
+        data_type: string
+      - name: fast_aggregated_proficiency
         data_type: string

@@ -475,5 +475,7 @@ models:
         data_type: boolean
       - name: is_ap_course
         data_type: boolean
+      - name: standardized_discipline
+        data_type: string
       - name: rn_student_year_illuminate_subject_desc
         data_type: int64
