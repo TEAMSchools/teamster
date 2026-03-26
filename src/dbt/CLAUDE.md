@@ -154,8 +154,9 @@ alias.
 
 ### YAML conventions
 
-- Column-level documentation belongs in properties YAML as a `description:`
-  field, not as inline SQL comments.
+- All new or modified models require `description:` on the model and every
+  column. Profile staging data via BigQuery MCP; infer downstream from parents.
+  Describe calculated fields by logic. Use qualitative language — no stats.
 - Columns with `data_tests:` should be sorted to the top of the `columns:` list
   for visibility.
 - Column renames for semantic clarity (e.g., boolean prefixing with `is_`,

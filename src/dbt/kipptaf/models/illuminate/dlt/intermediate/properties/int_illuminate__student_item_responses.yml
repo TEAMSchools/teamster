@@ -1,47 +1,77 @@
 models:
   - name: int_illuminate__student_item_responses
+    description: >-
+      Item-level student assessment responses enriched with question metadata,
+      answer labels, and scoring. One row per student per question per
+      assessment attempt. Excludes responses to soft-deleted fields.
     columns:
       - name: student_assessment_response_id
         data_type: int64
+        description: >-
+          Primary key, from students_assessments_responses. Unique per student
+          per question per assessment attempt.
         data_tests:
           - unique:
               config:
                 store_failures: true
       - name: student_assessment_id
         data_type: int64
+        description:
+          FK to students_assessments — the student's assessment sitting.
       - name: student_id
         data_type: int64
+        description: The student who took the assessment.
       - name: assessment_id
         data_type: int64
+        description: The assessment taken.
       - name: date_taken
         data_type: date
+        description: Date the student took the assessment.
       - name: created_at
         data_type: timestamp
+        description: When the assessment sitting record was created.
       - name: updated_at
         data_type: timestamp
+        description: When the assessment sitting record was last updated.
       - name: manual_score
         data_type: boolean
+        description:
+          Whether this response was manually scored (vs. auto-scored).
       - name: sheet_label
         data_type: string
+        description: Answer sheet column label for this question.
       - name: body
         data_type: string
+        description: Question text (HTML). Sparsely populated.
       - name: maximum
         data_type: float64
+        description: Maximum points possible for this question.
       - name: factor
         data_type: float64
+        description: Weight multiplier applied to points.
       - name: field_order
         data_type: int64
+        description: Display order of this question within the assessment.
       - name: is_rubric
         data_type: bool
+        description: Whether this question uses rubric-based scoring.
       - name: is_advanced
         data_type: bool
+        description: Whether this is an advanced-level question.
       - name: is_extra_credit
         data_type: bool
+        description: Whether this question is extra credit.
       - name: is_partial_score
         data_type: bool
+        description: Whether partial credit scoring is enabled.
       - name: response
         data_type: string
+        description: The response label chosen by the student (e.g., "A", "3").
       - name: points
         data_type: bignumeric
+        description: Points awarded for this response.
       - name: percent_correct
         data_type: float64
+        description: >-
+          Ratio of points to maximum (via safe_divide). NULL when points or
+          maximum is NULL. 1.0 = full credit; 0.0 = no credit.

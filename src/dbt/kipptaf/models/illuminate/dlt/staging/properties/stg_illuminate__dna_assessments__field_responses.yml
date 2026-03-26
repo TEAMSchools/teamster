@@ -1,5 +1,10 @@
 models:
   - name: stg_illuminate__dna_assessments__field_responses
+    description: >-
+      Scoring rubric entries mapping each answer choice to its point value for a
+      given field and assessment version. Deduplicated on (field_id,
+      response_id, version_id) — source contains duplicate rows with identical
+      data.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -12,15 +17,31 @@ models:
     columns:
       - name: field_response_id
         data_type: int64
+        description: >-
+          Source primary key (autoincremented). Retained after deduplication but
+          not used as the uniqueness key — the natural key is (field_id,
+          response_id, version_id).
       - name: field_id
         data_type: int64
+        description: FK to fields — the question this rubric entry scores.
       - name: response_id
         data_type: int64
+        description: FK to responses — the answer choice being scored.
       - name: points
         data_type: bignumeric
+        description: >-
+          Points awarded for this answer. Compared against fields.maximum to
+          determine percent_correct downstream.
       - name: choice
         data_type: string
+        description: >-
+          Full answer text (HTML-formatted). Sparsely populated. Distinct from
+          responses.response which is the letter/code label.
       - name: rationale
         data_type: string
+        description: >-
+          Explanation for why this answer is correct/incorrect. Sparsely
+          populated.
       - name: version_id
         data_type: int64
+        description: Assessment version this rubric entry applies to.
