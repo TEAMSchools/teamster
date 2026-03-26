@@ -12,6 +12,8 @@
   with `jq` instead of parsing `claude plugins list` output
 - VS Code task shells do not inherit `~/.local/bin` in PATH — `uv` is not
   available unless you `source "${HOME}/.local/bin/env"` first
+- Task scripts must also use `uv run` for venv-installed tools (`dbt`,
+  `dagster`, etc.) — the venv is not activated in task shells
 
 ## GCloud Auth
 
