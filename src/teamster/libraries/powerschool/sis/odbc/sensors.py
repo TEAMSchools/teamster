@@ -102,7 +102,7 @@ def build_powerschool_asset_sensor(
                 {
                     "asset_key": r.asset_key,
                     "job_name": job_name,
-                    "partition_key": r.partition_key,
+                    "partition_key": r.partition_key or "",
                 }
             )
 
@@ -118,7 +118,7 @@ def build_powerschool_asset_sensor(
                         f"{job_name}_{partition_key}_{datetime.now().timestamp()}"
                     ),
                     job_name=job_name,
-                    partition_key=partition_key,
+                    partition_key=partition_key or None,
                     asset_selection=[g["asset_key"] for g in group],
                     tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
                 )

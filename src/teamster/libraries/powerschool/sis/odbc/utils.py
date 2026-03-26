@@ -63,8 +63,10 @@ def powerschool_connection(
         log.exception("PowerSchool ODBC error")
         raise
     finally:
-        connection.close()
-        ssh_tunnel.kill()
+        try:
+            connection.close()
+        finally:
+            ssh_tunnel.kill()
 
 
 def format_oracle_timestamp(timestamp: float, tz: ZoneInfo) -> str:
