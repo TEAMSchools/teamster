@@ -124,7 +124,7 @@ def build_powerschool_table_asset(
             constructed_where = ""
         else:
             start_value, end_value = get_partition_window(
-                context.partition_key, partitions_def
+                context.partition_key, check.not_none(value=partitions_def)
             )
 
             constructed_where = (

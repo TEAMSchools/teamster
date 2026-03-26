@@ -59,11 +59,13 @@ class TestBuildPowerschoolAssetSensor:
         result = inner_fn(context, ssh, db)
 
         assert isinstance(result, SensorResult)
+        # trunk-ignore-begin(pyright): run_requests is always set in our SensorResult
         assert len(result.run_requests) == 1
         assert len(result.run_requests[0].asset_selection) == 2
         assert (
             "loc__powerschool__sis__asset_job_None" in result.run_requests[0].job_name
         )
+        # trunk-ignore-end(pyright)
 
     @patch("teamster.libraries.powerschool.sis.odbc.sensors.evaluate_asset_staleness")
     @patch("teamster.libraries.powerschool.sis.odbc.sensors.powerschool_connection")
@@ -92,4 +94,5 @@ class TestBuildPowerschoolAssetSensor:
         result = inner_fn(MagicMock(), MagicMock(), MagicMock())
 
         assert isinstance(result, SensorResult)
+        # trunk-ignore(pyright): run_requests is always set in our SensorResult
         assert len(result.run_requests) == 0

@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from sqlalchemy import TextClause
+from sqlalchemy import TextClause, text
 
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 
@@ -66,10 +66,10 @@ class TestExecuteQueryTupleMode:
         conn = self._make_connection(cursor)
 
         resource = _make_resource()
-        query = MagicMock()
-        query.__str__ = lambda _: "SELECT * FROM STUDENTS"
 
-        result = resource.execute_query(connection=conn, query=query)
+        result = resource.execute_query(
+            connection=conn, query=text("SELECT * FROM STUDENTS")
+        )
 
         assert result == rows
 
@@ -78,11 +78,12 @@ class TestExecuteQueryTupleMode:
         conn = self._make_connection(cursor)
 
         resource = _make_resource()
-        query = MagicMock()
-        query.__str__ = lambda _: "SELECT * FROM STUDENTS"
 
         resource.execute_query(
-            connection=conn, query=query, prefetch_rows=500, array_size=250
+            connection=conn,
+            query=text("SELECT * FROM STUDENTS"),
+            prefetch_rows=500,
+            array_size=250,
         )
 
         assert cursor.prefetchrows == 500
@@ -95,11 +96,11 @@ class TestExecuteQueryTupleMode:
         conn = self._make_connection(cursor)
 
         resource = _make_resource()
-        query = MagicMock()
-        query.__str__ = lambda _: "SELECT COUNT(*) FROM STUDENTS"
 
         result = resource.execute_query(
-            connection=conn, query=query, output_format=None
+            connection=conn,
+            query=text("SELECT COUNT(*) FROM STUDENTS"),
+            output_format=None,
         )
 
         cursor.fetchall.assert_called_once()
@@ -118,19 +119,20 @@ class TestExecuteQueryAvroMode:
         cursor.fetchmany.return_value = []  # empty result — avro writer exits immediately
         return cursor
 
-    def _make_text_clause_query(self, sql: str, description: str) -> MagicMock:
-        """Return a mock that isinstance-checks as TextClause."""
-        query = MagicMock(spec=TextClause)
-        query.__str__ = lambda _: sql
-        query.description = description
-        return query
+    @staticmethod
+    def _make_text_clause_query(sql: str) -> TextClause:
+        """Return a TextClause with a description for avro-mode tests."""
+        clause = text(sql)
+        # trunk-ignore(pyright/reportAttributeAccessIssue): description is writable at runtime
+        clause.description = "test_query"
+        return clause
 
     def test_returns_path(self, tmp_path):
         cursor = self._make_cursor_with_description()
         conn = MagicMock()
         conn.cursor.return_value = cursor
 
-        query = self._make_text_clause_query("SELECT ID FROM STUDENTS", "students")
+        query = self._make_text_clause_query("SELECT ID FROM STUDENTS")
         avro_path = tmp_path / "out.avro"
 
         # ConfigurableResource is a frozen Pydantic model — patch on the class
@@ -154,7 +156,7 @@ class TestExecuteQueryAvroMode:
         conn = MagicMock()
         conn.cursor.return_value = cursor
 
-        query = self._make_text_clause_query("SELECT ID FROM STUDENTS", "students")
+        query = self._make_text_clause_query("SELECT ID FROM STUDENTS")
         avro_path = tmp_path / "out.avro"
 
         with patch(

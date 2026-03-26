@@ -48,6 +48,7 @@ class TestBuildPowerschoolSisAssetSchedule:
         )
 
         # Access the underlying decorated function to bypass Dagster invocation
+        # trunk-ignore(pyright): accessing Dagster internals to test without full instance
         inner_fn = schedule_def._execution_fn.decorated_fn
 
         context = MagicMock()
@@ -55,9 +56,11 @@ class TestBuildPowerschoolSisAssetSchedule:
         ssh = MagicMock()
         db = MagicMock()
 
+        # trunk-ignore(pyright): inner_fn return type is dynamic
         run_requests = list(inner_fn(context, ssh, db))
 
         assert len(run_requests) == 1
         assert isinstance(run_requests[0], RunRequest)
         assert run_requests[0].run_key == "_"
+        # trunk-ignore(pyright): asset_selection is always set in our RunRequests
         assert len(run_requests[0].asset_selection) == 2
