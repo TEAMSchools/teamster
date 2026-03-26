@@ -4,6 +4,7 @@ Context managers, timestamp formatting, partition window calculation,
 and staleness evaluation logic shared across assets, schedules, and sensors.
 """
 
+import logging
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -16,12 +17,13 @@ from dagster import (
     AssetRecordsFilter,
     AssetsDefinition,
     DagsterInstance,
+    EventLogEntry,
     MonthlyPartitionsDefinition,
     TimeWindowPartitionsDefinition,
 )
 from dagster_shared import check
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import text
+from sqlalchemy import TextClause, text
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
@@ -29,7 +31,7 @@ from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCRes
 
 @contextmanager
 def powerschool_connection(
-    ssh_resource, db_resource, log
+    ssh_resource, db_resource, log: logging.Logger
 ) -> Generator[oracledb.Connection, None, None]:
     """Open an SSH tunnel and Oracle connection, with guaranteed cleanup.
 
@@ -130,7 +132,7 @@ def get_query_text(
     column: str | None,
     start_value: str | None = None,
     end_value: str | None = None,
-):
+) -> TextClause:
     """Build a SQLAlchemy text clause for an Oracle COUNT query.
 
     Args:
@@ -186,13 +188,13 @@ class StalenessResult:
 
 def _evaluate_non_partitioned(
     asset: AssetsDefinition,
-    latest_event,
+    latest_event: EventLogEntry | None,
     table_name: str,
     partition_column: str | None,
     execution_timezone: ZoneInfo,
     connection: oracledb.Connection,
     db_powerschool: PowerSchoolODBCResource,
-    log,
+    log: logging.Logger,
 ) -> StalenessResult | None:
     """Evaluate staleness for a non-partitioned asset.
 
@@ -293,7 +295,7 @@ def _evaluate_partition(
     instance: DagsterInstance,
     connection: oracledb.Connection,
     db_powerschool: PowerSchoolODBCResource,
-    log,
+    log: logging.Logger,
 ) -> StalenessResult | None:
     """Evaluate staleness for a single partition.
 
@@ -424,7 +426,7 @@ def _evaluate_partitioned(
     instance: DagsterInstance,
     connection: oracledb.Connection,
     db_powerschool: PowerSchoolODBCResource,
-    log,
+    log: logging.Logger,
 ) -> list[StalenessResult]:
     """Evaluate staleness for all partitions of a partitioned asset.
 
@@ -475,7 +477,7 @@ def evaluate_asset_staleness(
     instance: DagsterInstance,
     connection: oracledb.Connection,
     db_powerschool: PowerSchoolODBCResource,
-    log,
+    log: logging.Logger,
     limit_monthly_partitions: int | None = None,
 ) -> list[StalenessResult]:
     """Evaluate staleness for a list of assets.

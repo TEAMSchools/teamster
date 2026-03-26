@@ -13,6 +13,7 @@ from dagster import (
     MAX_RUNTIME_SECONDS_TAG,
     AssetsDefinition,
     RunRequest,
+    ScheduleDefinition,
     ScheduleEvaluationContext,
     schedule,
 )
@@ -31,7 +32,7 @@ def build_powerschool_sis_asset_schedule(
     cron_schedule: str,
     asset_selection: list[AssetsDefinition],
     max_runtime_seconds: int = (60 * 10),
-):
+) -> ScheduleDefinition:
     """Build a Dagster schedule that detects and rematerializes stale assets.
 
     Args:

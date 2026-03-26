@@ -16,6 +16,7 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     RunRequest,
+    SensorDefinition,
     SensorEvaluationContext,
     SensorResult,
     define_asset_job,
@@ -36,7 +37,7 @@ def build_powerschool_asset_sensor(
     asset_selection: list[AssetsDefinition],
     minimum_interval_seconds: int | None = None,
     max_runtime_seconds: int = (60 * 5),
-):
+) -> SensorDefinition:
     """Build a Dagster sensor that detects and rematerializes stale assets.
 
     Args:

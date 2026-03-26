@@ -62,7 +62,7 @@ def file_as_blockiter(file: BufferedReader, size: int = 65536):
 
 
 def build_powerschool_table_asset(
-    code_location,
+    code_location: str,
     table_name: str,
     partitions_def: TimeWindowPartitionsDefinition | None = None,
     partition_column: str | None = None,
