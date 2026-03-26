@@ -4,16 +4,27 @@ Context managers, timestamp formatting, partition window calculation,
 and staleness evaluation logic shared across assets, schedules, and sensors.
 """
 
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from dagster import MonthlyPartitionsDefinition, TimeWindowPartitionsDefinition
+import oracledb
+from dagster import (
+    AssetKey,
+    AssetRecordsFilter,
+    AssetsDefinition,
+    DagsterInstance,
+    MonthlyPartitionsDefinition,
+    TimeWindowPartitionsDefinition,
+)
+from dagster_shared import check
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import text
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
+from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 
 
 @contextmanager
@@ -152,3 +163,388 @@ def get_query_text(
         )
 
     return text(query)
+
+
+@dataclass
+class StalenessResult:
+    """A stale asset or partition that needs re-materialization.
+
+    Every entry in the list returned by evaluate_asset_staleness represents
+    an asset/partition that is stale. Absence from the list means not stale.
+
+    Attributes:
+        asset_key: Dagster AssetKey of the stale asset.
+        partitions_def_identifier: Serializable unique identifier for the
+            partitions definition. None for non-partitioned assets.
+        partition_key: Partition key string. None for non-partitioned assets.
+    """
+
+    asset_key: AssetKey
+    partitions_def_identifier: str | None
+    partition_key: str | None
+
+
+def _evaluate_non_partitioned(
+    asset: AssetsDefinition,
+    latest_event,
+    table_name: str,
+    partition_column: str | None,
+    execution_timezone: ZoneInfo,
+    connection: oracledb.Connection,
+    db_powerschool: PowerSchoolODBCResource,
+    log,
+) -> StalenessResult | None:
+    """Evaluate staleness for a non-partitioned asset.
+
+    Checks in order: never materialized, modified count > 0, table count
+    mismatch. Returns a StalenessResult if stale, None otherwise.
+
+    Args:
+        asset: The Dagster asset definition.
+        latest_event: Latest materialization event, or None.
+        table_name: Oracle table name.
+        partition_column: Column for modification tracking, or None.
+        execution_timezone: Timezone for timestamp formatting.
+        connection: Open oracledb connection.
+        db_powerschool: PowerSchool ODBC resource.
+        log: Dagster logger.
+
+    Returns:
+        StalenessResult if the asset is stale, None otherwise.
+    """
+    asset_key_identifier = asset.key.to_python_identifier()
+
+    # Check 1: never materialized
+    if latest_event is None:
+        log.info(f"{asset_key_identifier} never materialized")
+        return StalenessResult(
+            asset_key=asset.key,
+            partitions_def_identifier=None,
+            partition_key=None,
+        )
+
+    metadata = check.not_none(value=latest_event.asset_materialization).metadata
+    materialization_count = metadata["records"].value
+
+    # Check 2: modified count > 0
+    if partition_column is not None:
+        timestamp = check.inst(
+            obj=metadata["latest_materialization_timestamp"].value,
+            ttype=float,
+        )
+
+        timestamp_fmt = format_oracle_timestamp(timestamp, execution_timezone)
+
+        [(modified_count,)] = check.inst(
+            db_powerschool.execute_query(
+                connection=connection,
+                query=get_query_text(
+                    table=table_name,
+                    column=partition_column,
+                    start_value=timestamp_fmt,
+                ),
+                prefetch_rows=2,
+                array_size=1,
+            ),
+            list,
+        )
+
+        if modified_count > 0:
+            log.info(f"{asset_key_identifier}\nmodified count: {modified_count}")
+            return StalenessResult(
+                asset_key=asset.key,
+                partitions_def_identifier=None,
+                partition_key=None,
+            )
+
+    # Check 3: table count mismatch
+    [(table_count,)] = check.inst(
+        db_powerschool.execute_query(
+            connection=connection,
+            query=get_query_text(table=table_name, column=None),
+            prefetch_rows=2,
+            array_size=1,
+        ),
+        list,
+    )
+
+    if table_count != materialization_count:
+        log.info(
+            f"{asset_key_identifier}\n"
+            f"PS count ({table_count}) != DB count ({materialization_count})"
+        )
+        return StalenessResult(
+            asset_key=asset.key,
+            partitions_def_identifier=None,
+            partition_key=None,
+        )
+
+    return None
+
+
+def _evaluate_partition(
+    asset: AssetsDefinition,
+    partition_key: str,
+    first_partition_key: str,
+    last_partition_key: str,
+    table_name: str,
+    partition_column: str | None,
+    execution_timezone: ZoneInfo,
+    instance: DagsterInstance,
+    connection: oracledb.Connection,
+    db_powerschool: PowerSchoolODBCResource,
+    log,
+) -> StalenessResult | None:
+    """Evaluate staleness for a single partition.
+
+    Checks in order: skip first partition, never materialized, last partition
+    modified count, partition count mismatch.
+
+    Args:
+        asset: The Dagster asset definition.
+        partition_key: The partition key to evaluate.
+        first_partition_key: First partition key in the definition.
+        last_partition_key: Last partition key in the definition.
+        table_name: Oracle table name.
+        partition_column: Column for modification tracking, or None.
+        execution_timezone: Timezone for timestamp formatting.
+        instance: Dagster instance for materialization lookups.
+        connection: Open oracledb connection.
+        db_powerschool: PowerSchool ODBC resource.
+        log: Dagster logger.
+
+    Returns:
+        StalenessResult if the partition is stale, None otherwise.
+    """
+    asset_key_identifier = asset.key.to_python_identifier()
+    partitions_def = check.not_none(value=asset.partitions_def)
+    partitions_def_id = partitions_def.get_serializable_unique_identifier()
+
+    # Check 1: skip first partition
+    if partition_key == first_partition_key:
+        return None
+
+    # Check 2: never materialized
+    event_records = instance.fetch_materializations(
+        records_filter=AssetRecordsFilter(
+            asset_key=asset.key, asset_partitions=[partition_key]
+        ),
+        limit=1,
+    )
+
+    if not event_records.records:
+        log.info(f"{asset_key_identifier} {partition_key} never materialized")
+        return StalenessResult(
+            asset_key=asset.key,
+            partitions_def_identifier=partitions_def_id,
+            partition_key=partition_key,
+        )
+
+    metadata = check.not_none(
+        value=event_records.records[0].asset_materialization
+    ).metadata
+
+    # Check 3: last partition modified count > 0
+    if partition_key == last_partition_key:
+        timestamp = check.inst(
+            obj=metadata["latest_materialization_timestamp"].value,
+            ttype=float,
+        )
+
+        timestamp_fmt = format_oracle_timestamp(timestamp, execution_timezone)
+
+        [(modified_count,)] = check.inst(
+            db_powerschool.execute_query(
+                connection=connection,
+                query=get_query_text(
+                    table=table_name,
+                    column=partition_column,
+                    start_value=timestamp_fmt,
+                ),
+                prefetch_rows=2,
+                array_size=1,
+            ),
+            list,
+        )
+
+        if modified_count > 0:
+            log.info(
+                f"{asset_key_identifier}\n{partition_key}\n"
+                f"modified count: {modified_count}"
+            )
+            return StalenessResult(
+                asset_key=asset.key,
+                partitions_def_identifier=partitions_def_id,
+                partition_key=partition_key,
+            )
+
+    # Check 4: partition count mismatch
+    start_value, end_value = get_partition_window(
+        partition_key,
+        check.inst(partitions_def, TimeWindowPartitionsDefinition),
+    )
+
+    [(partition_count,)] = check.inst(
+        db_powerschool.execute_query(
+            connection=connection,
+            query=get_query_text(
+                table=table_name,
+                column=partition_column,
+                start_value=start_value,
+                end_value=end_value,
+            ),
+            prefetch_rows=2,
+            array_size=1,
+        ),
+        list,
+    )
+
+    materialization_count = metadata["records"].value
+
+    if partition_count > 0 and partition_count != materialization_count:
+        log.info(
+            f"{asset_key_identifier}\n{partition_key}\n"
+            f"PS count ({partition_count}) != DB count ({materialization_count})"
+        )
+        return StalenessResult(
+            asset_key=asset.key,
+            partitions_def_identifier=partitions_def_id,
+            partition_key=partition_key,
+        )
+
+    return None
+
+
+def _evaluate_partitioned(
+    asset: AssetsDefinition,
+    partition_keys: Sequence[str],
+    table_name: str,
+    partition_column: str | None,
+    execution_timezone: ZoneInfo,
+    instance: DagsterInstance,
+    connection: oracledb.Connection,
+    db_powerschool: PowerSchoolODBCResource,
+    log,
+) -> list[StalenessResult]:
+    """Evaluate staleness for all partitions of a partitioned asset.
+
+    Gets first/last partition keys from the full partition definition and
+    delegates each key to _evaluate_partition.
+
+    Args:
+        asset: The Dagster asset definition.
+        partition_keys: List of partition keys to evaluate (may be sliced).
+        table_name: Oracle table name.
+        partition_column: Column for modification tracking, or None.
+        execution_timezone: Timezone for timestamp formatting.
+        instance: Dagster instance for materialization lookups.
+        connection: Open oracledb connection.
+        db_powerschool: PowerSchool ODBC resource.
+        log: Dagster logger.
+
+    Returns:
+        List of StalenessResult for stale partitions.
+    """
+    partitions_def = check.not_none(value=asset.partitions_def)
+    first_partition_key = check.not_none(value=partitions_def.get_first_partition_key())
+    last_partition_key = check.not_none(value=partitions_def.get_last_partition_key())
+
+    results = []
+    for partition_key in partition_keys:
+        result = _evaluate_partition(
+            asset=asset,
+            partition_key=partition_key,
+            first_partition_key=first_partition_key,
+            last_partition_key=last_partition_key,
+            table_name=table_name,
+            partition_column=partition_column,
+            execution_timezone=execution_timezone,
+            instance=instance,
+            connection=connection,
+            db_powerschool=db_powerschool,
+            log=log,
+        )
+        if result is not None:
+            results.append(result)
+    return results
+
+
+def evaluate_asset_staleness(
+    asset_selection: list[AssetsDefinition],
+    execution_timezone: ZoneInfo,
+    instance: DagsterInstance,
+    connection: oracledb.Connection,
+    db_powerschool: PowerSchoolODBCResource,
+    log,
+    limit_monthly_partitions: int | None = None,
+) -> list[StalenessResult]:
+    """Evaluate staleness for a list of assets.
+
+    For non-partitioned assets, checks whether the latest materialization is
+    up to date with the source table. For partitioned assets, checks each
+    partition individually.
+
+    Args:
+        asset_selection: List of Dagster asset definitions to evaluate.
+        execution_timezone: Timezone for timestamp formatting.
+        instance: Dagster instance for materialization lookups.
+        connection: Open oracledb connection.
+        db_powerschool: PowerSchool ODBC resource.
+        log: Dagster logger.
+        limit_monthly_partitions: If set, only check the last N partition
+            keys for assets with MonthlyPartitionsDefinition.
+
+    Returns:
+        List of StalenessResult for stale assets/partitions.
+    """
+    asset_keys = [asset.key for asset in asset_selection]
+    latest_materialization_events = instance.get_latest_materialization_events(
+        asset_keys
+    )
+
+    results: list[StalenessResult] = []
+
+    for asset in asset_selection:
+        metadata = asset.metadata_by_key[asset.key]
+        table_name = metadata["table_name"]
+        partition_column = metadata["partition_column"]
+
+        if asset.partitions_def is None:
+            # Non-partitioned asset
+            latest_event = latest_materialization_events.get(asset.key)
+            result = _evaluate_non_partitioned(
+                asset=asset,
+                latest_event=latest_event,
+                table_name=table_name,
+                partition_column=partition_column,
+                execution_timezone=execution_timezone,
+                connection=connection,
+                db_powerschool=db_powerschool,
+                log=log,
+            )
+            if result is not None:
+                results.append(result)
+        else:
+            # Partitioned asset
+            partition_keys = asset.partitions_def.get_partition_keys()
+
+            if limit_monthly_partitions is not None and isinstance(
+                asset.partitions_def, MonthlyPartitionsDefinition
+            ):
+                partition_keys = partition_keys[-limit_monthly_partitions:]
+
+            results.extend(
+                _evaluate_partitioned(
+                    asset=asset,
+                    partition_keys=partition_keys,
+                    table_name=table_name,
+                    partition_column=partition_column,
+                    execution_timezone=execution_timezone,
+                    instance=instance,
+                    connection=connection,
+                    db_powerschool=db_powerschool,
+                    log=log,
+                )
+            )
+
+    return results
