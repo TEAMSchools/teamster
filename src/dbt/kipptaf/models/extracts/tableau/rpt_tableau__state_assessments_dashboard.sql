@@ -32,7 +32,7 @@ with
             c.cc_academic_year = {{ var("current_academic_year") }}
             and c.rn_credittype_year = 1
             and not c.is_dropped_section
-            and c.discipline in ('ELA', 'MATH', 'SCI', 'SOC')
+            and c.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
     ),
 
     schedules as (
@@ -64,7 +64,7 @@ with
             e.cc_academic_year >= {{ var("current_academic_year") - 7 }}
             and e.rn_credittype_year = 1
             and not e.is_dropped_section
-            and e.discipline in ('ELA', 'MATH', 'SCI', 'SOC')
+            and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
     ),
 
     state_comps as (
