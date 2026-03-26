@@ -1,5 +1,16 @@
 models:
   - name: rpt_gsheets__gpa_flags_report
+    description: >
+      Surfaces potential cumulative GPA data quality issues for currently
+      enrolled students to support review by the academics and operations teams.
+      Each row represents a student flagged for one of two conditions: their
+      unweighted cumulative GPA exceeds their weighted GPA, or their cumulative
+      GPA is null despite meeting eligibility criteria defined by grade level,
+      year in school, and academic calendar thresholds. Flags are only surfaced
+      during defined windows of the school year, aligned to the grading calendar
+      for each region. This report is also the source of truth for the
+      corresponding dbt data quality test, which alerts the data team via Slack
+      when weighted/unweighted inversions are detected.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
