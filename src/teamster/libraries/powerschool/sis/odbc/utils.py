@@ -4,7 +4,30 @@ Context managers, timestamp formatting, partition window calculation,
 and staleness evaluation logic shared across assets, schedules, and sensors.
 """
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from sqlalchemy import text
+
+
+def format_oracle_timestamp(timestamp: float, tz: ZoneInfo) -> str:
+    """Convert a Unix timestamp to an Oracle-compatible ISO string.
+
+    Produces a timezone-naive ISO string at microsecond precision, suitable
+    for Oracle's TO_TIMESTAMP function.
+
+    Args:
+        timestamp: Unix timestamp (seconds since epoch).
+        tz: Timezone to localize the timestamp before stripping tzinfo.
+
+    Returns:
+        ISO 8601 string without timezone, e.g. '2024-07-01T12:00:00.000000'.
+    """
+    return (
+        datetime.fromtimestamp(timestamp, tz=tz)
+        .replace(tzinfo=None)
+        .isoformat(timespec="microseconds")
+    )
 
 
 def get_query_text(
