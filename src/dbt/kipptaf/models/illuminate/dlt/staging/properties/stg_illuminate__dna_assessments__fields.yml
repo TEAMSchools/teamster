@@ -22,11 +22,11 @@ models:
           Display order of this question within the assessment. Renamed from
           source column `order` (BigQuery reserved word).
       - name: factor
-        data_type: float64
+        data_type: bignumeric
         description: >-
           Weight multiplier applied to points.
       - name: maximum
-        data_type: float64
+        data_type: bignumeric
         description: >-
           Maximum points possible for this question. Used as the denominator in
           percent_correct calculations downstream.
