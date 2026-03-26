@@ -1,11 +1,14 @@
+import logging
+
 from dagster import EnvVar, build_resources
-from sqlalchemy import TextClause
+from sqlalchemy import text
 
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
+from teamster.libraries.powerschool.sis.odbc.utils import powerschool_connection
 from teamster.libraries.ssh.resources import SSHResource
 
 
-def test():
+def test_powerschool_odbc_resource_connects_and_queries():
     with build_resources(
         resources={
             "ssh_powerschool": SSHResource(
@@ -26,17 +29,13 @@ def test():
         ssh_powerschool: SSHResource = resources.ssh_powerschool
         db_powerschool: PowerSchoolODBCResource = resources.db_powerschool
 
-    ssh_tunnel = ssh_powerschool.open_ssh_tunnel()
+    log = logging.getLogger(__name__)
 
-    try:
-        connection = db_powerschool.connect()
-    except Exception as e:
-        ssh_tunnel.kill()
-        raise e
+    with powerschool_connection(ssh_powerschool, db_powerschool, log) as connection:
+        result = db_powerschool.execute_query(
+            connection=connection,
+            query=text("SELECT network_service_banner FROM v$session_connect_info"),
+        )
 
-    result = db_powerschool.execute_query(
-        connection=connection,
-        query=TextClause("SELECT network_service_banner FROM v$session_connect_info"),
-    )
-
-    print(result)
+    assert isinstance(result, list)
+    assert len(result) > 0
