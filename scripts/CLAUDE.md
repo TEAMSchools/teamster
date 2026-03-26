@@ -1,7 +1,7 @@
 # CLAUDE.md — `scripts/`
 
-Project utilities. Python scripts run with `uv run scripts/<name>.py [args]` —
-never bare `python`. Shell scripts run directly: `bash scripts/<name>.sh`.
+Project utilities. Python scripts: `uv run scripts/<name>.py [args]`. Shell
+scripts: `bash scripts/<name>.sh`.
 
 ## Script Catalog
 
