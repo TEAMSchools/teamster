@@ -19,7 +19,7 @@ lifecycle and partition date window calculation.
 
 ## Out of Scope
 
-- Changes to `resources.py`
+- Changes to the `resources.py` implementation
 - Changes to the asset factory signature, metadata, or output format
 - Integration tests against the live Oracle database
 
@@ -302,7 +302,10 @@ Returns `None` if not stale.
 ~70 lines. Sets up the `@sensor` and jobs, opens a connection via
 `powerschool_connection()`, calls
 `evaluate_asset_staleness(limit_monthly_partitions=None)`, groups results by
-`(job_name, partition_key)`, returns `SensorResult`.
+`(job_name, partition_key)`, returns `SensorResult`. Always returns
+`SensorResult` (never `SkipReason`) — empty `run_requests` when nothing is
+stale. The current code declares `-> SensorResult | SkipReason` but never
+returns `SkipReason`; the refactor drops it from the return type.
 
 ### `assets.py` (after)
 
@@ -328,13 +331,18 @@ Factory signature and asset metadata are unchanged.
 
 ## Testing
 
-Unit tests for pure-Python logic in `utils.py`:
+All Python files under `src/teamster/libraries/powerschool/sis/odbc/` must have
+unit tests. Test files live in `tests/libraries/powerschool/sis/odbc/`.
+
+### `utils.py`
 
 - **`format_oracle_timestamp()`** — given a float + timezone, assert the correct
   Oracle-compatible ISO string
 - **`get_partition_window()`** — given a partition key + each supported
   `partitions_def` type, assert correct `(start_value, end_value)` strings;
   assert `TypeError` for unsupported types
+- **`get_query_text()`** — assert correct SQL for each branch (no column,
+  start-only, start+end)
 - **`evaluate_asset_staleness()`** — mock
   `instance.get_latest_materialization_events()` and
   `instance.fetch_materializations()` for materialization lookups; mock
@@ -351,9 +359,55 @@ Unit tests for pure-Python logic in `utils.py`:
     checked
   - Non-partitioned with `partition_column` set: modified count == 0 but table
     count mismatch → stale (verifies check 2 falls through to check 3)
+- **`powerschool_connection()`** — mock SSH tunnel and DB connection to verify
+  cleanup on success, on connection failure, and on query error
 
-No unit tests for `powerschool_connection()` — lifecycle logic is
-straightforward and would require mocking subprocess behavior.
+### `schedules.py`
+
+- **`build_powerschool_sis_asset_schedule()`** — mock
+  `evaluate_asset_staleness()` to return controlled `StalenessResult` lists;
+  assert correct `RunRequest` grouping, run keys, and partition keys
+
+### `sensors.py`
+
+- **`build_powerschool_asset_sensor()`** — mock `evaluate_asset_staleness()` to
+  return controlled `StalenessResult` lists; assert correct `SensorResult` with
+  expected `RunRequest` grouping, job names, and run keys
+
+### `assets.py`
+
+- **`build_powerschool_table_asset()`** — mock SSH tunnel, DB connection, and
+  `execute_query()` to return a fixture Avro file; assert correct `Output`
+  metadata (records, digest, timestamp); test partition window delegation to
+  `get_partition_window()`
+
+### `resources.py`
+
+- **`PowerSchoolODBCResource.execute_query()`** — mock `oracledb.Connection` and
+  cursor; assert correct return for tuple-mode (fetchall) and avro-mode (file
+  output); verify cursor prefetchrows/arraysize are set
+- **`PowerSchoolODBCResource.connect()`** — mock `oracledb.connect()`; assert
+  connection returned with correct params
+- **`PowerSchoolODBCResource.result_to_avro()`** — mock cursor fetchmany; assert
+  Avro file written with correct schema and records
+
+### Existing integration tests
+
+Reevaluate the existing integration tests in `tests/` for best practices:
+
+- `tests/assets/test_assets_powerschool_sis.py`
+- `tests/resources/test_resource_powerschool_sis.py`
+- `tests/schedules/test_schedules_powerschool_sis.py`
+- `tests/sensors/test_sensors_powerschool_sis.py`
+
+Review for: proper assertions (not just "runs without error"), clear test names,
+appropriate use of fixtures, separation of unit vs integration concerns, and
+removal of dead code. Refactor or archive as needed.
+
+## Docstrings
+
+All Python files under `src/teamster/libraries/powerschool/sis/odbc/` must have
+Google-style docstrings on all public functions, classes, and the module itself.
 
 ## Expected Outcome
 
