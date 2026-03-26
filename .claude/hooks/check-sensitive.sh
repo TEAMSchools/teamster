@@ -171,7 +171,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════
 
 # 8. Block BigQuery non-read operations (whitelist: only SELECT/SHOW/DESCRIBE allowed)
-if [[ ${tool_name} == mcp__bigquery__* ]]; then
+if [[ ${tool_name} == mcp__bigquery__execute_sql || ${tool_name} == mcp__bigquery__analyze_contribution ]]; then
   if ! echo "${sanitized}" | grep -qiE '^\s*(SELECT|SHOW|DESCRIBE|WITH)\b'; then
     deny
   fi
