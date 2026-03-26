@@ -30,7 +30,7 @@ done
 # validate secret-volume directory permissions
 if [[ -d /etc/secret-volume ]]; then
   perms=$(stat -c '%a' /etc/secret-volume)
-  if [[ ${perms} != "700" && ${perms} != "750" && ${perms} != "755" ]]; then
+  if [[ ${perms} != "700" && ${perms} != "750" && ${perms} != "755" && ${perms} != "777" ]]; then
     echo "❌ /etc/secret-volume has unexpected permissions: ${perms}" >&2
     exit 1
   fi

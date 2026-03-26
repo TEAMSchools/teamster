@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # inject 1Password secrets — only strip token from future shells if inject succeeded
-if source ./.devcontainer/scripts/inject-secrets.sh; then
+if ./.devcontainer/scripts/inject-secrets.sh; then
   echo 'export OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' >>/home/vscode/.bashrc
   echo 'export OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' >>/home/vscode/.profile
 fi
