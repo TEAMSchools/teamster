@@ -1,5 +1,5 @@
 select
-    * replace(
+    * replace (
         cast(points as numeric) as points,
         cast(points_possible as numeric) as points_possible,
         cast(percent_correct as numeric) as percent_correct,
