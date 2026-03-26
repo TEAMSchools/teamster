@@ -43,5 +43,5 @@ models:
         data_type: string
       - name: points
         data_type: bignumeric
-      - name: is_correct
-        data_type: boolean
+      - name: percent_correct
+        data_type: float64

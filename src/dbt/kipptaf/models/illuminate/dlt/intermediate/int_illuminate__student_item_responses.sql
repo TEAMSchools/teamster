@@ -22,7 +22,8 @@ select
     r.response,
 
     fr.points,
-    fr.points > 0 as is_correct,
+
+    safe_divide(fr.points, f.maximum) as percent_correct,
 from {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
 inner join
     {{ ref("stg_illuminate__dna_assessments__students_assessments_responses") }} as sar
@@ -35,6 +36,7 @@ inner join
     on sar.field_id = fr.field_id
     and sar.response_id = fr.response_id
     and sar.version_id = fr.version_id
+-- intentionally excludes responses to soft-deleted fields
 inner join
     {{ ref("stg_illuminate__dna_assessments__fields") }} as f
     on sar.field_id = f.field_id
