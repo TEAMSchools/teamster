@@ -152,10 +152,14 @@ Columns within a SELECT **must** follow this order — no interleaving:
 When a SELECT reads from a single table/CTE, do not prefix columns with the
 alias.
 
-### Documentation
+### YAML conventions
 
-Column-level documentation belongs in the model's properties YAML as a
-`description:` field, not as inline SQL comments.
+- Column-level documentation belongs in properties YAML as a `description:`
+  field, not as inline SQL comments.
+- Columns with `data_tests:` should be sorted to the top of the `columns:` list
+  for visibility.
+- Column renames for semantic clarity (e.g., boolean prefixing with `is_`,
+  reserved word aliases) belong in the staging model, not downstream.
 
 ### Legacy `base_` prefix
 

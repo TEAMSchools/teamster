@@ -9,9 +9,8 @@ models:
                 store_failures: true
       - name: assessment_id
         data_type: int64
-      - name: order
+      - name: field_order
         data_type: int64
-        quote: true
       - name: factor
         data_type: float64
       - name: maximum
@@ -32,7 +31,7 @@ models:
         data_type: string
       - name: sheet_responses
         data_type: string
-      - name: extra_credit
+      - name: is_extra_credit
         data_type: bool
       - name: item_rev_id
         data_type: int64
@@ -40,5 +39,5 @@ models:
         data_type: bool
       - name: field_type_id
         data_type: int64
-      - name: partial_score
+      - name: is_partial_score
         data_type: bool

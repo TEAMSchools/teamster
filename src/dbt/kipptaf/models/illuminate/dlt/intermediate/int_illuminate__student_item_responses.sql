@@ -7,12 +7,17 @@ select
     sa.updated_at,
 
     sar.student_assessment_response_id,
-    sar.version_id,
-    sar.field_id,
-    sar.response_id,
     sar.manual_score,
 
-    f.`order` as field_order,
+    f.sheet_label,
+    f.body,
+    f.maximum,
+    f.factor,
+    f.field_order,
+    f.is_rubric,
+    f.is_advanced,
+    f.is_extra_credit,
+    f.is_partial_score,
 
     r.response,
 

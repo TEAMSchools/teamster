@@ -1,6 +1,12 @@
 models:
   - name: int_illuminate__student_item_responses
     columns:
+      - name: student_assessment_response_id
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
       - name: student_assessment_id
         data_type: int64
       - name: student_id
@@ -13,22 +19,26 @@ models:
         data_type: timestamp
       - name: updated_at
         data_type: timestamp
-      - name: student_assessment_response_id
-        data_type: int64
-        data_tests:
-          - unique:
-              config:
-                store_failures: true
-      - name: version_id
-        data_type: int64
-      - name: field_id
-        data_type: int64
-      - name: response_id
-        data_type: int64
       - name: manual_score
         data_type: boolean
+      - name: sheet_label
+        data_type: string
+      - name: body
+        data_type: string
+      - name: maximum
+        data_type: float64
+      - name: factor
+        data_type: float64
       - name: field_order
         data_type: int64
+      - name: is_rubric
+        data_type: bool
+      - name: is_advanced
+        data_type: bool
+      - name: is_extra_credit
+        data_type: bool
+      - name: is_partial_score
+        data_type: bool
       - name: response
         data_type: string
       - name: points
