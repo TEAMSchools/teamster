@@ -41,6 +41,10 @@ passed it. `chunk()` from `core/utils/functions` returns `Iterator[list]`, not
 [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings).
 API reference URLs go in the extended description, never the summary line.
 
+`ScheduleEvaluationContext.log` and `SensorEvaluationContext.log` return
+`logging.Logger`; `AssetExecutionContext.log` returns `DagsterLogManager`. Use
+`logging.Logger` when a function accepts log from any context.
+
 ## Library Categories
 
 Libraries fall into four patterns based on how they ingest data:
