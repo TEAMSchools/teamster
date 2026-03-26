@@ -1,5 +1,6 @@
 """Unit tests for PowerSchool SIS ODBC utilities."""
 
+from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -10,6 +11,7 @@ from teamster.libraries.powerschool.sis.odbc.utils import (
     format_oracle_timestamp,
     get_partition_window,
     get_query_text,
+    powerschool_connection,
 )
 
 
@@ -101,3 +103,50 @@ class TestGetPartitionWindow:
         partitions_def = DailyPartitionsDefinition(start_date="2024-01-01")
         with pytest.raises(TypeError, match="Unsupported partitions_def type"):
             get_partition_window("2024-07-01", partitions_def)
+
+
+class TestPowerschoolConnection:
+    def _make_mocks(self):
+        ssh = MagicMock()
+        ssh.remote_host = "ps.example.com"
+        tunnel = MagicMock()
+        ssh.open_ssh_tunnel.return_value = tunnel
+
+        db = MagicMock()
+        conn = MagicMock()
+        db.connect.return_value = conn
+
+        log = MagicMock()
+
+        return ssh, db, log, tunnel, conn
+
+    def test_yields_connection_and_cleans_up(self):
+        ssh, db, log, tunnel, conn = self._make_mocks()
+
+        with powerschool_connection(ssh, db, log) as connection:
+            assert connection is conn
+
+        conn.close.assert_called_once()
+        tunnel.kill.assert_called_once()
+
+    def test_connection_failure_kills_tunnel(self):
+        ssh, db, log, tunnel, conn = self._make_mocks()
+        db.connect.side_effect = RuntimeError("connection refused")
+
+        with pytest.raises(RuntimeError, match="connection refused"):
+            with powerschool_connection(ssh, db, log):
+                pass
+
+        tunnel.kill.assert_called_once()
+        conn.close.assert_not_called()
+
+    def test_query_error_logs_and_cleans_up(self):
+        ssh, db, log, tunnel, conn = self._make_mocks()
+
+        with pytest.raises(ValueError, match="bad query"):
+            with powerschool_connection(ssh, db, log):
+                raise ValueError("bad query")
+
+        log.exception.assert_called_once()
+        conn.close.assert_called_once()
+        tunnel.kill.assert_called_once()

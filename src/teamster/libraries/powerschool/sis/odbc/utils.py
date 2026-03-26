@@ -4,6 +4,8 @@ Context managers, timestamp formatting, partition window calculation,
 and staleness evaluation logic shared across assets, schedules, and sensors.
 """
 
+from collections.abc import Generator
+from contextlib import contextmanager
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -12,6 +14,44 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy import text
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
+
+
+@contextmanager
+def powerschool_connection(
+    ssh_resource, db_resource, log
+) -> Generator[object, None, None]:
+    """Open an SSH tunnel and Oracle connection, with guaranteed cleanup.
+
+    Opens the SSH tunnel first, then the database connection. On success,
+    yields the connection. Cleans up both on exit.
+
+    If the connection fails, the tunnel is killed immediately. If an error
+    occurs during query execution, it is logged before re-raising. Connection
+    failures propagate without logging (Dagster handles them at the run level).
+
+    Args:
+        ssh_resource: SSHResource with open_ssh_tunnel() method.
+        db_resource: PowerSchoolODBCResource with connect() method.
+        log: Dagster logger (context.log).
+
+    Yields:
+        Open oracledb.Connection.
+    """
+    log.info(f"Opening SSH tunnel to {ssh_resource.remote_host}")
+    ssh_tunnel = ssh_resource.open_ssh_tunnel()
+    try:
+        connection = db_resource.connect()
+    except Exception:
+        ssh_tunnel.kill()
+        raise
+    try:
+        yield connection
+    except Exception:
+        log.exception("PowerSchool ODBC error")
+        raise
+    finally:
+        connection.close()
+        ssh_tunnel.kill()
 
 
 def format_oracle_timestamp(timestamp: float, tz: ZoneInfo) -> str:

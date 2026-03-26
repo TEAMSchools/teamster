@@ -92,6 +92,18 @@ changed queries against the schema source above.
 it back as `cursor` on the next call to page forward. Timestamp-based filtering
 is not supported by the API — paginate and filter client-side.
 
+### Diagnosing degraded assets
+
+1. Use `list_runs(statuses=["FAILURE"])` to find recent failures — more targeted
+   than `list_stale_assets` (which can exceed token limits at 1.8M+ chars).
+2. Use `get_run` for step keys and asset selection, then cross-reference
+   BigQuery source schemas (`get_table_info`) against dbt contract YAML files.
+3. Compute logs (`get_run_compute_logs`) return null for GKE-executed runs —
+   logs live on ephemeral pods and aren't persisted. Use BigQuery MCP and dbt
+   compilation as alternatives for diagnosing dbt failures.
+4. `get_run_logs` may return 400 — the `gql()` function swallows the response
+   body on HTTP errors, making the cause undiagnosable.
+
 ## BigQuery MCP
 
 The BigQuery MCP tool truncates results at 50 rows. When querying
