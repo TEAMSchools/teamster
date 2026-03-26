@@ -49,7 +49,7 @@ for project in "${DBT_PROJECTS[@]}"; do
 done
 
 echo -e "\n\033[1;34m▶ Committing changes\033[0m"
-git add -A
+git add -u
 git commit -m "chore: update dependencies"
 
 echo -e "\n\033[1;32m✔ All dependencies updated and committed\033[0m"
