@@ -21,6 +21,10 @@ with
             g.cumulative_y1_gpa_unweighted,
 
             e.academic_year,
+            e.region,
+            e.school_name,
+            e.student_number,
+            e.lastfirst,
             e.enroll_status,
             e.grade_level,
             e.year_in_school,
@@ -37,10 +41,11 @@ with
     )
 
 select
-    _dbt_source_relation,
-    studentid,
-    schoolid,
     academic_year,
+    region,
+    school_name,
+    student_number,
+    lastfirst as student_name,
     cumulative_y1_gpa,
     cumulative_y1_gpa_unweighted,
     grade_level,
@@ -52,10 +57,11 @@ where cumulative_y1_gpa_unweighted > cumulative_y1_gpa
 union all
 
 select
-    _dbt_source_relation,
-    studentid,
-    schoolid,
     academic_year,
+    region,
+    school_name,
+    student_number,
+    lastfirst as student_name,
     cumulative_y1_gpa,
     cumulative_y1_gpa_unweighted,
     grade_level,
