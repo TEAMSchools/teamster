@@ -1,3 +1,11 @@
+"""Dagster resource for PowerSchool SIS Oracle ODBC connections.
+
+Provides a ConfigurableResource that wraps oracledb to connect to the
+PowerSchool Oracle database, execute queries, and stream results to Avro
+block files. Requires an active SSH tunnel opened separately via
+SSHResource.open_ssh_tunnel() before connect() is called.
+"""
+
 import pathlib
 
 import fastavro
@@ -11,6 +19,24 @@ from teamster.libraries.powerschool.sis.odbc.schema import ORACLE_AVRO_SCHEMA_TY
 
 
 class PowerSchoolODBCResource(ConfigurableResource):
+    """Dagster resource for connecting to the PowerSchool SIS Oracle database.
+
+    Wraps oracledb to open cursors, execute SQL queries, and write results
+    to Avro block files using the column-type mapping in schema.py. Requires
+    an active SSH tunnel before connect() is called.
+
+    Attributes:
+        user: Oracle database username.
+        password: Oracle database password.
+        host: Hostname or IP of the Oracle listener (tunnel local endpoint).
+        port: Oracle listener port. Defaults to "1521".
+        service_name: Oracle service name identifying the target database.
+        expire_time: keepalive interval in minutes (0 = disabled).
+        retry_count: Number of connection retries on failure.
+        retry_delay: Seconds between connection retries.
+        tcp_connect_timeout: Seconds before a TCP connection attempt times out.
+    """
+
     user: str
     password: str
     host: str
@@ -25,6 +51,16 @@ class PowerSchoolODBCResource(ConfigurableResource):
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
+        """Initialise the resource before the first op/asset execution.
+
+        Disables LOB streaming (fetch_lobs = False so CLOBs/BLOBs are returned
+        as plain Python strings/bytes), stores the Dagster log manager, and
+        builds the ConnectParams object that connect() will use.
+
+        Args:
+            context: Dagster resource initialisation context providing the log
+                manager.
+        """
         defaults.fetch_lobs = False
 
         self._log = check.not_none(value=context.log)
@@ -42,6 +78,15 @@ class PowerSchoolODBCResource(ConfigurableResource):
         )
 
     def connect(self):
+        """Open and return an Oracle database connection.
+
+        Uses the ConnectParams built during setup_for_execution(). An active
+        SSH tunnel to the database host must already be established before
+        calling this method.
+
+        Returns:
+            An open oracledb Connection object.
+        """
         self._log.debug("Opening connection to database")
         return connect(params=self._connect_params)
 
@@ -54,6 +99,27 @@ class PowerSchoolODBCResource(ConfigurableResource):
         prefetch_rows: int = defaults.prefetchrows,
         array_size: int = defaults.arraysize,
     ):
+        """Execute a SQL query and return results in the requested format.
+
+        Opens a cursor on the given connection, applies prefetch/array-size
+        tuning, and executes the query. Returns either a list of tuples
+        (default) or an Avro file path (when output_format="avro").
+
+        Args:
+            connection: An open oracledb Connection returned by connect().
+            query: A SQLAlchemy Select or TextClause whose string representation
+                is passed to cursor.execute().
+            output_format: When set to "avro", results are streamed to an Avro
+                block file via result_to_avro() and the file path is returned.
+                Any other value (including None) returns a list of tuples.
+            batch_size: Number of rows fetched per batch when writing Avro output.
+            prefetch_rows: oracledb cursor prefetchrows tuning parameter.
+            array_size: oracledb cursor arraysize tuning parameter.
+
+        Returns:
+            A list of tuples when output_format is not "avro", or a
+            pathlib.Path pointing to the written Avro file otherwise.
+        """
         self._log.debug(f"Opening cursor on {connection.service_name}")
         cursor = connection.cursor()
 
@@ -106,6 +172,23 @@ class PowerSchoolODBCResource(ConfigurableResource):
         schema,
         data_filepath: pathlib.Path | None = None,
     ):
+        """Stream cursor rows into a Snappy-compressed Avro block file.
+
+        Writes an empty Avro container with the given schema first, then
+        appends batches of rows fetched from the cursor until the result set
+        is exhausted. The cursor's rowfactory must produce dicts (keyed by
+        lowercase column name) before this method is called.
+
+        Args:
+            cursor: An executed oracledb Cursor whose rowfactory returns dicts.
+            batch_size: Number of rows fetched per fastavro.writer() call.
+            schema: A parsed fastavro schema (from fastavro.parse_schema()).
+            data_filepath: Destination path for the Avro file. Defaults to
+                env/data.avro relative to the current working directory.
+
+        Returns:
+            A pathlib.Path pointing to the written Avro file.
+        """
         if data_filepath is None:
             data_filepath = pathlib.Path("env/data.avro").absolute()
 
