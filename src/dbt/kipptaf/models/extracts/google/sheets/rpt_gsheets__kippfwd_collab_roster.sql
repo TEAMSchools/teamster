@@ -174,4 +174,4 @@ left join
     on ktc.student_number = se.student_number
     and se.academic_year = {{ var("current_academic_year") }}
     and se.rn_year = 1
-    and se.enroll_status = 0
+where se.enroll_status = 0
