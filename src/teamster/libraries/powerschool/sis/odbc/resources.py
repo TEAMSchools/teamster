@@ -138,15 +138,23 @@ class PowerSchoolODBCResource(ConfigurableResource):
             elif isinstance(query, TextClause):
                 record_name = query.description
 
-            for name, type, _, _, _, _, _ in cursor.description:
-                columns.append(name.lower())
+            # trunk-ignore-begin(pyright): oracledb lacks type stubs; cursor.description elements are FetchInfo at runtime
+            for col_info in cursor.description or []:
+                col_name = col_info[0].lower()
+                col_type_name = col_info[1].name
+
+                columns.append(col_name)
                 fields.append(
                     {
-                        "name": name.lower(),
-                        "type": ["null", *ORACLE_AVRO_SCHEMA_TYPES.get(type.name, [])],
+                        "name": col_name,
+                        "type": [
+                            "null",
+                            *ORACLE_AVRO_SCHEMA_TYPES.get(col_type_name, []),
+                        ],
                         "default": None,
                     }
                 )
+            # trunk-ignore-end(pyright)
 
             cursor.rowfactory = lambda *args: dict(zip(columns, args, strict=False))
 
