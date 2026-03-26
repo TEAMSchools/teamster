@@ -26,12 +26,22 @@
 - `DAGSTER_CLOUD_API_TOKEN` is scoped to the `prerun` and `deploy` jobs only —
   do not move it to workflow-level `env`.
 
+## Teams and CODEOWNERS
+
+| Team                  | Repo role | CODEOWNERS scope                                                              |
+| --------------------- | --------- | ----------------------------------------------------------------------------- |
+| `admins`              | admin     | Global fallback (`*`)                                                         |
+| `platform`            | maintain  | `.github/`, `.devcontainer/`, `.claude/`, `.trunk/`, Dockerfile, scripts, MCP |
+| `data-engineers`      | write     | `src/teamster/`, tests                                                        |
+| `analytics-engineers` | maintain  | All `src/dbt/`                                                                |
+| `analysts`            | write     | kipptaf `models/extracts/`, `models/exposures/`                               |
+| `data-team`           | write     | docs                                                                          |
+
+- GitHub API uses `push` (not `write`) for the permission field when setting
+  team repo access.
+
 ## Other Files
 
-- `CODEOWNERS` — `@TEAMSchools/admins` owns everything by default;
-  `data-engineers` own `src/teamster/`, dbt projects, tests, scripts, and MCP;
-  `kipp-taf-admins` and `analytics-engineers` own kipptaf dbt subdirectories;
-  `data-team` owns docs.
 - `dependabot.yml` — daily `uv` ecosystem updates.
 - `pull_request_template.md` — checklist for PRs (Dagster, dbt, docs sections).
 - `actionlint.yaml` — self-hosted runner labels for actionlint.

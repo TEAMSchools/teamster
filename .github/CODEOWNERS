@@ -1,41 +1,25 @@
 # default owner
 * @TEAMSchools/admins
 
-# CI/CD and infrastructure
-/.github/ @TEAMSchools/admins
+# platform — CI/CD, devcontainer, hooks, scripts, MCP
+/.github/ @TEAMSchools/platform
+/.devcontainer/ @TEAMSchools/platform
+/.claude/ @TEAMSchools/platform
+/.trunk/ @TEAMSchools/platform
+/Dockerfile @TEAMSchools/platform
+/scripts/ @TEAMSchools/platform
+/mcp/ @TEAMSchools/platform
 
-# dagster code
+# data engineers — Dagster orchestration and tests
 /src/teamster/ @TEAMSchools/data-engineers
-
-# dbt code — regional projects
-/src/dbt/kippcamden/ @TEAMSchools/data-engineers
-/src/dbt/kippmiami/ @TEAMSchools/data-engineers
-/src/dbt/kippnewark/ @TEAMSchools/data-engineers
-/src/dbt/kipppaterson/ @TEAMSchools/data-engineers
-/src/dbt/kipptaf/ @TEAMSchools/kipp-taf-admins
-/src/dbt/kipptaf/models/extracts/ @TEAMSchools/analytics-engineers
-/src/dbt/kipptaf/models/marts/ @TEAMSchools/analytics-engineers
-/src/dbt/kipptaf/models/metrics/ @TEAMSchools/analytics-engineers
-/src/dbt/kipptaf/models/exposures/ @TEAMSchools/analytics-engineers
-
-# dbt code — source-specific projects
-/src/dbt/amplify/ @TEAMSchools/data-engineers
-/src/dbt/deanslist/ @TEAMSchools/data-engineers
-/src/dbt/edplan/ @TEAMSchools/data-engineers
-/src/dbt/finalsite/ @TEAMSchools/data-engineers
-/src/dbt/iready/ @TEAMSchools/data-engineers
-/src/dbt/overgrad/ @TEAMSchools/data-engineers
-/src/dbt/pearson/ @TEAMSchools/data-engineers
-/src/dbt/powerschool/ @TEAMSchools/data-engineers
-/src/dbt/renlearn/ @TEAMSchools/data-engineers
-/src/dbt/titan/ @TEAMSchools/data-engineers
-
-# tests
 /tests/ @TEAMSchools/data-engineers
 
-# scripts and MCP servers
-/scripts/ @TEAMSchools/data-engineers
-/mcp/ @TEAMSchools/data-engineers
+# analytics engineers — all dbt projects
+/src/dbt/ @TEAMSchools/analytics-engineers
 
-# docs
+# analysts — kipptaf extracts and exposures
+/src/dbt/kipptaf/models/extracts/ @TEAMSchools/analysts
+/src/dbt/kipptaf/models/exposures/ @TEAMSchools/analysts
+
+# docs — everyone
 /docs/ @TEAMSchools/data-team
