@@ -1,0 +1,20 @@
+select
+    field_id,
+    assessment_id,
+    `order` as field_order,
+    factor,
+    maximum,
+    created_at,
+    updated_at,
+    body,
+    sort_order,
+    is_rubric,
+    sheet_label,
+    sheet_responses,
+    extra_credit as is_extra_credit,
+    item_rev_id,
+    is_advanced,
+    field_type_id,
+    partial_score as is_partial_score,
+from {{ source("illuminate_dna_assessments", "fields") }}
+where deleted_at is null

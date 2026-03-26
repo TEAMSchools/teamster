@@ -1,0 +1,19 @@
+models:
+  - name: stg_illuminate__dna_assessments__responses
+    description: >-
+      Lookup table of response labels keyed by response_id. Values include
+      single letters (A–F), digits, multi-character codes, and free-text
+      entries.
+    columns:
+      - name: response_id
+        data_type: int64
+        description: Primary key.
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: response
+        data_type: string
+        description: >-
+          The response label or value (e.g., "A", "3", "ABE"). Not the full
+          answer text — see field_responses.choice for that.
