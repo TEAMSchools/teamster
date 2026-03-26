@@ -49,6 +49,17 @@
       "problemMatcher": []
     },
     {
+      "label": "Update: Dependencies",
+      "type": "shell",
+      "command": "bash .vscode/scripts/update-dependencies.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "dbt: Build Init",
       "type": "shell",
       "command": "bash .vscode/scripts/dbt-build-init.sh ${input:dbtProject}",
