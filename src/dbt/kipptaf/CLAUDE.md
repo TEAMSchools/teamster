@@ -99,10 +99,10 @@ Facebook, Illuminate Fivetran, Instagram.
 ## DLT Type Mapping
 
 DLT writes Postgres unbounded `numeric` as `decimal128(38, 18)` → BigQuery
-`BIGNUMERIC`. Staging contracts for DLT-sourced numeric columns must use
-`bignumeric`, not `numeric`. The `union_relations` macro in models like
-`int_illuminate__agg_student_responses` explicitly casts to `NUMERIC`,
-insulating downstream contracts from the type widening.
+`BIGNUMERIC`. Staging models that `SELECT *` from DLT sources must use
+`SELECT * REPLACE(cast(col as numeric) as col)` to narrow BIGNUMERIC columns
+back to NUMERIC. Without this, BIGNUMERIC propagates through `union_relations`
+and downstream enforced contracts. Keep property YAML contracts as `numeric`.
 
 ## Cross-Project Refs
 
