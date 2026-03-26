@@ -17,6 +17,7 @@ never bare `python`. Shell scripts run directly: `bash scripts/<name>.sh`.
 | `gen-automations-doc.py` | Regenerate `docs/reference/automations.md`          |
 | `json2py.py`             | Generate Pydantic models from JSON schemas          |
 | `migrate-asset-key.py`   | Migrate asset materialization history to new key    |
+| `update.py`              | Update all project dependencies (uv, Trunk, dbt)    |
 
 ## Prerequisites
 
@@ -29,5 +30,4 @@ never bare `python`. Shell scripts run directly: `bash scripts/<name>.sh`.
 
 - `migrate-asset-key.py` creates runless materialization events — automation
   cursors will not recognize migrated events.
-- `update.py` — removed; replaced by `.vscode/scripts/update-dependencies.sh`
-  (VS Code task "Update: Dependencies").
+- `update.py` upgrades all 15 dbt projects sequentially — slow operation.

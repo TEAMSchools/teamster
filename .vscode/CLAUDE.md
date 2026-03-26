@@ -13,13 +13,6 @@
 - VS Code task shells do not inherit `~/.local/bin` in PATH — `uv` is not
   available unless you `source "${HOME}/.local/bin/env"` first
 
-## Task: Update Dependencies
-
-`update-dependencies.sh` replaces `scripts/update.py`. Creates a dated branch,
-runs `uv lock --upgrade`, `uv sync`, `trunk upgrade -y`, `dbt deps --upgrade`
-for all 15 dbt projects, then commits. Branch name:
-`<user>/chore/update-dependencies-<YYYY-MM-DD>`.
-
 ## GCloud Auth
 
 ### Access Model
