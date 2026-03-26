@@ -37,6 +37,10 @@ after container start if env vars or secrets are missing.
 
 ## Quirks
 
+- **Claude's Bash shell lacks injected secrets**: `inject-secrets.sh` secrets
+  (e.g., `ILLUMINATE_DB_DRIVERNAME`) are only available in the user's terminal
+  session, not in Claude Code's Bash tool. Commands requiring these env vars
+  (e.g., `uv run dagster definitions validate`) must be run by the user.
 - **`apt-get` and `DAC_OVERRIDE`**: devcontainer features (1Password,
   gcloud-cli) run `apt-get update` during `docker build`, leaving stale files in
   `/var/lib/apt/lists/partial/` owned by `_apt:root` with mode `0700`.
