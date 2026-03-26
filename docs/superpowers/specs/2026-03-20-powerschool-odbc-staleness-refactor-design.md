@@ -209,7 +209,7 @@ Internally structured with private helpers to keep nesting ≤3:
 
 #### `_evaluate_non_partitioned`
 
-```
+```python
 _evaluate_non_partitioned(
     asset, latest_event, connection, db_powerschool, execution_timezone, log
 ) -> StalenessResult | None
@@ -237,7 +237,7 @@ Returns `None` if not stale.
 
 #### `_evaluate_partitioned`
 
-```
+```python
 _evaluate_partitioned(
     asset, partition_keys, connection, db_powerschool,
     execution_timezone, instance, log
@@ -255,7 +255,7 @@ non-`None` results.
 
 #### `_evaluate_partition`
 
-```
+```python
 _evaluate_partition(
     asset, partition_key, first_partition_key, last_partition_key,
     connection, db_powerschool, execution_timezone, instance, log
