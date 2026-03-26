@@ -25,6 +25,7 @@ select
 
     safe_divide(fr.points, f.maximum) as percent_correct,
 from {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
+-- inner joins drop responses to unloaded or unscored items
 inner join
     {{ ref("stg_illuminate__dna_assessments__students_assessments_responses") }} as sar
     on sa.student_assessment_id = sar.student_assessment_id

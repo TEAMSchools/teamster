@@ -107,6 +107,8 @@ data_tests:
 
 - **Soft-delete filters**: Apply in the **staging model**, not in downstream
   `ON` clauses. Deleted rows should never reach intermediate or mart models.
+  Omit columns whose value is predetermined by the WHERE filter (e.g.,
+  `deleted_at` after `WHERE deleted_at IS NULL`) — they add no signal.
 - **No `GROUP BY` without aggregation** — use `DISTINCT` instead (see next rule
   for deduplication constraints).
 - **No `SELECT DISTINCT` for deduplication** — use `dbt_utils.deduplicate()`

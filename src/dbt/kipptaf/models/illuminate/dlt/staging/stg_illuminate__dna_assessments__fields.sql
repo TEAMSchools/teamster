@@ -6,7 +6,6 @@ select
     maximum,
     created_at,
     updated_at,
-    deleted_at,
     body,
     sort_order,
     is_rubric,

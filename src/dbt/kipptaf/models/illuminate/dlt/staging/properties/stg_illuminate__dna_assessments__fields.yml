@@ -36,11 +36,6 @@ models:
       - name: updated_at
         data_type: timestamp
         description: When the field was last updated.
-      - name: deleted_at
-        data_type: timestamp
-        description: >-
-          Soft-delete timestamp. Always NULL in this model (filtered in WHERE
-          clause). Retained for contract enforcement.
       - name: body
         data_type: string
         description: >-
