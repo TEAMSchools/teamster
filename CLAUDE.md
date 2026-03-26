@@ -32,9 +32,9 @@ from 1Password at container start.
   - Branch naming: `<gh-username>/<commit-type>/<brief-description>`. Get the
     username from `gh api user -q .login`. For AI-assisted branches, prefix the
     description with `claude-`.
-  - **Staging protected paths**: Use bare `git add -u` (no path argument) —
-    naming protected paths explicitly (e.g., `git add .claude/settings.json`)
-    triggers the hook and gets blocked.
+  - **Staging**: Prefer `git add -u` (no path argument) — naming protected paths
+    explicitly triggers the hook, and `git add -A` can stage unrelated files on
+    dirty checkouts.
 
 - **GitHub**:
   - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as
