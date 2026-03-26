@@ -1,7 +1,6 @@
 with
     gpa_with_enrollment as (
         select
-            g._dbt_source_relation,
             g.studentid,
             g.schoolid,
             g.cumulative_y1_gpa,
