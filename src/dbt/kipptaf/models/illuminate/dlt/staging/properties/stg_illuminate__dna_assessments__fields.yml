@@ -7,21 +7,37 @@ models:
           - unique:
               config:
                 store_failures: true
-      - name: version_id
-        data_type: int64
-      - name: field_type_id
+      - name: assessment_id
         data_type: int64
       - name: order
         data_type: int64
-      - name: body
-        data_type: string
-      - name: deleted_at
-        data_type: timestamp
+      - name: factor
+        data_type: float64
+      - name: maximum
+        data_type: float64
       - name: created_at
         data_type: timestamp
       - name: updated_at
         data_type: timestamp
+      - name: deleted_at
+        data_type: timestamp
+      - name: body
+        data_type: string
       - name: sort_order
-        data_type: array<int64>
+        data_type: string
+      - name: is_rubric
+        data_type: bool
+      - name: sheet_label
+        data_type: string
       - name: sheet_responses
-        data_type: array<string>
+        data_type: string
+      - name: extra_credit
+        data_type: bool
+      - name: item_rev_id
+        data_type: int64
+      - name: is_advanced
+        data_type: bool
+      - name: field_type_id
+        data_type: int64
+      - name: partial_score
+        data_type: bool

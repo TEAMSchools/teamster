@@ -5,13 +5,15 @@
 Teamster is a data engineering platform for KIPP TEAM & Family Schools (Newark,
 Camden, and Paterson, NJ & Miami, FL) built on **Dagster** (orchestration),
 **dbt** (transformations), and **Google BigQuery** (warehouse), with Google
-Cloud Storage (GCS) as the intermediate storage layer.
+Cloud Storage (GCS) as the intermediate storage layer. Python ≥3.13.
+
+Production runs on **GKE** (Google Kubernetes Engine) via Dagster Cloud.
+Development uses **GitHub Codespaces** (devcontainer) — secrets are injected
+from 1Password at container start.
 
 ## Working Conventions
 
-- **Python execution**: Always use `uv run` — never bare `python` or `python3`,
-  including inline one-liners (`uv run python -c "..."`, not
-  `python3 -c "..."`). The project environment is managed by uv.
+- **Python execution**: Always `uv run` — never bare `python` or `python3`.
 
 - **Built-in tools over Bash**: Never use Bash for file I/O (read, search, edit,
   write) — use the dedicated tool. No exceptions for convenience, pipes, or
@@ -63,18 +65,3 @@ guidance in the nearest subdirectory CLAUDE.md, not here.
 **You MUST read the relevant CLAUDE.md file before doing any work in a
 subdirectory — reading, explaining, reviewing, or modifying code. Do NOT skip
 this step.**
-
-| Path                      | When                               |
-| ------------------------- | ---------------------------------- |
-| `src/teamster/CLAUDE.md`  | Dagster code                       |
-| `src/dbt/CLAUDE.md`       | dbt models                         |
-| `.vscode/CLAUDE.md`       | VS Code tasks/scripts              |
-| `.claude/CLAUDE.md`       | hooks, deny rules, protected paths |
-| `.devcontainer/CLAUDE.md` | Codespace setup                    |
-| `.k8s/CLAUDE.md`          | GKE setup                          |
-| `.trunk/CLAUDE.md`        | linting config                     |
-| `tests/CLAUDE.md`         | testing                            |
-| `scripts/CLAUDE.md`       | project utilities                  |
-| `mcp/CLAUDE.md`           | MCP servers/tools                  |
-| `docs/CLAUDE.md`          | MkDocs documentation site          |
-| Any subdirectory          | that directory's CLAUDE.md         |
