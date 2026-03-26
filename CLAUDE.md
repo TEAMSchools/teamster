@@ -13,7 +13,8 @@ from 1Password at container start.
 
 ## Working Conventions
 
-- **Python execution**: Always `uv run` — never bare `python` or `python3`.
+- **Python execution**: Always `uv run` — never bare `python`, `python3`, or
+  venv-installed tools (`dbt`, `dagster`, etc.).
 
 - **Built-in tools over Bash**: Never use Bash for file I/O (read, search, edit,
   write) — use the dedicated tool. No exceptions for convenience, pipes, or
