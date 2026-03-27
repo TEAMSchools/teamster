@@ -55,10 +55,13 @@ from 1Password at container start.
      brainstorms and for planned work. Quick fixes and small changes do not
      require an issue.
   3. **Ask the user: worktree or branch switch?** Do not choose on their behalf.
-     - **Worktree** — stay on `main`, work in `.worktrees/<branch>` (isolated,
-       supports parallel work, but IDE tooling stays on the main workspace)
-     - **Branch switch** — check out the feature branch in the primary workspace
-       (simpler, full IDE support, but blocks other branch work)
+     - **Worktree** — work in `.worktrees/<branch>` while main workspace stays
+       on `main`. Enables parallel work: compare behavior across branches
+       side-by-side, start new tasks without waiting on open PRs, run subagents
+       on isolated branches. Downside: IDE tooling stays on the main workspace.
+     - **Branch switch** — check out the feature branch in the primary
+       workspace. Full IDE support, but blocks other branch work until switch
+       back.
   4. Create the branch. When an issue exists, use
      `gh issue develop <number> --name <branch> --checkout`. For worktrees with
      an issue, create the branch first with `gh issue develop`, then
