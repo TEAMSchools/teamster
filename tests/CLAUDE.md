@@ -29,6 +29,10 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   `utils.py` for SSH/DB resource helpers (require env vars).
 - **Archived tests**: `_test_` prefix in `archive/` subdirectories — ignored by
   pytest by convention, not markers.
+- **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields inside
+  `build_resources()`. For non-`str` fields (e.g. `int` ports), use
+  `int(check.not_none(EnvVar("X").get_value()))` — `EnvVar` resolves lazily, so
+  `int(EnvVar("X"))` casts the marker object, not the value.
 - `dagster definitions validate` requires env vars from `.env` (injected from
   1Password at container start). The hook blocks reading `.env`, so validation
   fails in Claude sessions — this is expected, not a code issue.

@@ -1,6 +1,7 @@
 import logging
 
 from dagster import EnvVar, build_resources
+from dagster_shared import check
 from sqlalchemy import text
 
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
@@ -13,7 +14,7 @@ def test_powerschool_odbc_resource_connects_and_queries():
         resources={
             "ssh_powerschool": SSHResource(
                 remote_host=EnvVar("PS_SSH_HOST"),
-                remote_port=int(EnvVar("PS_SSH_PORT")),
+                remote_port=int(check.not_none(EnvVar("PS_SSH_PORT").get_value())),
                 username=EnvVar("PS_SSH_USERNAME"),
                 tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
             ),
