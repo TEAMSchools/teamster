@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook>
+  <datasources>
+    <datasource caption='rpt_tableau__grades (kipptaf_tableau)' name='federated.ds1'>
+      <column caption='gpa_points' datatype='real' name='[gpa_points]' role='measure' />
+      <column caption='credit_hours' datatype='integer' name='[credit_hours]' role='measure' />
+      <column caption='GPA Weighted' datatype='real' name='[Calculation_100]' role='measure'>
+        <calculation class='tableau' formula='SUM([gpa_points] * [credit_hours]) / SUM([credit_hours])' />
+      </column>
+    </datasource>
+
+    <datasource caption='rpt_tableau__attendance (kipptaf_tableau)' name='federated.ds2'>
+      <column caption='is_present' datatype='boolean' name='[is_present]' role='measure' />
+      <column caption='student_name' datatype='string' name='[student_name]' role='dimension' />
+    </datasource>
+
+    <!-- Duplicate datasource (same caption, should be skipped) -->
+    <datasource caption='rpt_tableau__grades (kipptaf_tableau)' name='federated.ds1_copy'>
+      <column caption='gpa_points' datatype='real' name='[gpa_points]' role='measure' />
+    </datasource>
+
+    <!-- Parameters -->
+    <datasource caption='Parameters' name='Parameters'>
+      <column caption='School Filter' datatype='string' name='[Parameter 1]' role='dimension'>
+        <calculation class='tableau' formula='&quot;All Schools&quot;' />
+      </column>
+      <column caption='Year' datatype='integer' name='[Parameter 2]' role='dimension'>
+        <calculation class='tableau' formula='2025' />
+      </column>
+    </datasource>
+  </datasources>
+
+  <worksheets>
+    <worksheet name='Grades'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='rpt_tableau__grades (kipptaf_tableau)' name='federated.ds1' />
+          </datasources>
+          <datasource-dependencies datasource='federated.ds1'>
+            <column caption='gpa_points' datatype='real' name='[gpa_points]' />
+            <column caption='credit_hours' datatype='integer' name='[credit_hours]' />
+            <column caption='GPA Weighted' datatype='real' name='[Calculation_100]' />
+          </datasource-dependencies>
+          <rows>[federated.ds1].AVG:[gpa_points]</rows>
+          <cols>[federated.ds1].SUM:[Calculation_100]</cols>
+        </view>
+      </table>
+    </worksheet>
+    <worksheet name='Attendance'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='rpt_tableau__attendance (kipptaf_tableau)' name='federated.ds2' />
+          </datasources>
+          <datasource-dependencies datasource='federated.ds2'>
+            <column caption='is_present' datatype='boolean' name='[is_present]' />
+            <column caption='student_name' datatype='string' name='[student_name]' />
+          </datasource-dependencies>
+          <rows>[federated.ds2].[student_name]</rows>
+          <cols>[federated.ds2].SUM:[is_present]</cols>
+        </view>
+      </table>
+    </worksheet>
+  </worksheets>
+</workbook>

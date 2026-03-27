@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook>
+  <datasources>
+    <datasource caption='rpt_tableau__test_dashboard (kipptaf_tableau)' name='federated.abc123'>
+      <!-- Internal system fields (should be skipped) -->
+      <column caption='' datatype='string' name='[:internal_field]' role='dimension' />
+      <column caption='' datatype='integer' name='[Number of Records]' role='measure' />
+
+      <!-- Calculation name map entries -->
+      <column caption='Attendance Rate' datatype='real' name='[Calculation_1234]' role='measure'>
+        <calculation class='tableau' formula='SUM([is_present]) / COUNT([student_number])' />
+      </column>
+
+      <!-- Plain columns -->
+      <column caption='student_number' datatype='integer' name='[student_number]' role='dimension' />
+      <column caption='grade_level' datatype='integer' name='[grade_level]' role='dimension' />
+
+      <!-- LOD expression -->
+      <column caption='Student Avg' datatype='real' name='[Calculation_5678]' role='measure'>
+        <calculation class='tableau' formula='{ FIXED [student_number] : AVG([grade_points]) }' />
+      </column>
+    </datasource>
+
+    <!-- Parameters datasource -->
+    <datasource caption='Parameters' name='Parameters'>
+      <column caption='Selected Term' datatype='string' name='[Parameter 1]' role='dimension'>
+        <calculation class='tableau' formula='&quot;Q3&quot;' />
+      </column>
+    </datasource>
+  </datasources>
+
+  <worksheets>
+    <worksheet name='Overview'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='rpt_tableau__test_dashboard (kipptaf_tableau)' name='federated.abc123' />
+          </datasources>
+          <datasource-dependencies datasource='federated.abc123'>
+            <column caption='student_number' datatype='integer' name='[student_number]' />
+            <column caption='grade_level' datatype='integer' name='[grade_level]' />
+            <column caption='Attendance Rate' datatype='real' name='[Calculation_1234]' />
+            <column caption='Student Avg' datatype='real' name='[Calculation_5678]' />
+          </datasource-dependencies>
+          <rows>[federated.abc123].[student_number] [federated.abc123].[grade_level]</rows>
+          <cols>[federated.abc123].SUM:[Calculation_1234]</cols>
+        </view>
+      </table>
+    </worksheet>
+    <worksheet name='Detail'>
+      <table>
+        <view>
+          <datasources>
+            <datasource caption='rpt_tableau__test_dashboard (kipptaf_tableau)' name='federated.abc123' />
+          </datasources>
+          <datasource-dependencies datasource='federated.abc123'>
+            <column caption='student_number' datatype='integer' name='[student_number]' />
+            <column caption='Attendance Rate' datatype='real' name='[Calculation_1234]' />
+          </datasource-dependencies>
+          <rows>[federated.abc123].[student_number]</rows>
+          <cols>[federated.abc123].AVG:[Calculation_1234]</cols>
+        </view>
+      </table>
+    </worksheet>
+  </worksheets>
+</workbook>
