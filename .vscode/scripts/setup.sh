@@ -24,12 +24,6 @@ if [[ -z ${GITHUB_USER-} ]]; then
   grep -q "export GITHUB_USER=" ~/.bashrc || echo "export GITHUB_USER=${GITHUB_USER}" >>~/.bashrc
 fi
 
-if ! gcloud auth application-default print-access-token >/dev/null 2>&1; then
-  bash "${SCRIPT_DIR}/gcloud-application-default-login.sh"
-else
-  echo -e "\033[1;32m✔ GCloud authenticated\033[0m"
-fi
-
 # On a fresh rebuild the Claude Code extension may still be installing when
 # this task fires. Poll until the binary appears (up to ~5 minutes).
 if [[ -z ${CLAUDE} ]]; then
@@ -78,6 +72,12 @@ if [[ -n ${CLAUDE} ]]; then
       done
     fi
   fi
+fi
+
+if ! gcloud auth application-default print-access-token >/dev/null 2>&1; then
+  bash "${SCRIPT_DIR}/gcloud-application-default-login.sh"
+else
+  echo -e "\033[1;32m✔ GCloud authenticated\033[0m"
 fi
 
 bash "${SCRIPT_DIR}/check-dbt-dev-datasets.sh"

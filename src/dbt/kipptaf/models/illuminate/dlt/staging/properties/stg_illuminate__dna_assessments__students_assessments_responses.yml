@@ -1,0 +1,35 @@
+models:
+  - name: stg_illuminate__dna_assessments__students_assessments_responses
+    description: >-
+      Individual student responses to assessment questions. One row per student
+      per field (question) per assessment attempt, linking to the response
+      chosen and the assessment version.
+    columns:
+      - name: student_assessment_response_id
+        data_type: int64
+        description: Primary key (autoincremented).
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: assessment_id
+        data_type: int64
+        description: FK to assessments.
+      - name: student_assessment_id
+        data_type: int64
+        description:
+          FK to students_assessments — the student's assessment sitting.
+      - name: field_id
+        data_type: int64
+        description: FK to fields — the question answered.
+      - name: response_id
+        data_type: int64
+        description: FK to responses — the answer chosen.
+      - name: version_id
+        data_type: int64
+        description:
+          Assessment version, used to join field_responses scoring rubric.
+      - name: manual_score
+        data_type: boolean
+        description: >-
+          Whether this response was manually scored. NULL when unscored.

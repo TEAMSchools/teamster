@@ -1,0 +1,74 @@
+models:
+  - name: stg_illuminate__dna_assessments__fields
+    description: >-
+      Assessment question (field) metadata including ordering, point maximums,
+      scoring flags, and question body. Soft-delete filtered — only active
+      fields are included.
+    columns:
+      - name: field_id
+        data_type: int64
+        description: Primary key.
+        data_tests:
+          - unique:
+              config:
+                store_failures: true
+      - name: assessment_id
+        data_type: int64
+        description:
+          FK to assessments — the assessment this question belongs to.
+      - name: field_order
+        data_type: int64
+        description: >-
+          Display order of this question within the assessment. Renamed from
+          source column `order` (BigQuery reserved word).
+      - name: factor
+        data_type: bignumeric
+        description: >-
+          Weight multiplier applied to points.
+      - name: maximum
+        data_type: bignumeric
+        description: >-
+          Maximum points possible for this question. Used as the denominator in
+          percent_correct calculations downstream.
+      - name: created_at
+        data_type: timestamp
+        description: When the field was created.
+      - name: updated_at
+        data_type: timestamp
+        description: When the field was last updated.
+      - name: body
+        data_type: string
+        description: >-
+          Question text (HTML). Sparsely populated — most questions store their
+          body elsewhere.
+      - name: sort_order
+        data_type: string
+        description: Sort order metadata (string-encoded).
+      - name: is_rubric
+        data_type: bool
+        description: Whether this field uses rubric-based scoring.
+      - name: sheet_label
+        data_type: string
+        description: Label for the answer sheet column.
+      - name: sheet_responses
+        data_type: string
+        description: Expected response options for the answer sheet.
+      - name: is_extra_credit
+        data_type: bool
+        description: >-
+          Whether this question is extra credit. Renamed from source column
+          `extra_credit`.
+      - name: item_rev_id
+        data_type: int64
+        description: Item revision ID.
+      - name: is_advanced
+        data_type: bool
+        description: Whether this is an advanced-level question.
+      - name: field_type_id
+        data_type: int64
+        description: FK to field types (e.g., multiple choice, open response).
+      - name: is_partial_score
+        data_type: bool
+        description: >-
+          Whether partial credit scoring is enabled. Renamed from source column
+          `partial_score`.

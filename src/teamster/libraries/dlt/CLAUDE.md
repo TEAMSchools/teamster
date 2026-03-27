@@ -37,3 +37,12 @@ using a vendored DLT Zendesk pipeline.
 
 All DLT assets use `DagsterDltResource` (from `dagster-dlt`) and write directly
 to BigQuery — they do not go through the GCS IO managers.
+
+### Illuminate: unbounded Postgres `numeric`
+
+Postgres `numeric` with no precision/scale reflects as `precision=None` in
+SQLAlchemy. DLT defaults to `decimal128(38, 9)`, which truncates values with
+
+> 9 decimal places and raises `PyToArrowConversionException`.
+> `unbounded_numeric_adapter` in `illuminate/assets.py` handles this via
+> `type_adapter_callback`, widening to `decimal128(38, 18)`.

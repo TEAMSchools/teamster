@@ -36,7 +36,7 @@ server = Server("dagster-plus")
 
 def gql(query: str, variables: dict[str, Any] | None = None) -> dict[str, Any]:
     """Execute a GraphQL query against the Dagster+ API."""
-    with httpx.Client(timeout=30) as client:
+    with httpx.Client(timeout=60) as client:
         response = client.post(
             GRAPHQL_URL,
             json={"query": query, "variables": variables or {}},
@@ -45,7 +45,10 @@ def gql(query: str, variables: dict[str, Any] | None = None) -> dict[str, Any]:
                 "Content-Type": "application/json",
             },
         )
-        response.raise_for_status()
+        if not response.is_success:
+            raise RuntimeError(
+                f"Dagster API {response.status_code}: {response.text[:500]}"
+            )
         data = response.json()
         if "errors" in data:
             raise RuntimeError(f"GraphQL errors: {data['errors']}")
