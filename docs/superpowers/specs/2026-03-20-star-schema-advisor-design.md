@@ -369,9 +369,10 @@ exactly which files changed:
 
 **Adding to an existing mart:**
 
-- Add the column to the SQL `SELECT` clause following column ordering
-  convention: plain refs → simple functions → nested functions → logicals → CASE
-  → window functions
+- Add the column to the SQL `SELECT` clause following the column ordering in
+  `src/dbt/CLAUDE.md`: plain refs (grouped by source table in join order,
+  separated by blank lines) → constants → simple functions → nested functions →
+  logicals → CASE → window functions
 - Add a corresponding entry to the properties YAML (`name`, `data_type`,
   optional `description`)
 - Follow `.trunk/config/.sqlfluff` style: trailing commas, single quotes, max 88
@@ -615,9 +616,9 @@ BI tool.
 - **Standalone script.** `tableau-analyze-workbook.py` is a new standalone
   script with no Dagster dependencies. It reads credentials directly from
   environment variables.
-- **One datasource per run.** Multi-datasource workbooks are handled by running
-  the command multiple times; each run produces a separate report with a
-  datasource slug in the filename.
+- **One datasource at a time.** Multi-datasource workbooks are processed
+  sequentially within a single session (see Step 8); each datasource produces
+  its own report with a datasource slug in the filename.
 
 ---
 
