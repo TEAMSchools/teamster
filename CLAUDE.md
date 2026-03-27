@@ -21,6 +21,9 @@ from 1Password at container start.
   one-liners. Bash is only for commands with no dedicated tool (`git`, `uv run`,
   `gh`, `docker`, `trunk`, plain `ls`).
 
+- **Docs**: When the user says "docs", they mean the `docs/` folder (MkDocs
+  site), not CLAUDE.md files.
+
 - **Verify before claiming**: Do not extrapolate third-party tool behavior from
   general knowledge — read the actual source. Proposed code must match the
   discussion; do not present fixes that contradict what was just agreed on.
@@ -48,6 +51,15 @@ from 1Password at container start.
   `gh issue develop <number> --name <branch> --checkout`. Design documents
   (`docs/superpowers/plans/`, `docs/superpowers/specs/`) follow the same flow:
   create the issue, develop the branch, then commit.
+
+- **Workflow choice**: Before starting feature work, ask the user:
+  1. **Worktree** — stay on `main`, work in `.worktrees/<branch>` (isolated,
+     supports parallel work, but IDE tooling stays on the main workspace)
+  2. **Branch switch** — check out the feature branch in the primary workspace
+     (simpler, full IDE support, but blocks other branch work) When using
+     worktrees and an issue exists, create the branch first with
+     `gh issue develop`, then `git worktree add .worktrees/<branch> <branch>`.
+     Without an issue, use `git worktree add .worktrees/<branch> -b <branch>`.
 
 - **Claude CLI**: The binary is provided by the VS Code extension (under
   `~/.vscode-remote/extensions/`) and is not on `$PATH`. It cannot be invoked

@@ -5,10 +5,7 @@ models:
       - name: commlog_key
         data_type: string
         tests:
-          - unique:
-              config:
-                severity: Warn
-                store_failures: true
+          - unique
 
       - name: student_number
         data_type: int64

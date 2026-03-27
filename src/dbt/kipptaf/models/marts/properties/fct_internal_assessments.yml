@@ -133,7 +133,4 @@ models:
         data_type: string
         description: ""
         tests:
-          - unique:
-              config:
-                severity: Warn
-                store_failures: true
+          - unique

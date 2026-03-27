@@ -7,7 +7,7 @@ models:
               - ap_number_ap_id
               - enrollment_school_year
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: ap_number_ap_id
         data_type: string
@@ -16,9 +16,6 @@ models:
               arguments:
                 to: ref("stg_google_sheets__collegeboard__ap_id_crosswalk")
                 field: college_board_id
-              config:
-                store_failures: true
-                severity: warn
       - name: enrollment_school_year
         data_type: int64
       - name: student_identifier

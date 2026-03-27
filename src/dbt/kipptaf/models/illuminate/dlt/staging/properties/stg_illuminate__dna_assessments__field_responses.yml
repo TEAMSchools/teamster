@@ -13,7 +13,7 @@ models:
               - response_id
               - version_id
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: field_response_id
         data_type: int64

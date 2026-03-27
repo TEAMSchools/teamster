@@ -246,7 +246,7 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: lep_status
         data_type: boolean
       - name: is_homeless

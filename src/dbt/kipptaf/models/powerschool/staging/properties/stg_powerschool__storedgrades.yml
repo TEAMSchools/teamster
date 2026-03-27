@@ -10,7 +10,7 @@ models:
               - _dbt_source_relation
               - dcid
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: dcid
         data_type: int64

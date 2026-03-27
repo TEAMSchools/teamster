@@ -9,4 +9,4 @@ models:
               - _dbt_source_relation
               - id
           config:
-            store_failures: true
+            severity: error

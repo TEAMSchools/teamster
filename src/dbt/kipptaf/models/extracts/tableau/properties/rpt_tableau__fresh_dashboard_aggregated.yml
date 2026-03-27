@@ -16,7 +16,7 @@ models:
               - grouped_status_timeframe
               - latest_status
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: academic_year
         data_type: int64

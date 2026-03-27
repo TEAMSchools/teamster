@@ -9,4 +9,4 @@ models:
               - powerschool_student_number
               - rn_exam_number
           config:
-            store_failures: true
+            severity: error

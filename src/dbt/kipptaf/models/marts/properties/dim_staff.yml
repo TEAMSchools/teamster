@@ -8,10 +8,7 @@ models:
       - name: staff_history_key
         data_type: string
         tests:
-          - unique:
-              config:
-                severity: warn
-                store_failures: true
+          - unique
 
       - name: marts_effective_date_start
         data_type: timestamp

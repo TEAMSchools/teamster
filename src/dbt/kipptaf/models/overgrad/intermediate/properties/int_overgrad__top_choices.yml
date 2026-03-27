@@ -5,15 +5,14 @@ models:
       and application outcomes from KIPPADB. One row per student. When a student
       has tagged multiple schools with the same rank, the first school
       alphabetically is used for all rank-specific columns.
-    data_tests:
-      - unique:
-          column_name: contact_id
-          config:
-            store_failures: true
     columns:
       - name: contact_id
         data_type: string
         description: Salesforce contact ID.
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: has_overgrad_1st_choice
         data_type: boolean
         description: >
