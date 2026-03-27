@@ -4,7 +4,7 @@ models:
     columns:
       - name: student_enrollments_key
         data_type: string
-        tests:
+        data_tests:
           - unique
 
       - name: student_number
@@ -87,3 +87,15 @@ models:
 
       - name: most_recent_grade_level
         data_type: int64
+
+      - name: student_name
+        data_type: string
+
+      - name: team
+        data_type: string
+
+      - name: is_counseling_services
+        data_type: boolean
+
+      - name: is_student_athlete
+        data_type: boolean

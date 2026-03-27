@@ -4,7 +4,7 @@ models:
     columns:
       - name: attendance_key
         data_type: string
-        tests:
+        data_tests:
           - unique
 
       - name: student_number

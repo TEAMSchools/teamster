@@ -132,5 +132,5 @@ models:
       - name: internal_assessments_key
         data_type: string
         description: ""
-        tests:
+        data_tests:
           - unique
