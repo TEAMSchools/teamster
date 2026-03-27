@@ -76,6 +76,11 @@ after container start if env vars or secrets are missing.
   configurable) on startup. Risk: extension may activate before `uv sync`
   installs dbt-core. If `dbt deps` runs in `postCreate.sh`, set
   `dbt.installDepsOnProjectInitialization` to `false` to avoid duplicate work.
+- **dbt Power User project scanning**: `dbt.allowListFolders` restricts which
+  paths the extension scans for `dbt_project.yml` — uses `startsWith` matching.
+  The extension also has a built-in `notInDBtPackages` filter. Manifest is read
+  from `target/` via Python bridge, not VS Code file watcher, so
+  `files.watcherExclude` on `target/` doesn't break it.
 - **Protected scripts**: `.devcontainer/scripts/` is read-only under hooks —
   present changes as manual application blocks, not diffs. `.vscode/scripts/` is
   **not** hook-protected and can be edited directly.
