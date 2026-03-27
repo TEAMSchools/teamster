@@ -51,6 +51,8 @@ from 1Password at container start.
 
 - **Branching** (hard gate — complete in order, do not skip steps):
   1. Never commit directly to `main`.
+     - This applies even when a skill/plugin instructs you to commit — project
+       conventions override skill workflows.
   2. **Create a GitHub issue** if one does not already exist — required after
      brainstorms and for planned work. Quick fixes and small changes do not
      require an issue.
