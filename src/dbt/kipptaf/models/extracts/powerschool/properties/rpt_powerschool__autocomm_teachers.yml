@@ -6,9 +6,6 @@ models:
             combination_of_columns:
               - teachernumber
               - home_work_location_dagster_code_location
-          config:
-            store_failures: true
-            severity: warn
     columns:
       - name: teachernumber
         data_type: string

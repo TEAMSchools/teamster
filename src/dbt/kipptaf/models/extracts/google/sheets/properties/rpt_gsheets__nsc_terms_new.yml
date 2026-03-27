@@ -7,7 +7,7 @@ models:
               - enrollment__c
               - term_start_date__c
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: enrollment__c
         data_type: string

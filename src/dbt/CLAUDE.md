@@ -88,9 +88,7 @@ CLAUDE.md files reference this section rather than repeating it.
 columns:
   - name: surrogate_key
     data_tests:
-      - unique:
-          config:
-            store_failures: true
+      - unique
 
 # multi-column uniqueness (when no single column is unique)
 data_tests:
@@ -99,9 +97,29 @@ data_tests:
         combination_of_columns:
           - column_a
           - column_b
-      config:
-        store_failures: true
 ```
+
+### Test config defaults
+
+All kipp\* `dbt_project.yml` files set project-level test defaults:
+
+```yaml
+data_tests:
+  +severity: warn
+  +store_failures: true
+  +store_failures_as: view
+```
+
+- Do not add `store_failures: true` to individual tests — the project default
+  handles it
+- Tests that must error (not warn) need explicit `config: severity: error`
+- Unscoped `+config` applies to tests from all installed packages, not just the
+  current project
+
+### VS Code YAML schema
+
+The VS Code YAML extension does not recognize `store_failures_as` — the
+resulting diagnostic is a false positive. dbt parses it correctly.
 
 ### SQL conventions
 

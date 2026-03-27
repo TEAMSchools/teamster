@@ -8,9 +8,6 @@ models:
               arguments:
                 to: ref("stg_google_sheets__people__location_crosswalk")
                 field: name
-              config:
-                store_failures: true
-                severity: warn
       - name: student_id
         data_type: int64
       - name: student_first_name

@@ -6,7 +6,7 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: examiner_smid
         data_type: string
       - name: parcc_braille_paper

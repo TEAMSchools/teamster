@@ -4,9 +4,7 @@ models:
       - name: student_id
         data_type: int64
         data_tests:
-          - not_null:
-              config:
-                severity: warn
+          - not_null
       - name: academic_year_int
         data_type: int64
       - name: academic_year

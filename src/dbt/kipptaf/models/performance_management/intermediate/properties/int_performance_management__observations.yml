@@ -8,8 +8,7 @@ models:
     #       arguments:
     #         combination_of_columns:
     #           - ...
-    #       config:
-    #         store_failures: true
+    #       config: {}
     columns:
       - name: observation_id
         data_type: string
