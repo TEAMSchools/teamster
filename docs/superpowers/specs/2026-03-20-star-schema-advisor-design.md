@@ -98,8 +98,11 @@ parsing and emits structured JSON.
 
 **Inputs (mutually exclusive):**
 
-- `--exposure <name>` — pulls the workbook from Tableau Server using the LSID
-  from `src/dbt/kipptaf/models/exposures/tableau.yml`
+- `--exposure <name>` — pulls the workbook from Tableau Server using the
+  workbook ID at `config.meta.dagster.asset.metadata.id` in
+  `src/dbt/kipptaf/models/exposures/tableau.yml`. Not all exposures have this
+  field populated — the script must exit with a clear error if the selected
+  exposure has no ID
 - `--file <path>` — reads a local `.twb` or `.twbx` file directly
 
 **Output (JSON to stdout):**
@@ -249,7 +252,7 @@ existing reports matching the exposure name. If any are found, tell the analyst:
 
 > "I found existing reports for this workbook:
 >
-> - ✓ `<exposure>-<slug>-<date>.md`
+> - ✓ `<exposure>-<slug>-<YYYY-MM-DD>T<HHMM>.md`
 >
 > Remaining datasources: `rpt_tableau__foo`, `rpt_tableau__bar`. Pick up where
 > you left off?"
@@ -340,7 +343,8 @@ below. Display it inline in chat.
 
 Ask the analyst to review:
 
-> "Report written to `docs/superpowers/star-schema-reports/<name>-<date>.md`.
+> "Report written to
+> `docs/superpowers/star-schema-reports/<exposure>-<slug>-<YYYY-MM-DD>T<HHMM>.md`.
 > Please review the Field Verdicts table — you can override any verdict by
 > editing the file directly or telling me the changes in chat. When you're
 > ready, say 'go ahead' and I'll apply the approved dim and fact changes."
@@ -359,8 +363,9 @@ exactly which files changed:
 > - `src/dbt/kipptaf/models/marts/dim_students.sql`
 > - `src/dbt/kipptaf/models/marts/properties/dim_students.yml`
 >
-> The report file at `docs/superpowers/star-schema-reports/<name>-<date>.md` is
-> ready to commit now as an audit trail."
+> The report file at
+> `docs/superpowers/star-schema-reports/<exposure>-<slug>-<YYYY-MM-DD>T<HHMM>.md`
+> is ready to commit now as an audit trail."
 
 **Adding to an existing mart:**
 
@@ -449,8 +454,8 @@ summary before suggesting a `git diff`:
 >
 > **Reports written** (commit these now):
 >
-> - `ops_dashboard-rpt-attendance-dashboard-2026-03-20.md`
-> - `ops_dashboard-rpt-ops-dashboard-2026-03-20.md`
+> - `ops_dashboard-rpt-attendance-dashboard-2026-03-20T1430.md`
+> - `ops_dashboard-rpt-ops-dashboard-2026-03-20T1445.md`
 >
 > **Semantic layer fields queued across all datasources:** N fields total — run
 > `/cube-measure-generator` pointing at any report file when ready."
