@@ -4,11 +4,8 @@ models:
     columns:
       - name: student_enrollments_key
         data_type: string
-        tests:
-          - unique:
-              config:
-                severity: warn
-                store_failures: true
+        data_tests:
+          - unique
 
       - name: student_number
         data_type: int64

@@ -4,11 +4,8 @@ models:
     columns:
       - name: additional_earnings_key
         data_type: string
-        tests:
-          - unique:
-              config:
-                severity: warn
-                store_failures: true
+        data_tests:
+          - unique
 
       - name: additional_earnings_code
         data_type: string

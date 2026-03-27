@@ -4,11 +4,8 @@ models:
     columns:
       - name: staff_terminations_key
         data_type: string
-        tests:
-          - unique:
-              config:
-                severity: warn
-                store_failures: true
+        data_tests:
+          - unique
 
       - name: employee_number
         data_type: int64

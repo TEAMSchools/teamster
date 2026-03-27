@@ -4,11 +4,8 @@ models:
     columns:
       - name: seats_key
         data_type: string
-        tests:
-          - unique:
-              config:
-                severity: warn
-                store_failures: true
+        data_tests:
+          - unique
 
       - name: academic_year
         data_type: int64

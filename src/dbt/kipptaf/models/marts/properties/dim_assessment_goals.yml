@@ -7,11 +7,8 @@ models:
         description:
           Surrogate key on (academic_year, school_id, state_assessment_code,
           grade_level, illuminate_subject_area).
-        tests:
-          - unique:
-              config:
-                severity: warn
-                store_failures: true
+        data_tests:
+          - unique
 
       - name: academic_year
         data_type: int64
