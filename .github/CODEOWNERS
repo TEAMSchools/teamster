@@ -20,6 +20,7 @@
 # analysts — kipptaf extracts and exposures
 /src/dbt/kipptaf/models/extracts/ @TEAMSchools/analysts
 /src/dbt/kipptaf/models/exposures/ @TEAMSchools/analysts
+/src/dbt/kipptaf/models/marts/ @TEAMSchools/analysts
 
 # docs — everyone
 /docs/ @TEAMSchools/data-team

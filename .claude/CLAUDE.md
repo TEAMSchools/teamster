@@ -53,7 +53,8 @@ Bash. Plugin and marketplace commands (`claude plugins install`,
 **Bash-only rules** (do NOT fire for Read, Write, Edit, Grep, or Glob):
 
 - Environment variable / process memory leakage (`printenv`, `set`, `env`, etc.)
-- 1Password CLI commands (`op vault`, `op item`, etc.)
+- 1Password CLI commands (`op vault`, `op item`, `op read`, `op document`,
+  `op inject`, etc.)
 - Encoding bypass attempts (base64-to-shell pipes, Python exec/eval obfuscation)
 - Shell variable expansion (`$UPPER_CASE` vars not on the safe list)
 
@@ -79,9 +80,10 @@ fire for Edit.
   them explicitly in `git add <file>` triggers the hook and gets blocked
 - Commit message bodies are scanned by the hook (it reads the full command
   string) — avoid `env` as a standalone word, `$VAR` references, and sensitive
-  path strings (e.g. `secret-volume`, `.env`, `.cer`) in message text. The Bash
-  tool `description` field is scanned too — keep it generic. Shorten the body if
-  a commit is repeatedly blocked.
+  path strings (e.g. `secret-volume`, `.env`, `.cer`), and 1Password CLI
+  subcommands (e.g. `op read`, `op inject`, `op document`) in message text. The
+  Bash tool `description` field is scanned too — keep it generic. Shorten the
+  body if a commit is repeatedly blocked.
 
 ## permissions.deny path prefixes
 

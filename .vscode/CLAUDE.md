@@ -71,3 +71,9 @@ To grant a new developer access: add them to
 - On a fresh rebuild the Claude Code extension may not be installed when
   `folderOpen` fires; `$CLAUDE` will be empty — poll for the binary rather than
   silently skipping
+
+## File Watcher
+
+- **`.worktrees/` and file watcher**: do not add `.worktrees/` to
+  `files.watcherExclude` — the worktree workflow expects IDE features (explorer
+  updates, git decorations, diagnostics) to work from the main workspace

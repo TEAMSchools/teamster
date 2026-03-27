@@ -24,6 +24,17 @@ after container start if env vars or secrets are missing.
 - **Adding a new secret**: update **both** the symlink validation loop and the
   injection `for` loop — omitting either silently skips the secret.
 
+## 1Password CLI Commands
+
+- **`op inject`** — replaces `op://` references in template files; used for
+  `.env.tpl` and other templates with embedded secret URIs
+- **`op read`** — reads a single secret or file attachment by `op://` URI;
+  supports `--out-file` for binary output; use for multi-attachment items (e.g.,
+  `op read "op://vault/item/filename" --out-file path`)
+- **`op document get`** — downloads an item's document attachment by item
+  name/UUID (not `op://` URIs); no `--file-name` flag exists, so it cannot
+  select among multiple attachments — use `op read` instead
+
 ## Claude Code Auth in Codespaces
 
 - The CLI binary detects `op` on `$PATH` and tries to use it as a credential
@@ -65,6 +76,11 @@ after container start if env vars or secrets are missing.
   configurable) on startup. Risk: extension may activate before `uv sync`
   installs dbt-core. If `dbt deps` runs in `postCreate.sh`, set
   `dbt.installDepsOnProjectInitialization` to `false` to avoid duplicate work.
+- **dbt Power User project scanning**: `dbt.allowListFolders` restricts which
+  paths the extension scans for `dbt_project.yml` — uses `startsWith` matching.
+  The extension also has a built-in `notInDBtPackages` filter. Manifest is read
+  from `target/` via Python bridge, not VS Code file watcher, so
+  `files.watcherExclude` on `target/` doesn't break it.
 - **Protected scripts**: `.devcontainer/scripts/` is read-only under hooks —
   present changes as manual application blocks, not diffs. `.vscode/scripts/` is
   **not** hook-protected and can be edited directly.

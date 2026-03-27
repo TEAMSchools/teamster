@@ -4,6 +4,8 @@
 if ./.devcontainer/scripts/inject-secrets.sh; then
   echo 'export OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' >>/home/vscode/.bashrc
   echo 'export OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' >>/home/vscode/.profile
+  echo 'export OP_CONNECT_TOKEN=revoked-after-injection' >>/home/vscode/.bashrc
+  echo 'export OP_CONNECT_TOKEN=revoked-after-injection' >>/home/vscode/.profile
 fi
 
 set +euo pipefail
