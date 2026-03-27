@@ -31,6 +31,11 @@ for nullable params, and `_` for unused unpacked variables. Callable-returning
 functions annotate as `Callable[[], ReturnType]` (import from
 `collections.abc`).
 
+**`defaultdict` typing**: `defaultdict(set[T])` works at runtime in 3.13
+(GenericAlias is callable) but is semantically wrong — use
+`defaultdict[K, set[T]](set)` with the subscript on the type annotation, not the
+factory argument.
+
 **kwargs forwarding**: When extracting a kwarg default before spreading
 `**kwargs`, always use `pop`, never `get` — `get` leaves the key in `kwargs`,
 causing `TypeError: got multiple values for keyword argument` if the caller

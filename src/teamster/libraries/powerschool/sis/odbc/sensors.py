@@ -15,6 +15,7 @@ from dagster import (
     MAX_RUNTIME_SECONDS_TAG,
     AssetKey,
     AssetsDefinition,
+    PartitionsDefinition,
     RunRequest,
     SensorDefinition,
     SensorEvaluationContext,
@@ -51,7 +52,9 @@ def build_powerschool_asset_sensor(
         A Dagster sensor function.
     """
     jobs = []
-    keys_by_partitions_def = defaultdict(set[AssetKey])
+    keys_by_partitions_def: defaultdict[PartitionsDefinition | None, set[AssetKey]] = (
+        defaultdict(set)
+    )
 
     base_job_name = f"{code_location}__powerschool__sis__asset_job"
 

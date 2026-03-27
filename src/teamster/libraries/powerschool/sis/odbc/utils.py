@@ -27,11 +27,14 @@ from sqlalchemy import TextClause, text
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
+from teamster.libraries.ssh.resources import SSHResource
 
 
 @contextmanager
 def powerschool_connection(
-    ssh_resource, db_resource, log: logging.Logger
+    ssh_resource: SSHResource,
+    db_resource: PowerSchoolODBCResource,
+    log: logging.Logger,
 ) -> Generator[oracledb.Connection, None, None]:
     """Open an SSH tunnel and Oracle connection, with guaranteed cleanup.
 
@@ -146,7 +149,7 @@ def get_query_text(
     Returns:
         SQLAlchemy TextClause wrapping the COUNT query.
     """
-    # TODO: paramterize sqlalchemy query to resolve bandit/B608
+    # TODO: parameterize sqlalchemy query to resolve bandit/B608
     if column is None:
         # trunk-ignore(bandit/B608)
         query = f"SELECT COUNT(*) FROM {table}"
@@ -167,6 +170,32 @@ def get_query_text(
         )
 
     return text(query)
+
+
+def _fetch_count(
+    db_powerschool: PowerSchoolODBCResource,
+    connection: oracledb.Connection,
+    table: str,
+    column: str | None,
+    start_value: str | None = None,
+    end_value: str | None = None,
+) -> int:
+    """Execute a COUNT query and return the scalar result."""
+    [(count,)] = check.inst(
+        db_powerschool.execute_query(
+            connection=connection,
+            query=get_query_text(
+                table=table,
+                column=column,
+                start_value=start_value,
+                end_value=end_value,
+            ),
+            prefetch_rows=2,
+            array_size=1,
+        ),
+        list,
+    )
+    return check.int_param(count, "count")
 
 
 @dataclass
@@ -239,18 +268,8 @@ def _evaluate_non_partitioned(
 
         timestamp_fmt = format_oracle_timestamp(timestamp, execution_timezone)
 
-        [(modified_count,)] = check.inst(
-            db_powerschool.execute_query(
-                connection=connection,
-                query=get_query_text(
-                    table=table_name,
-                    column=partition_column,
-                    start_value=timestamp_fmt,
-                ),
-                prefetch_rows=2,
-                array_size=1,
-            ),
-            list,
+        modified_count = _fetch_count(
+            db_powerschool, connection, table_name, partition_column, timestamp_fmt
         )
 
         if modified_count > 0:
@@ -262,15 +281,7 @@ def _evaluate_non_partitioned(
             )
 
     # Check 3: table count mismatch
-    [(table_count,)] = check.inst(
-        db_powerschool.execute_query(
-            connection=connection,
-            query=get_query_text(table=table_name, column=None),
-            prefetch_rows=2,
-            array_size=1,
-        ),
-        list,
-    )
+    table_count = _fetch_count(db_powerschool, connection, table_name, column=None)
 
     if table_count != materialization_count:
         log.info(
@@ -357,18 +368,8 @@ def _evaluate_partition(
 
         timestamp_fmt = format_oracle_timestamp(timestamp, execution_timezone)
 
-        [(modified_count,)] = check.inst(
-            db_powerschool.execute_query(
-                connection=connection,
-                query=get_query_text(
-                    table=table_name,
-                    column=partition_column,
-                    start_value=timestamp_fmt,
-                ),
-                prefetch_rows=2,
-                array_size=1,
-            ),
-            list,
+        modified_count = _fetch_count(
+            db_powerschool, connection, table_name, partition_column, timestamp_fmt
         )
 
         if modified_count > 0:
@@ -388,19 +389,8 @@ def _evaluate_partition(
         check.inst(partitions_def, TimeWindowPartitionsDefinition),
     )
 
-    [(partition_count,)] = check.inst(
-        db_powerschool.execute_query(
-            connection=connection,
-            query=get_query_text(
-                table=table_name,
-                column=partition_column,
-                start_value=start_value,
-                end_value=end_value,
-            ),
-            prefetch_rows=2,
-            array_size=1,
-        ),
-        list,
+    partition_count = _fetch_count(
+        db_powerschool, connection, table_name, partition_column, start_value, end_value
     )
 
     materialization_count = metadata["records"].value
