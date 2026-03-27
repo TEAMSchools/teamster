@@ -1,5 +1,6 @@
 import logging
 
+import pytest
 from dagster import EnvVar, build_resources
 from dagster_shared import check
 from sqlalchemy import text
@@ -8,22 +9,32 @@ from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCRes
 from teamster.libraries.powerschool.sis.odbc.utils import powerschool_connection
 from teamster.libraries.ssh.resources import SSHResource
 
+DISTRICTS = ["KIPPNEWARK", "KIPPCAMDEN", "KIPPMIAMI"]
 
-def test_powerschool_odbc_resource_connects_and_queries():
+
+def _get_env(name: str, district: str) -> str:
+    """Resolve a district-specific env var via EnvVar."""
+    return check.not_none(EnvVar(f"{name}_{district}").get_value())
+
+
+@pytest.mark.parametrize("district", DISTRICTS)
+def test_powerschool_odbc_resource_connects_and_queries(district: str):
     with build_resources(
         resources={
             "ssh_powerschool": SSHResource(
-                remote_host=EnvVar("PS_SSH_HOST"),
-                remote_port=int(check.not_none(EnvVar("PS_SSH_PORT").get_value())),
-                username=EnvVar("PS_SSH_USERNAME"),
-                tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
+                remote_host=_get_env("PS_SSH_HOST", district),
+                remote_port=int(_get_env("PS_SSH_PORT", district)),
+                username=_get_env("PS_SSH_USERNAME", district),
+                password=_get_env("PS_SSH_PASSWORD", district),
+                tunnel_remote_host=_get_env("PS_SSH_REMOTE_BIND_HOST", district),
+                test=True,
             ),
             "db_powerschool": PowerSchoolODBCResource(
-                user=EnvVar("PS_DB_USERNAME"),
-                password=EnvVar("PS_DB_PASSWORD"),
-                host=EnvVar("PS_DB_HOST"),
-                port=EnvVar("PS_DB_PORT"),
-                service_name=EnvVar("PS_DB_DATABASE"),
+                user=_get_env("PS_DB_USERNAME", district),
+                password=_get_env("PS_DB_PASSWORD", district),
+                host=_get_env("PS_DB_HOST", district),
+                port=_get_env("PS_DB_PORT", district),
+                service_name=_get_env("PS_DB_DATABASE", district),
             ),
         }
     ) as resources:

@@ -33,6 +33,12 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   `build_resources()`. For non-`str` fields (e.g. `int` ports), use
   `int(check.not_none(EnvVar("X").get_value()))` — `EnvVar` resolves lazily, so
   `int(EnvVar("X"))` casts the marker object, not the value.
+- **Worktree tests**: VS Code doesn't discover tests in worktrees. Run manually
+  with `set -a && source env/.env && set +a` then
+  `cd .worktrees/<branch> && uv run pytest ...`.
+- **SSH `test=True`**: `SSHResource` reads the SSH password from a secret file
+  by default (`test=False`). Integration tests must set `test=True` and pass
+  `password` directly so each district uses its own credentials.
 - `dagster definitions validate` requires env vars from `.env` (injected from
   1Password at container start). The hook blocks reading `.env`, so validation
   fails in Claude sessions — this is expected, not a code issue.
