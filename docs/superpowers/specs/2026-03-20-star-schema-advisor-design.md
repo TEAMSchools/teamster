@@ -42,20 +42,18 @@ A Claude Code slash command (`/star-schema-advisor`) that:
 ### `scripts/tableau-analyze-workbook.py`
 
 A standalone Python script with no Claude reasoning. Handles all Tableau XML
-parsing and emits structured JSON. **Replaces
-`scripts/tableau-extract-calcs.py`** — the new script is a strict superset of
-the old one's capabilities.
+parsing and emits structured JSON.
 
 **Implementation patterns:**
 
 - Use `defusedxml.ElementTree` for all XML parsing (not stdlib `xml`)
-- Read PAT credentials from the environment variables defined by
-  `TableauServerResource` in `src/teamster/libraries/tableau/resources.py` —
-  match those names exactly (`TABLEAU_SERVER_ADDRESS`, `TABLEAU_SITE_ID`,
-  `TABLEAU_TOKEN_NAME`, `TABLEAU_PERSONAL_ACCESS_TOKEN`). These are only present
-  after `.devcontainer/scripts/inject-secrets.sh` has been run by the analyst —
-  the script must exit gracefully with a clear error message if any are missing,
-  rather than failing mid-execution
+- Read PAT credentials from environment variables `TABLEAU_SERVER_ADDRESS`,
+  `TABLEAU_SITE_ID`, `TABLEAU_TOKEN_NAME`, `TABLEAU_PERSONAL_ACCESS_TOKEN` (the
+  same vars consumed by Dagster in production via `EnvVar()` in
+  `src/teamster/code_locations/kipptaf/resources.py`, injected locally by
+  `.devcontainer/scripts/inject-secrets.sh`). The script must exit gracefully
+  with a clear error message if any are missing, rather than failing
+  mid-execution
 - For `.twbx` files (zip archives): extract the inner `.twb` using `zipfile`,
   reading into memory rather than extracting to disk
 - Deduplicate datasources by caption — Tableau duplicates a datasource element
@@ -64,7 +62,15 @@ the old one's capabilities.
   empty, `name` starts with `[:`, or `name` equals `[Number of Records]`
 - Use `uv run` inline script header (`# /// script`) with pinned dependencies
   (`defusedxml`, `requests`, `pyyaml`), matching the style of other `scripts/`
-  files
+  files. Example header:
+
+  ```python
+  # /// script
+  # requires-python = ">=3.13"
+  # dependencies = ["defusedxml", "requests", "pyyaml"]
+  # ///
+  ```
+
 - **Auth**: prefer PAT via `TABLEAU_TOKEN_NAME` +
   `TABLEAU_PERSONAL_ACCESS_TOKEN`; fall back to username/password prompt via
   `getpass` only when `--username` is passed and PAT vars are absent; raise
@@ -92,8 +98,11 @@ the old one's capabilities.
 
 **Inputs (mutually exclusive):**
 
-- `--exposure <name>` — pulls the workbook from Tableau Server using the LSID
-  from `src/dbt/kipptaf/models/exposures/tableau.yml`
+- `--exposure <name>` — pulls the workbook from Tableau Server using the
+  workbook ID at `config.meta.dagster.asset.metadata.id` in
+  `src/dbt/kipptaf/models/exposures/tableau.yml`. Not all exposures have this
+  field populated — the script must exit with a clear error if the selected
+  exposure has no ID
 - `--file <path>` — reads a local `.twb` or `.twbx` file directly
 
 **Output (JSON to stdout):**
@@ -178,15 +187,18 @@ This script is reusable by `/cube-measure-generator` in the second phase.
 
 ### `.claude/commands/star-schema-advisor.md`
 
-The slash command file. Contains the complete 8-step workflow as prose
-instructions that Claude follows. All reasoning about field classification, mart
-placement decisions, and dbt SQL/YAML conventions lives here. Updated as the
-team learns new best practices — no code changes required.
+The slash command file. The `.claude/commands/` directory does not exist yet and
+must be created during implementation.
+
+Contains the complete 8-step workflow as prose instructions that Claude follows.
+All reasoning about field classification, mart placement decisions, and dbt
+SQL/YAML conventions lives here. Updated as the team learns new best practices —
+no code changes required.
 
 **Structural pattern:** Numbered steps, each specifying what to read or gather,
 what action to take, and what to show the analyst before proceeding.
 
-### `docs/superpowers/star-schema-reports/<exposure-name>-<YYYY-MM-DD>.md`
+### `docs/superpowers/star-schema-reports/<exposure-name>-<datasource-slug>-<YYYY-MM-DD>T<HHMM>.md`
 
 Per-run markdown report written during Step 6. Stored under `docs/superpowers/`
 (consistent with the working-docs convention for specs and plans) rather than
@@ -199,6 +211,71 @@ Serves three purposes:
    the file directly or replying in chat
 3. **Semantic layer queue** — the `## Semantic Layer Queue` section persists
    approved semantic layer fields across sessions for `/cube-measure-generator`
+
+---
+
+## Prerequisites: Mart Design Principles and Structure
+
+The slash command classifies fields and proposes mart placements, so it depends
+on a well-defined mart layer. The following foundational work should be
+completed before or alongside implementation.
+
+### Mart design principles in `src/dbt/CLAUDE.md`
+
+Add a "Mart design principles" section to `src/dbt/CLAUDE.md` covering:
+
+- **Dims vs facts** — dims hold descriptive attributes of a business entity (one
+  row per entity or per historical period); facts hold events or transactions at
+  the lowest useful grain with numeric measures or boolean flags that get
+  aggregated in the semantic layer (Cube)
+- **Conformed dimensions** — `dim_students`, `dim_staff`, `dim_locations`, and
+  `dim_dates` are the conformed core; new dims should reuse their natural keys
+  (`student_number`, `employee_number`, `school_id`, date columns)
+- **Join strategy** — facts reference dims via natural keys at query time, not
+  via explicit foreign key columns
+- **Create vs extend** — add a column when the field shares the same grain and
+  entity; create a new mart when the grain is different
+- **Mart vs semantic layer boundary** — raw columns and simple transformations
+  (rename, cast, coalesce) belong in dbt; aggregations, ratios, and
+  context-dependent logic belong in Cube; Tableau-specific calculations, LOD
+  expressions, and display formatting belong in neither
+
+The slash command's verdict rules (Step 5) and placement logic (Step 7) should
+reference this section.
+
+### Missing dimensions
+
+The following entities are referenced across multiple facts and reporting views
+but lack dedicated dimension models. Without them, the slash command will
+repeatedly propose adding these attributes to facts when they belong in dims.
+
+| Candidate                  | Key columns                                                               | Referenced by                                                       | Priority |
+| -------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------- | -------- |
+| `dim_courses`              | course_number, course_name, discipline, subject_area, credit_type         | fct_student_course_enrollments, fct_internal_assessments, 6+ rpts   | High     |
+| `dim_assessment_standards` | response_type_id, standard_code, standard_description, domain_description | fct_internal_assessments, fct_state_assessments, 10+ rpts           | High     |
+| `dim_performance_bands`    | performance_band_set_id, band_label, band_level                           | fct_internal_assessments, fct_state_assessments, 9+ rpts            | Medium   |
+| `dim_communication_types`  | commlog_reason, commlog_type, commlog_topic                               | fct_attendance_communications, fct_attendance_interventions, 6 rpts | Medium   |
+
+### Misclassified facts
+
+Several existing `fct_*` models carry mostly descriptive attributes with few or
+no aggregatable measures, suggesting they should be reclassified:
+
+- **`fct_student_course_enrollments`** — no measures; purely a student-course
+  association. Better modeled as a dim or bridge table once `dim_courses`
+  exists.
+- **`fct_internal_assessments`** — thin measure core (points, percent_correct)
+  buried under heavy assessment metadata (response_type, module_type,
+  performance_band_label, scope). Extracting `dim_assessment_standards` and
+  `dim_performance_bands` would leave a cleaner fact.
+- **`fct_state_assessments`** — score and proficiency flag are measures, but
+  test_name, subject, performance_band, and state-level demographics are
+  descriptive. State demographics are explicitly noted in the SQL as potentially
+  divergent from `dim_students`.
+
+This restructuring is out of scope for the slash command — it should be
+completed as separate mart development work. The slash command operates on
+whatever mart structure exists at runtime.
 
 ---
 
@@ -240,14 +317,16 @@ existing reports matching the exposure name. If any are found, tell the analyst:
 
 > "I found existing reports for this workbook:
 >
-> - ✓ `<exposure>-<slug>-<date>.md`
+> - ✓ `<exposure>-<slug>-<YYYY-MM-DD>T<HHMM>.md`
 >
 > Remaining datasources: `rpt_tableau__foo`, `rpt_tableau__bar`. Pick up where
 > you left off?"
 
 Each datasource produces its own report file. Always include a datasource slug
 in the filename to avoid collisions:
-`<exposure-name>-<datasource-slug>-<YYYY-MM-DD>.md`.
+`<exposure-name>-<datasource-slug>-<YYYY-MM-DD>T<HHMM>.md` (the timestamp
+prevents collisions when the same exposure+datasource is analyzed twice in one
+day).
 
 ### Step 3 — Read the reporting view
 
@@ -273,21 +352,28 @@ match is semantically correct — a name match does not guarantee the same grain
 or join key.
 
 For fields that do **not** match by name, do a secondary check using the dbt MCP
-`get_node_details_dev` tool on the rpt model. This returns the compiled SQL and
-upstream column lineage — use it to find the source expression for each
-unmatched field. If the source expression is a direct column reference (no
-calculation), check whether that upstream column name matches any mart column.
-Flag any hits as **"Possible match — verify alias"** in the Notes column with
-the mart name and upstream column name, so the analyst can confirm before
-approving. If the source expression is a calculation rather than a direct ref,
-leave it unmatched — it likely belongs in the semantic layer anyway.
+`get_node_details_dev` tool on the rpt model (this runs against the local
+project manifest, not dbt Cloud). This returns the compiled SQL and upstream
+column lineage — use it to find the source expression for each unmatched field.
+If the source expression is a direct column reference (no calculation), check
+whether that upstream column name matches any mart column. Flag any hits as
+**"Possible match — verify alias"** in the Notes column with the mart name and
+upstream column name, so the analyst can confirm before approving. If the source
+expression is a calculation rather than a direct ref, leave it unmatched — it
+likely belongs in the semantic layer anyway.
 
-When processing a second or later datasource in the same session, mart files may
-already have been modified by Step 7 of an earlier datasource. The re-scan will
-pick these up naturally since edits are written to disk. Use a distinct note for
-these hits — **"Already in marts (promoted this session)"** — so the analyst can
-see what came from prior datasources vs what was already there before the
-session started.
+> **Fallback:** If the dbt MCP server is unavailable or the model is not in the
+> manifest, skip the lineage check. Note "MCP unavailable — lineage not checked"
+> in the report and continue with name-only matching. The analyst can re-run the
+> command after rebuilding the manifest with `prepare-and-package`.
+
+When processing a second or later datasource in the same session (sequential
+processing within a single Claude conversation), mart files may already have
+been modified by Step 7 of an earlier datasource. The re-scan will pick these up
+naturally since edits are written to disk. Use a distinct note for these hits —
+**"Already in marts (promoted this session)"** — so the analyst can see what
+came from prior datasources vs what was already there before the session
+started.
 
 ### Step 5 — Classify every field
 
@@ -322,7 +408,8 @@ below. Display it inline in chat.
 
 Ask the analyst to review:
 
-> "Report written to `docs/superpowers/star-schema-reports/<name>-<date>.md`.
+> "Report written to
+> `docs/superpowers/star-schema-reports/<exposure>-<slug>-<YYYY-MM-DD>T<HHMM>.md`.
 > Please review the Field Verdicts table — you can override any verdict by
 > editing the file directly or telling me the changes in chat. When you're
 > ready, say 'go ahead' and I'll apply the approved dim and fact changes."
@@ -341,17 +428,20 @@ exactly which files changed:
 > - `src/dbt/kipptaf/models/marts/dim_students.sql`
 > - `src/dbt/kipptaf/models/marts/properties/dim_students.yml`
 >
-> The report file at `docs/superpowers/star-schema-reports/<name>-<date>.md` is
-> ready to commit now as an audit trail."
+> The report file at
+> `docs/superpowers/star-schema-reports/<exposure>-<slug>-<YYYY-MM-DD>T<HHMM>.md`
+> is ready to commit now as an audit trail."
 
 **Adding to an existing mart:**
 
 - Add the column to the SQL `SELECT` clause following the column ordering in
-  `src/dbt/CLAUDE.md` (plain refs → simple functions → nested functions →
-  logicals → CASE → window functions)
+  `src/dbt/CLAUDE.md`: plain refs (grouped by source table in join order,
+  separated by blank lines) → constants → simple functions → nested functions →
+  logicals → CASE → window functions
 - Add a corresponding entry to the properties YAML (`name`, `data_type`,
   optional `description`)
-- Follow `.sqlfluff` style: trailing commas, single quotes, max 88 chars
+- Follow `.trunk/config/.sqlfluff` style: trailing commas, single quotes, max 88
+  chars
 
 **Creating a new mart:**
 
@@ -430,8 +520,8 @@ summary before suggesting a `git diff`:
 >
 > **Reports written** (commit these now):
 >
-> - `ops_dashboard-rpt-attendance-dashboard-2026-03-20.md`
-> - `ops_dashboard-rpt-ops-dashboard-2026-03-20.md`
+> - `ops_dashboard-rpt-attendance-dashboard-2026-03-20T1430.md`
+> - `ops_dashboard-rpt-ops-dashboard-2026-03-20T1445.md`
 >
 > **Semantic layer fields queued across all datasources:** N fields total — run
 > `/cube-measure-generator` pointing at any report file when ready."
@@ -550,7 +640,8 @@ BI tool.
 
 | File                                            | Action                                              |
 | ----------------------------------------------- | --------------------------------------------------- |
-| `scripts/tableau-analyze-workbook.py`           | **New** — replaces `tableau-extract-calcs.py`       |
+| `src/dbt/CLAUDE.md`                             | **Modified** — add mart design principles (prereq)  |
+| `scripts/tableau-analyze-workbook.py`           | **New**                                             |
 | `.claude/commands/star-schema-advisor.md`       | **New** — slash command workflow                    |
 | `docs/superpowers/star-schema-reports/`         | **New directory** — per-run reports                 |
 | `src/dbt/kipptaf/models/marts/*.sql`            | **Modified per run** — columns added, left unstaged |
@@ -563,14 +654,14 @@ BI tool.
 **Upstream (existing):**
 
 - `src/dbt/kipptaf/models/exposures/tableau.yml` — source of truth for exposure
-  names and Tableau Server LSIDs
-- `src/teamster/libraries/tableau/resources.py` — `TableauServerResource`
-  defines the authentication environment variable conventions the script must
-  match
+  names and Tableau Server workbook IDs
+  (`config.meta.dagster.asset.metadata.id`)
+- `src/teamster/code_locations/kipptaf/resources.py` — wires
+  `TableauServerResource` with `EnvVar()` calls that define the environment
+  variable names the script reads
 
 **Retired (do not merge to main):**
 
-- `scripts/tableau-extract-calcs.py` — superseded by this script
 - `.claude/commands/tableau-upstream.md` — superseded by `/star-schema-advisor`;
   the workflow of moving calculated fields into dbt is now handled as part of
   the mart triage process
@@ -589,9 +680,27 @@ BI tool.
   committed immediately — it is the audit trail and the queue for the next tool.
   Mart SQL/YAML files are written but not staged; the analyst reviews the diff,
   makes any adjustments, then commits when satisfied.
-- **One script, not two.** `tableau-analyze-workbook.py` replaces
-  `tableau-extract-calcs.py`. The JSON output is a strict superset of what the
-  old script produced.
-- **One datasource per run.** Multi-datasource workbooks are handled by running
-  the command multiple times; each run produces a separate report with a
-  datasource slug in the filename.
+- **Standalone script.** `tableau-analyze-workbook.py` is a new standalone
+  script with no Dagster dependencies. It reads credentials directly from
+  environment variables.
+- **One datasource at a time.** Multi-datasource workbooks are processed
+  sequentially within a single session (see Step 8); each datasource produces
+  its own report with a datasource slug in the filename.
+
+---
+
+## Testing
+
+### `scripts/tableau-analyze-workbook.py`
+
+The script performs non-trivial XML parsing, zip extraction, datasource
+deduplication, and calc name resolution. At minimum:
+
+- Include a sample `.twb` fixture (a minimal, hand-crafted Tableau workbook XML
+  with representative fields, calculated fields, LOD expressions, and
+  parameters) in `tests/fixtures/`
+- Write a test that runs the script against the fixture and asserts the JSON
+  output shape matches the schema documented above (datasources array, field
+  keys, parameter keys, lod_expressions keys)
+- Test edge cases: `.twbx` zip extraction, duplicate datasource deduplication,
+  `[Calculation_*]` formula rewriting, internal/system field filtering
