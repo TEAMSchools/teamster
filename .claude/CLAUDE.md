@@ -53,7 +53,8 @@ Bash. Plugin and marketplace commands (`claude plugins install`,
 **Bash-only rules** (do NOT fire for Read, Write, Edit, Grep, or Glob):
 
 - Environment variable / process memory leakage (`printenv`, `set`, `env`, etc.)
-- 1Password CLI commands (`op vault`, `op item`, etc.)
+- 1Password CLI commands (`op vault`, `op item`, `op read`, `op document`,
+  `op inject`, etc.)
 - Encoding bypass attempts (base64-to-shell pipes, Python exec/eval obfuscation)
 - Shell variable expansion (`$UPPER_CASE` vars not on the safe list)
 

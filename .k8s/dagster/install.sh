@@ -1,9 +1,6 @@
 #!/bin/bash
 
-curl -fsSL -o .k8s/get_helm.sh \
-  https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 &&
-  chmod 700 .k8s/get_helm.sh &&
-  .k8s/get_helm.sh
+set -euo pipefail
 
 helm repo add dagster-cloud https://dagster-io.github.io/helm-user-cloud
 helm repo update

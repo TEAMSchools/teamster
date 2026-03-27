@@ -1,9 +1,6 @@
 #!/bin/bash
 
-curl -fsSL -o .k8s/get_helm.sh \
-  https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 &&
-  chmod 700 .k8s/get_helm.sh &&
-  .k8s/get_helm.sh
+set -euo pipefail
 
 helm repo add 1password https://1password.github.io/connect-helm-charts/
 helm repo update
@@ -14,7 +11,7 @@ source env/.env
 
 helm upgrade \
   --install connect 1password/connect \
-  --set-file connect.credentials=env/1password-credentials.json \
+  --set-file connect.credentials=/etc/secret-volume/1password-credentials.json \
   --set operator.token.value="${OP_CONNECT_TOKEN}" \
   --namespace dagster-cloud \
   -f .k8s/1password/values-override.yaml

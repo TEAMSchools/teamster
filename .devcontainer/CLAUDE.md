@@ -24,6 +24,17 @@ after container start if env vars or secrets are missing.
 - **Adding a new secret**: update **both** the symlink validation loop and the
   injection `for` loop — omitting either silently skips the secret.
 
+## 1Password CLI Commands
+
+- **`op inject`** — replaces `op://` references in template files; used for
+  `.env.tpl` and other templates with embedded secret URIs
+- **`op read`** — reads a single secret or file attachment by `op://` URI;
+  supports `--out-file` for binary output; use for multi-attachment items (e.g.,
+  `op read "op://vault/item/filename" --out-file path`)
+- **`op document get`** — downloads an item's document attachment by item
+  name/UUID (not `op://` URIs); no `--file-name` flag exists, so it cannot
+  select among multiple attachments — use `op read` instead
+
 ## Claude Code Auth in Codespaces
 
 - The CLI binary detects `op` on `$PATH` and tries to use it as a credential
