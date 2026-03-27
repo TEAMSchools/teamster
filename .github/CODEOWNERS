@@ -2,25 +2,25 @@
 * @TEAMSchools/admins
 
 # platform — CI/CD, devcontainer, hooks, scripts, MCP
-/.github/ @TEAMSchools/platform
-/.devcontainer/ @TEAMSchools/platform
-/.claude/ @TEAMSchools/platform
-/.trunk/ @TEAMSchools/platform
-/Dockerfile @TEAMSchools/platform
-/scripts/ @TEAMSchools/platform
-/mcp/ @TEAMSchools/platform
+/.github/ @TEAMSchools/admins @TEAMSchools/platform
+/.devcontainer/ @TEAMSchools/admins @TEAMSchools/platform
+/.claude/ @TEAMSchools/admins @TEAMSchools/platform
+/.trunk/ @TEAMSchools/admins @TEAMSchools/platform
+/Dockerfile @TEAMSchools/admins @TEAMSchools/platform
+/scripts/ @TEAMSchools/admins @TEAMSchools/platform
+/mcp/ @TEAMSchools/admins @TEAMSchools/platform
 
 # data engineers — Dagster orchestration and tests
-/src/teamster/ @TEAMSchools/data-engineers
-/tests/ @TEAMSchools/data-engineers
+/src/teamster/ @TEAMSchools/admins @TEAMSchools/data-engineers
+/tests/ @TEAMSchools/admins @TEAMSchools/data-engineers
 
 # analytics engineers — all dbt projects
-/src/dbt/ @TEAMSchools/analytics-engineers
+/src/dbt/ @TEAMSchools/admins @TEAMSchools/analytics-engineers
 
-# analysts — kipptaf extracts and exposures
-/src/dbt/kipptaf/models/extracts/ @TEAMSchools/analysts
-/src/dbt/kipptaf/models/exposures/ @TEAMSchools/analysts
-/src/dbt/kipptaf/models/marts/ @TEAMSchools/analysts
+# analysts — kipptaf extracts, exposures, and marts
+/src/dbt/kipptaf/models/extracts/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
+/src/dbt/kipptaf/models/exposures/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
+/src/dbt/kipptaf/models/marts/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
 
 # docs — everyone
-/docs/ @TEAMSchools/data-team
+/docs/ @TEAMSchools/admins @TEAMSchools/data-team
