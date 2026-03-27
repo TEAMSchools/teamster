@@ -38,6 +38,9 @@ from 1Password at container start.
   - **Staging**: Prefer `git add -u` (no path argument) — naming protected paths
     explicitly triggers the hook, and `git add -A` can stage unrelated files on
     dirty checkouts.
+  - **Subagent git staging**: When dispatching subagents, instruct them to name
+    specific files in `git add` — never `git add -u`, `git add -A`, or
+    `git add .`. Subagents don't know what else is modified in the working tree.
 
 - **GitHub**:
   - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as
