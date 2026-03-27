@@ -14,13 +14,11 @@ cleanup() {
 }
 trap cleanup ERR EXIT INT TERM HUP
 
-for tpl_file in .devcontainer/tpl/.env.tpl \
-  .devcontainer/tpl/powerschool_ssh_password.txt.tpl; do
-  if [[ -L ${tpl_file} ]]; then
-    echo "❌ ${tpl_file} is a symlink — aborting" >&2
-    exit 1
-  fi
-done
+tpl_file=".devcontainer/tpl/.env.tpl"
+if [[ -L ${tpl_file} ]]; then
+  echo "❌ ${tpl_file} is a symlink — aborting" >&2
+  exit 1
+fi
 
 # validate secret-volume directory permissions
 if [[ -d /etc/secret-volume ]]; then
@@ -57,12 +55,3 @@ download_doc "Data Team" "ADP Workforce Now API" "adp_wfn_api.key"
 download_doc "Data Team" "TEAMster 1Password Credentials File" "1password-credentials.json"
 download_doc "Data Team" "DeansList API" "deanslist_api_key_map.yaml"
 download_doc "Data Team" "Egencia SFTP" "id_rsa_egencia"
-
-# inject template-based secrets
-TMP_SECRET="${TMPDIR}/powerschool_ssh_password.txt"
-op inject -f --in-file=".devcontainer/tpl/powerschool_ssh_password.txt.tpl" --out-file="${TMP_SECRET}"
-if [[ ! -s ${TMP_SECRET} ]]; then
-  echo "❌ op inject produced empty output for powerschool_ssh_password.txt" >&2
-  exit 1
-fi
-install -m 600 "${TMP_SECRET}" "/etc/secret-volume/powerschool_ssh_password.txt"
