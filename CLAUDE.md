@@ -49,20 +49,21 @@ from 1Password at container start.
     conventional commit type, any related source systems (e.g., `adp`,
     `powerschool`, `deanslist`), and `dagster` and/or `dbt` when applicable.
 
-- **Branching**: Never commit directly to `main` — always create a feature
-  branch first. When an issue exists, use
-  `gh issue develop <number> --name <branch> --checkout`. Design documents
-  (`docs/superpowers/plans/`, `docs/superpowers/specs/`) follow the same flow:
-  create the issue, develop the branch, then commit.
-
-- **Workflow choice**: Before starting feature work, ask the user:
-  1. **Worktree** — stay on `main`, work in `.worktrees/<branch>` (isolated,
-     supports parallel work, but IDE tooling stays on the main workspace)
-  2. **Branch switch** — check out the feature branch in the primary workspace
-     (simpler, full IDE support, but blocks other branch work) When using
-     worktrees and an issue exists, create the branch first with
-     `gh issue develop`, then `git worktree add .worktrees/<branch> <branch>`.
-     Without an issue, use `git worktree add .worktrees/<branch> -b <branch>`.
+- **Branching** (hard gate — complete in order, do not skip steps):
+  1. Never commit directly to `main`.
+  2. **Create a GitHub issue** if one does not already exist — required after
+     brainstorms and for planned work. Quick fixes and small changes do not
+     require an issue.
+  3. **Ask the user: worktree or branch switch?** Do not choose on their behalf.
+     - **Worktree** — stay on `main`, work in `.worktrees/<branch>` (isolated,
+       supports parallel work, but IDE tooling stays on the main workspace)
+     - **Branch switch** — check out the feature branch in the primary workspace
+       (simpler, full IDE support, but blocks other branch work)
+  4. Create the branch. When an issue exists, use
+     `gh issue develop <number> --name <branch> --checkout`. For worktrees with
+     an issue, create the branch first with `gh issue develop`, then
+     `git worktree add .worktrees/<branch> <branch>`. Without an issue, use
+     `git worktree add .worktrees/<branch> -b <branch>`.
 
 - **Claude CLI**: The binary is provided by the VS Code extension (under
   `~/.vscode-remote/extensions/`) and is not on `$PATH`. It cannot be invoked
