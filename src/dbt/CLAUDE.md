@@ -129,10 +129,11 @@ resulting diagnostic is a false positive. dbt parses it correctly.
   `deleted_at` after `WHERE deleted_at IS NULL`) — they add no signal.
 - **No `GROUP BY` without aggregation** — use `DISTINCT` instead (see next rule
   for deduplication constraints).
-- **No `SELECT DISTINCT` for deduplication** — use `dbt_utils.deduplicate()`
-  with an explicit `partition_by` and `order_by`. If `DISTINCT` is truly
-  unavoidable, it must include a `-- TODO:` comment explaining why and what
-  needs to be fixed upstream.
+- **No manual deduplication** — do not use `SELECT DISTINCT` or
+  `qualify row_number() over (...) = 1` for deduplication. Use
+  `dbt_utils.deduplicate()` with an explicit `partition_by` and `order_by`. If
+  `DISTINCT` is truly unavoidable, it must include a `-- TODO:` comment
+  explaining why and what needs to be fixed upstream.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
   breaks silently when upstream columns change.
 - **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models.

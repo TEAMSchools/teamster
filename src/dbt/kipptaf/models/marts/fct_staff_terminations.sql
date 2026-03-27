@@ -36,7 +36,8 @@ with
     ),
 
     /* first termination record by academic year */
-    terminations as (
+    -- trunk-ignore(sqlfluff/ST03)
+    terminations_filtered as (
         select
             employee_number,
             academic_year,
@@ -50,12 +51,16 @@ with
             assignment_status = 'Terminated'
             and assignment_status_reason
             not in ('Import Created Action', 'Upgrade Created Action')
-        qualify
-            row_number() over (
-                partition by employee_number, academic_year
-                order by assignment_status_effective_date asc
+    ),
+
+    terminations as (
+        {{
+            dbt_utils.deduplicate(
+                relation="terminations_filtered",
+                partition_by="employee_number, academic_year",
+                order_by="termination_effective_date asc",
             )
-            = 1
+        }}
     ),
 
     final as (
