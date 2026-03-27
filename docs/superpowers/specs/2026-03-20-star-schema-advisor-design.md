@@ -377,9 +377,10 @@ started.
 
 ### Step 5 — Classify every field
 
-Apply verdict rules to every field in the datasource JSON. Also check each
-field's `contains_lod` flag — if `true`, treat it as an LOD expression
-regardless of `is_calculated`.
+Apply the mart design principles from `src/dbt/CLAUDE.md` (see Prerequisites) to
+classify every field in the datasource JSON. Also check each field's
+`contains_lod` flag — if `true`, treat it as an LOD expression regardless of
+`is_calculated`.
 
 For fields that appear in multiple viz roles across worksheets (e.g. both SUMmed
 and used as a filter), assign **Ambiguous — analyst decision**.
