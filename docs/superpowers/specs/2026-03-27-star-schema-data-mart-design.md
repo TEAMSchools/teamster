@@ -33,7 +33,7 @@ files to target systems.
 | Gradebook facts          | Full hierarchy — term grades, category grades, assignments                                                                       | Assignments are important even though current extract usage is limited                                                |
 | GPA                      | Pre-calculated `fct_gpa` fact                                                                                                    | Cumulative/weighted/unweighted logic too complex for Cube calculation                                                 |
 | Attendance               | Separate facts by business process                                                                                               | Daily attendance, interventions, and communications have different grains                                             |
-| People domain            | Normalized — person, work assignment, compensation, reporting relationship as separate dims                                      | Different change cadences; manager and comp can change within same assignment                                         |
+| Staff domain             | Normalized — staff, work assignment, compensation, reporting relationship as separate dims                                       | Different change cadences; manager and comp can change within same assignment                                         |
 | Course domain            | Normalized — course catalog separate from sections                                                                               | Clean separation of catalog vs instance                                                                               |
 | Mart directory structure | `marts/dimensions/`, `marts/facts/`, `marts/bridges/`                                                                            | Mirrors how Cube thinks; star schema role is the organizing principle                                                 |
 | Build order              | Conformed dimensions first, then domain facts                                                                                    | Facts depend on conformed dims; clear dependency ordering                                                             |
@@ -69,14 +69,14 @@ files to target systems.
 
 | Model                         | SCD    | Grain                        | Key Sources                                                                                                                                                                      |
 | ----------------------------- | ------ | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dim_people`                  | Type 2 | one row per person x version | ADP workers, LDAP, surveys — name, birth_date, gender, race/ethnicity, education, alumni_status, contact info (personal/work email, phone, address), LDAP/Google/UPN identifiers |
+| `dim_staff`                   | Type 2 | one row per person x version | ADP workers, LDAP, surveys — name, birth_date, gender, race/ethnicity, education, alumni_status, contact info (personal/work email, phone, address), LDAP/Google/UPN identifiers |
 | `dim_work_assignments`        | Type 2 | person x position x version  | ADP work assignments — job_title, department, assignment_status, worker_type, management_indicator, benefits_eligibility, payroll_group                                          |
 | `dim_compensation`            | Type 2 | person x position x version  | ADP — base_annual_rate, hourly_rate, additional_remunerations, wage_law                                                                                                          |
 | `dim_reporting_relationships` | Type 2 | person x version             | ADP + leadership crosswalk — reports_to_employee_number, reports_to_name, reports_to_email                                                                                       |
 
 **Foreign keys on `dim_work_assignments`:**
 
-- `person_key` -> `dim_people`
+- `staff_key` -> `dim_staff`
 - `location_key` -> `dim_locations`
 - `compensation_key` -> `dim_compensation`
 - `reporting_relationship_key` -> `dim_reporting_relationships`
@@ -89,10 +89,10 @@ Column-level mapping during implementation may reveal additional splits.
 
 ### Course Domain
 
-| Model          | SCD    | Grain                         | Key Sources                                                                                               |
-| -------------- | ------ | ----------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `dim_courses`  | Type 1 | one row per course in catalog | PowerSchool courses — course_number, course_name, discipline, credit_hours                                |
-| `dim_sections` | Type 1 | one row per section x term    | PowerSchool sections — section_number, teacher (FK -> `dim_people`), location_key, term_key, period, room |
+| Model          | SCD    | Grain                         | Key Sources                                                                                              |
+| -------------- | ------ | ----------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `dim_courses`  | Type 1 | one row per course in catalog | PowerSchool courses — course_number, course_name, discipline, credit_hours                               |
+| `dim_sections` | Type 1 | one row per section x term    | PowerSchool sections — section_number, teacher (FK -> `dim_staff`), location_key, term_key, period, room |
 
 ### Assessment Domain
 
@@ -116,11 +116,11 @@ Column-level mapping during implementation may reveal additional splits.
 | `fct_gpa`                                 | student x term                        | student_key, term_key, region_key, location_key                                                                                               | cumulative_gpa, term_gpa, weighted/unweighted variants, credit_hours_earned, credit_hours_attempted                                                                                 |
 | `fct_assessment_scores`                   | student x assessment x administration | student_key, assessment_key, test_date_key (role-playing), term_key, region_key, location_key                                                 | scale_score, percent_correct, proficiency_level, achievement_level, growth_percentile, section_scores (nullable), superscore (nullable), college_readiness_benchmark_met (nullable) |
 | `fct_attendance`                          | student x date                        | student_key, date_key, location_key, region_key, term_key                                                                                     | attendance_code, excused/unexcused, present/absent/tardy/early_dismissal                                                                                                            |
-| `fct_attendance_interventions`            | student x intervention event          | student_key, staff_key (-> dim_people), intervention_date_key (role-playing), location_key, region_key                                        | intervention_type, outcome                                                                                                                                                          |
-| `fct_attendance_communications`           | student x communication event         | student_key, staff_key (-> dim_people), communication_date_key (role-playing), location_key, region_key                                       | communication_method, outcome                                                                                                                                                       |
-| `fct_staff_attrition`                     | person x termination event            | person_key, work_assignment_key, termination_date_key (role-playing), region_key, location_key                                                | termination_reason, voluntary/involuntary                                                                                                                                           |
-| `fct_performance_management_observations` | person x observation event            | person_key, work_assignment_key, observer_key (-> dim_people), observation_date_key (role-playing), term_key, region_key, location_key        | rubric_score, measurement_name, strand                                                                                                                                              |
-| `fct_behavioral_incidents`                | student x incident                    | student_key, referring_staff_key (-> dim_people), incident_date_key (role-playing), location_key, region_key                                  | incident_type                                                                                                                                                                       |
+| `fct_attendance_interventions`            | student x intervention event          | student_key, staff_key (-> dim_staff), intervention_date_key (role-playing), location_key, region_key                                         | intervention_type, outcome                                                                                                                                                          |
+| `fct_attendance_communications`           | student x communication event         | student_key, staff_key (-> dim_staff), communication_date_key (role-playing), location_key, region_key                                        | communication_method, outcome                                                                                                                                                       |
+| `fct_staff_attrition`                     | person x termination event            | staff_key, work_assignment_key, termination_date_key (role-playing), region_key, location_key                                                 | termination_reason, voluntary/involuntary                                                                                                                                           |
+| `fct_performance_management_observations` | person x observation event            | staff_key, work_assignment_key, observer_key (-> dim_staff), observation_date_key (role-playing), term_key, region_key, location_key          | rubric_score, measurement_name, strand                                                                                                                                              |
+| `fct_behavioral_incidents`                | student x incident                    | student_key, referring_staff_key (-> dim_staff), incident_date_key (role-playing), location_key, region_key                                   | incident_type                                                                                                                                                                       |
 | `fct_behavioral_consequences`             | student x incident x consequence      | student_key, incident_key (-> fct_behavioral_incidents), start_date_key (role-playing), end_date_key (role-playing), location_key, region_key | consequence_type, duration, is_served                                                                                                                                               |
 | `fct_college_enrollments`                 | student x college x term              | student_key, college_key (-> dim_colleges), enrollment_date_key (role-playing), region_key                                                    | enrollment_status, degree_pursued                                                                                                                                                   |
 
@@ -145,7 +145,7 @@ Examples:
 | SCD Type                | Applied To                                                                                                                                                         | Behavior                                                                                                                     |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | Type 1 (overwrite)      | `dim_students`, `dim_student_contacts`, `dim_regions`, `dim_locations`, `dim_courses`, `dim_sections`, `dim_assessments`, `dim_colleges`, `dim_terms`, `dim_dates` | Current state only; corrections overwrite                                                                                    |
-| Type 2 (versioned rows) | `dim_people`, `dim_work_assignments`, `dim_compensation`, `dim_reporting_relationships`, `dim_student_enrollments`                                                 | Versioned with `effective_date_start`, `effective_date_end`, `is_current_record`; facts link to version active at event time |
+| Type 2 (versioned rows) | `dim_staff`, `dim_work_assignments`, `dim_compensation`, `dim_reporting_relationships`, `dim_student_enrollments`                                                  | Versioned with `effective_date_start`, `effective_date_end`, `is_current_record`; facts link to version active at event time |
 
 ## Open Review Items
 
@@ -227,7 +227,7 @@ completion, career outcomes).
 
 ### 8. Staff Domain Decomposition
 
-The people/staff dimension split (`dim_people`, `dim_work_assignments`,
+The staff dimension split (`dim_staff`, `dim_work_assignments`,
 `dim_compensation`, `dim_reporting_relationships`) was designed based on change
 cadence analysis of `int_people__staff_roster_history`. The 223-column source
 model is complex.
