@@ -1,5 +1,4 @@
 {
-  "autoMemoryEnabled": false,
   "permissions": {
     "allow": [
       "Bash(gh issue list:*)",
@@ -184,5 +183,6 @@
         "repo": "dbt-labs/dbt-agent-skills"
       }
     }
-  }
+  },
+  "autoMemoryEnabled": false
 }

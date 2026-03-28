@@ -101,8 +101,9 @@ is not supported by the API — paginate and filter client-side.
 3. Compute logs (`get_run_compute_logs`) return null for GKE-executed runs —
    logs live on ephemeral pods and aren't persisted. Use BigQuery MCP and dbt
    compilation as alternatives for diagnosing dbt failures.
-4. `get_run_logs` may return 400 — the `gql()` function swallows the response
-   body on HTTP errors, making the cause undiagnosable.
+4. `get_run_logs` returns `timestamp: null` for non-`MessageEvent` implementors
+   (e.g. `ExecutionStepFailureEvent`, `LogsCapturedEvent`) — timestamp is only
+   populated on `MessageEvent` subtypes.
 
 ## BigQuery MCP
 

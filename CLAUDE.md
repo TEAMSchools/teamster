@@ -61,6 +61,8 @@ from 1Password at container start.
        on `main`. Enables parallel work: compare behavior across branches
        side-by-side, start new tasks without waiting on open PRs, run subagents
        on isolated branches. Downside: IDE tooling stays on the main workspace.
+       **Edit files directly at `.worktrees/<branch>/...` — never edit main
+       workspace files and copy them over.**
      - **Branch switch** — check out the feature branch in the primary
        workspace. Full IDE support, but blocks other branch work until switch
        back.
