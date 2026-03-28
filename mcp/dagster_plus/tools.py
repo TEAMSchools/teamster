@@ -61,6 +61,7 @@ def _build_execution_params(
         "selector": {
             "repositoryLocationName": repository_location_name,
             "repositoryName": repository_name,
+            "jobName": "__ASSET_JOB",
             "assetSelection": [{"path": key.split("/")} for key in asset_keys],
         },
     }
