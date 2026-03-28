@@ -79,11 +79,11 @@ query GetRunLogs($runId: ID!, $afterCursor: String, $limit: Int) {
     ... on EventConnection {
       events {
         __typename
-        timestamp
         ... on MessageEvent {
           message
           level
           stepKey
+          timestamp
         }
         ... on ExecutionStepFailureEvent {
           stepKey
