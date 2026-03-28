@@ -70,3 +70,32 @@ client-side.
    BigQuery MCP and dbt compilation instead
 4. `get_run_logs` returns `timestamp: null` for non-`MessageEvent` types —
    timestamp only on `MessageEvent` subtypes
+
+## Mutation tools
+
+Three tools launch runs via GraphQL mutations. All use a **confirm flag
+pattern**: `confirm=False` (default) returns a preview of what would be sent;
+`confirm=True` executes the mutation. No server-side state — preview and execute
+are independent calls.
+
+| Tool                   | Description                                                                   |
+| ---------------------- | ----------------------------------------------------------------------------- |
+| `launch_run`           | Materialize selected assets in a code location                                |
+| `launch_multiple_runs` | Batch-launch multiple asset materializations                                  |
+| `reexecute_run`        | Re-execute a previous run (`FROM_FAILURE`, `FROM_ASSET_FAILURE`, `ALL_STEPS`) |
+
+### Usage pattern
+
+1. Call with `confirm=False` (or omit) to preview the execution params
+2. Review the preview JSON
+3. Call again with `confirm=True` to execute
+
+### Schema gotchas (mutations)
+
+- `ExecutionParams.selector` uses `assetSelection` (list of `AssetKeyInput`),
+  not `assetKeys` — tools handle this conversion from slash-separated strings
+- `ReexecutionParams.extraTags` uses `[ExecutionTag!]` format (`key`/`value`
+  objects), not a flat dict — tools handle this conversion
+- `launchMultipleRuns` returns a nested result: the outer union has
+  `LaunchMultipleRunsResult`, whose `launchMultipleRunsResult` field is a list
+  of per-run `LaunchRunResult` unions
