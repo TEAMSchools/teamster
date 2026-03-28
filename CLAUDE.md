@@ -78,7 +78,8 @@ from 1Password at container start.
 
 - **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment. Do
   not use linter-native disable syntax (e.g., `# shellcheck disable=`, `# noqa`,
-  `-- noqa`).
+  `-- noqa`). The `trunk` binary is not on `$PATH` — use
+  `/workspaces/teamster/.trunk/tools/trunk`.
 
 ## Architecture
 
