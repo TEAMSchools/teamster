@@ -12,6 +12,6 @@ models:
       - name: label
         data_type: string
       - name: label_number
-        data_type: numeric
+        data_type: bignumeric
       - name: minimum_value
-        data_type: float64
+        data_type: bignumeric
