@@ -581,6 +581,13 @@ def launch_multiple_runs(
     ] = False,
 ) -> str:
     """Launch multiple Dagster+ runs in a single batch. Call with confirm=False first to preview, then confirm=True to execute."""
+    for i, r in enumerate(runs):
+        for key in ("asset_keys", "repository_location_name"):
+            if key not in r:
+                return json.dumps(
+                    {"error": f"runs[{i}] missing required key '{key}'"},
+                    indent=2,
+                )
     params_list = [
         _build_execution_params(
             asset_keys=r["asset_keys"],
@@ -631,8 +638,8 @@ def reexecute_run(
         bool,
         Field(
             description=(
-                "False (default) returns a preview with parent run details. "
-                "True executes the mutation."
+                "False (default) fetches the parent run from Dagster+ and "
+                "returns a preview with its details. True executes the mutation."
             ),
         ),
     ] = False,
