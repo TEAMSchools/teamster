@@ -3,7 +3,7 @@
 ## Overview
 
 MCP (Model Context Protocol) servers that expose Dagster+ operational data to AI
-assistants. Each server is a standalone Python script run via `uv run`.
+assistants. Each server is a Python package or script run via `uv run`.
 
 ## MCP Tool Selection
 
@@ -12,16 +12,16 @@ BigQuery MCP directly. Use dbt MCP's `show` only when `ref()` / `source()`
 resolution is needed — it adds compilation overhead and the target determines
 the environment.
 
-## `dagster_plus.py`
+## `dagster_plus/`
 
-An MCP server that exposes Dagster+ run logs, compute logs, daemon health, asset
-staleness, automation condition evaluations, tick history, backfills, and more
-via the Dagster+ GraphQL API.
+A FastMCP server package that exposes Dagster+ run logs, compute logs, daemon
+health, asset staleness, automation condition evaluations, tick history,
+backfills, and more via the Dagster+ GraphQL API.
 
 ### Running
 
 ```bash
-uv run mcp/dagster_plus.py
+cd mcp && uv run python -m dagster_plus
 ```
 
 ### Environment Variables
