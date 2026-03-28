@@ -605,3 +605,61 @@ def launch_multiple_runs(
         {"executionParamsList": params_list},
     )
     return json.dumps(data["launchMultipleRuns"], indent=2)
+
+
+@server.tool()
+def reexecute_run(
+    parent_run_id: Annotated[
+        str,
+        Field(description="The run ID (UUID) of the failed run to re-execute."),
+    ],
+    strategy: Annotated[
+        ReexecutionStrategy,
+        Field(
+            description=(
+                "Re-execution strategy: FROM_FAILURE (retry from failed step), "
+                "FROM_ASSET_FAILURE (retry from failed asset), or "
+                "ALL_STEPS (re-run everything)."
+            ),
+        ),
+    ],
+    extra_tags: Annotated[
+        dict[str, str] | None,
+        Field(description="Optional additional tags for the new run."),
+    ] = None,
+    confirm: Annotated[
+        bool,
+        Field(
+            description=(
+                "False (default) returns a preview with parent run details. "
+                "True executes the mutation."
+            ),
+        ),
+    ] = False,
+) -> str:
+    """Re-execute a previous Dagster+ run with the given strategy. Call with confirm=False first to preview parent run details, then confirm=True to execute."""
+    if not confirm:
+        parent_data = gql(RUN_BY_ID_QUERY, {"runId": parent_run_id})
+        return json.dumps(
+            {
+                "mode": "preview",
+                "parent_run": parent_data["runOrError"],
+                "strategy": strategy,
+                "extra_tags": extra_tags,
+                "action_required": "Call again with confirm=True to execute.",
+            },
+            indent=2,
+        )
+    reexecution_params: dict[str, Any] = {
+        "parentRunId": parent_run_id,
+        "strategy": strategy,
+    }
+    if extra_tags:
+        reexecution_params["extraTags"] = [
+            {"key": k, "value": v} for k, v in extra_tags.items()
+        ]
+    data = gql(
+        LAUNCH_RUN_REEXECUTION_MUTATION,
+        {"reexecutionParams": reexecution_params},
+    )
+    return json.dumps(data["launchRunReexecution"], indent=2)
