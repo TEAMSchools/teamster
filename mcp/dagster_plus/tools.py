@@ -555,3 +555,53 @@ def launch_run(
         )
     data = gql(LAUNCH_RUN_MUTATION, {"executionParams": params})
     return json.dumps(data["launchRun"], indent=2)
+
+
+@server.tool()
+def launch_multiple_runs(
+    runs: Annotated[
+        list[dict[str, Any]],
+        Field(
+            description=(
+                "List of run specs. Each dict must have 'asset_keys' (list of "
+                "slash-separated strings) and 'repository_location_name' (str). "
+                "Optional: 'repository_name' (str, default '__repository__'), "
+                "'tags' (dict[str, str]), 'run_config' (dict)."
+            ),
+        ),
+    ],
+    confirm: Annotated[
+        bool,
+        Field(
+            description=(
+                "False (default) returns a preview of what would be launched. "
+                "True executes the mutation."
+            ),
+        ),
+    ] = False,
+) -> str:
+    """Launch multiple Dagster+ runs in a single batch. Call with confirm=False first to preview, then confirm=True to execute."""
+    params_list = [
+        _build_execution_params(
+            asset_keys=r["asset_keys"],
+            repository_location_name=r["repository_location_name"],
+            repository_name=r.get("repository_name", "__repository__"),
+            tags=r.get("tags"),
+            run_config=r.get("run_config"),
+        )
+        for r in runs
+    ]
+    if not confirm:
+        return json.dumps(
+            {
+                "mode": "preview",
+                "runs": params_list,
+                "action_required": "Call again with confirm=True to execute.",
+            },
+            indent=2,
+        )
+    data = gql(
+        LAUNCH_MULTIPLE_RUNS_MUTATION,
+        {"executionParamsList": params_list},
+    )
+    return json.dumps(data["launchMultipleRuns"], indent=2)
