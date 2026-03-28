@@ -50,6 +50,7 @@ StalenessCategory = Literal["CODE", "DATA", "DEPENDENCIES"]
 
 def _build_execution_params(
     asset_keys: list[str],
+    *,
     repository_location_name: str,
     repository_name: str = "__repository__",
     tags: dict[str, str] | None = None,
@@ -537,6 +538,8 @@ def launch_run(
     ] = False,
 ) -> str:
     """Launch a Dagster+ run to materialize selected assets. Call with confirm=False first to preview, then confirm=True to execute."""
+    if not asset_keys:
+        return json.dumps({"error": "asset_keys must not be empty"}, indent=2)
     params = _build_execution_params(
         asset_keys=asset_keys,
         repository_location_name=repository_location_name,
@@ -581,6 +584,8 @@ def launch_multiple_runs(
     ] = False,
 ) -> str:
     """Launch multiple Dagster+ runs in a single batch. Call with confirm=False first to preview, then confirm=True to execute."""
+    if not runs:
+        return json.dumps({"error": "runs must not be empty"}, indent=2)
     for i, r in enumerate(runs):
         for key in ("asset_keys", "repository_location_name"):
             if key not in r:
@@ -588,6 +593,11 @@ def launch_multiple_runs(
                     {"error": f"runs[{i}] missing required key '{key}'"},
                     indent=2,
                 )
+        if not r["asset_keys"]:
+            return json.dumps(
+                {"error": f"runs[{i}] asset_keys must not be empty"},
+                indent=2,
+            )
     params_list = [
         _build_execution_params(
             asset_keys=r["asset_keys"],

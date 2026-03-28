@@ -536,8 +536,16 @@ mutation LaunchMultipleRuns($executionParamsList: [ExecutionParams!]!) {
           run { id jobName status creationTime assetSelection { path } }
         }
         ... on PythonError { message }
+        ... on InvalidSubsetError { message }
+        ... on PipelineNotFoundError { message }
+        ... on RunConfigValidationInvalid {
+          errors { message reason }
+        }
         ... on RunConflict { message }
         ... on UnauthorizedError { message }
+        ... on ConflictingExecutionParamsError { message }
+        ... on InvalidStepError { invalidStepKey }
+        ... on InvalidOutputError { stepKey invalidOutputName }
       }
     }
     ... on PythonError { message stack }
@@ -562,9 +570,16 @@ mutation LaunchRunReexecution($reexecutionParams: ReexecutionParams!) {
       }
     }
     ... on PythonError { message stack }
+    ... on InvalidSubsetError { message }
     ... on PipelineNotFoundError { message }
+    ... on RunConfigValidationInvalid {
+      errors { message reason }
+    }
     ... on RunConflict { message }
     ... on UnauthorizedError { message }
+    ... on ConflictingExecutionParamsError { message }
+    ... on InvalidStepError { invalidStepKey }
+    ... on InvalidOutputError { stepKey invalidOutputName }
   }
 }
 """
