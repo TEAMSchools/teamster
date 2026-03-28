@@ -489,3 +489,82 @@ query GetBackfill($backfillId: String!) {
   }
 }
 """
+
+LAUNCH_RUN_MUTATION = """
+mutation LaunchRun($executionParams: ExecutionParams!) {
+  launchRun(executionParams: $executionParams) {
+    __typename
+    ... on LaunchRunSuccess {
+      run {
+        id
+        jobName
+        status
+        creationTime
+        assetSelection { path }
+        tags { key value }
+        repositoryOrigin {
+          repositoryName
+          repositoryLocationName
+        }
+      }
+    }
+    ... on PythonError { message stack }
+    ... on InvalidSubsetError { message }
+    ... on PipelineNotFoundError { message }
+    ... on RunConfigValidationInvalid {
+      errors { message reason }
+    }
+    ... on RunConflict { message }
+    ... on UnauthorizedError { message }
+    ... on ConflictingExecutionParamsError { message }
+    ... on PresetNotFoundError { message }
+    ... on NoModeProvidedError { message }
+    ... on InvalidStepError { invalidStepKey }
+    ... on InvalidOutputError { stepKey invalidOutputName }
+  }
+}
+"""
+
+LAUNCH_MULTIPLE_RUNS_MUTATION = """
+mutation LaunchMultipleRuns($executionParamsList: [ExecutionParams!]!) {
+  launchMultipleRuns(executionParamsList: $executionParamsList) {
+    __typename
+    ... on LaunchMultipleRunsResult {
+      launchMultipleRunsResult {
+        __typename
+        ... on LaunchRunSuccess {
+          run { id jobName status creationTime assetSelection { path } }
+        }
+        ... on PythonError { message }
+        ... on RunConflict { message }
+        ... on UnauthorizedError { message }
+      }
+    }
+    ... on PythonError { message stack }
+  }
+}
+"""
+
+LAUNCH_RUN_REEXECUTION_MUTATION = """
+mutation LaunchRunReexecution($reexecutionParams: ReexecutionParams!) {
+  launchRunReexecution(reexecutionParams: $reexecutionParams) {
+    __typename
+    ... on LaunchRunSuccess {
+      run {
+        id
+        jobName
+        status
+        creationTime
+        parentRunId
+        rootRunId
+        assetSelection { path }
+        tags { key value }
+      }
+    }
+    ... on PythonError { message stack }
+    ... on PipelineNotFoundError { message }
+    ... on RunConflict { message }
+    ... on UnauthorizedError { message }
+  }
+}
+"""
