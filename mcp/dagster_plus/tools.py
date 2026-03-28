@@ -44,7 +44,7 @@ StalenessCategory = Literal["CODE", "DATA", "DEPENDENCIES"]
 
 
 @server.tool()
-async def list_runs(
+def list_runs(
     limit: Annotated[
         int,
         Field(description="Max number of runs to return (default 20, max 100)."),
@@ -117,7 +117,7 @@ async def list_runs(
 
 
 @server.tool()
-async def get_run(
+def get_run(
     run_id: Annotated[
         str,
         Field(description="The run ID (UUID) to look up."),
@@ -129,7 +129,7 @@ async def get_run(
 
 
 @server.tool()
-async def get_run_logs(
+def get_run_logs(
     run_id: Annotated[
         str,
         Field(description="The run ID to fetch logs for."),
@@ -183,7 +183,7 @@ async def get_run_logs(
 
 
 @server.tool()
-async def get_run_compute_logs(
+def get_run_compute_logs(
     log_key: Annotated[
         list[str],
         Field(
@@ -215,7 +215,7 @@ async def get_run_compute_logs(
 
 
 @server.tool()
-async def get_captured_logs_metadata(
+def get_captured_logs_metadata(
     log_key: Annotated[
         list[str],
         Field(description="The logKey array from a LogsCapturedEvent."),
@@ -230,21 +230,21 @@ async def get_captured_logs_metadata(
 
 
 @server.tool()
-async def get_daemon_health() -> str:
+def get_daemon_health() -> str:
     """Get the health status of all Dagster+ daemons (scheduler, sensor, run coordinator, etc.). Returns whether each daemon is healthy, its last heartbeat time, and any error messages."""
     data = gql(DAEMON_HEALTH_QUERY)
     return json.dumps(data["instance"]["daemonHealth"]["allDaemonStatuses"], indent=2)
 
 
 @server.tool()
-async def list_code_locations() -> str:
+def list_code_locations() -> str:
     """List all code locations in the Dagster+ workspace and their load status. Shows which locations loaded successfully and which have errors (e.g. import failures after a deploy)."""
     data = gql(CODE_LOCATIONS_QUERY)
     return json.dumps(data["workspaceOrError"], indent=2)
 
 
 @server.tool()
-async def list_stale_assets(
+def list_stale_assets(
     category: Annotated[
         StalenessCategory | None,
         Field(description="Filter to a specific staleness category. Omit for all."),
@@ -270,7 +270,7 @@ async def list_stale_assets(
 
 
 @server.tool()
-async def get_asset_materializations(
+def get_asset_materializations(
     asset_key: Annotated[
         str,
         Field(
@@ -309,7 +309,7 @@ async def get_asset_materializations(
 
 
 @server.tool()
-async def get_asset_partition_statuses(
+def get_asset_partition_statuses(
     asset_key: Annotated[
         str,
         Field(description="Asset key as slash-separated string."),
@@ -327,7 +327,7 @@ async def get_asset_partition_statuses(
 
 
 @server.tool()
-async def get_asset_check_executions(
+def get_asset_check_executions(
     asset_key: Annotated[
         str,
         Field(description="Asset key as slash-separated string."),
@@ -361,7 +361,7 @@ async def get_asset_check_executions(
 
 
 @server.tool()
-async def get_asset_condition_evaluations(
+def get_asset_condition_evaluations(
     asset_key: Annotated[
         str,
         Field(description="Asset key as slash-separated string."),
@@ -392,7 +392,7 @@ async def get_asset_condition_evaluations(
 
 
 @server.tool()
-async def get_tick_history(
+def get_tick_history(
     name: Annotated[
         str,
         Field(description="The schedule or sensor name."),
@@ -431,7 +431,7 @@ async def get_tick_history(
 
 
 @server.tool()
-async def list_backfills(
+def list_backfills(
     status: Annotated[
         BackfillStatus | None,
         Field(description="Filter to backfills with this status."),
@@ -459,7 +459,7 @@ async def list_backfills(
 
 
 @server.tool()
-async def get_backfill(
+def get_backfill(
     backfill_id: Annotated[
         str,
         Field(description="The backfill ID to look up."),

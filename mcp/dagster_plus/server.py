@@ -6,7 +6,7 @@ from typing import Any
 import httpx
 from mcp.server.fastmcp import FastMCP
 
-DAGSTER_CLOUD_API_TOKEN = os.environ.get("DAGSTER_CLOUD_API_TOKEN", "")
+DAGSTER_CLOUD_API_TOKEN = os.environ["DAGSTER_CLOUD_API_TOKEN"]
 DAGSTER_CLOUD_ORGANIZATION_ID = os.environ.get(
     "DAGSTER_CLOUD_ORGANIZATION_ID", "kipptaf"
 )
