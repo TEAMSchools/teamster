@@ -16,6 +16,9 @@ from .queries import (
     CODE_LOCATIONS_QUERY,
     COMPUTE_LOGS_QUERY,
     DAEMON_HEALTH_QUERY,
+    LAUNCH_MULTIPLE_RUNS_MUTATION,
+    LAUNCH_RUN_MUTATION,
+    LAUNCH_RUN_REEXECUTION_MUTATION,
     LIST_RUNS_QUERY,
     RUN_BY_ID_QUERY,
     RUN_LOGS_QUERY,
@@ -40,7 +43,33 @@ TickStatus = Literal["SUCCESS", "FAILURE", "SKIPPED", "STARTED"]
 
 BackfillStatus = Literal["REQUESTED", "CANCELING", "CANCELED", "FAILED", "COMPLETED"]
 
+ReexecutionStrategy = Literal["FROM_FAILURE", "FROM_ASSET_FAILURE", "ALL_STEPS"]
+
 StalenessCategory = Literal["CODE", "DATA", "DEPENDENCIES"]
+
+
+def _build_execution_params(
+    asset_keys: list[str],
+    repository_location_name: str,
+    repository_name: str = "__repository__",
+    tags: dict[str, str] | None = None,
+    run_config: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build an ExecutionParams dict from asset-centric arguments."""
+    params: dict[str, Any] = {
+        "selector": {
+            "repositoryLocationName": repository_location_name,
+            "repositoryName": repository_name,
+            "assetSelection": [{"path": key.split("/")} for key in asset_keys],
+        },
+    }
+    if run_config:
+        params["runConfigData"] = run_config
+    if tags:
+        params["executionMetadata"] = {
+            "tags": [{"key": k, "value": v} for k, v in tags.items()],
+        }
+    return params
 
 
 @server.tool()
@@ -468,3 +497,61 @@ def get_backfill(
     """Get details for a single backfill by ID. Returns asset selection, partition names, status counts, error, and metadata."""
     data = gql(BACKFILL_QUERY, {"backfillId": backfill_id})
     return json.dumps(data["partitionBackfillOrError"], indent=2)
+
+
+@server.tool()
+def launch_run(
+    asset_keys: Annotated[
+        list[str],
+        Field(
+            description=(
+                "Asset keys to materialize, as slash-separated strings "
+                "(e.g. ['school/source/table'])."
+            ),
+        ),
+    ],
+    repository_location_name: Annotated[
+        str,
+        Field(description="The code location name (e.g. 'kipptaf')."),
+    ],
+    repository_name: Annotated[
+        str,
+        Field(description="The repository name (default '__repository__')."),
+    ] = "__repository__",
+    tags: Annotated[
+        dict[str, str] | None,
+        Field(description="Optional key/value tags for the run."),
+    ] = None,
+    run_config: Annotated[
+        dict[str, Any] | None,
+        Field(description="Optional run config overrides."),
+    ] = None,
+    confirm: Annotated[
+        bool,
+        Field(
+            description=(
+                "False (default) returns a preview of what would be launched. "
+                "True executes the mutation."
+            ),
+        ),
+    ] = False,
+) -> str:
+    """Launch a Dagster+ run to materialize selected assets. Call with confirm=False first to preview, then confirm=True to execute."""
+    params = _build_execution_params(
+        asset_keys=asset_keys,
+        repository_location_name=repository_location_name,
+        repository_name=repository_name,
+        tags=tags,
+        run_config=run_config,
+    )
+    if not confirm:
+        return json.dumps(
+            {
+                "mode": "preview",
+                "execution_params": params,
+                "action_required": "Call again with confirm=True to execute.",
+            },
+            indent=2,
+        )
+    data = gql(LAUNCH_RUN_MUTATION, {"executionParams": params})
+    return json.dumps(data["launchRun"], indent=2)
