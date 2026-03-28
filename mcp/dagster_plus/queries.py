@@ -535,7 +535,7 @@ mutation LaunchMultipleRuns($executionParamsList: [ExecutionParams!]!) {
         ... on LaunchRunSuccess {
           run { id jobName status creationTime assetSelection { path } }
         }
-        ... on PythonError { message }
+        ... on PythonError { message stack }
         ... on InvalidSubsetError { message }
         ... on PipelineNotFoundError { message }
         ... on RunConfigValidationInvalid {
