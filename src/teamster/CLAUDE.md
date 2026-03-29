@@ -85,11 +85,11 @@ code_locations/<name>/
 
 **Identity constants** (defined in `__init__.py`):
 
-| Constant              | Example (`kippnewark`)         |
-| --------------------- | ------------------------------ |
-| `CODE_LOCATION`       | `"kippnewark"`                 |
-| `LOCAL_TIMEZONE`      | `ZoneInfo("America/New_York")` |
-| `CURRENT_FISCAL_YEAR` | `2026`                         |
+| Constant              | Example (`kippnewark`)          |
+| --------------------- | ------------------------------- |
+| `CODE_LOCATION`       | `"kippnewark"`                  |
+| `LOCAL_TIMEZONE`      | `ZoneInfo("America/New_York")`  |
+| `CURRENT_FISCAL_YEAR` | fiscal year (updated each July) |
 
 **GCS bucket**: `teamster-<code_location>` (redirects to `teamster-test` in
 branch deployments).
