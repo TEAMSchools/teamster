@@ -69,15 +69,13 @@ against the Python schema in
 `cursor`. Pass it back to page forward. No server-side timestamp filtering —
 paginate and filter client-side.
 
-## Diagnosing degraded assets
+## Diagnosing assets (cross-tool)
 
-1. `search_assets(prefix="...")` to discover asset keys
-2. `get_asset_health(asset_keys=[...])` for health status,
-   `get_asset_staleness(asset_keys=[...])` for staleness root causes
-3. `list_runs(statuses=["FAILURE"])` for broad failure scanning across all
-   assets
-4. `get_run` for step keys/asset selection, then cross-reference BigQuery
-   schemas (`get_table_info`) against dbt contract YAML
+Tool selection and diagnostic workflows are in the server `instructions` (see
+`server.py`). Below covers cross-MCP-server patterns only.
+
+- `get_run` for step keys/asset selection, then cross-reference BigQuery schemas
+  (`get_table_info`) against dbt contract YAML
 
 ### API quirks
 
