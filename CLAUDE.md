@@ -45,23 +45,9 @@ from 1Password at container start.
 - **GitHub**:
   - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as
     the PR body — fill in the relevant sections based on the changes.
-  - **Issues**: Do not open proactively — ask first. Use `gh issue create` (not
-    the web UI). Label with a
-    [conventional commit type](https://www.conventionalcommits.org/en/v1.0.0/)
-    (`feat`, `fix`, `docs`, `refactor`, `chore`, etc.), any related source
-    systems (e.g., `adp`, `powerschool`, `deanslist`), and `dagster` and/or
-    `dbt` when applicable.
-  - **Design specs**: When a spec is first ready to commit:
-    1. Open a GitHub issue (`gh issue create`)
-    2. Create and link the branch
-       (`gh issue develop <number> --name <branch> --checkout`)
-    3. Commit the spec to that branch
-    4. Push the branch
-    5. Update the issue body with a hyperlink to the spec on the branch
-    - Spec and plan documents must include a status table at the top. Specs
-      track **Spec**, **Plan**, and **Development**; plans track **Plan** and
-      **Development**. Valid statuses: NOT STARTED, IN PROGRESS, IN REVIEW,
-      APPROVED, COMPLETE. Update as work progresses.
+  - **Issues**: Use `gh issue create` (not the web UI). Label with a
+    conventional commit type, any related source systems (e.g., `adp`,
+    `powerschool`, `deanslist`), and `dagster` and/or `dbt` when applicable.
 
 - **Branching** (hard gate — complete in order, do not skip steps):
   1. Never commit directly to `main`.

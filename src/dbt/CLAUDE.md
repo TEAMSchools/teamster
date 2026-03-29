@@ -32,6 +32,22 @@ titan ────────┘
 Not every district uses every source package. See each district project's
 CLAUDE.md for its active packages.
 
+## District Variable Defaults
+
+All district projects share these values (override via `dbt_project.yml`):
+
+| Variable                             | Value                                                                         |
+| ------------------------------------ | ----------------------------------------------------------------------------- |
+| `current_academic_year`              | `2025`                                                                        |
+| `current_fiscal_year`                | `2026`                                                                        |
+| `local_timezone`                     | `America/New_York`                                                            |
+| `cloud_storage_uri_base`             | `gs://teamster-<project>/dagster/<project>`                                   |
+| `powerschool_external_location_root` | `gs://teamster-<project>/dagster/<project>/powerschool` (ODBC districts only) |
+
+Exceptions: `kippnewark` adds `iready_schema: kippnj_iready` and
+`renlearn_schema: kippnj_renlearn`. `kipptaf` has
+`bigquery_external_connection_name` — see its CLAUDE.md.
+
 ## Shared Dependencies
 
 All projects use:
@@ -201,35 +217,3 @@ All SQL follows `.trunk/config/.sqlfluff`. Key enforced rules:
 - **Line length**: 88 characters max
 
 Do not flag code that follows these rules.
-
-## Package Macro Resolution
-
-Source-system projects are consumed as dbt packages by school projects. dbt
-ignores `generate_schema_name` overrides in installed packages — it must live in
-the consuming project. Custom macros (e.g., `resolve_source_schema`) ARE
-resolved from the consuming project's namespace when called from package source
-files.
-
-Running `dbt parse` directly against a standalone source-system project will
-fail if its source files call macros defined in consuming projects. This is
-expected — source-system projects are only compiled as packages.
-
-`stage_external_sources --args 'select: *'` stages all external sources;
-`--args 'select: source_name'` scopes to one source.
-
-## dbt Cloud
-
-- **"Target name" in job settings** controls `target.name` in Jinja exactly —
-  `"default"` is a literal string, not a placeholder. Set explicitly to
-  `"staging"` or `"prod"` for target-driven macro logic to work.
-
-## Profiles Architecture
-
-Two `profiles.yml` files per school/network project:
-
-- **`.dbt/profiles.yml`** — local dev + dbt Cloud, multiple targets
-  (`dev`/`staging`/`prod`)
-- **`src/dbt/<project>/profiles.yml`** — shipped with code, used by Dagster
-
-Source-system projects only appear in `.dbt/profiles.yml` (not shipped to
-Dagster — they run as packages inside school projects).
