@@ -38,8 +38,3 @@ project.
 The `odbc/` vs `sftp/` split exists because some schools pull data via live
 Oracle ODBC tunnel and others via SFTP file drops. Only one should be enabled
 per deployment.
-
-## Model Conventions
-
-See `src/dbt/CLAUDE.md` for per-layer requirements (contract enforcement,
-uniqueness tests, SQL antipatterns) that apply to all dbt projects.

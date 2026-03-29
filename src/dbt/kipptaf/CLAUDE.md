@@ -124,15 +124,10 @@ config:
           cron_schedule: "0 7 * * *" # only if Dagster-managed
 ```
 
-## Key Variables
+## kipptaf-Specific Variables
 
-| Variable                            | Value                                                                    |
-| ----------------------------------- | ------------------------------------------------------------------------ |
-| `current_academic_year`             | `2025`                                                                   |
-| `current_fiscal_year`               | `2026`                                                                   |
-| `local_timezone`                    | `America/New_York`                                                       |
-| `cloud_storage_uri_base`            | `gs://teamster-kipptaf/dagster/kipptaf`                                  |
-| `bigquery_external_connection_name` | `projects/teamster-332318/locations/us/connections/biglake-teamster-gcs` |
+`bigquery_external_connection_name`:
+`projects/teamster-332318/locations/us/connections/biglake-teamster-gcs`
 
 dbt Cloud project ID: `211862`.
 

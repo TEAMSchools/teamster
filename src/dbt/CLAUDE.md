@@ -32,6 +32,22 @@ titan ────────┘
 Not every district uses every source package. See each district project's
 CLAUDE.md for its active packages.
 
+## District Variable Defaults
+
+All district projects share these values (override via `dbt_project.yml`):
+
+| Variable                             | Value                                                                         |
+| ------------------------------------ | ----------------------------------------------------------------------------- |
+| `current_academic_year`              | `2025`                                                                        |
+| `current_fiscal_year`                | `2026`                                                                        |
+| `local_timezone`                     | `America/New_York`                                                            |
+| `cloud_storage_uri_base`             | `gs://teamster-<project>/dagster/<project>`                                   |
+| `powerschool_external_location_root` | `gs://teamster-<project>/dagster/<project>/powerschool` (ODBC districts only) |
+
+Exceptions: `kippnewark` adds `iready_schema: kippnj_iready` and
+`renlearn_schema: kippnj_renlearn`. `kipptaf` has
+`bigquery_external_connection_name` — see its CLAUDE.md.
+
 ## Shared Dependencies
 
 All projects use:
