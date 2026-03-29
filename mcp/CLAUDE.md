@@ -2,8 +2,8 @@
 
 ## Overview
 
-MCP (Model Context Protocol) servers that expose Dagster+ operational data to AI
-assistants. Each server is a Python package or script run via `uv run`.
+MCP servers configured in `.mcp.json`. The `dagster_plus` package is the only
+locally-developed server — others (BigQuery, dbt, GKE) are external tools.
 
 ## MCP Tool Selection
 
@@ -14,11 +14,8 @@ the environment.
 
 ## Dagster+ MCP
 
-Launched via `mcp/dagster_plus/run.sh`, which fetches `DAGSTER_CLOUD_API_TOKEN`
-via `op read` (requires a valid `OP_SERVICE_ACCOUNT_TOKEN`) and execs
-`uv run --project mcp python -m dagster_plus`. The `mcp/` directory has its own
-`pyproject.toml` so `dagster_plus` is a proper installable package — no
-`PYTHONPATH` needed.
+See `dagster_plus/CLAUDE.md` for package structure, schema gotchas, and mutation
+patterns.
 
 ### Dagster asset statuses
 
@@ -29,9 +26,8 @@ via `op read` (requires a valid `OP_SERVICE_ACCOUNT_TOKEN`) and execs
   filter) — bulk cross-referencing capped result sets misses retries and
   recoveries.
 - **Stale** = upstream data/code/dependencies changed since last
-  materialization. Use `get_asset_staleness` for specific assets. Use
-  `search_assets` to discover assets by prefix, then drill in. Avoid
-  `list_stale_assets` was removed (fetched entire graph).
+  materialization. Use `search_assets` to discover assets by prefix, then
+  `get_asset_staleness` for specific assets.
 
 ## BigQuery MCP
 

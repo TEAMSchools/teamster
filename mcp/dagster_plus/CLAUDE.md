@@ -6,7 +6,8 @@ FastMCP server exposing Dagster+ operational data via GraphQL.
 
 - `server.py` — `FastMCP` instance (with `instructions`), env vars, persistent
   `httpx.AsyncClient`, async `gql()` client, `GraphQLError` exception
-- `queries.py` — GraphQL query strings (verify against schema before modifying)
+- `queries.py` — GraphQL query strings (see GraphQL section below before
+  modifying)
 - `tools.py` — async `@server.tool()` handlers with
   `Annotated[type, Field(description=...)]`, wrapped with `@_handle_gql_errors`
   for structured error returns
@@ -17,7 +18,8 @@ FastMCP server exposing Dagster+ operational data via GraphQL.
 schema from type hints. Use `BaseModel` subclasses for complex input types (see
 `RunSpec`).
 
-**Import constraint:** `mcp/` has no `__init__.py` (would shadow the `mcp` SDK).
+**Import constraint:** `mcp/` has no `__init__.py` — adding one would shadow the
+`mcp` SDK. The `dagster_plus` package is built via hatch (`mcp/pyproject.toml`).
 Use relative imports. Pyright `reportMissingImports` warnings are expected.
 
 **Testing imports:** `DAGSTER_CLOUD_API_TOKEN` is required at import time — use
@@ -39,9 +41,12 @@ uv run --project mcp python -m dagster_plus
 
 ## GraphQL Schema Reference
 
-Queries verified against
+New queries are sourced from the Dagster UI TypeScript at
+[`js_modules/ui-core/src`](https://github.com/dagster-io/dagster/tree/master/js_modules/ui-core/src)
+— no Python package exports client-side queries. Verify field names/types
+against the Python schema in
 [`dagster-graphql/dagster_graphql/schema`](https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-graphql/dagster_graphql/schema).
-**Do not write or modify queries from memory.** Always verify against source.
+**Do not write or modify queries from memory.**
 
 ### Schema gotchas
 
@@ -60,23 +65,30 @@ Queries verified against
 ## Pagination
 
 `list_runs`, `get_run_logs`, `get_asset_condition_evaluations`,
-`get_asset_check_executions`, and `list_backfills` return a `cursor`. Pass it
-back to page forward. No server-side timestamp filtering — paginate and filter
-client-side.
+`get_asset_check_executions`, `list_backfills`, and `search_assets` return a
+`cursor`. Pass it back to page forward. No server-side timestamp filtering —
+paginate and filter client-side.
 
 ## Diagnosing degraded assets
 
-1. `get_asset_health(asset_keys=[...])` for targeted health status of specific
-   assets — returns overall health, materialization status, checks status, and
-   freshness. Use `search_assets(prefix="...")` to discover asset keys first.
-   `get_asset_staleness(asset_keys=[...])` for staleness root causes. Fall back
-   to `list_runs(statuses=["FAILURE"])` for broad failure scanning
-2. `get_run` for step keys/asset selection, then cross-reference BigQuery
+1. `search_assets(prefix="...")` to discover asset keys
+2. `get_asset_health(asset_keys=[...])` for health status,
+   `get_asset_staleness(asset_keys=[...])` for staleness root causes
+3. `list_runs(statuses=["FAILURE"])` for broad failure scanning across all
+   assets
+4. `get_run` for step keys/asset selection, then cross-reference BigQuery
    schemas (`get_table_info`) against dbt contract YAML
-3. `get_run_compute_logs` returns null for GKE runs (ephemeral pods) — use
-   BigQuery MCP and dbt compilation instead
-4. `get_run_logs` returns `timestamp: null` for non-`MessageEvent` types —
-   timestamp only on `MessageEvent` subtypes
+
+### API quirks
+
+- `get_run_compute_logs` returns null for GKE runs (ephemeral pods) — use
+  BigQuery MCP and dbt compilation instead
+- `get_run_logs` returns `timestamp: null` for non-`MessageEvent` types
+
+## Live API testing
+
+Security hooks block `op read` in Bash — smoke test against live Dagster Cloud
+API manually in the terminal, not via Claude Code.
 
 ## Mutation tools
 
