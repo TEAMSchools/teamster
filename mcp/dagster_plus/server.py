@@ -2,6 +2,8 @@
 
 import logging
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx
@@ -21,6 +23,27 @@ GRAPHQL_URL = (
     f"/{DAGSTER_CLOUD_DEPLOYMENT}/graphql"
 )
 
+_client: httpx.AsyncClient | None = None
+
+
+@asynccontextmanager
+async def _lifespan(_server: FastMCP) -> AsyncIterator[None]:
+    global _client  # noqa: PLW0603
+    _client = httpx.AsyncClient(
+        base_url=GRAPHQL_URL,
+        headers={
+            "Dagster-Cloud-Api-Token": DAGSTER_CLOUD_API_TOKEN,
+            "Content-Type": "application/json",
+        },
+        timeout=60,
+    )
+    try:
+        yield
+    finally:
+        await _client.aclose()
+        _client = None
+
+
 server = FastMCP(
     "dagster-plus",
     instructions=(
@@ -32,15 +55,7 @@ server = FastMCP(
         "reexecute_run) require confirm=True to execute — always preview first "
         "with confirm=False."
     ),
-)
-
-_client = httpx.AsyncClient(
-    base_url=GRAPHQL_URL,
-    headers={
-        "Dagster-Cloud-Api-Token": DAGSTER_CLOUD_API_TOKEN,
-        "Content-Type": "application/json",
-    },
-    timeout=60,
+    lifespan=_lifespan,
 )
 
 
@@ -55,6 +70,8 @@ class GraphQLError(Exception):
 
 async def gql(query: str, variables: dict[str, Any] | None = None) -> dict[str, Any]:
     """Execute a GraphQL query against the Dagster+ API."""
+    if _client is None:
+        raise RuntimeError("HTTP client not initialized (lifespan not started)")
     response = await _client.post(
         "", json={"query": query, "variables": variables or {}}
     )
