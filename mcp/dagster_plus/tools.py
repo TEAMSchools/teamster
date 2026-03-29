@@ -26,7 +26,6 @@ from .queries import (
     LIST_RUNS_QUERY,
     RUN_BY_ID_QUERY,
     RUN_LOGS_QUERY,
-    STALE_ASSETS_QUERY,
     TICK_HISTORY_QUERY,
 )
 from .server import GraphQLError, gql, server
@@ -65,8 +64,6 @@ TickStatus = Literal["SUCCESS", "FAILURE", "SKIPPED", "STARTED"]
 BackfillStatus = Literal["REQUESTED", "CANCELING", "CANCELED", "FAILED", "COMPLETED"]
 
 ReexecutionStrategy = Literal["FROM_FAILURE", "FROM_ASSET_FAILURE", "ALL_STEPS"]
-
-StalenessCategory = Literal["CODE", "DATA", "DEPENDENCIES"]
 
 
 def _build_execution_params(
@@ -304,33 +301,6 @@ async def list_code_locations() -> str:
 
 @server.tool()
 @_handle_gql_errors
-async def list_stale_assets(
-    category: Annotated[
-        StalenessCategory | None,
-        Field(description="Filter to a specific staleness category. Omit for all."),
-    ] = None,
-    group: Annotated[
-        str | None,
-        Field(description="Filter to assets in this group name."),
-    ] = None,
-) -> str:
-    """List assets with a stale status in Dagster+. CODE = code version changed since last materialization (shown as 'unsynced' in the UI); DATA = upstream data updated; DEPENDENCIES = upstream dependency structure changed. Returns asset key, group, compute kind, owners, jobs, and stale causes. WARNING: fetches the entire asset graph — response can be very large. Prefer list_runs with statuses=['FAILURE'] for diagnosing degraded assets."""
-    data = await gql(STALE_ASSETS_QUERY)
-    nodes = data["assetNodes"]
-    stale = [n for n in nodes if n.get("staleStatus") == "STALE"]
-    if group:
-        stale = [n for n in stale if n.get("groupName") == group]
-    if category:
-        stale = [
-            n
-            for n in stale
-            if any(c.get("category") == category for c in n.get("staleCauses", []))
-        ]
-    return json.dumps(stale)
-
-
-@server.tool()
-@_handle_gql_errors
 async def get_asset_health(
     asset_keys: Annotated[
         list[str],
@@ -342,7 +312,7 @@ async def get_asset_health(
         ),
     ],
 ) -> str:
-    """Get health status for specific assets. Returns overall health (HEALTHY, DEGRADED, WARNING, UNKNOWN), materialization status, asset checks status, and freshness status with detailed metadata. Much more efficient than list_stale_assets — targets specific assets instead of fetching the entire graph."""
+    """Get health status for specific assets. Returns overall health (HEALTHY, DEGRADED, WARNING, UNKNOWN), materialization status, asset checks status, and freshness status with detailed metadata."""
     asset_keys_input = [{"path": key.split("/")} for key in asset_keys[:250]]
     data = await gql(ASSET_HEALTH_QUERY, {"assetKeys": asset_keys_input})
     return json.dumps(data["assetsOrError"])
@@ -361,7 +331,7 @@ async def get_asset_staleness(
         ),
     ],
 ) -> str:
-    """Get staleness status and root causes for specific assets. Returns stale status and each cause (category: CODE, DATA, or DEPENDENCIES) with the dependency that triggered it. Much more efficient than list_stale_assets — targets specific assets instead of fetching the entire graph."""
+    """Get staleness status and root causes for specific assets. Returns stale status and each cause (category: CODE, DATA, or DEPENDENCIES) with the dependency that triggered it."""
     asset_keys_input = [{"path": key.split("/")} for key in asset_keys[:250]]
     data = await gql(ASSET_STALENESS_QUERY, {"assetKeys": asset_keys_input})
     return json.dumps(data["assetNodes"])
@@ -388,7 +358,7 @@ async def search_assets(
         ),
     ] = None,
 ) -> str:
-    """Search and browse assets in the Dagster+ deployment with pagination. Returns asset key, group, compute kind, owners, tags, jobs, automation conditions, and repository location. Use this to discover assets before drilling into health or staleness."""
+    """Search and browse assets in the Dagster+ deployment with pagination. Returns asset key, group, compute kind, owners, tags, jobs, automation conditions, and repository location. Use this to discover assets before drilling into health or staleness. Note: assets without a code definition (materialized-only) return definition=null."""
     limit = min(limit, 250)
     variables: dict[str, Any] = {"limit": limit, "cursor": cursor}
     if prefix:

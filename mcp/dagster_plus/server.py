@@ -1,11 +1,14 @@
 """FastMCP server instance and GraphQL client for Dagster+."""
 
+import logging
 import os
 from typing import Any
 
 import httpx
 
 from mcp.server.fastmcp import FastMCP
+
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 DAGSTER_CLOUD_API_TOKEN = os.environ["DAGSTER_CLOUD_API_TOKEN"]
 DAGSTER_CLOUD_ORGANIZATION_ID = os.environ.get(
@@ -25,8 +28,7 @@ server = FastMCP(
         "To diagnose asset issues: use search_assets to discover assets by "
         "prefix, then get_asset_health for health status (HEALTHY, DEGRADED, "
         "WARNING, UNKNOWN) and get_asset_staleness for staleness root causes. "
-        "Avoid list_stale_assets — it fetches the entire asset graph and can "
-        "be very large. Mutation tools (launch_run, launch_multiple_runs, "
+        "Mutation tools (launch_run, launch_multiple_runs, "
         "reexecute_run) require confirm=True to execute — always preview first "
         "with confirm=False."
     ),

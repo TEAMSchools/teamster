@@ -31,7 +31,7 @@ via `op read` (requires a valid `OP_SERVICE_ACCOUNT_TOKEN`) and execs
 - **Stale** = upstream data/code/dependencies changed since last
   materialization. Use `get_asset_staleness` for specific assets. Use
   `search_assets` to discover assets by prefix, then drill in. Avoid
-  `list_stale_assets` (fetches entire graph, can exceed token limits).
+  `list_stale_assets` was removed (fetched entire graph).
 
 ## BigQuery MCP
 

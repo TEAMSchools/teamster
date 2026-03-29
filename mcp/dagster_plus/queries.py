@@ -191,33 +191,6 @@ query DaemonHealth {
 }
 """
 
-STALE_ASSETS_QUERY = """
-query GetStaleAssets {
-  assetNodes {
-    assetKey { path }
-    groupName
-    description
-    computeKind
-    isPartitioned
-    jobNames
-    owners {
-      ... on UserAssetOwner { email }
-      ... on TeamAssetOwner { team }
-    }
-    changedReasons
-    staleStatus
-    staleCauses {
-      key { path }
-      partitionKey
-      category
-      reason
-      dependency { path }
-      dependencyPartitionKey
-    }
-  }
-}
-"""
-
 ASSET_MATERIALIZATIONS_QUERY = """
 query GetAssetMaterializations($assetKey: AssetKeyInput!, $limit: Int, $partitions: [String!]) {
   assetNodes(assetKeys: [$assetKey]) {

@@ -53,8 +53,8 @@ Queries verified against
 - `AssetConditionEvaluationRecord` has `numRequested` only — no
   `numSkipped`/`numDiscarded`
 - `evaluationNodes` is top-level, not nested under `evaluation`
-- `AssetGroupSelector` requires all three fields — `list_stale_assets` filters
-  by group in Python instead
+- `AssetGroupSelector` requires all three fields (`groupName`,
+  `repositoryLocationName`, `repositoryName`)
 - Timestamps (`createdAfter`, etc.) are Unix floats, not ISO strings
 
 ## Pagination
@@ -70,8 +70,7 @@ client-side.
    assets — returns overall health, materialization status, checks status, and
    freshness. Use `search_assets(prefix="...")` to discover asset keys first.
    `get_asset_staleness(asset_keys=[...])` for staleness root causes. Fall back
-   to `list_runs(statuses=["FAILURE"])` for broad failure scanning — more
-   targeted than `list_stale_assets` (can exceed token limits at 1.8M+ chars)
+   to `list_runs(statuses=["FAILURE"])` for broad failure scanning
 2. `get_run` for step keys/asset selection, then cross-reference BigQuery
    schemas (`get_table_info`) against dbt contract YAML
 3. `get_run_compute_logs` returns null for GKE runs (ephemeral pods) — use
