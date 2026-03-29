@@ -15,13 +15,6 @@
       "Bash(trunk check:*)",
       "Bash(trunk fmt:*)",
       "Bash(uv tool list:*)",
-      "Edit(**/.env.*)",
-      "Edit(**/.env)",
-      "Edit(**/*.cer)",
-      "Edit(**/*.key)",
-      "Edit(**/*.pem)",
-      "Edit(**/credentials.json)",
-      "Edit(**/secrets.json)",
       "mcp__bigquery__analyze_contribution",
       "mcp__bigquery__execute_sql",
       "mcp__bigquery__forecast",
@@ -32,8 +25,10 @@
       "mcp__bigquery__search_catalog",
       "mcp__dagster__get_asset_check_executions",
       "mcp__dagster__get_asset_condition_evaluations",
+      "mcp__dagster__get_asset_health",
       "mcp__dagster__get_asset_materializations",
       "mcp__dagster__get_asset_partition_statuses",
+      "mcp__dagster__get_asset_staleness",
       "mcp__dagster__get_backfill",
       "mcp__dagster__get_captured_logs_metadata",
       "mcp__dagster__get_daemon_health",
@@ -44,7 +39,7 @@
       "mcp__dagster__list_backfills",
       "mcp__dagster__list_code_locations",
       "mcp__dagster__list_runs",
-      "mcp__dagster__list_stale_assets",
+      "mcp__dagster__search_assets",
       "mcp__gke__get_cluster",
       "mcp__gke__get_gke_release_notes",
       "mcp__gke__get_k8s_changelog",
@@ -53,19 +48,26 @@
       "mcp__gke__list_monitored_resource_descriptors",
       "mcp__gke__list_recommendations",
       "mcp__gke__query_logs",
-      "Read(**/.env.*)",
-      "Read(**/.env)",
-      "Read(**/*.cer)",
-      "Read(**/*.key)",
-      "Read(**/*.pem)",
-      "Read(**/credentials.json)",
-      "Read(**/secrets.json)",
       "Read(//workspaces/teamster/**)",
       "Read(~/.claude/plugins/**)",
       "Skill(claude-md-management:revise-claude-md)",
       "Skill(claude-md-management:revise-claude-md:*)"
     ],
     "deny": [
+      "Edit(**/.env)",
+      "Edit(**/.env.*)",
+      "Edit(**/*.cer)",
+      "Edit(**/*.key)",
+      "Edit(**/*.pem)",
+      "Edit(**/credentials.json)",
+      "Edit(**/secrets.json)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*.cer)",
+      "Read(**/*.key)",
+      "Read(**/*.pem)",
+      "Read(**/credentials.json)",
+      "Read(**/secrets.json)",
       "Edit(/.claude/hooks/**/*.sh)",
       "Edit(/.claude/settings.json)",
       "Edit(/.claude/settings.local.json)",
@@ -97,16 +99,6 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sed -i -E '/(_SECRET|_TOKEN|_PASSWORD|_CREDENTIAL|_API_KEY|_APP_KEY|PRIVATE_KEY|SERVICE_ACCOUNT|OP_SERVICE)/Id' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true",
-            "statusMessage": "Sanitizing shell snapshots..."
-          }
-        ]
-      },
-      {
         "matcher": "Read|Edit|Write|Bash|Grep|Glob|NotebookEdit|WebFetch|WebSearch|mcp__.*",
         "hooks": [
           {
@@ -133,9 +125,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "trunk fmt {changed_files}",
-            "statusMessage": "Auto-formatting with Trunk",
-            "async": true
+            "command": "jq -r '.tool_input.file_path' | xargs /workspaces/teamster/.trunk/tools/trunk fmt --no-progress 2>/dev/null; exit 0",
+            "statusMessage": "Auto-formatting with Trunk"
           }
         ]
       }
@@ -157,18 +148,6 @@
       "source": {
         "source": "github",
         "repo": "anthropics/claude-plugins-official"
-      }
-    },
-    "dagster-skills": {
-      "source": {
-        "source": "github",
-        "repo": "dagster-io/skills"
-      }
-    },
-    "dbt-agent-skills": {
-      "source": {
-        "source": "github",
-        "repo": "dbt-labs/dbt-agent-skills"
       }
     },
     "dagster": {
