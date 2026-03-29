@@ -17,8 +17,3 @@ by consuming projects).
 ## Cross-Project Usage
 
 Referenced by `kipptaf` only.
-
-## Model Conventions
-
-See `src/dbt/CLAUDE.md` for per-layer requirements (contract enforcement,
-uniqueness tests, SQL antipatterns) that apply to all dbt projects.
