@@ -20,7 +20,9 @@ developer workflows unreliable and error-prone.
 1. Consistent schema resolution across all 15 dbt projects
 2. Safe defaults — developers cannot accidentally write to production
 3. Support `--defer` via dbt Power User for everyday development — unchanged
-   models resolve to prod, including regional source data
+   `ref()` models resolve to prod. Regional source data (kipptaf
+   `sources-kipp*.yml`) also resolves to prod by default via a dedicated macro;
+   opt-in to personal namespace via `--target dev-region`
 4. dbt Cloud CI validates PRs against staging datasets
 5. New integration development (including external sources) works in isolation
 
@@ -50,7 +52,8 @@ Source-system projects do NOT get their own copy of the macro.
 
 #### `resolve_source_schema(base_schema)`
 
-Controls where `source()` calls read from:
+Controls where `source()` calls read from. Used in all projects **except** for
+kipptaf's cross-regional source files (see `resolve_region_source_schema`).
 
 | Target    | Result                           |
 | --------- | -------------------------------- |
@@ -73,9 +76,9 @@ Implementation:
 ```
 
 All inline Jinja conditionals in source files are replaced with a single macro
-call. This applies to source files in **all** projects — including source-system
-packages, which resolve the macro from the consuming project's namespace at
-compile time.
+call, with the exception noted below for kipptaf cross-regional sources. This
+applies to source files in **all** projects — including source-system packages,
+which resolve the macro from the consuming project's namespace at compile time.
 
 ```yaml
 # before (inconsistent, per-file logic)
@@ -88,6 +91,42 @@ schema: |
 # after
 schema: "{{ resolve_source_schema('kippnewark_powerschool') }}"
 ```
+
+#### `resolve_region_source_schema(base_schema)` (kipptaf only)
+
+Controls where kipptaf's cross-regional `source()` calls read from. Used
+exclusively in `sources-kippnewark.yml`, `sources-kippcamden.yml`,
+`sources-kippmiami.yml`, and `sources-kipppaterson.yml`. These files point to
+regional staging model outputs — authoritative BigQuery tables that live in
+production and do not belong in any developer's personal namespace.
+
+Default behavior is production (no prefix). Developers working on regional model
+changes and needing to test end-to-end through kipptaf opt in via
+`--target dev-region`.
+
+| Target       | Result                           |
+| ------------ | -------------------------------- |
+| `dev`        | `<base_schema>` (production)     |
+| `dev-region` | `zz_<GITHUB_USER>_<base_schema>` |
+| `staging`    | `zz_stg_<base_schema>`           |
+| `prod`       | `<base_schema>`                  |
+
+Implementation:
+
+```sql
+{% macro resolve_region_source_schema(base_schema) %}
+  {%- if target.name == 'dev-region' -%}
+    zz_{{ env_var('GITHUB_USER', 'dev') }}_{{ base_schema }}
+  {%- elif target.name == 'staging' -%}
+    zz_stg_{{ base_schema }}
+  {%- else -%}
+    {{ base_schema }}
+  {%- endif -%}
+{% endmacro %}
+```
+
+This macro lives in **kipptaf only** — no other project has cross-regional
+source files.
 
 #### Model output schemas (no custom macro needed)
 
@@ -127,6 +166,12 @@ kipptaf:
       method: oauth
       project: teamster-332318
       threads: 40
+    dev-region:
+      type: bigquery
+      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kipptaf
+      method: oauth
+      project: teamster-332318
+      threads: 40
     staging:
       type: bigquery
       schema: zz_stg_kipptaf
@@ -141,8 +186,13 @@ kipptaf:
       threads: 40
 ```
 
+`dev-region` is identical to `dev` in output schema — the only difference is the
+target name, which `resolve_region_source_schema` keys off to resolve kipptaf's
+cross-regional sources to personal namespace instead of production.
+
 The 5 school/network projects (`kipptaf`, `kippnewark`, `kippcamden`,
-`kippmiami`, `kipppaterson`) get all three targets.
+`kippmiami`, `kipppaterson`) get all three standard targets. kipptaf
+additionally gets `dev-region`.
 
 Source-system projects (`amplify`, `deanslist`, `edplan`, `finalsite`, `iready`,
 `overgrad`, `pearson`, `powerschool`, `renlearn`, `titan`) get a single `dev`
@@ -338,12 +388,19 @@ With inputs:
    prep)
 5. Open PR
 
+### Everyday kipptaf development (no regional changes)
+
+1. Work on models with `--target dev` (default)
+2. `resolve_region_source_schema` returns bare production schema names for
+   cross-regional sources — no regional builds required locally
+3. Power User `--defer` resolves upstream `ref()` calls to prod manifest
+
 ### Cross-project development (regional + kipptaf)
 
 1. Develop regional project with `--target dev` → writes to
    `zz_<user>_kippnewark_*`
-2. In kipptaf, `--target dev` → `resolve_source_schema` returns
-   `zz_<user>_kippnewark_powerschool` → reads your regional dev output
+2. In kipptaf, use `--target dev-region` → `resolve_region_source_schema`
+   returns `zz_<user>_kippnewark_powerschool` → reads your regional dev output
 3. Test end-to-end locally
 4. Stage to staging for both projects before PR
 
@@ -412,7 +469,10 @@ are only compiled as packages within school projects.
 Steps:
 
 1. Replace inline Jinja in all in-scope source files with
-   `resolve_source_schema()` calls
+   `resolve_source_schema()` calls, **except** for kipptaf's four cross-regional
+   source files (`sources-kippnewark.yml`, `sources-kippcamden.yml`,
+   `sources-kippmiami.yml`, `sources-kipppaterson.yml`) — these use
+   `resolve_region_source_schema()` instead
 1. Test locally with `--target dev` and `--target prod`
 
 #### Phase 3: Clean up
@@ -421,7 +481,10 @@ Steps:
    profiles to single `dev` target
 1. Remove `DBT_CLOUD_ENVIRONMENT_TYPE` env var from `.devcontainer/` and
    `.vscode/settings.json`
-1. Delete `scripts/dbt-sxs.py` and remove its entry from `scripts/CLAUDE.md`
+1. Delete `scripts/dbt-sxs.py`; update `scripts/CLAUDE.md` to replace its entry
+   with the VS Code task equivalent, documenting project selection, source
+   filtering (equivalent of `--select`), and the test-bucket option (equivalent
+   of `--test`)
 1. Set up `post-merge` git hook for prod manifest generation — install to
    `.git/hooks/post-merge`; also wire into devcontainer `postStartCommand` so it
    runs on Codespace creation
@@ -446,11 +509,13 @@ from BigQuery.
 
 ### `GITHUB_USER` unset
 
-If `GITHUB_USER` is not set, the dev target defaults to `zz_dev_<project>`. In
-local dev, `GITHUB_USER` is set by the devcontainer. In dbt Cloud CI, the
-staging target is used (no `GITHUB_USER` needed). The risk is a developer
-outside the devcontainer with no `GITHUB_USER` — they get a shared `zz_dev_*`
-schema. This is acceptable since all development happens in Codespaces.
+If `GITHUB_USER` is not set, `resolve_source_schema` defaults to
+`zz_dev_<project>` and `resolve_region_source_schema` defaults to
+`zz_dev_<base_schema>`. In practice, `GITHUB_USER` is always set by the
+devcontainer (injected from 1Password). In dbt Cloud CI the staging target is
+used so `GITHUB_USER` is never needed. A developer outside Codespaces without
+`GITHUB_USER` gets a shared `zz_dev_*` namespace — acceptable given that all
+development happens in Codespaces.
 
 ### `dbt parse --target prod` in git hook
 
