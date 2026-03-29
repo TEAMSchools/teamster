@@ -32,7 +32,7 @@ from .server import GraphQLError, gql, server
 
 
 def _handle_gql_errors(fn):
-    """Catch GraphQLError and return structured JSON instead of a traceback."""
+    """Catch errors and return structured JSON instead of a traceback."""
 
     @wraps(fn)
     async def wrapper(*args, **kwargs):
@@ -43,6 +43,8 @@ def _handle_gql_errors(fn):
             if e.details:
                 result["details"] = e.details
             return json.dumps(result)
+        except Exception as e:
+            return json.dumps({"error": type(e).__name__, "details": str(e)})
 
     return wrapper
 
