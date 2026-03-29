@@ -490,6 +490,123 @@ query GetBackfill($backfillId: String!) {
 }
 """
 
+ASSET_HEALTH_QUERY = """
+query AssetHealthQuery($assetKeys: [AssetKeyInput!]!) {
+  assetsOrError(assetKeys: $assetKeys) {
+    ... on AssetConnection {
+      nodes {
+        id
+        key { path }
+        latestMaterializationTimestamp
+        latestFailedToMaterializeTimestamp
+        freshnessStatusChangedTimestamp
+        assetHealth {
+          assetHealth
+          materializationStatus
+          materializationStatusMetadata {
+            ... on AssetHealthMaterializationDegradedPartitionedMeta {
+              numMissingPartitions
+              numFailedPartitions
+              totalNumPartitions
+              latestFailedRunId
+            }
+            ... on AssetHealthMaterializationHealthyPartitionedMeta {
+              numMissingPartitions
+              totalNumPartitions
+              latestRunId
+            }
+            ... on AssetHealthMaterializationDegradedNotPartitionedMeta {
+              failedRunId
+            }
+          }
+          assetChecksStatus
+          assetChecksStatusMetadata {
+            ... on AssetHealthCheckDegradedMeta {
+              numFailedChecks
+              numWarningChecks
+              totalNumChecks
+            }
+            ... on AssetHealthCheckWarningMeta {
+              numWarningChecks
+              totalNumChecks
+            }
+            ... on AssetHealthCheckUnknownMeta {
+              numNotExecutedChecks
+              totalNumChecks
+            }
+          }
+          freshnessStatus
+          freshnessStatusMetadata {
+            ... on AssetHealthFreshnessMeta {
+              lastMaterializedTimestamp
+            }
+          }
+        }
+      }
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
+
+ASSET_STALENESS_QUERY = """
+query AssetStalenessQuery($assetKeys: [AssetKeyInput!]!) {
+  assetNodes(assetKeys: $assetKeys) {
+    id
+    assetKey { path }
+    staleStatus
+    staleCauses {
+      key { path }
+      reason
+      category
+      dependency { path }
+    }
+  }
+}
+"""
+
+ASSET_CATALOG_QUERY = """
+query AssetCatalogQuery($cursor: String, $limit: Int!, $prefix: [String!]) {
+  assetsOrError(cursor: $cursor, limit: $limit, prefix: $prefix) {
+    ... on AssetConnection {
+      nodes {
+        id
+        key { path }
+        definition {
+          id
+          groupName
+          computeKind
+          isPartitioned
+          isMaterializable
+          isObservable
+          hasAssetChecks
+          description
+          jobNames
+          owners {
+            ... on UserAssetOwner { email }
+            ... on TeamAssetOwner { team }
+          }
+          tags { key value }
+          automationCondition { label }
+          repository {
+            name
+            location { name }
+          }
+        }
+      }
+      cursor
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
+
 LAUNCH_RUN_MUTATION = """
 mutation LaunchRun($executionParams: ExecutionParams!) {
   launchRun(executionParams: $executionParams) {

@@ -1,15 +1,19 @@
 """Dagster+ MCP tool handlers."""
 
 import json
+from functools import wraps
 from typing import Annotated, Any, Literal
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from .queries import (
+    ASSET_CATALOG_QUERY,
     ASSET_CHECK_EXECUTIONS_QUERY,
     ASSET_CONDITION_EVALUATIONS_QUERY,
+    ASSET_HEALTH_QUERY,
     ASSET_MATERIALIZATIONS_QUERY,
     ASSET_PARTITION_STATUSES_QUERY,
+    ASSET_STALENESS_QUERY,
     BACKFILL_QUERY,
     BACKFILLS_QUERY,
     CAPTURED_LOGS_METADATA_QUERY,
@@ -25,7 +29,24 @@ from .queries import (
     STALE_ASSETS_QUERY,
     TICK_HISTORY_QUERY,
 )
-from .server import gql, server
+from .server import GraphQLError, gql, server
+
+
+def _handle_gql_errors(fn):
+    """Catch GraphQLError and return structured JSON instead of a traceback."""
+
+    @wraps(fn)
+    async def wrapper(*args, **kwargs):
+        try:
+            return await fn(*args, **kwargs)
+        except GraphQLError as e:
+            result = {"error": e.message}
+            if e.details:
+                result["details"] = e.details
+            return json.dumps(result)
+
+    return wrapper
+
 
 RunStatus = Literal[
     "QUEUED",
@@ -75,7 +96,8 @@ def _build_execution_params(
 
 
 @server.tool()
-def list_runs(
+@_handle_gql_errors
+async def list_runs(
     limit: Annotated[
         int,
         Field(description="Max number of runs to return (default 20, max 100)."),
@@ -136,7 +158,7 @@ def list_runs(
         filter_args["updatedAfter"] = updated_after
     if updated_before:
         filter_args["updatedBefore"] = updated_before
-    data = gql(
+    data = await gql(
         LIST_RUNS_QUERY,
         {
             "filter": filter_args or None,
@@ -144,23 +166,25 @@ def list_runs(
             "limit": limit,
         },
     )
-    return json.dumps(data["runsOrError"], indent=2)
+    return json.dumps(data["runsOrError"])
 
 
 @server.tool()
-def get_run(
+@_handle_gql_errors
+async def get_run(
     run_id: Annotated[
         str,
         Field(description="The run ID (UUID) to look up."),
     ],
 ) -> str:
     """Get full details for a single Dagster+ run by ID. Includes asset selection, re-execution lineage (parentRunId, rootRunId), step keys, step counts, and tags."""
-    data = gql(RUN_BY_ID_QUERY, {"runId": run_id})
-    return json.dumps(data["runOrError"], indent=2)
+    data = await gql(RUN_BY_ID_QUERY, {"runId": run_id})
+    return json.dumps(data["runOrError"])
 
 
 @server.tool()
-def get_run_logs(
+@_handle_gql_errors
+async def get_run_logs(
     run_id: Annotated[
         str,
         Field(description="The run ID to fetch logs for."),
@@ -192,7 +216,7 @@ def get_run_logs(
 ) -> str:
     """Get the structured event log for a Dagster+ run. Includes step start/success/failure events, log messages, asset materializations, engine errors, and resource init failures. Paginate with cursor if hasMore is true."""
     limit = min(limit, 1000)
-    data = gql(
+    data = await gql(
         RUN_LOGS_QUERY,
         {
             "runId": run_id,
@@ -210,11 +234,12 @@ def get_run_logs(
                     e for e in result["events"] if e.get("__typename") in filter_set
                 ],
             }
-    return json.dumps(result, indent=2)
+    return json.dumps(result)
 
 
 @server.tool()
-def get_run_compute_logs(
+@_handle_gql_errors
+async def get_run_compute_logs(
     log_key: Annotated[
         list[str],
         Field(
@@ -234,7 +259,7 @@ def get_run_compute_logs(
     ] = 50000,
 ) -> str:
     """Get raw stdout and stderr compute logs for a step in a Dagster+ run. First use get_run_logs to find LogsCapturedEvent entries, which contain the logKey needed here. Returns both stdout and stderr as separate fields."""
-    data = gql(
+    data = await gql(
         COMPUTE_LOGS_QUERY,
         {
             "logKey": log_key,
@@ -242,40 +267,44 @@ def get_run_compute_logs(
             "limit": limit,
         },
     )
-    return json.dumps(data["capturedLogs"], indent=2)
+    return json.dumps(data["capturedLogs"])
 
 
 @server.tool()
-def get_captured_logs_metadata(
+@_handle_gql_errors
+async def get_captured_logs_metadata(
     log_key: Annotated[
         list[str],
         Field(description="The logKey array from a LogsCapturedEvent."),
     ],
 ) -> str:
     """Get signed download URLs and storage locations for stdout/stderr compute logs. Use when logs are too large to stream via get_run_compute_logs. logKey comes from a LogsCapturedEvent."""
-    data = gql(
+    data = await gql(
         CAPTURED_LOGS_METADATA_QUERY,
         {"logKey": log_key},
     )
-    return json.dumps(data["capturedLogsMetadata"], indent=2)
+    return json.dumps(data["capturedLogsMetadata"])
 
 
 @server.tool()
-def get_daemon_health() -> str:
+@_handle_gql_errors
+async def get_daemon_health() -> str:
     """Get the health status of all Dagster+ daemons (scheduler, sensor, run coordinator, etc.). Returns whether each daemon is healthy, its last heartbeat time, and any error messages."""
-    data = gql(DAEMON_HEALTH_QUERY)
-    return json.dumps(data["instance"]["daemonHealth"]["allDaemonStatuses"], indent=2)
+    data = await gql(DAEMON_HEALTH_QUERY)
+    return json.dumps(data["instance"]["daemonHealth"]["allDaemonStatuses"])
 
 
 @server.tool()
-def list_code_locations() -> str:
+@_handle_gql_errors
+async def list_code_locations() -> str:
     """List all code locations in the Dagster+ workspace and their load status. Shows which locations loaded successfully and which have errors (e.g. import failures after a deploy)."""
-    data = gql(CODE_LOCATIONS_QUERY)
-    return json.dumps(data["workspaceOrError"], indent=2)
+    data = await gql(CODE_LOCATIONS_QUERY)
+    return json.dumps(data["workspaceOrError"])
 
 
 @server.tool()
-def list_stale_assets(
+@_handle_gql_errors
+async def list_stale_assets(
     category: Annotated[
         StalenessCategory | None,
         Field(description="Filter to a specific staleness category. Omit for all."),
@@ -285,8 +314,8 @@ def list_stale_assets(
         Field(description="Filter to assets in this group name."),
     ] = None,
 ) -> str:
-    """List assets with a stale status in Dagster+. CODE = code version changed since last materialization (shown as 'unsynced' in the UI); DATA = upstream data updated; DEPENDENCIES = upstream dependency structure changed. Returns asset key, group, compute kind, owners, jobs, and stale causes."""
-    data = gql(STALE_ASSETS_QUERY)
+    """List assets with a stale status in Dagster+. CODE = code version changed since last materialization (shown as 'unsynced' in the UI); DATA = upstream data updated; DEPENDENCIES = upstream dependency structure changed. Returns asset key, group, compute kind, owners, jobs, and stale causes. WARNING: fetches the entire asset graph — response can be very large. Prefer list_runs with statuses=['FAILURE'] for diagnosing degraded assets."""
+    data = await gql(STALE_ASSETS_QUERY)
     nodes = data["assetNodes"]
     stale = [n for n in nodes if n.get("staleStatus") == "STALE"]
     if group:
@@ -297,11 +326,80 @@ def list_stale_assets(
             for n in stale
             if any(c.get("category") == category for c in n.get("staleCauses", []))
         ]
-    return json.dumps(stale, indent=2)
+    return json.dumps(stale)
 
 
 @server.tool()
-def get_asset_materializations(
+@_handle_gql_errors
+async def get_asset_health(
+    asset_keys: Annotated[
+        list[str],
+        Field(
+            description=(
+                "Asset keys as slash-separated strings (e.g. "
+                "['school/source/table']). Max 250 per call."
+            ),
+        ),
+    ],
+) -> str:
+    """Get health status for specific assets. Returns overall health (HEALTHY, DEGRADED, WARNING, UNKNOWN), materialization status, asset checks status, and freshness status with detailed metadata. Much more efficient than list_stale_assets — targets specific assets instead of fetching the entire graph."""
+    asset_keys_input = [{"path": key.split("/")} for key in asset_keys[:250]]
+    data = await gql(ASSET_HEALTH_QUERY, {"assetKeys": asset_keys_input})
+    return json.dumps(data["assetsOrError"])
+
+
+@server.tool()
+@_handle_gql_errors
+async def get_asset_staleness(
+    asset_keys: Annotated[
+        list[str],
+        Field(
+            description=(
+                "Asset keys as slash-separated strings (e.g. "
+                "['school/source/table']). Max 250 per call."
+            ),
+        ),
+    ],
+) -> str:
+    """Get staleness status and root causes for specific assets. Returns stale status and each cause (category: CODE, DATA, or DEPENDENCIES) with the dependency that triggered it. Much more efficient than list_stale_assets — targets specific assets instead of fetching the entire graph."""
+    asset_keys_input = [{"path": key.split("/")} for key in asset_keys[:250]]
+    data = await gql(ASSET_STALENESS_QUERY, {"assetKeys": asset_keys_input})
+    return json.dumps(data["assetNodes"])
+
+
+@server.tool()
+@_handle_gql_errors
+async def search_assets(
+    limit: Annotated[
+        int,
+        Field(description="Number of assets to return per page (default 50, max 250)."),
+    ] = 50,
+    cursor: Annotated[
+        str | None,
+        Field(description="Pagination cursor from a previous search_assets call."),
+    ] = None,
+    prefix: Annotated[
+        str | None,
+        Field(
+            description=(
+                "Filter to assets whose key starts with this prefix, "
+                "as a slash-separated string (e.g. 'kipptaf/extracts')."
+            ),
+        ),
+    ] = None,
+) -> str:
+    """Search and browse assets in the Dagster+ deployment with pagination. Returns asset key, group, compute kind, owners, tags, jobs, automation conditions, and repository location. Use this to discover assets before drilling into health or staleness."""
+    limit = min(limit, 250)
+    variables: dict[str, Any] = {"limit": limit, "cursor": cursor}
+    if prefix:
+        variables["prefix"] = prefix.split("/")
+    data = await gql(ASSET_CATALOG_QUERY, variables)
+    return json.dumps(data["assetsOrError"])
+
+
+@server.tool()
+@_handle_gql_errors
+async def get_asset_materializations(
     asset_key: Annotated[
         str,
         Field(
@@ -322,7 +420,7 @@ def get_asset_materializations(
     """Get recent materialization history for an asset. Returns timestamps, run IDs, partition keys, and metadata entries for each materialization."""
     asset_key_path = asset_key.split("/")
     limit = min(limit, 100)
-    data = gql(
+    data = await gql(
         ASSET_MATERIALIZATIONS_QUERY,
         {
             "assetKey": {"path": asset_key_path},
@@ -336,11 +434,12 @@ def get_asset_materializations(
         if nodes
         else {"assetKey": {"path": asset_key_path}, "assetMaterializations": []}
     )
-    return json.dumps(result, indent=2)
+    return json.dumps(result)
 
 
 @server.tool()
-def get_asset_partition_statuses(
+@_handle_gql_errors
+async def get_asset_partition_statuses(
     asset_key: Annotated[
         str,
         Field(description="Asset key as slash-separated string."),
@@ -348,17 +447,18 @@ def get_asset_partition_statuses(
 ) -> str:
     """Get partition materialization status for a partitioned asset. Returns aggregate counts (materialized, failed, missing) and, for time-partitioned assets, a range breakdown."""
     asset_key_path = asset_key.split("/")
-    data = gql(
+    data = await gql(
         ASSET_PARTITION_STATUSES_QUERY,
         {"assetKey": {"path": asset_key_path}},
     )
     nodes = data["assetNodes"]
     result = nodes[0] if nodes else {}
-    return json.dumps(result, indent=2)
+    return json.dumps(result)
 
 
 @server.tool()
-def get_asset_check_executions(
+@_handle_gql_errors
+async def get_asset_check_executions(
     asset_key: Annotated[
         str,
         Field(description="Asset key as slash-separated string."),
@@ -379,7 +479,7 @@ def get_asset_check_executions(
     """Get execution history for a specific asset check. Returns pass/fail status, severity, description, and metadata for each execution."""
     asset_key_path = asset_key.split("/")
     limit = min(limit, 50)
-    data = gql(
+    data = await gql(
         ASSET_CHECK_EXECUTIONS_QUERY,
         {
             "assetKey": {"path": asset_key_path},
@@ -388,11 +488,12 @@ def get_asset_check_executions(
             "cursor": cursor,
         },
     )
-    return json.dumps(data["assetCheckExecutions"], indent=2)
+    return json.dumps(data["assetCheckExecutions"])
 
 
 @server.tool()
-def get_asset_condition_evaluations(
+@_handle_gql_errors
+async def get_asset_condition_evaluations(
     asset_key: Annotated[
         str,
         Field(description="Asset key as slash-separated string."),
@@ -411,7 +512,7 @@ def get_asset_condition_evaluations(
     """Get automation condition evaluation history for an asset. Shows why the daemon requested or skipped each materialization — includes the full condition node tree with each node's label, operator type, and true/candidate counts."""
     asset_key_path = asset_key.split("/")
     limit = min(limit, 50)
-    data = gql(
+    data = await gql(
         ASSET_CONDITION_EVALUATIONS_QUERY,
         {
             "assetKey": {"path": asset_key_path},
@@ -419,11 +520,12 @@ def get_asset_condition_evaluations(
             "cursor": cursor,
         },
     )
-    return json.dumps(data["assetConditionEvaluationRecordsOrError"], indent=2)
+    return json.dumps(data["assetConditionEvaluationRecordsOrError"])
 
 
 @server.tool()
-def get_tick_history(
+@_handle_gql_errors
+async def get_tick_history(
     name: Annotated[
         str,
         Field(description="The schedule or sensor name."),
@@ -448,7 +550,7 @@ def get_tick_history(
     ] = None,
 ) -> str:
     """Get tick history for a schedule or sensor. Shows each evaluation tick with its status (SUCCESS, FAILURE, SKIPPED), run IDs launched, skip reason, and error details. Essential for diagnosing why a schedule or sensor is not firing."""
-    data = gql(
+    data = await gql(
         TICK_HISTORY_QUERY,
         {
             "name": name,
@@ -458,11 +560,12 @@ def get_tick_history(
             "statuses": statuses or None,
         },
     )
-    return json.dumps(data["instigationStateOrError"], indent=2)
+    return json.dumps(data["instigationStateOrError"])
 
 
 @server.tool()
-def list_backfills(
+@_handle_gql_errors
+async def list_backfills(
     status: Annotated[
         BackfillStatus | None,
         Field(description="Filter to backfills with this status."),
@@ -478,7 +581,7 @@ def list_backfills(
 ) -> str:
     """List backfills in the Dagster+ deployment. Returns backfill ID, status, asset selection, partition counts by run status, and any errors."""
     limit = min(limit, 100)
-    data = gql(
+    data = await gql(
         BACKFILLS_QUERY,
         {
             "status": status,
@@ -486,23 +589,25 @@ def list_backfills(
             "limit": limit,
         },
     )
-    return json.dumps(data["partitionBackfillsOrError"], indent=2)
+    return json.dumps(data["partitionBackfillsOrError"])
 
 
 @server.tool()
-def get_backfill(
+@_handle_gql_errors
+async def get_backfill(
     backfill_id: Annotated[
         str,
         Field(description="The backfill ID to look up."),
     ],
 ) -> str:
     """Get details for a single backfill by ID. Returns asset selection, partition names, status counts, error, and metadata."""
-    data = gql(BACKFILL_QUERY, {"backfillId": backfill_id})
-    return json.dumps(data["partitionBackfillOrError"], indent=2)
+    data = await gql(BACKFILL_QUERY, {"backfillId": backfill_id})
+    return json.dumps(data["partitionBackfillOrError"])
 
 
 @server.tool()
-def launch_run(
+@_handle_gql_errors
+async def launch_run(
     asset_keys: Annotated[
         list[str],
         Field(
@@ -540,7 +645,7 @@ def launch_run(
 ) -> str:
     """Launch a Dagster+ run to materialize selected assets. Call with confirm=False first to preview, then confirm=True to execute."""
     if not asset_keys:
-        return json.dumps({"error": "asset_keys must not be empty"}, indent=2)
+        return json.dumps({"error": "asset_keys must not be empty"})
     params = _build_execution_params(
         asset_keys=asset_keys,
         repository_location_name=repository_location_name,
@@ -555,24 +660,45 @@ def launch_run(
                 "execution_params": params,
                 "action_required": "Call again with confirm=True to execute.",
             },
-            indent=2,
         )
-    data = gql(LAUNCH_RUN_MUTATION, {"executionParams": params})
-    return json.dumps(data["launchRun"], indent=2)
+    data = await gql(LAUNCH_RUN_MUTATION, {"executionParams": params})
+    return json.dumps(data["launchRun"])
+
+
+class RunSpec(BaseModel):
+    """Specification for a single run in a batch launch."""
+
+    asset_keys: Annotated[
+        list[str],
+        Field(
+            description="Asset keys to materialize, as slash-separated strings.",
+            min_length=1,
+        ),
+    ]
+    repository_location_name: Annotated[
+        str,
+        Field(description="The code location name (e.g. 'kipptaf')."),
+    ]
+    repository_name: Annotated[
+        str,
+        Field(description="The repository name (default '__repository__')."),
+    ] = "__repository__"
+    tags: Annotated[
+        dict[str, str] | None,
+        Field(description="Optional key/value tags for the run."),
+    ] = None
+    run_config: Annotated[
+        dict[str, Any] | None,
+        Field(description="Optional run config overrides."),
+    ] = None
 
 
 @server.tool()
-def launch_multiple_runs(
+@_handle_gql_errors
+async def launch_multiple_runs(
     runs: Annotated[
-        list[dict[str, Any]],
-        Field(
-            description=(
-                "List of run specs. Each dict must have 'asset_keys' (list of "
-                "slash-separated strings) and 'repository_location_name' (str). "
-                "Optional: 'repository_name' (str, default '__repository__'), "
-                "'tags' (dict[str, str]), 'run_config' (dict)."
-            ),
-        ),
+        list[RunSpec],
+        Field(description="List of run specifications.", min_length=1),
     ],
     confirm: Annotated[
         bool,
@@ -585,27 +711,13 @@ def launch_multiple_runs(
     ] = False,
 ) -> str:
     """Launch multiple Dagster+ runs in a single batch. Call with confirm=False first to preview, then confirm=True to execute."""
-    if not runs:
-        return json.dumps({"error": "runs must not be empty"}, indent=2)
-    for i, r in enumerate(runs):
-        for key in ("asset_keys", "repository_location_name"):
-            if key not in r:
-                return json.dumps(
-                    {"error": f"runs[{i}] missing required key '{key}'"},
-                    indent=2,
-                )
-        if not r["asset_keys"]:
-            return json.dumps(
-                {"error": f"runs[{i}] asset_keys must not be empty"},
-                indent=2,
-            )
     params_list = [
         _build_execution_params(
-            asset_keys=r["asset_keys"],
-            repository_location_name=r["repository_location_name"],
-            repository_name=r.get("repository_name", "__repository__"),
-            tags=r.get("tags"),
-            run_config=r.get("run_config"),
+            asset_keys=r.asset_keys,
+            repository_location_name=r.repository_location_name,
+            repository_name=r.repository_name,
+            tags=r.tags,
+            run_config=r.run_config,
         )
         for r in runs
     ]
@@ -616,17 +728,17 @@ def launch_multiple_runs(
                 "runs": params_list,
                 "action_required": "Call again with confirm=True to execute.",
             },
-            indent=2,
         )
-    data = gql(
+    data = await gql(
         LAUNCH_MULTIPLE_RUNS_MUTATION,
         {"executionParamsList": params_list},
     )
-    return json.dumps(data["launchMultipleRuns"], indent=2)
+    return json.dumps(data["launchMultipleRuns"])
 
 
 @server.tool()
-def reexecute_run(
+@_handle_gql_errors
+async def reexecute_run(
     parent_run_id: Annotated[
         str,
         Field(description="The run ID (UUID) of the failed run to re-execute."),
@@ -657,7 +769,7 @@ def reexecute_run(
 ) -> str:
     """Re-execute a previous Dagster+ run with the given strategy. Call with confirm=False first to preview parent run details, then confirm=True to execute."""
     if not confirm:
-        parent_data = gql(RUN_BY_ID_QUERY, {"runId": parent_run_id})
+        parent_data = await gql(RUN_BY_ID_QUERY, {"runId": parent_run_id})
         return json.dumps(
             {
                 "mode": "preview",
@@ -666,7 +778,6 @@ def reexecute_run(
                 "extra_tags": extra_tags,
                 "action_required": "Call again with confirm=True to execute.",
             },
-            indent=2,
         )
     reexecution_params: dict[str, Any] = {
         "parentRunId": parent_run_id,
@@ -676,8 +787,8 @@ def reexecute_run(
         reexecution_params["extraTags"] = [
             {"key": k, "value": v} for k, v in extra_tags.items()
         ]
-    data = gql(
+    data = await gql(
         LAUNCH_RUN_REEXECUTION_MUTATION,
         {"reexecutionParams": reexecution_params},
     )
-    return json.dumps(data["launchRunReexecution"], indent=2)
+    return json.dumps(data["launchRunReexecution"])

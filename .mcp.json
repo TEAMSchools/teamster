@@ -2,14 +2,10 @@
   "mcpServers": {
     "dagster": {
       "command": "bash",
-      "args": [
-        "-c",
-        "DAGSTER_CLOUD_API_TOKEN=$(op read 'op://Data Team/Dagster Cloud Agent/credential') uv run --group mcp python -m dagster_plus"
-      ],
+      "args": ["mcp/dagster_plus/run.sh"],
       "env": {
         "DAGSTER_CLOUD_ORGANIZATION_ID": "kipptaf",
-        "DAGSTER_CLOUD_DEPLOYMENT": "prod",
-        "PYTHONPATH": "/workspaces/teamster/mcp"
+        "DAGSTER_CLOUD_DEPLOYMENT": "prod"
       }
     },
     "bigquery": {

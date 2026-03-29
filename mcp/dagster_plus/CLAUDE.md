@@ -4,14 +4,18 @@ FastMCP server exposing Dagster+ operational data via GraphQL.
 
 ## Package Structure
 
-- `server.py` — `FastMCP` instance, env vars, `gql()` client
+- `server.py` — `FastMCP` instance (with `instructions`), env vars, persistent
+  `httpx.AsyncClient`, async `gql()` client, `GraphQLError` exception
 - `queries.py` — GraphQL query strings (verify against schema before modifying)
-- `tools.py` — sync `@server.tool()` handlers with
-  `Annotated[type, Field(description=...)]`
+- `tools.py` — async `@server.tool()` handlers with
+  `Annotated[type, Field(description=...)]`, wrapped with `@_handle_gql_errors`
+  for structured error returns
 - `__main__.py` — entry point (imports `tools` to trigger registration)
 
 **Adding a tool:** Add query to `queries.py`, add `@server.tool()` function to
-`tools.py`. FastMCP auto-generates JSON schema from type hints.
+`tools.py` with the `@_handle_gql_errors` decorator. FastMCP auto-generates JSON
+schema from type hints. Use `BaseModel` subclasses for complex input types (see
+`RunSpec`).
 
 **Import constraint:** `mcp/` has no `__init__.py` (would shadow the `mcp` SDK).
 Use relative imports. Pyright `reportMissingImports` warnings are expected.
@@ -22,7 +26,7 @@ Use relative imports. Pyright `reportMissingImports` warnings are expected.
 ## Running
 
 ```bash
-cd mcp && uv run python -m dagster_plus
+uv run --project mcp python -m dagster_plus
 ```
 
 ## Environment Variables
@@ -62,8 +66,12 @@ client-side.
 
 ## Diagnosing degraded assets
 
-1. `list_runs(statuses=["FAILURE"])` for recent failures — more targeted than
-   `list_stale_assets` (can exceed token limits at 1.8M+ chars)
+1. `get_asset_health(asset_keys=[...])` for targeted health status of specific
+   assets — returns overall health, materialization status, checks status, and
+   freshness. Use `search_assets(prefix="...")` to discover asset keys first.
+   `get_asset_staleness(asset_keys=[...])` for staleness root causes. Fall back
+   to `list_runs(statuses=["FAILURE"])` for broad failure scanning — more
+   targeted than `list_stale_assets` (can exceed token limits at 1.8M+ chars)
 2. `get_run` for step keys/asset selection, then cross-reference BigQuery
    schemas (`get_table_info`) against dbt contract YAML
 3. `get_run_compute_logs` returns null for GKE runs (ephemeral pods) — use
