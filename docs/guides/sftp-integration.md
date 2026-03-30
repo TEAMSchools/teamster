@@ -137,14 +137,33 @@ uv run scripts/dbt-sxs.py <district_project> --test --select <source_name>.<asse
 Run this for each district project that consumes the source (e.g., `kippnewark`,
 `kipppaterson`). The `--test` flag uses the `teamster-test` bucket.
 
-## Step 8 — Build and validate the dbt model
+## Step 8 — Build the district staging model
 
 ```bash
 uv run dbt build -s <model_name> --project-dir src/dbt/<district_project>
 ```
 
 Review the output — check for contract violations, test failures, and data
-quality warnings.
+quality warnings. Run this for each district project.
+
+## Step 9 — Unblock kipptaf CI
+
+The kipptaf union model sources from district staging tables. In CI (dbt Cloud),
+these resolve to dev-prefixed schemas (e.g., `z_dev_kippnewark_amplify`). The
+district staging model must exist in that schema before kipptaf CI can build.
+
+Steps 7 and 8 create this table in your personal dev schema. To create it in the
+shared dev schema that CI uses, stage and build against the production GCS
+bucket:
+
+```bash
+uv run scripts/dbt-sxs.py <district_project> --select <source_name>.<asset_name>
+uv run dbt build -s <model_name> --project-dir src/dbt/<district_project>
+```
+
+!!! warning This requires production data in GCS. If the asset hasn't been
+materialized in prod yet, use `--test` to point at `teamster-test` and build
+against test data. The CI build will pass once prod data exists.
 
 ## Summary
 
@@ -153,4 +172,5 @@ quality warnings.
 | Inspect (Steps 1-3)  | Explore SFTP, download sample, preview schema | Developer |
 | Scaffold (Step 4)    | Generate all pipeline boilerplate             | Script    |
 | Customize (Step 5)   | Fill in regex, type casts, column definitions | Developer |
-| Validate (Steps 6-8) | Materialize, stage, build                     | Developer |
+| Validate (Steps 6-8) | Materialize, stage, build district models     | Developer |
+| CI Setup (Step 9)    | Create dev-schema tables for kipptaf CI       | Developer |
