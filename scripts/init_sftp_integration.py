@@ -133,14 +133,25 @@ def cmd_list(args: argparse.Namespace) -> None:
     sftp = get_sftp_client(args.resource, args.code_location)
 
     try:
+        match_count = 0
+
         for attr in sftp.listdir_attr(args.path):
             filename = attr.filename
 
             if args.pattern and args.pattern not in filename:
                 continue
 
+            match_count += 1
             size_kb = (attr.st_size or 0) / 1024
             print(f"{size_kb:>10.1f} KB  {filename}")
+
+        if match_count == 0:
+            pattern_msg = f" matching '{args.pattern}'" if args.pattern else ""
+            print(
+                f"WARNING: No files found{pattern_msg} in {args.path} "
+                f"on {args.code_location}",
+                file=sys.stderr,
+            )
     finally:
         close_sftp(sftp)
 
