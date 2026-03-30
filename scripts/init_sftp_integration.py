@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["paramiko"]
+# dependencies = ["paramiko", "python-slugify"]
 # ///
 
 import argparse
@@ -12,6 +12,7 @@ import tempfile
 from pathlib import Path
 
 import paramiko
+from slugify import slugify
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -47,10 +48,14 @@ def close_sftp(sftp: paramiko.SFTPClient) -> None:
 
 
 def normalize_field_name(header: str) -> str:
-    name = header.strip().lower()
-    name = re.sub(r"[^a-z0-9]+", "_", name)
-    name = name.strip("_")
-    return name
+    return slugify(text=header, separator="_")
+
+
+def _to_schema_const(class_name: str) -> str:
+    return (
+        re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])", "_", class_name).upper()
+        + "_SCHEMA"
+    )
 
 
 def read_csv_headers(file_path: str) -> list[str]:
@@ -76,7 +81,6 @@ def find_latest_match(
 
     filename = matches[0].filename
     return f"{path}/{filename}" if path != "/" else f"/{filename}"
-    return None
 
 
 def download_to_temp(
@@ -185,15 +189,33 @@ def cmd_codegen(args: argparse.Namespace) -> None:
     print(generate_pydantic_class(args.class_name, headers))
 
 
-def scaffold_pydantic_schema(resource: str, class_name: str, fields: list[str]) -> None:
+def _subpath_to_path(base: Path, subpath: list[str]) -> Path:
+    result = base
+    for segment in subpath:
+        result = result / segment
+    return result
+
+
+def _model_name(resource: str, subpath: list[str], asset_name: str) -> str:
+    subpath_joined = "__".join(subpath)
+    return f"stg_{resource}__{subpath_joined}__{asset_name}"
+
+
+def _source_name(resource: str, subpath: list[str]) -> str:
+    return f"{resource}_{'_'.join(subpath)}"
+
+
+def _gcs_subpath(resource: str, subpath: list[str]) -> str:
+    return f"{resource}/{'/'.join(subpath)}"
+
+
+def scaffold_pydantic_schema(
+    resource: str, subpath: list[str], class_name: str, fields: list[str]
+) -> None:
     schema_path = (
-        REPO_ROOT
-        / "src"
-        / "teamster"
-        / "libraries"
-        / resource
-        / "mclass"
-        / "sftp"
+        _subpath_to_path(
+            REPO_ROOT / "src" / "teamster" / "libraries" / resource, subpath
+        )
         / "schema.py"
     )
 
@@ -212,23 +234,16 @@ def scaffold_pydantic_schema(resource: str, class_name: str, fields: list[str]) 
 
 
 def scaffold_avro_schema(
-    resource: str, class_name: str, code_locations: list[str]
+    resource: str, subpath: list[str], class_name: str, code_locations: list[str]
 ) -> None:
-    schema_const = (
-        re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])", "_", class_name).upper()
-        + "_SCHEMA"
-    )
+    schema_const = _to_schema_const(class_name)
 
     for loc in code_locations:
         schema_path = (
-            REPO_ROOT
-            / "src"
-            / "teamster"
-            / "code_locations"
-            / loc
-            / resource
-            / "mclass"
-            / "sftp"
+            _subpath_to_path(
+                REPO_ROOT / "src" / "teamster" / "code_locations" / loc / resource,
+                subpath,
+            )
             / "schema.py"
         )
 
@@ -240,13 +255,11 @@ def scaffold_avro_schema(
             )
             continue
 
-        # Add import
         existing = existing.replace(
             ")\n\npas_options",
             f"    {class_name},\n)\n\npas_options",
         )
 
-        # Add schema constant
         new_const = (
             f"\n{schema_const} = json.loads(\n"
             f"    py_avro_schema.generate(py_type={class_name}, options=pas_options)\n"
@@ -261,25 +274,20 @@ def scaffold_avro_schema(
 
 def scaffold_dagster_asset(
     resource: str,
+    subpath: list[str],
     class_name: str,
     asset_name: str,
     code_locations: list[str],
 ) -> None:
-    schema_const = (
-        re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])", "_", class_name).upper()
-        + "_SCHEMA"
-    )
+    schema_const = _to_schema_const(class_name)
+    asset_key_segments = ", ".join(f'"{s}"' for s in [resource, *subpath, asset_name])
 
     for loc in code_locations:
         assets_path = (
-            REPO_ROOT
-            / "src"
-            / "teamster"
-            / "code_locations"
-            / loc
-            / resource
-            / "mclass"
-            / "sftp"
+            _subpath_to_path(
+                REPO_ROOT / "src" / "teamster" / "code_locations" / loc / resource,
+                subpath,
+            )
             / "assets.py"
         )
 
@@ -291,17 +299,15 @@ def scaffold_dagster_asset(
             )
             continue
 
-        # Add schema import
         existing = existing.replace(
             ")\nfrom teamster.libraries.sftp",
             f"    {schema_const},\n)\nfrom teamster.libraries.sftp",
         )
 
-        # Add asset definition before the assets list
         asset_block = (
             f"\n{asset_name} = build_sftp_file_asset(\n"
-            f'    asset_key=[CODE_LOCATION, "{resource}", "mclass", "sftp", "{asset_name}"],\n'
-            f'    remote_dir_regex=r"/PM",\n'
+            f"    asset_key=[CODE_LOCATION, {asset_key_segments}],\n"
+            f"    remote_dir_regex=...,  # TODO: fill in remote dir regex\n"
             f"    remote_file_regex=...,  # TODO: fill in regex pattern\n"
             f'    ssh_resource_key="ssh_{resource}",\n'
             f"    avro_schema={schema_const},\n"
@@ -310,7 +316,6 @@ def scaffold_dagster_asset(
             f")\n"
         )
 
-        # Add to assets list
         existing = existing.replace(
             "\nassets = [",
             f"{asset_block}\nassets = [",
@@ -326,9 +331,11 @@ def scaffold_dagster_asset(
 
 
 def scaffold_integration_test(
-    resource: str, asset_name: str, code_locations: list[str]
+    resource: str, subpath: list[str], asset_name: str, code_locations: list[str]
 ) -> None:
+    subpath_str = "_".join(subpath)
     test_path = REPO_ROOT / "tests" / "assets" / f"test_assets_{resource}_sftp.py"
+    import_subpath = ".".join(subpath)
 
     existing = test_path.read_text()
     modified = False
@@ -337,17 +344,16 @@ def scaffold_integration_test(
         # Use kipptaf for kippnewark (existing convention in test file)
         test_loc = "kipptaf" if loc == "kippnewark" else loc
 
-        func_name = f"test_{resource}_mclass_{asset_name}_{test_loc}"
+        func_name = f"test_{resource}_{subpath_str}_{asset_name}_{test_loc}"
 
         if func_name in existing:
             continue
 
         modified = True
-        import_loc = loc
 
         test_block = (
             f"\n\ndef {func_name}():\n"
-            f"    from teamster.code_locations.{import_loc}.{resource}.mclass.sftp.assets import (\n"
+            f"    from teamster.code_locations.{loc}.{resource}.{import_subpath}.assets import (\n"
             f"        {asset_name},\n"
             f"    )\n"
             f"\n"
@@ -365,22 +371,27 @@ def scaffold_integration_test(
         )
 
 
-def scaffold_dbt_source(resource: str, asset_name: str) -> None:
+def scaffold_dbt_source(resource: str, subpath: list[str], asset_name: str) -> None:
     sources_path = REPO_ROOT / "src" / "dbt" / resource / "models" / "sources.yml"
+    source_name = _source_name(resource, subpath)
+    gcs_subpath = _gcs_subpath(resource, subpath)
+    asset_key_lines = "".join(
+        f"                - {s}\n" for s in [resource, *subpath, asset_name]
+    )
 
     source_entry = (
         f"      - name: {asset_name}\n"
         f"        external:\n"
         f"          location:\n"
         f"            \"{{{{ var('cloud_storage_uri_base')\n"
-        f'            }}}}/{resource}/mclass/sftp/{asset_name}/*"\n'
+        f'            }}}}/{gcs_subpath}/{asset_name}/*"\n'
         f"          options:\n"
         f"            connection_name: \"{{{{ var('bigquery_external_connection_name') }}}}\"\n"
         f"            metadata_cache_mode: MANUAL\n"
         f"            max_staleness: INTERVAL 7 DAY\n"
         f"            hive_partition_uri_prefix:\n"
         f"              \"{{{{ var('cloud_storage_uri_base')\n"
-        f'              }}}}/{resource}/mclass/sftp/{asset_name}/"\n'
+        f'              }}}}/{gcs_subpath}/{asset_name}/"\n'
         f"            format: AVRO\n"
         f"            enable_logical_types: true\n"
         f"        config:\n"
@@ -388,10 +399,7 @@ def scaffold_dbt_source(resource: str, asset_name: str) -> None:
         f"            dagster:\n"
         f"              asset_key:\n"
         f'                - "{{{{ project_name }}}}"\n'
-        f"                - {resource}\n"
-        f"                - mclass\n"
-        f"                - sftp\n"
-        f"                - {asset_name}\n"
+        f"{asset_key_lines}"
     )
 
     existing = sources_path.read_text()
@@ -402,21 +410,33 @@ def scaffold_dbt_source(resource: str, asset_name: str) -> None:
         )
         return
 
-    # Find the end of the amplify_mclass_sftp source block by locating
-    # the next source definition
-    marker = "  - name: amplify_mclass_api"
-    existing = existing.replace(marker, source_entry + marker)
+    # Append to end of the matching source block
+    source_header = f"  - name: {source_name}"
+    if source_header in existing:
+        # Find the next source definition after ours to insert before it
+        header_pos = existing.index(source_header)
+        rest = existing[header_pos + len(source_header) :]
+        next_source = rest.find("\n  - name: ")
+        if next_source >= 0:
+            insert_pos = header_pos + len(source_header) + next_source + 1
+            existing = existing[:insert_pos] + source_entry + existing[insert_pos:]
+        else:
+            existing = existing.rstrip() + "\n" + source_entry
+    else:
+        existing = existing.rstrip() + "\n" + source_entry
 
     sources_path.write_text(existing)
 
     print(f"  dbt source: {sources_path.relative_to(REPO_ROOT)}")
 
 
-def scaffold_dbt_staging(resource: str, asset_name: str) -> None:
-    model_name = f"stg_{resource}__mclass__sftp__{asset_name}"
+def scaffold_dbt_staging(resource: str, subpath: list[str], asset_name: str) -> None:
+    model_name = _model_name(resource, subpath, asset_name)
+    source_name = _source_name(resource, subpath)
 
     staging_dir = (
-        REPO_ROOT / "src" / "dbt" / resource / "models" / "mclass" / "sftp" / "staging"
+        _subpath_to_path(REPO_ROOT / "src" / "dbt" / resource / "models", subpath)
+        / "staging"
     )
     props_dir = staging_dir / "properties"
     props_dir.mkdir(parents=True, exist_ok=True)
@@ -426,7 +446,7 @@ def scaffold_dbt_staging(resource: str, asset_name: str) -> None:
 
     sql_content = (
         f"select *\n"
-        f'from {{{{ source("{resource}_mclass_sftp", "{asset_name}") }}}}\n'
+        f'from {{{{ source("{source_name}", "{asset_name}") }}}}\n'
         f"-- TODO: add type casts and derived columns\n"
     )
 
@@ -459,42 +479,34 @@ def scaffold_dbt_staging(resource: str, asset_name: str) -> None:
 
 
 def scaffold_kipptaf_union(
-    resource: str, asset_name: str, code_locations: list[str]
+    resource: str, subpath: list[str], asset_name: str, code_locations: list[str]
 ) -> None:
     non_kipptaf = [loc for loc in code_locations if loc != "kipptaf"]
 
     if not non_kipptaf:
         return
 
-    model_name = f"stg_{resource}__mclass__sftp__{asset_name}"
+    model_name = _model_name(resource, subpath, asset_name)
 
-    # Find the source-package staging model to derive the kipptaf mirror path
     source_pkg_dir = REPO_ROOT / "src" / "dbt" / resource / "models"
-    staging_matches = list(source_pkg_dir.rglob(f"{model_name}.sql"))
+    staging_match = next(source_pkg_dir.rglob(f"{model_name}.sql"), None)
 
-    if not staging_matches:
+    if staging_match is None:
         print(f"  kipptaf union: could not find {model_name}.sql in {resource} package")
         return
 
-    # Derive relative path: e.g., mclass/sftp/staging/stg_*.sql
-    # The kipptaf mirror is: kipptaf/models/<resource>/<relative_path>
-    source_staging_dir = staging_matches[0].parent
+    source_staging_dir = staging_match.parent
     relative_to_models = source_staging_dir.relative_to(source_pkg_dir)
 
     kipptaf_models_dir = REPO_ROOT / "src" / "dbt" / "kipptaf" / "models" / resource
 
-    # Sources live one level above the deepest non-staging dir
-    # e.g., mclass/sftp/staging -> sources at mclass/
-    # Find existing sources-kipp*.yml to determine the right level
-    sources_matches = list(kipptaf_models_dir.rglob("sources-kipp*.yml"))
+    sources_match = next(kipptaf_models_dir.rglob("sources-kipp*.yml"), None)
 
-    if sources_matches:
-        sources_dir = sources_matches[0].parent
+    if sources_match is not None:
+        sources_dir = sources_match.parent
     else:
-        # Fall back: sources at the resource model root
         sources_dir = kipptaf_models_dir
 
-    # Add source entries for each district
     for loc in non_kipptaf:
         sources_path = sources_dir / f"sources-{loc}.yml"
 
@@ -532,7 +544,6 @@ def scaffold_kipptaf_union(
 
         print(f"  kipptaf source: {sources_path.relative_to(REPO_ROOT)}")
 
-    # Create union model mirroring the source-package path
     staging_dir = kipptaf_models_dir / relative_to_models
     props_dir = staging_dir / "properties"
     props_dir.mkdir(parents=True, exist_ok=True)
@@ -540,8 +551,6 @@ def scaffold_kipptaf_union(
     sql_path = staging_dir / f"{model_name}.sql"
     yml_path = props_dir / f"{model_name}.yml"
 
-    # Derive source name from existing sources files
-    # e.g., sources-kippnewark.yml has "name: kippnewark_amplify"
     source_names = [f"{loc}_{resource}" for loc in non_kipptaf]
 
     if sql_path.exists():
@@ -590,39 +599,40 @@ def scaffold_kipptaf_union(
 
         print(f"  kipptaf union YAML: {yml_path.relative_to(REPO_ROOT)}")
 
-        print(f"  kipptaf union YAML: {yml_path.relative_to(REPO_ROOT)}")
-
 
 def cmd_scaffold(args: argparse.Namespace) -> None:
     headers = get_headers_from_args(args)
+    subpath = args.source_subpath.split("/")
 
     print(f"Scaffolding pipeline for {args.class_name}...")
     print(f"  Fields: {len(headers)}")
     print()
 
-    scaffold_pydantic_schema(args.resource, args.class_name, headers)
-    scaffold_avro_schema(args.resource, args.class_name, args.code_locations)
+    scaffold_pydantic_schema(args.resource, subpath, args.class_name, headers)
+    scaffold_avro_schema(args.resource, subpath, args.class_name, args.code_locations)
     scaffold_dagster_asset(
-        args.resource, args.class_name, args.asset_name, args.code_locations
+        args.resource, subpath, args.class_name, args.asset_name, args.code_locations
     )
-    scaffold_integration_test(args.resource, args.asset_name, args.code_locations)
-    scaffold_dbt_source(args.resource, args.asset_name)
-    scaffold_dbt_staging(args.resource, args.asset_name)
-    scaffold_kipptaf_union(args.resource, args.asset_name, args.code_locations)
+    scaffold_integration_test(
+        args.resource, subpath, args.asset_name, args.code_locations
+    )
+    scaffold_dbt_source(args.resource, subpath, args.asset_name)
+    scaffold_dbt_staging(args.resource, subpath, args.asset_name)
+    scaffold_kipptaf_union(args.resource, subpath, args.asset_name, args.code_locations)
 
-    model_name = f"stg_{args.resource}__mclass__sftp__{args.asset_name}"
-    staging_dir = f"src/dbt/{args.resource}/models/mclass/sftp/staging"
+    model_name = _model_name(args.resource, subpath, args.asset_name)
+    source_name = _source_name(args.resource, subpath)
+    subpath_str = "/".join(subpath)
+    staging_dir = f"src/dbt/{args.resource}/models/{subpath_str}/staging"
     test_file = f"tests/assets/test_assets_{args.resource}_sftp.py"
-
-    source_name = f"{args.resource}_mclass_sftp"
 
     print()
     print("Scaffold complete. Developer TODOs:")
     print()
-    print("1. Fill in remote_file_regex:")
+    print("1. Fill in remote_dir_regex and remote_file_regex:")
     for loc in args.code_locations:
         assets_file = (
-            f"src/teamster/code_locations/{loc}/{args.resource}/mclass/sftp/assets.py"
+            f"src/teamster/code_locations/{loc}/{args.resource}/{subpath_str}/assets.py"
         )
         print(f"   - {assets_file}")
     print()
@@ -706,6 +716,11 @@ def main() -> None:
         "--class-name", required=True, help="Pydantic class name to generate"
     )
     sc_parser.add_argument("--asset-name", required=True, help="Snake_case asset name")
+    sc_parser.add_argument(
+        "--source-subpath",
+        required=True,
+        help="Slash-separated subpath within resource (e.g., mclass/sftp)",
+    )
     sc_parser.add_argument(
         "--code-locations",
         nargs="+",
