@@ -447,8 +447,11 @@ def cmd_scaffold(args: argparse.Namespace) -> None:
     staging_dir = f"src/dbt/{args.resource}/models/mclass/sftp/staging"
     test_file = f"tests/assets/test_assets_{args.resource}_sftp.py"
 
+    source_name = f"{args.resource}_mclass_sftp"
+
     print()
     print("Scaffold complete. Developer TODOs:")
+    print()
 
     for loc in args.code_locations:
         assets_file = (
@@ -456,9 +459,18 @@ def cmd_scaffold(args: argparse.Namespace) -> None:
         )
         print(f"  1. Fill in remote_file_regex: {assets_file}")
 
-    print(f"  2. Add type casts and derived columns: {staging_dir}/{model_name}.sql")
-    print(f"  3. Add column definitions: {staging_dir}/properties/{model_name}.yml")
-    print(f"  4. Run integration test to materialize data: {test_file}")
+    print(f"  2. Run integration test to materialize data:")
+    print(f"     uv run pytest {test_file} -k {args.asset_name} -v")
+    print(f"  3. Stage external source:")
+    print(
+        f"     uv run scripts/dbt-sxs.py {args.resource} --test --select {source_name}.{args.asset_name}"
+    )
+    print(f"  4. Add type casts and derived columns: {staging_dir}/{model_name}.sql")
+    print(f"  5. Add column definitions: {staging_dir}/properties/{model_name}.yml")
+    print(f"  6. Build dbt model:")
+    print(
+        f"     uv run dbt build -s {model_name} --project-dir src/dbt/{args.resource}"
+    )
 
 
 def main() -> None:

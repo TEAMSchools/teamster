@@ -206,14 +206,18 @@ to the existing asset are needed.
 
 ## Dev workflow
 
-After Batch 2, the developer runs two commands to validate the full pipeline:
+After Batch 2, the developer validates the full pipeline:
 
-1. **Materialize the asset** via the integration test:
-   `uv run pytest tests/assets/test_assets_amplify_sftp.py::test_amplify_mclass_pm_student_summary_aimline_kipptaf`.
+1. **Fill in `remote_file_regex`** in both code locations' `assets.py`.
+2. **Materialize the asset** via the integration test:
+   `uv run pytest tests/assets/test_assets_amplify_sftp.py -k pm_student_summary_aimline -v`.
    This writes to the `teamster-test` GCS bucket using
    `get_io_manager_gcs_avro(code_location="test", test=True)`.
-2. **Build the dbt model** against the materialized test data:
-   `uv run dbt build -s stg_amplify__mclass__sftp__pm_student_summary_aimline`.
+3. **Stage the external source** (creates BigQuery external table over GCS):
+   `uv run scripts/dbt-sxs.py amplify --test --select amplify_mclass_sftp.pm_student_summary_aimline`.
+4. **Add type casts and columns** to the dbt staging model.
+5. **Build the dbt model** against the materialized test data:
+   `uv run dbt build -s stg_amplify__mclass__sftp__pm_student_summary_aimline --project-dir src/dbt/amplify`.
 
 This avoids the branch deployment round-trip and keeps the dev cycle fast.
 
