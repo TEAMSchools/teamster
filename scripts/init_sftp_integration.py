@@ -16,11 +16,12 @@ import paramiko
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-def get_sftp_client(resource_name: str) -> paramiko.SFTPClient:
+def get_sftp_client(resource_name: str, code_location: str) -> paramiko.SFTPClient:
     name = resource_name.upper()
+    loc = code_location.upper()
     host = os.environ[f"{name}_SFTP_HOST"]
-    username = os.environ[f"{name}_SFTP_USERNAME"]
-    password = os.environ[f"{name}_SFTP_PASSWORD"]
+    username = os.environ[f"{name}_SFTP_USERNAME_{loc}"]
+    password = os.environ[f"{name}_SFTP_PASSWORD_{loc}"]
     port = int(os.environ.get(f"{name}_SFTP_PORT", "22"))
 
     transport = paramiko.Transport((host, port))
@@ -111,7 +112,7 @@ def get_headers_from_args(args: argparse.Namespace) -> list[str]:
     if args.local:
         return read_csv_headers(args.local)
 
-    sftp = get_sftp_client(args.resource)
+    sftp = get_sftp_client(args.resource, args.code_location)
 
     try:
         tmp = download_to_temp(sftp, args.path, args.pattern)
@@ -129,7 +130,7 @@ def get_headers_from_args(args: argparse.Namespace) -> list[str]:
 
 
 def cmd_list(args: argparse.Namespace) -> None:
-    sftp = get_sftp_client(args.resource)
+    sftp = get_sftp_client(args.resource, args.code_location)
 
     try:
         for attr in sftp.listdir_attr(args.path):
@@ -145,7 +146,7 @@ def cmd_list(args: argparse.Namespace) -> None:
 
 
 def cmd_download(args: argparse.Namespace) -> None:
-    sftp = get_sftp_client(args.resource)
+    sftp = get_sftp_client(args.resource, args.code_location)
 
     try:
         remote_path = find_latest_match(sftp, args.path, args.pattern)
@@ -485,6 +486,11 @@ def main() -> None:
     )
 
     parser.add_argument("resource", help="SFTP resource name (e.g., amplify)")
+    parser.add_argument(
+        "--code-location",
+        required=True,
+        help="Code location for SFTP credentials (e.g., kipptaf, kipppaterson)",
+    )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
