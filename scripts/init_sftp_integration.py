@@ -70,8 +70,8 @@ def _to_schema_const(class_name: str) -> str:
     )
 
 
-def read_csv_headers(file_path: str) -> list[str]:
-    with open(file_path, newline="") as f:
+def read_csv_headers(file_path: str | Path) -> list[str]:
+    with Path(file_path).open(newline="", encoding="utf-8") as f:
         reader = csv.reader(f)
         raw_headers = next(reader)
 
