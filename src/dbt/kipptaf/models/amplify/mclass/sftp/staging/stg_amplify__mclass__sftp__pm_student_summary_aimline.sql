@@ -16,5 +16,6 @@ with
         }}
     )
 
-select *
+-- trunk-ignore(sqlfluff/AM04): union_relations produces dynamic columns
+select *,
 from union_relations
