@@ -581,14 +581,15 @@ git commit -m "fix: resolve dbt compile errors from _dbt_source_project refactor
 
 **Files:**
 
-- Modify: `CLAUDE.md` (in `src/dbt/kipptaf/`)
+- Modify: `src/dbt/kipptaf/CLAUDE.md`
+- Modify: `docs/reference/dbt-conventions.md`
 
-- [ ] **Step 1: Update the `union_dataset_join_clause` section**
+- [ ] **Step 1: Update `src/dbt/kipptaf/CLAUDE.md`**
 
-In `src/dbt/kipptaf/CLAUDE.md`, replace the section titled
-`### \`union_dataset_join_clause\` (critical)` (lines ~47-60) with:
+Replace the section titled `### \`union_dataset_join_clause\` (critical)` (lines
+~47-60) with:
 
-```markdown
+````markdown
 ### `_dbt_source_project` column (critical)
 
 Cross-district union models expose `_dbt_source_project`, extracted from
@@ -596,20 +597,61 @@ Cross-district union models expose `_dbt_source_project`, extracted from
 `macros/utils.sql`. **Join on it directly** — never compare
 `_dbt_source_relation` across tables:
 
-\`\`\`sql inner join {{ ref("other_union_model") }} as b on a.id = b.id and
-a.\_dbt_source_project = b.\_dbt_source_project \`\`\`
+```sql
+inner join {{ ref("other_union_model") }} as b
+    on a.id = b.id
+    and a._dbt_source_project = b._dbt_source_project
+```
 
 When adding a new cross-district `union_relations` model, add the column:
 
-\`\`\`sql select \*, {{ extract_source_project("union_relations") }} as
-\_dbt_source_project, from union_relations \`\`\`
+```sql
+select
+    *,
+    {{ extract_source_project("union_relations") }} as _dbt_source_project,
+from union_relations
+```
+````
+
+- [ ] **Step 2: Update `docs/reference/dbt-conventions.md`**
+
+Replace the `union_dataset_join_clause()` bullet (lines 43-59) with:
+
+````markdown
+- **Join cross-district tables on `_dbt_source_project`** — all cross-district
+  union models expose this column. Use it directly in join conditions:
+
+  ```sql
+  inner join {{ ref("other_union_model") }} as b
+      on a.id = b.id
+      and a._dbt_source_project = b._dbt_source_project
+  ```
+
+  When creating a new cross-district union model, add the column using the
+  `extract_source_project` macro from `kipptaf/macros/utils.sql`:
+
+  ```sql
+  select
+      *,
+      {{ extract_source_project("union_relations") }}
+          as _dbt_source_project,
+  from union_relations
+  ```
+````
+
+Update the `functions.region_join()` row in the BigQuery scalar functions table
+(line 126) to note deprecation:
+
+```markdown
+| `functions.region_join(left_col, right_col)` | **Deprecated** — use
+`a._dbt_source_project = b._dbt_source_project` instead |
 ```
 
-- [ ] **Step 2: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
-git add CLAUDE.md
-git commit -m "docs(kipptaf): update CLAUDE.md for _dbt_source_project convention (#3142)"
+git add src/dbt/kipptaf/CLAUDE.md docs/reference/dbt-conventions.md
+git commit -m "docs: update dbt-conventions and kipptaf CLAUDE.md for _dbt_source_project (#3142)"
 ```
 
 ---

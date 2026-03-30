@@ -113,6 +113,75 @@ column (`_dbt_source_project`), then join on it directly downstream.
 {% endmacro %}
 ```
 
+## Developer impact
+
+### What changes for SQL developers
+
+**Joining cross-district tables (the common case):**
+
+Before:
+
+```sql
+inner join {{ ref("other_union_model") }} as b
+    on a.id = b.id
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="b") }}
+```
+
+After:
+
+```sql
+inner join {{ ref("other_union_model") }} as b
+    on a.id = b.id
+    and a._dbt_source_project = b._dbt_source_project
+```
+
+No macro import, no Jinja — just a plain column comparison.
+
+**Creating a new cross-district union model:**
+
+Add `_dbt_source_project` using the centralized macro:
+
+```sql
+select
+    *,
+    {{ extract_source_project("union_relations") }} as _dbt_source_project,
+from union_relations
+```
+
+Add to properties YAML (contract-enforced models):
+
+```yaml
+- name: _dbt_source_project
+  data_type: string
+```
+
+**Extracting a human-readable region label:**
+
+The existing pattern
+`initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_'))` still works but
+can now be derived from `_dbt_source_project` with
+`initcap(regexp_extract(s._dbt_source_project, r'kipp(\w+)'))` — one fewer regex
+group since the trailing `_` is already stripped.
+
+**BigQuery UDF `functions.region_join()`:**
+
+This UDF is the scalar equivalent of `union_dataset_join_clause()` for use
+outside dbt (Cube semantic layer, ad-hoc queries). It currently operates on
+`_dbt_source_relation`. Post-refactor, queries can use
+`a._dbt_source_project = b._dbt_source_project` directly instead of calling the
+UDF. The UDF should be deprecated — removal is a separate task since it requires
+coordinating with Cube model definitions.
+
+### Documentation deliverables
+
+- **`docs/reference/dbt-conventions.md`** — update the
+  `union_dataset_join_clause()` section (lines 43-59) to document
+  `_dbt_source_project` and `extract_source_project`. Update the
+  `functions.region_join()` row in the BigQuery scalar functions table to note
+  deprecation in favor of `_dbt_source_project`.
+- **`src/dbt/kipptaf/CLAUDE.md`** — replace the `union_dataset_join_clause`
+  section with `_dbt_source_project` documentation.
+
 ## Testing and validation
 
 - `dbt compile` to verify all models parse correctly.
