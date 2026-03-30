@@ -71,6 +71,16 @@ All staging sources use BigQuery external tables backed by GCS (Avro format,
 BigLake connection, 7-day staleness window). Each source's `sources.yml`
 includes `dagster: asset_key` metadata so Dagster can track lineage.
 
+## CI External Table Setup
+
+New external tables must be staged in the `z_dev_` schema before kipptaf CI can
+reference them via `union_relations`. Use `--target staging` with both
+`dbt-sxs.py` and `dbt build`. The default `--target dev` creates tables in your
+personal `zz_<user>_*` schema, which CI does not see.
+
+`dbt-sxs.py` flags are independent: `--test` controls the GCS bucket
+(`teamster-test` vs production), `--target` controls the BigQuery schema.
+
 ## Model Conventions
 
 These conventions apply to **every** dbt project in this directory. Per-project
