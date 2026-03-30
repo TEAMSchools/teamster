@@ -439,11 +439,23 @@ def scaffold_dbt_staging(resource: str, asset_name: str) -> None:
         f"    # TODO: add columns, then set contract.enforced: true\n"
     )
 
-    sql_path.write_text(sql_content)
-    yml_path.write_text(yml_content)
+    if sql_path.exists():
+        print(
+            f"  dbt staging SQL: {sql_path.relative_to(REPO_ROOT)}"
+            f" (skipped, already exists)"
+        )
+    else:
+        sql_path.write_text(sql_content)
+        print(f"  dbt staging SQL: {sql_path.relative_to(REPO_ROOT)}")
 
-    print(f"  dbt staging SQL: {sql_path.relative_to(REPO_ROOT)}")
-    print(f"  dbt staging YAML: {yml_path.relative_to(REPO_ROOT)}")
+    if yml_path.exists():
+        print(
+            f"  dbt staging YAML: {yml_path.relative_to(REPO_ROOT)}"
+            f" (skipped, already exists)"
+        )
+    else:
+        yml_path.write_text(yml_content)
+        print(f"  dbt staging YAML: {yml_path.relative_to(REPO_ROOT)}")
 
 
 def scaffold_kipptaf_union(

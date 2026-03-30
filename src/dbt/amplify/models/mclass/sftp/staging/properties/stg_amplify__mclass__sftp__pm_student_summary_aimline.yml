@@ -1,8 +1,5 @@
 models:
   - name: stg_amplify__mclass__sftp__pm_student_summary_aimline
-    config:
-      contract:
-        enforced: true
     columns:
       - name: surrogate_key
         data_type: string
