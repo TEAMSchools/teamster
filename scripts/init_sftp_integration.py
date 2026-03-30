@@ -309,7 +309,7 @@ def scaffold_integration_test(
 
     test_path.write_text(existing + "\n")
 
-    print(f"  Test: {test_path.relative_to(REPO_ROOT)}")
+    print(f"  Integration test: {test_path.relative_to(REPO_ROOT)}")
 
 
 def scaffold_dbt_source(resource: str, asset_name: str) -> None:
@@ -403,11 +403,22 @@ def cmd_scaffold(args: argparse.Namespace) -> None:
     scaffold_dbt_source(args.resource, args.asset_name)
     scaffold_dbt_staging(args.resource, args.asset_name)
 
+    model_name = f"stg_{args.resource}__mclass__sftp__{args.asset_name}"
+    staging_dir = f"src/dbt/{args.resource}/models/mclass/sftp/staging"
+    test_file = f"tests/assets/test_assets_{args.resource}_sftp.py"
+
     print()
     print("Scaffold complete. Developer TODOs:")
-    print("  1. Fill in remote_file_regex in each code location's assets.py")
-    print("  2. Add type casts and derived columns to the dbt staging SQL")
-    print("  3. Add column definitions to the dbt properties YAML")
+
+    for loc in args.code_locations:
+        assets_file = (
+            f"src/teamster/code_locations/{loc}/{args.resource}/mclass/sftp/assets.py"
+        )
+        print(f"  1. Fill in remote_file_regex: {assets_file}")
+
+    print(f"  2. Add type casts and derived columns: {staging_dir}/{model_name}.sql")
+    print(f"  3. Add column definitions: {staging_dir}/properties/{model_name}.yml")
+    print(f"  4. Run integration test to materialize data: {test_file}")
 
 
 def main() -> None:
