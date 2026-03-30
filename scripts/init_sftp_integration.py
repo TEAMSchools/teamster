@@ -13,6 +13,8 @@ from pathlib import Path
 
 import paramiko
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
 
 def get_sftp_client(resource_name: str) -> paramiko.SFTPClient:
     name = resource_name.upper()
@@ -156,8 +158,248 @@ def cmd_codegen(args: argparse.Namespace) -> None:
     print(generate_pydantic_class(args.class_name, headers))
 
 
+def scaffold_pydantic_schema(resource: str, class_name: str, fields: list[str]) -> None:
+    schema_path = (
+        REPO_ROOT
+        / "src"
+        / "teamster"
+        / "libraries"
+        / resource
+        / "mclass"
+        / "sftp"
+        / "schema.py"
+    )
+
+    class_code = generate_pydantic_class(class_name, fields)
+
+    existing = schema_path.read_text()
+    schema_path.write_text(f"{existing}\n\n{class_code}\n")
+
+    print(f"  Pydantic schema: {schema_path.relative_to(REPO_ROOT)}")
+
+
+def scaffold_avro_schema(
+    resource: str, class_name: str, code_locations: list[str]
+) -> None:
+    schema_const = re.sub(r"(?<=[a-z])(?=[A-Z])", "_", class_name).upper() + "_SCHEMA"
+
+    for loc in code_locations:
+        schema_path = (
+            REPO_ROOT
+            / "src"
+            / "teamster"
+            / "code_locations"
+            / loc
+            / resource
+            / "mclass"
+            / "sftp"
+            / "schema.py"
+        )
+
+        existing = schema_path.read_text()
+
+        # Add import
+        existing = existing.replace(
+            ")\n\npas_options",
+            f"    {class_name},\n)\n\npas_options",
+        )
+
+        # Add schema constant
+        new_const = (
+            f"\n{schema_const} = json.loads(\n"
+            f"    py_avro_schema.generate(py_type={class_name}, options=pas_options)\n"
+            f")\n"
+        )
+        existing = existing.rstrip() + "\n" + new_const
+
+        schema_path.write_text(existing)
+
+        print(f"  Avro schema: {schema_path.relative_to(REPO_ROOT)}")
+
+
+def scaffold_dagster_asset(
+    resource: str,
+    class_name: str,
+    asset_name: str,
+    code_locations: list[str],
+) -> None:
+    schema_const = re.sub(r"(?<=[a-z])(?=[A-Z])", "_", class_name).upper() + "_SCHEMA"
+
+    for loc in code_locations:
+        assets_path = (
+            REPO_ROOT
+            / "src"
+            / "teamster"
+            / "code_locations"
+            / loc
+            / resource
+            / "mclass"
+            / "sftp"
+            / "assets.py"
+        )
+
+        existing = assets_path.read_text()
+
+        # Add schema import
+        existing = existing.replace(
+            ")\nfrom teamster.libraries.sftp",
+            f"    {schema_const},\n)\nfrom teamster.libraries.sftp",
+        )
+
+        # Add asset definition before the assets list
+        asset_block = (
+            f"\n{asset_name} = build_sftp_file_asset(\n"
+            f'    asset_key=[CODE_LOCATION, "{resource}", "mclass", "sftp", "{asset_name}"],\n'
+            f'    remote_dir_regex=r"/PM",\n'
+            f"    remote_file_regex=...,  # TODO: fill in regex pattern\n"
+            f'    ssh_resource_key="ssh_{resource}",\n'
+            f"    avro_schema={schema_const},\n"
+            f"    partitions_def=partitions_def,\n"
+            f"    ignore_multiple_matches=True,\n"
+            f")\n"
+        )
+
+        # Add to assets list
+        existing = existing.replace(
+            "\nassets = [",
+            f"{asset_block}\nassets = [",
+        )
+        existing = existing.replace(
+            "\n]\n",
+            f"    {asset_name},\n]\n",
+        )
+
+        assets_path.write_text(existing)
+
+        print(f"  Asset: {assets_path.relative_to(REPO_ROOT)}")
+
+
+def scaffold_integration_test(
+    resource: str, asset_name: str, code_locations: list[str]
+) -> None:
+    test_path = REPO_ROOT / "tests" / "assets" / f"test_assets_{resource}_sftp.py"
+
+    existing = test_path.read_text()
+
+    for loc in code_locations:
+        # Use kipptaf for kippnewark (existing convention in test file)
+        test_loc = "kipptaf" if loc == "kippnewark" else loc
+
+        func_name = f"test_{resource}_mclass_{asset_name}_{test_loc}"
+        import_loc = loc
+
+        test_block = (
+            f"\n\ndef {func_name}():\n"
+            f"    from teamster.code_locations.{import_loc}.{resource}.mclass.sftp.assets import (\n"
+            f"        {asset_name},\n"
+            f"    )\n"
+            f"\n"
+            f'    _test_asset(code_location="{test_loc}", asset={asset_name})\n'
+        )
+
+        existing = existing.rstrip() + test_block
+
+    test_path.write_text(existing + "\n")
+
+    print(f"  Test: {test_path.relative_to(REPO_ROOT)}")
+
+
+def scaffold_dbt_source(resource: str, asset_name: str) -> None:
+    sources_path = REPO_ROOT / "src" / "dbt" / resource / "models" / "sources.yml"
+
+    source_entry = (
+        f"      - name: {asset_name}\n"
+        f"        external:\n"
+        f"          location:\n"
+        f"            \"{{{{ var('cloud_storage_uri_base')\n"
+        f'            }}}}/{resource}/mclass/sftp/{asset_name}/*"\n'
+        f"          options:\n"
+        f"            connection_name: \"{{{{ var('bigquery_external_connection_name') }}}}\"\n"
+        f"            metadata_cache_mode: MANUAL\n"
+        f"            max_staleness: INTERVAL 7 DAY\n"
+        f"            hive_partition_uri_prefix:\n"
+        f"              \"{{{{ var('cloud_storage_uri_base')\n"
+        f'              }}}}/{resource}/mclass/sftp/{asset_name}/"\n'
+        f"            format: AVRO\n"
+        f"            enable_logical_types: true\n"
+        f"        config:\n"
+        f"          meta:\n"
+        f"            dagster:\n"
+        f"              asset_key:\n"
+        f'                - "{{{{ project_name }}}}"\n'
+        f"                - {resource}\n"
+        f"                - mclass\n"
+        f"                - sftp\n"
+        f"                - {asset_name}\n"
+    )
+
+    existing = sources_path.read_text()
+
+    # Find the end of the amplify_mclass_sftp source block by locating
+    # the next source definition
+    marker = "  - name: amplify_mclass_api"
+    existing = existing.replace(marker, source_entry + marker)
+
+    sources_path.write_text(existing)
+
+    print(f"  dbt source: {sources_path.relative_to(REPO_ROOT)}")
+
+
+def scaffold_dbt_staging(resource: str, asset_name: str) -> None:
+    model_name = f"stg_{resource}__mclass__sftp__{asset_name}"
+
+    staging_dir = (
+        REPO_ROOT / "src" / "dbt" / resource / "models" / "mclass" / "sftp" / "staging"
+    )
+    props_dir = staging_dir / "properties"
+    props_dir.mkdir(parents=True, exist_ok=True)
+
+    sql_path = staging_dir / f"{model_name}.sql"
+    yml_path = props_dir / f"{model_name}.yml"
+
+    sql_content = (
+        f"select *\n"
+        f'from {{{{ source("{resource}_mclass_sftp", "{asset_name}") }}}}\n'
+        f"-- TODO: add type casts and derived columns\n"
+    )
+
+    yml_content = (
+        f"models:\n"
+        f"  - name: {model_name}\n"
+        f"    config:\n"
+        f"      contract:\n"
+        f"        enforced: true\n"
+        f"    # TODO: add columns\n"
+    )
+
+    sql_path.write_text(sql_content)
+    yml_path.write_text(yml_content)
+
+    print(f"  dbt staging SQL: {sql_path.relative_to(REPO_ROOT)}")
+    print(f"  dbt staging YAML: {yml_path.relative_to(REPO_ROOT)}")
+
+
 def cmd_scaffold(args: argparse.Namespace) -> None:
-    raise NotImplementedError("scaffold subcommand not yet implemented")
+    headers = get_headers_from_args(args)
+
+    print(f"Scaffolding pipeline for {args.class_name}...")
+    print(f"  Fields: {len(headers)}")
+    print()
+
+    scaffold_pydantic_schema(args.resource, args.class_name, headers)
+    scaffold_avro_schema(args.resource, args.class_name, args.code_locations)
+    scaffold_dagster_asset(
+        args.resource, args.class_name, args.asset_name, args.code_locations
+    )
+    scaffold_integration_test(args.resource, args.asset_name, args.code_locations)
+    scaffold_dbt_source(args.resource, args.asset_name)
+    scaffold_dbt_staging(args.resource, args.asset_name)
+
+    print()
+    print("Scaffold complete. Developer TODOs:")
+    print("  1. Fill in remote_file_regex in each code location's assets.py")
+    print("  2. Add type casts and derived columns to the dbt staging SQL")
+    print("  3. Add column definitions to the dbt properties YAML")
 
 
 def main() -> None:
