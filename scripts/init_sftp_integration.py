@@ -445,8 +445,8 @@ def scaffold_dbt_staging(resource: str, subpath: list[str], asset_name: str) -> 
     sql_path = staging_dir / f"{model_name}.sql"
     yml_path = props_dir / f"{model_name}.yml"
 
-    # trunk-ignore(bandit/B608): dbt Jinja template, not executed SQL
     sql_content = (
+        # trunk-ignore(bandit/B608): dbt Jinja template, not executed SQL
         f"select *\n"
         f'from {{{{ source("{source_name}", "{asset_name}") }}}}\n'
         f"-- TODO: add type casts and derived columns\n"
@@ -569,8 +569,8 @@ def scaffold_kipptaf_union(
             for sn in source_names
         )
 
-        # trunk-ignore(bandit/B608): dbt Jinja template, not executed SQL
         sql_content = (
+            # trunk-ignore(bandit/B608): dbt Jinja template, not executed SQL
             f"with\n"
             f"    union_relations as (\n"
             f"        {{{{\n"
