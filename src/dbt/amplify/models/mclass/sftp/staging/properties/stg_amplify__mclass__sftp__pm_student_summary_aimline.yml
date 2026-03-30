@@ -1,0 +1,9 @@
+models:
+  - name: stg_amplify__mclass__sftp__pm_student_summary_aimline
+    # TODO: enable contract and add columns
+    # config:
+    #   contract:
+    #     enforced: true
+    # columns:
+    #   - name: ...
+    #     data_type: ...

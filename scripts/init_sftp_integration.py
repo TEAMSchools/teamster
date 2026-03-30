@@ -433,10 +433,13 @@ def scaffold_dbt_staging(resource: str, asset_name: str) -> None:
     yml_content = (
         f"models:\n"
         f"  - name: {model_name}\n"
-        f"    config:\n"
-        f"      contract:\n"
-        f"        enforced: true\n"
-        f"    # TODO: add columns\n"
+        f"    # TODO: enable contract and add columns\n"
+        f"    # config:\n"
+        f"    #   contract:\n"
+        f"    #     enforced: true\n"
+        f"    # columns:\n"
+        f"    #   - name: ...\n"
+        f"    #     data_type: ...\n"
     )
 
     sql_path.write_text(sql_content)
