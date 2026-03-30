@@ -15,6 +15,7 @@
       "Bash(trunk check:*)",
       "Bash(trunk fmt:*)",
       "Bash(uv tool list:*)",
+      "Bash(gh api user -q .login)",
       "mcp__bigquery__analyze_contribution",
       "mcp__bigquery__execute_sql",
       "mcp__bigquery__forecast",
