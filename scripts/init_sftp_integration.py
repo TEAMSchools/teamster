@@ -20,9 +20,21 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 def get_sftp_client(resource_name: str, code_location: str) -> paramiko.SFTPClient:
     name = resource_name.upper()
     loc = code_location.upper()
-    host = os.environ[f"{name}_SFTP_HOST"]
-    username = os.environ[f"{name}_SFTP_USERNAME_{loc}"]
-    password = os.environ[f"{name}_SFTP_PASSWORD_{loc}"]
+
+    required_vars = {
+        "host": f"{name}_SFTP_HOST",
+        "username": f"{name}_SFTP_USERNAME_{loc}",
+        "password": f"{name}_SFTP_PASSWORD_{loc}",
+    }
+
+    missing = [v for v in required_vars.values() if v not in os.environ]
+    if missing:
+        print(f"Missing required env vars: {', '.join(missing)}", file=sys.stderr)
+        sys.exit(1)
+
+    host = os.environ[required_vars["host"]]
+    username = os.environ[required_vars["username"]]
+    password = os.environ[required_vars["password"]]
     port = int(os.environ.get(f"{name}_SFTP_PORT", "22"))
 
     transport = paramiko.Transport((host, port))
@@ -241,8 +253,16 @@ def scaffold_avro_schema(
             )
             continue
 
+        import_marker = ")\n\npas_options"
+        if import_marker not in existing:
+            print(
+                f"  Avro schema: {schema_path.relative_to(REPO_ROOT)}"
+                f" (skipped, unexpected file format)"
+            )
+            continue
+
         existing = existing.replace(
-            ")\n\npas_options",
+            import_marker,
             f"    {class_name},\n)\n\npas_options",
         )
 
