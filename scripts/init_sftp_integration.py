@@ -461,16 +461,19 @@ def cmd_scaffold(args: argparse.Namespace) -> None:
 
     print(f"  2. Run integration test to materialize data:")
     print(f"     uv run pytest {test_file} -k {args.asset_name} -v")
-    print(f"  3. Stage external source:")
-    print(
-        f"     uv run scripts/dbt-sxs.py {args.resource} --test --select {source_name}.{args.asset_name}"
-    )
+
+    for loc in args.code_locations:
+        print(f"  3. Stage external source ({loc}):")
+        print(
+            f"     uv run scripts/dbt-sxs.py {loc} --test --select {source_name}.{args.asset_name}"
+        )
+
     print(f"  4. Add type casts and derived columns: {staging_dir}/{model_name}.sql")
     print(f"  5. Add column definitions: {staging_dir}/properties/{model_name}.yml")
-    print(f"  6. Build dbt model:")
-    print(
-        f"     uv run dbt build -s {model_name} --project-dir src/dbt/{args.resource}"
-    )
+
+    for loc in args.code_locations:
+        print(f"  6. Build dbt model ({loc}):")
+        print(f"     uv run dbt build -s {model_name} --project-dir src/dbt/{loc}")
 
 
 def main() -> None:
