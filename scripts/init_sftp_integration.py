@@ -547,8 +547,8 @@ def main() -> None:
     sc_parser = subparsers.add_parser(
         "scaffold", help="Generate full pipeline boilerplate"
     )
+    sc_parser.add_argument("resource", help="SFTP resource name (e.g., amplify)")
     sc_parser.add_argument("--local", help="Path to a local CSV file")
-    sc_parser.add_argument("resource", nargs="?", help="SFTP resource name")
     sc_parser.add_argument(
         "code_location", nargs="?", help="Code location for credentials"
     )
