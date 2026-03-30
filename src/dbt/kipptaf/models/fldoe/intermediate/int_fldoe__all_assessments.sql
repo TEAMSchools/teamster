@@ -60,6 +60,29 @@ select
 
     cast(regexp_extract(fl.achievement_level, r'\d+') as int) as achievement_level_int,
 
+    'Actual' as results_type,
+    'KTAF FL' as district_state,
+
+    fl.administration_window as `admin`,
+    fl.assessment_subject as `subject`,
+
+    case
+        when fl.assessment_subject like 'English Language Arts%'
+        then 'Text Study'
+        when fl.assessment_subject in ('Algebra I', 'Algebra II', 'Geometry')
+        then 'Mathematics'
+        else fl.assessment_subject
+    end as illuminate_subject,
+
+    case
+        when cast(regexp_extract(fl.achievement_level, r'\d+') as int) = 1
+        then 'Below/Far Below'
+        when cast(regexp_extract(fl.achievement_level, r'\d+') as int) = 2
+        then 'Approaching'
+        when cast(regexp_extract(fl.achievement_level, r'\d+') as int) >= 3
+        then 'At/Above'
+    end as fast_aggregated_proficiency,
+
     if(cw1.sublevel_number >= 6, null, cw2.scale_low) as scale_for_proficiency,
 
     if(
