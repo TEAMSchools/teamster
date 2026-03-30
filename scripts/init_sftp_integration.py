@@ -112,6 +112,13 @@ def get_headers_from_args(args: argparse.Namespace) -> list[str]:
     if args.local:
         return read_csv_headers(args.local)
 
+    if not args.resource or not args.code_location or not args.path:
+        print(
+            "resource, code_location, and path are required when --local is not used.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     sftp = get_sftp_client(args.resource, args.code_location)
 
     try:
@@ -523,22 +530,30 @@ def main() -> None:
 
     # codegen
     cg_parser = subparsers.add_parser(
-        "codegen", parents=[common], help="Generate Pydantic class from CSV headers"
+        "codegen", help="Generate Pydantic class from CSV headers"
+    )
+    cg_parser.add_argument("--local", help="Path to a local CSV file")
+    cg_parser.add_argument("resource", nargs="?", help="SFTP resource name")
+    cg_parser.add_argument(
+        "code_location", nargs="?", help="Code location for credentials"
     )
     cg_parser.add_argument("path", nargs="?", help="Remote directory path")
     cg_parser.add_argument("--pattern", help="Filename filter substring")
-    cg_parser.add_argument("--local", help="Path to a local CSV file")
     cg_parser.add_argument(
         "--class-name", required=True, help="Pydantic class name to generate"
     )
 
     # scaffold
     sc_parser = subparsers.add_parser(
-        "scaffold", parents=[common], help="Generate full pipeline boilerplate"
+        "scaffold", help="Generate full pipeline boilerplate"
+    )
+    sc_parser.add_argument("--local", help="Path to a local CSV file")
+    sc_parser.add_argument("resource", nargs="?", help="SFTP resource name")
+    sc_parser.add_argument(
+        "code_location", nargs="?", help="Code location for credentials"
     )
     sc_parser.add_argument("path", nargs="?", help="Remote directory path")
     sc_parser.add_argument("--pattern", help="Filename filter substring")
-    sc_parser.add_argument("--local", help="Path to a local CSV file")
     sc_parser.add_argument(
         "--class-name", required=True, help="Pydantic class name to generate"
     )
