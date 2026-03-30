@@ -60,20 +60,28 @@ def read_csv_headers(file_path: str) -> list[str]:
     return [normalize_field_name(h) for h in raw_headers]
 
 
-def find_first_match(
+def find_latest_match(
     sftp: paramiko.SFTPClient, path: str, pattern: str | None
 ) -> str | None:
-    for attr in sftp.listdir_attr(path):
-        if pattern and pattern not in attr.filename:
-            continue
-        return f"{path}/{attr.filename}" if path != "/" else f"/{attr.filename}"
+    matches = [
+        attr
+        for attr in sftp.listdir_attr(path)
+        if not pattern or pattern in attr.filename
+    ]
+    matches.sort(key=lambda a: a.st_mtime or 0, reverse=True)
+
+    if not matches:
+        return None
+
+    filename = matches[0].filename
+    return f"{path}/{filename}" if path != "/" else f"/{filename}"
     return None
 
 
 def download_to_temp(
     sftp: paramiko.SFTPClient, path: str, pattern: str | None
 ) -> Path | None:
-    remote_path = find_first_match(sftp, path, pattern)
+    remote_path = find_latest_match(sftp, path, pattern)
 
     if remote_path is None:
         return None
@@ -140,7 +148,7 @@ def cmd_download(args: argparse.Namespace) -> None:
     sftp = get_sftp_client(args.resource)
 
     try:
-        remote_path = find_first_match(sftp, args.path, args.pattern)
+        remote_path = find_latest_match(sftp, args.path, args.pattern)
 
         if remote_path is None:
             print("No matching file found.", file=sys.stderr)
