@@ -333,7 +333,6 @@ def scaffold_dagster_asset(
 def scaffold_integration_test(
     resource: str, subpath: list[str], asset_name: str, code_locations: list[str]
 ) -> None:
-    subpath_str = "_".join(subpath)
     test_path = REPO_ROOT / "tests" / "assets" / f"test_assets_{resource}_sftp.py"
     import_subpath = ".".join(subpath)
 
@@ -344,7 +343,8 @@ def scaffold_integration_test(
         # Use kipptaf for kippnewark (existing convention in test file)
         test_loc = "kipptaf" if loc == "kippnewark" else loc
 
-        func_name = f"test_{resource}_{subpath_str}_{asset_name}_{test_loc}"
+        # Convention: test name uses first subpath segment only (e.g., mclass)
+        func_name = f"test_{resource}_{subpath[0]}_{asset_name}_{test_loc}"
 
         if func_name in existing:
             continue
