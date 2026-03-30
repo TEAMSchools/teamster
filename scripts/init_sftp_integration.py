@@ -195,7 +195,10 @@ def scaffold_pydantic_schema(resource: str, class_name: str, fields: list[str]) 
 def scaffold_avro_schema(
     resource: str, class_name: str, code_locations: list[str]
 ) -> None:
-    schema_const = re.sub(r"(?<=[a-z])(?=[A-Z])", "_", class_name).upper() + "_SCHEMA"
+    schema_const = (
+        re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])", "_", class_name).upper()
+        + "_SCHEMA"
+    )
 
     for loc in code_locations:
         schema_path = (
@@ -243,7 +246,10 @@ def scaffold_dagster_asset(
     asset_name: str,
     code_locations: list[str],
 ) -> None:
-    schema_const = re.sub(r"(?<=[a-z])(?=[A-Z])", "_", class_name).upper() + "_SCHEMA"
+    schema_const = (
+        re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])|(?<=[a-z])(?=[A-Z])", "_", class_name).upper()
+        + "_SCHEMA"
+    )
 
     for loc in code_locations:
         assets_path = (
