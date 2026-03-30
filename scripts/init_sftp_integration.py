@@ -452,28 +452,31 @@ def cmd_scaffold(args: argparse.Namespace) -> None:
     print()
     print("Scaffold complete. Developer TODOs:")
     print()
-
+    print("1. Fill in remote_file_regex:")
     for loc in args.code_locations:
         assets_file = (
             f"src/teamster/code_locations/{loc}/{args.resource}/mclass/sftp/assets.py"
         )
-        print(f"  1. Fill in remote_file_regex: {assets_file}")
-
-    print(f"  2. Run integration test to materialize data:")
-    print(f"     uv run pytest {test_file} -k {args.asset_name} -v")
-
+        print(f"   - {assets_file}")
+    print()
+    print("2. Run integration test to materialize data:")
+    print(f"   $ uv run pytest {test_file} -k {args.asset_name} -v")
+    print()
+    print("3. Stage external source:")
     for loc in args.code_locations:
-        print(f"  3. Stage external source ({loc}):")
         print(
-            f"     uv run scripts/dbt-sxs.py {loc} --test --select {source_name}.{args.asset_name}"
+            f"   $ uv run scripts/dbt-sxs.py {loc} --test --select {source_name}.{args.asset_name}"
         )
-
-    print(f"  4. Add type casts and derived columns: {staging_dir}/{model_name}.sql")
-    print(f"  5. Add column definitions: {staging_dir}/properties/{model_name}.yml")
-
+    print()
+    print("4. Add type casts and derived columns:")
+    print(f"   - {staging_dir}/{model_name}.sql")
+    print()
+    print("5. Add column definitions:")
+    print(f"   - {staging_dir}/properties/{model_name}.yml")
+    print()
+    print("6. Build dbt model:")
     for loc in args.code_locations:
-        print(f"  6. Build dbt model ({loc}):")
-        print(f"     uv run dbt build -s {model_name} --project-dir src/dbt/{loc}")
+        print(f"   $ uv run dbt build -s {model_name} --project-dir src/dbt/{loc}")
 
 
 def main() -> None:
