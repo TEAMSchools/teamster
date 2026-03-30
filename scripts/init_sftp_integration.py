@@ -24,7 +24,23 @@ def get_sftp_client(resource_name: str) -> paramiko.SFTPClient:
     transport = paramiko.Transport((host, port))
     transport.connect(username=username, password=password)
 
-    return paramiko.SFTPClient.from_transport(transport)
+    client = paramiko.SFTPClient.from_transport(transport)
+
+    if client is None:
+        msg = f"Failed to open SFTP session to {host}"
+        raise ConnectionError(msg)
+
+    return client
+
+
+def close_sftp(sftp: paramiko.SFTPClient) -> None:
+    channel = sftp.get_channel()
+
+    if channel is not None:
+        transport = channel.get_transport()
+
+        if transport is not None:
+            transport.close()
 
 
 def normalize_field_name(header: str) -> str:
@@ -60,7 +76,9 @@ def download_to_temp(
     if remote_path is None:
         return None
 
-    tmp = Path(tempfile.mktemp(suffix=".csv"))
+    fd, tmp_path = tempfile.mkstemp(suffix=".csv")
+    os.close(fd)
+    tmp = Path(tmp_path)
     sftp.get(remote_path, str(tmp))
 
     return tmp
@@ -97,7 +115,7 @@ def get_headers_from_args(args: argparse.Namespace) -> list[str]:
         finally:
             tmp.unlink()
     finally:
-        sftp.get_channel().get_transport().close()
+        close_sftp(sftp)
 
 
 def cmd_list(args: argparse.Namespace) -> None:
@@ -113,7 +131,7 @@ def cmd_list(args: argparse.Namespace) -> None:
             size_kb = (attr.st_size or 0) / 1024
             print(f"{size_kb:>10.1f} KB  {filename}")
     finally:
-        sftp.get_channel().get_transport().close()
+        close_sftp(sftp)
 
 
 def cmd_download(args: argparse.Namespace) -> None:
@@ -130,7 +148,7 @@ def cmd_download(args: argparse.Namespace) -> None:
         sftp.get(remote_path, args.output)
         print("Done.")
     finally:
-        sftp.get_channel().get_transport().close()
+        close_sftp(sftp)
 
 
 def cmd_codegen(args: argparse.Namespace) -> None:
