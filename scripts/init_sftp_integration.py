@@ -496,29 +496,34 @@ def main() -> None:
         description="Inspect and scaffold SFTP integrations"
     )
 
-    parser.add_argument("resource", help="SFTP resource name (e.g., amplify)")
-    parser.add_argument(
-        "--code-location",
-        required=True,
+    # shared positional args for all subcommands
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("resource", help="SFTP resource name (e.g., amplify)")
+    common.add_argument(
+        "code_location",
         help="Code location for SFTP credentials (e.g., kipptaf, kipppaterson)",
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # list
-    list_parser = subparsers.add_parser("list", help="List remote files")
+    list_parser = subparsers.add_parser(
+        "list", parents=[common], help="List remote files"
+    )
     list_parser.add_argument("path", help="Remote directory path")
     list_parser.add_argument("--pattern", help="Filename filter substring")
 
     # download
-    dl_parser = subparsers.add_parser("download", help="Download a sample file")
+    dl_parser = subparsers.add_parser(
+        "download", parents=[common], help="Download a sample file"
+    )
     dl_parser.add_argument("path", help="Remote directory path")
     dl_parser.add_argument("--pattern", help="Filename filter substring")
     dl_parser.add_argument("--output", required=True, help="Local output path")
 
     # codegen
     cg_parser = subparsers.add_parser(
-        "codegen", help="Generate Pydantic class from CSV headers"
+        "codegen", parents=[common], help="Generate Pydantic class from CSV headers"
     )
     cg_parser.add_argument("path", nargs="?", help="Remote directory path")
     cg_parser.add_argument("--pattern", help="Filename filter substring")
@@ -529,7 +534,7 @@ def main() -> None:
 
     # scaffold
     sc_parser = subparsers.add_parser(
-        "scaffold", help="Generate full pipeline boilerplate"
+        "scaffold", parents=[common], help="Generate full pipeline boilerplate"
     )
     sc_parser.add_argument("path", nargs="?", help="Remote directory path")
     sc_parser.add_argument("--pattern", help="Filename filter substring")
