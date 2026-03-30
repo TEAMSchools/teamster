@@ -1,5 +1,5 @@
 select
-    * replace (
+    * except (score) replace (
         cast(probe_number as int) as probe_number,
         cast(additional_student_id as int) as additional_student_id,
         cast(total_number_of_probes as int) as total_number_of_probes,
