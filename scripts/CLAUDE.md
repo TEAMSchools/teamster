@@ -5,19 +5,20 @@ scripts: `bash scripts/<name>.sh`.
 
 ## Script Catalog
 
-| Script                   | Purpose                                             |
-| ------------------------ | --------------------------------------------------- |
-| `dagster-dev.py`         | Start Dagster webserver for selected code locations |
-| `avro-schema-update.py`  | Rewrite Avro data in GCS with updated schema        |
-| `dbt-bq-audit.py`        | Audit BigQuery objects against dbt manifest         |
-| `dbt-build-init.sh`      | Initialize dbt build environment                    |
-| `dbt-manifest.py`        | Extract dbt manifest model list to CSV              |
-| `dbt-sxs.py`             | Run dbt side-by-side source comparison              |
-| `dbt-yaml.py`            | Parse and transform dbt YAML files                  |
-| `gen-automations-doc.py` | Regenerate `docs/reference/automations.md`          |
-| `json2py.py`             | Generate Pydantic models from JSON schemas          |
-| `migrate-asset-key.py`   | Migrate asset materialization history to new key    |
-| `update.py`              | Update all project dependencies (uv, Trunk, dbt)    |
+| Script                     | Purpose                                             |
+| -------------------------- | --------------------------------------------------- |
+| `dagster-dev.py`           | Start Dagster webserver for selected code locations |
+| `avro-schema-update.py`    | Rewrite Avro data in GCS with updated schema        |
+| `dbt-bq-audit.py`          | Audit BigQuery objects against dbt manifest         |
+| `dbt-build-init.sh`        | Initialize dbt build environment                    |
+| `dbt-manifest.py`          | Extract dbt manifest model list to CSV              |
+| `dbt-sxs.py`               | Run dbt side-by-side source comparison              |
+| `dbt-yaml.py`              | Parse and transform dbt YAML files                  |
+| `gen-automations-doc.py`   | Regenerate `docs/reference/automations.md`          |
+| `init_sftp_integration.py` | Inspect SFTP servers and scaffold new integrations  |
+| `json2py.py`               | Generate Pydantic models from JSON schemas          |
+| `migrate-asset-key.py`     | Migrate asset materialization history to new key    |
+| `update.py`                | Update all project dependencies (uv, Trunk, dbt)    |
 
 ## Prerequisites
 
