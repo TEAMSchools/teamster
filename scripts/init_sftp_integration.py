@@ -446,6 +446,141 @@ def scaffold_dbt_staging(resource: str, asset_name: str) -> None:
     print(f"  dbt staging YAML: {yml_path.relative_to(REPO_ROOT)}")
 
 
+def scaffold_kipptaf_union(
+    resource: str, asset_name: str, code_locations: list[str]
+) -> None:
+    non_kipptaf = [loc for loc in code_locations if loc != "kipptaf"]
+
+    if not non_kipptaf:
+        return
+
+    model_name = f"stg_{resource}__mclass__sftp__{asset_name}"
+
+    # Find the source-package staging model to derive the kipptaf mirror path
+    source_pkg_dir = REPO_ROOT / "src" / "dbt" / resource / "models"
+    staging_matches = list(source_pkg_dir.rglob(f"{model_name}.sql"))
+
+    if not staging_matches:
+        print(f"  kipptaf union: could not find {model_name}.sql in {resource} package")
+        return
+
+    # Derive relative path: e.g., mclass/sftp/staging/stg_*.sql
+    # The kipptaf mirror is: kipptaf/models/<resource>/<relative_path>
+    source_staging_dir = staging_matches[0].parent
+    relative_to_models = source_staging_dir.relative_to(source_pkg_dir)
+
+    kipptaf_models_dir = REPO_ROOT / "src" / "dbt" / "kipptaf" / "models" / resource
+
+    # Sources live one level above the deepest non-staging dir
+    # e.g., mclass/sftp/staging -> sources at mclass/
+    # Find existing sources-kipp*.yml to determine the right level
+    sources_matches = list(kipptaf_models_dir.rglob("sources-kipp*.yml"))
+
+    if sources_matches:
+        sources_dir = sources_matches[0].parent
+    else:
+        # Fall back: sources at the resource model root
+        sources_dir = kipptaf_models_dir
+
+    # Add source entries for each district
+    for loc in non_kipptaf:
+        sources_path = sources_dir / f"sources-{loc}.yml"
+
+        if not sources_path.exists():
+            print(
+                f"  kipptaf source: {sources_path.relative_to(REPO_ROOT)}"
+                f" (skipped, file not found)"
+            )
+            continue
+
+        existing = sources_path.read_text()
+
+        if model_name in existing:
+            print(
+                f"  kipptaf source: {sources_path.relative_to(REPO_ROOT)}"
+                f" (skipped, already exists)"
+            )
+            continue
+
+        source_entry = (
+            f"      - name: {model_name}\n"
+            f"        config:\n"
+            f"          meta:\n"
+            f"            dagster:\n"
+            f"              group: {resource}\n"
+            f"              asset_key:\n"
+            f"                - {loc}\n"
+            f"                - {resource}\n"
+            f"                - {model_name}\n"
+        )
+
+        existing = existing.rstrip() + "\n" + source_entry
+
+        sources_path.write_text(existing)
+
+        print(f"  kipptaf source: {sources_path.relative_to(REPO_ROOT)}")
+
+    # Create union model mirroring the source-package path
+    staging_dir = kipptaf_models_dir / relative_to_models
+    props_dir = staging_dir / "properties"
+    props_dir.mkdir(parents=True, exist_ok=True)
+
+    sql_path = staging_dir / f"{model_name}.sql"
+    yml_path = props_dir / f"{model_name}.yml"
+
+    # Derive source name from existing sources files
+    # e.g., sources-kippnewark.yml has "name: kippnewark_amplify"
+    source_names = [f"{loc}_{resource}" for loc in non_kipptaf]
+
+    if sql_path.exists():
+        print(
+            f"  kipptaf union SQL: {sql_path.relative_to(REPO_ROOT)}"
+            f" (skipped, already exists)"
+        )
+    else:
+        relations = ",\n                    ".join(
+            f"source(\n"
+            f'                        "{sn}",\n'
+            f'                        "{model_name}",\n'
+            f"                    )"
+            for sn in source_names
+        )
+
+        sql_content = (
+            f"with\n"
+            f"    union_relations as (\n"
+            f"        {{{{\n"
+            f"            dbt_utils.union_relations(\n"
+            f"                relations=[\n"
+            f"                    {relations},\n"
+            f"                ]\n"
+            f"            )\n"
+            f"        }}}}\n"
+            f"    )\n"
+            f"\n"
+            f"select *\n"
+            f"from union_relations\n"
+        )
+
+        sql_path.write_text(sql_content)
+
+        print(f"  kipptaf union SQL: {sql_path.relative_to(REPO_ROOT)}")
+
+    if yml_path.exists():
+        print(
+            f"  kipptaf union YAML: {yml_path.relative_to(REPO_ROOT)}"
+            f" (skipped, already exists)"
+        )
+    else:
+        yml_content = f"models:\n  - name: {model_name}\n"
+
+        yml_path.write_text(yml_content)
+
+        print(f"  kipptaf union YAML: {yml_path.relative_to(REPO_ROOT)}")
+
+        print(f"  kipptaf union YAML: {yml_path.relative_to(REPO_ROOT)}")
+
+
 def cmd_scaffold(args: argparse.Namespace) -> None:
     headers = get_headers_from_args(args)
 
@@ -461,6 +596,7 @@ def cmd_scaffold(args: argparse.Namespace) -> None:
     scaffold_integration_test(args.resource, args.asset_name, args.code_locations)
     scaffold_dbt_source(args.resource, args.asset_name)
     scaffold_dbt_staging(args.resource, args.asset_name)
+    scaffold_kipptaf_union(args.resource, args.asset_name, args.code_locations)
 
     model_name = f"stg_{args.resource}__mclass__sftp__{args.asset_name}"
     staging_dir = f"src/dbt/{args.resource}/models/mclass/sftp/staging"
