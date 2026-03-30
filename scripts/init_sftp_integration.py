@@ -178,9 +178,15 @@ def scaffold_pydantic_schema(resource: str, class_name: str, fields: list[str]) 
         / "schema.py"
     )
 
-    class_code = generate_pydantic_class(class_name, fields)
-
     existing = schema_path.read_text()
+
+    if f"class {class_name}" in existing:
+        print(
+            f"  Pydantic schema: {schema_path.relative_to(REPO_ROOT)} (skipped, already exists)"
+        )
+        return
+
+    class_code = generate_pydantic_class(class_name, fields)
     schema_path.write_text(f"{existing}\n\n{class_code}\n")
 
     print(f"  Pydantic schema: {schema_path.relative_to(REPO_ROOT)}")
@@ -205,6 +211,12 @@ def scaffold_avro_schema(
         )
 
         existing = schema_path.read_text()
+
+        if schema_const in existing:
+            print(
+                f"  Avro schema: {schema_path.relative_to(REPO_ROOT)} (skipped, already exists)"
+            )
+            continue
 
         # Add import
         existing = existing.replace(
@@ -248,6 +260,12 @@ def scaffold_dagster_asset(
 
         existing = assets_path.read_text()
 
+        if f"{asset_name} = build_sftp_file_asset" in existing:
+            print(
+                f"  Asset: {assets_path.relative_to(REPO_ROOT)} (skipped, already exists)"
+            )
+            continue
+
         # Add schema import
         existing = existing.replace(
             ")\nfrom teamster.libraries.sftp",
@@ -288,12 +306,18 @@ def scaffold_integration_test(
     test_path = REPO_ROOT / "tests" / "assets" / f"test_assets_{resource}_sftp.py"
 
     existing = test_path.read_text()
+    modified = False
 
     for loc in code_locations:
         # Use kipptaf for kippnewark (existing convention in test file)
         test_loc = "kipptaf" if loc == "kippnewark" else loc
 
         func_name = f"test_{resource}_mclass_{asset_name}_{test_loc}"
+
+        if func_name in existing:
+            continue
+
+        modified = True
         import_loc = loc
 
         test_block = (
@@ -307,9 +331,13 @@ def scaffold_integration_test(
 
         existing = existing.rstrip() + test_block
 
-    test_path.write_text(existing + "\n")
-
-    print(f"  Integration test: {test_path.relative_to(REPO_ROOT)}")
+    if modified:
+        test_path.write_text(existing + "\n")
+        print(f"  Integration test: {test_path.relative_to(REPO_ROOT)}")
+    else:
+        print(
+            f"  Integration test: {test_path.relative_to(REPO_ROOT)} (skipped, already exists)"
+        )
 
 
 def scaffold_dbt_source(resource: str, asset_name: str) -> None:
@@ -342,6 +370,12 @@ def scaffold_dbt_source(resource: str, asset_name: str) -> None:
     )
 
     existing = sources_path.read_text()
+
+    if f"- name: {asset_name}" in existing:
+        print(
+            f"  dbt source: {sources_path.relative_to(REPO_ROOT)} (skipped, already exists)"
+        )
+        return
 
     # Find the end of the amplify_mclass_sftp source block by locating
     # the next source definition
