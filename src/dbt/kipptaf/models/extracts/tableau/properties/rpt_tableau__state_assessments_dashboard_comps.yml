@@ -33,3 +33,17 @@ models:
         data_type: boolean
       - name: region_matched_or_outperformed
         data_type: boolean
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - school_level
+              - assessment_name
+              - test_code
+              - region
+              - comparison_entity
+              - comparison_demographic_group
+              - comparison_demographic_subgroup
+          config:
+            store_failures: true

@@ -1,3 +1,25 @@
+{#
+    Student-level assessment scores joined to enrollment demographics,
+    then aggregated via GROUPING SETS into demographic comparison rows.
+
+    Each grouping set produces one demographic focus at a time (or a total),
+    crossed with region present-or-rolled-up — 12 sets total.
+#}
+{% set base_dims = [
+    "academic_year",
+    "district_state",
+    "assessment_name",
+    "test_code",
+] %}
+
+{% set focus_dims = [
+    "gender",
+    "aggregate_ethnicity",
+    "lunch_status",
+    "ml_status",
+    "iep_status",
+] %}
+
 with
     assessment_scores as (
         select
@@ -7,6 +29,7 @@ with
             statestudentidentifier as state_id,
             assessment_name,
             is_proficient,
+            is_proficient_int,
 
             results_type,
             district_state,
@@ -54,6 +77,7 @@ with
             student_id as state_id,
             assessment_name,
             is_proficient,
+            if(is_proficient, 1, 0) as is_proficient_int,
 
             'Actual' as results_type,
             'KTAF FL' as district_state,
@@ -79,9 +103,10 @@ with
 
             test_type as assessment_name,
             is_proficient,
+            if(is_proficient, 1, 0) as is_proficient_int,
             results_type,
             district_state,
-            test_code,
+            aligned_test_code as test_code,
 
             null as aggregate_ethnicity,
             null as ml_status,
@@ -93,185 +118,253 @@ with
             and administration = 'Spring'
             and test_type = 'NJSLA'
             and academic_year = {{ var("current_academic_year") }}
+    ),
+
+    /* NJ scores */
+    nj_scores as (
+        select
+            e.academic_year,
+            e.region,
+            e.student_number,
+
+            a.district_state,
+            a.assessment_name,
+            a.aggregate_ethnicity,
+            a.ml_status,
+            a.iep_status,
+            a.is_proficient_int,
+
+            if(
+                e.lunch_status in ('F', 'R'),
+                'Economically Disadvantaged',
+                'Non Economically Disadvantaged'
+            ) as lunch_status,
+
+            case
+                when a.test_code = 'ALG01'
+                then concat(a.test_code, '_', e.school_level)
+                else a.test_code
+            end as test_code,
+
+            case
+                e.gender
+                when 'F'
+                then 'Female'
+                when 'M'
+                then 'Male'
+                when 'X'
+                then 'Non-Binary'
+            end as gender,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            assessment_scores as a
+            on e.academic_year = a.academic_year
+            and e.pearson_local_student_identifier = a.localstudentidentifier
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
+            and a.results_type = 'Actual'
+        where
+            e.rn_year = 1
+            and e.academic_year >= {{ var("current_academic_year") - 7 }}
+            and e.grade_level > 2
+            and e.school_level != 'OD'
+    ),
+
+    /* FL scores */
+    fl_scores as (
+        select
+            e.academic_year,
+            e.region,
+            e.student_number,
+
+            a.district_state,
+            a.assessment_name,
+
+            case
+                when e.race_ethnicity = 'B'
+                then 'African American'
+                when e.race_ethnicity = 'A'
+                then 'Asian'
+                when e.race_ethnicity = 'I'
+                then 'American Indian'
+                when e.race_ethnicity = 'H'
+                then 'Hispanic'
+                when e.race_ethnicity = 'P'
+                then 'Native Hawaiian'
+                when e.race_ethnicity = 'T'
+                then 'Other'
+                when e.race_ethnicity = 'W'
+                then 'White'
+                when e.race_ethnicity is null
+                then 'Blank'
+            end as aggregate_ethnicity,
+
+            e.ml_status,
+
+            if(
+                e.iep_status = 'Has IEP',
+                'Students With Disabilities',
+                'Students Without Disabilities'
+            ) as iep_status,
+
+            a.is_proficient_int,
+
+            if(
+                e.lunch_status in ('F', 'R'),
+                'Economically Disadvantaged',
+                'Non Economically Disadvantaged'
+            ) as lunch_status,
+
+            case
+                when a.test_code = 'ALG01'
+                then concat(a.test_code, '_', e.school_level)
+                else a.test_code
+            end as test_code,
+
+            case
+                e.gender
+                when 'F'
+                then 'Female'
+                when 'M'
+                then 'Male'
+                when 'X'
+                then 'Non-Binary'
+            end as gender,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            assessment_scores as a
+            on e.academic_year = a.academic_year
+            and e.state_studentnumber = a.state_id
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
+            and a.results_type = 'Actual'
+        where
+            e.region = 'Miami'
+            and e.rn_year = 1
+            and e.academic_year >= {{ var("current_academic_year") - 7 }}
+            and e.grade_level > 2
+    ),
+
+    demographic_comps as (
+        select *
+        from nj_scores
+        union all
+        select *
+        from fl_scores
     )
 
-/* NJ scores */
 select
-    e.academic_year,
-    e.region,
-    e.student_number,
+    academic_year,
+    district_state,
+    region,
+    assessment_name,
+    test_code,
 
-    a.district_state,
-    a.assessment_name,
-    a.aggregate_ethnicity,
-    a.ml_status,
-    a.iep_status,
-    a.is_proficient_int,
+    round(
+        avg(is_proficient_int) * count(student_number), 0
+    ) as total_proficient_students,
+    count(student_number) as total_students,
+    avg(is_proficient_int) as percent_proficient,
 
-    if(
-        e.lunch_status in ('F', 'R'),
-        'Economically Disadvantaged',
-        'Non Economically Disadvantaged'
-    ) as lunch_status,
+    /* (a) focus_level + demographic labels */
+    case
+        {% for dim in focus_dims %}
+            when grouping({{ dim }}) = 0 then '{{ dim }}'
+        {% endfor %}
+        else 'all_null'
+    end as focus_level,
 
     case
-        when a.test_code = 'ALG01'
-        then concat(a.test_code, '_', e.school_level)
-        else a.test_code
-    end as test_code,
+        when
+            {% for dim in focus_dims %}
+                grouping({{ dim }}) = 1{% if not loop.last %} and {% endif %}
+            {% endfor %}
+        then 'Total'
+        when
+            grouping(ml_status) = 0
+            or grouping(iep_status) = 0
+            or grouping(lunch_status) = 0
+        then 'Subgroup'
+        when grouping(gender) = 0
+        then 'Gender'
+        when grouping(aggregate_ethnicity) = 0
+        then 'Aggregate Ethnicity'
+    end as comparison_demographic_group,
 
     case
-        e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
-    end as gender,
+        when
+            {% for dim in focus_dims %}
+                grouping({{ dim }}) = 1{% if not loop.last %} and {% endif %}
+            {% endfor %}
+        then 'All Students'
+        else coalesce(gender, aggregate_ethnicity, lunch_status, ml_status, iep_status)
+    end as comparison_demographic_subgroup,
 
-from {{ ref("int_extracts__student_enrollments") }} as e
-inner join
-    assessment_scores as a
-    on e.academic_year = a.academic_year
-    and e.pearson_local_student_identifier = a.localstudentidentifier
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
-    and a.results_type = 'Actual'
-where
-    e.rn_year = 1
-    and e.academic_year >= {{ var("current_academic_year") - 7 }}
-    and e.grade_level > 2
-    and e.school_level != 'OD'
+    /* (b) comparison_entity from region null-ness */
+    if(grouping(region) = 1, district_state, 'Region') as comparison_entity,
 
-union all
-
-/* FL scores */
-select
-    e.academic_year,
-    e.region,
-    e.student_number,
-
-    a.district_state,
-    a.assessment_name,
+    /* (c) test_code-derived columns */
+    case
+        when
+            test_code in (
+                'ELA09',
+                'ELA10',
+                'ELA11',
+                'ELAGP',
+                'ALG01_HS',
+                'GEO01',
+                'ALG02',
+                'MATGP',
+                'SCI11'
+            )
+        then 'HS'
+        when test_code = 'ALG01_MS'
+        then 'MS'
+        when safe_cast(right(test_code, 2) as numeric) between 5 and 8
+        then 'MS'
+        else 'ES'
+    end as school_level,
 
     case
-        when e.race_ethnicity = 'B'
-        then 'African American'
-        when e.race_ethnicity = 'A'
-        then 'Asian'
-        when e.race_ethnicity = 'I'
-        then 'American Indian'
-        when e.race_ethnicity = 'H'
-        then 'Hispanic'
-        when e.race_ethnicity = 'P'
-        then 'Native Hawaiian'
-        when e.race_ethnicity = 'T'
-        then 'Other'
-        when e.race_ethnicity = 'W'
-        then 'White'
-        when e.race_ethnicity is null
-        then 'Blank'
-    end as aggregate_ethnicity,
-
-    e.ml_status,
-
-    if(
-        e.iep_status = 'Has IEP',
-        'Students With Disabilities',
-        'Students Without Disabilities'
-    ) as iep_status,
-
-    if(
-        e.lunch_status in ('F', 'R'),
-        'Economically Disadvantaged',
-        'Non Economically Disadvantaged'
-    ) as lunch_status,
-
-    if(a.is_proficient, 1, 0) as is_proficient_int,
+        when
+            test_code in (
+                'ELA09',
+                'ELA10',
+                'ELA11',
+                'ELAGP',
+                'ALG01_HS',
+                'GEO01',
+                'ALG02',
+                'MATGP',
+                'SCI11'
+            )
+        then 'HS'
+        else '3-8'
+    end as grade_range_band,
 
     case
-        when a.test_code = 'ALG01'
-        then concat(a.test_code, '_', e.school_level)
-        else a.test_code
-    end as test_code,
+        when left(test_code, 3) in ('MAT', 'ALG', 'GEO')
+        then 'Math'
+        when left(test_code, 3) = 'ELA'
+        then 'ELA'
+        when left(test_code, 3) = 'SCI'
+        then 'Science'
+        when left(test_code, 3) = 'SOC'
+        then 'Social Studies'
+    end as discipline,
 
-    case
-        e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
-    end as gender,
+from demographic_comps
 
-from {{ ref("int_extracts__student_enrollments") }} as e
-inner join
-    assessment_scores as a
-    on e.academic_year = a.academic_year
-    and e.state_studentnumber = a.state_id
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
-    and a.results_type = 'Actual'
-where
-    e.region = 'Miami'
-    and e.rn_year = 1
-    and e.academic_year >= {{ var("current_academic_year") - 7 }}
-    and e.grade_level > 2
+group by
+    grouping sets (
+        {# Total (all focus dims rolled up) — with and without region #}
+        ({{ base_dims | join(", ") }}, region),
+        ({{ base_dims | join(", ") }}),
 
-    -- union all
-    /* NJ prelim scores */
-    /* disabled until december
-select
-    e.academic_year,
-    e.region,
-    e.student_number,
-
-    a.district_state,
-    a.assessment_name,
-
-    case
-        when e.race_ethnicity = 'B'
-        then 'African American'
-        when e.race_ethnicity = 'A'
-        then 'Asian'
-        when e.race_ethnicity = 'I'
-        then 'American Indian'
-        when e.race_ethnicity = 'H'
-        then 'Hispanic'
-        when e.race_ethnicity = 'P'
-        then 'Native Hawaiian'
-        when e.race_ethnicity = 'T'
-        then 'Other'
-        when e.race_ethnicity = 'W'
-        then 'White'
-        when e.race_ethnicity is null
-        then 'Blank'
-    end as aggregate_ethnicity,
-
-    e.ml_status,
-    
-    if(
-        e.iep_status = 'Has IEP',
-        'Students With Disabilities',
-        'Students Without Disabilities'
-    ) as iep_status,
-    
-    if(
-        e.lunch_status in ('F', 'R'),
-        'Economically Disadvantaged',
-        'Non Economically Disadvantaged'
-    ) as lunch_status,
-
-    if(a.is_proficient, 1, 0) as is_proficient_int,
-
-    case
-        when a.test_code = 'ALG01'
-        then concat(a.test_code, '_', e.school_level)
-        else a.test_code
-    end as test_code,
-
-    case
-        e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
-    end as gender,
-
-from {{ ref("int_extracts__student_enrollments") }} as e
-inner join
-    assessment_scores as a
-    on e.academic_year = a.academic_year
-    and e.state_studentnumber = a.state_id
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
-    and a.results_type = 'Preliminary'
-where
-    e.academic_year = {{ var("current_academic_year") }}
-    and e.rn_year = 1
-    and e.grade_level > 2
-    and e.school_level != 'OD'
-*/
+        {# One focus dim active at a time — with and without region #}
+        {% for dim in focus_dims %}
+            ({{ base_dims | join(", ") }}, region, {{ dim }}),
+            ({{ base_dims | join(", ") }}, {{ dim }})
+            {% if not loop.last %},{% endif %}
+        {% endfor %}
+    )
