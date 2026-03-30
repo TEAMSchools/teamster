@@ -50,14 +50,8 @@ select
         then 'NWF'
         when 'NWF-CLS'
         then 'NWF'
-        when 'ORF'
-        then 'ORF'
         when 'ORF-Accu'
         then 'ORF'
-        when 'WRF'
-        then 'WRF'
-        when 'PSF'
-        then 'PSF'
         else measure
     end as measure_name_code,
 
