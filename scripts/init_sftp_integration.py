@@ -189,13 +189,6 @@ def cmd_codegen(args: argparse.Namespace) -> None:
     print(generate_pydantic_class(args.class_name, headers))
 
 
-def _subpath_to_path(base: Path, subpath: list[str]) -> Path:
-    result = base
-    for segment in subpath:
-        result = result / segment
-    return result
-
-
 def _model_name(resource: str, subpath: list[str], asset_name: str) -> str:
     subpath_joined = "__".join(subpath)
     return f"stg_{resource}__{subpath_joined}__{asset_name}"
@@ -212,12 +205,9 @@ def _gcs_subpath(resource: str, subpath: list[str]) -> str:
 def scaffold_pydantic_schema(
     resource: str, subpath: list[str], class_name: str, fields: list[str]
 ) -> None:
-    schema_path = (
-        _subpath_to_path(
-            REPO_ROOT / "src" / "teamster" / "libraries" / resource, subpath
-        )
-        / "schema.py"
-    )
+    schema_path = (REPO_ROOT / "src" / "teamster" / "libraries" / resource).joinpath(
+        *subpath
+    ) / "schema.py"
 
     existing = schema_path.read_text()
 
@@ -240,12 +230,8 @@ def scaffold_avro_schema(
 
     for loc in code_locations:
         schema_path = (
-            _subpath_to_path(
-                REPO_ROOT / "src" / "teamster" / "code_locations" / loc / resource,
-                subpath,
-            )
-            / "schema.py"
-        )
+            REPO_ROOT / "src" / "teamster" / "code_locations" / loc / resource
+        ).joinpath(*subpath) / "schema.py"
 
         existing = schema_path.read_text()
 
@@ -284,12 +270,8 @@ def scaffold_dagster_asset(
 
     for loc in code_locations:
         assets_path = (
-            _subpath_to_path(
-                REPO_ROOT / "src" / "teamster" / "code_locations" / loc / resource,
-                subpath,
-            )
-            / "assets.py"
-        )
+            REPO_ROOT / "src" / "teamster" / "code_locations" / loc / resource
+        ).joinpath(*subpath) / "assets.py"
 
         existing = assets_path.read_text()
 
@@ -434,10 +416,9 @@ def scaffold_dbt_staging(resource: str, subpath: list[str], asset_name: str) -> 
     model_name = _model_name(resource, subpath, asset_name)
     source_name = _source_name(resource, subpath)
 
-    staging_dir = (
-        _subpath_to_path(REPO_ROOT / "src" / "dbt" / resource / "models", subpath)
-        / "staging"
-    )
+    staging_dir = (REPO_ROOT / "src" / "dbt" / resource / "models").joinpath(
+        *subpath
+    ) / "staging"
     props_dir = staging_dir / "properties"
     props_dir.mkdir(parents=True, exist_ok=True)
 
@@ -622,8 +603,7 @@ def cmd_scaffold(args: argparse.Namespace) -> None:
 
     model_name = _model_name(args.resource, subpath, args.asset_name)
     source_name = _source_name(args.resource, subpath)
-    subpath_str = "/".join(subpath)
-    staging_dir = f"src/dbt/{args.resource}/models/{subpath_str}/staging"
+    staging_dir = f"src/dbt/{args.resource}/models/{args.source_subpath}/staging"
     test_file = f"tests/assets/test_assets_{args.resource}_sftp.py"
 
     print()
@@ -631,9 +611,7 @@ def cmd_scaffold(args: argparse.Namespace) -> None:
     print()
     print("1. Fill in remote_dir_regex and remote_file_regex:")
     for loc in args.code_locations:
-        assets_file = (
-            f"src/teamster/code_locations/{loc}/{args.resource}/{subpath_str}/assets.py"
-        )
+        assets_file = f"src/teamster/code_locations/{loc}/{args.resource}/{args.source_subpath}/assets.py"
         print(f"   - {assets_file}")
     print()
     print("2. Run integration test to materialize data:")
