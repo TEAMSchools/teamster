@@ -1,3 +1,4 @@
+-- TODO: add kipppaterson source once the file is available on their SFTP
 with
     union_relations as (
         {{
@@ -5,10 +6,6 @@ with
                 relations=[
                     source(
                         "kippnewark_amplify",
-                        "stg_amplify__mclass__sftp__pm_student_summary_aimline",
-                    ),
-                    source(
-                        "kipppaterson_amplify",
                         "stg_amplify__mclass__sftp__pm_student_summary_aimline",
                     ),
                 ]
