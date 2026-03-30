@@ -152,18 +152,18 @@ The kipptaf union model sources from district staging tables. In CI (dbt Cloud),
 these resolve to dev-prefixed schemas (e.g., `z_dev_kippnewark_amplify`). The
 district staging model must exist in that schema before kipptaf CI can build.
 
-Steps 7 and 8 create this table in your personal dev schema. To create it in the
-shared dev schema that CI uses, stage and build against the production GCS
-bucket:
+Steps 7 and 8 create this table in your personal dev schema (`zz_<user>_*`). CI
+uses the shared `z_dev_` schema, which requires `--target staging`:
 
 ```bash
-uv run scripts/dbt-sxs.py <district_project> --select <source_name>.<asset_name>
-uv run dbt build -s <model_name> --project-dir src/dbt/<district_project>
+uv run scripts/dbt-sxs.py <district_project> --target staging --select <source_name>.<asset_name>
+uv run dbt build -s <model_name> --project-dir src/dbt/<district_project> --target staging
 ```
 
 !!! warning This requires production data in GCS. If the asset hasn't been
-materialized in prod yet, use `--test` to point at `teamster-test` and build
-against test data. The CI build will pass once prod data exists.
+materialized in prod yet, add `--test` to `dbt-sxs.py` to point at
+`teamster-test` and build against test data. The CI build will pass once prod
+data exists.
 
 ## Summary
 
