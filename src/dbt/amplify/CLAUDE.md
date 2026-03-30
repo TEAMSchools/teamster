@@ -27,11 +27,6 @@ can be independently enabled/disabled per school in the consuming project's
 
 ## Cross-Project Usage
 
-Referenced by `kippnewark`, `kipppaterson`, and `kipptaf`. School projects
+Referenced by `kippnewark`, `kipppaterson`, and `kipptaf`. District projects
 selectively enable only the Amplify products they use — for example,
 `kipppaterson` disables both `dds` and `mclass/api`.
-
-## Model Conventions
-
-See `src/dbt/CLAUDE.md` for per-layer requirements (contract enforcement,
-uniqueness tests, SQL antipatterns) that apply to all dbt projects.

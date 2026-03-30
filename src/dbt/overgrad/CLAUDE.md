@@ -14,11 +14,6 @@ models/
 
 ## Cross-Project Usage
 
-Referenced by `kippnewark`, `kippcamden`, and `kipptaf`. School projects disable
-`stg_overgrad__followings` and `stg_overgrad__schools` (not available for all
-schools).
-
-## Model Conventions
-
-See `src/dbt/CLAUDE.md` for per-layer requirements (contract enforcement,
-uniqueness tests, SQL antipatterns) that apply to all dbt projects.
+Referenced by `kippnewark`, `kippcamden`, and `kipptaf`. District projects
+disable `stg_overgrad__followings` and `stg_overgrad__schools` (not available
+for all schools).

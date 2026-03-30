@@ -12,8 +12,7 @@ models:
               - academic_year
               - entrydate
           config:
-            store_failures: true
-            # severity: warn
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -491,6 +490,8 @@ models:
         data_type: string
       - name: next_year_schoolid
         data_type: int64
+      - name: finalsite_student_id
+        data_type: string
       - name: district
         data_type: string
       - name: region_school_level
@@ -511,9 +512,6 @@ models:
                 values:
                   - Not Grad IEP Exempt
                   - "Yes"
-              config:
-                severity: warn
-                store_failures: true
       - name: iep_status
         data_type: string
       - name: ml_status
@@ -569,5 +567,3 @@ models:
                 where:
                   grade_level != 99 and academic_year = {{
                   var('current_academic_year')}}
-                severity: warn
-                store_failures: true

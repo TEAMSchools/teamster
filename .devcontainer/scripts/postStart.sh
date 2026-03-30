@@ -1,9 +1,11 @@
 #!/bin/bash
 
 # inject 1Password secrets — only strip token from future shells if inject succeeded
-if source ./.devcontainer/scripts/inject-secrets.sh; then
-  echo 'unset OP_SERVICE_ACCOUNT_TOKEN' >>/home/vscode/.bashrc
-  echo 'unset OP_SERVICE_ACCOUNT_TOKEN' >>/home/vscode/.profile
+if ./.devcontainer/scripts/inject-secrets.sh; then
+  echo 'export OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' >>/home/vscode/.bashrc
+  echo 'export OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' >>/home/vscode/.profile
+  echo 'export OP_CONNECT_TOKEN=revoked-after-injection' >>/home/vscode/.bashrc
+  echo 'export OP_CONNECT_TOKEN=revoked-after-injection' >>/home/vscode/.profile
 fi
 
 set +euo pipefail
@@ -16,4 +18,4 @@ uv tool upgrade --all
 uv sync --frozen --all-groups
 
 # install trunk tools
-/workspaces/teamster/trunk install
+/workspaces/teamster/trunk install --verbose

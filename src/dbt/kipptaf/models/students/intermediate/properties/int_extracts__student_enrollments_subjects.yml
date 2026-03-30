@@ -13,8 +13,7 @@ models:
               - iready_subject
           config:
             enabled: false
-            store_failures: true
-            # severity: warn
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string

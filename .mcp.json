@@ -2,10 +2,7 @@
   "mcpServers": {
     "dagster": {
       "command": "bash",
-      "args": [
-        "-c",
-        "DAGSTER_CLOUD_API_TOKEN=$(op read 'op://Data Team/Dagster Cloud Agent/credential') uv run --group mcp python mcp/dagster_plus.py"
-      ],
+      "args": ["mcp/dagster_plus/run.sh"],
       "env": {
         "DAGSTER_CLOUD_ORGANIZATION_ID": "kipptaf",
         "DAGSTER_CLOUD_DEPLOYMENT": "prod"
@@ -20,8 +17,8 @@
       }
     },
     "dbt": {
-      "command": "dbt-mcp",
-      "args": [],
+      "command": "uvx",
+      "args": ["dbt-mcp"],
       "env": {
         "DBT_PROJECT_DIR": "/workspaces/teamster/src/dbt/kipptaf",
         "DBT_PATH": "/workspaces/teamster/.venv/bin/dbt"

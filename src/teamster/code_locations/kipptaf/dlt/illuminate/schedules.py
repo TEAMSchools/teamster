@@ -17,6 +17,7 @@ illuminate_dlt_hourly_asset_job_schedule = ScheduleDefinition(
         f"{asset_key_prefix}/dna_assessments/assessments",
         f"{asset_key_prefix}/dna_assessments/assessments_reporting_groups",
         f"{asset_key_prefix}/dna_assessments/students_assessments",
+        f"{asset_key_prefix}/dna_assessments/students_assessments_responses",
     ],
 )
 
@@ -27,9 +28,12 @@ illuminate_dlt_daily_asset_job_schedule = ScheduleDefinition(
     target=[
         f"{asset_key_prefix}/codes/dna_scopes",
         f"{asset_key_prefix}/codes/dna_subject_areas",
+        f"{asset_key_prefix}/dna_assessments/field_responses",
+        f"{asset_key_prefix}/dna_assessments/fields",
         f"{asset_key_prefix}/dna_assessments/performance_band_sets",
         f"{asset_key_prefix}/dna_assessments/performance_bands",
         f"{asset_key_prefix}/dna_assessments/reporting_groups",
+        f"{asset_key_prefix}/dna_assessments/responses",
         f"{asset_key_prefix}/dna_repositories/fields",
         f"{asset_key_prefix}/dna_repositories/repositories",
         f"{asset_key_prefix}/dna_repositories/repository_443",

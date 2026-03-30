@@ -6,16 +6,38 @@ SCRIPT_DIR="$(dirname "$0")"
 
 source "${SCRIPT_DIR}/shared/claude.sh"
 
+# VS Code opens the folder (triggering this task) while postCreate.sh or
+# postStart.sh may still be running. Wait for both to finish first.
+for script in postCreate.sh postStart.sh; do
+  if pgrep -f "${script}" >/dev/null 2>&1; then
+    echo "⏳ Waiting for ${script} to finish..."
+    while pgrep -f "${script}" >/dev/null 2>&1; do
+      sleep 5
+    done
+    echo -e "\033[1;32m✔ ${script} complete\033[0m"
+  fi
+done
+
 if [[ -z ${GITHUB_USER-} ]]; then
   GITHUB_USER=$(gh api user --jq .login 2>/dev/null)
   export GITHUB_USER
   grep -q "export GITHUB_USER=" ~/.bashrc || echo "export GITHUB_USER=${GITHUB_USER}" >>~/.bashrc
 fi
 
-if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" 2>/dev/null | grep -q .; then
-  bash "${SCRIPT_DIR}/gcloud-application-default-login.sh"
-else
-  echo -e "\033[1;32m✔ GCloud authenticated\033[0m"
+# On a fresh rebuild the Claude Code extension may still be installing when
+# this task fires. Poll until the binary appears (up to ~5 minutes).
+if [[ -z ${CLAUDE} ]]; then
+  echo "⏳ Waiting for Claude Code extension to install..."
+  _elapsed=0
+  while [[ -z ${CLAUDE} && ${_elapsed} -lt 300 ]]; do
+    sleep 5
+    _elapsed=$((_elapsed + 5))
+    CLAUDE=$(find ~/.vscode-remote/extensions/anthropic.claude-code-*/resources/native-binary/claude -type f 2>/dev/null | head -1) || true
+  done
+  if [[ -z ${CLAUDE} ]]; then
+    echo -e "\033[1;33m⚠ Claude Code extension not found — skipping Claude setup\033[0m"
+    echo -e "\033[1;33m  Install the extension and run the 'Claude: Login' task manually\033[0m"
+  fi
 fi
 
 if [[ -n ${CLAUDE} ]]; then
@@ -50,6 +72,12 @@ if [[ -n ${CLAUDE} ]]; then
       done
     fi
   fi
+fi
+
+if ! gcloud auth application-default print-access-token >/dev/null 2>&1; then
+  bash "${SCRIPT_DIR}/gcloud-application-default-login.sh"
+else
+  echo -e "\033[1;32m✔ GCloud authenticated\033[0m"
 fi
 
 bash "${SCRIPT_DIR}/check-dbt-dev-datasets.sh"

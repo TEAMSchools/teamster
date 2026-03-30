@@ -18,6 +18,6 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: issms
         data_type: int64

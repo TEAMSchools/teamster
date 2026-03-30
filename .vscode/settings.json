@@ -1,5 +1,7 @@
 {
   "dbt.enableNewLineagePanel": true,
+  "dbt.allowListFolders": ["src/dbt"],
+  "dbt.installDepsOnProjectInitialization": false,
   "diffEditor.experimental.showMoves": true,
   "diffEditor.ignoreTrimWhitespace": false,
   "editor.defaultFormatter": "trunk.io",
@@ -31,13 +33,13 @@
     "*.toml": "toml"
   },
   "files.exclude": {
+    "**/.git": false,
     "**/.trunk/*actions/": true,
     "**/.trunk/*logs/": true,
     "**/.trunk/*notifications/": true,
     "**/.trunk/*out/": true,
     "**/.trunk/*plugins/": true,
-    "**/dbt_packages/": true,
-    "**/target/**": true
+    "**/dbt_packages/": true
   },
   "files.watcherExclude": {
     "**/.trunk/*actions/": true,
@@ -81,7 +83,6 @@
     "editor.defaultFormatter": "trunk.io"
   },
   "claudeCode.preferredLocation": "sidebar",
-  "claudeCode.useTerminal": true,
   "terminal.integrated.profiles.linux": {
     "Claude Code": {
       "path": "claude",

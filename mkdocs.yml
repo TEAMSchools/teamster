@@ -33,13 +33,6 @@ hooks:
 
 nav:
   - Home: README.md
-  - Reference:
-      - Architecture: reference/architecture.md
-      - Adding an Integration: reference/adding-an-integration.md
-      - IO Managers: reference/io-managers.md
-      - Fiscal Year & Partitioning: reference/fiscal-year-partitioning.md
-      - dbt Conventions: reference/dbt-conventions.md
-      - Automation Conditions: reference/automation-conditions.md
   - Guides:
       - guides/index.md
       - Codespaces: guides/codespaces.md
@@ -50,6 +43,13 @@ nav:
       - Dagster: troubleshooting/dagster.md
       - dbt: troubleshooting/dbt.md
       - VS Code: troubleshooting/vscode.md
+  - Reference:
+      - Architecture: reference/architecture.md
+      - Adding an Integration: reference/adding-an-integration.md
+      - IO Managers: reference/io-managers.md
+      - Fiscal Year & Partitioning: reference/fiscal-year-partitioning.md
+      - dbt Conventions: reference/dbt-conventions.md
+      - Automation Conditions: reference/automation-conditions.md
   - Automations: reference/automations.md
 
 markdown_extensions:

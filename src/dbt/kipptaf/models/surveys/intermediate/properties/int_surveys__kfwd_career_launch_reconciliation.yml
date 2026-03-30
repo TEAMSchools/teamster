@@ -6,9 +6,6 @@ models:
       - name: survey_response_id
         data_type: string
         data_tests:
-          - unique:
-              config:
-                severity: warn
-                store_failures: true
+          - unique
       - name: sf_contact_id
         data_type: string

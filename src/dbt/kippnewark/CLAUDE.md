@@ -1,15 +1,15 @@
 # CLAUDE.md — `dbt/kippnewark/`
 
-School-specific dbt project for **KIPP New Jersey - Newark** schools. Combines
+District-specific dbt project for **KIPP New Jersey - Newark** schools. Combines
 local PowerSchool staging with cross-project references to produce school-level
-extracts. This is the most complete NJ school project, including all available
+extracts. This is the most complete NJ district project, including all available
 source integrations.
 
 ## Model Structure
 
 ```text
 models/
-  powerschool/   # school-specific PowerSchool staging (refs powerschool package)
+  powerschool/   # district-specific PowerSchool staging (refs powerschool package)
     sis/staging/
   edplan/        # refs edplan package
   extracts/
@@ -33,20 +33,3 @@ All of the following are materialized as tables via cross-project `ref()`:
 - `titan`
 
 Several models from each package are disabled (see `dbt_project.yml`).
-
-## Key Variables
-
-| Variable                             | Value                                                     |
-| ------------------------------------ | --------------------------------------------------------- |
-| `current_academic_year`              | `2025`                                                    |
-| `current_fiscal_year`                | `2026`                                                    |
-| `local_timezone`                     | `America/New_York`                                        |
-| `cloud_storage_uri_base`             | `gs://teamster-kippnewark/dagster/kippnewark`             |
-| `powerschool_external_location_root` | `gs://teamster-kippnewark/dagster/kippnewark/powerschool` |
-| `iready_schema`                      | `kippnj_iready`                                           |
-| `renlearn_schema`                    | `kippnj_renlearn`                                         |
-
-## Model Conventions
-
-See `src/dbt/CLAUDE.md` for per-layer requirements (contract enforcement,
-uniqueness tests, SQL antipatterns) that apply to all dbt projects.

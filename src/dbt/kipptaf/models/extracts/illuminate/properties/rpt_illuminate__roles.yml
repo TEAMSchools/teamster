@@ -10,7 +10,7 @@ models:
               - "`04 Academic Year`"
               - "`05 Session Type ID`"
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: "`01 Local User ID`"
         data_type: string

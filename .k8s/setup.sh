@@ -72,6 +72,9 @@ if ! gcloud auth list --filter="status:ACTIVE" --format="value(account)" 2>/dev/
   gcloud auth login
 fi
 
+# Set gcloud project
+gcloud config set project teamster-332318
+
 # Configure GKE cluster
 gcloud container clusters get-credentials autopilot-cluster-dagster-hybrid-1 \
   --project=teamster-332318 \

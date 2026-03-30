@@ -19,6 +19,11 @@ clean-targets:
   - target
   - dbt_packages
 
+data_tests:
+  +severity: warn
+  +store_failures: true
+  +store_failures_as: view
+
 vars:
   local_timezone: America/New_York
   cloud_storage_uri_base: gs://teamster-kipptaf/dagster/kipptaf

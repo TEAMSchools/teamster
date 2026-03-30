@@ -14,9 +14,4 @@ models/
 ## Cross-Project Usage
 
 Referenced by `kippnewark`, `kippcamden`, and `kipptaf`. The model
-`stg_titan__income_form_data` is disabled in NJ school projects.
-
-## Model Conventions
-
-See `src/dbt/CLAUDE.md` for per-layer requirements (contract enforcement,
-uniqueness tests, SQL antipatterns) that apply to all dbt projects.
+`stg_titan__income_form_data` is disabled in NJ district projects.

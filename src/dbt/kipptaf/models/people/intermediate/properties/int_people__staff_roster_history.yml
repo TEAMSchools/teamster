@@ -9,9 +9,6 @@ models:
               - employee_number
               - effective_date_start
               - position_id
-          config:
-            severity: warn
-            store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string

@@ -10,10 +10,7 @@ models:
           comparison_demographic_group_aligned,
           comparison_demographic_subgroup_aligned).
         data_tests:
-          - unique:
-              config:
-                severity: warn
-                store_failures: true
+          - unique
 
       - name: academic_year
         data_type: int64

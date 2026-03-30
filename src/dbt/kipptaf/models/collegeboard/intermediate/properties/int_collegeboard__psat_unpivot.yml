@@ -10,7 +10,7 @@ models:
               - latest_psat_date
               - score_type
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: cb_id
         data_type: int64

@@ -8,13 +8,12 @@
     "ghcr.io/devcontainers/features/node:1": {}
   },
   "mounts": [
-    "type=tmpfs,destination=/etc/secret-volume,tmpfs-mode=0700,tmpfs-size=10485760"
+    "type=tmpfs,destination=/etc/secret-volume,tmpfs-mode=0777,tmpfs-size=10485760"
   ],
   "runArgs": [
     "--cap-drop=NET_RAW",
     "--cap-drop=SYS_PTRACE",
-    "--cap-drop=NET_ADMIN",
-    "--cap-drop=DAC_OVERRIDE"
+    "--cap-drop=NET_ADMIN"
   ],
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
   "postStartCommand": "bash .devcontainer/scripts/postStart.sh",

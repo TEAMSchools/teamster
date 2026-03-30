@@ -25,7 +25,7 @@ with
     )
 
 select
-    ur.*,
+    ur.* except (courses_credittype),
 
     cx.ap_course_subject,
     cx.block_schedule_session,
@@ -54,6 +54,18 @@ select
     initcap(regexp_extract(ur._dbt_source_relation, r'kipp(\w+)_')) as region,
 
     if(cx.ap_course_subject is not null, true, false) as is_ap_course,
+
+    case
+        when ur.courses_credittype in ('ENG', 'ELA')
+        then 'ENG'
+        when ur.courses_credittype in ('MATH', 'Math')
+        then 'MATH'
+        when ur.courses_credittype in ('SCI', 'Science')
+        then 'SCI'
+        when ur.courses_credittype in ('HR', 'Homeroom')
+        then 'HR'
+        else ur.courses_credittype
+    end as courses_credittype,
 
     if(csc.discipline = 'SOC', 'Civics', csc.discipline) as standardized_discipline,
 
