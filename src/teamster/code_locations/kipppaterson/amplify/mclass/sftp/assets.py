@@ -41,7 +41,7 @@ pm_student_summary_aimline = build_sftp_file_asset(
         "pm_student_summary_aimline",
     ],
     remote_dir_regex=r"/PM",
-    remote_file_regex=...,  # TODO: fill in regex pattern
+    remote_file_regex=r"dibels8_PM_CUSTOM_(?P<school_year>[\d-]+)_[-\w]+\.csv",
     ssh_resource_key="ssh_amplify",
     avro_schema=PM_STUDENT_SUMMARY_AIMLINE_SCHEMA,
     partitions_def=partitions_def,
