@@ -43,7 +43,9 @@ dimensional modeling methodology.
 
 All mart models use generic, standard terminology — no source system field names
 or KIPP-specific language. Mapping from source-specific names happens in
-staging/intermediate layers.
+staging/intermediate layers. The
+[Ed-Fi Unified Data Model](https://edfi.atlassian.net/wiki/spaces/EFDS/overview)
+is a reference for entity and attribute nomenclature where applicable.
 
 | Source-Specific                          | Mart Column Name           |
 | ---------------------------------------- | -------------------------- |
@@ -188,12 +190,12 @@ are Cube concerns, not mart models.
 
 ### Behavioral & Communications Domain
 
-| Model                         | SCD    | Grain                                        | Key Sources                                                                                                                                                                                       |
-| ----------------------------- | ------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dim_communication_types`     | Type 1 | one row per communication type definition    | DeansList — method, topic/reason categories. Used for scaffolding.                                                                                                                                |
-| `fct_behavioral_incidents`    | Type 1 | one row per student x incident               | DeansList — incident_type. FK to `dim_students`, `dim_staff` (referring_staff as role-playing), `dim_dates`, `dim_locations`, `dim_regions`                                                       |
-| `fct_behavioral_consequences` | Type 1 | one row per student x incident x consequence | DeansList — consequence_type, duration, is_served. FK to `dim_students`, `fct_behavioral_incidents` (incident_key), `dim_dates` (start, end as role-playing), `dim_locations`, `dim_regions`      |
-| `fct_family_communications`   | Type 1 | one row per communication event              | DeansList comm log — method, topic, reason, status, outcome. General-purpose, not attendance-specific. FK to `dim_students`, `dim_staff`, `dim_communication_types`, `dim_dates`, `dim_locations` |
+| Model                            | SCD    | Grain                                        | Key Sources                                                                                                                                                                                              |
+| -------------------------------- | ------ | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dim_family_communication_types` | Type 1 | one row per communication type definition    | DeansList — method, topic/reason categories. Used for scaffolding.                                                                                                                                       |
+| `fct_behavioral_incidents`       | Type 1 | one row per student x incident               | DeansList — incident_type. FK to `dim_students`, `dim_staff` (referring_staff as role-playing), `dim_dates`, `dim_locations`, `dim_regions`                                                              |
+| `fct_behavioral_consequences`    | Type 1 | one row per student x incident x consequence | DeansList — consequence_type, duration, is_served. FK to `dim_students`, `fct_behavioral_incidents` (incident_key), `dim_dates` (start, end as role-playing), `dim_locations`, `dim_regions`             |
+| `fct_family_communications`      | Type 1 | one row per communication event              | DeansList comm log — method, topic, reason, status, outcome. General-purpose, not attendance-specific. FK to `dim_students`, `dim_staff`, `dim_family_communication_types`, `dim_dates`, `dim_locations` |
 
 ### Gradebook Domain
 
