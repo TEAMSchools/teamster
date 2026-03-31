@@ -170,15 +170,6 @@ with
                     )
                 then true
                 when
-                    tw.school_level = 'HS'
-                    and tw.`quarter` = 'Q3'
-                    and current_date(
-                        '{{ var("local_timezone") }}'
-                    ) between (tw.quarter_end_date_insession + interval 9 day) and (
-                        tw.quarter_end_date_insession + interval 20 day
-                    )
-                then true
-                when
                     tw.region != 'Miami'
                     and current_date(
                         '{{ var("local_timezone") }}'
