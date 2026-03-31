@@ -283,74 +283,41 @@ Examples:
 
 ## Open Review Items
 
-The following items need validation before or during implementation:
+### Requires domain expert validation
 
-### 1. Staff Domain Decomposition
+1. **Behavioral domain relationships** — the design models
+   `fct_behavioral_incidents` and `fct_behavioral_consequences` as a
+   parent-child fact relationship (consequences carry `incident_key` FK).
+   Confirm with a domain expert that this accurately represents the DeansList
+   data model.
 
-The staff dimension split was designed based on change cadence analysis of
-`int_people__staff_roster_history`. The 223-column source model is complex.
-Definitional vs. versionable attributes on `dim_staff_work_assignments` must be
-determined during column-level mapping from
-`int_adp_workforce_now__workers__work_assignments`.
+2. **College/post-secondary domain** — the design includes `dim_colleges` and
+   `dim_college_enrollments` based on NSC data. Confirm with a domain expert
+   that this captures the full scope of post-secondary tracking needs
+   (matriculation, persistence, degree completion, career outcomes).
 
-### 2. Behavioral Domain Relationships
+### Monitor during implementation
 
-The design models `fct_behavioral_incidents` and `fct_behavioral_consequences`
-as a parent-child fact relationship (consequences carry `incident_key` FK). This
-assumes one incident can have multiple consequences.
-
-**Decision needed:** Confirm with a domain expert that this accurately
-represents the DeansList data model and business process.
-
-### 3. College/Post-Secondary Domain
-
-The design includes `dim_colleges` and `dim_college_enrollments` based on NSC
-data and the KIPP Forward program extracts.
-
-**Decision needed:** Confirm with a domain expert that this captures the full
-scope of post-secondary tracking needs (matriculation, persistence, degree
-completion, career outcomes).
-
-### 4. Bridge Table Candidates
-
-Identified candidates for multi-valued dimension relationships beyond
-`bridge_staff_benefits_enrollments`:
-
-- Students with multiple race/ethnicity codes
-- Staff with multiple group memberships (ADP)
-- Students with multiple special program flags
-
-**Decision needed:** Which multi-valued relationships require bridge tables?
-
-### 5. Survey Response Structure
-
-The design targets a single unified `fct_survey_responses`. Staff and student
-surveys may have divergent response structures.
-
-**Decision needed:** Validate during implementation whether domain separation is
-needed.
-
-### 6. `fct_staff_additional_earnings` Interaction with `fct_staff_compensation`
-
-These are separate facts with different grains. If this creates friction in
-analysis, an alternative approach merges them into a single fact with a
-`compensation_type` column.
-
-### 7. Attendance Interventions Domain Placement
-
-`dim_attendance_intervention_types` and `fct_attendance_interventions` are
-triggered by absences (Attendance Domain) but the actual actions are
-communications logged in DeansList (Behavioral & Communications Domain).
-
-**Decision needed:** Confirm domain placement — keep in Attendance, move to
-Behavioral & Communications, or split?
+- **Staff domain decomposition** — definitional vs. versionable attributes on
+  `dim_staff_work_assignments` must be determined during column-level mapping
+  from `int_adp_workforce_now__workers__work_assignments`.
+- **Bridge table candidates** — students with multiple race/ethnicity codes,
+  staff with multiple group memberships, students with multiple special program
+  flags. Determine which need bridge tables as the data is explored.
+- **Survey response structure** — single `fct_survey_responses` may need domain
+  separation if staff and student survey structures diverge too much.
+- **`fct_staff_additional_earnings` / `fct_staff_compensation`** — separate
+  facts with different grains. If this creates friction, alternative approach
+  merges them with a `compensation_type` column.
+- **Attendance interventions domain placement** — currently in Attendance Domain
+  but the actions are DeansList communications (Behavioral & Communications
+  Domain). Revisit if the split causes friction.
 
 ## Future Domains
 
 Acknowledged for future expansion, out of scope for v1:
 
-- **Student Recruitment and Enrollment (SRE) marketing** — enrollment
-  pipeline/funnel tracking
-- **SRE Finalsite** — website/CMS analytics for enrollment marketing
+- **Student Recruitment and Enrollment (SRE)** — enrollment pipeline/funnel
+  tracking and Finalsite website/CMS analytics
 - **Certification tracking** — staff teaching certifications/licenses
 - **Grant timesheet tracking** — time tracking for grant-funded positions
