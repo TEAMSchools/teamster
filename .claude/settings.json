@@ -32,6 +32,7 @@
       "mcp__dagster__get_asset_staleness",
       "mcp__dagster__get_backfill",
       "mcp__dagster__get_captured_logs_metadata",
+      "mcp__dagster__get_cloud_agents",
       "mcp__dagster__get_daemon_health",
       "mcp__dagster__get_run_compute_logs",
       "mcp__dagster__get_run_logs",

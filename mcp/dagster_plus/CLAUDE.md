@@ -46,7 +46,8 @@ New queries are sourced from the Dagster UI TypeScript at
 — no Python package exports client-side queries. Verify field names/types
 against the Python schema in
 [`dagster-graphql/dagster_graphql/schema`](https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-graphql/dagster_graphql/schema).
-**Do not write or modify queries from memory.**
+**Do not write or modify queries from memory.** Cloud-only queries (e.g.,
+`agents` root field) are not in the OSS repo — capture from browser Network tab.
 
 ### Schema gotchas
 

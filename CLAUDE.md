@@ -56,6 +56,9 @@ from 1Password at container start.
   linter-native disable syntax. Binary:
   `/workspaces/teamster/.trunk/tools/trunk`.
 
+- **Markdown**: Always specify a language on fenced code blocks (MD040). Use
+  `text` only when no real language applies.
+
 - **Claude CLI**: Not on `$PATH` — user must run `claude` commands in their
   terminal, not via Bash tool.
 
