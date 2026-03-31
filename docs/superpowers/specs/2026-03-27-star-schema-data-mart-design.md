@@ -321,3 +321,85 @@ Acknowledged for future expansion, out of scope for v1:
   tracking and Finalsite website/CMS analytics
 - **Certification tracking** — staff teaching certifications/licenses
 - **Grant timesheet tracking** — time tracking for grant-funded positions
+
+## Appendix: Entity Relationship Diagram
+
+Minimal diagram showing entities and foreign key relationships. Conformed
+dimensions (`dim_dates`, `dim_terms`, `dim_regions`, `dim_locations`,
+`dim_school_calendars`) are shared across most domains and omitted from
+individual relationships for readability.
+
+```mermaid
+erDiagram
+    %% Student Domain
+    dim_students ||--o{ dim_student_enrollments : ""
+    dim_students ||--o{ dim_student_contacts : ""
+    dim_students ||--o{ dim_student_section_enrollments : ""
+    dim_course_sections ||--o{ dim_student_section_enrollments : ""
+
+    %% Staff Domain
+    dim_staff ||--o{ dim_staff_work_assignments : ""
+    dim_staff_work_assignments ||--o{ dim_staff_reporting_relationships : ""
+    dim_staff_work_assignments ||--o{ dim_staff_work_assignment_status : ""
+    dim_staff ||--o{ fct_staff_compensation : ""
+    dim_staff ||--o{ fct_staff_additional_earnings : ""
+    dim_staff ||--o{ bridge_staff_benefits_enrollments : ""
+
+    %% Course Domain
+    dim_courses ||--o{ dim_course_sections : ""
+    dim_staff ||--o{ dim_course_sections : "teacher"
+
+    %% Assessment Domain
+    dim_assessments ||--o{ dim_assessment_comparisons : ""
+    dim_assessments ||--o{ dim_assessment_targets : ""
+    dim_students ||--o{ fct_assessment_scores : ""
+    dim_assessments ||--o{ fct_assessment_scores : ""
+
+    %% College Domain
+    dim_students ||--o{ dim_college_enrollments : ""
+    dim_colleges ||--o{ dim_college_enrollments : ""
+
+    %% Classroom Observation & PD Domain
+    dim_classroom_observation_rubrics ||--o{ dim_classroom_observation_rubric_measurements : ""
+    dim_staff ||--o{ fct_classroom_observations : "teacher"
+    dim_staff ||--o{ fct_classroom_observations : "observer"
+    dim_classroom_observation_types ||--o{ fct_classroom_observations : ""
+    fct_classroom_observations ||--o{ fct_classroom_observation_scores : ""
+    dim_classroom_observation_rubric_measurements ||--o{ fct_classroom_observation_scores : ""
+    dim_staff ||--o{ fct_classroom_observation_microgoals : ""
+    dim_classroom_observation_microgoal_types ||--o{ fct_classroom_observation_microgoals : ""
+
+    %% Student Attendance Domain
+    dim_students ||--o{ fct_student_attendance_daily : ""
+    dim_students ||--o{ fct_student_attendance_streaks : ""
+    dim_students ||--o{ fct_student_attendance_interventions : ""
+    dim_student_attendance_intervention_types ||--o{ fct_student_attendance_interventions : ""
+
+    %% Behavioral & Communications Domain
+    dim_students ||--o{ fct_behavioral_incidents : ""
+    dim_staff ||--o{ fct_behavioral_incidents : "referring_staff"
+    fct_behavioral_incidents ||--o{ fct_behavioral_consequences : ""
+    dim_students ||--o{ fct_family_communications : ""
+    dim_staff ||--o{ fct_family_communications : ""
+    dim_family_communication_types ||--o{ fct_family_communications : ""
+
+    %% Gradebook Domain
+    dim_students ||--o{ fct_grades_term : ""
+    dim_course_sections ||--o{ fct_grades_term : ""
+    dim_students ||--o{ fct_grades_category : ""
+    dim_course_sections ||--o{ fct_grades_category : ""
+    dim_students ||--o{ fct_grades_assignments : ""
+    dim_course_sections ||--o{ fct_grades_assignments : ""
+    dim_students ||--o{ fct_grades_gpa : ""
+
+    %% Survey Domain
+    dim_surveys ||--o{ fct_survey_responses : ""
+
+    %% Talent Acquisition Domain
+    dim_job_candidates ||--o{ fct_job_candidate_applications : ""
+    dim_staffing_positions ||--o{ fct_job_candidate_applications : ""
+
+    %% IT Support Domain
+    dim_staff ||--o{ fct_support_tickets : "submitter"
+    dim_staff ||--o{ fct_support_tickets : "assignee"
+```
