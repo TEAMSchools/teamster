@@ -29,6 +29,13 @@ patterns.
   materialization. Use `search_assets` to discover assets by prefix, then
   `get_asset_staleness` for specific assets.
 
+## GKE MCP
+
+Authenticates via ADC as **impersonated service account**
+`codespaces@teamster-332318.iam.gserviceaccount.com` — not the user's gcloud
+identity. Permissions are on the `CodespacesRole` custom IAM role. If calls
+return `PermissionDenied`, check that role, not user IAM bindings.
+
 ## BigQuery MCP
 
 The BigQuery MCP tool truncates results at 50 rows. When querying

@@ -10,3 +10,9 @@ on GKE Autopilot.
 - `safe-to-evict: "false"` only blocks cluster autoscaler evictions — kubelet
   node-pressure evictions (exit 137, OOM) are unaffected. Scale-Out density
   makes these occasional; Dagster retries automatically.
+- GKE Autopilot cluster: `autopilot-cluster-dagster-hybrid-1` in `us-central1`
+  (`kubectl config current-context`).
+- Spot VMs are a **preference** on agent and code server pods — falls back to
+  on-demand during GCE STOCKOUT. Run pods are on-demand only
+  (`safe-to-evict: "false"` + spot tolerations are mutually exclusive on
+  Autopilot). `arm64` requires an explicit `compute-class` in `nodeSelector`.
