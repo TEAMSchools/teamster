@@ -82,7 +82,7 @@ Return all collected data as a single JSON object with keys: failed_runs,
 failed_ticks, agents, gke_critical_events, gke_daemon_pod_storms.
 ```
 
-## Phase 2: Classify and correlate (Sonnet)
+## Phase 2: Classify and correlate
 
 Using the subagent's returned data:
 
