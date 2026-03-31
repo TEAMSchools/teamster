@@ -1,2 +1,124 @@
 models:
   - name: int_pearson__student_list_report
+    description: >
+      Intermediate transformation of preliminary Pearson student list report
+      data, unioned across Newark, Camden, and Paterson regions. Derives
+      discipline, subject, aligned test code, and performance band level from
+      the raw performance_level and test_name columns, and computes
+      is_proficient and is_proficient_int for use in demographic comparison
+      models.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - academic_year
+              - administration
+              - state_id
+              - aligned_test_code
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+        description: Source relation identifier from dbt_utils.union_relations.
+
+      - name: academic_year
+        data_type: int64
+        description: Academic year the assessment was administered.
+
+      - name: state_student_identifier
+        data_type: int64
+        description: State student identifier from the source file.
+
+      - name: local_student_identifier
+        data_type: int64
+        description: Local student identifier from the source file.
+
+      - name: last_or_surname
+        data_type: string
+        description: Student last name or surname as reported by Pearson.
+
+      - name: first_name
+        data_type: string
+        description: Student first name as reported by Pearson.
+
+      - name: date_of_birth
+        data_type: string
+        description: Student date of birth as reported by Pearson.
+
+      - name: test_type
+        data_type: string
+        description: Assessment test type from the Dagster partition key.
+
+      - name: scale_score
+        data_type: int64
+        description: Student's raw scale score on the assessment.
+
+      - name: performance_level
+        data_type: string
+        description: >
+          Performance level label as reported by Pearson (e.g. 'Met
+          Expectations', 'Graduation Ready').
+
+      - name: administration
+        data_type: string
+        description:
+          Assessment administration period from the Dagster partition key.
+
+      - name: results_type
+        data_type: string
+        description:
+          Always 'Preliminary' — student list reports contain pre-release
+          scores.
+
+      - name: district_state
+        data_type: string
+        description: >
+          Network district/state identifier; always 'KTAF NJ' for this model.
+
+      - name: state_id
+        data_type: string
+        description: State student identifier cast to string.
+
+      - name: discipline
+        data_type: string
+        description: >
+          Subject discipline derived from test_name —
+          Mathematics/Algebra/Geometry map to 'Math', all others map to 'ELA'.
+
+      - name: subject
+        data_type: string
+        quote: true
+        description: >
+          Subject normalized for stacked reporting across assessment programs —
+          Mathematics/Algebra/Geometry map to 'Mathematics', all others map to
+          'English Language Arts', matching the label convention used in
+          comparison sources.
+
+      - name: aligned_test_code
+        data_type: string
+        description: >
+          Test code normalized for stacked reporting across assessment programs
+          — derived from test_name: graduation proficiency tests map to
+          ELAGP/MATGP, Geometry to GEO01, Algebra I to ALG01; grade-level math
+          and ELA tests extract the grade from the name and prefix with MAT/ELA.
+
+      - name: performance_band_level
+        data_type: int64
+        description: >
+          Numeric performance band level derived from performance_level: 'Did
+          Not Yet Meet Expectations'/'Not Yet Graduation Ready' = 1, 'Partially
+          Met Expectations' = 2, 'Approached Expectations' = 3, 'Met
+          Expectations' = 4, 'Exceeded Expectations' = 5, 'Graduation Ready' =
+          2.
+
+      - name: is_proficient
+        data_type: boolean
+        description: >
+          Whether the student scored proficient or above — true when
+          performance_level is 'Met Expectations', 'Exceeded Expectations', or
+          'Graduation Ready'.
+
+      - name: is_proficient_int
+        data_type: int64
+        description:
+          Integer representation of is_proficient (1 = true, 0 = false).

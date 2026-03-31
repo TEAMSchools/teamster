@@ -21,107 +21,18 @@
 ] %}
 
 with
-    assessment_scores as (
+    test_code_metadata as (
         select
-            _dbt_source_relation,
-            academic_year,
-            localstudentidentifier,
-            statestudentidentifier as state_id,
-            assessment_name,
-            is_proficient,
-            is_proficient_int,
-
-            results_type,
-            district_state,
-            aligned_test_code as test_code,
-
-            case
-                when race_ethnicity = 'B'
-                then 'African American'
-                when race_ethnicity = 'A'
-                then 'Asian'
-                when race_ethnicity = 'I'
-                then 'American Indian'
-                when race_ethnicity = 'H'
-                then 'Hispanic'
-                when race_ethnicity = 'P'
-                then 'Native Hawaiian'
-                when race_ethnicity = 'T'
-                then 'Other'
-                when race_ethnicity = 'W'
-                then 'White'
-                when race_ethnicity is null
-                then 'Blank'
-            end as aggregate_ethnicity,
-
-            if(lep_status, 'ML', 'Not ML') as ml_status,
-
-            if(
-                iep_status = 'Has IEP',
-                'Students With Disabilities',
-                'Students Without Disabilities'
-            ) as iep_status,
-
-        from {{ ref("int_pearson__all_assessments") }}
-        where
-            testscalescore is not null and `period` = 'Spring' and academic_year >= 2018
-
-        union all
-
-        select
-            _dbt_source_relation,
-            academic_year,
-
-            null as localstudentidentifier,
-
-            student_id as state_id,
-            assessment_name,
-            is_proficient,
-            if(is_proficient, 1, 0) as is_proficient_int,
-
-            'Actual' as results_type,
-            'KTAF FL' as district_state,
-
-            test_code,
-
-            null as aggregate_ethnicity,
-            null as ml_status,
-            null as iep_status,
-
-        from {{ ref("int_fldoe__all_assessments") }}
-        where scale_score is not null and season = 'Spring'
-
-        union all
-
-        select
-            _dbt_source_relation,
-            academic_year,
-
-            local_student_identifier as localstudentidentifier,
-
-            cast(state_student_identifier as string) as state_id,
-
-            test_type as assessment_name,
-            is_proficient,
-            if(is_proficient, 1, 0) as is_proficient_int,
-            results_type,
-            district_state,
-            aligned_test_code as test_code,
-
-            null as aggregate_ethnicity,
-            null as ml_status,
-            null as iep_status,
-
-        from {{ ref("int_pearson__student_list_report") }}
-        where
-            state_student_identifier is not null
-            and administration = 'Spring'
-            and test_type = 'NJSLA'
-            and academic_year = {{ var("current_academic_year") }}
+            aligned_level_test_code,
+            any_value(school_level) as school_level,
+            any_value(grade_range_band) as grade_range_band,
+            any_value(discipline) as discipline,
+        from {{ ref("stg_google_sheets__state_test_comparison_demographics") }}
+        group by aligned_level_test_code
     ),
 
-    /* NJ scores */
-    nj_scores as (
+    scores as (
+        -- NJ's official scores
         select
             e.academic_year,
             e.region,
@@ -129,10 +40,14 @@ with
 
             a.district_state,
             a.assessment_name,
-            a.aggregate_ethnicity,
-            a.ml_status,
-            a.iep_status,
             a.is_proficient_int,
+            a.aligned_test_code as test_code,
+            a.aligned_ml_status as ml_status,
+
+            e.aligned_gender as gender,
+
+            a.aligned_aggregate_ethnicity as aggregate_ethnicity,
+            a.aligned_iep_status as iep_status,
 
             if(
                 e.lunch_status in ('F', 'R'),
@@ -140,45 +55,36 @@ with
                 'Non Economically Disadvantaged'
             ) as lunch_status,
 
-            case
-                when a.test_code = 'ALG01'
-                then concat(a.test_code, '_', e.school_level)
-                else a.test_code
-            end as test_code,
-
-            case
-                e.gender
-                when 'F'
-                then 'Female'
-                when 'M'
-                then 'Male'
-                when 'X'
-                then 'Non-Binary'
-            end as gender,
-
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            assessment_scores as a
+            {{ ref("int_pearson__all_assessments") }} as a
             on e.academic_year = a.academic_year
             and e.pearson_local_student_identifier = a.localstudentidentifier
             and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
-            and a.results_type = 'Actual'
+            and a.academic_year >= 2018
+            and a.season = 'Spring'
+            and a.testscalescore is not null
         where
             e.rn_year = 1
             and e.academic_year >= {{ var("current_academic_year") - 7 }}
             and e.grade_level > 2
             and e.school_level != 'OD'
-    ),
 
-    /* FL scores */
-    fl_scores as (
+        union all
+
+        -- NJ's prelim scores
         select
             e.academic_year,
             e.region,
             e.student_number,
 
             a.district_state,
-            a.assessment_name,
+            a.test_type as assessment_name,
+            a.is_proficient_int,
+            a.aligned_test_code as test_code,
+
+            e.ml_status,
+            e.aligned_gender as gender,
 
             case
                 when e.race_ethnicity = 'B'
@@ -199,15 +105,11 @@ with
                 then 'Blank'
             end as aggregate_ethnicity,
 
-            e.ml_status,
-
             if(
                 e.iep_status = 'Has IEP',
                 'Students With Disabilities',
                 'Students Without Disabilities'
             ) as iep_status,
-
-            a.is_proficient_int,
 
             if(
                 e.lunch_status in ('F', 'R'),
@@ -215,42 +117,82 @@ with
                 'Non Economically Disadvantaged'
             ) as lunch_status,
 
-            case
-                when a.test_code = 'ALG01'
-                then concat(a.test_code, '_', e.school_level)
-                else a.test_code
-            end as test_code,
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            {{ ref("int_pearson__student_list_report") }} as a
+            on e.academic_year = a.academic_year
+            and e.pearson_local_student_identifier = a.local_student_identifier
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
+            and a.academic_year >= 2018
+            and a.administration = 'Spring'
+            and a.scale_score is not null
+        where
+            e.rn_year = 1
+            and e.academic_year >= {{ var("current_academic_year") - 7 }}
+            and e.grade_level > 2
+            and e.school_level != 'OD'
+
+        union all
+
+        -- FL's official scores
+        select
+            e.academic_year,
+            e.region,
+            e.student_number,
+
+            a.district_state,
+            a.assessment_name,
+            a.is_proficient_int,
+            a.test_code,
+
+            e.ml_status,
+            e.aligned_gender as gender,
 
             case
-                e.gender
-                when 'F'
-                then 'Female'
-                when 'M'
-                then 'Male'
-                when 'X'
-                then 'Non-Binary'
-            end as gender,
+                when e.race_ethnicity = 'B'
+                then 'African American'
+                when e.race_ethnicity = 'A'
+                then 'Asian'
+                when e.race_ethnicity = 'I'
+                then 'American Indian'
+                when e.race_ethnicity = 'H'
+                then 'Hispanic'
+                when e.race_ethnicity = 'P'
+                then 'Native Hawaiian'
+                when e.race_ethnicity = 'T'
+                then 'Other'
+                when e.race_ethnicity = 'W'
+                then 'White'
+                when e.race_ethnicity is null
+                then 'Blank'
+            end as aggregate_ethnicity,
+
+            if(
+                e.iep_status = 'Has IEP',
+                'Students With Disabilities',
+                'Students Without Disabilities'
+            ) as iep_status,
+
+            if(
+                e.lunch_status in ('F', 'R'),
+                'Economically Disadvantaged',
+                'Non Economically Disadvantaged'
+            ) as lunch_status,
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
-            assessment_scores as a
+            {{ ref("int_fldoe__all_assessments") }} as a
             on e.academic_year = a.academic_year
-            and e.state_studentnumber = a.state_id
+            and e.state_studentnumber = a.student_id
             and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
             and a.results_type = 'Actual'
+            and a.scale_score is not null
+            and a.season = 'Spring'
         where
             e.region = 'Miami'
             and e.rn_year = 1
             and e.academic_year >= {{ var("current_academic_year") - 7 }}
             and e.grade_level > 2
-    ),
-
-    demographic_comps as (
-        select *
-        from nj_scores
-        union all
-        select *
-        from fl_scores
     )
 
 select
@@ -303,58 +245,13 @@ select
     /* (b) comparison_entity from region null-ness */
     if(grouping(region) = 1, district_state, 'Region') as comparison_entity,
 
-    /* (c) test_code-derived columns */
-    case
-        when
-            test_code in (
-                'ELA09',
-                'ELA10',
-                'ELA11',
-                'ELAGP',
-                'ALG01_HS',
-                'GEO01',
-                'ALG02',
-                'MATGP',
-                'SCI11'
-            )
-        then 'HS'
-        when test_code = 'ALG01_MS'
-        then 'MS'
-        when safe_cast(right(test_code, 2) as numeric) between 5 and 8
-        then 'MS'
-        else 'ES'
-    end as school_level,
+    /* (c) test_code-derived columns via sheet lookup */
+    any_value(m.school_level) as school_level,
+    any_value(m.grade_range_band) as grade_range_band,
+    any_value(m.discipline) as discipline,
 
-    case
-        when
-            test_code in (
-                'ELA09',
-                'ELA10',
-                'ELA11',
-                'ELAGP',
-                'ALG01_HS',
-                'GEO01',
-                'ALG02',
-                'MATGP',
-                'SCI11'
-            )
-        then 'HS'
-        else '3-8'
-    end as grade_range_band,
-
-    case
-        when left(test_code, 3) in ('MAT', 'ALG', 'GEO')
-        then 'Math'
-        when left(test_code, 3) = 'ELA'
-        then 'ELA'
-        when left(test_code, 3) = 'SCI'
-        then 'Science'
-        when left(test_code, 3) = 'SOC'
-        then 'Social Studies'
-    end as discipline,
-
-from demographic_comps
-
+from scores
+left join test_code_metadata as m on scores.test_code = m.aligned_level_test_code
 group by
     grouping sets (
         {# Total (all focus dims rolled up) — with and without region #}

@@ -10,6 +10,16 @@ models:
       ALG02 totals are 10th-grade only; demographic group totals include all
       students who took ALG02 regardless of grade. GEO01 follows the same
       pattern for grades 9 and 10.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - test_code
+              - region
+              - comparison_entity
+              - comparison_demographic_group
+              - comparison_demographic_subgroup
     columns:
       - name: academic_year
         data_type: int64
@@ -72,6 +82,13 @@ models:
         data_type: int64
         description: Total number of students tested.
 
+      - name: aligned_level_test_code
+        data_type: string
+        description: >
+          Test code adjusted for school level — ALG01 rows with a school_level
+          other than MS_HS are suffixed with the school level (e.g. 'ALG01_HS');
+          all other test codes are passed through unchanged.
+
       - name: comparison_demographic_group_aligned
         data_type: string
         description: >
@@ -89,15 +106,3 @@ models:
         description: >
           Derived count of proficient students (percent_proficient *
           total_students, rounded to 0 decimal places).
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - academic_year
-              - test_code
-              - region
-              - comparison_entity
-              - comparison_demographic_group
-              - comparison_demographic_subgroup
-          config:
-            store_failures: true

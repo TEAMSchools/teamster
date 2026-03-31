@@ -58,13 +58,18 @@ select
     cw1.sublevel_number,
     cw1.sublevel_name,
 
-    cast(regexp_extract(fl.achievement_level, r'\d+') as int) as achievement_level_int,
-
     'Actual' as results_type,
     'KTAF FL' as district_state,
 
-    fl.administration_window as `admin`,
-    fl.assessment_subject as `subject`,
+    cast(regexp_extract(fl.achievement_level, r'\d+') as int) as achievement_level_int,
+
+    case
+        when fl.test_code = 'ALG01' and fl.assessment_grade = '8'
+        then concat(fl.test_code, '_', 'MS')
+        when fl.test_code = 'ALG01' and fl.assessment_grade in ('9', '10', '11', '12')
+        then concat(fl.test_code, '_', 'HS')
+        else fl.test_code
+    end as aligned_level_test_code,
 
     case
         when fl.assessment_subject like 'English Language Arts%'
@@ -83,6 +88,8 @@ select
         then 'At/Above'
     end as fast_aggregated_proficiency,
 
+    if(fl.is_proficient, 1, 0) as is_proficient_int,
+
     if(cw1.sublevel_number >= 6, null, cw2.scale_low) as scale_for_proficiency,
 
     if(
@@ -99,6 +106,7 @@ select
         partition by fl.student_id, fl.academic_year, fl.assessment_subject
         order by fl.administration_window asc
     ) as scale_score_prev,
+
 from source as fl
 left join
     scale_crosswalk as sc

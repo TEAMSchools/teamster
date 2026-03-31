@@ -16,6 +16,8 @@ with
             'Preliminary' as results_type,
             'KTAF NJ' as district_state,
 
+            cast(state_student_identifier as string) as state_id,
+
             case
                 when test_name like '%Mathematics%'
                 then 'Math'
@@ -76,5 +78,12 @@ select
         true,
         false
     ) as is_proficient,
+
+    if(
+        performance_level
+        in ('Met Expectations', 'Exceeded Expectations', 'Graduation Ready'),
+        1,
+        0
+    ) as is_proficient_int,
 
 from scores

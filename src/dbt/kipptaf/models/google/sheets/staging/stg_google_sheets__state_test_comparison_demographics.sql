@@ -1,6 +1,12 @@
 select
     *,
 
+    case
+        when test_code = 'ALG01' and school_level != 'MS_HS'
+        then concat(test_code, '_', school_level)
+        else test_code
+    end as aligned_level_test_code,
+
     if(
         comparison_demographic_subgroup in ('Grade - 08', 'Grade - 09', 'Grade - 10'),
         'Total',
