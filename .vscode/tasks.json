@@ -49,6 +49,18 @@
       "problemMatcher": []
     },
     {
+      "label": "dbt: Open YAML",
+      "type": "shell",
+      "command": "[ -f \"${fileDirname}/properties/${fileBasenameNoExtension}.yml\" ] && code \"${fileDirname}/properties/${fileBasenameNoExtension}.yml\" || code \"${fileDirname}/properties/${fileBasenameNoExtension}.yaml\"",
+      "presentation": {
+        "reveal": "never",
+        "panel": "shared",
+        "focus": false,
+        "close": true
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "dbt: Build Init",
       "type": "shell",
       "command": "bash .vscode/scripts/dbt-build-init.sh ${input:dbtProject}",
