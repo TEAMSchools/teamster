@@ -47,10 +47,14 @@ dagsterCloudAgent:
         - /bin/bash
         - -c
         - test -f /tmp/finished_initial_reconciliation_sentinel.txt
-    failureThreshold: 60
+    failureThreshold: 60 # 10 min (60 × 10s) for initial reconciliation
     initialDelaySeconds: 0
     periodSeconds: 10
 
+  # maxSurge: 200% brings pod count to 4 during upgrades. Combined with
+  # requiredDuringSchedulingIgnoredDuringExecution hostname anti-affinity,
+  # this requires 4 distinct nodes briefly. On Autopilot spot this is
+  # provisioned on demand; a stalled rollout indicates spot exhaustion.
   deploymentStrategy:
     type: RollingUpdate
     rollingUpdate:
@@ -110,6 +114,9 @@ dagsterCloudAgent:
           matchLabels:
             app.kubernetes.io/name: dagster-cloud-agent
 
+  # Agent container securityContext — not set because the agent runs Dagster's
+  # own image (UID 1001), not ours (UID 1234). Spec Section 2 covers workspace
+  # and run pods only. The Helm chart does support this field.
   # securityContext:
   #   runAsNonRoot: true
   #   allowPrivilegeEscalation: false

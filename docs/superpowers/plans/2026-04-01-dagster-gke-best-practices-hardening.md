@@ -201,16 +201,16 @@ additionalPodSpecConfig:
   topologySpreadConstraints:
     - maxSkew: 1
       topologyKey: topology.kubernetes.io/zone
-      whenUnsatisfiable: DoNotSchedule
+      whenUnsatisfiable: ScheduleAnyway
       labelSelector:
         matchLabels:
           app.kubernetes.io/name: dagster-cloud-agent
 ```
 
-This adds cross-zone distribution on top of the existing hostname anti-affinity.
-If only one zone has spot capacity, the second agent pod will remain Pending
-with `DoNotSchedule` — monitor and be prepared to relax to `ScheduleAnyway` if
-multi-zone unavailability recurs (see spec Risks section).
+`ScheduleAnyway` prefers cross-zone distribution but allows same-zone during
+capacity exhaustion. Changed from `DoNotSchedule` during review — the
+2026-03-30/31 STOCKOUT showed that hard constraints worsen multi-zone
+unavailability.
 
 - [ ] **Step 2: Commit**
 
@@ -294,9 +294,9 @@ Add the following bullets to the Conventions list in `.k8s/CLAUDE.md`:
   and `dagster-k8s/config` tags can set: `resources`, `env`, `nodeSelector`,
   `affinity`, `annotations`, and `ttlSecondsAfterFinished`. Everything else is
   locked to Helm chart values.
-- **Agent topology spread** uses `DoNotSchedule` across
-  `topology.kubernetes.io/zone` via `additionalPodSpecConfig`. If multi-zone
-  STOCKOUT recurs, relax to `ScheduleAnyway`.
+- **Agent topology spread** uses `ScheduleAnyway` across
+  `topology.kubernetes.io/zone` via `additionalPodSpecConfig`. Prefers
+  cross-zone but allows same-zone during capacity exhaustion.
 - **Agent readiness probe** checks for
   `/tmp/finished_initial_reconciliation_sentinel.txt`. Rolling update
   (`maxSurge: 200%`, `maxUnavailable: 0%`) ensures zero-downtime Helm upgrades.
