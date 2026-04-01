@@ -258,9 +258,11 @@ workspace:
     containerConfig:
       resources: true
       env: true
+      volumeMounts: true
     podSpecConfig:
       nodeSelector: true
       affinity: true
+      volumes: true
     podTemplateSpecMetadata:
       annotations: true
     jobSpecConfig:

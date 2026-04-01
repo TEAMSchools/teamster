@@ -28,9 +28,9 @@ on GKE Autopilot.
   `teamster` user), `allowPrivilegeEscalation: false`, all capabilities dropped.
   `readOnlyRootFilesystem` intentionally omitted (dbt/Dagster write to `/tmp`).
 - **`onlyAllowUserDefinedK8sConfigFields`** restricts what `dagster-cloud.yaml`
-  and `dagster-k8s/config` tags can set: `resources`, `env`, `nodeSelector`,
-  `affinity`, `annotations`, and `ttlSecondsAfterFinished`. Everything else is
-  locked to Helm chart values.
+  and `dagster-k8s/config` tags can set: `resources`, `env`, `volumeMounts`,
+  `nodeSelector`, `affinity`, `volumes`, `annotations`, and
+  `ttlSecondsAfterFinished`. Everything else is locked to Helm chart values.
 - **Agent topology spread** uses `ScheduleAnyway` across
   `topology.kubernetes.io/zone` via `additionalPodSpecConfig`. Prefers
   cross-zone but allows same-zone during capacity exhaustion.
