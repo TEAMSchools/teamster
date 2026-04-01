@@ -7,6 +7,11 @@ from requests.exceptions import HTTPError
 from requests.models import Response as RealResponse
 
 from teamster.libraries.http.resources import BaseHTTPResource
+from teamster.libraries.overgrad.resources import OvergradResource
+from teamster.libraries.powerschool.enrollment.resources import (
+    PowerSchoolEnrollmentResource,
+)
+from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 
 
 def _make_resource(**kwargs) -> BaseHTTPResource:
@@ -267,12 +272,6 @@ class TestErrorHandling:
         assert result is None
 
 
-from teamster.libraries.powerschool.enrollment.resources import (
-    PowerSchoolEnrollmentResource,
-)
-from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
-
-
 class TestSmartRecruitersResource:
     def _make(self) -> SmartRecruitersResource:
         resource = SmartRecruitersResource(smart_token="test-token")
@@ -330,4 +329,30 @@ class TestPowerSchoolEnrollmentResource:
         assert (
             resource._get_url("schools", "123")
             == "https://registration.powerschool.com/api/v1/schools/123"
+        )
+
+
+class TestOvergradResource:
+    def _make(self) -> OvergradResource:
+        resource = OvergradResource(api_key="test-key")
+        ctx = MagicMock()
+        ctx.log = MagicMock()
+        resource.setup_for_execution(ctx)
+        return resource
+
+    def test_setup_sets_api_key_header(self):
+        resource = self._make()
+        assert resource._session.headers["ApiKey"] == "test-key"
+
+    def test_get_url(self):
+        resource = self._make()
+        assert (
+            resource._get_url("students") == "https://api.overgrad.com/api/v1/students"
+        )
+
+    def test_get_url_with_extra_parts(self):
+        resource = self._make()
+        assert (
+            resource._get_url("students", "123")
+            == "https://api.overgrad.com/api/v1/students/123"
         )
