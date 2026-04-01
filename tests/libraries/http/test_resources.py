@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
@@ -381,3 +382,38 @@ class TestKnowBe4Resource:
     def test_base_url_includes_server(self):
         resource = self._make()
         assert "us.api.knowbe4.com" in resource._base_url
+
+
+from teamster.libraries.zendesk.resources import ZendeskResource
+
+
+class TestZendeskResource:
+    def _make(self) -> ZendeskResource:
+        resource = ZendeskResource(
+            subdomain="test", email="user@example.com", token="test-token"
+        )
+        ctx = MagicMock()
+        ctx.log = MagicMock()
+        resource.setup_for_execution(ctx)
+        return resource
+
+    def test_setup_sets_basic_auth(self):
+        resource = self._make()
+        assert resource._session.auth is not None
+
+    def test_setup_sets_content_type(self):
+        resource = self._make()
+        assert resource._session.headers["Content-Type"] == "application/json"
+
+    def test_get_url(self):
+        resource = self._make()
+        assert resource._get_url("tickets") == "https://test.zendesk.com/api/v2/tickets"
+
+    def test_get_retry_after_parses_ratelimit_remaining(self):
+        resource = self._make()
+        resp = _make_error_response(429)
+        resp.headers["ratelimit-remaining"] = "0"
+        resp.headers["ratelimit-reset"] = str(time.time() + 5)
+        result = resource._get_retry_after(resp)
+        assert result is not None
+        assert result > 0
