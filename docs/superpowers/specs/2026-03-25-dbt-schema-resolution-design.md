@@ -271,14 +271,17 @@ No other Dagster code changes required — callers continue to call
 
 #### Production manifest generation
 
-A `post-merge` git hook generates prod manifests locally:
+A `post-merge` git hook generates prod manifests locally. All 5 projects parse
+in parallel — `dbt parse` is CPU-only (no DB access), so wall-clock time is
+roughly the cost of the slowest project rather than the sum:
 
 ```bash
 for project in kipptaf kippnewark kippcamden kippmiami kipppaterson; do
   dbt parse --target prod \
     --project-dir "src/dbt/${project}" \
-    --target-path target/prod
+    --target-path target/prod &
 done
+wait
 ```
 
 The `--target-path target/prod` keeps the prod manifest separate from the
@@ -490,6 +493,12 @@ Steps:
    runs on Codespace creation
 1. Configure Power User `--defer` in `.vscode/settings.json`
 1. Add VS Code task for staging external sources
+1. Update developer-facing docs — add a new guide page
+   (`docs/guides/dbt-development.md`) covering: target names and when to use
+   each, the VS Code "Stage External Sources" task (replaces `dbt-sxs.py`),
+   Power User `--defer` behavior, and the cross-project `--target dev-region`
+   workflow. Add a nav entry in `mkdocs.yml`. Update `docs/guides/index.md`
+   routing table with the new page
 
 ### Naming changes
 
@@ -504,6 +513,47 @@ Steps:
 Before dropping old datasets, run full staging builds to confirm `zz_stg_*`
 datasets are fully populated and CI is healthy. Then drop old `z_dev_*` datasets
 from BigQuery.
+
+### Developer migration
+
+After the migration lands on `main`, developers need to be aware of the
+following changes. Most are automatic (handled by the devcontainer and git
+hooks), but some require awareness.
+
+#### Automatic (no developer action)
+
+- **`post-merge` hook** installs via devcontainer setup — generates prod
+  manifests for Power User `--defer` on every `git pull`/merge to `main`.
+  Existing Codespaces pick it up on next rebuild; new Codespaces get it
+  automatically
+- **Power User `--defer`** configuration ships in `.vscode/settings.json` — no
+  per-developer setup required
+- **Profile changes** ship in `.dbt/profiles.yml` — no local file edits needed
+
+#### Requires awareness
+
+- **Target names changed**: The default target is now `dev` (previously the
+  project name, e.g. `kipptaf`). `--target dev` is the default and does not need
+  to be specified explicitly. Use `--target staging` for CI-equivalent builds
+  and `--target prod` only when generating production manifests (handled by the
+  git hook)
+- **`scripts/dbt-sxs.py` removed**: Use the VS Code task "dbt: Stage External
+  Sources" instead — it prompts for project, target, and source selection. For
+  terminal usage, run the equivalent `dbt run-operation stage_external_sources`
+  command directly (documented in the new `docs/guides/dbt-development.md` page)
+- **Schema prefix changed**: Staging schemas change from `z_dev_*` to
+  `zz_stg_*`. Dev schemas are now `zz_<GITHUB_USER>_*`. Old `z_dev_*` datasets
+  will be dropped after confirming `zz_stg_*` is healthy
+- **Cross-regional development**: kipptaf developers working on regional model
+  changes use `--target dev-region` to resolve cross-regional sources to their
+  personal namespace. Default `--target dev` resolves cross-regional sources to
+  production (the common case)
+
+#### One-time cleanup (optional)
+
+- Delete stale local `target/` directories if they contain manifests from old
+  target names — the `post-merge` hook writes to `target/prod/` which is a new
+  path
 
 ## Risks
 
