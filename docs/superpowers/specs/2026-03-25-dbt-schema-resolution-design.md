@@ -41,23 +41,19 @@ schemas are handled by dbt's built-in `generate_schema_name` default, which
 already produces the correct behavior when profiles carry the right `schema`
 prefix per target.
 
-### Macros
+### Source schema resolution
 
-#### Placement strategy
+#### dbt limitation: no custom macros in source YAML
 
-The `resolve_source_schema` macro lives in the **5 school/network projects
-only** (kipptaf, kippnewark, kippcamden, kippmiami, kipppaterson). Source-system
-projects (amplify, deanslist, edplan, finalsite, iready, overgrad, pearson,
-powerschool, renlearn, titan) are consumed as dbt packages — their source files
-call `resolve_source_schema` at compile time, but the macro is resolved from the
-consuming project's namespace.
+dbt source YAML `schema:` fields render with `SchemaYamlContext`, which only
+provides `env_var()`, `var()`, `target`, and `project_name` — not custom project
+macros (dbt-labs/dbt-core#6056, #4753). Source schema resolution therefore uses
+**standardized inline Jinja** rather than macro calls.
 
-Source-system projects do NOT get their own copy of the macro.
-
-#### `resolve_source_schema(base_schema)`
+#### Source schema pattern
 
 Controls where `source()` calls read from. Used in all projects **except** for
-kipptaf's cross-regional source files (see `resolve_region_source_schema`).
+kipptaf's cross-regional source files (see region source schema pattern below).
 
 | Target    | Result                           |
 | --------- | -------------------------------- |
@@ -66,24 +62,7 @@ kipptaf's cross-regional source files (see `resolve_region_source_schema`).
 | `staging` | `zz_stg_<base_schema>`           |
 | `prod`    | `<base_schema>`                  |
 
-Implementation:
-
-```sql
-{% macro resolve_source_schema(base_schema) %}
-  {%- if target.name in ['defer', 'dev'] -%}
-    zz_{{ env_var('GITHUB_USER', 'dev') }}_{{ base_schema }}
-  {%- elif target.name == 'staging' -%}
-    zz_stg_{{ base_schema }}
-  {%- else -%}
-    {{ base_schema }}
-  {%- endif -%}
-{% endmacro %}
-```
-
-All inline Jinja conditionals in source files are replaced with a single macro
-call, with the exception noted below for kipptaf cross-regional sources. This
-applies to source files in **all** projects — including source-system packages,
-which resolve the macro from the consuming project's namespace at compile time.
+Inline Jinja template (single-line, all whitespace controlled by `{%- -%}`):
 
 ```yaml
 # before (inconsistent, per-file logic)
@@ -93,8 +72,8 @@ schema: |
   {%- elif env_var('GITHUB_USER', '') != '' -%}zz_{{ env_var('GITHUB_USER') }}_
   {%- endif -%}kippnewark_powerschool
 
-# after
-schema: "{{ resolve_source_schema('kippnewark_powerschool') }}"
+# after (standardized)
+schema: "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippnewark_powerschool"
 ```
 
 #### `resolve_region_source_schema(base_schema)` (kipptaf only)
@@ -122,37 +101,35 @@ regional model changes and needing to test end-to-end through kipptaf opt in via
 | `staging` | `zz_stg_<base_schema>`           |
 | `prod`    | `<base_schema>`                  |
 
-Implementation:
+Inline Jinja template — note only `dev` (not `defer`) triggers the prefix:
 
-```sql
-{% macro resolve_region_source_schema(base_schema) %}
-  {%- if target.name == 'dev' -%}
-    zz_{{ env_var('GITHUB_USER', 'dev') }}_{{ base_schema }}
-  {%- elif target.name == 'staging' -%}
-    zz_stg_{{ base_schema }}
-  {%- else -%}
-    {{ base_schema }}
-  {%- endif -%}
-{% endmacro %}
+```yaml
+schema:
+  "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
+  elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippnewark_powerschool"
 ```
 
-This macro lives in **kipptaf only** — no other project has cross-regional
+These files live in **kipptaf only** — no other project has cross-regional
 source files.
+
+### Macros
 
 #### `check_prod_guard()`
 
-Prevents accidental production writes from local development environments. Runs
-once per dbt invocation via `on-run-start` — fires for `run`, `build`, `test`,
-`seed`, `snapshot` but **not** for `parse`, `compile`, or `list`. The
-`post-merge` hook uses `dbt parse`, so it is unaffected.
+Prevents accidental production writes from local development environments.
+Unlike source schema resolution (inline Jinja), this is a proper macro —
+`on-run-start` hooks run in `ManifestContext` where custom macros are available.
+Fires for `run`, `build`, `test`, `seed`, `snapshot` but **not** for `parse`,
+`compile`, or `list`. The `post-merge` hook uses `dbt parse`, so it is
+unaffected.
 
 ```sql
 {% macro check_prod_guard() %}
   {%- if target.name == 'prod' and not env_var('DAGSTER_CLOUD_DEPLOYMENT_NAME', '') -%}
     {{ exceptions.raise_compiler_error(
       "target 'prod' is reserved for production deployments. "
-      "Use --target defer (default) for development. "
-      "Set DAGSTER_CLOUD_DEPLOYMENT_NAME to override."
+      ~ "Use --target defer (default) for development. "
+      ~ "Set DAGSTER_CLOUD_DEPLOYMENT_NAME to override."
     ) }}
   {%- endif -%}
 {% endmacro %}
