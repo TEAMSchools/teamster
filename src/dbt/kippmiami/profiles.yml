@@ -1,9 +1,15 @@
 kippmiami:
-  target: kippmiami
+  target: defer
   outputs:
-    kippmiami:
+    defer:
       type: bigquery
-      schema: kippmiami
-      threads: 40
+      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kippmiami
       method: oauth
       project: teamster-332318
+      threads: 40
+    prod:
+      type: bigquery
+      schema: kippmiami
+      method: oauth
+      project: teamster-332318
+      threads: 40

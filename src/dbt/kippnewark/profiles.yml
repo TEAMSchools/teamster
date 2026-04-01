@@ -1,9 +1,15 @@
 kippnewark:
-  target: kippnewark
+  target: defer
   outputs:
-    kippnewark:
+    defer:
       type: bigquery
-      schema: kippnewark
-      threads: 40
+      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kippnewark
       method: oauth
       project: teamster-332318
+      threads: 40
+    prod:
+      type: bigquery
+      schema: kippnewark
+      method: oauth
+      project: teamster-332318
+      threads: 40

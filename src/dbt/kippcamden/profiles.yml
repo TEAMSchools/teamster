@@ -1,9 +1,15 @@
 kippcamden:
-  target: kippcamden
+  target: defer
   outputs:
-    kippcamden:
+    defer:
       type: bigquery
-      schema: kippcamden
-      threads: 40
+      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kippcamden
       method: oauth
       project: teamster-332318
+      threads: 40
+    prod:
+      type: bigquery
+      schema: kippcamden
+      method: oauth
+      project: teamster-332318
+      threads: 40

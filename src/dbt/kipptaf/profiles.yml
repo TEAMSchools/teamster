@@ -1,9 +1,15 @@
 kipptaf:
-  target: kipptaf
+  target: defer
   outputs:
-    kipptaf:
+    defer:
       type: bigquery
-      schema: kipptaf
-      threads: 40
+      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kipptaf
       method: oauth
       project: teamster-332318
+      threads: 40
+    prod:
+      type: bigquery
+      schema: kipptaf
+      method: oauth
+      project: teamster-332318
+      threads: 40
