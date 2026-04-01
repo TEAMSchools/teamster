@@ -1,7 +1,26 @@
+import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import Response, Session
+from requests.exceptions import HTTPError
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
+
+
+class _NonRetryableHTTPError(Exception):
+    """Wraps an HTTPError to prevent tenacity from retrying."""
+
+    def __init__(self, cause: HTTPError) -> None:
+        super().__init__(str(cause))
+        self.cause = cause
 
 
 class BaseHTTPResource(ConfigurableResource):
@@ -20,6 +39,7 @@ class BaseHTTPResource(ConfigurableResource):
     _session: Session = PrivateAttr(default_factory=Session)
     _base_url: str = PrivateAttr(default="")
     _log: DagsterLogManager = PrivateAttr()
+    _reauth_attempted: bool = PrivateAttr(default=False)
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         """Assign the Dagster log manager and initialise the HTTP session.
@@ -63,12 +83,90 @@ class BaseHTTPResource(ConfigurableResource):
         """
         return method, url, kwargs
 
-    def _request(self, method: str, url: str, **kwargs) -> Response:
-        """Dispatch an HTTP request through the session.
+    def _get_retry_after(self, response: Response) -> float | None:
+        """Parse the rate-limit wait time from response headers.
 
-        Sets the default timeout, runs ``_prepare_request``, dispatches via
-        ``_session.request``, logs the result at info level, and calls
-        ``raise_for_status()``.
+        Checks ``Retry-After`` (as seconds or HTTP-date) then
+        ``X-RateLimit-Reset`` (as a Unix epoch timestamp).
+
+        Args:
+            response: The HTTP response to inspect.
+
+        Returns:
+            Seconds to wait as a float, or ``None`` if no relevant header
+            is present.
+        """
+        retry_after = response.headers.get("Retry-After")
+        if retry_after is not None:
+            try:
+                return float(retry_after)
+            except ValueError:
+                try:
+                    reset_dt = parsedate_to_datetime(retry_after)
+                    delta = (reset_dt - datetime.now(tz=timezone.utc)).total_seconds()
+                    return max(delta, 0.0)
+                except Exception:
+                    pass
+
+        x_reset = response.headers.get("X-RateLimit-Reset")
+        if x_reset is not None:
+            try:
+                return max(float(x_reset) - time.time(), 0.0)
+            except ValueError:
+                pass
+
+        return None
+
+    def _reauthenticate(self) -> None:
+        """Refresh authentication credentials.
+
+        Called once on a 401 response before retrying. Default re-raises the
+        current exception. Subclasses override with token refresh logic.
+
+        Raises:
+            requests.HTTPError: Re-raises the triggering error by default.
+        """
+        raise
+
+    def _handle_error(self, response: Response, error: HTTPError) -> None:
+        """React to an HTTP error and decide whether to retry.
+
+        Args:
+            response: The HTTP response that triggered the error.
+            error: The ``HTTPError`` raised by ``raise_for_status()``.
+
+        Raises:
+            requests.HTTPError: Always — either to let tenacity retry or to
+                propagate a non-retryable failure.
+        """
+        status = response.status_code
+
+        if status == 429:
+            wait = self._get_retry_after(response)
+            if wait is not None:
+                time.sleep(wait)
+            raise error
+
+        if status == 401:
+            if not self._reauth_attempted:
+                self._reauth_attempted = True
+                self._reauthenticate()
+                raise error
+            self._log.error(f"Re-authentication failed: {error}")
+            raise _NonRetryableHTTPError(error)
+
+        if status >= 500:
+            self._log.error(f"Server error {status}: {error}")
+            raise error
+
+        # Other 4xx — non-retryable
+        self._log.error(f"Client error {status}: {error}")
+        raise _NonRetryableHTTPError(error)
+
+    def _request(self, method: str, url: str, **kwargs) -> Response:
+        """Dispatch an HTTP request through the session with retry support.
+
+        Resets the re-auth guard and delegates to ``_request_with_retry``.
 
         Args:
             method: HTTP method string (e.g. ``"GET"``).
@@ -80,7 +178,39 @@ class BaseHTTPResource(ConfigurableResource):
             The :class:`requests.Response` object for a successful request.
 
         Raises:
-            requests.HTTPError: If the response status indicates an error.
+            requests.HTTPError: If the response status indicates a
+                non-retryable error or retries are exhausted.
+        """
+        self._reauth_attempted = False
+        try:
+            return self._request_with_retry(method, url, **kwargs)
+        except _NonRetryableHTTPError as exc:
+            raise exc.cause from None
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential_jitter(initial=1, max=60),
+        retry=retry_if_exception_type(HTTPError),
+        reraise=True,
+    )
+    def _request_with_retry(self, method: str, url: str, **kwargs) -> Response:
+        """Inner retry loop for dispatching a single HTTP attempt.
+
+        Decorated with tenacity retry logic (up to 3 attempts, exponential
+        backoff with jitter, retries on ``HTTPError``).
+
+        Args:
+            method: HTTP method string (e.g. ``"GET"``).
+            url: Fully-qualified request URL.
+            **kwargs: Additional keyword arguments forwarded to
+                ``Session.request``.
+
+        Returns:
+            The :class:`requests.Response` object for a successful request.
+
+        Raises:
+            requests.HTTPError: Propagated after retries are exhausted or for
+                non-retryable status codes.
         """
         kwargs.setdefault("timeout", self.request_timeout)
         method, url, kwargs = self._prepare_request(method, url, kwargs)
@@ -89,7 +219,10 @@ class BaseHTTPResource(ConfigurableResource):
             f"{method} {url} -> {response.status_code}"
             f" ({response.elapsed.total_seconds():.2f}s)"
         )
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except HTTPError as exc:
+            self._handle_error(response, exc)
         return response
 
     def _get_url(self, *parts: str) -> str:
