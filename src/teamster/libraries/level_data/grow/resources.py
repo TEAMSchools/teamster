@@ -11,6 +11,8 @@ from teamster.libraries.http.resources import BaseHTTPResource
 
 
 class GrowResource(BaseHTTPResource):
+    """HTTP resource for the LevelData Grow performance management API."""
+
     client_id: str
     client_secret: str
     district_id: str
@@ -19,6 +21,7 @@ class GrowResource(BaseHTTPResource):
     _default_params: dict = PrivateAttr()
 
     def _setup_session(self) -> None:
+        """Configure base URL, default params, and obtain an OAuth2 Bearer token."""
         self._base_url = "https://grow-api.leveldata.com"
 
         self._default_params = {
@@ -43,6 +46,7 @@ class GrowResource(BaseHTTPResource):
         )
 
     def _get_url(self, *parts: str) -> str:
+        """Return ``/grow-api.leveldata.com/external/<parts>`` URL."""
         return self._base_url + "/external/" + "/".join(parts)
 
     # trunk-ignore(pyright/reportIncompatibleMethodOverride): Grow API returns dict, not Response
@@ -111,18 +115,47 @@ class GrowResource(BaseHTTPResource):
 
     # trunk-ignore(pyright/reportIncompatibleMethodOverride): Grow API returns dict, not Response
     def post(self, endpoint: str, *args: str, **kwargs) -> dict[str, Any]:
+        """Send a POST request and return the parsed JSON response.
+
+        Args:
+            endpoint: API endpoint name.
+            *args: Additional path segments appended to the URL.
+            **kwargs: Additional keyword arguments forwarded to ``_request``.
+
+        Returns:
+            Parsed JSON response dict.
+        """
         url = self._get_url(endpoint, *args)
         self._log.debug(f"POST: {url}")
         return self._request("POST", url, **kwargs).json()
 
     # trunk-ignore(pyright/reportIncompatibleMethodOverride): Grow API returns dict, not Response
     def put(self, endpoint: str, *args: str, **kwargs) -> dict[str, Any]:
+        """Send a PUT request and return the parsed JSON response.
+
+        Args:
+            endpoint: API endpoint name.
+            *args: Additional path segments appended to the URL.
+            **kwargs: Additional keyword arguments forwarded to ``_request``.
+
+        Returns:
+            Parsed JSON response dict.
+        """
         url = self._get_url(endpoint, *args)
         self._log.debug(f"PUT: {url}")
         return self._request("PUT", url, **kwargs).json()
 
     # trunk-ignore(pyright/reportIncompatibleMethodOverride): Grow API returns dict, not Response
     def delete(self, endpoint: str, *args: str) -> dict[str, Any]:
+        """Send a DELETE request and return the parsed JSON response.
+
+        Args:
+            endpoint: API endpoint name.
+            *args: Additional path segments appended to the URL.
+
+        Returns:
+            Parsed JSON response dict.
+        """
         url = self._get_url(endpoint, *args)
         self._log.debug(f"DELETE: {url}")
         return self._request("DELETE", url).json()

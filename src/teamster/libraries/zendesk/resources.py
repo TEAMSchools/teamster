@@ -9,6 +9,8 @@ from teamster.libraries.http.resources import BaseHTTPResource
 
 
 class ZendeskResource(BaseHTTPResource):
+    """HTTP resource for the Zendesk customer support REST API."""
+
     subdomain: str
     email: str
     token: str
@@ -16,6 +18,7 @@ class ZendeskResource(BaseHTTPResource):
     api_version: str = "v2"
 
     def _setup_session(self) -> None:
+        """Configure base URL and HTTP Basic auth with email/token credentials."""
         self._base_url = f"https://{self.subdomain}.zendesk.com/api"
         self._session.headers["Content-Type"] = "application/json"
         self._session.auth = HTTPBasicAuth(
@@ -23,6 +26,7 @@ class ZendeskResource(BaseHTTPResource):
         )
 
     def _get_url(self, *parts: str) -> str:
+        """Return ``/<subdomain>.zendesk.com/api/<api_version>/<parts>`` URL."""
         return (
             self._base_url
             + "/"
@@ -47,6 +51,15 @@ class ZendeskResource(BaseHTTPResource):
         return super()._get_retry_after(response)
 
     def list(self, resource: str, **kwargs) -> list[dict[str, Any]]:
+        """Return all records for a resource using cursor-based pagination.
+
+        Args:
+            resource: API resource name used as the URL segment and response key.
+            **kwargs: Supports ``params`` dict merged into initial page params.
+
+        Returns:
+            Flat list of all record dicts across all pages.
+        """
         all_data: list[dict[str, Any]] = []
 
         def fetch_page(params: dict) -> Response:

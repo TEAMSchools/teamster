@@ -10,12 +10,15 @@ from teamster.libraries.http.resources import BaseHTTPResource
 
 
 class CoupaResource(BaseHTTPResource):
+    """HTTP resource for the Coupa procurement and spend management API."""
+
     instance_url: str
     client_id: str
     client_secret: str
     scope: list[str]
 
     def _setup_session(self) -> None:
+        """Configure base URL and obtain an OAuth2 Bearer token via client credentials."""
         self._base_url = f"https://{self.instance_url}"
 
         self._session = OAuth2Session(
@@ -33,12 +36,23 @@ class CoupaResource(BaseHTTPResource):
 
     @property
     def oauth_session(self) -> OAuth2Session:
+        """Return the underlying OAuth2Session for direct use."""
         return cast(OAuth2Session, self._session)
 
     def _get_url(self, *parts: str) -> str:
+        """Return ``/<instance_url>/api/<parts>`` URL."""
         return self._base_url + "/api/" + "/".join(parts)
 
     def list(self, resource: str, **kwargs) -> list[dict[str, Any]]:
+        """Return all records for a resource using offset-based pagination.
+
+        Args:
+            resource: API resource path segment.
+            **kwargs: Additional keyword arguments forwarded to ``get``.
+
+        Returns:
+            Flat list of all record dicts across all pages.
+        """
         all_data: list[dict[str, Any]] = []
 
         def fetch_page(params: dict) -> Response:

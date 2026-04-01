@@ -10,6 +10,8 @@ from teamster.libraries.http.resources import BaseHTTPResource
 
 
 class AdpWorkforceNowResource(BaseHTTPResource):
+    """HTTP resource for the ADP Workforce Now REST API using mutual TLS OAuth2."""
+
     client_id: str
     client_secret: str
     cert_filepath: str
@@ -17,6 +19,7 @@ class AdpWorkforceNowResource(BaseHTTPResource):
     masked: bool = True
 
     def _setup_session(self) -> None:
+        """Configure mutual TLS, obtain an OAuth2 Bearer token, and set base URL."""
         self._base_url = "https://api.adp.com"
 
         self._session = OAuth2Session(
@@ -39,11 +42,21 @@ class AdpWorkforceNowResource(BaseHTTPResource):
 
     @property
     def oauth_session(self) -> OAuth2Session:
+        """Return the underlying OAuth2Session for direct use."""
         return cast(OAuth2Session, self._session)
 
     def get_records(
         self, endpoint: str, params: dict | None = None
     ) -> list[dict[str, Any]]:
+        """Return all records for an endpoint using offset-based pagination.
+
+        Args:
+            endpoint: API endpoint path (last segment used as the response key).
+            params: Optional base query parameters merged with pagination params.
+
+        Returns:
+            Flat list of all record dicts across all pages.
+        """
         endpoint_name = endpoint.split("/")[-1]
 
         if params is None:

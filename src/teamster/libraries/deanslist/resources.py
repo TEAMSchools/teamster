@@ -12,6 +12,8 @@ from teamster.libraries.http.resources import BaseHTTPResource
 
 
 class DeansListResource(BaseHTTPResource):
+    """HTTP resource for the DeansList behavior management API, keyed per school."""
+
     subdomain: str
     api_key_map: str
 
@@ -19,6 +21,7 @@ class DeansListResource(BaseHTTPResource):
     _current_school_id: int = PrivateAttr(default=0)
 
     def _setup_session(self) -> None:
+        """Configure base URL and load the school-to-API-key mapping from YAML."""
         self._base_url = f"https://{self.subdomain}.deanslistsoftware.com/api"
 
         with open(self.api_key_map) as f:
@@ -69,6 +72,20 @@ class DeansListResource(BaseHTTPResource):
         *args: str,
         **kwargs,
     ) -> tuple[int, list[dict[str, Any]]]:
+        """Fetch a single page of records for one school, including deleted rows.
+
+        Args:
+            api_version: API version segment (e.g. ``"v1"``, ``"beta"``).
+            endpoint: API endpoint name.
+            school_id: School ID used to look up the correct API key.
+            params: Query parameters forwarded to the request.
+            *args: Additional URL path segments.
+            **kwargs: Additional keyword arguments forwarded to ``_request_with_cleanup``.
+
+        Returns:
+            A ``(total_row_count, records)`` tuple where records includes both
+            active and deleted rows (deleted rows have ``is_deleted=True``).
+        """
         self._current_school_id = school_id
         try:
             self._log.info(
@@ -109,6 +126,24 @@ class DeansListResource(BaseHTTPResource):
         *args: str,
         **kwargs,
     ) -> tuple[int, list[dict[str, Any]] | pathlib.Path]:
+        """Fetch all pages for one school, optionally streaming to an Avro file.
+
+        Args:
+            api_version: API version segment (e.g. ``"v1"``, ``"beta"``).
+            endpoint: API endpoint name.
+            school_id: School ID used to look up the correct API key.
+            params: Query parameters forwarded to each page request.
+            page_size: Number of records per page.
+            avro_schema: If provided, records are written incrementally to an
+                Avro file and the file path is returned instead of a list.
+            *args: Additional URL path segments.
+            **kwargs: Additional keyword arguments forwarded to ``_request_with_cleanup``.
+
+        Returns:
+            A ``(total_count, records_or_path)`` tuple. When ``avro_schema`` is
+            given, the second element is the ``pathlib.Path`` to the Avro file;
+            otherwise it is a flat list of all record dicts.
+        """
         self._current_school_id = school_id
         try:
             data_filepath = pathlib.Path(
