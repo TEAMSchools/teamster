@@ -110,6 +110,7 @@ daemon_health, gke_critical_events, gke_daemon_pod_storms.
 | Backoff limit      | "Job has reached the specified backoff limit", "BackoffLimitExceeded"      |
 | Network/SSH        | "ssh:", "SSH tunnel", "port 22", "port 5484"                               |
 | Connection failure | "Connection timed out/refused", "gRPC Error code: UNAVAILABLE" (no "ssh:") |
+| Agent API timeout  | "ReadTimeout" + `*.agent.dagster.cloud` in agent errors (not run logs)     |
 | Code error         | ExecutionStepFailureEvent with Python traceback                            |
 | Infra timeout      | "run worker failed" without scheduling/OOM/K8s API signals                 |
 | Unclassified       | No match -- include full message, flag for review                          |
