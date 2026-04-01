@@ -118,11 +118,9 @@ def adp_workforce_now_workers_update(
         if mail != mail_adp or mail_adp is None:
             context.log.info(f"{employee_number}\twork_email\t{mail_adp} => {mail}")
             try:
-                adp_wfn.post_action(
-                    endpoint="events/hr/v1/worker",
-                    subresource="business-communication.email",
-                    verb="change",
-                    payload={
+                adp_wfn.post(
+                    "events/hr/v1/worker.business-communication.email.change",
+                    json={
                         "events": [
                             get_event_payload(
                                 associate_oid=associate_oid,
@@ -145,11 +143,9 @@ def adp_workforce_now_workers_update(
             )
 
             try:
-                adp_wfn.post_action(
-                    endpoint="events/hr/v1/worker",
-                    subresource="custom-field.string",
-                    verb="change",
-                    payload={
+                adp_wfn.post(
+                    "events/hr/v1/worker.custom-field.string.change",
+                    json={
                         "events": [
                             get_event_payload(
                                 associate_oid=associate_oid,

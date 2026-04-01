@@ -522,15 +522,15 @@ class TestAdpWorkforceNowResource:
             == "https://api.adp.com/hr/v2/workers"
         )
 
-    def test_post_action_url_pattern(self):
+    def test_post_delegates_with_dotted_path(self):
         resource = self._make()
         with patch.object(AdpWorkforceNowResource, "_request") as mock:
             mock.return_value = MagicMock(status_code=200)
-            resource.post_action("hr/v2/workers", "request", "submit", payload={})
+            resource.post("events/hr/v1/worker.request.submit", json={"events": []})
             mock.assert_called_once_with(
                 "POST",
-                "https://api.adp.com/hr/v2/workers.request.submit",
-                json={},
+                "https://api.adp.com/events/hr/v1/worker.request.submit",
+                json={"events": []},
             )
 
 

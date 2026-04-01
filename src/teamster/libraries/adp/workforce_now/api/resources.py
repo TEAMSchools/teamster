@@ -41,16 +41,6 @@ class AdpWorkforceNowResource(BaseHTTPResource):
     def oauth_session(self) -> OAuth2Session:
         return cast(OAuth2Session, self._session)
 
-    def post_action(
-        self, endpoint: str, subresource: str, verb: str, payload: dict
-    ) -> Response:
-        """ADP-specific POST URL pattern: {endpoint}.{subresource}.{verb}."""
-        return self._request(
-            "POST",
-            f"{self._base_url}/{endpoint}.{subresource}.{verb}",
-            json=payload,
-        )
-
     def get_records(
         self, endpoint: str, params: dict | None = None
     ) -> list[dict[str, Any]]:
