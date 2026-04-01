@@ -7,6 +7,9 @@ from requests import Session
 from requests.exceptions import HTTPError
 from requests.models import Response as RealResponse
 
+from teamster.libraries.adp.workforce_now.api.resources import (
+    AdpWorkforceNowResource,
+)
 from teamster.libraries.coupa.resources import CoupaResource
 from teamster.libraries.http.resources import BaseHTTPResource
 from teamster.libraries.knowbe4.resources import KnowBe4Resource
@@ -486,3 +489,50 @@ class TestGrowResource:
             resource._get_url("schools", "123")
             == "https://grow-api.leveldata.com/external/schools/123"
         )
+
+
+class TestAdpWorkforceNowResource:
+    def _make(self) -> AdpWorkforceNowResource:
+        resource = AdpWorkforceNowResource(
+            client_id="cid",
+            client_secret="csec",
+            cert_filepath="/tmp/cert.pem",
+            key_filepath="/tmp/key.pem",
+        )
+        ctx = MagicMock()
+        ctx.log = MagicMock()
+        with patch(
+            "teamster.libraries.adp.workforce_now.api.resources.OAuth2Session"
+        ) as mock_oauth:
+            mock_session = MagicMock()
+            mock_session.fetch_token.return_value = {"access_token": "test-token"}
+            mock_session.headers = {}
+            mock_oauth.return_value = mock_session
+            resource.setup_for_execution(ctx)
+        return resource
+
+    def test_setup_sets_bearer_header(self):
+        resource = self._make()
+        assert "Bearer" in str(resource._session.headers.get("Authorization", ""))
+
+    def test_setup_sets_cert(self):
+        resource = self._make()
+        assert resource._session.cert == ("/tmp/cert.pem", "/tmp/key.pem")
+
+    def test_get_url(self):
+        resource = self._make()
+        assert (
+            resource._get_url("hr", "v2", "workers")
+            == "https://api.adp.com/hr/v2/workers"
+        )
+
+    def test_post_action_url_pattern(self):
+        resource = self._make()
+        with patch.object(AdpWorkforceNowResource, "_request") as mock:
+            mock.return_value = MagicMock(status_code=200)
+            resource.post_action("hr/v2/workers", "request", "submit", payload={})
+            mock.assert_called_once_with(
+                "POST",
+                "https://api.adp.com/hr/v2/workers.request.submit",
+                json={},
+            )

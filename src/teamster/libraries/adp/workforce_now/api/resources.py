@@ -1,107 +1,85 @@
-import time
+from typing import Any, cast
 
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
-from dagster_shared import check
 from oauthlib.oauth2 import BackendApplicationClient
-from pydantic import PrivateAttr
 from requests import Response
 from requests.auth import HTTPBasicAuth
-from requests.exceptions import HTTPError
 from requests_oauthlib import OAuth2Session
 
+from teamster.libraries.http.pagination import paginate_offset
+from teamster.libraries.http.resources import BaseHTTPResource
 
-class AdpWorkforceNowResource(ConfigurableResource):
+
+class AdpWorkforceNowResource(BaseHTTPResource):
     client_id: str
     client_secret: str
     cert_filepath: str
     key_filepath: str
     masked: bool = True
 
-    _service_root: str = PrivateAttr(default="https://api.adp.com")
-    _session: OAuth2Session = PrivateAttr()
-    _log: DagsterLogManager = PrivateAttr()
+    def _setup_session(self) -> None:
+        self._base_url = "https://api.adp.com"
 
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = check.not_none(value=context.log)
-
-        # instantiate client
         self._session = OAuth2Session(
             client=BackendApplicationClient(client_id=self.client_id)
         )
         self._session.cert = (self.cert_filepath, self.key_filepath)
 
-        # authorize client
         token_dict = self._session.fetch_token(
-            # trunk-ignore(bandit/B106)
+            # trunk-ignore(bandit/B106): token URL, not a password
             token_url="https://accounts.adp.com/auth/oauth/v2/token",
             auth=HTTPBasicAuth(username=self.client_id, password=self.client_secret),
         )
 
-        access_token = token_dict.get("access_token")
-
-        self._session.headers["Authorization"] = f"Bearer {access_token}"
+        self._session.headers["Authorization"] = (
+            f"Bearer {token_dict.get('access_token')}"
+        )
 
         if not self.masked:
             self._session.headers["Accept"] = "application/json;masked=false"
 
-    def _request(self, method: str, url: str, **kwargs) -> Response:
-        response = self._session.request(method=method, url=url, **kwargs)
+    @property
+    def oauth_session(self) -> OAuth2Session:
+        return cast(OAuth2Session, self._session)
 
-        try:
-            response.raise_for_status()
-
-            # https://developers.adp.com/learn/key-concepts/access-tokens
-            # Your application should limit access to under 300 times in a 60 second
-            # period, with no more than 50 concurrent requests in any time. ADP will
-            # throttle your requests when this limit is exceeded. Then, return a
-            # response of HTTP 429 for too many requests.
-            time.sleep(60 / 300)
-
-            return response
-        except HTTPError as e:
-            response_json = response.json()
-
-            self._log.error(msg=response_json)
-            raise Exception(response_json) from e
-
-    def post(
+    def post_action(
         self, endpoint: str, subresource: str, verb: str, payload: dict
     ) -> Response:
+        """ADP-specific POST URL pattern: {endpoint}.{subresource}.{verb}."""
         return self._request(
-            method="POST",
-            url=f"{self._service_root}/{endpoint}.{subresource}.{verb}",
+            "POST",
+            f"{self._base_url}/{endpoint}.{subresource}.{verb}",
             json=payload,
         )
 
-    def get(self, endpoint: str, params: dict | None = None) -> Response:
-        if params is None:
-            params = {}
-
-        return self._request(
-            method="GET", url=f"{self._service_root}/{endpoint}", params=params
-        )
-
-    def get_records(self, endpoint: str, params: dict | None = None) -> list[dict]:
-        page_size = 100
-        all_records = []
-
+    def get_records(
+        self, endpoint: str, params: dict | None = None
+    ) -> list[dict[str, Any]]:
         endpoint_name = endpoint.split("/")[-1]
 
         if params is None:
             params = {}
 
-        params.update({"$top": page_size, "$skip": 0})
+        all_records: list[dict[str, Any]] = []
 
-        while True:
-            self._log.debug(msg=params)
-            response = self.get(endpoint=endpoint, params=params)
+        def fetch_page(page_params: dict) -> Response:
+            merged = {**params, **page_params}
+            self._log.debug(msg=merged)
+            return self.get(endpoint, params=merged)
 
-            if response.status_code == 204:
-                break
+        def extract_records(resp: Response) -> list[dict[str, Any]]:
+            return resp.json()[endpoint_name]
 
-            response_json = response.json()[endpoint_name]
+        def is_last_page(resp: Response) -> bool:
+            return resp.status_code == 204
 
-            all_records.extend(response_json)
-            params.update({"$skip": params["$skip"] + page_size})
+        for page_records in paginate_offset(
+            fetch_page,
+            extract_records,
+            page_size=100,
+            offset_param="$skip",
+            limit_param="$top",
+            is_last_page=is_last_page,
+        ):
+            all_records.extend(page_records)
 
         return all_records
