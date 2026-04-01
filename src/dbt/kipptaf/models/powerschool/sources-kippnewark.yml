@@ -1,10 +1,6 @@
 sources:
   - name: kippnewark_powerschool
-    schema: |
-      {%- if target.name == 'staging' -%}z_dev_
-      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}z_dev_
-      {%- elif env_var('GITHUB_USER', '') != '' -%}zz_{{ env_var('GITHUB_USER') }}_
-      {%- endif -%}kippnewark_powerschool
+    schema: "{{ resolve_region_source_schema('kippnewark_powerschool') }}"
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
         config:

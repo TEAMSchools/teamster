@@ -1,5 +1,6 @@
 sources:
   - name: kippmiami_renlearn
+    schema: "{{ resolve_region_source_schema('kippmiami_renlearn') }}"
     tables:
       - name: stg_renlearn__accelerated_reader
         config:

@@ -1,11 +1,6 @@
 sources:
   - name: kippcamden_deanslist
-    schema: |
-      {%- if env_var('GITHUB_USER', '') != '' -%}
-      zz_{{ env_var('GITHUB_USER', '') }}_
-      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}
-      z_dev_
-      {%- endif -%}kippcamden_deanslist
+    schema: "{{ resolve_region_source_schema('kippcamden_deanslist') }}"
     tables:
       - name: stg_deanslist__behavior
         config:
