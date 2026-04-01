@@ -64,6 +64,17 @@
       "type": "shell",
       "command": "uv run dbt run-operation stage_external_sources --project-dir src/dbt/${input:dbtProject} --target ${input:dbtSxsTarget} --vars '{\"ext_full_refresh\": \"true\", \"cloud_storage_uri_base\": \"gs://teamster-${input:dbtProject}/dagster/${input:dbtProject}\"}' --args 'select: ${input:dbtSourceSelect}'",
       "problemMatcher": []
+    },
+    {
+      "label": "dbt: Generate Prod Manifests",
+      "type": "shell",
+      "command": "bash .vscode/scripts/post-merge.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
     }
   ],
   "inputs": [
