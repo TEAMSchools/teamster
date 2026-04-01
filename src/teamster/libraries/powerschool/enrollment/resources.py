@@ -1,70 +1,54 @@
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
-from dagster_shared import check
-from pydantic import PrivateAttr
-from requests import Response, Session
-from requests.exceptions import HTTPError
+from typing import Any
+
+from requests import Response
+
+from teamster.libraries.http.pagination import paginate_page
+from teamster.libraries.http.resources import BaseHTTPResource
 
 
-class PowerSchoolEnrollmentResource(ConfigurableResource):
+class PowerSchoolEnrollmentResource(BaseHTTPResource):
+    """HTTP resource for the PowerSchool Enrollment/Registration REST API."""
+
     api_key: str
     api_version: str = "v1"
     page_size: int = 50
 
-    _base_url: str = PrivateAttr(default="https://registration.powerschool.com/api")
-    _session: Session = PrivateAttr(default_factory=Session)
-    _log: DagsterLogManager = PrivateAttr()
-
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = check.not_none(value=context.log)
+    def _setup_session(self) -> None:
+        """Configure base URL and HTTP Basic auth with the API key."""
+        self._base_url = "https://registration.powerschool.com/api"
         self._session.auth = (self.api_key, "")
 
-    def _get_url(self, endpoint, *args):
-        if args:
-            return f"{self._base_url}/{self.api_version}/{endpoint}/{'/'.join(args)}"
-        else:
-            return f"{self._base_url}/{self.api_version}/{endpoint}"
+    def _get_url(self, *parts: str) -> str:
+        """Return ``/api/<api_version>/<parts>`` URL."""
+        return self._base_url + "/" + self.api_version + "/" + "/".join(parts)
 
-    def _request(self, method, url, **kwargs):
-        response = Response()
+    def list(self, endpoint: str, **kwargs) -> list[dict[str, Any]]:
+        """Return all records for an endpoint using page-based pagination.
 
-        try:
-            response = self._session.request(method=method, url=url, **kwargs)
+        Args:
+            endpoint: API endpoint path segment.
+            **kwargs: Additional keyword arguments forwarded to ``get``.
 
-            response.raise_for_status()
-            return response
-        except HTTPError as e:
-            self._log.exception(e)
-            raise HTTPError(response.text) from e
+        Returns:
+            Flat list of all record dicts across all pages.
+        """
+        all_records: list[dict[str, Any]] = []
 
-    def _parse_response(self, response):
-        return response.json()
+        def fetch_page(params: dict) -> Response:
+            return self.get(endpoint, params=params, **kwargs)
 
-    def get(self, endpoint, *args, **kwargs):
-        url = self._get_url(endpoint, *args)
-
-        response = self._request(method="GET", url=url, **kwargs)
-
-        return self._parse_response(response)
-
-    def list(self, endpoint, **kwargs) -> list[dict]:
-        page = 1
-        all_records = []
-
-        params = {"pagesize": self.page_size}
-
-        while True:
-            params.update({"page": page})
-
-            metadata, records = self.get(
-                endpoint=endpoint, params=params, **kwargs
-            ).values()
-
+        def extract_records(resp: Response) -> list[dict[str, Any]]:
+            response_json = resp.json()
+            metadata, records = response_json.values()
             self._log.debug(metadata)
-            all_records.extend(records)
+            return records
 
-            if page == metadata["pageCount"]:
-                break
-            else:
-                page += 1
+        for page_records in paginate_page(
+            fetch_page,
+            extract_records,
+            page_size=self.page_size,
+            size_param="pagesize",
+        ):
+            all_records.extend(page_records)
 
         return all_records

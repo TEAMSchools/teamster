@@ -1,67 +1,52 @@
-import time
+from typing import Any
 
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
-from dagster_shared import check
-from pydantic import PrivateAttr
-from requests import HTTPError, Response, Session
+from requests import Response
+
+from teamster.libraries.http.pagination import paginate_page
+from teamster.libraries.http.resources import BaseHTTPResource
 
 
-class KnowBe4Resource(ConfigurableResource):
+class KnowBe4Resource(BaseHTTPResource):
+    """HTTP resource for the KnowBe4 security awareness training API."""
+
     api_key: str
     server: str
     page_size: int = 100
 
-    _service_root: str = PrivateAttr(default="https://{0}.api.knowbe4.com")
-    _session: Session = PrivateAttr(default_factory=Session)
-    _log: DagsterLogManager = PrivateAttr()
-
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = check.not_none(value=context.log)
-        self._service_root = self._service_root.format(self.server)
+    def _setup_session(self) -> None:
+        """Configure base URL for the regional server and Bearer token auth."""
+        self._base_url = f"https://{self.server}.api.knowbe4.com"
         self._session.headers["Authorization"] = f"Bearer {self.api_key}"
 
-    def _get_url(self, resource: str, id: int | None, api_version: str = "v1") -> str:
-        return f"{self._service_root}/{api_version}/{resource}" + (
-            f"/{id}" if id else ""
-        )
+    def _get_url(self, *parts: str) -> str:
+        """Return ``/<server>.api.knowbe4.com/v1/<parts>`` URL."""
+        return self._base_url + "/v1/" + "/".join(parts)
 
-    def _request(
-        self, method: str, resource: str, id: int | None, **kwargs
-    ) -> Response:
-        url = self._get_url(resource=resource, id=id)
+    def list(self, resource: str, **kwargs) -> list[dict[str, Any]]:
+        """Return all records for a resource using page-based pagination.
 
-        self._log.debug(msg=f"{method} {url}\n{kwargs}")
-        response = self._session.request(method=method, url=url, **kwargs)
+        Args:
+            resource: API resource path segment.
+            **kwargs: Ignored; reserved for interface compatibility.
 
-        try:
-            response.raise_for_status()
-            return response
-        except HTTPError as e:
-            self._log.error(response.text)
-            raise e
+        Returns:
+            Flat list of all record dicts across all pages.
+        """
+        all_data: list[dict[str, Any]] = []
 
-    def get(self, resource: str, id: int | None = None, **kwargs) -> Response:
-        return self._request(method="GET", resource=resource, id=id, **kwargs)
+        def fetch_page(params: dict) -> Response:
+            return self.get(resource, params=params)
 
-    def list(self, resource: str, **kwargs) -> list[dict]:
-        params = {"per_page": self.page_size} | kwargs.get("params", {})
+        def extract_records(resp: Response) -> list[dict[str, Any]]:
+            return resp.json()
 
-        all_data = []
-        page = 1
+        for page_records in paginate_page(
+            fetch_page,
+            extract_records,
+            page_size=self.page_size,
+            page_param="page",
+            size_param="per_page",
+        ):
+            all_data.extend(page_records)
 
-        while True:
-            data = self.get(resource=resource, params={"page": page, **params}).json()
-
-            if data:
-                all_data.extend(data)
-                page += 1
-            else:
-                return all_data
-
-            # https://developer.knowbe4.com/rest/reporting#tag/Rate-Limiting
-            # 2,000 requests per day plus the number of licensed users on your account.
-            # The APIs may only be accessed four times per second. The API burst limit
-            # is 50 requests per minute. Please note that the API bursts limits will
-            # start around five (5) minutes and the API daily limit starts around
-            # twenty-four (24) hours from the first API request.
-            time.sleep(1 / 4)
+        return all_data

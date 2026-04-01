@@ -119,10 +119,8 @@ def adp_workforce_now_workers_update(
             context.log.info(f"{employee_number}\twork_email\t{mail_adp} => {mail}")
             try:
                 adp_wfn.post(
-                    endpoint="events/hr/v1/worker",
-                    subresource="business-communication.email",
-                    verb="change",
-                    payload={
+                    "events/hr/v1/worker.business-communication.email.change",
+                    json={
                         "events": [
                             get_event_payload(
                                 associate_oid=associate_oid,
@@ -146,10 +144,8 @@ def adp_workforce_now_workers_update(
 
             try:
                 adp_wfn.post(
-                    endpoint="events/hr/v1/worker",
-                    subresource="custom-field.string",
-                    verb="change",
-                    payload={
+                    "events/hr/v1/worker.custom-field.string.change",
+                    json={
                         "events": [
                             get_event_payload(
                                 associate_oid=associate_oid,

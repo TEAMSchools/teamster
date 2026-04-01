@@ -1,118 +1,85 @@
 import time
+from typing import Any
 
-from dagster import ConfigurableResource, InitResourceContext
-from dagster_shared import check
-from pydantic import PrivateAttr
-from requests import HTTPError, Response, Session
+from requests import Response
 from requests.auth import HTTPBasicAuth
 
+from teamster.libraries.http.pagination import paginate_cursor
+from teamster.libraries.http.resources import BaseHTTPResource
 
-class ZendeskResource(ConfigurableResource):
+
+class ZendeskResource(BaseHTTPResource):
+    """HTTP resource for the Zendesk customer support REST API."""
+
     subdomain: str
     email: str
     token: str
     page_size: int = 100
     api_version: str = "v2"
 
-    _service_root: str = PrivateAttr(default="https://{0}.zendesk.com/api")
-    _session: Session = PrivateAttr(default_factory=Session)
-
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = check.not_none(value=context.log)
-        self._service_root = self._service_root.format(self.subdomain)
-        self._session.headers = {"Content-Type": "application/json"}
+    def _setup_session(self) -> None:
+        """Configure base URL and HTTP Basic auth with email/token credentials."""
+        self._base_url = f"https://{self.subdomain}.zendesk.com/api"
+        self._session.headers["Content-Type"] = "application/json"
         self._session.auth = HTTPBasicAuth(
             username=f"{self.email}/token", password=self.token
         )
 
-    def _get_url(self, *args) -> str:
-        return f"{self._service_root}/{self.api_version}/" + "/".join(
-            str(a) for a in args if a
+    def _get_url(self, *parts: str) -> str:
+        """Return ``/<subdomain>.zendesk.com/api/<api_version>/<parts>`` URL."""
+        return (
+            self._base_url
+            + "/"
+            + self.api_version
+            + "/"
+            + "/".join(str(p) for p in parts if p)
         )
 
-    def _request(self, method: str, *args, **kwargs) -> Response:
-        url = self._get_url(*args)
-        params = kwargs.pop("params", {})
+    def _get_retry_after(self, response: Response) -> float | None:
+        """Parse Zendesk-specific rate-limit headers."""
+        remaining = response.headers.get("ratelimit-remaining")
+        if remaining is not None and int(remaining) <= 0:
+            reset = response.headers.get("ratelimit-reset", "60")
+            return max(float(reset) - time.time() + 1, 0.0)
 
-        self._log.debug(msg=f"{method}\t{url}\n{kwargs}")
-        response = self._session.request(
-            method=method, url=url, params=params, **kwargs
-        )
+        endpoint_header = response.headers.get("Zendesk-RateLimit-Endpoint", "")
+        if endpoint_header:
+            parts = endpoint_header.split(";")
+            if int(parts[1].split("=")[1]) <= 0:
+                return max(float(parts[2].split("=")[1]) - time.time() + 1, 0.0)
 
-        try:
-            response.raise_for_status()
-            return response
-        except HTTPError as e:
-            self._log.error(response.text)
-            raise e
+        return super()._get_retry_after(response)
 
-    def get(self, resource: str, id: str | int | None = None, **kwargs) -> Response:
-        return self._request("GET", resource, id, **kwargs)
+    def list(self, resource: str, **kwargs) -> list[dict[str, Any]]:
+        """Return all records for a resource using cursor-based pagination.
 
-    def put(
-        self,
-        resource: str,
-        id: str | int | None = None,
-        json: dict | None = None,
-        **kwargs,
-    ) -> Response:
-        if json is None:
-            json = {}
+        Args:
+            resource: API resource name used as the URL segment and response key.
+            **kwargs: Supports ``params`` dict merged into initial page params.
 
-        return self._request("PUT", resource, id, json=json, **kwargs)
+        Returns:
+            Flat list of all record dicts across all pages.
+        """
+        all_data: list[dict[str, Any]] = []
 
-    def post(self, resource: str, json: dict | None = None, **kwargs) -> Response:
-        if json is None:
-            json = {}
+        def fetch_page(params: dict) -> Response:
+            return self.get(resource, params=params)
 
-        return self._request("POST", resource, json=json, **kwargs)
+        def extract_records(resp: Response) -> list[dict[str, Any]]:
+            return resp.json()[resource]
 
-    def delete(self, resource: str, id: str | int | None = None, **kwargs) -> Response:
-        return self._request("DELETE", resource, id, **kwargs)
+        def extract_cursor(resp: Response) -> str | None:
+            meta = resp.json().get("meta", {})
+            if meta.get("has_more"):
+                return meta.get("after_cursor")
+            return None
 
-    def list(self, resource: str, **kwargs) -> list[dict]:
-        params = {"page[size]": self.page_size} | kwargs.get("params", {})
+        for page_records in paginate_cursor(
+            fetch_page,
+            extract_records,
+            extract_cursor,
+            page_params={"page[size]": self.page_size, **kwargs.get("params", {})},
+        ):
+            all_data.extend(page_records)
 
-        all_data = []
-
-        while True:
-            data = self.get(resource=resource, params=params).json()
-
-            if data["meta"]["has_more"]:
-                all_data.extend(data[resource])
-                params["page[after]"] = data["meta"]["after_cursor"]
-            else:
-                return all_data
-
-    def handle_limit_exceeded(self, limit_header_reset_time: float) -> bool:
-        wait_time = limit_header_reset_time - time.time() + 1  # Add 1 second buffer
-
-        print(f"Rate limit exceeded. Waiting for {wait_time} seconds...")
-        time.sleep(wait_time)
-
-        return False
-
-    def handle_rate_limits(self, response: Response) -> bool:
-        rate_limit_remaining = response.headers.get("ratelimit-remaining")
-
-        if not rate_limit_remaining:
-            return False
-
-        if int(rate_limit_remaining) <= 0:
-            return self.handle_limit_exceeded(
-                float(response.headers.get("ratelimit-reset", "60"))
-            )
-
-        rate_limit_endpoint: str = response.headers.get(
-            "Zendesk-RateLimit-Endpoint", ""
-        )
-
-        if not rate_limit_endpoint:
-            return True
-
-        parts = rate_limit_endpoint.split(";")
-
-        if int(parts[1].split("=")[1]) > 0:
-            return True
-
-        return self.handle_limit_exceeded(int(parts[2].split("=")[1]))
+        return all_data

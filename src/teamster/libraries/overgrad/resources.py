@@ -1,75 +1,55 @@
-import time
+from typing import Any
 
-from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
-from dagster_shared import check
-from pydantic import PrivateAttr
-from requests import Response, Session
-from requests.exceptions import HTTPError
+from requests import Response
+
+from teamster.libraries.http.pagination import paginate_page
+from teamster.libraries.http.resources import BaseHTTPResource
 
 
-class OvergradResource(ConfigurableResource):
+class OvergradResource(BaseHTTPResource):
+    """HTTP resource for the Overgrad college counseling platform API."""
+
     api_key: str
     api_version: str = "v1"
     page_limit: int = 20
-    request_timeout: float = 60.0
 
-    _base_url: str = PrivateAttr(default="https://api.overgrad.com/api")
-    _session: Session = PrivateAttr(default_factory=Session)
-    _log: DagsterLogManager = PrivateAttr()
-
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._log = check.not_none(value=context.log)
+    def _setup_session(self) -> None:
+        """Configure base URL and ApiKey header auth."""
+        self._base_url = "https://api.overgrad.com/api"
         self._session.headers["ApiKey"] = self.api_key
 
-    def _get_url(self, path: str, *args: str) -> str:
-        versioned_url = f"{self._base_url}/{self.api_version}"
+    def _get_url(self, *parts: str) -> str:
+        """Return ``/api/<api_version>/<parts>`` URL."""
+        return self._base_url + "/" + self.api_version + "/" + "/".join(parts)
 
-        if args:
-            return f"{versioned_url}/{path}/{'/'.join(args)}"
-        else:
-            return f"{versioned_url}/{path}"
+    def list(self, path: str, *args: str, **kwargs) -> list[dict[str, Any]]:
+        """Return all records for an endpoint using page-based pagination.
 
-    # TODO: use exponential backoff
-    def _request(self, method: str, url: str, **kwargs) -> Response:
-        response = self._session.request(
-            method=method, url=url, timeout=self.request_timeout, **kwargs
-        )
+        Args:
+            path: API endpoint path segment.
+            *args: Additional path segments appended to the URL.
+            **kwargs: Additional keyword arguments forwarded to ``get``.
 
-        try:
-            response.raise_for_status()
+        Returns:
+            Flat list of all record dicts from the ``data`` key across all pages.
+        """
+        all_data: list[dict[str, Any]] = []
 
-            return response
-        except HTTPError as e:
-            self._log.exception(e)
-            raise HTTPError(response.text) from e
+        def fetch_page(params: dict) -> Response:
+            return self.get(path, *args, params=params, **kwargs)
 
-    def get(self, path: str, *args: str, **kwargs) -> Response:
-        url = self._get_url(path, *args)
-        self._log.debug(f"GET: {url}")
+        def extract_records(resp: Response) -> list[dict[str, Any]]:
+            response_json = resp.json()
+            self._log.debug({k: v for k, v in response_json.items() if k != "data"})
+            return response_json["data"]
 
-        return self._request(method="GET", url=url, **kwargs)
+        for page_records in paginate_page(
+            fetch_page,
+            extract_records,
+            page_size=self.page_limit,
+            page_param="page",
+            size_param="limit",
+        ):
+            all_data.extend(page_records)
 
-    def list(self, path: str, *args: str, **kwargs) -> list[dict]:
-        kwargs["params"] = {"limit": self.page_limit}
-
-        page = 1
-        data = []
-        while True:
-            kwargs["params"].update({"page": page})
-
-            response_json: dict = self.get(path, *args, **kwargs).json()
-
-            data.extend(response_json.pop("data"))
-            self._log.debug(response_json)
-
-            if page == response_json["total_pages"]:
-                break
-            else:
-                page += 1
-
-                # Overgrad's API limits users to making 60 requests per minute and 1000
-                # requests per hour
-                # - increased past 1 req/sec becase we still get 429 errors
-                time.sleep(1.5)
-
-        return data
+        return all_data
