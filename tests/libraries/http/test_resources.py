@@ -384,6 +384,7 @@ class TestKnowBe4Resource:
         assert "us.api.knowbe4.com" in resource._base_url
 
 
+from teamster.libraries.coupa.resources import CoupaResource
 from teamster.libraries.zendesk.resources import ZendeskResource
 
 
@@ -417,3 +418,33 @@ class TestZendeskResource:
         result = resource._get_retry_after(resp)
         assert result is not None
         assert result > 0
+
+
+class TestCoupaResource:
+    def _make(self) -> CoupaResource:
+        resource = CoupaResource(
+            instance_url="test.coupahost.com",
+            client_id="cid",
+            client_secret="csec",
+            scope=["core.read"],
+        )
+        ctx = MagicMock()
+        ctx.log = MagicMock()
+        with patch("teamster.libraries.coupa.resources.OAuth2Session") as mock_oauth:
+            mock_session = MagicMock()
+            mock_session.fetch_token.return_value = {"access_token": "test-token"}
+            mock_session.headers = {}
+            mock_oauth.return_value = mock_session
+            resource.setup_for_execution(ctx)
+        return resource
+
+    def test_setup_sets_bearer_header(self):
+        resource = self._make()
+        assert "Bearer" in resource._session.headers.get("Authorization", "")
+
+    def test_get_url(self):
+        resource = self._make()
+        assert (
+            resource._get_url("purchase_orders")
+            == "https://test.coupahost.com/api/purchase_orders"
+        )
