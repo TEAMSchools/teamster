@@ -267,6 +267,9 @@ class TestErrorHandling:
         assert result is None
 
 
+from teamster.libraries.powerschool.enrollment.resources import (
+    PowerSchoolEnrollmentResource,
+)
 from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
 
 
@@ -301,3 +304,30 @@ class TestSmartRecruitersResource:
             with patch("teamster.libraries.http.resources.time.sleep"):
                 result = resource._request("GET", "https://example.com")
                 assert result.status_code == 200
+
+
+class TestPowerSchoolEnrollmentResource:
+    def _make(self) -> PowerSchoolEnrollmentResource:
+        resource = PowerSchoolEnrollmentResource(api_key="test-key")
+        ctx = MagicMock()
+        ctx.log = MagicMock()
+        resource.setup_for_execution(ctx)
+        return resource
+
+    def test_setup_sets_basic_auth(self):
+        resource = self._make()
+        assert resource._session.auth == ("test-key", "")
+
+    def test_get_url_with_version(self):
+        resource = self._make()
+        assert (
+            resource._get_url("schools")
+            == "https://registration.powerschool.com/api/v1/schools"
+        )
+
+    def test_get_url_with_extra_parts(self):
+        resource = self._make()
+        assert (
+            resource._get_url("schools", "123")
+            == "https://registration.powerschool.com/api/v1/schools/123"
+        )
