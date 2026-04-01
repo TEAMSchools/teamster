@@ -67,6 +67,10 @@ from 1Password at container start.
 
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
 
+- **CLAUDE.md edits**: Every addition must be a net-value-add over the tokens it
+  consumes. Omit human-only context (motivation, rationale, history) — only
+  include what changes Claude's behavior in a future session.
+
 ## Architecture
 
 This file is a **router** — it contains project-wide conventions, then routes to
