@@ -238,6 +238,20 @@ workspace:
     branchDeployments:
       ttlSeconds: 900
 
+  onlyAllowUserDefinedK8sConfigFields:
+    containerConfig:
+      resources: true
+      env: true
+    podSpecConfig:
+      nodeSelector: true
+      affinity: true
+    podTemplateSpecMetadata:
+      annotations: true
+    jobSpecConfig:
+      ttlSecondsAfterFinished: true
+    jobMetadata:
+      annotations: true
+
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ########################################################################################
