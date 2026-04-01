@@ -3,7 +3,7 @@ kipppaterson:
   outputs:
     defer:
       type: bigquery
-      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kipppaterson
+      schema: zz_dagster_kipppaterson
       method: oauth
       project: teamster-332318
       threads: 40

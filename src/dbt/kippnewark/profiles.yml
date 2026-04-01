@@ -3,7 +3,7 @@ kippnewark:
   outputs:
     defer:
       type: bigquery
-      schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kippnewark
+      schema: zz_dagster_kippnewark
       method: oauth
       project: teamster-332318
       threads: 40
