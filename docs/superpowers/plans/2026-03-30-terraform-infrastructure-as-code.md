@@ -10,10 +10,10 @@ with import blocks for all existing resources, replacing `.gcloud/` and `.k8s/`
 shell scripts.
 
 **Architecture:** Module-per-domain structure under `terraform/` at the repo
-root. A single root module composes 8 child modules (bootstrap, gke, gcs,
-bigquery, artifact_registry, iam, k8s, github). GCS remote state with a
-bootstrap module for the state bucket. All existing resources are imported via
-declarative `import` blocks.
+root. A single root module composes 9 child modules (bootstrap, gke, gcs,
+bigquery, artifact_registry, iam, k8s, github, alerting). GCS remote state with
+a bootstrap module for the state bucket. Existing resources are imported via
+declarative `import` blocks; `alerting/` creates new resources.
 
 **Tech Stack:** Terraform >= 1.5.0, Google provider (`hashicorp/google`), Google
 Beta provider (`hashicorp/google-beta`), Kubernetes provider
@@ -51,6 +51,7 @@ Each module has: `main.tf`, `variables.tf`, `outputs.tf`
 | `iam/`               | Service accounts, Workload Identity Federation, IAM bindings, domain-wide delegation docs             |
 | `k8s/`               | Kubernetes namespace, service account, Helm releases (Dagster + 1Password), OnePasswordItem manifests |
 | `github/`            | Repository settings, branch protection, Actions secrets/variables                                     |
+| `alerting/`          | Cloud Monitoring alert policies for GKE (new resources, no import)                                    |
 
 ### Other files
 
@@ -1286,7 +1287,89 @@ git commit -m "feat(terraform): add GitHub module with branch protection and Act
 
 ---
 
-## Task 10: Root module composition (main.tf, outputs.tf, imports.tf)
+## Task 10: Alerting module
+
+**Files:**
+
+- Create: `terraform/modules/alerting/main.tf`
+- Create: `terraform/modules/alerting/variables.tf`
+- Create: `terraform/modules/alerting/outputs.tf`
+
+> Unlike other modules, `alerting/` creates new resources — no import needed.
+> The notification channel type (Slack, email, PagerDuty) must be decided before
+> implementation. Alert policy details are specified in the
+> [design spec](../specs/2026-03-30-terraform-infrastructure-as-code-design.md)
+> under the `alerting/` module section. Moved here from the Dagster GKE best
+> practices spec (TEAMSchools/teamster#3539).
+
+- [ ] **Step 1: Decide notification channel type**
+
+This is a manual decision. Options: Slack webhook, email distribution list, or
+PagerDuty integration. The choice determines the
+`google_monitoring_notification_channel` resource type and configuration.
+
+- [ ] **Step 2: Create `terraform/modules/alerting/variables.tf`**
+
+```hcl
+variable "project_id" {
+  description = "GCP project ID"
+  type        = string
+}
+
+variable "namespace" {
+  description = "Kubernetes namespace to scope alerts to"
+  type        = string
+  default     = "dagster-cloud"
+}
+
+variable "notification_channel_ids" {
+  description = "List of notification channel IDs for alert policies"
+  type        = list(string)
+}
+```
+
+- [ ] **Step 3: Create `terraform/modules/alerting/main.tf`**
+
+Define 5 `google_monitoring_alert_policy` resources:
+
+1. Pod restart storm (> 3 restarts in 10 min for agent/code server pods)
+2. OOM kill (any `OOMKilled` container)
+3. PDB at limit (disruptions allowed = 0 for > 5 min)
+4. Pod stuck pending (> 5 min in namespace)
+5. Scale-up failure (`ScaleUpFailed` / `RESOURCE_POOL_EXHAUSTED`)
+
+Exact metric filters and condition thresholds will be determined during
+implementation by consulting the Cloud Monitoring API documentation and
+available GKE metrics.
+
+- [ ] **Step 4: Create `terraform/modules/alerting/outputs.tf`**
+
+```hcl
+output "alert_policy_ids" {
+  description = "Map of alert policy names to IDs"
+  value = {
+    pod_restart_storm = google_monitoring_alert_policy.pod_restart_storm.name
+    oom_kill          = google_monitoring_alert_policy.oom_kill.name
+    pdb_at_limit      = google_monitoring_alert_policy.pdb_at_limit.name
+    pod_stuck_pending = google_monitoring_alert_policy.pod_stuck_pending.name
+    scale_up_failure  = google_monitoring_alert_policy.scale_up_failure.name
+  }
+}
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add terraform/modules/alerting/
+git commit -m "feat(terraform): add alerting module with GKE monitoring policies"
+```
+
+---
+
+## Task 11: Root module composition (main.tf, outputs.tf, imports.tf)
+
+> **Note:** Task numbers 11-15 were renumbered from 10-14 after inserting the
+> alerting module (Task 10).
 
 **Files:**
 
@@ -1357,6 +1440,13 @@ module "github" {
   gcp_project_id     = var.project_id
   gcp_project_number = var.project_number
   gcp_region         = var.region
+}
+
+module "alerting" {
+  source = "./modules/alerting"
+
+  project_id               = var.project_id
+  notification_channel_ids = [] # TODO: populate after notification channel decision
 }
 
 # ---------------------------------------------------------------------------
@@ -2203,7 +2293,7 @@ git commit -m "feat(terraform): add root module composition and import blocks"
 
 ---
 
-## Task 11: terraform/README.md
+## Task 12: terraform/README.md
 
 **Files:**
 
@@ -2229,7 +2319,7 @@ git commit -m "docs(terraform): add README pointer to MkDocs site"
 
 ---
 
-## Task 12: MkDocs infrastructure documentation
+## Task 13: MkDocs infrastructure documentation
 
 **Files:**
 
@@ -2648,7 +2738,7 @@ git commit -m "docs: add infrastructure documentation to MkDocs site"
 
 ---
 
-## Task 13: Delete replaced files
+## Task 14: Delete replaced files
 
 **Files:**
 
@@ -2688,7 +2778,7 @@ git commit -m "chore: remove .gcloud/ and .k8s/ replaced by terraform modules"
 
 ---
 
-## Task 14: Final validation and reconciliation
+## Task 15: Final validation and reconciliation
 
 This task is manual and iterative. It cannot be fully scripted because
 `terraform plan` output depends on the actual state of GCP resources.

@@ -53,6 +53,7 @@ terraform/
     artifact_registry/   # Container image repository
     iam/                 # Service accounts, Workload Identity, role bindings
     k8s/                 # Kubernetes namespace, Helm releases, 1Password items
+    alerting/            # Cloud Monitoring alert policies for GKE
     github/              # Repository settings, branch protection, Actions secrets
 ```
 
@@ -185,6 +186,29 @@ Manages repository settings and CI/CD configuration.
 | `github_actions_secret`    | `GCP_PROJECT_ID`, `GCP_PROJECT_NUMBER`, `DAGSTER_ORGANIZATION_ID`, etc.    |
 | `github_actions_variable`  | Non-sensitive CI variables                                                 |
 
+### `alerting/`
+
+Cloud Monitoring alert policies for GKE operational visibility. Motivated by a
+sustained GCE STOCKOUT on 2026-03-30/31 that was invisible until manually
+investigated via GKE event logs. Moved here from the
+[Dagster GKE best practices spec](2026-03-27-dagster-gke-best-practices-design.md)
+(TEAMSchools/teamster#3539 — relative link resolves after both branches merge to
+`main`).
+
+| Resource                                 | Details                                                        |
+| ---------------------------------------- | -------------------------------------------------------------- |
+| `google_monitoring_alert_policy`         | Pod restart storm (> 3 restarts in 10 min, agent/code servers) |
+| `google_monitoring_alert_policy`         | OOM kill (any `OOMKilled` container)                           |
+| `google_monitoring_alert_policy`         | PDB at limit (disruptions allowed = 0 for > 5 min)             |
+| `google_monitoring_alert_policy`         | Pod stuck pending (> 5 min in `dagster-cloud` namespace)       |
+| `google_monitoring_alert_policy`         | Scale-up failure (`ScaleUpFailed` / `RESOURCE_POOL_EXHAUSTED`) |
+| `google_monitoring_notification_channel` | TBD (Slack webhook, email, or PagerDuty)                       |
+
+All policies scope to the `dagster-cloud` namespace. The notification channel
+will be determined during implementation. If multiple modules eventually need
+notifications, the channel resource may move to the root module as a shared
+resource.
+
 ## Import Strategy
 
 All resources are pre-existing. The migration approach is write-then-import:
@@ -203,8 +227,11 @@ Dependencies determine the order:
 5. `gke/` -- Autopilot cluster (no dependencies on other modules)
 6. `k8s/` -- namespace, Helm releases, 1Password items (depends on `gke/`)
 7. `github/` -- repo settings, secrets, branch protection (no GCP dependencies)
+8. `alerting/` -- Cloud Monitoring alert policies (no dependencies, new
+   resources)
 
-Steps 1-5 and 7 are independent. Step 6 must follow step 5.
+Steps 1-5, 7, and 8 are independent. Step 6 must follow step 5. Step 8 creates
+new resources (no import needed).
 
 After each import, run `terraform plan` and adjust `.tf` files until the plan
 shows no changes.
