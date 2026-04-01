@@ -3,7 +3,7 @@
 |                 | Status      |
 | --------------- | ----------- |
 | **Spec**        | APPROVED    |
-| **Plan**        | NOT STARTED |
+| **Plan**        | REVIEW      |
 | **Development** | NOT STARTED |
 
 ## Problem
