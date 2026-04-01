@@ -265,3 +265,39 @@ class TestErrorHandling:
         response = RealResponse()
         result = resource._get_retry_after(response)
         assert result is None
+
+
+from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
+
+
+class TestSmartRecruitersResource:
+    def _make(self) -> SmartRecruitersResource:
+        resource = SmartRecruitersResource(smart_token="test-token")
+        ctx = MagicMock()
+        ctx.log = MagicMock()
+        resource.setup_for_execution(ctx)
+        return resource
+
+    def test_setup_sets_smart_token_header(self):
+        resource = self._make()
+        assert resource._session.headers["X-SmartToken"] == "test-token"
+
+    def test_get_url(self):
+        resource = self._make()
+        assert (
+            resource._get_url("reporting", "reports")
+            == "https://api.smartrecruiters.com/reporting/reports"
+        )
+
+    def test_inherits_retry(self):
+        resource = self._make()
+        resp_500 = _make_error_response(500)
+        resp_200 = MagicMock(status_code=200)
+        resp_200.raise_for_status = MagicMock()
+        resp_200.elapsed.total_seconds.return_value = 0.1
+        with patch.object(
+            resource._session, "request", side_effect=[resp_500, resp_200]
+        ):
+            with patch("teamster.libraries.http.resources.time.sleep"):
+                result = resource._request("GET", "https://example.com")
+                assert result.status_code == 200
