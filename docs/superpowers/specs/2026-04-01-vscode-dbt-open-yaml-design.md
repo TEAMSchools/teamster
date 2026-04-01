@@ -91,6 +91,8 @@ model exists.
 Open User Keybindings (`Ctrl+K Ctrl+S`, then click `{}` in the top right) and
 add:
 
+**Linux / Windows** — `Ctrl+Shift+Y` is unbound by default:
+
 ```json
 {
   "key": "ctrl+shift+y",
@@ -99,8 +101,10 @@ add:
 }
 ```
 
-`Ctrl+Shift+Y` is unbound by default in VS Code on Linux and Windows; verify
-there is no conflict on macOS (`Cmd+Shift+Y` is used by Debug Console).
+**macOS** — `Cmd+Shift+Y` is reserved for Debug Console. No universal
+conflict-free alternative exists, so macOS users should choose their own
+preferred combo and add it to their User Keybindings using the same `"command"`
+and `"args"` values above.
 
 ---
 
