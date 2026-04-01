@@ -1,8 +1,8 @@
 sources:
   - name: iready
-    schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ var('iready_schema', project_name + '_iready') }}
+    schema:
+      "{{ resolve_source_schema(var('iready_schema', project_name ~ '_iready'))
+      }}"
     tables:
       - name: src_iready__diagnostic_results
         config:

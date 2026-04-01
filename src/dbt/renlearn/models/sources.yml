@@ -1,8 +1,8 @@
 sources:
   - name: renlearn
-    schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ var('renlearn_schema', project_name + '_renlearn') }}
+    schema:
+      "{{ resolve_source_schema(var('renlearn_schema', project_name ~
+      '_renlearn')) }}"
     tables:
       - name: src_renlearn__accelerated_reader
         config:

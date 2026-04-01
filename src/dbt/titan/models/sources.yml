@@ -1,8 +1,7 @@
 sources:
   - name: titan
-    schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ var('titan_schema', project_name + '_titan') }}
+    schema:
+      "{{ resolve_source_schema(var('titan_schema', project_name ~ '_titan')) }}"
     tables:
       - name: src_titan__person_data
         config:
