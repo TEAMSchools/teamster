@@ -498,7 +498,9 @@ Steps:
    each, the VS Code "Stage External Sources" task (replaces `dbt-sxs.py`),
    Power User `--defer` behavior, and the cross-project `--target dev-region`
    workflow. Add a nav entry in `mkdocs.yml`. Update `docs/guides/index.md`
-   routing table with the new page
+   routing table with the new page. Update `docs/guides/google-sheets.md` —
+   replace `scripts/dbt-sxs.py` verification section and bare
+   `stage_external_sources` commands with links to the new dbt development guide
 
 ### Naming changes
 
