@@ -2,6 +2,9 @@ name: kippcamden
 version: 1.0.0
 config-version: 2
 
+on-run-start:
+  - "{{ check_prod_guard() }}"
+
 profile: kippcamden
 
 model-paths: [models]
