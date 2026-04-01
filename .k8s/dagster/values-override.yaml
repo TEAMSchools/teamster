@@ -105,6 +105,14 @@ workspace:
         limits:
           cpu: 750m
           memory: 2.5Gi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1234
+        runAsGroup: 1234
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
@@ -170,6 +178,14 @@ workspace:
         limits:
           cpu: 750m
           memory: 2.5Gi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1234
+        runAsGroup: 1234
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
