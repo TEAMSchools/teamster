@@ -9,6 +9,7 @@ def paginate_cursor(
     extract_records: Callable[[Response], list[dict[str, Any]]],
     extract_cursor: Callable[[Response], str | None],
     page_params: dict | None = None,
+    cursor_param: str = "page[after]",
 ) -> Iterator[list[dict[str, Any]]]:
     """Cursor-based pagination. Stops when extract_cursor returns None.
 
@@ -18,6 +19,8 @@ def paginate_cursor(
         extract_cursor: Callable that extracts the next cursor from a Response,
             or None when there are no more pages.
         page_params: Optional initial query parameters to include in every request.
+        cursor_param: Query parameter name for the cursor. Defaults to
+            ``"page[after]"``.
 
     Yields:
         Lists of record dicts, one list per page.
@@ -32,7 +35,7 @@ def paginate_cursor(
         cursor = extract_cursor(response)
         if cursor is None:
             break
-        params["page[after]"] = cursor
+        params[cursor_param] = cursor
 
 
 def paginate_offset(

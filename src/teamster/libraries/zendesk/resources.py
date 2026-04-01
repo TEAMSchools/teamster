@@ -36,13 +36,13 @@ class ZendeskResource(BaseHTTPResource):
         remaining = response.headers.get("ratelimit-remaining")
         if remaining is not None and int(remaining) <= 0:
             reset = response.headers.get("ratelimit-reset", "60")
-            return float(reset) - time.time() + 1
+            return max(float(reset) - time.time() + 1, 0.0)
 
         endpoint_header = response.headers.get("Zendesk-RateLimit-Endpoint", "")
         if endpoint_header:
             parts = endpoint_header.split(";")
             if int(parts[1].split("=")[1]) <= 0:
-                return float(parts[2].split("=")[1]) - time.time() + 1
+                return max(float(parts[2].split("=")[1]) - time.time() + 1, 0.0)
 
         return super()._get_retry_after(response)
 

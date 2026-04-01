@@ -54,7 +54,7 @@ class DeansListResource(BaseHTTPResource):
             params["apikey"] = self._api_key_map[self._current_school_id]
         return method, url, kwargs
 
-    def _post_request(self, kwargs: dict) -> None:
+    def _strip_api_key(self, kwargs: dict) -> None:
         """Strip apikey from params after request to avoid logging it."""
         params = kwargs.get("params", {})
         params.pop("apikey", None)
@@ -70,31 +70,33 @@ class DeansListResource(BaseHTTPResource):
         **kwargs,
     ) -> tuple[int, list[dict[str, Any]]]:
         self._current_school_id = school_id
-        self._log.info(
-            f"GET:\t{self._get_url(api_version, endpoint, *args)}"
-            f"\nSCHOOL_ID:\t{school_id}\nPARAMS:\t{params}"
-        )
+        try:
+            self._log.info(
+                f"GET:\t{self._get_url(api_version, endpoint, *args)}"
+                f"\nSCHOOL_ID:\t{school_id}\nPARAMS:\t{params}"
+            )
 
-        url = self._get_url(api_version, endpoint, *args)
-        response = self._request_with_cleanup("GET", url, params=params, **kwargs)
-        response_json: dict = response.json()
+            url = self._get_url(api_version, endpoint, *args)
+            response = self._request_with_cleanup("GET", url, params=params, **kwargs)
+            response_json: dict = response.json()
 
-        total_row_count = response_json.get("rowcount", 0) + response_json.get(
-            "deleted_rowcount", 0
-        )
+            total_row_count = response_json.get("rowcount", 0) + response_json.get(
+                "deleted_rowcount", 0
+            )
 
-        data = response_json.get("data", [])
-        if isinstance(data, dict):
-            data = [data]
-            total_row_count = 1
+            data = response_json.get("data", [])
+            if isinstance(data, dict):
+                data = [data]
+                total_row_count = 1
 
-        deleted_data = response_json.get("deleted_data", [])
-        for d in deleted_data:
-            d["is_deleted"] = True
+            deleted_data = response_json.get("deleted_data", [])
+            for d in deleted_data:
+                d["is_deleted"] = True
 
-        all_data = data + deleted_data
-        self._current_school_id = 0
-        return total_row_count, all_data
+            all_data = data + deleted_data
+            return total_row_count, all_data
+        finally:
+            self._current_school_id = 0
 
     def list(
         self,
@@ -108,68 +110,68 @@ class DeansListResource(BaseHTTPResource):
         **kwargs,
     ) -> tuple[int, list[dict[str, Any]] | pathlib.Path]:
         self._current_school_id = school_id
+        try:
+            data_filepath = pathlib.Path(
+                f"env/deanslist/{endpoint}/{params['UpdatedSince']}/{school_id}/data.avro"
+            ).absolute()
 
-        data_filepath = pathlib.Path(
-            f"env/deanslist/{endpoint}/{params['UpdatedSince']}/{school_id}/data.avro"
-        ).absolute()
+            url = self._get_url(api_version, endpoint, *args)
 
-        url = self._get_url(api_version, endpoint, *args)
+            all_data: list[dict[str, Any]] = []
+            total_count = 0
 
-        all_data: list[dict[str, Any]] = []
-        total_count = 0
+            if avro_schema is not None:
+                data_filepath.parent.mkdir(parents=True, exist_ok=True)
+                with data_filepath.open("wb") as fo:
+                    fastavro.writer(
+                        fo=fo,
+                        schema=avro_schema,
+                        records=[],
+                        codec="snappy",
+                        strict_allow_default=True,
+                    )
 
-        if avro_schema is not None:
-            data_filepath.parent.mkdir(parents=True, exist_ok=True)
-            with data_filepath.open("wb") as fo:
-                fastavro.writer(
-                    fo=fo,
-                    schema=avro_schema,
-                    records=[],
-                    codec="snappy",
-                    strict_allow_default=True,
-                )
+            fo = data_filepath.open("a+b") if avro_schema is not None else None
 
-        fo = data_filepath.open("a+b") if avro_schema is not None else None
+            def fetch_page(page_params: dict) -> Response:
+                merged = {**params, **page_params}
+                return self._request_with_cleanup("GET", url, params=merged, **kwargs)
 
-        def fetch_page(page_params: dict) -> Response:
-            merged = {**params, **page_params}
-            return self._request_with_cleanup("GET", url, params=merged, **kwargs)
+            def extract_records(resp: Response) -> list[dict[str, Any]]:
+                nonlocal total_count
+                response_json = resp.json()
+                total_count = response_json["total_count"]
+                return response_json["data"]
 
-        def extract_records(resp: Response) -> list[dict[str, Any]]:
-            nonlocal total_count
-            response_json = resp.json()
-            total_count = response_json["total_count"]
-            return response_json["data"]
+            for page_records in paginate_page(
+                fetch_page,
+                extract_records,
+                page_size=page_size,
+                page_param="page",
+                size_param="page_size",
+            ):
+                if avro_schema is not None and fo is not None:
+                    fastavro.writer(
+                        fo=fo,
+                        schema=avro_schema,
+                        records=page_records,
+                        codec="snappy",
+                        strict_allow_default=True,
+                    )
+                else:
+                    all_data.extend(page_records)
 
-        for page_records in paginate_page(
-            fetch_page,
-            extract_records,
-            page_size=page_size,
-            page_param="page",
-            size_param="page_size",
-        ):
-            if avro_schema is not None and fo is not None:
-                fastavro.writer(
-                    fo=fo,
-                    schema=avro_schema,
-                    records=page_records,
-                    codec="snappy",
-                    strict_allow_default=True,
-                )
-            else:
-                all_data.extend(page_records)
+            if fo is not None:
+                fo.close()
 
-        if fo is not None:
-            fo.close()
-
-        self._current_school_id = 0
-
-        if avro_schema is not None:
-            return int(total_count), data_filepath
-        return int(total_count), all_data
+            if avro_schema is not None:
+                return int(total_count), data_filepath
+            return int(total_count), all_data
+        finally:
+            self._current_school_id = 0
 
     def _request_with_cleanup(self, method: str, url: str, **kwargs) -> Response:
         """Call _request then strip apikey from params."""
         response = super()._request(method, url, **kwargs)
-        self._post_request(kwargs)
+        self._strip_api_key(kwargs)
         return response

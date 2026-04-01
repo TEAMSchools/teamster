@@ -63,6 +63,10 @@ class BaseHTTPResource(ConfigurableResource):
 
         Called by ``setup_for_execution``. Override in subclasses to configure
         the session before the first request is made. Default is a no-op.
+
+        Subclasses that replace ``self._session`` entirely (e.g. with an
+        ``OAuth2Session``) may do so directly — the default ``Session`` has no
+        open connections and does not need to be closed first.
         """
 
     def _prepare_request(

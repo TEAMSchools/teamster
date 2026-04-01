@@ -67,6 +67,8 @@ class AdpWorkforceNowResource(BaseHTTPResource):
             return self.get(endpoint, params=merged)
 
         def extract_records(resp: Response) -> list[dict[str, Any]]:
+            if resp.status_code == 204:
+                return []
             return resp.json()[endpoint_name]
 
         def is_last_page(resp: Response) -> bool:

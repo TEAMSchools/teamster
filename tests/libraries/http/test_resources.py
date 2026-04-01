@@ -249,19 +249,12 @@ class TestErrorHandling:
     def test_get_retry_after_parses_http_date(self):
         resource = _make_resource()
         response = RealResponse()
-        # HTTP-date 5 seconds in the future
-        datetime(2026, 4, 1, 12, 0, 5, tzinfo=timezone.utc)
         now_dt = datetime(2026, 4, 1, 12, 0, 0, tzinfo=timezone.utc)
-        http_date = "Tue, 01 Apr 2026 12:00:05 GMT"
-        response.headers["Retry-After"] = http_date
+        response.headers["Retry-After"] = "Tue, 01 Apr 2026 12:00:05 GMT"
         with patch("teamster.libraries.http.resources.datetime") as mock_dt:
             mock_dt.now.return_value = now_dt
-            # parsedate_to_datetime is a module-level function, not on datetime class
-            mock_dt.side_effect = None
             result = resource._get_retry_after(response)
-        # Should be approximately 5.0 seconds
-        assert result is not None
-        assert abs(result - 5.0) < 1.0
+        assert result == pytest.approx(5.0)
 
     def test_get_retry_after_parses_x_ratelimit_reset(self):
         resource = _make_resource()
