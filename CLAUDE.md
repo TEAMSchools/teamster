@@ -35,6 +35,8 @@ from 1Password at container start.
      `git worktree add .worktrees/<branch> <branch>` (branch exists from
      `gh issue develop`) or `git worktree add .worktrees/<branch> -b <branch>`
      (no issue).
+  3. **Before resuming work** on an existing branch, merge `main` to avoid
+     conflicts: `git fetch origin main && git merge origin/main`.
 
 - **Git**: Commit messages and branch names use
   [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch
