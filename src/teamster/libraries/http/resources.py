@@ -105,7 +105,7 @@ class BaseHTTPResource(ConfigurableResource):
                     reset_dt = parsedate_to_datetime(retry_after)
                     delta = (reset_dt - datetime.now(tz=timezone.utc)).total_seconds()
                     return max(delta, 0.0)
-                except Exception:
+                except Exception:  # trunk-ignore(bandit/B110): malformed header falls through to next check
                     pass
 
         x_reset = response.headers.get("X-RateLimit-Reset")

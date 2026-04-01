@@ -103,6 +103,7 @@ class TestRequestPipeline:
         mock_response.elapsed = timedelta(seconds=0.25)
         resource._session.request = MagicMock(return_value=mock_response)
         resource._request("GET", "https://example.com/api")
+        # trunk-ignore(pyright/reportAttributeAccessIssue): _log is a MagicMock
         resource._log.info.assert_called_once()
 
 
@@ -249,7 +250,7 @@ class TestErrorHandling:
         resource = _make_resource()
         response = RealResponse()
         # HTTP-date 5 seconds in the future
-        future_dt = datetime(2026, 4, 1, 12, 0, 5, tzinfo=timezone.utc)
+        datetime(2026, 4, 1, 12, 0, 5, tzinfo=timezone.utc)
         now_dt = datetime(2026, 4, 1, 12, 0, 0, tzinfo=timezone.utc)
         http_date = "Tue, 01 Apr 2026 12:00:05 GMT"
         response.headers["Retry-After"] = http_date
@@ -475,6 +476,7 @@ class TestGrowResource:
 
     def test_setup_sets_bearer_header(self):
         resource = self._make()
+        # trunk-ignore(pyright/reportOperatorIssue): headers values are str at runtime
         assert "Bearer test-token" in resource._session.headers.get("Authorization", "")
 
     def test_get_url(self):

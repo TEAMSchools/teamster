@@ -59,6 +59,7 @@ class DeansListResource(BaseHTTPResource):
         params = kwargs.get("params", {})
         params.pop("apikey", None)
 
+    # trunk-ignore(pyright/reportIncompatibleMethodOverride): DeansList API returns tuple, not Response
     def get(
         self,
         api_version: str,

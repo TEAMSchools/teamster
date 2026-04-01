@@ -45,6 +45,7 @@ class GrowResource(BaseHTTPResource):
     def _get_url(self, *parts: str) -> str:
         return self._base_url + "/external/" + "/".join(parts)
 
+    # trunk-ignore(pyright/reportIncompatibleMethodOverride): Grow API returns dict, not Response
     def get(self, endpoint: str, *args: str, **kwargs) -> dict[str, Any]:
         """GET with pagination and response validation.
 
@@ -108,16 +109,19 @@ class GrowResource(BaseHTTPResource):
             "data": data,
         }
 
+    # trunk-ignore(pyright/reportIncompatibleMethodOverride): Grow API returns dict, not Response
     def post(self, endpoint: str, *args: str, **kwargs) -> dict[str, Any]:
         url = self._get_url(endpoint, *args)
         self._log.debug(f"POST: {url}")
         return self._request("POST", url, **kwargs).json()
 
+    # trunk-ignore(pyright/reportIncompatibleMethodOverride): Grow API returns dict, not Response
     def put(self, endpoint: str, *args: str, **kwargs) -> dict[str, Any]:
         url = self._get_url(endpoint, *args)
         self._log.debug(f"PUT: {url}")
         return self._request("PUT", url, **kwargs).json()
 
+    # trunk-ignore(pyright/reportIncompatibleMethodOverride): Grow API returns dict, not Response
     def delete(self, endpoint: str, *args: str) -> dict[str, Any]:
         url = self._get_url(endpoint, *args)
         self._log.debug(f"DELETE: {url}")
