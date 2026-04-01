@@ -21,6 +21,36 @@
 ] %}
 
 with
+    /*
+        Prelim score gating: automatically includes preliminary NJ scores only
+        when official scores for that assessment/year have not yet landed in
+        int_pearson__all_assessments. This eliminates the need to manually
+        comment/uncomment the prelim branch each time a new student list file
+        is loaded — the branch self-deactivates once official scores arrive.
+    */
+    prelim_assessments as (
+        select academic_year, test_type, count(*) as record_count,
+        from {{ ref("int_pearson__student_list_report") }}
+        where
+            -- 2024: first year we track preliminary scores for comparison
+            academic_year >= 2024
+            and administration = 'Spring'
+            and scale_score is not null
+        group by academic_year, test_type
+    ),
+
+    valid_prelim_assessments as (
+        select pa.academic_year, pa.test_type,
+        from prelim_assessments as pa
+        left join
+            {{ ref("int_pearson__all_assessments") }} as p
+            on pa.academic_year = p.academic_year
+            and pa.test_type = p.assessment_name
+            and p.season = 'Spring'
+        group by pa.academic_year, pa.test_type
+        having count(p.assessment_name) = 0
+    ),
+
     test_code_metadata as (
         select
             aligned_level_test_code,
@@ -61,12 +91,12 @@ with
             on e.academic_year = a.academic_year
             and e.pearson_local_student_identifier = a.localstudentidentifier
             and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
-            and a.academic_year >= 2018
             and a.season = 'Spring'
             and a.testscalescore is not null
         where
             e.rn_year = 1
-            and e.academic_year >= {{ var("current_academic_year") - 7 }}
+            -- 2018: earliest year with available comps data
+            and e.academic_year >= 2018
             and e.grade_level > 2
             and e.school_level != 'OD'
 
@@ -123,12 +153,18 @@ with
             on e.academic_year = a.academic_year
             and e.pearson_local_student_identifier = a.local_student_identifier
             and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
-            and a.academic_year >= 2018
+            -- see prelim_assessments CTE
+            and a.academic_year >= 2024
             and a.administration = 'Spring'
             and a.scale_score is not null
+        inner join
+            valid_prelim_assessments as vpa
+            on a.academic_year = vpa.academic_year
+            and a.test_type = vpa.test_type
         where
             e.rn_year = 1
-            and e.academic_year >= {{ var("current_academic_year") - 7 }}
+            -- 2018: earliest year with available comps data
+            and e.academic_year >= 2018
             and e.grade_level > 2
             and e.school_level != 'OD'
 
@@ -191,22 +227,23 @@ with
         where
             e.region = 'Miami'
             and e.rn_year = 1
-            and e.academic_year >= {{ var("current_academic_year") - 7 }}
+            -- 2018: earliest year with available comps data
+            and e.academic_year >= 2018
             and e.grade_level > 2
     )
 
 select
-    academic_year,
-    district_state,
-    region,
-    assessment_name,
-    test_code,
+    s.academic_year,
+    s.district_state,
+    s.region,
+    s.assessment_name,
+    s.test_code,
 
     round(
-        avg(is_proficient_int) * count(student_number), 0
+        avg(s.is_proficient_int) * count(s.student_number), 0
     ) as total_proficient_students,
-    count(student_number) as total_students,
-    avg(is_proficient_int) as percent_proficient,
+    count(s.student_number) as total_students,
+    avg(s.is_proficient_int) as percent_proficient,
 
     /* (a) focus_level + demographic labels */
     case
@@ -223,13 +260,13 @@ select
             {% endfor %}
         then 'Total'
         when
-            grouping(ml_status) = 0
-            or grouping(iep_status) = 0
-            or grouping(lunch_status) = 0
+            grouping(s.ml_status) = 0
+            or grouping(s.iep_status) = 0
+            or grouping(s.lunch_status) = 0
         then 'Subgroup'
-        when grouping(gender) = 0
+        when grouping(s.gender) = 0
         then 'Gender'
-        when grouping(aggregate_ethnicity) = 0
+        when grouping(s.aggregate_ethnicity) = 0
         then 'Aggregate Ethnicity'
     end as comparison_demographic_group,
 
@@ -239,28 +276,35 @@ select
                 grouping({{ dim }}) = 1{% if not loop.last %} and {% endif %}
             {% endfor %}
         then 'All Students'
-        else coalesce(gender, aggregate_ethnicity, lunch_status, ml_status, iep_status)
+        else
+            coalesce(
+                s.gender,
+                s.aggregate_ethnicity,
+                s.lunch_status,
+                s.ml_status,
+                s.iep_status
+            )
     end as comparison_demographic_subgroup,
 
     /* (b) comparison_entity from region null-ness */
-    if(grouping(region) = 1, district_state, 'Region') as comparison_entity,
+    if(grouping(s.region) = 1, s.district_state, 'Region') as comparison_entity,
 
     /* (c) test_code-derived columns via sheet lookup */
     any_value(m.school_level) as school_level,
     any_value(m.grade_range_band) as grade_range_band,
     any_value(m.discipline) as discipline,
 
-from scores
-left join test_code_metadata as m on scores.test_code = m.aligned_level_test_code
+from scores as s
+left join test_code_metadata as m on s.test_code = m.aligned_level_test_code
 group by
     grouping sets (
         {# Total (all focus dims rolled up) — with and without region #}
-        ({{ base_dims | join(", ") }}, region),
+        ({{ base_dims | join(", ") }}, s.region),
         ({{ base_dims | join(", ") }}),
 
         {# One focus dim active at a time — with and without region #}
         {% for dim in focus_dims %}
-            ({{ base_dims | join(", ") }}, region, {{ dim }}),
+            ({{ base_dims | join(", ") }}, s.region, {{ dim }}),
             ({{ base_dims | join(", ") }}, {{ dim }})
             {% if not loop.last %},{% endif %}
         {% endfor %}

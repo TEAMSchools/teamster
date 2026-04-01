@@ -153,9 +153,9 @@ with
 
             'Actual' as results_type,
 
-            `admin`,
+            administration_window as `admin`,
             season,
-            `subject`,
+            assessment_subject as `subject`,
             test_code,
 
         from {{ ref("int_fldoe__all_assessments") }}
