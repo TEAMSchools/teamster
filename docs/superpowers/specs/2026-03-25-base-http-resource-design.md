@@ -198,7 +198,7 @@ Each paginator takes two callbacks:
 
 - `extract_cursor(response) -> str | None` — pulls next cursor; `None` to stop
 - Yields each page's records via `extract_records`
-- **Consumers:** Zendesk, Finalsite
+- **Consumers:** Zendesk
 
 ### `_paginate_offset(fetch_page, extract_records, page_size, start=0, offset_param="offset", limit_param="limit")`
 
@@ -240,12 +240,12 @@ Override `_setup_session()` only, optionally `_get_url()`.
 Uses `_get_retry_after` override, OAuth2Session, or non-trivial
 `_setup_session`.
 
-| Resource          | Auth               | Pagination         | Hook overrides                                                                                     |
-| ----------------- | ------------------ | ------------------ | -------------------------------------------------------------------------------------------------- |
-| ZendeskResource   | HTTPBasicAuth      | `_paginate_cursor` | `_get_retry_after` parses `ratelimit-remaining`, `ratelimit-reset`, `Zendesk-RateLimit-Endpoint`   |
-| FinalsiteResource | JWT bearer         | `_paginate_cursor` | Replaces recursive 429 retry with tenacity + `_get_retry_after` (behavior change: bounded retries) |
-| CoupaResource     | OAuth2Session      | `_paginate_offset` | `_setup_session` assigns OAuth2Session                                                             |
-| GrowResource      | OAuth2 token fetch | `_paginate_offset` | `extract_records` validates `data`/`count` keys; post-pagination assertion `len(results) == count` |
+| Resource              | Auth               | Pagination             | Hook overrides                                                                                     |
+| --------------------- | ------------------ | ---------------------- | -------------------------------------------------------------------------------------------------- |
+| ZendeskResource       | HTTPBasicAuth      | `_paginate_cursor`     | `_get_retry_after` parses `ratelimit-remaining`, `ratelimit-reset`, `Zendesk-RateLimit-Endpoint`   |
+| ~~FinalsiteResource~~ | ~~JWT bearer~~     | ~~`_paginate_cursor`~~ | **Vestigial** — code locations use SFTP, not API resource. Moved to vestigial list.                |
+| CoupaResource         | OAuth2Session      | `_paginate_offset`     | `_setup_session` assigns OAuth2Session                                                             |
+| GrowResource          | OAuth2 token fetch | `_paginate_offset`     | `extract_records` validates `data`/`count` keys; post-pagination assertion `len(results) == count` |
 
 ### Tier 3 — Complex (2 resources)
 
@@ -257,8 +257,9 @@ Uses `_get_retry_after` override, OAuth2Session, or non-trivial
 ### Vestigial resources (preserved, not migrated)
 
 AdpWorkforceManagerResource, MClassResource, DibelsDataSystemResource,
-CouchdropResource, AlchemerResource — builder functions exist but are not called
-by any code location. Left as-is.
+CouchdropResource, AlchemerResource, FinalsiteResource — builder functions exist
+but are not called by any code location (Finalsite code locations use SFTP, not
+the API resource). Left as-is.
 
 ## Testing
 
