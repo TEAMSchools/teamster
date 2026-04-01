@@ -153,6 +153,7 @@ workspace:
       env: true
     podSpecConfig:
       nodeSelector: true
+      affinity: true
     podTemplateSpecMetadata:
       annotations: true
     jobSpecConfig:
@@ -162,8 +163,8 @@ workspace:
 ```
 
 Only resource requests/limits, environment variables, node selectors,
-annotations, and job TTL can be set from code. Everything else is locked to the
-Helm chart values.
+affinities, annotations, and job TTL can be set from code. Everything else is
+locked to the Helm chart values.
 
 ### 4. GKE Alerting
 
