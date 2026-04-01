@@ -127,6 +127,5 @@ server failures, unhealthy daemons, ScaleUpFailed, evictions, daemon pod storms.
   _Escalate_ (sustained platform problems).
 - **Truncation warning** if any GKE query hit 100 results.
 
-Reference matching sections from the GKE hardening spec (branch
-`cbini/docs/claude-dagster-gke-best-practices`, file
-`docs/superpowers/specs/2026-03-27-dagster-gke-best-practices-design.md`).
+Reference `.k8s/CLAUDE.md` for scheduling strategy, topology spread, security
+contexts, and config restrictions.
