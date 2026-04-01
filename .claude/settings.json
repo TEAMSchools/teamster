@@ -12,6 +12,8 @@
       "Bash(git add:*)",
       "Bash(git diff:*)",
       "Bash(git status:*)",
+      "Bash(git worktree add:*)",
+      "Bash(git worktree list:*)",
       "Bash(trunk check:*)",
       "Bash(trunk fmt:*)",
       "Bash(uv tool list:*)",
@@ -52,7 +54,6 @@
       "mcp__gke__query_logs",
       "Read(//workspaces/teamster/**)",
       "Read(~/.claude/plugins/**)",
-      "Skill(claude-md-management:revise-claude-md)",
       "Skill(claude-md-management:revise-claude-md:*)"
     ],
     "deny": [
