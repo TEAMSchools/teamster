@@ -99,11 +99,17 @@ schema: "{{ resolve_source_schema('kippnewark_powerschool') }}"
 
 #### `resolve_region_source_schema(base_schema)` (kipptaf only)
 
-Controls where kipptaf's cross-regional `source()` calls read from. Used
-exclusively in `sources-kippnewark.yml`, `sources-kippcamden.yml`,
-`sources-kippmiami.yml`, and `sources-kipppaterson.yml`. These files point to
-regional staging model outputs — authoritative BigQuery tables that live in
-production and do not belong in any developer's personal namespace.
+Controls where kipptaf's cross-regional `source()` calls read from. Applies to
+any kipptaf source file whose name starts with a regional project — i.e.,
+`sources-kippnewark*`, `sources-kippcamden*`, `sources-kippmiami*`,
+`sources-kipppaterson*`, and `sources-kippnj*` (combined NJ variant for
+iready/renlearn). These files point to regional staging model outputs —
+authoritative BigQuery tables that live in production and do not belong in any
+developer's personal namespace.
+
+Across all source systems (powerschool, deanslist, finalsite, overgrad, pearson,
+edplan, titan, amplify/mclass, renlearn, iready, fldoe), this totals
+approximately 27 files.
 
 Default behavior (`defer`) is production (no prefix). Developers working on
 regional model changes and needing to test end-to-end through kipptaf opt in via
@@ -526,10 +532,10 @@ are only compiled as packages within school projects.
 Steps:
 
 1. Replace inline Jinja in all in-scope source files with
-   `resolve_source_schema()` calls, **except** for kipptaf's four cross-regional
-   source files (`sources-kippnewark.yml`, `sources-kippcamden.yml`,
-   `sources-kippmiami.yml`, `sources-kipppaterson.yml`) — these use
-   `resolve_region_source_schema()` instead
+   `resolve_source_schema()` calls, **except** for kipptaf's cross-regional
+   source files (any file matching `sources-kippnewark*`, `sources-kippcamden*`,
+   `sources-kippmiami*`, `sources-kipppaterson*`, or `sources-kippnj*`) — these
+   use `resolve_region_source_schema()` instead (~27 files)
 1. Test locally with `--target defer` and `--target prod` (set
    `DAGSTER_CLOUD_DEPLOYMENT_NAME` to bypass the prod guard for testing)
 
