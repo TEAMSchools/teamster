@@ -117,9 +117,6 @@ dagsterCloudAgent:
   # Agent container securityContext — not set because the agent runs Dagster's
   # own image (UID 1001), not ours (UID 1234). Spec Section 2 covers workspace
   # and run pods only. The Helm chart does support this field.
-  # securityContext:
-  #   runAsNonRoot: true
-  #   allowPrivilegeEscalation: false
 
 ########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
