@@ -23,3 +23,17 @@ on GKE Autopilot.
   `podAntiAffinity` from per-location and `nodeAffinity` from global coexist.
 - Container images are multi-arch (amd64 + arm64) via Docker buildx matrix in CI
   — x86 fallback works without build changes.
+- **Security contexts** on workspace (`serverK8sConfig`) and run
+  (`runK8sConfig`) pods: `runAsNonRoot`, UID/GID 1234 (matches Dockerfile
+  `teamster` user), `allowPrivilegeEscalation: false`, all capabilities dropped.
+  `readOnlyRootFilesystem` intentionally omitted (dbt/Dagster write to `/tmp`).
+- **`onlyAllowUserDefinedK8sConfigFields`** restricts what `dagster-cloud.yaml`
+  and `dagster-k8s/config` tags can set: `resources`, `env`, `nodeSelector`,
+  `affinity`, `annotations`, and `ttlSecondsAfterFinished`. Everything else is
+  locked to Helm chart values.
+- **Agent topology spread** uses `DoNotSchedule` across
+  `topology.kubernetes.io/zone` via `additionalPodSpecConfig`. If multi-zone
+  STOCKOUT recurs, relax to `ScheduleAnyway`.
+- **Agent readiness probe** checks for
+  `/tmp/finished_initial_reconciliation_sentinel.txt`. Rolling update
+  (`maxSurge: 200%`, `maxUnavailable: 0%`) ensures zero-downtime Helm upgrades.
