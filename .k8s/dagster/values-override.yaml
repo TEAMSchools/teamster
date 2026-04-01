@@ -41,6 +41,22 @@ dagsterCloudAgent:
 
   terminationGracePeriodSeconds: 15
 
+  readinessProbe:
+    exec:
+      command:
+        - /bin/bash
+        - -c
+        - test -f /tmp/finished_initial_reconciliation_sentinel.txt
+    failureThreshold: 60
+    initialDelaySeconds: 0
+    periodSeconds: 10
+
+  deploymentStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0%
+      maxSurge: 200%
+
   # Number of replicas of the agent service to keep up at a given time.
   replicas: 2
 
