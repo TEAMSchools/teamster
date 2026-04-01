@@ -11,6 +11,7 @@ from teamster.libraries.adp.workforce_now.api.resources import (
     AdpWorkforceNowResource,
 )
 from teamster.libraries.coupa.resources import CoupaResource
+from teamster.libraries.deanslist.resources import DeansListResource
 from teamster.libraries.http.resources import BaseHTTPResource
 from teamster.libraries.knowbe4.resources import KnowBe4Resource
 from teamster.libraries.level_data.grow.resources import GrowResource
@@ -536,3 +537,53 @@ class TestAdpWorkforceNowResource:
                 "https://api.adp.com/hr/v2/workers.request.submit",
                 json={},
             )
+
+
+class TestDeansListResource:
+    def _make(self) -> DeansListResource:
+        resource = DeansListResource(
+            subdomain="test-district",
+            api_key_map="/tmp/fake-key-map.yaml",
+        )
+        ctx = MagicMock()
+        ctx.log = MagicMock()
+        with patch("builtins.open", create=True) as mock_open:
+            from io import StringIO
+
+            mock_open.return_value.__enter__ = MagicMock(
+                return_value=StringIO("api_key_map:\n  100: key-100\n  200: key-200")
+            )
+            mock_open.return_value.__exit__ = MagicMock(return_value=False)
+            resource.setup_for_execution(ctx)
+        return resource
+
+    def test_base_url(self):
+        resource = self._make()
+        assert resource._base_url == "https://test-district.deanslistsoftware.com/api"
+
+    def test_get_url_versioned(self):
+        resource = self._make()
+        assert (
+            resource._get_url("v1", "students")
+            == "https://test-district.deanslistsoftware.com/api/v1/students"
+        )
+
+    def test_get_url_beta(self):
+        resource = self._make()
+        url = resource._get_url("beta", "behavior")
+        assert url.endswith("/beta/export/get-behavior-data.php")
+
+    def test_get_url_beta_no_data_suffix(self):
+        resource = self._make()
+        url = resource._get_url("beta", "suspensions")
+        assert url.endswith("/beta/export/get-suspensions.php")
+
+    def test_prepare_request_injects_apikey(self):
+        resource = self._make()
+        resource._current_school_id = 100
+        _, _, kwargs = resource._prepare_request(
+            "GET",
+            "https://example.com",
+            {"params": {"page": 1}},
+        )
+        assert kwargs["params"]["apikey"] == "key-100"
