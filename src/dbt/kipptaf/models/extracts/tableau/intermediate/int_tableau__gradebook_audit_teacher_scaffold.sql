@@ -178,6 +178,8 @@ with
                         tw.quarter_end_date_insession + interval 20 day
                     )
                 then true
+                when tw.school_level = 'HS' and tw.`quarter` = 'Q3'
+                then false
                 when
                     tw.region != 'Miami'
                     and current_date(
