@@ -1,7 +1,15 @@
 # Dagster GKE Best Practices Hardening
 
-**Date:** 2026-03-27 **Status:** Approved **Scope:**
-`.k8s/dagster/values-override.yaml`, Terraform alerting (new)
+**Date:** 2026-03-27 **Updated:** 2026-04-01 **Status:** Approved **Scope:**
+`.k8s/dagster/values-override.yaml`
+
+> **Update (2026-04-01):** Spec revised throughout to reflect the node
+> scheduling fallback strategy implemented on `main` after a sustained GCE
+> STOCKOUT in us-central1 on 2026-03-30/31. Hard `nodeSelector` constraints were
+> replaced with weighted `nodeAffinity` preferences across all pod types. GKE
+> alerting (Section 4) moved to the Terraform IaC spec
+> (TEAMSchools/teamster#3550). See Risks section for the spot STOCKOUT incident
+> and on-demand fallback tradeoff.
 
 ## Problem Statement
 
@@ -21,21 +29,47 @@ issues:
 3. **Cost:** ARM64 spot is the right strategy and stays. No cost changes
    proposed — this is about not wasting money on avoidable incident response.
 
+4. **Capacity exhaustion:** A sustained GCE STOCKOUT on 2026-03-30/31 revealed
+   that hard `nodeSelector` constraints (Scale-Out + arm64) cause pods to stay
+   Pending indefinitely when the requested compute class is unavailable. 28
+   `ScaleUpFailed` events over ~10 hours caused OOM evictions, scheduling
+   failures, and sensor tick errors across multiple code locations.
+
 ## Design
 
 ### 1. Agent Resilience: Topology Spread + Readiness Probe
 
-**Replace** the hostname-level pod anti-affinity with zone-level topology spread
-constraints. This ensures the 2 agent replicas land in different GCE zones,
-reducing the probability of correlated spot preemption.
+> **Already implemented (partial):** All pod types now use weighted
+> `nodeAffinity` preferences instead of hard `nodeSelector`. The existing
+> `podAntiAffinity` on `kubernetes.io/hostname` was preserved. This section
+> proposes adding zone-level topology spread on top of the current affinity
+> structure.
+>
+> Current scheduling weights (see [`.k8s/CLAUDE.md`](../../../.k8s/CLAUDE.md)
+> for full details):
+>
+> | Weight | Agent (x86-only) | Code server     | Run pod         |
+> | ------ | ---------------- | --------------- | --------------- |
+> | 50     | Spot             | Spot            | —               |
+> | 40     | —                | Scale-Out arm64 | Scale-Out arm64 |
+> | 30     | General-Purpose  | General-Purpose | General-Purpose |
+> | 20     | Scale-Out        | Scale-Out x86   | Scale-Out x86   |
+> | 10     | Balanced         | Balanced        | Balanced        |
+>
+> Run pods exclude spot (`safe-to-evict: "false"` is mutually exclusive with
+> spot on Autopilot). Agent pods exclude arm64 tiers (image is x86-only).
 
-Remove the existing `affinity` block (pod anti-affinity on
-`kubernetes.io/hostname`) entirely — zone-level spread subsumes it (different
-zones = different nodes).
+**Add** zone-level topology spread constraints alongside the existing affinity
+block. The `podAntiAffinity` ensures different hostnames; topology spread adds
+cross-zone distribution to reduce correlated spot preemption.
 
 ```yaml
 dagsterCloudAgent:
-  # affinity: <removed>
+  affinity:
+    nodeAffinity:
+      # ... existing weighted preferences (spot, GP, Scale-Out, Balanced)
+    podAntiAffinity:
+      # ... existing hostname anti-affinity (preserved)
   topologySpreadConstraints:
     - maxSkew: 1
       topologyKey: topology.kubernetes.io/zone
@@ -105,6 +139,12 @@ Add `onlyAllowUserDefinedK8sConfigFields` to prevent `dagster-k8s/config` tags
 in code from overriding sensitive K8s fields (volumes, service accounts,
 security contexts):
 
+> **Note:** `nodeSelector` is retained in the allowlist even though global
+> scheduling now uses `nodeAffinity` preferences. Per-location
+> `server_k8s_config` in `dagster-cloud.yaml` deep-merges with global
+> `serverK8sConfig`, so code locations may still need `nodeSelector` for
+> location-specific constraints (e.g., `podAntiAffinity` is set per-location).
+
 ```yaml
 workspace:
   onlyAllowUserDefinedK8sConfigFields:
@@ -125,26 +165,12 @@ Only resource requests/limits, environment variables, node selectors,
 annotations, and job TTL can be set from code. Everything else is locked to the
 Helm chart values.
 
-### 4. GKE Alerting (Terraform)
+### 4. GKE Alerting
 
-Create GCP Cloud Monitoring alert policies as Terraform resources. This aligns
-with the planned IaC initiative for GCP infrastructure.
-
-**Alert policies:**
-
-| Alert             | Metric/Condition                                           | Threshold                                            |
-| ----------------- | ---------------------------------------------------------- | ---------------------------------------------------- |
-| Pod restart storm | `kubernetes.io/container/restart_count` rate               | > 3 restarts in 10 min for agent or code server pods |
-| OOM kill          | Container `reason = OOMKilled`                             | Any occurrence                                       |
-| PDB at limit      | `kubernetes.io/poddisruptionbudget/pods_disrupted_allowed` | = 0 for > 5 min                                      |
-| Pod stuck pending | Pod phase = `Pending`                                      | > 5 min in `dagster-cloud` namespace                 |
-
-**Notification channel:** To be determined during implementation (Slack webhook,
-email, or PagerDuty).
-
-**Terraform scope:** Alert policies only. The GKE cluster, Helm releases, and
-1Password Connect remain managed by their existing shell scripts. Migrating
-those to Terraform is out of scope for this project.
+Moved to the
+[Terraform IaC design spec](2026-03-30-terraform-infrastructure-as-code-design.md)
+(`alerting/` module) — alert policies are Terraform resources, not Helm/YAML
+config. See TEAMSchools/teamster#3550.
 
 ## Out of Scope
 
@@ -153,14 +179,29 @@ those to Terraform is out of scope for this project.
 - `readOnlyRootFilesystem` (requires emptyDir mount planning)
 - Branch deployment TTL tuning
 - Migrating existing K8s resources (cluster, Helm releases) to Terraform
-- Image pre-pull / image streaming optimization (limited value on Autopilot)
+- Image pre-pull / image streaming optimization (limited value on Autopilot, but
+  cold starts on fallback on-demand nodes may be slower without cached images —
+  worth monitoring after the scheduling fallback is exercised in production)
 
 ## Risks
 
+- **Spot STOCKOUT and on-demand fallback (realized 2026-03-30/31):** A sustained
+  GCE `RESOURCE_POOL_EXHAUSTED` across zones `a`, `b`, and `f` in us-central1
+  caused ~10 hours of scheduling failures. Hard `nodeSelector` constraints meant
+  pods could not fall back to alternative compute classes. **Mitigated:** all
+  pod types now use weighted `nodeAffinity` preferences instead of
+  `nodeSelector`, allowing Autopilot to schedule on any available compute class.
+  **Tradeoff:** on-demand nodes cost more than spot — but Autopilot bills
+  per-pod, so the cost difference is limited to the spot discount (~60-91%)
+  during the fallback window. Availability during overnight batch runs is worth
+  the cost.
 - **Topology spread on Autopilot:** Autopilot manages node provisioning. If only
   one zone has spot capacity, the second agent pod could remain Pending with
-  `DoNotSchedule`. Mitigation: monitor pod pending alerts, consider relaxing to
-  `ScheduleAnyway` if this becomes an issue.
+  `DoNotSchedule`. Note that `DoNotSchedule` combined with a multi-zone STOCKOUT
+  (as seen on 2026-03-30/31) would be _worse_ than no topology spread — it would
+  prevent even single-zone scheduling. Mitigation: monitor pod pending alerts
+  (and the new scale-up failure alert), and be prepared to relax to
+  `ScheduleAnyway` if multi-zone unavailability recurs.
 - **Helm chart support for topology spread:** The `dagsterCloudAgent` section
   may not have a native `topologySpreadConstraints` field — verify during
   implementation. May need to use `additionalPodSpecConfig` or a similar escape
@@ -171,13 +212,15 @@ those to Terraform is out of scope for this project.
 
 ## Implementation Order
 
-1. Audit code locations for existing `dagster-k8s/config` tag usage
-2. Apply security contexts to `values-override.yaml`
-3. Apply `onlyAllowUserDefinedK8sConfigFields`
-4. Replace anti-affinity with topology spread constraints
-5. Enable readiness probe and rolling update strategy
-6. Verify Helm chart supports all fields (check values.yaml schema)
-7. Deploy via `helm upgrade` and validate
-8. Create Terraform project/module for GKE alerting
-9. Define and deploy alert policies
-10. Document runbook for common alert scenarios
+1. ~~Replace `nodeSelector` with weighted `nodeAffinity` preferences~~ — **done
+   (2026-03-31, 2026-04-01)**, applied directly to `main`
+2. ~~Add `--dry-run` + confirmation prompt to install scripts~~ — **done
+   (2026-03-31)**, applied directly to `main`
+3. Audit code locations for existing `dagster-k8s/config` tag usage
+4. Apply security contexts to `values-override.yaml`
+5. Apply `onlyAllowUserDefinedK8sConfigFields`
+6. Add topology spread constraints to agent pods (alongside existing affinity)
+7. Enable readiness probe and rolling update strategy
+8. Verify Helm chart supports all fields (check values.yaml schema)
+9. Deploy via `helm upgrade --dry-run` and validate, then apply
+10. GKE alerting — see Terraform IaC spec (TEAMSchools/teamster#3550)
