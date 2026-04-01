@@ -47,19 +47,24 @@ for retries with status FAILURE.
 mcp__dagster__list_code_locations for location names. Then IN PARALLEL for each:
 mcp__dagster__get_tick_history(
   name="<loc>__automation_condition_sensor",
-  repository_location_name="<loc>", statuses=["FAILURE"], limit=20).
-IMPORTANT: Discard ticks with timestamp < {EPOCH} (verify numerically).
+  repository_location_name="<loc>", statuses=["FAILURE"], limit=50).
+Response is often saved to a file (too large for context). Check each tool
+result — if it mentions a file path (ending in .txt), you MUST run:
+  python3 .claude/skills/day2/filter_ticks.py <FILE_PATH> {EPOCH}
+Use the script output directly. If the result is inline (no file path), discard
+ticks with timestamp < {EPOCH} (verify numerically).
 Collect: tickId, timestamp, location, error message (first 300 chars).
+Report which locations returned 0 in-window failures (confirm all were queried).
 
 ## 4. Agent health
 
-mcp__dagster__get_cloud_agents(). Response is very large (200KB+). If saved to
-a file, run: python3 .claude/skills/day2/filter_agents.py <FILE_PATH> {EPOCH}
-If inline, apply same logic: keep only agents with errors where timestamp >=
-{EPOCH}. Omit agents with zero in-window errors. Per agent collect: id, status,
-lastHeartbeatTime, filtered errors (timestamp + error.message or str(error),
-truncated to 300 chars), codeServerStates (locationName, status, error),
-runWorkerStates (runId, status, message).
+mcp__dagster__get_cloud_agents(). Response is very large (200KB+) and WILL be
+saved to a file. You MUST run the filter script on the saved file:
+  python3 .claude/skills/day2/filter_agents.py <FILE_PATH> {EPOCH}
+The file path appears in the tool result (look for a path ending in .txt).
+Use the script output directly — do not parse the raw file yourself.
+Per agent the script returns: id, status, lastHeartbeatTime, filtered errors
+(timestamp + message, truncated to 300 chars), codeServerStates, runWorkerStates.
 
 ## 5. Daemon health
 
@@ -71,8 +76,10 @@ null on Dagster Cloud).
 
 Two PARALLEL mcp__gke__query_logs calls: project=teamster-332318,
 cluster=autopilot-cluster-dagster-hybrid-1, location=us-central1,
-time_range={{"start_time":"{UTC_START}","end_time":"{UTC_END}"}}, limit=100,
-format="{{{{.timestamp}}}} {{{{.jsonPayload.reason}}}} {{{{.jsonPayload.involvedObject.kind}}}}/{{{{.jsonPayload.involvedObject.name}}}} {{{{.jsonPayload.message}}}}".
+time_range={{"start_time":"{UTC_START}","end_time":"{UTC_END}"}}, limit=100.
+Read .claude/skills/day2/gke_log_format.txt and pass its contents as the format
+parameter verbatim. The response will be formatted text lines, not JSON — return
+them as-is in an array of strings (one per log line).
 
 Query A filter (critical):
   resource.type="k8s_cluster"
