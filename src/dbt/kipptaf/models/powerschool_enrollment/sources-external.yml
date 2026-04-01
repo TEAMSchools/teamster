@@ -1,7 +1,8 @@
 sources:
   - name: powerschool_enrollment
-    schema:
-      "{{ resolve_source_schema(project_name ~ '_powerschool_enrollment') }}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ project_name }}_powerschool_enrollment
     tables:
       - name: src_powerschool_enrollment__submission_records
         external:

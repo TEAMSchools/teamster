@@ -1,6 +1,8 @@
 sources:
   - name: collegeboard
-    schema: "{{ resolve_source_schema('kipptaf_collegeboard') }}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}
+      z_dev_{%- endif -%}kipptaf_collegeboard
     tables:
       - name: src_collegeboard__psat
         external:

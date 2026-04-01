@@ -1,6 +1,5 @@
 sources:
   - name: kippnewark_titan
-    schema: "{{ resolve_region_source_schema('kippnewark_titan') }}"
     tables:
       - name: stg_titan__person_data
         config:

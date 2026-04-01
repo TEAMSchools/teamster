@@ -1,6 +1,5 @@
 sources:
   - name: kippcamden_edplan
-    schema: "{{ resolve_region_source_schema('kippcamden_edplan') }}"
     tables:
       - name: int_edplan__njsmart_powerschool_union
         config:

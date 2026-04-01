@@ -1,6 +1,6 @@
 sources:
   - name: surveys
-    schema: "{{ resolve_source_schema(project_name ~ '_surveys') }}"
+    schema: "{{ project_name }}_surveys"
     tables:
       - name: int_surveys__response_identifiers
         config:

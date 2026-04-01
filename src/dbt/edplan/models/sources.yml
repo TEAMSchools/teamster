@@ -1,8 +1,8 @@
 sources:
   - name: edplan
-    schema:
-      "{{ resolve_source_schema(var('edplan_schema', project_name ~ '_edplan'))
-      }}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ var('edplan_schema', project_name + '_edplan') }}
     tables:
       - name: src_edplan__njsmart_powerschool
         config:

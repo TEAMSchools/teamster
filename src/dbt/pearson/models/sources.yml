@@ -1,8 +1,8 @@
 sources:
   - name: pearson
-    schema:
-      "{{ resolve_source_schema(var('pearson_schema', project_name ~
-      '_pearson')) }}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
+      {{ var('pearson_schema', project_name + '_pearson') }}
     tables:
       - name: src_pearson__njgpa
         config:

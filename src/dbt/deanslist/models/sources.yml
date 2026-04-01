@@ -1,8 +1,7 @@
 sources:
   - name: deanslist
-    schema:
-      "{{ resolve_source_schema(var('deanslist_schema', project_name ~
-      '_deanslist')) }}"
+    schema: |
+      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}{{ var('deanslist_schema', project_name + '_deanslist') }}
     tables:
       - name: src_deanslist__behavior
         config:
