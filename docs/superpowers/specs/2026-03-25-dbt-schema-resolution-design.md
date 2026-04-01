@@ -22,7 +22,7 @@ developer workflows unreliable and error-prone.
 3. Support `--defer` via dbt Power User for everyday development — unchanged
    `ref()` models resolve to prod. Regional source data (kipptaf
    `sources-kipp*.yml`) also resolves to prod by default via a dedicated macro;
-   opt-in to personal namespace via `--target dev-region`
+   opt-in to personal namespace via `--target dev`
 4. dbt Cloud CI validates PRs against staging datasets
 5. New integration development (including external sources) works in isolation
 
@@ -31,8 +31,12 @@ developer workflows unreliable and error-prone.
 ### Target-Driven Architecture
 
 All schema resolution is controlled by `--target`. School/network projects get
-three targets (`dev`, `staging`, `prod`); source-system projects get a single
-`dev` target. One shared macro centralizes source schema logic. Model output
+four targets (`defer`, `dev`, `staging`, `prod`); source-system projects get a
+single `dev` target. The default target is `defer` — the common development
+workflow where cross-regional sources read from production and Power User defers
+unchanged models. `dev` provides full isolation for cross-project development.
+`prod` is guarded by an `on-run-start` macro that blocks execution outside
+Dagster Cloud. One shared macro centralizes source schema logic. Model output
 schemas are handled by dbt's built-in `generate_schema_name` default, which
 already produces the correct behavior when profiles carry the right `schema`
 prefix per target.
@@ -57,6 +61,7 @@ kipptaf's cross-regional source files (see `resolve_region_source_schema`).
 
 | Target    | Result                           |
 | --------- | -------------------------------- |
+| `defer`   | `zz_<GITHUB_USER>_<base_schema>` |
 | `dev`     | `zz_<GITHUB_USER>_<base_schema>` |
 | `staging` | `zz_stg_<base_schema>`           |
 | `prod`    | `<base_schema>`                  |
@@ -65,7 +70,7 @@ Implementation:
 
 ```sql
 {% macro resolve_source_schema(base_schema) %}
-  {%- if target.name == 'dev' -%}
+  {%- if target.name in ['defer', 'dev'] -%}
     zz_{{ env_var('GITHUB_USER', 'dev') }}_{{ base_schema }}
   {%- elif target.name == 'staging' -%}
     zz_stg_{{ base_schema }}
@@ -100,22 +105,22 @@ exclusively in `sources-kippnewark.yml`, `sources-kippcamden.yml`,
 regional staging model outputs — authoritative BigQuery tables that live in
 production and do not belong in any developer's personal namespace.
 
-Default behavior is production (no prefix). Developers working on regional model
-changes and needing to test end-to-end through kipptaf opt in via
-`--target dev-region`.
+Default behavior (`defer`) is production (no prefix). Developers working on
+regional model changes and needing to test end-to-end through kipptaf opt in via
+`--target dev`.
 
-| Target       | Result                           |
-| ------------ | -------------------------------- |
-| `dev`        | `<base_schema>` (production)     |
-| `dev-region` | `zz_<GITHUB_USER>_<base_schema>` |
-| `staging`    | `zz_stg_<base_schema>`           |
-| `prod`       | `<base_schema>`                  |
+| Target    | Result                           |
+| --------- | -------------------------------- |
+| `defer`   | `<base_schema>` (production)     |
+| `dev`     | `zz_<GITHUB_USER>_<base_schema>` |
+| `staging` | `zz_stg_<base_schema>`           |
+| `prod`    | `<base_schema>`                  |
 
 Implementation:
 
 ```sql
 {% macro resolve_region_source_schema(base_schema) %}
-  {%- if target.name == 'dev-region' -%}
+  {%- if target.name == 'dev' -%}
     zz_{{ env_var('GITHUB_USER', 'dev') }}_{{ base_schema }}
   {%- elif target.name == 'staging' -%}
     zz_stg_{{ base_schema }}
@@ -128,6 +133,36 @@ Implementation:
 This macro lives in **kipptaf only** — no other project has cross-regional
 source files.
 
+#### `check_prod_guard()`
+
+Prevents accidental production writes from local development environments. Runs
+once per dbt invocation via `on-run-start` — fires for `run`, `build`, `test`,
+`seed`, `snapshot` but **not** for `parse`, `compile`, or `list`. The
+`post-merge` hook uses `dbt parse`, so it is unaffected.
+
+```sql
+{% macro check_prod_guard() %}
+  {%- if target.name == 'prod' and not env_var('DAGSTER_CLOUD_DEPLOYMENT_NAME', '') -%}
+    {{ exceptions.raise_compiler_error(
+      "target 'prod' is reserved for production deployments. "
+      "Use --target defer (default) for development. "
+      "Set DAGSTER_CLOUD_DEPLOYMENT_NAME to override."
+    ) }}
+  {%- endif -%}
+{% endmacro %}
+```
+
+Each school project's `dbt_project.yml` includes:
+
+```yaml
+on-run-start:
+  - "{{ check_prod_guard() }}"
+```
+
+This macro lives in the **5 school/network projects** alongside
+`resolve_source_schema`. Emergency override:
+`DAGSTER_CLOUD_DEPLOYMENT_NAME=prod uv run dbt build --target prod --select my_model`.
+
 #### Model output schemas (no custom macro needed)
 
 dbt's built-in `generate_schema_name` default produces
@@ -137,6 +172,8 @@ prefix per target, this produces the right output without any override:
 
 | Target    | custom_schema | Result                                 |
 | --------- | ------------- | -------------------------------------- |
+| `defer`   | `powerschool` | `zz_<GITHUB_USER>_kipptaf_powerschool` |
+| `defer`   | (none)        | `zz_<GITHUB_USER>_kipptaf`             |
 | `dev`     | `powerschool` | `zz_<GITHUB_USER>_kipptaf_powerschool` |
 | `dev`     | (none)        | `zz_<GITHUB_USER>_kipptaf`             |
 | `staging` | `powerschool` | `zz_stg_kipptaf_powerschool`           |
@@ -152,21 +189,22 @@ namespace collision issues with source-system packages.
 
 #### `.dbt/profiles.yml` (local dev + dbt Cloud)
 
-School/network projects get three targets (`dev`, `staging`, `prod`). Default
-target is `dev` (safe). Source-system projects get a single `dev` target —
-matching the `integration_tests` pattern.
+School/network projects get four targets (`defer`, `dev`, `staging`, `prod`).
+Default target is `defer` (safe — reads cross-regional sources from production,
+writes model outputs to personal namespace). Source-system projects get a single
+`dev` target — matching the `integration_tests` pattern.
 
 ```yaml
 kipptaf:
-  target: dev
+  target: defer
   outputs:
-    dev:
+    defer:
       type: bigquery
       schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kipptaf
       method: oauth
       project: teamster-332318
       threads: 40
-    dev-region:
+    dev:
       type: bigquery
       schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kipptaf
       method: oauth
@@ -186,13 +224,13 @@ kipptaf:
       threads: 40
 ```
 
-`dev-region` is identical to `dev` in output schema — the only difference is the
-target name, which `resolve_region_source_schema` keys off to resolve kipptaf's
-cross-regional sources to personal namespace instead of production.
+`defer` and `dev` are identical in output schema — the only difference is the
+target name, which `resolve_region_source_schema` keys off. `defer` resolves
+kipptaf's cross-regional sources to production (the common case); `dev` resolves
+them to the developer's personal namespace (for cross-project development).
 
-The 5 school/network projects (`kipptaf`, `kippnewark`, `kippcamden`,
-`kippmiami`, `kipppaterson`) get all three standard targets. kipptaf
-additionally gets `dev-region`.
+All 5 school/network projects (`kipptaf`, `kippnewark`, `kippcamden`,
+`kippmiami`, `kipppaterson`) get the same four targets.
 
 Source-system projects (`amplify`, `deanslist`, `edplan`, `finalsite`, `iready`,
 `overgrad`, `pearson`, `powerschool`, `renlearn`, `titan`) get a single `dev`
@@ -202,13 +240,13 @@ needed.
 
 #### `src/dbt/<project>/profiles.yml` (shipped to Dagster)
 
-Two targets: `dev` (default, safe for local `dagster dev`) and `prod`.
+Two targets: `defer` (default, safe for local `dagster dev`) and `prod`.
 
 ```yaml
 kipptaf:
-  target: dev
+  target: defer
   outputs:
-    dev:
+    defer:
       type: bigquery
       schema: zz_{{ env_var('GITHUB_USER', 'dev') }}_kipptaf
       method: oauth
@@ -241,8 +279,8 @@ def get_dbt_cli_resource(dbt_project: DbtProject) -> DbtCliResource:
 | Context             | Behavior                   |
 | ------------------- | -------------------------- |
 | Dagster Cloud prod  | `target="prod"` (explicit) |
-| Branch deploy       | Profile default (`dev`)    |
-| Local `dagster dev` | Profile default (`dev`)    |
+| Branch deploy       | Profile default (`defer`)  |
+| Local `dagster dev` | Profile default (`defer`)  |
 
 Branch deploys and local dev are identical — both write to dev schemas.
 
@@ -347,8 +385,8 @@ With inputs:
     "id": "dbtSxsTarget",
     "type": "pickString",
     "description": "Target environment",
-    "options": ["dev", "staging"],
-    "default": "dev"
+    "options": ["defer", "dev", "staging"],
+    "default": "defer"
   },
   {
     "id": "dbtSourceSelect",
@@ -363,16 +401,16 @@ With inputs:
 
 ### Modify existing kipptaf models
 
-1. Work on models with `--target dev` (default)
+1. Work on models with `--target defer` (default)
 2. Power User `--defer` resolves upstream `ref()` calls to prod manifest — only
    modified models build into `zz_<GITHUB_USER>_kipptaf_*`
 
 ### Add/modify an external source (e.g. Google Sheets)
 
 1. Modify source definition in `sources-external.yml`
-2. Run VS Code task "dbt: Stage External Sources" → pick project → `dev` → enter
-   source name
-3. Build/test the staging model locally with `--target dev`. `--defer` can be
+2. Run VS Code task "dbt: Stage External Sources" → pick project → `defer` →
+   enter source name
+3. Build/test the staging model locally with `--target defer`. `--defer` can be
    used — unchanged upstream models resolve to prod; the modified staging model
    builds against the dev-prefixed source
 4. Run VS Code task again → pick project → `staging` → same source name (CI
@@ -382,9 +420,9 @@ With inputs:
 ### New integration (new source + staging model)
 
 1. Add source + staging model definitions
-2. Run VS Code task "dbt: Stage External Sources" → pick project → `dev` → enter
-   source name
-3. Build/test locally with `--target dev`. `--defer` can be used — existing
+2. Run VS Code task "dbt: Stage External Sources" → pick project → `defer` →
+   enter source name
+3. Build/test locally with `--target defer`. `--defer` can be used — existing
    upstream `ref()` calls resolve to the prod manifest; only the new models
    (absent from prod) build locally
 4. Run VS Code task again → pick project → `staging` → same source name (CI
@@ -393,17 +431,17 @@ With inputs:
 
 ### Everyday kipptaf development (no regional changes)
 
-1. Work on models with `--target dev` (default)
+1. Work on models with `--target defer` (default)
 2. `resolve_region_source_schema` returns bare production schema names for
    cross-regional sources — no regional builds required locally
 3. Power User `--defer` resolves upstream `ref()` calls to prod manifest
 
 ### Cross-project development (regional + kipptaf)
 
-1. Develop regional project with `--target dev` → writes to
+1. Develop regional project with `--target defer` (default) → writes to
    `zz_<user>_kippnewark_*`
-2. In kipptaf, use `--target dev-region` → `resolve_region_source_schema`
-   returns `zz_<user>_kippnewark_powerschool` → reads your regional dev output
+2. In kipptaf, use `--target dev` → `resolve_region_source_schema` returns
+   `zz_<user>_kippnewark_powerschool` → reads your regional dev output
 3. Test end-to-end locally
 4. Stage to staging for both projects before PR
 
@@ -438,11 +476,14 @@ After Phase 2, `resolve_source_schema` uses only `target.name` — if dbt Cloud
 still passes `target: default`, the `else` branch fires and CI reads from prod
 schemas instead of `zz_stg_*`.
 
-1. Add `resolve_source_schema` macro to the 5 school/network projects
-1. Update `.dbt/profiles.yml` — add `dev`/`staging`/`prod` targets alongside
-   existing targets (do not remove old targets yet)
-1. Update shipped `src/dbt/<project>/profiles.yml` — add `dev` and `prod`
-   targets, set default to `dev`
+1. Add `resolve_source_schema` and `check_prod_guard` macros to the 5
+   school/network projects; add `resolve_region_source_schema` to kipptaf; add
+   `on-run-start: ["{{ check_prod_guard() }}"]` to each school project's
+   `dbt_project.yml`
+1. Update `.dbt/profiles.yml` — add `defer`/`dev`/`staging`/`prod` targets
+   alongside existing targets (do not remove old targets yet)
+1. Update shipped `src/dbt/<project>/profiles.yml` — add `defer` and `prod`
+   targets, set default to `defer`
 1. Update `get_dbt_cli_resource` to pass `target="prod"` in Dagster Cloud;
    remove dead `test` parameter
 1. Deploy Dagster — prod continues to work (explicit `target="prod"`)
@@ -476,7 +517,8 @@ Steps:
    source files (`sources-kippnewark.yml`, `sources-kippcamden.yml`,
    `sources-kippmiami.yml`, `sources-kipppaterson.yml`) — these use
    `resolve_region_source_schema()` instead
-1. Test locally with `--target dev` and `--target prod`
+1. Test locally with `--target defer` and `--target prod` (set
+   `DAGSTER_CLOUD_DEPLOYMENT_NAME` to bypass the prod guard for testing)
 
 #### Phase 3: Clean up
 
@@ -496,19 +538,21 @@ Steps:
 1. Update developer-facing docs — add a new guide page
    (`docs/guides/dbt-development.md`) covering: target names and when to use
    each, the VS Code "Stage External Sources" task (replaces `dbt-sxs.py`),
-   Power User `--defer` behavior, and the cross-project `--target dev-region`
-   workflow. Add a nav entry in `mkdocs.yml`. Update `docs/guides/index.md`
-   routing table with the new page. Update `docs/guides/google-sheets.md` —
-   replace `scripts/dbt-sxs.py` verification section and bare
-   `stage_external_sources` commands with links to the new dbt development guide
+   Power User `--defer` behavior, the `check_prod_guard` safeguard, and the
+   cross-project `--target dev` workflow. Add a nav entry in `mkdocs.yml`.
+   Update `docs/guides/index.md` routing table with the new page. Update
+   `docs/guides/google-sheets.md` — replace `scripts/dbt-sxs.py` verification
+   section and bare `stage_external_sources` commands with links to the new dbt
+   development guide
 
 ### Naming changes
 
-| Current pattern                            | New pattern                        |
-| ------------------------------------------ | ---------------------------------- |
-| `z_dev_<project>`                          | `zz_stg_<project>`                 |
-| Target name: project name (e.g. `kipptaf`) | Target name: `dev`                 |
-| Source-system: region-specific targets     | Source-system: single `dev` target |
+| Current pattern                            | New pattern                         |
+| ------------------------------------------ | ----------------------------------- |
+| `z_dev_<project>`                          | `zz_stg_<project>`                  |
+| Target name: project name (e.g. `kipptaf`) | Target name: `defer` (default)      |
+| kipptaf-only `dev-region` target           | `dev` target on all school projects |
+| Source-system: region-specific targets     | Source-system: single `dev` target  |
 
 ### Cleanup
 
@@ -534,11 +578,12 @@ hooks), but some require awareness.
 
 #### Requires awareness
 
-- **Target names changed**: The default target is now `dev` (previously the
-  project name, e.g. `kipptaf`). `--target dev` is the default and does not need
-  to be specified explicitly. Use `--target staging` for CI-equivalent builds
-  and `--target prod` only when generating production manifests (handled by the
-  git hook)
+- **Target names changed**: The default target is now `defer` (previously the
+  project name, e.g. `kipptaf`). `--target defer` is the default and does not
+  need to be specified explicitly. Use `--target dev` for full isolation
+  (cross-regional sources resolve to personal namespace), `--target staging` for
+  CI-equivalent builds. `--target prod` is guarded — it only works in Dagster
+  Cloud or with `DAGSTER_CLOUD_DEPLOYMENT_NAME` set
 - **`scripts/dbt-sxs.py` removed**: Use the VS Code task "dbt: Stage External
   Sources" instead — it prompts for project, target, and source selection. For
   terminal usage, run the equivalent `dbt run-operation stage_external_sources`
@@ -547,8 +592,8 @@ hooks), but some require awareness.
   `zz_stg_*`. Dev schemas are now `zz_<GITHUB_USER>_*`. Old `z_dev_*` datasets
   will be dropped after confirming `zz_stg_*` is healthy
 - **Cross-regional development**: kipptaf developers working on regional model
-  changes use `--target dev-region` to resolve cross-regional sources to their
-  personal namespace. Default `--target dev` resolves cross-regional sources to
+  changes use `--target dev` to resolve cross-regional sources to their personal
+  namespace. Default `--target defer` resolves cross-regional sources to
   production (the common case)
 
 #### One-time cleanup (optional)
