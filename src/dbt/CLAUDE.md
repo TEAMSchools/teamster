@@ -86,6 +86,20 @@ Two inline patterns (see spec for details):
 - **Region source schema** (kipptaf `sources-kipp*` files only): prefixes for
   `dev` only (`defer` resolves to production)
 
+## Source File Conventions
+
+- **`sources-bigquery.yml`** — BQ-native archive sources. Use plain schema
+  (`{{ project_name }}_<service>`) with no target-conditional prefix. All tables
+  are `enabled: false`.
+- **`sources-external.yml`** — GCS/Google Sheets external sources. Use the
+  target-conditional inline Jinja prefix pattern.
+
+## Shipped Profiles (`src/dbt/*/profiles.yml`)
+
+Dagster-only: `defer` (static `zz_dagster_<project>` schema) + `prod`. No
+`GITHUB_USER` — not available in Dagster deployments. Developers use
+`.dbt/profiles.yml` for full target support.
+
 ## Model Conventions
 
 These conventions apply to **every** dbt project in this directory. Per-project
