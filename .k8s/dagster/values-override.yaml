@@ -39,15 +39,42 @@ dagsterCloudAgent:
   podSecurityContext:
     runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
 
-  nodeSelector:
-    cloud.google.com/gke-spot: "true"
-
   terminationGracePeriodSeconds: 15
 
   # Number of replicas of the agent service to keep up at a given time.
   replicas: 2
 
   affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 50
+          preference:
+            matchExpressions:
+              - key: cloud.google.com/gke-spot
+                operator: In
+                values:
+                  - "true"
+        - weight: 30
+          preference:
+            matchExpressions:
+              - key: cloud.google.com/compute-class
+                operator: In
+                values:
+                  - General-Purpose
+        - weight: 20
+          preference:
+            matchExpressions:
+              - key: cloud.google.com/compute-class
+                operator: In
+                values:
+                  - Scale-Out
+        - weight: 10
+          preference:
+            matchExpressions:
+              - key: cloud.google.com/compute-class
+                operator: In
+                values:
+                  - Balanced
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         - labelSelector:
@@ -82,10 +109,52 @@ workspace:
       annotations:
         operator.1password.io/auto-restart: "true"
     podSpecConfig:
-      nodeSelector:
-        cloud.google.com/compute-class: Scale-Out
-        cloud.google.com/gke-spot: "true"
-        kubernetes.io/arch: arm64
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/gke-spot
+                    operator: In
+                    values:
+                      - "true"
+            - weight: 40
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - Scale-Out
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - arm64
+            - weight: 30
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - General-Purpose
+            - weight: 20
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - Scale-Out
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+            - weight: 10
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - Balanced
       terminationGracePeriodSeconds: 15
 
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
@@ -105,9 +174,45 @@ workspace:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
-      nodeSelector:
-        cloud.google.com/compute-class: Scale-Out
-        kubernetes.io/arch: arm64
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 40
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - Scale-Out
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - arm64
+            - weight: 30
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - General-Purpose
+            - weight: 20
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - Scale-Out
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+            - weight: 10
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - Balanced
 
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.

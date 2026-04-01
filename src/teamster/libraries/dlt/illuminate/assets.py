@@ -1,13 +1,16 @@
+from collections.abc import Iterator
 from datetime import date
 
-from dagster import AssetExecutionContext, AssetKey
+from dagster import AssetExecutionContext, AssetKey, AssetSpec
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
 from dlt.sources.sql_database import remove_nullability_adapter, sql_database
+from sqlalchemy import Numeric
 from sqlalchemy.sql import Select, TableClause
+from sqlalchemy.types import TypeEngine
 
 
 class IlluminateDagsterDltTranslator(DagsterDltTranslator):
@@ -15,7 +18,7 @@ class IlluminateDagsterDltTranslator(DagsterDltTranslator):
         self.code_location = code_location
         return super().__init__()
 
-    def get_asset_spec(self, data):
+    def get_asset_spec(self, data) -> AssetSpec:
         asset_spec = super().get_asset_spec(data)
 
         asset_spec = asset_spec.replace_attributes(
@@ -36,9 +39,21 @@ class IlluminateDagsterDltTranslator(DagsterDltTranslator):
         return asset_spec
 
 
-def filter_date_taken_callback(query: Select, table: TableClause):
+def filter_date_taken_callback(query: Select, table: TableClause) -> Select:
     """date_taken is a postgres infinity date type, breaks psycopg"""
     return query.where(table.c.date_taken <= date(year=9999, month=12, day=31))
+
+
+def unbounded_numeric_adapter(col_type: TypeEngine) -> TypeEngine | None:
+    """Set precision/scale for unbounded Postgres numeric columns.
+
+    Postgres ``numeric`` with no size constraint reflects as
+    ``precision=None, scale=None``.  DLT defaults to
+    ``decimal128(38, 9)`` which truncates values with >9 decimal places.
+    """
+    if isinstance(col_type, Numeric) and col_type.precision is None:
+        return Numeric(precision=38, scale=18)
+    return col_type
 
 
 def build_illuminate_dlt_assets(
@@ -59,6 +74,7 @@ def build_illuminate_dlt_assets(
         defer_table_reflect=True,
         backend="pyarrow",
         table_adapter_callback=remove_nullability_adapter,
+        type_adapter_callback=unbounded_numeric_adapter,
         query_adapter_callback=(
             filter_date_taken_callback if filter_date_taken else None
         ),
@@ -80,7 +96,7 @@ def build_illuminate_dlt_assets(
         pool=f"dlt_illuminate_{code_location}",
         op_tags=op_tags,
     )
-    def _assets(context: AssetExecutionContext, dlt: DagsterDltResource):
+    def _assets(context: AssetExecutionContext, dlt: DagsterDltResource) -> Iterator:
         yield from dlt.run(context=context, write_disposition="replace")
 
     return _assets

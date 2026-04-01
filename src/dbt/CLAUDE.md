@@ -32,6 +32,21 @@ titan ────────┘
 Not every district uses every source package. See each district project's
 CLAUDE.md for its active packages.
 
+## District Variable Defaults
+
+All district projects share these variables (override via `dbt_project.yml`):
+
+- `current_academic_year`, `current_fiscal_year` — updated each July; get
+  current values from any district's `dbt_project.yml`
+- `local_timezone` — `America/New_York`
+- `cloud_storage_uri_base` — `gs://teamster-<project>/dagster/<project>`
+- `powerschool_external_location_root` —
+  `gs://teamster-<project>/dagster/<project>/powerschool` (ODBC districts only)
+
+Exceptions: `kippnewark` adds `iready_schema: kippnj_iready` and
+`renlearn_schema: kippnj_renlearn`. `kipptaf` has
+`bigquery_external_connection_name` — see its CLAUDE.md.
+
 ## Shared Dependencies
 
 All projects use:
@@ -55,6 +70,16 @@ deployments.
 All staging sources use BigQuery external tables backed by GCS (Avro format,
 BigLake connection, 7-day staleness window). Each source's `sources.yml`
 includes `dagster: asset_key` metadata so Dagster can track lineage.
+
+## CI External Table Setup
+
+New external tables must be staged in the `z_dev_` schema before kipptaf CI can
+reference them via `union_relations`. Use `--target staging` with both
+`dbt-sxs.py` and `dbt build`. The default `--target dev` creates tables in your
+personal `zz_<user>_*` schema, which CI does not see.
+
+`dbt-sxs.py` flags are independent: `--test` controls the GCS bucket
+(`teamster-test` vs production), `--target` controls the BigQuery schema.
 
 ## Model Conventions
 
@@ -88,9 +113,7 @@ CLAUDE.md files reference this section rather than repeating it.
 columns:
   - name: surrogate_key
     data_tests:
-      - unique:
-          config:
-            store_failures: true
+      - unique
 
 # multi-column uniqueness (when no single column is unique)
 data_tests:
@@ -99,52 +122,91 @@ data_tests:
         combination_of_columns:
           - column_a
           - column_b
-      config:
-        store_failures: true
 ```
+
+### Test config defaults
+
+All kipp\* `dbt_project.yml` files set project-level test defaults:
+
+```yaml
+data_tests:
+  +severity: warn
+  +store_failures: true
+  +store_failures_as: view
+```
+
+- Do not add `store_failures: true` to individual tests — the project default
+  handles it
+- Tests that must error (not warn) need explicit `config: severity: error`
+- Unscoped `+config` applies to tests from all installed packages, not just the
+  current project
+
+### VS Code YAML schema
+
+The VS Code YAML extension does not recognize `store_failures_as` — the
+resulting diagnostic is a false positive. dbt parses it correctly.
 
 ### SQL conventions
 
 - **Soft-delete filters**: Apply in the **staging model**, not in downstream
   `ON` clauses. Deleted rows should never reach intermediate or mart models.
-- **No `GROUP BY` without aggregation** — use `DISTINCT` instead. `DISTINCT`
-  requires a comment explaining why it is necessary.
+  Omit columns whose value is predetermined by the WHERE filter (e.g.,
+  `deleted_at` after `WHERE deleted_at IS NULL`) — they add no signal.
+- **No `GROUP BY` without aggregation** — use `DISTINCT` instead (see next rule
+  for deduplication constraints).
+- **No manual deduplication** — do not use `SELECT DISTINCT` or
+  `qualify row_number() over (...) = 1` for deduplication. Use
+  `dbt_utils.deduplicate()` with an explicit `partition_by` and `order_by`. If
+  `DISTINCT` is truly unavoidable, it must include a `-- TODO:` comment
+  explaining why and what needs to be fixed upstream.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
   breaks silently when upstream columns change.
 - **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models.
 - **No `SELECT *` in final `SELECT` of `rpt_`/mart models** — list columns
-  explicitly. Pass-through CTEs (`select * from ref(...)`) are fine.
+  explicitly. Pass-through CTEs (`select * from ref(...)`) are fine. Get the
+  authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
+
+  ```sql
+  select column_name
+  from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
+  where table_name = '<model_name>'
+  order by ordinal_position
+  ```
+
 - **`ON` vs `WHERE`** — row filters on the preserved table belong in `WHERE`,
   not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
   Exception: `FULL JOIN` conditions referencing one side stay in `ON`.
-- **`SELECT *` from `dbt_utils.star()` models** — see
-  `src/dbt/kipptaf/CLAUDE.md` for guidance (includes
-  `INFORMATION_SCHEMA.COLUMNS` query pattern).
 - **Timezone-aware today**:
 
   ```sql
   current_date('{{ var("local_timezone") }}')
   ```
 
-### SQL column ordering in SELECT clauses
+### SQL column ordering in SELECT clauses (enforced by ST06)
 
-Columns within a SELECT must follow this order:
+Columns within a SELECT **must** follow this order — no interleaving:
 
 1. Column enumerations (plain refs), grouped by source table in join order,
    separated by a blank line between each table's group
-2. Simple functions (`coalesce(...)`, simple `if(...)`)
-3. Nested functions
-4. Logicals (`if(condition, true, false)`)
-5. Case statements
-6. Window functions (`row_number() over (...)`)
+2. Constants and literals
+3. Simple functions (`coalesce(...)`, simple `if(...)`)
+4. Nested functions
+5. Logicals (`if(condition, true, false)`)
+6. Case statements
+7. Window functions (`row_number() over (...)`)
 
 When a SELECT reads from a single table/CTE, do not prefix columns with the
 alias.
 
-### Documentation
+### YAML conventions
 
-Column-level documentation belongs in the model's properties YAML as a
-`description:` field, not as inline SQL comments.
+- All new or modified models require `description:` on the model and every
+  column. Profile staging data via BigQuery MCP; infer downstream from parents.
+  Describe calculated fields by logic. Use qualitative language — no stats.
+- Columns with `data_tests:` should be sorted to the top of the `columns:` list
+  for visibility.
+- Column renames for semantic clarity (e.g., boolean prefixing with `is_`,
+  reserved word aliases) belong in the staging model, not downstream.
 
 ### Legacy `base_` prefix
 
@@ -158,6 +220,8 @@ All SQL follows `.trunk/config/.sqlfluff`. Key enforced rules:
 
 - **Dialect**: BigQuery
 - **Trailing commas**: required in `SELECT` clauses
+- **Reserved words**: BigQuery reserved words as column names must be
+  backtick-quoted in SQL and have `quote: true` in properties YAML
 - **String literals**: single quotes only (no double quotes)
 - **Line length**: 88 characters max
 

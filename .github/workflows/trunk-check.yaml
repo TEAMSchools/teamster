@@ -14,8 +14,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions: read-all
-
 jobs:
   trunk_check:
     name: Trunk Check Runner
@@ -27,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Trunk Check
         uses: trunk-io/trunk-action@v1

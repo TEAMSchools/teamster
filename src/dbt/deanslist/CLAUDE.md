@@ -21,8 +21,3 @@ projects.
 Referenced as a dbt package by `kippnewark`, `kippcamden`, and `kipptaf`.
 Consuming district projects may disable specific models (e.g.,
 `stg_deanslist__followups`) in their own `dbt_project.yml`.
-
-## Model Conventions
-
-See `src/dbt/CLAUDE.md` for per-layer requirements (contract enforcement,
-uniqueness tests, SQL antipatterns) that apply to all dbt projects.

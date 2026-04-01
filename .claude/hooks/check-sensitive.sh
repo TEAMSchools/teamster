@@ -97,7 +97,7 @@ if [[ ${tool_name} == "Bash" ]]; then
   fi
 
   # 3. Environment variable / process memory leakage
-  if echo "${sanitized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bexport -p\b|\bcompgen\b|\btypeset([[:space:]]+-x|\b)|/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|OP_SERVICE_ACCOUNT_TOKEN|OP_SERVICE|ACCOUNT_TOKEN|\benviron\b|\bgetenv\b'; then
+  if echo "${sanitized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bexport -p\b|\bcompgen\b|\btypeset([[:space:]]+-x|\b)|/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|OP_SERVICE_ACCOUNT_TOKEN|OP_CONNECT_TOKEN|OP_SERVICE|ACCOUNT_TOKEN|\benviron\b|\bgetenv\b'; then
     deny
   fi
 
@@ -171,7 +171,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════
 
 # 8. Block BigQuery non-read operations (whitelist: only SELECT/SHOW/DESCRIBE allowed)
-if [[ ${tool_name} == mcp__bigquery__* ]]; then
+if [[ ${tool_name} == mcp__bigquery__execute_sql || ${tool_name} == mcp__bigquery__analyze_contribution ]]; then
   if ! echo "${sanitized}" | grep -qiE '^\s*(SELECT|SHOW|DESCRIBE|WITH)\b'; then
     deny
   fi

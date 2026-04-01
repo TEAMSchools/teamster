@@ -14,4 +14,4 @@ models:
       - name: label_number
         data_type: numeric
       - name: minimum_value
-        data_type: float64
+        data_type: numeric

@@ -103,7 +103,7 @@ echo -e "${YELLOW}Description field scoping${NC}"
 
 # trunk-ignore-begin(shellcheck/SC2312)
 expect_deny_json "MCP description field with .env" \
-  "$(jq -n '{tool_name: "mcp__bigquery__query", tool_input: {description: "cat .env", sql: "SELECT 1"}}')"
+  "$(jq -n '{tool_name: "mcp__bigquery__execute_sql", tool_input: {description: "cat .env", sql: "SELECT 1"}}')"
 
 expect_allow_json "Agent description with env word" \
   "$(jq -n '{tool_name: "Agent", tool_input: {description: "check the environment setup", prompt: "list files"}}')"

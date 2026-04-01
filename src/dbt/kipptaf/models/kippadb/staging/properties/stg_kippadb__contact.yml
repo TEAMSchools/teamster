@@ -7,7 +7,7 @@ models:
           - unique:
               config:
                 where: school_specific_id is not null
-                store_failures: true
+                severity: error
       - name: id
         data_type: string
       - name: owner_id

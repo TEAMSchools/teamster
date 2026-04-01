@@ -6,7 +6,7 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: date_value
         data_type: date
       - name: scheduleid

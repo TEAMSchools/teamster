@@ -63,14 +63,8 @@ Macro defined in `macros/utils.sql` — extracts school prefix via
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not
 SQL. YAML properties drift silently. **Rule**: enumerate columns explicitly when
-joining these models. Get the authoritative list:
-
-```sql
-select column_name
-from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
-where table_name = '<model_name>'
-order by ordinal_position
-```
+joining these models (see `INFORMATION_SCHEMA.COLUMNS` query in
+`src/dbt/CLAUDE.md`).
 
 `union_relations` views have a related issue (stale compiled SQL) but are
 handled automatically by `dbt_union_relations_automation_condition()`.
@@ -130,15 +124,10 @@ config:
           cron_schedule: "0 7 * * *" # only if Dagster-managed
 ```
 
-## Key Variables
+## kipptaf-Specific Variables
 
-| Variable                            | Value                                                                    |
-| ----------------------------------- | ------------------------------------------------------------------------ |
-| `current_academic_year`             | `2025`                                                                   |
-| `current_fiscal_year`               | `2026`                                                                   |
-| `local_timezone`                    | `America/New_York`                                                       |
-| `cloud_storage_uri_base`            | `gs://teamster-kipptaf/dagster/kipptaf`                                  |
-| `bigquery_external_connection_name` | `projects/teamster-332318/locations/us/connections/biglake-teamster-gcs` |
+`bigquery_external_connection_name`:
+`projects/teamster-332318/locations/us/connections/biglake-teamster-gcs`
 
 dbt Cloud project ID: `211862`.
 

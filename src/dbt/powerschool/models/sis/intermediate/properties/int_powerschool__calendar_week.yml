@@ -7,7 +7,7 @@ models:
               - schoolid
               - week_start_date
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: schoolid
         data_type: int64

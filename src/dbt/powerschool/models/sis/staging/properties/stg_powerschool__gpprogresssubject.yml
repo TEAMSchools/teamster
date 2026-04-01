@@ -6,7 +6,7 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: gpnodeid
         data_type: int64
       - name: isadvancedplan

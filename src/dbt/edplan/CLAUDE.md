@@ -19,8 +19,3 @@ models/
 Referenced by `kippnewark`, `kippcamden`, and `kipptaf`. The model
 `stg_edplan__njsmart_powerschool_archive` is disabled in NJ district projects
 (enabled only in `kipptaf` if needed).
-
-## Model Conventions
-
-See `src/dbt/CLAUDE.md` for per-layer requirements (contract enforcement,
-uniqueness tests, SQL antipatterns) that apply to all dbt projects.

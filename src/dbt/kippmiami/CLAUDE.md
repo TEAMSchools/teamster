@@ -29,18 +29,3 @@ All materialized as tables via cross-project `ref()`:
 - `renlearn`
 
 Note: Miami does not use `edplan`, `overgrad`, `pearson`, or `titan`.
-
-## Key Variables
-
-| Variable                             | Value                                                   |
-| ------------------------------------ | ------------------------------------------------------- |
-| `current_academic_year`              | `2025`                                                  |
-| `current_fiscal_year`                | `2026`                                                  |
-| `local_timezone`                     | `America/New_York`                                      |
-| `cloud_storage_uri_base`             | `gs://teamster-kippmiami/dagster/kippmiami`             |
-| `powerschool_external_location_root` | `gs://teamster-kippmiami/dagster/kippmiami/powerschool` |
-
-## Model Conventions
-
-See `src/dbt/CLAUDE.md` for per-layer requirements (contract enforcement,
-uniqueness tests, SQL antipatterns) that apply to all dbt projects.

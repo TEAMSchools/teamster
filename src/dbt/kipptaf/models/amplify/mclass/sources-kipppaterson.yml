@@ -22,3 +22,12 @@ sources:
                 - kipppaterson
                 - amplify
                 - stg_amplify__mclass__sftp__pm_student_summary
+      - name: stg_amplify__mclass__sftp__pm_student_summary_aimline
+        config:
+          meta:
+            dagster:
+              group: amplify
+              asset_key:
+                - kipppaterson
+                - amplify
+                - stg_amplify__mclass__sftp__pm_student_summary_aimline

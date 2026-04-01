@@ -33,13 +33,26 @@ assets:
       - table_name: assessment_standards
       - table_name: assessments
       - table_name: assessments_reporting_groups
+      - table_name: field_responses
+      - table_name: fields
       - table_name: performance_band_sets
       - table_name: performance_bands
       - table_name: reporting_groups
+      - table_name: responses
       - table_name: students_assessments
         filter_date_taken: true
         op_tags:
           dagster/priority: "1"
+      - table_name: students_assessments_responses
+        op_tags:
+          dagster/priority: "1"
+          dagster-k8s/config:
+            container_config:
+              resources:
+                requests:
+                  cpu: 500m
+                limits:
+                  cpu: 1000m
   - schema: dna_repositories
     tables:
       - table_name: fields

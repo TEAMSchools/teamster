@@ -2,6 +2,11 @@ models:
   - name: fct_additional_earnings
 
     columns:
+      - name: additional_earnings_key
+        data_type: string
+        data_tests:
+          - unique
+
       - name: additional_earnings_code
         data_type: string
 

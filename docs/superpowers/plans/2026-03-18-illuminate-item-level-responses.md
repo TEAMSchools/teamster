@@ -307,7 +307,7 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: assessment_id
         data_type: int64
       - name: student_assessment_id
@@ -367,7 +367,7 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: response
         data_type: string
 ```
@@ -413,7 +413,7 @@ models:
               - response_id
               - version_id
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: field_response_id
         data_type: int64
@@ -484,7 +484,7 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: version_id
         data_type: int64
       - name: field_type_id
@@ -582,7 +582,7 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: student_assessment_id
         data_type: int64
       - name: assessment_id
