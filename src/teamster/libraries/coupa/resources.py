@@ -18,8 +18,8 @@ class CoupaResource(BaseHTTPResource):
     def _setup_session(self) -> None:
         self._base_url = f"https://{self.instance_url}"
 
-        # trunk-ignore(pyright/reportArgumentType): scope is list[str], API expects str
         self._session = OAuth2Session(
+            # trunk-ignore(pyright/reportArgumentType): scope is list[str], API expects str
             client=BackendApplicationClient(client_id=self.client_id, scope=self.scope)
         )
 
