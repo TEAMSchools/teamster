@@ -73,11 +73,15 @@ dagsterCloudAgent:
   topologySpreadConstraints:
     - maxSkew: 1
       topologyKey: topology.kubernetes.io/zone
-      whenUnsatisfiable: DoNotSchedule
+      whenUnsatisfiable: ScheduleAnyway
       labelSelector:
         matchLabels:
           app.kubernetes.io/name: dagster-cloud-agent
 ```
+
+`ScheduleAnyway` prefers cross-zone distribution but allows same-zone placement
+during capacity exhaustion — strictly better than `DoNotSchedule` for
+availability, with no downside when capacity is normal.
 
 **Enable** the readiness probe and rolling update strategy for zero-downtime
 Helm upgrades. The probe checks for completion of the initial reconciliation
@@ -196,13 +200,12 @@ config. See TEAMSchools/teamster#3550.
   per-pod, so the cost difference is limited to the spot discount (~60-91%)
   during the fallback window. Availability during overnight batch runs is worth
   the cost.
-- **Topology spread on Autopilot:** Autopilot manages node provisioning. If only
-  one zone has spot capacity, the second agent pod could remain Pending with
-  `DoNotSchedule`. Note that `DoNotSchedule` combined with a multi-zone STOCKOUT
-  (as seen on 2026-03-30/31) would be _worse_ than no topology spread — it would
-  prevent even single-zone scheduling. Mitigation: monitor pod pending alerts
-  (and the new scale-up failure alert), and be prepared to relax to
-  `ScheduleAnyway` if multi-zone unavailability recurs.
+- **Topology spread on Autopilot:** Autopilot manages node provisioning. Using
+  `ScheduleAnyway` (not `DoNotSchedule`) so the scheduler prefers cross-zone
+  distribution but allows same-zone placement during capacity exhaustion.
+  `DoNotSchedule` combined with a multi-zone STOCKOUT (as seen on 2026-03-30/31)
+  would be _worse_ than no topology spread — it would prevent even single-zone
+  scheduling.
 - **Helm chart support for topology spread:** The `dagsterCloudAgent` section
   may not have a native `topologySpreadConstraints` field — verify during
   implementation. May need to use `additionalPodSpecConfig` or a similar escape

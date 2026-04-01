@@ -31,9 +31,9 @@ on GKE Autopilot.
   and `dagster-k8s/config` tags can set: `resources`, `env`, `nodeSelector`,
   `affinity`, `annotations`, and `ttlSecondsAfterFinished`. Everything else is
   locked to Helm chart values.
-- **Agent topology spread** uses `DoNotSchedule` across
-  `topology.kubernetes.io/zone` via `additionalPodSpecConfig`. If multi-zone
-  STOCKOUT recurs, relax to `ScheduleAnyway`.
+- **Agent topology spread** uses `ScheduleAnyway` across
+  `topology.kubernetes.io/zone` via `additionalPodSpecConfig`. Prefers
+  cross-zone but allows same-zone during capacity exhaustion.
 - **Agent readiness probe** checks for
   `/tmp/finished_initial_reconciliation_sentinel.txt`. Rolling update
   (`maxSurge: 200%`, `maxUnavailable: 0%`) ensures zero-downtime Helm upgrades.
