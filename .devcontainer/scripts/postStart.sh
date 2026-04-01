@@ -19,16 +19,3 @@ uv sync --frozen --all-groups
 
 # install trunk tools
 /workspaces/teamster/trunk install --verbose
-
-# generate prod manifests for Power User --defer
-for project in kipptaf kippnewark kippcamden kippmiami kipppaterson; do
-  uv run dbt parse --target prod \
-    --project-dir "src/dbt/${project}" \
-    --profiles-dir .dbt \
-    --target-path target/prod &
-done
-wait
-
-# install post-merge hook for future manifest regeneration
-cp .vscode/scripts/post-merge.sh .git/hooks/post-merge
-chmod +x .git/hooks/post-merge
