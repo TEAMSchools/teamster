@@ -2,8 +2,8 @@
 
 ## Targets
 
-Four targets are available for school projects (kippnewark, kippcamden,
-kippmiami, kipptaf):
+Four targets are available for school projects (kipptaf, kippnewark, kippcamden,
+kippmiami, kipppaterson):
 
 | Target    | Purpose                                                                                                                                        |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
