@@ -18,7 +18,9 @@ models/
       staging/
     sftp/
       staging/
-  sources.yml
+  sources-dds.yml
+  sources-mclass-api.yml
+  sources-mclass-sftp.yml
 ```
 
 All staging models have `contract: enforced: true`. Both `dds` and `mclass/api`
