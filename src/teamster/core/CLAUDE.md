@@ -18,7 +18,8 @@ location's `definitions.py`. Two categories:
   SFTP/API assets)
 - `get_io_manager_gcs_file(code_location)` → `GCSIOManager` (raw file, used by
   paginated Deanslist)
-- `get_dbt_cli_resource(dbt_project, test=False)` → `DbtCliResource`
+- `get_dbt_cli_resource(dbt_project)` → `DbtCliResource` (targets `prod` in
+  Dagster Cloud production, default target otherwise)
 - `get_powerschool_ssh_resource()` → `SSHResource` (reads from shared env vars)
 
 All IO manager factories redirect to `teamster-test` bucket when
