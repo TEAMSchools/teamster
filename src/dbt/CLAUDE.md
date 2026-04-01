@@ -71,6 +71,21 @@ All staging sources use BigQuery external tables backed by GCS (Avro format,
 BigLake connection, 7-day staleness window). Each source's `sources.yml`
 includes `dagster: asset_key` metadata so Dagster can track lineage.
 
+## Source Schema Resolution
+
+dbt source YAML `schema:` fields render with `SchemaYamlContext`, which only
+provides `env_var()`, `var()`, `target`, and `project_name` — **not custom
+project macros** (dbt-labs/dbt-core#6056). Use standardized inline Jinja with
+`target.name` checks, not macro calls. Use single-line quoted strings — YAML
+multiline scalars (`|`, `>`) cause whitespace issues with `{%- -%}` tags.
+
+Two inline patterns (see spec for details):
+
+- **Source schema** (all sources except kipptaf cross-regional): prefixes for
+  `defer` and `dev` targets
+- **Region source schema** (kipptaf `sources-kipp*` files only): prefixes for
+  `dev` only (`defer` resolves to production)
+
 ## Model Conventions
 
 These conventions apply to **every** dbt project in this directory. Per-project

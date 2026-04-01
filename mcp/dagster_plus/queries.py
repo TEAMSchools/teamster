@@ -673,3 +673,52 @@ mutation LaunchRunReexecution($reexecutionParams: ReexecutionParams!) {
   }
 }
 """
+
+CLOUD_AGENTS_QUERY = """
+query CloudAgents {
+  agents {
+    id
+    agentLabel
+    status
+    lastHeartbeatTime
+    metadata {
+      key
+      value
+    }
+    errors {
+      timestamp
+      error {
+        message
+        stack
+        errorChain {
+          isExplicitLink
+          error {
+            message
+            stack
+          }
+        }
+      }
+    }
+    codeServerStates {
+      locationName
+      status
+      error {
+        message
+        stack
+        errorChain {
+          isExplicitLink
+          error {
+            message
+            stack
+          }
+        }
+      }
+    }
+    runWorkerStates {
+      message
+      status
+      runId
+    }
+  }
+}
+"""

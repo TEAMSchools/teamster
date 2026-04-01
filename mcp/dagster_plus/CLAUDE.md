@@ -46,7 +46,8 @@ New queries are sourced from the Dagster UI TypeScript at
 — no Python package exports client-side queries. Verify field names/types
 against the Python schema in
 [`dagster-graphql/dagster_graphql/schema`](https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-graphql/dagster_graphql/schema).
-**Do not write or modify queries from memory.**
+**Do not write or modify queries from memory.** Cloud-only queries (e.g.,
+`agents` root field) are not in the OSS repo — capture from browser Network tab.
 
 ### Schema gotchas
 
@@ -79,6 +80,11 @@ Tool selection and diagnostic workflows are in the server `instructions` (see
 
 ### API quirks
 
+- `get_cloud_agents` returns ALL agents (active + historical) with full error
+  logs — response is 200KB+ (77K tokens). Filter client-side; do not pass raw
+  result to subagents. See `.claude/skills/day2/filter_agents.py` for example.
+- `get_daemon_health` returns `lastHeartbeatTime: null` for all daemons on
+  Dagster Cloud — only useful as a binary healthy/unhealthy check
 - `get_run_compute_logs` returns null for GKE runs (ephemeral pods) — use
   BigQuery MCP and dbt compilation instead
 - `get_run_logs` returns `timestamp: null` for non-`MessageEvent` types

@@ -51,6 +51,29 @@ sources:
                 - mclass
                 - sftp
                 - pm_student_summary
+      - name: pm_student_summary_aimline
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base')
+            }}/amplify/mclass/sftp/pm_student_summary_aimline/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base')
+              }}/amplify/mclass/sftp/pm_student_summary_aimline/"
+            format: AVRO
+            enable_logical_types: true
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - amplify
+                - mclass
+                - sftp
+                - pm_student_summary_aimline
   - name: amplify_mclass_api
     schema:
       "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',

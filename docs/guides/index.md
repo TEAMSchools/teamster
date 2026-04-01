@@ -49,3 +49,4 @@ Cloud:
 | [Dagster](dagster.md)                     | Tableau scheduling, backfills, branch deployments, monitoring runs     |
 | [Google Sheets & Forms](google-sheets.md) | Adding and updating Google Sheets and Forms sources                    |
 | [dbt Development](dbt-development.md)     | Targets, defer, staging external sources, cross-project workflows      |
+| [SFTP Integration](sftp-integration.md)   | Adding a new SFTP file drop using `init_sftp_integration.py`           |

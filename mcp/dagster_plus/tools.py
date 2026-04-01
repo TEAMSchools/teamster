@@ -17,6 +17,7 @@ from .queries import (
     BACKFILL_QUERY,
     BACKFILLS_QUERY,
     CAPTURED_LOGS_METADATA_QUERY,
+    CLOUD_AGENTS_QUERY,
     CODE_LOCATIONS_QUERY,
     COMPUTE_LOGS_QUERY,
     DAEMON_HEALTH_QUERY,
@@ -291,6 +292,14 @@ async def get_daemon_health() -> str:
     """Get the health status of all Dagster+ daemons (scheduler, sensor, run coordinator, etc.). Returns whether each daemon is healthy, its last heartbeat time, and any error messages."""
     data = await gql(DAEMON_HEALTH_QUERY)
     return json.dumps(data["instance"]["daemonHealth"]["allDaemonStatuses"])
+
+
+@server.tool()
+@_handle_gql_errors
+async def get_cloud_agents() -> str:
+    """Get Dagster Cloud agent statuses, recent errors, code server states, and run worker states. Use for diagnosing agent-level issues like gRPC connectivity failures, code server crashes, or agent heartbeat gaps."""
+    data = await gql(CLOUD_AGENTS_QUERY)
+    return json.dumps(data["agents"])
 
 
 @server.tool()
