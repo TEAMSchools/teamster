@@ -1,8 +1,8 @@
 sources:
   - name: kippnewark_finalsite
-    schema: |
-      {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_
-      {%- endif -%}kippnewark_finalsite
+    schema:
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
+      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippnewark_finalsite"
     tables:
       - name: stg_finalsite__status_report
         config:
