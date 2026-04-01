@@ -5,11 +5,13 @@
 
 ## Problem
 
-10 active `ConfigurableResource` classes independently implement the same
+14 `ConfigurableResource` classes independently implement the same
 `requests.Session` wrapper pattern, duplicating session lifecycle, URL
 construction, request wrapping, error handling, and auth setup. This makes it
 hard to add cross-cutting improvements (retries, rate limiting, metrics) and
-increases the cost of adding new API integrations.
+increases the cost of adding new API integrations. Of these, 10 are actively
+used in code locations; 4 are vestigial (builder functions exist but are not
+called).
 
 ## Approach
 
@@ -18,8 +20,12 @@ needs — auth setup, URL format, error handling, or request preparation. The ba
 provides built-in retry via tenacity, standardized error handling with
 rate-limit awareness, and pagination helpers for the three common patterns.
 
-Dead resource libraries (AdpWorkforceManagerResource, MClassResource,
-DibelsDataSystemResource, CouchdropResource) are preserved untouched.
+Vestigial resource libraries (AdpWorkforceManagerResource, MClassResource,
+DibelsDataSystemResource, CouchdropResource, AlchemerResource) are preserved
+untouched — their builder functions exist but are not called by any code
+location. Proactive rate-limiting sleeps in existing resources (Overgrad,
+KnowBe4, ADP WFN) are removed during migration; tenacity retry on 429 is
+sufficient.
 
 ## Base Class Design
 
@@ -42,8 +48,18 @@ Dagster `ConfigurableResource` config.
 OAuth2Session subclasses (Coupa, ADP WFN) assign an `OAuth2Session` in
 `_setup_session()` — this works at runtime since `OAuth2Session` extends
 `Session`, but pyright may flag it. Subclasses that need
-`OAuth2Session`-specific methods (e.g., `fetch_token()`) should use a typed
-property or cast rather than re-declaring the PrivateAttr.
+`OAuth2Session`-specific methods (e.g., `fetch_token()`) add a typed property
+accessor with `cast`:
+
+```python
+@property
+def oauth_session(self) -> OAuth2Session:
+    return cast(OAuth2Session, self._session)
+```
+
+This matches the existing codebase pattern (Coupa/ADP already assign
+`OAuth2Session` to a `Session`-typed attr), avoids Dagster/Pydantic generic
+compatibility risk, and limits the cast to one accessor per subclass.
 
 | Field       | Type                | Default                   | Purpose                               |
 | ----------- | ------------------- | ------------------------- | ------------------------------------- |
@@ -89,10 +105,16 @@ The core method, decorated with tenacity `@retry`:
 - `wait=wait_exponential_jitter(initial=1, max=60)`
 - `retry=retry_if_exception_type(HTTPError)`
 
-Subclasses can override retry behavior by re-decorating or setting class-level
-attributes (`_max_retries`, `_retry_wait_max`).
+Subclasses can override retry behavior by re-decorating `_request` with a new
+`@retry` decorator.
 
-Logs method + URL at debug level.
+Logging levels are standardized across the request pipeline:
+
+| Level     | Where           | Content                                    |
+| --------- | --------------- | ------------------------------------------ |
+| **info**  | `_request`      | Method, URL, status code, elapsed time     |
+| **debug** | `_request`      | Request/response details (headers, params) |
+| **error** | `_handle_error` | Method, URL, status code, `response.text`  |
 
 #### `_prepare_request(method, url, kwargs) -> tuple[str, str, dict]`
 
@@ -110,7 +132,7 @@ Error hook called on HTTPError. Built-in defaults:
 | Status    | Behavior                                                                                        |
 | --------- | ----------------------------------------------------------------------------------------------- |
 | **429**   | Calls `_get_retry_after(response)` for wait time, sleeps if found, raises to let tenacity retry |
-| **401**   | Calls `_reauthenticate()`, raises to let tenacity retry                                         |
+| **401**   | Calls `_reauthenticate()` (once per request — see guard below), raises to let tenacity retry    |
 | **5xx**   | Raises to let tenacity retry (exponential backoff)                                              |
 | **Other** | Logs `response.text` at error level, re-raises                                                  |
 
@@ -121,7 +143,8 @@ headers, APIs that misuse 403 for expired tokens).
 
 Parses rate-limit wait time from the response. Default checks in order:
 
-1. `Retry-After` header (seconds or HTTP-date format)
+1. `Retry-After` header — tries integer seconds first, then parses HTTP-date
+   format via `email.utils.parsedate_to_datetime` and converts to delta
 2. `X-RateLimit-Reset` header (epoch timestamp, converted to delta)
 3. Returns `None` (falls back to tenacity's exponential backoff)
 
@@ -134,6 +157,12 @@ Called by `_handle_error` on 401. Default re-raises the original `HTTPError` (no
 re-auth capability). Subclasses override with refresh token or token re-fetch
 logic; after re-authenticating, the override should return normally and let
 tenacity retry the request.
+
+**Single-attempt guard:** `_request` tracks whether `_reauthenticate()` has
+already been called for the current request (via a flag reset at the top of each
+`_request` call). On a second 401 for the same request, `_handle_error` skips
+`_reauthenticate()` and re-raises immediately, preventing credential-loop
+retries from burning all attempts.
 
 ### URL Construction
 
@@ -154,15 +183,15 @@ Three methods on `BaseHTTPResource` that subclasses call from their `list()`
 methods. These are utility methods that handle the loop mechanics while
 delegating page-fetching to the subclass via callbacks.
 
-All return `Iterator[list[dict]]` — yields per-page, so callers can stream or
-collect as needed.
+All return `Iterator[list[dict[str, Any]]]` — yields per-page, so callers can
+stream or collect as needed.
 
 Each paginator takes two callbacks:
 
 - `fetch_page(params) -> Response` — makes the HTTP request with the given
   pagination params
-- `extract_records(response) -> list[dict]` — extracts the record list from the
-  response (e.g., `response.json()["data"]`). This keeps response-shape
+- `extract_records(response) -> list[dict[str, Any]]` — extracts the record list
+  from the response (e.g., `response.json()["data"]`). This keeps response-shape
   knowledge in the subclass, not the paginator.
 
 ### `_paginate_cursor(fetch_page, extract_records, extract_cursor, page_params=None)`
@@ -175,50 +204,61 @@ Each paginator takes two callbacks:
 
 - Increments offset by `page_size` each iteration
 - Stops when `extract_records` returns fewer records than `page_size` (or empty)
-- **Consumers:** Overgrad, Grow, Coupa, DeansList, ADP WFN (`$skip`/`$top`)
+- Supports custom stop condition via optional `is_last_page(response) -> bool`
+  callback — default checks record count < page_size. ADP WFN overrides to stop
+  on HTTP 204.
+- **Consumers:** Grow, Coupa, ADP WFN (`$skip`/`$top`)
 
 ### `_paginate_page(fetch_page, extract_records, page_size, start=1, page_param="page", size_param="pagesize")`
 
 - Increments page number each iteration
 - Stops when `extract_records` returns empty or fewer than `page_size`
-- **Consumers:** KnowBe4, PowerSchool
+- **Consumers:** KnowBe4, PowerSchool, Overgrad, DeansList
 
 ## Migration Tiers
+
+**`_request` signature normalization:** Several existing resources use
+domain-specific `_request` signatures (e.g., KnowBe4's
+`(method, resource, id, **kwargs)`, DeansList's
+`(method, url, school_id, params, **kwargs)`). All must be refactored to the
+base class's generic `(method, url, **kwargs)` signature, moving domain logic
+into `_get_url()` or `_prepare_request()` overrides.
 
 ### Tier 1 — Direct drop-in (4 resources)
 
 Override `_setup_session()` only, optionally `_get_url()`.
 
-| Resource                      | Auth                  | Pagination         |
-| ----------------------------- | --------------------- | ------------------ |
-| SmartRecruitersResource       | `X-SmartToken` header | None               |
-| PowerSchoolEnrollmentResource | Basic auth            | `_paginate_page`   |
-| OvergradResource              | `ApiKey` header       | `_paginate_offset` |
-| KnowBe4Resource               | Bearer header         | `_paginate_page`   |
+| Resource                      | Auth                  | Pagination       |
+| ----------------------------- | --------------------- | ---------------- |
+| SmartRecruitersResource       | `X-SmartToken` header | None             |
+| PowerSchoolEnrollmentResource | Basic auth            | `_paginate_page` |
+| OvergradResource              | `ApiKey` header       | `_paginate_page` |
+| KnowBe4Resource               | Bearer header         | `_paginate_page` |
 
 ### Tier 2 — Additional hooks (4 resources)
 
 Uses `_get_retry_after` override, OAuth2Session, or non-trivial
 `_setup_session`.
 
-| Resource          | Auth               | Pagination         | Hook overrides                                 |
-| ----------------- | ------------------ | ------------------ | ---------------------------------------------- |
-| ZendeskResource   | HTTPBasicAuth      | `_paginate_cursor` | `_get_retry_after` (custom rate-limit headers) |
-| FinalsiteResource | JWT bearer         | `_paginate_cursor` | Default 429 handling via `_get_retry_after`    |
-| CoupaResource     | OAuth2Session      | `_paginate_offset` | `_setup_session` assigns OAuth2Session         |
-| GrowResource      | OAuth2 token fetch | `_paginate_offset` | Custom response validation in `get()`          |
+| Resource          | Auth               | Pagination         | Hook overrides                                                                                     |
+| ----------------- | ------------------ | ------------------ | -------------------------------------------------------------------------------------------------- |
+| ZendeskResource   | HTTPBasicAuth      | `_paginate_cursor` | `_get_retry_after` parses `ratelimit-remaining`, `ratelimit-reset`, `Zendesk-RateLimit-Endpoint`   |
+| FinalsiteResource | JWT bearer         | `_paginate_cursor` | Replaces recursive 429 retry with tenacity + `_get_retry_after` (behavior change: bounded retries) |
+| CoupaResource     | OAuth2Session      | `_paginate_offset` | `_setup_session` assigns OAuth2Session                                                             |
+| GrowResource      | OAuth2 token fetch | `_paginate_offset` | `extract_records` validates `data`/`count` keys; post-pagination assertion `len(results) == count` |
 
 ### Tier 3 — Complex (2 resources)
 
-| Resource                | Auth                 | Pagination                          | Hook overrides                                                            |
-| ----------------------- | -------------------- | ----------------------------------- | ------------------------------------------------------------------------- |
-| AdpWorkforceNowResource | OAuth2Session + mTLS | `_paginate_offset` (`$skip`/`$top`) | `_get_retry_after`, `_setup_session` with cert                            |
-| DeansListResource       | API key per school   | `_paginate_offset`                  | `_prepare_request` (school_id injection), custom Avro writing in subclass |
+| Resource                | Auth                 | Pagination                                        | Hook overrides                                                                                                             |
+| ----------------------- | -------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| AdpWorkforceNowResource | OAuth2Session + mTLS | `_paginate_offset` (`$skip`/`$top`, stops on 204) | `_setup_session` with cert, `_get_url` override for `post()` (`{endpoint}.{subresource}.{verb}` pattern)                   |
+| DeansListResource       | API key per school   | `_paginate_page`                                  | `_prepare_request` (school_id injection), `_get_url` (beta endpoint `-data` suffix logic), custom Avro writing in subclass |
 
-### Dead resources (preserved, not migrated)
+### Vestigial resources (preserved, not migrated)
 
 AdpWorkforceManagerResource, MClassResource, DibelsDataSystemResource,
-CouchdropResource — no active consumers, left as-is.
+CouchdropResource, AlchemerResource — builder functions exist but are not called
+by any code location. Left as-is.
 
 ## Testing
 
