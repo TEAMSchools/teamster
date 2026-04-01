@@ -344,9 +344,21 @@ available from the first session.
 
 Similar entries for regional projects as needed.
 
-`favorState: false` means Power User defers based on the prod manifest only — it
-does not skip models whose upstream deps have not changed. New models absent
-from the prod manifest are built locally as normal.
+`favorState` maps to dbt's `--favor-state` CLI flag. When `true`, dbt always
+prefers the production manifest over local dev relations — even for models you
+just built. When `false` (our choice), dbt uses a local dev relation if it
+exists in your dev schema, otherwise defers to the prod manifest.
+
+`favorState: false` is the right default because it lets sequential single-model
+builds chain correctly: build model A, then build downstream model B, and B's
+`ref('model_a')` picks up your local dev version automatically. With
+`favorState: true`, B would defer A back to prod, requiring developers to always
+`--select` the full chain together.
+
+Trade-off: `favorState: false` means stale models from previous dev sessions
+(still in your `zz_<user>_*` BigQuery datasets) are silently used instead of
+deferring to prod. This is acceptable — developers can rebuild upstream or drop
+stale dev datasets when needed. The `dbt-development.md` guide documents this.
 
 > **Open question**: The Power User command palette exposes "Apply defer
 > configuration" — it is unclear whether this is a mandatory one-time setup step
@@ -538,7 +550,8 @@ Steps:
 1. Update developer-facing docs — add a new guide page
    (`docs/guides/dbt-development.md`) covering: target names and when to use
    each, the VS Code "Stage External Sources" task (replaces `dbt-sxs.py`),
-   Power User `--defer` behavior, the `check_prod_guard` safeguard, and the
+   Power User `--defer` behavior (including `favorState: false` trade-offs and
+   stale dev schema cleanup), the `check_prod_guard` safeguard, and the
    cross-project `--target dev` workflow. Add a nav entry in `mkdocs.yml`.
    Update `docs/guides/index.md` routing table with the new page. Update
    `docs/guides/google-sheets.md` — replace `scripts/dbt-sxs.py` verification
