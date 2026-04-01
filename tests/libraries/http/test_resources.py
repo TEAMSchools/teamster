@@ -382,7 +382,7 @@ class TestKnowBe4Resource:
 
     def test_base_url_includes_server(self):
         resource = self._make()
-        assert "us.api.knowbe4.com" in resource._base_url
+        assert resource._base_url == "https://us.api.knowbe4.com"
 
 
 class TestZendeskResource:
