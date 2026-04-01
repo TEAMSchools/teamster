@@ -7,6 +7,7 @@ from requests.exceptions import HTTPError
 from requests.models import Response as RealResponse
 
 from teamster.libraries.http.resources import BaseHTTPResource
+from teamster.libraries.knowbe4.resources import KnowBe4Resource
 from teamster.libraries.overgrad.resources import OvergradResource
 from teamster.libraries.powerschool.enrollment.resources import (
     PowerSchoolEnrollmentResource,
@@ -356,3 +357,27 @@ class TestOvergradResource:
             resource._get_url("students", "123")
             == "https://api.overgrad.com/api/v1/students/123"
         )
+
+
+class TestKnowBe4Resource:
+    def _make(self) -> KnowBe4Resource:
+        resource = KnowBe4Resource(api_key="test-key", server="us")
+        ctx = MagicMock()
+        ctx.log = MagicMock()
+        resource.setup_for_execution(ctx)
+        return resource
+
+    def test_setup_sets_bearer_header(self):
+        resource = self._make()
+        assert resource._session.headers["Authorization"] == "Bearer test-key"
+
+    def test_get_url(self):
+        resource = self._make()
+        assert (
+            resource._get_url("training", "enrollments")
+            == "https://us.api.knowbe4.com/v1/training/enrollments"
+        )
+
+    def test_base_url_includes_server(self):
+        resource = self._make()
+        assert "us.api.knowbe4.com" in resource._base_url
