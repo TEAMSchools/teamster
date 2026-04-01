@@ -2,7 +2,8 @@
 # Generate prod manifests for Power User --defer
 # Runs in parallel — dbt parse is CPU-only (no DB access)
 
-cd "$(git rev-parse --show-toplevel)" || exit 0
+toplevel="$(git rev-parse --show-toplevel)" || exit 0
+cd "${toplevel}" || exit 0
 
 # trunk-ignore(shellcheck/SC1091): sourced file created at runtime by uv installer
 source "${HOME}/.local/bin/env"
