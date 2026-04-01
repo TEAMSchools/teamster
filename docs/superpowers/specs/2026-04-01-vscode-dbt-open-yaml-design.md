@@ -13,8 +13,9 @@ a repetitive, friction-inducing step that interrupts the development flow.
 ## Goal
 
 A single keystroke opens the YAML properties file for whatever SQL model is
-currently active in the editor. No terminal output, no panel reveal — just the
-file.
+currently active in the editor. If no YAML exists yet, it creates a minimal stub
+so the developer has a starting point. No terminal output, no panel reveal —
+just the file.
 
 ---
 
@@ -49,7 +50,7 @@ Add one entry to the `tasks` array:
 {
   "label": "dbt: Open YAML",
   "type": "shell",
-  "command": "[ -f \"${fileDirname}/properties/${fileBasenameNoExtension}.yml\" ] && code \"${fileDirname}/properties/${fileBasenameNoExtension}.yml\" || code \"${fileDirname}/properties/${fileBasenameNoExtension}.yaml\"",
+  "command": "YML=\"${fileDirname}/properties/${fileBasenameNoExtension}.yml\"; YAML=\"${fileDirname}/properties/${fileBasenameNoExtension}.yaml\"; if [ -f \"$YML\" ]; then code \"$YML\"; elif [ -f \"$YAML\" ]; then code \"$YAML\"; else mkdir -p \"${fileDirname}/properties\" && printf 'models:\\n  - name: ${fileBasenameNoExtension}\\n    config:\\n      contract:\\n        enforced: false\\n' > \"$YML\" && code \"$YML\"; fi",
   "presentation": {
     "reveal": "never",
     "panel": "shared",
@@ -63,8 +64,27 @@ Add one entry to the `tasks` array:
 **Behavior:**
 
 - Checks for `.yml` first (house convention); falls back to `.yaml`
+- If neither exists, creates `properties/<model>.yml` with a minimal stub and
+  opens it
 - `reveal: never` + `close: true` — terminal panel never opens or flashes
 - `focus: false` — editor focus stays on the SQL file after invocation
+
+### Stub format
+
+When no YAML exists, the generated stub is:
+
+```yaml
+models:
+  - name: <model_name>
+    config:
+      contract:
+        enforced: false
+```
+
+`contract: enforced: false` is intentional — the developer builds out the model
+first, then flips the contract on once columns are stable. Full column
+generation with data types is handled by TEAMSchools/teamster#3551 once the
+model exists.
 
 ### User keybinding (each developer, one-time setup)
 
@@ -88,9 +108,10 @@ there is no conflict on macOS (`Cmd+Shift+Y` is used by Debug Console).
 
 | In scope                                   | Out of scope                                      |
 | ------------------------------------------ | ------------------------------------------------- |
-| Open matching YAML for the active SQL file | Creating the YAML file if it doesn't exist        |
-| `.yml` / `.yaml` fallback                  | Supporting non-`properties/` subdirectory layouts |
-| Silent invocation (no terminal reveal)     | Workspace-level keybinding (VS Code limitation)   |
+| Open matching YAML for the active SQL file | Supporting non-`properties/` subdirectory layouts |
+| `.yml` / `.yaml` fallback                  | Workspace-level keybinding (VS Code limitation)   |
+| Create minimal stub if no YAML exists      | Full column generation with data types (#3551)    |
+| Silent invocation (no terminal reveal)     |                                                   |
 
 ---
 
@@ -98,6 +119,8 @@ there is no conflict on macOS (`Cmd+Shift+Y` is used by Debug Console).
 
 - [ ] `.vscode/tasks.json` contains a `"dbt: Open YAML"` task
 - [ ] Task prefers `.yml`, falls back to `.yaml`
+- [ ] When no YAML exists, task creates a stub with `contract: enforced: false`
+      and opens it
 - [ ] Terminal panel does not appear on invocation
 - [ ] Task is manually verified against a real model file in the Codespace
 
@@ -107,4 +130,5 @@ there is no conflict on macOS (`Cmd+Shift+Y` is used by Debug Console).
 
 Single file change: add the task object to `.vscode/tasks.json`.
 
-No scripts, no new dependencies, no environment variables required.
+The stub creation logic is embedded in the shell command — no external scripts,
+no new dependencies, no environment variables required.
