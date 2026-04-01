@@ -315,8 +315,9 @@ roughly the cost of the slowest project rather than the sum:
 
 ```bash
 for project in kipptaf kippnewark kippcamden kippmiami kipppaterson; do
-  dbt parse --target prod \
+  uv run dbt parse --target prod \
     --project-dir "src/dbt/${project}" \
+    --profiles-dir .dbt \
     --target-path target/prod &
 done
 wait
