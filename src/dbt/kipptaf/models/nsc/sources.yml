@@ -1,8 +1,6 @@
 sources:
   - name: nsc
-    schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}
-      z_dev_{%- endif -%}kipptaf_nsc
+    schema: "{{ resolve_source_schema('kipptaf_nsc') }}"
     tables:
       - name: src_nsc__student_tracker
         external:

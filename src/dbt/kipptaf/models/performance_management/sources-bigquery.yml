@@ -1,6 +1,7 @@
 sources:
   - name: performance_management
-    schema: "{{ project_name }}_performance_management"
+    schema:
+      "{{ resolve_source_schema(project_name ~ '_performance_management') }}"
     config:
       enabled: false
     tables:

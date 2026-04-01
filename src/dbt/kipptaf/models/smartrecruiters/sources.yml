@@ -1,8 +1,6 @@
 sources:
   - name: smartrecruiters
-    schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['dev', 'staging'] -%}z_dev_
-      {%- endif -%}kipptaf_smartrecruiters
+    schema: "{{ resolve_source_schema('kipptaf_smartrecruiters') }}"
     tables:
       - name: src_smartrecruiters__applications
         external:

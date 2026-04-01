@@ -1,8 +1,6 @@
 sources:
   - name: alchemer
-    schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ project_name }}_alchemer
+    schema: "{{ resolve_source_schema(project_name ~ '_alchemer') }}"
     config:
       enabled: false
     tables:

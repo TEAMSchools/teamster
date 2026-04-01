@@ -1,6 +1,6 @@
 sources:
   - name: zendesk
-    schema: "{{ project_name }}_zendesk"
+    schema: "{{ resolve_source_schema(project_name ~ '_zendesk') }}"
     tables:
       - name: groups
       - name: organizations
