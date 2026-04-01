@@ -7,13 +7,16 @@ from requests import Session
 from requests.exceptions import HTTPError
 from requests.models import Response as RealResponse
 
+from teamster.libraries.coupa.resources import CoupaResource
 from teamster.libraries.http.resources import BaseHTTPResource
 from teamster.libraries.knowbe4.resources import KnowBe4Resource
+from teamster.libraries.level_data.grow.resources import GrowResource
 from teamster.libraries.overgrad.resources import OvergradResource
 from teamster.libraries.powerschool.enrollment.resources import (
     PowerSchoolEnrollmentResource,
 )
 from teamster.libraries.smartrecruiters.resources import SmartRecruitersResource
+from teamster.libraries.zendesk.resources import ZendeskResource
 
 
 def _make_resource(**kwargs) -> BaseHTTPResource:
@@ -384,10 +387,6 @@ class TestKnowBe4Resource:
         assert "us.api.knowbe4.com" in resource._base_url
 
 
-from teamster.libraries.coupa.resources import CoupaResource
-from teamster.libraries.zendesk.resources import ZendeskResource
-
-
 class TestZendeskResource:
     def _make(self) -> ZendeskResource:
         resource = ZendeskResource(
@@ -440,11 +439,50 @@ class TestCoupaResource:
 
     def test_setup_sets_bearer_header(self):
         resource = self._make()
-        assert "Bearer" in resource._session.headers.get("Authorization", "")
+        assert "Bearer" in str(resource._session.headers.get("Authorization", ""))
 
     def test_get_url(self):
         resource = self._make()
         assert (
             resource._get_url("purchase_orders")
             == "https://test.coupahost.com/api/purchase_orders"
+        )
+
+
+class TestGrowResource:
+    def _make(self) -> GrowResource:
+        resource = GrowResource(
+            client_id="cid",
+            client_secret="csec",
+            district_id="dist-1",
+        )
+        ctx = MagicMock()
+        ctx.log = MagicMock()
+        with patch(
+            "teamster.libraries.level_data.grow.resources.OAuth2Session"
+        ) as mock_oauth:
+            mock_oauth_instance = MagicMock()
+            mock_oauth_instance.fetch_token.return_value = {
+                "access_token": "test-token"
+            }
+            mock_oauth.return_value = mock_oauth_instance
+            resource.setup_for_execution(ctx)
+        return resource
+
+    def test_setup_sets_bearer_header(self):
+        resource = self._make()
+        assert "Bearer test-token" in resource._session.headers.get("Authorization", "")
+
+    def test_get_url(self):
+        resource = self._make()
+        assert (
+            resource._get_url("schools")
+            == "https://grow-api.leveldata.com/external/schools"
+        )
+
+    def test_get_url_with_id(self):
+        resource = self._make()
+        assert (
+            resource._get_url("schools", "123")
+            == "https://grow-api.leveldata.com/external/schools/123"
         )
