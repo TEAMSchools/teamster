@@ -10,7 +10,7 @@ models:
               - lesson_type
               - domain
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: student_id
         data_type: int64

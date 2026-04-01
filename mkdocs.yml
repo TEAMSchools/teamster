@@ -39,6 +39,7 @@ nav:
       - Local Development: guides/local-development.md
       - Dagster: guides/dagster.md
       - Google Sheets & Forms: guides/google-sheets.md
+      - SFTP Integration: guides/sftp-integration.md
   - Troubleshooting:
       - Dagster: troubleshooting/dagster.md
       - dbt: troubleshooting/dbt.md

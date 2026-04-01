@@ -14,23 +14,16 @@ cleanup() {
 }
 trap cleanup ERR EXIT INT TERM HUP
 
-# validate template files are not symlinks
-for tpl_file in .devcontainer/tpl/.env.tpl \
-  .devcontainer/tpl/adp_wfn_api.cer.tpl \
-  .devcontainer/tpl/adp_wfn_api.key.tpl \
-  .devcontainer/tpl/deanslist_api_key_map_yaml.tpl \
-  .devcontainer/tpl/id_rsa_egencia.tpl \
-  .devcontainer/tpl/powerschool_ssh_password.txt.tpl; do
-  if [[ -L ${tpl_file} ]]; then
-    echo "❌ ${tpl_file} is a symlink — aborting" >&2
-    exit 1
-  fi
-done
+tpl_file=".devcontainer/tpl/.env.tpl"
+if [[ -L ${tpl_file} ]]; then
+  echo "❌ ${tpl_file} is a symlink — aborting" >&2
+  exit 1
+fi
 
 # validate secret-volume directory permissions
 if [[ -d /etc/secret-volume ]]; then
   perms=$(stat -c '%a' /etc/secret-volume)
-  if [[ ${perms} != "700" && ${perms} != "750" && ${perms} != "755" ]]; then
+  if [[ ${perms} != "700" && ${perms} != "750" && ${perms} != "755" && ${perms} != "777" ]]; then
     echo "❌ /etc/secret-volume has unexpected permissions: ${perms}" >&2
     exit 1
   fi
@@ -45,17 +38,20 @@ if [[ ! -s ${TMP_ENV} ]]; then
 fi
 install -m 600 "${TMP_ENV}" /etc/secret-volume/.env
 
-# save secrets to file
-for tpl in adp_wfn_api.cer adp_wfn_api.key deanslist_api_key_map_yaml id_rsa_egencia powerschool_ssh_password.txt; do
-  TMP_SECRET="${TMPDIR}/${tpl}"
-  op inject -f --in-file=".devcontainer/tpl/${tpl}.tpl" --out-file="${TMP_SECRET}"
-
-  # verify non-empty output
-  if [[ ! -s ${TMP_SECRET} ]]; then
-    echo "❌ op inject produced empty output for ${tpl}" >&2
+# download file-based secrets (stored as 1Password documents)
+download_doc() {
+  local vault="$1" item="$2" filename="$3"
+  local tmp_doc="${TMPDIR}/${filename}"
+  op read "op://${vault}/${item}/${filename}" --out-file "${tmp_doc}"
+  if [[ ! -s ${tmp_doc} ]]; then
+    echo "❌ op read produced empty output for ${filename}" >&2
     exit 1
   fi
+  install -m 600 "${tmp_doc}" "/etc/secret-volume/${filename}"
+}
 
-  # set explicit permissions and move into place
-  install -m 600 "${TMP_SECRET}" "/etc/secret-volume/${tpl}"
-done
+download_doc "Data Team" "ADP Workforce Now API" "adp_wfn_api.cer"
+download_doc "Data Team" "ADP Workforce Now API" "adp_wfn_api.key"
+download_doc "Data Team" "TEAMster 1Password Credentials File" "1password-credentials.json"
+download_doc "Data Team" "DeansList API" "deanslist_api_key_map.yaml"
+download_doc "Data Team" "Egencia SFTP" "id_rsa_egencia"

@@ -10,11 +10,12 @@ models:
       or does not meet the bar.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - contact_id
-            - application_id
+          arguments:
+            combination_of_columns:
+              - contact_id
+              - application_id
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: contact_id
         data_type: string

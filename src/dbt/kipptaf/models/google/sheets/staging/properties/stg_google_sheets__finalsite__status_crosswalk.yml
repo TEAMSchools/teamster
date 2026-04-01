@@ -8,7 +8,7 @@ models:
               - enrollment_type
               - detailed_status
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: _dagster_partition_key
         data_type: string

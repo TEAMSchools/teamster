@@ -3,6 +3,7 @@ from dagster import StaticPartitionsDefinition
 from teamster.code_locations.kipppaterson import CODE_LOCATION, CURRENT_FISCAL_YEAR
 from teamster.code_locations.kipppaterson.amplify.mclass.sftp.schema import (
     BENCHMARK_STUDENT_SUMMARY_SCHEMA,
+    PM_STUDENT_SUMMARY_AIMLINE_SCHEMA,
     PM_STUDENT_SUMMARY_SCHEMA,
 )
 from teamster.libraries.sftp.assets import build_sftp_file_asset
@@ -31,7 +32,24 @@ pm_student_summary = build_sftp_file_asset(
     ignore_multiple_matches=True,
 )
 
+pm_student_summary_aimline = build_sftp_file_asset(
+    asset_key=[
+        CODE_LOCATION,
+        "amplify",
+        "mclass",
+        "sftp",
+        "pm_student_summary_aimline",
+    ],
+    remote_dir_regex=r"/PM",
+    remote_file_regex=r"dibels8_PM_CUSTOM_(?P<school_year>[\d-]+)_[-\w]+\.csv",
+    ssh_resource_key="ssh_amplify",
+    avro_schema=PM_STUDENT_SUMMARY_AIMLINE_SCHEMA,
+    partitions_def=partitions_def,
+    ignore_multiple_matches=True,
+)
+
 assets = [
     benchmark_student_summary,
     pm_student_summary,
+    pm_student_summary_aimline,
 ]

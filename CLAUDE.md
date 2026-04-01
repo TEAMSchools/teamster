@@ -5,71 +5,67 @@
 Teamster is a data engineering platform for KIPP TEAM & Family Schools (Newark,
 Camden, and Paterson, NJ & Miami, FL) built on **Dagster** (orchestration),
 **dbt** (transformations), and **Google BigQuery** (warehouse), with Google
-Cloud Storage (GCS) as the intermediate storage layer.
+Cloud Storage (GCS) as the intermediate storage layer. Python ≥3.13.
+
+Production runs on **GKE** (Google Kubernetes Engine) via Dagster Cloud.
+Development uses **GitHub Codespaces** (devcontainer) — secrets are injected
+from 1Password at container start.
 
 ## Working Conventions
 
-- **Python execution**: Always use `uv run` — never bare `python` or `python3`,
-  including inline one-liners (`uv run python -c "..."`, not
-  `python3 -c "..."`). The project environment is managed by uv.
+- **Issue first**: Create a GitHub issue before any planned work — always after
+  a brainstorm, before the design doc. Quick fixes do not require one. Use
+  `gh issue create`; label with conventional commit type, related source systems
+  (e.g., `powerschool`, `deanslist`), and `dagster`/`dbt` when applicable.
+  Create the branch with `gh issue develop <number> --name <branch> --checkout`.
 
-- **Memory vs CLAUDE.md**: Rules and conventions go in CLAUDE.md, not memory.
-  Memory is only for non-obvious context not derivable from code (e.g., _why_ a
-  surprising design choice was made, user preferences).
+- **No commits without a branch**: Never commit to `main` — design docs, specs,
+  and code all go on feature branches. Project conventions override skill
+  workflows.
 
-- **Built-in tools over Bash**: **Never** use Bash for file I/O — use the
-  dedicated tool. No exceptions for convenience, pipes, or one-liners.
+- **Branching** (hard gate — complete in order):
+  1. **Ask the user: worktree or branch switch?** Do not choose for them.
+     - **Worktree** — work in `.worktrees/<branch>`, main workspace stays on
+       `main`. No IDE tooling in worktrees. **Edit files directly at
+       `.worktrees/<branch>/...` — never edit main workspace and copy over.**
+     - **Branch switch** — full IDE support, blocks other branch work.
+  2. Create the branch. For worktrees:
+     `git worktree add .worktrees/<branch> <branch>` (branch exists from
+     `gh issue develop`) or `git worktree add .worktrees/<branch> -b <branch>`
+     (no issue).
 
-  | Bash (NEVER)                       | Tool (ALWAYS)    |
-  | ---------------------------------- | ---------------- |
-  | `cat`, `head`, `tail`, `less`      | **Read**         |
-  | `grep`, `rg`, `ag`, `ack`          | **Grep**         |
-  | `find`, `fd`, `ls \| grep`         | **Glob**         |
-  | `sed`, `awk`, inline patch scripts | **Edit**         |
-  | `echo >`, `cat <<EOF >`, `tee`     | **Write**        |
-  | `cp`                               | **Read + Write** |
+- **Git**: Commit messages and branch names use
+  [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch
+  naming: `<gh-username>/<commit-type>/<brief-description>` (get username from
+  `gh api user -q .login`; AI-assisted branches prefix with `claude-`). Prefer
+  `git add -u` — naming protected paths triggers the hook, `git add -A` can
+  stage unrelated files. Subagents must name specific files in `git add` — never
+  `-u`, `-A`, or `.`.
 
-  Bash is only for commands with no dedicated tool (`git`, `uv run`, `gh`,
-  `docker`, `trunk`, plain `ls`).
+- **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as the
+  PR body.
 
-- **Verify before claiming**: Do not extrapolate third-party tool behavior from
-  general knowledge — read the actual source. Proposed code must match the
-  discussion; do not present fixes that contradict what was just agreed on.
+- **Python**: Always `uv run` — never bare `python`, `python3`, or
+  venv-installed tools (`dbt`, `dagster`, etc.).
 
-- **Git**:
-  - Commit messages follow
-    [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/)
-    format.
-  - Branch naming: `<gh-username>/<commit-type>/<brief-description>`. Get the
-    username from `gh api user -q .login`. For AI-assisted branches, prefix the
-    description with `claude-`.
-  - **Staging protected paths**: Use bare `git add -u` (no path argument) —
-    naming protected paths explicitly (e.g., `git add .claude/settings.json`)
-    triggers the hook and gets blocked.
+- **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
+  Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
+  `uv run`, `gh`, `docker`, `trunk`, `ls`).
 
-- **GitHub**:
-  - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as
-    the PR body — fill in the relevant sections based on the changes.
-  - **Issues**: Use `gh issue create` (not the web UI). Label with a
-    [conventional commit type](https://www.conventionalcommits.org/en/v1.0.0/)
-    (`feat`, `fix`, `docs`, `refactor`, `chore`, etc.), any related source
-    systems (e.g., `adp`, `powerschool`, `deanslist`), and `dagster` and/or
-    `dbt` when applicable.
+- **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment — not
+  linter-native disable syntax. Binary:
+  `/workspaces/teamster/.trunk/tools/trunk`.
 
-- **Design specs**: Never commit specs to `main`. After a spec is reviewed:
-  1. `gh issue create` (skip if issue already exists)
-  2. `gh issue develop <number> --name <branch> --checkout`
-  3. Commit the spec to the new branch and push
+- **Markdown**: Always specify a language on fenced code blocks (MD040). Use
+  `text` only when no real language applies.
 
-- **Claude CLI**: Not on `$PATH` — cannot be run via Bash. Use a terminal.
+- **Claude CLI**: Not on `$PATH` — user must run `claude` commands in their
+  terminal, not via Bash tool.
 
-- **File links in responses**: Use relative paths with no leading slash; bare
-  line numbers in anchors with no `L` prefix. Example:
-  [.devcontainer/scripts/postCreate.sh:105-109](.devcontainer/scripts/postCreate.sh#105-109)
+- **Verify before claiming**: Read actual source code — do not extrapolate
+  third-party tool behavior from general knowledge.
 
-- **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment. Do
-  not use linter-native disable syntax (e.g., `# shellcheck disable=`, `# noqa`,
-  `-- noqa`).
+- **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
 
 ## Architecture
 
@@ -80,18 +76,3 @@ guidance in the nearest subdirectory CLAUDE.md, not here.
 **You MUST read the relevant CLAUDE.md file before doing any work in a
 subdirectory — reading, explaining, reviewing, or modifying code. Do NOT skip
 this step.**
-
-| Path                      | When                               |
-| ------------------------- | ---------------------------------- |
-| `src/teamster/CLAUDE.md`  | Dagster code                       |
-| `src/dbt/CLAUDE.md`       | dbt models                         |
-| `.vscode/CLAUDE.md`       | VS Code tasks/scripts              |
-| `.claude/CLAUDE.md`       | hooks, deny rules, protected paths |
-| `.devcontainer/CLAUDE.md` | Codespace setup                    |
-| `.k8s/CLAUDE.md`          | GKE setup                          |
-| `.trunk/CLAUDE.md`        | linting config                     |
-| `tests/CLAUDE.md`         | testing                            |
-| `scripts/CLAUDE.md`       | project utilities                  |
-| `mcp/CLAUDE.md`           | MCP servers/tools                  |
-| `docs/CLAUDE.md`          | MkDocs documentation site          |
-| Any subdirectory          | that directory's CLAUDE.md         |

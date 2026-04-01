@@ -124,7 +124,9 @@ corresponding properties YAML under `models/illuminate/dlt/staging/properties/`.
 | `stg_illuminate__dna_assessments__field_responses`                | `field_responses`                | `dbt_utils.unique_combination_of_columns` on `(field_id, response_id, version_id)` |
 | `stg_illuminate__dna_assessments__fields`                         | `fields`                         | `unique` on `field_id`                                                             |
 
-All uniqueness tests use `config: store_failures: true`.
+All uniqueness tests inherit `store_failures: true` and
+`store_failures_as: view` from the project-level `data_tests` config in
+`dbt_project.yml`.
 
 Naming follows the existing convention: `stg_illuminate__<schema>__<table>`.
 
@@ -155,8 +157,8 @@ views). No override required; follow the existing pattern.
 **Grain**: one row per `student_assessment_response_id` (student × question ×
 assessment attempt).
 
-**Uniqueness test**: `unique` on `student_assessment_response_id` with
-`config: store_failures: true`.
+**Uniqueness test**: `unique` on `student_assessment_response_id` (inherits
+`store_failures` from project-level config).
 
 ### Joins
 

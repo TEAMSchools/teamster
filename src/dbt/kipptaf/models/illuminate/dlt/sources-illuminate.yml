@@ -148,6 +148,50 @@ sources:
                 - illuminate
                 - dna_assessments
                 - students_assessments
+      - name: field_responses
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - dlt
+                - illuminate
+                - dna_assessments
+                - field_responses
+      - name: fields
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - dlt
+                - illuminate
+                - dna_assessments
+                - fields
+      - name: responses
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - dlt
+                - illuminate
+                - dna_assessments
+                - responses
+      - name: students_assessments_responses
+        config:
+          meta:
+            dagster:
+              group: illuminate
+              asset_key:
+                - kipptaf
+                - dlt
+                - illuminate
+                - dna_assessments
+                - students_assessments_responses
   - name: illuminate_national_assessments
     config:
       enabled: false

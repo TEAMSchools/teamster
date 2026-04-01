@@ -11,7 +11,7 @@ models:
               - course_number
               - storecode
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: studentid
         data_type: int64

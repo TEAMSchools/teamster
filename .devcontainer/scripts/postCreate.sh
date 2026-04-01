@@ -9,6 +9,7 @@ jq '. + {"python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python
   >/tmp/machine-settings.json &&
   mv /tmp/machine-settings.json "${MACHINE_SETTINGS}"
 
+# configure git
 git config pull.rebase false # specify how to reconcile divergent branches (merge)
 git config push.autoSetupRemote true
 
@@ -17,9 +18,6 @@ sudo apt-get update -y &&
   sudo apt-get -y install --no-install-recommends sshpass &&
   sudo apt-get -y clean &&
   sudo rm -rf /var/lib/apt/lists/*
-
-# install pyright for Claude Code LSP
-npm install -g pyright
 
 # create env folder
 mkdir -p ./env
@@ -32,9 +30,6 @@ chmod 700 ./env
 # restrict permissions on hook/config paths
 chmod 644 .claude/settings.json
 chmod 755 .claude/hooks/ .claude/hooks/*.sh
-
-# set up trunk
-chmod +x /workspaces/teamster/trunk
 
 # install uv -- ignoring feature bc it doesn't allow self update
 curl -LsSf https://astral.sh/uv/install.sh -o /tmp/uv-install.sh &&
@@ -51,24 +46,8 @@ uv tool install dagster-dg
 uv tool install dbt-mcp
 uv sync --frozen --all-groups
 
-# install MCP toolbox
-curl --fail -O https://storage.googleapis.com/genai-toolbox/v0.29.0/linux/amd64/toolbox ||
-  {
-    echo "❌ MCP toolbox download failed"
-    exit 1
-  }
-echo "8cb1cacbbaccf0940926643482d20e3b02efba80d1c93eafb4342079b1ebee95  toolbox" |
-  sha256sum -c - ||
-  {
-    echo "❌ MCP toolbox checksum mismatch"
-    exit 1
-  }
-chmod +x toolbox
-sudo mv toolbox /usr/local/bin/
-
-export DBT_SEND_ANONYMOUS_USAGE_STATS=false
-
 # bootstrap dbt packages
+export DBT_SEND_ANONYMOUS_USAGE_STATS=false
 uv run dbt deps --project-dir=src/dbt/amplify &
 uv run dbt deps --project-dir=src/dbt/deanslist &
 uv run dbt deps --project-dir=src/dbt/edplan &
@@ -85,6 +64,27 @@ uv run dbt deps --project-dir=src/dbt/kippnewark &
 uv run dbt deps --project-dir=src/dbt/kipppaterson &
 uv run dbt deps --project-dir=src/dbt/kipptaf &
 wait
+
+# set up trunk
+chmod +x /workspaces/teamster/trunk
+
+# install pyright for Claude Code LSP
+npm install -g pyright
+
+# install MCP toolbox
+curl --fail -O https://storage.googleapis.com/genai-toolbox/v0.29.0/linux/amd64/toolbox ||
+  {
+    echo "❌ MCP toolbox download failed"
+    exit 1
+  }
+echo "8cb1cacbbaccf0940926643482d20e3b02efba80d1c93eafb4342079b1ebee95  toolbox" |
+  sha256sum -c - ||
+  {
+    echo "❌ MCP toolbox checksum mismatch"
+    exit 1
+  }
+chmod +x toolbox
+sudo mv toolbox /usr/local/bin/
 
 # fix tmpfs permissions (Codespaces may override tmpfs-mode from mount config)
 sudo chmod 755 /etc/secret-volume

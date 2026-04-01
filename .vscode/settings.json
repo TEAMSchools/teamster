@@ -1,5 +1,6 @@
 {
   "dbt.enableNewLineagePanel": true,
+  "dbt.allowListFolders": ["src/dbt"],
   "dbt.installDepsOnProjectInitialization": false,
   "diffEditor.experimental.showMoves": true,
   "diffEditor.ignoreTrimWhitespace": false,
@@ -32,14 +33,13 @@
     "*.toml": "toml"
   },
   "files.exclude": {
+    "**/.git": false,
     "**/.trunk/*actions/": true,
     "**/.trunk/*logs/": true,
     "**/.trunk/*notifications/": true,
     "**/.trunk/*out/": true,
     "**/.trunk/*plugins/": true,
-    "**/.worktrees/": true,
-    "**/dbt_packages/": true,
-    "**/target/**": true
+    "**/dbt_packages/": true
   },
   "files.watcherExclude": {
     "**/.trunk/*actions/": true,
@@ -47,7 +47,6 @@
     "**/.trunk/*notifications/": true,
     "**/.trunk/*out/": true,
     "**/.trunk/*plugins/": true,
-    "**/.worktrees/**": true,
     "**/dbt_packages/**": true,
     "**/target/**": true
   },

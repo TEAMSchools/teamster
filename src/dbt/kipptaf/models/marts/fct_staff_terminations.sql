@@ -36,23 +36,31 @@ with
     ),
 
     /* first termination record by academic year */
-    /* using effective start date downstream to filter post-termination actions */
-    terminations as (
+    -- trunk-ignore(sqlfluff/ST03)
+    terminations_filtered as (
         select
             employee_number,
             academic_year,
             assignment_status as termination_status,
             assignment_status_reason as termination_reason,
-
-            min(assignment_status_effective_date) as min_effective_date,
-            min(assignment_status_effective_date) as termination_effective_date,
+            cast(
+                assignment_status_effective_date as timestamp
+            ) as termination_effective_date,
         from teammate_history
         where
             assignment_status = 'Terminated'
             and assignment_status_reason
             not in ('Import Created Action', 'Upgrade Created Action')
-        group by
-            employee_number, academic_year, assignment_status, assignment_status_reason
+    ),
+
+    terminations as (
+        {{
+            dbt_utils.deduplicate(
+                relation="terminations_filtered",
+                partition_by="employee_number, academic_year",
+                order_by="termination_effective_date asc",
+            )
+        }}
     ),
 
     final as (
@@ -62,9 +70,7 @@ with
 
             tr.termination_status,
             tr.termination_reason,
-            cast(
-                tr.termination_effective_date as timestamp
-            ) as termination_effective_date,
+            tr.termination_effective_date,
 
             if(tr.employee_number is null, false, true) as is_termination,
         from annual_roster as ar
@@ -72,9 +78,6 @@ with
             terminations as tr
             on ar.employee_number = tr.employee_number
             and ar.academic_year = tr.academic_year
-        where
-            tr.min_effective_date <= tr.termination_effective_date
-            or tr.termination_effective_date is null
     )
 
 select
@@ -84,4 +87,7 @@ select
     termination_reason,
     termination_effective_date,
     is_termination,
+
+    {{ dbt_utils.generate_surrogate_key(["employee_number", "academic_year"]) }}
+    as staff_terminations_key,
 from final

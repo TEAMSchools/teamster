@@ -9,7 +9,7 @@ models:
               - student_id
               - academic_year
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: student_id
         data_type: string
