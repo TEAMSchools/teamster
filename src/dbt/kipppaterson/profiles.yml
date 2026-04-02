@@ -1,7 +1,7 @@
 # Dagster-only profile (defer + prod). Developers use .dbt/profiles.yml for
 # full target support (defer/dev/staging/prod).
 kipppaterson:
-  target: defer
+  target: prod
   outputs:
     defer:
       type: bigquery
