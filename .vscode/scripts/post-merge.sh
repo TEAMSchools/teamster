@@ -15,7 +15,8 @@ cd "${toplevel}" || {
 source "${HOME}/.local/bin/env"
 
 for project in kipptaf kippnewark kippcamden kippmiami kipppaterson; do
-  uv run dbt parse --target prod \
+  DAGSTER_CLOUD_DEPLOYMENT_NAME=prod \
+    uv run dbt parse --target prod \
     --project-dir "src/dbt/${project}" \
     --profiles-dir .dbt \
     --target-path target/prod &
