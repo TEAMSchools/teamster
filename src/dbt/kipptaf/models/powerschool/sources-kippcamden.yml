@@ -1,10 +1,9 @@
 sources:
   - name: kippcamden_powerschool
-    schema: |
-      {%- if target.name == 'staging' -%}z_dev_
-      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}z_dev_
-      {%- elif env_var('GITHUB_USER', '') != '' -%}zz_{{ env_var('GITHUB_USER') }}_
-      {%- endif -%}kippcamden_powerschool
+    schema:
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
+      elif target.name == 'staging' -%}zz_stg_{%- endif
+      -%}kippcamden_powerschool"
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
         config:

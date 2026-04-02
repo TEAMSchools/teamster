@@ -55,7 +55,6 @@
   },
   "terminal.integrated.env.linux": {
     "DAGSTER_HOME": "${workspaceFolder}/.dagster/home",
-    "DBT_CLOUD_ENVIRONMENT_TYPE": "dev",
     "DBT_PROFILES_DIR": "${workspaceFolder}/.dbt",
     "GOOGLE_CLOUD_PROJECT": "teamster-332318",
     "PYTHONDONTWRITEBYTECODE": "1",
@@ -89,5 +88,32 @@
       "icon": "sparkle"
     }
   },
-  "python.analysis.typeCheckingMode": "off"
+  "python.analysis.typeCheckingMode": "off",
+  "dbt.deferConfigPerProject": {
+    "kipptaf": {
+      "deferToProduction": true,
+      "manifestPathForDeferral": "src/dbt/kipptaf/target/prod/manifest.json",
+      "favorState": false
+    },
+    "kippnewark": {
+      "deferToProduction": true,
+      "manifestPathForDeferral": "src/dbt/kippnewark/target/prod/manifest.json",
+      "favorState": false
+    },
+    "kippcamden": {
+      "deferToProduction": true,
+      "manifestPathForDeferral": "src/dbt/kippcamden/target/prod/manifest.json",
+      "favorState": false
+    },
+    "kippmiami": {
+      "deferToProduction": true,
+      "manifestPathForDeferral": "src/dbt/kippmiami/target/prod/manifest.json",
+      "favorState": false
+    },
+    "kipppaterson": {
+      "deferToProduction": true,
+      "manifestPathForDeferral": "src/dbt/kipppaterson/target/prod/manifest.json",
+      "favorState": false
+    }
+  }
 }

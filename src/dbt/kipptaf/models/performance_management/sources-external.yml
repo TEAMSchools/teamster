@@ -1,8 +1,9 @@
 sources:
   - name: performance_management
-    schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      {{ project_name }}_performance_management
+    schema:
+      "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
+      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif -%}{{
+      project_name }}_performance_management"
     tables:
       - name: src_performance_management__outlier_detection
         external:

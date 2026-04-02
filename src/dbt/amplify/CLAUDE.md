@@ -18,7 +18,9 @@ models/
       staging/
     sftp/
       staging/
-  sources.yml
+  sources-dds.yml
+  sources-mclass-api.yml
+  sources-mclass-sftp.yml
 ```
 
 Both `dds` and `mclass/api` can be independently enabled/disabled per school in

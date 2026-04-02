@@ -13,6 +13,10 @@ jq '. + {"python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python
 git config pull.rebase false # specify how to reconcile divergent branches (merge)
 git config push.autoSetupRemote true
 
+# install post-merge hook for future manifest regeneration
+cp .vscode/scripts/post-merge.sh .git/hooks/post-merge
+chmod +x .git/hooks/post-merge
+
 # install extra apt packages
 sudo apt-get update -y &&
   sudo apt-get -y install --no-install-recommends sshpass &&
@@ -63,6 +67,15 @@ uv run dbt deps --project-dir=src/dbt/kippmiami &
 uv run dbt deps --project-dir=src/dbt/kippnewark &
 uv run dbt deps --project-dir=src/dbt/kipppaterson &
 uv run dbt deps --project-dir=src/dbt/kipptaf &
+wait
+
+# generate prod manifests for Power User --defer
+for project in kipptaf kippnewark kippcamden kippmiami kipppaterson; do
+  uv run dbt parse --target prod \
+    --project-dir "src/dbt/${project}" \
+    --profiles-dir .dbt \
+    --target-path target/prod &
+done
 wait
 
 # set up trunk

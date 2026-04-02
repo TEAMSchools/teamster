@@ -61,15 +61,34 @@ All staging sources use BigQuery external tables backed by GCS (Avro format,
 BigLake connection, 7-day staleness window). Each source's `sources.yml`
 includes `dagster: asset_key` metadata so Dagster can track lineage.
 
-## CI External Table Setup
+## Source Schema Resolution
 
-New external tables must be staged in the `z_dev_` schema before kipptaf CI can
-reference them via `union_relations`. Use `--target staging` with both
-`dbt-sxs.py` and `dbt build`. The default `--target dev` creates tables in your
-personal `zz_<user>_*` schema, which CI does not see.
+dbt source YAML `schema:` fields render with `SchemaYamlContext`, which only
+provides `env_var()`, `var()`, `target`, and `project_name` — **not custom
+project macros** (dbt-labs/dbt-core#6056). Use standardized inline Jinja with
+`target.name` checks, not macro calls. Use single-line quoted strings — YAML
+multiline scalars (`|`, `>`) cause whitespace issues with `{%- -%}` tags.
 
-`dbt-sxs.py` flags are independent: `--test` controls the GCS bucket
-(`teamster-test` vs production), `--target` controls the BigQuery schema.
+Two inline patterns (see spec for details):
+
+- **Source schema** (all sources except kipptaf cross-regional): prefixes for
+  `defer` and `dev` targets
+- **Region source schema** (kipptaf `sources-kipp*` files only): prefixes for
+  `dev` only (`defer` resolves to production)
+
+## Source File Conventions
+
+- **`sources-bigquery.yml`** — BQ-native archive sources. Use plain schema
+  (`{{ project_name }}_<service>`) with no target-conditional prefix. All tables
+  are `enabled: false`.
+- **`sources-external.yml`** — GCS/Google Sheets external sources. Use the
+  target-conditional inline Jinja prefix pattern.
+
+## Shipped Profiles (`src/dbt/*/profiles.yml`)
+
+Dagster-only: `defer` (static `zz_dagster_<project>` schema) + `prod`. No
+`GITHUB_USER` — not available in Dagster deployments. Developers use
+`.dbt/profiles.yml` for full target support.
 
 ## Model Conventions
 
