@@ -86,9 +86,10 @@ Two inline patterns (see spec for details):
 
 ## Shipped Profiles (`src/dbt/*/profiles.yml`)
 
-Dagster-only: `defer` (static `zz_dagster_<project>` schema) + `prod`. No
-`GITHUB_USER` — not available in Dagster deployments. Developers use
-`.dbt/profiles.yml` for full target support.
+Dagster-only: default target `prod` + `defer` output. Branch deployments
+explicitly pass `target="defer"` via `DbtCliResource`; prod uses the profile
+default (no Python override needed). No `GITHUB_USER` — not available in Dagster
+deployments. Developers use `.dbt/profiles.yml` for full target support.
 
 ## Model Conventions
 
