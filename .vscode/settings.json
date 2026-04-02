@@ -90,27 +90,27 @@
   },
   "python.analysis.typeCheckingMode": "off",
   "dbt.deferConfigPerProject": {
-    "kipptaf": {
+    "src/dbt/kipptaf": {
       "deferToProduction": true,
       "manifestPathForDeferral": "src/dbt/kipptaf/target/prod/manifest.json",
       "favorState": false
     },
-    "kippnewark": {
+    "src/dbt/kippnewark": {
       "deferToProduction": true,
       "manifestPathForDeferral": "src/dbt/kippnewark/target/prod/manifest.json",
       "favorState": false
     },
-    "kippcamden": {
+    "src/dbt/kippcamden": {
       "deferToProduction": true,
       "manifestPathForDeferral": "src/dbt/kippcamden/target/prod/manifest.json",
       "favorState": false
     },
-    "kippmiami": {
+    "src/dbt/kippmiami": {
       "deferToProduction": true,
       "manifestPathForDeferral": "src/dbt/kippmiami/target/prod/manifest.json",
       "favorState": false
     },
-    "kipppaterson": {
+    "src/dbt/kipppaterson": {
       "deferToProduction": true,
       "manifestPathForDeferral": "src/dbt/kipppaterson/target/prod/manifest.json",
       "favorState": false
