@@ -270,6 +270,10 @@ select
 
     if(qbls.qbl is not null, true, false) as is_qbl,
 
+    if(
+        co.response_type = 'overall' or co.response_type is null, true, false
+    ) as is_completion_row,
+
     coalesce(ip.is_pass_2_lessons_int_reading, 0) as is_passed_iready_2plus_reading_int,
     coalesce(ip.is_pass_4_lessons_int_reading, 0) as is_passed_iready_4plus_reading_int,
     coalesce(ip.is_pass_2_lessons_int_math, 0) as is_passed_iready_2plus_math_int,
@@ -373,6 +377,10 @@ select
     null as total_iready_lessons_passed_math,
 
     if(qbls.qbl is not null, true, false) as is_qbl,
+
+    if(
+        co.response_type = 'overall' or co.response_type is null, true, false
+    ) as is_completion_row,
 
     null as is_passed_iready_2plus_reading_int,
     null as is_passed_iready_4plus_reading_int,
@@ -501,6 +509,7 @@ select
     null as total_iready_lessons_passed_reading,
     null as total_iready_lessons_passed_math,
     null as is_qbl,
+    null as is_completion_row,
     null as is_passed_iready_2plus_reading_int,
     null as is_passed_iready_4plus_reading_int,
     null as is_passed_iready_2plus_math_int,
