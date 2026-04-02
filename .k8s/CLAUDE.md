@@ -38,3 +38,9 @@ on GKE Autopilot.
 - **Agent readiness probe** checks for
   `/tmp/finished_initial_reconciliation_sentinel.txt`. Rolling update
   (`maxSurge: 200%`, `maxUnavailable: 0%`) ensures zero-downtime Helm upgrades.
+- **PDB for code servers** uses `minAvailable: 1` (not `maxUnavailable`).
+  `maxUnavailable` requires resolving the owning controller (Deployment) to
+  calculate expected pod count — during Dagster Cloud rollovers the old
+  Deployment is deleted before pods terminate, causing
+  `CalculateExpectedPodCountFailed` and leaving pods unprotected. `minAvailable`
+  only counts current healthy pods, no controller lookup needed.
