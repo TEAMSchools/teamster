@@ -33,7 +33,3 @@ data file drop.
 
 Uses **ODBC** (live Oracle tunnel). Config YAMLs under `powerschool/config/` —
 same structure as other NJ schools.
-
-## No Asset Checks
-
-Miami does not define freshness checks (`asset_checks.py` is absent).

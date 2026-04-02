@@ -47,16 +47,6 @@ Exceptions: `kippnewark` adds `iready_schema: kippnj_iready` and
 `renlearn_schema: kippnj_renlearn`. `kipptaf` has
 `bigquery_external_connection_name` — see its CLAUDE.md.
 
-## Shared Dependencies
-
-All projects use:
-
-- `dbt-labs/dbt_utils` — `unique_combination_of_columns`,
-  `generate_surrogate_key`, etc.
-- `dbt-labs/dbt_external_tables` — BigQuery external table staging
-
-District and network projects additionally use `dbt-labs/codegen`.
-
 ## Variable Override Pattern
 
 Source-system projects declare variables with null/zero defaults
@@ -126,25 +116,11 @@ data_tests:
 
 ### Test config defaults
 
-All kipp\* `dbt_project.yml` files set project-level test defaults:
-
-```yaml
-data_tests:
-  +severity: warn
-  +store_failures: true
-  +store_failures_as: view
-```
-
 - Do not add `store_failures: true` to individual tests — the project default
   handles it
 - Tests that must error (not warn) need explicit `config: severity: error`
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
-
-### VS Code YAML schema
-
-The VS Code YAML extension does not recognize `store_failures_as` — the
-resulting diagnostic is a false positive. dbt parses it correctly.
 
 ### SQL conventions
 

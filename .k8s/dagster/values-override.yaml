@@ -18,10 +18,10 @@ dagsterCloudAgent:
   resources:
     requests:
       cpu: 500m # Autopilot minimum of 500m required for using pod anti affinity
-      memory: 0.5Gi
+      memory: 2.0Gi # extended-duration minimum (safe-to-evict: "false")
     limits:
       cpu: 750m
-      memory: 1.0Gi
+      memory: 2.5Gi
 
   podSecurityContext:
     runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
@@ -40,8 +40,8 @@ dagsterCloudAgent:
 
   # maxSurge: 200% brings pod count to 4 during upgrades. Combined with
   # requiredDuringSchedulingIgnoredDuringExecution hostname anti-affinity,
-  # this requires 4 distinct nodes briefly. On Autopilot spot this is
-  # provisioned on demand; a stalled rollout indicates spot exhaustion.
+  # this requires 4 distinct nodes briefly. On Autopilot this is provisioned
+  # on demand; a stalled rollout indicates capacity exhaustion.
   deploymentStrategy:
     type: RollingUpdate
     rollingUpdate:
@@ -51,16 +51,12 @@ dagsterCloudAgent:
   # Number of replicas of the agent service to keep up at a given time.
   replicas: 2
 
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 50
-          preference:
-            matchExpressions:
-              - key: cloud.google.com/gke-spot
-                operator: In
-                values:
-                  - "true"
         - weight: 30
           preference:
             matchExpressions:
@@ -184,6 +180,8 @@ workspace:
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
   runK8sConfig:
+    jobSpecConfig:
+      backoffLimit: 1
     containerConfig:
       # Autopilot enforces special minimum values for resource requests on extended
       # duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation

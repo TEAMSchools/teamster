@@ -14,10 +14,11 @@ on GKE Autopilot.
   (`kubectl config current-context`).
 - **Scheduling strategy** uses weighted `nodeAffinity` preferences (no hard
   `nodeSelector`). Compute-class tiers: Scale-Out arm64 > General-Purpose >
-  Scale-Out x86 > Balanced. Spot adds +50 on agent and code server pods (not run
-  pods — `safe-to-evict: "false"` + spot are mutually exclusive on Autopilot).
-  Agent pods exclude arm64 tiers (image is x86-only). Autopilot bills per-pod,
-  so fallback tiers have no cost penalty.
+  Scale-Out x86 > Balanced. Spot adds +50 on code server pods (not agent or run
+  pods). Agent pods use `safe-to-evict: "false"` (extended-duration) to prevent
+  Autopilot scale-down churn, which is mutually exclusive with spot. Agent pods
+  exclude arm64 tiers (image is x86-only). Autopilot bills per-pod, so fallback
+  tiers have no cost penalty.
 - Per-location `server_k8s_config` in `dagster-cloud.yaml` deep-merges with
   global `serverK8sConfig` (Dagster default `K8sConfigMergeBehavior.DEEP`) —
   `podAntiAffinity` from per-location and `nodeAffinity` from global coexist.

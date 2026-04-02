@@ -45,7 +45,3 @@ Customizes asset key and automation condition generation:
 Produces a schedule that runs only the dbt assets whose compiled SQL has changed
 since their last materialization (compares `code_versions_by_key` against
 `get_latest_materialization_code_versions`).
-
-> **Note**: `dbt_code_version_schedule` was previously defined in
-> `dbt/schedules.py` for `kippnewark`, `kippcamden`, and `kippmiami` but was
-> never wired into any `definitions.py` and has since been deleted.

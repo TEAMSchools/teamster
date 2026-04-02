@@ -8,7 +8,7 @@ projects and `kipptaf`.
 
 ```text
 models/
-  staging/     # contract-enforced
+  staging/
   intermediate/
   sources.yml
   sources-archive.yml   # legacy archived sources
