@@ -2,9 +2,6 @@ name: kipppaterson
 version: 1.0.0
 config-version: 2
 
-on-run-start:
-  - "{{ check_prod_guard() }}"
-
 profile: kipppaterson
 
 model-paths: [models]

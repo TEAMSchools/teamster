@@ -2,9 +2,6 @@ name: kippnewark
 version: 1.0.0
 config-version: 2
 
-on-run-start:
-  - "{{ check_prod_guard() }}"
-
 profile: kippnewark
 
 model-paths: [models]
