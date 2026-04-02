@@ -56,7 +56,7 @@ def get_io_manager_gcs_file(code_location: str, test: bool = False) -> GCSIOMana
 
 
 def get_dbt_cli_resource(dbt_project: DbtProject) -> DbtCliResource:
-    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT"):
+    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
         return DbtCliResource(project_dir=dbt_project, target="defer")
     return DbtCliResource(project_dir=dbt_project)
 
