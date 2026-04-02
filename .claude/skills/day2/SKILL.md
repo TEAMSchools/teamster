@@ -1,5 +1,6 @@
 ---
 name: day2
+disable-model-invocation: true
 description: >-
   Use when performing daily platform health checks, triaging overnight Dagster
   run failures, investigating GKE cluster events, or reviewing automation sensor
