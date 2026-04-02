@@ -74,28 +74,25 @@ null on Dagster Cloud).
 
 ## 6. GKE events
 
-Two PARALLEL mcp__gke__query_logs calls: project=teamster-332318,
+mcp__gke__query_logs call: project=teamster-332318,
 cluster=autopilot-cluster-dagster-hybrid-1, location=us-central1,
 time_range={{"start_time":"{UTC_START}","end_time":"{UTC_END}"}}, limit=100.
 Read .claude/skills/day2/gke_log_format.txt and pass its contents as the format
 parameter verbatim. The response will be formatted text lines, not JSON — return
 them as-is in an array of strings (one per log line).
 
-Query A filter (critical):
+Filter (critical):
   resource.type="k8s_cluster"
   log_name="projects/teamster-332318/logs/events"
   resource.labels.cluster_name="autopilot-cluster-dagster-hybrid-1"
   jsonPayload.reason=("ScaleUpFailed" OR "BackoffLimitExceeded" OR "Evicted"
-    OR "OOMKilling" OR "Preempted" OR "NodeNotReady")
+    OR "OOMKilling" OR "Preempted" OR "NodeNotReady" OR "FailedCreate"
+    OR "FailedScheduling")
 
-Query B filter (daemon pods): same resource/log/cluster filters with
-  jsonPayload.reason="FailedDaemonPod"
-Count per node name, not individual pods.
-
-If either query returns exactly 100 results, add "truncated": true.
+If the query returns exactly 100 results, add "truncated": true.
 
 Return JSON with keys: failed_runs, retry_outcomes, failed_ticks, agents,
-daemon_health, gke_critical_events, gke_daemon_pod_storms.
+daemon_health, gke_critical_events.
 ```
 
 ## Phase 2: Classify and correlate
@@ -116,7 +113,7 @@ daemon_health, gke_critical_events, gke_daemon_pod_storms.
 | Unclassified       | No match -- include full message, flag for review                          |
 
 **Timeline table** (ET): combine run failures, tick failures, agent errors, code
-server failures, unhealthy daemons, ScaleUpFailed, evictions, daemon pod storms.
+server failures, unhealthy daemons, ScaleUpFailed, evictions.
 
 **Report sections:**
 

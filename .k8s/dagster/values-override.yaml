@@ -184,6 +184,8 @@ workspace:
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
   runK8sConfig:
+    jobSpecConfig:
+      backoffLimit: 1
     containerConfig:
       # Autopilot enforces special minimum values for resource requests on extended
       # duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
