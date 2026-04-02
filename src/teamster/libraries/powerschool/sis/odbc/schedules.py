@@ -31,7 +31,7 @@ def build_powerschool_sis_asset_schedule(
     execution_timezone: ZoneInfo,
     cron_schedule: str,
     asset_selection: list[AssetsDefinition],
-    max_runtime_seconds: int = (60 * 10),
+    max_runtime_seconds: int = (60 * 15),
 ) -> ScheduleDefinition:
     """Build a Dagster schedule that detects and rematerializes stale assets.
 
