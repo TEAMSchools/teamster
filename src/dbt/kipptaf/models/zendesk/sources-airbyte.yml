@@ -1,6 +1,9 @@
 sources:
   - name: zendesk
-    schema: "{{ project_name }}_zendesk"
+    schema:
+      "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
+      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif -%}{{
+      project_name }}_zendesk"
     tables:
       - name: groups
       - name: organizations

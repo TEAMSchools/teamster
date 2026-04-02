@@ -28,11 +28,15 @@ from 1Password at container start.
      - **Worktree** — work in `.worktrees/<branch>`, main workspace stays on
        `main`. No IDE tooling in worktrees. **Edit files directly at
        `.worktrees/<branch>/...` — never edit main workspace and copy over.**
+       dbt worktrees require `dbt deps` before first `dbt parse` —
+       `dbt_packages/` is not shared across worktrees.
      - **Branch switch** — full IDE support, blocks other branch work.
   2. Create the branch. For worktrees:
      `git worktree add .worktrees/<branch> <branch>` (branch exists from
      `gh issue develop`) or `git worktree add .worktrees/<branch> -b <branch>`
      (no issue).
+  3. **Before resuming work** on an existing branch, merge `main` to avoid
+     conflicts: `git fetch origin main && git merge origin/main`.
 
 - **Git**: Commit messages and branch names use
   [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch

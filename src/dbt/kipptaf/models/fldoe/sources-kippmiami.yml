@@ -1,8 +1,8 @@
 sources:
   - name: kippmiami_fldoe
-    schema: |
-      {% if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'dev' -%}z_dev_{%- endif -%}
-      kippmiami_fldoe
+    schema:
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
+      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippmiami_fldoe"
     tables:
       - name: stg_fldoe__fast
         config:
