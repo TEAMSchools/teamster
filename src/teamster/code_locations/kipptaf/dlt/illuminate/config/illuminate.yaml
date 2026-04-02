@@ -52,7 +52,7 @@ assets:
                 requests:
                   cpu: 500m
                 limits:
-                  cpu: 1000m
+                  cpu: 1250m
   - schema: dna_repositories
     tables:
       - table_name: fields
