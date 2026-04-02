@@ -58,6 +58,17 @@
         "focus": true
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Chore: Update Dependencies",
+      "type": "shell",
+      "command": "bash .vscode/scripts/update-dependencies.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
     }
   ],
   "inputs": [
