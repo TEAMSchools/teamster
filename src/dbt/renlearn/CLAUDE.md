@@ -7,7 +7,7 @@ and STAR assessments). Staging-only project.
 
 ```text
 models/
-  staging/     # contract: enforced: true
+  staging/
   sources.yml
 ```
 

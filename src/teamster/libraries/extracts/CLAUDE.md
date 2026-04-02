@@ -43,12 +43,3 @@ Pass explicit `deps` to wire in additional upstream assets (e.g., a staging
 table that is the true data source) or to bypass intermediate VIEW assets that
 would otherwise fan out cross-partition updates. Pass `automation_condition` to
 enable reactive triggering (typically `AutomationCondition.eager()`).
-
-Example — `intacct_extract` deps rationale:
-
-- `stg_adp_payroll__general_ledger_file` (TABLE, partitioned) — partition-aware;
-  updates one partition at a time
-- `rpt_gsheets__intacct_integration_file` (VIEW, same partitions) — partition-
-  aware; triggers when the VIEW model code changes
-- `stg_google_sheets__finance__payroll_code_mapping` (TABLE, non-partitioned) —
-  fans out to ALL extract partitions when the mapping table refreshes

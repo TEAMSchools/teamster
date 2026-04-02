@@ -99,8 +99,8 @@ Facebook, Illuminate Fivetran, Instagram.
 ## Cross-Project Refs
 
 Sources models from: `powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`,
-`pearson`, `renlearn`, `titan`, `amplify`, `finalsite`, `overgrad`.
-District-specific PowerSchool data via multiple `sources-kipp*.yml` files.
+`pearson`, `renlearn`, `titan`, `amplify`, `finalsite`. District-specific
+PowerSchool data via multiple `sources-kipp*.yml` files.
 
 ## Exposures
 
@@ -137,7 +137,3 @@ dbt Cloud project ID: `211862`.
   `models/extracts/`.
 - **`dim_*` / `fct_*`** — dimensional marts for semantic layer. Live in
   `models/marts/`. Actively being developed.
-
-Key marts: `dim_students`, `dim_staff`, `dim_locations`, `dim_terms`,
-`dim_dates`, `dim_seats`, `fct_attendance`, `fct_staff_attrition`,
-`fct_staff_terminations`, `fct_additional_earnings`, `fct_microgoals`.

@@ -67,9 +67,11 @@ from 1Password at container start.
 
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
 
-- **CLAUDE.md edits**: Every addition must be a net-value-add over the tokens it
-  consumes. Omit human-only context (motivation, rationale, history) — only
-  include what changes Claude's behavior in a future session.
+- **CLAUDE.md edits**: Default to **not adding**. Only add when the absence
+  caused a concrete, repeatable mistake — not a one-off error or something
+  already documented elsewhere. Every line competes for context window space.
+  Omit human-only context (motivation, rationale, history) — only include what
+  changes Claude's behavior in a future session.
 
 ## Architecture
 

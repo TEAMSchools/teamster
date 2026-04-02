@@ -52,14 +52,9 @@ path) to suppress inter-batch delays.
 **`schema.py`**: Pydantic models (`User`, `OrgUnits`, `Role`, `RoleAssignment`,
 `Group`, `Member`) mirroring the Google Directory API response shapes. Code
 locations consume these via `py_avro_schema.generate()` to produce Avro schemas
-for IO manager output. `Group` and `Member` schemas are defined but currently
-unused (commented out in kipptaf).
+for IO manager output.
 
-**`ops.py`**: Four legacy ops (`google_directory_user_create_op`,
-`google_directory_user_update_op`, `google_directory_member_create_op`,
-`google_directory_role_assignment_create_op`). **Not used anywhere** — this
-provisioning logic has been reimplemented as assets in
-`kipptaf/google/directory/assets.py`.
+**`ops.py`**: Legacy — use `kipptaf/google/directory/assets.py` instead.
 
 ## `drive/`
 
