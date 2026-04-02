@@ -78,6 +78,7 @@ with
             cw.week_start_monday,
             cw.week_end_sunday,
             cw.school_week_start_date_lead,
+            cw.quarter_end_date_insession,
             cw.week_number_academic_year,
             cw.week_number_quarter,
 
@@ -131,6 +132,7 @@ with
             tw.week_start_monday,
             tw.week_end_sunday,
             tw.school_week_start_date_lead,
+            tw.quarter_end_date_insession,
             tw.week_number_academic_year,
             tw.week_number_quarter,
             tw.hos,
