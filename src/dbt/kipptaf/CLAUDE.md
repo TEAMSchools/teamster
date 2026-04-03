@@ -134,6 +134,11 @@ config:
 
 dbt Cloud project ID: `211862`.
 
+## dbt Cloud CI
+
+CI job: `dbt build --select state:modified+ --full-refresh`, target `staging`,
+defers to Staging environment.
+
 ## Model Layer Distinctions
 
 - **`rpt_`** — analyst-built reporting views for external tools. Live in
