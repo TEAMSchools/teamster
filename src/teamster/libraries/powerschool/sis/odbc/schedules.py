@@ -10,7 +10,6 @@ from operator import itemgetter
 from zoneinfo import ZoneInfo
 
 from dagster import (
-    MAX_RUNTIME_SECONDS_TAG,
     AssetsDefinition,
     RunRequest,
     ScheduleDefinition,
@@ -31,7 +30,6 @@ def build_powerschool_sis_asset_schedule(
     execution_timezone: ZoneInfo,
     cron_schedule: str,
     asset_selection: list[AssetsDefinition],
-    max_runtime_seconds: int = (60 * 15),
 ) -> ScheduleDefinition:
     """Build a Dagster schedule that detects and rematerializes stale assets.
 
@@ -40,7 +38,6 @@ def build_powerschool_sis_asset_schedule(
         execution_timezone: Timezone for schedule evaluation.
         cron_schedule: Cron expression for schedule frequency.
         asset_selection: Assets to monitor for staleness.
-        max_runtime_seconds: Maximum run duration tag value.
 
     Returns:
         A Dagster schedule function.
@@ -88,7 +85,6 @@ def build_powerschool_sis_asset_schedule(
                 run_key=f"{partitions_def}_{partition_key}",
                 asset_selection=[g["key"] for g in group],
                 partition_key=partition_key or None,
-                tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
             )
 
     return _schedule

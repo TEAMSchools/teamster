@@ -75,6 +75,8 @@ class SSHResource(DagsterSSHResource):
                 "-oHostKeyAlgorithms=+ssh-rsa",
                 "-oStrictHostKeyChecking=accept-new",
                 "-oConnectTimeout=10",
+                "-oServerAliveInterval=30",
+                "-oServerAliveCountMax=3",
                 "-N",
             ],
             stdout=subprocess.PIPE,

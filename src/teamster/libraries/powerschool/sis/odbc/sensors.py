@@ -12,7 +12,6 @@ from operator import itemgetter
 from zoneinfo import ZoneInfo
 
 from dagster import (
-    MAX_RUNTIME_SECONDS_TAG,
     AssetKey,
     AssetsDefinition,
     PartitionsDefinition,
@@ -37,7 +36,6 @@ def build_powerschool_asset_sensor(
     execution_timezone: ZoneInfo,
     asset_selection: list[AssetsDefinition],
     minimum_interval_seconds: int | None = None,
-    max_runtime_seconds: int = (60 * 5),
 ) -> SensorDefinition:
     """Build a Dagster sensor that detects and rematerializes stale assets.
 
@@ -46,7 +44,6 @@ def build_powerschool_asset_sensor(
         execution_timezone: Timezone for sensor evaluation.
         asset_selection: Assets to monitor for staleness.
         minimum_interval_seconds: Minimum seconds between sensor ticks.
-        max_runtime_seconds: Maximum run duration tag value.
 
     Returns:
         A Dagster sensor function.
@@ -123,7 +120,6 @@ def build_powerschool_asset_sensor(
                     job_name=job_name,
                     partition_key=partition_key or None,
                     asset_selection=[g["asset_key"] for g in group],
-                    tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
                 )
             )
 
