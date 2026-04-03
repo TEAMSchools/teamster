@@ -57,7 +57,8 @@
       "Skill(claude-md-management:revise-claude-md:*)",
       "mcp__observability__list_log_entries",
       "mcp__observability__list_alerts",
-      "mcp__observability__list_group_stats"
+      "mcp__observability__list_group_stats",
+      "mcp__dagster__list_sensors"
     ],
     "deny": [
       "Edit(**/.env)",
