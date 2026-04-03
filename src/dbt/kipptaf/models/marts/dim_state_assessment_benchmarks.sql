@@ -1,14 +1,14 @@
 select
     academic_year,
-    test_name,
+    assessment_name,
     season,
     school_level,
     grade_range_band,
     discipline,
-    test_code,
+    aligned_test_code,
     region,
-    comparison_demographic_group_aligned,
-    comparison_demographic_subgroup_aligned,
+    aligned_comparison_demographic_group,
+    aligned_comparison_demographic_subgroup,
 
     max(
         case when comparison_entity = 'City' then percent_proficient end
@@ -47,14 +47,14 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "academic_year",
-                "test_name",
-                "test_code",
+                "assessment_name",
+                "aligned_test_code",
                 "region",
                 "school_level",
                 "grade_range_band",
                 "season",
-                "comparison_demographic_group_aligned",
-                "comparison_demographic_subgroup_aligned",
+                "aligned_comparison_demographic_group",
+                "aligned_comparison_demographic_subgroup",
             ]
         )
     }} as state_assessment_benchmarks_key,
@@ -62,12 +62,12 @@ select
 from {{ ref("stg_google_sheets__state_test_comparison_demographics") }}
 group by
     academic_year,
-    test_name,
+    assessment_name,
     season,
     school_level,
     grade_range_band,
     discipline,
-    test_code,
+    aligned_test_code,
     region,
-    comparison_demographic_group_aligned,
-    comparison_demographic_subgroup_aligned
+    aligned_comparison_demographic_group,
+    aligned_comparison_demographic_subgroup

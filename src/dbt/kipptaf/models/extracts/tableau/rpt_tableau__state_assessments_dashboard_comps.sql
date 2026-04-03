@@ -57,10 +57,10 @@ with
         /* Google Sheets benchmarks */
         select
             academic_year,
-            test_name as assessment_name,
+            assessment_name,
             comparison_entity,
-            comparison_demographic_group_aligned as comparison_demographic_group,
-            comparison_demographic_subgroup_aligned as comparison_demographic_subgroup,
+            aligned_comparison_demographic_group as comparison_demographic_group,
+            aligned_comparison_demographic_subgroup as comparison_demographic_subgroup,
             null as focus_level,
             school_level,
             grade_range_band,
@@ -68,7 +68,7 @@ with
             total_proficient_students,
             total_students,
             percent_proficient,
-            test_code,
+            aligned_test_code as test_code,
             region,
 
         from {{ ref("stg_google_sheets__state_test_comparison_demographics") }}

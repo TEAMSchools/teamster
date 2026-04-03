@@ -70,8 +70,8 @@ with
     state_comps as (
         select
             academic_year,
-            test_name,
-            test_code,
+            assessment_name,
+            aligned_test_code,
             region,
             season,
 
@@ -95,7 +95,7 @@ with
         where
             comparison_demographic_group = 'Total'
             and comparison_demographic_subgroup = 'All Students'
-        group by academic_year, test_name, test_code, region, season
+        group by academic_year, assessment_name, aligned_test_code, region, season
     ),
 
     assessment_scores as (
@@ -321,8 +321,8 @@ inner join
 left join
     state_comps as c
     on a.academic_year = c.academic_year
-    and a.assessment_name = c.test_name
-    and a.test_code = c.test_code
+    and a.assessment_name = c.assessment_name
+    and a.test_code = c.aligned_test_code
     and a.season = c.season
     and e.region = c.region
 left join
@@ -441,8 +441,8 @@ inner join
 left join
     state_comps as c
     on a.academic_year = c.academic_year
-    and a.assessment_name = c.test_name
-    and a.test_code = c.test_code
+    and a.assessment_name = c.assessment_name
+    and a.test_code = c.aligned_test_code
     and a.season = c.season
     and e.region = c.region
 left join
@@ -560,8 +560,8 @@ inner join
 left join
     state_comps as c
     on a.academic_year = c.academic_year
-    and a.assessment_name = c.test_name
-    and a.test_code = c.test_code
+    and a.assessment_name = c.assessment_name
+    and a.test_code = c.aligned_test_code
     and a.season = c.season
     and e.region = c.region
 left join
