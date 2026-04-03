@@ -46,6 +46,11 @@ on GKE Autopilot.
 - **Agent readiness probe** checks for
   `/tmp/finished_initial_reconciliation_sentinel.txt`. Rolling update
   (`maxSurge: 200%`, `maxUnavailable: 0%`) ensures zero-downtime Helm upgrades.
+- **Orphan cleanup env vars** —
+  `DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS` (set to 900s) and
+  `DAGSTER_CLOUD_CLEANUP_SERVER_CHECK_INTERVAL` (set to 600s) control how
+  quickly orphaned code server Deployments from previous agent IDs are deleted.
+  Do not set grace period below reconciliation time (~3-4 min).
 
 ## Resource Config Inheritance
 

@@ -34,6 +34,19 @@ Tick failures from gRPC UNAVAILABLE during code server pod replacement are
 Dagster Cloud platform behavior — no user-side k8s config can eliminate them.
 Don't propose fixes; characterize as transient.
 
+## Code server startup failure triage
+
+When a code location fails to load, check ALL pods for the deployment — multiple
+pod failures indicate a systemic issue. Key signals:
+
+- `Aborted!` on stderr = SIGABRT, native library crash
+- `DagsterExecutionInterruptedError` = SIGTERM during import (deploy rollover if
+  a new deployment replaced it)
+- Silent hang after "Starting Dagster code server" = blocked I/O. Confirm with
+  `kubernetes.io/container/cpu/core_usage_time` (`ALIGN_RATE`,
+  `alignmentPeriod: "60s"` — the `s` suffix is required): near-zero CPU on a
+  Running/Ready pod = I/O block, not CPU throttling.
+
 ## Efficient traceback retrieval from Cloud Logging
 
 GKE container tracebacks are split across dozens of individual log entries (one

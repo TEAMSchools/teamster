@@ -28,6 +28,15 @@ dagsterCloudAgent:
 
   terminationGracePeriodSeconds: 15
 
+  env:
+    # Reduce cleanup delay for orphaned code server deployments left by previous
+    # agent IDs after Helm upgrades. Defaults: grace=3600s, interval=1800s.
+    # With replicas: 2, each upgrade leaves 2 orphaned deployments per location;
+    # the 10-min heartbeat expiry + 15-min grace period ensures replacements are
+    # reconciled before orphans are deleted.
+    DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS: "900"
+    DAGSTER_CLOUD_CLEANUP_SERVER_CHECK_INTERVAL: "600"
+
   readinessProbe:
     exec:
       command:
