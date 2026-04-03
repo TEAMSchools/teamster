@@ -105,6 +105,8 @@ dagsterCloudAgent:
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ########################################################################################
 workspace:
+  serverProcessStartupTimeout: 300
+
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   serverK8sConfig:
     containerConfig:

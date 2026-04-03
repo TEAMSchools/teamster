@@ -28,6 +28,12 @@ Agent-to-cloud communication errors (e.g. `ReadTimeout` to
 not in GKE pod logs or container logs. Always check the agent API first for
 these errors.
 
+## gRPC UNAVAILABLE during deploy rollovers is not user-fixable
+
+Tick failures from gRPC UNAVAILABLE during code server pod replacement are
+Dagster Cloud platform behavior — no user-side k8s config can eliminate them.
+Don't propose fixes; characterize as transient.
+
 ## Efficient traceback retrieval from Cloud Logging
 
 GKE container tracebacks are split across dozens of individual log entries (one
