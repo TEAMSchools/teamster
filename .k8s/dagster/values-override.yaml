@@ -204,6 +204,7 @@ workspace:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
+      priorityClassName: dagster-run
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -328,6 +329,16 @@ extraManifests:
           deployment_name: prod
           managed_by: K8sUserCodeLauncher
           location_name: kipppaterson
+  - apiVersion: scheduling.k8s.io/v1
+    kind: PriorityClass
+    metadata:
+      name: dagster-run
+    value: 1000
+    globalDefault: false
+    preemptionPolicy: PreemptLowerPriority
+    description: >-
+      Elevates run/step pods above default priority (0) so kubelet evicts code
+      server pods first during node memory pressure.
   - apiVersion: policy/v1
     kind: PodDisruptionBudget
     metadata:

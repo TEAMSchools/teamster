@@ -10,6 +10,11 @@ on GKE Autopilot.
 - `safe-to-evict: "false"` only blocks cluster autoscaler evictions — kubelet
   node-pressure evictions (exit 137, OOM) are unaffected. Scale-Out density
   makes these occasional; Dagster retries automatically.
+- **PriorityClass `dagster-run`** (value 1000) on run/step pods makes kubelet
+  evict code server pods (default priority 0) first during node memory pressure.
+  Does not protect against OOM kills of the pod itself — only eviction ordering.
+  Code servers tolerate eviction: they are stateless and PDB-protected
+  (`minAvailable: 1`).
 - GKE Autopilot cluster: `autopilot-cluster-dagster-hybrid-1` in `us-central1`
   (`kubectl config current-context`).
 - **Scheduling strategy** uses weighted `nodeAffinity` preferences (no hard
