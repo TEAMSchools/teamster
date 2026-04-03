@@ -59,6 +59,10 @@ API).
 
 ### Schema gotchas
 
+- `AssetConditionEvaluationRecordsOrError` union does not include `PythonError`
+  — never add `... on PythonError` to that query
+- `AssetNode.assetMaterializations` does not accept `afterTimestampMillis` —
+  only the top-level `assetMaterializations` query field does
 - `RunsFilter` uses `pipelineName`, not `jobName` (legacy naming)
 - `Run` has `hasTerminatePermission`, not `hasCancelPermission`
   (`PartitionBackfill` does have `hasCancelPermission`)
@@ -114,11 +118,10 @@ Tool selection and diagnostic workflows are in the server `instructions` (see
 
 ### API quirks
 
-- `get_cloud_agents` returns ALL agents (active + historical) with full error
-  logs — response is 200KB+ (77K tokens). Filter client-side; do not pass raw
-  result to subagents. See `.claude/skills/day2/filter_agents.py` for example.
-- `get_cloud_agents` returns a **list** of agent dicts (not
-  `{"agents": [...]}`). Parse with `json.loads(result)` → iterate directly.
+- `get_cloud_agents` supports server-side filtering via optional `agent_id`
+  (substring match), `status` (`RUNNING`/`NOT_RUNNING`), and `errors_after`
+  (Unix epoch). Always returns compact JSON with truncated error messages (300
+  chars). Use filters to avoid 200KB+ unfiltered responses.
 - `get_daemon_health` returns `lastHeartbeatTime: null` for all daemons on
   Dagster Cloud — only useful as a binary healthy/unhealthy check
 - `get_run_compute_logs` returns null for GKE runs (ephemeral pods) — use

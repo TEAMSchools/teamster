@@ -90,6 +90,11 @@ materializes, directly-dependent view assets are marked "unsynced" in the UI
 even though the automation condition correctly suppresses any run. There is no
 built-in Dagster API to suppress this per-asset.
 
+**Deploy rollover + `code_version_changed` race**: if a run completes during
+deploy rollover, the materialization may be stamped with the new deployment's
+code version. `code_version_changed()` returns false permanently — manual
+materialization is the only fix. See dagster-io/dagster#33708.
+
 **Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
 ALL partitions on every materialization. To preserve per-partition triggering,
 the dep must itself be partitioned with the same `PartitionsDefinition`.

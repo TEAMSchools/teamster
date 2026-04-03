@@ -187,6 +187,14 @@ workspace:
                     values:
                       - Balanced
       terminationGracePeriodSeconds: 15
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              managed_by: K8sUserCodeLauncher
+              deployment_name: prod
 
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment

@@ -5,9 +5,8 @@
 When the user asks about a **specific agent ID** (not a general health check),
 skip the full day2 skill. Instead:
 
-1. `mcp__dagster__get_cloud_agents()` — response is 200KB+, always saved to
-   file. Filter with Python inline for the specific agent ID (faster than
-   `filter_agents.py` which processes all agents).
+1. `mcp__dagster__get_cloud_agents(agent_id="<id>")` — filters server-side and
+   returns compact JSON. Add `errors_after=<epoch>` to scope errors.
 2. Check `list_runs(statuses=["FAILURE"])` in a ±30 min window around the error.
 3. Check GKE events in the same window for correlated cluster issues.
 
@@ -56,6 +55,15 @@ pod failures indicate a systemic issue. Key signals:
   `kubernetes.io/container/cpu/core_usage_time` (`ALIGN_RATE`,
   `alignmentPeriod: "60s"` — the `s` suffix is required): near-zero CPU on a
   Running/Ready pod = I/O block, not CPU throttling.
+
+## Agent health check replacement paths
+
+Four code paths replace a code server — only gRPC UNAVAILABLE uses the grace
+period (`DAGSTER_CLOUD_CODE_SERVER_HEALTH_CHECK_REDEPLOY_TIMEOUT`, defaults to
+`serverProcessStartupTimeout`). The other three are immediate: error state
+(server returns `SerializableErrorInfo`), recovery (agent local error vs Cloud
+healthy), and pex disappeared. When the agent logs "300 seconds" but replaces
+immediately, it hit an immediate path on the next reconciliation loop.
 
 ## Efficient traceback retrieval from Cloud Logging
 

@@ -199,10 +199,10 @@ query DaemonHealth {
 """
 
 ASSET_MATERIALIZATIONS_QUERY = """
-query GetAssetMaterializations($assetKey: AssetKeyInput!, $limit: Int, $partitions: [String!], $beforeTimestampMillis: String, $afterTimestampMillis: String) {
+query GetAssetMaterializations($assetKey: AssetKeyInput!, $limit: Int, $partitions: [String!], $beforeTimestampMillis: String) {
   assetNodes(assetKeys: [$assetKey]) {
     assetKey { path }
-    assetMaterializations(limit: $limit, partitions: $partitions, beforeTimestampMillis: $beforeTimestampMillis, afterTimestampMillis: $afterTimestampMillis) {
+    assetMaterializations(limit: $limit, partitions: $partitions, beforeTimestampMillis: $beforeTimestampMillis) {
       timestamp
       runId
       partition
@@ -326,10 +326,6 @@ query GetAssetConditionEvaluations($assetKey: AssetKeyInput!, $limit: Int!, $cur
     }
     ... on AutoMaterializeAssetEvaluationNeedsMigrationError {
       message
-    }
-    ... on PythonError {
-      message
-      stack
     }
   }
 }

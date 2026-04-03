@@ -123,19 +123,9 @@ chars). If no schedules have failures, return an empty array.
 
 ## 4. Agent health
 
-mcp__dagster__get_cloud_agents(). Response is very large (200KB+) and WILL be
-saved to a file. You MUST run the filter script on the saved file:
-  uv run python .claude/skills/day2/filter_agents.py <FILE_PATH> {EPOCH}
-The file path appears in the tool result (look for a path ending in .txt).
-Use the script output directly — do not parse the raw file yourself.
-Per agent the script returns: id, status, lastHeartbeatTime, hasInWindowErrors,
-filtered errors (timestamp + message, truncated to 300 chars),
-codeServerStates, runWorkerStates.
-
-If you cannot locate the file path or the script fails, return the raw agent
-data with only these fields per agent: id, status, lastHeartbeatTime, errors
-(filtered to timestamp >= {EPOCH}, message truncated to 300 chars),
-codeServerStates (locationName + status), runWorkerStates (runId + status).
+mcp__dagster__get_cloud_agents(errors_after={EPOCH}).
+Per agent returns: id, status, lastHeartbeatTime, filtered errors (timestamp +
+message, truncated to 300 chars), codeServerStates, runWorkerStates.
 
 ## 5. Daemon health
 

@@ -300,10 +300,87 @@ async def get_daemon_health() -> str:
 
 @server.tool()
 @_handle_gql_errors
-async def get_cloud_agents() -> str:
+async def get_cloud_agents(
+    agent_id: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Filter to a single agent by ID (substring match).",
+        ),
+    ] = None,
+    errors_after: Annotated[
+        float | None,
+        Field(
+            default=None,
+            description=(
+                "Only include errors at or after this Unix epoch (seconds). "
+                "Errors outside the window are dropped; error count fields "
+                "reflect the filtered set."
+            ),
+        ),
+    ] = None,
+    status: Annotated[
+        Literal["RUNNING", "NOT_RUNNING"] | None,
+        Field(
+            default=None,
+            description="Filter agents by status.",
+        ),
+    ] = None,
+) -> str:
     """Get Dagster Cloud agent statuses, recent errors, code server states, and run worker states. Use for diagnosing agent-level issues like gRPC connectivity failures, code server crashes, or agent heartbeat gaps."""
     data = await gql(CLOUD_AGENTS_QUERY)
-    return json.dumps(data["agents"])
+    agents: list[dict[str, Any]] = data["agents"]
+
+    if status is not None:
+        agents = [a for a in agents if a.get("status") == status]
+
+    if agent_id is not None:
+        agents = [a for a in agents if agent_id in str(a.get("id", ""))]
+
+    if errors_after is not None:
+        for a in agents:
+            a["errors"] = [
+                e
+                for e in (a.get("errors") or [])
+                if e.get("timestamp", 0) >= errors_after
+            ]
+
+    out = []
+    for a in agents:
+        errs = a.get("errors") or []
+        out.append(
+            {
+                "id": a["id"],
+                "status": a["status"],
+                "lastHeartbeatTime": a.get("lastHeartbeatTime"),
+                "errors": [
+                    {
+                        "timestamp": e["timestamp"],
+                        "message": e.get("error", {}).get(
+                            "message", str(e.get("error", ""))
+                        )[:300],
+                    }
+                    for e in errs
+                ],
+                "codeServerStates": [
+                    {
+                        "locationName": cs.get("locationName"),
+                        "status": cs.get("status"),
+                        "error": cs.get("error"),
+                    }
+                    for cs in (a.get("codeServerStates") or [])
+                ],
+                "runWorkerStates": [
+                    {
+                        "runId": rw.get("runId"),
+                        "status": rw.get("status"),
+                        "message": rw.get("message"),
+                    }
+                    for rw in (a.get("runWorkerStates") or [])
+                ],
+            }
+        )
+    return json.dumps(out)
 
 
 @server.tool()
@@ -407,12 +484,6 @@ async def get_asset_materializations(
             description="Only return materializations before this timestamp (milliseconds since epoch, as string). Server-side filter."
         ),
     ] = None,
-    after_timestamp_millis: Annotated[
-        str | None,
-        Field(
-            description="Only return materializations after this timestamp (milliseconds since epoch, as string). Server-side filter."
-        ),
-    ] = None,
 ) -> str:
     """Get recent materialization history for an asset. Returns timestamps, run IDs, partition keys, and metadata entries for each materialization."""
     asset_key_path = asset_key.split("/")
@@ -424,7 +495,6 @@ async def get_asset_materializations(
             "limit": limit,
             "partitions": [partition] if partition else None,
             "beforeTimestampMillis": before_timestamp_millis,
-            "afterTimestampMillis": after_timestamp_millis,
         },
     )
     nodes = data["assetNodes"]
