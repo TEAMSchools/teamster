@@ -28,20 +28,31 @@ Replace `{EPOCH}`, `{UTC_START}`, `{UTC_END}` in the prompt below.
 Gather Dagster and GCP Observability data. Return structured JSON only — no
 prose, recommendations, or narrative. Classification fields are expected.
 
-Steps 1, 3, 4, 5, 6, 7, and 8 are independent -- call their initial tools in
-parallel. Steps 2 and 9 depend on step 1's output. Step 3a depends on step 3's
-output. Within steps 1 and 3, parallelize fan-out calls (e.g. all get_run_logs
-calls at once, all list_sensors calls at once, all get_tick_history calls at
-once).
+Steps 1, 3, 4, 5, 6, 7, 8, 10, and 11 are independent -- call their initial
+tools in parallel. Steps 2 and 9 depend on step 1's output. Steps 3a and 3b
+depend on step 3's output. Within steps, parallelize fan-out calls (e.g. all
+get_run_logs calls at once, all get_tick_history calls at once).
 
 ## 1. Failed runs
 
 mcp__dagster__list_runs(statuses=["FAILURE"], created_after={EPOCH}).
-For each run IN PARALLEL: mcp__dagster__get_run_logs(run_id=<id>,
-  filter_types=["ExecutionStepFailureEvent","RunFailureEvent","EngineEvent"],
-  limit=500).
-Collect: runId, jobName, dagster/code_location tag, startTime, endTime,
-RunFailureEvent message, dagster/will_retry value, dagster/auto_retry_run_id.
+If the response includes a cursor, paginate by calling list_runs again with
+that cursor. Repeat until no cursor is returned. Collect ALL failed runs.
+
+Then IN PARALLEL:
+- For each run: mcp__dagster__get_run_logs(run_id=<id>,
+    filter_types=["ExecutionStepFailureEvent","RunFailureEvent","EngineEvent"],
+    limit=500).
+- mcp__dagster__list_runs(statuses=["SUCCESS"], created_after={EPOCH}, limit=1)
+  — note the total count from the response (or count returned items).
+- mcp__dagster__list_runs(statuses=["CANCELED"], created_after={EPOCH}, limit=1)
+  — note the total count.
+
+Collect per failed run: runId, jobName, dagster/code_location tag, startTime,
+endTime, RunFailureEvent message, dagster/will_retry value,
+dagster/auto_retry_run_id.
+Collect totals: failureCount, successCount, canceledCount.
+
 Classify each run by first matching signal (using run logs only):
   Node OOM/eviction: "low on resource: memory", exit 137, "Evicted"
   Scheduling failure: "FailedScheduling", "Insufficient cpu/memory", taints
@@ -64,18 +75,20 @@ for retries with status FAILURE.
 ## 3. Failed ticks
 
 mcp__dagster__list_code_locations for location names and load status. Then IN
-PARALLEL for each loaded location:
-  mcp__dagster__list_sensors(repository_location_name="<loc>")
-to discover sensor names. Then IN PARALLEL for each automation sensor
-(sensorType="AUTOMATION"):
-mcp__dagster__get_tick_history(
-  name="<sensor_name>",
-  repository_location_name="<loc>", statuses=["FAILURE"], limit=50,
-  after_timestamp={EPOCH}).
-Collect: tickId, timestamp, location, sensor name, error message (first 300
-chars). Report which locations returned 0 in-window failures (confirm all were
-queried). If a location has loadStatus != "LOADED", skip tick queries for it and
-flag it for step 3a.
+PARALLEL for each location with loadStatus == "LOADED":
+  mcp__dagster__get_tick_history(
+    name="<location>__automation_condition_sensor",
+    repository_location_name="<location>",
+    statuses=["FAILURE"], limit=50,
+    after_timestamp={EPOCH}).
+  mcp__dagster__list_schedules(
+    repository_location_name="<location>",
+    schedule_status="RUNNING").
+
+Collect automation tick failures: tickId, timestamp, location, sensor name,
+error message (first 300 chars). Report which locations returned 0 in-window
+failures (confirm all were queried). If a location has loadStatus != "LOADED",
+skip tick queries for it and flag it for step 3a.
 
 ## 3a. Code location load failures (depends on step 3)
 
@@ -85,6 +98,17 @@ Collect: locationName, loadStatus, codeLocationUpdateTriggerTimestamp, error
 message. This shows the deploy timeline — when the location broke and whether
 prior deploys loaded successfully.
 
+## 3b. Schedule tick failures (depends on step 3)
+
+For each RUNNING schedule discovered by list_schedules in step 3, IN PARALLEL:
+  mcp__dagster__get_tick_history(
+    name="<schedule_name>",
+    repository_location_name="<location>",
+    statuses=["FAILURE"], limit=20,
+    after_timestamp={EPOCH}).
+Collect: tickId, timestamp, location, schedule name, error message (first 300
+chars). If no schedules have failures, return an empty array.
+
 ## 4. Agent health
 
 mcp__dagster__get_cloud_agents(). Response is very large (200KB+) and WILL be
@@ -92,8 +116,14 @@ saved to a file. You MUST run the filter script on the saved file:
   uv run python .claude/skills/day2/filter_agents.py <FILE_PATH> {EPOCH}
 The file path appears in the tool result (look for a path ending in .txt).
 Use the script output directly — do not parse the raw file yourself.
-Per agent the script returns: id, status, lastHeartbeatTime, filtered errors
-(timestamp + message, truncated to 300 chars), codeServerStates, runWorkerStates.
+Per agent the script returns: id, status, lastHeartbeatTime, hasInWindowErrors,
+filtered errors (timestamp + message, truncated to 300 chars),
+codeServerStates, runWorkerStates.
+
+If you cannot locate the file path or the script fails, return the raw agent
+data with only these fields per agent: id, status, lastHeartbeatTime, errors
+(filtered to timestamp >= {EPOCH}, message truncated to 300 chars),
+codeServerStates (locationName + status), runWorkerStates (runId + status).
 
 ## 5. Daemon health
 
@@ -156,9 +186,27 @@ Check run worker logs for the exact pod name if the tag is ambiguous.
 Collect per run: peak memory bytes, memory limit bytes. Skip this step if no
 runs are classified as "Node OOM/eviction".
 
-Return JSON with keys: failed_runs, retry_outcomes, failed_ticks,
-location_load_failures, agents, daemon_health, gke_critical_events, open_alerts,
-error_groups, oom_metrics.
+## 10. Queued/stuck runs
+
+mcp__dagster__list_runs(
+  statuses=["QUEUED","NOT_STARTED","MANAGED","STARTING"],
+  created_after={EPOCH}, limit=20).
+For any run queued longer than 15 minutes (now minus startTime > 900 seconds),
+flag it. Collect: runId, jobName, status, startTime, queueDurationSeconds.
+If no runs match or none exceed 15 minutes, return an empty array.
+
+## 11. Backfill status
+
+Two calls IN PARALLEL:
+  mcp__dagster__list_backfills(status="REQUESTED", limit=10).
+  mcp__dagster__list_backfills(status="FAILED", created_after={EPOCH}, limit=10).
+Collect: backfillId, status, numPartitions, timestamp, error message if failed.
+If no active or failed backfills, return empty arrays.
+
+Return JSON with keys: failed_runs, run_counts, retry_outcomes, failed_ticks,
+failed_schedule_ticks, location_load_failures, agents, daemon_health,
+gke_critical_events, open_alerts, error_groups, oom_metrics, queued_runs,
+backfills.
 ```
 
 ## Phase 2: Correlate and report
@@ -174,11 +222,56 @@ and refine classifications using cross-signal context now available:
 - If reclassification creates new "Node OOM/eviction" runs that Haiku missed,
   pull their memory metrics using the same `list_time_series` query from step 9.
 
-**Timeline table** (ET): combine run failures, tick failures, code location load
-failures, agent errors, code server failures, unhealthy daemons, GKE critical
-events (ScaleUpFailed, evictions, OOM), open alerts, and top error groups.
+**Agent topology check**: Expected steady state is **2 RUNNING agents**. Flag
+deviations — e.g. 1 RUNNING (degraded redundancy), 3 RUNNING (mid-rollover,
+transient), or any NOT_RUNNING agent with a lastHeartbeatTime inside the window
+(recently stopped — verify it was replaced).
 
-**Report sections:**
+**Timeline table** (ET): combine run failures, tick failures, schedule tick
+failures, code location load failures, agent errors, code server failures,
+unhealthy daemons, GKE critical events (ScaleUpFailed, evictions, OOM), open
+alerts, and top error groups.
+
+**Report template:**
+
+```markdown
+## Day-2 Operations Report — {DATE_RANGE}
+
+**Run volume:** {successCount} succeeded, {failureCount} failed, {canceledCount}
+canceled
+
+### Timeline (ET)
+
+| Time | Signal | Source |
+| ---- | ------ | ------ |
+| ...  | ...    | ...    |
+
+### Root Causes
+
+**1. {cause title}** {Narrative linking signals to underlying cause.}
+
+### Impact
+
+- **Run failures:** ...
+- **Tick failures:** ...
+- **Schedule tick failures:** ... (omit if none)
+- **Queued runs:** ... (omit if none)
+- **Backfills:** ... (omit if none)
+
+### Emerging Issues
+
+{Omit section entirely if no error groups returned.}
+
+### Actions
+
+| Action | Item | Rationale |
+| ------ | ---- | --------- |
+| ...    | ...  | ...       |
+
+{Truncation warning if any query returned nextPageToken.}
+```
+
+**Report section guidance:**
 
 - **Root causes** -- group by underlying cause; link code location load failures
   to tick outages (a location in ERROR state means its sensors can't evaluate);
@@ -195,6 +288,8 @@ events (ScaleUpFailed, evictions, OOM), open alerts, and top error groups.
   Correlate all infra pod events with agent health and daemon data.
 
 - **Impact** -- affected assets/jobs, retry outcomes (definitive, not guesses).
+  Include queued/stuck runs if any were flagged. Include backfill status if any
+  active or failed backfills exist.
 - **Emerging issues** -- recurring error groups from Error Reporting that have
   not yet caused run failures but show increasing frequency. Omit this section
   if no error groups were returned.
