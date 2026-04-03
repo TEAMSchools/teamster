@@ -24,3 +24,7 @@ helm upgrade \
   --install user-cloud dagster-cloud/dagster-cloud-agent \
   --namespace dagster-cloud \
   -f .k8s/dagster/values-override.yaml
+
+# ConfigMap changes don't trigger a rollout — force restart to pick up new env vars.
+kubectl rollout restart deployment/user-cloud-dagster-cloud-agent-agent -n dagster-cloud
+kubectl rollout status deployment/user-cloud-dagster-cloud-agent-agent -n dagster-cloud --timeout=600s
