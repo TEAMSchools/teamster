@@ -2,7 +2,7 @@ sources:
   - name: kippnewark_pearson
     schema:
       "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippnewark_pearson"
+      endif -%}kippnewark_pearson"
     tables:
       - name: stg_pearson__njgpa
         config:

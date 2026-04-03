@@ -2,8 +2,8 @@ sources:
   - name: coupa
     schema:
       "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
-      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif -%}{{
-      project_name }}_coupa"
+      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif
+      -%}kipptaf_coupa"
     tables:
       - name: src_coupa__addresses
         external:

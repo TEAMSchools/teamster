@@ -2,8 +2,8 @@ sources:
   - name: zendesk
     schema:
       "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
-      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif -%}{{
-      project_name }}_zendesk"
+      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif
+      -%}kipptaf_zendesk"
     tables:
       - name: src_zendesk__ticket_metrics_archive
         config:

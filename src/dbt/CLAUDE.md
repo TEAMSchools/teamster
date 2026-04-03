@@ -61,6 +61,9 @@ All staging sources use BigQuery external tables backed by GCS (Avro format,
 BigLake connection, 7-day staleness window). Each source's `sources.yml`
 includes `dagster: asset_key` metadata so Dagster can track lineage.
 
+When a PR adds or modifies an external source, flag that the developer must
+stage it with `--target staging` before the dbt Cloud CI job will pass.
+
 ## Source Schema Resolution
 
 dbt source YAML `schema:` fields render with `SchemaYamlContext`, which only
@@ -78,11 +81,25 @@ Two inline patterns (see spec for details):
 
 ## Source File Conventions
 
-- **`sources-bigquery.yml`** — BQ-native archive sources. Use plain schema
-  (`{{ project_name }}_<service>`) with no target-conditional prefix. All tables
-  are `enabled: false`.
+- **`sources-bigquery.yml`** — BQ-native sources (Airbyte, Fivetran, frozen
+  archives, AppSheet sync, etc.). Plain schema, no target-conditional prefix.
+  Tables may be active or `enabled: false`.
 - **`sources-external.yml`** — GCS/Google Sheets external sources. Use the
   target-conditional inline Jinja prefix pattern.
+- **`sources-<project>.yml`** — kipptaf regional sources pointing to district
+  project datasets. Use the region schema pattern (dev-only prefix).
+
+A single integration may have both files under the same source `name:` — dbt
+merges at parse time. When both exist, `sources-bigquery.yml` omits `schema:`
+(inherits from the external file). Never mix `external:` and non-external active
+tables in one file. Source-system projects place source files alongside or
+inside their model subdirectories, not at the top-level `models/` directory.
+
+### `{{ project_name }}` in source schemas
+
+- **Source-system projects** (amplify, deanslist, edplan, etc.): use
+  `{{ project_name }}`.
+- **kipp\* projects** (kipptaf, kippnewark, etc.): hardcode the project name.
 
 ## Shipped Profiles (`src/dbt/*/profiles.yml`)
 
