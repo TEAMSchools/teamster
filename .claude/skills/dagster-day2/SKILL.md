@@ -1,5 +1,5 @@
 ---
-name: day2
+name: dagster-day2
 disable-model-invocation: true
 description: >-
   Use when checking Dagster platform health, triaging run failures,
@@ -17,8 +17,8 @@ description: >-
 Compute the time window, then dispatch a **single** `model: haiku` Agent call.
 
 - **Default:** 5 PM ET previous business day to now.
-- **With argument:** `/day2 24h` (relative) or `/day2 2026-03-29` (absolute, 5
-  PM ET that date).
+- **With argument:** `/dagster-day2 24h` (relative) or
+  `/dagster-day2 2026-03-29` (absolute, 5 PM ET that date).
 - ET = UTC-4 (EDT, Mar-Nov) or UTC-5 (EST, Nov-Mar). Compute RFC 3339 UTC and
   Unix epoch.
 
