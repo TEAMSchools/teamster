@@ -47,7 +47,15 @@ New queries are sourced from the Dagster UI TypeScript at
 against the Python schema in
 [`dagster-graphql/dagster_graphql/schema`](https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-graphql/dagster_graphql/schema).
 **Do not write or modify queries from memory.** Cloud-only queries (e.g.,
-`agents` root field) are not in the OSS repo — capture from browser Network tab.
+`agents` root field) are not in the OSS repo — capture from browser Network tab
+or check `mcp/dagster_plus/schema.json` (full introspection dump of the Cloud
+API).
+
+### Known API limitations
+
+- `agents` query: zero args, no server-side filtering on `errors`,
+  `runWorkerStates`, or `codeServerStates`. Response is 200KB+ — must filter
+  client-side.
 
 ### Schema gotchas
 
@@ -66,9 +74,35 @@ against the Python schema in
 ## Pagination
 
 `list_runs`, `get_run_logs`, `get_asset_condition_evaluations`,
-`get_asset_check_executions`, `list_backfills`, and `search_assets` return a
-`cursor`. Pass it back to page forward. No server-side timestamp filtering —
-paginate and filter client-side.
+`get_asset_check_executions`, `list_backfills`, `search_assets`, and
+`get_location_load_history` return a `cursor`. Pass it back to page forward.
+
+Server-side timestamp filtering is available on:
+
+- `get_tick_history` — `after_timestamp`/`before_timestamp` (Unix epoch floats)
+- `get_asset_materializations` —
+  `before_timestamp_millis`/`after_timestamp_millis` (millisecond epoch as
+  **string**, not float)
+- `list_backfills` — `created_after`/`created_before` (Unix epoch floats)
+
+Other tools require client-side filtering after pagination.
+
+## Discovery tools
+
+- `list_schedules` / `list_sensors` — require `repository_location_name`; use
+  `list_code_locations` first to get location names. Both accept an optional
+  status filter (`RUNNING` or `STOPPED`).
+- `list_sensors` returns `nextTick.timestamp` (predicted next evaluation) and
+  `sensorType` (e.g. `AUTOMATION` for automation condition sensors).
+- `get_tick_history` also returns `nextTick.timestamp` on the instigation state.
+- `get_run_group` — pass any run ID to get the full re-execution chain (all runs
+  sharing the same root). More efficient than traversing
+  `parentRunId`/`rootRunId` manually.
+- `get_location_load_history` — shows deploy timeline per code location with
+  load status (`LOADED`/`ERROR`), timestamps, and error details. Use for
+  diagnosing failed deploys.
+- `get_run` now includes `stepStats` — per-step timing and status without
+  fetching full logs via `get_run_logs`.
 
 ## Diagnosing assets (cross-tool)
 

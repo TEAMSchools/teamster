@@ -53,8 +53,8 @@ workspace opens. It walks you through each step in order:
 2. **Claude Code authentication** — opens a browser for Claude login.
 3. **Claude Code plugin installation** — installs plugins listed in
    `.claude/settings.json`. Re-runs automatically when the plugin list changes.
-4. **dbt dev dataset check** — advises you to run **dbt: Build Init** if your
-   personal dev datasets don't exist yet (first-time only).
+4. **dbt dev dataset reminder** — prints a note about running **dbt: Build
+   Init** for first-time setup.
 
 On subsequent opens (restarts, reconnects), the task re-checks each step and
 skips anything already configured.

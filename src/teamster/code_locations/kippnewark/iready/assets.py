@@ -19,13 +19,6 @@ personalized_instruction_summary = build_iready_sftp_asset(
     avro_schema=PERSONALIZED_INSTRUCTION_SUMMARY,
     start_fiscal_year=2025,
     end_fiscal_year=CURRENT_FISCAL_YEAR.fiscal_year,
-    op_tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {"requests": {"cpu": "500m"}, "limits": {"cpu": "1000m"}}
-            }
-        }
-    },
 )
 
 diagnostic_results = build_iready_sftp_asset(

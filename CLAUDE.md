@@ -77,6 +77,22 @@ from 1Password at container start.
   only contain what changes Claude's behavior — omit human-only context
   (motivation, rationale, history).
 
+## Troubleshooting Production
+
+- **Code location down**: Use `list_code_locations` (Dagster MCP) for the error
+  summary, then **GKE pod logs** (`mcp__gke__query_logs`) for the full picture.
+  The `list_code_locations` error only shows the last 25 log lines from the pod
+  — always check GKE logs for the complete timeline.
+- **Dagster Cloud deployment model**: Each deploy creates a new k8s Deployment
+  (`<location>-prod-<hash>`). Old Deployments are deleted during rollover.
+  Multiple commits in quick succession → multiple deployments → pods competing
+  for resources.
+- **GKE log queries**: Filter by `resource.labels.pod_name:<prefix>` for
+  container logs, `resource.type="k8s_cluster"` for k8s events (scheduling,
+  scaling, eviction). Use `jsonPayload.reason` to filter event types.
+- **Local `dagster definitions validate` may mislead** — env vars unavailable in
+  codespace cause false errors unrelated to production failures.
+
 ## Architecture
 
 This file is a **router** — it contains project-wide conventions, then routes to

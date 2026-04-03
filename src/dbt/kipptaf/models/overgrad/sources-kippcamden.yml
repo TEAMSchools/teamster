@@ -2,7 +2,7 @@ sources:
   - name: kippcamden_overgrad
     schema:
       "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippcamden_overgrad"
+      endif -%}kippcamden_overgrad"
     tables:
       - name: stg_overgrad__admissions
         config:

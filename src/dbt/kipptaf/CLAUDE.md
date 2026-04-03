@@ -29,10 +29,13 @@ models/
 Each integration uses two source files with the **same `name:` under
 `sources:`** (dbt merges at parse time):
 
-| File                   | Points to                          | Schema expression            |
-| ---------------------- | ---------------------------------- | ---------------------------- |
-| `sources-external.yml` | GCS Avro / Google Sheets externals | dev-prefixed (env-isolated)  |
-| `sources-bigquery.yml` | Native BQ tables (frozen archives) | plain `project_name_<integ>` |
+| File                   | Points to                          | Schema expression                    |
+| ---------------------- | ---------------------------------- | ------------------------------------ |
+| `sources-external.yml` | GCS Avro / Google Sheets externals | dev-prefixed (env-isolated)          |
+| `sources-bigquery.yml` | Native BQ tables (Airbyte, frozen) | plain hardcoded (e.g. `kipptaf_foo`) |
+
+When both files exist for the same source, `sources-bigquery.yml` omits
+`schema:`.
 
 **Archive pattern**: Disable the model (`config: enabled: false` in properties
 YAML) → add BQ-native entry in `sources-bigquery.yml` → update downstream

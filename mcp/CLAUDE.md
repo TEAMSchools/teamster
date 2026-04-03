@@ -29,6 +29,17 @@ patterns.
   materialization. Use `search_assets` to discover assets by prefix, then
   `get_asset_staleness` for specific assets.
 
+## Observability MCP (`@google-cloud/observability-mcp`)
+
+Covers Cloud Logging, Monitoring, Trace, and Error Reporting for
+`teamster-332318`. Uses ADC (same as BigQuery/GKE). Tools: `list_group_stats`
+(Error Reporting), `list_log_entries`, `list_alerts`, `list_alert_policies`,
+`list_time_series`, etc.
+
+For pod-level log queries, prefer `mcp__gke__query_logs` over
+`mcp__observability__list_log_entries` — the GKE MCP returns pod labels (run-id,
+op, code-location) that the observability MCP may not surface.
+
 ## GKE MCP
 
 Authenticates via ADC as **impersonated service account**

@@ -91,27 +91,27 @@
   "python.analysis.typeCheckingMode": "off",
   "dbt.deferConfigPerProject": {
     "src/dbt/kipptaf": {
-      "deferToProduction": true,
+      "deferToProduction": false,
       "manifestPathForDeferral": "src/dbt/kipptaf/target/prod/manifest.json",
       "favorState": false
     },
     "src/dbt/kippnewark": {
-      "deferToProduction": true,
+      "deferToProduction": false,
       "manifestPathForDeferral": "src/dbt/kippnewark/target/prod/manifest.json",
       "favorState": false
     },
     "src/dbt/kippcamden": {
-      "deferToProduction": true,
+      "deferToProduction": false,
       "manifestPathForDeferral": "src/dbt/kippcamden/target/prod/manifest.json",
       "favorState": false
     },
     "src/dbt/kippmiami": {
-      "deferToProduction": true,
+      "deferToProduction": false,
       "manifestPathForDeferral": "src/dbt/kippmiami/target/prod/manifest.json",
       "favorState": false
     },
     "src/dbt/kipppaterson": {
-      "deferToProduction": true,
+      "deferToProduction": false,
       "manifestPathForDeferral": "src/dbt/kipppaterson/target/prod/manifest.json",
       "favorState": false
     }

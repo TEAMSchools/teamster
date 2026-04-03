@@ -30,6 +30,13 @@
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
       }
+    },
+    "observability": {
+      "command": "npx",
+      "args": ["-y", "@google-cloud/observability-mcp"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
+      }
     }
   }
 }

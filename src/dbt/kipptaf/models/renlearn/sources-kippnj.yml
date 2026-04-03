@@ -2,7 +2,7 @@ sources:
   - name: kippnj_renlearn
     schema:
       "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippnewark_renlearn"
+      endif -%}kippnewark_renlearn"
     tables:
       - name: stg_renlearn__accelerated_reader
         config:

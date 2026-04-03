@@ -57,6 +57,13 @@ query GetRun($runId: ID!) {
           expectations
         }
       }
+      stepStats {
+        stepKey
+        status
+        startTime
+        endTime
+        attempts { startTime endTime }
+      }
       repositoryOrigin {
         repositoryName
         repositoryLocationName
@@ -192,10 +199,10 @@ query DaemonHealth {
 """
 
 ASSET_MATERIALIZATIONS_QUERY = """
-query GetAssetMaterializations($assetKey: AssetKeyInput!, $limit: Int, $partitions: [String!]) {
+query GetAssetMaterializations($assetKey: AssetKeyInput!, $limit: Int, $partitions: [String!], $beforeTimestampMillis: String, $afterTimestampMillis: String) {
   assetNodes(assetKeys: [$assetKey]) {
     assetKey { path }
-    assetMaterializations(limit: $limit, partitions: $partitions) {
+    assetMaterializations(limit: $limit, partitions: $partitions, beforeTimestampMillis: $beforeTimestampMillis, afterTimestampMillis: $afterTimestampMillis) {
       timestamp
       runId
       partition
@@ -251,8 +258,8 @@ query GetAssetPartitionStatuses($assetKey: AssetKeyInput!) {
 """
 
 ASSET_CHECK_EXECUTIONS_QUERY = """
-query GetAssetCheckExecutions($assetKey: AssetKeyInput!, $checkName: String!, $limit: Int!, $cursor: String) {
-  assetCheckExecutions(assetKey: $assetKey, checkName: $checkName, limit: $limit, cursor: $cursor) {
+query GetAssetCheckExecutions($assetKey: AssetKeyInput!, $checkName: String!, $limit: Int!, $cursor: String, $partition: String) {
+  assetCheckExecutions(assetKey: $assetKey, checkName: $checkName, limit: $limit, cursor: $cursor, partition: $partition) {
     id
     runId
     status
@@ -335,6 +342,8 @@ query GetTickHistory(
   $repositoryLocationName: String!
   $limit: Int
   $statuses: [InstigationTickStatus!]
+  $afterTimestamp: Float
+  $beforeTimestamp: Float
 ) {
   instigationStateOrError(instigationSelector: {
     name: $name
@@ -345,7 +354,8 @@ query GetTickHistory(
       name
       instigationType
       status
-      ticks(limit: $limit, statuses: $statuses) {
+      nextTick { timestamp }
+      ticks(limit: $limit, statuses: $statuses, afterTimestamp: $afterTimestamp, beforeTimestamp: $beforeTimestamp) {
         id
         tickId
         status
@@ -382,6 +392,7 @@ query ListCodeLocations {
         name
         loadStatus
         updatedTimestamp
+        displayMetadata { key value }
         locationOrLoadError {
           ... on RepositoryLocation {
             id
@@ -406,8 +417,8 @@ query ListCodeLocations {
 """
 
 BACKFILLS_QUERY = """
-query ListBackfills($status: BulkActionStatus, $cursor: String, $limit: Int) {
-  partitionBackfillsOrError(status: $status, cursor: $cursor, limit: $limit) {
+query ListBackfills($status: BulkActionStatus, $cursor: String, $limit: Int, $filters: BulkActionsFilter) {
+  partitionBackfillsOrError(status: $status, cursor: $cursor, limit: $limit, filters: $filters) {
     ... on PartitionBackfills {
       results {
         id
@@ -718,6 +729,130 @@ query CloudAgents {
       message
       status
       runId
+    }
+  }
+}
+"""
+
+SCHEDULES_QUERY = """
+query ListSchedules(
+  $repositoryName: String!
+  $repositoryLocationName: String!
+  $scheduleStatus: InstigationStatus
+) {
+  schedulesOrError(repositorySelector: {
+    repositoryName: $repositoryName
+    repositoryLocationName: $repositoryLocationName
+  }, scheduleStatus: $scheduleStatus) {
+    ... on Schedules {
+      results {
+        id
+        name
+        cronSchedule
+        pipelineName
+        executionTimezone
+        description
+        defaultStatus
+        scheduleState {
+          status
+          hasStartPermission
+          hasStopPermission
+        }
+        tags { key value }
+      }
+    }
+    ... on RepositoryNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
+
+SENSORS_QUERY = """
+query ListSensors(
+  $repositoryName: String!
+  $repositoryLocationName: String!
+  $sensorStatus: InstigationStatus
+) {
+  sensorsOrError(repositorySelector: {
+    repositoryName: $repositoryName
+    repositoryLocationName: $repositoryLocationName
+  }, sensorStatus: $sensorStatus) {
+    ... on Sensors {
+      results {
+        id
+        name
+        sensorType
+        description
+        defaultStatus
+        minIntervalSeconds
+        nextTick { timestamp }
+        sensorState {
+          status
+          hasStartPermission
+          hasStopPermission
+        }
+        targets {
+          pipelineName
+        }
+        tags { key value }
+      }
+    }
+    ... on RepositoryNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
+
+RUN_GROUP_QUERY = """
+query GetRunGroup($runId: ID!) {
+  runGroupOrError(runId: $runId) {
+    ... on RunGroup {
+      rootRunId
+      runs {
+        id
+        jobName
+        status
+        creationTime
+        startTime
+        endTime
+        parentRunId
+        rootRunId
+        assetSelection { path }
+        tags { key value }
+      }
+    }
+    ... on RunGroupNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+"""
+
+LOCATION_LOAD_HISTORY_QUERY = """
+query GetLocationLoadHistory($locationName: String!, $limit: Int!, $cursor: String) {
+  locationLoadHistory(locationName: $locationName, limit: $limit, cursor: $cursor) {
+    locationName
+    codeLocationDataUploadTimestamp
+    codeLocationUpdateTriggerTimestamp
+    loadStatus
+    displayMetadata { key value }
+    error {
+      message
+      stack
     }
   }
 }

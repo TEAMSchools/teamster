@@ -1,6 +1,6 @@
 sources:
   - name: dayforce
-    schema: "{{ project_name }}_dayforce"
+    schema: kipptaf_dayforce
     tables:
       - name: int_dayforce__employee_history
         config:
