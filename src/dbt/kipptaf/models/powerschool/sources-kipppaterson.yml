@@ -2,8 +2,7 @@ sources:
   - name: kipppaterson_powerschool
     schema:
       "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      elif target.name == 'staging' -%}zz_stg_{%- endif
-      -%}kipppaterson_powerschool"
+      endif -%}kipppaterson_powerschool"
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
         config:

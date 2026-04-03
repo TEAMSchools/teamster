@@ -1,6 +1,6 @@
 sources:
   - name: amplify
-    schema: "{{ project_name }}_amplify"
+    schema: kipptaf_amplify
     tables:
       - name: stg_amplify__mclass__api__benchmark_student_summary
         identifier: stg_amplify__benchmark_student_summary

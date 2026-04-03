@@ -2,8 +2,8 @@ sources:
   - name: adp_workforce_manager
     schema:
       "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
-      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif -%}{{
-      project_name }}_adp_workforce_manager"
+      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif
+      -%}kipptaf_adp_workforce_manager"
     tables:
       - name: src_adp_workforce_manager__accrual_reporting_period_summary
         external:

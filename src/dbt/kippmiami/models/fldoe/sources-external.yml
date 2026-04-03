@@ -3,7 +3,7 @@ sources:
     schema:
       "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
       'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif -%}{{
-      var('fldoe_schema', project_name ~ '_fldoe') }}"
+      var('fldoe_schema', 'kippmiami_fldoe') }}"
     tables:
       - name: src_fldoe__fast
         config:
@@ -23,14 +23,6 @@ sources:
               "{{ var('cloud_storage_uri_base') }}/fldoe/fast/"
             format: AVRO
             enable_logical_types: true
-      - name: stg_fldoe__fsa
-        config:
-          meta:
-            dagster:
-              asset_key:
-                - kippmiami
-                - fldoe
-                - fsa
       - name: src_fldoe__fsa
         config:
           enabled: false
