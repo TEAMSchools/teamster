@@ -2,7 +2,7 @@ sources:
   - name: kippcamden_titan
     schema:
       "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippcamden_titan"
+      endif -%}kippcamden_titan"
     tables:
       - name: stg_titan__person_data
         config:

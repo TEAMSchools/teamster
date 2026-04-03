@@ -2,7 +2,7 @@ sources:
   - name: kipppaterson_amplify
     schema:
       "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kipppaterson_amplify"
+      endif -%}kipppaterson_amplify"
     tables:
       - name: stg_amplify__mclass__sftp__benchmark_student_summary
         config:

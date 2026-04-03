@@ -1,10 +1,11 @@
-"""Filter get_cloud_agents output to errors within a time window.
+"""Filter get_cloud_agents output for day-2 triage.
 
 Usage: python3 .claude/skills/day2/filter_agents.py <file_path> <epoch>
 
 Reads the saved MCP tool result JSON ({"result": "<JSON string>"}), filters
-agent errors to those at or after <epoch>, and prints compact JSON with only
-the fields needed for triage. Agents with no in-window errors are omitted.
+agent errors to those at or after <epoch>, and prints compact JSON.  All agents
+are always returned (not just those with in-window errors) so Phase 2 can
+assess fleet topology.
 """
 
 import json
@@ -26,13 +27,12 @@ def main() -> None:
     out = []
     for a in agents:
         errs = [e for e in (a.get("errors") or []) if e.get("timestamp", 0) >= epoch]
-        if not errs:
-            continue
         out.append(
             {
                 "id": a["id"],
                 "status": a["status"],
                 "lastHeartbeatTime": a.get("lastHeartbeatTime"),
+                "hasInWindowErrors": len(errs) > 0,
                 "errors": [
                     {
                         "timestamp": e["timestamp"],

@@ -25,8 +25,12 @@ from .queries import (
     LAUNCH_RUN_MUTATION,
     LAUNCH_RUN_REEXECUTION_MUTATION,
     LIST_RUNS_QUERY,
+    LOCATION_LOAD_HISTORY_QUERY,
     RUN_BY_ID_QUERY,
+    RUN_GROUP_QUERY,
     RUN_LOGS_QUERY,
+    SCHEDULES_QUERY,
+    SENSORS_QUERY,
     TICK_HISTORY_QUERY,
 )
 from .server import GraphQLError, gql, server
@@ -397,6 +401,18 @@ async def get_asset_materializations(
         str | None,
         Field(description="Filter to a specific partition key."),
     ] = None,
+    before_timestamp_millis: Annotated[
+        str | None,
+        Field(
+            description="Only return materializations before this timestamp (milliseconds since epoch, as string). Server-side filter."
+        ),
+    ] = None,
+    after_timestamp_millis: Annotated[
+        str | None,
+        Field(
+            description="Only return materializations after this timestamp (milliseconds since epoch, as string). Server-side filter."
+        ),
+    ] = None,
 ) -> str:
     """Get recent materialization history for an asset. Returns timestamps, run IDs, partition keys, and metadata entries for each materialization."""
     asset_key_path = asset_key.split("/")
@@ -407,6 +423,8 @@ async def get_asset_materializations(
             "assetKey": {"path": asset_key_path},
             "limit": limit,
             "partitions": [partition] if partition else None,
+            "beforeTimestampMillis": before_timestamp_millis,
+            "afterTimestampMillis": after_timestamp_millis,
         },
     )
     nodes = data["assetNodes"]
@@ -456,6 +474,12 @@ async def get_asset_check_executions(
         str | None,
         Field(description="Pagination cursor from a previous call."),
     ] = None,
+    partition: Annotated[
+        str | None,
+        Field(
+            description='Filter to a specific partition key. Empty string ("") returns only unpartitioned executions.'
+        ),
+    ] = None,
 ) -> str:
     """Get execution history for a specific asset check. Returns pass/fail status, severity, description, and metadata for each execution."""
     asset_key_path = asset_key.split("/")
@@ -467,6 +491,7 @@ async def get_asset_check_executions(
             "checkName": check_name,
             "limit": limit,
             "cursor": cursor,
+            "partition": partition,
         },
     )
     return json.dumps(data["assetCheckExecutions"])
@@ -529,6 +554,18 @@ async def get_tick_history(
         list[TickStatus] | None,
         Field(description="Filter to ticks with these statuses. Omit for all."),
     ] = None,
+    after_timestamp: Annotated[
+        float | None,
+        Field(
+            description="Only return ticks at or after this Unix epoch (seconds). Server-side filter."
+        ),
+    ] = None,
+    before_timestamp: Annotated[
+        float | None,
+        Field(
+            description="Only return ticks at or before this Unix epoch (seconds). Server-side filter."
+        ),
+    ] = None,
 ) -> str:
     """Get tick history for a schedule or sensor. Shows each evaluation tick with its status (SUCCESS, FAILURE, SKIPPED), run IDs launched, skip reason, and error details. Essential for diagnosing why a schedule or sensor is not firing."""
     data = await gql(
@@ -539,6 +576,8 @@ async def get_tick_history(
             "repositoryName": repository_name,
             "limit": limit,
             "statuses": statuses or None,
+            "afterTimestamp": after_timestamp,
+            "beforeTimestamp": before_timestamp,
         },
     )
     return json.dumps(data["instigationStateOrError"])
@@ -559,15 +598,33 @@ async def list_backfills(
         str | None,
         Field(description="Pagination cursor from a previous call."),
     ] = None,
+    created_after: Annotated[
+        float | None,
+        Field(
+            description="Filter to backfills created after this Unix timestamp. Server-side filter."
+        ),
+    ] = None,
+    created_before: Annotated[
+        float | None,
+        Field(
+            description="Filter to backfills created before this Unix timestamp. Server-side filter."
+        ),
+    ] = None,
 ) -> str:
     """List backfills in the Dagster+ deployment. Returns backfill ID, status, asset selection, partition counts by run status, and any errors."""
     limit = min(limit, 100)
+    filters: dict[str, Any] = {}
+    if created_after:
+        filters["createdAfter"] = created_after
+    if created_before:
+        filters["createdBefore"] = created_before
     data = await gql(
         BACKFILLS_QUERY,
         {
             "status": status,
             "cursor": cursor,
             "limit": limit,
+            "filters": filters or None,
         },
     )
     return json.dumps(data["partitionBackfillsOrError"])
@@ -773,3 +830,122 @@ async def reexecute_run(
         {"reexecutionParams": reexecution_params},
     )
     return json.dumps(data["launchRunReexecution"])
+
+
+InstigationStatus = Literal["RUNNING", "STOPPED"]
+
+SensorType = Literal[
+    "STANDARD",
+    "RUN_STATUS",
+    "ASSET",
+    "MULTI_ASSET",
+    "FRESHNESS_POLICY",
+    "AUTO_MATERIALIZE",
+    "AUTOMATION",
+]
+
+
+@server.tool()
+@_handle_gql_errors
+async def list_schedules(
+    repository_location_name: Annotated[
+        str,
+        Field(description="The code location name (e.g. 'kipptaf')."),
+    ],
+    repository_name: Annotated[
+        str,
+        Field(
+            description="The repository name within the code location (default '__repository__')."
+        ),
+    ] = "__repository__",
+    schedule_status: Annotated[
+        InstigationStatus | None,
+        Field(
+            description="Filter to schedules with this status (RUNNING or STOPPED). Omit for all."
+        ),
+    ] = None,
+) -> str:
+    """List all schedules in a code location. Returns schedule name, cron expression, job name, timezone, current status, and tags."""
+    data = await gql(
+        SCHEDULES_QUERY,
+        {
+            "repositoryName": repository_name,
+            "repositoryLocationName": repository_location_name,
+            "scheduleStatus": schedule_status,
+        },
+    )
+    return json.dumps(data["schedulesOrError"])
+
+
+@server.tool()
+@_handle_gql_errors
+async def list_sensors(
+    repository_location_name: Annotated[
+        str,
+        Field(description="The code location name (e.g. 'kipptaf')."),
+    ],
+    repository_name: Annotated[
+        str,
+        Field(
+            description="The repository name within the code location (default '__repository__')."
+        ),
+    ] = "__repository__",
+    sensor_status: Annotated[
+        InstigationStatus | None,
+        Field(
+            description="Filter to sensors with this status (RUNNING or STOPPED). Omit for all."
+        ),
+    ] = None,
+) -> str:
+    """List all sensors in a code location. Returns sensor name, type, description, current status, next tick timestamp, target jobs, and tags. Use this to discover sensor names before calling get_tick_history."""
+    data = await gql(
+        SENSORS_QUERY,
+        {
+            "repositoryName": repository_name,
+            "repositoryLocationName": repository_location_name,
+            "sensorStatus": sensor_status,
+        },
+    )
+    return json.dumps(data["sensorsOrError"])
+
+
+@server.tool()
+@_handle_gql_errors
+async def get_run_group(
+    run_id: Annotated[
+        str,
+        Field(description="Any run ID in the re-execution chain."),
+    ],
+) -> str:
+    """Get the full re-execution chain for a run. Returns all runs sharing the same root, with their statuses and timestamps. More efficient than manually traversing parentRunId/rootRunId."""
+    data = await gql(RUN_GROUP_QUERY, {"runId": run_id})
+    return json.dumps(data["runGroupOrError"])
+
+
+@server.tool()
+@_handle_gql_errors
+async def get_location_load_history(
+    location_name: Annotated[
+        str,
+        Field(description="The code location name (e.g. 'kipptaf')."),
+    ],
+    limit: Annotated[
+        int,
+        Field(description="Number of entries to return (default 10, max 50)."),
+    ] = 10,
+    cursor: Annotated[
+        str | None,
+        Field(description="Pagination cursor from a previous call."),
+    ] = None,
+) -> str:
+    """Get the load/reload history for a code location. Shows each deploy attempt with load status (LOADED or ERROR), timestamps, metadata, and error details. Use for diagnosing deploy failures."""
+    limit = min(limit, 50)
+    data = await gql(
+        LOCATION_LOAD_HISTORY_QUERY,
+        {
+            "locationName": location_name,
+            "limit": limit,
+            "cursor": cursor,
+        },
+    )
+    return json.dumps(data["locationLoadHistory"])
