@@ -1,1 +1,0 @@
-{{.timestamp}} {{.jsonPayload.reason}} {{.jsonPayload.involvedObject.kind}}/{{.jsonPayload.involvedObject.name}} {{.jsonPayload.message}}

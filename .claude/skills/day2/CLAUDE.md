@@ -15,6 +15,12 @@ Always run all three steps before drawing conclusions — do not stop at step 1
 even if the agent looks healthy now. The user is asking you to investigate, not
 triage.
 
+## Re-execution chain investigation
+
+Use `get_run_group(run_id)` to get the full re-execution chain for any run in
+one call — more efficient than traversing `parentRunId`/`rootRunId` via
+`get_run` or `list_runs`.
+
 ## Data source for agent errors
 
 Agent-to-cloud communication errors (e.g. `ReadTimeout` to
