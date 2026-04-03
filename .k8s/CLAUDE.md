@@ -51,6 +51,8 @@ on GKE Autopilot.
   `DAGSTER_CLOUD_CLEANUP_SERVER_CHECK_INTERVAL` (set to 600s) control how
   quickly orphaned code server Deployments from previous agent IDs are deleted.
   Do not set grace period below reconciliation time (~3-4 min).
+- **`kubectl cordon` is ineffective on Autopilot** — Google manages node
+  lifecycle and may ignore cordon or replace the node entirely.
 - **Agent image architecture**: `dagster/dagster-cloud-agent` is amd64-only (as
   of 1.12.22). Check with
   `curl -s "https://hub.docker.com/v2/repositories/dagster/dagster-cloud-agent/tags/?page_size=3"`.

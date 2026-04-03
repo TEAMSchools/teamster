@@ -72,3 +72,10 @@ per line). Search for the exception line first, not the traceback header:
 `textPayload:("Exception" OR "Error") AND NOT textPayload:"BetaWarning"` with a
 narrow timestamp window. Use `pageSize` 10-15 (50 on per-line entries exceeds
 token limits). Skip intermediate frames unless the exception type is ambiguous.
+
+## Pod zone placement from VPC firewall logs
+
+`list_log_entries` with `resource.type="gce_subnetwork"` and
+`logName=".../compute.googleapis.com%2Ffirewall"` shows `instance.zone` and
+`remote_instance.zone` for each connection. Filter on `dest_port=4000` for
+agent→code-server gRPC traffic. Agent source IP is consistent across entries.
