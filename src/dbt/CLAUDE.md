@@ -61,6 +61,9 @@ All staging sources use BigQuery external tables backed by GCS (Avro format,
 BigLake connection, 7-day staleness window). Each source's `sources.yml`
 includes `dagster: asset_key` metadata so Dagster can track lineage.
 
+When a PR adds or modifies an external source, flag that the developer must
+stage it with `--target staging` before the dbt Cloud CI job will pass.
+
 ## Source Schema Resolution
 
 dbt source YAML `schema:` fields render with `SchemaYamlContext`, which only
