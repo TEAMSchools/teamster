@@ -51,6 +51,8 @@ models:
         data_type: int64
       - name: discipline
         data_type: string
+      - name: is_bl_fb
+        data_type: boolean
       - name: is_proficient
         data_type: boolean
       - name: testperformancelevel_text
