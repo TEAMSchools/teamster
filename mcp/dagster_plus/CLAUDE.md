@@ -116,7 +116,7 @@ Tool selection and diagnostic workflows are in the server `instructions` (see
 - `get_run` for step keys/asset selection, then cross-reference BigQuery schemas
   (`get_table_info`) against dbt contract YAML
 
-### API quirks
+## API quirks
 
 - `get_cloud_agents` supports server-side filtering via optional `agent_id`
   (substring match), `status` (`RUNNING`/`NOT_RUNNING`), and `errors_after`

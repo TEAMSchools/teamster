@@ -11,40 +11,49 @@ Production runs on **GKE** (Google Kubernetes Engine) via Dagster Cloud.
 Development uses **GitHub Codespaces** (devcontainer) — secrets are injected
 from 1Password at container start.
 
+## Architecture
+
+This file is a **router** — it contains project-wide conventions, then routes to
+subdirectory CLAUDE.md files for domain-specific context. Keep domain-specific
+guidance in the nearest subdirectory CLAUDE.md, not here.
+
+**You MUST read the relevant CLAUDE.md file before doing any work in a
+subdirectory — reading, explaining, reviewing, or modifying code. Do NOT skip
+this step.**
+
 ## Working Conventions
 
-- **Issue first**: Create a GitHub issue before any planned work — always after
-  a brainstorm, before the design doc. Quick fixes do not require one. Use
-  `gh issue create`; label with conventional commit type, related source systems
-  (e.g., `powerschool`, `deanslist`), and `dagster`/`dbt` when applicable.
-  Create the branch with `gh issue develop <number> --name <branch> --checkout`.
+- **Brainstorm-to-branch discipline** (hard gate — complete in order):
+  1. Create a GitHub issue before any planned work — always after a brainstorm,
+     before the design doc. Quick fixes do not require one. Use
+     `gh issue create`; label with conventional commit type, related source
+     systems (e.g., `powerschool`, `deanslist`), and `dagster`/`dbt` when
+     applicable.
+  2. **Ask the user: worktree or branch switch?** Do not choose for them.
+  3. Create the branch:
+     - **Worktree**: `gh issue develop <number> --name <branch>` (no
+       `--checkout`), then `git worktree add .worktrees/<branch> <branch>`. No
+       IDE tooling in worktrees. Edit files directly at
+       `.worktrees/<branch>/...` — never edit main workspace and copy over. Use
+       `git -C .worktrees/<branch>` for all git commands — never `cd` into the
+       worktree or rely on cwd.
+     - **Branch switch**:
+       `gh issue develop <number> --name <branch> --checkout`.
+  4. Do not write any files until on the feature branch — specs, code, and
+     config all belong on the branch, never main. Project conventions override
+     skill workflows.
 
-- **No commits without a branch**: Never commit to `main` — design docs, specs,
-  and code all go on feature branches. Project conventions override skill
-  workflows.
-
-- **Branching** (hard gate — complete in order):
-  1. **Ask the user: worktree or branch switch?** Do not choose for them.
-     - **Worktree** — work in `.worktrees/<branch>`, main workspace stays on
-       `main`. No IDE tooling in worktrees. **Edit files directly at
-       `.worktrees/<branch>/...` — never edit main workspace and copy over.**
-       dbt worktrees require `dbt deps` before first `dbt parse` —
-       `dbt_packages/` is not shared across worktrees.
-     - **Branch switch** — full IDE support, blocks other branch work.
-  2. Create the branch. For worktrees:
-     `git worktree add .worktrees/<branch> <branch>` (branch exists from
-     `gh issue develop`) or `git worktree add .worktrees/<branch> -b <branch>`
-     (no issue).
-  3. **Before resuming work** on an existing branch, merge `main` to avoid
-     conflicts: `git fetch origin main && git merge origin/main`.
-
-- **Git**: Commit messages and branch names use
+- **Git naming**: Commit messages and branch names use
   [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch
-  naming: `<gh-username>/<commit-type>/<brief-description>` (get username from
-  `gh api user -q .login`; AI-assisted branches prefix with `claude-`). Prefer
-  `git add -u` — naming protected paths triggers the hook, `git add -A` can
-  stage unrelated files. Subagents must name specific files in `git add` — never
-  `-u`, `-A`, or `.`.
+  naming: `<gh-username>/<commit-type>/claude-<brief-description>` (get username
+  from `gh api user -q .login`).
+
+- **Git staging**: Prefer `git add -u` — naming protected paths triggers the
+  hook, `git add -A` can stage unrelated files. Subagents must name specific
+  files in `git add` — never `-u`, `-A`, or `.`.
+
+- **Git resuming**: Before resuming work on an existing branch, merge `main`:
+  `git fetch origin main && git merge origin/main`.
 
 - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as the
   PR body.
@@ -76,29 +85,3 @@ from 1Password at container start.
   correct, faster, or more consistent?). Never self-approve. Additions should
   only contain what changes Claude's behavior — omit human-only context
   (motivation, rationale, history).
-
-## Troubleshooting Production
-
-- **Code location down**: Use `list_code_locations` (Dagster MCP) for the error
-  summary, then **GKE pod logs** (`mcp__gke__query_logs`) for the full picture.
-  The `list_code_locations` error only shows the last 25 log lines from the pod
-  — always check GKE logs for the complete timeline.
-- **Dagster Cloud deployment model**: Each deploy creates a new k8s Deployment
-  (`<location>-prod-<hash>`). Old Deployments are deleted during rollover.
-  Multiple commits in quick succession → multiple deployments → pods competing
-  for resources.
-- **GKE log queries**: Filter by `resource.labels.pod_name:<prefix>` for
-  container logs, `resource.type="k8s_cluster"` for k8s events (scheduling,
-  scaling, eviction). Use `jsonPayload.reason` to filter event types.
-- **Local `dagster definitions validate` may mislead** — env vars unavailable in
-  codespace cause false errors unrelated to production failures.
-
-## Architecture
-
-This file is a **router** — it contains project-wide conventions, then routes to
-subdirectory CLAUDE.md files for domain-specific context. Keep domain-specific
-guidance in the nearest subdirectory CLAUDE.md, not here.
-
-**You MUST read the relevant CLAUDE.md file before doing any work in a
-subdirectory — reading, explaining, reviewing, or modifying code. Do NOT skip
-this step.**
