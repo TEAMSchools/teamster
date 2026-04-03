@@ -7,6 +7,9 @@ on GKE Autopilot.
 
 - `values.yaml` is auto-downloaded from Helm — never edit. All customizations go
   in `values-override.yaml`.
+- **`serverProcessStartupTimeout`** (Helm `workspace` key, default 180s) — time
+  the agent waits for a code server gRPC ping after creating the Deployment.
+  Currently set to 300s in `values-override.yaml`.
 - `safe-to-evict: "false"` only blocks cluster autoscaler evictions — kubelet
   node-pressure evictions (exit 137, OOM) are unaffected. Scale-Out density
   makes these occasional; Dagster retries automatically.
@@ -53,6 +56,9 @@ Three pod types, three config sources:
 | Code server     | `<location>-prod-*` | `serverK8sConfig` (Helm) + per-location `server_k8s_config` (`dagster-cloud.yaml`) | —                                                  |
 | Run coordinator | `dagster-run-*`     | `runK8sConfig` (Helm) + per-location `run_k8s_config` (`dagster-cloud.yaml`)       | —                                                  |
 | Step worker     | `dagster-step-*`    | same as run coordinator                                                            | `op_tags["dagster-k8s/config"]` deep-merges on top |
+
+"Same as run coordinator" includes annotations, priorityClassName, and affinity
+— `K8sStepHandler` inherits the full `run_k8s_config` from `K8sRunLauncher`.
 
 `op_tags` at or below the `runK8sConfig` limit are redundant — remove them when
 bumping the base. CPU limits live in three places: Python `op_tags` dicts, YAML

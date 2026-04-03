@@ -8,7 +8,9 @@
   model.
 - `dagster-cloud-deploy.yaml` — reusable workflow (`workflow_call`) for
   multi-arch Docker builds and Dagster Cloud deploys. Called by per-location
-  `deploy-prod-*.yaml` workflows.
+  `deploy-prod-*.yaml` workflows. Uses `cancel-in-progress: true` grouped by
+  workflow + ref + event — rapid pushes to the same branch cancel prior deploys.
+  Does not prevent multiple locations deploying simultaneously from one commit.
 - `trunk-check.yaml` — runs Trunk linter on PRs (excludes `requirements.txt`).
 - `mkdocs-gh-deploy.yaml` — deploys docs site on push to `main`.
 
