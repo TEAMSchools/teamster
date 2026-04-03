@@ -51,6 +51,9 @@ on GKE Autopilot.
   `DAGSTER_CLOUD_CLEANUP_SERVER_CHECK_INTERVAL` (set to 600s) control how
   quickly orphaned code server Deployments from previous agent IDs are deleted.
   Do not set grace period below reconciliation time (~3-4 min).
+- **Helm upgrades are manual** — `git push` triggers Dagster Cloud code location
+  image builds, not Helm agent upgrades. Agent config changes in
+  `values-override.yaml` require a manual `helm upgrade`.
 
 ## Resource Config Inheritance
 

@@ -34,6 +34,16 @@ Tick failures from gRPC UNAVAILABLE during code server pod replacement are
 Dagster Cloud platform behavior — no user-side k8s config can eliminate them.
 Don't propose fixes; characterize as transient.
 
+## Sensor timeout vs startup timeout
+
+Two unrelated timeout types — do not conflate:
+
+- **Startup timeout** (`serverProcessStartupTimeout`, default 180s): agent waits
+  for code server gRPC ping. Failure → agent removes deployment and reconciles a
+  replacement. Causes deployment churn.
+- **Sensor execution timeout** (300s): sensor function ran too long. Code server
+  stays running. Agent logs the error and moves on. No deployment churn.
+
 ## Code server startup failure triage
 
 When a code location fails to load, check ALL pods for the deployment — multiple

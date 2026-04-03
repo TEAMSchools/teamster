@@ -117,6 +117,8 @@ Tool selection and diagnostic workflows are in the server `instructions` (see
 - `get_cloud_agents` returns ALL agents (active + historical) with full error
   logs — response is 200KB+ (77K tokens). Filter client-side; do not pass raw
   result to subagents. See `.claude/skills/day2/filter_agents.py` for example.
+- `get_cloud_agents` returns a **list** of agent dicts (not
+  `{"agents": [...]}`). Parse with `json.loads(result)` → iterate directly.
 - `get_daemon_health` returns `lastHeartbeatTime: null` for all daemons on
   Dagster Cloud — only useful as a binary healthy/unhealthy check
 - `get_run_compute_logs` returns null for GKE runs (ephemeral pods) — use
