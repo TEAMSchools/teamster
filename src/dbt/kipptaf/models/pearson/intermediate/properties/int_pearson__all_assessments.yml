@@ -37,6 +37,8 @@ models:
         data_type: float64
       - name: testscalescore
         data_type: float64
+      - name: testscorecomplete
+        data_type: float64
       - name: twoormoreraces
         data_type: string
       - name: white
