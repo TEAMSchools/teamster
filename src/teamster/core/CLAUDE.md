@@ -18,11 +18,16 @@ location's `definitions.py`. Two categories:
   SFTP/API assets)
 - `get_io_manager_gcs_file(code_location)` → `GCSIOManager` (raw file, used by
   paginated Deanslist)
-- `get_dbt_cli_resource(dbt_project, test=False)` → `DbtCliResource`
+- `get_dbt_cli_resource(dbt_project)` → `DbtCliResource` (passes
+  `target="defer"` when `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT == "1"`; otherwise
+  uses the shipped profile default, which is `prod`)
 - `get_powerschool_ssh_resource()` → `SSHResource` (reads from shared env vars)
 
 All IO manager factories redirect to `teamster-test` bucket when
 `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`.
+
+**Env var gotcha**: `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` is `"0"` (not absent)
+in full deployments — always check `== "1"`, never truthy.
 
 **Singletons** (shared across all code locations):
 

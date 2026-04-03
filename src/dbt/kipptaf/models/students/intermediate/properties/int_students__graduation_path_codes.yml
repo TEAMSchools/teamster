@@ -7,9 +7,6 @@ models:
           arguments:
             group_by: student_number
             distinct_field: grad_eligibility
-            config:
-              severity: warn
-              store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -100,9 +97,6 @@ models:
                   - FAFSA Only
                   - ELA Only / No FAFSA
                   - Math Only / No FAFSA
-              config:
-                severity: warn
-                store_failures: true
       - name: test_type
         data_type: string
       - name: rn_discipline_distict

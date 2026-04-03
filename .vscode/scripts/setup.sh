@@ -80,4 +80,4 @@ else
   echo -e "\033[1;32m✔ GCloud authenticated\033[0m"
 fi
 
-bash "${SCRIPT_DIR}/check-dbt-dev-datasets.sh"
+echo -e "\033[1;36mℹ First time? Run 'dbt: Build Init' to populate dev datasets (Ctrl+Shift+P → Tasks: Run Task)\033[0m"

@@ -42,11 +42,3 @@ sensor-driven (`couchdrop_sftp_sensor` for PowerSchool,
 `build_amplify_mclass_sftp_sensor` for Amplify). `AutomationConditionSensor`
 handles any assets with an automation condition defined (e.g. `finalsite`,
 `pearson`).
-
-## Resources
-
-Minimal resource set — only GCS, dbt, Couchdrop, and Amplify SFTP:
-
-- `gcs`, `io_manager`, `io_manager_gcs_avro`, `dbt_cli`
-- `ssh_couchdrop`, `ssh_amplify`
-- `google_drive` — used by Couchdrop sensor

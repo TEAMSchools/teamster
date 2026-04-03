@@ -159,5 +159,15 @@ with
             and ryc.academic_year = rrc.academic_year
     )
 
-select attrition_type, academic_year, employee_number, is_attrition,
+select
+    attrition_type,
+    academic_year,
+    employee_number,
+    is_attrition,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["employee_number", "academic_year", "attrition_type"]
+        )
+    }} as staff_attrition_key,
 from final

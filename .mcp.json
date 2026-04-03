@@ -2,10 +2,7 @@
   "mcpServers": {
     "dagster": {
       "command": "bash",
-      "args": [
-        "-c",
-        "DAGSTER_CLOUD_API_TOKEN=$(op read 'op://Data Team/Dagster Cloud Agent/credential') uv run --group mcp python mcp/dagster_plus.py"
-      ],
+      "args": ["mcp/dagster_plus/run.sh"],
       "env": {
         "DAGSTER_CLOUD_ORGANIZATION_ID": "kipptaf",
         "DAGSTER_CLOUD_DEPLOYMENT": "prod"
@@ -30,6 +27,13 @@
     "gke": {
       "command": "gke-mcp",
       "args": [],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
+      }
+    },
+    "observability": {
+      "command": "npx",
+      "args": ["-y", "@google-cloud/observability-mcp"],
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
       }

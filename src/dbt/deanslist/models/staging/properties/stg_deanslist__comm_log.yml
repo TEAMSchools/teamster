@@ -6,7 +6,7 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: is_draft
         data_type: boolean
       - name: call_status_id

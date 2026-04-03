@@ -6,9 +6,6 @@ models:
             combination_of_columns:
               - person_identifier
               - academic_year
-          config:
-            severity: warn
-            store_failures: true
     columns:
       - name: person_identifier
         data_type: int64

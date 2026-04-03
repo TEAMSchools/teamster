@@ -9,7 +9,7 @@ models:
               - employee_number
               - academic_year
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: employee_number
         data_type: int64

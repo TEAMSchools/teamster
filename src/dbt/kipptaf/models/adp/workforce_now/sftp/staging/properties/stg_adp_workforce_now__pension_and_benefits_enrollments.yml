@@ -7,8 +7,6 @@ models:
               - position_id
               - enrollment_status
               - plan_name
-          config:
-            store_failures: true
     columns:
       - name: employee_number
         data_type: int64

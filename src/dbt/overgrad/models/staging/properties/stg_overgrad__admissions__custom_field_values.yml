@@ -7,7 +7,7 @@ models:
               - id
               - custom_field_id
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: id
         data_type: int64

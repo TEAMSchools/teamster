@@ -58,13 +58,41 @@
         "focus": true
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Chore: Update Dependencies",
+      "type": "shell",
+      "command": "bash .vscode/scripts/update-dependencies.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "dbt: Stage External Sources",
+      "type": "shell",
+      "command": "uv run dbt run-operation stage_external_sources --project-dir src/dbt/${input:dbtProject} --target ${input:dbtSxsTarget} --vars '{\"ext_full_refresh\": \"true\", \"cloud_storage_uri_base\": \"gs://teamster-${input:dbtProject}/dagster/${input:dbtProject}\"}' --args 'select: ${input:dbtSourceSelect}'",
+      "problemMatcher": []
+    },
+    {
+      "label": "dbt: Generate Prod Manifests",
+      "type": "shell",
+      "command": "bash .vscode/scripts/post-merge.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
     }
   ],
   "inputs": [
     {
       "id": "dbtProject",
       "type": "pickString",
-      "description": "Select a dbt project to build",
+      "description": "Select a dbt project",
       "options": [
         "all",
         "kippcamden",
@@ -73,6 +101,19 @@
         "kipppaterson",
         "kipptaf"
       ]
+    },
+    {
+      "id": "dbtSxsTarget",
+      "type": "pickString",
+      "description": "Target environment",
+      "options": ["defer", "dev", "staging"],
+      "default": "defer"
+    },
+    {
+      "id": "dbtSourceSelect",
+      "type": "promptString",
+      "description": "Source selection (e.g. google_sheets.my_source). Use * to stage all sources.",
+      "default": "*"
     }
   ]
 }

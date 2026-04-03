@@ -69,9 +69,9 @@ check_output "Grep normal match" clean Grep "import dagster"
 echo ""
 echo -e "${YELLOW}PostToolUse: MCP tool output scanning${NC}"
 
-check_output "MCP tool with op://" deny "mcp__bigquery__query" "op://vault/item/field"
+check_output "MCP tool with op://" deny "mcp__bigquery__execute_sql" "op://vault/item/field"
 check_output "MCP tool with private key" deny "mcp__dagster__get_run" "-----BEGIN RSA PRIVATE KEY-----"
-check_output "MCP tool clean output" clean "mcp__bigquery__query" "rows_affected: 42"
+check_output "MCP tool clean output" clean "mcp__bigquery__execute_sql" "rows_affected: 42"
 
 # ─── High-entropy string boundary (120 chars) ────────────────────────────────
 echo ""

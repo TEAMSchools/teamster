@@ -4,7 +4,7 @@ models:
       - unique:
           column_name: id
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: id
         data_type: string

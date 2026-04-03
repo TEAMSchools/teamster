@@ -8,7 +8,7 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: contact_1_address_home
         data_type: string
       - name: contact_1_email_current

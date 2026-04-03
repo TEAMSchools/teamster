@@ -14,7 +14,7 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: n_overgrad_1st_choice
         data_type: int64
         description: Count of schools this student has tagged as #1 Choice in Overgrad.

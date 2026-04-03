@@ -7,7 +7,7 @@ communications platform). Staging-only project with no intermediate layer.
 
 ```text
 models/
-  staging/     # materialized: table, contract: enforced: true
+  staging/     # materialized: table
   sources.yml
 ```
 
@@ -17,8 +17,3 @@ by consuming projects).
 ## Cross-Project Usage
 
 Referenced by `kipptaf` only.
-
-## Model Conventions
-
-See `src/dbt/CLAUDE.md` for per-layer requirements (contract enforcement,
-uniqueness tests, SQL antipatterns) that apply to all dbt projects.

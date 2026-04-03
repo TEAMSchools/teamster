@@ -10,8 +10,7 @@ models:
               - student_number
               - week_start_monday
           config:
-            store_failures: true
-            # severity: warn
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string

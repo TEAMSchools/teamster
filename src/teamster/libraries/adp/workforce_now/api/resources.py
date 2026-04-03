@@ -8,6 +8,12 @@ from requests import Response
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 from requests_oauthlib import OAuth2Session
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 
 
 class AdpWorkforceNowResource(ConfigurableResource):
@@ -44,6 +50,11 @@ class AdpWorkforceNowResource(ConfigurableResource):
         if not self.masked:
             self._session.headers["Accept"] = "application/json;masked=false"
 
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential_jitter(initial=10, max=60),
+        retry=retry_if_exception_type(HTTPError),
+    )
     def _request(self, method: str, url: str, **kwargs) -> Response:
         response = self._session.request(method=method, url=url, **kwargs)
 
@@ -60,8 +71,11 @@ class AdpWorkforceNowResource(ConfigurableResource):
             return response
         except HTTPError as e:
             response_json = response.json()
-
             self._log.error(msg=response_json)
+
+            if response.status_code == 429:
+                raise  # retryable via tenacity
+
             raise Exception(response_json) from e
 
     def post(

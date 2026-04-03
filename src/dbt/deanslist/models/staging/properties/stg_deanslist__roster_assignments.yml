@@ -7,7 +7,7 @@ models:
               - dl_roster_id
               - dl_student_id
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: first_name
         data_type: string

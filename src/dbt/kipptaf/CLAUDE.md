@@ -29,10 +29,13 @@ models/
 Each integration uses two source files with the **same `name:` under
 `sources:`** (dbt merges at parse time):
 
-| File                   | Points to                          | Schema expression            |
-| ---------------------- | ---------------------------------- | ---------------------------- |
-| `sources-external.yml` | GCS Avro / Google Sheets externals | dev-prefixed (env-isolated)  |
-| `sources-bigquery.yml` | Native BQ tables (frozen archives) | plain `project_name_<integ>` |
+| File                   | Points to                          | Schema expression                    |
+| ---------------------- | ---------------------------------- | ------------------------------------ |
+| `sources-external.yml` | GCS Avro / Google Sheets externals | dev-prefixed (env-isolated)          |
+| `sources-bigquery.yml` | Native BQ tables (Airbyte, frozen) | plain hardcoded (e.g. `kipptaf_foo`) |
+
+When both files exist for the same source, `sources-bigquery.yml` omits
+`schema:`.
 
 **Archive pattern**: Disable the model (`config: enabled: false` in properties
 YAML) → add BQ-native entry in `sources-bigquery.yml` → update downstream
@@ -63,14 +66,8 @@ Macro defined in `macros/utils.sql` — extracts school prefix via
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not
 SQL. YAML properties drift silently. **Rule**: enumerate columns explicitly when
-joining these models. Get the authoritative list:
-
-```sql
-select column_name
-from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
-where table_name = '<model_name>'
-order by ordinal_position
-```
+joining these models (see `INFORMATION_SCHEMA.COLUMNS` query in
+`src/dbt/CLAUDE.md`).
 
 `union_relations` views have a related issue (stale compiled SQL) but are
 handled automatically by `dbt_union_relations_automation_condition()`.
@@ -105,8 +102,8 @@ Facebook, Illuminate Fivetran, Instagram.
 ## Cross-Project Refs
 
 Sources models from: `powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`,
-`pearson`, `renlearn`, `titan`, `amplify`, `finalsite`, `overgrad`.
-District-specific PowerSchool data via multiple `sources-kipp*.yml` files.
+`pearson`, `renlearn`, `titan`, `amplify`, `finalsite`. District-specific
+PowerSchool data via multiple `sources-kipp*.yml` files.
 
 ## Exposures
 
@@ -130,15 +127,10 @@ config:
           cron_schedule: "0 7 * * *" # only if Dagster-managed
 ```
 
-## Key Variables
+## kipptaf-Specific Variables
 
-| Variable                            | Value                                                                    |
-| ----------------------------------- | ------------------------------------------------------------------------ |
-| `current_academic_year`             | `2025`                                                                   |
-| `current_fiscal_year`               | `2026`                                                                   |
-| `local_timezone`                    | `America/New_York`                                                       |
-| `cloud_storage_uri_base`            | `gs://teamster-kipptaf/dagster/kipptaf`                                  |
-| `bigquery_external_connection_name` | `projects/teamster-332318/locations/us/connections/biglake-teamster-gcs` |
+`bigquery_external_connection_name`:
+`projects/teamster-332318/locations/us/connections/biglake-teamster-gcs`
 
 dbt Cloud project ID: `211862`.
 
@@ -148,7 +140,3 @@ dbt Cloud project ID: `211862`.
   `models/extracts/`.
 - **`dim_*` / `fct_*`** — dimensional marts for semantic layer. Live in
   `models/marts/`. Actively being developed.
-
-Key marts: `dim_students`, `dim_staff`, `dim_locations`, `dim_terms`,
-`dim_dates`, `dim_seats`, `fct_attendance`, `fct_staff_attrition`,
-`fct_staff_terminations`, `fct_additional_earnings`, `fct_microgoals`.

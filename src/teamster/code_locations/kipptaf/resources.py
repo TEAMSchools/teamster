@@ -99,6 +99,7 @@ SSH_RESOURCE_CLEVER = SSHResource(
     remote_port=22,
     username=EnvVar("CLEVER_SFTP_USERNAME"),
     password=EnvVar("CLEVER_SFTP_PASSWORD"),
+    timeout=30,
 )
 
 SSH_RESOURCE_COUPA = SSHResource(
@@ -127,6 +128,7 @@ SSH_RESOURCE_ILLUMINATE = SSHResource(
     remote_port=22,
     username=EnvVar("ILLUMINATE_SFTP_USERNAME"),
     password=EnvVar("ILLUMINATE_SFTP_PASSWORD"),
+    timeout=30,
 )
 
 SSH_RESOURCE_IDAUTO = SSHResource(

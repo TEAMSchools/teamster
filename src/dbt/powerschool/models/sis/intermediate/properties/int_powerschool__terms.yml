@@ -8,4 +8,4 @@ models:
               - yearid
               - term
           config:
-            store_failures: true
+            severity: error
