@@ -1,6 +1,6 @@
 sources:
   - name: amplify
-    schema: "{{ project_name }}_amplify"
+    schema: kipptaf_amplify
     tables:
       - name: int_amplify__dds__data_farming_unpivot
         identifier: int_amplify__dibels_data_farming_unpivot

@@ -28,3 +28,6 @@ sources:
               }}/edplan/njsmart_powerschool/"
             format: AVRO
             enable_logical_types: true
+      - name: src_edplan__njsmart_powerschool_archive
+        config:
+          enabled: false
