@@ -151,6 +151,7 @@ with
             and r.assignment_category_code = e.gradebook_category
             and e.view_name = 'audit_flags'
             and e.cte = 'teacher_unpivot_cc'
+            and e.is_quarter_end_date_range is null
         where e.include_row is null
     ),
 
