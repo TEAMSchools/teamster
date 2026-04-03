@@ -27,3 +27,11 @@ Agent-to-cloud communication errors (e.g. `ReadTimeout` to
 `*.agent.dagster.cloud`) appear only in the Dagster Cloud agent `errors` array —
 not in GKE pod logs or container logs. Always check the agent API first for
 these errors.
+
+## Efficient traceback retrieval from Cloud Logging
+
+GKE container tracebacks are split across dozens of individual log entries (one
+per line). Search for the exception line first, not the traceback header:
+`textPayload:("Exception" OR "Error") AND NOT textPayload:"BetaWarning"` with a
+narrow timestamp window. Use `pageSize` 10-15 (50 on per-line entries exceeds
+token limits). Skip intermediate frames unless the exception type is ambiguous.

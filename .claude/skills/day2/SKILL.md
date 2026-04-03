@@ -86,9 +86,21 @@ PARALLEL for each location with loadStatus == "LOADED":
     schedule_status="RUNNING").
 
 Collect automation tick failures: tickId, timestamp, location, sensor name,
-error message (first 300 chars). Report which locations returned 0 in-window
-failures (confirm all were queried). If a location has loadStatus != "LOADED",
-skip tick queries for it and flag it for step 3a.
+error message (first 300 chars). Extract the gRPC target IP from each failure's
+error chain (look for "ipv4:<ip>:<port>" in the message). Report which locations
+returned 0 in-window failures (confirm all were queried). If a location has
+loadStatus != "LOADED", skip tick queries for it and flag it for step 3a.
+
+When a location has failures, fetch context ticks (ALL statuses) around them:
+  mcp__dagster__get_tick_history(
+    name="<location>__automation_condition_sensor",
+    repository_location_name="<location>",
+    after_timestamp=<first_failure_timestamp - 60>,
+    before_timestamp=<last_failure_timestamp + 60>,
+    limit=50).
+Collect per tick: timestamp, status. This shows whether failures were
+consecutive or interleaved with successes. Also note any IP changes across
+failure ticks (different IPs = pod replacement during deploy rollover).
 
 ## 3a. Code location load failures (depends on step 3)
 
@@ -221,6 +233,14 @@ and refine classifications using cross-signal context now available:
   a run classified "Code error" whose traceback is actually a K8s API timeout).
 - If reclassification creates new "Node OOM/eviction" runs that Haiku missed,
   pull their memory metrics using the same `list_time_series` query from step 9.
+
+**Deploy rollover detection**: When tick failures show gRPC UNAVAILABLE errors,
+check the context ticks from step 3. If failures form brief clusters (a few
+ticks each) bounded by successes on both sides, and the gRPC target IP changes
+between clusters, this is a **code server pod replacement** during a deploy
+rollover — not a sustained outage. Report the actual failure duration per
+cluster (count of consecutive failures x ~30s tick interval), not the span from
+first to last failure. Note the IP change as evidence of pod replacement.
 
 **Agent topology check**: Expected steady state is **2 RUNNING agents**. Flag
 deviations — e.g. 1 RUNNING (degraded redundancy), 3 RUNNING (mid-rollover,
