@@ -54,7 +54,19 @@ with
             and e2.view_name = 'audit_flags'
             and e2.cte = 'student_unpivot'
             and e2.is_quarter_end_date_range is not null
-        where e1.include_row is null and e2.include_row is null
+        -- permanently remove flags by credit type and gradebook category
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e3
+            on u.academic_year = e3.academic_year
+            and u.region = e3.region
+            and u.school_level = e3.school_level
+            and u.credit_type = e3.credit_type
+            and u.assignment_category_code = e3.gradebook_category
+            and e3.view_name = 'audit_flags'
+            and e3.cte = 'student_unpivot'
+            and e3.is_quarter_end_date_range is null
+        where
+            e1.include_row is null and e2.include_row is null and e3.include_row is null
     ),
 
     teacher_unpivot_cca as (
@@ -129,6 +141,18 @@ with
             and r.assignment_category_code = f.code
             and r.audit_flag_name = f.audit_flag_name
             and f.cte_grouping = 'class_category'
+        -- permanently remove flags by credit type and gradebook category
+        left join
+            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
+            on r.academic_year = e.academic_year
+            and r.region = e.region
+            and r.school_level = e.school_level
+            and r.credit_type = e.credit_type
+            and r.assignment_category_code = e.gradebook_category
+            and e.view_name = 'audit_flags'
+            and e.cte = 'teacher_unpivot_cc'
+            and e.is_quarter_end_date_range is null
+        where e.include_row is null
     ),
 
     eoq_items as (
