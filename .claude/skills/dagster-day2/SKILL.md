@@ -43,10 +43,11 @@ Then IN PARALLEL:
 - For each run: mcp__dagster__get_run_logs(run_id=<id>,
     filter_types=["ExecutionStepFailureEvent","RunFailureEvent","EngineEvent"],
     limit=500).
-- mcp__dagster__list_runs(statuses=["SUCCESS"], created_after={EPOCH}, limit=1)
-  — note the total count from the response (or count returned items).
-- mcp__dagster__list_runs(statuses=["CANCELED"], created_after={EPOCH}, limit=1)
-  — note the total count.
+- mcp__dagster__list_runs(statuses=["SUCCESS"], created_after={EPOCH}, limit=100).
+  Count returned items. If a cursor is returned, paginate until no cursor
+  remains — the API has no total count field.
+- mcp__dagster__list_runs(statuses=["CANCELED"], created_after={EPOCH}, limit=100).
+  Same counting approach.
 
 Collect per failed run: runId, jobName, dagster/code_location tag, startTime,
 endTime, RunFailureEvent message, dagster/will_retry value,
@@ -98,9 +99,10 @@ When a location has failures, fetch context ticks (ALL statuses) around them:
     after_timestamp=<first_failure_timestamp - 60>,
     before_timestamp=<last_failure_timestamp + 60>,
     limit=50).
-Collect per tick: timestamp, status. This shows whether failures were
-consecutive or interleaved with successes. Also note any IP changes across
-failure ticks (different IPs = pod replacement during deploy rollover).
+Collect per context tick: timestamp, status, and the gRPC target IP if present
+in the error message. Return these as a flat array — Phase 2 will analyze
+whether failures were consecutive or interleaved with successes and whether IP
+changes indicate deploy rollover.
 
 ## 3a. Code location load failures (depends on step 3)
 
@@ -124,8 +126,13 @@ chars). If no schedules have failures, return an empty array.
 ## 4. Agent health
 
 mcp__dagster__get_cloud_agents(errors_after={EPOCH}).
-Per agent returns: id, status, lastHeartbeatTime, filtered errors (timestamp +
-message, truncated to 300 chars), codeServerStates, runWorkerStates.
+The response is large (70K+ chars) because it includes full codeServerStates
+and runWorkerStates arrays for every agent. Extract only these fields per agent:
+  id, status, lastHeartbeatTime, errors (timestamp + message, truncated to
+  300 chars each).
+Discard codeServerStates and runWorkerStates — they are not needed for the
+report. Include all agents whose lastHeartbeatTime falls within the window
+(these were active during the period), plus all currently RUNNING agents.
 
 ## 5. Daemon health
 
