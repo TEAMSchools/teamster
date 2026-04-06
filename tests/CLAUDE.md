@@ -25,7 +25,7 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   `subprocess.check_output` — tests the real module load, not a mock.
 - **Automation condition tests**: use ephemeral in-memory Dagster instances
   (fast, no external deps).
-- **Root `conftest.py`**: contains a single session-scoped autouse fixture that
+- **`conftest.py`**: contains a single session-scoped autouse fixture that
   bootstraps secrets from 1Password on demand. No shared test fixtures — see
   `utils.py` for SSH/DB resource helpers (require env vars).
 - **Archived tests**: `_test_` prefix in `archive/` subdirectories — ignored by
