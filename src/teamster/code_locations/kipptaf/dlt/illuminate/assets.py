@@ -15,10 +15,10 @@ sql_database_credentials = ConnectionStringCredentials(
         "drivername": check.not_none(
             value=EnvVar("ILLUMINATE_DB_DRIVERNAME").get_value()
         ),
-        "database": check.not_none(value=EnvVar("ILLUMINATE_DB_DATABASE").get_value()),
-        "password": check.not_none(value=EnvVar("ILLUMINATE_DB_PASSWORD").get_value()),
-        "username": check.not_none(value=EnvVar("ILLUMINATE_DB_USERNAME").get_value()),
-        "host": check.not_none(value=EnvVar("ILLUMINATE_DB_HOST").get_value()),
+        "database": EnvVar("ILLUMINATE_DB_DATABASE").get_value(),
+        "password": EnvVar("ILLUMINATE_DB_PASSWORD").get_value(),
+        "username": EnvVar("ILLUMINATE_DB_USERNAME").get_value(),
+        "host": EnvVar("ILLUMINATE_DB_HOST").get_value(),
     }
 )
 
