@@ -150,13 +150,28 @@ mcp__observability__list_log_entries(
 Collect per entry: timestamp, jsonPayload.reason, involvedObject kind+name,
 message. If the response includes a nextPageToken, add "truncated": true.
 
-## 7. Open alerts (Cloud Monitoring)
+## 7. Alerts (Cloud Monitoring)
 
-mcp__observability__list_alerts(
-  parent="projects/teamster-332318",
-  filter='state="OPEN"').
-Collect per alert: name, displayName, state, open_time, policy name/ID,
-condition display name. If no alerts are open, return an empty array.
+Two calls IN PARALLEL:
+  mcp__observability__list_alerts(
+    parent="projects/teamster-332318",
+    filter='state="OPEN"').
+  mcp__observability__list_alerts(
+    parent="projects/teamster-332318",
+    filter='open_time >= "{UTC_START}"',
+    orderBy="open_time desc",
+    pageSize=50).
+The first catches currently open alerts. The second catches alerts that fired
+and auto-resolved within the window (brief CPU/memory spikes, transient
+conditions). Deduplicate by alert name.
+Collect per alert: name, displayName, state, open_time, close_time (if closed),
+resource labels (pod_name, namespace_name), metric type, policy name/ID.
+For each alert on a dagster-cloud pod, extract the pod type from the name:
+  dagster-step-* → step worker (identify the run ID and asset from pod labels
+    or from list_log_entries for that pod, look for STEP_WORKER_STARTED)
+  dagster-run-* → run coordinator
+  <location>-prod-* → code server
+Report which asset/job triggered the alert so resource limits can be adjusted.
 
 ## 8. Recurring error groups (Error Reporting)
 
@@ -207,8 +222,8 @@ If no active or failed backfills, return empty arrays.
 
 Return JSON with keys: failed_runs, run_counts, retry_outcomes, failed_ticks,
 failed_schedule_ticks, location_load_failures, agents, daemon_health,
-gke_critical_events, open_alerts, error_groups, oom_metrics, queued_runs,
-backfills.
+gke_critical_events, alerts (both open and recently closed), error_groups,
+oom_metrics, queued_runs, backfills.
 ```
 
 ## Phase 2: Correlate and report
@@ -265,6 +280,8 @@ canceled
 - **Run failures:** ...
 - **Tick failures:** ...
 - **Schedule tick failures:** ... (omit if none)
+- **Alerts:** ... (omit if none; include pod type, asset/job, and whether the
+  alert self-resolved; note resource limit implications)
 - **Queued runs:** ... (omit if none)
 - **Backfills:** ... (omit if none)
 

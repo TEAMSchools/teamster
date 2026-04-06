@@ -73,6 +73,12 @@ per line). Search for the exception line first, not the traceback header:
 narrow timestamp window. Use `pageSize` 10-15 (50 on per-line entries exceeds
 token limits). Skip intermediate frames unless the exception type is ambiguous.
 
+## kipptaf step worker CPU spikes
+
+kipptaf step workers hit the 1000m CPU limit during Python module import. Alerts
+on `dagster-step-*` pods for kipptaf jobs that self-resolve within ~60s are this
+pattern. Fix via per-asset k8s config overrides, not global limit changes.
+
 ## Pod zone placement from VPC firewall logs
 
 `list_log_entries` with `resource.type="gce_subnetwork"` and
