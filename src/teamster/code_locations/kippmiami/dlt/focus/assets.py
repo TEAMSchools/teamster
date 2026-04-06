@@ -1,8 +1,7 @@
 import pathlib
 
 import yaml
-from dagster import EnvVar
-from dagster_shared import check
+from dlt.common.configuration import resolve_configuration
 from dlt.common.configuration.specs import ConnectionStringCredentials
 
 from teamster.code_locations.kippmiami import CODE_LOCATION
@@ -10,15 +9,8 @@ from teamster.libraries.dlt.focus.assets import build_focus_dlt_assets
 
 config_file = pathlib.Path(__file__).parent / "config" / "focus.yaml"
 
-sql_database_credentials = ConnectionStringCredentials(
-    {
-        "drivername": check.not_none(value=EnvVar("FOCUS_DB_DRIVERNAME").get_value()),
-        "database": check.not_none(value=EnvVar("FOCUS_DB_DATABASE").get_value()),
-        "password": check.not_none(value=EnvVar("FOCUS_DB_PASSWORD").get_value()),
-        "username": check.not_none(value=EnvVar("FOCUS_DB_USERNAME").get_value()),
-        "host": check.not_none(value=EnvVar("FOCUS_DB_HOST").get_value()),
-        "port": check.not_none(value=EnvVar("FOCUS_DB_PORT").get_value()),
-    }
+sql_database_credentials = resolve_configuration(
+    ConnectionStringCredentials(), sections=("FOCUS_DB",)
 )
 
 assets = [

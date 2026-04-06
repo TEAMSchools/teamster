@@ -140,32 +140,32 @@ locations:
                   secretKeyRef:
                     name: op-deanslist-api
                     key: subdomain
-              - name: FOCUS_DB_DRIVERNAME
+              - name: FOCUS_DB__DRIVERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
                     key: drivername
-              - name: FOCUS_DB_HOST
+              - name: FOCUS_DB__HOST
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
                     key: host
-              - name: FOCUS_DB_DATABASE
+              - name: FOCUS_DB__DATABASE
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
                     key: database
-              - name: FOCUS_DB_USERNAME
+              - name: FOCUS_DB__USERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
                     key: username
-              - name: FOCUS_DB_PASSWORD
+              - name: FOCUS_DB__PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
                     key: password
-              - name: FOCUS_DB_PORT
+              - name: FOCUS_DB__PORT
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
@@ -268,32 +268,32 @@ locations:
                   secretKeyRef:
                     name: op-deanslist-api
                     key: subdomain
-              - name: FOCUS_DB_DRIVERNAME
+              - name: FOCUS_DB__DRIVERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
                     key: drivername
-              - name: FOCUS_DB_HOST
+              - name: FOCUS_DB__HOST
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
                     key: host
-              - name: FOCUS_DB_DATABASE
+              - name: FOCUS_DB__DATABASE
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
                     key: database
-              - name: FOCUS_DB_USERNAME
+              - name: FOCUS_DB__USERNAME
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
                     key: username
-              - name: FOCUS_DB_PASSWORD
+              - name: FOCUS_DB__PASSWORD
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
                     key: password
-              - name: FOCUS_DB_PORT
+              - name: FOCUS_DB__PORT
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
