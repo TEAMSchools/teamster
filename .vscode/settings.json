@@ -1,7 +1,4 @@
 {
-  "dbt.enableNewLineagePanel": true,
-  "dbt.allowListFolders": ["src/dbt"],
-  "dbt.installDepsOnProjectInitialization": false,
   "diffEditor.experimental.showMoves": true,
   "diffEditor.ignoreTrimWhitespace": false,
   "editor.defaultFormatter": "trunk.io",
@@ -29,7 +26,6 @@
   "trunk.trunkPath": "./trunk",
   "files.associations": {
     "*.env": "shellscript",
-    "*.sql": "jinja-sql",
     "*.toml": "toml"
   },
   "files.exclude": {
@@ -67,53 +63,17 @@
     "tag:yaml.org,2002:python/name:material.extensions.emoji.twemoji scalar",
     "tag:yaml.org,2002:python/name:material.extensions.emoji.to_svg scalar"
   ],
-  "yaml.schemas": {
-    "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/dbt_project-latest.json": "src/dbt/**/dbt_project.yml",
-    "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/selectors-latest.json": "src/dbt/**/selectors.yml",
-    "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/packages-latest.json": "src/dbt/**/packages.yml",
-    "https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/dbt_yml_files-latest.json": [
-      "src/dbt/**/*.yml",
-      "!src/dbt/**/dbt_project.yml",
-      "!src/dbt/**/selectors.yml",
-      "!src/dbt/**/packages.yml"
-    ]
-  },
   "[python]": {
     "editor.defaultFormatter": "trunk.io"
   },
   "claudeCode.preferredLocation": "sidebar",
-  "terminal.integrated.profiles.linux": {
-    "Claude Code": {
-      "path": "claude",
-      "icon": "sparkle"
-    }
-  },
   "python.analysis.typeCheckingMode": "off",
-  "dbt.deferConfigPerProject": {
-    "src/dbt/kipptaf": {
-      "deferToProduction": false,
-      "manifestPathForDeferral": "src/dbt/kipptaf/target/prod/manifest.json",
-      "favorState": false
-    },
-    "src/dbt/kippnewark": {
-      "deferToProduction": false,
-      "manifestPathForDeferral": "src/dbt/kippnewark/target/prod/manifest.json",
-      "favorState": false
-    },
-    "src/dbt/kippcamden": {
-      "deferToProduction": false,
-      "manifestPathForDeferral": "src/dbt/kippcamden/target/prod/manifest.json",
-      "favorState": false
-    },
-    "src/dbt/kippmiami": {
-      "deferToProduction": false,
-      "manifestPathForDeferral": "src/dbt/kippmiami/target/prod/manifest.json",
-      "favorState": false
-    },
-    "src/dbt/kipppaterson": {
-      "deferToProduction": false,
-      "manifestPathForDeferral": "src/dbt/kipppaterson/target/prod/manifest.json",
-      "favorState": false
-    }
+  "dbtCoreTools.profilesDir": ".dbt",
+  "dbtCoreTools.deferManifestPath": {
+    "kipptaf": "src/dbt/kipptaf/target/prod",
+    "kippnewark": "src/dbt/kippnewark/target/prod",
+    "kippcamden": "src/dbt/kippcamden/target/prod",
+    "kippmiami": "src/dbt/kippmiami/target/prod",
+    "kipppaterson": "src/dbt/kipppaterson/target/prod"
   }
 }

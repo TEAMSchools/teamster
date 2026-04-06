@@ -69,7 +69,7 @@ uv run dbt deps --project-dir=src/dbt/kipppaterson &
 uv run dbt deps --project-dir=src/dbt/kipptaf &
 wait
 
-# generate prod manifests for Power User --defer
+# generate prod manifests for dbt --defer
 for project in kipptaf kippnewark kippcamden kippmiami kipppaterson; do
   uv run dbt parse --target prod \
     --project-dir "src/dbt/${project}" \
