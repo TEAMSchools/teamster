@@ -75,7 +75,7 @@ def _fetch_file_secrets(token: str) -> None:
 
 
 @pytest.fixture(autouse=True, scope="session")
-def _bootstrap_secrets() -> None:  # trunk-ignore(pyright/reportUnusedFunction)
+def _bootstrap_secrets() -> None:
     """Fetch secrets from 1Password on first test run."""
     if not _TOKEN_PATH.exists():
         return
