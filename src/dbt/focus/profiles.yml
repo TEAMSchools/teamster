@@ -1,0 +1,17 @@
+# Dagster-only profile (defer + prod). Developers use .dbt/profiles.yml for
+# full target support (defer/dev/staging/prod).
+focus:
+  target: prod
+  outputs:
+    defer:
+      type: bigquery
+      schema: zz_dagster_focus
+      method: oauth
+      project: teamster-332318
+      threads: 40
+    prod:
+      type: bigquery
+      schema: focus
+      method: oauth
+      project: teamster-332318
+      threads: 40
