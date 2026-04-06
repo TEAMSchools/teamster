@@ -113,7 +113,7 @@ if [[ ${tool_name} == "Bash" ]]; then
   fi
 
   # 4. 1Password CLI escalation — prevent using a leaked token to access vault
-  if echo "${sanitized}" | grep -qE '\bop\b.*\b(vault|item|read|document|inject)\b'; then
+  if echo "${sanitized}" | grep -qE '\bop\b.*\b(vault|item|read|run|document|inject)\b'; then
     deny
   fi
 
