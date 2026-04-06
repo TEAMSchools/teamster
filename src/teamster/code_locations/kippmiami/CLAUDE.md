@@ -22,6 +22,7 @@ GCS bucket: `teamster-kippmiami`
 | `renlearn`    | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)     |
 | `extracts`    | BigQuery→SFTP | schedule                                  |
 | `couchdrop`   | sensor only   | sensor (Google Drive watcher)             |
+| `dlt/focus`   | dlt assets    | schedule (daily midnight ET)              |
 
 ## Florida-Specific
 
