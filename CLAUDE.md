@@ -23,25 +23,19 @@ this step.**
 
 ## Working Conventions
 
-- **Brainstorm-to-branch discipline** (hard gate — complete in order):
-  1. Create a GitHub issue before any planned work — always after a brainstorm,
-     before the design doc. Quick fixes do not require one. Use
-     `gh issue create`; label with conventional commit type, related source
-     systems (e.g., `powerschool`, `deanslist`), and `dagster`/`dbt` when
-     applicable.
-  2. **Ask the user: worktree or branch switch?** Do not choose for them.
-  3. Create the branch:
-     - **Worktree**: `gh issue develop <number> --name <branch>` (no
-       `--checkout`), then `git worktree add .worktrees/<branch> <branch>`. No
-       IDE tooling in worktrees. Edit files directly at
-       `.worktrees/<branch>/...` — never edit main workspace and copy over. Use
-       `git -C .worktrees/<branch>` for all git commands — never `cd` into the
-       worktree or rely on cwd.
-     - **Branch switch**:
-       `gh issue develop <number> --name <branch> --checkout`.
-  4. Do not write any files until on the feature branch — specs, code, and
-     config all belong on the branch, never main. Project conventions override
-     skill workflows.
+- **Before writing any spec or plan**: create a GitHub issue (`gh issue create`;
+  label with conventional commit type, related source systems, and
+  `dagster`/`dbt` when applicable). Quick fixes do not require one.
+
+- **Before creating a branch**: ask the user — worktree or branch switch? Do not
+  choose for them.
+
+- **Before writing any file (spec, code, config)**: be on the feature branch.
+
+- **Worktree**: `gh issue develop <number> --name <branch>` (no `--checkout`),
+  then `git worktree add .worktrees/<branch> <branch>`.
+
+- **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
 
 - **Git naming**: Commit messages and branch names use
   [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch
