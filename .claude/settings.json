@@ -63,9 +63,9 @@
       "mcp__observability__list_time_series"
     ],
     "deny": [
-      "Bash(gcloud*)",
-      "Bash(kubectl*)",
-      "Bash(op *)",
+      "Bash(* gcloud *)",
+      "Bash(* kubectl *)",
+      "Bash(* op *)",
       "Edit(**/.env.*)",
       "Edit(**/.env)",
       "Edit(**/*.cer)",

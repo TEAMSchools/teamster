@@ -53,8 +53,8 @@ Bash. Plugin and marketplace commands (`claude plugins install`,
 **Bash-only rules** (do NOT fire for Read, Write, Edit, Grep, or Glob):
 
 - Environment variable / process memory leakage (`printenv`, `set`, `env`, etc.)
-- 1Password CLI commands (`op vault`, `op item`, `op read`, `op document`,
-  `op inject`, etc.)
+- 1Password CLI commands (`op vault`, `op item`, `op read`, `op run`,
+  `op document`, `op inject`, etc.)
 - Encoding bypass attempts (base64-to-shell pipes, Python exec/eval obfuscation)
 - Shell variable expansion (`$UPPER_CASE` vars not on the safe list)
 
@@ -84,6 +84,12 @@ fire for Edit.
   `git commit -F /tmp/commit-msg.txt`. The Write tool's `content` field is
   exempt from path/keyword scanning. The Bash tool `description` field is also
   scanned — keep it generic (e.g. "Commit changes").
+
+## permissions.deny vs hooks
+
+`Bash(<pattern>)` deny rules match from the **start** of the command only. Hooks
+scan the full command string. For `op`, both are needed — do not remove one in
+favor of the other.
 
 ## permissions.deny path prefixes
 
