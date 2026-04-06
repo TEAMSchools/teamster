@@ -1,5 +1,5 @@
 ---
-name: day2
+name: dagster-day2
 disable-model-invocation: true
 description: >-
   Use when checking Dagster platform health, triaging run failures,
@@ -17,8 +17,8 @@ description: >-
 Compute the time window, then dispatch a **single** `model: haiku` Agent call.
 
 - **Default:** 5 PM ET previous business day to now.
-- **With argument:** `/day2 24h` (relative) or `/day2 2026-03-29` (absolute, 5
-  PM ET that date).
+- **With argument:** `/dagster-day2 24h` (relative) or
+  `/dagster-day2 2026-03-29` (absolute, 5 PM ET that date).
 - ET = UTC-4 (EDT, Mar-Nov) or UTC-5 (EST, Nov-Mar). Compute RFC 3339 UTC and
   Unix epoch.
 
@@ -43,10 +43,11 @@ Then IN PARALLEL:
 - For each run: mcp__dagster__get_run_logs(run_id=<id>,
     filter_types=["ExecutionStepFailureEvent","RunFailureEvent","EngineEvent"],
     limit=500).
-- mcp__dagster__list_runs(statuses=["SUCCESS"], created_after={EPOCH}, limit=1)
-  — note the total count from the response (or count returned items).
-- mcp__dagster__list_runs(statuses=["CANCELED"], created_after={EPOCH}, limit=1)
-  — note the total count.
+- mcp__dagster__list_runs(statuses=["SUCCESS"], created_after={EPOCH}, limit=100).
+  Count returned items. If a cursor is returned, paginate until no cursor
+  remains — the API has no total count field.
+- mcp__dagster__list_runs(statuses=["CANCELED"], created_after={EPOCH}, limit=100).
+  Same counting approach.
 
 Collect per failed run: runId, jobName, dagster/code_location tag, startTime,
 endTime, RunFailureEvent message, dagster/will_retry value,
@@ -98,9 +99,10 @@ When a location has failures, fetch context ticks (ALL statuses) around them:
     after_timestamp=<first_failure_timestamp - 60>,
     before_timestamp=<last_failure_timestamp + 60>,
     limit=50).
-Collect per tick: timestamp, status. This shows whether failures were
-consecutive or interleaved with successes. Also note any IP changes across
-failure ticks (different IPs = pod replacement during deploy rollover).
+Collect per context tick: timestamp, status, and the gRPC target IP if present
+in the error message. Return these as a flat array — Phase 2 will analyze
+whether failures were consecutive or interleaved with successes and whether IP
+changes indicate deploy rollover.
 
 ## 3a. Code location load failures (depends on step 3)
 
@@ -124,8 +126,13 @@ chars). If no schedules have failures, return an empty array.
 ## 4. Agent health
 
 mcp__dagster__get_cloud_agents(errors_after={EPOCH}).
-Per agent returns: id, status, lastHeartbeatTime, filtered errors (timestamp +
-message, truncated to 300 chars), codeServerStates, runWorkerStates.
+The response is large (70K+ chars) because it includes full codeServerStates
+and runWorkerStates arrays for every agent. Extract only these fields per agent:
+  id, status, lastHeartbeatTime, errors (timestamp + message, truncated to
+  300 chars each).
+Discard codeServerStates and runWorkerStates — they are not needed for the
+report. Include all agents whose lastHeartbeatTime falls within the window
+(these were active during the period), plus all currently RUNNING agents.
 
 ## 5. Daemon health
 
@@ -150,13 +157,28 @@ mcp__observability__list_log_entries(
 Collect per entry: timestamp, jsonPayload.reason, involvedObject kind+name,
 message. If the response includes a nextPageToken, add "truncated": true.
 
-## 7. Open alerts (Cloud Monitoring)
+## 7. Alerts (Cloud Monitoring)
 
-mcp__observability__list_alerts(
-  parent="projects/teamster-332318",
-  filter='state="OPEN"').
-Collect per alert: name, displayName, state, open_time, policy name/ID,
-condition display name. If no alerts are open, return an empty array.
+Two calls IN PARALLEL:
+  mcp__observability__list_alerts(
+    parent="projects/teamster-332318",
+    filter='state="OPEN"').
+  mcp__observability__list_alerts(
+    parent="projects/teamster-332318",
+    filter='open_time >= "{UTC_START}"',
+    orderBy="open_time desc",
+    pageSize=50).
+The first catches currently open alerts. The second catches alerts that fired
+and auto-resolved within the window (brief CPU/memory spikes, transient
+conditions). Deduplicate by alert name.
+Collect per alert: name, displayName, state, open_time, close_time (if closed),
+resource labels (pod_name, namespace_name), metric type, policy name/ID.
+For each alert on a dagster-cloud pod, extract the pod type from the name:
+  dagster-step-* → step worker (identify the run ID and asset from pod labels
+    or from list_log_entries for that pod, look for STEP_WORKER_STARTED)
+  dagster-run-* → run coordinator
+  <location>-prod-* → code server
+Report which asset/job triggered the alert so resource limits can be adjusted.
 
 ## 8. Recurring error groups (Error Reporting)
 
@@ -207,8 +229,8 @@ If no active or failed backfills, return empty arrays.
 
 Return JSON with keys: failed_runs, run_counts, retry_outcomes, failed_ticks,
 failed_schedule_ticks, location_load_failures, agents, daemon_health,
-gke_critical_events, open_alerts, error_groups, oom_metrics, queued_runs,
-backfills.
+gke_critical_events, alerts (both open and recently closed), error_groups,
+oom_metrics, queued_runs, backfills.
 ```
 
 ## Phase 2: Correlate and report
@@ -265,6 +287,8 @@ canceled
 - **Run failures:** ...
 - **Tick failures:** ...
 - **Schedule tick failures:** ... (omit if none)
+- **Alerts:** ... (omit if none; include pod type, asset/job, and whether the
+  alert self-resolved; note resource limit implications)
 - **Queued runs:** ... (omit if none)
 - **Backfills:** ... (omit if none)
 

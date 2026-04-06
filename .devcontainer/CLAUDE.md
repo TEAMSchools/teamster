@@ -5,10 +5,9 @@ and operational docs are in `docs/guides/codespaces.md`.
 
 ## Quirks
 
-- **Claude's Bash shell lacks injected secrets**: `inject-secrets.sh` secrets
-  (e.g., `ILLUMINATE_DB_DRIVERNAME`) are only available in the user's terminal
-  session, not in Claude Code's Bash tool. Commands requiring these env vars
-  (e.g., `uv run dagster definitions validate`) must be run by the user.
+- **No startup secret injection**: secrets are fetched on demand by
+  `tests/conftest.py` when pytest runs. Commands requiring env vars (e.g.,
+  `uv run dagster definitions validate`) must be run by the user.
 - **`--cap-add` stripped**: Codespaces silently strips `--cap-add` from
   `runArgs` — namespace-based sandboxing (bwrap, unshare) will not work. Hooks
   are the sole enforcement layer for path-based access control.

@@ -25,6 +25,8 @@ expect_deny "op with flags before subcommand" Bash command "op --format json vau
 expect_deny "op read" Bash command "op read op://vault/item/field"
 expect_deny "op document get" Bash command "op document get abc123"
 expect_deny "op inject" Bash command "op inject -i template.env"
+expect_deny "op run" Bash command "op run --env-file=.env.tpl -- env"
+expect_deny "op run with no flags" Bash command "op run -- printenv"
 
 expect_allow "op --version" Bash command "op --version"
 expect_allow "op whoami" Bash command "op whoami"

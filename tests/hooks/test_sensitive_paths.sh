@@ -90,8 +90,8 @@ echo -e "${YELLOW}Symlink resolution${NC}"
 
 # Create a temp symlink for testing (clean up after)
 TMPLINK="/tmp/test_hook_symlink_$$"
-if ln -s /workspaces/teamster/env/.env "${TMPLINK}" 2>/dev/null; then
-  expect_deny "symlink to env/.env" Read file_path "${TMPLINK}"
+if ln -s /etc/secret-volume "${TMPLINK}" 2>/dev/null; then
+  expect_deny "symlink to secret-volume" Read file_path "${TMPLINK}"
   rm -f "${TMPLINK}"
 else
   echo -e "  ${YELLOW}SKIP${NC}: could not create test symlink"

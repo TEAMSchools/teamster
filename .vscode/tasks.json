@@ -73,7 +73,12 @@
     {
       "label": "dbt: Stage External Sources",
       "type": "shell",
-      "command": "uv run dbt run-operation stage_external_sources --project-dir src/dbt/${input:dbtProject} --target ${input:dbtSxsTarget} --vars '{\"ext_full_refresh\": \"true\", \"cloud_storage_uri_base\": \"gs://teamster-${input:dbtProject}/dagster/${input:dbtProject}\"}' --args 'select: ${input:dbtSourceSelect}'",
+      "command": "bash .vscode/scripts/dbt-stage-external-sources.sh ${input:dbtProject} ${input:dbtSxsTarget} '${input:dbtSourceSelect}'",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
       "problemMatcher": []
     },
     {
@@ -112,8 +117,8 @@
     {
       "id": "dbtSourceSelect",
       "type": "promptString",
-      "description": "Source selection (e.g. google_sheets.my_source). Use * to stage all sources.",
-      "default": "*"
+      "description": "Source selection (e.g. google_sheets.my_source). Leave blank to stage all sources.",
+      "default": ""
     }
   ]
 }

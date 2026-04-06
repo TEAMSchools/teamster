@@ -1,12 +1,10 @@
 #!/bin/bash
 
-# inject 1Password secrets — only strip token from future shells if inject succeeded
-if ./.devcontainer/scripts/inject-secrets.sh; then
-  echo 'export OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' >>/home/vscode/.bashrc
-  echo 'export OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' >>/home/vscode/.profile
-  echo 'export OP_CONNECT_TOKEN=revoked-after-injection' >>/home/vscode/.bashrc
-  echo 'export OP_CONNECT_TOKEN=revoked-after-injection' >>/home/vscode/.profile
-fi
+# revoke 1Password tokens from future interactive shells
+echo 'export OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' >>/home/vscode/.bashrc
+echo 'export OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' >>/home/vscode/.profile
+echo 'export OP_CONNECT_TOKEN=revoked-after-injection' >>/home/vscode/.bashrc
+echo 'export OP_CONNECT_TOKEN=revoked-after-injection' >>/home/vscode/.profile
 
 set +euo pipefail
 

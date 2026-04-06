@@ -27,8 +27,6 @@ sudo apt-get update -y &&
 mkdir -p ./env
 
 # restrict permissions on secrets-related paths
-chmod 755 .devcontainer/scripts/inject-secrets.sh
-chmod 600 .devcontainer/tpl/*
 chmod 700 ./env
 
 # restrict permissions on hook/config paths
@@ -103,14 +101,14 @@ sudo mv toolbox /usr/local/bin/
 sudo chmod 755 /etc/secret-volume
 sudo chown vscode:vscode /etc/secret-volume
 
-# inject secrets
-.devcontainer/scripts/inject-secrets.sh
-
 # create convenience symlinks (-n: don't follow existing symlink-to-directory)
 ln -sfn /etc/secret-volume /workspaces/teamster/secret-volume
-ln -sfn /etc/secret-volume/.env /workspaces/teamster/env/.env
 mkdir -p /tmp/dagster
 ln -sfn /tmp/dagster /workspaces/teamster/dagster-tmp
+
+# save 1Password token for on-demand use (conftest.py reads this at test time)
+echo "${OP_SERVICE_ACCOUNT_TOKEN}" >/etc/secret-volume/.op-token
+chmod 600 /etc/secret-volume/.op-token
 
 # remove sudo — must be last privileged step
 sudo rm -f /usr/local/bin/sudo /usr/bin/sudo

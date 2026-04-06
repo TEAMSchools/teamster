@@ -151,3 +151,6 @@ uv run dagster definitions validate -m teamster.code_locations.kipptaf.definitio
 # Prepare and package a dbt project (required before running dbt assets)
 uv run dagster-dbt project prepare-and-package --file src/teamster/code_locations/kipptaf/__init__.py
 ```
+
+`dagster definitions validate` may mislead locally — env vars unavailable in
+codespace cause false errors unrelated to production failures.

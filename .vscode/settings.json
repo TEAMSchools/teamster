@@ -15,7 +15,6 @@
   "git.ignoreRebaseWarning": true,
   "python.createEnvironment.trigger": "off",
   "python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python",
-  "python.envFile": "${workspaceFolder}/env/.env",
   "python.terminal.activateEnvironment": false,
   "python.terminal.useEnvFile": true,
   "python.testing.pytestArgs": ["tests", "--capture=no"],
@@ -59,7 +58,6 @@
     "GOOGLE_CLOUD_PROJECT": "teamster-332318",
     "PYTHONDONTWRITEBYTECODE": "1",
     "TRUNK_TELEMETRY": "off",
-    "UV_ENV_FILE": "${workspaceFolder}/env/.env",
     "UV_LINK_MODE": "copy",
     "UV_RESOLUTION": "highest"
   },
