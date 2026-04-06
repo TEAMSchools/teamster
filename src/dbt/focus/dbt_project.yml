@@ -20,6 +20,7 @@ clean-targets:
 vars:
   current_academic_year: 0
   current_fiscal_year: 0
+  focus_schema: null
   local_timezone: UTC
 
 models:

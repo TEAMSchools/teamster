@@ -16,7 +16,7 @@ from sqlalchemy.types import TypeEngine
 class IlluminateDagsterDltTranslator(DagsterDltTranslator):
     def __init__(self, code_location: str):
         self.code_location = code_location
-        return super().__init__()
+        super().__init__()
 
     def get_asset_spec(self, data) -> AssetSpec:
         asset_spec = super().get_asset_spec(data)
