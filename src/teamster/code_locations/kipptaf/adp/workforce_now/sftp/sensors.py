@@ -15,6 +15,8 @@ from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.workforce_now.sftp.assets import assets
 from teamster.libraries.ssh.resources import SSHResource
 
+DIR_MTIMES_KEY = "__dir_mtimes"
+
 
 @sensor(
     name=f"{CODE_LOCATION}__adp__workforce_now__sftp_assets_sensor",
@@ -29,7 +31,16 @@ def adp_wfn_sftp_sensor(
     run_requests = []
     cursor: dict = json.loads(context.cursor or "{}")
 
-    files = ssh_adp_workforce_now.listdir_attr_r()
+    dir_mtimes = cursor.pop(DIR_MTIMES_KEY, {})
+
+    asset_cursors = {k: v for k, v in cursor.items() if k != DIR_MTIMES_KEY}
+    min_mtime = min(asset_cursors.values(), default=0)
+
+    files, dir_mtimes = ssh_adp_workforce_now.listdir_attr_r(
+        exclude_dirs=["./payroll"],
+        min_mtime=min_mtime,
+        dir_mtimes=dir_mtimes,
+    )
 
     for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]
@@ -38,11 +49,11 @@ def adp_wfn_sftp_sensor(
         context.log.info(asset_identifier)
         last_run = cursor.get(asset_identifier, 0)
 
+        pattern = re.compile(pattern=asset_metadata["remote_file_regex"])
+
         updates = []
         for f, _ in files:
-            match = re.match(
-                pattern=asset_metadata["remote_file_regex"], string=f.filename
-            )
+            match = pattern.match(string=f.filename)
 
             if (
                 match is not None
@@ -62,6 +73,8 @@ def adp_wfn_sftp_sensor(
                 )
 
             cursor[asset_identifier] = now.timestamp()
+
+    cursor[DIR_MTIMES_KEY] = dir_mtimes
 
     if run_requests:
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
