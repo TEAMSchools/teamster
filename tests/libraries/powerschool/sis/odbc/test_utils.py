@@ -14,6 +14,7 @@ from teamster.libraries.powerschool.sis.odbc.utils import (
     get_partition_window,
     get_query_text,
     powerschool_connection,
+    with_powerschool_retry,
 )
 
 
@@ -152,6 +153,73 @@ class TestPowerschoolConnection:
         log.exception.assert_called_once()
         conn.close.assert_called_once()
         tunnel.kill.assert_called_once()
+
+
+class TestWithPowerschoolRetry:
+    @staticmethod
+    def _make_mocks():
+        ssh = MagicMock()
+        db = MagicMock()
+        tunnel = MagicMock()
+        conn = MagicMock()
+        ssh.open_ssh_tunnel.return_value = tunnel
+        db.connect.return_value = conn
+        log = MagicMock()
+        return ssh, db, log, tunnel, conn
+
+    def test_returns_work_fn_result(self):
+        ssh, db, log, tunnel, conn = self._make_mocks()
+
+        result = with_powerschool_retry(ssh, db, log, work_fn=lambda c: "ok")
+
+        assert result == "ok"
+        conn.close.assert_called_once()
+        tunnel.kill.assert_called_once()
+
+    def test_retries_on_connection_failure(self):
+        ssh, db, log, tunnel, conn = self._make_mocks()
+        db.connect.side_effect = [RuntimeError("refused"), conn]
+
+        result = with_powerschool_retry(ssh, db, log, work_fn=lambda c: "ok")
+
+        assert result == "ok"
+        assert db.connect.call_count == 2
+        assert tunnel.kill.call_count == 2
+
+    def test_retries_on_work_fn_failure(self):
+        ssh, db, log, tunnel, conn = self._make_mocks()
+        call_count = 0
+
+        def flaky_work(connection):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise ValueError("transient")
+            return "recovered"
+
+        result = with_powerschool_retry(ssh, db, log, work_fn=flaky_work)
+
+        assert result == "recovered"
+        assert call_count == 2
+        assert db.connect.call_count == 2
+
+    def test_raises_after_max_attempts(self):
+        ssh, db, log, tunnel, conn = self._make_mocks()
+        db.connect.side_effect = RuntimeError("down")
+
+        with pytest.raises(RuntimeError, match="down"):
+            with_powerschool_retry(ssh, db, log, work_fn=lambda c: None)
+
+        assert db.connect.call_count == 2
+
+    def test_no_retry_when_max_attempts_1(self):
+        ssh, db, log, tunnel, conn = self._make_mocks()
+        db.connect.side_effect = RuntimeError("down")
+
+        with pytest.raises(RuntimeError, match="down"):
+            with_powerschool_retry(ssh, db, log, work_fn=lambda c: None, max_attempts=1)
+
+        assert db.connect.call_count == 1
 
 
 # ---------------------------------------------------------------------------

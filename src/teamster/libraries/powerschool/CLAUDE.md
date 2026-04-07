@@ -38,6 +38,13 @@ partitioned assets by comparing the last materialized partition's
 **`schema.py`**: `ORACLE_AVRO_SCHEMA_TYPES` — maps Oracle column types to Avro
 types for schema inference.
 
+## Connection Retry
+
+`with_powerschool_retry()` in `utils.py` wraps `powerschool_connection()` with a
+retry loop. All callers (sensors, schedules, assets) use it instead of
+`powerschool_connection()` directly. The context manager itself cannot retry
+because `@contextmanager` only allows one `yield`.
+
 ## Type Annotations
 
 - `oracledb` lacks type stubs — `cursor.description` elements are `FetchInfo` at
