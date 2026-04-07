@@ -20,7 +20,7 @@ from dagster import (
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 from teamster.libraries.powerschool.sis.odbc.utils import (
     evaluate_asset_staleness,
-    powerschool_connection,
+    with_powerschool_retry,
 )
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -54,18 +54,20 @@ def build_powerschool_sis_asset_schedule(
         ssh_powerschool: SSHResource,
         db_powerschool: PowerSchoolODBCResource,
     ):
-        with powerschool_connection(
-            ssh_powerschool, db_powerschool, context.log
-        ) as connection:
-            results = evaluate_asset_staleness(
+        results = with_powerschool_retry(
+            ssh_resource=ssh_powerschool,
+            db_resource=db_powerschool,
+            log=context.log,
+            work_fn=lambda conn: evaluate_asset_staleness(
                 asset_selection=asset_selection,
                 execution_timezone=execution_timezone,
                 instance=context.instance,
-                connection=connection,
+                connection=conn,
                 db_powerschool=db_powerschool,
                 log=context.log,
                 limit_monthly_partitions=12,
-            )
+            ),
+        )
 
         kwargs = [
             {
