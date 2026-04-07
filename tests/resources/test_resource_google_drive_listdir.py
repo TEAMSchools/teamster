@@ -183,6 +183,7 @@ def test_min_modified_time_query_construction():
         min_modified_time="2026-03-01T00:00:00.000Z",
     )
 
+    # trunk-ignore(pyright/reportAttributeAccessIssue): files_list is a MagicMock
     call_kwargs = resource.files_list.call_args_list[0].kwargs
     expected_q = (
         "'root-folder' in parents and trashed = false"

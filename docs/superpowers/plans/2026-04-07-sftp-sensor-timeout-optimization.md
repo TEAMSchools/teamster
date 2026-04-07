@@ -24,7 +24,7 @@ pytest
 
 ---
 
-### Task 1: Add `min_mtime` to `SSHResource._inner_listdir_attr_r`
+## Task 1: Add `min_mtime` to `SSHResource._inner_listdir_attr_r`
 
 **Files:**
 
@@ -204,7 +204,7 @@ git commit -m "feat(ssh): add min_mtime filter to listdir_attr_r"
 
 ---
 
-### Task 2: Add `dir_mtimes` caching to `SSHResource._inner_listdir_attr_r`
+## Task 2: Add `dir_mtimes` caching to `SSHResource._inner_listdir_attr_r`
 
 **Files:**
 
@@ -421,7 +421,7 @@ git commit -m "feat(ssh): add dir_mtimes caching to listdir_attr_r"
 
 ---
 
-### Task 3: Update ADP WFN SFTP sensor
+## Task 3: Update ADP WFN SFTP sensor
 
 **Files:**
 
@@ -550,7 +550,7 @@ git commit -m "perf(adp): optimize WFN SFTP sensor with min_mtime, dir_mtimes, e
 
 ---
 
-### Task 4: Add `min_modified_time` to
+## Task 4: Add `min_modified_time` to
 
 `GoogleDriveResource.files_list_recursive`
 
@@ -835,7 +835,7 @@ git commit -m "feat(drive): add min_modified_time filter to files_list_recursive
 
 ---
 
-### Task 5: Update Couchdrop sensor
+## Task 5: Update Couchdrop sensor
 
 **Files:**
 
@@ -900,7 +900,7 @@ git commit -m "perf(couchdrop): pass min_modified_time to files_list_recursive"
 
 ---
 
-### Task 6: Final validation and push
+## Task 6: Final validation and push
 
 - [ ] **Step 1: Run all new unit tests**
 
