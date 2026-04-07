@@ -32,9 +32,7 @@ def adp_wfn_sftp_sensor(
     cursor: dict = json.loads(context.cursor or "{}")
 
     dir_mtimes = cursor.pop(DIR_MTIMES_KEY, {})
-
-    asset_cursors = {k: v for k, v in cursor.items() if k != DIR_MTIMES_KEY}
-    min_mtime = min(asset_cursors.values(), default=0)
+    min_mtime = min(cursor.values(), default=0)
 
     result = ssh_adp_workforce_now.listdir_attr_r(
         exclude_dirs=["./payroll"],
@@ -81,7 +79,7 @@ def adp_wfn_sftp_sensor(
     if run_requests:
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
     else:
-        return SkipReason()
+        return SkipReason("no new files matching asset patterns")
 
 
 sensors = [

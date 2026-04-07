@@ -69,7 +69,6 @@ class SSHResource(DagsterSSHResource):
                         and check.not_none(value=file.st_mtime) <= cached_mtime
                     ):
                         continue
-                    dir_mtimes[path] = check.not_none(value=file.st_mtime)
 
                 self._inner_listdir_attr_r(
                     sftp_client=sftp_client,
@@ -79,6 +78,9 @@ class SSHResource(DagsterSSHResource):
                     min_mtime=min_mtime,
                     dir_mtimes=dir_mtimes,
                 )
+
+                if dir_mtimes is not None:
+                    dir_mtimes[path] = check.not_none(value=file.st_mtime)
             elif S_ISREG(check.not_none(value=file.st_mode)):
                 if min_mtime is None or check.not_none(value=file.st_mtime) > min_mtime:
                     files.append((file, path))

@@ -66,6 +66,7 @@ def build_couchdrop_sftp_sensor(
 
         cursor: dict = json.loads(context.cursor or "{}")
 
+        # 0 when any asset is unprocessed — lists all files on first run
         min_cursor = min(cursor.values(), default=0)
 
         if min_cursor > 0:
