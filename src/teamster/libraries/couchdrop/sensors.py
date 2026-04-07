@@ -1,7 +1,7 @@
 import json
 import re
 from collections import defaultdict
-from datetime import datetime
+from datetime import UTC, datetime
 from itertools import groupby
 from operator import itemgetter
 from zoneinfo import ZoneInfo
@@ -66,6 +66,15 @@ def build_couchdrop_sftp_sensor(
 
         cursor: dict = json.loads(context.cursor or "{}")
 
+        min_cursor = min(cursor.values(), default=0)
+
+        if min_cursor > 0:
+            min_modified_time = datetime.fromtimestamp(min_cursor, tz=UTC).strftime(
+                "%Y-%m-%dT%H:%M:%S.%fZ"
+            )
+        else:
+            min_modified_time = None
+
         files = google_drive.files_list_recursive(
             corpora="drive",
             drive_id="0AKZ2G1Z8rxooUk9PVA",
@@ -75,6 +84,7 @@ def build_couchdrop_sftp_sensor(
             folder_id=folder_id,
             file_path=f"/data-team/{code_location}",
             exclude=exclude_dirs,
+            min_modified_time=min_modified_time,
         )
 
         for a in asset_selection:
