@@ -184,6 +184,7 @@ class TestWithPowerschoolRetry:
 
         assert result == "ok"
         assert db.connect.call_count == 2
+        assert tunnel.kill.call_count == 2
 
     def test_retries_on_work_fn_failure(self):
         ssh, db, log, tunnel, conn = self._make_mocks()
@@ -200,6 +201,7 @@ class TestWithPowerschoolRetry:
 
         assert result == "recovered"
         assert call_count == 2
+        assert db.connect.call_count == 2
 
     def test_raises_after_max_attempts(self):
         ssh, db, log, tunnel, conn = self._make_mocks()
