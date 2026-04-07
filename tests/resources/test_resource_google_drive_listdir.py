@@ -1,6 +1,9 @@
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 from teamster.libraries.google.drive.resources import GoogleDriveResource
+
+MIN_MODIFIED_TIME = datetime(2026, 3, 1, tzinfo=UTC)
 
 
 def _build_drive_resource() -> GoogleDriveResource:
@@ -90,7 +93,7 @@ def test_min_modified_time_filters_old_files():
         **COMMON_KWARGS,
         folder_id="root-folder",
         file_path="/test",
-        min_modified_time="2026-03-01T00:00:00.000Z",
+        min_modified_time=MIN_MODIFIED_TIME,
     )
 
     assert len(files) == 1
@@ -128,7 +131,7 @@ def test_min_modified_time_preserves_folders():
         **COMMON_KWARGS,
         folder_id="root-folder",
         file_path="/test",
-        min_modified_time="2026-03-01T00:00:00.000Z",
+        min_modified_time=MIN_MODIFIED_TIME,
     )
 
     assert len(files) == 1
@@ -180,7 +183,7 @@ def test_min_modified_time_query_construction():
         **COMMON_KWARGS,
         folder_id="root-folder",
         file_path="/test",
-        min_modified_time="2026-03-01T00:00:00.000Z",
+        min_modified_time=MIN_MODIFIED_TIME,
     )
 
     # trunk-ignore(pyright/reportAttributeAccessIssue): files_list is a MagicMock
@@ -188,6 +191,6 @@ def test_min_modified_time_query_construction():
     expected_q = (
         "'root-folder' in parents and trashed = false"
         " and (mimeType = 'application/vnd.google-apps.folder'"
-        " or modifiedTime > '2026-03-01T00:00:00.000Z')"
+        " or modifiedTime > '2026-03-01T00:00:00.000000Z')"
     )
     assert call_kwargs["q"] == expected_q

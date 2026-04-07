@@ -138,7 +138,7 @@ class GoogleDriveResource(ConfigurableResource):
         file_path: str = "",
         exclude: list[str] | None = None,
         files: list | None = None,
-        min_modified_time: str | None = None,
+        min_modified_time: datetime | None = None,
     ) -> list:
         if exclude is None:
             exclude = []
@@ -151,9 +151,10 @@ class GoogleDriveResource(ConfigurableResource):
 
         q = f"'{folder_id}' in parents and trashed = false"
         if min_modified_time is not None:
+            modified_time_str = min_modified_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
             q += (
                 f" and (mimeType = 'application/vnd.google-apps.folder'"
-                f" or modifiedTime > '{min_modified_time}')"
+                f" or modifiedTime > '{modified_time_str}')"
             )
 
         self._log.info(f"Listing of all files under {file_path}")

@@ -70,9 +70,7 @@ def build_couchdrop_sftp_sensor(
         min_cursor = min(cursor.values(), default=0)
 
         if min_cursor > 0:
-            min_modified_time = datetime.fromtimestamp(min_cursor, tz=UTC).strftime(
-                "%Y-%m-%dT%H:%M:%S.%fZ"
-            )
+            min_modified_time = datetime.fromtimestamp(min_cursor, tz=UTC)
         else:
             min_modified_time = None
 
