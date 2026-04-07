@@ -18,7 +18,6 @@ from dagster import (
     define_asset_job,
     sensor,
 )
-from dagster_shared import check
 
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 
@@ -100,19 +99,19 @@ def build_couchdrop_sftp_sensor(
                 )
             )
 
-            file_matches = [
-                f
-                for f in files
-                if pattern.match(string=f["path"])
-                and f["modified_timestamp"] > cursor_modified_timestamp
-                and f["size"] > 0
-            ]
+            file_matches = []
+            for f in files:
+                match = pattern.match(string=f["path"])
+                if (
+                    match is not None
+                    and f["modified_timestamp"] > cursor_modified_timestamp
+                    and f["size"] > 0
+                ):
+                    file_matches.append((f, match))
 
-            for f in file_matches:
+            for f, match in file_matches:
                 if f["modified_timestamp"] > max_modified_timestamp:
                     max_modified_timestamp = f["modified_timestamp"]
-
-                match = check.not_none(value=pattern.match(string=f["path"]))
 
                 if isinstance(a.partitions_def, MultiPartitionsDefinition):
                     partition_key = MultiPartitionKey(match.groupdict())

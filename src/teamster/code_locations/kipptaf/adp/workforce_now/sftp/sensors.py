@@ -1,6 +1,5 @@
 import json
 import re
-from datetime import datetime
 
 from dagster import (
     RunRequest,
@@ -11,7 +10,7 @@ from dagster import (
 )
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.adp.workforce_now.sftp.assets import assets
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -26,8 +25,6 @@ DIR_MTIMES_KEY = "__dir_mtimes"
 def adp_wfn_sftp_sensor(
     context: SensorEvaluationContext, ssh_adp_workforce_now: SSHResource
 ):
-    now = datetime.now(LOCAL_TIMEZONE)
-
     run_requests = []
     cursor: dict = json.loads(context.cursor or "{}")
 
@@ -51,7 +48,7 @@ def adp_wfn_sftp_sensor(
 
         pattern = re.compile(pattern=asset_metadata["remote_file_regex"])
 
-        updates = []
+        max_mtime = last_run
         for f, _ in files:
             match = pattern.match(string=f.filename)
 
@@ -61,18 +58,18 @@ def adp_wfn_sftp_sensor(
                 and check.not_none(value=f.st_size) > 0
             ):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                updates.append({"mtime": f.st_mtime})
-
-        if updates:
-            for u in updates:
                 run_requests.append(
                     RunRequest(
-                        run_key=f"{asset_identifier}_{u['mtime']}",
+                        run_key=f"{asset_identifier}_{f.st_mtime}",
                         asset_selection=[asset.key],
                     )
                 )
 
-            cursor[asset_identifier] = now.timestamp()
+                if f.st_mtime > max_mtime:
+                    max_mtime = f.st_mtime
+
+        if max_mtime > last_run:
+            cursor[asset_identifier] = max_mtime
 
     cursor[DIR_MTIMES_KEY] = dir_mtimes
 

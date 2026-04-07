@@ -26,9 +26,7 @@ class SSHResource(DagsterSSHResource):
             exclude_dirs = []
 
         with self.get_connection() as connection:
-            self.log.info("Opening SFTP session")
             with connection.open_sftp() as sftp_client:
-                self.log.info(f"Listing of all files under {remote_dir}")
                 return self._inner_listdir_attr_r(
                     sftp_client=sftp_client,
                     remote_dir=remote_dir,
@@ -57,17 +55,14 @@ class SSHResource(DagsterSSHResource):
                 return files, dir_mtimes
             return files
 
-        self.log.info(f"Listing {remote_dir}")
         for file in sftp_client.listdir_attr(remote_dir):
             path = str(pathlib.Path(remote_dir) / file.filename)
+            mtime = check.not_none(value=file.st_mtime)
 
             if S_ISDIR(check.not_none(value=file.st_mode)):
                 if dir_mtimes is not None:
                     cached_mtime = dir_mtimes.get(path)
-                    if (
-                        cached_mtime is not None
-                        and check.not_none(value=file.st_mtime) <= cached_mtime
-                    ):
+                    if cached_mtime is not None and mtime <= cached_mtime:
                         continue
 
                 self._inner_listdir_attr_r(
@@ -80,9 +75,9 @@ class SSHResource(DagsterSSHResource):
                 )
 
                 if dir_mtimes is not None:
-                    dir_mtimes[path] = check.not_none(value=file.st_mtime)
+                    dir_mtimes[path] = mtime
             elif S_ISREG(check.not_none(value=file.st_mode)):
-                if min_mtime is None or check.not_none(value=file.st_mtime) > min_mtime:
+                if min_mtime is None or mtime > min_mtime:
                     files.append((file, path))
 
         if dir_mtimes is not None:
