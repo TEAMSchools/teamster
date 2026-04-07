@@ -54,6 +54,10 @@ API reference URLs go in the extended description, never the summary line.
 `logging.Logger`; `AssetExecutionContext.log` returns `DagsterLogManager`. Use
 `logging.Logger` when a function accepts log from any context.
 
+**Runtime type narrowing**: Use `check.is_tuple()`, `check.inst()`,
+`check.not_none()` from `dagster_shared` — never `assert isinstance(...)`
+(`assert` is stripped by `-O`).
+
 ## Library Categories
 
 Libraries fall into four patterns based on how they ingest data:
@@ -138,7 +142,9 @@ with partition dimension values via `regex_pattern_replace()`.
 
 **SFTP sensors**: List remote directories, match files against asset regexes,
 extract partition keys from named groups, emit `RunRequest`s grouped by
-`(job_name, partition_key)`.
+`(job_name, partition_key)`. Sensor cursors should store max file mtime from
+matched files, not `now.timestamp()` — wall-clock cursors skip files with older
+mtimes.
 
 **Fiscal year**: July 1 start. `FiscalYear` class and
 `FiscalYearPartitionsDefinition` in `core/utils/classes.py`.
