@@ -1,7 +1,6 @@
 import json
 import re
 from datetime import datetime
-from typing import cast
 
 from dagster import (
     RunRequest,
@@ -11,7 +10,6 @@ from dagster import (
     sensor,
 )
 from dagster_shared import check
-from paramiko import SFTPAttributes
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.workforce_now.sftp.assets import assets
@@ -44,9 +42,7 @@ def adp_wfn_sftp_sensor(
         dir_mtimes=dir_mtimes,
     )
 
-    files, dir_mtimes = cast(
-        tuple[list[tuple[SFTPAttributes, str]], dict[str, float]], result
-    )
+    files, dir_mtimes = check.is_tuple(result)
 
     for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]
