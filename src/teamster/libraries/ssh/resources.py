@@ -13,19 +13,26 @@ class SSHResource(DagsterSSHResource):
     test: bool = False
 
     def listdir_attr_r(
-        self, remote_dir: str = ".", exclude_dirs: list[str] | None = None
+        self,
+        remote_dir: str = ".",
+        exclude_dirs: list[str] | None = None,
+        min_mtime: float | None = None,
+        dir_mtimes: dict[str, float] | None = None,
+    ) -> (
+        tuple[list[tuple[SFTPAttributes, str]], dict[str, float]]
+        | list[tuple[SFTPAttributes, str]]
     ):
         if exclude_dirs is None:
             exclude_dirs = []
 
         with self.get_connection() as connection:
-            self.log.info("Opening SFTP session")
             with connection.open_sftp() as sftp_client:
-                self.log.info(f"Listing of all files under {remote_dir}")
                 return self._inner_listdir_attr_r(
                     sftp_client=sftp_client,
                     remote_dir=remote_dir,
                     exclude_dirs=exclude_dirs,
+                    min_mtime=min_mtime,
+                    dir_mtimes=dir_mtimes,
                 )
 
     def _inner_listdir_attr_r(
@@ -34,27 +41,47 @@ class SSHResource(DagsterSSHResource):
         remote_dir: str,
         exclude_dirs: list[str],
         files: list | None = None,
-    ) -> list[tuple[SFTPAttributes, str]]:
+        min_mtime: float | None = None,
+        dir_mtimes: dict[str, float] | None = None,
+    ) -> (
+        tuple[list[tuple[SFTPAttributes, str]], dict[str, float]]
+        | list[tuple[SFTPAttributes, str]]
+    ):
         if files is None:
             files = []
 
         if remote_dir in exclude_dirs:
+            if dir_mtimes is not None:
+                return files, dir_mtimes
             return files
 
-        self.log.info(f"Listing {remote_dir}")
         for file in sftp_client.listdir_attr(remote_dir):
             path = str(pathlib.Path(remote_dir) / file.filename)
+            mtime = check.not_none(value=file.st_mtime)
 
             if S_ISDIR(check.not_none(value=file.st_mode)):
+                if dir_mtimes is not None:
+                    cached_mtime = dir_mtimes.get(path)
+                    if cached_mtime is not None and mtime <= cached_mtime:
+                        continue
+
                 self._inner_listdir_attr_r(
                     sftp_client=sftp_client,
                     remote_dir=path,
                     exclude_dirs=exclude_dirs,
                     files=files,
+                    min_mtime=min_mtime,
+                    dir_mtimes=dir_mtimes,
                 )
-            elif S_ISREG(check.not_none(value=file.st_mode)):
-                files.append((file, path))
 
+                if dir_mtimes is not None:
+                    dir_mtimes[path] = mtime
+            elif S_ISREG(check.not_none(value=file.st_mode)):
+                if min_mtime is None or mtime > min_mtime:
+                    files.append((file, path))
+
+        if dir_mtimes is not None:
+            return files, dir_mtimes
         return files
 
     def open_ssh_tunnel(self):

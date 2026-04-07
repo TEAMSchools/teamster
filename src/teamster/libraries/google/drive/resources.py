@@ -1,4 +1,5 @@
 from datetime import datetime
+from logging import Logger
 
 from dagster import ConfigurableResource, InitResourceContext
 from dagster_shared import check
@@ -13,6 +14,7 @@ class GoogleDriveResource(ConfigurableResource):
     service_account_file_path: str | None = None
 
     _service: discovery.Resource = PrivateAttr()
+    _log: Logger = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._log = check.not_none(value=context.log)
@@ -136,6 +138,8 @@ class GoogleDriveResource(ConfigurableResource):
         file_path: str = "",
         exclude: list[str] | None = None,
         files: list | None = None,
+        min_modified_time: datetime | None = None,
+        _modified_time_q_suffix: str = "",
     ) -> list:
         if exclude is None:
             exclude = []
@@ -143,15 +147,24 @@ class GoogleDriveResource(ConfigurableResource):
         if files is None:
             files = []
 
+        if not _modified_time_q_suffix and min_modified_time is not None:
+            _modified_time_q_suffix = (
+                f" and (mimeType = 'application/vnd.google-apps.folder'"
+                f" or modifiedTime > '"
+                f"{min_modified_time.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}')"
+            )
+
         if file_path in exclude:
             return files
+
+        q = f"'{folder_id}' in parents and trashed = false{_modified_time_q_suffix}"
 
         self._log.info(f"Listing of all files under {file_path}")
         files_list = self.files_list(
             corpora=corpora,
             drive_id=drive_id,
             include_items_from_all_drives=include_items_from_all_drives,
-            q=f"'{folder_id}' in parents and trashed = false",
+            q=q,
             supports_all_drives=supports_all_drives,
             fields=fields,
         )
@@ -170,6 +183,7 @@ class GoogleDriveResource(ConfigurableResource):
                     exclude=exclude,
                     files=files,
                     fields=fields,
+                    _modified_time_q_suffix=_modified_time_q_suffix,
                 )
             else:
                 file["path"] = f"{file_path}/{file['name']}"
