@@ -29,8 +29,6 @@ consumers.
   workflow)
 - dbt Semantic Layer as Cube data source — Cube reads BigQuery `kipptaf` schema
   directly; dbt integration is metadata enrichment only
-- Assessment cubes (`fct_internal_assessments`, `fct_state_assessments`) —
-  deferred to a separate spec
 - Vercel and Supabase integrations — future work
 - Cube model expansion beyond existing marts — this spec covers integration
   setup and core model scaffolding only
@@ -46,8 +44,8 @@ src/cube/
   .env.example             # Required env vars for local dev (committed)
   .gitignore               # excludes .env, node_modules, .cubestore
   model/
-    cubes/                 # One YAML file per mart (carried from feature branch,
-      dim_dates.yml        #   minus assessment cubes)
+    cubes/                 # One YAML file per mart (carried from feature branch)
+      dim_dates.yml
       dim_locations.yml
       dim_seats.yml
       dim_staff.yml        # salary/compensation → cube-perm-hr access policy
@@ -60,15 +58,13 @@ src/cube/
       fct_microgoals.yml
       fct_staff_attrition.yml
       fct_staff_benefits_enrollments.yml
-      fct_staff_terminations.yml
     views/
       attendance_metrics.yml
       staff_information_metrics.yml
   SETUP.md                 # Cube Cloud one-time setup + local dev guide
 ```
 
-Carried over from `claude/feat/cube-semantic-layer`, minus
-`fct_internal_assessments.yml` and `fct_state_assessments.yml`.
+Carried over from `claude/feat/cube-semantic-layer`.
 
 ## Architecture
 
@@ -382,8 +378,6 @@ Performed in the Cube Cloud UI:
 
 ## Out of Scope / Future Work
 
-- Assessment cubes (`fct_internal_assessments`, `fct_state_assessments`) —
-  separate spec
 - Vercel and Supabase integrations
 - Pre-aggregations for lower-volume cubes
 - Cube model expansion to additional marts (planned overhaul)

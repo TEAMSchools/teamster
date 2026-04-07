@@ -1,7 +1,4 @@
 {
-  "dbt.enableNewLineagePanel": true,
-  "dbt.allowListFolders": ["src/dbt"],
-  "dbt.installDepsOnProjectInitialization": false,
   "diffEditor.experimental.showMoves": true,
   "diffEditor.ignoreTrimWhitespace": false,
   "editor.defaultFormatter": "trunk.io",
@@ -89,31 +86,12 @@
     }
   },
   "python.analysis.typeCheckingMode": "off",
-  "dbt.deferConfigPerProject": {
-    "src/dbt/kipptaf": {
-      "deferToProduction": false,
-      "manifestPathForDeferral": "src/dbt/kipptaf/target/prod/manifest.json",
-      "favorState": false
-    },
-    "src/dbt/kippnewark": {
-      "deferToProduction": false,
-      "manifestPathForDeferral": "src/dbt/kippnewark/target/prod/manifest.json",
-      "favorState": false
-    },
-    "src/dbt/kippcamden": {
-      "deferToProduction": false,
-      "manifestPathForDeferral": "src/dbt/kippcamden/target/prod/manifest.json",
-      "favorState": false
-    },
-    "src/dbt/kippmiami": {
-      "deferToProduction": false,
-      "manifestPathForDeferral": "src/dbt/kippmiami/target/prod/manifest.json",
-      "favorState": false
-    },
-    "src/dbt/kipppaterson": {
-      "deferToProduction": false,
-      "manifestPathForDeferral": "src/dbt/kipppaterson/target/prod/manifest.json",
-      "favorState": false
-    }
+  "dbtCoreTools.profilesDir": ".dbt",
+  "dbtCoreTools.deferManifestPath": {
+    "kipptaf": "src/dbt/kipptaf/target/prod",
+    "kippnewark": "src/dbt/kippnewark/target/prod",
+    "kippcamden": "src/dbt/kippcamden/target/prod",
+    "kippmiami": "src/dbt/kippmiami/target/prod",
+    "kipppaterson": "src/dbt/kipppaterson/target/prod"
   }
 }
