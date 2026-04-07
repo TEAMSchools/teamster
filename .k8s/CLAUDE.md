@@ -79,6 +79,19 @@ on GKE Autopilot.
   `CalculateExpectedPodCountFailed` and leaving pods unprotected. `minAvailable`
   only counts current healthy pods, no controller lookup needed.
 
+## gRPC Worker Threads
+
+`DAGSTER_GRPC_MAX_WORKERS` (env var on code server pods via
+`serverK8sConfig.containerConfig.env`) sets the gRPC thread pool size. Each
+sensor eval, schedule eval, and health check holds one thread for its duration.
+Unset default is `min(32, cpu_count + 4)` — ~5 on 0.5 vCPU pods, too low for
+locations with many sensors. Currently set to 20 globally.
+
+Sizing: sensors + (peak concurrent schedules / 3) + 3 headroom. Idle threads
+cost ~1MB each, zero CPU (GIL). Changes require `helm upgrade` (see Helm
+section) and only take effect on **new** code server pods — existing pods must
+be recycled.
+
 ## Resource Config Inheritance
 
 Three pod types, three config sources:
