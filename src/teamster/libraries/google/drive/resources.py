@@ -139,6 +139,7 @@ class GoogleDriveResource(ConfigurableResource):
         exclude: list[str] | None = None,
         files: list | None = None,
         min_modified_time: datetime | None = None,
+        _modified_time_q_suffix: str = "",
     ) -> list:
         if exclude is None:
             exclude = []
@@ -146,16 +147,17 @@ class GoogleDriveResource(ConfigurableResource):
         if files is None:
             files = []
 
+        if not _modified_time_q_suffix and min_modified_time is not None:
+            _modified_time_q_suffix = (
+                f" and (mimeType = 'application/vnd.google-apps.folder'"
+                f" or modifiedTime > '"
+                f"{min_modified_time.strftime('%Y-%m-%dT%H:%M:%S.%fZ')}')"
+            )
+
         if file_path in exclude:
             return files
 
-        q = f"'{folder_id}' in parents and trashed = false"
-        if min_modified_time is not None:
-            modified_time_str = min_modified_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-            q += (
-                f" and (mimeType = 'application/vnd.google-apps.folder'"
-                f" or modifiedTime > '{modified_time_str}')"
-            )
+        q = f"'{folder_id}' in parents and trashed = false{_modified_time_q_suffix}"
 
         self._log.info(f"Listing of all files under {file_path}")
         files_list = self.files_list(
@@ -181,7 +183,7 @@ class GoogleDriveResource(ConfigurableResource):
                     exclude=exclude,
                     files=files,
                     fields=fields,
-                    min_modified_time=min_modified_time,
+                    _modified_time_q_suffix=_modified_time_q_suffix,
                 )
             else:
                 file["path"] = f"{file_path}/{file['name']}"
