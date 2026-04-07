@@ -119,6 +119,9 @@ workspace:
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   serverK8sConfig:
     containerConfig:
+      env:
+        - name: DAGSTER_GRPC_MAX_WORKERS
+          value: "10"
       resources:
         # Autopilot minimum of 0.5 vCPU & 2 GiB required for scale-out pods using
         # workload separation: https://docs.cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation

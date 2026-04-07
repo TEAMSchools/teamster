@@ -36,6 +36,10 @@ Covers Cloud Logging, Monitoring, Trace, and Error Reporting for
 (Error Reporting), `list_log_entries`, `list_alerts`, `list_alert_policies`,
 `list_time_series`, etc.
 
+Uses the same `CodespacesRole` custom IAM role as the GKE MCP. If any tool
+returns permission denied, the role is missing that API's permission — flag it
+to the user, don't assume no data.
+
 For pod-level log queries, prefer `mcp__gke__query_logs` over
 `mcp__observability__list_log_entries` — the GKE MCP returns pod labels (run-id,
 op, code-location) that the observability MCP may not surface.

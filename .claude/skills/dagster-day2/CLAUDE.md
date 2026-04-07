@@ -27,11 +27,16 @@ Agent-to-cloud communication errors (e.g. `ReadTimeout` to
 not in GKE pod logs or container logs. Always check the agent API first for
 these errors.
 
-## gRPC UNAVAILABLE during deploy rollovers is not user-fixable
+## gRPC UNAVAILABLE tick failures — two distinct causes
 
-Tick failures from gRPC UNAVAILABLE during code server pod replacement are
-Dagster Cloud platform behavior — no user-side k8s config can eliminate them.
-Don't propose fixes; characterize as transient.
+**Deploy rollover** (transient): brief tick failures during code server pod
+replacement. Bounded by successes, self-resolving. No fix needed.
+
+**Health check starvation** (actionable): long-running sensor evaluations block
+gRPC worker threads, causing sustained health check failures and pod replacement
+loops. Diagnose via agent logs ("failed a health check … 300 seconds") and
+SuccessfulCreate event frequency. Mitigate with `DAGSTER_GRPC_MAX_WORKERS` env
+var on code server pods. See dagster-io/dagster#25116.
 
 ## Sensor timeout vs startup timeout
 
@@ -78,6 +83,12 @@ token limits). Skip intermediate frames unless the exception type is ambiguous.
 kipptaf step workers hit the 1000m CPU limit during Python module import. Alerts
 on `dagster-step-*` pods for kipptaf jobs that self-resolve within ~60s are this
 pattern. Fix via per-asset k8s config overrides, not global limit changes.
+
+## Data collection caveats
+
+- `get_location_load_history` returns the N most recent deploys regardless of
+  timestamp — not filtered by the monitoring window. Distinguish in-window vs.
+  historical data in the report.
 
 ## Pod zone placement from VPC firewall logs
 

@@ -36,6 +36,10 @@ functions annotate as `Callable[[], ReturnType]` (import from
 `defaultdict[K, set[T]](set)` with the subscript on the type annotation, not the
 factory argument.
 
+**Inline type parameters** (PEP 695): Prefer `def foo[T](x: T) -> T` over
+`TypeVar`. The formatter removes unused `TypeVar` imports before the binding is
+defined, causing unresolved name errors.
+
 **kwargs forwarding**: When extracting a kwarg default before spreading
 `**kwargs`, always use `pop`, never `get` — `get` leaves the key in `kwargs`,
 causing `TypeError: got multiple values for keyword argument` if the caller
