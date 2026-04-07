@@ -36,11 +36,15 @@ def adp_wfn_sftp_sensor(
     asset_cursors = {k: v for k, v in cursor.items() if k != DIR_MTIMES_KEY}
     min_mtime = min(asset_cursors.values(), default=0)
 
-    files, dir_mtimes = ssh_adp_workforce_now.listdir_attr_r(
+    result = ssh_adp_workforce_now.listdir_attr_r(
         exclude_dirs=["./payroll"],
         min_mtime=min_mtime,
         dir_mtimes=dir_mtimes,
     )
+
+    # dir_mtimes is always passed, so result is always a tuple
+    assert isinstance(result, tuple)
+    files, dir_mtimes = result
 
     for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]

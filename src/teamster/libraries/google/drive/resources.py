@@ -1,4 +1,5 @@
 from datetime import datetime
+from logging import Logger
 
 from dagster import ConfigurableResource, InitResourceContext
 from dagster_shared import check
@@ -13,6 +14,7 @@ class GoogleDriveResource(ConfigurableResource):
     service_account_file_path: str | None = None
 
     _service: discovery.Resource = PrivateAttr()
+    _log: Logger = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._log = check.not_none(value=context.log)
@@ -136,6 +138,7 @@ class GoogleDriveResource(ConfigurableResource):
         file_path: str = "",
         exclude: list[str] | None = None,
         files: list | None = None,
+        min_modified_time: str | None = None,
     ) -> list:
         if exclude is None:
             exclude = []
@@ -146,12 +149,19 @@ class GoogleDriveResource(ConfigurableResource):
         if file_path in exclude:
             return files
 
+        q = f"'{folder_id}' in parents and trashed = false"
+        if min_modified_time is not None:
+            q += (
+                f" and (mimeType = 'application/vnd.google-apps.folder'"
+                f" or modifiedTime > '{min_modified_time}')"
+            )
+
         self._log.info(f"Listing of all files under {file_path}")
         files_list = self.files_list(
             corpora=corpora,
             drive_id=drive_id,
             include_items_from_all_drives=include_items_from_all_drives,
-            q=f"'{folder_id}' in parents and trashed = false",
+            q=q,
             supports_all_drives=supports_all_drives,
             fields=fields,
         )
@@ -170,6 +180,7 @@ class GoogleDriveResource(ConfigurableResource):
                     exclude=exclude,
                     files=files,
                     fields=fields,
+                    min_modified_time=min_modified_time,
                 )
             else:
                 file["path"] = f"{file_path}/{file['name']}"
