@@ -2,97 +2,90 @@
 
 ## Targeted agent investigation
 
-When the user asks about a **specific agent ID** (not a general health check),
-skip the full day2 skill. Instead:
+Specific agent ID query (not general health): skip full skill.
 
-1. `mcp__dagster__get_cloud_agents(agent_id="<id>")` — filters server-side and
-   returns compact JSON. Add `errors_after=<epoch>` to scope errors.
-2. Check `list_runs(statuses=["FAILURE"])` in a ±30 min window around the error.
-3. Check GKE events in the same window for correlated cluster issues.
+1. `get_cloud_agents(agent_id="<id>", errors_after=<epoch>)`
+2. `list_runs(statuses=["FAILURE"])` ±30 min around error
+3. GKE events same window
 
-Always run all three steps before drawing conclusions — do not stop at step 1
-even if the agent looks healthy now. The user is asking you to investigate, not
-triage.
+Run all three before concluding — even if agent looks healthy now.
 
-## Re-execution chain investigation
+## Re-execution chains
 
-Use `get_run_group(run_id)` to get the full re-execution chain for any run in
-one call — more efficient than traversing `parentRunId`/`rootRunId` via
-`get_run` or `list_runs`.
+`get_run_group(run_id)` → full chain in one call. Don't traverse
+parentRunId/rootRunId via get_run/list_runs.
 
-## Data source for agent errors
+## Agent error data source
 
-Agent-to-cloud communication errors (e.g. `ReadTimeout` to
-`*.agent.dagster.cloud`) appear only in the Dagster Cloud agent `errors` array —
-not in GKE pod logs or container logs. Always check the agent API first for
-these errors.
+ReadTimeout to `*.agent.dagster.cloud` only appears in agent `errors` array —
+not in GKE pod/container logs. Check agent API first.
 
-## gRPC UNAVAILABLE tick failures — two distinct causes
+## gRPC UNAVAILABLE tick failures
 
-**Deploy rollover** (transient): brief tick failures during code server pod
-replacement. Bounded by successes, self-resolving. No fix needed.
+Two causes:
 
-**Health check starvation** (actionable): long-running sensor evaluations block
-gRPC worker threads, causing sustained health check failures and pod replacement
-loops. Diagnose via agent logs ("failed a health check … 300 seconds") and
-SuccessfulCreate event frequency. Mitigate with `DAGSTER_GRPC_MAX_WORKERS` env
-var on code server pods. See dagster-io/dagster#25116.
+- **Deploy rollover** (transient): brief clusters bounded by successes,
+  self-resolving.
+- **Health check starvation** (actionable): long sensor evals block gRPC threads
+  → sustained failures + pod replacement loops. Diagnose: agent logs "failed a
+  health check … 300 seconds" + SuccessfulCreate frequency. Fix:
+  `DAGSTER_GRPC_MAX_WORKERS`. See dagster-io/dagster#25116.
 
-## Sensor timeout vs startup timeout
+## Timeout types (do not conflate)
 
-Two unrelated timeout types — do not conflate:
+- **Startup** (`serverProcessStartupTimeout`, default 180s): agent→code server
+  gRPC ping. Failure → deployment removed + replacement. Causes churn.
+- **Sensor execution** (300s): sensor ran too long. Code server stays up. No
+  churn.
 
-- **Startup timeout** (`serverProcessStartupTimeout`, default 180s): agent waits
-  for code server gRPC ping. Failure → agent removes deployment and reconciles a
-  replacement. Causes deployment churn.
-- **Sensor execution timeout** (300s): sensor function ran too long. Code server
-  stays running. Agent logs the error and moves on. No deployment churn.
+## Code server startup failure signals
 
-## Code server startup failure triage
+Check ALL pods for the deployment. Key signals:
 
-When a code location fails to load, check ALL pods for the deployment — multiple
-pod failures indicate a systemic issue. Key signals:
-
-- `Aborted!` on stderr = SIGABRT, native library crash
-- `DagsterExecutionInterruptedError` = SIGTERM during import (deploy rollover if
-  a new deployment replaced it)
-- Silent hang after "Starting Dagster code server" = blocked I/O. Confirm with
+- `Aborted!` stderr = SIGABRT (native crash)
+- `DagsterExecutionInterruptedError` = SIGTERM during import (rollover)
+- Silent hang after "Starting Dagster code server" = blocked I/O. Confirm:
   `kubernetes.io/container/cpu/core_usage_time` (`ALIGN_RATE`,
-  `alignmentPeriod: "60s"` — the `s` suffix is required): near-zero CPU on a
-  Running/Ready pod = I/O block, not CPU throttling.
+  `alignmentPeriod: "60s"`): near-zero CPU on Running/Ready pod = I/O block.
 
 ## Agent health check replacement paths
 
-Four code paths replace a code server — only gRPC UNAVAILABLE uses the grace
-period (`DAGSTER_CLOUD_CODE_SERVER_HEALTH_CHECK_REDEPLOY_TIMEOUT`, defaults to
-`serverProcessStartupTimeout`). The other three are immediate: error state
-(server returns `SerializableErrorInfo`), recovery (agent local error vs Cloud
-healthy), and pex disappeared. When the agent logs "300 seconds" but replaces
-immediately, it hit an immediate path on the next reconciliation loop.
+Four paths replace code server. Only gRPC UNAVAILABLE uses grace period
+(`DAGSTER_CLOUD_CODE_SERVER_HEALTH_CHECK_REDEPLOY_TIMEOUT` = startup timeout).
+Other three immediate: error state (SerializableErrorInfo), recovery (agent
+local error vs Cloud healthy), pex disappeared. "300 seconds" log + immediate
+replace = hit immediate path on next reconciliation.
 
-## Efficient traceback retrieval from Cloud Logging
+## GKE traceback retrieval
 
-GKE container tracebacks are split across dozens of individual log entries (one
-per line). Search for the exception line first, not the traceback header:
-`textPayload:("Exception" OR "Error") AND NOT textPayload:"BetaWarning"` with a
-narrow timestamp window. Use `pageSize` 10-15 (50 on per-line entries exceeds
-token limits). Skip intermediate frames unless the exception type is ambiguous.
+Tracebacks split across many log entries. Search exception line first:
+`textPayload:("Exception" OR "Error") AND NOT textPayload:"BetaWarning"`. Narrow
+timestamp. pageSize 10-15 (50 exceeds tokens on per-line entries).
 
-## kipptaf step worker CPU spikes
+## kipptaf step worker CPU
 
-kipptaf step workers hit the 1000m CPU limit during Python module import. Alerts
-on `dagster-step-*` pods for kipptaf jobs that self-resolve within ~60s are this
-pattern. Fix via per-asset k8s config overrides, not global limit changes.
+kipptaf steps hit 1000m CPU during import. `dagster-step-*` alerts self-resolve
+~60s. Fix: per-asset k8s config, not global limit.
 
-## Data collection caveats
+## Data caveats
 
-- `get_location_load_history` returns the N most recent deploys regardless of
-  timestamp — not filtered by the monitoring window. Distinguish in-window vs.
-  historical data in the report.
+`get_location_load_history` returns N most recent deploys regardless of
+timestamp. Distinguish in-window vs historical.
 
-## Pod zone placement from VPC firewall logs
+## Temporal correlation
 
-`list_log_entries` with `resource.type="gce_subnetwork"` and
-`logName=".../compute.googleapis.com%2Ffirewall"` shows `instance.zone` and
-`remote_instance.zone` for each connection. Filter on `dest_port=4000` for
-agent→code-server gRPC traffic. Agent source IP is consistent across entries.
+Signals in same window ≠ causal. Compare timestamps before grouping. Run failure
+at 04:00 + alert at 06:00 = independent.
+
+## Agent preemption by run pods
+
+Agents at priority 0 preempted by run/step pods at 1000 (`dagster-run`).
+`safe-to-evict`/PDBs don't block priority preemption. Symptoms: all-location
+`gRPC UNAVAILABLE`, "no agents have recently heartbeated", many
+SuccessfulCreate+Preempted on agent pods. Fix: agent PriorityClass = 1000.
+
+## Pod zone placement
+
+`list_log_entries` with `resource.type="gce_subnetwork"` +
+`logName=".../compute.googleapis.com%2Ffirewall"` → `instance.zone` +
+`remote_instance.zone`. Filter `dest_port=4000` for agent→code-server gRPC.

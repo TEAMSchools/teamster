@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(gh api user -q .login)",
       "Bash(gh issue list)",
       "Bash(gh issue status)",
       "Bash(gh pr checks)",
@@ -14,7 +15,6 @@
       "Bash(trunk check)",
       "Bash(trunk fmt)",
       "Bash(uv tool list)",
-      "Bash(gh api user -q .login)",
       "mcp__bigquery__analyze_contribution",
       "mcp__bigquery__execute_sql",
       "mcp__bigquery__forecast",
@@ -41,6 +41,8 @@
       "mcp__dagster__list_backfills",
       "mcp__dagster__list_code_locations",
       "mcp__dagster__list_runs",
+      "mcp__dagster__list_schedules",
+      "mcp__dagster__list_sensors",
       "mcp__dagster__search_assets",
       "mcp__gke__get_cluster",
       "mcp__gke__get_gke_release_notes",
@@ -50,16 +52,14 @@
       "mcp__gke__list_monitored_resource_descriptors",
       "mcp__gke__list_recommendations",
       "mcp__gke__query_logs",
-      "Read(//workspaces/teamster/**)",
-      "Read(~/.claude/plugins/**)",
-      "Skill(claude-md-management:revise-claude-md:*)",
-      "mcp__observability__list_log_entries",
+      "mcp__observability__get_trace",
       "mcp__observability__list_alerts",
       "mcp__observability__list_group_stats",
-      "mcp__dagster__list_sensors",
-      "mcp__dagster__list_schedules",
+      "mcp__observability__list_log_entries",
       "mcp__observability__list_time_series",
-      "mcp__observability__get_trace"
+      "Read(//workspaces/teamster/**)",
+      "Read(~/.claude/plugins/**)",
+      "Skill(claude-md-management:revise-claude-md:*)"
     ],
     "deny": [
       "Bash(* gcloud *)",

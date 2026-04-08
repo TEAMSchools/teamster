@@ -74,9 +74,13 @@ this step.**
 
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
 
+## CLAUDE.md Editing Rules
+
 - **Before editing any CLAUDE.md file**: present the proposed change as a quote
   block with a one-line expected-utility note. Do not apply it until the user
   approves.
 
-- **Before adding to any CLAUDE.md file**: verify the addition changes Claude's
-  behavior. Do not add human-only context (motivation, rationale, history).
+- **Before adding to any CLAUDE.md file**: for each line, answer: what specific
+  wrong action does this prevent? If you can't name one, cut it. General
+  knowledge and human-only context (motivation, rationale, history) don't
+  qualify.

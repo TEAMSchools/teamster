@@ -69,9 +69,10 @@ on GKE Autopilot.
   makes these occasional; Dagster retries automatically.
 - **PriorityClass `dagster-run`** (value 1000) on run/step pods makes kubelet
   evict code server pods (default priority 0) first during node memory pressure.
-  Does not protect against OOM kills of the pod itself — only eviction ordering.
-  Code servers tolerate eviction: they are stateless and PDB-protected
-  (`minAvailable: 1`).
+- **PriorityClass `dagster-agent`** (value 1000) on agent pods — same tier as
+  run/step pods, preventing mutual preemption. Does not protect against OOM
+  kills of the pod itself — only eviction ordering. Code servers tolerate
+  eviction: they are stateless and PDB-protected (`minAvailable: 1`).
 - **PDB for code servers** uses `minAvailable: 1` (not `maxUnavailable`).
   `maxUnavailable` requires resolving the owning controller (Deployment) to
   calculate expected pod count — during Dagster Cloud rollovers the old
