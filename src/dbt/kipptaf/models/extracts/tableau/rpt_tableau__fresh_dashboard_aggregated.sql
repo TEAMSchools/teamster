@@ -63,6 +63,8 @@ left join
 where
     s.grouped_status_timeframe = 'Current' and s.goal_name in ('Deferred', 'Waitlisted')
 
+union all
+
 -- latest status: enrollment in progress
 select
     s.academic_year,
