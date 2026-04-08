@@ -79,6 +79,7 @@ left join
     on sr.respondent_employee_number = srh.employee_number
     and sr.date_submitted
     between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
+    and srh.primary_indicator
 left join
     {{ ref("int_extracts__student_enrollments") }} as se1
     on sr.respondent_email = se1.student_email
