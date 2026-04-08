@@ -54,7 +54,8 @@ with the current timestamp.
 
 Three `object_type` modes: `"pickle"`, `"avro"` (writes Fastavro container
 files), `"file"` (writes raw bytes from a local file path). The `test=True` flag
-prefixes GCS paths with `test/` to isolate test runs.
+writes local files to `/tmp/dagster` (not the `dagster-tmp` symlink — causes
+`FileExistsError`) instead of `env/`, and prefixes GCS paths with `test/`.
 
 ### `asset_checks.py`
 
