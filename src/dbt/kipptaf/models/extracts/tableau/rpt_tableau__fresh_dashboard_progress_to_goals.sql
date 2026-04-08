@@ -75,7 +75,9 @@ with
             enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
+        where
+            goal_type in ('Enrolled', 'Enrollment In Progress')
+            and latest_status = goal_type
 
         union all
 
@@ -107,7 +109,9 @@ with
             aligned_enrollment_type as enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
+        where
+            goal_type in ('Enrolled', 'Enrollment In Progress')
+            and latest_status = goal_type
 
         union all
 
@@ -176,7 +180,9 @@ with
             enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
+        where
+            goal_type in ('Enrolled', 'Enrollment In Progress')
+            and latest_status = goal_type
 
         union all
 
@@ -208,7 +214,9 @@ with
             aligned_enrollment_type as enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
+        where
+            goal_type in ('Enrolled', 'Enrollment In Progress')
+            and latest_status = goal_type
 
         union all
 
