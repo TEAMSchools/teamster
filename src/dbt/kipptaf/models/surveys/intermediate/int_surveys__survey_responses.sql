@@ -12,11 +12,11 @@ select
     rt.code as term_code,
     rt.name as term_name,
 
-    ldap.employee_number as respondent_employee_number,
+    srh.employee_number as respondent_employee_number,
 
-    sr.formatted_name as respondent_preferred_name,
-    sr.sam_account_name as respondent_samaccountname,
-    sr.user_principal_name as respondent_userprincipalname,
+    srh.formatted_name as respondent_preferred_name,
+    srh.sam_account_name as respondent_samaccountname,
+    srh.user_principal_name as respondent_userprincipalname,
 
     safe_cast(fr.text_value as numeric) as answer_value,
 
@@ -38,17 +38,16 @@ select
     ) as round_rn,
 from {{ ref("int_google_forms__form_responses") }} as fr
 left join
-    {{ ref("stg_ldap__user_person") }} as ldap
-    on fr.respondent_email = ldap.google_email
-    and ldap.uac_account_disable = 0
-left join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on fr.info_title = rt.name
     and date(fr.last_submitted_time) between rt.start_date and rt.end_date
     and rt.type = 'SURVEY'
 left join
-    {{ ref("int_people__staff_roster") }} as sr
-    on ldap.employee_number = sr.employee_number
+    {{ ref("int_people__staff_roster_history") }} as srh
+    on lower(regexp_extract(fr.respondent_email, r'^([^@]+)')) = srh.sam_account_name
+    and timestamp(fr.last_submitted_time)
+    between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
+    and srh.primary_indicator
 
 union all
 
@@ -71,11 +70,11 @@ select
 
     coalesce(regexp_extract(sr.campaign_name, r'\s(.*)'), rt.code) as term_code,
 
-    null as term_name,
-    null as respondent_employee_number,
-    null as respondent_preferred_name,
-    null as respondent_samaccountname,
-    null as respondent_userprincipalname,
+    rt.name as term_name,
+    srh.employee_number as respondent_employee_number,
+    srh.formatted_name as respondent_preferred_name,
+    srh.sam_account_name as respondent_samaccountname,
+    srh.user_principal_name as respondent_userprincipalname,
 
     safe_cast(sr.response_value as numeric) as answer_value,
 
@@ -98,3 +97,9 @@ left join
     {{ source("surveys", "int_surveys__response_identifiers") }} as ri
     on sr.survey_id = ri.survey_id
     and sr.response_id = ri.response_id
+left join
+    {{ ref("int_people__staff_roster_history") }} as srh
+    on lower(regexp_extract(ri.respondent_mail, r'^([^@]+)')) = srh.sam_account_name
+    and sr.response_date_submitted
+    between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
+    and srh.primary_indicator

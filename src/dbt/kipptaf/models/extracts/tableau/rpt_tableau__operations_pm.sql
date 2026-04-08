@@ -106,7 +106,9 @@ with
             between terms.start_date and terms.end_date
         left join schools on ops_pm_roster.home_work_location_name = schools.name
         left join
-            full_roster on responses_pivoted.respondent_email = full_roster.google_email
+            full_roster
+            on lower(regexp_extract(responses_pivoted.respondent_email, r'^([^@]+)'))
+            = full_roster.sam_account_name
     )
 
 select *,
