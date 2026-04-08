@@ -39,6 +39,8 @@ nav:
       - Local Development: guides/local-development.md
       - Dagster: guides/dagster.md
       - Google Sheets & Forms: guides/google-sheets.md
+      - dbt Development: guides/dbt-development.md
+      - SFTP Integration: guides/sftp-integration.md
       - Claude Code & Superpowers: guides/superpowers.md
   - Troubleshooting:
       - Dagster: troubleshooting/dagster.md

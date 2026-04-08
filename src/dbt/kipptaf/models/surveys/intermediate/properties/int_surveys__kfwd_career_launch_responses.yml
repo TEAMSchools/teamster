@@ -7,9 +7,6 @@ models:
               - survey_id
               - response_id
               - question_short_name
-          config:
-            severity: warn
-            store_failures: true
     columns:
       - name: response_date_submitted
         data_type: timestamp

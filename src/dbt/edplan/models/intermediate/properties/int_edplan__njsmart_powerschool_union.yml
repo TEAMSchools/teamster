@@ -7,9 +7,6 @@ models:
               - student_number
               - academic_year
               - rn_student_year_desc
-          config:
-            severity: warn
-            store_failures: true
     columns:
       - name: row_hash
         data_type: string

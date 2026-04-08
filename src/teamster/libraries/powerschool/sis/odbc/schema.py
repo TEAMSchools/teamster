@@ -1,3 +1,9 @@
+"""Oracle-to-Avro type mapping for PowerSchool SIS ODBC.
+
+Maps oracledb column type names from cursor.description to Avro schema type
+definitions. All fields are nullable (wrapped in a union with "null").
+"""
+
 # https://cx-oracle.readthedocs.io/en/latest/user_guide/sql_execution.html#defaultfetchtypes
 ORACLE_AVRO_SCHEMA_TYPES = {
     "DB_TYPE_BINARY_DOUBLE": ["double"],

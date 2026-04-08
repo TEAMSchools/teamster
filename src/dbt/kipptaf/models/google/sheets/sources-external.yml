@@ -1,12 +1,9 @@
 sources:
   - name: google_sheets
-    schema: |
-      {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['staging', 'dev'] -%}
-      z_dev_
-      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'prod' -%}
-      {%- elif env_var('GITHUB_USER', '') != '' -%}
-      zz_{{ env_var('GITHUB_USER', '') }}_
-      {%- endif -%}kipptaf_google_sheets
+    schema:
+      "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
+      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif
+      -%}kipptaf_google_sheets"
     tables:
       - name: src_google_sheets__zendesk__org_lookup
         external:
@@ -885,7 +882,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1G2z9rwXsFaMdFL6iOYdfQTVjZ7bctXMyz_Q09IhP4QE
-            sheet_range: src_assessments__course_subject_crosswalk
+            sheet_range: src_assessments__course_subject_crosswalk_v2
             skip_leading_rows: 1
         columns:
           - name: PowerSchool_Course_Number
@@ -897,8 +894,6 @@ sources:
           - name: Is_Foundations
             data_type: boolean
           - name: Is_Advanced_Math
-            data_type: boolean
-          - name: Exclude_from_Gradebook
             data_type: boolean
           - name: Discipline
             data_type: string

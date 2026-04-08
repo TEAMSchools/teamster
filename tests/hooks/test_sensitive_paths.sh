@@ -90,8 +90,8 @@ echo -e "${YELLOW}Symlink resolution${NC}"
 
 # Create a temp symlink for testing (clean up after)
 TMPLINK="/tmp/test_hook_symlink_$$"
-if ln -s /workspaces/teamster/env/.env "${TMPLINK}" 2>/dev/null; then
-  expect_deny "symlink to env/.env" Read file_path "${TMPLINK}"
+if ln -s /etc/secret-volume "${TMPLINK}" 2>/dev/null; then
+  expect_deny "symlink to secret-volume" Read file_path "${TMPLINK}"
   rm -f "${TMPLINK}"
 else
   echo -e "  ${YELLOW}SKIP${NC}: could not create test symlink"
@@ -103,7 +103,7 @@ echo -e "${YELLOW}Description field scoping${NC}"
 
 # trunk-ignore-begin(shellcheck/SC2312)
 expect_deny_json "MCP description field with .env" \
-  "$(jq -n '{tool_name: "mcp__bigquery__query", tool_input: {description: "cat .env", sql: "SELECT 1"}}')"
+  "$(jq -n '{tool_name: "mcp__bigquery__execute_sql", tool_input: {description: "cat .env", sql: "SELECT 1"}}')"
 
 expect_allow_json "Agent description with env word" \
   "$(jq -n '{tool_name: "Agent", tool_input: {description: "check the environment setup", prompt: "list files"}}')"

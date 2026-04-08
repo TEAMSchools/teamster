@@ -10,7 +10,7 @@ models:
               - studentid
               - academic_year
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string

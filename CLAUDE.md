@@ -5,87 +5,11 @@
 Teamster is a data engineering platform for KIPP TEAM & Family Schools (Newark,
 Camden, and Paterson, NJ & Miami, FL) built on **Dagster** (orchestration),
 **dbt** (transformations), and **Google BigQuery** (warehouse), with Google
-Cloud Storage (GCS) as the intermediate storage layer.
+Cloud Storage (GCS) as the intermediate storage layer. Python ≥3.13.
 
-## Working Conventions
-
-- **Python execution**: Always use `uv run` — never bare `python` or `python3`,
-  including inline one-liners (`uv run python -c "..."`, not
-  `python3 -c "..."`). The project environment is managed by uv.
-
-- **Memory vs CLAUDE.md**: Do not save instructions that should govern every
-  session in this project to memory — put them in CLAUDE.md instead. Memory is
-  for information not derivable from the codebase or not appropriate for
-  CLAUDE.md (e.g., user preferences, one-off context).
-
-- **Built-in tools over Bash**: You have dedicated tools — use them instead of
-  shell equivalents. This is a hard rule, not a suggestion.
-
-  | Instead of (Bash)                  | Use this tool                     |
-  | ---------------------------------- | --------------------------------- |
-  | `cat`, `head`, `tail`, `less`      | **Read**                          |
-  | `grep`, `rg`, `ag`, `ack`          | **Grep** (pattern/content search) |
-  | `find`, `fd`                       | **Glob**                          |
-  | `sed`, `awk`, inline patch scripts | **Edit**                          |
-  | `echo >`, `cat <<EOF >`, `tee`     | **Write**                         |
-  | `cp`                               | **Read** then **Write**           |
-
-  `ls` is the one exception — use it via Bash to list directory contents (Glob
-  matches patterns, not directory listings).
-
-  **No exceptions for convenience** — piped shell commands (`grep | head`,
-  `ls | grep`), one-liner reads (`cat file`), copy operations (`cp`), in-place
-  substitutions (`sed -i`), and heredoc file creation (`cat <<EOF >`) are all
-  covered by the table above. Use the dedicated tool even when the shell version
-  feels simpler. The `ls` exception is strictly for plain directory listings —
-  `ls | grep` is a Glob, not an `ls`.
-
-  Bash is **only** for commands that have no dedicated tool equivalent (e.g.,
-  `git`, `uv run`, `gh`, `docker`, `trunk`, `ls`). If you catch yourself typing
-  a shell command from the left column above — stop and use the tool instead.
-
-- **Git**:
-  - Do not commit proactively — ask first when a change is complete and tests
-    are passing, then commit if confirmed.
-  - Commit messages follow
-    [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/)
-    format. Avoid checkpoint-style messages (`save`, `oops`, `update`, etc.).
-  - Branch naming: `<author>/<commit-type>/<brief-description>` (e.g.,
-    `cbini/feat/salesforce-alumni-tracking`). For AI-assisted branches, prefix
-    the description with `claude-` (e.g.,
-    `cbini/feat/claude-salesforce-alumni-tracking`).
-  - **Staging protected paths**: Use bare `git add -u` (no path argument) —
-    naming protected paths explicitly (e.g., `git add .claude/settings.json`)
-    triggers the hook and gets blocked.
-
-- **GitHub**:
-  - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as
-    the PR body — fill in the relevant sections based on the changes.
-  - **Issues**: Do not open proactively — ask first. Use `gh issue create` (not
-    the web UI). Label with a
-    [conventional commit type](https://www.conventionalcommits.org/en/v1.0.0/)
-    (`feat`, `fix`, `docs`, `refactor`, `chore`, etc.), any related source
-    systems (e.g., `adp`, `powerschool`, `deanslist`), and `dagster` and/or
-    `dbt` when applicable.
-  - **Design specs**: After a spec is written and reviewed:
-    1. Open a GitHub issue (`gh issue create`)
-    2. Create and link the branch
-       (`gh issue develop <number> --name <branch> --checkout`)
-    3. Commit the spec to that branch
-    4. Push the branch
-
-- **Claude CLI**: The `claude` binary is at
-  `~/.vscode-remote/extensions/anthropic.claude-code-*/resources/native-binary/claude`
-  and is not on `$PATH`, so it cannot be run via Bash. Run it manually in a
-  terminal.
-
-- **File links in responses**: Use relative paths with no leading slash; bare
-  line numbers in anchors with no `L` prefix. Example:
-  [.devcontainer/scripts/postCreate.sh:105-109](.devcontainer/scripts/postCreate.sh#105-109)
-
-- **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment. Do
-  not use linter-native disable syntax (e.g., `# shellcheck disable=`, `# noqa`,
-  `-- noqa`).
+Production runs on **GKE** (Google Kubernetes Engine) via Dagster Cloud.
+Development uses **GitHub Codespaces** (devcontainer) — secrets are injected
+from 1Password at container start.
 
 ## Architecture
 
@@ -97,17 +21,66 @@ guidance in the nearest subdirectory CLAUDE.md, not here.
 subdirectory — reading, explaining, reviewing, or modifying code. Do NOT skip
 this step.**
 
-| Path                      | When                               |
-| ------------------------- | ---------------------------------- |
-| `src/teamster/CLAUDE.md`  | Dagster code                       |
-| `src/dbt/CLAUDE.md`       | dbt models                         |
-| `.vscode/CLAUDE.md`       | VS Code tasks/scripts              |
-| `.claude/CLAUDE.md`       | hooks, deny rules, protected paths |
-| `.devcontainer/CLAUDE.md` | Codespace setup                    |
-| `.k8s/CLAUDE.md`          | GKE setup                          |
-| `.trunk/CLAUDE.md`        | linting config                     |
-| `tests/CLAUDE.md`         | testing                            |
-| `scripts/CLAUDE.md`       | project utilities                  |
-| `mcp/CLAUDE.md`           | MCP servers/tools                  |
-| `docs/CLAUDE.md`          | MkDocs documentation site          |
-| Any subdirectory          | that directory's CLAUDE.md         |
+## Working Conventions
+
+- **Before writing any spec or plan**: create a GitHub issue (`gh issue create`;
+  label with conventional commit type, related source systems, and
+  `dagster`/`dbt` when applicable). Quick fixes do not require one.
+
+- **Before creating a branch**: ask the user — worktree or branch switch? Do not
+  choose for them.
+
+- **Before writing any file (spec, code, config)**: be on the feature branch.
+
+- **Worktree**: `gh issue develop <number> --name <branch>` (no `--checkout`),
+  then `git worktree add .worktrees/<branch> <branch>`.
+
+- **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
+
+- **Git naming**: Commit messages and branch names use
+  [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch
+  naming: `<gh-username>/<commit-type>/claude-<brief-description>` (get username
+  from `gh api user -q .login`).
+
+- **Git staging**: Prefer `git add -u` — naming protected paths triggers the
+  hook, `git add -A` can stage unrelated files. Subagents must name specific
+  files in `git add` — never `-u`, `-A`, or `.`.
+
+- **Git resuming**: Before resuming work on an existing branch, merge `main`:
+  `git fetch origin main && git merge origin/main`.
+
+- **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as the
+  PR body.
+
+- **Python**: Always `uv run` — never bare `python`, `python3`, or
+  venv-installed tools (`dbt`, `dagster`, etc.).
+
+- **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
+  Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
+  `uv run`, `gh`, `docker`, `trunk`, `ls`).
+
+- **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment — not
+  linter-native disable syntax. Binary:
+  `/workspaces/teamster/.trunk/tools/trunk`.
+
+- **Markdown**: Always specify a language on fenced code blocks (MD040). Use
+  `text` only when no real language applies.
+
+- **Claude CLI**: Not on `$PATH` — user must run `claude` commands in their
+  terminal, not via Bash tool.
+
+- **Verify before claiming**: Read actual source code — do not extrapolate
+  third-party tool behavior from general knowledge.
+
+- **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
+
+## CLAUDE.md Editing Rules
+
+- **Before editing any CLAUDE.md file**: present the proposed change as a quote
+  block with a one-line expected-utility note. Do not apply it until the user
+  approves.
+
+- **Before adding to any CLAUDE.md file**: for each line, answer: what specific
+  wrong action does this prevent? If you can't name one, cut it. General
+  knowledge and human-only context (motivation, rationale, history) don't
+  qualify.

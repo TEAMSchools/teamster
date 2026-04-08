@@ -18,11 +18,16 @@ location's `definitions.py`. Two categories:
   SFTP/API assets)
 - `get_io_manager_gcs_file(code_location)` → `GCSIOManager` (raw file, used by
   paginated Deanslist)
-- `get_dbt_cli_resource(dbt_project, test=False)` → `DbtCliResource`
+- `get_dbt_cli_resource(dbt_project)` → `DbtCliResource` (passes
+  `target="defer"` when `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT == "1"`; otherwise
+  uses the shipped profile default, which is `prod`)
 - `get_powerschool_ssh_resource()` → `SSHResource` (reads from shared env vars)
 
 All IO manager factories redirect to `teamster-test` bucket when
 `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`.
+
+**Env var gotcha**: `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` is `"0"` (not absent)
+in full deployments — always check `== "1"`, never truthy.
 
 **Singletons** (shared across all code locations):
 
@@ -49,7 +54,8 @@ with the current timestamp.
 
 Three `object_type` modes: `"pickle"`, `"avro"` (writes Fastavro container
 files), `"file"` (writes raw bytes from a local file path). The `test=True` flag
-prefixes GCS paths with `test/` to isolate test runs.
+writes local files to `/tmp/dagster` (not the `dagster-tmp` symlink — causes
+`FileExistsError`) instead of `env/`, and prefixes GCS paths with `test/`.
 
 ### `asset_checks.py`
 
@@ -84,6 +90,15 @@ data versioning system, not the automation condition. When an upstream table
 materializes, directly-dependent view assets are marked "unsynced" in the UI
 even though the automation condition correctly suppresses any run. There is no
 built-in Dagster API to suppress this per-asset.
+
+**Deploy rollover + `code_version_changed` race**: if a run completes during
+deploy rollover, the materialization may be stamped with the new deployment's
+code version. `code_version_changed()` returns false permanently — manual
+materialization is the only fix. See dagster-io/dagster#33708.
+
+**Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
+ALL partitions on every materialization. To preserve per-partition triggering,
+the dep must itself be partitioned with the same `PartitionsDefinition`.
 
 ### `utils/classes.py`
 

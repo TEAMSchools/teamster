@@ -1,231 +1,147 @@
 # CLAUDE.md — `dbt/kipptaf/`
 
-The **primary network-wide analytics project** for KIPP TEAM & Family (TAF).
-This is the most complex dbt project — it aggregates data from all source-system
-packages and all four school projects to produce network-level marts, reporting
-models, and extracts for downstream tools (Tableau, PowerSchool, Deanslist,
-Google Sheets, etc.).
+The **network-wide analytics project** — aggregates all source-system packages
+and four district projects into network-level marts, reporting, and extracts.
+Most complex dbt project in the repo.
 
 ## Model Structure
 
 ```text
 models/
-  <source>/          # one folder per integration (adp, deanslist, powerschool, etc.)
-    staging/         # materialized: table, contract: enforced: true
+  <source>/          # per-integration (adp, deanslist, powerschool, etc.)
+    staging/         # table, contract enforced
     intermediate/
   assessments/       # cross-source assessment aggregations
-  people/            # staff/HR unified layer
+  people/            # unified staff/HR (ADP + LDAP + PS + perf mgmt, has snapshots)
   students/          # cross-school student data
-  marts/             # dim_* and fct_* models for Tableau (contract: enforced: true)
-  reporting/         # topline reporting
-  extracts/          # outbound feeds
-    tableau/         # Tableau-specific extract models
+  marts/             # dim_*/fct_* for Tableau + Cube semantic layer, contract enforced
+  reporting/         # topline reporting (+schema: reporting, no contract defaults)
+  extracts/          # outbound feeds, contract enforced
+    tableau/         # +schema: tableau → lands in kipptaf_tableau
     deanslist/
-    powerschool/
+    powerschool/     # see note below
     google/
-    ...
-  exposures/         # dbt exposures (Tableau, etc.)
+  exposures/         # dbt exposures (Tableau, Google Sheets, etc.)
 ```
 
 ## Source File Conventions
 
-Each integration with external table sources uses two source files:
+Each integration uses two source files with the **same `name:` under
+`sources:`** (dbt merges at parse time):
 
-- **`sources-external.yml`** — BigQuery external tables (GCS Avro or Google
-  Sheets). Uses a dev-prefixed schema expression so dev/staging environments
-  point to isolated schemas.
-- **`sources-bigquery.yml`** — Native BQ tables. Uses a plain
-  `"{{ project_name }}_<integration>"` schema (no dev prefix), always pointing
-  to production. Used for frozen archive tables whose staging models have been
-  disabled.
+| File                   | Points to                          | Schema expression                    |
+| ---------------------- | ---------------------------------- | ------------------------------------ |
+| `sources-external.yml` | GCS Avro / Google Sheets externals | dev-prefixed (env-isolated)          |
+| `sources-bigquery.yml` | Native BQ tables (Airbyte, frozen) | plain hardcoded (e.g. `kipptaf_foo`) |
 
-Both files use the same `name:` under `sources:` — dbt merges the table lists at
-parse time.
+When both files exist for the same source, `sources-bigquery.yml` omits
+`schema:`.
 
-**Archive table pattern**: When a staging or intermediate model is retired but
-its data must be preserved, disable the model (`config: enabled: false` in its
-properties YAML), add a BQ-native entry in `sources-bigquery.yml` pointing to
-the schema where the model was materialized, and update downstream `ref()` calls
-to `source()`. See `google/sheets/sources-bigquery.yml` and
-`performance_management/sources-bigquery.yml` for examples.
+**Archive pattern**: Disable the model (`config: enabled: false` in properties
+YAML) → add BQ-native entry in `sources-bigquery.yml` → update downstream
+`ref()` → `source()`. Examples: `google/sheets/sources-bigquery.yml`,
+`performance_management/sources-bigquery.yml`.
 
-**Shared-spreadsheet risk**: Google Sheets sources that share a spreadsheet URI
-all trigger together when Dagster detects any tab change. Archive tabs on shared
-sheets must be decoupled by converting to BQ-native sources (see above).
+**Shared-spreadsheet risk**: Google Sheets sharing a URI all trigger together on
+any tab change. Archive tabs must be converted to BQ-native sources.
 
-## Key Architectural Notes
+## Key Rules
 
-**Cross-project refs**: This project references all source-system packages
-(`powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`, `pearson`,
-`renlearn`, `titan`, `amplify`, `finalsite`, `overgrad`) and resolves models
-from those packages at run time. School-specific PowerSchool data is sourced
-from multiple `sources-kipp*.yml` files.
+### `union_dataset_join_clause` (critical)
 
-**Marts layer** (`models/marts/`): Dimensional models (`dim_*`, `fct_*`) used by
-Tableau and the **Cube** semantic layer. All have `contract: enforced: true`.
-Key models:
+Union models carry `_dbt_source_relation` but values differ across models (they
+include schema + table name). **Never join on
+`a._dbt_source_relation = b._dbt_source_relation`** — use the macro:
 
-- `dim_students`, `dim_staff`, `dim_locations`, `dim_terms`, `dim_dates`,
-  `dim_seats`
-- `fct_attendance`, `fct_staff_attrition`, `fct_staff_terminations`,
-  `fct_additional_earnings`, `fct_microgoals`
+```sql
+inner join {{ ref("other_union_model") }} as b
+    on a.id = b.id
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="b") }}
+```
 
-**People layer** (`models/people/`): Unified staff/HR view combining ADP, LDAP,
-PowerSchool, and performance management data. Includes snapshots
-(`snapshot_people__*`).
+Macro defined in `macros/utils.sql` — extracts school prefix via
+`regexp_extract(..., r'(kipp\w+)_')`.
 
-**Extracts layer** (`models/extracts/`): Outbound data feeds. Subdirectories map
-to destination systems. All models have `contract: enforced: true`.
+### Selecting from `dbt_utils.star()` models
 
-**`extracts/powerschool/`** is a special case: `rpt_powerschool__autocomm_*`
-models define a consistent export file format shared across all regions. They
-are **not** extracted here — regional dbt projects (`kippnewark`, `kippcamden`,
-`kippmiami`) each source from these models and filter to their own data, then
-push to their respective PowerSchool instance. Therefore `extracts/powerschool/`
-has no dbt exposure in kipptaf; exposures live in the regional projects.
+`base_` models using `star()` resolve columns from BigQuery at run time, not
+SQL. YAML properties drift silently. **Rule**: enumerate columns explicitly when
+joining these models (see `INFORMATION_SCHEMA.COLUMNS` query in
+`src/dbt/CLAUDE.md`).
 
-**Disabled integrations**: The following are fully disabled at the project level
-via `+enabled: false` in `dbt_project.yml`: ACT, ADP Workforce Manager, ADP
-Workforce Now Fivetran, Alchemer, Coupa Fivetran, Dayforce, Facebook, Illuminate
-Fivetran, Instagram.
+`union_relations` views have a related issue (stale compiled SQL) but are
+handled automatically by `dbt_union_relations_automation_condition()`.
 
-## Key Variables
+### `extracts/powerschool/` special case
 
-| Variable                            | Value                                                                    |
-| ----------------------------------- | ------------------------------------------------------------------------ |
-| `current_academic_year`             | `2025`                                                                   |
-| `current_fiscal_year`               | `2026`                                                                   |
-| `local_timezone`                    | `America/New_York`                                                       |
-| `cloud_storage_uri_base`            | `gs://teamster-kipptaf/dagster/kipptaf`                                  |
-| `bigquery_external_connection_name` | `projects/teamster-332318/locations/us/connections/biglake-teamster-gcs` |
+`rpt_powerschool__autocomm_*` models define a shared export format but are
+**not** extracted here — regional projects source from them, filter to their
+data, and push to their own PowerSchool instance. Exposures live in regional
+projects, not kipptaf.
 
-## dbt Cloud
+## `dbt_project.yml` Inherited Defaults
 
-This project is connected to dbt Cloud project ID `211862`. The `dbt-cloud`
-block in `dbt_project.yml` enables dbt Cloud CI/CD.
+These are set at directory level — **do not repeat per-model** or flag their
+absence:
+
+| Directory / pattern                    | `materialized` | `contract: enforced` |
+| -------------------------------------- | -------------- | -------------------- |
+| All integration `staging/`             | `table`        | `true`               |
+| `extracts/`                            | view (default) | `true`               |
+| `marts/`                               | view (default) | `true`               |
+| `illuminate/dlt/staging/repositories/` | `table`        | `false` (override)   |
+
+**Disabled illuminate repositories**: 365, 413, 428 — disabled in
+`models/illuminate/dlt/staging/repositories/properties.yml`. Check before adding
+`ref()` calls to `int_illuminate__repository_data`.
+
+**Disabled integrations** (project-level `+enabled: false`): ACT, ADP Workforce
+Manager, ADP Workforce Now Fivetran, Alchemer, Coupa Fivetran, Dayforce,
+Facebook, Illuminate Fivetran, Instagram.
+
+## Cross-Project Refs
+
+Sources models from: `powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`,
+`pearson`, `renlearn`, `titan`, `amplify`, `finalsite`. District-specific
+PowerSchool data via multiple `sources-kipp*.yml` files.
 
 ## Exposures
 
-Every external tool that consumes kipptaf data **must have a dbt exposure**
-defined in `models/exposures/`. Exposures make the dependency graph explicit and
-power Dagster asset lineage.
+Every external consumer **must** have a dbt exposure in `models/exposures/`.
+Files grouped by tool: `tableau.yml`, `google-sheets.yml`, etc.
 
-**All exposures** require:
+Required fields: `name`, `label`, `type`, `owner.name: Data Team`, `depends_on`,
+`url`, `config.meta.dagster.kinds`.
 
-```yaml
-exposures:
-  - name: exposure_name_snake_case
-    label: Human Readable Title
-    type: dashboard | application | analysis | notebook | ml
-    owner:
-      name: Data Team
-    depends_on:
-      - ref("rpt_tableau__some_model")
-      - ref("rpt_gsheets__another_model")
-    url: https://... # link to the external tool/workbook/sheet
-    config:
-      meta:
-        dagster:
-          kinds:
-            - tableau # or: googlesheets, powerschool, etc.
-```
-
-**Tableau workbooks** may include the workbook LSID (`id`) under
-`asset.metadata` to link the exposure to a specific Tableau Server workbook. Add
-`cron_schedule` only when Dagster owns the refresh trigger:
+**Tableau workbooks** — add `asset.metadata.id` (LSID) when known. Add
+`cron_schedule` only if Dagster owns the refresh:
 
 ```yaml
 config:
   meta:
     dagster:
-      kinds:
-        - tableau
+      kinds: [tableau]
       asset:
         metadata:
-          id: <tableau-workbook-lsid-uuid> # always include if known
-          cron_schedule: "0 7 * * *" # only if Dagster manages the refresh
+          id: <lsid-uuid> # always include if known
+          cron_schedule: "0 7 * * *" # only if Dagster-managed
 ```
 
-- `id` only → workbook is tracked in the asset graph but refreshed externally
-- `id` + `cron_schedule` → Dagster owns the refresh schedule
-- neither → workbook exposure with no asset-level metadata
+## kipptaf-Specific Variables
 
-Tableau workbooks with no metadata at all can omit the `asset` block entirely —
-just the `kinds: [tableau]` is sufficient.
+`bigquery_external_connection_name`:
+`projects/teamster-332318/locations/us/connections/biglake-teamster-gcs`
 
-Exposure files live in `models/exposures/` grouped by tool: `tableau.yml`,
-`google-sheets.yml`, `google-appsheet.yml`, etc.
+dbt Cloud project ID: `211862`.
 
-## Model Conventions
+## dbt Cloud CI
 
-See `src/dbt/CLAUDE.md` for shared per-layer requirements (contract enforcement,
-uniqueness tests, SQL antipatterns, documentation standards) that apply to all
-dbt projects. The following are **kipptaf-specific** additions.
+CI job: `dbt build --select state:modified+ --full-refresh`, target `staging`,
+defers to Staging environment.
 
-### `dbt_project.yml` — inherited defaults
+## Model Layer Distinctions
 
-These settings are applied at the directory level and **must not be repeated
-per-model** unless overriding. When reviewing model YAML files, do not flag the
-absence of these settings — they are intentionally inherited.
-
-| Directory / pattern                    | `materialized` | `contract: enforced`        |
-| -------------------------------------- | -------------- | --------------------------- |
-| All integration `staging/`             | `table`        | `true`                      |
-| `extracts/`                            | (view default) | `true`                      |
-| `marts/`                               | (view default) | `true`                      |
-| `illuminate/dlt/staging/repositories/` | `table`        | `false` (explicit override) |
-
-**Disabled illuminate repository models**: Repositories 365, 413, and 428 are
-disabled in `models/illuminate/dlt/staging/repositories/properties.yml`. Check
-this file before adding new `ref()` calls to `int_illuminate__repository_data`.
-
-**Schema overrides**: `extracts/tableau/` sets `+schema: tableau`, so
-`rpt_tableau__*` models land in `kipptaf_tableau`, not `kipptaf_extracts`.
-`extracts/` itself uses `+schema: extracts`.
-
-**`reporting/`** (`+schema: reporting`) has no contract or materialization
-defaults set — it is a separate layer from `extracts/` and is not where `rpt_`
-models live.
-
-### Model layer distinctions
-
-**`rpt_` models** are analyst-built reporting views that serve as the data
-source for external reporting tools (Tableau, Google Sheets, PowerSchool, etc.).
-They live in `models/extracts/` and are distinct from the data mart layer.
-
-**`dim_*` / `fct_*` models** are dimensional data mart models being built for
-use with a semantic layer. They live in `models/marts/`. This layer is actively
-being developed.
-
-### Selecting from models that use `dbt_utils.star()`
-
-Several `base_` models (e.g. `base_kippadb__contact`, `base_powerschool__*`)
-generate their columns via `dbt_utils.star()`, which reads the BigQuery relation
-schema at dbt run time — not from the SQL source. This means:
-
-- The model's actual columns are only knowable from BigQuery, not from the SQL
-  file
-- YAML property files for these models drift silently unless actively maintained
-- Selecting `c.*` from them in downstream models makes the downstream column
-  list invisible — you won't notice when columns are added, renamed, or removed
-
-**Rule**: When joining a `dbt_utils.star()` model, enumerate columns explicitly.
-Get the authoritative list from `INFORMATION_SCHEMA.COLUMNS`:
-
-```sql
-select column_name
-from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
-where table_name = '<model_name>'
-order by ordinal_position
-```
-
-Then list them in your `SELECT` and update the YAML properties to match.
-
-**Note on `union_relations` views**: Views using the `union_relations` macro
-have a related but distinct problem — the macro compiles to an explicit column
-list at dbt run time, so stale compiled SQL won't pick up new upstream columns
-until re-materialized. This is handled automatically by
-`dbt_union_relations_automation_condition()` (see PR
-[#3440](https://github.com/TEAMSchools/teamster/pull/3440)). The guidance above
-applies to non-`union_relations` models where you are joining a star-generated
-base model directly.
+- **`rpt_`** — analyst-built reporting views for external tools. Live in
+  `models/extracts/`.
+- **`dim_*` / `fct_*`** — dimensional marts for semantic layer. Live in
+  `models/marts/`. Actively being developed.

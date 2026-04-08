@@ -1,5 +1,8 @@
 sources:
   - name: kippcamden_titan
+    schema:
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
+      endif -%}kippcamden_titan"
     tables:
       - name: stg_titan__person_data
         config:

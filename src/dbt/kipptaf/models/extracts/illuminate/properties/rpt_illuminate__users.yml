@@ -6,7 +6,7 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: "`02 User Last Name`"
         data_type: string
       - name: "`03 User First Name`"

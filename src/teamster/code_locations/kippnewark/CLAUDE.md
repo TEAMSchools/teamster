@@ -27,26 +27,6 @@ GCS bucket: `teamster-kippnewark`
 | `extracts`              | BigQuery→SFTP | schedule                                    |
 | `couchdrop`             | sensor only   | sensor (Google Drive watcher)               |
 
-Newark is the most complete school code location — it uses every available
-integration.
-
 ## PowerSchool Configuration
 
 Uses **ODBC** (live Oracle tunnel). Config YAMLs under `powerschool/config/`.
-
-## Asset Checks
-
-`asset_checks.py` defines freshness checks on Titan assets
-(`kippnewark/titan/person_data`, `stg_titan__person_data`) — deadline 11:30pm,
-30-minute window.
-
-## Resources
-
-All resources come from `teamster.core.resources`. Notable resources:
-
-- `db_powerschool` — Oracle ODBC
-- `ssh_powerschool` — SSH tunnel for ODBC
-- `ssh_amplify`, `ssh_edplan`, `ssh_iready`, `ssh_renlearn`, `ssh_titan` — SFTP
-- `ssh_couchdrop` — Couchdrop SFTP
-- `google_drive` — used by Couchdrop sensor
-- `overgrad` — Overgrad API

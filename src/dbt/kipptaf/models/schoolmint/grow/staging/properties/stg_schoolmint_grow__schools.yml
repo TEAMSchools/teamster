@@ -10,8 +10,6 @@ models:
                 field: name
               config:
                 where: name != '[Training School]'
-                store_failures: true
-                severity: warn
       - name: school_id
         data_type: string
       - name: abbreviation

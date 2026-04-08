@@ -37,6 +37,8 @@ models:
         data_type: float64
       - name: testscalescore
         data_type: float64
+      - name: testscorecomplete
+        data_type: float64
       - name: twoormoreraces
         data_type: string
       - name: white
@@ -49,6 +51,8 @@ models:
         data_type: int64
       - name: discipline
         data_type: string
+      - name: is_bl_fb
+        data_type: boolean
       - name: is_proficient
         data_type: boolean
       - name: testperformancelevel_text

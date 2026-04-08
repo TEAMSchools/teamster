@@ -20,8 +20,9 @@ def _test(sensor, ssh_powerschool, db_powerschool):
 
     assert sensor_results.run_requests is not None
 
-    for result in sensor_results.run_requests:
-        context.log.info(result)
+    for run_request in sensor_results.run_requests:
+        assert run_request.run_key is not None
+        assert run_request.job_name is not None
 
 
 def test_powerschool_sis_sensor_kippnewark():

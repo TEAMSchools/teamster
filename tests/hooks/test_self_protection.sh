@@ -23,7 +23,7 @@ expect_deny "bash devcontainer scripts" Bash command "cat .devcontainer/scripts/
 expect_allow "read settings.json" Read file_path ".claude/settings.json"
 expect_allow "read hooks/" Read file_path ".claude/hooks/check-sensitive.sh"
 expect_allow "grep in hooks/" Grep path ".claude/hooks/"
-expect_allow "read devcontainer scripts" Read file_path ".devcontainer/scripts/inject-secrets.sh"
+expect_allow "read devcontainer scripts" Read file_path ".devcontainer/scripts/postCreate.sh"
 
 # ─── Shell snapshots self-protection ──────────────────────────────────────────
 echo ""
@@ -55,7 +55,7 @@ echo -e "${YELLOW}Content mentioning protected paths (not accessing them)${NC}"
 
 expect_allow2 "write file whose content mentions .claude/hooks/" Write file_path "docs/CLAUDE.md" content "See .claude/hooks/ for details"
 expect_allow2 "write file whose content mentions .trunk/config/" Write file_path "docs/CLAUDE.md" content "SQL rules in .trunk/config/.sqlfluff"
-expect_allow2 "write file whose content mentions .devcontainer/scripts/" Write file_path "docs/CLAUDE.md" content "Run .devcontainer/scripts/inject-secrets.sh"
+expect_allow2 "write file whose content mentions .devcontainer/scripts/" Write file_path "docs/CLAUDE.md" content "Run .devcontainer/scripts/postCreate.sh"
 expect_allow2 "edit file whose new_string mentions .claude/hooks/" Edit file_path "docs/CLAUDE.md" new_string "Read .claude/hooks/check-sensitive.sh"
 expect_allow2 "write file whose content mentions .git/hooks/" Write file_path "docs/guide.md" content "Pre-commit runs via .git/hooks/pre-commit"
 

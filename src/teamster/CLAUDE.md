@@ -7,7 +7,7 @@ teamster/
   __init__.py             # GCS_PROJECT_NAME = "teamster-332318"
   core/                   # Shared infrastructure (IO managers, resources, utils)
   libraries/              # Reusable asset builders, resources, and schemas
-  code_locations/         # Per-school Dagster definitions (kipptaf, kippnewark, etc.)
+  code_locations/         # Per-district Dagster definitions (kipptaf, kippnewark, etc.)
 ```
 
 ## Library + Code Location Pattern
@@ -16,11 +16,11 @@ Integrations follow a two-layer separation:
 
 1. **`libraries/<integration>/`** — reusable factory functions, resource
    classes, Avro schemas, and sensors. Never import from a code location.
-2. **`code_locations/<school>/<integration>/`** — calls the library factory with
-   school-specific YAML config via `config_from_files()`. Wires assets into the
-   code location's `definitions.py`.
+2. **`code_locations/<district>/<integration>/`** — calls the library factory
+   with district-specific YAML config via `config_from_files()`. Wires assets
+   into the code location's `definitions.py`.
 
-This means adding a new school to an existing integration requires only YAML
+This means adding a new district to an existing integration requires only YAML
 config and a few lines of Python in the code location — no library changes.
 
 ## Python Standards
@@ -31,26 +31,32 @@ for nullable params, and `_` for unused unpacked variables. Callable-returning
 functions annotate as `Callable[[], ReturnType]` (import from
 `collections.abc`).
 
+**`defaultdict` typing**: `defaultdict(set[T])` works at runtime in 3.13
+(GenericAlias is callable) but is semantically wrong — use
+`defaultdict[K, set[T]](set)` with the subscript on the type annotation, not the
+factory argument.
+
+**Inline type parameters** (PEP 695): Prefer `def foo[T](x: T) -> T` over
+`TypeVar`. The formatter removes unused `TypeVar` imports before the binding is
+defined, causing unresolved name errors.
+
 **kwargs forwarding**: When extracting a kwarg default before spreading
 `**kwargs`, always use `pop`, never `get` — `get` leaves the key in `kwargs`,
 causing `TypeError: got multiple values for keyword argument` if the caller
 passed it. `chunk()` from `core/utils/functions` returns `Iterator[list]`, not
 `list` — wrap in `list()` if `len()` or multiple passes are needed.
 
-**Docstrings (mkdocstrings-compatible)**:
+**Docstrings**: Follow the
+[Google Python Style Guide](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings).
+API reference URLs go in the extended description, never the summary line.
 
-- First line must be a human-readable summary — never a raw URL. API reference
-  URLs go in the extended description as `[API reference](url)`.
-- All modules need a module-level docstring; mkdocstrings uses it as the page
-  intro.
-- Classes document configurable fields in `Attributes:`. Methods that propagate
-  exceptions document them in `Raises:`.
-- Private members (`_name`) are hidden by default — public API requires full
-  docstrings; private methods need only enough for internal comprehension.
-- Cross-references: `[text][full.module.path.ClassName.method]` for clickable
-  links within docs; backtick code renders as inline code but is not linked.
-- `Note:` and `Warning:` sections render as callout boxes — use for behavioral
-  gotchas (e.g. "errors are collected and returned, not raised").
+`ScheduleEvaluationContext.log` and `SensorEvaluationContext.log` return
+`logging.Logger`; `AssetExecutionContext.log` returns `DagsterLogManager`. Use
+`logging.Logger` when a function accepts log from any context.
+
+**Runtime type narrowing**: Use `check.is_tuple()`, `check.inst()`,
+`check.not_none()` from `dagster_shared` — never `assert isinstance(...)`
+(`assert` is stripped by `-O`).
 
 ## Library Categories
 
@@ -69,6 +75,10 @@ code location using the generic SFTP factory.
 
 ## Code Location Structure
 
+`kippnewark` is the most complete district code location — it uses every
+available integration. Use it as the reference implementation when adding new
+integrations to other districts.
+
 Each code location follows the same layout:
 
 ```text
@@ -83,11 +93,11 @@ code_locations/<name>/
 
 **Identity constants** (defined in `__init__.py`):
 
-| Constant              | Example (`kippnewark`)         |
-| --------------------- | ------------------------------ |
-| `CODE_LOCATION`       | `"kippnewark"`                 |
-| `LOCAL_TIMEZONE`      | `ZoneInfo("America/New_York")` |
-| `CURRENT_FISCAL_YEAR` | `2026`                         |
+| Constant              | Example (`kippnewark`)          |
+| --------------------- | ------------------------------- |
+| `CODE_LOCATION`       | `"kippnewark"`                  |
+| `LOCAL_TIMEZONE`      | `ZoneInfo("America/New_York")`  |
+| `CURRENT_FISCAL_YEAR` | fiscal year (updated each July) |
 
 **GCS bucket**: `teamster-<code_location>` (redirects to `teamster-test` in
 branch deployments).
@@ -132,7 +142,9 @@ with partition dimension values via `regex_pattern_replace()`.
 
 **SFTP sensors**: List remote directories, match files against asset regexes,
 extract partition keys from named groups, emit `RunRequest`s grouped by
-`(job_name, partition_key)`.
+`(job_name, partition_key)`. Sensor cursors should store max file mtime from
+matched files, not `now.timestamp()` — wall-clock cursors skip files with older
+mtimes.
 
 **Fiscal year**: July 1 start. `FiscalYear` class and
 `FiscalYearPartitionsDefinition` in `core/utils/classes.py`.
@@ -149,3 +161,6 @@ uv run dagster definitions validate -m teamster.code_locations.kipptaf.definitio
 # Prepare and package a dbt project (required before running dbt assets)
 uv run dagster-dbt project prepare-and-package --file src/teamster/code_locations/kipptaf/__init__.py
 ```
+
+`dagster definitions validate` may mislead locally — env vars unavailable in
+codespace cause false errors unrelated to production failures.

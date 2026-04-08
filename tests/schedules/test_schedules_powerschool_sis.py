@@ -1,4 +1,4 @@
-from dagster import DagsterInstance, build_schedule_context
+from dagster import DagsterInstance, RunRequest, build_schedule_context
 
 from tests.utils import get_db_powerschool_resource, get_ssh_powerschool_resource
 
@@ -13,10 +13,11 @@ def _test(schedule, ssh_powerschool, db_powerschool):
             "db_powerschool": db_powerschool,
         },
     ) as context:
-        output = schedule(context=context)
+        output = list(schedule(context=context))
 
-    for o in output:
-        context.log.info(o)
+    for run_request in output:
+        assert isinstance(run_request, RunRequest)
+        assert run_request.run_key is not None
 
 
 def test_powerschool_sis_asset_gradebook_schedule_kippnewark():

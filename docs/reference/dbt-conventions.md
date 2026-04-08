@@ -97,13 +97,9 @@ consumed by reporting tools and applications.
   for system_time as of timestamp('2025-08-22 23:59:59')
   ```
 
-- **New external sources** — before building, stage them first:
-
-  ```bash
-  uv run dbt run-operation stage_external_sources \
-    --vars "{'ext_full_refresh': 'true'}" \
-    --args 'select: [model_name]'
-  ```
+- **New or modified external sources** — stage before building. See
+  [Staging external sources](../guides/dbt-development.md#staging-external-sources)
+  for the full command and CI requirements.
 
 ### `ref()` and `source()`
 
@@ -174,8 +170,6 @@ models:
             combination_of_columns:
               - column_a
               - column_b
-          config:
-            store_failures: true
 ```
 
 ## Exposures

@@ -43,9 +43,10 @@
       (`stg_`, `rpt_`, mart) will break downstream exposures. Coordinate with
       affected teams before merging and document your rollback plan in the
       summary above.
-- [ ] If adding a new external source, run `stage_external_sources` before
-      building — see
-      [SQL conventions](https://teamschools.github.io/teamster/reference/dbt-conventions/#sql-conventions)
+- [ ] If adding or modifying an external source, run `stage_external_sources`
+      with **`--target staging`** so the dbt Cloud CI job can find the table.
+      See
+      [Staging external sources](https://teamschools.github.io/teamster/guides/dbt-development/#staging-external-sources)
 
 ### Docs _(skip if no schedule, sensor, or integration changes)_
 

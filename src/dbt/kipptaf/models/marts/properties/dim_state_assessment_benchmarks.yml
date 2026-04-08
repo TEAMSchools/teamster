@@ -6,11 +6,8 @@ models:
         data_type: string
         description:
           Surrogate key on (academic_year, test_name, test_code, region).
-        tests:
-          - unique:
-              config:
-                severity: Warn
-                store_failures: true
+        data_tests:
+          - unique
 
       - name: academic_year
         data_type: int64

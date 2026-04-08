@@ -44,11 +44,13 @@ table that is the true data source) or to bypass intermediate VIEW assets that
 would otherwise fan out cross-partition updates. Pass `automation_condition` to
 enable reactive triggering (typically `AutomationCondition.eager()`).
 
-Example — `intacct_extract` deps rationale:
+## Gotchas
 
-- `stg_adp_payroll__general_ledger_file` (TABLE, partitioned) — partition-aware;
-  updates one partition at a time
-- `rpt_gsheets__intacct_integration_file` (VIEW, same partitions) — partition-
-  aware; triggers when the VIEW model code changes
-- `stg_google_sheets__finance__payroll_code_mapping` (TABLE, non-partitioned) —
-  fans out to ALL extract partitions when the mapping table refreshes
+**Empty query results**: The `_asset` function returns early when BigQuery
+yields zero rows — do not remove that guard (`transform_data()` crashes on
+CSV/TSV/TXT with empty data).
+
+**Unpartitioned dep fan-out**: Per `core/CLAUDE.md` "Dep fan-out rule", use
+`any_deps_updated().ignore(AssetSelection.keys(...))` instead of bare `eager()`
+when a partitioned extract has unpartitioned deps. See
+`kipptaf/extracts/assets.py` `_INTACCT_AUTOMATION_CONDITION` for the pattern.
