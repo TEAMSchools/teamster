@@ -44,7 +44,10 @@ left join
     and rt.type = 'SURVEY'
 left join
     {{ ref("int_people__staff_roster_history") }} as srh
-    on lower(regexp_extract(fr.respondent_email, r'^([^@]+)')) = srh.sam_account_name
+    on (
+        lower(regexp_extract(fr.respondent_email, r'^([^@]+)')) = srh.sam_account_name
+        or fr.respondent_email = srh.google_email
+    )
     and timestamp(fr.last_submitted_time)
     between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
     and srh.primary_indicator
@@ -99,7 +102,10 @@ left join
     and sr.response_id = ri.response_id
 left join
     {{ ref("int_people__staff_roster_history") }} as srh
-    on lower(regexp_extract(ri.respondent_mail, r'^([^@]+)')) = srh.sam_account_name
+    on (
+        lower(regexp_extract(ri.respondent_mail, r'^([^@]+)')) = srh.sam_account_name
+        or ri.respondent_mail = srh.google_email
+    )
     and sr.response_date_submitted
     between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
     and srh.primary_indicator
