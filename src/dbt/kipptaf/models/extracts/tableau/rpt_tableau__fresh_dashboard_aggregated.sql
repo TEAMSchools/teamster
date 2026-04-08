@@ -161,7 +161,9 @@ left join
     and s.goal_type = f.goal_type
     and s.goal_name = f.goal_name
     and s.grouped_status_timeframe = f.grouped_status_timeframe
-where s.goal_type in ('Inquiries', 'Applications')
+where
+    s.goal_type in ('Inquiries', 'Applications')
+    and s.goal_granularity = 'Region/Grade Level'
 
 union all
 
