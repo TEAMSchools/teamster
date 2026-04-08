@@ -87,6 +87,7 @@
     }
   },
   "python.analysis.typeCheckingMode": "off",
+  "yaml.validate": false,
   "dbt.deferConfigPerProject": {
     "src/dbt/kipptaf": {
       "deferToProduction": false,
