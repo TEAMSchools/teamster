@@ -79,7 +79,6 @@
   "[python]": {
     "editor.defaultFormatter": "trunk.io"
   },
-  "claudeCode.preferredLocation": "sidebar",
   "terminal.integrated.profiles.linux": {
     "Claude Code": {
       "path": "claude",
