@@ -128,3 +128,9 @@ defaults.
 - **GKE log queries**: Filter by `resource.labels.pod_name:<prefix>` for
   container logs, `resource.type="k8s_cluster"` for k8s events (scheduling,
   scaling, eviction). Use `jsonPayload.reason` to filter event types.
+- **Pathlib `AttributeError` on code server startup**: `PosixPath` missing
+  `_str`/`_drv` slots = SIGTERM hit during Python module import (preemption or
+  eviction). Pods self-heal on restart. Safe to mute in GCP Error Reporting.
+- **GCP Error Reporting investigation**: `list_group_stats` (find groups) →
+  `list_log_entries` (reconstruct multi-line tracebacks from individual log
+  entries) → `k8s_pod` events (find root cause: preemption, OOM, eviction).

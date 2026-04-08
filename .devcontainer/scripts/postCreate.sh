@@ -106,9 +106,5 @@ ln -sfn /etc/secret-volume /workspaces/teamster/secret-volume
 mkdir -p /tmp/dagster
 ln -sfn /tmp/dagster /workspaces/teamster/dagster-tmp
 
-# save 1Password token for on-demand use (conftest.py reads this at test time)
-echo "${OP_SERVICE_ACCOUNT_TOKEN}" >/etc/secret-volume/.op-token
-chmod 600 /etc/secret-volume/.op-token
-
 # remove sudo — must be last privileged step
 sudo rm -f /usr/local/bin/sudo /usr/bin/sudo

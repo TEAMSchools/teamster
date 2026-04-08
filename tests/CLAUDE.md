@@ -28,6 +28,9 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
 - **`conftest.py`**: contains a single session-scoped autouse fixture that
   bootstraps secrets from 1Password on demand. No shared test fixtures — see
   `utils.py` for SSH/DB resource helpers (require env vars).
+- **Token file missing**: `_bootstrap_secrets` silently returns when
+  `/etc/secret-volume/.op-token` doesn't exist. If ALL env vars are missing,
+  check the token file first — don't investigate individual env vars.
 - **Archived tests**: `_test_` prefix in `archive/` subdirectories — ignored by
   pytest by convention, not markers.
 - **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields inside

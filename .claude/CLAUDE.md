@@ -28,6 +28,10 @@ regression test suite (`expect_deny_exit0`) enforces both invariants.
 directory, secret-volume, credentials JSON files, devcontainer template
 directory. See `check-sensitive.sh` for the full pattern list.
 
+**Silent hook blocks on search**: Grep/Glob on `.devcontainer/tpl/` for patterns
+containing sensitive keywords returns "No files found" — not a clear denial. Do
+not trust empty results in that directory.
+
 **High-risk proc/dev paths** (all tools blocked) — `/proc/*/environ`,
 `/proc/*/cmdline`, `/dev/fd/`.
 
