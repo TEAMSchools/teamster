@@ -76,9 +76,10 @@ select
 from {{ ref("int_surveys__survey_responses") }} as sr
 left join
     {{ ref("int_people__staff_roster_history") }} as srh
-    on sr.respondent_email = srh.google_email
+    on sr.respondent_employee_number = srh.employee_number
     and sr.date_submitted
     between srh.effective_date_start_timestamp and srh.effective_date_end_timestamp
+    and srh.primary_indicator
 left join
     {{ ref("int_extracts__student_enrollments") }} as se1
     on sr.respondent_email = se1.student_email
