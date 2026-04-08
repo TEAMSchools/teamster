@@ -69,10 +69,20 @@ After the brainstorm conversation, Claude will:
    system labels.
 2. **Ask you: worktree or branch switch?** These are two ways to create a
    development branch. Claude will not choose for you.
-   - **Branch switch** — switches your current workspace to the new branch.
-     Simpler, but you can't work on `main` while the branch is active.
-   - **Worktree** — creates an isolated copy of the repo in a separate
-     directory. Useful when you want to keep `main` untouched.
+   - **Branch switch** — switches your current workspace to the new branch. One
+     directory, no extra setup. Tradeoff: you can't work on `main` or another
+     feature without switching back.
+   - **Worktree** — creates a second checkout in `.worktrees/<branch>`. Your
+     original workspace stays on its current branch, so you can run other code
+     or start a separate feature in parallel. Tradeoff: two directories to
+     manage, and your editor needs to open the worktree path.
+
+   | Consideration                                               | Branch switch                  | Worktree                                    |
+   | ----------------------------------------------------------- | ------------------------------ | ------------------------------------------- |
+   | Single-task focus                                           | Good — one branch, one context | Unnecessary overhead                        |
+   | Parallel work (e.g., reviewing a PR while coding a feature) | Must stash/switch constantly   | Each task has its own directory             |
+   | Editor comfort                                              | Tabs and open files stay put   | Need to open a second window or re-navigate |
+
 3. Create and link the dev branch. Branch names follow
    [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/):
    `<gh-username>/<commit-type>/claude-<brief-description>`.
