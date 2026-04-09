@@ -71,10 +71,18 @@ list_code_locations → names + loadStatus. Per LOADED location IN PARALLEL:
     after_timestamp={EPOCH}).
   list_schedules(repository_location_name="<loc>", schedule_status="RUNNING").
 
-Collect: tickId, timestamp, location, error (300 chars). Extract gRPC IP
-("ipv4:<ip>:<port>"). Note locations with 0 failures. Flag non-LOADED for 3a.
+Collect per failure tick: tickId, timestamp, location, grpcIp (extracted from
+"ipv4:<ip>:<port>"), error (300 chars). Note locations with 0 failures. Flag
+non-LOADED for 3a.
 
-For locations with failures, fetch context ticks (ALL statuses):
+Per location write ALL failure ticks as an array (not count + sample):
+  [{tickId, timestamp, grpcIp, error}]
+
+For locations with failures, also fetch get_location_load_history(limit=5)
+and include deploy timestamps in the output. Note: load history returns N
+most recent deploys regardless of timestamp — filter to in-window deploys.
+Then fetch context ticks
+(ALL statuses):
   get_tick_history(same sensor, after_timestamp=<first_fail - 60>,
     before_timestamp=<last_fail + 60>, limit=50).
 Per context tick: timestamp, status, gRPC IP if present. Flat array.
@@ -143,7 +151,11 @@ mcp__gke__query_logs(project_id="teamster-332318",
   time_range={startTime: "{UTC_START}", endTime: "{UTC_END}"}, limit=100,
   format="{{.timestamp}} {{.resource.labels.pod_name}} {{.jsonPayload.reason}} {{.jsonPayload.message}}").
 
-Per entry: timestamp, reason, pod/object name, message. Flag truncation.
+Per entry: timestamp, reason, pod/object name, message.
+
+`mcp__gke__query_logs` caps at 100 results. If either query returns 100
+(truncated), paginate: use the last entry's timestamp as the new `start_time`
+and re-query. Repeat until results < 100. Deduplicate by timestamp + pod name.
 
 ## 7. Alerts
 
@@ -205,18 +217,41 @@ Read from `dagster-tmp/day2/{DATE}/` per manifest.
 **Reclassify** runs using cross-signal context:
 
 - "Unclassified"/"Connection failure" → "Agent API timeout" if agent errors show
-  "ReadTimeout" + `*.agent.dagster.cloud` in same window.
+  "ReadTimeout" + `*.agent.dagster.cloud` in same window. Note: ReadTimeout to
+  `*.agent.dagster.cloud` only appears in agent `errors` array, not GKE logs.
 - Override wrong categories (e.g. "Code error" that's actually K8s API timeout).
 - New OOM runs → pull memory metrics per step 9.
 
-**Deploy rollover**: gRPC UNAVAILABLE ticks in brief clusters bounded by
-successes + IP change between clusters = code server pod replacement. Report
-per-cluster duration (consecutive failures × ~30s), not first-to-last span.
+**Tick failure analysis**: For any location with >5 gRPC UNAVAILABLE tick
+failures, run this procedure before attributing a root cause:
+
+1. Sort failure ticks ascending, cluster by gap >120s
+2. Cross-reference deploy timestamps from location load history (step 3 data)
+3. Clusters aligned with a deploy timestamp = deploy rollover (1–5 ticks)
+4. For remaining clusters: query GKE pod events for `<location>-prod-*` pods in
+   the failure window (`mcp__gke__query_logs`, reason includes Preempted,
+   Evicted, OOMKilling, Killing). gRPC IPs in tick errors are Service ClusterIPs
+   — they are always stable and cannot distinguish pod replacement from
+   container restarts.
+5. Classify by GKE event type:
+   - **Preempted** "by pod \<uuid\>": priority preemption by run/step pods
+     (priority 1000 vs code server 0). Check for hourly pattern (>50% in first 5
+     min of hour = schedule-triggered). PDB is bypassed. Escalate.
+   - **Evicted** "low on resource: memory": node memory pressure. Monitor.
+   - **OOMKilling**: container OOM (pod survives, container restarts).
+     Investigate memory requests.
+   - **Killing** without Preempted/Evicted: agent cleanup or deploy rollover.
+
+Note: if no GKE pod events correlate with tick failures, consider health check
+starvation — long sensor evals blocking gRPC threads. Diagnose: agent logs
+"failed a health check … 300 seconds" + SuccessfulCreate frequency.
 
 **Agent topology**: Steady state = 2 RUNNING. Flag deviations. Cross-reference
 step 6 pod events filtered to `user-cloud-dagster-cloud-agent-agent` for cause
 (Preempted/Evicted/OOMKilling). Step 4a churn: 2–4 creates = one-off, >>4 =
-sustained storm.
+sustained storm. Agents at priority 0 can be preempted by run/step pods at
+priority 1000 — symptoms: all-location gRPC UNAVAILABLE + "no agents have
+recently heartbeated" + many SuccessfulCreate+Preempted on agent pods.
 
 **Timeline table** (ET): run failures, tick failures, schedule tick failures,
 location load failures, agent errors, code server failures, unhealthy daemons,
@@ -274,6 +309,9 @@ if none.
 **Actions**: No action (transient + retry success), Monitor
 (recurring/emerging), Investigate (retry failure), Escalate (sustained platform
 issue).
+
+**Known self-resolving alerts**: kipptaf `dagster-step-*` CPU alerts (1000m
+during import) self-resolve ~60s. Action: No action.
 
 Flag truncation if any query hit pagination limits.
 

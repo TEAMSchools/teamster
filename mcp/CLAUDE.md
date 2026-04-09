@@ -51,6 +51,10 @@ Authenticates via ADC as **impersonated service account**
 identity. Permissions are on the `CodespacesRole` custom IAM role. If calls
 return `PermissionDenied`, check that role, not user IAM bindings.
 
+`mcp__gke__query_logs` uses snake_case keys in `time_range` (`start_time`,
+`end_time`), not camelCase. Results cap at 100 — paginate by using the last
+entry's timestamp as the next `start_time`.
+
 ## BigQuery MCP
 
 The BigQuery MCP tool truncates results at 50 rows. When querying

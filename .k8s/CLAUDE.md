@@ -14,9 +14,9 @@ on GKE Autopilot.
 
 - `values.yaml` is auto-downloaded from Helm — never edit. All customizations go
   in `values-override.yaml`.
-- **Helm upgrades are manual** — `git push` triggers Dagster Cloud code location
-  image builds, not Helm agent upgrades. Agent config changes in
-  `values-override.yaml` require a manual `helm upgrade`.
+- **Helm deploy is manual** — editing `values-override.yaml` is fine, but
+  changes only take effect after `helm upgrade`. `git push` builds code location
+  images, not Helm agent config.
 - `serverProcessStartupTimeout` (Helm `workspace` key, default 180s) — time the
   agent waits for a code server gRPC ping after creating the Deployment.
   Currently set to 300s in `values-override.yaml`.
@@ -134,3 +134,27 @@ defaults.
 - **GCP Error Reporting investigation**: `list_group_stats` (find groups) →
   `list_log_entries` (reconstruct multi-line tracebacks from individual log
   entries) → `k8s_pod` events (find root cause: preemption, OOM, eviction).
+- **Timeout types** (do not conflate): Startup (`serverProcessStartupTimeout`,
+  default 180s) = agent→code server gRPC ping; failure → deployment removed +
+  replacement, causes churn. Sensor execution (300s) = sensor ran too long; code
+  server stays up, no churn.
+- **Code server startup failure signals**: Check ALL pods for the deployment.
+  `Aborted!` stderr = SIGABRT (native crash). `DagsterExecutionInterruptedError`
+  = SIGTERM during import (rollover). Silent hang after "Starting Dagster code
+  server" = blocked I/O — confirm with
+  `kubernetes.io/container/cpu/core_usage_time` (`ALIGN_RATE`,
+  `alignmentPeriod: "60s"`): near-zero CPU on Running/Ready pod = I/O block.
+- **Agent health check replacement paths**: Four paths replace code server. Only
+  gRPC UNAVAILABLE uses grace period
+  (`DAGSTER_CLOUD_CODE_SERVER_HEALTH_CHECK_REDEPLOY_TIMEOUT` = startup timeout).
+  Other three immediate: error state (SerializableErrorInfo), recovery (agent
+  local error vs Cloud healthy), pex disappeared. "300 seconds" log + immediate
+  replace = hit immediate path on next reconciliation.
+- **GKE traceback retrieval**: Tracebacks split across many log entries. Search
+  exception line first:
+  `textPayload:("Exception" OR "Error") AND NOT textPayload:"BetaWarning"`.
+  Narrow timestamp. pageSize 10-15 (50 exceeds tokens on per-line entries).
+- **Pod zone placement**: `list_log_entries` with
+  `resource.type="gce_subnetwork"` +
+  `logName=".../compute.googleapis.com%2Ffirewall"` → `instance.zone` +
+  `remote_instance.zone`. Filter `dest_port=4000` for agent→code-server gRPC.

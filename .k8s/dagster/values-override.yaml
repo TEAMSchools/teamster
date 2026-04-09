@@ -192,6 +192,13 @@ workspace:
             matchLabels:
               managed_by: K8sUserCodeLauncher
               deployment_name: prod
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              managed_by: K8sUserCodeLauncher
+              deployment_name: prod
 
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
