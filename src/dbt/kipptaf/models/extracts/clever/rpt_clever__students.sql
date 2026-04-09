@@ -11,8 +11,8 @@ select
 
     sc.relationship_type as contact_relationship,
 
-    sr.cumulative_y1_gpa as unweighted_gpa,
-    sr.cumulative_y1_gpa_unweighted as weighted_gpa,
+    sr.cumulative_y1_gpa as weighted_gpa,
+    sr.cumulative_y1_gpa_unweighted as unweighted_gpa,
 
     null as hispanic_latino,
     null as home_language,

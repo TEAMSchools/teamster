@@ -3,12 +3,13 @@
 ## Workflows
 
 - `claude-code-review.yaml` — auto-reviews PRs touching `src/`, `tests/`,
-  `scripts/`, `mcp/` (excludes markdown). Uses `sonnet` model.
-- `claude.yaml` — responds to `@claude` mentions on issues/PRs. Uses `sonnet`
-  model.
+  `scripts/`, `mcp/` (excludes markdown).
+- `claude.yaml` — responds to `@claude` mentions on issues/PRs.
 - `dagster-cloud-deploy.yaml` — reusable workflow (`workflow_call`) for
   multi-arch Docker builds and Dagster Cloud deploys. Called by per-location
-  `deploy-prod-*.yaml` workflows.
+  `deploy-prod-*.yaml` workflows. Uses `cancel-in-progress: true` grouped by
+  workflow + ref + event — rapid pushes to the same branch cancel prior deploys.
+  Does not prevent multiple locations deploying simultaneously from one commit.
 - `trunk-check.yaml` — runs Trunk linter on PRs (excludes `requirements.txt`).
 - `mkdocs-gh-deploy.yaml` — deploys docs site on push to `main`.
 
@@ -34,7 +35,7 @@
 | `platform`            | maintain  | `.github/`, `.devcontainer/`, `.claude/`, `.trunk/`, Dockerfile, scripts, MCP |
 | `data-engineers`      | write     | `src/teamster/`, tests                                                        |
 | `analytics-engineers` | maintain  | All `src/dbt/`                                                                |
-| `analysts`            | write     | kipptaf `models/extracts/`, `models/exposures/`                               |
+| `analysts`            | write     | kipptaf folders without staging models (see CODEOWNERS)                       |
 | `data-team`           | write     | docs                                                                          |
 
 - GitHub API uses `push` (not `write`) for the permission field when setting
@@ -42,6 +43,5 @@
 
 ## Other Files
 
-- `dependabot.yml` — daily `uv` ecosystem updates.
 - `pull_request_template.md` — checklist for PRs (Dagster, dbt, docs sections).
 - `actionlint.yaml` — self-hosted runner labels for actionlint.

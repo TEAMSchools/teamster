@@ -5,7 +5,7 @@ and staleness evaluation logic shared across assets, schedules, and sensors.
 """
 
 import logging
-from collections.abc import Generator, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
@@ -70,6 +70,44 @@ def powerschool_connection(
             connection.close()
         finally:
             ssh_tunnel.kill()
+
+
+def with_powerschool_retry[_T](
+    ssh_resource: SSHResource,
+    db_resource: PowerSchoolODBCResource,
+    log: logging.Logger,
+    work_fn: Callable[[oracledb.Connection], _T],
+    max_attempts: int = 2,
+) -> _T:
+    """Run a function with a PowerSchool connection, retrying on failure.
+
+    Opens a tunnel and connection via ``powerschool_connection``, calls
+    ``work_fn`` with the connection, and returns the result. If the
+    connection or work_fn raises, tears down the tunnel and retries up to
+    ``max_attempts`` times before re-raising.
+
+    Args:
+        ssh_resource: SSHResource with open_ssh_tunnel() method.
+        db_resource: PowerSchoolODBCResource with connect() method.
+        log: Dagster logger (context.log).
+        work_fn: Callable that receives an open connection and returns a result.
+        max_attempts: Total attempts (initial + retries). Defaults to 2.
+
+    Returns:
+        The return value of work_fn.
+    """
+    for attempt in range(1, max_attempts + 1):
+        try:
+            with powerschool_connection(ssh_resource, db_resource, log) as conn:
+                return work_fn(conn)
+        except Exception:
+            if attempt == max_attempts:
+                raise
+            log.warning(
+                f"PowerSchool attempt {attempt}/{max_attempts} failed, retrying..."
+            )
+
+    raise AssertionError("unreachable: max_attempts must be >= 1")
 
 
 def format_oracle_timestamp(timestamp: float, tz: ZoneInfo) -> str:
@@ -151,18 +189,15 @@ def get_query_text(
     """
     # TODO: parameterize sqlalchemy query to resolve bandit/B608
     if column is None:
-        # trunk-ignore(bandit/B608)
         query = f"SELECT COUNT(*) FROM {table}"
     elif end_value is None:
         query = (
-            # trunk-ignore(bandit/B608)
             f"SELECT COUNT(*) FROM {table} "
             f"WHERE {column} >= "
             f"TO_TIMESTAMP('{start_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
         )
     else:
         query = (
-            # trunk-ignore(bandit/B608)
             f"SELECT COUNT(*) FROM {table} "
             f"WHERE {column} BETWEEN "
             f"TO_TIMESTAMP('{start_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "

@@ -10,17 +10,16 @@ from teamster.libraries.powerschool.sis.odbc.utils import StalenessResult
 
 class TestBuildPowerschoolAssetSensor:
     @patch("teamster.libraries.powerschool.sis.odbc.sensors.evaluate_asset_staleness")
-    @patch("teamster.libraries.powerschool.sis.odbc.sensors.powerschool_connection")
+    @patch("teamster.libraries.powerschool.sis.odbc.sensors.with_powerschool_retry")
     def test_returns_sensor_result_with_grouped_run_requests(
-        self, mock_conn_ctx, mock_eval
+        self, mock_retry, mock_eval
     ):
         from teamster.libraries.powerschool.sis.odbc.sensors import (
             build_powerschool_asset_sensor,
         )
 
-        mock_conn = MagicMock()
-        mock_conn_ctx.return_value.__enter__ = MagicMock(return_value=mock_conn)
-        mock_conn_ctx.return_value.__exit__ = MagicMock(return_value=False)
+        # Make mock_retry call the work_fn with a fake connection
+        mock_retry.side_effect = lambda *, work_fn, **kw: work_fn(MagicMock())
 
         mock_eval.return_value = [
             StalenessResult(
@@ -48,7 +47,6 @@ class TestBuildPowerschoolAssetSensor:
             asset_selection=[asset1, asset2],
         )
 
-        # Access the underlying decorated function to bypass Dagster invocation
         inner_fn = sensor_def._raw_fn
 
         context = MagicMock()
@@ -68,15 +66,13 @@ class TestBuildPowerschoolAssetSensor:
         # trunk-ignore-end(pyright)
 
     @patch("teamster.libraries.powerschool.sis.odbc.sensors.evaluate_asset_staleness")
-    @patch("teamster.libraries.powerschool.sis.odbc.sensors.powerschool_connection")
-    def test_empty_results_returns_sensor_result(self, mock_conn_ctx, mock_eval):
+    @patch("teamster.libraries.powerschool.sis.odbc.sensors.with_powerschool_retry")
+    def test_empty_results_returns_sensor_result(self, mock_retry, mock_eval):
         from teamster.libraries.powerschool.sis.odbc.sensors import (
             build_powerschool_asset_sensor,
         )
 
-        mock_conn = MagicMock()
-        mock_conn_ctx.return_value.__enter__ = MagicMock(return_value=mock_conn)
-        mock_conn_ctx.return_value.__exit__ = MagicMock(return_value=False)
+        mock_retry.side_effect = lambda *, work_fn, **kw: work_fn(MagicMock())
         mock_eval.return_value = []
 
         asset = MagicMock(spec=AssetsDefinition)

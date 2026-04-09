@@ -13,3 +13,9 @@ structure.
 `SSHException`). Non-partitioned assets only.
 
 **`schema.py`**: Avro schemas for Titan K12 SFTP file formats.
+
+## Asset Checks
+
+Code locations define freshness checks on `titan/person_data` and
+`stg_titan__person_data` — deadline 11:30pm, 30-minute window (kippcamden,
+kippnewark).
