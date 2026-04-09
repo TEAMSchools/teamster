@@ -22,7 +22,7 @@ with
             schoolid,
             week_start_monday,
             week_end_sunday
-    )
+    ),
 
     running as (
         select

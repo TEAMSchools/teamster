@@ -233,5 +233,3 @@ models:
         data_type: boolean
       - name: fafsa_status_mismatch_category
         data_type: string
-      - name: region_official_name
-        data_type: string

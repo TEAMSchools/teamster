@@ -445,7 +445,7 @@ select
     null as n_is_null_not_missing,
     null as n_expected,
     null as n_expected_scored,
-    null as um_totalpointvalue_section_quarter_category,
+    null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
@@ -675,7 +675,7 @@ select
     null as scoretype,
     null as totalpointvalue,
     null as scorepoints,
-    null as expected_,
+    null as is_expected_late,
     null as is_exempt,
     null as is_expected_missing,
     null as is_expected_zero,
