@@ -85,8 +85,6 @@ with
         where e.include_row is null
     )
 
-/* this captures 'class_category_assignment': w_assign_max_score_not_10,
-   f_assign_max_score_not_10, h_assign_max_score_not_10, s_max_score_greater_100 */
 select
     r._dbt_source_relation,
     r.academic_year,
@@ -178,7 +176,6 @@ select
 from teacher_unpivot_cca as r
 
 union all
--- this captures 'class_category'
 select
     r._dbt_source_relation,
     r.academic_year,

@@ -1,5 +1,4 @@
 with
-    /* Branch 1: Aggregate 16 student assignment flags to teacher×assignment grain */
     student_assignment_rollup as (
         select
             _dbt_source_relation,
@@ -192,8 +191,6 @@ with
             e1.include_row is null and e2.include_row is null and e3.include_row is null
     ),
 
-    /* Branch 2: Aggregate 4 student category flags to
-       teacher×section×quarter×category grain */
     student_category_rollup as (
         select
             _dbt_source_relation,
@@ -307,7 +304,6 @@ with
         where e.include_row is null
     ),
 
-    /* Branch 3: Aggregate 7 EOQ student flags to teacher×section×quarter grain */
     student_eoq_rollup as (
         select
             _dbt_source_relation,
@@ -427,9 +423,6 @@ with
         where e1.include_row is null
     ),
 
-    /* Branch 4: Conduct code flags — UNPIVOT at student grain, filter by
-       grade_level via flags join, apply exceptions, then aggregate to
-       teacher×section×quarter×flag grain and join teacher context */
     student_conduct_unpivoted as (
         select *,
         from
@@ -568,7 +561,6 @@ with
         where t.scaffold_name = 'teacher_scaffold'
     )
 
-/* Branch 1: student assignment flags (aggregated) */
 select
     academic_year,
     academic_year_display,
@@ -642,7 +634,6 @@ from student_assignment_unpivot
 
 union all
 
-/* Branch 2: student category flags (aggregated) */
 select
     academic_year,
     academic_year_display,
@@ -716,7 +707,6 @@ from student_category_unpivot
 
 union all
 
-/* Branch 3: EOQ flags (aggregated, excluding conduct code) */
 select
     academic_year,
     academic_year_display,
@@ -792,7 +782,6 @@ from student_eoq_unpivot
 
 union all
 
-/* Branch 4: conduct code flags (aggregated, ES only) */
 select
     academic_year,
     academic_year_display,
@@ -868,7 +857,6 @@ from student_conduct_unpivot
 
 union all
 
-/* Branches 5-6: existing teacher flags (already at teacher grain) */
 select
     academic_year,
     academic_year_display,

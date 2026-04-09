@@ -197,7 +197,6 @@ with
         where e.include_row is null
     )
 
--- this captures all flags from assignment_student
 select
     r._dbt_source_relation,
     r.academic_year,
@@ -330,9 +329,6 @@ left join
 
 union all
 
-/* this captures all student_course_category: qt_effort_grade_missing,
-qt_formative_grade_missing, qt_summative_grade_missing, and
-w_grade_inflation */
 select
     _dbt_source_relation,
     academic_year,
@@ -458,7 +454,6 @@ from student_course_category
 
 union all
 
--- this captures all eoq items except conduct_code
 select
     _dbt_source_relation,
     academic_year,
@@ -583,7 +578,7 @@ select
 from eoq_items
 
 union all
--- this captures conduct_code
+
 select
     _dbt_source_relation,
     academic_year,
