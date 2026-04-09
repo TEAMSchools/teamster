@@ -1,7 +1,6 @@
 with
-    student_unpivot as (
-        select u.*, f.cte_grouping, f.audit_category, f.code_type,
-
+    student_unpivoted as (
+        select *,
         from
             {{ ref("int_tableau__gradebook_audit_assignments_student") }} unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -22,7 +21,12 @@ with
                     assign_s_ms_score_not_conversion_chart_options,
                     assign_s_hs_score_not_conversion_chart_options
                 )
-            ) as u
+            )
+    ),
+
+    student_unpivot as (
+        select u.*, f.cte_grouping, f.audit_category, f.code_type,
+        from student_unpivoted as u
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on u.academic_year = f.academic_year
@@ -69,10 +73,8 @@ with
             e1.include_row is null and e2.include_row is null and e3.include_row is null
     ),
 
-    eoq_items as (
-        select  -- All but Conduct Code
-            r.*, f.cte_grouping, f.audit_category, f.code_type,
-
+    eoq_items_unpivoted as (
+        select *,
         from
             {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -84,7 +86,12 @@ with
                     qt_percent_grade_greater_100,
                     qt_student_is_ada_80_plus_gpa_less_2
                 )
-            ) as r
+            )
+    ),
+
+    eoq_items as (
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
+        from eoq_items_unpivoted as r
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on r.academic_year = f.academic_year
@@ -108,10 +115,8 @@ with
         where e1.include_row is null
     ),
 
-    eoq_items_conduct_code as (
-        select  -- Conduct Code for ES (requires grade level join)
-            r.*, f.cte_grouping, f.audit_category, f.code_type,
-
+    eoq_items_conduct_code_unpivoted as (
+        select *,
         from
             {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -121,7 +126,13 @@ with
                     qt_g1_g8_conduct_code_missing,
                     qt_g1_g8_conduct_code_incorrect
                 )
-            ) as r
+            )
+    ),
+
+    -- Conduct Code for ES (requires grade level join)
+    eoq_items_conduct_code as (
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
+        from eoq_items_conduct_code_unpivoted as r
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on r.academic_year = f.academic_year
@@ -159,11 +170,8 @@ with
             r.school_level = 'ES' and e1.include_row is null and e2.include_row is null
     ),
 
-    /* w_grade_inflation, qt_effort_grade_missing, qt_formative_grade_missing,
-    qt_summative_grade_missing */
-    student_course_category as (
-        select r.*, f.cte_grouping, f.audit_category, f.code_type,
-
+    student_course_category_unpivoted as (
+        select *,
         from
             {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -172,7 +180,12 @@ with
                     qt_formative_grade_missing,
                     qt_summative_grade_missing
                 )
-            ) as r
+            )
+    ),
+
+    student_course_category as (
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
+        from student_course_category_unpivoted as r
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on r.academic_year = f.academic_year
