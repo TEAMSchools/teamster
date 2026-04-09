@@ -1,5 +1,79 @@
 with
-    teacher_aggs as (
+    student_teacher_aggs as (
+        select
+            academic_year,
+            academic_year_display,
+            region,
+            school_level,
+            region_school_level,
+            schoolid,
+            school,
+            `quarter`,
+            semester,
+            week_number_quarter as audit_qt_week_number,
+            quarter_start_date,
+            quarter_end_date,
+            is_current_term as is_current_quarter,
+            is_quarter_end_date_range,
+            week_start_monday as audit_start_date,
+            week_end_sunday as audit_end_date,
+            school_week_start_date_lead as audit_due_date,
+            is_current_week,
+            assignment_category_name,
+            assignment_category_code,
+            assignment_category_term,
+            expectation,
+            notes,
+            section_or_period,
+            sectionid,
+            sections_dcid,
+            section_number,
+            external_expression,
+            credit_type,
+            course_number,
+            course_name,
+            exclude_from_gpa,
+            is_ap_course,
+            teacher_number,
+            teacher_name,
+            teacher_tableau_username,
+            school_leader,
+            school_leader_tableau_username,
+            assignmentid as teacher_assign_id,
+            assignment_name as teacher_assign_name,
+            duedate as teacher_assign_due_date,
+            scoretype as teacher_assign_score_type,
+            totalpointvalue as teacher_assign_max_score,
+            n_students,
+            n_late,
+            n_exempt,
+            n_missing,
+            n_null,
+            n_academic_dishonesty,
+            n_is_null_missing,
+            n_is_null_not_missing,
+            n_expected,
+            n_expected_scored,
+
+            null as total_expected_scored_section_quarter_week_category,
+            null as total_expected_section_quarter_week_category,
+            null as percent_graded_for_quarter_week_class,
+
+            sum_totalpointvalue_section_quarter_category,
+            teacher_running_total_assign_by_cat,
+            teacher_avg_score_for_assign_per_class_section_and_assign_id,
+            audit_category,
+            cte_grouping,
+            code_type,
+            audit_flag_name,
+
+            max(audit_flag_value) as audit_flag_value,
+
+        from {{ ref("int_tableau__gradebook_audit_flags__student") }}
+        group by all
+    ),
+
+    teacher_teacher_aggs as (
         select
             academic_year,
             academic_year_display,
@@ -67,11 +141,11 @@ with
 
             max(audit_flag_value) as audit_flag_value,
 
-        from {{ ref("int_tableau__gradebook_audit_flags") }}
+        from {{ ref("int_tableau__gradebook_audit_flags__teacher") }}
         group by all
     ),
 
-    valid_flags as (
+    student_valid_flags as (
         select
             academic_year,
             region,
@@ -128,7 +202,72 @@ with
             audit_flag_name,
             audit_flag_value as flag_value,
 
-        from {{ ref("int_tableau__gradebook_audit_flags") }}
+        from {{ ref("int_tableau__gradebook_audit_flags__student") }}
+        where audit_flag_value = 1
+    ),
+
+    teacher_valid_flags as (
+        select
+            academic_year,
+            region,
+            schoolid,
+            `quarter`,
+            week_number_quarter as audit_qt_week_number,
+            assignment_category_term,
+            sectionid,
+            teacher_number,
+            assignmentid as teacher_assign_id,
+
+            null as studentid,
+            null as student_number,
+            null as student_name,
+            null as grade_level,
+            null as salesforce_id,
+            null as ktc_cohort,
+            null as enroll_status,
+            null as cohort,
+            null as gender,
+            null as ethnicity,
+            null as advisory,
+            null as year_in_school,
+            null as year_in_network,
+            null as rn_undergrad,
+            null as is_out_of_district,
+            null as is_retained_year,
+            null as is_retained_ever,
+            null as lunch_status,
+            null as gifted_and_talented,
+            null as iep_status,
+            null as lep_status,
+            null as is_504,
+            null as is_counseling_services,
+            null as is_student_athlete,
+            null as ada,
+            null as ada_above_or_at_80,
+            null as date_enrolled,
+
+            category_quarter_percent_grade,
+            category_quarter_average_all_courses,
+
+            null as quarter_course_percent_grade,
+            null as quarter_course_grade_points,
+            null as quarter_conduct,
+            null as quarter_comment_value,
+            null as raw_score,
+            null as score_entered,
+            null as assign_final_score_percent,
+            null as is_exempt,
+            null as is_expected_late,
+            null as is_expected_missing,
+            null as is_expected_academic_dishonesty,
+
+            audit_category,
+            cte_grouping,
+            code_type,
+            audit_flag_name,
+            audit_flag_value as flag_value,
+
+        from {{ ref("int_tableau__gradebook_audit_flags__teacher") }}
         where audit_flag_value = 1
     )
 
@@ -178,9 +317,9 @@ select
 
     coalesce(v.flag_value, 0) as flag_value,
 
-from teacher_aggs as t
+from student_teacher_aggs as t
 left join
-    valid_flags as v
+    student_valid_flags as v
     on t.academic_year = v.academic_year
     and t.region = v.region
     and t.schoolid = v.schoolid
@@ -247,9 +386,9 @@ select
 
     coalesce(v.flag_value, 0) as flag_value,
 
-from teacher_aggs as t
+from student_teacher_aggs as t
 left join
-    valid_flags as v
+    student_valid_flags as v
     on t.academic_year = v.academic_year
     and t.region = v.region
     and t.schoolid = v.schoolid
@@ -314,9 +453,9 @@ select
 
     coalesce(v.flag_value, 0) as flag_value,
 
-from teacher_aggs as t
+from student_teacher_aggs as t
 left join
-    valid_flags as v
+    student_valid_flags as v
     on t.academic_year = v.academic_year
     and t.region = v.region
     and t.schoolid = v.schoolid
@@ -381,9 +520,9 @@ select
 
     coalesce(v.flag_value, 0) as flag_value,
 
-from teacher_aggs as t
+from teacher_teacher_aggs as t
 left join
-    valid_flags as v
+    teacher_valid_flags as v
     on t.academic_year = v.academic_year
     and t.region = v.region
     and t.schoolid = v.schoolid
@@ -450,9 +589,9 @@ select
 
     coalesce(v.flag_value, 0) as flag_value,
 
-from teacher_aggs as t
+from teacher_teacher_aggs as t
 left join
-    valid_flags as v
+    teacher_valid_flags as v
     on t.academic_year = v.academic_year
     and t.region = v.region
     and t.schoolid = v.schoolid

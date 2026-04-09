@@ -1,9 +1,12 @@
 models:
-  - name: int_tableau__gradebook_audit_flags
+  - name: int_tableau__gradebook_audit_flags__student
     config:
-      enabled: false
-      cluster_by: cte_grouping
-      # materialized: table
+      materialized: table
+      cluster_by:
+        - code_type
+        - cte_grouping
+        - region
+        - schoolid
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -221,12 +224,6 @@ models:
         data_type: int64
       - name: n_expected_scored
         data_type: int64
-      - name: total_expected_scored_section_quarter_week_category
-        data_type: float64
-      - name: total_expected_section_quarter_week_category
-        data_type: float64
-      - name: percent_graded_for_quarter_week_class
-        data_type: float64
       - name: sum_totalpointvalue_section_quarter_category
         data_type: float64
       - name: teacher_running_total_assign_by_cat

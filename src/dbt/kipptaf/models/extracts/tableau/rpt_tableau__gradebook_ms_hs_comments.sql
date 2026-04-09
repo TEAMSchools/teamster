@@ -96,13 +96,13 @@ with
             n_is_null_not_missing,
             n_expected,
             n_expected_scored,
-            total_expected_scored_section_quarter_week_category,
-            total_expected_section_quarter_week_category,
-            percent_graded_for_quarter_week_class,
+            null as total_expected_scored_section_quarter_week_category,
+            null as total_expected_section_quarter_week_category,
+            null as percent_graded_for_quarter_week_class,
             sum_totalpointvalue_section_quarter_category,
             teacher_running_total_assign_by_cat,
             teacher_avg_score_for_assign_per_class_section_and_assign_id,
-        from {{ ref("int_tableau__gradebook_audit_flags") }}
+        from {{ ref("int_tableau__gradebook_audit_flags__student") }}
         where
             audit_flag_name = 'qt_grade_70_comment_missing'
             and credit_type != 'HR'
@@ -162,9 +162,9 @@ with
             n_is_null_not_missing,
             n_expected,
             n_expected_scored,
-            total_expected_scored_section_quarter_week_category,
-            total_expected_section_quarter_week_category,
-            percent_graded_for_quarter_week_class,
+            null as total_expected_scored_section_quarter_week_category,
+            null as total_expected_section_quarter_week_category,
+            null as percent_graded_for_quarter_week_class,
             sum_totalpointvalue_section_quarter_category,
             teacher_running_total_assign_by_cat,
             teacher_avg_score_for_assign_per_class_section_and_assign_id,
