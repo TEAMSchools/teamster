@@ -19,11 +19,11 @@ Every feature, refactor, or significant change follows this lifecycle:
  "Let's brainstorm"   Asks questions, proposes           Answer questions,
                       approaches, presents design        approve design
 
-                      Writes spec to docs/superpowers/   Review spec
-                      specs/
+                      Opens GitHub issue, asks            Choose worktree or
+                      worktree or branch switch           branch switch
 
-                      Opens GitHub issue, creates         Share issue with team
-                      dev branch, commits spec
+                      Creates dev branch, writes          Review spec, share
+                      spec on the branch                  issue with team
 
                                                          Team reviews and
                                                          discusses on the issue
@@ -58,19 +58,42 @@ Tell Claude what you want to build or change. It will:
 **Your role:** Answer questions honestly. Push back if something doesn't feel
 right. Say "yes" or "looks good" to approve each section.
 
-**When you're done:** Claude writes the approved design to a **spec file** at
-`docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`.
+**When you're done:** Claude moves to Phase 2 — no files are written yet.
 
 ## Phase 2: GitHub Issue and Dev Branch
 
-After the spec is written, Claude will:
+After the brainstorm conversation, Claude will:
 
 1. Open a GitHub issue with `gh issue create` — labeled with the appropriate
    conventional commit type (`feat`, `fix`, `refactor`, etc.) and any related
    system labels.
-2. Create and link a dev branch with
-   `gh issue develop <number> --name <branch> --checkout`.
-3. Commit the spec to the dev branch and push it.
+2. **Ask you: worktree or branch switch?** These are two ways to create a
+   development branch. Claude will not choose for you.
+   - **Branch switch** — switches your current workspace to the new branch. One
+     directory, no extra setup. Tradeoff: you can't work on `main` or another
+     feature without switching back.
+   - **Worktree** — creates a second checkout in `.worktrees/<branch>`. Your
+     original workspace stays on its current branch, so you can run other code
+     or start a separate feature in parallel. Tradeoff: two directories to
+     manage, and your editor needs to open the worktree path.
+
+   | Consideration                                               | Branch switch                  | Worktree                                    |
+   | ----------------------------------------------------------- | ------------------------------ | ------------------------------------------- |
+   | Single-task focus                                           | Good — one branch, one context | Unnecessary overhead                        |
+   | Parallel work (e.g., reviewing a PR while coding a feature) | Must stash/switch constantly   | Each task has its own directory             |
+   | Editor comfort                                              | Tabs and open files stay put   | Need to open a second window or re-navigate |
+
+3. Create and link the dev branch. Branch names follow
+   [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/):
+   `<gh-username>/<commit-type>/claude-<brief-description>`.
+4. Write the approved design to a **spec file** at
+   `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` — on the branch, not
+   `main`. Commit and push.
+
+!!! info "Nothing is written until we're on the branch"
+
+    Specs, code, and config all belong on the feature branch. Claude will not
+    write any files while on `main`.
 
 **Your role:** Share the GitHub issue with the team.
 
@@ -93,6 +116,12 @@ issue.
 ## Phase 4: Write the Plan
 
 **Trigger phrase:** "Let's write the plan"
+
+!!! tip "Resuming work across sessions"
+
+    If you're returning to a branch after working on something else, Claude will
+    merge `main` into the branch before continuing. This keeps the branch
+    up-to-date and avoids merge conflicts later.
 
 Once the team approves the spec, Claude turns it into a step-by-step
 implementation plan:
@@ -184,8 +213,8 @@ actual passing test output before claiming success. If it says "should" or
 ```text
 Phase    You say                  Claude does                 Output
 ─────    ───────                  ───────────                 ──────
-1        "Let's brainstorm"       Design conversation         Spec file
-2        (automatic)              GH issue + dev branch       Issue URL
+1        "Let's brainstorm"       Design conversation         Approved design
+2        (automatic)              GH issue + dev branch       Issue URL + spec file
 3        (you + team)             —                           Team approval
 4        "Let's write the plan"   Step-by-step plan           Plan file
 5        "Let's execute the plan" Subagent execution          Completed code
