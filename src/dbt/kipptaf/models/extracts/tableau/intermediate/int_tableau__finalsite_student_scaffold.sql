@@ -342,6 +342,7 @@ select
     e.is_enrolled_fdos,
     e.is_enrolled_oct01,
     e.is_enrolled_oct15,
+    e.is_enrolled_mar15,
 
 from final_roster as r
 left join
@@ -388,6 +389,7 @@ select
     e.is_enrolled_fdos,
     e.is_enrolled_oct01,
     e.is_enrolled_oct15,
+    e.is_enrolled_mar15,
 
 from final_roster as r
 inner join

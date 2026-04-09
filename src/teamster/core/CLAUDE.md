@@ -54,7 +54,8 @@ with the current timestamp.
 
 Three `object_type` modes: `"pickle"`, `"avro"` (writes Fastavro container
 files), `"file"` (writes raw bytes from a local file path). The `test=True` flag
-prefixes GCS paths with `test/` to isolate test runs.
+writes local files to `/tmp/dagster` (not the `dagster-tmp` symlink — causes
+`FileExistsError`) instead of `env/`, and prefixes GCS paths with `test/`.
 
 ### `asset_checks.py`
 
@@ -94,6 +95,11 @@ built-in Dagster API to suppress this per-asset.
 deploy rollover, the materialization may be stamped with the new deployment's
 code version. `code_version_changed()` returns false permanently — manual
 materialization is the only fix. See dagster-io/dagster#33708.
+
+**Deploy ordering gate**: `_dep_code_version_pending` blocks materialization
+when a direct dependency has `code_version_changed().since(newly_updated())` —
+prevents schema errors when a deploy adds columns through a TABLE → VIEW chain.
+Applied in `_build_dbt_condition()` so all three conditions inherit it.
 
 **Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
 ALL partitions on every materialization. To preserve per-partition triggering,

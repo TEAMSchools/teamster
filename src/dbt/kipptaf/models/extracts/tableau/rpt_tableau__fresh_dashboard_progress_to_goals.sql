@@ -61,6 +61,7 @@ with
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
+            is_enrolled_mar15,
 
             'Student' as row_type,
 
@@ -75,7 +76,9 @@ with
             enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
+        where
+            goal_type in ('Enrolled', 'Enrollment In Progress')
+            and latest_status = goal_type
 
         union all
 
@@ -93,6 +96,7 @@ with
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
+            is_enrolled_mar15,
 
             'Student' as row_type,
 
@@ -107,7 +111,9 @@ with
             aligned_enrollment_type as enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
+        where
+            goal_type in ('Enrolled', 'Enrollment In Progress')
+            and latest_status = goal_type
 
         union all
 
@@ -127,6 +133,7 @@ with
             null as is_enrolled_fdos,
             null as is_enrolled_oct01,
             null as is_enrolled_oct15,
+            null as is_enrolled_mar15,
 
             'Goal' as row_type,
 
@@ -162,6 +169,7 @@ with
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
+            is_enrolled_mar15,
 
             'Student' as row_type,
 
@@ -176,7 +184,9 @@ with
             enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
+        where
+            goal_type in ('Enrolled', 'Enrollment In Progress')
+            and latest_status = goal_type
 
         union all
 
@@ -194,6 +204,7 @@ with
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
+            is_enrolled_mar15,
 
             'Student' as row_type,
 
@@ -208,7 +219,9 @@ with
             aligned_enrollment_type as enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
+        where
+            goal_type in ('Enrolled', 'Enrollment In Progress')
+            and latest_status = goal_type
 
         union all
 
@@ -228,6 +241,7 @@ with
             null as is_enrolled_fdos,
             null as is_enrolled_oct01,
             null as is_enrolled_oct15,
+            null as is_enrolled_mar15,
 
             'Goal' as row_type,
 
@@ -262,6 +276,10 @@ select
     d.latest_status,
     d.enrollment_type as student_enrollment_type,
     d.self_contained,
+    d.is_enrolled_fdos,
+    d.is_enrolled_oct01,
+    d.is_enrolled_oct15,
+    d.is_enrolled_mar15,
     d.row_type,
     d.student_count,
     d.seat_target,
@@ -296,6 +314,10 @@ select
     d.latest_status,
     d.enrollment_type as student_enrollment_type,
     d.self_contained,
+    d.is_enrolled_fdos,
+    d.is_enrolled_oct01,
+    d.is_enrolled_oct15,
+    d.is_enrolled_mar15,
     d.row_type,
     d.student_count,
     d.seat_target,

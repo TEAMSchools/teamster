@@ -79,7 +79,6 @@
   "[python]": {
     "editor.defaultFormatter": "trunk.io"
   },
-  "claudeCode.preferredLocation": "sidebar",
   "terminal.integrated.profiles.linux": {
     "Claude Code": {
       "path": "claude",
@@ -87,6 +86,7 @@
     }
   },
   "python.analysis.typeCheckingMode": "off",
+  "yaml.validate": false,
   "dbt.deferConfigPerProject": {
     "src/dbt/kipptaf": {
       "deferToProduction": false,

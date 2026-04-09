@@ -74,8 +74,13 @@ this step.**
 
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
 
-- **CLAUDE.md edits**: Default to **not adding**. Propose additions to the user
-  with a brief expected-utility note (will this make future sessions more
-  correct, faster, or more consistent?). Never self-approve. Additions should
-  only contain what changes Claude's behavior — omit human-only context
-  (motivation, rationale, history).
+## CLAUDE.md Editing Rules
+
+- **Before editing any CLAUDE.md file**: present the proposed change as a quote
+  block with a one-line expected-utility note. Do not apply it until the user
+  approves.
+
+- **Before adding to any CLAUDE.md file**: for each line, answer: what specific
+  wrong action does this prevent? If you can't name one, cut it. General
+  knowledge and human-only context (motivation, rationale, history) don't
+  qualify.

@@ -14,9 +14,9 @@ on GKE Autopilot.
 
 - `values.yaml` is auto-downloaded from Helm — never edit. All customizations go
   in `values-override.yaml`.
-- **Helm upgrades are manual** — `git push` triggers Dagster Cloud code location
-  image builds, not Helm agent upgrades. Agent config changes in
-  `values-override.yaml` require a manual `helm upgrade`.
+- **Helm deploy is manual** — editing `values-override.yaml` is fine, but
+  changes only take effect after `helm upgrade`. `git push` builds code location
+  images, not Helm agent config.
 - `serverProcessStartupTimeout` (Helm `workspace` key, default 180s) — time the
   agent waits for a code server gRPC ping after creating the Deployment.
   Currently set to 300s in `values-override.yaml`.
@@ -69,15 +69,29 @@ on GKE Autopilot.
   makes these occasional; Dagster retries automatically.
 - **PriorityClass `dagster-run`** (value 1000) on run/step pods makes kubelet
   evict code server pods (default priority 0) first during node memory pressure.
-  Does not protect against OOM kills of the pod itself — only eviction ordering.
-  Code servers tolerate eviction: they are stateless and PDB-protected
-  (`minAvailable: 1`).
+- **PriorityClass `dagster-agent`** (value 1000) on agent pods — same tier as
+  run/step pods, preventing mutual preemption. Does not protect against OOM
+  kills of the pod itself — only eviction ordering. Code servers tolerate
+  eviction: they are stateless and PDB-protected (`minAvailable: 1`).
 - **PDB for code servers** uses `minAvailable: 1` (not `maxUnavailable`).
   `maxUnavailable` requires resolving the owning controller (Deployment) to
   calculate expected pod count — during Dagster Cloud rollovers the old
   Deployment is deleted before pods terminate, causing
   `CalculateExpectedPodCountFailed` and leaving pods unprotected. `minAvailable`
   only counts current healthy pods, no controller lookup needed.
+
+## gRPC Worker Threads
+
+`DAGSTER_GRPC_MAX_WORKERS` (env var on code server pods via
+`serverK8sConfig.containerConfig.env`) sets the gRPC thread pool size. Each
+sensor eval, schedule eval, and health check holds one thread for its duration.
+Unset default is `min(32, cpu_count + 4)` — ~5 on 0.5 vCPU pods, too low for
+locations with many sensors. Currently set to 20 globally.
+
+Sizing: sensors + (peak concurrent schedules / 3) + 3 headroom. Idle threads
+cost ~1MB each, zero CPU (GIL). Changes require `helm upgrade` (see Helm
+section) and only take effect on **new** code server pods — existing pods must
+be recycled.
 
 ## Resource Config Inheritance
 
@@ -114,3 +128,33 @@ defaults.
 - **GKE log queries**: Filter by `resource.labels.pod_name:<prefix>` for
   container logs, `resource.type="k8s_cluster"` for k8s events (scheduling,
   scaling, eviction). Use `jsonPayload.reason` to filter event types.
+- **Pathlib `AttributeError` on code server startup**: `PosixPath` missing
+  `_str`/`_drv` slots = SIGTERM hit during Python module import (preemption or
+  eviction). Pods self-heal on restart. Safe to mute in GCP Error Reporting.
+- **GCP Error Reporting investigation**: `list_group_stats` (find groups) →
+  `list_log_entries` (reconstruct multi-line tracebacks from individual log
+  entries) → `k8s_pod` events (find root cause: preemption, OOM, eviction).
+- **Timeout types** (do not conflate): Startup (`serverProcessStartupTimeout`,
+  default 180s) = agent→code server gRPC ping; failure → deployment removed +
+  replacement, causes churn. Sensor execution (300s) = sensor ran too long; code
+  server stays up, no churn.
+- **Code server startup failure signals**: Check ALL pods for the deployment.
+  `Aborted!` stderr = SIGABRT (native crash). `DagsterExecutionInterruptedError`
+  = SIGTERM during import (rollover). Silent hang after "Starting Dagster code
+  server" = blocked I/O — confirm with
+  `kubernetes.io/container/cpu/core_usage_time` (`ALIGN_RATE`,
+  `alignmentPeriod: "60s"`): near-zero CPU on Running/Ready pod = I/O block.
+- **Agent health check replacement paths**: Four paths replace code server. Only
+  gRPC UNAVAILABLE uses grace period
+  (`DAGSTER_CLOUD_CODE_SERVER_HEALTH_CHECK_REDEPLOY_TIMEOUT` = startup timeout).
+  Other three immediate: error state (SerializableErrorInfo), recovery (agent
+  local error vs Cloud healthy), pex disappeared. "300 seconds" log + immediate
+  replace = hit immediate path on next reconciliation.
+- **GKE traceback retrieval**: Tracebacks split across many log entries. Search
+  exception line first:
+  `textPayload:("Exception" OR "Error") AND NOT textPayload:"BetaWarning"`.
+  Narrow timestamp. pageSize 10-15 (50 exceeds tokens on per-line entries).
+- **Pod zone placement**: `list_log_entries` with
+  `resource.type="gce_subnetwork"` +
+  `logName=".../compute.googleapis.com%2Ffirewall"` → `instance.zone` +
+  `remote_instance.zone`. Filter `dest_port=4000` for agent→code-server gRPC.
