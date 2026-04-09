@@ -363,11 +363,11 @@ select
 
     'student_category_scaffold' as scaffold_name,
 
-    ge.assignment_category_name,
-    ge.assignment_category_code,
-    ge.assignment_category_term,
-    ge.expectation,
-    ge.notes,
+    sec.assignment_category_name,
+    sec.assignment_category_code,
+    sec.assignment_category_term,
+    sec.expectation,
+    sec.notes,
 
     cg.category_quarter_percent_grade,
     cg.category_quarter_average_all_courses,
@@ -384,7 +384,7 @@ select
     null as qt_kg_conduct_code_not_hr,
 
     if(
-        ge.assignment_category_code = 'W'
+        sec.assignment_category_code = 'W'
         and s.school_level_alt != 'ES'
         and abs(
             round(cg.category_quarter_average_all_courses, 2)
@@ -397,7 +397,7 @@ select
 
     if(
         s.region = 'Miami'
-        and ge.assignment_category_code = 'W'
+        and sec.assignment_category_code = 'W'
         and cg.category_quarter_percent_grade is null
         and sec.is_quarter_end_date_range,
         true,
@@ -406,7 +406,7 @@ select
 
     if(
         s.region_school_level = 'MiamiES'
-        and ge.assignment_category_code = 'F'
+        and sec.assignment_category_code = 'F'
         and cg.category_quarter_percent_grade is null
         and sec.is_quarter_end_date_range,
         true,
@@ -416,7 +416,7 @@ select
     if(
         s.region_school_level = 'MiamiES'
         and sec.credit_type not in ('ENG', 'MATH')
-        and ge.assignment_category_code = 'S'
+        and sec.assignment_category_code = 'S'
         and cg.category_quarter_percent_grade is null
         and sec.is_quarter_end_date_range,
         true,
@@ -437,14 +437,6 @@ inner join
     and ce.cc_sectionid = sec.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
     and sec.scaffold_name = 'teacher_category_scaffold'
-inner join
-    {{ ref("stg_google_sheets__gradebook_expectations_assignments") }} as ge
-    on sec.region = ge.region
-    and sec.school_level = ge.school_level
-    and sec.academic_year = ge.academic_year
-    and sec.quarter = ge.quarter
-    and sec.week_number_quarter = ge.week_number
-    and sec.assignment_category_code = ge.assignment_category_code
 left join
     quarter_course_grades as qg
     on ce.terms_yearid = qg.yearid
@@ -461,7 +453,7 @@ left join
     and ce.cc_studentid = cg.studentid
     and ce.cc_sectionid = cg.sectionid
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="cg") }}
-    and ge.assignment_category_term = cg.storecode
+    and sec.assignment_category_term = cg.storecode
 where
     s.academic_year = {{ var("current_academic_year") }}
     and s.rn_year = 1

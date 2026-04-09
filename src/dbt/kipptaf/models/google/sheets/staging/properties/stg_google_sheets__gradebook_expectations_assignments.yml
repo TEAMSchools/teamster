@@ -1,5 +1,17 @@
 models:
   - name: stg_google_sheets__gradebook_expectations_assignments
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - Academic_Year
+              - Region
+              - School_Level
+              - Quarter
+              - Week_Number
+              - assignment_category_code
+          config:
+            severity: error
     columns:
       - name: Academic_Year
         data_type: int64
