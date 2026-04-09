@@ -1,7 +1,6 @@
 with
-    teacher_unpivot_cca as (
-        select r.*, f.cte_grouping, f.audit_category, f.code_type,
-
+    teacher_cca_unpivoted as (
+        select *,
         from
             {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -10,7 +9,12 @@ with
                     f_assign_max_score_not_10,
                     s_max_score_greater_100
                 )
-            ) as r
+            )
+    ),
+
+    teacher_unpivot_cca as (
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
+        from teacher_cca_unpivoted as r
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on r.academic_year = f.academic_year
@@ -43,9 +47,8 @@ with
         where e1.include_row is null and e2.include_row is null
     ),
 
-    teacher_unpivot_cc as (
-        select r.*, f.cte_grouping, f.audit_category, f.code_type,
-
+    teacher_cc_unpivoted as (
+        select *,
         from
             {{ ref("int_tableau__gradebook_audit_categories_teacher") }} unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -62,7 +65,12 @@ with
                     f_percent_graded_min_not_met,
                     s_percent_graded_min_not_met
                 )
-            ) as r
+            )
+    ),
+
+    teacher_unpivot_cc as (
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
+        from teacher_cc_unpivoted as r
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on r.academic_year = f.academic_year
