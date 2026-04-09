@@ -107,8 +107,8 @@ by copying the original and applying these modifications:
 
 **UNION ALL branches to DROP** (do not include):
 
-5. Branch from `teacher_unpivot_cca` (original lines 811–950)
-6. Branch from `teacher_unpivot_cc` (original lines 952–1091)
+1. Branch from `teacher_unpivot_cca` (original lines 811–950)
+1. Branch from `teacher_unpivot_cc` (original lines 952–1091)
 
 **Columns to REMOVE from every branch** — these 3 teacher-only columns are
 always `null as ...` in all 4 student branches. Remove the lines entirely from
@@ -168,7 +168,7 @@ config:
     - schoolid
 ```
 
-3. Remove these 3 column definitions (they don't exist in the student model):
+1. Remove these 3 column definitions (they don't exist in the student model):
 
 ```yaml
 - name: total_expected_scored_section_quarter_week_category
@@ -179,7 +179,7 @@ config:
   data_type: float64
 ```
 
-4. Keep ALL other column definitions exactly as-is.
+1. Keep ALL other column definitions exactly as-is.
 
 ---
 
@@ -208,8 +208,8 @@ student-only columns removed.
 
 **UNION ALL branches to KEEP** (2 branches):
 
-5. Branch from `teacher_unpivot_cca` (original lines 811–950)
-6. Branch from `teacher_unpivot_cc` (original lines 952–1091)
+1. Branch from `teacher_unpivot_cca` (original lines 811–950)
+1. Branch from `teacher_unpivot_cc` (original lines 952–1091)
 
 **Columns to REMOVE from both branches** — these are always `null as ...` in the
 teacher branches. Remove the lines entirely:
@@ -323,7 +323,7 @@ config:
     - schoolid
 ```
 
-3. Remove these student-only column definitions:
+1. Remove these student-only column definitions:
 
 ```yaml
 - name: students_dcid
@@ -414,7 +414,7 @@ config:
   data_type: boolean
 ```
 
-4. KEEP these column definitions (they exist in the teacher model):
+1. KEEP these column definitions (they exist in the teacher model):
 
 - `hos`, `region_school_level`, `termid`, `category_quarter_percent_grade`,
   `category_quarter_average_all_courses`
@@ -468,9 +468,9 @@ config:
 # after — remove the entire config block (no other config keys)
 ```
 
-2. `rpt_tableau__gradebook_es_comments.yml`: same change
-3. `rpt_tableau__gradebook_ms_hs_comments.yml`: same change
-4. `rpt_tableau__gradebook_gpa.yml`: same change
+1. `rpt_tableau__gradebook_es_comments.yml`: same change
+1. `rpt_tableau__gradebook_ms_hs_comments.yml`: same change
+1. `rpt_tableau__gradebook_gpa.yml`: same change
 
 ---
 
@@ -844,7 +844,7 @@ student-level data — change all refs to `__student`.
         from {{ ref("int_tableau__gradebook_audit_flags__student") }}
 ```
 
-2. Line 241 (effort grade LEFT JOIN):
+1. Line 241 (effort grade LEFT JOIN):
 
 ```sql
 -- before
