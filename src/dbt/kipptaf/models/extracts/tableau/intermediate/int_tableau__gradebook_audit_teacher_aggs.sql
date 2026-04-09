@@ -116,9 +116,9 @@ with
             and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
     ),
 
-    /* UNPIVOT, apply flags + exceptions */
-    student_assignment_unpivot as (
-        select u.*, f.cte_grouping, f.audit_category, f.code_type,
+    /* UNPIVOT student assignment flags */
+    student_assignment_unpivoted as (
+        select *,
         from
             student_assignment_with_flags unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -139,7 +139,13 @@ with
                     assign_s_ms_score_not_conversion_chart_options,
                     assign_s_hs_score_not_conversion_chart_options
                 )
-            ) as u
+            )
+    ),
+
+    /* Apply flags + exceptions */
+    student_assignment_unpivot as (
+        select u.*, f.cte_grouping, f.audit_category, f.code_type,
+        from student_assignment_unpivoted as u
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on u.academic_year = f.academic_year
@@ -261,8 +267,9 @@ with
         where t.scaffold_name = 'teacher_category_scaffold'
     ),
 
-    student_category_unpivot as (
-        select u.*, f.cte_grouping, f.audit_category, f.code_type,
+    /* UNPIVOT student category flags */
+    student_category_unpivoted as (
+        select *,
         from
             student_category_with_flags unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -271,7 +278,12 @@ with
                     qt_formative_grade_missing,
                     qt_summative_grade_missing
                 )
-            ) as u
+            )
+    ),
+
+    student_category_unpivot as (
+        select u.*, f.cte_grouping, f.audit_category, f.code_type,
+        from student_category_unpivoted as u
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on u.academic_year = f.academic_year
@@ -372,8 +384,9 @@ with
         where t.scaffold_name = 'teacher_scaffold'
     ),
 
-    student_eoq_unpivot as (
-        select u.*, f.cte_grouping, f.audit_category, f.code_type,
+    /* UNPIVOT student EOQ flags */
+    student_eoq_unpivoted as (
+        select *,
         from
             student_eoq_with_flags unpivot (
                 audit_flag_value for audit_flag_name in (
@@ -385,7 +398,12 @@ with
                     qt_percent_grade_greater_100,
                     qt_student_is_ada_80_plus_gpa_less_2
                 )
-            ) as u
+            )
+    ),
+
+    student_eoq_unpivot as (
+        select u.*, f.cte_grouping, f.audit_category, f.code_type,
+        from student_eoq_unpivoted as u
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on u.academic_year = f.academic_year
