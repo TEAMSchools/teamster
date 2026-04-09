@@ -1,7 +1,7 @@
 from dagster import ConfigurableResource, InitResourceContext
 from pydantic import PrivateAttr
 from tableauserverclient.models.tableau_auth import PersonalAccessTokenAuth
-from tableauserverclient.server.server import Server, default_server_version
+from tableauserverclient.server.server import Server
 from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
 
@@ -31,8 +31,9 @@ class TableauServerResource(ConfigurableResource):
         reraise=True,
     )
     def _resolve_server_version(self) -> None:
+        initial_version = self._server.version
         self._server.use_server_version()
 
-        if self._server.version == default_server_version:
-            msg = f"Tableau API version discovery failed — got default {default_server_version}"
+        if self._server.version == initial_version:
+            msg = f"Tableau API version discovery failed — version unchanged at {initial_version!r}"
             raise ConnectionError(msg)
