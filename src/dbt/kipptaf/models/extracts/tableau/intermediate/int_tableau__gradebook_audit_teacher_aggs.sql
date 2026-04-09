@@ -31,94 +31,96 @@ with
         group by _dbt_source_relation, sectionid, assignmentid
     ),
 
-    /* Join rollup to assignments_teacher for context, UNPIVOT, apply flags +
-       exceptions */
+    /* Join rollup to assignments_teacher for context */
+    student_assignment_with_flags as (
+        select
+            t.academic_year,
+            t.academic_year_display,
+            t.region,
+            t.school_level,
+            t.region_school_level,
+            t.schoolid,
+            t.school,
+            t.`quarter`,
+            t.semester,
+            t.week_number_quarter,
+            t.quarter_start_date,
+            t.quarter_end_date,
+            t.is_current_term,
+            t.is_quarter_end_date_range,
+            t.week_start_monday,
+            t.week_end_sunday,
+            t.school_week_start_date_lead,
+            t.is_current_week,
+            t.assignment_category_name,
+            t.assignment_category_code,
+            t.assignment_category_term,
+            t.expectation,
+            t.notes,
+            t.section_or_period,
+            t.sectionid,
+            t.sections_dcid,
+            t.section_number,
+            t.external_expression,
+            t.credit_type,
+            t.course_number,
+            t.course_name,
+            t.exclude_from_gpa,
+            t.is_ap_course,
+            t.teacher_number,
+            t.teacher_name,
+            t.teacher_tableau_username,
+            t.school_leader,
+            t.school_leader_tableau_username,
+            t.assignmentid,
+            t.assignment_name,
+            t.duedate,
+            t.scoretype,
+            t.totalpointvalue,
+            t.n_students,
+            t.n_late,
+            t.n_exempt,
+            t.n_missing,
+            t.n_null,
+            t.n_academic_dishonesty,
+            t.n_is_null_missing,
+            t.n_is_null_not_missing,
+            t.n_expected,
+            t.n_expected_scored,
+            t.sum_totalpointvalue_section_quarter_category,
+            t.teacher_running_total_assign_by_cat,
+            t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
+
+            r.assign_null_score,
+            r.assign_score_above_max,
+            r.assign_w_score_less_5,
+            r.assign_h_score_less_5,
+            r.assign_f_score_less_5,
+            r.assign_w_missing_score_not_5,
+            r.assign_f_missing_score_not_5,
+            r.assign_h_missing_score_not_5,
+            r.assign_w_missing_score_not_0,
+            r.assign_f_missing_score_not_0,
+            r.assign_h_missing_score_not_0,
+            r.assign_s_missing_score_not_0,
+            r.assign_s_score_less_50p,
+            r.assign_s_hs_score_less_50p,
+            r.assign_s_ms_score_not_conversion_chart_options,
+            r.assign_s_hs_score_not_conversion_chart_options,
+
+        from {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} as t
+        inner join
+            student_assignment_rollup as r
+            on t.sectionid = r.sectionid
+            and t.assignmentid = r.assignmentid
+            and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
+    ),
+
+    /* UNPIVOT, apply flags + exceptions */
     student_assignment_unpivot as (
         select u.*, f.cte_grouping, f.audit_category, f.code_type,
         from
-            (
-                select
-                    t.academic_year,
-                    t.academic_year_display,
-                    t.region,
-                    t.school_level,
-                    t.region_school_level,
-                    t.schoolid,
-                    t.school,
-                    t.`quarter`,
-                    t.semester,
-                    t.week_number_quarter,
-                    t.quarter_start_date,
-                    t.quarter_end_date,
-                    t.is_current_term,
-                    t.is_quarter_end_date_range,
-                    t.week_start_monday,
-                    t.week_end_sunday,
-                    t.school_week_start_date_lead,
-                    t.is_current_week,
-                    t.assignment_category_name,
-                    t.assignment_category_code,
-                    t.assignment_category_term,
-                    t.expectation,
-                    t.notes,
-                    t.section_or_period,
-                    t.sectionid,
-                    t.sections_dcid,
-                    t.section_number,
-                    t.external_expression,
-                    t.credit_type,
-                    t.course_number,
-                    t.course_name,
-                    t.exclude_from_gpa,
-                    t.is_ap_course,
-                    t.teacher_number,
-                    t.teacher_name,
-                    t.teacher_tableau_username,
-                    t.school_leader,
-                    t.school_leader_tableau_username,
-                    t.assignmentid,
-                    t.assignment_name,
-                    t.duedate,
-                    t.scoretype,
-                    t.totalpointvalue,
-                    t.n_students,
-                    t.n_late,
-                    t.n_exempt,
-                    t.n_missing,
-                    t.n_null,
-                    t.n_academic_dishonesty,
-                    t.n_is_null_missing,
-                    t.n_is_null_not_missing,
-                    t.n_expected,
-                    t.n_expected_scored,
-                    t.sum_totalpointvalue_section_quarter_category,
-                    t.teacher_running_total_assign_by_cat,
-                    t.teacher_avg_score_for_assign_per_class_section_and_assign_id,
-
-                    r.assign_null_score,
-                    r.assign_score_above_max,
-                    r.assign_w_score_less_5,
-                    r.assign_h_score_less_5,
-                    r.assign_f_score_less_5,
-                    r.assign_w_missing_score_not_5,
-                    r.assign_f_missing_score_not_5,
-                    r.assign_h_missing_score_not_5,
-                    r.assign_w_missing_score_not_0,
-                    r.assign_f_missing_score_not_0,
-                    r.assign_h_missing_score_not_0,
-                    r.assign_s_missing_score_not_0,
-                    r.assign_s_score_less_50p,
-                    r.assign_s_hs_score_less_50p,
-                    r.assign_s_ms_score_not_conversion_chart_options,
-                    r.assign_s_hs_score_not_conversion_chart_options,
-
-                from {{ ref("int_tableau__gradebook_audit_assignments_teacher") }} as t
-                inner join
-                    student_assignment_rollup as r
-                    on t.sectionid = r.sectionid
-                    and t.assignmentid = r.assignmentid
-                    and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
-            ) unpivot (
+            student_assignment_with_flags unpivot (
                 audit_flag_value for audit_flag_name in (
                     assign_null_score,
                     assign_score_above_max,
@@ -203,64 +205,66 @@ with
         group by _dbt_source_relation, sectionid, `quarter`, assignment_category_code
     ),
 
+    student_category_with_flags as (
+        select
+            t.academic_year,
+            t.academic_year_display,
+            t.region,
+            t.school_level,
+            t.region_school_level,
+            t.schoolid,
+            t.school,
+            t.`quarter`,
+            t.semester,
+            t.week_number_quarter,
+            t.quarter_start_date,
+            t.quarter_end_date,
+            t.is_current_term,
+            t.is_quarter_end_date_range,
+            t.week_start_monday,
+            t.week_end_sunday,
+            t.school_week_start_date_lead,
+            t.is_current_week,
+            t.assignment_category_name,
+            t.assignment_category_code,
+            t.assignment_category_term,
+            t.expectation,
+            t.notes,
+            t.section_or_period,
+            t.sectionid,
+            t.sections_dcid,
+            t.section_number,
+            t.external_expression,
+            t.credit_type,
+            t.course_number,
+            t.course_name,
+            t.exclude_from_gpa,
+            t.is_ap_course,
+            t.teacher_number,
+            t.teacher_name,
+            t.teacher_tableau_username,
+            t.school_leader,
+            t.school_leader_tableau_username,
+
+            r.qt_effort_grade_missing,
+            r.w_grade_inflation,
+            r.qt_formative_grade_missing,
+            r.qt_summative_grade_missing,
+
+        from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as t
+        inner join
+            student_category_rollup as r
+            on t.sectionid = r.sectionid
+            and t.quarter = r.quarter
+            and t.assignment_category_code = r.assignment_category_code
+            and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
+        where t.scaffold_name = 'teacher_category_scaffold'
+    ),
+
     student_category_unpivot as (
         select u.*, f.cte_grouping, f.audit_category, f.code_type,
         from
-            (
-                select
-                    t.academic_year,
-                    t.academic_year_display,
-                    t.region,
-                    t.school_level,
-                    t.region_school_level,
-                    t.schoolid,
-                    t.school,
-                    t.`quarter`,
-                    t.semester,
-                    t.week_number_quarter,
-                    t.quarter_start_date,
-                    t.quarter_end_date,
-                    t.is_current_term,
-                    t.is_quarter_end_date_range,
-                    t.week_start_monday,
-                    t.week_end_sunday,
-                    t.school_week_start_date_lead,
-                    t.is_current_week,
-                    t.assignment_category_name,
-                    t.assignment_category_code,
-                    t.assignment_category_term,
-                    t.expectation,
-                    t.notes,
-                    t.section_or_period,
-                    t.sectionid,
-                    t.sections_dcid,
-                    t.section_number,
-                    t.external_expression,
-                    t.credit_type,
-                    t.course_number,
-                    t.course_name,
-                    t.exclude_from_gpa,
-                    t.is_ap_course,
-                    t.teacher_number,
-                    t.teacher_name,
-                    t.teacher_tableau_username,
-                    t.school_leader,
-                    t.school_leader_tableau_username,
-
-                    r.qt_effort_grade_missing,
-                    r.w_grade_inflation,
-                    r.qt_formative_grade_missing,
-                    r.qt_summative_grade_missing,
-
-                from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as t
-                inner join
-                    student_category_rollup as r
-                    on t.sectionid = r.sectionid
-                    and t.quarter = r.quarter
-                    and t.assignment_category_code = r.assignment_category_code
-                    and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
-                where t.scaffold_name = 'teacher_category_scaffold'
-            ) unpivot (
+            student_category_with_flags unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_effort_grade_missing,
                     w_grade_inflation,
@@ -315,61 +319,63 @@ with
         group by _dbt_source_relation, sectionid, `quarter`
     ),
 
+    student_eoq_with_flags as (
+        select
+            t.academic_year,
+            t.academic_year_display,
+            t.region,
+            t.school_level,
+            t.region_school_level,
+            t.schoolid,
+            t.school,
+            t.`quarter`,
+            t.semester,
+            t.week_number_quarter,
+            t.quarter_start_date,
+            t.quarter_end_date,
+            t.is_current_term,
+            t.is_quarter_end_date_range,
+            t.week_start_monday,
+            t.week_end_sunday,
+            t.school_week_start_date_lead,
+            t.is_current_week,
+            t.section_or_period,
+            t.sectionid,
+            t.sections_dcid,
+            t.section_number,
+            t.external_expression,
+            t.credit_type,
+            t.course_number,
+            t.course_name,
+            t.exclude_from_gpa,
+            t.is_ap_course,
+            t.teacher_number,
+            t.teacher_name,
+            t.teacher_tableau_username,
+            t.school_leader,
+            t.school_leader_tableau_username,
+
+            r.qt_comment_missing,
+            r.qt_es_comment_missing,
+            r.qt_grade_70_comment_missing,
+            r.qt_g1_g8_conduct_code_missing,
+            r.qt_g1_g8_conduct_code_incorrect,
+            r.qt_percent_grade_greater_100,
+            r.qt_student_is_ada_80_plus_gpa_less_2,
+
+        from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as t
+        inner join
+            student_eoq_rollup as r
+            on t.sectionid = r.sectionid
+            and t.quarter = r.quarter
+            and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
+        where t.scaffold_name = 'teacher_scaffold'
+    ),
+
     student_eoq_unpivot as (
         select u.*, f.cte_grouping, f.audit_category, f.code_type,
         from
-            (
-                select
-                    t.academic_year,
-                    t.academic_year_display,
-                    t.region,
-                    t.school_level,
-                    t.region_school_level,
-                    t.schoolid,
-                    t.school,
-                    t.`quarter`,
-                    t.semester,
-                    t.week_number_quarter,
-                    t.quarter_start_date,
-                    t.quarter_end_date,
-                    t.is_current_term,
-                    t.is_quarter_end_date_range,
-                    t.week_start_monday,
-                    t.week_end_sunday,
-                    t.school_week_start_date_lead,
-                    t.is_current_week,
-                    t.section_or_period,
-                    t.sectionid,
-                    t.sections_dcid,
-                    t.section_number,
-                    t.external_expression,
-                    t.credit_type,
-                    t.course_number,
-                    t.course_name,
-                    t.exclude_from_gpa,
-                    t.is_ap_course,
-                    t.teacher_number,
-                    t.teacher_name,
-                    t.teacher_tableau_username,
-                    t.school_leader,
-                    t.school_leader_tableau_username,
-
-                    r.qt_comment_missing,
-                    r.qt_es_comment_missing,
-                    r.qt_grade_70_comment_missing,
-                    r.qt_g1_g8_conduct_code_missing,
-                    r.qt_g1_g8_conduct_code_incorrect,
-                    r.qt_percent_grade_greater_100,
-                    r.qt_student_is_ada_80_plus_gpa_less_2,
-
-                from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as t
-                inner join
-                    student_eoq_rollup as r
-                    on t.sectionid = r.sectionid
-                    and t.quarter = r.quarter
-                    and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
-                where t.scaffold_name = 'teacher_scaffold'
-            ) unpivot (
+            student_eoq_with_flags unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_comment_missing,
                     qt_es_comment_missing,
@@ -403,84 +409,13 @@ with
         where e1.include_row is null
     ),
 
-    /* Branch 4: Aggregate 5 conduct code flags to
-       teacher×section×quarter×grade_level grain, then UNPIVOT+flags join on
-       grade_level, then re-aggregate to drop grade_level */
-    student_conduct_rollup as (
-        select
-            _dbt_source_relation,
-            sectionid,
-            `quarter`,
-            grade_level,
-
-            logical_or(qt_kg_conduct_code_missing) as qt_kg_conduct_code_missing,
-            logical_or(qt_kg_conduct_code_incorrect) as qt_kg_conduct_code_incorrect,
-            logical_or(qt_kg_conduct_code_not_hr) as qt_kg_conduct_code_not_hr,
-            logical_or(qt_g1_g8_conduct_code_missing) as qt_g1_g8_conduct_code_missing,
-            logical_or(
-                qt_g1_g8_conduct_code_incorrect
-            ) as qt_g1_g8_conduct_code_incorrect,
-
-        from {{ ref("int_tableau__gradebook_audit_student_scaffold") }}
-        where scaffold_name = 'student_scaffold'
-        group by _dbt_source_relation, sectionid, `quarter`, grade_level
-    ),
-
-    /* UNPIVOT conduct flags with grade_level for the flags join */
-    student_conduct_unpivot_raw as (
-        select u.*, f.cte_grouping, f.audit_category, f.code_type,
+    /* Branch 4: Conduct code flags — UNPIVOT at student grain, filter by
+       grade_level via flags join, apply exceptions, then aggregate to
+       teacher×section×quarter×flag grain and join teacher context */
+    student_conduct_unpivoted as (
+        select *,
         from
-            (
-                select
-                    t.academic_year,
-                    t.academic_year_display,
-                    t.region,
-                    t.school_level,
-                    t.region_school_level,
-                    t.schoolid,
-                    t.school,
-                    t.`quarter`,
-                    t.semester,
-                    t.week_number_quarter,
-                    t.quarter_start_date,
-                    t.quarter_end_date,
-                    t.is_current_term,
-                    t.is_quarter_end_date_range,
-                    t.week_start_monday,
-                    t.week_end_sunday,
-                    t.school_week_start_date_lead,
-                    t.is_current_week,
-                    t.section_or_period,
-                    t.sectionid,
-                    t.sections_dcid,
-                    t.section_number,
-                    t.external_expression,
-                    t.credit_type,
-                    t.course_number,
-                    t.course_name,
-                    t.exclude_from_gpa,
-                    t.is_ap_course,
-                    t.teacher_number,
-                    t.teacher_name,
-                    t.teacher_tableau_username,
-                    t.school_leader,
-                    t.school_leader_tableau_username,
-
-                    r.grade_level,
-                    r.qt_kg_conduct_code_missing,
-                    r.qt_kg_conduct_code_incorrect,
-                    r.qt_kg_conduct_code_not_hr,
-                    r.qt_g1_g8_conduct_code_missing,
-                    r.qt_g1_g8_conduct_code_incorrect,
-
-                from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as t
-                inner join
-                    student_conduct_rollup as r
-                    on t.sectionid = r.sectionid
-                    and t.quarter = r.quarter
-                    and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
-                where t.scaffold_name = 'teacher_scaffold'
-            ) unpivot (
+            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_kg_conduct_code_missing,
                     qt_kg_conduct_code_incorrect,
@@ -488,7 +423,23 @@ with
                     qt_g1_g8_conduct_code_missing,
                     qt_g1_g8_conduct_code_incorrect
                 )
-            ) as u
+            )
+        where scaffold_name = 'student_scaffold'
+    ),
+
+    student_conduct_filtered as (
+        select
+            u._dbt_source_relation,
+            u.sectionid,
+            u.`quarter`,
+            u.audit_flag_name,
+            u.audit_flag_value,
+
+            f.cte_grouping,
+            f.audit_category,
+            f.code_type,
+
+        from student_conduct_unpivoted as u
         inner join
             {{ ref("stg_google_sheets__gradebook_flags") }} as f
             on u.academic_year = f.academic_year
@@ -525,89 +476,78 @@ with
             u.school_level = 'ES' and e1.include_row is null and e2.include_row is null
     ),
 
-    /* Re-aggregate conduct flags to drop grade_level (max across grade levels
-       within the same section×quarter×flag) */
+    student_conduct_agg as (
+        select
+            _dbt_source_relation,
+            sectionid,
+            `quarter`,
+            audit_flag_name,
+            cte_grouping,
+            audit_category,
+            code_type,
+
+            logical_or(audit_flag_value) as audit_flag_value,
+
+        from student_conduct_filtered
+        group by
+            _dbt_source_relation,
+            sectionid,
+            `quarter`,
+            audit_flag_name,
+            cte_grouping,
+            audit_category,
+            code_type
+    ),
+
     student_conduct_unpivot as (
         select
-            academic_year,
-            academic_year_display,
-            region,
-            school_level,
-            region_school_level,
-            schoolid,
-            school,
-            `quarter`,
-            semester,
-            week_number_quarter,
-            quarter_start_date,
-            quarter_end_date,
-            is_current_term,
-            is_quarter_end_date_range,
-            week_start_monday,
-            week_end_sunday,
-            school_week_start_date_lead,
-            is_current_week,
-            section_or_period,
-            sectionid,
-            sections_dcid,
-            section_number,
-            external_expression,
-            credit_type,
-            course_number,
-            course_name,
-            exclude_from_gpa,
-            is_ap_course,
-            teacher_number,
-            teacher_name,
-            teacher_tableau_username,
-            school_leader,
-            school_leader_tableau_username,
-            cte_grouping,
-            audit_category,
-            code_type,
-            audit_flag_name,
+            t.academic_year,
+            t.academic_year_display,
+            t.region,
+            t.school_level,
+            t.region_school_level,
+            t.schoolid,
+            t.school,
+            t.`quarter`,
+            t.semester,
+            t.week_number_quarter,
+            t.quarter_start_date,
+            t.quarter_end_date,
+            t.is_current_term,
+            t.is_quarter_end_date_range,
+            t.week_start_monday,
+            t.week_end_sunday,
+            t.school_week_start_date_lead,
+            t.is_current_week,
+            t.section_or_period,
+            t.sectionid,
+            t.sections_dcid,
+            t.section_number,
+            t.external_expression,
+            t.credit_type,
+            t.course_number,
+            t.course_name,
+            t.exclude_from_gpa,
+            t.is_ap_course,
+            t.teacher_number,
+            t.teacher_name,
+            t.teacher_tableau_username,
+            t.school_leader,
+            t.school_leader_tableau_username,
 
-            max(audit_flag_value) as audit_flag_value,
+            r.cte_grouping,
+            r.audit_category,
+            r.code_type,
+            r.audit_flag_name,
+            r.audit_flag_value,
 
-        from student_conduct_unpivot_raw
-        group by
-            academic_year,
-            academic_year_display,
-            region,
-            school_level,
-            region_school_level,
-            schoolid,
-            school,
-            `quarter`,
-            semester,
-            week_number_quarter,
-            quarter_start_date,
-            quarter_end_date,
-            is_current_term,
-            is_quarter_end_date_range,
-            week_start_monday,
-            week_end_sunday,
-            school_week_start_date_lead,
-            is_current_week,
-            section_or_period,
-            sectionid,
-            sections_dcid,
-            section_number,
-            external_expression,
-            credit_type,
-            course_number,
-            course_name,
-            exclude_from_gpa,
-            is_ap_course,
-            teacher_number,
-            teacher_name,
-            teacher_tableau_username,
-            school_leader,
-            school_leader_tableau_username,
-            cte_grouping,
-            audit_category,
-            code_type,
-            audit_flag_name
+        from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as t
+        inner join
+            student_conduct_agg as r
+            on t.sectionid = r.sectionid
+            and t.quarter = r.quarter
+            and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
+        where t.scaffold_name = 'teacher_scaffold'
     )
 
 /* Branch 1: student assignment flags (aggregated) */
