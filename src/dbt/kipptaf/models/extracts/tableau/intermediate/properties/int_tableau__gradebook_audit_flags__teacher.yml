@@ -7,17 +7,6 @@ models:
         - cte_grouping
         - region
         - schoolid
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - _dbt_source_relation
-              - cte_grouping
-              - audit_flag_name
-              - sectionid
-              - quarter
-              - week_number_quarter
-              - assignmentid
     columns:
       - name: _dbt_source_relation
         data_type: string

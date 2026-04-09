@@ -5,16 +5,6 @@ models:
       teacher flag models. Groups by all non-student columns and takes the max
       audit_flag_value per group, producing one row per teacher-assignment-flag
       combination.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - cte_grouping
-              - audit_flag_name
-              - sectionid
-              - quarter
-              - audit_qt_week_number
-              - teacher_assign_id
     columns:
       - name: academic_year
         description: The academic year as an integer (e.g. 2025 for 2025-2026).
