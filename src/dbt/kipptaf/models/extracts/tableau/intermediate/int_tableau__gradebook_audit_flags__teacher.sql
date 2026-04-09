@@ -147,8 +147,8 @@ select
     r.expectation,
     r.notes,
 
-    null as category_quarter_percent_grade,
-    null as category_quarter_average_all_courses,
+    cast(null as float64) as category_quarter_percent_grade,
+    cast(null as float64) as category_quarter_average_all_courses,
 
     r.assignmentid,
     r.assignment_name,
@@ -238,8 +238,8 @@ select
     r.expectation,
     r.notes,
 
-    null as category_quarter_percent_grade,
-    null as category_quarter_average_all_courses,
+    cast(null as float64) as category_quarter_percent_grade,
+    cast(null as float64) as category_quarter_average_all_courses,
     null as assignmentid,
     null as assignment_name,
     null as duedate,
