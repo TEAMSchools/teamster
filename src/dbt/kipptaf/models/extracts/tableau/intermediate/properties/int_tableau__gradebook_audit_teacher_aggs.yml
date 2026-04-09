@@ -1,0 +1,228 @@
+models:
+  - name: int_tableau__gradebook_audit_teacher_aggs
+    description: >-
+      Teacher-level aggregation of gradebook audit flags from both student and
+      teacher flag models. Groups by all non-student columns and takes the max
+      audit_flag_value per group, producing one row per teacher-assignment-flag
+      combination.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - cte_grouping
+              - audit_flag_name
+              - sectionid
+              - quarter
+              - audit_qt_week_number
+              - teacher_assign_id
+    columns:
+      - name: academic_year
+        description: The academic year as an integer (e.g. 2025 for 2025-2026).
+        data_type: int64
+      - name: academic_year_display
+        description: Display string for the academic year (e.g. "2025-2026").
+        data_type: string
+      - name: region
+        description: KIPP region name (e.g. Newark, Camden, Miami).
+        data_type: string
+      - name: school_level
+        description: School level designation (e.g. ES, MS, HS).
+        data_type: string
+      - name: region_school_level
+        description: Concatenation of region and school level.
+        data_type: string
+      - name: schoolid
+        description: PowerSchool school identifier.
+        data_type: int64
+      - name: school
+        description: School name.
+        data_type: string
+      - name: quarter
+        description: Quarter identifier string.
+        data_type: string
+        quote: true
+      - name: semester
+        description: Semester identifier string.
+        data_type: string
+      - name: audit_qt_week_number
+        description: Week number within the quarter for audit purposes.
+        data_type: int64
+      - name: quarter_start_date
+        description: Start date of the quarter.
+        data_type: date
+      - name: quarter_end_date
+        description: End date of the quarter.
+        data_type: date
+      - name: is_current_quarter
+        description: Whether this row falls in the current quarter.
+        data_type: boolean
+      - name: is_quarter_end_date_range
+        description: Whether the current date is within the quarter-end range.
+        data_type: boolean
+      - name: audit_start_date
+        description: Monday start date of the audit week window.
+        data_type: date
+      - name: audit_end_date
+        description: Sunday end date of the audit week window.
+        data_type: date
+      - name: audit_due_date
+        description: >-
+          Lead school week start date used as the audit due date.
+        data_type: date
+      - name: is_current_week
+        description: Whether this row falls in the current audit week.
+        data_type: boolean
+      - name: assignment_category_name
+        description: Name of the gradebook assignment category.
+        data_type: string
+      - name: assignment_category_code
+        description: Code for the gradebook assignment category.
+        data_type: string
+      - name: assignment_category_term
+        description: Term associated with the assignment category.
+        data_type: string
+      - name: expectation
+        description: Expected number of assignments for the category.
+        data_type: float64
+      - name: notes
+        description: Notes associated with the assignment category expectation.
+        data_type: string
+      - name: section_or_period
+        description: Section or period identifier for the class.
+        data_type: string
+      - name: sectionid
+        description: PowerSchool section identifier.
+        data_type: int64
+      - name: sections_dcid
+        description: PowerSchool sections DCID.
+        data_type: int64
+      - name: section_number
+        description: Section number string.
+        data_type: string
+      - name: external_expression
+        description: External expression for the section schedule.
+        data_type: string
+      - name: credit_type
+        description: Credit type of the course.
+        data_type: string
+      - name: course_number
+        description: PowerSchool course number.
+        data_type: string
+      - name: course_name
+        description: Name of the course.
+        data_type: string
+      - name: exclude_from_gpa
+        description: Whether the course is excluded from GPA calculation.
+        data_type: int64
+      - name: is_ap_course
+        description: Whether the course is an AP course.
+        data_type: boolean
+      - name: teacher_number
+        description: PowerSchool teacher number.
+        data_type: string
+      - name: teacher_name
+        description: Full name of the teacher.
+        data_type: string
+      - name: teacher_tableau_username
+        description: Tableau username for the teacher.
+        data_type: string
+      - name: school_leader
+        description: Name of the school leader.
+        data_type: string
+      - name: school_leader_tableau_username
+        description: Tableau username for the school leader.
+        data_type: string
+      - name: teacher_assign_id
+        description: PowerSchool assignment identifier.
+        data_type: int64
+      - name: teacher_assign_name
+        description: Name of the assignment as entered by the teacher.
+        data_type: string
+      - name: teacher_assign_due_date
+        description: Due date of the assignment.
+        data_type: date
+      - name: teacher_assign_score_type
+        description: Score type of the assignment (e.g. Points, Percent).
+        data_type: string
+      - name: teacher_assign_max_score
+        description: Maximum possible score for the assignment.
+        data_type: float64
+      - name: n_students
+        description: Count of students enrolled in the section.
+        data_type: int64
+      - name: n_late
+        description: Count of students with late submissions.
+        data_type: int64
+      - name: n_exempt
+        description: Count of students marked exempt.
+        data_type: int64
+      - name: n_missing
+        description: Count of students marked missing.
+        data_type: int64
+      - name: n_null
+        description: Count of students with null scores.
+        data_type: int64
+      - name: n_academic_dishonesty
+        description: Count of students flagged for academic dishonesty.
+        data_type: int64
+      - name: n_is_null_missing
+        description: Count of students with null scores expected to be missing.
+        data_type: int64
+      - name: n_is_null_not_missing
+        description: >-
+          Count of students with null scores not expected to be missing.
+        data_type: int64
+      - name: n_expected
+        description: Count of students expected to have a score.
+        data_type: int64
+      - name: n_expected_scored
+        description: Count of expected students who have a score entered.
+        data_type: int64
+      - name: total_expected_scored_section_quarter_week_category
+        description: >-
+          Total expected scored students aggregated at
+          section-quarter-week-category level. Null for rows sourced from the
+          student flag model.
+        data_type: float64
+      - name: total_expected_section_quarter_week_category
+        description: >-
+          Total expected students aggregated at section-quarter-week-category
+          level. Null for rows sourced from the student flag model.
+        data_type: float64
+      - name: percent_graded_for_quarter_week_class
+        description: >-
+          Percentage of expected assignments graded for the quarter-week-class
+          combination. Null for rows sourced from the student flag model.
+        data_type: float64
+      - name: sum_totalpointvalue_section_quarter_category
+        description: >-
+          Sum of total point values at the section-quarter-category level.
+        data_type: float64
+      - name: teacher_running_total_assign_by_cat
+        description: >-
+          Running total of assignments by category for the teacher.
+        data_type: float64
+      - name: teacher_avg_score_for_assign_per_class_section_and_assign_id
+        description: >-
+          Average score for the assignment across the class section.
+        data_type: float64
+      - name: audit_category
+        description: The audit category grouping for the flag.
+        data_type: string
+      - name: cte_grouping
+        description: >-
+          Grouping label indicating the audit grain (e.g. assignment_student,
+          student_course_category, class_category_assignment).
+        data_type: string
+      - name: code_type
+        description: >-
+          Code type for the audit flag (e.g. Gradebook Category, Quarter).
+        data_type: string
+      - name: audit_flag_name
+        description: Name of the specific audit flag being evaluated.
+        data_type: string
+      - name: audit_flag_value
+        description: >-
+          Maximum audit flag value within the group (1 if any row in the group
+          is flagged, 0 otherwise).
+        data_type: int64
