@@ -47,16 +47,6 @@ Exceptions: `kippnewark` adds `iready_schema: kippnj_iready` and
 `renlearn_schema: kippnj_renlearn`. `kipptaf` has
 `bigquery_external_connection_name` — see its CLAUDE.md.
 
-## Shared Dependencies
-
-All projects use:
-
-- `dbt-labs/dbt_utils` — `unique_combination_of_columns`,
-  `generate_surrogate_key`, etc.
-- `dbt-labs/dbt_external_tables` — BigQuery external table staging
-
-District and network projects additionally use `dbt-labs/codegen`.
-
 ## Variable Override Pattern
 
 Source-system projects declare variables with null/zero defaults
@@ -70,6 +60,59 @@ deployments.
 All staging sources use BigQuery external tables backed by GCS (Avro format,
 BigLake connection, 7-day staleness window). Each source's `sources.yml`
 includes `dagster: asset_key` metadata so Dagster can track lineage.
+
+When a PR adds or modifies an external source, flag that the developer must
+stage it with `--target staging` before the dbt Cloud CI job will pass.
+
+## Source Schema Resolution
+
+dbt source YAML `schema:` fields render with `SchemaYamlContext`, which only
+provides `env_var()`, `var()`, `target`, and `project_name` — **not custom
+project macros** (dbt-labs/dbt-core#6056). Use standardized inline Jinja with
+`target.name` checks, not macro calls. Use single-line quoted strings — YAML
+multiline scalars (`|`, `>`) cause whitespace issues with `{%- -%}` tags.
+
+Two inline patterns (see spec for details):
+
+- **Source schema** (all sources except kipptaf cross-regional): prefixes for
+  `defer` and `dev` targets
+- **Region source schema** (kipptaf `sources-kipp*` files only): prefixes for
+  `dev` only (`defer` resolves to production)
+
+## Source File Conventions
+
+- **`sources-bigquery.yml`** — BQ-native sources (Airbyte, Fivetran, frozen
+  archives, AppSheet sync, etc.). Plain schema, no target-conditional prefix.
+  Tables may be active or `enabled: false`.
+- **`sources-external.yml`** — GCS/Google Sheets external sources. Use the
+  target-conditional inline Jinja prefix pattern.
+- **`sources-<project>.yml`** — kipptaf regional sources pointing to district
+  project datasets. Use the region schema pattern (dev-only prefix).
+
+A single integration may have both files under the same source `name:` — dbt
+merges at parse time. When both exist **in the same project**,
+`sources-bigquery.yml` may omit `schema:` (inherits from the external file).
+However, in **source-system packages** consumed by district projects, the
+cross-file schema merge does not bridge the package/consumer boundary — the
+consuming project's schema override won't reach the package-level BQ file. In
+that case, `sources-bigquery.yml` must include its own `schema:` (plain `var()`
+without target-conditional prefixes, since BQ-native tables are static
+production data). Never mix `external:` and non-external active tables in one
+file. Source-system projects place source files alongside or inside their model
+subdirectories, not at the top-level `models/` directory.
+
+### `{{ project_name }}` in source schemas
+
+- **Source-system projects** (amplify, deanslist, edplan, etc.): use
+  `{{ project_name }}`.
+- **kipp\* projects** (kipptaf, kippnewark, etc.): hardcode the project name.
+
+## Shipped Profiles (`src/dbt/*/profiles.yml`)
+
+Dagster-only: default target `prod` + `defer` output. Branch deployments
+explicitly pass `target="defer"` via `DbtCliResource`; prod uses the profile
+default (no Python override needed). No `GITHUB_USER` — not available in Dagster
+deployments. Developers use `.dbt/profiles.yml` for full target support.
 
 ## Model Conventions
 
@@ -116,25 +159,11 @@ data_tests:
 
 ### Test config defaults
 
-All kipp\* `dbt_project.yml` files set project-level test defaults:
-
-```yaml
-data_tests:
-  +severity: warn
-  +store_failures: true
-  +store_failures_as: view
-```
-
 - Do not add `store_failures: true` to individual tests — the project default
   handles it
 - Tests that must error (not warn) need explicit `config: severity: error`
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
-
-### VS Code YAML schema
-
-The VS Code YAML extension does not recognize `store_failures_as` — the
-resulting diagnostic is a false positive. dbt parses it correctly.
 
 ### SQL conventions
 

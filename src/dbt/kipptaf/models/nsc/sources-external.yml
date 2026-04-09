@@ -1,0 +1,24 @@
+sources:
+  - name: nsc
+    schema:
+      "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
+      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif
+      -%}kipptaf_nsc"
+    tables:
+      - name: src_nsc__student_tracker
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/nsc/student_tracker/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+        config:
+          meta:
+            dagster:
+              group: nsc
+              asset_key:
+                - kipptaf
+                - nsc
+                - student_tracker

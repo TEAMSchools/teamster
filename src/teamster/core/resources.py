@@ -55,13 +55,10 @@ def get_io_manager_gcs_file(code_location: str, test: bool = False) -> GCSIOMana
     )
 
 
-def get_dbt_cli_resource(dbt_project: DbtProject, test: bool = False) -> DbtCliResource:
-    if test:
-        return DbtCliResource(
-            project_dir=dbt_project, dbt_executable="/workspaces/teamster/.venv/bin/dbt"
-        )
-    else:
-        return DbtCliResource(project_dir=dbt_project)
+def get_dbt_cli_resource(dbt_project: DbtProject) -> DbtCliResource:
+    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+        return DbtCliResource(project_dir=dbt_project, target="defer")
+    return DbtCliResource(project_dir=dbt_project)
 
 
 def get_powerschool_ssh_resource() -> SSHResource:

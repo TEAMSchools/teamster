@@ -42,7 +42,7 @@ with
             y1.percent as y1_percent_grade_adjusted,
             y1.gpa_points as y1_grade_points,
 
-            null as y1_grade_points_unweighted,
+            su.grade_points as y1_grade_points_unweighted,
 
             if(
                 sg.potentialcrhrs != 0.0, sg.potentialcrhrs, c.credit_hours
@@ -65,6 +65,10 @@ with
             and y1.yearid = sg.yearid
             and y1.course_number = sg.course_number
             and storecode = sg.storecode
+        left join
+            {{ ref("int_powerschool__gradescaleitem_lookup") }} as su
+            on y1.percent between su.min_cutoffpercentage and su.max_cutoffpercentage
+            and y1.gradescale_name_unweighted = su.gradescale_name
         where
             y1.storecode = 'Y1'
             and y1.excludefromgpa = 0

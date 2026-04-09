@@ -9,7 +9,11 @@ PROJECT="${1:-all}"
 
 run_project() {
   local project="$1"
-  uv run scripts/dbt-sxs.py "${project}"
+  uv run dbt run-operation stage_external_sources \
+    --project-dir "src/dbt/${project}/" \
+    --target defer \
+    --vars "{\"ext_full_refresh\": \"true\", \"cloud_storage_uri_base\": \"gs://teamster-${project}/dagster/${project}\"}" \
+    --args 'select: *'
   uv run dbt build --full-refresh --project-dir="src/dbt/${project}/"
 }
 

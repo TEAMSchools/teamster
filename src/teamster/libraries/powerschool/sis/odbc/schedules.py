@@ -10,7 +10,6 @@ from operator import itemgetter
 from zoneinfo import ZoneInfo
 
 from dagster import (
-    MAX_RUNTIME_SECONDS_TAG,
     AssetsDefinition,
     RunRequest,
     ScheduleDefinition,
@@ -21,7 +20,7 @@ from dagster import (
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 from teamster.libraries.powerschool.sis.odbc.utils import (
     evaluate_asset_staleness,
-    powerschool_connection,
+    with_powerschool_retry,
 )
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -31,7 +30,6 @@ def build_powerschool_sis_asset_schedule(
     execution_timezone: ZoneInfo,
     cron_schedule: str,
     asset_selection: list[AssetsDefinition],
-    max_runtime_seconds: int = (60 * 10),
 ) -> ScheduleDefinition:
     """Build a Dagster schedule that detects and rematerializes stale assets.
 
@@ -40,7 +38,6 @@ def build_powerschool_sis_asset_schedule(
         execution_timezone: Timezone for schedule evaluation.
         cron_schedule: Cron expression for schedule frequency.
         asset_selection: Assets to monitor for staleness.
-        max_runtime_seconds: Maximum run duration tag value.
 
     Returns:
         A Dagster schedule function.
@@ -57,18 +54,20 @@ def build_powerschool_sis_asset_schedule(
         ssh_powerschool: SSHResource,
         db_powerschool: PowerSchoolODBCResource,
     ):
-        with powerschool_connection(
-            ssh_powerschool, db_powerschool, context.log
-        ) as connection:
-            results = evaluate_asset_staleness(
+        results = with_powerschool_retry(
+            ssh_resource=ssh_powerschool,
+            db_resource=db_powerschool,
+            log=context.log,
+            work_fn=lambda conn: evaluate_asset_staleness(
                 asset_selection=asset_selection,
                 execution_timezone=execution_timezone,
                 instance=context.instance,
-                connection=connection,
+                connection=conn,
                 db_powerschool=db_powerschool,
                 log=context.log,
                 limit_monthly_partitions=12,
-            )
+            ),
+        )
 
         kwargs = [
             {
@@ -88,7 +87,6 @@ def build_powerschool_sis_asset_schedule(
                 run_key=f"{partitions_def}_{partition_key}",
                 asset_selection=[g["key"] for g in group],
                 partition_key=partition_key or None,
-                tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
             )
 
     return _schedule

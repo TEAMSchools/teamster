@@ -12,10 +12,6 @@ models/
   intermediate/
 ```
 
-All staging models have `contract: enforced: true`. The
-`bigquery_external_connection_name` var is `null` here and set by consuming
-projects.
-
 ## Cross-Project Usage
 
 Referenced as a dbt package by `kippnewark`, `kippcamden`, and `kipptaf`.

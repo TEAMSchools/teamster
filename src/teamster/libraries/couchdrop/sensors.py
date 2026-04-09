@@ -1,7 +1,7 @@
 import json
 import re
 from collections import defaultdict
-from datetime import datetime
+from datetime import UTC, datetime
 from itertools import groupby
 from operator import itemgetter
 from zoneinfo import ZoneInfo
@@ -18,7 +18,6 @@ from dagster import (
     define_asset_job,
     sensor,
 )
-from dagster_shared import check
 
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 
@@ -66,6 +65,14 @@ def build_couchdrop_sftp_sensor(
 
         cursor: dict = json.loads(context.cursor or "{}")
 
+        # 0 when any asset is unprocessed — lists all files on first run
+        min_cursor = min(cursor.values(), default=0)
+
+        if min_cursor > 0:
+            min_modified_time = datetime.fromtimestamp(min_cursor, tz=UTC)
+        else:
+            min_modified_time = None
+
         files = google_drive.files_list_recursive(
             corpora="drive",
             drive_id="0AKZ2G1Z8rxooUk9PVA",
@@ -75,6 +82,7 @@ def build_couchdrop_sftp_sensor(
             folder_id=folder_id,
             file_path=f"/data-team/{code_location}",
             exclude=exclude_dirs,
+            min_modified_time=min_modified_time,
         )
 
         for a in asset_selection:
@@ -91,19 +99,19 @@ def build_couchdrop_sftp_sensor(
                 )
             )
 
-            file_matches = [
-                f
-                for f in files
-                if pattern.match(string=f["path"])
-                and f["modified_timestamp"] > cursor_modified_timestamp
-                and f["size"] > 0
-            ]
+            file_matches = []
+            for f in files:
+                match = pattern.match(string=f["path"])
+                if (
+                    match is not None
+                    and f["modified_timestamp"] > cursor_modified_timestamp
+                    and f["size"] > 0
+                ):
+                    file_matches.append((f, match))
 
-            for f in file_matches:
+            for f, match in file_matches:
                 if f["modified_timestamp"] > max_modified_timestamp:
                     max_modified_timestamp = f["modified_timestamp"]
-
-                match = check.not_none(value=pattern.match(string=f["path"]))
 
                 if isinstance(a.partitions_def, MultiPartitionsDefinition):
                     partition_key = MultiPartitionKey(match.groupdict())

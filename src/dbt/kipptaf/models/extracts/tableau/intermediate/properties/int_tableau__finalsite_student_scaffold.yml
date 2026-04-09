@@ -53,6 +53,8 @@ models:
         data_type: boolean
       - name: is_enrolled_oct15
         data_type: boolean
+      - name: is_enrolled_mar15
+        data_type: boolean
       - name: latest_status
         data_type: string
       - name: aligned_enrollment_type

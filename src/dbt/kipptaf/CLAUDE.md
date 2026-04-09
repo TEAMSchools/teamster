@@ -29,10 +29,13 @@ models/
 Each integration uses two source files with the **same `name:` under
 `sources:`** (dbt merges at parse time):
 
-| File                   | Points to                          | Schema expression            |
-| ---------------------- | ---------------------------------- | ---------------------------- |
-| `sources-external.yml` | GCS Avro / Google Sheets externals | dev-prefixed (env-isolated)  |
-| `sources-bigquery.yml` | Native BQ tables (frozen archives) | plain `project_name_<integ>` |
+| File                   | Points to                          | Schema expression                    |
+| ---------------------- | ---------------------------------- | ------------------------------------ |
+| `sources-external.yml` | GCS Avro / Google Sheets externals | dev-prefixed (env-isolated)          |
+| `sources-bigquery.yml` | Native BQ tables (Airbyte, frozen) | plain hardcoded (e.g. `kipptaf_foo`) |
+
+When both files exist for the same source, `sources-bigquery.yml` omits
+`schema:`.
 
 **Archive pattern**: Disable the model (`config: enabled: false` in properties
 YAML) → add BQ-native entry in `sources-bigquery.yml` → update downstream
@@ -99,8 +102,8 @@ Facebook, Illuminate Fivetran, Instagram.
 ## Cross-Project Refs
 
 Sources models from: `powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`,
-`pearson`, `renlearn`, `titan`, `amplify`, `finalsite`, `overgrad`.
-District-specific PowerSchool data via multiple `sources-kipp*.yml` files.
+`pearson`, `renlearn`, `titan`, `amplify`, `finalsite`. District-specific
+PowerSchool data via multiple `sources-kipp*.yml` files.
 
 ## Exposures
 
@@ -131,13 +134,14 @@ config:
 
 dbt Cloud project ID: `211862`.
 
+## dbt Cloud CI
+
+CI job: `dbt build --select state:modified+ --full-refresh`, target `staging`,
+defers to Staging environment.
+
 ## Model Layer Distinctions
 
 - **`rpt_`** — analyst-built reporting views for external tools. Live in
   `models/extracts/`.
 - **`dim_*` / `fct_*`** — dimensional marts for semantic layer. Live in
   `models/marts/`. Actively being developed.
-
-Key marts: `dim_students`, `dim_staff`, `dim_locations`, `dim_terms`,
-`dim_dates`, `dim_seats`, `fct_attendance`, `fct_staff_attrition`,
-`fct_staff_terminations`, `fct_additional_earnings`, `fct_microgoals`.

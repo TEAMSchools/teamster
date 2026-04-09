@@ -7,7 +7,7 @@ PARCC and NJGPA (New Jersey) standardized tests. Staging-only project.
 
 ```text
 models/
-  staging/     # contract: enforced: true
+  staging/
   sources.yml
 ```
 

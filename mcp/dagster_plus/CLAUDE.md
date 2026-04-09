@@ -46,10 +46,23 @@ New queries are sourced from the Dagster UI TypeScript at
 — no Python package exports client-side queries. Verify field names/types
 against the Python schema in
 [`dagster-graphql/dagster_graphql/schema`](https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-graphql/dagster_graphql/schema).
-**Do not write or modify queries from memory.**
+**Do not write or modify queries from memory.** Cloud-only queries (e.g.,
+`agents` root field) are not in the OSS repo — capture from browser Network tab
+or check `mcp/dagster_plus/schema.json` (full introspection dump of the Cloud
+API).
+
+### Known API limitations
+
+- `agents` query: zero args, no server-side filtering on `errors`,
+  `runWorkerStates`, or `codeServerStates`. Response is 200KB+ — must filter
+  client-side.
 
 ### Schema gotchas
 
+- `AssetConditionEvaluationRecordsOrError` union does not include `PythonError`
+  — never add `... on PythonError` to that query
+- `AssetNode.assetMaterializations` does not accept `afterTimestampMillis` —
+  only the top-level `assetMaterializations` query field does
 - `RunsFilter` uses `pipelineName`, not `jobName` (legacy naming)
 - `Run` has `hasTerminatePermission`, not `hasCancelPermission`
   (`PartitionBackfill` does have `hasCancelPermission`)
@@ -65,9 +78,35 @@ against the Python schema in
 ## Pagination
 
 `list_runs`, `get_run_logs`, `get_asset_condition_evaluations`,
-`get_asset_check_executions`, `list_backfills`, and `search_assets` return a
-`cursor`. Pass it back to page forward. No server-side timestamp filtering —
-paginate and filter client-side.
+`get_asset_check_executions`, `list_backfills`, `search_assets`, and
+`get_location_load_history` return a `cursor`. Pass it back to page forward.
+
+Server-side timestamp filtering is available on:
+
+- `get_tick_history` — `after_timestamp`/`before_timestamp` (Unix epoch floats)
+- `get_asset_materializations` —
+  `before_timestamp_millis`/`after_timestamp_millis` (millisecond epoch as
+  **string**, not float)
+- `list_backfills` — `created_after`/`created_before` (Unix epoch floats)
+
+Other tools require client-side filtering after pagination.
+
+## Discovery tools
+
+- `list_schedules` / `list_sensors` — require `repository_location_name`; use
+  `list_code_locations` first to get location names. Both accept an optional
+  status filter (`RUNNING` or `STOPPED`).
+- `list_sensors` returns `nextTick.timestamp` (predicted next evaluation) and
+  `sensorType` (e.g. `AUTOMATION` for automation condition sensors).
+- `get_tick_history` also returns `nextTick.timestamp` on the instigation state.
+- `get_run_group` — pass any run ID to get the full re-execution chain (all runs
+  sharing the same root). More efficient than traversing
+  `parentRunId`/`rootRunId` manually.
+- `get_location_load_history` — shows deploy timeline per code location with
+  load status (`LOADED`/`ERROR`), timestamps, and error details. Use for
+  diagnosing failed deploys.
+- `get_run` now includes `stepStats` — per-step timing and status without
+  fetching full logs via `get_run_logs`.
 
 ## Diagnosing assets (cross-tool)
 
@@ -77,8 +116,14 @@ Tool selection and diagnostic workflows are in the server `instructions` (see
 - `get_run` for step keys/asset selection, then cross-reference BigQuery schemas
   (`get_table_info`) against dbt contract YAML
 
-### API quirks
+## API quirks
 
+- `get_cloud_agents` supports server-side filtering via optional `agent_id`
+  (substring match), `status` (`RUNNING`/`NOT_RUNNING`), and `errors_after`
+  (Unix epoch). Always returns compact JSON with truncated error messages (300
+  chars). Use filters to avoid 200KB+ unfiltered responses.
+- `get_daemon_health` returns `lastHeartbeatTime: null` for all daemons on
+  Dagster Cloud — only useful as a binary healthy/unhealthy check
 - `get_run_compute_logs` returns null for GKE runs (ephemeral pods) — use
   BigQuery MCP and dbt compilation instead
 - `get_run_logs` returns `timestamp: null` for non-`MessageEvent` types

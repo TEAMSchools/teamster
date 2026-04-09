@@ -56,6 +56,7 @@ models:
         description:
           Hispanic or Latino ethnicity indicator from Pearson ('Y' or null).
 
+
       - name: is_proficient
         data_type: boolean
         description:
@@ -118,6 +119,10 @@ models:
       - name: testscalescore
         data_type: float64
         description: Student's raw scale score on the assessment.
+
+      - name: testscorecomplete
+        data_type: float64
+        description: Score completeness indicator as reported by Pearson.
 
       - name: twoormoreraces
         data_type: string

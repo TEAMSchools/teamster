@@ -21,9 +21,5 @@ schemas:
     destination_tables: [table1, table2]
 ```
 
-**`schedules.py`**: Disabled schedule factory
-(`build_fivetran_start_sync_schedule`) that would trigger a Fivetran sync via
-the connector API. Commented out pending re-enablement.
-
 **`sensors.py`**: Sensor that detects completed Fivetran syncs and emits asset
 materialization events.

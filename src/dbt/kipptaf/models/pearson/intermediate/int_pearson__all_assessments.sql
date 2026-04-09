@@ -37,6 +37,7 @@ with
                     "testperformancelevel_text",
                     "testperformancelevel",
                     "testscalescore",
+                    "testscorecomplete",
                     "twoormoreraces",
                     "white",
                 ],
@@ -69,6 +70,7 @@ with
             u.testperformancelevel_text,
             u.testperformancelevel,
             u.testscalescore,
+            u.testscorecomplete,
             u.twoormoreraces,
             u.white,
 
