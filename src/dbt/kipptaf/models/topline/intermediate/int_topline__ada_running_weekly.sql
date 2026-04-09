@@ -24,40 +24,42 @@ with
             week_end_sunday
     )
 
-select
-    co.student_number,
-    co.academic_year,
-    co.week_start_monday,
-    co.week_end_sunday,
+    running as (
+        select
+            co.student_number,
+            co.academic_year,
+            co.week_start_monday,
+            co.week_end_sunday,
 
-    sum(agg.attendance_value_sum) over (
-        partition by co.studentid, co.academic_year, co.schoolid
-        order by co.week_start_monday asc
-    ) as attendance_value_sum_running,
-
-    sum(agg.membership_value_sum) over (
-        partition by co.studentid, co.academic_year, co.schoolid
-        order by co.week_start_monday asc
-    ) as membership_value_sum_running,
-
-    round(
-        safe_divide(
             sum(agg.attendance_value_sum) over (
                 partition by co.studentid, co.academic_year, co.schoolid
                 order by co.week_start_monday asc
-            ),
+            ) as attendance_value_sum_running,
+
             sum(agg.membership_value_sum) over (
                 partition by co.studentid, co.academic_year, co.schoolid
                 order by co.week_start_monday asc
-            )
-        ),
-        3
+            ) as membership_value_sum_running,
+        from {{ ref("int_extracts__student_enrollments_weeks") }} as co
+        left join
+            agg_weeks as agg
+            on co.studentid = agg.studentid
+            and co.schoolid = agg.schoolid
+            and co.academic_year = agg.academic_year
+            and co.week_start_monday = agg.week_start_monday
+        where co.academic_year >= {{ var("current_academic_year") - 1 }}
+    )
+
+select
+    student_number,
+    academic_year,
+    week_start_monday,
+    week_end_sunday,
+
+    attendance_value_sum_running,
+    membership_value_sum_running,
+
+    round(
+        safe_divide(attendance_value_sum_running, membership_value_sum_running), 3
     ) as ada_running,
-from {{ ref("int_extracts__student_enrollments_weeks") }} as co
-left join
-    agg_weeks as agg
-    on co.studentid = agg.studentid
-    and co.schoolid = agg.schoolid
-    and co.academic_year = agg.academic_year
-    and co.week_start_monday = agg.week_start_monday
-where co.academic_year >= {{ var("current_academic_year") - 1 }}
+from running
