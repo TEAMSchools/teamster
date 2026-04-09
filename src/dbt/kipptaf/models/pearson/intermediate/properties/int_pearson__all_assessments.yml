@@ -56,7 +56,6 @@ models:
         description:
           Hispanic or Latino ethnicity indicator from Pearson ('Y' or null).
 
-
       - name: is_proficient
         data_type: boolean
         description:
