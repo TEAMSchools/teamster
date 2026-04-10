@@ -111,12 +111,19 @@ with
 
     final as (
         select
-            sec.*,
+            sec.* except (expectation),
 
-            agg.teacher_running_total_assign_by_cat,
+            cast(sec.expectation as float64) as expectation,
+            cast(
+                agg.teacher_running_total_assign_by_cat as float64
+            ) as teacher_running_total_assign_by_cat,
             agg.sum_totalpointvalue_section_quarter_category,
-            agg.total_expected_section_quarter_week_category,
-            agg.total_expected_scored_section_quarter_week_category,
+            cast(
+                agg.total_expected_section_quarter_week_category as float64
+            ) as total_expected_section_quarter_week_category,
+            cast(
+                agg.total_expected_scored_section_quarter_week_category as float64
+            ) as total_expected_scored_section_quarter_week_category,
 
             safe_divide(
                 agg.total_expected_scored_section_quarter_week_category,
