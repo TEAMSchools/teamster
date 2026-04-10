@@ -111,9 +111,3 @@ models:
         description: >
           Derived count of proficient students (percent_proficient *
           total_students, rounded to 0 decimal places).
-
-      - name: remove_row
-        data_type: boolean
-        description: >
-          Tag to remove Grade rows that are used only to calculate aggregated
-          values for ALG01 HS
