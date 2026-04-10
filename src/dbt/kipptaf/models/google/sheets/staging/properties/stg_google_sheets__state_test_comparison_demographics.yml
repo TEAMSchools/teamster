@@ -71,7 +71,7 @@ models:
         data_type: string
         description: >
           Raw demographic group label from the source sheet (e.g. Grade,
-          Race/Ethnicity, Gender).
+          Aggregate Ethnicity, Gender).
 
       - name: comparison_demographic_subgroup
         data_type: string
@@ -90,21 +90,8 @@ models:
       - name: aligned_level_test_code
         data_type: string
         description: >
-          Test code adjusted for school level — ALG01 rows with a school_level
-          other than MS_HS are suffixed with the school level (e.g. 'ALG01_HS');
-          all other test codes are passed through unchanged.
-
-      - name: aligned_comparison_demographic_group
-        data_type: string
-        description: >
-          Demographic group after alignment — Grade rows with subgroups 08/09/10
-          are remapped to 'Total'.
-
-      - name: aligned_comparison_demographic_subgroup
-        data_type: string
-        description: >
-          Demographic subgroup after alignment — Grade group rows are remapped
-          to 'All Students'.
+          Test code adjusted for school level for ALG01 to differentiate between
+          MS and HS scores
 
       - name: total_proficient_students
         data_type: float64
