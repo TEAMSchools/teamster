@@ -44,9 +44,15 @@ with
                 when test_name = 'Algebra I'
                 then 'ALG01'
                 when test_name like '%Mathematics%'
-                then concat('MAT', regexp_extract(test_name, r'.{6}(.{2})'))
+                then
+                    concat(
+                        'MAT', lpad(regexp_extract(test_name, r'Grade (\d+)'), 2, '0')
+                    )
                 when test_name like '%ELA%'
-                then concat('ELA', regexp_extract(test_name, r'.{6}(.{2})'))
+                then
+                    concat(
+                        'ELA', lpad(regexp_extract(test_name, r'Grade (\d+)'), 2, '0')
+                    )
             end as aligned_test_code,
 
             case

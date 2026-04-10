@@ -45,5 +45,3 @@ models:
               - comparison_entity
               - comparison_demographic_group
               - comparison_demographic_subgroup
-          config:
-            store_failures: true
