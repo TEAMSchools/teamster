@@ -156,10 +156,6 @@ with
 
             coalesce(sec.school_level_alt, tw.school_level) as school_level,
 
-            cast(tw.academic_year as string)
-            || '-'
-            || right(cast(tw.academic_year + 1 as string), 2) as academic_year_display,
-
             case
                 when
                     tw.region = 'Miami'
