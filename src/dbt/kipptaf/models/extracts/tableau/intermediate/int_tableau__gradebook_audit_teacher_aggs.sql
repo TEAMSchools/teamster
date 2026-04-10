@@ -203,8 +203,12 @@ with
             logical_or(qt_formative_grade_missing) as qt_formative_grade_missing,
             logical_or(qt_summative_grade_missing) as qt_summative_grade_missing,
 
-        from {{ ref("int_tableau__gradebook_audit_student_scaffold") }}
-        where scaffold_name = 'student_category_scaffold'
+        from
+            {{
+                ref(
+                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
+                )
+            }}
         group by _dbt_source_relation, sectionid, `quarter`, assignment_category_code
     ),
 
@@ -254,14 +258,15 @@ with
             r.qt_formative_grade_missing,
             r.qt_summative_grade_missing,
 
-        from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as t
+        from
+            {{ ref("int_tableau__gradebook_audit_section_week_category_scaffold") }}
+            as t
         inner join
             student_category_rollup as r
             on t.sectionid = r.sectionid
             and t.quarter = r.quarter
             and t.assignment_category_code = r.assignment_category_code
             and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
-        where t.scaffold_name = 'teacher_category_scaffold'
     ),
 
     /* UNPIVOT student category flags */
@@ -322,8 +327,7 @@ with
                 qt_student_is_ada_80_plus_gpa_less_2
             ) as qt_student_is_ada_80_plus_gpa_less_2,
 
-        from {{ ref("int_tableau__gradebook_audit_student_scaffold") }}
-        where scaffold_name = 'student_scaffold'
+        from {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
         group by _dbt_source_relation, sectionid, `quarter`
     ),
 
@@ -371,13 +375,12 @@ with
             r.qt_percent_grade_greater_100,
             r.qt_student_is_ada_80_plus_gpa_less_2,
 
-        from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as t
+        from {{ ref("int_tableau__gradebook_audit_section_week_scaffold") }} as t
         inner join
             student_eoq_rollup as r
             on t.sectionid = r.sectionid
             and t.quarter = r.quarter
             and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
-        where t.scaffold_name = 'teacher_scaffold'
     ),
 
     /* UNPIVOT student EOQ flags */
@@ -426,7 +429,8 @@ with
     student_conduct_unpivoted as (
         select *,
         from
-            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
+            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
+            unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_kg_conduct_code_missing,
                     qt_kg_conduct_code_incorrect,
@@ -435,7 +439,6 @@ with
                     qt_g1_g8_conduct_code_incorrect
                 )
             )
-        where scaffold_name = 'student_scaffold'
     ),
 
     student_conduct_filtered as (
@@ -552,13 +555,12 @@ with
             r.audit_flag_name,
             r.audit_flag_value,
 
-        from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as t
+        from {{ ref("int_tableau__gradebook_audit_section_week_scaffold") }} as t
         inner join
             student_conduct_agg as r
             on t.sectionid = r.sectionid
             and t.quarter = r.quarter
             and {{ union_dataset_join_clause(left_alias="t", right_alias="r") }}
-        where t.scaffold_name = 'teacher_scaffold'
     )
 
 select

@@ -1,7 +1,15 @@
 models:
-  - name: int_tableau__gradebook_audit_assignments_student
-    # config:
-    #   materialized: table
+  - name: int_tableau__gradebook_audit_section_week_student_category_scaffold
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - studentid
+              - sectionid
+              - quarter
+              - week_number_quarter
+              - assignment_category_code
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -192,68 +200,4 @@ models:
       - name: qt_formative_grade_missing
         data_type: boolean
       - name: qt_summative_grade_missing
-        data_type: boolean
-      - name: assignmentid
-        data_type: int64
-      - name: assignment_name
-        data_type: string
-      - name: duedate
-        data_type: date
-      - name: scoretype
-        data_type: string
-      - name: scorepoints
-        data_type: float64
-      - name: totalpointvalue
-        data_type: float64
-      - name: is_exempt
-        data_type: int64
-      - name: is_expected_late
-        data_type: int64
-      - name: is_expected_missing
-        data_type: int64
-      - name: is_expected_zero
-        data_type: int64
-      - name: is_expected_academic_dishonesty
-        data_type: int64
-      - name: is_expected_null
-        data_type: int64
-      - name: score_entered
-        data_type: float64
-      - name: assign_final_score_percent
-        data_type: float64
-      - name: assign_expected_to_be_scored
-        data_type: boolean
-      - name: assign_expected_with_score
-        data_type: boolean
-      - name: assign_null_score
-        data_type: boolean
-      - name: assign_score_above_max
-        data_type: boolean
-      - name: assign_w_score_less_5
-        data_type: boolean
-      - name: assign_h_score_less_5
-        data_type: boolean
-      - name: assign_f_score_less_5
-        data_type: boolean
-      - name: assign_w_missing_score_not_5
-        data_type: boolean
-      - name: assign_h_missing_score_not_5
-        data_type: boolean
-      - name: assign_f_missing_score_not_5
-        data_type: boolean
-      - name: assign_w_missing_score_not_0
-        data_type: boolean
-      - name: assign_h_missing_score_not_0
-        data_type: boolean
-      - name: assign_f_missing_score_not_0
-        data_type: boolean
-      - name: assign_s_missing_score_not_0
-        data_type: boolean
-      - name: assign_s_score_less_50p
-        data_type: boolean
-      - name: assign_s_hs_score_less_50p
-        data_type: boolean
-      - name: assign_s_ms_score_not_conversion_chart_options
-        data_type: boolean
-      - name: assign_s_hs_score_not_conversion_chart_options
         data_type: boolean

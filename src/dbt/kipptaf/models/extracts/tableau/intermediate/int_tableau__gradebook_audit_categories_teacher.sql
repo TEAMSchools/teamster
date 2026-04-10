@@ -59,7 +59,9 @@ with
                     sec.assignment_category_code
             ) as total_expected_scored_section_quarter_week_category,
 
-        from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
+        from
+            {{ ref("int_tableau__gradebook_audit_section_week_category_scaffold") }}
+            as sec
         left join
             {{ ref("int_powerschool__gradebook_assignments") }} as a
             on sec.sections_dcid = a.sectionsdcid
@@ -70,7 +72,6 @@ with
             assignment_score_rollup as asg
             on a.assignmentsectionid = asg.assignmentsectionid
             and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
-        where sec.scaffold_name = 'teacher_category_scaffold'
     ),
 
     percent_graded as (

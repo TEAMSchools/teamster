@@ -95,7 +95,7 @@ select
         order by sec.week_number_quarter asc
     ) as teacher_running_total_assign_by_cat,
 
-from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
+from {{ ref("int_tableau__gradebook_audit_section_week_category_scaffold") }} as sec
 left join
     {{ ref("int_powerschool__gradebook_assignments") }} as a
     on sec.sections_dcid = a.sectionsdcid
@@ -117,4 +117,3 @@ left join
     and e.cte is null
     and e.course_number is not null
     and e.is_quarter_end_date_range is not null
-where sec.scaffold_name = 'teacher_category_scaffold'

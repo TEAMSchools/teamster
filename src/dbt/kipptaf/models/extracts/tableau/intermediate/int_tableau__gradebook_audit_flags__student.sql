@@ -76,7 +76,8 @@ with
     eoq_items_unpivoted as (
         select *,
         from
-            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
+            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
+            unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_comment_missing,
                     qt_es_comment_missing,
@@ -99,7 +100,6 @@ with
             and r.school_level = f.school_level
             and r.quarter = f.code
             and r.audit_flag_name = f.audit_flag_name
-            and r.scaffold_name = 'student_scaffold'
             and f.cte_grouping in ('student_course', 'student')
             and f.audit_category != 'Conduct Code'
         left join
@@ -118,7 +118,8 @@ with
     eoq_items_conduct_code_unpivoted as (
         select *,
         from
-            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
+            {{ ref("int_tableau__gradebook_audit_section_week_student_scaffold") }}
+            unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_kg_conduct_code_missing,
                     qt_kg_conduct_code_incorrect,
@@ -141,7 +142,6 @@ with
             and r.quarter = f.code
             and r.grade_level = f.grade_level
             and r.audit_flag_name = f.audit_flag_name
-            and r.scaffold_name = 'student_scaffold'
             and f.cte_grouping = 'student_course'
             and f.audit_category = 'Conduct Code'
         -- permanently remove flags by credit type
@@ -173,7 +173,12 @@ with
     student_course_category_unpivoted as (
         select *,
         from
-            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
+            {{
+                ref(
+                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
+                )
+            }}
+            unpivot (
                 audit_flag_value for audit_flag_name in (
                     qt_effort_grade_missing,
                     w_grade_inflation,
@@ -194,7 +199,6 @@ with
             and r.quarter = f.code
             and r.assignment_category_code = f.alt_code
             and r.audit_flag_name = f.audit_flag_name
-            and r.scaffold_name = 'student_category_scaffold'
             and f.cte_grouping = 'student_course_category'
         -- temporarily remove flags
         left join

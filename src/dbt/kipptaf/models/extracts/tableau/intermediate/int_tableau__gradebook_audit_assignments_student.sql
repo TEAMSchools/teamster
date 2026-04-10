@@ -156,7 +156,9 @@ select
         false
     ) as assign_s_hs_score_not_conversion_chart_options,
 
-from {{ ref("int_tableau__gradebook_audit_student_scaffold") }} as ce
+from
+    {{ ref("int_tableau__gradebook_audit_section_week_student_category_scaffold") }}
+    as ce
 left join
     {{ ref("int_powerschool__gradebook_assignments_scores") }} as a
     on ce.sections_dcid = a.sectionsdcid
@@ -167,4 +169,3 @@ left join
     and {{ union_dataset_join_clause(left_alias="ce", right_alias="a") }}
     and a.iscountedinfinalgrade = 1
     and a.scoretype in ('POINTS', 'PERCENT')
-where ce.scaffold_name = 'student_category_scaffold'
