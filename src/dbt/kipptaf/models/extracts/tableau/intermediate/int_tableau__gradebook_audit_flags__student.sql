@@ -175,7 +175,7 @@ with
         from
             {{
                 ref(
-                    "int_tableau__gradebook_audit_section_week_student_category_scaffold"
+                    "int_tableau__gradebook_audit_section_week_category_student_scaffold"
                 )
             }}
             unpivot (

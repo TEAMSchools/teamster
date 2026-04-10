@@ -157,7 +157,7 @@ select
     ) as assign_s_hs_score_not_conversion_chart_options,
 
 from
-    {{ ref("int_tableau__gradebook_audit_section_week_student_category_scaffold") }}
+    {{ ref("int_tableau__gradebook_audit_section_week_category_student_scaffold") }}
     as ce
 left join
     {{ ref("int_powerschool__gradebook_assignments_scores") }} as a
