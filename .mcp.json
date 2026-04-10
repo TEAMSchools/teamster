@@ -2,7 +2,7 @@
   "mcpServers": {
     "dagster": {
       "command": "bash",
-      "args": ["mcp/dagster_plus/run.sh"],
+      "args": ["scripts/run-dagster-mcp.sh"],
       "env": {
         "DAGSTER_CLOUD_ORGANIZATION_ID": "kipptaf",
         "DAGSTER_CLOUD_DEPLOYMENT": "prod"
