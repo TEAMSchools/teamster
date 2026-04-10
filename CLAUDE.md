@@ -84,3 +84,45 @@ this step.**
   wrong action does this prevent? If you can't name one, cut it. General
   knowledge and human-only context (motivation, rationale, history) don't
   qualify.
+
+## MCP Servers
+
+Dagster+ MCP server: `dagster-plus-mcp` package (`dev` group) —
+[TEAMSchools/dagster-plus-mcp](https://github.com/TEAMSchools/dagster-plus-mcp).
+See that repo's CLAUDE.md for package internals.
+
+### MCP tool selection
+
+Use BigQuery MCP for ad-hoc queries against known production tables. Use dbt
+MCP's `show` only when `ref()` / `source()` resolution is needed — it adds
+compilation overhead.
+
+### Dagster asset diagnosis
+
+When verifying failures, fetch the most recent run per job (`list_runs` with
+`job_name=..., limit=1`, no status filter) — bulk cross-referencing capped
+result sets misses retries and recoveries.
+
+### GKE MCP
+
+Authenticates as impersonated service account
+`codespaces@teamster-332318.iam.gserviceaccount.com`. If `PermissionDenied`,
+check the `CodespacesRole` custom IAM role, not user IAM bindings.
+
+`mcp__gke__query_logs` uses snake_case keys in `time_range` (`start_time`,
+`end_time`), not camelCase. Results cap at 100 — paginate by using the last
+entry's timestamp as the next `start_time`.
+
+For pod-level logs, prefer `mcp__gke__query_logs` over
+`mcp__observability__list_log_entries` — the GKE MCP returns pod labels (run-id,
+op, code-location) that the observability MCP does not.
+
+### Observability MCP
+
+If any tool returns permission denied, flag it to the user — don't assume no
+data.
+
+### BigQuery MCP
+
+Truncates results at 50 rows. When querying `INFORMATION_SCHEMA.COLUMNS` for
+wide tables, paginate with `WHERE ordinal_position > N`.
