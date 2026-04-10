@@ -91,6 +91,11 @@ absence:
 | `marts/`                               | view (default) | `true`               |
 | `illuminate/dlt/staging/repositories/` | `table`        | `false` (override)   |
 
+**Contract scope for `extracts/`**: `contract: enforced: true` applies to ALL
+models under `extracts/`, including `intermediate/` — not just `rpt_` models.
+This means `SELECT *`, `GROUP BY ALL`, and bare `null` columns are not safe in
+any model under this directory.
+
 **Disabled illuminate repositories**: 365, 413, 428 — disabled in
 `models/illuminate/dlt/staging/repositories/properties.yml`. Check before adding
 `ref()` calls to `int_illuminate__repository_data`.

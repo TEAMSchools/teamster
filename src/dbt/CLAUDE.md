@@ -180,6 +180,12 @@ data_tests:
   explaining why and what needs to be fixed upstream.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
   breaks silently when upstream columns change.
+- **Bare `null` in UNION ALL / contracted models**: `null as col_name` resolves
+  to INT64 in BigQuery. When the contract expects a different type, use
+  `cast(null as <type>) as col_name` (string, float64, boolean, date, etc.).
+- **UNPIVOT style**: Always separate UNPIVOTs into their own CTE. Do not combine
+  `table unpivot (...)` with JOINs in the same FROM clause — split into an
+  `_unpivoted` CTE (UNPIVOT only), then a second CTE for the JOINs.
 - **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models.
 - **No `SELECT *` in final `SELECT` of `rpt_`/mart models** — list columns
   explicitly. Pass-through CTEs (`select * from ref(...)`) are fine. Get the
