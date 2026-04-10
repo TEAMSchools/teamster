@@ -97,24 +97,16 @@ select
     r._dbt_source_relation,
     r.academic_year,
     r.academic_year_display,
-    r.yearid,
     r.region,
     r.school_level,
     r.schoolid,
     r.school,
-
-    r.hos,
     r.region_school_level,
-
     r.sectionid,
     r.course_number,
-
     r.sections_dcid,
     r.section_number,
     r.external_expression,
-
-    null as termid,
-
     r.credit_type,
     r.course_name,
     r.exclude_from_gpa,
@@ -130,32 +122,24 @@ select
     r.quarter_end_date,
     r.is_current_term,
     r.is_quarter_end_date_range,
-    r.week_start_date,
-    r.week_end_date,
     r.week_start_monday,
     r.week_end_sunday,
     r.school_week_start_date_lead,
-    r.quarter_end_date_insession,
-    r.week_number_academic_year,
     r.week_number_quarter,
     r.is_current_week,
-
     r.section_or_period,
     r.assignment_category_name,
     r.assignment_category_code,
     r.assignment_category_term,
     r.expectation,
     r.notes,
-
     cast(null as float64) as category_quarter_percent_grade,
     cast(null as float64) as category_quarter_average_all_courses,
-
     r.assignmentid,
     r.assignment_name,
     r.duedate,
     r.scoretype,
     r.totalpointvalue,
-
     r.cte_grouping,
     r.audit_flag_name,
     r.n_students,
@@ -168,13 +152,11 @@ select
     r.n_is_null_not_missing,
     r.n_expected,
     r.n_expected_scored,
-
     null as total_expected_scored_section_quarter_week_category,
     null as total_expected_section_quarter_week_category,
     null as percent_graded_for_quarter_week_class,
     null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
-
     r.teacher_avg_score_for_assign_per_class_section_and_assign_id,
     r.audit_category,
     r.code_type,
@@ -184,28 +166,21 @@ select
 from teacher_unpivot_cca as r
 
 union all
+
 select
     r._dbt_source_relation,
     r.academic_year,
     r.academic_year_display,
-    r.yearid,
     r.region,
     r.school_level,
     r.schoolid,
     r.school,
-
-    r.hos,
     r.region_school_level,
-
     r.sectionid,
     r.course_number,
-
     r.sections_dcid,
     r.section_number,
     r.external_expression,
-
-    null as termid,
-
     r.credit_type,
     r.course_name,
     r.exclude_from_gpa,
@@ -221,23 +196,17 @@ select
     r.quarter_end_date,
     r.is_current_term,
     r.is_quarter_end_date_range,
-    r.week_start_date,
-    r.week_end_date,
     r.week_start_monday,
     r.week_end_sunday,
     r.school_week_start_date_lead,
-    r.quarter_end_date_insession,
-    r.week_number_academic_year,
     r.week_number_quarter,
     r.is_current_week,
-
     r.section_or_period,
     r.assignment_category_name,
     r.assignment_category_code,
     r.assignment_category_term,
     r.expectation,
     r.notes,
-
     cast(null as float64) as category_quarter_percent_grade,
     cast(null as float64) as category_quarter_average_all_courses,
     null as assignmentid,
@@ -245,10 +214,8 @@ select
     null as duedate,
     null as scoretype,
     null as totalpointvalue,
-
     r.cte_grouping,
     r.audit_flag_name,
-
     null as n_students,
     null as n_late,
     null as n_exempt,
@@ -259,15 +226,12 @@ select
     null as n_is_null_not_missing,
     null as n_expected,
     null as n_expected_scored,
-
     r.total_expected_scored_section_quarter_week_category,
     r.total_expected_section_quarter_week_category,
     r.percent_graded_for_quarter_week_class,
     r.sum_totalpointvalue_section_quarter_category,
     r.teacher_running_total_assign_by_cat,
-
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
-
     r.audit_category,
     r.code_type,
 
