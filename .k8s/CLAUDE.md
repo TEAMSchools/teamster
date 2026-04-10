@@ -158,3 +158,13 @@ defaults.
   `resource.type="gce_subnetwork"` +
   `logName=".../compute.googleapis.com%2Ffirewall"` → `instance.zone` +
   `remote_instance.zone`. Filter `dest_port=4000` for agent→code-server gRPC.
+
+## Agent Error Observability
+
+- `get_cloud_agents` errors array capped at **25 per agent** — most recent 25
+  only. GCP container logs on `user-cloud-dagster-cloud-agent-agent` pods are
+  the complete record.
+- Schedule tick evaluation retries gRPC calls indefinitely within a single tick.
+  Agent-level "Error serving request" logs during preemption are noise, not tick
+  failures. Only `get_tick_history(statuses=["FAILURE"])` reflects terminal
+  schedule failures (`max_tick_retries` default 0).
