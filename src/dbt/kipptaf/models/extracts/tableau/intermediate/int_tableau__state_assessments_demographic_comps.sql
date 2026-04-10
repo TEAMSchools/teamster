@@ -30,6 +30,7 @@ with
     */
     prelim_assessments as (
         select academic_year, test_type, count(*) as record_count,
+
         from {{ ref("int_pearson__student_list_report") }}
         where
             -- 2024: first year we track preliminary scores for comparison
@@ -41,6 +42,7 @@ with
 
     valid_prelim_assessments as (
         select pa.academic_year, pa.test_type,
+
         from prelim_assessments as pa
         left join
             {{ ref("int_pearson__all_assessments") }} as p
@@ -57,6 +59,7 @@ with
             any_value(school_level) as school_level,
             any_value(grade_range_band) as grade_range_band,
             any_value(discipline) as discipline,
+
         from {{ ref("stg_google_sheets__state_test_comparison_demographics") }}
         group by aligned_level_test_code
     ),
