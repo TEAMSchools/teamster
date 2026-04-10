@@ -66,6 +66,12 @@ models:
         description: >
           Whether the student scored at the Below or Far Below proficiency band.
 
+      - name: is_504
+        data_type: boolean
+        description: >
+          Whether the student has a 504 plan, derived from
+          studentwithdisabilities being '504' or 'B'.
+
       - name: nativehawaiianorotherpacificislander
         data_type: string
         description: >
@@ -199,12 +205,6 @@ models:
           Testing administration period with 'FallBlock' normalized to 'Fall';
           reserved word alias for Tableau.
 
-      - name: season
-        data_type: string
-        description: >
-          Testing season with 'FallBlock' normalized to 'Fall'; same logic as
-          admin.
-
       - name: aligned_subject
         data_type: string
         description: >
@@ -217,6 +217,19 @@ models:
         data_type: int64
         description:
           Integer representation of is_proficient (1 = true, 0 = false).
+
+      - name: is_approaching_int
+        data_type: int64
+        description: >
+          Integer flag for approaching proficiency (1 = approaching, 0 =
+          otherwise) — NJSLA Science level 2, ELA/Math level 3; always 0 for
+          NJGPA.
+
+      - name: is_below_int
+        data_type: int64
+        description: >
+          Integer flag for below proficiency (1 = below, 0 = otherwise) — NJGPA
+          level 1, NJSLA Science below level 2, ELA/Math below level 3.
 
       - name: aligned_aggregate_ethnicity
         data_type: string

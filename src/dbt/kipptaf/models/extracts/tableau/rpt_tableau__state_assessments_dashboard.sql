@@ -5,6 +5,38 @@
 ] %}
 
 with
+    /*
+        Prelim score gating: automatically includes preliminary NJ scores only
+        when official scores for that assessment/year have not yet landed in
+        int_pearson__all_assessments. This eliminates the need to manually
+        comment/uncomment the prelim branch each time a new student list file
+        is loaded — the branch self-deactivates once official scores arrive.
+    */
+    prelim_assessments as (
+        select academic_year, test_type, count(*) as record_count,
+
+        from {{ ref("int_pearson__student_list_report") }}
+        where
+            -- 2024: first year we track preliminary scores for comparison
+            academic_year >= 2024
+            and administration = 'Spring'
+            and scale_score is not null
+        group by academic_year, test_type
+    ),
+
+    valid_prelim_assessments as (
+        select pa.academic_year, pa.test_type,
+
+        from prelim_assessments as pa
+        left join
+            {{ ref("int_pearson__all_assessments") }} as p
+            on pa.academic_year = p.academic_year
+            and pa.test_type = p.assessment_name
+            and p.`admin` = 'Spring'
+        group by pa.academic_year, pa.test_type
+        having count(p.assessment_name) = 0
+    ),
+
     schedules_current as (
         select
             c._dbt_source_relation,
@@ -72,6 +104,7 @@ with
             academic_year,
             assessment_name,
             aligned_test_code,
+            school_level,
             region,
             season,
 
@@ -95,7 +128,13 @@ with
         where
             comparison_demographic_group = 'Total'
             and comparison_demographic_subgroup = 'All Students'
-        group by academic_year, assessment_name, aligned_test_code, region, season
+        group by
+            academic_year,
+            assessment_name,
+            aligned_test_code,
+            school_level,
+            region,
+            season
     ),
 
     assessment_scores as (
@@ -119,7 +158,7 @@ with
             results_type,
 
             `admin`,
-            season,
+            `admin` as season,
             aligned_subject as `subject`,
             aligned_test_code as test_code,
 
@@ -151,7 +190,7 @@ with
 
             cast(assessment_grade as int) as test_grade,
 
-            'Actual' as results_type,
+            results_type,
 
             administration_window as `admin`,
             season,
@@ -160,7 +199,7 @@ with
 
         from {{ ref("int_fldoe__all_assessments") }}
         where scale_score is not null
-    /* disabled until next december
+
         union all
 
         select
@@ -168,42 +207,12 @@ with
             academic_year,
             local_student_identifier as localstudentidentifier,
             cast(state_student_identifier as string) as state_id,
-
             test_type as assessment_name,
-
-            case
-                when test_name like '%Mathematics%'
-                then 'Math'
-                when test_name in ('Algebra I', 'Geometry')
-                then 'Math'
-                else 'ELA'
-            end as discipline,
-
+            discipline,
             scale_score as score,
 
-            case
-                when performance_level = 'Did Not Yet Meet Expectations'
-                then 1
-                when performance_level = 'Partially Met Expectations'
-                then 2
-                when performance_level = 'Approached Expectations'
-                then 3
-                when performance_level = 'Met Expectations'
-                then 4
-                when performance_level = 'Exceeded Expectations'
-                then 5
-                when performance_level = 'Not Yet Graduation Ready'
-                then 1
-                when performance_level = 'Graduation Ready'
-                then 2
-            end as performance_band_level,
-
-            if(
-                performance_level
-                in ('Met Expectations', 'Exceeded Expectations', 'Graduation Ready'),
-                true,
-                false
-            ) as is_proficient,
+            performance_band_level,
+            is_proficient,
 
             performance_level as performance_band,
             null as lep_status,
@@ -216,13 +225,7 @@ with
             administration as `admin`,
             administration as season,
 
-            case
-                when test_name like '%Mathematics%'
-                then 'Mathematics'
-                when test_name in ('Algebra I', 'Geometry')
-                then 'Mathematics'
-                else 'English Language Arts'
-            end as subject,
+            `subject`,
 
             aligned_test_code as test_code,
 
@@ -230,8 +233,9 @@ with
         where
             state_student_identifier is not null
             and administration = 'Spring'
-            and test_type = 'NJSLA'
-            and academic_year = {{ var("current_academic_year") - 1 }}*/
+            and scale_score is not null
+            -- 2024: first year we track preliminary scores for comparison
+            and academic_year >= 2024
     )
 
 -- NJ scores
@@ -267,7 +271,7 @@ select
 
     a.assessment_name,
     a.discipline,
-    a.subject,
+    a.`subject`,
     a.test_code,
     a.test_grade,
     a.`admin`,
@@ -323,6 +327,7 @@ left join
     on a.academic_year = c.academic_year
     and a.assessment_name = c.assessment_name
     and a.test_code = c.aligned_test_code
+    and e.school_level = c.school_level
     and a.season = c.season
     and e.region = c.region
 left join
@@ -386,7 +391,7 @@ select
 
     a.assessment_name,
     a.discipline,
-    a.subject,
+    a.`subject`,
     a.test_code,
     a.test_grade,
     a.`admin`,
@@ -443,6 +448,7 @@ left join
     on a.academic_year = c.academic_year
     and a.assessment_name = c.assessment_name
     and a.test_code = c.aligned_test_code
+    and e.school_level = c.school_level
     and a.season = c.season
     and e.region = c.region
 left join
@@ -506,7 +512,7 @@ select
 
     a.assessment_name,
     a.discipline,
-    a.subject,
+    a.`subject`,
     a.test_code,
     a.test_grade,
     a.`admin`,
@@ -557,11 +563,16 @@ inner join
     and a.results_type = 'Preliminary'
     and e.rn_year = 1
     and e.grade_level > 2
+inner join
+    valid_prelim_assessments as vpa
+    on a.academic_year = vpa.academic_year
+    and a.assessment_name = vpa.test_type
 left join
     state_comps as c
     on a.academic_year = c.academic_year
     and a.assessment_name = c.assessment_name
     and a.test_code = c.aligned_test_code
+    and e.school_level = c.school_level
     and a.season = c.season
     and e.region = c.region
 left join

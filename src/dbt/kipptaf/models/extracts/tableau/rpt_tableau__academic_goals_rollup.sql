@@ -37,13 +37,13 @@ with
             testscalescore as scale_score,
             testperformancelevel as `level`,
 
-            'NJSLA' as assessment_type,
+            assessment_name as assessment_type,
 
             academic_year + 1 as academic_year_plus,
 
-            if(testperformancelevel >= 4, 1, 0) as is_proficient_int,
-            if(testperformancelevel = 3, 1, 0) as is_approaching_int,
-            if(testperformancelevel < 3, 1, 0) as is_below_int,
+            is_proficient_int,
+            is_approaching_int,
+            is_below_int,
 
             case
                 when `subject` like 'English%'
@@ -53,6 +53,7 @@ with
                     or `subject` in ('Mathematics', 'Geometry')
                 then 'Math'
             end as `subject`,
+
         from {{ ref("int_pearson__all_assessments") }}
         where
             assessment_name = 'NJSLA'
@@ -71,14 +72,15 @@ with
 
             f.academic_year + 1 as academic_year_plus,
 
-            if(f.achievement_level_int >= 3, 1, 0) as is_proficient_int,
-            if(f.achievement_level_int = 2, 1, 0) as is_approaching_int,
-            if(f.achievement_level_int < 2, 1, 0) as is_below_int,
+            f.is_proficient_int,
+            f.is_approaching_int,
+            f.is_below_int,
 
             if(
                 f.assessment_subject = 'English Language Arts', 'Reading', 'Math'
             ) as `subject`,
-        from {{ ref("stg_fldoe__fast") }} as f
+
+        from {{ ref("int_fldoe__all_assessments") }} as f
         inner join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
             on f.student_id = suf.fleid
@@ -88,7 +90,10 @@ with
             on suf.studentsdcid = s.dcid
             and {{ union_dataset_join_clause(left_alias="suf", right_alias="s") }}
             and s.grade_level >= 4
-        where f.administration_window = 'PM3' and f.scale_score is not null
+        where
+            f.assessment_name = 'FAST'
+            and f.administration_window = 'PM3'
+            and f.scale_score is not null
 
         union all
 
@@ -103,14 +108,15 @@ with
 
             f.academic_year as academic_year_plus,
 
-            if(f.achievement_level_int >= 3, 1, 0) as is_proficient_int,
-            if(f.achievement_level_int = 2, 1, 0) as is_approaching_int,
-            if(f.achievement_level_int < 2, 1, 0) as is_below_int,
+            f.is_proficient_int,
+            f.is_approaching_int,
+            f.is_below_int,
 
             if(
                 f.assessment_subject = 'English Language Arts', 'Reading', 'Math'
             ) as `subject`,
-        from {{ ref("stg_fldoe__fast") }} as f
+
+        from {{ ref("int_fldoe__all_assessments") }} as f
         inner join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
             on f.student_id = suf.fleid
@@ -120,7 +126,10 @@ with
             on suf.studentsdcid = s.dcid
             and {{ union_dataset_join_clause(left_alias="suf", right_alias="s") }}
             and s.grade_level = 3
-        where f.administration_window = 'PM1' and f.scale_score is not null
+        where
+            f.assessment_name = 'FAST'
+            and f.administration_window = 'PM1'
+            and f.scale_score is not null
 
         union all
 

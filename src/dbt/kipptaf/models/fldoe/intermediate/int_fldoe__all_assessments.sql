@@ -14,6 +14,7 @@ with
 
             'FAST_NEW' as source_system,
             'FL' as destination_system,
+
         from
             unnest(
                 generate_array(2023, {{ var("current_academic_year") }})
@@ -28,6 +29,7 @@ with
             2022 as academic_year,
             'FAST' as source_system,
             'FL' as destination_system,
+
         from unnest(['PM1', 'PM2']) as administration_window
 
         union all
@@ -54,14 +56,13 @@ select
     fl.performance_level,
     fl.student_id,
     fl.assessment_name,
+    fl.performance_level as achievement_level_int,
 
     cw1.sublevel_number,
     cw1.sublevel_name,
 
     'Actual' as results_type,
     'KTAF FL' as district_state,
-
-    cast(regexp_extract(fl.achievement_level, r'\d+') as int) as achievement_level_int,
 
     case
         when fl.test_code = 'ALG01' and fl.assessment_grade = '8'
@@ -80,15 +81,19 @@ select
     end as illuminate_subject,
 
     case
-        when cast(regexp_extract(fl.achievement_level, r'\d+') as int) = 1
+        when fl.performance_level = 1
         then 'Below/Far Below'
-        when cast(regexp_extract(fl.achievement_level, r'\d+') as int) = 2
+        when fl.performance_level = 2
         then 'Approaching'
-        when cast(regexp_extract(fl.achievement_level, r'\d+') as int) >= 3
+        when fl.performance_level >= 3
         then 'At/Above'
     end as fast_aggregated_proficiency,
 
     if(fl.is_proficient, 1, 0) as is_proficient_int,
+
+    if(fl.performance_level = 2, 1, 0) as is_approaching_int,
+
+    if(fl.performance_level < 2, 1, 0) as is_below_int,
 
     if(cw1.sublevel_number >= 6, null, cw2.scale_low) as scale_for_proficiency,
 

@@ -130,6 +130,26 @@ with
                 then 'At/Above'
             end as njsla_aggregated_proficiency,
 
+            case
+                when u.assessment_name = 'NJGPA'
+                then 0
+                when u.assessment_name = 'NJSLA Science' and u.testperformancelevel = 2
+                then 1
+                when u.discipline in ('ELA', 'Math') and u.testperformancelevel = 3
+                then 1
+                else 0
+            end as is_approaching_int,
+
+            case
+                when u.assessment_name = 'NJGPA' and u.testperformancelevel = 1
+                then 1
+                when u.assessment_name = 'NJSLA Science' and u.testperformancelevel < 2
+                then 1
+                when u.discipline in ('ELA', 'Math') and u.testperformancelevel < 3
+                then 1
+                else 0
+            end as is_below_int,
+
             if(u.englishlearnerel = 'Y', true, false) as lep_status,
 
             if(
@@ -137,8 +157,6 @@ with
             ) as iep_status,
 
             if(u.`period` = 'FallBlock', 'Fall', u.`period`) as `admin`,
-
-            if(u.`period` = 'FallBlock', 'Fall', u.`period`) as season,
 
             if(
                 u.`subject` = 'English Language Arts/Literacy',

@@ -48,7 +48,7 @@ with
             {{ ref("int_pearson__all_assessments") }} as p
             on pa.academic_year = p.academic_year
             and pa.test_type = p.assessment_name
-            and p.season = 'Spring'
+            and p.`admin` = 'Spring'
         group by pa.academic_year, pa.test_type
         having count(p.assessment_name) = 0
     ),
@@ -94,7 +94,7 @@ with
             on e.academic_year = a.academic_year
             and e.pearson_local_student_identifier = a.localstudentidentifier
             and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
-            and a.season = 'Spring'
+            and a.`admin` = 'Spring'
             and a.testscalescore is not null
         where
             e.rn_year = 1
