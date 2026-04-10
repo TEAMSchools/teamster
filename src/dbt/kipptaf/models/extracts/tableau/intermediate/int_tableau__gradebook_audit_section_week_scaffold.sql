@@ -136,6 +136,7 @@ with
             tw.hos,
             tw.school_leader,
             tw.school_leader_tableau_username,
+            tw.academic_year_display,
 
             sec.sections_dcid,
             sec.sectionid,
