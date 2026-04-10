@@ -70,6 +70,12 @@ material (keys, tokens, connection strings, high-entropy strings). Fires for
 Bash, Read, Grep, NotebookEdit, WebFetch, WebSearch, and MCP tools. Does NOT
 fire for Edit.
 
+## Git authentication for new repos
+
+The Codespace `GITHUB_TOKEN` (`ghu_*`) only has access to the repo it was
+provisioned for. Pushing to other org repos requires bypassing it:
+`GITHUB_TOKEN= git -c credential.helper='!gh auth git-credential' push`
+
 ## Modifying protected files
 
 - Hook scripts (`.claude/hooks/**/*.sh`), `.devcontainer/scripts/`, and
