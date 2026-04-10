@@ -3,11 +3,9 @@ models:
     description: >-
       Section × week scaffold for the gradebook audit pipeline. One row per
       section per calendar week per quarter. Provides teacher, course, and
-      schedule context for all downstream audit models. Materialized as a table
-      — consumed by the category scaffold, student scaffold, teacher aggs, and
+      schedule context for all downstream audit models. Consumed by the category
+      scaffold, student scaffold, teacher aggs, and
       rpt_tableau__assignment_checks.
-    config:
-      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

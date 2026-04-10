@@ -5,8 +5,6 @@ models:
       scaffold by joining gradebook category expectations (W, H, F, S). Consumed
       by assignments_teacher, categories_teacher, the category student scaffold,
       and teacher_aggs.
-    config:
-      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
