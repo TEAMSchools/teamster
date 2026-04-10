@@ -1,65 +1,65 @@
-withn
-custom_rows as (
-    select
-        academic_year,
-        assessment_name,
-        season,
-        school_level,
-        grade_range_band,
-        discipline,
-        aligned_test_code,
-        region,
-        comparison_entity,
-        comparison_demographic_group,
-        comparison_demographic_subgroup,
-        percent_proficient,
-        total_students,
+with
+    custom_rows as (
+        select
+            academic_year,
+            assessment_name,
+            season,
+            school_level,
+            grade_range_band,
+            discipline,
+            aligned_test_code,
+            region,
+            comparison_entity,
+            comparison_demographic_group,
+            comparison_demographic_subgroup,
+            percent_proficient,
+            total_students,
 
-    from
-        {{
-            source(
-                "google_sheets",
-                "src_google_sheets__state_test_comparison_demographics",
-            )
-        }}
+        from
+            {{
+                source(
+                    "google_sheets",
+                    "src_google_sheets__state_test_comparison_demographics",
+                )
+            }}
 
-    union all
+        union all
 
-    -- HS-only ALG01 totals are not provided by official comp data sources
-    select
-        academic_year,
-        assessment_name,
-        season,
-        grade_range_band as school_level,
-        grade_range_band,
-        discipline,
-        aligned_test_code,
-        region,
-        comparison_entity,
-        'Total' as comparison_demographic_group,
-        'All Students' as comparison_demographic_subgroup,
+        -- HS-only ALG01 totals are not provided by official comp data sources
+        select
+            academic_year,
+            assessment_name,
+            season,
+            grade_range_band as school_level,
+            grade_range_band,
+            discipline,
+            aligned_test_code,
+            region,
+            comparison_entity,
+            'Total' as comparison_demographic_group,
+            'All Students' as comparison_demographic_subgroup,
 
-        sum(percent_proficient) as percent_proficient,
-        sum(total_students) as total_students,
+            sum(percent_proficient) as percent_proficient,
+            sum(total_students) as total_students,
 
-    from
-        {{
-            source(
-                "google_sheets",
-                "src_google_sheets__state_test_comparison_demographics",
-            )
-        }}
-    where school_level in ('HS_09', 'HS_10') and aligned_test_code = 'ALG01'
-    group by
-        academic_year,
-        assessment_name,
-        season,
-        grade_range_band,
-        discipline,
-        aligned_test_code,
-        region,
-        comparison_entity
-)
+        from
+            {{
+                source(
+                    "google_sheets",
+                    "src_google_sheets__state_test_comparison_demographics",
+                )
+            }}
+        where school_level in ('HS_09', 'HS_10') and aligned_test_code = 'ALG01'
+        group by
+            academic_year,
+            assessment_name,
+            season,
+            grade_range_band,
+            discipline,
+            aligned_test_code,
+            region,
+            comparison_entity
+    )
 
 select
     *,
