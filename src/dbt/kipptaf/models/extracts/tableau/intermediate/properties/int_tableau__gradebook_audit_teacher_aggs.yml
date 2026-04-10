@@ -1,5 +1,7 @@
 models:
   - name: int_tableau__gradebook_audit_teacher_aggs
+    config:
+      materialized: table
     description: >-
       Teacher-level aggregation of gradebook audit flags from both student and
       teacher flag models. Groups by all non-student columns and takes the max
