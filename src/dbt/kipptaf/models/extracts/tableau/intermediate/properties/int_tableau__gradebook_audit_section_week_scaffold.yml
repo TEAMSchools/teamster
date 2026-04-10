@@ -1,5 +1,11 @@
 models:
   - name: int_tableau__gradebook_audit_section_week_scaffold
+    description: >-
+      Section × week scaffold for the gradebook audit pipeline. One row per
+      section per calendar week per quarter. Provides teacher, course, and
+      schedule context for all downstream audit models. Materialized as a table
+      — consumed by the category scaffold, student scaffold, teacher aggs, and
+      rpt_tableau__assignment_checks.
     config:
       materialized: table
     data_tests:

@@ -1,5 +1,10 @@
 models:
   - name: int_tableau__gradebook_audit_section_week_student_scaffold
+    description: >-
+      Student × section × week scaffold with quarter-level audit flags. Computes
+      comment, conduct code, GPA, and ADA flags per student per section per
+      week. Consumed by the student flags model and teacher_aggs for aggregation
+      to teacher grain.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

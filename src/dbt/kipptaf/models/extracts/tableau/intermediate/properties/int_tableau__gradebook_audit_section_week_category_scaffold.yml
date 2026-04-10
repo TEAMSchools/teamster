@@ -1,5 +1,10 @@
 models:
   - name: int_tableau__gradebook_audit_section_week_category_scaffold
+    description: >-
+      Section × week × assignment category scaffold. Extends the section-week
+      scaffold by joining gradebook category expectations (W, H, F, S). Consumed
+      by assignments_teacher, categories_teacher, the category student scaffold,
+      and teacher_aggs.
     config:
       materialized: table
     data_tests:
