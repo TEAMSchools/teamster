@@ -22,7 +22,7 @@ with
                     "src_google_sheets__state_test_comparison_demographics",
                 )
             }}
-        where remove_row is null
+        where not remove_row
 
         union all
 
