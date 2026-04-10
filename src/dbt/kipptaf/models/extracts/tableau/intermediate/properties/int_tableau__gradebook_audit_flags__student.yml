@@ -10,13 +10,6 @@ models:
       JOIN. No uniqueness test — this is a multi-grain UNION ALL (assignment,
       category, EOQ, conduct code). Uniqueness is enforced upstream on each
       single-grain scaffold model.
-    config:
-      materialized: table
-      cluster_by:
-        - code_type
-        - cte_grouping
-        - region
-        - schoolid
     columns:
       - name: _dbt_source_relation
         data_type: string
