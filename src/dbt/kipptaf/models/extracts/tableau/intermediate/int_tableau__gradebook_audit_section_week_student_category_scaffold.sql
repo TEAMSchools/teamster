@@ -152,16 +152,16 @@ select
     cg.category_quarter_percent_grade,
     cg.category_quarter_average_all_courses,
 
-    null as qt_student_is_ada_80_plus_gpa_less_2,
-    null as qt_percent_grade_greater_100,
-    null as qt_grade_70_comment_missing,
-    null as qt_comment_missing,
-    null as qt_es_comment_missing,
-    null as qt_g1_g8_conduct_code_missing,
-    null as qt_g1_g8_conduct_code_incorrect,
-    null as qt_kg_conduct_code_missing,
-    null as qt_kg_conduct_code_incorrect,
-    null as qt_kg_conduct_code_not_hr,
+    cast(null as boolean) as qt_student_is_ada_80_plus_gpa_less_2,
+    cast(null as boolean) as qt_percent_grade_greater_100,
+    cast(null as boolean) as qt_grade_70_comment_missing,
+    cast(null as boolean) as qt_comment_missing,
+    cast(null as boolean) as qt_es_comment_missing,
+    cast(null as boolean) as qt_g1_g8_conduct_code_missing,
+    cast(null as boolean) as qt_g1_g8_conduct_code_incorrect,
+    cast(null as boolean) as qt_kg_conduct_code_missing,
+    cast(null as boolean) as qt_kg_conduct_code_incorrect,
+    cast(null as boolean) as qt_kg_conduct_code_not_hr,
 
     if(
         sec.assignment_category_code = 'W'

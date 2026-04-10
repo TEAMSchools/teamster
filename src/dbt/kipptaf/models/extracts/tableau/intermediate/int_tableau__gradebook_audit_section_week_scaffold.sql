@@ -213,11 +213,11 @@ with
 select
     slm.*,
 
-    null as assignment_category_code,
-    null as assignment_category_name,
-    null as assignment_category_term,
-    null as expectation,
-    null as notes,
+    cast(null as string) as assignment_category_code,
+    cast(null as string) as assignment_category_name,
+    cast(null as string) as assignment_category_term,
+    cast(null as int64) as expectation,
+    cast(null as string) as notes,
 
     if(
         current_date('{{ var("local_timezone") }}')

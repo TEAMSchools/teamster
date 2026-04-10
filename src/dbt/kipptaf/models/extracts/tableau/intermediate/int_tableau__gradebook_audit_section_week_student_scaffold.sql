@@ -120,14 +120,14 @@ select
     qg.quarter_conduct,
     qg.quarter_comment_value,
 
-    null as assignment_category_name,
-    null as assignment_category_code,
-    null as assignment_category_term,
-    null as expectation,
-    null as notes,
+    cast(null as string) as assignment_category_name,
+    cast(null as string) as assignment_category_code,
+    cast(null as string) as assignment_category_term,
+    cast(null as int64) as expectation,
+    cast(null as string) as notes,
 
-    null as category_quarter_percent_grade,
-    null as category_quarter_average_all_courses,
+    cast(null as float64) as category_quarter_percent_grade,
+    cast(null as float64) as category_quarter_average_all_courses,
 
     -- gpa and ada tag
     if(
@@ -221,10 +221,10 @@ select
         false
     ) as qt_kg_conduct_code_not_hr,
 
-    null as w_grade_inflation,
-    null as qt_effort_grade_missing,
-    null as qt_formative_grade_missing,
-    null as qt_summative_grade_missing,
+    cast(null as boolean) as w_grade_inflation,
+    cast(null as boolean) as qt_effort_grade_missing,
+    cast(null as boolean) as qt_formative_grade_missing,
+    cast(null as boolean) as qt_summative_grade_missing,
 
 from {{ ref("int_extracts__student_enrollments") }} as s
 inner join
