@@ -7,7 +7,9 @@ models:
       anti-joins. Materialized as a table — consumed by
       rpt_tableau__gradebook_audit, rpt_tableau__gradebook_es_comments, and
       rpt_tableau__gradebook_ms_hs_comments for student-level detail in the LEFT
-      JOIN.
+      JOIN. No uniqueness test — this is a multi-grain UNION ALL (assignment,
+      category, EOQ, conduct code). Uniqueness is enforced upstream on each
+      single-grain scaffold model.
     config:
       materialized: table
       cluster_by:

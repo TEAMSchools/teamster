@@ -4,7 +4,10 @@ models:
       Teacher-level aggregation of gradebook audit flags from both student and
       teacher flag models. Groups by all non-student columns and takes the max
       audit_flag_value per group, producing one row per teacher-assignment-flag
-      combination.
+      combination. No uniqueness test — this is a multi-grain UNION ALL
+      (assignment, category, EOQ, conduct code, class_category_assignment,
+      class_category). Uniqueness is enforced upstream on each single-grain
+      scaffold model.
     columns:
       - name: academic_year
         description: The academic year as an integer (e.g. 2025 for 2025-2026).
