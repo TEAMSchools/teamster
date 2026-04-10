@@ -22,6 +22,7 @@ with
                     "src_google_sheets__state_test_comparison_demographics",
                 )
             }}
+        where remove_row is null
 
         union all
 
@@ -49,7 +50,7 @@ with
                     "src_google_sheets__state_test_comparison_demographics",
                 )
             }}
-        where school_level in ('HS_09', 'HS_10') and aligned_test_code = 'ALG01'
+        where remove_row and aligned_test_code = 'ALG01'
         group by
             academic_year,
             assessment_name,
