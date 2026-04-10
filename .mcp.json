@@ -1,9 +1,21 @@
 {
   "mcpServers": {
     "dagster": {
-      "command": "bash",
-      "args": ["scripts/run-dagster-mcp.sh"],
+      "command": "op",
+      "args": [
+        "run",
+        "--no-masking",
+        "--",
+        "uv",
+        "run",
+        "--group",
+        "dev",
+        "python",
+        "-m",
+        "dagster_plus_mcp"
+      ],
       "env": {
+        "DAGSTER_CLOUD_API_TOKEN": "op://Data Team/Dagster Cloud Agent/credential",
         "DAGSTER_CLOUD_ORGANIZATION_ID": "kipptaf",
         "DAGSTER_CLOUD_DEPLOYMENT": "prod"
       }
