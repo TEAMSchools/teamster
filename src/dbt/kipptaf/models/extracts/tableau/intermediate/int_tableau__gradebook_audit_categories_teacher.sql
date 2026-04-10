@@ -21,9 +21,14 @@ with
         group by s._dbt_source_relation, s.assignmentsectionid
     ),
 
-    assignments as (
+    assignment_aggs as (
         select
-            sec.*,
+            sec._dbt_source_relation,
+            sec.sectionid,
+            sec.`quarter`,
+            sec.week_number_quarter,
+            sec.assignment_category_code,
+            sec.assignment_category_term,
 
             count(a.assignmentid) over (
                 partition by
@@ -36,7 +41,7 @@ with
             sum(a.totalpointvalue) over (
                 partition by
                     sec._dbt_source_relation,
-                    sec.quarter,
+                    sec.`quarter`,
                     sec.sectionid,
                     sec.assignment_category_code
             ) as sum_totalpointvalue_section_quarter_category,
@@ -45,7 +50,7 @@ with
                 partition by
                     sec._dbt_source_relation,
                     sec.sectionid,
-                    sec.quarter,
+                    sec.`quarter`,
                     sec.week_number_quarter,
                     sec.assignment_category_code
             ) as total_expected_section_quarter_week_category,
@@ -54,7 +59,7 @@ with
                 partition by
                     sec._dbt_source_relation,
                     sec.sectionid,
-                    sec.quarter,
+                    sec.`quarter`,
                     sec.week_number_quarter,
                     sec.assignment_category_code
             ) as total_expected_scored_section_quarter_week_category,
@@ -74,137 +79,113 @@ with
             and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
     ),
 
-    percent_graded as (
+    category_aggs as (
         select
-            *,
+            _dbt_source_relation,
+            sectionid,
+            `quarter`,
+            week_number_quarter,
+            assignment_category_code,
 
-            safe_divide(
-                total_expected_scored_section_quarter_week_category,
+            max(
+                teacher_running_total_assign_by_cat
+            ) as teacher_running_total_assign_by_cat,
+            max(
+                sum_totalpointvalue_section_quarter_category
+            ) as sum_totalpointvalue_section_quarter_category,
+            max(
                 total_expected_section_quarter_week_category
-            ) as percent_graded_for_quarter_week_class,
+            ) as total_expected_section_quarter_week_category,
+            max(
+                total_expected_scored_section_quarter_week_category
+            ) as total_expected_scored_section_quarter_week_category,
 
-        from assignments
+        from assignment_aggs
+        group by
+            _dbt_source_relation,
+            sectionid,
+            `quarter`,
+            week_number_quarter,
+            assignment_category_code
     ),
 
     final as (
         select
-            _dbt_source_relation,
-            schoolid,
-            yearid,
-            academic_year,
-            `quarter`,
-            semester,
-            quarter_start_date,
-            quarter_end_date,
-            is_current_term,
-            school,
-            region,
-            school_level,
-            region_school_level,
-            week_start_date,
-            week_end_date,
-            week_start_monday,
-            week_end_sunday,
-            school_week_start_date_lead,
-            week_number_academic_year,
-            week_number_quarter,
-            is_current_week,
-            academic_year_display,
-            quarter_end_date_insession,
-            sections_dcid,
-            sectionid,
-            section_number,
-            external_expression,
-            course_number,
-            course_name,
-            credit_type,
-            exclude_from_gpa,
-            is_ap_course,
-            teacher_number,
-            teacher_name,
-            teacher_tableau_username,
-            hos,
-            school_leader,
-            school_leader_tableau_username,
-            is_quarter_end_date_range,
-            section_or_period,
-            assignment_category_code,
-            assignment_category_name,
-            assignment_category_term,
-            notes,
+            sec.*,
 
-            avg(expectation) as expectation,
+            agg.teacher_running_total_assign_by_cat,
+            agg.sum_totalpointvalue_section_quarter_category,
+            agg.total_expected_section_quarter_week_category,
+            agg.total_expected_scored_section_quarter_week_category,
 
-            avg(
-                teacher_running_total_assign_by_cat
-            ) as teacher_running_total_assign_by_cat,
-
-            avg(
-                sum_totalpointvalue_section_quarter_category
-            ) as sum_totalpointvalue_section_quarter_category,
-
-            avg(
-                total_expected_section_quarter_week_category
-            ) as total_expected_section_quarter_week_category,
-
-            avg(
-                total_expected_scored_section_quarter_week_category
-            ) as total_expected_scored_section_quarter_week_category,
-
-            avg(
-                percent_graded_for_quarter_week_class
+            safe_divide(
+                agg.total_expected_scored_section_quarter_week_category,
+                agg.total_expected_section_quarter_week_category
             ) as percent_graded_for_quarter_week_class,
 
-        from percent_graded
-        group by
-            _dbt_source_relation,
-            schoolid,
-            yearid,
-            academic_year,
-            `quarter`,
-            semester,
-            quarter_start_date,
-            quarter_end_date,
-            is_current_term,
-            school,
-            region,
-            school_level,
-            region_school_level,
-            week_start_date,
-            week_end_date,
-            week_start_monday,
-            week_end_sunday,
-            school_week_start_date_lead,
-            week_number_academic_year,
-            week_number_quarter,
-            is_current_week,
-            academic_year_display,
-            quarter_end_date_insession,
-            sections_dcid,
-            sectionid,
-            section_number,
-            external_expression,
-            course_number,
-            course_name,
-            credit_type,
-            exclude_from_gpa,
-            is_ap_course,
-            teacher_number,
-            teacher_name,
-            teacher_tableau_username,
-            hos,
-            school_leader,
-            school_leader_tableau_username,
-            is_quarter_end_date_range,
-            section_or_period,
-            assignment_category_code,
-            assignment_category_name,
-            assignment_category_term,
-            notes
+        from
+            {{ ref("int_tableau__gradebook_audit_section_week_category_scaffold") }}
+            as sec
+        left join
+            category_aggs as agg
+            on sec._dbt_source_relation = agg._dbt_source_relation
+            and sec.sectionid = agg.sectionid
+            and sec.quarter = agg.quarter
+            and sec.week_number_quarter = agg.week_number_quarter
+            and sec.assignment_category_code = agg.assignment_category_code
     )
 
 select
-    f.*,
+    f._dbt_source_relation,
+    f.schoolid,
+    f.yearid,
+    f.academic_year,
+    f.`quarter`,
+    f.semester,
+    f.quarter_start_date,
+    f.quarter_end_date,
+    f.is_current_term,
+    f.school,
+    f.region,
+    f.school_level,
+    f.region_school_level,
+    f.week_start_date,
+    f.week_end_date,
+    f.week_start_monday,
+    f.week_end_sunday,
+    f.school_week_start_date_lead,
+    f.week_number_academic_year,
+    f.week_number_quarter,
+    f.is_current_week,
+    f.academic_year_display,
+    f.quarter_end_date_insession,
+    f.sections_dcid,
+    f.sectionid,
+    f.section_number,
+    f.external_expression,
+    f.course_number,
+    f.course_name,
+    f.credit_type,
+    f.exclude_from_gpa,
+    f.is_ap_course,
+    f.teacher_number,
+    f.teacher_name,
+    f.teacher_tableau_username,
+    f.hos,
+    f.school_leader,
+    f.school_leader_tableau_username,
+    f.is_quarter_end_date_range,
+    f.section_or_period,
+    f.assignment_category_code,
+    f.assignment_category_name,
+    f.assignment_category_term,
+    f.expectation,
+    f.notes,
+    f.teacher_running_total_assign_by_cat,
+    f.sum_totalpointvalue_section_quarter_category,
+    f.total_expected_section_quarter_week_category,
+    f.total_expected_scored_section_quarter_week_category,
+    f.percent_graded_for_quarter_week_class,
 
     if(
         f.assignment_category_code = 'W'
