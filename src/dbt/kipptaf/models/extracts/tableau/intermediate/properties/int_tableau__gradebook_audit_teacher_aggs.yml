@@ -5,6 +5,45 @@ models:
       teacher flag models. Groups by all non-student columns and takes the max
       audit_flag_value per group, producing one row per teacher-assignment-flag
       combination.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sectionid
+              - quarter
+              - audit_qt_week_number
+              - teacher_assign_id
+              - audit_flag_name
+              - cte_grouping
+          config:
+            severity: warn
+            where:
+              "cte_grouping in ('assignment_student',
+              'class_category_assignment') and teacher_assign_id is not null"
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sectionid
+              - quarter
+              - audit_qt_week_number
+              - assignment_category_code
+              - audit_flag_name
+              - cte_grouping
+          config:
+            severity: warn
+            where:
+              "cte_grouping in ('student_course_category', 'class_category')"
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - sectionid
+              - quarter
+              - audit_qt_week_number
+              - audit_flag_name
+              - cte_grouping
+          config:
+            severity: warn
+            where: "cte_grouping in ('student_course', 'student')"
     columns:
       - name: academic_year
         description: The academic year as an integer (e.g. 2025 for 2025-2026).

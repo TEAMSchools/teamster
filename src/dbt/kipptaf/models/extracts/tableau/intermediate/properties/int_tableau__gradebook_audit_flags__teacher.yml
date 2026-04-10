@@ -7,6 +7,31 @@ models:
         - cte_grouping
         - region
         - schoolid
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - sectionid
+              - quarter
+              - week_number_quarter
+              - assignmentid
+              - audit_flag_name
+          config:
+            severity: warn
+            where: "cte_grouping = 'class_category_assignment'"
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - sectionid
+              - quarter
+              - week_number_quarter
+              - assignment_category_code
+              - audit_flag_name
+          config:
+            severity: warn
+            where: "cte_grouping = 'class_category'"
     columns:
       - name: _dbt_source_relation
         data_type: string
