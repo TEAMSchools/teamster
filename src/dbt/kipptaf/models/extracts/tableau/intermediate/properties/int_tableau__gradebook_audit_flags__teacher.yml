@@ -1,5 +1,11 @@
 models:
   - name: int_tableau__gradebook_audit_flags__teacher
+    description: >-
+      Teacher-level audit flags for class_category_assignment and class_category
+      grains combined via UNION ALL. UNPIVOTs teacher-specific flags from
+      assignments_teacher and categories_teacher. Materialized as a table —
+      consumed by teacher_aggs and rpt_tableau__gradebook_audit for teacher-only
+      flag data.
     config:
       materialized: table
       cluster_by:

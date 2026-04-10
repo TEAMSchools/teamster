@@ -1,5 +1,9 @@
 models:
   - name: int_tableau__gradebook_audit_categories_teacher
+    description: >-
+      Section × category × week grain with category-level teacher aggregates.
+      Computes percent graded, assignment count expectations, and point total
+      flags. Consumed by the teacher flags model via UNPIVOT.
     columns:
       - name: _dbt_source_relation
         data_type: string

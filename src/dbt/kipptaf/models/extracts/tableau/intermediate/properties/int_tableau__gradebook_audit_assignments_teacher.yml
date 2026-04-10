@@ -1,7 +1,11 @@
 models:
   - name: int_tableau__gradebook_audit_assignments_teacher
-    # config:
-    #   materialized: table
+    description: >-
+      Section × assignment grain with teacher-level assignment aggregates. Rolls
+      up student scores per assignment (n_students, n_late, n_missing, etc.) and
+      computes 4 assignment-metadata flags (max score checks). Consumed by the
+      student flags model (for teacher context in the LEFT JOIN) and
+      teacher_aggs.
     columns:
       - name: _dbt_source_relation
         data_type: string

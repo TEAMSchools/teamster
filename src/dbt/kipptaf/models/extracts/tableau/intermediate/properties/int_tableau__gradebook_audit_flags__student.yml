@@ -1,5 +1,13 @@
 models:
   - name: int_tableau__gradebook_audit_flags__student
+    description: >-
+      Student-level audit flags across 4 grains (assignment, category, EOQ,
+      conduct code) combined via UNION ALL. Each branch UNPIVOTs boolean flag
+      columns, joins to the flags configuration sheet, and applies exception
+      anti-joins. Materialized as a table — consumed by
+      rpt_tableau__gradebook_audit, rpt_tableau__gradebook_es_comments, and
+      rpt_tableau__gradebook_ms_hs_comments for student-level detail in the LEFT
+      JOIN.
     config:
       materialized: table
       cluster_by:

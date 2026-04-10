@@ -1,7 +1,10 @@
 models:
   - name: int_tableau__gradebook_audit_assignments_student
-    # config:
-    #   materialized: table
+    description: >-
+      Student × assignment grain with 16 score-level audit flags. Joins the
+      category student scaffold to individual assignment scores and computes
+      flags for null scores, scores above max, missing score values, and
+      conversion chart violations. Consumed by the student flags model.
     columns:
       - name: _dbt_source_relation
         data_type: string
