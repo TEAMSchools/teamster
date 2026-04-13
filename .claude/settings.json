@@ -15,6 +15,7 @@
       "Bash(trunk check)",
       "Bash(trunk fmt)",
       "Bash(uv tool list)",
+      "Edit(/.claude/skills/**)",
       "mcp__bigquery__analyze_contribution",
       "mcp__bigquery__execute_sql",
       "mcp__bigquery__forecast",
@@ -57,6 +58,9 @@
       "mcp__observability__list_group_stats",
       "mcp__observability__list_log_entries",
       "mcp__observability__list_time_series",
+      "mcp__plugin_context7_context7__query-docs",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "Read(//tmp/dagster/**)",
       "Read(//workspaces/teamster/**)",
       "Read(~/.claude/plugins/**)",
       "Skill(claude-md-management:revise-claude-md:*)"
@@ -95,7 +99,10 @@
       "Read(~/.kube/**)",
       "Read(~/.ssh/**)"
     ],
-    "additionalDirectories": ["/workspaces/teamster/dagster-tmp/day2"]
+    "additionalDirectories": [
+      "/workspaces/teamster/dagster-tmp/",
+      "/tmp/dagster"
+    ]
   },
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
   "hooks": {
