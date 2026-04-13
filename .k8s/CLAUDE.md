@@ -24,9 +24,11 @@ on GKE Autopilot.
 ## Scheduling
 
 - Weighted `nodeAffinity` preferences (no hard `nodeSelector`). Compute-class
-  tiers: Scale-Out arm64 > General-Purpose > Scale-Out x86 > Balanced. Spot adds
-  +50 on code server pods (not agent or run pods). Autopilot bills per-pod, so
-  fallback tiers have no cost penalty.
+  tiers: Scale-Out arm64 > General-Purpose > Scale-Out x86. Balanced removed —
+  its separation/extended-duration minimums (1 vCPU / 4 GiB) exceed our requests
+  (500m / 2 GiB), which would cause pod admission rejection if anti-affinity is
+  ever applied. Spot adds +50 on code server pods (not agent or run pods).
+  Autopilot bills per-pod, so fallback tiers have no cost penalty.
 - Agent pods use `safe-to-evict: "false"` (extended-duration) to prevent
   Autopilot scale-down churn, which is mutually exclusive with spot. Agent pods
   exclude arm64 tiers (image is x86-only).
@@ -61,6 +63,17 @@ on GKE Autopilot.
   `DAGSTER_CLOUD_CLEANUP_SERVER_CHECK_INTERVAL` (set to 600s) control how
   quickly orphaned code server Deployments from previous agent IDs are deleted.
   Do not set grace period below reconciliation time (~3-4 min).
+- **Code server ClusterIPs change on every reconcile** —
+  `unique_resource_name()` in
+  `dagster_cloud/workspace/user_code_launcher/utils.py` appends a fresh
+  `uuid4().hex[:6]`; Services are delete-old/create-new, never updated in place.
+  Multiple distinct gRPC IPs across tick errors in a short window = agent
+  reconciliation, NOT pod preemption. Audit-log signal:
+  `protoPayload.methodName="io.k8s.core.v1.services.create"` on `dagster-cloud`
+  namespace.
+- **`dagsterCloudAgent.replicas: 2` doubles Service churn** — both replicas race
+  and independently recreate Services per control-plane update. Agent HA trades
+  directly against reduced ClusterIP churn; currently set to 1.
 
 ## Eviction and Priority
 
@@ -167,4 +180,10 @@ defaults.
 - Schedule tick evaluation retries gRPC calls indefinitely within a single tick.
   Agent-level "Error serving request" logs during preemption are noise, not tick
   failures. Only `get_tick_history(statuses=["FAILURE"])` reflects terminal
-  schedule failures (`max_tick_retries` default 0).
+  schedule failures.
+- **Hybrid daemon location** — sensor / asset / schedule daemons run in the
+  Dagster Cloud control plane, NOT in the local agent. OSS `dagster.yaml`
+  settings (`max_tick_retries`, `auto_materialize.*`, etc.) do not apply; the
+  Dagster+ full deployment settings expose only `concurrency`, `run_monitoring`,
+  `run_retries`, `sso_default_role` — no tick-retry knob. Terminal
+  `DagsterUserCodeUnreachableError` ticks remain terminal.

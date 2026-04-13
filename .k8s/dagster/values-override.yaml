@@ -26,12 +26,12 @@ dagsterCloudAgent:
   podSecurityContext:
     runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
 
-  terminationGracePeriodSeconds: 15
+  terminationGracePeriodSeconds: 60
 
   env:
     # Reduce cleanup delay for orphaned code server deployments left by previous
     # agent IDs after Helm upgrades. Defaults: grace=3600s, interval=1800s.
-    # With replicas: 2, each upgrade leaves 2 orphaned deployments per location;
+    # With replicas: 1, each upgrade leaves 1 orphaned deployment per location;
     # the 10-min heartbeat expiry + 15-min grace period ensures replacements are
     # reconciled before orphans are deleted.
     DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS: "900"
@@ -47,18 +47,20 @@ dagsterCloudAgent:
     initialDelaySeconds: 0
     periodSeconds: 10
 
-  # maxSurge: 200% brings pod count to 4 during upgrades. Combined with
-  # requiredDuringSchedulingIgnoredDuringExecution hostname anti-affinity,
-  # this requires 4 distinct nodes briefly. On Autopilot this is provisioned
-  # on demand; a stalled rollout indicates capacity exhaustion.
+  # maxSurge: 200% surges the new pod above the current replica for zero-downtime
+  # Helm upgrades. Combined with requiredDuringSchedulingIgnoredDuringExecution
+  # hostname anti-affinity, this requires a distinct node briefly. On Autopilot
+  # this is provisioned on demand; a stalled rollout indicates capacity exhaustion.
   deploymentStrategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0%
       maxSurge: 200%
 
-  # Number of replicas of the agent service to keep up at a given time.
-  replicas: 2
+  # Single replica minimizes k8s Service churn from dual-agent reconciliation
+  # (both replicas independently recreate code server Deployments/Services on
+  # every control-plane update, doubling ClusterIP transitions and gRPC gaps).
+  replicas: 1
 
   annotations:
     cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
@@ -80,13 +82,6 @@ dagsterCloudAgent:
                 operator: In
                 values:
                   - Scale-Out
-        - weight: 10
-          preference:
-            matchExpressions:
-              - key: cloud.google.com/compute-class
-                operator: In
-                values:
-                  - Balanced
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         - labelSelector:
@@ -99,13 +94,6 @@ dagsterCloudAgent:
 
   additionalPodSpecConfig:
     priorityClassName: dagster-agent
-    topologySpreadConstraints:
-      - maxSkew: 1
-        topologyKey: topology.kubernetes.io/zone
-        whenUnsatisfiable: ScheduleAnyway
-        labelSelector:
-          matchLabels:
-            app.kubernetes.io/name: dagster-cloud-agent
 
   # Agent container securityContext — not set because the agent runs Dagster's
   # own image (UID 1001), not ours (UID 1234). Spec Section 2 covers workspace
@@ -176,14 +164,7 @@ workspace:
                     operator: In
                     values:
                       - amd64
-            - weight: 10
-              preference:
-                matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - Balanced
-      terminationGracePeriodSeconds: 15
+      terminationGracePeriodSeconds: 60
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
@@ -213,7 +194,12 @@ workspace:
           cpu: 500m
           memory: 2.0Gi
         limits:
-          cpu: 1000m
+          # Bumped from 1000m to 1750m to cover non-dbt step pods whose p95 CPU
+          # usage is ~950m with observed peaks to 1.45 cores. 1750m gives ~20%
+          # headroom above the 14-day max, staying below the most aggressive
+          # per-asset dbt override (2250m). Dbt assets keep their own higher
+          # per-asset limit overrides in Python asset definitions.
+          cpu: 1750m
           memory: 2.5Gi
       securityContext:
         runAsNonRoot: true
@@ -260,13 +246,6 @@ workspace:
                     operator: In
                     values:
                       - amd64
-            - weight: 10
-              preference:
-                matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - Balanced
 
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.
