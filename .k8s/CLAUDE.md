@@ -128,6 +128,35 @@ bumping the base. CPU limits live in three places: Python `op_tags` dicts, YAML
 config files (`config/*.yaml`), and Helm values. Scan all three when changing
 defaults.
 
+## Pod Labels (for selectors / PDBs / anti-affinity)
+
+From `dagster_k8s/utils.py` `get_common_labels()` — applied to both run and step
+pods:
+
+| Key                           | Value                                       |
+| ----------------------------- | ------------------------------------------- |
+| `app.kubernetes.io/name`      | `dagster`                                   |
+| `app.kubernetes.io/instance`  | `dagster`                                   |
+| `app.kubernetes.io/part-of`   | `dagster`                                   |
+| `app.kubernetes.io/component` | `run_worker` (run) / `step_worker` (step)   |
+| `dagster/run-id`              | run UUID (both)                             |
+| `dagster/code-location`       | location name if `remote_job_origin` is set |
+
+Code server pods (`<location>-prod-*`) carry `managed_by: K8sUserCodeLauncher`,
+`deployment_name: prod`, `location_name: <loc>` — already used by the
+per-location PDB selectors in `extraManifests`.
+
+Agent pods (`user-cloud-dagster-cloud-agent-*`) carry
+`app.kubernetes.io/name: dagster-cloud-agent`.
+
+**Self-exclusion pitfall on run/step anti-affinity**: do NOT use
+`app.kubernetes.io/name: dagster` as an anti-affinity `labelSelector` ON a
+run/step pod — that label is on the pod itself, so the selector would self-match
+and block scheduling everywhere. Use code-server-specific labels
+(`managed_by: K8sUserCodeLauncher`) or agent-specific labels
+(`app.kubernetes.io/name: dagster-cloud-agent`) when the anti-affinity target is
+a different pod type.
+
 ## Troubleshooting
 
 - **Code location down**: Use `list_code_locations` (Dagster MCP) for the error

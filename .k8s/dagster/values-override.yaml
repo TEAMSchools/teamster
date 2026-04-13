@@ -246,6 +246,25 @@ workspace:
                     operator: In
                     values:
                       - amd64
+        # Hard-block run/step pods from sharing a node with code servers
+        # (eliminates preemption-driven code server evictions) or with the
+        # agent (protects the single-replica agent from kubelet node-pressure
+        # eviction by bursty run workloads). Each term is evaluated
+        # independently — a candidate node is rejected if EITHER selector
+        # matches a pod already on it. Autopilot provisions new nodes on
+        # demand when existing nodes can't satisfy the constraint; per-pod
+        # billing means this adds only startup latency, not direct cost.
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  managed_by: K8sUserCodeLauncher
+                  deployment_name: prod
+              topologyKey: kubernetes.io/hostname
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: dagster-cloud-agent
+              topologyKey: kubernetes.io/hostname
 
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.
