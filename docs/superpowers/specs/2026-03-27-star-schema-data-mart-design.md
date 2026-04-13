@@ -469,20 +469,6 @@ Examples:
 
 ## Open Review Items
 
-### Requires domain expert validation
-
-1. **Behavioral domain relationships** — the design models
-   `fct_behavioral_incidents` and `fct_behavioral_consequences` as a
-   parent-child fact relationship (consequences carry `incident_key` FK; student
-   context traverses through the parent). Confirm with a domain expert that this
-   accurately represents the DeansList data model.
-
-2. **College/post-secondary domain** — the design includes `dim_colleges`,
-   `dim_college_enrollments`, and `fct_assessment_scores_student_scoped` based
-   on NSC and College Board / ACT data. Confirm with a domain expert that this
-   captures the full scope of post-secondary tracking needs (matriculation,
-   persistence, degree completion, career outcomes).
-
 ### Monitor during implementation
 
 - **Expectation scaffold complexity** — `dim_staff_observation_expectations`,
