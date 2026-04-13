@@ -773,204 +773,212 @@ erDiagram
 
 ## Appendix: Foreign Key Catalog
 
-Complete catalog of every FK edge in the mart. Each row asserts a many-to-one
-relationship from child to parent (or the cardinality noted). Role-playing edges
-list their alias. Conformed dimensions (`dim_dates`, `dim_terms`, `dim_regions`,
+Complete catalog of every FK edge in the mart. Role-playing edges list their
+alias. Conformed dimensions (`dim_dates`, `dim_terms`, `dim_regions`,
 `dim_locations`, `dim_school_calendars`) appear here even though they are
 omitted from the per-domain ERDs.
 
+**Cardinality column values:**
+
+- **many-to-one** — standard FK: multiple child rows may reference the same
+  parent; the FK column is non-nullable.
+- **many-to-one (nullable)** — same shape, but the FK column is nullable (the
+  child may exist without a parent — e.g., a ticket without an assignee).
+- **many-to-many (via bridge)** — the child model is a bridge table whose two
+  FKs together resolve a many-to-many relationship between two dims.
+
 ### Conformed Dimensions
 
-| From                   | To              | Role | Assertion                                                    |
-| ---------------------- | --------------- | ---- | ------------------------------------------------------------ |
-| `dim_school_calendars` | `dim_dates`     |      | Each school-calendar entry is for exactly one date.          |
-| `dim_school_calendars` | `dim_locations` |      | Each school-calendar entry is for exactly one school/office. |
+| From                   | To              | Role | Cardinality | Assertion                                                    |
+| ---------------------- | --------------- | ---- | ----------- | ------------------------------------------------------------ |
+| `dim_school_calendars` | `dim_dates`     |      | many-to-one | Each school-calendar entry is for exactly one date.          |
+| `dim_school_calendars` | `dim_locations` |      | many-to-one | Each school-calendar entry is for exactly one school/office. |
 
 ### Student Domain
 
-| From                              | To                        | Role         | Assertion                                                                |
-| --------------------------------- | ------------------------- | ------------ | ------------------------------------------------------------------------ |
-| `dim_student_enrollments`         | `dim_students`            |              | Each enrollment belongs to exactly one student.                          |
-| `dim_student_enrollments`         | `dim_locations`           |              | Each enrollment is at exactly one school.                                |
-| `dim_student_enrollments`         | `dim_regions`             |              | Each enrollment is in exactly one region.                                |
-| `dim_student_enrollments`         | `dim_dates`               | `entry_date` | Each enrollment has exactly one entry date.                              |
-| `dim_student_enrollments`         | `dim_dates`               | `exit_date`  | Each enrollment has at most one exit date (future or null while active). |
-| `dim_student_contacts`            | `dim_students`            |              | Each contact belongs to exactly one student.                             |
-| `dim_student_section_enrollments` | `dim_student_enrollments` |              | Each section enrollment rolls up to exactly one student enrollment.      |
-| `dim_student_section_enrollments` | `dim_course_sections`     |              | Each section enrollment is for exactly one course section.               |
-| `dim_student_section_enrollments` | `dim_terms`               |              | Each section enrollment is in exactly one term.                          |
+| From                              | To                        | Role         | Cardinality            | Assertion                                                                |
+| --------------------------------- | ------------------------- | ------------ | ---------------------- | ------------------------------------------------------------------------ |
+| `dim_student_enrollments`         | `dim_students`            |              | many-to-one            | Each enrollment belongs to exactly one student.                          |
+| `dim_student_enrollments`         | `dim_locations`           |              | many-to-one            | Each enrollment is at exactly one school.                                |
+| `dim_student_enrollments`         | `dim_regions`             |              | many-to-one            | Each enrollment is in exactly one region.                                |
+| `dim_student_enrollments`         | `dim_dates`               | `entry_date` | many-to-one            | Each enrollment has exactly one entry date.                              |
+| `dim_student_enrollments`         | `dim_dates`               | `exit_date`  | many-to-one (nullable) | Each enrollment has at most one exit date (future or null while active). |
+| `dim_student_contacts`            | `dim_students`            |              | many-to-one            | Each contact belongs to exactly one student.                             |
+| `dim_student_section_enrollments` | `dim_student_enrollments` |              | many-to-one            | Each section enrollment rolls up to exactly one student enrollment.      |
+| `dim_student_section_enrollments` | `dim_course_sections`     |              | many-to-one            | Each section enrollment is for exactly one course section.               |
+| `dim_student_section_enrollments` | `dim_terms`               |              | many-to-one            | Each section enrollment is in exactly one term.                          |
 
 ### Staff Domain
 
-| From                                          | To                           | Role             | Assertion                                                                                                                    |
-| --------------------------------------------- | ---------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `dim_staff_status`                            | `dim_staff`                  |                  | Each status version is for exactly one person.                                                                               |
-| `dim_staff_work_assignments`                  | `dim_staff`                  |                  | Each work assignment belongs to exactly one person.                                                                          |
-| `dim_work_assignment_status`                  | `dim_staff_work_assignments` |                  | Each status version is for exactly one work assignment.                                                                      |
-| `dim_work_assignment_jobs`                    | `dim_staff_work_assignments` |                  | Each job version is for exactly one work assignment.                                                                         |
-| `dim_work_assignment_types`                   | `dim_staff_work_assignments` |                  | Each worker-type version is for exactly one work assignment.                                                                 |
-| `dim_work_assignment_locations`               | `dim_staff_work_assignments` |                  | Each location version is for exactly one work assignment.                                                                    |
-| `dim_work_assignment_organizational_units`    | `dim_staff_work_assignments` |                  | Each org-unit version is for exactly one work assignment.                                                                    |
-| `dim_work_assignment_reporting_relationships` | `dim_staff_work_assignments` |                  | Each reporting-relationship version is for exactly one work assignment.                                                      |
-| `fct_work_assignment_compensation`            | `dim_staff_work_assignments` |                  | Each compensation record is for exactly one work assignment.                                                                 |
-| `fct_work_assignment_compensation`            | `dim_dates`                  | `effective_date` | Each compensation record has an effective date.                                                                              |
-| `fct_work_assignment_additional_earnings`     | `dim_staff_work_assignments` |                  | Each additional-earnings record is for exactly one work assignment.                                                          |
-| `fct_work_assignment_additional_earnings`     | `dim_dates`                  | `effective_date` | Each additional-earnings record has an effective date.                                                                       |
-| `fct_staff_attrition`                         | `dim_staff_work_assignments` |                  | Each attrition row is attributed to exactly one work assignment that was active during the methodology's measurement window. |
-| `bridge_staff_benefits_enrollments`           | `dim_staff`                  |                  | Resolves the many-to-many between staff and benefit plans.                                                                   |
-| `bridge_staff_membership_enrollments`         | `dim_staff`                  |                  | Resolves the many-to-many between staff and programs (leader/teacher development).                                           |
+| From                                          | To                           | Role             | Cardinality               | Assertion                                                                                                                    |
+| --------------------------------------------- | ---------------------------- | ---------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `dim_staff_status`                            | `dim_staff`                  |                  | many-to-one               | Each status version is for exactly one person.                                                                               |
+| `dim_staff_work_assignments`                  | `dim_staff`                  |                  | many-to-one               | Each work assignment belongs to exactly one person.                                                                          |
+| `dim_work_assignment_status`                  | `dim_staff_work_assignments` |                  | many-to-one               | Each status version is for exactly one work assignment.                                                                      |
+| `dim_work_assignment_jobs`                    | `dim_staff_work_assignments` |                  | many-to-one               | Each job version is for exactly one work assignment.                                                                         |
+| `dim_work_assignment_types`                   | `dim_staff_work_assignments` |                  | many-to-one               | Each worker-type version is for exactly one work assignment.                                                                 |
+| `dim_work_assignment_locations`               | `dim_staff_work_assignments` |                  | many-to-one               | Each location version is for exactly one work assignment.                                                                    |
+| `dim_work_assignment_organizational_units`    | `dim_staff_work_assignments` |                  | many-to-one               | Each org-unit version is for exactly one work assignment.                                                                    |
+| `dim_work_assignment_reporting_relationships` | `dim_staff_work_assignments` |                  | many-to-one               | Each reporting-relationship version is for exactly one work assignment.                                                      |
+| `fct_work_assignment_compensation`            | `dim_staff_work_assignments` |                  | many-to-one               | Each compensation record is for exactly one work assignment.                                                                 |
+| `fct_work_assignment_compensation`            | `dim_dates`                  | `effective_date` | many-to-one               | Each compensation record has an effective date.                                                                              |
+| `fct_work_assignment_additional_earnings`     | `dim_staff_work_assignments` |                  | many-to-one               | Each additional-earnings record is for exactly one work assignment.                                                          |
+| `fct_work_assignment_additional_earnings`     | `dim_dates`                  | `effective_date` | many-to-one               | Each additional-earnings record has an effective date.                                                                       |
+| `fct_staff_attrition`                         | `dim_staff_work_assignments` |                  | many-to-one               | Each attrition row is attributed to exactly one work assignment that was active during the methodology's measurement window. |
+| `bridge_staff_benefits_enrollments`           | `dim_staff`                  |                  | many-to-many (via bridge) | Resolves the many-to-many between staff and benefit plans.                                                                   |
+| `bridge_staff_membership_enrollments`         | `dim_staff`                  |                  | many-to-many (via bridge) | Resolves the many-to-many between staff and programs (leader/teacher development).                                           |
 
 ### Course Domain
 
-| From                  | To              | Role      | Assertion                                       |
-| --------------------- | --------------- | --------- | ----------------------------------------------- |
-| `dim_course_sections` | `dim_courses`   |           | Each section instantiates exactly one course.   |
-| `dim_course_sections` | `dim_staff`     | `teacher` | Each section has exactly one teacher of record. |
-| `dim_course_sections` | `dim_locations` |           | Each section is taught at exactly one location. |
-| `dim_course_sections` | `dim_terms`     |           | Each section is in exactly one term.            |
+| From                  | To              | Role      | Cardinality | Assertion                                       |
+| --------------------- | --------------- | --------- | ----------- | ----------------------------------------------- |
+| `dim_course_sections` | `dim_courses`   |           | many-to-one | Each section instantiates exactly one course.   |
+| `dim_course_sections` | `dim_staff`     | `teacher` | many-to-one | Each section has exactly one teacher of record. |
+| `dim_course_sections` | `dim_locations` |           | many-to-one | Each section is taught at exactly one location. |
+| `dim_course_sections` | `dim_terms`     |           | many-to-one | Each section is in exactly one term.            |
 
 ### Assessment Domain
 
-| From                                      | To                        | Role        | Assertion                                                  |
-| ----------------------------------------- | ------------------------- | ----------- | ---------------------------------------------------------- |
-| `dim_assessment_comparisons`              | `dim_assessments`         |             | Each comparison pertains to exactly one assessment.        |
-| `dim_assessment_comparisons`              | `dim_regions`             |             | Each comparison is for exactly one region.                 |
-| `dim_assessment_targets`                  | `dim_assessments`         |             | Each target is for exactly one assessment.                 |
-| `dim_assessment_targets`                  | `dim_locations`           |             | Each target is for exactly one school.                     |
-| `dim_student_assessment_expectations`     | `dim_student_enrollments` |             | Each expectation is for exactly one enrollment.            |
-| `dim_student_assessment_expectations`     | `dim_assessments`         |             | Each expectation is for exactly one assessment.            |
-| `dim_student_assessment_expectations`     | `dim_terms`               |             | Each expectation covers exactly one administration window. |
-| `fct_assessment_scores_enrollment_scoped` | `dim_student_enrollments` |             | Each score is for exactly one enrollment.                  |
-| `fct_assessment_scores_enrollment_scoped` | `dim_assessments`         |             | Each score is for exactly one assessment.                  |
-| `fct_assessment_scores_enrollment_scoped` | `dim_dates`               | `test_date` | Each score has a test date.                                |
-| `fct_assessment_scores_enrollment_scoped` | `dim_terms`               |             | Each score is in exactly one term (administration window). |
+| From                                      | To                        | Role        | Cardinality | Assertion                                                  |
+| ----------------------------------------- | ------------------------- | ----------- | ----------- | ---------------------------------------------------------- |
+| `dim_assessment_comparisons`              | `dim_assessments`         |             | many-to-one | Each comparison pertains to exactly one assessment.        |
+| `dim_assessment_comparisons`              | `dim_regions`             |             | many-to-one | Each comparison is for exactly one region.                 |
+| `dim_assessment_targets`                  | `dim_assessments`         |             | many-to-one | Each target is for exactly one assessment.                 |
+| `dim_assessment_targets`                  | `dim_locations`           |             | many-to-one | Each target is for exactly one school.                     |
+| `dim_student_assessment_expectations`     | `dim_student_enrollments` |             | many-to-one | Each expectation is for exactly one enrollment.            |
+| `dim_student_assessment_expectations`     | `dim_assessments`         |             | many-to-one | Each expectation is for exactly one assessment.            |
+| `dim_student_assessment_expectations`     | `dim_terms`               |             | many-to-one | Each expectation covers exactly one administration window. |
+| `fct_assessment_scores_enrollment_scoped` | `dim_student_enrollments` |             | many-to-one | Each score is for exactly one enrollment.                  |
+| `fct_assessment_scores_enrollment_scoped` | `dim_assessments`         |             | many-to-one | Each score is for exactly one assessment.                  |
+| `fct_assessment_scores_enrollment_scoped` | `dim_dates`               | `test_date` | many-to-one | Each score has a test date.                                |
+| `fct_assessment_scores_enrollment_scoped` | `dim_terms`               |             | many-to-one | Each score is in exactly one term (administration window). |
 
 ### College Domain
 
-| From                                   | To                | Role              | Assertion                                                      |
-| -------------------------------------- | ----------------- | ----------------- | -------------------------------------------------------------- |
-| `dim_college_enrollments`              | `dim_students`    |                   | Each college enrollment is for exactly one student.            |
-| `dim_college_enrollments`              | `dim_colleges`    |                   | Each college enrollment is at exactly one institution.         |
-| `dim_college_enrollments`              | `dim_terms`       |                   | Each college enrollment covers exactly one term.               |
-| `dim_college_enrollments`              | `dim_dates`       | `enrollment_date` | Each college enrollment has an enrollment date.                |
-| `dim_college_enrollments`              | `dim_regions`     |                   | Each college enrollment is attributed to one region of origin. |
-| `fct_assessment_scores_student_scoped` | `dim_students`    |                   | Each score is for exactly one student.                         |
-| `fct_assessment_scores_student_scoped` | `dim_assessments` |                   | Each score is for exactly one assessment.                      |
-| `fct_assessment_scores_student_scoped` | `dim_dates`       | `test_date`       | Each score has a test date.                                    |
-| `fct_assessment_scores_student_scoped` | `dim_terms`       |                   | Each score is in exactly one term.                             |
+| From                                   | To                | Role              | Cardinality | Assertion                                                      |
+| -------------------------------------- | ----------------- | ----------------- | ----------- | -------------------------------------------------------------- |
+| `dim_college_enrollments`              | `dim_students`    |                   | many-to-one | Each college enrollment is for exactly one student.            |
+| `dim_college_enrollments`              | `dim_colleges`    |                   | many-to-one | Each college enrollment is at exactly one institution.         |
+| `dim_college_enrollments`              | `dim_terms`       |                   | many-to-one | Each college enrollment covers exactly one term.               |
+| `dim_college_enrollments`              | `dim_dates`       | `enrollment_date` | many-to-one | Each college enrollment has an enrollment date.                |
+| `dim_college_enrollments`              | `dim_regions`     |                   | many-to-one | Each college enrollment is attributed to one region of origin. |
+| `fct_assessment_scores_student_scoped` | `dim_students`    |                   | many-to-one | Each score is for exactly one student.                         |
+| `fct_assessment_scores_student_scoped` | `dim_assessments` |                   | many-to-one | Each score is for exactly one assessment.                      |
+| `fct_assessment_scores_student_scoped` | `dim_dates`       | `test_date`       | many-to-one | Each score has a test date.                                    |
+| `fct_assessment_scores_student_scoped` | `dim_terms`       |                   | many-to-one | Each score is in exactly one term.                             |
 
 ### Staff Observation & Professional Development Domain
 
-| From                                        | To                                          | Role               | Assertion                                                              |
-| ------------------------------------------- | ------------------------------------------- | ------------------ | ---------------------------------------------------------------------- |
-| `dim_staff_observation_rubric_measurements` | `dim_staff_observation_rubrics`             |                    | Each measurement belongs to exactly one rubric.                        |
-| `dim_staff_observation_expectations`        | `dim_staff`                                 |                    | Each expectation is for exactly one staff member.                      |
-| `dim_staff_observation_expectations`        | `dim_staff_observation_types`               |                    | Each expectation is for exactly one observation type.                  |
-| `dim_staff_observation_expectations`        | `dim_terms`                                 |                    | Each expectation is for exactly one term.                              |
-| `fct_staff_observations`                    | `dim_staff`                                 | `teacher`          | Each observation has exactly one teacher being observed.               |
-| `fct_staff_observations`                    | `dim_staff`                                 | `observer`         | Each observation has exactly one observer.                             |
-| `fct_staff_observations`                    | `dim_staff_observation_types`               |                    | Each observation has exactly one type.                                 |
-| `fct_staff_observations`                    | `dim_locations`                             |                    | Each observation takes place at exactly one location.                  |
-| `fct_staff_observations`                    | `dim_dates`                                 | `observation_date` | Each observation has a date.                                           |
-| `fct_staff_observations`                    | `dim_terms`                                 |                    | Each observation is in exactly one term.                               |
-| `fct_staff_observation_scores`              | `fct_staff_observations`                    |                    | Each score is one measurement-item outcome of exactly one observation. |
-| `fct_staff_observation_scores`              | `dim_staff_observation_rubric_measurements` |                    | Each score corresponds to exactly one rubric measurement.              |
-| `fct_staff_observation_microgoals`          | `dim_staff`                                 | `teacher`          | Each microgoal is assigned to exactly one teacher.                     |
-| `fct_staff_observation_microgoals`          | `dim_staff`                                 | `creator`          | Each microgoal was created by exactly one staff member.                |
-| `fct_staff_observation_microgoals`          | `dim_staff_observation_microgoal_types`     |                    | Each microgoal references exactly one goal type.                       |
-| `fct_staff_observation_microgoals`          | `dim_terms`                                 |                    | Each microgoal is in exactly one term.                                 |
-| `fct_staff_observation_microgoals`          | `dim_dates`                                 | `assignment_date`  | Each microgoal was assigned on a date.                                 |
+| From                                        | To                                          | Role               | Cardinality | Assertion                                                              |
+| ------------------------------------------- | ------------------------------------------- | ------------------ | ----------- | ---------------------------------------------------------------------- |
+| `dim_staff_observation_rubric_measurements` | `dim_staff_observation_rubrics`             |                    | many-to-one | Each measurement belongs to exactly one rubric.                        |
+| `dim_staff_observation_expectations`        | `dim_staff`                                 |                    | many-to-one | Each expectation is for exactly one staff member.                      |
+| `dim_staff_observation_expectations`        | `dim_staff_observation_types`               |                    | many-to-one | Each expectation is for exactly one observation type.                  |
+| `dim_staff_observation_expectations`        | `dim_terms`                                 |                    | many-to-one | Each expectation is for exactly one term.                              |
+| `fct_staff_observations`                    | `dim_staff`                                 | `teacher`          | many-to-one | Each observation has exactly one teacher being observed.               |
+| `fct_staff_observations`                    | `dim_staff`                                 | `observer`         | many-to-one | Each observation has exactly one observer.                             |
+| `fct_staff_observations`                    | `dim_staff_observation_types`               |                    | many-to-one | Each observation has exactly one type.                                 |
+| `fct_staff_observations`                    | `dim_locations`                             |                    | many-to-one | Each observation takes place at exactly one location.                  |
+| `fct_staff_observations`                    | `dim_dates`                                 | `observation_date` | many-to-one | Each observation has a date.                                           |
+| `fct_staff_observations`                    | `dim_terms`                                 |                    | many-to-one | Each observation is in exactly one term.                               |
+| `fct_staff_observation_scores`              | `fct_staff_observations`                    |                    | many-to-one | Each score is one measurement-item outcome of exactly one observation. |
+| `fct_staff_observation_scores`              | `dim_staff_observation_rubric_measurements` |                    | many-to-one | Each score corresponds to exactly one rubric measurement.              |
+| `fct_staff_observation_microgoals`          | `dim_staff`                                 | `teacher`          | many-to-one | Each microgoal is assigned to exactly one teacher.                     |
+| `fct_staff_observation_microgoals`          | `dim_staff`                                 | `creator`          | many-to-one | Each microgoal was created by exactly one staff member.                |
+| `fct_staff_observation_microgoals`          | `dim_staff_observation_microgoal_types`     |                    | many-to-one | Each microgoal references exactly one goal type.                       |
+| `fct_staff_observation_microgoals`          | `dim_terms`                                 |                    | many-to-one | Each microgoal is in exactly one term.                                 |
+| `fct_staff_observation_microgoals`          | `dim_dates`                                 | `assignment_date`  | many-to-one | Each microgoal was assigned on a date.                                 |
 
 ### Student Attendance Domain
 
-| From                                   | To                                          | Role         | Assertion                                                                                                                   |
-| -------------------------------------- | ------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| `fct_student_attendance_daily`         | `dim_student_enrollments`                   |              | Each attendance row is for exactly one enrollment.                                                                          |
-| `fct_student_attendance_daily`         | `dim_dates`                                 |              | Each attendance row is on exactly one date.                                                                                 |
-| `fct_student_attendance_streaks`       | `dim_student_enrollments`                   |              | Each streak is for exactly one enrollment.                                                                                  |
-| `fct_student_attendance_streaks`       | `dim_dates`                                 | `start_date` | Each streak has a start date.                                                                                               |
-| `fct_student_attendance_streaks`       | `dim_dates`                                 | `end_date`   | Each streak has an end date.                                                                                                |
-| `fct_student_attendance_interventions` | `dim_student_enrollments`                   |              | Each intervention row is for exactly one enrollment.                                                                        |
-| `fct_student_attendance_interventions` | `dim_student_attendance_intervention_types` |              | Each intervention row is of exactly one intervention type.                                                                  |
-| `fct_student_attendance_interventions` | `dim_staff`                                 |              | Each intervention row is associated with the staff member responsible for the required communication (nullable if missing). |
-| `fct_student_attendance_interventions` | `dim_dates`                                 |              | Each intervention row has an associated date (threshold-crossing date).                                                     |
+| From                                   | To                                          | Role         | Cardinality            | Assertion                                                                                                                   |
+| -------------------------------------- | ------------------------------------------- | ------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `fct_student_attendance_daily`         | `dim_student_enrollments`                   |              | many-to-one            | Each attendance row is for exactly one enrollment.                                                                          |
+| `fct_student_attendance_daily`         | `dim_dates`                                 |              | many-to-one            | Each attendance row is on exactly one date.                                                                                 |
+| `fct_student_attendance_streaks`       | `dim_student_enrollments`                   |              | many-to-one            | Each streak is for exactly one enrollment.                                                                                  |
+| `fct_student_attendance_streaks`       | `dim_dates`                                 | `start_date` | many-to-one            | Each streak has a start date.                                                                                               |
+| `fct_student_attendance_streaks`       | `dim_dates`                                 | `end_date`   | many-to-one            | Each streak has an end date.                                                                                                |
+| `fct_student_attendance_interventions` | `dim_student_enrollments`                   |              | many-to-one            | Each intervention row is for exactly one enrollment.                                                                        |
+| `fct_student_attendance_interventions` | `dim_student_attendance_intervention_types` |              | many-to-one            | Each intervention row is of exactly one intervention type.                                                                  |
+| `fct_student_attendance_interventions` | `dim_staff`                                 |              | many-to-one (nullable) | Each intervention row is associated with the staff member responsible for the required communication (nullable if missing). |
+| `fct_student_attendance_interventions` | `dim_dates`                                 |              | many-to-one            | Each intervention row has an associated date (threshold-crossing date).                                                     |
 
 ### Behavioral & Communications Domain
 
-| From                          | To                               | Role              | Assertion                                                      |
-| ----------------------------- | -------------------------------- | ----------------- | -------------------------------------------------------------- |
-| `fct_behavioral_incidents`    | `dim_student_enrollments`        |                   | Each incident is for exactly one enrolled student.             |
-| `fct_behavioral_incidents`    | `dim_staff`                      | `referring_staff` | Each incident has exactly one referring staff member.          |
-| `fct_behavioral_incidents`    | `dim_dates`                      |                   | Each incident has a date.                                      |
-| `fct_behavioral_consequences` | `fct_behavioral_incidents`       |                   | Each consequence is tied to exactly one incident.              |
-| `fct_behavioral_consequences` | `dim_dates`                      | `start_date`      | Each consequence has a start date.                             |
-| `fct_behavioral_consequences` | `dim_dates`                      | `end_date`        | Each consequence has an end date.                              |
-| `fct_family_communications`   | `dim_student_enrollments`        |                   | Each family communication is for exactly one enrolled student. |
-| `fct_family_communications`   | `dim_staff`                      |                   | Each family communication is sent by exactly one staff member. |
-| `fct_family_communications`   | `dim_family_communication_types` |                   | Each family communication is of exactly one type.              |
-| `fct_family_communications`   | `dim_dates`                      |                   | Each family communication has a date.                          |
+| From                          | To                               | Role              | Cardinality | Assertion                                                      |
+| ----------------------------- | -------------------------------- | ----------------- | ----------- | -------------------------------------------------------------- |
+| `fct_behavioral_incidents`    | `dim_student_enrollments`        |                   | many-to-one | Each incident is for exactly one enrolled student.             |
+| `fct_behavioral_incidents`    | `dim_staff`                      | `referring_staff` | many-to-one | Each incident has exactly one referring staff member.          |
+| `fct_behavioral_incidents`    | `dim_dates`                      |                   | many-to-one | Each incident has a date.                                      |
+| `fct_behavioral_consequences` | `fct_behavioral_incidents`       |                   | many-to-one | Each consequence is tied to exactly one incident.              |
+| `fct_behavioral_consequences` | `dim_dates`                      | `start_date`      | many-to-one | Each consequence has a start date.                             |
+| `fct_behavioral_consequences` | `dim_dates`                      | `end_date`        | many-to-one | Each consequence has an end date.                              |
+| `fct_family_communications`   | `dim_student_enrollments`        |                   | many-to-one | Each family communication is for exactly one enrolled student. |
+| `fct_family_communications`   | `dim_staff`                      |                   | many-to-one | Each family communication is sent by exactly one staff member. |
+| `fct_family_communications`   | `dim_family_communication_types` |                   | many-to-one | Each family communication is of exactly one type.              |
+| `fct_family_communications`   | `dim_dates`                      |                   | many-to-one | Each family communication has a date.                          |
 
 ### Gradebook Domain
 
-| From                     | To                                | Role       | Assertion                                                    |
-| ------------------------ | --------------------------------- | ---------- | ------------------------------------------------------------ |
-| `fct_grades_term`        | `dim_student_section_enrollments` |            | Each term grade is for exactly one section enrollment.       |
-| `fct_grades_term`        | `dim_terms`                       |            | Each term grade is in exactly one term.                      |
-| `fct_grades_term`        | `dim_dates`                       |            | Each term grade has an issued date.                          |
-| `fct_grades_category`    | `dim_student_section_enrollments` |            | Each category grade is for exactly one section enrollment.   |
-| `fct_grades_category`    | `dim_terms`                       |            | Each category grade is in exactly one term.                  |
-| `fct_grades_assignments` | `dim_student_section_enrollments` |            | Each assignment score is for exactly one section enrollment. |
-| `fct_grades_assignments` | `dim_terms`                       |            | Each assignment is in exactly one term.                      |
-| `fct_grades_assignments` | `dim_dates`                       | `due_date` | Each assignment has a due date.                              |
-| `fct_grades_gpa`         | `dim_student_enrollments`         |            | Each GPA record is for exactly one enrollment.               |
-| `fct_grades_gpa`         | `dim_terms`                       |            | Each GPA record is as-of the close of exactly one term.      |
+| From                     | To                                | Role       | Cardinality | Assertion                                                    |
+| ------------------------ | --------------------------------- | ---------- | ----------- | ------------------------------------------------------------ |
+| `fct_grades_term`        | `dim_student_section_enrollments` |            | many-to-one | Each term grade is for exactly one section enrollment.       |
+| `fct_grades_term`        | `dim_terms`                       |            | many-to-one | Each term grade is in exactly one term.                      |
+| `fct_grades_term`        | `dim_dates`                       |            | many-to-one | Each term grade has an issued date.                          |
+| `fct_grades_category`    | `dim_student_section_enrollments` |            | many-to-one | Each category grade is for exactly one section enrollment.   |
+| `fct_grades_category`    | `dim_terms`                       |            | many-to-one | Each category grade is in exactly one term.                  |
+| `fct_grades_assignments` | `dim_student_section_enrollments` |            | many-to-one | Each assignment score is for exactly one section enrollment. |
+| `fct_grades_assignments` | `dim_terms`                       |            | many-to-one | Each assignment is in exactly one term.                      |
+| `fct_grades_assignments` | `dim_dates`                       | `due_date` | many-to-one | Each assignment has a due date.                              |
+| `fct_grades_gpa`         | `dim_student_enrollments`         |            | many-to-one | Each GPA record is for exactly one enrollment.               |
+| `fct_grades_gpa`         | `dim_terms`                       |            | many-to-one | Each GPA record is as-of the close of exactly one term.      |
 
 ### Survey Domain
 
-| From                              | To                               | Role | Assertion                                               |
-| --------------------------------- | -------------------------------- | ---- | ------------------------------------------------------- |
-| `dim_surveys`                     | `dim_terms`                      |      | Each survey is administered in exactly one term window. |
-| `bridge_survey_questions`         | `dim_surveys`                    |      | Each pairing references exactly one survey.             |
-| `bridge_survey_questions`         | `dim_survey_questions`           |      | Each pairing references exactly one question.           |
-| `dim_staff_survey_expectations`   | `dim_staff`                      |      | Each expectation is for exactly one staff member.       |
-| `dim_staff_survey_expectations`   | `dim_surveys`                    |      | Each expectation is for exactly one survey.             |
-| `dim_staff_survey_expectations`   | `dim_terms`                      |      | Each expectation is for exactly one term.               |
-| `dim_student_survey_expectations` | `dim_student_enrollments`        |      | Each expectation is for exactly one enrollment.         |
-| `dim_student_survey_expectations` | `dim_surveys`                    |      | Each expectation is for exactly one survey.             |
-| `dim_student_survey_expectations` | `dim_terms`                      |      | Each expectation is for exactly one term.               |
-| `fct_staff_survey_submissions`    | `dim_staff`                      |      | Each submission is by exactly one staff member.         |
-| `fct_staff_survey_submissions`    | `dim_surveys`                    |      | Each submission is for exactly one survey.              |
-| `fct_staff_survey_submissions`    | `dim_dates`                      |      | Each submission has a submission date.                  |
-| `fct_student_survey_submissions`  | `dim_student_enrollments`        |      | Each submission is by exactly one enrolled student.     |
-| `fct_student_survey_submissions`  | `dim_surveys`                    |      | Each submission is for exactly one survey.              |
-| `fct_student_survey_submissions`  | `dim_dates`                      |      | Each submission has a submission date.                  |
-| `fct_staff_survey_responses`      | `fct_staff_survey_submissions`   |      | Each response is part of exactly one submission.        |
-| `fct_staff_survey_responses`      | `dim_survey_questions`           |      | Each response answers exactly one question.             |
-| `fct_student_survey_responses`    | `fct_student_survey_submissions` |      | Each response is part of exactly one submission.        |
-| `fct_student_survey_responses`    | `dim_survey_questions`           |      | Each response answers exactly one question.             |
+| From                              | To                               | Role | Cardinality               | Assertion                                               |
+| --------------------------------- | -------------------------------- | ---- | ------------------------- | ------------------------------------------------------- |
+| `dim_surveys`                     | `dim_terms`                      |      | many-to-one               | Each survey is administered in exactly one term window. |
+| `bridge_survey_questions`         | `dim_surveys`                    |      | many-to-many (via bridge) | Each pairing references exactly one survey.             |
+| `bridge_survey_questions`         | `dim_survey_questions`           |      | many-to-many (via bridge) | Each pairing references exactly one question.           |
+| `dim_staff_survey_expectations`   | `dim_staff`                      |      | many-to-one               | Each expectation is for exactly one staff member.       |
+| `dim_staff_survey_expectations`   | `dim_surveys`                    |      | many-to-one               | Each expectation is for exactly one survey.             |
+| `dim_staff_survey_expectations`   | `dim_terms`                      |      | many-to-one               | Each expectation is for exactly one term.               |
+| `dim_student_survey_expectations` | `dim_student_enrollments`        |      | many-to-one               | Each expectation is for exactly one enrollment.         |
+| `dim_student_survey_expectations` | `dim_surveys`                    |      | many-to-one               | Each expectation is for exactly one survey.             |
+| `dim_student_survey_expectations` | `dim_terms`                      |      | many-to-one               | Each expectation is for exactly one term.               |
+| `fct_staff_survey_submissions`    | `dim_staff`                      |      | many-to-one               | Each submission is by exactly one staff member.         |
+| `fct_staff_survey_submissions`    | `dim_surveys`                    |      | many-to-one               | Each submission is for exactly one survey.              |
+| `fct_staff_survey_submissions`    | `dim_dates`                      |      | many-to-one               | Each submission has a submission date.                  |
+| `fct_student_survey_submissions`  | `dim_student_enrollments`        |      | many-to-one               | Each submission is by exactly one enrolled student.     |
+| `fct_student_survey_submissions`  | `dim_surveys`                    |      | many-to-one               | Each submission is for exactly one survey.              |
+| `fct_student_survey_submissions`  | `dim_dates`                      |      | many-to-one               | Each submission has a submission date.                  |
+| `fct_staff_survey_responses`      | `fct_staff_survey_submissions`   |      | many-to-one               | Each response is part of exactly one submission.        |
+| `fct_staff_survey_responses`      | `dim_survey_questions`           |      | many-to-one               | Each response answers exactly one question.             |
+| `fct_student_survey_responses`    | `fct_student_survey_submissions` |      | many-to-one               | Each response is part of exactly one submission.        |
+| `fct_student_survey_responses`    | `dim_survey_questions`           |      | many-to-one               | Each response answers exactly one question.             |
 
 ### Talent Acquisition Domain
 
-| From                             | To                   | Role | Assertion                                       |
-| -------------------------------- | -------------------- | ---- | ----------------------------------------------- |
-| `fct_job_candidate_applications` | `dim_job_candidates` |      | Each application is from exactly one candidate. |
-| `fct_job_candidate_applications` | `dim_dates`          |      | Each application has an application date.       |
+| From                             | To                   | Role | Cardinality | Assertion                                       |
+| -------------------------------- | -------------------- | ---- | ----------- | ----------------------------------------------- |
+| `fct_job_candidate_applications` | `dim_job_candidates` |      | many-to-one | Each application is from exactly one candidate. |
+| `fct_job_candidate_applications` | `dim_dates`          |      | many-to-one | Each application has an application date.       |
 
 ### Staffing Model Domain
 
-| From                     | To              | Role        | Assertion                                                                |
-| ------------------------ | --------------- | ----------- | ------------------------------------------------------------------------ |
-| `dim_staffing_positions` | `dim_locations` |             | Each budgeted position is for exactly one location.                      |
-| `dim_staffing_positions` | `dim_staff`     | `teammate`  | Each filled position has exactly one teammate (nullable while unfilled). |
-| `dim_staffing_positions` | `dim_staff`     | `recruiter` | Each position has at most one recruiter (nullable).                      |
+| From                     | To              | Role        | Cardinality            | Assertion                                                                |
+| ------------------------ | --------------- | ----------- | ---------------------- | ------------------------------------------------------------------------ |
+| `dim_staffing_positions` | `dim_locations` |             | many-to-one            | Each budgeted position is for exactly one location.                      |
+| `dim_staffing_positions` | `dim_staff`     | `teammate`  | many-to-one (nullable) | Each filled position has exactly one teammate (nullable while unfilled). |
+| `dim_staffing_positions` | `dim_staff`     | `recruiter` | many-to-one (nullable) | Each position has at most one recruiter (nullable).                      |
 
 ### IT Support Domain
 
-| From                  | To              | Role                | Assertion                                                                 |
-| --------------------- | --------------- | ------------------- | ------------------------------------------------------------------------- |
-| `fct_support_tickets` | `dim_staff`     | `submitter`         | Each ticket has exactly one submitter.                                    |
-| `fct_support_tickets` | `dim_staff`     | `assignee`          | Each ticket has at most one current assignee (nullable while unassigned). |
-| `fct_support_tickets` | `dim_staff`     | `original_assignee` | Each ticket has at most one original assignee (nullable).                 |
-| `fct_support_tickets` | `dim_dates`     | `created`           | Each ticket has a created date.                                           |
-| `fct_support_tickets` | `dim_dates`     | `solved`            | Each ticket has at most one solved date (nullable while unresolved).      |
-| `fct_support_tickets` | `dim_locations` |                     | Each ticket is attributed to exactly one location.                        |
+| From                  | To              | Role                | Cardinality            | Assertion                                                                 |
+| --------------------- | --------------- | ------------------- | ---------------------- | ------------------------------------------------------------------------- |
+| `fct_support_tickets` | `dim_staff`     | `submitter`         | many-to-one            | Each ticket has exactly one submitter.                                    |
+| `fct_support_tickets` | `dim_staff`     | `assignee`          | many-to-one (nullable) | Each ticket has at most one current assignee (nullable while unassigned). |
+| `fct_support_tickets` | `dim_staff`     | `original_assignee` | many-to-one (nullable) | Each ticket has at most one original assignee (nullable).                 |
+| `fct_support_tickets` | `dim_dates`     | `created`           | many-to-one            | Each ticket has a created date.                                           |
+| `fct_support_tickets` | `dim_dates`     | `solved`            | many-to-one (nullable) | Each ticket has at most one solved date (nullable while unresolved).      |
+| `fct_support_tickets` | `dim_locations` |                     | many-to-one            | Each ticket is attributed to exactly one location.                        |
