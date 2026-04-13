@@ -41,9 +41,12 @@ def powerschool_connection(
     Opens the SSH tunnel first, then the database connection. On success,
     yields the connection. Cleans up both on exit.
 
-    If the connection fails, the tunnel is killed immediately. If an error
-    occurs during query execution, it is logged before re-raising. Connection
-    failures propagate without logging (Dagster handles them at the run level).
+    If the connection fails, the tunnel is killed immediately. All failures
+    (connection or query execution) propagate without logging — logging is
+    the caller's responsibility. ``with_powerschool_retry`` logs intermediate
+    attempts at WARNING; Dagster captures unrecovered failures at the run
+    level. Logging here at ERROR severity would file GCP Error Reporting
+    groups for transient issues that the retry layer recovers from.
 
     Args:
         ssh_resource: SSHResource with open_ssh_tunnel() method.
@@ -62,9 +65,6 @@ def powerschool_connection(
         raise
     try:
         yield connection
-    except Exception:
-        log.exception("PowerSchool ODBC error")
-        raise
     finally:
         try:
             connection.close()
