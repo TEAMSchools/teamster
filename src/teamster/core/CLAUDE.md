@@ -96,6 +96,11 @@ deploy rollover, the materialization may be stamped with the new deployment's
 code version. `code_version_changed()` returns false permanently — manual
 materialization is the only fix. See dagster-io/dagster#33708.
 
+**Deploy ordering gate**: `_dep_code_version_pending` blocks materialization
+when a direct dependency has `code_version_changed().since(newly_updated())` —
+prevents schema errors when a deploy adds columns through a TABLE → VIEW chain.
+Applied in `_build_dbt_condition()` so all three conditions inherit it.
+
 **Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
 ALL partitions on every materialization. To preserve per-partition triggering,
 the dep must itself be partitioned with the same `PartitionsDefinition`.

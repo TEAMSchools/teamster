@@ -94,7 +94,8 @@
       "Read(/env/**)",
       "Read(~/.kube/**)",
       "Read(~/.ssh/**)"
-    ]
+    ],
+    "additionalDirectories": ["/workspaces/teamster/dagster-tmp/day2"]
   },
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
   "hooks": {
