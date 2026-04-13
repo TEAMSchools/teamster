@@ -92,6 +92,14 @@ on GKE Autopilot.
   Deployment is deleted before pods terminate, causing
   `CalculateExpectedPodCountFailed` and leaving pods unprotected. `minAvailable`
   only counts current healthy pods, no controller lookup needed.
+- **GKE Autopilot system-critical preemption** — `system-cluster-critical` and
+  `system-node-critical` pods (priority 2,000,000,000) preempt dagster-run pods
+  (priority 1000) cluster-wide whenever GKE needs to land kube-dns, fluent-bit,
+  metrics-agent, etc. on a node. Unpreventable at our layer. Observable
+  signature in pod events: "Preempted in order to admit critical pod". Mitigated
+  by `runK8sConfig.jobSpecConfig.podFailurePolicy` with `action: Ignore` on the
+  `DisruptionTarget` pod condition — preempted pods transparently retry without
+  burning `backoffLimit`.
 
 ## gRPC Worker Threads
 
@@ -127,6 +135,13 @@ Per-location `server_k8s_config` in `dagster-cloud.yaml` deep-merges with global
 bumping the base. CPU limits live in three places: Python `op_tags` dicts, YAML
 config files (`config/*.yaml`), and Helm values. Scan all three when changing
 defaults.
+
+**`jobSpecConfig` accepts any K8s Job spec field** via Dagster's `Permissive()`
+schema in `UserDefinedDagsterK8sConfig`. snake_case/camelCase handled
+automatically by `k8s_snake_case_dict` → `k8s_model_from_dict`. Including newer
+fields like `podFailurePolicy` (K8s 1.31+ GA) that aren't in Dagster's typed
+schema. Dagster default `backoffLimit` is **0** (not K8s default 6) —
+`DEFAULT_K8S_JOB_BACKOFF_LIMIT` in `dagster_k8s/job.py`.
 
 ## Pod Labels (for selectors / PDBs / anti-affinity)
 

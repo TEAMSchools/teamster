@@ -185,7 +185,26 @@ workspace:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
   runK8sConfig:
     jobSpecConfig:
+      # backoffLimit is retries (not total attempts): 1 = 2 total pod attempts
+      # before K8s marks the Job Failed. Kept low so genuine application errors
+      # surface quickly via Dagster's run retry (dagster/will_retry).
       backoffLimit: 1
+      # K8s sets the DisruptionTarget pod condition when a pod is terminated by
+      # priority-class preemption, eviction API (node drain), graceful node
+      # shutdown, or taint-based eviction. On Autopilot, GKE system-critical
+      # pods (priority > 1000) routinely preempt our dagster-run pods
+      # (priority 1000) to land kube-dns, fluent-bit, metrics-agent, etc. —
+      # this is unavoidable cluster-wide behavior. podFailurePolicy with
+      # action=Ignore makes the Job controller treat those disruptions as
+      # not-a-failure: the Job transparently replaces the pod without counting
+      # against backoffLimit. Genuine app failures (non-zero exits without
+      # DisruptionTarget) still consume the retry budget as before.
+      # GA in K8s 1.31+; cluster is on 1.34.4.
+      podFailurePolicy:
+        rules:
+          - action: Ignore
+            onPodConditions:
+              - type: DisruptionTarget
     containerConfig:
       # Autopilot enforces special minimum values for resource requests on extended
       # duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
