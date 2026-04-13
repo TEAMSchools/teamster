@@ -53,5 +53,8 @@ select
     d.award_letter.unmet_need_with_max_family_contribution
     as award_letter__unmet_need_with_max_family_contribution,
     d.award_letter.seog as award_letter__seog,
+-- The admissions API returns only student.id in the nested student object;
+-- external_student_id is not populated there. Joining students here keeps the
+-- field in the enforced staging contract without requiring a contract migration.
 from deduplicate as d
 left join {{ ref("stg_overgrad__students") }} as s on d.student.id = s.id
