@@ -31,13 +31,11 @@ def adp_wfn_sftp_sensor(
     dir_mtimes = cursor.pop(DIR_MTIMES_KEY, {})
     min_mtime = min(cursor.values(), default=0)
 
-    result = ssh_adp_workforce_now.listdir_attr_r(
+    files = ssh_adp_workforce_now.listdir_attr_r(
         exclude_dirs=["./payroll"],
         min_mtime=min_mtime,
         dir_mtimes=dir_mtimes,
     )
-
-    files, dir_mtimes = check.is_tuple(result)
 
     for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]
@@ -65,8 +63,8 @@ def adp_wfn_sftp_sensor(
                     )
                 )
 
-                if f.st_mtime > max_mtime:
-                    max_mtime = f.st_mtime
+                if check.not_none(value=f.st_mtime) > max_mtime:
+                    max_mtime = check.not_none(value=f.st_mtime)
 
         if max_mtime > last_run:
             cursor[asset_identifier] = max_mtime

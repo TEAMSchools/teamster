@@ -102,15 +102,16 @@ def test_dir_mtimes_skips_unchanged_subtree():
         {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
     ) as resources:
         # dir_mtimes says subdir was last seen at mtime=100 — unchanged, skip it
-        files, updated_dir_mtimes = resources.ssh._inner_listdir_attr_r(
+        dir_mtimes = {"subdir": 100}
+        files = resources.ssh._inner_listdir_attr_r(
             sftp_client=sftp,
             remote_dir=".",
             exclude_dirs=[],
-            dir_mtimes={"subdir": 100},
+            dir_mtimes=dir_mtimes,
         )
 
     assert files == []
-    assert updated_dir_mtimes["subdir"] == 100
+    assert dir_mtimes["subdir"] == 100
     # subdir should NOT have been listed
     sftp.listdir_attr.assert_called_once_with(".")
 
@@ -131,16 +132,17 @@ def test_dir_mtimes_traverses_changed_subtree():
         {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
     ) as resources:
         # dir_mtimes says subdir was last seen at mtime=100 — changed, traverse it
-        files, updated_dir_mtimes = resources.ssh._inner_listdir_attr_r(
+        dir_mtimes = {"subdir": 100}
+        files = resources.ssh._inner_listdir_attr_r(
             sftp_client=sftp,
             remote_dir=".",
             exclude_dirs=[],
-            dir_mtimes={"subdir": 100},
+            dir_mtimes=dir_mtimes,
         )
 
     filenames = [attr.filename for attr, _ in files]
     assert filenames == ["file.csv"]
-    assert updated_dir_mtimes["subdir"] == 200
+    assert dir_mtimes["subdir"] == 200
 
 
 def test_dir_mtimes_traverses_unseen_directory():
@@ -159,16 +161,17 @@ def test_dir_mtimes_traverses_unseen_directory():
         {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
     ) as resources:
         # empty dir_mtimes — newdir is unseen, must traverse
-        files, updated_dir_mtimes = resources.ssh._inner_listdir_attr_r(
+        dir_mtimes: dict[str, float] = {}
+        files = resources.ssh._inner_listdir_attr_r(
             sftp_client=sftp,
             remote_dir=".",
             exclude_dirs=[],
-            dir_mtimes={},
+            dir_mtimes=dir_mtimes,
         )
 
     filenames = [attr.filename for attr, _ in files]
     assert filenames == ["data.csv"]
-    assert updated_dir_mtimes["newdir"] == 300
+    assert dir_mtimes["newdir"] == 300
 
 
 def test_dir_mtimes_none_returns_list_only():

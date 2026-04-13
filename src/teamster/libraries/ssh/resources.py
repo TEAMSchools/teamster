@@ -18,10 +18,7 @@ class SSHResource(DagsterSSHResource):
         exclude_dirs: list[str] | None = None,
         min_mtime: float | None = None,
         dir_mtimes: dict[str, float] | None = None,
-    ) -> (
-        tuple[list[tuple[SFTPAttributes, str]], dict[str, float]]
-        | list[tuple[SFTPAttributes, str]]
-    ):
+    ) -> list[tuple[SFTPAttributes, str]]:
         if exclude_dirs is None:
             exclude_dirs = []
 
@@ -43,16 +40,11 @@ class SSHResource(DagsterSSHResource):
         files: list | None = None,
         min_mtime: float | None = None,
         dir_mtimes: dict[str, float] | None = None,
-    ) -> (
-        tuple[list[tuple[SFTPAttributes, str]], dict[str, float]]
-        | list[tuple[SFTPAttributes, str]]
-    ):
+    ) -> list[tuple[SFTPAttributes, str]]:
         if files is None:
             files = []
 
         if remote_dir in exclude_dirs:
-            if dir_mtimes is not None:
-                return files, dir_mtimes
             return files
 
         for file in sftp_client.listdir_attr(remote_dir):
@@ -80,8 +72,6 @@ class SSHResource(DagsterSSHResource):
                 if min_mtime is None or mtime > min_mtime:
                     files.append((file, path))
 
-        if dir_mtimes is not None:
-            return files, dir_mtimes
         return files
 
     def open_ssh_tunnel(self):

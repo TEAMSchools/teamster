@@ -24,9 +24,11 @@ on GKE Autopilot.
 ## Scheduling
 
 - Weighted `nodeAffinity` preferences (no hard `nodeSelector`). Compute-class
-  tiers: Scale-Out arm64 > General-Purpose > Scale-Out x86 > Balanced. Spot adds
-  +50 on code server pods (not agent or run pods). Autopilot bills per-pod, so
-  fallback tiers have no cost penalty.
+  tiers: Scale-Out arm64 > General-Purpose > Scale-Out x86. Balanced removed —
+  its separation/extended-duration minimums (1 vCPU / 4 GiB) exceed our requests
+  (500m / 2 GiB), which would cause pod admission rejection if anti-affinity is
+  ever applied. Spot adds +50 on code server pods (not agent or run pods).
+  Autopilot bills per-pod, so fallback tiers have no cost penalty.
 - Agent pods use `safe-to-evict: "false"` (extended-duration) to prevent
   Autopilot scale-down churn, which is mutually exclusive with spot. Agent pods
   exclude arm64 tiers (image is x86-only).
@@ -61,6 +63,17 @@ on GKE Autopilot.
   `DAGSTER_CLOUD_CLEANUP_SERVER_CHECK_INTERVAL` (set to 600s) control how
   quickly orphaned code server Deployments from previous agent IDs are deleted.
   Do not set grace period below reconciliation time (~3-4 min).
+- **Code server ClusterIPs change on every reconcile** —
+  `unique_resource_name()` in
+  `dagster_cloud/workspace/user_code_launcher/utils.py` appends a fresh
+  `uuid4().hex[:6]`; Services are delete-old/create-new, never updated in place.
+  Multiple distinct gRPC IPs across tick errors in a short window = agent
+  reconciliation, NOT pod preemption. Audit-log signal:
+  `protoPayload.methodName="io.k8s.core.v1.services.create"` on `dagster-cloud`
+  namespace.
+- **`dagsterCloudAgent.replicas: 2` doubles Service churn** — both replicas race
+  and independently recreate Services per control-plane update. Agent HA trades
+  directly against reduced ClusterIP churn; currently set to 1.
 
 ## Eviction and Priority
 
@@ -79,6 +92,14 @@ on GKE Autopilot.
   Deployment is deleted before pods terminate, causing
   `CalculateExpectedPodCountFailed` and leaving pods unprotected. `minAvailable`
   only counts current healthy pods, no controller lookup needed.
+- **GKE Autopilot system-critical preemption** — `system-cluster-critical` and
+  `system-node-critical` pods (priority 2,000,000,000) preempt dagster-run pods
+  (priority 1000) cluster-wide whenever GKE needs to land kube-dns, fluent-bit,
+  metrics-agent, etc. on a node. Unpreventable at our layer. Observable
+  signature in pod events: "Preempted in order to admit critical pod". Mitigated
+  by `runK8sConfig.jobSpecConfig.podFailurePolicy` with `action: Ignore` on the
+  `DisruptionTarget` pod condition — preempted pods transparently retry without
+  burning `backoffLimit`.
 
 ## gRPC Worker Threads
 
@@ -114,6 +135,42 @@ Per-location `server_k8s_config` in `dagster-cloud.yaml` deep-merges with global
 bumping the base. CPU limits live in three places: Python `op_tags` dicts, YAML
 config files (`config/*.yaml`), and Helm values. Scan all three when changing
 defaults.
+
+**`jobSpecConfig` accepts any K8s Job spec field** via Dagster's `Permissive()`
+schema in `UserDefinedDagsterK8sConfig`. snake_case/camelCase handled
+automatically by `k8s_snake_case_dict` → `k8s_model_from_dict`. Including newer
+fields like `podFailurePolicy` (K8s 1.31+ GA) that aren't in Dagster's typed
+schema. Dagster default `backoffLimit` is **0** (not K8s default 6) —
+`DEFAULT_K8S_JOB_BACKOFF_LIMIT` in `dagster_k8s/job.py`.
+
+## Pod Labels (for selectors / PDBs / anti-affinity)
+
+From `dagster_k8s/utils.py` `get_common_labels()` — applied to both run and step
+pods:
+
+| Key                           | Value                                       |
+| ----------------------------- | ------------------------------------------- |
+| `app.kubernetes.io/name`      | `dagster`                                   |
+| `app.kubernetes.io/instance`  | `dagster`                                   |
+| `app.kubernetes.io/part-of`   | `dagster`                                   |
+| `app.kubernetes.io/component` | `run_worker` (run) / `step_worker` (step)   |
+| `dagster/run-id`              | run UUID (both)                             |
+| `dagster/code-location`       | location name if `remote_job_origin` is set |
+
+Code server pods (`<location>-prod-*`) carry `managed_by: K8sUserCodeLauncher`,
+`deployment_name: prod`, `location_name: <loc>` — already used by the
+per-location PDB selectors in `extraManifests`.
+
+Agent pods (`user-cloud-dagster-cloud-agent-*`) carry
+`app.kubernetes.io/name: dagster-cloud-agent`.
+
+**Self-exclusion pitfall on run/step anti-affinity**: do NOT use
+`app.kubernetes.io/name: dagster` as an anti-affinity `labelSelector` ON a
+run/step pod — that label is on the pod itself, so the selector would self-match
+and block scheduling everywhere. Use code-server-specific labels
+(`managed_by: K8sUserCodeLauncher`) or agent-specific labels
+(`app.kubernetes.io/name: dagster-cloud-agent`) when the anti-affinity target is
+a different pod type.
 
 ## Troubleshooting
 
@@ -158,3 +215,19 @@ defaults.
   `resource.type="gce_subnetwork"` +
   `logName=".../compute.googleapis.com%2Ffirewall"` → `instance.zone` +
   `remote_instance.zone`. Filter `dest_port=4000` for agent→code-server gRPC.
+
+## Agent Error Observability
+
+- `get_cloud_agents` errors array capped at **25 per agent** — most recent 25
+  only. GCP container logs on `user-cloud-dagster-cloud-agent-agent` pods are
+  the complete record.
+- Schedule tick evaluation retries gRPC calls indefinitely within a single tick.
+  Agent-level "Error serving request" logs during preemption are noise, not tick
+  failures. Only `get_tick_history(statuses=["FAILURE"])` reflects terminal
+  schedule failures.
+- **Hybrid daemon location** — sensor / asset / schedule daemons run in the
+  Dagster Cloud control plane, NOT in the local agent. OSS `dagster.yaml`
+  settings (`max_tick_retries`, `auto_materialize.*`, etc.) do not apply; the
+  Dagster+ full deployment settings expose only `concurrency`, `run_monitoring`,
+  `run_retries`, `sso_default_role` — no tick-retry knob. Terminal
+  `DagsterUserCodeUnreachableError` ticks remain terminal.

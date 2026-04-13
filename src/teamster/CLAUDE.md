@@ -149,6 +149,20 @@ mtimes.
 **Fiscal year**: July 1 start. `FiscalYear` class and
 `FiscalYearPartitionsDefinition` in `core/utils/classes.py`.
 
+**Retry pattern**: Use `tenacity` — standard import set:
+`retry, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter`.
+Match on a specific exception class (define one if the upstream code raises bare
+`Exception`), never on error message or bare `Exception`. Existing examples:
+`libraries/adp/workforce_now/api/resources.py`,
+`libraries/tableau/resources.py`, `libraries/level_data/grow/resources.py`.
+
+**Don't `log.exception` inside retry-wrapped helpers**. GCP Error Reporting
+files groups at ERROR severity, so logging a traceback inside a context manager
+/ helper that's called from a retry loop creates false-positive error groups for
+transient failures the retry layer recovers from. Let the retry wrapper log
+intermediate attempts at WARNING; Dagster logs unrecovered failures at the run
+level.
+
 ## Development Commands
 
 ```bash
