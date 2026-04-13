@@ -548,8 +548,10 @@ fundamental domains are stable.
 ## Appendix: Entity Relationship Diagrams
 
 Diagrams split by domain for readability. Conformed dimensions (`dim_dates`,
-`dim_terms`, `dim_regions`, `dim_locations`, `dim_school_calendars`) are
-included where they carry meaningful relationships to the domain.
+`dim_terms`, `dim_regions`, `dim_locations`, `dim_school_calendars`) are omitted
+from per-domain diagrams — they connect to nearly every fact as role-playing
+aliases and would overwhelm the entity relationships each diagram is meant to
+show.
 
 ### Student & Course
 
@@ -561,13 +563,6 @@ erDiagram
     dim_courses ||--o{ dim_course_sections : ""
     dim_course_sections ||--o{ dim_student_section_enrollments : ""
     dim_staff ||--o{ dim_course_sections : "teacher"
-    dim_locations ||--o{ dim_student_enrollments : ""
-    dim_regions ||--o{ dim_student_enrollments : ""
-    dim_dates ||--o{ dim_student_enrollments : "entry_date"
-    dim_dates ||--o{ dim_student_enrollments : "exit_date"
-    dim_terms ||--o{ dim_student_section_enrollments : ""
-    dim_terms ||--o{ dim_course_sections : ""
-    dim_locations ||--o{ dim_course_sections : ""
 ```
 
 ### Staff
@@ -587,8 +582,6 @@ erDiagram
     dim_staff_work_assignments ||--o{ fct_staff_attrition : ""
     dim_staff ||--o{ bridge_staff_benefits_enrollments : ""
     dim_staff ||--o{ bridge_staff_membership_enrollments : ""
-    dim_dates ||--o{ fct_work_assignment_compensation : ""
-    dim_dates ||--o{ fct_work_assignment_additional_earnings : ""
 ```
 
 ### Assessment (enrollment-scoped)
@@ -602,9 +595,6 @@ erDiagram
     dim_student_enrollments ||--o{ dim_student_assessment_expectations : ""
     dim_assessments ||--o{ dim_student_assessment_expectations : ""
     dim_student_assessment_expectations }o--o{ fct_assessment_scores_enrollment_scoped : "expected-vs-taken"
-    dim_terms ||--o{ fct_assessment_scores_enrollment_scoped : ""
-    dim_terms ||--o{ dim_student_assessment_expectations : ""
-    dim_dates ||--o{ fct_assessment_scores_enrollment_scoped : "test_date"
 ```
 
 ### College
@@ -615,10 +605,6 @@ erDiagram
     dim_colleges ||--o{ dim_college_enrollments : ""
     dim_students ||--o{ fct_assessment_scores_student_scoped : ""
     dim_assessments ||--o{ fct_assessment_scores_student_scoped : ""
-    dim_dates ||--o{ dim_college_enrollments : "enrollment_date"
-    dim_dates ||--o{ fct_assessment_scores_student_scoped : "test_date"
-    dim_terms ||--o{ fct_assessment_scores_student_scoped : ""
-    dim_regions ||--o{ dim_college_enrollments : ""
 ```
 
 ### Staff Observation & Professional Development
@@ -636,10 +622,6 @@ erDiagram
     dim_staff_observation_microgoal_types ||--o{ fct_staff_observation_microgoals : ""
     dim_staff ||--o{ fct_staff_observation_microgoals : ""
     dim_staff_observation_expectations }o--o{ fct_staff_observations : "expected-vs-completed"
-    dim_terms ||--o{ dim_staff_observation_expectations : ""
-    dim_terms ||--o{ fct_staff_observations : ""
-    dim_locations ||--o{ fct_staff_observations : ""
-    dim_dates ||--o{ fct_staff_observations : "observation_date"
 ```
 
 ### Student Attendance
@@ -651,11 +633,6 @@ erDiagram
     dim_student_enrollments ||--o{ fct_student_attendance_interventions : ""
     dim_student_attendance_intervention_types ||--o{ fct_student_attendance_interventions : ""
     dim_staff ||--o{ fct_student_attendance_interventions : ""
-    dim_dates ||--o{ fct_student_attendance_daily : ""
-    dim_dates ||--o{ fct_student_attendance_streaks : "start_date"
-    dim_dates ||--o{ fct_student_attendance_streaks : "end_date"
-    dim_dates ||--o{ fct_student_attendance_interventions : ""
-    dim_school_calendars ||--o{ fct_student_attendance_daily : ""
 ```
 
 ### Behavioral & Communications
@@ -668,11 +645,6 @@ erDiagram
     dim_student_enrollments ||--o{ fct_family_communications : ""
     dim_staff ||--o{ fct_family_communications : ""
     dim_family_communication_types ||--o{ fct_family_communications : ""
-    dim_dates ||--o{ fct_behavioral_incidents : ""
-    dim_dates ||--o{ fct_behavioral_consequences : "start_date"
-    dim_dates ||--o{ fct_behavioral_consequences : "end_date"
-    dim_dates ||--o{ fct_family_communications : ""
-    dim_locations ||--o{ fct_family_communications : ""
 ```
 
 ### Gradebook
@@ -683,12 +655,6 @@ erDiagram
     dim_student_section_enrollments ||--o{ fct_grades_category : ""
     dim_student_section_enrollments ||--o{ fct_grades_assignments : ""
     dim_student_enrollments ||--o{ fct_grades_gpa : ""
-    dim_terms ||--o{ fct_grades_term : ""
-    dim_terms ||--o{ fct_grades_category : ""
-    dim_terms ||--o{ fct_grades_assignments : ""
-    dim_terms ||--o{ fct_grades_gpa : ""
-    dim_dates ||--o{ fct_grades_term : ""
-    dim_dates ||--o{ fct_grades_assignments : "due_date"
 ```
 
 ### Survey
@@ -710,10 +676,6 @@ erDiagram
     fct_student_survey_submissions ||--o{ fct_student_survey_responses : ""
     dim_staff_survey_expectations }o--o{ fct_staff_survey_submissions : "expected-vs-completed"
     dim_student_survey_expectations }o--o{ fct_student_survey_submissions : "expected-vs-completed"
-    dim_terms ||--o{ dim_staff_survey_expectations : ""
-    dim_terms ||--o{ dim_student_survey_expectations : ""
-    dim_dates ||--o{ fct_staff_survey_submissions : ""
-    dim_dates ||--o{ fct_student_survey_submissions : ""
 ```
 
 ### Talent Acquisition, Staffing & IT Support
@@ -724,11 +686,6 @@ erDiagram
     dim_staff ||--o{ fct_support_tickets : "submitter"
     dim_staff ||--o{ fct_support_tickets : "assignee"
     dim_staff ||--o{ fct_support_tickets : "original_assignee"
-    dim_dates ||--o{ fct_job_candidate_applications : ""
-    dim_dates ||--o{ fct_support_tickets : "created"
-    dim_dates ||--o{ fct_support_tickets : "solved"
-    dim_locations ||--o{ fct_support_tickets : ""
-    dim_staffing_positions ||--|| dim_locations : ""
     dim_staff ||--o{ dim_staffing_positions : "teammate"
     dim_staff ||--o{ dim_staffing_positions : "recruiter"
 ```
