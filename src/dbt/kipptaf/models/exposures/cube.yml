@@ -7,7 +7,7 @@ exposures:
     depends_on:
       - ref("dim_dates")
       - ref("dim_locations")
-      - ref("dim_seats")
+      - ref("dim_staffing_positions")
       - ref("dim_staff")
       - ref("dim_students")
       - ref("dim_terms")
