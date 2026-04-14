@@ -23,6 +23,17 @@ with
             )
             + floor(sum(is_tardy) / 3) as n_absences_y1_running_non_susp,
 
+            coalesce(
+                sum(
+                    if(
+                        ac.att_code not in ('ISS', 'OSS', 'OS', 'OSSP', 'SHI'),
+                        abs(mem.attendancevalue - 1),
+                        null
+                    )
+                ),
+                0
+            ) as n_absences_y1_running_non_susp_no_tardy,
+
             case
                 regexp_extract(mem._dbt_source_relation, r'(kipp\w+)_')
                 when 'kippnewark'
@@ -243,6 +254,7 @@ with
             att.ada_term_running,
             att.n_absences_y1_running,
             att.n_absences_y1_running_non_susp,
+            att.n_absences_y1_running_non_susp_no_tardy,
 
             ir.iready_reading_recent,
             ir.iready_math_recent,
@@ -338,14 +350,28 @@ with
                     and co.grade_level in (1, 2, 4)
                     and (att.ada_term_running < 0.85 or att.n_absences_y1_running >= 27)
                 then 'Off-Track'
-                /* HS */
+                /* HS Camden */
                 when
                     co.grade_level >= 9
+                    and co.region = 'Camden'
                     and att.n_absences_y1_running_non_susp >= att.hs_at_risk_absences
                 then 'Off-Track'
                 when
                     co.grade_level >= 9
+                    and co.region = 'Camden'
                     and att.n_absences_y1_running_non_susp >= att.hs_off_track_absences
+                then 'Off-Track'
+                /* HS Newark */
+                when
+                    co.grade_level >= 9
+                    and co.region = 'Newark'
+                    and att.n_absences_y1_running_non_susp_no_tardy >= att.hs_at_risk_absences
+                then 'Off-Track'
+                when
+                    co.grade_level >= 9
+                    and co.region = 'Newark'
+                    and att.n_absences_y1_running_non_susp_no_tardy
+                    >= att.hs_off_track_absences
                 then 'Off-Track'
                 else 'On-Track'
             end as attendance_status,
@@ -408,14 +434,28 @@ with
                     and co.grade_level in (1, 2, 4)
                     and (att.ada_term_running < 0.85 or att.n_absences_y1_running >= 27)
                 then 'Off-Track'
-                /* HS */
+                /* HS Camden */
                 when
                     co.grade_level >= 9
+                    and co.region = 'Camden'
                     and att.n_absences_y1_running_non_susp >= att.hs_at_risk_absences
                 then 'Off-Track (Already reached threshold)'
                 when
                     co.grade_level >= 9
+                    and co.region = 'Camden'
                     and att.n_absences_y1_running_non_susp >= att.hs_off_track_absences
+                then 'Off-Track (Approaching threshold)'
+                /* HS Newark */
+                when
+                    co.grade_level >= 9
+                    and co.region = 'Newark'
+                    and att.n_absences_y1_running_non_susp_no_tardy >= att.hs_at_risk_absences
+                then 'Off-Track (Already reached threshold)'
+                when
+                    co.grade_level >= 9
+                    and co.region = 'Newark'
+                    and att.n_absences_y1_running_non_susp_no_tardy
+                    >= att.hs_off_track_absences
                 then 'Off-Track (Approaching threshold)'
                 else 'On-Track'
             end as attendance_status_hs_detail,
@@ -537,6 +577,7 @@ select
     ada_term_running,
     n_absences_y1_running,
     n_absences_y1_running_non_susp,
+    n_absences_y1_running_non_susp_no_tardy,
     iready_reading_recent,
     iready_math_recent,
     n_failing,
