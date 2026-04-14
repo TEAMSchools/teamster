@@ -23,7 +23,7 @@ models:
       - name: day_of_week
         data_type: int64
         description: >-
-          ISO day of week (1=Monday through 7=Sunday).
+          Day of week (1=Sunday through 7=Saturday).
 
       - name: day_of_week_name
         data_type: string
@@ -85,12 +85,12 @@ models:
       - name: week_start_date
         data_type: date
         description: >-
-          Start of the ISO week (Sunday) containing this date.
+          Start of the Sunday-based week containing this date.
 
       - name: week_end_date
         data_type: date
         description: >-
-          End of the ISO week (Saturday) containing this date.
+          End of the Sunday-based week (Saturday) containing this date.
 
       - name: week_start_monday
         data_type: date
