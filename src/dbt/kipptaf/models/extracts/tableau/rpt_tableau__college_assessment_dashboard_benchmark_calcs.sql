@@ -19,8 +19,6 @@ select
     s.scope,
     s.score_type,
     s.subject_area,
-    s.aligned_subject_area,
-    s.aligned_subject,
     s.test_date,
     s.max_scale_score,
     s.scale_score,

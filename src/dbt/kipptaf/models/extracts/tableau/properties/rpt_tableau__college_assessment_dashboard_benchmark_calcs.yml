@@ -50,10 +50,6 @@ models:
         data_type: string
       - name: subject_area
         data_type: string
-      - name: aligned_subject_area
-        data_type: string
-      - name: aligned_subject
-        data_type: string
       - name: test_date
         data_type: date
       - name: max_scale_score
