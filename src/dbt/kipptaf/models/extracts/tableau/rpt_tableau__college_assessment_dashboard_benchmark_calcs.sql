@@ -25,6 +25,9 @@ select
     s.max_scale_score,
     s.scale_score,
 
+    ce.teacher_lastfirst as ccr_teacher,
+    ce.sections_external_expression as ccr_period,
+
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     {{ ref("int_assessments__college_assessment") }} as s
@@ -37,6 +40,13 @@ inner join
         'sat_math_test_score',
         'sat_reading_test_score'
     )
+left join
+    {{ ref("base_powerschool__course_enrollments") }} as ce
+    on e.student_number = ce.students_student_number
+    and e.academic_year = ce.cc_academic_year
+    and ce.courses_course_name like 'College and Career%'
+    and ce.rn_course_number_year = 1
+    and not ce.is_dropped_section
 where
     e.school_level = 'HS'
     and e.rn_undergrad = 1

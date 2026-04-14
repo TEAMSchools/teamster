@@ -60,3 +60,7 @@ models:
         data_type: numeric
       - name: scale_score
         data_type: numeric
+      - name: ccr_period
+        data_type: string
+      - name: ccr_teacher
+        data_type: string
