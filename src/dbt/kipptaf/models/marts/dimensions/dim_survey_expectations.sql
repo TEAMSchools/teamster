@@ -140,6 +140,7 @@ with
         from survey_admin as sa
         cross join
             (
+                -- TODO: deduplicating contact persons; no unique key in source
                 select distinct student_contact_person_key,
                 from {{ ref("dim_student_contact_persons") }}
             ) as cp
@@ -204,6 +205,7 @@ with
         from family_scd
     )
 
+-- TODO: roster history has multiple assignments per employee
 select distinct
     {{
         dbt_utils.generate_surrogate_key(

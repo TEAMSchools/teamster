@@ -1,5 +1,6 @@
 with
     locations as (
+        -- TODO: int_people__location_crosswalk has duplicate rows (#3633)
         select distinct
             location_powerschool_school_id,
             location_dagster_code_location,

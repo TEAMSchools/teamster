@@ -1,3 +1,4 @@
+-- TODO: int_people__location_crosswalk has duplicate rows (#3633)
 select distinct
     {{ dbt_utils.generate_surrogate_key(["location_clean_name"]) }} as location_key,
 

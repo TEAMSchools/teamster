@@ -1,11 +1,13 @@
 with
     google_forms_surveys as (
+        -- TODO: upstream at response grain, no definition model (#3635)
         select distinct form_id as survey_id, info_title as survey_name,
         from {{ ref("int_google_forms__form_responses") }}
         where form_id is not null
     ),
 
     alchemer_surveys as (
+        -- TODO: upstream at response grain, no definition model (#3635)
         select distinct
             safe_cast(survey_id as string) as survey_id, survey_title as survey_name,
         from {{ source("alchemer", "base_alchemer__survey_results") }}
