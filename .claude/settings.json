@@ -16,6 +16,7 @@
       "Bash(uv tool list)",
       "Edit(/.claude/skills/**)",
       "Edit(/.claude/scratch/**)",
+      "Edit(/.worktrees/**)",
       "mcp__bigquery__analyze_contribution",
       "mcp__bigquery__execute_sql",
       "mcp__bigquery__forecast",
@@ -63,12 +64,14 @@
       "mcp__plugin_context7_context7__query-docs",
       "mcp__plugin_context7_context7__resolve-library-id",
       "Read(/.claude/scratch/**)",
+      "Read(/.worktrees/**)",
       "Read(//home/vscode/.claude/**)",
       "Read(//tmp/dagster/**)",
       "Read(//workspaces/teamster/**)",
       "Skill(claude-md-management:revise-claude-md:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)",
-      "Write(/.claude/scratch/**)"
+      "Write(/.claude/scratch/**)",
+      "Write(/.worktrees/**)"
     ],
     "deny": [
       "Bash(* gcloud *)",
