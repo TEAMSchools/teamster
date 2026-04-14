@@ -1,10 +1,3 @@
-with
-    alt_max_scale_score as (
-        select student_number, score_type, max(scale_score) as alt_max_scale_score,
-        from {{ ref("int_assessments__college_assessment") }}
-        group by student_number, score_type
-    )
-
 select
     e.academic_year,
     e.region,
@@ -28,30 +21,24 @@ select
     s.subject_area,
     s.aligned_subject_area,
     s.aligned_subject,
+    s.test_date,
     s.max_scale_score,
     s.scale_score,
 
-    c.alt_max_scale_score,
-
 from {{ ref("int_extracts__student_enrollments") }} as e
-left join
+inner join
     {{ ref("int_assessments__college_assessment") }} as s
     on e.student_number = s.student_number
     and e.academic_year = s.academic_year
-    and s.rn_highest = 1
     and s.scope != 'ACT'
-left join
-    alt_max_scale_score as c
-    on s.student_number = c.student_number
-    and s.score_type = c.score_type
-where
-    e.school_level = 'HS'
-    and e.rn_undergrad = 1
-    and e.rn_year = 1
-    and not e.is_out_of_district
     and s.score_type not in (
         'psat10_math_test',
         'psat10_reading',
         'sat_math_test_score',
         'sat_reading_test_score'
     )
+where
+    e.school_level = 'HS'
+    and e.rn_undergrad = 1
+    and e.rn_year = 1
+    and not e.is_out_of_district

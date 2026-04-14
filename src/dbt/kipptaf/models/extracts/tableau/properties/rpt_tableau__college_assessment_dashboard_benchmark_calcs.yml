@@ -1,7 +1,16 @@
-version: 2
-
 models:
   - name: rpt_tableau__college_assessment_dashboard_benchmark_calcs
+    description: >
+      Student-level college assessment scores used to calculate the percentage
+      of students meeting readiness benchmark for KIPP Forward use.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - score_type
+              - test_date
     columns:
       - name: academic_year
         data_type: int64
@@ -45,9 +54,9 @@ models:
         data_type: string
       - name: aligned_subject
         data_type: string
+      - name: test_date
+        data_type: date
       - name: max_scale_score
         data_type: numeric
       - name: scale_score
-        data_type: numeric
-      - name: alt_max_scale_score
         data_type: numeric
