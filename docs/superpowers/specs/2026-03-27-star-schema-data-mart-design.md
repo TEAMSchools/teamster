@@ -557,6 +557,10 @@ fundamental domains are stable.
 - **Student Recruitment and Enrollment (SRE)** — enrollment pipeline/funnel
   tracking and Finalsite website/CMS analytics (includes the pattern for
   creating historical data where the source has none).
+- **College Domain expansion** — kippadb (Salesforce) entities beyond NSC
+  enrollments and test scores: college applications, post-secondary employment,
+  financial aid awards, counselor contact notes, internships/programs, college
+  persistence (semester-to-semester retention). All currently fan-out 1.
 - **Certification tracking** — staff teaching certifications/licenses.
 - **Grant timesheet tracking** — time tracking for grant-funded positions.
 
