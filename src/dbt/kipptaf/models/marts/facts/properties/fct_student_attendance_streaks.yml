@@ -1,0 +1,75 @@
+models:
+  - name: fct_student_attendance_streaks
+    description: >-
+      Student attendance streak fact table. One row per student x consecutive
+      attendance streak. A streak is a run of consecutive membership days with
+      the same attendance code (or same attendancevalue for present/absent
+      streaks). FK to dim_student_enrollments and dim_dates (role-playing via
+      streak_start_date_key and streak_end_date_key).
+    columns:
+      - name: student_attendance_streak_key
+        data_type: string
+        description: >-
+          Surrogate key identifying the streak. Derived from project, studentid,
+          yearid, attendance code/value, and gap-and-island group number.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_relation, academic_year, and entrydate.
+        data_tests:
+          - not_null
+
+      - name: streak_start_date_key
+        data_type: date
+        description: >-
+          First date of the streak. FK to dim_dates (role-playing as streak
+          start date).
+
+      - name: streak_end_date_key
+        data_type: date
+        description: >-
+          Last date of the streak. FK to dim_dates (role-playing as streak end
+          date).
+
+      - name: student_number
+        data_type: int64
+        description: >-
+          PowerSchool student number. Degenerate dimension for filtering.
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year (July start) derived from yearid + 1990.
+
+      - name: streak_type
+        data_type: string
+        description: >-
+          Attendance code or attendancevalue string that defines the streak
+          (e.g., 'A' for absent, 'P' for present, '1.0' for present-value
+          streaks).
+
+      - name: streak_start_date
+        data_type: date
+        description: >-
+          First calendar date of the streak.
+
+      - name: streak_end_date
+        data_type: date
+        description: >-
+          Last calendar date of the streak.
+
+      - name: streak_length_membership
+        data_type: int64
+        description: >-
+          Number of membership days in the streak (count of school days).
+
+      - name: streak_length_calendar
+        data_type: int64
+        description: >-
+          Number of calendar days in the streak (end_date - start_date + 1),
+          including weekends and holidays.

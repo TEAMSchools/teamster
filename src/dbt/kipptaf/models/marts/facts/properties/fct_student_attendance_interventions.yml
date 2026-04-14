@@ -1,0 +1,114 @@
+models:
+  - name: fct_student_attendance_interventions
+    description: >-
+      Student attendance intervention fact table. One row per student x
+      intervention type x academic year. Tracks whether each required
+      intervention communication was completed based on the student's unexcused
+      absence count exceeding the threshold defined in
+      dim_student_attendance_intervention_types. FK to dim_student_enrollments
+      and dim_student_attendance_intervention_types.
+    columns:
+      - name: student_attendance_intervention_key
+        data_type: string
+        description: >-
+          Surrogate key derived from student_number, academic_year, and
+          commlog_reason. Primary key for this fact.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_relation, academic_year, and entrydate.
+        data_tests:
+          - not_null
+
+      - name: intervention_type_key
+        data_type: string
+        description: >-
+          FK to dim_student_attendance_intervention_types. Surrogate key derived
+          from region and commlog_reason.
+
+      - name: date_key
+        data_type: date
+        description: >-
+          Date the communication was logged. FK to dim_dates. Null when the
+          intervention is missing (not yet completed).
+
+      - name: student_number
+        data_type: int64
+        description: >-
+          PowerSchool student number. Degenerate dimension for filtering.
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year (July start) for this intervention record.
+
+      - name: commlog_reason
+        data_type: string
+        description: >-
+          DeansList comm log reason value matching the intervention type (e.g.,
+          'Chronic Absence: 4').
+
+      - name: absence_threshold
+        data_type: int64
+        description: >-
+          Number of unexcused absences that triggered this intervention.
+
+      - name: days_absent_unexcused
+        data_type: float64
+        description: >-
+          Student's year-to-date unexcused absence count at the time of
+          evaluation.
+
+      - name: commlog_notes
+        data_type: string
+        description: >-
+          Free-text response notes from the communication log entry.
+
+      - name: commlog_topic
+        data_type: string
+        description: >-
+          Topic selected for the communication log entry.
+
+      - name: commlog_date
+        data_type: date
+        description: >-
+          Date the communication was logged in DeansList. Null when the
+          intervention is missing.
+
+      - name: commlog_status
+        data_type: string
+        description: >-
+          Status of the communication (e.g., Completed, Attempted).
+
+      - name: commlog_type
+        data_type: string
+        description: >-
+          Type of communication (e.g., Phone Call, Home Visit, IP).
+
+      - name: commlog_staff_name
+        data_type: string
+        description: >-
+          Full name of the staff member who logged the communication.
+
+      - name: intervention_status
+        data_type: string
+        description: >-
+          Whether the intervention is 'Complete' (communication logged) or
+          'Missing' (no matching communication found).
+
+      - name: intervention_status_required_int
+        data_type: int64
+        description: >-
+          Integer encoding of intervention_status. 1 = Complete, 0 = Missing.
+          Used for aggregation.
+
+      - name: is_ca_exception
+        data_type: boolean
+        description: >-
+          TRUE if the student is currently enrolled in the Attendance Exceptions
+          special program, exempting them from chronic absence tracking.

@@ -11,7 +11,7 @@ exposures:
       - ref("dim_staff")
       - ref("dim_students")
       - ref("dim_terms")
-      - ref("fct_attendance")
+      - ref("fct_student_attendance_daily")
       - ref("fct_staff_observation_microgoals")
     config:
       meta:
