@@ -85,7 +85,7 @@ git commit -m "chore: create marts subdirectory structure (dimensions, facts, br
 ### Task 1: `dim_dates`
 
 Revise the existing generated date dimension. Changes from prototype: extend
-range to 2000-01-01 through 2099-12-31, add a DATE primary key column
+range to 2000-01-01 through 9999-12-31, add a DATE primary key column
 (`date_key`), add calendar attribute columns (day_of_week, month, quarter, year,
 is_weekday), add `date_timestamp` column for Cube, add uniqueness test.
 
@@ -108,7 +108,7 @@ models:
   - name: dim_dates
     description: >-
       Generated calendar date dimension. One row per calendar date from
-      2000-01-01 through 2099-12-31. Conformed dimension joinable from any fact
+      2000-01-01 through 9999-12-31. Conformed dimension joinable from any fact
       or dimension in the mart via DATE key.
     config:
       materialized: table
@@ -221,7 +221,7 @@ with
             unnest(
                 generate_date_array(
                     date(2000, 1, 1),
-                    date(2099, 12, 31),
+                    date(9999, 12, 31),
                     interval 1 day
                 )
             ) as date_value
