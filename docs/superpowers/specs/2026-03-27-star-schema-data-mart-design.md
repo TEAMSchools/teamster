@@ -81,10 +81,16 @@ apply:
   PSAT, ACT, AP).
 - **Population prefix (`<population>_<process>_`)** — substantively different
   populations with parallel processes (different schedules, question pools,
-  business rules). Example: `fct_staff_survey_submissions` and
-  `fct_student_survey_submissions` are not the same survey at different grains;
-  they have different question pools, administration schedules, and respondent
-  contexts.
+  business rules) that cannot be meaningfully unioned. Example:
+  `fct_staff_observations` and student assessments are not the same process at
+  different grains; they have different instruments, rubrics, and business
+  rules.
+- **Discriminator column** — when populations share the same instrument and the
+  primary analytical use case is cross-population comparison, use a single model
+  with a `respondent_population` (or similar) discriminator and nullable
+  population-specific FKs. Example: `fct_survey_submissions` covers staff,
+  student, and family respondents taking the same SCD instrument; splitting
+  would make the core comparison use case harder.
 - **Solo models** — don't preemptively add suffixes. Apply the convention only
   when a sibling actually exists. Adding `_enrollment_scoped` to a dim with no
   student-scoped counterpart is noise.
@@ -124,9 +130,11 @@ Implementation-level decisions. Rationale for each is documented in the
   building `dim_student_assessment_expectations`
 - **Survey completion**: Submission-level fact (respondent x survey x admin)
   parent of response-level fact (submission x question)
-- **Survey respondent split**: Population split by respondent —
-  `fct_staff_survey_*` / `dim_staff_survey_expectations` vs
-  `fct_student_survey_*` / `dim_student_survey_expectations`
+- **Survey domain unification**: Single `fct_survey_submissions` /
+  `fct_survey_responses` / `dim_survey_expectations` with
+  `respondent_population` discriminator (staff/student/family) and nullable
+  population-specific respondent FKs. Motivated by the SCD being the same
+  instrument across populations.
 - **Date keys**: Raw DATE type; `dim_dates` carries a `date_timestamp` column
   for Cube
 - **Talent acquisition isolation**: SmartRecruiters and ADP/Seat Tracker have no
@@ -286,6 +294,27 @@ All Type 2 child models FK back to `dim_staff_work_assignments` via
 `work_assignment_key`. They carry their own `effective_date_start` /
 `effective_date_end` / `is_current_record` columns.
 
+**Date axis independence.** Each model in the staff domain carries its own date
+columns and joins `dim_dates` independently — dates are not inherited from the
+parent. Three distinct kinds of dates exist in this hierarchy:
+
+- **Lifecycle dates** on `dim_staff_work_assignments` — hire_date, start_date,
+  seniority_date, termination_date. These are milestones on the assignment
+  itself; they do not version.
+- **Attribute effective dates** on Type 2 children — `effective_date_start` /
+  `effective_date_end`. These track when a specific attribute (job title,
+  status, location, etc.) changed, independent of the parent's lifecycle dates.
+- **Event dates** on facts — `fct_work_assignment_compensation` and
+  `fct_work_assignment_additional_earnings` join `dim_dates` on their own
+  effective dates because the question is "when did this pay rate take effect,"
+  not "when did the assignment start."
+
+`fct_staff_benefits_enrollments` and `fct_staff_membership_enrollments` FK to
+`dim_staff` (not `dim_staff_work_assignments`) because benefits and memberships
+are **person-level** — a worker's health plan or union membership is not scoped
+to a single assignment. They join `dim_dates` on their own enrollment start/end
+dates.
+
 **`fct_staff_attrition` detail:**
 
 A fact table capturing each staff member's attrition status at the close of each
@@ -387,16 +416,32 @@ available; deferred to second pass (see Second Pass section).
 
 ### Staff Observation & Professional Development Domain
 
-| Model                                       | SCD    | Grain                                        | Key Sources                                                                                                                                                                              |
-| ------------------------------------------- | ------ | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dim_staff_observation_rubrics`             | Type 1 | one row per rubric definition                | SchoolMint Grow — rubric_name, measurement groups                                                                                                                                        |
-| `dim_staff_observation_rubric_measurements` | Type 1 | one row per measurement item per rubric      | SchoolMint Grow — measurement_name, strand_name. FK to `dim_staff_observation_rubrics`                                                                                                   |
-| `dim_staff_observation_types`               | Type 1 | one row per observation type                 | SchoolMint Grow — type name (walkthrough, O3, formal evaluation), scope, frequency expectations                                                                                          |
-| `dim_staff_observation_microgoal_types`     | Type 1 | one row per goal in 4-level taxonomy         | SchoolMint Grow generic tags — goal_type -> bucket -> strand -> goal                                                                                                                     |
-| `dim_staff_observation_expectations`        | Type 1 | one row per staff x observation_type x term  | Scaffolded from business rules — which observations a staff member should receive based on role, location, term. FK to `dim_staff`, `dim_staff_observation_types`, `dim_terms`.          |
-| `fct_staff_observations`                    | Type 1 | one row per observation event                | SchoolMint Grow — overall_score, glows, grows. FK to `dim_staff` (teacher, observer as role-playing), `dim_staff_observation_types`, `dim_locations`, `dim_dates`, `dim_terms`           |
-| `fct_staff_observation_scores`              | Type 1 | one row per measurement item per observation | SchoolMint Grow — measurement score, comments. FK to `fct_staff_observations`, `dim_staff_observation_rubric_measurements`                                                               |
-| `fct_staff_observation_microgoals`          | Type 1 | one row per teacher x goal assignment        | SchoolMint Grow assignments — assignment_date. FK to `dim_staff` (teacher, creator as role-playing), `dim_staff_observation_microgoal_types`, `dim_terms`, `dim_dates` (assignment_date) |
+| Model                                       | SCD    | Grain                                        | Key Sources                                                                                                                                                                                                                                                 |
+| ------------------------------------------- | ------ | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dim_staff_observation_rubrics`             | Type 1 | one row per rubric definition                | SchoolMint Grow — rubric_name, measurement groups                                                                                                                                                                                                           |
+| `dim_staff_observation_rubric_measurements` | Type 1 | one row per measurement item per rubric      | SchoolMint Grow — measurement_name, strand_name. FK to `dim_staff_observation_rubrics`                                                                                                                                                                      |
+| `dim_staff_observation_types`               | Type 1 | one row per observation type                 | SchoolMint Grow — type name (walkthrough, O3, formal evaluation), scope, frequency expectations                                                                                                                                                             |
+| `dim_staff_observation_microgoal_types`     | Type 1 | one row per goal in 4-level taxonomy         | SchoolMint Grow generic tags — goal_type -> bucket -> strand -> goal                                                                                                                                                                                        |
+| `dim_staff_observation_expectations`        | Type 1 | one row per staff x observation_type x term  | Scaffolded from business rules — which observations a staff member should receive based on role, location, term. FK to `dim_staff`, `dim_staff_observation_types`, `dim_terms`.                                                                             |
+| `fct_staff_observations`                    | Type 1 | one row per observation event                | SchoolMint Grow — overall_score, glows, grows. FK to `dim_staff` (teacher, observer as role-playing), `dim_staff_observation_types`, `dim_locations`, `dim_dates`, `dim_terms`                                                                              |
+| `fct_staff_observation_scores`              | Type 1 | one row per measurement item per observation | SchoolMint Grow — value_score (int64), value_text (dropdown selection), text_box_content (open text, HTML-cleaned), checkbox_values (boolean selections), measurement_comments. FK to `fct_staff_observations`, `dim_staff_observation_rubric_measurements` |
+| `fct_staff_observation_microgoals`          | Type 1 | one row per teacher x goal assignment        | SchoolMint Grow assignments — assignment_date. FK to `dim_staff` (teacher, creator as role-playing), `dim_staff_observation_microgoal_types`, `dim_terms`, `dim_dates` (assignment_date)                                                                    |
+
+**Score placement.** `overall_score` lives on `fct_staff_observations` (the
+observation-level fact), not on `fct_staff_observation_scores`. It is a property
+of the observation event at its natural grain — one value per observation. Cube
+exposes it directly on the observations cube; cross-cube queries (observations +
+measurement scores) reach it via the FK relationship. Denormalizing it onto the
+scores table would duplicate it across every measurement row, violating the
+grain principle.
+
+**Measurement response types.** `fct_staff_observation_scores` captures the full
+response payload from SchoolMint Grow, not just numeric scores. Measurement rows
+in Grow carry multiple response types: `value_score` (always present, int64),
+`value_text` (dropdown/radio selection), text boxes (free-text input, HTML
+cleaned), and checkboxes (boolean selections). The existing Tableau extract only
+surfaces `row_score` and `measurement_comments`; the mart preserves the complete
+response data.
 
 **Note:** PM round mapping and tier calculation (PM1/PM2/PM3, overall tier 1-4)
 are Cube concerns, not mart models.
@@ -453,34 +498,58 @@ school-level calendars).
 
 ### Survey Domain
 
-Surveys split by respondent population. Staff and student surveys have different
-question pools, administration schedules, and business rules — they are parallel
-processes, not the same process at different grains. Each population has its own
-expectation, submission, and response models, following the population-prefix
-naming convention.
+Unified survey domain — all populations (staff, student, family) share a single
+set of submission and response facts with a `respondent_population`
+discriminator column. The primary motivation is the School Community Diagnostic
+(SCD), which is the same instrument administered to staff, students, and
+families with identical questions and answer scales. The primary analytical use
+case — comparing responses across populations — is a filter on
+`respondent_population` within a single Cube cube, not a cross-cube join.
 
-| Model                             | SCD    | Grain                                           | Key Sources                                                                                                                                                                                     |
-| --------------------------------- | ------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dim_surveys`                     | Type 1 | one row per survey definition                   | Survey metadata — survey_name, survey_type, respondent_population (staff/student), subject area. FK to `dim_terms` (survey window)                                                              |
-| `dim_survey_questions`            | Type 1 | one row per question                            | Google Forms (current) / Alchemer (archival) — question_text, question_type, response_options. No FK to `dim_surveys` — questions are pure reference data so they can be reused across surveys. |
-| `bridge_survey_questions`         | Type 1 | one row per survey x question                   | Pairs questions to surveys with survey-specific metadata — ordering, is_required, section. FK to `dim_surveys`, `dim_survey_questions`.                                                         |
-| `dim_staff_survey_expectations`   | Type 1 | one row per staff x survey x term               | Scaffolded from business rules — which surveys a staff member should complete based on role, location, term. FK to `dim_staff`, `dim_surveys`, `dim_terms`.                                     |
-| `dim_student_survey_expectations` | Type 1 | one row per student_enrollment x survey x term  | Scaffolded from business rules — which surveys a student should complete based on grade, school, term. FK to `dim_student_enrollments`, `dim_surveys`, `dim_terms`.                             |
-| `fct_staff_survey_submissions`    | Type 1 | one row per staff x survey x administration     | Staff survey completion record. FK to `dim_staff`, `dim_surveys`, `dim_dates`.                                                                                                                  |
-| `fct_student_survey_submissions`  | Type 1 | one row per student_enrollment x survey x admin | Student survey completion record. FK to `dim_student_enrollments`, `dim_surveys`, `dim_dates`.                                                                                                  |
-| `fct_staff_survey_responses`      | Type 1 | one row per staff submission x question         | Staff response detail — response_value, response_text. FK to `fct_staff_survey_submissions`, `dim_survey_questions`. Reach `dim_surveys` only via the submission.                               |
-| `fct_student_survey_responses`    | Type 1 | one row per student submission x question       | Student response detail — response_value, response_text. FK to `fct_student_survey_submissions`, `dim_survey_questions`. Reach `dim_surveys` only via the submission.                           |
+Staff-only surveys (Manager Survey, Support/Engagement Survey) also fit in the
+unified fact. The Manager Survey adds a `subject_staff_key` (the manager being
+evaluated by their direct reports) — a nullable role-playing FK to `dim_staff`,
+populated only for that survey type.
+
+| Model                     | SCD    | Grain                                   | Key Sources                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------- | ------ | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dim_surveys`             | Type 1 | one row per survey definition           | Survey metadata — survey_name, survey_type, subject_area. FK to `dim_terms` (survey window)                                                                                                                                                                                                                                                                                                                       |
+| `dim_survey_questions`    | Type 1 | one row per question                    | Google Forms (current) / Alchemer (archival) — question_text, question_type, response_options. No FK to `dim_surveys` — questions are pure reference data so they can be reused across surveys.                                                                                                                                                                                                                   |
+| `bridge_survey_questions` | Type 1 | one row per survey x question           | Pairs questions to surveys with survey-specific metadata — ordering, is_required, section. FK to `dim_surveys`, `dim_survey_questions`.                                                                                                                                                                                                                                                                           |
+| `dim_survey_expectations` | Type 1 | one row per respondent x survey x term  | Scaffolded from business rules — which surveys a respondent should complete based on population-specific criteria (role/location/term for staff; grade/school/term for students; one per family per term for families). `respondent_population` discriminator. FK to `dim_surveys`, `dim_terms`, plus respondent FKs.                                                                                             |
+| `fct_survey_submissions`  | Type 1 | one row per respondent x survey x admin | Survey completion record. `respondent_population` discriminator (staff/student/family). Nullable respondent FKs: `staff_key` → `dim_staff`, `student_enrollment_key` → `dim_student_enrollments`, `student_contact_person_key` → `dim_student_contact_persons` (exactly one populated per row). Nullable `subject_staff_key` → `dim_staff` (role-playing, Manager Survey only). FK to `dim_surveys`, `dim_dates`. |
+| `fct_survey_responses`    | Type 1 | one row per submission x question       | Response detail — response_value, response_text. FK to `fct_survey_submissions`, `dim_survey_questions`. Reach `dim_surveys` only via the submission.                                                                                                                                                                                                                                                             |
+
+**Respondent FK routing.** Each submission row has exactly one respondent FK
+populated, determined by `respondent_population`:
+
+- `staff` → `staff_key` (staff member completing the survey)
+- `student` → `student_enrollment_key` (student completing the survey)
+- `family` → `student_contact_person_key` (family member completing the survey)
+
+Cube defines conditional joins filtered by `respondent_population` to resolve
+the correct respondent dimension.
+
+**Family respondent note.** Family SCD submissions FK to
+`dim_student_contact_persons`. The expectation grain is one survey per contact
+person per term (not per student). Student linkage is reachable via
+`bridge_student_contacts` when needed. Historical family SCD responses are not
+associated with a specific student. The family respondent source system is
+migrating from PowerSchool to Finalsite — the mart's source-agnostic design
+insulates this domain from that change.
+
+**Manager Survey.** The Manager Survey is taken by direct reports about their
+manager. The respondent is the direct report (`staff_key`); the subject is the
+manager (`subject_staff_key`, role-playing FK to `dim_staff`). Completion is
+tracked from the respondent side (did each direct report submit?), consistent
+with the expectation grain across all survey types: respondent x survey x term.
 
 **Expectation ↔ submission pattern.** Mirrors the assessment pattern. LEFT JOIN
-the population-specific expectation dim to the population-specific submission
-fact on `(respondent_key, survey_key, term_key)` for expected-taken/missed;
-anti-join the submission fact against the expectation dim for unexpected
-submissions.
-
-`dim_surveys` and `dim_survey_questions` remain shared across both populations
-because survey definitions and questions are the same data objects regardless of
-who responded; a `respondent_population` discriminator on `dim_surveys`
-indicates which population it targets.
+`dim_survey_expectations` to `fct_survey_submissions` on
+`(respondent_key, survey_key, term_key)` for expected-taken/missed; anti-join
+the submission fact against the expectation dim for unexpected submissions. The
+expectation dim carries `respondent_population` so business rules can differ per
+population while sharing a single model.
 
 **Why `bridge_survey_questions` exists.** A question's text and type are
 properties of the question itself, not of the survey it appears on — if survey A
@@ -527,10 +596,9 @@ Talent Acquisition known limitation above.
 
 ## Open Review Items
 
-- **Expectation scaffold complexity** — `dim_staff_observation_expectations`,
-  `dim_staff_survey_expectations`, and `dim_student_survey_expectations`
-  business rules (different dates, types, regions, every year) may be complex to
-  encode.
+- **Expectation scaffold complexity** — `dim_staff_observation_expectations` and
+  `dim_survey_expectations` business rules (different dates, types, regions,
+  every year) may be complex to encode.
 - **Talent acquisition isolation** — no joinable ID between SmartRecruiters and
   ADP/Seat Tracker. Future-state aspiration.
 - **Bridge table candidates** — students with multiple race/ethnicity codes,
