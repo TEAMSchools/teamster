@@ -249,10 +249,10 @@ date.
 
 #### Worker-level models
 
-| Model              | SCD              | Grain                                 | Key Sources                                                                                                                |
-| ------------------ | ---------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `dim_staff`        | Type 1           | one row per person                    | ADP `Worker.person` (names, demographics, addresses, communication), `Worker.workerDates`, `Worker.customFieldGroup`, LDAP |
-| `dim_staff_status` | Type 2 (derived) | one row per worker x status x version | ADP `Worker.workerStatus` — status_code (Active, Terminated). Effective-dated from daily payload-hash diffs.               |
+| Model              | SCD              | Grain                                 | Key Sources                                                                                                                                                                                                                                 |
+| ------------------ | ---------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dim_staff`        | Type 1           | one row per person                    | ADP `Worker.person` (names, demographics, addresses, communication), `Worker.workerDates`, `Worker.customFieldGroup`, LDAP. `employee_number` is a KIPP-generated identifier (via `stg_people__employee_numbers`), not an ADP-native field. |
+| `dim_staff_status` | Type 2 (derived) | one row per worker x status x version | ADP `Worker.workerStatus` — status_code (Active, Terminated). Effective-dated from daily payload-hash diffs.                                                                                                                                |
 
 #### Work assignment models
 
