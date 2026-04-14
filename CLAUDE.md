@@ -72,6 +72,12 @@ this step.**
 - **Verify before claiming**: Read actual source code — do not extrapolate
   third-party tool behavior from general knowledge.
 
+- **No PII in PR comments**: When posting comments or information to a GitHub
+  PR, never include actual values for PII fields — student names, student
+  numbers, student IDs, first/last names, dates of birth, addresses, contact
+  information, or gender. Field names may be used as references, but their
+  values must never appear in PR comments.
+
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
 
 ## CLAUDE.md Editing Rules
