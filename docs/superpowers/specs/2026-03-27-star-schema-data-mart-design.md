@@ -411,12 +411,11 @@ are Cube concerns, not mart models.
 
 ### Behavioral & Communications Domain
 
-| Model                            | SCD    | Grain                                        | Key Sources                                                                                                                                                                                                                                 |
-| -------------------------------- | ------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dim_family_communication_types` | Type 1 | one row per communication type definition    | DeansList — method, topic/reason categories. Used for scaffolding.                                                                                                                                                                          |
-| `fct_behavioral_incidents`       | Type 1 | one row per student x incident               | DeansList — incident_type. FK to `dim_student_enrollments`, `dim_staff` (referring_staff as role-playing), `dim_dates`                                                                                                                      |
-| `fct_behavioral_consequences`    | Type 1 | one row per student x incident x consequence | DeansList — consequence_type, duration, is_served. FK to `fct_behavioral_incidents` (incident_key), `dim_dates` (start, end as role-playing). Student/location/region context traversed through the parent incident.                        |
-| `fct_family_communications`      | Type 1 | one row per communication event              | DeansList comm log — method, topic, reason, status, outcome. General-purpose, not attendance-specific. Scope: enrolled-student recipients only. FK to `dim_student_enrollments`, `dim_staff`, `dim_family_communication_types`, `dim_dates` |
+| Model                         | SCD    | Grain                                        | Key Sources                                                                                                                                                                                                                                  |
+| ----------------------------- | ------ | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fct_behavioral_incidents`    | Type 1 | one row per student x incident               | DeansList — incident_type (degenerate dimension). FK to `dim_student_enrollments`, `dim_staff` (referring_staff as role-playing), `dim_dates`                                                                                                |
+| `fct_behavioral_consequences` | Type 1 | one row per student x incident x consequence | DeansList — consequence_type, duration, is_served (degenerate dimensions). FK to `fct_behavioral_incidents` (incident_key), `dim_dates` (start, end as role-playing). Student/location/region context traversed through the parent incident. |
+| `fct_family_communications`   | Type 1 | one row per communication event              | DeansList comm log — method, topic, reason, status, outcome (degenerate dimensions). General-purpose, not attendance-specific. Scope: enrolled-student recipients only. FK to `dim_student_enrollments`, `dim_staff`, `dim_dates`            |
 
 ### Gradebook Domain
 
@@ -497,10 +496,11 @@ required) is needed.
 
 ### Talent Acquisition Domain
 
-| Model                            | SCD    | Grain                            | Key Sources                                                                                 |
-| -------------------------------- | ------ | -------------------------------- | ------------------------------------------------------------------------------------------- |
-| `dim_job_candidates`             | Type 1 | one row per candidate            | SmartRecruiters — candidate profile, contact info                                           |
-| `fct_job_candidate_applications` | Type 1 | one row per applicant x position | SmartRecruiters — application status, stage, dates. FK to `dim_job_candidates`, `dim_dates` |
+| Model                            | SCD    | Grain                            | Key Sources                                                                                                          |
+| -------------------------------- | ------ | -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `dim_job_postings`               | Type 1 | one row per job posting          | SmartRecruiters — job_title, department, city, recruiter. 685 distinct postings across 20 departments and 11 cities. |
+| `dim_job_candidates`             | Type 1 | one row per candidate            | SmartRecruiters — candidate profile, contact info                                                                    |
+| `fct_job_candidate_applications` | Type 1 | one row per applicant x position | SmartRecruiters — application status, stage, dates. FK to `dim_job_candidates`, `dim_job_postings`, `dim_dates`      |
 
 **Known limitation:** No unique identifier or matchable field exists between
 SmartRecruiters (candidates) and ADP (staff) or AppSheet Seat Tracker
