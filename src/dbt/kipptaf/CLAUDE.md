@@ -99,6 +99,15 @@ absence:
 Manager, ADP Workforce Now Fivetran, Alchemer, Coupa Fivetran, Dayforce,
 Facebook, Illuminate Fivetran, Instagram.
 
+## Known Upstream Issues
+
+**`int_people__location_crosswalk`** is NOT a union model — it has no
+`_dbt_source_relation`. Use `extract_code_location()` matched against
+`location_dagster_code_location` for cross-region joins. It also produces
+duplicate rows per
+`(location_powerschool_school_id, location_dagster_code_location)` — downstream
+models need `SELECT DISTINCT` CTEs when joining it (#3633).
+
 ## Cross-Project Refs
 
 Sources models from: `powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`,
