@@ -1,0 +1,5 @@
+sources:
+  - name: edplan
+    schema: "{{ var('edplan_schema', project_name ~ '_edplan') }}"
+    tables:
+      - name: stg_edplan__njsmart_powerschool_archive

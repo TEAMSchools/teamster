@@ -18,20 +18,16 @@ models/
       staging/
     sftp/
       staging/
-  sources.yml
+  sources-dds.yml
+  sources-mclass-api.yml
+  sources-mclass-sftp.yml
 ```
 
-All staging models have `contract: enforced: true`. Both `dds` and `mclass/api`
-can be independently enabled/disabled per school in the consuming project's
-`dbt_project.yml`.
+Both `dds` and `mclass/api` can be independently enabled/disabled per school in
+the consuming project's `dbt_project.yml`.
 
 ## Cross-Project Usage
 
-Referenced by `kippnewark`, `kipppaterson`, and `kipptaf`. School projects
+Referenced by `kippnewark`, `kipppaterson`, and `kipptaf`. District projects
 selectively enable only the Amplify products they use — for example,
 `kipppaterson` disables both `dds` and `mclass/api`.
-
-## Model Conventions
-
-See `src/dbt/CLAUDE.md` for per-layer requirements (contract enforcement,
-uniqueness tests, SQL antipatterns) that apply to all dbt projects.

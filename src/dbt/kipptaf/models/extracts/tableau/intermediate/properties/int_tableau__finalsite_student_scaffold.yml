@@ -13,7 +13,7 @@ models:
               - goal_name
               - goal_type
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: enrollment_academic_year
         data_type: int64
@@ -52,6 +52,8 @@ models:
       - name: is_enrolled_oct01
         data_type: boolean
       - name: is_enrolled_oct15
+        data_type: boolean
+      - name: is_enrolled_mar15
         data_type: boolean
       - name: latest_status
         data_type: string

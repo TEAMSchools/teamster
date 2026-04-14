@@ -8,7 +8,7 @@ models:
               - school__c
               - start_date__c
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: student__c
         data_type: string

@@ -7,7 +7,7 @@ models:
               - school_id
               - staff_id
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: school_id
         data_type: string

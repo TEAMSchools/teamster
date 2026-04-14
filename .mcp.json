@@ -1,12 +1,21 @@
 {
   "mcpServers": {
     "dagster": {
-      "command": "bash",
+      "command": "op",
       "args": [
-        "-c",
-        "DAGSTER_CLOUD_API_TOKEN=$(op read 'op://Data Team/Dagster Cloud Agent/credential') uv run --group mcp python mcp/dagster_plus.py"
+        "run",
+        "--no-masking",
+        "--",
+        "uv",
+        "run",
+        "--group",
+        "dev",
+        "python",
+        "-m",
+        "dagster_plus_mcp"
       ],
       "env": {
+        "DAGSTER_CLOUD_API_TOKEN": "op://Data Team/Dagster Cloud Agent/credential",
         "DAGSTER_CLOUD_ORGANIZATION_ID": "kipptaf",
         "DAGSTER_CLOUD_DEPLOYMENT": "prod"
       }
@@ -20,11 +29,25 @@
       }
     },
     "dbt": {
-      "command": "dbt-mcp",
-      "args": [],
+      "command": "uvx",
+      "args": ["dbt-mcp"],
       "env": {
         "DBT_PROJECT_DIR": "/workspaces/teamster/src/dbt/kipptaf",
         "DBT_PATH": "/workspaces/teamster/.venv/bin/dbt"
+      }
+    },
+    "gke": {
+      "command": "gke-mcp",
+      "args": [],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
+      }
+    },
+    "observability": {
+      "command": "npx",
+      "args": ["-y", "@google-cloud/observability-mcp"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
       }
     }
   }

@@ -4,13 +4,21 @@
     "ghcr.io/devcontainers/features/common-utils:latest": {},
     "ghcr.io/devcontainers/features/github-cli:latest": {},
     "ghcr.io/itsmechlark/features/1password:latest": {},
-    "ghcr.io/jajera/features/gcloud-cli:latest": {}
+    "ghcr.io/jajera/features/gcloud-cli:latest": {},
+    "ghcr.io/devcontainers/features/node:1": {}
   },
+  "mounts": [
+    "type=tmpfs,destination=/etc/secret-volume,tmpfs-mode=0777,tmpfs-size=10485760"
+  ],
+  "runArgs": [
+    "--cap-drop=NET_RAW",
+    "--cap-drop=SYS_PTRACE",
+    "--cap-drop=NET_ADMIN"
+  ],
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
   "postStartCommand": "bash .devcontainer/scripts/postStart.sh",
   "containerEnv": {
     "DAGSTER_HOME": "/workspaces/teamster/.dagster/home",
-    "DBT_CLOUD_ENVIRONMENT_TYPE": "dev",
     "DBT_PROFILES_DIR": "/workspaces/teamster/.dbt",
     "GOOGLE_CLOUD_PROJECT": "teamster-332318",
     "PYTHONDONTWRITEBYTECODE": "1",

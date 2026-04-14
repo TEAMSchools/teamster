@@ -1,6 +1,6 @@
 sources:
   - name: alchemer
-    schema: "{{ project_name }}_alchemer"
+    schema: kipptaf_alchemer
     tables:
       - name: base_alchemer__survey_results
         config:

@@ -132,8 +132,5 @@ models:
       - name: internal_assessments_key
         data_type: string
         description: ""
-        tests:
-          - unique:
-              config:
-                severity: Warn
-                store_failures: true
+        data_tests:
+          - unique

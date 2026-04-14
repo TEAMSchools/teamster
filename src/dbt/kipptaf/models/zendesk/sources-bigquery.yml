@@ -1,0 +1,24 @@
+sources:
+  - name: zendesk
+    schema: kipptaf_zendesk
+    tables:
+      - name: groups
+      - name: organizations
+      - name: ticket_audits
+      - name: ticket_fields
+      - name: ticket_metrics
+      - name: tickets
+      - name: user_identities
+      - name: users
+      - name: articles
+        config:
+          enabled: false
+      - name: organization_memberships
+        config:
+          enabled: false
+      - name: organization_fields
+        config:
+          enabled: false
+      - name: user_fields
+        config:
+          enabled: false

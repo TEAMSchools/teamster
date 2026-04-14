@@ -2,6 +2,11 @@ models:
   - name: dim_seats
 
     columns:
+      - name: seats_key
+        data_type: string
+        data_tests:
+          - unique
+
       - name: academic_year
         data_type: int64
 
@@ -47,8 +52,8 @@ models:
       - name: is_mid_year_hire
         data_type: boolean
 
-      - name: dbt_valid_from
+      - name: effective_date_start
         data_type: timestamp
 
-      - name: dbt_valid_to
+      - name: effective_date_end
         data_type: timestamp

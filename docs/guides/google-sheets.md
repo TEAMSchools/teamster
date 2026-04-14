@@ -38,13 +38,9 @@
                  - {SOURCE_TABLE_NAME}
    ```
 
-4. Stage the external source definition:
-
-   ```bash
-   uv run dbt run-operation stage_external_sources \
-     --vars "{'ext_full_refresh': 'true'}" \
-     --args 'select: [model_name]'
-   ```
+4. Stage the external source definition. See the
+   [dbt Development guide](dbt-development.md#staging-external-sources) for
+   details on using the VS Code task or terminal command.
 
 5. Create a staging model. A simple `select *` is the starting point — it
    surfaces unexpected schema changes. Add any calculated fields you need:
@@ -88,15 +84,12 @@
    A successful build confirms the contract is satisfied and all column types
    are correct.
 
-### Verifying a Google Sheets source against production
+### Verifying changes against production
 
-Use `scripts/dbt-sxs.py` to run a model against both your dev dataset and
-production side-by-side, making it easy to spot regressions before merging:
-
-```bash
-uv run scripts/dbt-sxs.py kipptaf \
-  --select google_sheets.src_google_sheets__kippfwd_expected_assessments
-```
+Power User's `--defer` mode automatically resolves unchanged upstream models to
+production. Build your modified staging model and downstream consumers will
+reference prod data for anything you haven't changed. See the
+[dbt Development guide](dbt-development.md#power-user-defer) for details.
 
 ## Updating a Google Sheets source
 
@@ -115,13 +108,9 @@ uv run scripts/dbt-sxs.py kipptaf \
 5. If you added or renamed columns, update the source YAML and the staging
    model's properties file with the new column definitions.
 
-6. Stage the updated source:
-
-   ```bash
-   uv run dbt run-operation stage_external_sources \
-     --vars "{'ext_full_refresh': 'true'}" \
-     --args 'select: [model_name]'
-   ```
+6. Stage the updated source. See the
+   [dbt Development guide](dbt-development.md#staging-external-sources) for
+   details.
 
 7. Rebuild and verify the contract still passes:
 

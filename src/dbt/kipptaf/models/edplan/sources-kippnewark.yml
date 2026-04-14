@@ -1,5 +1,8 @@
 sources:
   - name: kippnewark_edplan
+    schema:
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
+      endif -%}kippnewark_edplan"
     tables:
       - name: int_edplan__njsmart_powerschool_union
         config:

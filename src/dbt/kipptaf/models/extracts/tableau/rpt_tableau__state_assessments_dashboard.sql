@@ -18,16 +18,11 @@ with
 
             s.abbreviation as school,
 
-            case
-                when c.courses_credittype in ('ENG', 'ELA')
-                then 'ELA'
-                when c.courses_credittype in ('MATH', 'Math')
-                then 'Math'
-                when c.courses_credittype in ('SCI', 'Science')
-                then 'Science'
-                when c.courses_credittype = 'SOC'
-                then 'Civics'
-            end as discipline,
+            if(
+                c.courses_credittype = 'SOC' and c.region = 'Miami',
+                'Civics',
+                c.discipline
+            ) as discipline,
 
         from {{ ref("base_powerschool__course_enrollments") }} as c
         left join
@@ -37,8 +32,7 @@ with
             c.cc_academic_year = {{ var("current_academic_year") }}
             and c.rn_credittype_year = 1
             and not c.is_dropped_section
-            and c.courses_credittype
-            in ('ENG', 'MATH', 'SCI', 'SOC', 'ELA', 'Math', 'Science')
+            and c.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
     ),
 
     schedules as (
@@ -55,16 +49,11 @@ with
             c.teachernumber as teachernumber_current,
             c.teacher_name as teacher_name_current,
 
-            case
-                when e.courses_credittype in ('ENG', 'ELA')
-                then 'ELA'
-                when e.courses_credittype in ('MATH', 'Math')
-                then 'Math'
-                when e.courses_credittype in ('SCI', 'Science')
-                then 'Science'
-                when e.courses_credittype = 'SOC'
-                then 'Civics'
-            end as discipline,
+            if(
+                e.courses_credittype = 'SOC' and e.region = 'Miami',
+                'Civics',
+                e.discipline
+            ) as discipline,
 
         from {{ ref("base_powerschool__course_enrollments") }} as e
         left join
@@ -75,8 +64,7 @@ with
             e.cc_academic_year >= {{ var("current_academic_year") - 7 }}
             and e.rn_credittype_year = 1
             and not e.is_dropped_section
-            and e.courses_credittype
-            in ('ENG', 'MATH', 'SCI', 'SOC', 'ELA', 'Math', 'Science')
+            and e.courses_credittype in ('ENG', 'MATH', 'SCI', 'SOC')
     ),
 
     state_comps as (

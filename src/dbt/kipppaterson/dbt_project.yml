@@ -16,6 +16,11 @@ clean-targets:
   - target
   - dbt_packages
 
+data_tests:
+  +severity: warn
+  +store_failures: true
+  +store_failures_as: view
+
 vars:
   local_timezone: America/New_York
   current_academic_year: 2025
@@ -138,10 +143,13 @@ models:
 
 sources:
   amplify:
-    amplify_mclass_api:
-      +enabled: false
-    amplify_dds:
-      +enabled: false
+    mclass:
+      api:
+        amplify_mclass_api:
+          +enabled: false
+    dds:
+      amplify_dds:
+        +enabled: false
   pearson:
     pearson:
       src_pearson__njgpa:

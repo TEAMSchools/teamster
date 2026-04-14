@@ -1,11 +1,9 @@
 sources:
   - name: schoolmint_grow
-    schema: |
-      {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}
-      z_dev_
-      {%- elif env_var('GITHUB_USER', '') != '' -%}
-      zz_{{ env_var('GITHUB_USER', '') }}_
-      {%- endif -%}kipptaf_schoolmint_grow
+    schema:
+      "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
+      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif
+      -%}kipptaf_schoolmint_grow"
     tables:
       - name: src_schoolmint_grow__rubrics
         external:

@@ -8,7 +8,7 @@ models:
               - academic_year
               - assessment_subject
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: student_number
         data_type: int64

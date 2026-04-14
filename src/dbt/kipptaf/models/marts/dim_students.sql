@@ -24,6 +24,11 @@ select
     se.is_out_of_district,
     se.grade_level,
     se.ms_attended,
+    se.student_name,
+    se.team,
+
+    se.is_counseling_services is not null as is_counseling_services,
+    se.is_student_athlete is not null as is_student_athlete,
 
     -- max grade_level across all enrollment years; equivalent to most recent for
     -- normal progressors, and reflects highest grade attained for retained students

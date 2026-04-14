@@ -5,9 +5,6 @@ models:
           arguments:
             combination_of_columns:
               - id
-          config:
-            severity: warn
-            store_failures: true
     columns:
       - name: id
         data_type: string

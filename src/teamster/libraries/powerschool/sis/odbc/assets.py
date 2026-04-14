@@ -1,3 +1,9 @@
+"""PowerSchool SIS ODBC asset factory.
+
+Builds Dagster assets that query PowerSchool's Oracle database via SSH tunnel
+and serialize results to Avro files for downstream loading into BigQuery.
+"""
+
 import hashlib
 import pathlib
 from datetime import datetime
@@ -6,22 +12,32 @@ from io import BufferedReader
 from dagster import (
     AssetExecutionContext,
     AssetsDefinition,
-    MonthlyPartitionsDefinition,
     Output,
     TimeWindowPartitionsDefinition,
     asset,
 )
 from dagster_shared import check
-from dateutil.relativedelta import relativedelta
 from fastavro import block_reader
 from sqlalchemy import literal_column, select, table, text
 
-from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
+from teamster.libraries.powerschool.sis.odbc.utils import (
+    get_partition_window,
+    with_powerschool_retry,
+)
 from teamster.libraries.ssh.resources import SSHResource
 
 
 def hash_bytestr_iter(bytesiter, hasher):
+    """Compute a hex digest by iterating over byte blocks.
+
+    Args:
+        bytesiter: Iterator yielding bytes objects.
+        hasher: A hashlib hash object (e.g. hashlib.sha256()).
+
+    Returns:
+        Hex digest string.
+    """
     for block in bytesiter:
         hasher.update(block)
 
@@ -29,6 +45,15 @@ def hash_bytestr_iter(bytesiter, hasher):
 
 
 def file_as_blockiter(file: BufferedReader, size: int = 65536):
+    """Yield fixed-size blocks from a file for hashing.
+
+    Args:
+        file: Open file in binary read mode.
+        size: Block size in bytes.
+
+    Yields:
+        Bytes blocks of the specified size.
+    """
     with file:
         block = file.read(size)
         while len(block) > 0:
@@ -37,7 +62,7 @@ def file_as_blockiter(file: BufferedReader, size: int = 65536):
 
 
 def build_powerschool_table_asset(
-    code_location,
+    code_location: str,
     table_name: str,
     partitions_def: TimeWindowPartitionsDefinition | None = None,
     partition_column: str | None = None,
@@ -47,6 +72,22 @@ def build_powerschool_table_asset(
     select_columns: list[str] | None = None,
     op_tags: dict | None = None,
 ) -> AssetsDefinition:
+    """Build a Dagster asset that queries a PowerSchool Oracle table.
+
+    Args:
+        code_location: District code location identifier.
+        table_name: Oracle table name.
+        partitions_def: Optional time-window partitions definition.
+        partition_column: Column to filter by partition window.
+        partition_size: Avro writer batch size.
+        prefetch_rows: Oracle cursor prefetchrows setting.
+        array_size: Oracle cursor arraysize setting.
+        select_columns: Columns to select. Defaults to ['*'].
+        op_tags: Optional Dagster op tags.
+
+    Returns:
+        A Dagster AssetsDefinition.
+    """
     if select_columns is None:
         select_columns = ["*"]
 
@@ -82,36 +123,15 @@ def build_powerschool_table_asset(
         elif context.partition_key == first_partition_key:
             constructed_where = ""
         else:
-            partition_start = datetime.fromisoformat(context.partition_key)
-
-            partition_start_fmt = partition_start.replace(tzinfo=None).isoformat(
-                timespec="microseconds"
-            )
-
-            if isinstance(partitions_def, FiscalYearPartitionsDefinition):
-                date_add_kwargs = {"years": 1}
-            elif isinstance(partitions_def, MonthlyPartitionsDefinition):
-                date_add_kwargs = {"months": 1}
-            else:
-                date_add_kwargs = {}
-
-            partition_end_fmt = (
-                (
-                    partition_start
-                    # trunk-ignore(pyright/reportArgumentType)
-                    + relativedelta(**date_add_kwargs)
-                    - relativedelta(days=1)
-                )
-                .replace(hour=23, minute=59, second=59, microsecond=999999)
-                .replace(tzinfo=None)
-                .isoformat(timespec="microseconds")
+            start_value, end_value = get_partition_window(
+                context.partition_key, check.not_none(value=partitions_def)
             )
 
             constructed_where = (
                 f"{partition_column} BETWEEN "
-                f"TO_TIMESTAMP('{partition_start_fmt}', "
+                f"TO_TIMESTAMP('{start_value}', "
                 "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
-                f"TO_TIMESTAMP('{partition_end_fmt}', "
+                f"TO_TIMESTAMP('{end_value}', "
                 "'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
             )
 
@@ -121,19 +141,13 @@ def build_powerschool_table_asset(
             .where(text(constructed_where))
         )
 
-        context.log.info(msg=f"Opening SSH tunnel to {ssh_powerschool.remote_host}")
-        ssh_tunnel = ssh_powerschool.open_ssh_tunnel()
-
-        try:
-            connection = db_powerschool.connect()
-        except Exception as e:
-            ssh_tunnel.kill()
-            raise e
-
-        try:
-            file_path = check.inst(
+        file_path = with_powerschool_retry(
+            ssh_resource=ssh_powerschool,
+            db_resource=db_powerschool,
+            log=context.log,
+            work_fn=lambda conn: check.inst(
                 obj=db_powerschool.execute_query(
-                    connection=connection,
+                    connection=conn,
                     query=sql,
                     output_format="avro",
                     batch_size=partition_size,
@@ -141,16 +155,16 @@ def build_powerschool_table_asset(
                     array_size=array_size,
                 ),
                 ttype=pathlib.Path,
-            )
-        finally:
-            connection.close()
-            ssh_tunnel.kill()
+            ),
+        )
 
         with file_path.open(mode="rb") as f:
             num_records = sum(block.num_records for block in block_reader(f))
-            digest = hash_bytestr_iter(
-                bytesiter=file_as_blockiter(file=f), hasher=hashlib.sha256()
-            )
+
+        digest = hash_bytestr_iter(
+            bytesiter=file_as_blockiter(file=file_path.open(mode="rb")),
+            hasher=hashlib.sha256(),
+        )
 
         return Output(
             value=file_path,

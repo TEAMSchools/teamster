@@ -1,9 +1,17 @@
+# Dagster-only profile (defer + prod). Developers use .dbt/profiles.yml for
+# full target support (defer/dev/staging/prod).
 kippmiami:
-  target: kippmiami
+  target: prod
   outputs:
-    kippmiami:
+    defer:
       type: bigquery
-      schema: kippmiami
-      threads: 40
+      schema: zz_dagster_kippmiami
       method: oauth
       project: teamster-332318
+      threads: 40
+    prod:
+      type: bigquery
+      schema: kippmiami
+      method: oauth
+      project: teamster-332318
+      threads: 40

@@ -23,6 +23,13 @@ wrapped via the module-level `_retryable_execute(request)` factory +
 `errors.HttpError` — 4xx client errors must not be retried. Transient codes:
 `{429, 500, 502, 503, 504}`.
 
+**409 conflict handling**: 409 is deliberately excluded from
+`_TRANSIENT_HTTP_CODES` because its meaning is method-specific: for
+`batch_insert_role_assignments` it means "entity already exists" (not
+retryable), but for `batch_update_users` it means "conflicting request, please
+try again" (retryable). User update 409s are retried individually via
+`_retry_update_user()` after a 1-second cooldown.
+
 **Batch callback signature**: Google's batch executor calls
 `callback(id, response, exception)` with exactly one of `response`/`exception`
 as `None`. Type both as `X | None`.
@@ -45,14 +52,9 @@ path) to suppress inter-batch delays.
 **`schema.py`**: Pydantic models (`User`, `OrgUnits`, `Role`, `RoleAssignment`,
 `Group`, `Member`) mirroring the Google Directory API response shapes. Code
 locations consume these via `py_avro_schema.generate()` to produce Avro schemas
-for IO manager output. `Group` and `Member` schemas are defined but currently
-unused (commented out in kipptaf).
+for IO manager output.
 
-**`ops.py`**: Four legacy ops (`google_directory_user_create_op`,
-`google_directory_user_update_op`, `google_directory_member_create_op`,
-`google_directory_role_assignment_create_op`). **Not used anywhere** — this
-provisioning logic has been reimplemented as assets in
-`kipptaf/google/directory/assets.py`.
+**`ops.py`**: Legacy — use `kipptaf/google/directory/assets.py` instead.
 
 ## `drive/`
 

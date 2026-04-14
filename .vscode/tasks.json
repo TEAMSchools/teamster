@@ -1,0 +1,124 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Setup: Post-Build Init",
+      "type": "shell",
+      "command": "bash .vscode/scripts/setup.sh",
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "GCloud: Application Default Login",
+      "type": "shell",
+      "command": "bash .vscode/scripts/gcloud-application-default-login.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Claude: Login",
+      "type": "shell",
+      "command": "bash .vscode/scripts/claude-login.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Claude: Install Plugins",
+      "type": "shell",
+      "command": "bash .vscode/scripts/claude-install-plugins.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "dbt: Build Init",
+      "type": "shell",
+      "command": "bash .vscode/scripts/dbt-build-init.sh ${input:dbtProject}",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Chore: Update Dependencies",
+      "type": "shell",
+      "command": "bash .vscode/scripts/update-dependencies.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "dbt: Stage External Sources",
+      "type": "shell",
+      "command": "bash .vscode/scripts/dbt-stage-external-sources.sh ${input:dbtProject} ${input:dbtSxsTarget} '${input:dbtSourceSelect}'",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "dbt: Generate Prod Manifests",
+      "type": "shell",
+      "command": "bash .vscode/scripts/post-merge.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "dbtProject",
+      "type": "pickString",
+      "description": "Select a dbt project",
+      "options": [
+        "all",
+        "kippcamden",
+        "kippmiami",
+        "kippnewark",
+        "kipppaterson",
+        "kipptaf"
+      ]
+    },
+    {
+      "id": "dbtSxsTarget",
+      "type": "pickString",
+      "description": "Target environment",
+      "options": ["defer", "dev", "staging"],
+      "default": "defer"
+    },
+    {
+      "id": "dbtSourceSelect",
+      "type": "promptString",
+      "description": "Source selection (e.g. google_sheets.my_source). Leave blank to stage all sources.",
+      "default": ""
+    }
+  ]
+}

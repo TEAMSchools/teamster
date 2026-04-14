@@ -451,8 +451,8 @@ with
         select
             m.academic_year,
             m.home_business_unit_name as region,
-            m.home_work_location_powerschool_school_id as schoolid,
 
+            null as schoolid,
             'All' as school,
 
             m.layer,
@@ -494,8 +494,6 @@ with
         group by
             m.academic_year,
             m.home_business_unit_name,
-            m.home_work_location_powerschool_school_id,
-            m.home_work_location_name,
             m.layer,
             m.indicator,
             m.term,

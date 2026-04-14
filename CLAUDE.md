@@ -5,139 +5,124 @@
 Teamster is a data engineering platform for KIPP TEAM & Family Schools (Newark,
 Camden, and Paterson, NJ & Miami, FL) built on **Dagster** (orchestration),
 **dbt** (transformations), and **Google BigQuery** (warehouse), with Google
-Cloud Storage (GCS) as the intermediate storage layer.
+Cloud Storage (GCS) as the intermediate storage layer. Python ≥3.13.
 
-## Working Conventions
-
-- **Python execution**: Always use `uv run` — never bare `python` or `python3`,
-  including inline one-liners (`uv run python -c "..."`, not
-  `python3 -c "..."`). The project environment is managed by uv.
-- **Git commits**: Do not commit proactively — ask first when a change is
-  complete, tests are passing, and it is ready to commit, then commit if
-  confirmed. Commits should have descriptive messages following the
-  [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/) format.
-  Avoid checkpoint-style messages (`save`, `oops`, `update`, etc.).
-- **Branch naming**: `<author>/<commit-type>/<brief-description>` (e.g.,
-  `cbini/feat/salesforce-alumni-tracking`). Use `claude` as the author prefix
-  for AI-assisted branches.
-- **Pull requests**: Squash merge. When opening a PR, use
-  `.github/pull_request_template.md` as the body — fill in the relevant sections
-  based on the changes.
-- **GitHub issues**: Do not open issues proactively — ask first when something
-  warrants one, then open it if confirmed. Use `gh issue create` (not the web
-  UI). Label it with a
-  [conventional commit type](https://www.conventionalcommits.org/en/v1.0.0/)
-  (`feat`, `fix`, `docs`, `refactor`, `chore`, etc.), any related source systems
-  (e.g., `adp`, `powerschool`, `deanslist`), and `dagster` and/or `dbt` when
-  applicable.
-
-## Commands
-
-The `scripts/` directory contains project utilities (doc generation, migrations,
-etc.) in lieu of a Makefile. Run them with `uv run scripts/<name>.py`.
-
-### Development
-
-```bash
-# Install dependencies
-uv sync --frozen
-
-# Inject 1Password secrets (required for Dagster development, not needed for SQL-only work)
-.devcontainer/scripts/inject-secrets.sh
-
-# Run Dagster webserver locally
-uv run dagster dev
-
-# Validate Dagster definitions for a code location
-uv run dagster definitions validate -m teamster.code_locations.kipptaf.definitions
-
-# Prepare and package a dbt project (must be done before running dbt assets)
-uv run dagster-dbt project prepare-and-package --file src/teamster/code_locations/kipptaf/__init__.py
-```
-
-### Testing
-
-```bash
-# Run all tests
-uv run pytest
-
-# Run a single test file
-uv run pytest tests/test_dagster_definitions.py
-
-# Run a single test
-uv run pytest tests/test_dagster_definitions.py::test_definitions_kipptaf
-
-# Run asset-specific tests (require env vars / external connections)
-uv run pytest tests/assets/test_assets_dbt.py
-```
-
-### Linting
-
-See `.trunk/trunk.yaml` for the full list of enabled linters and
-`.trunk/config/` for per-linter configuration files. A pre-commit hook runs
-`trunk check` — if a commit is rejected, fix the reported issues and re-commit.
-
-**SQL style**: Before writing, reviewing, or commenting on SQL, read
-`.trunk/config/.sqlfluff`. Key enforced rules: BigQuery dialect, trailing commas
-**required** in SELECT clauses, single quotes for literals, max line length 88.
-Do not flag code that follows these rules.
-
-### BigQuery MCP Queries
-
-The BigQuery MCP tool truncates results at 50 rows. When querying
-`INFORMATION_SCHEMA.COLUMNS` for tables with >50 columns, paginate with
-`WHERE ordinal_position > N` to get all rows.
-
-### Secrets
-
-PreToolUse (`.claude/hooks/check-sensitive.sh`) and PostToolUse
-(`.claude/hooks/check-output.sh`) hooks guard secrets. All `mcp__*` tools are
-also hooked. Read the hooks for full patterns. Key behavior:
-
-- **Secret paths** (`env/`, `secret-volume`, `.devcontainer/tpl/`, credentials,
-  `*.pem`/`*.key`/`*.cer`) — all tools blocked.
-- **Read-only paths** (`.claude/settings.json`, `.claude/hooks/`,
-  `.devcontainer/scripts/`) — Edit/Write/Bash blocked; Read/Grep/Glob allowed.
-- **Env leakage** (`printenv`, `os.environ`, `set`, `typeset`, `/proc/*/`,
-  encoding-to-shell pipes, `OP_SERVICE_ACCOUNT_TOKEN`) and **1Password CLI**
-  (`op inject/read/vault/item`) — blocked in Bash.
-- **Output scanning** — Bash output checked for `op://` URIs, private key
-  headers, Google API key patterns.
-
-To modify `.devcontainer/scripts/` or `.claude/hooks/`, draft changes and
-present them to the user for manual application. Files under `.claude/` must be
-staged and committed manually — the hook blocks Bash commands that reference
-these paths. Hook regression tests: `bash tests/test_hook_security.sh`
-
-## Documentation
-
-Two documentation systems serve different audiences — do not conflate them:
-
-- **dbt YAML** (properties files + exposures) — how analysts document models,
-  columns, tests, and external tool dependencies. Required for all dbt model
-  changes; enforced by the PR template checklist.
-- **MkDocs site** (`docs/`) — how engineers document infrastructure patterns,
-  architecture, and operational guides. Update when making engineering-level
-  changes:
-  - New integration → update `docs/reference/adding-an-integration.md` and the
-    code location's `CLAUDE.md`
-  - New or changed schedule/sensor → regenerate the automations catalog:
-    `uv run scripts/gen-automations-doc.py`
-  - New core pattern (IO manager behavior, automation condition, partitioning) →
-    update the relevant `docs/reference/` page
-
-Analysts adding or editing SQL models do not need to touch `docs/` — dbt YAML is
-the documentation mechanism for that work.
+Production runs on **GKE** (Google Kubernetes Engine) via Dagster Cloud.
+Development uses **GitHub Codespaces** (devcontainer) — secrets are injected
+from 1Password at container start.
 
 ## Architecture
 
-**IMPORTANT — you MUST read the relevant CLAUDE.md files before doing any work:
-reading, explaining, reviewing, or modifying code. Do NOT skip this step, even
-if you think you can answer from source code alone.**
+This file is a **router** — it contains project-wide conventions, then routes to
+subdirectory CLAUDE.md files for domain-specific context. Keep domain-specific
+guidance in the nearest subdirectory CLAUDE.md, not here.
 
-- **Dagster code** (reading or editing) → read `src/teamster/CLAUDE.md` first
-- **dbt models** (reading or editing) → read `src/dbt/CLAUDE.md` first
-- **Any subdirectory** → read that directory's CLAUDE.md first
+**You MUST read the relevant CLAUDE.md file before doing any work in a
+subdirectory — reading, explaining, reviewing, or modifying code. Do NOT skip
+this step.**
 
-These files contain conventions, antipatterns, and architectural decisions that
-are not discoverable from source code.
+## Working Conventions
+
+- **Before writing any spec or plan**: create a GitHub issue (`gh issue create`;
+  label with conventional commit type, related source systems, and
+  `dagster`/`dbt` when applicable). Quick fixes do not require one.
+
+- **Before creating a branch**: ask the user — worktree or branch switch? Do not
+  choose for them.
+
+- **Before writing any file (spec, code, config)**: be on the feature branch.
+
+- **Worktree**: `gh issue develop <number> --name <branch>` (no `--checkout`),
+  then `git worktree add .worktrees/<branch> <branch>`.
+
+- **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
+
+- **Git naming**: Commit messages and branch names use
+  [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch
+  naming: `<gh-username>/<commit-type>/claude-<brief-description>` (get username
+  from `gh api user -q .login`).
+
+- **Git staging**: Prefer `git add -u` — naming protected paths triggers the
+  hook, `git add -A` can stage unrelated files. Subagents must name specific
+  files in `git add` — never `-u`, `-A`, or `.`.
+
+- **Git resuming**: Before resuming work on an existing branch, merge `main`:
+  `git fetch origin main && git merge origin/main`.
+
+- **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as the
+  PR body.
+
+- **Python**: Always `uv run` — never bare `python`, `python3`, or
+  venv-installed tools (`dbt`, `dagster`, etc.).
+
+- **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
+  Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
+  `uv run`, `gh`, `docker`, `trunk`, `ls`).
+
+- **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment — not
+  linter-native disable syntax. Binary:
+  `/workspaces/teamster/.trunk/tools/trunk`.
+
+- **Markdown**: Always specify a language on fenced code blocks (MD040). Use
+  `text` only when no real language applies.
+
+- **Claude CLI**: Not on `$PATH` — user must run `claude` commands in their
+  terminal, not via Bash tool.
+
+- **Verify before claiming**: Read actual source code — do not extrapolate
+  third-party tool behavior from general knowledge.
+
+- **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
+
+## CLAUDE.md Editing Rules
+
+- **Before editing any CLAUDE.md file**: present the proposed change as a quote
+  block with a one-line expected-utility note. Do not apply it until the user
+  approves.
+
+- **Before adding to any CLAUDE.md file**: for each line, answer: what specific
+  wrong action does this prevent? If you can't name one, cut it. General
+  knowledge and human-only context (motivation, rationale, history) don't
+  qualify.
+
+## MCP Servers
+
+Dagster+ MCP server: `dagster-plus-mcp` package (`dev` group) —
+[TEAMSchools/dagster-plus-mcp](https://github.com/TEAMSchools/dagster-plus-mcp).
+See that repo's CLAUDE.md for package internals.
+
+### MCP tool selection
+
+Use BigQuery MCP for ad-hoc queries against known production tables. Use dbt
+MCP's `show` only when `ref()` / `source()` resolution is needed — it adds
+compilation overhead.
+
+### Dagster asset diagnosis
+
+When verifying failures, fetch the most recent run per job (`list_runs` with
+`job_name=..., limit=1`, no status filter) — bulk cross-referencing capped
+result sets misses retries and recoveries.
+
+### GKE MCP
+
+Authenticates as impersonated service account
+`codespaces@teamster-332318.iam.gserviceaccount.com`. If `PermissionDenied`,
+check the `CodespacesRole` custom IAM role, not user IAM bindings.
+
+`mcp__gke__query_logs` uses snake_case keys in `time_range` (`start_time`,
+`end_time`), not camelCase. Results cap at 100 — paginate by using the last
+entry's timestamp as the next `start_time`.
+
+For pod-level logs, prefer `mcp__gke__query_logs` over
+`mcp__observability__list_log_entries` — the GKE MCP returns pod labels (run-id,
+op, code-location) that the observability MCP does not.
+
+### Observability MCP
+
+If any tool returns permission denied, flag it to the user — don't assume no
+data.
+
+### BigQuery MCP
+
+Truncates results at 50 rows. When querying `INFORMATION_SCHEMA.COLUMNS` for
+wide tables, paginate with `WHERE ordinal_position > N`.

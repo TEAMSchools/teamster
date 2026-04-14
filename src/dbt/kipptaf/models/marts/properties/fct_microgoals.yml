@@ -2,6 +2,11 @@ models:
   - name: fct_microgoals
 
     columns:
+      - name: microgoals_key
+        data_type: string
+        data_tests:
+          - unique
+
       - name: employee_number
         data_type: int64
 

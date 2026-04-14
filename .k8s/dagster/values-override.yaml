@@ -11,19 +11,6 @@ dagsterCloud:
   # organization.
   branchDeployments: true
 
-  # # Optionally customize the socket_options that are passed in to the underlying HTTP
-  # # connection pool used to send HTTP requests to Dagster Cloud.
-  # # See https://urllib3.readthedocs.io/en/stable/reference/urllib3.connection.html for
-  # # the expected format.
-  # # socketOptions should be a list of lists, where each inner list has three elements.
-  # # The list values can either be string name of socket attributes (like "IPPROTO_TCP")
-  # # or the integer value of that attribute.
-  # socketOptions:
-  #   - [SOL_SOCKET, SO_KEEPALIVE, 1]
-  #   - [IPPROTO_TCP, TCP_KEEPIDLE, 11]
-  #   - [IPPROTO_TCP, TCP_KEEPINTVL, 7]
-  #   - [IPPROTO_TCP, TCP_KEEPCNT, 5]
-
 ########################################################################################
 # Dagster Cloud Agent: Configuration for the Dagster Cloud (User) Agent
 ########################################################################################
@@ -31,23 +18,70 @@ dagsterCloudAgent:
   resources:
     requests:
       cpu: 500m # Autopilot minimum of 500m required for using pod anti affinity
-      memory: 0.5Gi
+      memory: 2.0Gi # extended-duration minimum (safe-to-evict: "false")
     limits:
       cpu: 750m
-      memory: 1.0Gi
+      memory: 2.5Gi
 
   podSecurityContext:
     runAsUser: 1001 # provided non-root user in image versions 0.14.0 and above
 
-  nodeSelector:
-    cloud.google.com/gke-spot: "true"
+  terminationGracePeriodSeconds: 60
 
-  terminationGracePeriodSeconds: 15
+  env:
+    # Reduce cleanup delay for orphaned code server deployments left by previous
+    # agent IDs after Helm upgrades. Defaults: grace=3600s, interval=1800s.
+    # With replicas: 1, each upgrade leaves 1 orphaned deployment per location;
+    # the 10-min heartbeat expiry + 15-min grace period ensures replacements are
+    # reconciled before orphans are deleted.
+    DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS: "900"
+    DAGSTER_CLOUD_CLEANUP_SERVER_CHECK_INTERVAL: "600"
 
-  # Number of replicas of the agent service to keep up at a given time.
-  replicas: 2
+  readinessProbe:
+    exec:
+      command:
+        - /bin/bash
+        - -c
+        - test -f /tmp/finished_initial_reconciliation_sentinel.txt
+    failureThreshold: 60 # 10 min (60 × 10s) for initial reconciliation
+    initialDelaySeconds: 0
+    periodSeconds: 10
+
+  # maxSurge: 200% surges the new pod above the current replica for zero-downtime
+  # Helm upgrades. Combined with requiredDuringSchedulingIgnoredDuringExecution
+  # hostname anti-affinity, this requires a distinct node briefly. On Autopilot
+  # this is provisioned on demand; a stalled rollout indicates capacity exhaustion.
+  deploymentStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0%
+      maxSurge: 200%
+
+  # Single replica minimizes k8s Service churn from dual-agent reconciliation
+  # (both replicas independently recreate code server Deployments/Services on
+  # every control-plane update, doubling ClusterIP transitions and gRPC gaps).
+  replicas: 1
+
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
 
   affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 30
+          preference:
+            matchExpressions:
+              - key: cloud.google.com/compute-class
+                operator: In
+                values:
+                  - General-Purpose
+        - weight: 20
+          preference:
+            matchExpressions:
+              - key: cloud.google.com/compute-class
+                operator: In
+                values:
+                  - Scale-Out
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         - labelSelector:
@@ -58,17 +92,25 @@ dagsterCloudAgent:
                   - dagster-cloud-agent
           topologyKey: kubernetes.io/hostname
 
-  # securityContext:
-  #   runAsNonRoot: true
-  #   allowPrivilegeEscalation: false
+  additionalPodSpecConfig:
+    priorityClassName: dagster-agent
+
+  # Agent container securityContext — not set because the agent runs Dagster's
+  # own image (UID 1001), not ours (UID 1234). Spec Section 2 covers workspace
+  # and run pods only. The Helm chart does support this field.
 
 ########################################################################################
 # Workspace: Configuration for pods (launched by the agent) that run Dagster user code
 ########################################################################################
 workspace:
+  serverProcessStartupTimeout: 300
+
   # Raw k8s configuration for the Kubernetes Deployment created for each code location.
   serverK8sConfig:
     containerConfig:
+      env:
+        - name: DAGSTER_GRPC_MAX_WORKERS
+          value: "20"
       resources:
         # Autopilot minimum of 0.5 vCPU & 2 GiB required for scale-out pods using
         # workload separation: https://docs.cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
@@ -78,19 +120,91 @@ workspace:
         limits:
           cpu: 750m
           memory: 2.5Gi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1234
+        runAsGroup: 1234
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         operator.1password.io/auto-restart: "true"
     podSpecConfig:
-      nodeSelector:
-        cloud.google.com/compute-class: Scale-Out
-        cloud.google.com/gke-spot: "true"
-        kubernetes.io/arch: arm64
-      terminationGracePeriodSeconds: 15
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 40
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - Scale-Out
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - arm64
+            - weight: 30
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - General-Purpose
+            - weight: 20
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - Scale-Out
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+      terminationGracePeriodSeconds: 60
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              managed_by: K8sUserCodeLauncher
+              deployment_name: prod
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              managed_by: K8sUserCodeLauncher
+              deployment_name: prod
 
   # Raw k8s configuration for the Kubernetes Job and Pod created for each run. See:
   # https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment
   runK8sConfig:
+    jobSpecConfig:
+      # backoffLimit is retries (not total attempts): 1 = 2 total pod attempts
+      # before K8s marks the Job Failed. Kept low so genuine application errors
+      # surface quickly via Dagster's run retry (dagster/will_retry).
+      backoffLimit: 1
+      # K8s sets the DisruptionTarget pod condition when a pod is terminated by
+      # priority-class preemption, eviction API (node drain), graceful node
+      # shutdown, or taint-based eviction. On Autopilot, GKE system-critical
+      # pods (priority > 1000) routinely preempt our dagster-run pods
+      # (priority 1000) to land kube-dns, fluent-bit, metrics-agent, etc. —
+      # this is unavoidable cluster-wide behavior. podFailurePolicy with
+      # action=Ignore makes the Job controller treat those disruptions as
+      # not-a-failure: the Job transparently replaces the pod without counting
+      # against backoffLimit. Genuine app failures (non-zero exits without
+      # DisruptionTarget) still consume the retry budget as before.
+      # GA in K8s 1.31+; cluster is on 1.34.4.
+      podFailurePolicy:
+        rules:
+          - action: Ignore
+            onPodConditions:
+              - type: DisruptionTarget
     containerConfig:
       # Autopilot enforces special minimum values for resource requests on extended
       # duration Pods: https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests#workload-separation
@@ -99,15 +213,77 @@ workspace:
           cpu: 500m
           memory: 2.0Gi
         limits:
-          cpu: 750m
+          # Bumped from 1000m to 1750m to cover non-dbt step pods whose p95 CPU
+          # usage is ~950m with observed peaks to 1.45 cores. 1750m gives ~20%
+          # headroom above the 14-day max, staying below the most aggressive
+          # per-asset dbt override (2250m). Dbt assets keep their own higher
+          # per-asset limit overrides in Python asset definitions.
+          cpu: 1750m
           memory: 2.5Gi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1234
+        runAsGroup: 1234
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
     podTemplateSpecMetadata: # raw config for the pod's metadata
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
-      nodeSelector:
-        cloud.google.com/compute-class: Scale-Out
-        kubernetes.io/arch: arm64
+      priorityClassName: dagster-run
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 40
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - Scale-Out
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - arm64
+            - weight: 30
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - General-Purpose
+            - weight: 20
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/compute-class
+                    operator: In
+                    values:
+                      - Scale-Out
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+        # Hard-block run/step pods from sharing a node with code servers
+        # (eliminates preemption-driven code server evictions) or with the
+        # agent (protects the single-replica agent from kubelet node-pressure
+        # eviction by bursty run workloads). Each term is evaluated
+        # independently — a candidate node is rejected if EITHER selector
+        # matches a pod already on it. Autopilot provisions new nodes on
+        # demand when existing nodes can't satisfy the constraint; per-pod
+        # billing means this adds only startup latency, not direct cost.
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  managed_by: K8sUserCodeLauncher
+                  deployment_name: prod
+              topologyKey: kubernetes.io/hostname
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: dagster-cloud-agent
+              topologyKey: kubernetes.io/hostname
 
   # Specify TTL for user code servers.
   # By default full deployment servers do not have a TTL.
@@ -116,6 +292,22 @@ workspace:
   serverTTL:
     branchDeployments:
       ttlSeconds: 900
+
+  onlyAllowUserDefinedK8sConfigFields:
+    containerConfig:
+      resources: true
+      env: true
+      volumeMounts: true
+    podSpecConfig:
+      nodeSelector: true
+      affinity: true
+      volumes: true
+    podTemplateSpecMetadata:
+      annotations: true
+    jobSpecConfig:
+      ttlSecondsAfterFinished: true
+    jobMetadata:
+      annotations: true
 
 ########################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
@@ -126,7 +318,7 @@ extraManifests:
     metadata:
       name: dca-pdb
     spec:
-      maxUnavailable: 1
+      minAvailable: 1
       selector:
         matchLabels:
           app.kubernetes.io/instance: user-cloud
@@ -138,7 +330,7 @@ extraManifests:
     metadata:
       name: kippcamden-pdb
     spec:
-      maxUnavailable: 1
+      minAvailable: 1
       selector:
         matchLabels:
           deployment_name: prod
@@ -149,7 +341,7 @@ extraManifests:
     metadata:
       name: kippmiami-pdb
     spec:
-      maxUnavailable: 1
+      minAvailable: 1
       selector:
         matchLabels:
           deployment_name: prod
@@ -160,7 +352,7 @@ extraManifests:
     metadata:
       name: kippnewark-pdb
     spec:
-      maxUnavailable: 1
+      minAvailable: 1
       selector:
         matchLabels:
           deployment_name: prod
@@ -171,18 +363,38 @@ extraManifests:
     metadata:
       name: kipppaterson-pdb
     spec:
-      maxUnavailable: 1
+      minAvailable: 1
       selector:
         matchLabels:
           deployment_name: prod
           managed_by: K8sUserCodeLauncher
           location_name: kipppaterson
+  - apiVersion: scheduling.k8s.io/v1
+    kind: PriorityClass
+    metadata:
+      name: dagster-run
+    value: 1000
+    globalDefault: false
+    preemptionPolicy: PreemptLowerPriority
+    description: >-
+      Elevates run/step pods above default priority (0) so kubelet evicts code
+      server pods first during node memory pressure.
+  - apiVersion: scheduling.k8s.io/v1
+    kind: PriorityClass
+    metadata:
+      name: dagster-agent
+    value: 1000
+    globalDefault: false
+    preemptionPolicy: PreemptLowerPriority
+    description: >-
+      Elevates agent pods to the same priority as run/step pods so the scheduler
+      cannot preempt them to fit run workloads.
   - apiVersion: policy/v1
     kind: PodDisruptionBudget
     metadata:
       name: kipptaf-pdb
     spec:
-      maxUnavailable: 1
+      minAvailable: 1
       selector:
         matchLabels:
           deployment_name: prod

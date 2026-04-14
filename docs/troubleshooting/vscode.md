@@ -29,17 +29,12 @@ Pylance resolves imports from the venv. If imports are unresolved after
 Type checking is intentionally set to `off` in `.vscode/settings.json` — Pyright
 via Trunk handles type checking at lint/commit time instead.
 
-## `.env` file / secrets not loaded
+## Secrets not loaded
 
-Environment variables are loaded from `env/.env`, which is generated from
-1Password templates during `postCreate`. If the file is missing or stale:
-
-```bash
-bash .devcontainer/scripts/inject-secrets.sh
-```
-
-You must be authenticated with 1Password (`op signin`) for this to work. The
-`UV_ENV_FILE` variable points `uv run` at the same file automatically.
+Environment variables are fetched on demand from 1Password by
+`tests/conftest.py` when pytest runs. For commands outside pytest (e.g.,
+`dagster definitions validate`), run them in the VS Code terminal where
+`OP_SERVICE_ACCOUNT_TOKEN` is available.
 
 ## Trunk linter not running
 
@@ -56,11 +51,10 @@ Trunk is the default formatter for Python, SQL, YAML, and Markdown
 
 ## Container needs a rebuild
 
-If `postCreate` did not run completely (e.g. 1Password auth failed mid-script),
-the environment may be partially set up. Re-run the setup steps manually:
+If `postCreate` did not run completely, the environment may be partially set up.
+Re-run the setup steps manually:
 
 ```bash
-bash .devcontainer/scripts/inject-secrets.sh
 uv sync --frozen
 ```
 
@@ -74,5 +68,5 @@ See [Troubleshooting dbt → dbt Power User](dbt.md#dbt-power-user-extension).
 
 ---
 
-**See also:** [Getting Started](../getting-started.md) ·
-[Troubleshooting dbt](dbt.md) · [Troubleshooting Dagster](dagster.md)
+**See also:** [Guides](../guides/index.md) · [Troubleshooting dbt](dbt.md) ·
+[Troubleshooting Dagster](dagster.md)
