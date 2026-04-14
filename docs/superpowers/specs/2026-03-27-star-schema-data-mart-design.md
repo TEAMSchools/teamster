@@ -353,6 +353,7 @@ Sections have N:M relationships with both teachers and terms:
 | `dim_assessment_targets`                  | Type 1 | one row per assessment x year x target_type x school x grade                | Assessment targets with `target_type` discriminator — vendor-defined benchmarks (DIBELS benchmark levels, iReady growth targets), KIPP-defined internal goals (grade/school/region/organization goals), and any other target category. FK to `dim_assessments`, `dim_locations`. Answers "are we hitting our targets?"                |
 | `dim_student_assessment_expectations`     | Type 1 | one row per student_section_enrollment x assessment x administration_window | Scaffolded from business rules — which assessments a student should take based on section subject, grade, school, year. FK to `dim_student_section_enrollments`, `dim_assessments`, `dim_terms`. Enrollment-scoped only; no sibling for student-scoped assessments (SAT/ACT are elective, AP deferred to second pass).                |
 | `fct_assessment_scores_enrollment_scoped` | Type 1 | one row per student_section_enrollment x assessment x administration        | Enrollment-scoped administrations — iReady, STAR, DIBELS, FAST, NJSLA, internal KIPP assessments. Columns: scale_score, percent_correct, proficiency_level, growth_percentile, nullable assessment-specific fields. FK to `dim_student_section_enrollments`, `dim_assessments`, `dim_dates` (test_date as role-playing), `dim_terms`. |
+| `fct_assessment_scores_student_scoped`    | Type 1 | one row per student x assessment x administration                           | Student-scoped administrations that follow the student regardless of enrollment — SAT, PSAT, ACT, AP. Columns: scale_score, subscores, percent_correct, proficiency_level, nullable assessment-specific fields. FK to `dim_students`, `dim_assessments`, `dim_dates` (test_date as role-playing), `dim_terms`.                        |
 
 Both expectation and score models FK to `dim_student_section_enrollments`
 because the subject (and therefore the assessment family that applies) is
@@ -370,22 +371,18 @@ administrations that were _not_ explicitly expected, anti-join
 the enrollment-scoped fact; no cross-grain gymnastics are required because the
 student-scoped fact has no expectation scaffold.
 
-The student-scoped counterpart (`fct_assessment_scores_student_scoped`) lives in
-the College Domain.
-
-### College Domain
-
-| Model                                  | SCD    | Grain                                             | Key Sources                                                                                                                                                                                                                                                                                                    |
-| -------------------------------------- | ------ | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dim_colleges`                         | Type 1 | one row per institution                           | NSC — college_name, type (2yr/4yr), selectivity, state                                                                                                                                                                                                                                                         |
-| `dim_college_enrollments`              | Type 1 | one row per student x college x tenure            | NSC — enrollment_status, degree_pursued, enrollment_start_date, enrollment_end_date. A single enrollment spans the student's entire tenure at that college, not a single term. FK to `dim_students`, `dim_colleges`, `dim_dates` (enrollment_start_date, enrollment_end_date as role-playing).                 |
-| `fct_assessment_scores_student_scoped` | Type 1 | one row per student x assessment x administration | Student-scoped administrations that follow the student regardless of enrollment — SAT, PSAT, ACT, AP. Columns: scale_score, subscores, percent_correct, proficiency_level, nullable assessment-specific fields. FK to `dim_students`, `dim_assessments`, `dim_dates` (test_date as role-playing), `dim_terms`. |
-
 **No expectation scaffold for student-scoped assessments.** SAT/ACT
 participation is elective (X2 — no expectation dim). AP participation follows
 from course enrollment (student in an AP course should take the AP exam) but
 encoding this requires section → course → AP exam mapping data not currently
 available; deferred to second pass (see Second Pass section).
+
+### College Domain
+
+| Model                     | SCD    | Grain                                  | Key Sources                                                                                                                                                                                                                                                                                    |
+| ------------------------- | ------ | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dim_colleges`            | Type 1 | one row per institution                | NSC — college_name, type (2yr/4yr), selectivity, state                                                                                                                                                                                                                                         |
+| `dim_college_enrollments` | Type 1 | one row per student x college x tenure | NSC — enrollment_status, degree_pursued, enrollment_start_date, enrollment_end_date. A single enrollment spans the student's entire tenure at that college, not a single term. FK to `dim_students`, `dim_colleges`, `dim_dates` (enrollment_start_date, enrollment_end_date as role-playing). |
 
 ### Staff Observation & Professional Development Domain
 
