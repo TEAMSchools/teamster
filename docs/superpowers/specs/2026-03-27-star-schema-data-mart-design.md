@@ -131,13 +131,17 @@ Implementation-level decisions. Rationale for each is documented in the
   observations, surveys
 - **Expectation inputs**: `dim_student_section_enrollments` is a key input to
   building `dim_student_assessment_expectations`
-- **Survey completion**: Submission-level fact (respondent x survey x admin)
-  parent of response-level fact (submission x question)
+- **Survey completion**: Submission-level fact (respondent x
+  survey_administration) parent of response-level fact (submission x question)
 - **Survey domain unification**: Single `fct_survey_submissions` /
   `fct_survey_responses` / `dim_survey_expectations` with
   `respondent_population` discriminator (staff/student/family) and nullable
   population-specific respondent FKs. Motivated by the SCD being the same
   instrument across populations.
+- **Survey administration model**: `dim_survey_administrations` (survey x term)
+  sits between `dim_surveys` (pure definition) and the instance-level models
+  (expectations, submissions). Eliminates a diamond to `dim_terms` and gives
+  administration-specific metadata a home.
 - **Date keys**: Raw DATE type; `dim_dates` carries a `date_timestamp` column
   for Cube
 - **Talent acquisition isolation**: SmartRecruiters and ADP/Seat Tracker have no
@@ -514,14 +518,15 @@ unified fact. The Manager Survey adds a `subject_staff_key` (the manager being
 evaluated by their direct reports) — a nullable role-playing FK to `dim_staff`,
 populated only for that survey type.
 
-| Model                     | SCD    | Grain                                   | Key Sources                                                                                                                                                                                                                                                                                                                                                                                                       |
-| ------------------------- | ------ | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dim_surveys`             | Type 1 | one row per survey definition           | Survey metadata — survey_name, survey_type, subject_area. FK to `dim_terms` (survey window)                                                                                                                                                                                                                                                                                                                       |
-| `dim_survey_questions`    | Type 1 | one row per question                    | Google Forms (current) / Alchemer (archival) — question_text, question_type, response_options. No FK to `dim_surveys` — questions are pure reference data so they can be reused across surveys.                                                                                                                                                                                                                   |
-| `bridge_survey_questions` | Type 1 | one row per survey x question           | Pairs questions to surveys with survey-specific metadata — ordering, is_required, section. FK to `dim_surveys`, `dim_survey_questions`.                                                                                                                                                                                                                                                                           |
-| `dim_survey_expectations` | Type 1 | one row per respondent x survey x term  | Scaffolded from business rules — which surveys a respondent should complete based on population-specific criteria (role/location/term for staff; grade/school/term for students; one per family per term for families). `respondent_population` discriminator. FK to `dim_surveys`, `dim_terms`, plus respondent FKs.                                                                                             |
-| `fct_survey_submissions`  | Type 1 | one row per respondent x survey x admin | Survey completion record. `respondent_population` discriminator (staff/student/family). Nullable respondent FKs: `staff_key` → `dim_staff`, `student_enrollment_key` → `dim_student_enrollments`, `student_contact_person_key` → `dim_student_contact_persons` (exactly one populated per row). Nullable `subject_staff_key` → `dim_staff` (role-playing, Manager Survey only). FK to `dim_surveys`, `dim_dates`. |
-| `fct_survey_responses`    | Type 1 | one row per submission x question       | Response detail — response_value, response_text. FK to `fct_survey_submissions`, `dim_survey_questions`. Reach `dim_surveys` only via the submission.                                                                                                                                                                                                                                                             |
+| Model                        | SCD    | Grain                                          | Key Sources                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------- | ------ | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dim_surveys`                | Type 1 | one row per survey definition                  | Survey metadata — survey_name, survey_type, subject_area. Pure instrument definition, no temporal scoping. No FK to `dim_terms` — the administration window lives on `dim_survey_administrations`.                                                                                                                                                                                                                               |
+| `dim_survey_administrations` | Type 1 | one row per survey x term                      | Each instance of a survey in an administration window. FK to `dim_surveys`, `dim_terms`. Carries administration-specific metadata: administration_status (open/closed), response_deadline, platform (Google Forms/Alchemer). Analogous to how `dim_course_sections` sits between `dim_courses` and enrollment instances.                                                                                                         |
+| `dim_survey_questions`       | Type 1 | one row per question                           | Google Forms (current) / Alchemer (archival) — question_text, question_type, response_options. No FK to `dim_surveys` — questions are pure reference data so they can be reused across surveys.                                                                                                                                                                                                                                  |
+| `bridge_survey_questions`    | Type 1 | one row per survey x question                  | Pairs questions to surveys with survey-specific metadata — ordering, is_required, section. FK to `dim_surveys`, `dim_survey_questions`. Stays at definition level — questions pair to the instrument, not the instance.                                                                                                                                                                                                          |
+| `dim_survey_expectations`    | Type 1 | one row per respondent x survey_administration | Scaffolded from business rules — which survey administrations a respondent should complete based on population-specific criteria (role/location for staff; grade/school for students; one per family). `respondent_population` discriminator. FK to `dim_survey_administrations`, plus nullable respondent FKs.                                                                                                                  |
+| `fct_survey_submissions`     | Type 1 | one row per respondent x survey_administration | Survey completion record. `respondent_population` discriminator (staff/student/family). Nullable respondent FKs: `staff_key` → `dim_staff`, `student_enrollment_key` → `dim_student_enrollments`, `student_contact_person_key` → `dim_student_contact_persons` (exactly one populated per row). Nullable `subject_staff_key` → `dim_staff` (role-playing, Manager Survey only). FK to `dim_survey_administrations`, `dim_dates`. |
+| `fct_survey_responses`       | Type 1 | one row per submission x question              | Response detail — response_value, response_text. FK to `fct_survey_submissions`, `dim_survey_questions`. Reach `dim_surveys` only via the chain: submission → administration → survey.                                                                                                                                                                                                                                           |
 
 **Respondent FK routing.** Each submission row has exactly one respondent FK
 populated, determined by `respondent_population`:
@@ -534,25 +539,36 @@ Cube defines conditional joins filtered by `respondent_population` to resolve
 the correct respondent dimension.
 
 **Family respondent note.** Family SCD submissions FK to
-`dim_student_contact_persons`. The expectation grain is one survey per contact
-person per term (not per student). Student linkage is reachable via
-`bridge_student_contacts` when needed. Historical family SCD responses are not
-associated with a specific student. The family respondent source system is
-migrating from PowerSchool to Finalsite — the mart's source-agnostic design
-insulates this domain from that change.
+`dim_student_contact_persons`. The expectation grain is one survey
+administration per contact person (not per student). Student linkage is
+reachable via `bridge_student_contacts` when needed. Historical family SCD
+responses are not associated with a specific student. The family respondent
+source system is migrating from PowerSchool to Finalsite — the mart's
+source-agnostic design insulates this domain from that change.
 
 **Manager Survey.** The Manager Survey is taken by direct reports about their
 manager. The respondent is the direct report (`staff_key`); the subject is the
 manager (`subject_staff_key`, role-playing FK to `dim_staff`). Completion is
 tracked from the respondent side (did each direct report submit?), consistent
-with the expectation grain across all survey types: respondent x survey x term.
+with the expectation grain across all survey types: respondent x
+survey_administration.
+
+**Why `dim_survey_administrations` exists.** A survey definition (e.g., "School
+Community Diagnostic Staff Survey") is a timeless instrument — it gets
+administered in multiple terms across years. Without an administration model,
+`dim_surveys` would need an FK to `dim_terms`, which then creates a diamond:
+`dim_survey_expectations` → `dim_surveys` → `dim_terms` and
+`dim_survey_expectations` → `dim_terms` (direct). The administration model
+linearizes this — `dim_surveys` is a pure definition, and all temporal scoping
+flows through `dim_survey_administrations` → `dim_terms`. One path from any
+model to `dim_terms`.
 
 **Expectation ↔ submission pattern.** Mirrors the assessment pattern. LEFT JOIN
 `dim_survey_expectations` to `fct_survey_submissions` on
-`(respondent_key, survey_key, term_key)` for expected-taken/missed; anti-join
-the submission fact against the expectation dim for unexpected submissions. The
-expectation dim carries `respondent_population` so business rules can differ per
-population while sharing a single model.
+`(respondent_key, survey_administration_key)` for expected-taken/missed;
+anti-join the submission fact against the expectation dim for unexpected
+submissions. The expectation dim carries `respondent_population` so business
+rules can differ per population while sharing a single model.
 
 **Why `bridge_survey_questions` exists.** A question's text and type are
 properties of the question itself, not of the survey it appears on — if survey A
@@ -560,12 +576,12 @@ and survey B both ask "How many years have you worked in education?", that's one
 question used twice, not two questions with identical text. Hoisting the
 survey-to-question pairing into a bridge keeps `dim_survey_questions` as pure
 reference data and eliminates a diamond from the response facts: without this
-split, a response had two paths to `dim_surveys` (via submission and via
-question), and by construction the two always agreed — an unlabeled diamond that
-Cube resolves non-deterministically. With the bridge, the response chain is
-linear: response → submission → survey for survey context; response → question
-for question context; bridge joins only when survey-question metadata (ordering,
-required) is needed.
+split, a response had two paths to `dim_surveys` (via submission → admin →
+survey and via question), and by construction the two always agreed — an
+unlabeled diamond that Cube resolves non-deterministically. With the bridge, the
+response chain is linear: response → submission → administration → survey for
+survey context; response → question for question context; bridge joins only when
+survey-question metadata (ordering, required) is needed.
 
 ### Talent Acquisition Domain
 
