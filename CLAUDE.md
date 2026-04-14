@@ -113,6 +113,10 @@ check the `CodespacesRole` custom IAM role, not user IAM bindings.
 `end_time`), not camelCase. Results cap at 100 — paginate by using the last
 entry's timestamp as the next `start_time`.
 
+`query_logs` format templates reject hyphens in key names
+(`{{.labels.k8s-pod/dagster/op}}` fails). Use full JSON output and extract with
+jq instead.
+
 For pod-level logs, prefer `mcp__gke__query_logs` over
 `mcp__observability__list_log_entries` — the GKE MCP returns pod labels (run-id,
 op, code-location) that the observability MCP does not.
@@ -120,7 +124,9 @@ op, code-location) that the observability MCP does not.
 ### Observability MCP
 
 If any tool returns permission denied, flag it to the user — don't assume no
-data.
+data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not
+`"60"`). Container metrics (`kubernetes.io/container/*`) are keyed by `pod_name`
+— no `node_name` label; use `kubernetes.io/node/*` for node-level data.
 
 ### BigQuery MCP
 

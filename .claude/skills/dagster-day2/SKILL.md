@@ -58,12 +58,14 @@ Then IN PARALLEL:
 - Per run: mcp__dagster__get_run_logs(run_id=<id>,
     filter_types=["ExecutionStepFailureEvent","RunFailureEvent","EngineEvent"],
     limit=500).
-- list_runs(statuses=["SUCCESS"], created_after={EPOCH}, limit=100).
-  MUST paginate via cursor until a page returns < 100, summing pages into a
-  count. Write ONLY {count: N, pages: P, lastPageSize: M, complete: M<100} —
-  do NOT include the full run list (response is too large for the Write tool).
+- list_runs(statuses=["SUCCESS"], created_after={EPOCH}, limit=25).
+  MUST paginate via cursor until a page returns < 25, summing pages into a
+  count. Write ONLY {count: N, pages: P, lastPageSize: M, complete: M<25} —
+  do NOT include the full run list (response is too large for the MCP tool's
+  token limit at higher page sizes). Use limit=25 — full run details (asset
+  selections, tags, step stats) make each run ~1.5KB of JSON.
   If you write count without paginating to a short page, the count is wrong.
-- list_runs(statuses=["CANCELED"], created_after={EPOCH}, limit=100). Same
+- list_runs(statuses=["CANCELED"], created_after={EPOCH}, limit=25). Same
   count-only treatment, same pagination requirement.
 
 Per failed run: runId, jobName, dagster/code_location, startTime, endTime,
@@ -238,7 +240,7 @@ list_time_series(name="projects/teamster-332318",
   filter='metric.type="kubernetes.io/container/memory/used_bytes"
     AND resource.labels.pod_name=starts_with("<prefix>")',
   interval={startTime: "<run_start-5m>", endTime: "<run_end+5m>"},
-  aggregation={alignmentPeriod: "60", perSeriesAligner: "ALIGN_MAX"}).
+  aggregation={alignmentPeriod: "60s", perSeriesAligner: "ALIGN_MAX"}).
 Pod prefix: <loc>-prod-* (code server), dagster-run-* (coordinator),
 dagster-step-* (step). Collect: peak bytes, limit bytes.
 
