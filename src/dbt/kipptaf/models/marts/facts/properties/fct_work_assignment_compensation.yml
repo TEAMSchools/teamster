@@ -1,0 +1,81 @@
+models:
+  - name: fct_work_assignment_compensation
+    description: >-
+      Work assignment compensation fact table with source-native Type 2 SCD
+      tracking. One row per ADP work assignment x base remuneration version.
+      Uses baseRemuneration.effectiveDate from ADP (not the daily partition
+      date) to define version boundaries. Deduplicates across daily partitions
+      by (item_id, effectiveDate) before windowing.
+    columns:
+      - name: work_assignment_compensation_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from item_id and effective_date_start.
+          Generated with generate_surrogate_key(["item_id",
+          "effective_date_start"]).
+        data_tests:
+          - unique
+          - not_null
+
+      - name: work_assignment_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_work_assignments. Surrogate key derived from
+          item_id. Generated with generate_surrogate_key(["item_id"]).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff_work_assignments')
+                field: work_assignment_key
+
+      - name: effective_date_key
+        data_type: date
+        description: >-
+          Role-playing foreign key to dim_dates. The effective date of this
+          compensation version as a raw DATE value matching dim_dates.date_key.
+
+      - name: annual_rate
+        data_type: numeric
+        description: >-
+          Annual salary rate for this compensation version, from ADP
+          baseRemuneration.annualRateAmount.amountValue.
+
+      - name: hourly_rate
+        data_type: numeric
+        description: >-
+          Hourly pay rate for this compensation version, from ADP
+          baseRemuneration.hourlyRateAmount.amountValue. Null for salaried
+          assignments.
+
+      - name: daily_rate
+        data_type: numeric
+        description: >-
+          Daily pay rate for this compensation version, from ADP
+          baseRemuneration.dailyRateAmount.amountValue. Null for most
+          assignments.
+
+      - name: period_rate
+        data_type: numeric
+        description: >-
+          Pay-period rate for this compensation version, from ADP
+          baseRemuneration.payPeriodRateAmount.amountValue.
+
+      - name: effective_date_start
+        data_type: date
+        description: >-
+          Date this compensation version became effective, from ADP
+          baseRemuneration.effectiveDate.
+
+      - name: effective_date_end
+        data_type: date
+        description: >-
+          Last date this compensation version was effective. Computed as one day
+          before the next version's effective_date_start, or 9999-12-31 for the
+          current version.
+
+      - name: is_current_record
+        data_type: boolean
+        description: >-
+          TRUE if this is the most recent compensation version for the work
+          assignment (effective_date_end = 9999-12-31).
