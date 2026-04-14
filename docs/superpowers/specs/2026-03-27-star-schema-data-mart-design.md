@@ -97,8 +97,11 @@ apply:
 
 **Decision test:** If the two models could in principle be `UNION`-ed and mean
 something coherent (same columns, same business meaning), it's a grain split —
-use the suffix. If they are parallel processes that happen to share a shape,
-it's a population split — use the prefix.
+use the suffix. If the populations share the same instrument and the primary use
+case is cross-population comparison, use a single model with a discriminator
+column. If they are parallel processes that happen to share a shape but have
+genuinely different instruments or business rules, it's a population split — use
+the prefix.
 
 ## Architectural Decisions
 
