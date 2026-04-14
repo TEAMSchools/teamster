@@ -19,24 +19,6 @@ Dagster assets query the mart/Cube and deliver files to target systems.
   extracts, or retiring existing models. Those are future projects that consume
   this deliverable.
 
-## Glossary
-
-Key concepts used throughout this design. All terms follow the Kimball
-dimensional modeling methodology.
-
-| Concept                    | Plain English                                                                           | Example                                                                                                                     |
-| -------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Dimension (dim)**        | Descriptive attributes ("who, what, where, when") that provide context for events.      | `dim_students` — one row per student with name, grade, demographics.                                                        |
-| **Fact (fct)**             | Measurable events or transactions; each row records something that happened at a grain. | `fct_student_attendance_daily` — one row per student per day with present/absent/tardy.                                     |
-| **Factless fact table**    | A fact with no numeric measures — counted rather than summed.                           | `fct_student_attendance_interventions` — one row per student × intervention × year with completion status.                  |
-| **Bridge table**           | Resolves many-to-many relationships so joins don't overcount.                           | `bridge_staff_benefits_enrollments` — one row per staff × benefit plan.                                                     |
-| **Star schema**            | A central fact table joined to its dimensions.                                          | `fct_student_attendance_daily` joined to `dim_student_enrollments` + `dim_dates`.                                           |
-| **Role-playing dimension** | One dimension joined multiple times with different aliases, each a different role.      | `fct_behavioral_consequences` joins `dim_dates` as both `start_date` and `end_date`.                                        |
-| **SCD Type 1 (overwrite)** | Changes overwrite prior values; no history kept.                                        | `dim_students` — a corrected name replaces the old one.                                                                     |
-| **SCD Type 2 (versioned)** | Each change adds a new row with effective dates; history preserved.                     | `dim_work_assignment_jobs` — a job title change adds a new row with its own effective dates.                                |
-| **Conformed dimension**    | Shared across multiple facts with consistent keys; enables cross-process queries.       | `dim_staff` — same key used by compensation, observations, tickets, and communications.                                     |
-| **Expectation dimension**  | Scaffolds what _should_ happen; compared against facts for completion tracking.         | `dim_student_assessment_expectations` — one row per student_enrollment × assessment × window; LEFT JOIN facts to find gaps. |
-
 ## Conventions
 
 ### Column Naming
@@ -112,95 +94,65 @@ something coherent (same columns, same business meaning), it's a grain split —
 use the suffix. If they are parallel processes that happen to share a shape,
 it's a population split — use the prefix.
 
-## Foundational Decisions
-
-The three decisions below shape the entire mart. Everything in the Architectural
-Decisions table that follows is an implementation consequence of these; read
-this section first.
-
-### Methodology: Kimball dimensional modeling
-
-Facts at the center, conformed dimensions around them, SCD Type 1 or Type 2
-based on whether point-in-time history matters. Star schema is the organizing
-principle: every reporting question decomposes into a fact (the event or
-measurement) joined to dimensions (the context). Kimball is the industry
-standard for analytical warehouses, optimizes for query performance and user
-comprehension, and maps directly onto the Cube semantic layer.
-
-### Fact/dim traversal: strict chain (A+X)
-
-Every fact and dimension FKs only to its finest-grain parent on each entity
-chain. Broader context is reached via chain traversal rather than redundant FKs.
-When rows of one business process bind to different grains (e.g.,
-enrollment-scoped vs student-scoped assessments), the fact splits at the grain
-boundary rather than carrying nullable FKs.
-
-Two exemptions:
-
-- **Conformed dims** (`dim_dates`, `dim_terms`, `dim_regions`, `dim_locations`,
-  `dim_school_calendars`) may be joined directly from any fact. They are the
-  universal aggregation/filter axes.
-- **Role-playing (aliased) joins** to any dim — including non-conformed dims
-  like `dim_staff` as teacher/observer or submitter/assignee — are permitted.
-  The alias is the semantic label; Cube resolves these cleanly via explicit
-  aliased joins.
-
-This eliminates unlabeled diamond subgraphs — two different join paths from one
-fact to the same destination dim — which Cube docs flag as ambiguous and which
-force per-query join-path hints to resolve. The discipline matches Cube's
-transitive-join model: chained dims are traversed automatically at query time,
-so the mart stays canonical and the consumer stays simple.
-
-### Business logic split: dbt structural, Cube presentation
-
-The mart handles structural logic and stable business rules — canonical keys,
-SCD versioning, grain-level facts, expectation scaffolds. Cube handles
-presentation-layer shaping — flat result sets for consumers, calculated measures
-across cubes, segments, hierarchies, per-consumer dimension exposure, access
-controls, and pre-aggregations.
-
-Practical consequence: the mart stays lean and canonical; consumer-specific
-shape lives in Cube, not in a proliferation of extract models. The existing
-`models/extracts/` folder is the pre-Cube state; this mart + Cube subsumes its
-role over time, except for system integration feeds (Clever, PowerSchool
-autocomm, ADP, IDauto) where format-specific shaping doesn't belong in a
-semantic layer — those remain as thin dbt extracts on top of the mart, with
-Dagster delivering the output files to target systems.
-
 ## Architectural Decisions
 
-Implementation-level decisions that follow from the Foundational Decisions.
+Implementation-level decisions. Rationale for each is documented in the
+[issue description](https://github.com/TEAMSchools/teamster/issues/3543).
 
-| Decision                     | Choice                                                                                                                                                                                                                                                     | Rationale                                                                                                                                                                                                                                                                                 |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Multi-region handling        | `dim_regions` as its own normalized dimension                                                                                                                                                                                                              | Clean FK on all facts; supports region-specific logic in Cube                                                                                                                                                                                                                             |
-| System integration feeds     | Thin dbt extracts on top of mart + Dagster for delivery                                                                                                                                                                                                    | Cube stays purely analytical; format-specific shaping doesn't belong in semantic layer                                                                                                                                                                                                    |
-| Time/calendar                | Role-playing `dim_dates` + `dim_terms` + `dim_school_calendars`                                                                                                                                                                                            | Ad-hoc date filtering is a primary concern; every meaningful date on a fact gets a first-class dimension relationship                                                                                                                                                                     |
-| `dim_terms` scope            | Generalized beyond academic terms                                                                                                                                                                                                                          | Covers academic terms, performance management rounds, survey windows, assessment admin windows, fiscal periods                                                                                                                                                                            |
-| `dim_school_calendars` scope | Serves attendance validity AND assessment calculations                                                                                                                                                                                                     | School-day counts drive DIBELS progress monitoring goal calculations (expected words mastered by date at school level)                                                                                                                                                                    |
-| SCDs                         | Hybrid — Type 2 where point-in-time history matters, Type 1 for stable/static dims                                                                                                                                                                         | Keeps complexity where it adds analytical value                                                                                                                                                                                                                                           |
-| Student fact FK routing      | Each student-context fact FKs to its finest-grain dim — gradebook facts to `dim_student_section_enrollments`; daily attendance, GPA, etc. to `dim_student_enrollments`                                                                                     | Strict chain — broader context (`dim_students`, `dim_locations`) reached via traversal, not duplicated FK                                                                                                                                                                                 |
-| Staff compensation FK        | `fct_work_assignment_compensation` and `fct_work_assignment_additional_earnings` FK to `dim_staff_work_assignments`                                                                                                                                        | Compensation is per-position, not per-person                                                                                                                                                                                                                                              |
-| Attrition + termination      | Single `fct_staff_attrition` fact (employee x academic_year x attrition_type, recalculated each run); `fct_staff_terminations` dropped. FK to `dim_staff_status` (the worker-level status version active at the methodology's outcome determination date). | Attrition is a person-level concept (did they leave the org) — `Worker.workerStatus` expresses that directly and is stable across promotions/transfers. Work-assignment context (job, location, primary assignment) is reached via chain through `dim_staff → dim_staff_work_assignments` |
-| Expectation scaffolds        | Dimensions (`dim_*_expectations`) for assessments, observations, surveys                                                                                                                                                                                   | Define what _should_ happen; compared against facts for completion tracking                                                                                                                                                                                                               |
-| Expectation inputs           | `dim_student_section_enrollments` is a key input to building `dim_student_assessment_expectations`                                                                                                                                                         | Section enrollment determines subject, which determines expected assessments                                                                                                                                                                                                              |
-| Survey completion            | Submission-level fact (respondent x survey x admin) parent of response-level fact (submission x question)                                                                                                                                                  | Enables completion tracking without requiring question-level detail                                                                                                                                                                                                                       |
-| Survey respondent split      | Population split by respondent — `fct_staff_survey_*` / `dim_staff_survey_expectations` vs `fct_student_survey_*` / `dim_student_survey_expectations`                                                                                                      | Staff and student surveys have different question pools, schedules, and business rules; parallel processes, not same process at different grains                                                                                                                                          |
-| Date keys                    | Raw DATE type; `dim_dates` carries a `date_timestamp` column for Cube                                                                                                                                                                                      | Avoids surrogate key overhead; resolves Cube timestamp type requirements                                                                                                                                                                                                                  |
-| Talent acquisition isolation | SmartRecruiters and ADP/Seat Tracker have no joinable ID                                                                                                                                                                                                   | No connection to `dim_staff_work_assignments` or `dim_staffing_positions` in current state                                                                                                                                                                                                |
-| Assessment facts             | Split by grain — `fct_assessment_scores_enrollment_scoped` (iReady, STAR, DIBELS, FAST, NJSLA, internal) and `fct_assessment_scores_student_scoped` (SAT, PSAT, ACT, AP)                                                                                   | Enrollment-scoped assessments bind to a student's school/year context; student-scoped (College Board, ACT) follow the student and have no enrollment context                                                                                                                              |
-| Assessment targets           | Single `dim_assessment_targets` with `target_type` discriminator                                                                                                                                                                                           | Accommodates vendor-defined benchmarks (DIBELS levels, iReady growth), KIPP-defined internal goals, and any other target category in one model                                                                                                                                            |
-| Gradebook facts              | Full hierarchy — term grades, category grades, assignments — FK to `dim_student_section_enrollments`                                                                                                                                                       | Section enrollment is the finest grain at which grades are assigned; traverse up the chain for enrollment and student context                                                                                                                                                             |
-| GPA                          | Pre-calculated `fct_grades_gpa` fact at student_enrollment grain                                                                                                                                                                                           | GPA is a per-term summary across all sections, not section-bound; complex cumulative/weighted logic too complex for Cube calculation                                                                                                                                                      |
-| Attendance                   | Separate facts by business process                                                                                                                                                                                                                         | Daily attendance, streaks, and interventions have different grains                                                                                                                                                                                                                        |
-| Staff domain decomposition   | Derived from the ADP API Pydantic schema (`Worker` → `WorkAssignment` → nested objects); structs stay as columns, arrays and high-churn structs get their own effective-dated models                                                                       | Matches the source data structure; empirical change frequency analysis (BigQuery) confirms which attributes need independent versioning                                                                                                                                                   |
-| Staff assignment SCD         | `dim_staff_work_assignments` is Type 1; high-churn attributes factored to Type 2 child models                                                                                                                                                              | Assignment status (48%), compensation (48%), job title (19%), worker type (20%), location (10%) change too frequently to version on the parent                                                                                                                                            |
-| Work assignment child naming | Work-assignment children drop the `staff_` prefix and include `work_assignment_` in the name                                                                                                                                                               | Unambiguous scoping — `dim_work_assignment_*` / `fct_work_assignment_*` clearly identifies models that version or measure assignment-level attributes                                                                                                                                     |
-| Course domain                | Normalized — course catalog separate from sections                                                                                                                                                                                                         | Clean separation of catalog vs instance                                                                                                                                                                                                                                                   |
-| Staff observations           | Own domain separate from performance management                                                                                                                                                                                                            | Staff observations (O3s, walkthroughs, formal evaluations) are a distinct business process; PM round mapping and tier calculation are Cube concerns                                                                                                                                       |
-| Compensation                 | Fact, not dimension                                                                                                                                                                                                                                        | Compensation changes are measurable events (dollar amounts, rates) rather than descriptive attributes                                                                                                                                                                                     |
-| Mart directory structure     | `marts/dimensions/`, `marts/facts/`, `marts/bridges/`                                                                                                                                                                                                      | Mirrors how Cube thinks; star schema role is the organizing principle                                                                                                                                                                                                                     |
-| Build order                  | Conformed dimensions first, then domain facts                                                                                                                                                                                                              | Facts depend on conformed dims; clear dependency ordering                                                                                                                                                                                                                                 |
+- **Multi-region handling**: `dim_regions` as its own normalized dimension
+- **System integration feeds**: Thin dbt extracts on top of mart + Dagster for
+  delivery
+- **Time/calendar**: Role-playing `dim_dates` + `dim_terms` +
+  `dim_school_calendars`
+- **`dim_terms` scope**: Generalized beyond academic terms
+- **`dim_school_calendars` scope**: Serves attendance validity AND assessment
+  calculations
+- **SCDs**: Hybrid — Type 2 where point-in-time history matters, Type 1 for
+  stable/static dims
+- **Student fact FK routing**: Each student-context fact FKs to its finest-grain
+  dim — gradebook facts to `dim_student_section_enrollments`; daily attendance,
+  GPA, etc. to `dim_student_enrollments`
+- **Staff compensation FK**: `fct_work_assignment_compensation` and
+  `fct_work_assignment_additional_earnings` FK to `dim_staff_work_assignments`
+- **Attrition + termination**: Single `fct_staff_attrition` fact (employee x
+  academic_year x attrition_type, recalculated each run);
+  `fct_staff_terminations` dropped. FK to `dim_staff_status` (the worker-level
+  status version active at the methodology's outcome determination date).
+- **Expectation scaffolds**: Dimensions (`dim_*_expectations`) for assessments,
+  observations, surveys
+- **Expectation inputs**: `dim_student_section_enrollments` is a key input to
+  building `dim_student_assessment_expectations`
+- **Survey completion**: Submission-level fact (respondent x survey x admin)
+  parent of response-level fact (submission x question)
+- **Survey respondent split**: Population split by respondent —
+  `fct_staff_survey_*` / `dim_staff_survey_expectations` vs
+  `fct_student_survey_*` / `dim_student_survey_expectations`
+- **Date keys**: Raw DATE type; `dim_dates` carries a `date_timestamp` column
+  for Cube
+- **Talent acquisition isolation**: SmartRecruiters and ADP/Seat Tracker have no
+  joinable ID
+- **Assessment facts**: Split by grain —
+  `fct_assessment_scores_enrollment_scoped` (iReady, STAR, DIBELS, FAST, NJSLA,
+  internal) and `fct_assessment_scores_student_scoped` (SAT, PSAT, ACT, AP)
+- **Assessment targets**: Single `dim_assessment_targets` with `target_type`
+  discriminator
+- **Gradebook facts**: Full hierarchy — term grades, category grades,
+  assignments — FK to `dim_student_section_enrollments`
+- **GPA**: Pre-calculated `fct_grades_gpa` fact at student_enrollment grain
+- **Attendance**: Separate facts by business process
+- **Staff domain decomposition**: Derived from the ADP API Pydantic schema
+  (`Worker` → `WorkAssignment` → nested objects); structs stay as columns,
+  arrays and high-churn structs get their own effective-dated models
+- **Staff assignment SCD**: `dim_staff_work_assignments` is Type 1; high-churn
+  attributes factored to Type 2 child models
+- **Work assignment child naming**: Work-assignment children drop the `staff_`
+  prefix and include `work_assignment_` in the name
+- **Course domain**: Normalized — course catalog separate from sections
+- **Staff observations**: Own domain separate from performance management
+- **Compensation**: Fact, not dimension
+- **Mart directory structure**: `marts/dimensions/`, `marts/facts/`,
+  `marts/bridges/`
+- **Build order**: Conformed dimensions first, then domain facts
 
 ## Model Inventory
 
@@ -575,51 +527,7 @@ Talent Acquisition known limitation above.
 | --------------------- | ------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `fct_support_tickets` | Type 1 | one row per ticket | Zendesk — ticket status, subject, category, tech_tier, resolution_time, reply_count, business_hours_to_solve. Scope: staff-submitted only. FK to `dim_staff` (submitter, assignee, original_assignee as role-playing), `dim_dates` (created, solved as role-playing), `dim_locations` |
 
-## Model Summary
-
-| Domain                      | Dimensions | Facts  | Bridges | Models |
-| --------------------------- | ---------- | ------ | ------- | ------ |
-| Conformed                   | 5          | 0      | 0       | 5      |
-| Student                     | 4          | 0      | 1       | 5      |
-| Staff                       | 9          | 3      | 2       | 14     |
-| Course                      | 2          | 0      | 2       | 4      |
-| Assessment                  | 4          | 1      | 0       | 5      |
-| College                     | 2          | 1      | 0       | 3      |
-| Staff Observation & PD      | 5          | 3      | 0       | 8      |
-| Student Attendance          | 1          | 3      | 0       | 4      |
-| Behavioral & Communications | 1          | 3      | 0       | 4      |
-| Gradebook                   | 0          | 4      | 0       | 4      |
-| Survey                      | 4          | 4      | 1       | 9      |
-| Talent Acquisition          | 1          | 1      | 0       | 2      |
-| Staffing Model              | 1          | 0      | 0       | 1      |
-| IT Support                  | 0          | 1      | 0       | 1      |
-| **Total**                   | **39**     | **24** | **6**   | **69** |
-
-## Role-Playing Date Keys
-
-Every fact carries one or more foreign keys to `dim_dates`. Each key represents
-a different date role — the same date table joined multiple times with different
-aliases, so you can filter or group by any date independently. In Cube, each
-role-playing key is defined as a separate join to `dim_dates` with an alias,
-enabling full drill/filter/group capability on any date role.
-
-Examples:
-
-- `fct_student_attendance_daily`: `date_key`
-- `fct_behavioral_consequences`: `start_date_key`, `end_date_key`
-- `dim_student_enrollments`: `entry_date_key`, `exit_date_key`
-- `fct_staff_observations`: `observation_date_key`
-
-## Slowly Changing Dimension Strategy
-
-| SCD Type                | Applied To                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Behavior                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Type 1 (overwrite)      | Most dimensions and facts — `dim_students`, `dim_student_enrollments`, `dim_student_contact_persons`, `dim_student_section_enrollments`, `dim_staff`, `dim_staff_work_assignments`, `dim_regions`, `dim_locations`, `dim_school_calendars`, `dim_courses`, `dim_course_sections`, `dim_assessments`, `dim_assessment_comparisons`, `dim_assessment_targets`, `dim_student_assessment_expectations`, `dim_colleges`, `dim_college_enrollments`, `dim_terms`, all staff observation dims, all expectation dims, `dim_surveys`, `dim_survey_questions`, all facts, all bridges | Current state only; corrections overwrite                                                                                                                                                                                                                                                                                                                                                                                 |
-| Type 2 (versioned rows) | `dim_staff_status`, `dim_work_assignment_status`, `dim_work_assignment_jobs`, `dim_work_assignment_types`, `dim_work_assignment_locations`, `dim_work_assignment_organizational_units`, `dim_work_assignment_reporting_relationships`, `fct_work_assignment_compensation`, `fct_work_assignment_additional_earnings`, `dim_staffing_positions`                                                                                                                                                                                                                              | Versioned with `effective_date_start`, `effective_date_end`, `is_current_record`; facts link to version active at event time. Staff-domain Type 2 models use either source-native effective dates (`dim_work_assignment_status`, `fct_work_assignment_compensation`, `fct_work_assignment_additional_earnings`) or daily payload-hash diff derivation (the rest) — see the Staff Domain "Versioning mechanism" subsection |
-
 ## Open Review Items
-
-### Monitor during implementation
 
 - **Expectation scaffold complexity** — `dim_staff_observation_expectations`,
   `dim_staff_survey_expectations`, and `dim_student_survey_expectations`
@@ -641,16 +549,6 @@ Examples:
   provides checkpoint history. Within-term GPA tracking currently lives in dbt
   snapshots + topline layer. Second pass to determine if the mart needs a
   finer-grained model beyond term endpoints.
-
-### Source-scope verifications (resolved)
-
-These source-data scope questions were confirmed during brainstorming and have
-been incorporated into the model inventory above:
-
-- DeansList comm log — enrolled-student recipients only.
-- Zendesk tickets — staff-submitted only.
-- SchoolMint Grow — no external observers; all observed teachers are in ADP.
-- Staff roster history — no staff missing from `dim_staff`.
 
 ## Second Pass
 
@@ -680,370 +578,3 @@ fundamental domains are stable.
   the corresponding AP exam, but encoding this rule requires a section → course
   → AP exam mapping that is not currently curated. Deferred until that mapping
   exists. SAT/ACT do not need an expectation dim (participation is elective).
-
-## Appendix: Entity Relationship Diagrams
-
-Diagrams split by domain for readability. Conformed dimensions (`dim_dates`,
-`dim_terms`, `dim_regions`, `dim_locations`, `dim_school_calendars`) are omitted
-from per-domain diagrams — they connect to nearly every fact as role-playing
-aliases and would overwhelm the entity relationships each diagram is meant to
-show.
-
-### Student & Course
-
-```mermaid
-erDiagram
-    dim_students ||--o{ dim_student_enrollments : ""
-    dim_students ||--o{ bridge_student_contacts : ""
-    dim_student_contact_persons ||--o{ bridge_student_contacts : ""
-    dim_student_enrollments ||--o{ dim_student_section_enrollments : ""
-    dim_courses ||--o{ dim_course_sections : ""
-    dim_course_sections ||--o{ dim_student_section_enrollments : ""
-    dim_course_sections ||--o{ bridge_course_section_teachers : ""
-    dim_staff ||--o{ bridge_course_section_teachers : ""
-    dim_course_sections ||--o{ bridge_course_section_terms : ""
-```
-
-### Staff
-
-```mermaid
-erDiagram
-    dim_staff ||--o{ dim_staff_status : ""
-    dim_staff ||--o{ dim_staff_work_assignments : ""
-    dim_staff_work_assignments ||--o{ dim_work_assignment_status : ""
-    dim_staff_work_assignments ||--o{ dim_work_assignment_jobs : ""
-    dim_staff_work_assignments ||--o{ dim_work_assignment_types : ""
-    dim_staff_work_assignments ||--o{ dim_work_assignment_locations : ""
-    dim_staff_work_assignments ||--o{ dim_work_assignment_organizational_units : ""
-    dim_staff_work_assignments ||--o{ dim_work_assignment_reporting_relationships : ""
-    dim_staff_work_assignments ||--o{ fct_work_assignment_compensation : ""
-    dim_staff_work_assignments ||--o{ fct_work_assignment_additional_earnings : ""
-    dim_staff_status ||--o{ fct_staff_attrition : ""
-    dim_staff ||--o{ bridge_staff_benefits_enrollments : ""
-    dim_staff ||--o{ bridge_staff_membership_enrollments : ""
-```
-
-### Assessment (enrollment-scoped)
-
-```mermaid
-erDiagram
-    dim_student_section_enrollments ||--o{ fct_assessment_scores_enrollment_scoped : ""
-    dim_assessments ||--o{ fct_assessment_scores_enrollment_scoped : ""
-    dim_assessments ||--o{ dim_assessment_comparisons : ""
-    dim_assessments ||--o{ dim_assessment_targets : ""
-    dim_student_section_enrollments ||--o{ dim_student_assessment_expectations : ""
-    dim_assessments ||--o{ dim_student_assessment_expectations : ""
-    dim_student_assessment_expectations }o--o{ fct_assessment_scores_enrollment_scoped : "expected-vs-taken"
-```
-
-### College
-
-```mermaid
-erDiagram
-    dim_students ||--o{ dim_college_enrollments : ""
-    dim_colleges ||--o{ dim_college_enrollments : ""
-    dim_students ||--o{ fct_assessment_scores_student_scoped : ""
-    dim_assessments ||--o{ fct_assessment_scores_student_scoped : ""
-```
-
-### Staff Observation & Professional Development
-
-```mermaid
-erDiagram
-    dim_staff_observation_rubrics ||--o{ dim_staff_observation_rubric_measurements : ""
-    dim_staff_observation_types ||--o{ fct_staff_observations : ""
-    dim_staff_observation_types ||--o{ dim_staff_observation_expectations : ""
-    dim_staff ||--o{ dim_staff_observation_expectations : ""
-    dim_staff ||--o{ fct_staff_observations : "teacher"
-    dim_staff ||--o{ fct_staff_observations : "observer"
-    fct_staff_observations ||--o{ fct_staff_observation_scores : ""
-    dim_staff_observation_rubric_measurements ||--o{ fct_staff_observation_scores : ""
-    dim_staff_observation_microgoal_types ||--o{ fct_staff_observation_microgoals : ""
-    dim_staff ||--o{ fct_staff_observation_microgoals : ""
-    dim_staff_observation_expectations }o--o{ fct_staff_observations : "expected-vs-completed"
-```
-
-### Student Attendance
-
-```mermaid
-erDiagram
-    dim_student_enrollments ||--o{ fct_student_attendance_daily : ""
-    dim_student_enrollments ||--o{ fct_student_attendance_streaks : ""
-    dim_student_enrollments ||--o{ fct_student_attendance_interventions : ""
-    dim_student_attendance_intervention_types ||--o{ fct_student_attendance_interventions : ""
-    dim_staff ||--o{ fct_student_attendance_interventions : ""
-```
-
-### Behavioral & Communications
-
-```mermaid
-erDiagram
-    dim_student_enrollments ||--o{ fct_behavioral_incidents : ""
-    dim_staff ||--o{ fct_behavioral_incidents : "referring_staff"
-    fct_behavioral_incidents ||--o{ fct_behavioral_consequences : ""
-    dim_student_enrollments ||--o{ fct_family_communications : ""
-    dim_staff ||--o{ fct_family_communications : ""
-    dim_family_communication_types ||--o{ fct_family_communications : ""
-```
-
-### Gradebook
-
-```mermaid
-erDiagram
-    dim_student_section_enrollments ||--o{ fct_grades_term : ""
-    dim_student_section_enrollments ||--o{ fct_grades_category : ""
-    dim_student_section_enrollments ||--o{ fct_grades_assignments : ""
-    dim_student_enrollments ||--o{ fct_grades_gpa : ""
-```
-
-### Survey
-
-```mermaid
-erDiagram
-    dim_surveys ||--o{ bridge_survey_questions : ""
-    dim_survey_questions ||--o{ bridge_survey_questions : ""
-    dim_surveys ||--o{ dim_staff_survey_expectations : ""
-    dim_surveys ||--o{ dim_student_survey_expectations : ""
-    dim_surveys ||--o{ fct_staff_survey_submissions : ""
-    dim_surveys ||--o{ fct_student_survey_submissions : ""
-    dim_staff ||--o{ dim_staff_survey_expectations : ""
-    dim_staff ||--o{ fct_staff_survey_submissions : ""
-    dim_student_enrollments ||--o{ dim_student_survey_expectations : ""
-    dim_student_enrollments ||--o{ fct_student_survey_submissions : ""
-    dim_survey_questions ||--o{ fct_staff_survey_responses : ""
-    dim_survey_questions ||--o{ fct_student_survey_responses : ""
-    fct_staff_survey_submissions ||--o{ fct_staff_survey_responses : ""
-    fct_student_survey_submissions ||--o{ fct_student_survey_responses : ""
-    dim_staff_survey_expectations }o--o{ fct_staff_survey_submissions : "expected-vs-completed"
-    dim_student_survey_expectations }o--o{ fct_student_survey_submissions : "expected-vs-completed"
-```
-
-### Talent Acquisition, Staffing & IT Support
-
-```mermaid
-erDiagram
-    dim_job_candidates ||--o{ fct_job_candidate_applications : ""
-    dim_staff ||--o{ fct_support_tickets : "submitter"
-    dim_staff ||--o{ fct_support_tickets : "assignee"
-    dim_staff ||--o{ fct_support_tickets : "original_assignee"
-    dim_staff ||--o{ dim_staffing_positions : "teammate"
-    dim_staff ||--o{ dim_staffing_positions : "recruiter"
-```
-
-## Appendix: Foreign Key Catalog
-
-Complete catalog of every FK edge in the mart. Edges are written
-`child → parent`, with role-playing aliases in parentheses. Conformed dimensions
-(`dim_dates`, `dim_terms`, `dim_regions`, `dim_locations`,
-`dim_school_calendars`) appear here even though they are omitted from the
-per-domain ERDs.
-
-**Cardinality column values:**
-
-- **many-to-one** — standard FK: multiple child rows may reference the same
-  parent; the FK column is non-nullable.
-- **many-to-one (nullable)** — same shape, but the FK column is nullable (the
-  child may exist without a parent — e.g., a ticket without an assignee).
-- **many-to-many (via bridge)** — the child model is a bridge table whose two
-  FKs together resolve a many-to-many relationship between two dims.
-
-### Conformed Dimensions
-
-| Edge                                     | Cardinality | Assertion                                                    |
-| ---------------------------------------- | ----------- | ------------------------------------------------------------ |
-| `dim_school_calendars` → `dim_dates`     | many-to-one | Each school-calendar entry is for exactly one date.          |
-| `dim_school_calendars` → `dim_locations` | many-to-one | Each school-calendar entry is for exactly one school/office. |
-
-### Student Domain
-
-| Edge                                                          | Cardinality               | Assertion                                                                                 |
-| ------------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------- |
-| `dim_student_enrollments` → `dim_students`                    | many-to-one               | Each enrollment belongs to exactly one student.                                           |
-| `dim_student_enrollments` → `dim_locations`                   | many-to-one               | Each enrollment is at exactly one school (region reached via `dim_locations`).            |
-| `dim_student_enrollments` → `dim_dates` (entry_date)          | many-to-one               | Each enrollment has exactly one entry date.                                               |
-| `dim_student_enrollments` → `dim_dates` (exit_date)           | many-to-one (nullable)    | Each enrollment has at most one exit date (future or null while active).                  |
-| `dim_student_section_enrollments` → `dim_student_enrollments` | many-to-one               | Each section enrollment rolls up to exactly one student enrollment.                       |
-| `dim_student_section_enrollments` → `dim_course_sections`     | many-to-one               | Each section enrollment is for exactly one course section.                                |
-| `dim_student_section_enrollments` → `dim_terms`               | many-to-one               | Each section enrollment is in exactly one term.                                           |
-| `bridge_student_contacts` → `dim_students`                    | many-to-many (via bridge) | Resolves the N:M between students and contact persons (siblings share parents/guardians). |
-| `bridge_student_contacts` → `dim_student_contact_persons`     | many-to-many (via bridge) | Resolves the N:M between students and contact persons.                                    |
-
-### Staff Domain
-
-| Edge                                                                         | Cardinality               | Assertion                                                                                           |
-| ---------------------------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------- |
-| `dim_staff_status` → `dim_staff`                                             | many-to-one               | Each status version is for exactly one person.                                                      |
-| `dim_staff_work_assignments` → `dim_staff`                                   | many-to-one               | Each work assignment belongs to exactly one person.                                                 |
-| `dim_work_assignment_status` → `dim_staff_work_assignments`                  | many-to-one               | Each status version is for exactly one work assignment.                                             |
-| `dim_work_assignment_jobs` → `dim_staff_work_assignments`                    | many-to-one               | Each job version is for exactly one work assignment.                                                |
-| `dim_work_assignment_types` → `dim_staff_work_assignments`                   | many-to-one               | Each worker-type version is for exactly one work assignment.                                        |
-| `dim_work_assignment_locations` → `dim_staff_work_assignments`               | many-to-one               | Each location version is for exactly one work assignment.                                           |
-| `dim_work_assignment_organizational_units` → `dim_staff_work_assignments`    | many-to-one               | Each org-unit version is for exactly one work assignment.                                           |
-| `dim_work_assignment_reporting_relationships` → `dim_staff_work_assignments` | many-to-one               | Each reporting-relationship version is for exactly one work assignment.                             |
-| `fct_work_assignment_compensation` → `dim_staff_work_assignments`            | many-to-one               | Each compensation record is for exactly one work assignment.                                        |
-| `fct_work_assignment_compensation` → `dim_dates` (effective_date)            | many-to-one               | Each compensation record has an effective date.                                                     |
-| `fct_work_assignment_additional_earnings` → `dim_staff_work_assignments`     | many-to-one               | Each additional-earnings record is for exactly one work assignment.                                 |
-| `fct_work_assignment_additional_earnings` → `dim_dates` (effective_date)     | many-to-one               | Each additional-earnings record has an effective date.                                              |
-| `fct_staff_attrition` → `dim_staff_status`                                   | many-to-one               | Each attrition row points to the worker-status version effective on the outcome-determination date. |
-| `bridge_staff_benefits_enrollments` → `dim_staff`                            | many-to-many (via bridge) | Resolves the many-to-many between staff and benefit plans.                                          |
-| `bridge_staff_benefits_enrollments` → `dim_dates` (enrollment_start_date)    | many-to-one               | Each benefit enrollment has a start date.                                                           |
-| `bridge_staff_benefits_enrollments` → `dim_dates` (enrollment_end_date)      | many-to-one (nullable)    | Each benefit enrollment has an end date (null while active).                                        |
-| `bridge_staff_membership_enrollments` → `dim_staff`                          | many-to-many (via bridge) | Resolves the many-to-many between staff and programs (leader/teacher development).                  |
-| `bridge_staff_membership_enrollments` → `dim_dates` (enrollment_start_date)  | many-to-one               | Each program enrollment has a start date.                                                           |
-| `bridge_staff_membership_enrollments` → `dim_dates` (enrollment_end_date)    | many-to-one (nullable)    | Each program enrollment has an end date (null while active).                                        |
-
-### Course Domain
-
-| Edge                                                     | Cardinality               | Assertion                                                                                |
-| -------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------- |
-| `dim_course_sections` → `dim_courses`                    | many-to-one               | Each section instantiates exactly one course.                                            |
-| `dim_course_sections` → `dim_locations`                  | many-to-one               | Each section is taught at exactly one location.                                          |
-| `bridge_course_section_teachers` → `dim_course_sections` | many-to-many (via bridge) | Resolves the N:M between sections and teachers (lead + co-teachers + paraprofessionals). |
-| `bridge_course_section_teachers` → `dim_staff`           | many-to-many (via bridge) | Resolves the N:M between sections and teachers.                                          |
-| `bridge_course_section_terms` → `dim_course_sections`    | many-to-many (via bridge) | Resolves the N:M between sections and terms (a year-long section spans 4 quarter terms). |
-| `bridge_course_section_terms` → `dim_terms`              | many-to-many (via bridge) | Resolves the N:M between sections and terms.                                             |
-
-### Assessment Domain
-
-| Edge                                                                          | Cardinality | Assertion                                                                                                     |
-| ----------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------- |
-| `dim_assessment_comparisons` → `dim_assessments`                              | many-to-one | Each comparison pertains to exactly one assessment.                                                           |
-| `dim_assessment_comparisons` → `dim_regions`                                  | many-to-one | Each comparison is for exactly one region.                                                                    |
-| `dim_assessment_targets` → `dim_assessments`                                  | many-to-one | Each target is for exactly one assessment.                                                                    |
-| `dim_assessment_targets` → `dim_locations`                                    | many-to-one | Each target is for exactly one school.                                                                        |
-| `dim_student_assessment_expectations` → `dim_student_section_enrollments`     | many-to-one | Each expectation is for exactly one section enrollment (section subject determines which assessment applies). |
-| `dim_student_assessment_expectations` → `dim_assessments`                     | many-to-one | Each expectation is for exactly one assessment.                                                               |
-| `dim_student_assessment_expectations` → `dim_terms`                           | many-to-one | Each expectation covers exactly one administration window.                                                    |
-| `fct_assessment_scores_enrollment_scoped` → `dim_student_section_enrollments` | many-to-one | Each score is for exactly one section enrollment.                                                             |
-| `fct_assessment_scores_enrollment_scoped` → `dim_assessments`                 | many-to-one | Each score is for exactly one assessment.                                                                     |
-| `fct_assessment_scores_enrollment_scoped` → `dim_dates` (test_date)           | many-to-one | Each score has a test date.                                                                                   |
-| `fct_assessment_scores_enrollment_scoped` → `dim_terms`                       | many-to-one | Each score is in exactly one term (administration window).                                                    |
-
-### College Domain
-
-| Edge                                                             | Cardinality            | Assertion                                                    |
-| ---------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------ |
-| `dim_college_enrollments` → `dim_students`                       | many-to-one            | Each college enrollment is for exactly one student.          |
-| `dim_college_enrollments` → `dim_colleges`                       | many-to-one            | Each college enrollment is at exactly one institution.       |
-| `dim_college_enrollments` → `dim_dates` (enrollment_start_date)  | many-to-one            | Each college enrollment has a start date.                    |
-| `dim_college_enrollments` → `dim_dates` (enrollment_end_date)    | many-to-one (nullable) | Each college enrollment has an end date (null while active). |
-| `fct_assessment_scores_student_scoped` → `dim_students`          | many-to-one            | Each score is for exactly one student.                       |
-| `fct_assessment_scores_student_scoped` → `dim_assessments`       | many-to-one            | Each score is for exactly one assessment.                    |
-| `fct_assessment_scores_student_scoped` → `dim_dates` (test_date) | many-to-one            | Each score has a test date.                                  |
-| `fct_assessment_scores_student_scoped` → `dim_terms`             | many-to-one            | Each score is in exactly one term.                           |
-
-### Staff Observation & Professional Development Domain
-
-| Edge                                                                          | Cardinality | Assertion                                                              |
-| ----------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------- |
-| `dim_staff_observation_rubric_measurements` → `dim_staff_observation_rubrics` | many-to-one | Each measurement belongs to exactly one rubric.                        |
-| `dim_staff_observation_expectations` → `dim_staff`                            | many-to-one | Each expectation is for exactly one staff member.                      |
-| `dim_staff_observation_expectations` → `dim_staff_observation_types`          | many-to-one | Each expectation is for exactly one observation type.                  |
-| `dim_staff_observation_expectations` → `dim_terms`                            | many-to-one | Each expectation is for exactly one term.                              |
-| `fct_staff_observations` → `dim_staff` (teacher)                              | many-to-one | Each observation has exactly one teacher being observed.               |
-| `fct_staff_observations` → `dim_staff` (observer)                             | many-to-one | Each observation has exactly one observer.                             |
-| `fct_staff_observations` → `dim_staff_observation_types`                      | many-to-one | Each observation has exactly one type.                                 |
-| `fct_staff_observations` → `dim_locations`                                    | many-to-one | Each observation takes place at exactly one location.                  |
-| `fct_staff_observations` → `dim_dates` (observation_date)                     | many-to-one | Each observation has a date.                                           |
-| `fct_staff_observations` → `dim_terms`                                        | many-to-one | Each observation is in exactly one term.                               |
-| `fct_staff_observation_scores` → `fct_staff_observations`                     | many-to-one | Each score is one measurement-item outcome of exactly one observation. |
-| `fct_staff_observation_scores` → `dim_staff_observation_rubric_measurements`  | many-to-one | Each score corresponds to exactly one rubric measurement.              |
-| `fct_staff_observation_microgoals` → `dim_staff` (teacher)                    | many-to-one | Each microgoal is assigned to exactly one teacher.                     |
-| `fct_staff_observation_microgoals` → `dim_staff` (creator)                    | many-to-one | Each microgoal was created by exactly one staff member.                |
-| `fct_staff_observation_microgoals` → `dim_staff_observation_microgoal_types`  | many-to-one | Each microgoal references exactly one goal type.                       |
-| `fct_staff_observation_microgoals` → `dim_terms`                              | many-to-one | Each microgoal is in exactly one term.                                 |
-| `fct_staff_observation_microgoals` → `dim_dates` (assignment_date)            | many-to-one | Each microgoal was assigned on a date.                                 |
-
-### Student Attendance Domain
-
-| Edge                                                                                 | Cardinality            | Assertion                                                                                                                   |
-| ------------------------------------------------------------------------------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `fct_student_attendance_daily` → `dim_student_enrollments`                           | many-to-one            | Each attendance row is for exactly one enrollment.                                                                          |
-| `fct_student_attendance_daily` → `dim_dates`                                         | many-to-one            | Each attendance row is on exactly one date.                                                                                 |
-| `fct_student_attendance_streaks` → `dim_student_enrollments`                         | many-to-one            | Each streak is for exactly one enrollment.                                                                                  |
-| `fct_student_attendance_streaks` → `dim_dates` (start_date)                          | many-to-one            | Each streak has a start date.                                                                                               |
-| `fct_student_attendance_streaks` → `dim_dates` (end_date)                            | many-to-one            | Each streak has an end date.                                                                                                |
-| `fct_student_attendance_interventions` → `dim_student_enrollments`                   | many-to-one            | Each intervention row is for exactly one enrollment.                                                                        |
-| `fct_student_attendance_interventions` → `dim_student_attendance_intervention_types` | many-to-one            | Each intervention row is of exactly one intervention type.                                                                  |
-| `fct_student_attendance_interventions` → `dim_staff`                                 | many-to-one (nullable) | Each intervention row is associated with the staff member responsible for the required communication (nullable if missing). |
-| `fct_student_attendance_interventions` → `dim_dates`                                 | many-to-one            | Each intervention row has an associated date (threshold-crossing date).                                                     |
-
-### Behavioral & Communications Domain
-
-| Edge                                                           | Cardinality | Assertion                                                      |
-| -------------------------------------------------------------- | ----------- | -------------------------------------------------------------- |
-| `fct_behavioral_incidents` → `dim_student_enrollments`         | many-to-one | Each incident is for exactly one enrolled student.             |
-| `fct_behavioral_incidents` → `dim_staff` (referring_staff)     | many-to-one | Each incident has exactly one referring staff member.          |
-| `fct_behavioral_incidents` → `dim_dates`                       | many-to-one | Each incident has a date.                                      |
-| `fct_behavioral_consequences` → `fct_behavioral_incidents`     | many-to-one | Each consequence is tied to exactly one incident.              |
-| `fct_behavioral_consequences` → `dim_dates` (start_date)       | many-to-one | Each consequence has a start date.                             |
-| `fct_behavioral_consequences` → `dim_dates` (end_date)         | many-to-one | Each consequence has an end date.                              |
-| `fct_family_communications` → `dim_student_enrollments`        | many-to-one | Each family communication is for exactly one enrolled student. |
-| `fct_family_communications` → `dim_staff`                      | many-to-one | Each family communication is sent by exactly one staff member. |
-| `fct_family_communications` → `dim_family_communication_types` | many-to-one | Each family communication is of exactly one type.              |
-| `fct_family_communications` → `dim_dates`                      | many-to-one | Each family communication has a date.                          |
-
-### Gradebook Domain
-
-| Edge                                                         | Cardinality | Assertion                                                    |
-| ------------------------------------------------------------ | ----------- | ------------------------------------------------------------ |
-| `fct_grades_term` → `dim_student_section_enrollments`        | many-to-one | Each term grade is for exactly one section enrollment.       |
-| `fct_grades_term` → `dim_terms`                              | many-to-one | Each term grade is in exactly one term.                      |
-| `fct_grades_term` → `dim_dates`                              | many-to-one | Each term grade has an issued date.                          |
-| `fct_grades_category` → `dim_student_section_enrollments`    | many-to-one | Each category grade is for exactly one section enrollment.   |
-| `fct_grades_category` → `dim_terms`                          | many-to-one | Each category grade is in exactly one term.                  |
-| `fct_grades_assignments` → `dim_student_section_enrollments` | many-to-one | Each assignment score is for exactly one section enrollment. |
-| `fct_grades_assignments` → `dim_terms`                       | many-to-one | Each assignment is in exactly one term.                      |
-| `fct_grades_assignments` → `dim_dates` (due_date)            | many-to-one | Each assignment has a due date.                              |
-| `fct_grades_gpa` → `dim_student_enrollments`                 | many-to-one | Each GPA record is for exactly one enrollment.               |
-| `fct_grades_gpa` → `dim_terms`                               | many-to-one | Each GPA record is as-of the close of exactly one term.      |
-
-### Survey Domain
-
-| Edge                                                              | Cardinality               | Assertion                                               |
-| ----------------------------------------------------------------- | ------------------------- | ------------------------------------------------------- |
-| `dim_surveys` → `dim_terms`                                       | many-to-one               | Each survey is administered in exactly one term window. |
-| `bridge_survey_questions` → `dim_surveys`                         | many-to-many (via bridge) | Each pairing references exactly one survey.             |
-| `bridge_survey_questions` → `dim_survey_questions`                | many-to-many (via bridge) | Each pairing references exactly one question.           |
-| `dim_staff_survey_expectations` → `dim_staff`                     | many-to-one               | Each expectation is for exactly one staff member.       |
-| `dim_staff_survey_expectations` → `dim_surveys`                   | many-to-one               | Each expectation is for exactly one survey.             |
-| `dim_staff_survey_expectations` → `dim_terms`                     | many-to-one               | Each expectation is for exactly one term.               |
-| `dim_student_survey_expectations` → `dim_student_enrollments`     | many-to-one               | Each expectation is for exactly one enrollment.         |
-| `dim_student_survey_expectations` → `dim_surveys`                 | many-to-one               | Each expectation is for exactly one survey.             |
-| `dim_student_survey_expectations` → `dim_terms`                   | many-to-one               | Each expectation is for exactly one term.               |
-| `fct_staff_survey_submissions` → `dim_staff`                      | many-to-one               | Each submission is by exactly one staff member.         |
-| `fct_staff_survey_submissions` → `dim_surveys`                    | many-to-one               | Each submission is for exactly one survey.              |
-| `fct_staff_survey_submissions` → `dim_dates`                      | many-to-one               | Each submission has a submission date.                  |
-| `fct_student_survey_submissions` → `dim_student_enrollments`      | many-to-one               | Each submission is by exactly one enrolled student.     |
-| `fct_student_survey_submissions` → `dim_surveys`                  | many-to-one               | Each submission is for exactly one survey.              |
-| `fct_student_survey_submissions` → `dim_dates`                    | many-to-one               | Each submission has a submission date.                  |
-| `fct_staff_survey_responses` → `fct_staff_survey_submissions`     | many-to-one               | Each response is part of exactly one submission.        |
-| `fct_staff_survey_responses` → `dim_survey_questions`             | many-to-one               | Each response answers exactly one question.             |
-| `fct_student_survey_responses` → `fct_student_survey_submissions` | many-to-one               | Each response is part of exactly one submission.        |
-| `fct_student_survey_responses` → `dim_survey_questions`           | many-to-one               | Each response answers exactly one question.             |
-
-### Talent Acquisition Domain
-
-| Edge                                                    | Cardinality | Assertion                                       |
-| ------------------------------------------------------- | ----------- | ----------------------------------------------- |
-| `fct_job_candidate_applications` → `dim_job_candidates` | many-to-one | Each application is from exactly one candidate. |
-| `fct_job_candidate_applications` → `dim_dates`          | many-to-one | Each application has an application date.       |
-
-### Staffing Model Domain
-
-| Edge                                               | Cardinality            | Assertion                                                                |
-| -------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------ |
-| `dim_staffing_positions` → `dim_locations`         | many-to-one            | Each budgeted position is for exactly one location.                      |
-| `dim_staffing_positions` → `dim_staff` (teammate)  | many-to-one (nullable) | Each filled position has exactly one teammate (nullable while unfilled). |
-| `dim_staffing_positions` → `dim_staff` (recruiter) | many-to-one (nullable) | Each position has at most one recruiter (nullable).                      |
-
-### IT Support Domain
-
-| Edge                                                    | Cardinality            | Assertion                                                                 |
-| ------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------- |
-| `fct_support_tickets` → `dim_staff` (submitter)         | many-to-one            | Each ticket has exactly one submitter.                                    |
-| `fct_support_tickets` → `dim_staff` (assignee)          | many-to-one (nullable) | Each ticket has at most one current assignee (nullable while unassigned). |
-| `fct_support_tickets` → `dim_staff` (original_assignee) | many-to-one (nullable) | Each ticket has at most one original assignee (nullable).                 |
-| `fct_support_tickets` → `dim_dates` (created)           | many-to-one            | Each ticket has a created date.                                           |
-| `fct_support_tickets` → `dim_dates` (solved)            | many-to-one (nullable) | Each ticket has at most one solved date (nullable while unresolved).      |
-| `fct_support_tickets` → `dim_locations`                 | many-to-one            | Each ticket is attributed to exactly one location.                        |
