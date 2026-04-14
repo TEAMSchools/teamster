@@ -1,0 +1,48 @@
+models:
+  - name: bridge_course_section_terms
+    description: >-
+      Bridge table resolving the many-to-many relationship between course
+      sections and reporting terms. One row per section x reporting term pair
+      where the term's date range overlaps with the section's term dates. FK to
+      dim_course_sections via course_section_key and to dim_terms via term_key.
+
+    columns:
+      - name: course_section_key
+        data_type: string
+        description: >-
+          Surrogate key derived from sections_dcid and _dbt_source_relation. FK
+          to dim_course_sections.
+        data_tests:
+          - not_null
+
+      - name: term_key
+        data_type: string
+        description: >-
+          Surrogate key derived from type, code, name, start_date, region, and
+          school_id of the matching reporting term. FK to dim_terms.
+        data_tests:
+          - not_null
+
+      - name: sections_dcid
+        data_type: int64
+        description: >-
+          PowerSchool sections DCID. Natural key for the section.
+
+      - name: term_code
+        data_type: string
+        description: >-
+          Reporting term code (e.g., Q1, Q2) from the Google Sheets reporting
+          terms reference table.
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year in which this reporting term falls. The calendar
+          year in which the academic year begins (e.g., 2025 for the 2025-26
+          school year).
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - course_section_key
+            - term_key

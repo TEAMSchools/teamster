@@ -1,0 +1,84 @@
+models:
+  - name: dim_student_section_enrollments
+    description: >-
+      Student section enrollment dimension. One row per CC record — each
+      enrollment of a student into a section. Multiple rows per student x
+      section are possible when a student drops and re-enrolls in the same
+      section within a year. FK to dim_student_enrollments via
+      student_enrollment_key, dim_course_sections via course_section_key, and
+      dim_terms via term_key (nullable when CC term does not map to a reporting
+      term).
+    columns:
+      - name: student_section_enrollment_key
+        data_type: string
+        description: >-
+          Surrogate key derived from cc_dcid and _dbt_source_relation. Primary
+          key for this dimension — unique per CC record per region.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          Surrogate key derived from student_number, _dbt_source_relation,
+          academic_year, and entrydate. FK to dim_student_enrollments. Null when
+          no matching student enrollment record covers the CC dateenrolled.
+
+      - name: course_section_key
+        data_type: string
+        description: >-
+          Surrogate key derived from sections_dcid and _dbt_source_relation. FK
+          to dim_course_sections.
+        data_tests:
+          - not_null
+
+      - name: term_key
+        data_type: string
+        description: >-
+          Surrogate key derived from type, code, name, start_date, region, and
+          school_id of the matching reporting term. FK to dim_terms. Null when
+          cc_abs_termid does not match any reporting term powerschool_term_id
+          for the section's school and region.
+
+      - name: student_number
+        data_type: int64
+        description: >-
+          PowerSchool student_number. Natural key for the student.
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year in which this section enrollment falls. The
+          calendar year in which the academic year begins (e.g., 2025 for the
+          2025-26 school year).
+
+      - name: date_enrolled
+        data_type: date
+        description: >-
+          Date the student enrolled in this section (cc_dateenrolled from
+          PowerSchool).
+
+      - name: date_left
+        data_type: date
+        description: >-
+          Date the student left this section (cc_dateleft from PowerSchool).
+
+      - name: is_dropped_section
+        data_type: boolean
+        description: >-
+          TRUE if this specific section enrollment was dropped by the student
+          mid-term, as determined by PowerSchool sectionid sign and exit date
+          logic.
+
+      - name: is_dropped_course
+        data_type: boolean
+        description: >-
+          TRUE if all enrollments for this student x course x year were dropped,
+          meaning the entire course was abandoned rather than just a section
+          transfer.
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - student_section_enrollment_key
