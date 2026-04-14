@@ -1,0 +1,85 @@
+models:
+  - name: dim_work_assignment_reporting_relationships
+    description: >-
+      Work assignment reporting relationship dimension with derived Type 2 SCD
+      tracking. One row per assignment x manager change point. Detects changes
+      to reportsTo[] manager identity (associate OID and position ID) via daily
+      payload-hash comparison. FK to dim_staff_work_assignments via
+      work_assignment_key.
+    columns:
+      - name: work_assignment_reporting_relationship_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from item_id and effective_date_start.
+          Generated with generate_surrogate_key(["item_id",
+          "effective_date_start"]).
+        data_tests:
+          - unique
+          - not_null
+
+      - name: work_assignment_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_work_assignments. Surrogate key derived from
+          item_id. Generated with generate_surrogate_key(["item_id"]).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff_work_assignments')
+                field: work_assignment_key
+
+      - name: manager_associate_oid
+        data_type: string
+        description: >-
+          ADP associate OID of the reporting manager, from
+          reportsTo[].associateOID.
+
+      - name: manager_position_id
+        data_type: string
+        description: >-
+          Position ID of the reporting manager, from reportsTo[].positionID.
+
+      - name: manager_worker_id
+        data_type: string
+        description: >-
+          Worker ID (idValue) of the reporting manager, from
+          reportsTo[].workerID.idValue.
+
+      - name: manager_formatted_name
+        data_type: string
+        description: >-
+          Formatted name of the reporting manager, from
+          reportsTo[].reportsToWorkerName.formattedName.
+
+      - name: manager_given_name
+        data_type: string
+        description: >-
+          Given (first) name of the reporting manager, from
+          reportsTo[].reportsToWorkerName.givenName.
+
+      - name: manager_family_name_1
+        data_type: string
+        description: >-
+          Family (last) name of the reporting manager, from
+          reportsTo[].reportsToWorkerName.familyName1.
+
+      - name: effective_date_start
+        data_type: date
+        description: >-
+          Date this reporting relationship version was first observed, derived
+          from the daily partition date where the manager attribute hash
+          changed.
+
+      - name: effective_date_end
+        data_type: date
+        description: >-
+          Last date this reporting relationship version was effective. Computed
+          as one day before the next version's effective_date_start, or
+          9999-12-31 for the current version.
+
+      - name: is_current_record
+        data_type: boolean
+        description: >-
+          TRUE if this is the most recent reporting relationship version for the
+          work assignment (effective_date_end = 9999-12-31).

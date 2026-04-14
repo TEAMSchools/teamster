@@ -1,0 +1,68 @@
+models:
+  - name: dim_work_assignment_types
+    description: >-
+      Work assignment type dimension with derived Type 2 SCD tracking. One row
+      per assignment x worker type change point. Detects changes to
+      workerTypeCode and benefits eligibility class (from workerGroups[]) via
+      daily payload-hash comparison. FK to dim_staff_work_assignments via
+      work_assignment_key.
+    columns:
+      - name: work_assignment_type_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from item_id and effective_date_start.
+          Generated with generate_surrogate_key(["item_id",
+          "effective_date_start"]).
+        data_tests:
+          - unique
+          - not_null
+
+      - name: work_assignment_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_work_assignments. Surrogate key derived from
+          item_id. Generated with generate_surrogate_key(["item_id"]).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff_work_assignments')
+                field: work_assignment_key
+
+      - name: worker_type_code
+        data_type: string
+        description: >-
+          ADP worker type code value for the assignment (e.g., 'ALT', 'FLT'),
+          from WorkAssignment workerTypeCode.codeValue.
+
+      - name: worker_type_name
+        data_type: string
+        description: >-
+          Display name for the worker type, coalesced from longName and
+          shortName of WorkAssignment workerTypeCode.
+
+      - name: benefits_eligibility_class
+        data_type: string
+        description: >-
+          Benefits eligibility class name extracted from WorkAssignment
+          workerGroups[] where nameCode = 'Benefits Eligibility Class',
+          coalesced from groupCode longName and shortName.
+
+      - name: effective_date_start
+        data_type: date
+        description: >-
+          Date this type version was first observed, derived from the daily
+          partition date where the type attribute hash changed.
+
+      - name: effective_date_end
+        data_type: date
+        description: >-
+          Last date this type version was effective. Computed as one day before
+          the next version's effective_date_start, or 9999-12-31 for the current
+          version.
+
+      - name: is_current_record
+        data_type: boolean
+        description: >-
+          TRUE if this is the most recent type version for the work assignment
+          (effective_date_end = 9999-12-31).
