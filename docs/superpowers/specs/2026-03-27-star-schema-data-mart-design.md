@@ -355,10 +355,11 @@ Sections have N:M relationships with both teachers and terms:
 | `fct_assessment_scores_enrollment_scoped` | Type 1 | one row per student_section_enrollment x assessment x administration        | Enrollment-scoped administrations — iReady, STAR, DIBELS, FAST, NJSLA, internal KIPP assessments. Columns: scale_score, percent_correct, proficiency_level, growth_percentile, nullable assessment-specific fields. FK to `dim_student_section_enrollments`, `dim_assessments`, `dim_dates` (test_date as role-playing), `dim_terms`.                                                            |
 | `fct_assessment_scores_student_scoped`    | Type 1 | one row per student x assessment x administration                           | Student-scoped administrations that follow the student regardless of enrollment — SAT, PSAT, ACT, AP. Columns: scale_score, subscores, percent_correct, proficiency_level, nullable assessment-specific fields. FK to `dim_students`, `dim_assessments`, `dim_dates` (test_date as role-playing), `dim_terms`.                                                                                   |
 
-Both expectation and score models FK to `dim_student_section_enrollments`
-because the subject (and therefore the assessment family that applies) is
-determined by the section the student is enrolled in. Traversal reaches
-`dim_student_enrollments` and `dim_students` through the chain.
+Enrollment-scoped expectation and score models FK to
+`dim_student_section_enrollments` because the subject (and therefore the
+assessment family that applies) is determined by the section the student is
+enrolled in. Traversal reaches `dim_student_enrollments` and `dim_students`
+through the chain. Student-scoped scores FK directly to `dim_students`.
 
 **Expected vs unexpected analytical pattern.** To identify which expected
 assessments were taken (and which were missed), LEFT JOIN
