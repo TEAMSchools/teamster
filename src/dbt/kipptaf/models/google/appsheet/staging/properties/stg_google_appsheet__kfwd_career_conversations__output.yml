@@ -9,13 +9,14 @@ models:
         data_type: string
         data_tests:
           - unique
+          - not_null
       - name: notes
         description: Free-text notes from the career conversation.
         data_type: string
       - name: is_resume_score
         description: Whether resume was scored.
         data_type: boolean
-      - name: is_linked_in
+      - name: is_linkedin
         description: Whether the alumni's LinkedIn profile was discussed.
         data_type: boolean
       - name: is_mock_interview_or_prep

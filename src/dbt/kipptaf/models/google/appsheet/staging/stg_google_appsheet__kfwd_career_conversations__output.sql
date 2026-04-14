@@ -2,7 +2,7 @@ select
     contact_id,
     notes,
     resume_score as is_resume_score,
-    linkedin as is_linked_in,
+    linkedin as is_linkedin,
     mock_interview_or_prep as is_mock_interview_or_prep,
     professional_references_list as is_professional_references_list,
     job_search_template as is_job_search_template,
