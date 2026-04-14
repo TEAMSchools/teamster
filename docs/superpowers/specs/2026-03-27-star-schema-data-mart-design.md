@@ -170,7 +170,7 @@ Implementation-level decisions. Rationale for each is documented in the
 
 | Model                             | SCD    | Grain                                                                                            | Key Sources                                                                                                                                                                                                                                                                  |
 | --------------------------------- | ------ | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dim_students`                    | Type 1 | one row per student                                                                              | PowerSchool — local_student_identifier, state_student_identifier, name, birth_date, gender, race/ethnicity, is_gifted, has_iep, is_ell. Titan — lunch_status (source of truth for meal eligibility).                                                                         |
+| `dim_students`                    | Type 1 | one row per student                                                                              | PowerSchool — local_student_identifier, state_student_identifier, name, birth_date, gender, race/ethnicity, is_gifted, is_ell. edplan — has_iep (source of truth for special education status). Titan — lunch_status (source of truth for meal eligibility).                 |
 | `dim_student_enrollments`         | Type 1 | one row per student x school x year (each enrollment is a distinct record with entry/exit dates) | PowerSchool enrollments — grade_level, graduation_year, school_level, enroll_status, is_retained_year                                                                                                                                                                        |
 | `dim_student_contact_persons`     | Type 1 | one row per unique contact person                                                                | PowerSchool person records for contacts — contact_name, phone, email, address. Deduped across students; one parent who appears on multiple students' records collapses into a single row.                                                                                    |
 | `dim_student_section_enrollments` | Type 1 | one row per student x section                                                                    | PowerSchool — FK to `dim_student_enrollments`, `dim_course_sections`, `dim_terms`. Roster membership.                                                                                                                                                                        |
@@ -546,6 +546,13 @@ Talent Acquisition known limitation above.
   provides checkpoint history. Within-term GPA tracking currently lives in dbt
   snapshots + topline layer. Second pass to determine if the mart needs a
   finer-grained model beyond term endpoints.
+- **SIS migration: Focus replacing PowerSchool in Miami** — Focus is a new, not
+  yet integrated system. When onboarded, Miami student/enrollment/course/
+  gradebook/attendance data will source from Focus instead of PowerSchool. The
+  mart's source-agnostic column naming convention should insulate downstream
+  models, but the staging/intermediate layer will need a new source integration.
+- **SIS migration: Finalsite replacing PowerSchool enrollment** — Finalsite will
+  become the enrollment source. Same insulation principle applies.
 
 ## Second Pass
 
