@@ -57,7 +57,9 @@ with
 
             abs(mem.attendancevalue - 1) as is_absent,
 
-            if(mem.att_code like 'T%', 0.67, mem.attendancevalue) as is_present_weighted,
+            if(
+                mem.att_code like 'T%', 0.67, mem.attendancevalue
+            ) as is_present_weighted,
             if(mem.att_code like 'T%', 1.0, 0.0) as is_tardy,
             if(mem.att_code like 'T%', 0.0, 1.0) as is_ontime,
             if(mem.att_code in ('OS', 'OSS', 'OSSP', 'SHI'), 1.0, 0.0) as is_oss,
