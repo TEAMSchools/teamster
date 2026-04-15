@@ -2,6 +2,7 @@ with
     employee_numbers as (
         select employee_number, adp_associate_id,
         from {{ ref("stg_people__employee_numbers") }}
+        where is_active
     ),
 
     employee_memberships as (
