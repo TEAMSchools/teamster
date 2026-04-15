@@ -35,6 +35,10 @@ this step.**
 - **Worktree**: `gh issue develop <number> --name <branch>` (no `--checkout`),
   then `git worktree add .worktrees/<branch> <branch>`.
 
+- **Worktree git commands**: Always `cd` to the worktree before running `git`
+  commands — the main repo and worktree have separate git state. Running
+  `git commit` from the main repo commits to `main`, not the worktree branch.
+
 - **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
 
 - **Git naming**: Commit messages and branch names use
