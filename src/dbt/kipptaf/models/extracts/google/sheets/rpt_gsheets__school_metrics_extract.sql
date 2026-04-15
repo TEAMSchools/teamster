@@ -17,6 +17,12 @@ with
         where
             academic_year = {{ var("current_academic_year") }}
             and is_enrolled_week
+            and week_start_monday >= date_add(
+                date_trunc(
+                    current_date('{{ var("local_timezone") }}'), week(monday)
+                ),
+                interval -9 week
+            )
     ),
 
     enrollments as (
@@ -187,6 +193,12 @@ with
             and module_type in ('QA', 'MQQ', 'CRQ', 'TP')
             and is_mastery is not null
             and discipline in ('ELA', 'Math')
+            and date_trunc(administered_at, week(monday)) >= date_add(
+                date_trunc(
+                    current_date('{{ var("local_timezone") }}'), week(monday)
+                ),
+                interval -9 week
+            )
     ),
 
     proficiency_homeroom_week as (
@@ -507,7 +519,15 @@ with
             team_manager as tm
             on e.school = tm.school
             and e.team = tm.team
-        where g.gpa_y1 is not null and g.academic_year = {{ var("current_academic_year") }}
+        where
+            g.gpa_y1 is not null
+            and g.academic_year = {{ var("current_academic_year") }}
+            and g.week_start_monday >= date_add(
+                date_trunc(
+                    current_date('{{ var("local_timezone") }}'), week(monday)
+                ),
+                interval -9 week
+            )
         group by e.region, e.school, e.team, g.week_start_monday, tm.manager
     )
 
