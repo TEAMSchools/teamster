@@ -165,11 +165,22 @@ data_tests:
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
 
-### dbt_utils test syntax (dbt 1.11+)
+### Generic test syntax (dbt 1.11+)
 
-`dbt_utils.unique_combination_of_columns` and `relationships` tests require
-`arguments:` nesting. The flat form (without `arguments:`) triggers a
-deprecation warning.
+All generic tests (`relationships`, `accepted_values`,
+`dbt_utils.unique_combination_of_columns`, etc.) require `arguments:` nesting.
+The flat form (without `arguments:`) triggers a deprecation warning:
+
+```yaml
+# wrong — flat
+- accepted_values:
+    values: [a, b]
+
+# right — nested under arguments
+- accepted_values:
+    arguments:
+      values: [a, b]
+```
 
 ### Date-range joins
 
