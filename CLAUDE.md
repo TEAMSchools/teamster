@@ -59,10 +59,11 @@ this step.**
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
   `uv run`, `gh`, `docker`, `trunk`, `ls`).
 
-- **Trunk linting/formatting**: Do not run `trunk check` or `trunk fmt`
-  manually. Formatting is handled by the PostToolUse hook (after Edit/Write) and
-  `trunk-fmt-pre-commit` (at commit time). Lint checking runs via
-  `trunk-check-pre-push`. Let the hooks do their job.
+- **Trunk linting/formatting**: Do not run `trunk fmt` manually — formatting is
+  handled by the PostToolUse hook (after Edit/Write) and `trunk-fmt-pre-commit`
+  (at commit time). **Before pushing from a worktree**, run
+  `/workspaces/teamster/.trunk/tools/trunk check --ci` from the worktree root
+  and fix any issues — trunk git hooks are not installed in worktrees.
 
 - **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment — not
   linter-native disable syntax. Binary:
