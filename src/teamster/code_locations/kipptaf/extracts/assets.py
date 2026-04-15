@@ -1,6 +1,6 @@
 import pathlib
 
-from dagster import AssetKey, AutomationCondition, config_from_files
+from dagster import AssetKey, AssetSelection, AutomationCondition, config_from_files
 
 from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.payroll.assets import (
@@ -106,6 +106,28 @@ illuminate_extract_assets = [
     for a in config_from_files([f"{config_dir}/illuminate.yaml"])["assets"]
 ]
 
+_INTACCT_UNPARTITIONED_DEPS = AssetSelection.keys(
+    AssetKey(
+        [
+            CODE_LOCATION,
+            "google_sheets",
+            "stg_google_sheets__finance__payroll_code_mapping",
+        ]
+    )
+)
+
+# eager() but ignoring unpartitioned dep in any_deps_updated to prevent fan-out
+_INTACCT_AUTOMATION_CONDITION = (
+    AutomationCondition.in_latest_time_window()
+    & (
+        AutomationCondition.newly_missing()
+        | AutomationCondition.any_deps_updated().ignore(_INTACCT_UNPARTITIONED_DEPS)
+    ).since(AutomationCondition.newly_requested() | AutomationCondition.newly_updated())
+    & ~AutomationCondition.any_deps_missing()
+    & ~AutomationCondition.any_deps_in_progress()
+    & ~AutomationCondition.in_progress()
+)
+
 intacct_extract = build_bigquery_query_sftp_asset(
     code_location=CODE_LOCATION,
     timezone=LOCAL_TIMEZONE,
@@ -121,7 +143,7 @@ intacct_extract = build_bigquery_query_sftp_asset(
     file_config={"stem": "adp_payroll_{date}_{group_code}", "suffix": "csv"},
     destination_config={"name": "couchdrop", "path": "/data-team/accounting/intacct"},
     partitions_def=GENERAL_LEDGER_FILE_PARTITIONS_DEF,
-    automation_condition=AutomationCondition.eager(),
+    automation_condition=_INTACCT_AUTOMATION_CONDITION,
     deps=[
         AssetKey(
             [CODE_LOCATION, "adp_payroll", "stg_adp_payroll__general_ledger_file"]

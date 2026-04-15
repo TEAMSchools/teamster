@@ -43,6 +43,14 @@ models:
         data_type: string
       - name: self_contained
         data_type: string
+      - name: is_enrolled_fdos
+        data_type: boolean
+      - name: is_enrolled_oct01
+        data_type: boolean
+      - name: is_enrolled_oct15
+        data_type: boolean
+      - name: is_enrolled_mar15
+        data_type: boolean
       - name: row_type
         data_type: string
       - name: student_count

@@ -23,25 +23,23 @@ this step.**
 
 ## Working Conventions
 
-- **Brainstorm-to-branch discipline** (hard gate — complete in order):
-  1. Create a GitHub issue before any planned work — always after a brainstorm,
-     before the design doc. Quick fixes do not require one. Use
-     `gh issue create`; label with conventional commit type, related source
-     systems (e.g., `powerschool`, `deanslist`), and `dagster`/`dbt` when
-     applicable.
-  2. **Ask the user: worktree or branch switch?** Do not choose for them.
-  3. Create the branch:
-     - **Worktree**: `gh issue develop <number> --name <branch>` (no
-       `--checkout`), then `git worktree add .worktrees/<branch> <branch>`. No
-       IDE tooling in worktrees. Edit files directly at
-       `.worktrees/<branch>/...` — never edit main workspace and copy over. Use
-       `git -C .worktrees/<branch>` for all git commands — never `cd` into the
-       worktree or rely on cwd.
-     - **Branch switch**:
-       `gh issue develop <number> --name <branch> --checkout`.
-  4. Do not write any files until on the feature branch — specs, code, and
-     config all belong on the branch, never main. Project conventions override
-     skill workflows.
+- **Before writing any spec or plan**: create a GitHub issue (`gh issue create`;
+  label with conventional commit type, related source systems, and
+  `dagster`/`dbt` when applicable). Quick fixes do not require one.
+
+- **Before creating a branch**: ask the user — worktree or branch switch? Do not
+  choose for them.
+
+- **Before writing any file (spec, code, config)**: be on the feature branch.
+
+- **Worktree**: `gh issue develop <number> --name <branch>` (no `--checkout`),
+  then `git worktree add .worktrees/<branch> <branch>`.
+
+- **Worktree git commands**: Always `cd` to the worktree before running `git`
+  commands — the main repo and worktree have separate git state. Running
+  `git commit` from the main repo commits to `main`, not the worktree branch.
+
+- **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
 
 - **Git naming**: Commit messages and branch names use
   [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch
@@ -65,6 +63,12 @@ this step.**
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
   `uv run`, `gh`, `docker`, `trunk`, `ls`).
 
+- **Trunk linting/formatting**: Do not run `trunk fmt` manually — formatting is
+  handled by the PostToolUse hook (after Edit/Write) and `trunk-fmt-pre-commit`
+  (at commit time). **Before pushing from a worktree**, run
+  `/workspaces/teamster/.trunk/tools/trunk check --ci` from the worktree root
+  and fix any issues — trunk git hooks are not installed in worktrees.
+
 - **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment — not
   linter-native disable syntax. Binary:
   `/workspaces/teamster/.trunk/tools/trunk`.
@@ -80,8 +84,61 @@ this step.**
 
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
 
-- **CLAUDE.md edits**: Default to **not adding**. Propose additions to the user
-  with a brief expected-utility note (will this make future sessions more
-  correct, faster, or more consistent?). Never self-approve. Additions should
-  only contain what changes Claude's behavior — omit human-only context
-  (motivation, rationale, history).
+## CLAUDE.md Editing Rules
+
+- **Before editing any CLAUDE.md file**: present the proposed change as a quote
+  block with a one-line expected-utility note. Do not apply it until the user
+  approves.
+
+- **Before adding to any CLAUDE.md file**: for each line, answer: what specific
+  wrong action does this prevent? If you can't name one, cut it. General
+  knowledge and human-only context (motivation, rationale, history) don't
+  qualify.
+
+## MCP Servers
+
+Dagster+ MCP server: `dagster-plus-mcp` package (`dev` group) —
+[TEAMSchools/dagster-plus-mcp](https://github.com/TEAMSchools/dagster-plus-mcp).
+See that repo's CLAUDE.md for package internals.
+
+### MCP tool selection
+
+Use BigQuery MCP for ad-hoc queries against known production tables. Use dbt
+MCP's `show` only when `ref()` / `source()` resolution is needed — it adds
+compilation overhead.
+
+### Dagster asset diagnosis
+
+When verifying failures, fetch the most recent run per job (`list_runs` with
+`job_name=..., limit=1`, no status filter) — bulk cross-referencing capped
+result sets misses retries and recoveries.
+
+### GKE MCP
+
+Authenticates as impersonated service account
+`codespaces@teamster-332318.iam.gserviceaccount.com`. If `PermissionDenied`,
+check the `CodespacesRole` custom IAM role, not user IAM bindings.
+
+`mcp__gke__query_logs` uses snake_case keys in `time_range` (`start_time`,
+`end_time`), not camelCase. Results cap at 100 — paginate by using the last
+entry's timestamp as the next `start_time`.
+
+`query_logs` format templates reject hyphens in key names
+(`{{.labels.k8s-pod/dagster/op}}` fails). Use full JSON output and extract with
+jq instead.
+
+For pod-level logs, prefer `mcp__gke__query_logs` over
+`mcp__observability__list_log_entries` — the GKE MCP returns pod labels (run-id,
+op, code-location) that the observability MCP does not.
+
+### Observability MCP
+
+If any tool returns permission denied, flag it to the user — don't assume no
+data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not
+`"60"`). Container metrics (`kubernetes.io/container/*`) are keyed by `pod_name`
+— no `node_name` label; use `kubernetes.io/node/*` for node-level data.
+
+### BigQuery MCP
+
+Truncates results at 50 rows. When querying `INFORMATION_SCHEMA.COLUMNS` for
+wide tables, paginate with `WHERE ordinal_position > N`.

@@ -36,6 +36,10 @@ functions annotate as `Callable[[], ReturnType]` (import from
 `defaultdict[K, set[T]](set)` with the subscript on the type annotation, not the
 factory argument.
 
+**Inline type parameters** (PEP 695): Prefer `def foo[T](x: T) -> T` over
+`TypeVar`. The formatter removes unused `TypeVar` imports before the binding is
+defined, causing unresolved name errors.
+
 **kwargs forwarding**: When extracting a kwarg default before spreading
 `**kwargs`, always use `pop`, never `get` — `get` leaves the key in `kwargs`,
 causing `TypeError: got multiple values for keyword argument` if the caller
@@ -49,6 +53,10 @@ API reference URLs go in the extended description, never the summary line.
 `ScheduleEvaluationContext.log` and `SensorEvaluationContext.log` return
 `logging.Logger`; `AssetExecutionContext.log` returns `DagsterLogManager`. Use
 `logging.Logger` when a function accepts log from any context.
+
+**Runtime type narrowing**: Use `check.is_tuple()`, `check.inst()`,
+`check.not_none()` from `dagster_shared` — never `assert isinstance(...)`
+(`assert` is stripped by `-O`).
 
 ## Library Categories
 
@@ -134,10 +142,26 @@ with partition dimension values via `regex_pattern_replace()`.
 
 **SFTP sensors**: List remote directories, match files against asset regexes,
 extract partition keys from named groups, emit `RunRequest`s grouped by
-`(job_name, partition_key)`.
+`(job_name, partition_key)`. Sensor cursors should store max file mtime from
+matched files, not `now.timestamp()` — wall-clock cursors skip files with older
+mtimes.
 
 **Fiscal year**: July 1 start. `FiscalYear` class and
 `FiscalYearPartitionsDefinition` in `core/utils/classes.py`.
+
+**Retry pattern**: Use `tenacity` — standard import set:
+`retry, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter`.
+Match on a specific exception class (define one if the upstream code raises bare
+`Exception`), never on error message or bare `Exception`. Existing examples:
+`libraries/adp/workforce_now/api/resources.py`,
+`libraries/tableau/resources.py`, `libraries/level_data/grow/resources.py`.
+
+**Don't `log.exception` inside retry-wrapped helpers**. GCP Error Reporting
+files groups at ERROR severity, so logging a traceback inside a context manager
+/ helper that's called from a retry loop creates false-positive error groups for
+transient failures the retry layer recovers from. Let the retry wrapper log
+intermediate attempts at WARNING; Dagster logs unrecovered failures at the run
+level.
 
 ## Development Commands
 

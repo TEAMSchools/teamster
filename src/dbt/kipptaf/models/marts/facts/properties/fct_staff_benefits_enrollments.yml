@@ -1,0 +1,69 @@
+models:
+  - name: fct_staff_benefits_enrollments
+    description: >-
+      Staff benefits enrollment fact table. One row per staff member x benefit
+      plan x enrollment period. Captures the plan type, plan name, and coverage
+      level each employee was enrolled in, with the start and end dates of that
+      enrollment period.
+    columns:
+      - name: staff_benefits_enrollment_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from employee_number, plan_type,
+          plan_name, and enrollment_start_date. Generated with
+          generate_surrogate_key(["employee_number", "plan_type", "plan_name",
+          "enrollment_start_date"]).
+        data_tests:
+          - unique
+          - not_null
+
+      - name: staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff. Surrogate key derived from employee_number.
+          Generated with generate_surrogate_key(["employee_number"]).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
+      - name: employee_number
+        data_type: int64
+        description: KIPP-assigned unique identifier for the staff member.
+
+      - name: plan_type
+        data_type: string
+        description: >-
+          Degenerate dimension. The category of the benefit plan (e.g., Medical,
+          Dental, Vision, 401k).
+
+      - name: plan_name
+        data_type: string
+        description: >-
+          Degenerate dimension. The specific benefit plan name the employee is
+          enrolled in.
+
+      - name: coverage_level
+        data_type: string
+        description: >-
+          Degenerate dimension. The tier of coverage selected (e.g., Employee
+          Only, Employee + Spouse, Family).
+
+      - name: enrollment_status
+        data_type: string
+        description:
+          The current status of the enrollment record (e.g., Active, Inactive).
+
+      - name: enrollment_start_date
+        data_type: date
+        description: >-
+          Date key (role-playing to dim_dates) for the start of the enrollment
+          period.
+
+      - name: enrollment_end_date
+        data_type: date
+        description: >-
+          Date key (role-playing to dim_dates) for the end of the enrollment
+          period. Defaults to 9999-12-31 for open-ended enrollments.

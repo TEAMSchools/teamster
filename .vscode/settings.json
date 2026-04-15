@@ -10,9 +10,9 @@
   "editor.wordWrapColumn": 88,
   "git.confirmSync": false,
   "git.ignoreRebaseWarning": true,
+  "git.repositoryScanMaxDepth": 4,
   "python.createEnvironment.trigger": "off",
   "python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python",
-  "python.envFile": "${workspaceFolder}/env/.env",
   "python.terminal.activateEnvironment": false,
   "python.terminal.useEnvFile": true,
   "python.testing.pytestArgs": ["tests", "--capture=no"],
@@ -56,7 +56,6 @@
     "GOOGLE_CLOUD_PROJECT": "teamster-332318",
     "PYTHONDONTWRITEBYTECODE": "1",
     "TRUNK_TELEMETRY": "off",
-    "UV_ENV_FILE": "${workspaceFolder}/env/.env",
     "UV_LINK_MODE": "copy",
     "UV_RESOLUTION": "highest"
   },
@@ -78,7 +77,6 @@
   "[python]": {
     "editor.defaultFormatter": "trunk.io"
   },
-  "claudeCode.preferredLocation": "sidebar",
   "terminal.integrated.profiles.linux": {
     "Claude Code": {
       "path": "claude",
@@ -86,6 +84,7 @@
     }
   },
   "python.analysis.typeCheckingMode": "off",
+  "yaml.validate": false,
   "dbtCoreTools.profilesDir": ".dbt",
   "dbtCoreTools.deferManifestPath": {
     "kipptaf": "src/dbt/kipptaf/target/prod",
@@ -93,5 +92,32 @@
     "kippcamden": "src/dbt/kippcamden/target/prod",
     "kippmiami": "src/dbt/kippmiami/target/prod",
     "kipppaterson": "src/dbt/kipppaterson/target/prod"
+  },
+  "dbt.deferConfigPerProject": {
+    "src/dbt/kipptaf": {
+      "deferToProduction": false,
+      "manifestPathForDeferral": "src/dbt/kipptaf/target/prod/manifest.json",
+      "favorState": false
+    },
+    "src/dbt/kippnewark": {
+      "deferToProduction": false,
+      "manifestPathForDeferral": "src/dbt/kippnewark/target/prod/manifest.json",
+      "favorState": false
+    },
+    "src/dbt/kippcamden": {
+      "deferToProduction": false,
+      "manifestPathForDeferral": "src/dbt/kippcamden/target/prod/manifest.json",
+      "favorState": false
+    },
+    "src/dbt/kippmiami": {
+      "deferToProduction": false,
+      "manifestPathForDeferral": "src/dbt/kippmiami/target/prod/manifest.json",
+      "favorState": false
+    },
+    "src/dbt/kipppaterson": {
+      "deferToProduction": false,
+      "manifestPathForDeferral": "src/dbt/kipppaterson/target/prod/manifest.json",
+      "favorState": false
+    }
   }
 }

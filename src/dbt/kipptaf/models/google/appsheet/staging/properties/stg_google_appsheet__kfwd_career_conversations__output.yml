@@ -1,0 +1,37 @@
+models:
+  - name: stg_google_appsheet__kfwd_career_conversations__output
+    description: >-
+      Career conversation records from the KFWD AppSheet app, one row per alumni
+      contact.
+    columns:
+      - name: contact_id
+        description: Unique identifier for the alumni contact.
+        data_type: string
+        data_tests:
+          - unique
+          - not_null
+      - name: notes
+        description: Free-text notes from the career conversation.
+        data_type: string
+      - name: is_resume_score
+        description: Whether resume was scored.
+        data_type: boolean
+      - name: is_linkedin
+        description: Whether the alumni's LinkedIn profile was discussed.
+        data_type: boolean
+      - name: is_mock_interview_or_prep
+        description:
+          Whether mock interview or interview preparation was discussed.
+        data_type: boolean
+      - name: is_professional_references_list
+        description: Whether the professional references list was discussed.
+        data_type: boolean
+      - name: is_job_search_template
+        description: Whether the job search template was discussed.
+        data_type: boolean
+      - name: is_cover_letter_template
+        description: Whether the cover letter template was discussed.
+        data_type: boolean
+      - name: is_work_samples
+        description: Whether work samples were discussed in the conversation.
+        data_type: boolean

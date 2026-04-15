@@ -1,0 +1,75 @@
+models:
+  - name: dim_colleges
+    description: >-
+      College dimension. One row per unique college identified by NSC
+      college_code_branch. Deduplicates NSC enrollment records to a single row
+      per college, then enriches with crosswalk and Salesforce account
+      attributes including selectivity, HBCU status, and financial-aid coverage.
+    columns:
+      - name: college_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from college_code_branch. Generated with
+          generate_surrogate_key(["college_code_branch"]).
+        data_tests:
+          - unique
+          - not_null
+
+      - name: college_code_branch
+        data_type: string
+        description: >-
+          NSC college code including branch suffix. Natural identifier used to
+          join NSC enrollment records and the NSC–Salesforce crosswalk.
+
+      - name: college_name
+        data_type: string
+        description:
+          College name as reported by NSC, deduplicated to the most recent
+          value.
+
+      - name: college_state
+        data_type: string
+        description:
+          Two-letter state abbreviation for the college as reported by NSC.
+
+      - name: two_year_four_year
+        data_type: string
+        description: >-
+          NSC classification of the college as a two-year or four-year
+          institution (e.g., "2-year", "4-year").
+
+      - name: nces_id
+        data_type: int64
+        description: >-
+          National Center for Education Statistics (NCES) identifier from the
+          NSC crosswalk. Null when the college is not mapped in the crosswalk.
+
+      - name: meets_full_need
+        data_type: boolean
+        description: >-
+          TRUE if the college meets 100% of demonstrated financial need for
+          admitted students, per the NSC crosswalk.
+
+      - name: is_strong_oos_option
+        data_type: boolean
+        description: >-
+          TRUE if the college is considered a strong out-of-state option for
+          KIPP students, per the NSC crosswalk.
+
+      - name: selectivity
+        data_type: string
+        description: >-
+          Selectivity tier of the college from the Salesforce account
+          competitiveness_ranking field (e.g., "Most Selective", "Selective").
+
+      - name: account_type
+        data_type: string
+        description: >-
+          Salesforce account type for the college (e.g., "4-year
+          College/University", "2-year Community College").
+
+      - name: is_hbcu
+        data_type: boolean
+        description: >-
+          TRUE if the college is a Historically Black College or University, per
+          the Salesforce account record.

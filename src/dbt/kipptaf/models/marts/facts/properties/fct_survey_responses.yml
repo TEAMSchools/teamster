@@ -1,0 +1,61 @@
+models:
+  - name: fct_survey_responses
+    description: >-
+      Survey response fact table. One row per submission x question. Contains
+      the actual response value and text for each question answered. FK to
+      fct_survey_submissions via survey_submission_key and to
+      dim_survey_questions via survey_question_key. Reaches dim_surveys only via
+      the chain: response -> submission -> administration -> survey.
+    columns:
+      - name: survey_response_key
+        data_type: string
+        description: >-
+          Surrogate key derived from survey_id, survey_response_id,
+          respondent_identifier, and question_shortname. Primary key for this
+          fact.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: survey_submission_key
+        data_type: string
+        description: >-
+          FK to fct_survey_submissions. Links this response to its parent
+          submission record.
+        data_tests:
+          - not_null
+
+      - name: survey_question_key
+        data_type: string
+        description: >-
+          FK to dim_survey_questions. Identifies which question this response
+          answers.
+        data_tests:
+          - not_null
+
+      - name: survey_id
+        data_type: string
+        description: >-
+          Source system identifier for the survey instrument.
+
+      - name: survey_response_id
+        data_type: string
+        description: >-
+          Source system identifier for the individual survey response.
+
+      - name: question_shortname
+        data_type: string
+        description: >-
+          Abbreviated identifier for the question being answered. Matches the
+          grain of dim_survey_questions.
+
+      - name: response_value
+        data_type: numeric
+        description: >-
+          Numeric value of the response, when applicable. Null for open-ended
+          text responses. Cast from the raw answer text.
+
+      - name: response_text
+        data_type: string
+        description: >-
+          Raw text of the response as submitted by the respondent.

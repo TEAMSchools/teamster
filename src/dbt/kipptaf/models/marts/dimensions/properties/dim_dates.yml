@@ -1,0 +1,103 @@
+models:
+  - name: dim_dates
+    description: >-
+      Generated calendar date dimension. One row per calendar date from
+      2000-01-01 through 9999-12-31. Conformed dimension joinable from any fact
+      or dimension in the mart via DATE key.
+    config:
+      materialized: table
+    columns:
+      - name: date_key
+        data_type: date
+        description: >-
+          Calendar date. Primary key and join target for all mart models.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: date_timestamp
+        data_type: timestamp
+        description: >-
+          Timestamp cast of date_key. Required by Cube for date dimension joins.
+
+      - name: day_of_week
+        data_type: int64
+        description: >-
+          Day of week (1=Sunday through 7=Saturday).
+
+      - name: day_of_week_name
+        data_type: string
+        description: >-
+          Full day name (Monday, Tuesday, etc.).
+
+      - name: day_of_month
+        data_type: int64
+        description: >-
+          Day of month (1-31).
+
+      - name: day_of_year
+        data_type: int64
+        description: >-
+          Day of year (1-366).
+
+      - name: week_of_year
+        data_type: int64
+        description: >-
+          ISO week number (1-53).
+
+      - name: month_number
+        data_type: int64
+        description: >-
+          Month number (1-12).
+
+      - name: month_name
+        data_type: string
+        description: >-
+          Full month name (January, February, etc.).
+
+      - name: quarter_number
+        data_type: int64
+        description: >-
+          Calendar quarter (1-4).
+
+      - name: year_number
+        data_type: int64
+        description: >-
+          Calendar year.
+
+      - name: is_weekday
+        data_type: boolean
+        description: >-
+          TRUE for Monday through Friday.
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year (July start). The calendar year in which the
+          academic year begins (e.g., 2025 for the 2025-26 school year).
+
+      - name: fiscal_year
+        data_type: int64
+        description: >-
+          KIPP fiscal year (July start). The calendar year in which the fiscal
+          year ends (e.g., 2026 for FY2026 which begins July 2025).
+
+      - name: week_start_date
+        data_type: date
+        description: >-
+          Start of the Sunday-based week containing this date.
+
+      - name: week_end_date
+        data_type: date
+        description: >-
+          End of the Sunday-based week (Saturday) containing this date.
+
+      - name: week_start_monday
+        data_type: date
+        description: >-
+          Start of the Monday-based week containing this date.
+
+      - name: week_end_sunday
+        data_type: date
+        description: >-
+          End of the Monday-based week (Sunday) containing this date.

@@ -1,12 +1,18 @@
 #!/bin/bash
 
-# inject 1Password secrets — only strip token from future shells if inject succeeded
-if ./.devcontainer/scripts/inject-secrets.sh; then
+# persist 1Password token for on-demand use (conftest.py reads this at test time)
+echo "${OP_SERVICE_ACCOUNT_TOKEN}" >/etc/secret-volume/.op-token
+chmod 600 /etc/secret-volume/.op-token
+
+# revoke 1Password tokens from future interactive shells
+grep -qF 'OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' /home/vscode/.bashrc ||
   echo 'export OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' >>/home/vscode/.bashrc
+grep -qF 'OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' /home/vscode/.profile ||
   echo 'export OP_SERVICE_ACCOUNT_TOKEN=revoked-after-injection' >>/home/vscode/.profile
+grep -qF 'OP_CONNECT_TOKEN=revoked-after-injection' /home/vscode/.bashrc ||
   echo 'export OP_CONNECT_TOKEN=revoked-after-injection' >>/home/vscode/.bashrc
+grep -qF 'OP_CONNECT_TOKEN=revoked-after-injection' /home/vscode/.profile ||
   echo 'export OP_CONNECT_TOKEN=revoked-after-injection' >>/home/vscode/.profile
-fi
 
 set +euo pipefail
 
