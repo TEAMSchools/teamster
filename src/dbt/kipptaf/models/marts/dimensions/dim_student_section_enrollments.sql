@@ -56,8 +56,8 @@ left join
     student_enrollments as enr
     on cc.cc_studentid = enr.studentid
     and cc.cc_yearid = enr.yearid
-    and enr.entrydate <= cc.cc_dateenrolled
-    and enr.exitdate > cc.cc_dateenrolled
+    and cc.cc_dateenrolled >= enr.entrydate
+    and cc.cc_dateenrolled < enr.exitdate
     and {{ union_dataset_join_clause(left_alias="cc", right_alias="enr") }}
 left join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt

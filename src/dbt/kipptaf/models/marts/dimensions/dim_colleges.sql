@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     nsc_colleges as (
         select college_code_branch, college_name, college_state, two_year_four_year,
         from {{ ref("stg_nsc__student_tracker") }}
@@ -16,12 +17,10 @@ with
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["college_code_branch"]) }} as college_key,
-
-    college_code_branch,
-    college_name,
-    college_state,
-    two_year_four_year,
+    d.college_code_branch,
+    d.college_name,
+    d.college_state,
+    d.two_year_four_year,
 
     x.nces_id,
     x.meets_full_need,
@@ -30,6 +29,8 @@ select
     a.competitiveness_ranking as selectivity,
     a.`type` as account_type,
     a.hbcu as is_hbcu,
+
+    {{ dbt_utils.generate_surrogate_key(["d.college_code_branch"]) }} as college_key,
 from deduplicated as d
 left join
     {{ ref("stg_google_sheets__kippadb__nsc_crosswalk") }} as x

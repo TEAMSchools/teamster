@@ -49,7 +49,6 @@ select
     -- trunk-ignore(sqlfluff/LT01): week(monday) requires special formatting
     date_trunc(date_value, week(monday)) as week_start_monday,
 
-    -- trunk-ignore(sqlfluff/LT01): week(monday) requires special formatting
     -- date_add can overflow for dates in the last week of 9999; cap days added
     date_add(
         -- trunk-ignore(sqlfluff/LT01): week(monday) requires special formatting

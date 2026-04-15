@@ -1,4 +1,10 @@
 with
+    -- TODO: deduplicating contact persons; no unique key in source
+    contact_persons as (
+        select distinct student_contact_person_key,
+        from {{ ref("dim_student_contact_persons") }}
+    ),
+
     survey_admin as (
         select
             survey_administration_key,
@@ -138,12 +144,7 @@ with
 
             cp.student_contact_person_key,
         from survey_admin as sa
-        cross join
-            (
-                -- TODO: deduplicating contact persons; no unique key in source
-                select distinct student_contact_person_key,
-                from {{ ref("dim_student_contact_persons") }}
-            ) as cp
+        cross join contact_persons as cp
         where
             sa.survey_name in (
                 'KIPP NJ & KIPP Miami Family Survey',

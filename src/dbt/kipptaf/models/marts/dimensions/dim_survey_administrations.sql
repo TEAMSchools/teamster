@@ -75,13 +75,13 @@ with
     ),
 
     all_administrations as (
-        select *
+        select *,
         from survey_terms
         union all
-        select *
+        select *,
         from manager_terms
         union all
-        select *
+        select *,
         from support_terms
     ),
 

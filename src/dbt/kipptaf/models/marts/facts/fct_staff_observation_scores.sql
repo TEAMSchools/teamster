@@ -16,7 +16,7 @@ with
                         select
                             regexp_replace(
                                 regexp_replace(tb.value, r'<[^>]*>', ''), r'&nbsp;', ' '
-                            )
+                            ),
                         from unnest(os.textboxes) as tb
                         where tb.value is not null and tb.value != ''
                     ),
@@ -28,7 +28,7 @@ with
             nullif(
                 array_to_string(
                     array(
-                        select cb.label from unnest(os.checkboxes) as cb where cb.value
+                        select cb.label, from unnest(os.checkboxes) as cb where cb.value
                     ),
                     ', '
                 ),
@@ -39,8 +39,9 @@ with
         where
             obs.is_published
             and os.measurement is not null
-            and obs.observation_id
-            in (select observation_id from {{ ref("fct_staff_observations") }})
+            and obs.observation_id in (
+                select fo.observation_id, from {{ ref("fct_staff_observations") }} as fo
+            )
     )
 
 select

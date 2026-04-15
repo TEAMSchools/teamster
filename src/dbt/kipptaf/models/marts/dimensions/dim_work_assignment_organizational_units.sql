@@ -9,7 +9,7 @@ with
             ou.name_code__long_name,
             ou.name_code__short_name,
 
-            coalesce(ou.name_code__long_name, ou.name_code__short_name) as name,
+            coalesce(ou.name_code__long_name, ou.name_code__short_name) as `name`,
         from
             {{
                 ref(
@@ -29,19 +29,19 @@ with
                 if(type_code__code_value = 'Business Unit', name_code__code_value, null)
             ) as business_unit_code,
             max(
-                if(type_code__code_value = 'Business Unit', name, null)
+                if(type_code__code_value = 'Business Unit', `name`, null)
             ) as business_unit_name,
             max(
                 if(type_code__code_value = 'Department', name_code__code_value, null)
             ) as department_code,
             max(
-                if(type_code__code_value = 'Department', name, null)
+                if(type_code__code_value = 'Department', `name`, null)
             ) as department_name,
             max(
                 if(type_code__code_value = 'Cost Number', name_code__code_value, null)
             ) as cost_number_code,
             max(
-                if(type_code__code_value = 'Cost Number', name, null)
+                if(type_code__code_value = 'Cost Number', `name`, null)
             ) as cost_number_name,
 
             {{

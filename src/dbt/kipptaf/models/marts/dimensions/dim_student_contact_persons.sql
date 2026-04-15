@@ -43,6 +43,7 @@ with
         }}
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     phone_ranked as (
         select
             _dbt_source_relation,
@@ -79,6 +80,7 @@ with
         }}
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     email_all as (
         select _dbt_source_relation, personid, contact as email, priority_order,
         from person_contacts_union
@@ -95,6 +97,7 @@ with
         }}
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     address_all as (
         select _dbt_source_relation, personid, contact as address, priority_order,
         from person_contacts_union

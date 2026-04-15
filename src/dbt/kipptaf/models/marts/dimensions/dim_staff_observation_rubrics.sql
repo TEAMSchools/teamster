@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     rubric_rows as (
         select
             rubric_id,

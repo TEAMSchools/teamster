@@ -8,6 +8,7 @@ with
             and location_clean_name <> 'KIPP Whittier Elementary'
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     goals_with_school as (
         select
             g.academic_year,

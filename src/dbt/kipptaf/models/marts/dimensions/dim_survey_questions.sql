@@ -18,11 +18,12 @@ with
         where qc.question_code like 'School_Survey_%'
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     all_questions as (
-        select *
+        select *,
         from google_forms_questions
         union all
-        select *
+        select *,
         from scd_questions
     ),
 

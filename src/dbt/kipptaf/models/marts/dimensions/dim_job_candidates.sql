@@ -1,4 +1,5 @@
 with
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     applications as (
         select
             candidate_id,

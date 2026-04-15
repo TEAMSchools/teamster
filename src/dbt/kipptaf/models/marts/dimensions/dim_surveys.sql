@@ -33,19 +33,19 @@ with
     ),
 
     all_surveys as (
-        select *
+        select *,
         from google_forms_surveys
         union all
-        select *
+        select *,
         from alchemer_surveys
         union all
-        select *
+        select *,
         from archive_manager
         union all
-        select *
+        select *,
         from archive_support
         union all
-        select *
+        select *,
         from powerschool_family
     )
 
@@ -131,7 +131,6 @@ select
                 ' reconciliation'
             )
         then 'College & Career'
-        else null
     end as subject_area,
 
     case

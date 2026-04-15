@@ -116,19 +116,19 @@ with
     ),
 
     all_assessments as (
-        select *
+        select *,
         from illuminate_assessments
         union all
-        select *
+        select *,
         from state_nj
         union all
-        select *
+        select *,
         from state_fl
         union all
-        select *
+        select *,
         from college_assessments
         union all
-        select *
+        select *,
         from ap_assessments
     )
 

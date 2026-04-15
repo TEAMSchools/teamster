@@ -29,6 +29,11 @@ with
     manager_responses as (
         select
             ms.survey_id,
+            ms.question_shortname,
+            ms.answer as response_text,
+            ms.answer_value as response_value,
+            ms.respondent_df_employee_number as respondent_employee_number,
+            ms.campaign_academic_year as academic_year,
 
             coalesce(
                 ms.survey_response_id,
@@ -40,12 +45,6 @@ with
                     ms.campaign_reporting_term
                 )
             ) as survey_response_id,
-
-            ms.question_shortname,
-            ms.answer as response_text,
-            ms.answer_value as response_value,
-            ms.respondent_df_employee_number as respondent_employee_number,
-            ms.campaign_academic_year as academic_year,
         from {{ ref("int_surveys__manager_survey_details") }} as ms
         where ms.campaign_academic_year is not null
     ),
@@ -93,11 +92,12 @@ with
         from manager_responses as mr
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     all_responses as (
-        select *
+        select *,
         from general_with_keys
         union all
-        select *
+        select *,
         from manager_with_keys
     ),
 

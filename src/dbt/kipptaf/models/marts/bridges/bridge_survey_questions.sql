@@ -19,14 +19,18 @@ with
     ),
 
     all_pairs as (
-        select *
+        select *,
         from google_forms_pairs
         union all
-        select *
+        select *,
         from scd_powerschool_pairs
     )
 
 select
+    survey_id,
+    question_shortname,
+    is_required,
+
     {{ dbt_utils.generate_surrogate_key(["survey_id", "question_shortname"]) }}
     as survey_question_bridge_key,
 
@@ -34,8 +38,4 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["question_shortname"]) }}
     as survey_question_key,
-
-    survey_id,
-    question_shortname,
-    is_required,
 from all_pairs

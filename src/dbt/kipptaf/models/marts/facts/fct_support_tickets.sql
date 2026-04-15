@@ -43,7 +43,7 @@ select
     tm.group_stations,
 
     cast(t.created_at as date) as created_date,
-    t.created_at as created_at,
+    t.created_at,
     tm.initially_assigned_at,
     tm.assignee_updated_at,
     tm.solved_at,
