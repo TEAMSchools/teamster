@@ -1,0 +1,5 @@
+models:
+  - name: rpt_gsheets__award_ceremony_gpa
+    config:
+      contract:
+        enforced: false

@@ -142,5 +142,7 @@ models:
         data_type: string
       - name: _dbt_source_relation
         data_type: string
+      - name: agg_credittype
+        data_type: string
       - name: is_transfer_grade
         data_type: boolean
