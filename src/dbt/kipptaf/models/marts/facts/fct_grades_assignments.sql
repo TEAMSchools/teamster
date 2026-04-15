@@ -6,6 +6,8 @@ with
             cc_academic_year,
             cc_schoolid,
             cc_dcid,
+            cc_dateenrolled,
+            cc_dateleft,
             sections_dcid,
             students_dcid,
             students_student_number,
@@ -101,6 +103,8 @@ inner join
     course_enrollments as ce
     on asg.sectionsdcid = ce.sections_dcid
     and asg.students_dcid = ce.students_dcid
+    and asg.duedate >= ce.cc_dateenrolled
+    and asg.duedate < ce.cc_dateleft
     and {{ union_dataset_join_clause(left_alias="asg", right_alias="ce") }}
 inner join
     student_enrollments as enr

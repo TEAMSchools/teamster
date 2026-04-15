@@ -1,6 +1,12 @@
 with
     enrollments as (
-        select studentid, student_number, yearid, entrydate, _dbt_source_relation,
+        select
+            studentid,
+            student_number,
+            yearid,
+            entrydate,
+            exitdate,
+            _dbt_source_relation,
         from {{ ref("base_powerschool__student_enrollments") }}
     )
 
@@ -36,4 +42,5 @@ inner join
     on st.studentid = enr.studentid
     and st.yearid = enr.yearid
     and st.streak_start_date >= enr.entrydate
+    and st.streak_start_date < enr.exitdate
     and {{ union_dataset_join_clause(left_alias="st", right_alias="enr") }}
