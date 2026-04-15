@@ -43,6 +43,7 @@ models:
 
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - course_section_key
-            - term_key
+          arguments:
+            combination_of_columns:
+              - course_section_key
+              - term_key

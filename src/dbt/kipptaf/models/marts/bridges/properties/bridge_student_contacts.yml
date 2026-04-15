@@ -67,6 +67,7 @@ models:
 
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - student_key
-            - student_contact_person_key
+          arguments:
+            combination_of_columns:
+              - student_key
+              - student_contact_person_key
