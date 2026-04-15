@@ -810,7 +810,7 @@ exposures:
     type: application
     owner:
       name: Data Team
-    url: https://docs.google.com/spreadsheets/d/TBD
+    url: https://docs.google.com/spreadsheets/d/1hR5eTZHL-IjGyemODL-Xznj_Yz1GQXvsoNooVLMtRwQ/edit?usp=sharing
     depends_on:
       - ref("rpt_gsheets__school_metrics_extract")
     config:
