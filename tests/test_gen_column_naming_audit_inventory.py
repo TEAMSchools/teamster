@@ -132,3 +132,53 @@ def test_initial_rename_guess_unmapped_returns_none() -> None:
     module = _load_script()
     assert module._initial_rename_guess("student_key") is None
     assert module._initial_rename_guess("made_up_column") is None
+
+
+def test_structural_additions_includes_mdcps() -> None:
+    module = _load_script()
+    rows = module._structural_additions()
+    matches = [r for r in rows if r["proposed_name"] == "mdcps_student_identifier"]
+    assert len(matches) == 1
+    row = matches[0]
+    assert row["domain"] == "Student"
+    assert row["model"] == "dim_students"
+    assert row["action"] == "add"
+    assert row["rule_ref"] == "structural"
+    assert row["current_column"] == ""
+    assert row["review_status"] == "not_reviewed"
+
+
+def test_structural_additions_includes_salesforce() -> None:
+    module = _load_script()
+    rows = module._structural_additions()
+    assert any(
+        r["proposed_name"] == "salesforce_contact_id" and r["model"] == "dim_students"
+        for r in rows
+    )
+
+
+def test_structural_additions_includes_microsoft_365_email() -> None:
+    module = _load_script()
+    rows = module._structural_additions()
+    assert any(
+        r["proposed_name"] == "microsoft_365_email" and r["model"] == "dim_staff"
+        for r in rows
+    )
+
+
+def test_structural_additions_all_have_required_keys() -> None:
+    module = _load_script()
+    required = {
+        "domain",
+        "model",
+        "current_column",
+        "data_type",
+        "current_description",
+        "action",
+        "proposed_name",
+        "rule_ref",
+        "review_status",
+        "reviewer_notes",
+    }
+    for row in module._structural_additions():
+        assert set(row.keys()) == required, f"keys differ for {row}"

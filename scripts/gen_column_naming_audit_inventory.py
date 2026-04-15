@@ -131,6 +131,41 @@ def _initial_rename_guess(column_name: str) -> tuple[str, str] | None:
     return _RENAME_GUESSES.get(column_name)
 
 
+def _structural_additions() -> list[dict[str, str]]:
+    """Pre-populated add-rows for structural columns defined in the spec."""
+    template = {
+        "current_column": "",
+        "current_description": "",
+        "action": "add",
+        "rule_ref": "structural",
+        "review_status": "not_reviewed",
+        "reviewer_notes": "",
+    }
+    return [
+        {
+            **template,
+            "domain": "Student",
+            "model": "dim_students",
+            "data_type": "string",
+            "proposed_name": "mdcps_student_identifier",
+        },
+        {
+            **template,
+            "domain": "Student",
+            "model": "dim_students",
+            "data_type": "string",
+            "proposed_name": "salesforce_contact_id",
+        },
+        {
+            **template,
+            "domain": "Staff",
+            "model": "dim_staff",
+            "data_type": "string",
+            "proposed_name": "microsoft_365_email",
+        },
+    ]
+
+
 def main() -> None:
     raise NotImplementedError
 
