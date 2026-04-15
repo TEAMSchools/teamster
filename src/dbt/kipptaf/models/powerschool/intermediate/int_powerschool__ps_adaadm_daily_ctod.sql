@@ -26,7 +26,22 @@ with
 
     calcs as (
         select
-            mem.*,
+            mem._dbt_source_relation,
+            mem.studentid,
+            mem.student_number,
+            mem.schoolid,
+            mem.calendardate,
+            mem.fteid,
+            mem.attendance_conversion_id,
+            mem.grade_level,
+            mem.ontrack,
+            mem.offtrack,
+            mem.student_track,
+            mem.yearid,
+            mem.att_code,
+            mem.attendancevalue,
+            mem.potential_attendancevalue,
+            mem.membershipvalue,
 
             t.academic_year,
             t.semester,
@@ -39,6 +54,22 @@ with
             regexp_extract(
                 mem._dbt_source_relation, r'(kipp\w+)_'
             ) as _dbt_source_project,
+
+            abs(mem.attendancevalue - 1) as is_absent,
+
+            if(mem.att_code like 'T%', 0.67, mem.attendancevalue) as is_present_weighted,
+            if(mem.att_code like 'T%', 1.0, 0.0) as is_tardy,
+            if(mem.att_code like 'T%', 0.0, 1.0) as is_ontime,
+            if(mem.att_code in ('OS', 'OSS', 'OSSP', 'SHI'), 1.0, 0.0) as is_oss,
+            if(mem.att_code in ('S', 'ISS'), 1.0, 0.0) as is_iss,
+            if(
+                mem.att_code in ('OS', 'OSS', 'OSSP', 'S', 'ISS', 'SHI'), 1.0, 0.0
+            ) as is_suspended,
+            if(
+                mem.att_code not in ('ISS', 'OSS', 'OS', 'OSSP', 'SHI'),
+                abs(mem.attendancevalue - 1),
+                0.0
+            ) as is_absent_non_susp,
 
         from union_relations as mem
         inner join
