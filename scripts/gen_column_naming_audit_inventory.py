@@ -95,6 +95,42 @@ def _plumbing_columns() -> frozenset[str]:
     return _PLUMBING_COLUMNS
 
 
+# Pre-populated rename guesses carried over from the original 67-column
+# audit. Each entry is (current_name, (proposed_name, rule_ref)). The rule
+# references the rubric section in
+# docs/superpowers/specs/2026-04-15-column-naming-audit.md.
+_RENAME_GUESSES: dict[str, tuple[str, str]] = {
+    # Rule 1 — strip source-system names (student identifier)
+    "student_number": ("local_student_identifier", "R1"),
+    # Rule 2 — no KIPP-specific language (staff identifier)
+    "employee_number": ("local_staff_identifier", "R2"),
+    "teacher_employee_number": ("teacher_staff_identifier", "R2"),
+    "observer_employee_number": ("observer_staff_identifier", "R2"),
+    "teammate_employee_number": ("teammate_staff_identifier", "R2"),
+    "recruiter_employee_number": ("recruiter_staff_identifier", "R2"),
+    # Rule 6 — Ed-Fi / plain English for person names
+    "formatted_name": ("full_name", "R6"),
+    "family_name_1": ("last_name", "R6"),
+    "given_name": ("first_name", "R6"),
+    "manager_formatted_name": ("manager_full_name", "R6"),
+    "manager_family_name_1": ("manager_last_name", "R6"),
+    "manager_given_name": ("manager_first_name", "R6"),
+    # Rule 1 — PowerSchool identifier stripping
+    "powerschool_school_id": ("sis_school_id", "R1"),
+    "deanslist_school_id": ("behavior_system_school_id", "R1"),
+    "powerschool_term_id": ("sis_term_id", "R1"),
+    "powerschool_year_id": ("sis_year_id", "R1"),
+    "powerschool_person_id": ("contact_person_id", "R1"),
+    "sections_dcid": ("section_id", "R1"),
+    "teachernumber": ("teacher_number", "R1"),
+}
+
+
+def _initial_rename_guess(column_name: str) -> tuple[str, str] | None:
+    """Return (proposed_name, rule_ref) for known renames, else None."""
+    return _RENAME_GUESSES.get(column_name)
+
+
 def main() -> None:
     raise NotImplementedError
 

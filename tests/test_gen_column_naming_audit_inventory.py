@@ -108,3 +108,27 @@ def test_plumbing_columns_returns_frozenset() -> None:
     module = _load_script()
     result = module._plumbing_columns()
     assert isinstance(result, frozenset)
+
+
+def test_initial_rename_guess_student_number() -> None:
+    module = _load_script()
+    result = module._initial_rename_guess("student_number")
+    assert result == ("local_student_identifier", "R1")
+
+
+def test_initial_rename_guess_employee_number() -> None:
+    module = _load_script()
+    result = module._initial_rename_guess("employee_number")
+    assert result == ("local_staff_identifier", "R2")
+
+
+def test_initial_rename_guess_formatted_name() -> None:
+    module = _load_script()
+    result = module._initial_rename_guess("formatted_name")
+    assert result == ("full_name", "R6")
+
+
+def test_initial_rename_guess_unmapped_returns_none() -> None:
+    module = _load_script()
+    assert module._initial_rename_guess("student_key") is None
+    assert module._initial_rename_guess("made_up_column") is None
