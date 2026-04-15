@@ -70,3 +70,4 @@ from work_assignments as wa
 left join
     {{ ref("stg_people__employee_numbers") }} as en
     on wa.associate_oid = en.adp_associate_id
+    and en.is_active

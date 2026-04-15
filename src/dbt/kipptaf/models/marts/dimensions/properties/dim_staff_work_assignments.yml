@@ -5,12 +5,12 @@ models:
       state only). Contains stable, low-churn assignment-level scalars: position
       identifiers, flags, FTE, payroll fields, dates, pay cycle, standard hours,
       wage law coverage, and worker time profile. Employee number is resolved
-      via LEFT JOIN to stg_people__employee_numbers, so staff_key and
-      employee_number may be null for work assignments whose employees are not
-      in the staging employee numbers table. High-churn attributes (assignment
-      status, job title, worker type, location, org units, reports-to,
-      compensation) are tracked in separate Type 2 child models that FK to this
-      via work_assignment_key.
+      via LEFT JOIN to stg_people__employee_numbers (filtered to active number
+      records), so staff_key and employee_number may be null for work
+      assignments whose associate_oid has no active number mapping. High-churn
+      attributes (assignment status, job title, worker type, location, org
+      units, reports-to, compensation) are tracked in separate Type 2 child
+      models that FK to this via work_assignment_key.
     columns:
       - name: work_assignment_key
         data_type: string
@@ -25,9 +25,9 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from employee_number. FK to dim_staff. Generated
-          with generate_surrogate_key(["employee_number"]). Null when employee
-          number lookup finds no match (inactive employees excluded from
-          stg_people__employee_numbers in staging).
+          with generate_surrogate_key(["employee_number"]). Null when the
+          associate_oid has no active number mapping in
+          stg_people__employee_numbers.
         data_tests:
           - relationships:
               arguments:
@@ -38,8 +38,8 @@ models:
         data_type: int64
         description: >-
           KIPP-assigned unique identifier for the staff member who holds this
-          work assignment, from stg_people__employee_numbers. Null when employee
-          number lookup finds no match in staging.
+          work assignment, from stg_people__employee_numbers. Null when the
+          associate_oid has no active number mapping.
 
       - name: item_id
         data_type: string
