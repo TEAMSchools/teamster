@@ -365,7 +365,8 @@ with
                 when
                     co.grade_level >= 9
                     and co.region = 'Newark'
-                    and att.n_absences_y1_running_non_susp_no_tardy >= att.hs_at_risk_absences
+                    and att.n_absences_y1_running_non_susp_no_tardy
+                    >= att.hs_at_risk_absences
                 then 'Off-Track'
                 when
                     co.grade_level >= 9
@@ -449,7 +450,8 @@ with
                 when
                     co.grade_level >= 9
                     and co.region = 'Newark'
-                    and att.n_absences_y1_running_non_susp_no_tardy >= att.hs_at_risk_absences
+                    and att.n_absences_y1_running_non_susp_no_tardy
+                    >= att.hs_at_risk_absences
                 then 'Off-Track (Already reached threshold)'
                 when
                     co.grade_level >= 9
