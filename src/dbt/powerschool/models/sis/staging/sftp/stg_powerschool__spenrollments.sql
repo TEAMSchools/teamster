@@ -24,8 +24,8 @@ with
             cast(schoolid as int) as schoolid,
             cast(studentid as int) as studentid,
 
-            cast(enterdate as date) as enter_date,
-            cast(exitdate as date) as exit_date,
+            parse_date('%m/%d/%Y', enterdate) as enter_date,
+            parse_date('%m/%d/%Y', exitdate) as exit_date,
         from {{ source("powerschool_sftp", "src_powerschool__spenrollments") }}
     ),
 
