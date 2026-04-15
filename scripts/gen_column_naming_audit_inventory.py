@@ -21,8 +21,10 @@ Design reference:
 
 from __future__ import annotations
 
+import csv
 import re
 from pathlib import Path
+from typing import TextIO
 
 import yaml
 
@@ -211,8 +213,53 @@ def _read_mart_yaml(path: Path) -> list[dict[str, str]]:
     return rows
 
 
+CSV_FIELDS: tuple[str, ...] = (
+    "domain",
+    "model",
+    "current_column",
+    "data_type",
+    "current_description",
+    "action",
+    "proposed_name",
+    "rule_ref",
+    "review_status",
+    "reviewer_notes",
+)
+
+MART_YAML_DIRS: tuple[Path, ...] = (
+    Path("src/dbt/kipptaf/models/marts/bridges/properties"),
+    Path("src/dbt/kipptaf/models/marts/dimensions/properties"),
+    Path("src/dbt/kipptaf/models/marts/facts/properties"),
+)
+
+OUTPUT_CSV = Path("docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv")
+
+
+def _sort_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    """Stable sort by (domain, model). Within a model, YAML order is kept."""
+    return sorted(rows, key=lambda r: (r["domain"], r["model"]))
+
+
+def _write_csv(rows: list[dict[str, str]], fh: TextIO) -> None:
+    writer = csv.DictWriter(fh, fieldnames=list(CSV_FIELDS))
+    writer.writeheader()
+    for row in rows:
+        writer.writerow({key: row.get(key, "") for key in CSV_FIELDS})
+
+
 def main() -> None:
-    raise NotImplementedError
+    rows: list[dict[str, str]] = []
+    for directory in MART_YAML_DIRS:
+        for yaml_path in sorted(directory.glob("*.yml")):
+            rows.extend(_read_mart_yaml(yaml_path))
+    rows.extend(_structural_additions())
+    sorted_rows = _sort_rows(rows)
+
+    OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
+    with OUTPUT_CSV.open("w", encoding="utf-8", newline="") as fh:
+        _write_csv(sorted_rows, fh)
+
+    print(f"Wrote {len(sorted_rows)} rows to {OUTPUT_CSV}")
 
 
 if __name__ == "__main__":

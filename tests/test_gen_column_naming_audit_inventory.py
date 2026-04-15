@@ -245,3 +245,60 @@ def test_read_mart_yaml_review_status_not_reviewed() -> None:
     rows = module._read_mart_yaml(_FIXTURE)
     assert all(r["review_status"] == "not_reviewed" for r in rows)
     assert all(r["reviewer_notes"] == "" for r in rows)
+
+
+import csv
+import io
+
+
+def test_write_csv_emits_header_and_rows() -> None:
+    module = _load_script()
+    rows = [
+        {
+            "domain": "Student",
+            "model": "dim_students",
+            "current_column": "student_number",
+            "data_type": "int64",
+            "current_description": "Local student ID.",
+            "action": "rename",
+            "proposed_name": "local_student_identifier",
+            "rule_ref": "R1",
+            "review_status": "not_reviewed",
+            "reviewer_notes": "",
+        }
+    ]
+    buf = io.StringIO()
+    module._write_csv(rows, buf)
+    buf.seek(0)
+    reader = csv.DictReader(buf)
+    header = reader.fieldnames
+    assert header == [
+        "domain",
+        "model",
+        "current_column",
+        "data_type",
+        "current_description",
+        "action",
+        "proposed_name",
+        "rule_ref",
+        "review_status",
+        "reviewer_notes",
+    ]
+    parsed = list(reader)
+    assert len(parsed) == 1
+    assert parsed[0]["proposed_name"] == "local_student_identifier"
+
+
+def test_sort_rows_groups_by_domain_then_model() -> None:
+    module = _load_script()
+    unsorted = [
+        {"domain": "Staff", "model": "dim_staff", "current_column": "a"},
+        {"domain": "Student", "model": "dim_students", "current_column": "b"},
+        {"domain": "Student", "model": "dim_students", "current_column": "a"},
+        {"domain": "Conformed", "model": "dim_dates", "current_column": "c"},
+    ]
+    out = module._sort_rows(unsorted)
+    assert [r["domain"] for r in out] == ["Conformed", "Staff", "Student", "Student"]
+    # Within a model, preserve column order from the YAML (stable sort).
+    student_rows = [r for r in out if r["domain"] == "Student"]
+    assert [r["current_column"] for r in student_rows] == ["b", "a"]
