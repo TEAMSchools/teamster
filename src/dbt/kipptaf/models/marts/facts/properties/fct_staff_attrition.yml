@@ -6,7 +6,9 @@ models:
       measured across three methodologies with different window definitions:
       foundation (9/1–4/30), nj_compliance (7/1–6/30), and recruitment
       (9/1–8/31). Interns whose assignment status reason is Internship Ended are
-      excluded.
+      excluded. FKs to dim_staff_status (the status version effective on the
+      outcome-determination date: return-check date for retained, termination
+      date for attritors).
     columns:
       - name: staff_attrition_key
         data_type: string
@@ -19,27 +21,25 @@ models:
           - unique
           - not_null
 
-      - name: staff_key
+      - name: staff_status_key
         data_type: string
         description: >-
-          Foreign key to dim_staff. Surrogate key derived from employee_number.
-          Generated with generate_surrogate_key(["employee_number"]).
+          Foreign key to dim_staff_status. Points to the worker status version
+          effective on the outcome-determination date: return-check date for
+          retained staff (9/1 for foundation/recruitment, 7/1 for
+          nj_compliance), termination effective date for attritors. Null when no
+          matching status version exists.
         data_tests:
-          - not_null
           - relationships:
               arguments:
-                to: ref('dim_staff')
-                field: staff_key
+                to: ref('dim_staff_status')
+                field: staff_status_key
 
       - name: academic_year
         data_type: int64
         description: >-
           The academic year the staff member belongs to, derived from the fiscal
           year starting in July of that year (e.g., 2023 = July 2023–June 2024).
-
-      - name: employee_number
-        data_type: int64
-        description: KIPP-assigned unique identifier for the staff member.
 
       - name: attrition_type
         data_type: string

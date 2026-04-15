@@ -184,7 +184,7 @@ with
     ),
 
     /* left joins to compare prior year to following year rosters  */
-    final as (
+    attrition as (
         select
             fyc.academic_year,
             fyc.employee_number,
@@ -206,6 +206,12 @@ with
                 ft.termination_effective_date,
                 date(fyc.academic_year + 1, 4, 30)
             ) as attrition_cutoff_date,
+
+            if(
+                frc.employee_number is null,
+                ft.termination_effective_date,
+                date(fyc.academic_year + 1, 9, 1)
+            ) as outcome_determination_date,
         from foundation_year_cohort as fyc
         left join
             foundation_returner_cohort as frc
@@ -240,6 +246,12 @@ with
                 njt.termination_effective_date,
                 date(njyc.academic_year + 1, 6, 30)
             ) as attrition_cutoff_date,
+
+            if(
+                njrc.employee_number is null,
+                njt.termination_effective_date,
+                date(njyc.academic_year + 1, 7, 1)
+            ) as outcome_determination_date,
         from nj_year_cohort as njyc
         left join
             nj_returner_cohort as njrc
@@ -274,6 +286,12 @@ with
                 rt.termination_effective_date,
                 date(ryc.academic_year + 1, 8, 31)
             ) as attrition_cutoff_date,
+
+            if(
+                rrc.employee_number is null,
+                rt.termination_effective_date,
+                date(ryc.academic_year + 1, 9, 1)
+            ) as outcome_determination_date,
         from recruitment_year_cohort as ryc
         left join
             recruitment_returner_cohort as rrc
@@ -289,17 +307,21 @@ with
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["employee_number", "academic_year", "attrition_type"]
+            ["a.employee_number", "a.academic_year", "a.attrition_type"]
         )
     }} as staff_attrition_key,
 
-    {{ dbt_utils.generate_surrogate_key(["employee_number"]) }} as staff_key,
+    ss.staff_status_key,
 
-    academic_year,
-    employee_number,
-    attrition_type,
-    attrition_cutoff_date,
-    is_attrition,
-    termination_reason,
-    termination_effective_date,
-from final
+    a.academic_year,
+    a.attrition_type,
+    a.attrition_cutoff_date,
+    a.is_attrition,
+    a.termination_reason,
+    a.termination_effective_date,
+from attrition as a
+left join
+    {{ ref("dim_staff_status") }} as ss
+    on {{ dbt_utils.generate_surrogate_key(["a.employee_number"]) }} = ss.staff_key
+    and a.outcome_determination_date >= ss.effective_date_start
+    and a.outcome_determination_date <= ss.effective_date_end

@@ -80,5 +80,6 @@ models:
 
     data_tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - student_section_enrollment_key
+          arguments:
+            combination_of_columns:
+              - student_section_enrollment_key
