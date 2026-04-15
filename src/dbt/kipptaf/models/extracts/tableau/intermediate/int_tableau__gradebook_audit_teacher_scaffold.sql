@@ -111,6 +111,7 @@ with
             t.academic_year = {{ var("current_academic_year") }}
             and t.term_start_date <= current_date('{{ var("local_timezone") }}')
             and t.schoolid not in (0, 999999)
+            and t.term not in ('Q1', 'Q2')
     ),
 
     school_level_mod as (
