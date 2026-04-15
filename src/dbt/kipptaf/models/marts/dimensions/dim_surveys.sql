@@ -1,7 +1,8 @@
 with
     google_forms_surveys as (
         -- TODO: upstream at response grain, no definition model (#3635)
-        select distinct form_id as survey_id, info_title as survey_name,
+        select distinct
+            form_id as survey_id, info_title as survey_name, 'Google Forms' as platform,
         from {{ ref("int_google_forms__form_responses") }}
         where form_id is not null
     ),
@@ -9,7 +10,10 @@ with
     alchemer_surveys as (
         -- TODO: upstream at response grain, no definition model (#3635)
         select distinct
-            safe_cast(survey_id as string) as survey_id, survey_title as survey_name,
+            safe_cast(survey_id as string) as survey_id,
+            survey_title as survey_name,
+
+            'Alchemer' as platform,
         from {{ source("alchemer", "base_alchemer__survey_results") }}
         where survey_id is not null
     ),
@@ -18,18 +22,24 @@ with
         select
             'historic_alchemer_Manager_survey' as survey_id,
             'Manager Survey' as survey_name,
+
+            'Alchemer' as platform,
     ),
 
     archive_support as (
         select
             'historic_alchemer_cmo_support_survey' as survey_id,
             'CMO & Support Survey History' as survey_name,
+
+            'Alchemer' as platform,
     ),
 
     powerschool_family as (
         select
             'PowerSchool' as survey_id,
             'PowerSchool Family School Community Diagnostic' as survey_name,
+
+            'PowerSchool' as platform,
     ),
 
     all_surveys as (
@@ -47,97 +57,92 @@ with
         union all
         select *,
         from powerschool_family
+    ),
+
+    survey_classification as (
+        select survey_name, survey_type, subject_area,
+        from
+            unnest(
+                [
+                    struct(
+                        'School Community Diagnostic Staff Survey' as survey_name,
+                        'School Community Diagnostic' as survey_type,
+                        'School Culture' as subject_area
+                    ),
+                    struct(
+                        'School Community Diagnostic Student Survey',
+                        'School Community Diagnostic',
+                        'School Culture'
+                    ),
+                    struct(
+                        'KIPP NJ & KIPP Miami Family Survey',
+                        'School Community Diagnostic',
+                        'School Culture'
+                    ),
+                    struct(
+                        'KIPP Miami Re-Commitment Form'
+                        ' & Family School Community Diagnostic',
+                        'School Community Diagnostic',
+                        'School Culture'
+                    ),
+                    struct(
+                        'PowerSchool Family School Community Diagnostic',
+                        'School Community Diagnostic',
+                        'School Culture'
+                    ),
+                    struct('Manager Survey', 'Manager Survey', 'Staff Experience'),
+                    struct('Support Survey', 'Support Survey', 'Staff Experience'),
+                    struct(
+                        'CMO & Support Survey History',
+                        'Support Survey',
+                        'Staff Experience'
+                    ),
+                    struct('KTAF Support Survey', 'Support Survey', 'Staff Experience'),
+                    struct(
+                        'Engagement & Support Surveys',
+                        'Engagement Survey',
+                        'Staff Experience'
+                    ),
+                    struct('Self and Others', 'Climate Survey', cast(null as string)),
+                    struct('TNTP Insight', 'Climate Survey', cast(null as string)),
+                    struct(
+                        'TNTP Insight Survey', 'Climate Survey', cast(null as string)
+                    ),
+                    struct('Gallup Q12 Survey', 'Climate Survey', cast(null as string)),
+                    struct(
+                        'Intent to Return Survey', 'Intent to Return', 'Staff Retention'
+                    ),
+                    struct(
+                        'Staff Info & Certification Update',
+                        'Staff Information',
+                        'Staff Demographics'
+                    ),
+                    struct(
+                        'Renewal Approval Tool Processing', 'Renewal', 'Staff Retention'
+                    ),
+                    struct(
+                        'KIPP Forward Career Launch Survey',
+                        'Career Launch',
+                        'College & Career'
+                    ),
+                    struct(
+                        'Career Launch Survey invalid response'
+                        ' reconciliation',
+                        'Career Launch',
+                        'College & Career'
+                    )
+                ]
+            )
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["survey_id"]) }} as survey_key,
+    {{ dbt_utils.generate_surrogate_key(["s.survey_id"]) }} as survey_key,
 
-    survey_id,
-    survey_name,
+    s.survey_id,
+    s.survey_name,
 
-    case
-        when
-            survey_name in (
-                'School Community Diagnostic Staff Survey',
-                'School Community Diagnostic Student Survey',
-                'KIPP NJ & KIPP Miami Family Survey',
-                'KIPP Miami Re-Commitment Form'
-                ' & Family School Community Diagnostic',
-                'PowerSchool Family School Community Diagnostic'
-            )
-        then 'School Community Diagnostic'
-        when survey_name in ('Manager Survey')
-        then 'Manager Survey'
-        when
-            survey_name
-            in ('Support Survey', 'CMO & Support Survey History', 'KTAF Support Survey')
-        then 'Support Survey'
-        when survey_name in ('Engagement & Support Surveys')
-        then 'Engagement Survey'
-        when
-            survey_name in (
-                'Self and Others',
-                'TNTP Insight',
-                'TNTP Insight Survey',
-                'Gallup Q12 Survey'
-            )
-        then 'Climate Survey'
-        when survey_name = 'Intent to Return Survey'
-        then 'Intent to Return'
-        when survey_name = 'Staff Info & Certification Update'
-        then 'Staff Information'
-        when survey_name = 'Renewal Approval Tool Processing'
-        then 'Renewal'
-        when
-            survey_name in (
-                'KIPP Forward Career Launch Survey',
-                'Career Launch Survey invalid response'
-                ' reconciliation'
-            )
-        then 'Career Launch'
-        else 'Other'
-    end as survey_type,
-
-    case
-        when
-            survey_name in (
-                'School Community Diagnostic Staff Survey',
-                'School Community Diagnostic Student Survey',
-                'KIPP NJ & KIPP Miami Family Survey',
-                'KIPP Miami Re-Commitment Form'
-                ' & Family School Community Diagnostic',
-                'PowerSchool Family School Community Diagnostic'
-            )
-        then 'School Culture'
-        when
-            survey_name in (
-                'Manager Survey',
-                'Support Survey',
-                'CMO & Support Survey History',
-                'KTAF Support Survey',
-                'Engagement & Support Surveys'
-            )
-        then 'Staff Experience'
-        when survey_name = 'Intent to Return Survey'
-        then 'Staff Retention'
-        when survey_name = 'Staff Info & Certification Update'
-        then 'Staff Demographics'
-        when survey_name = 'Renewal Approval Tool Processing'
-        then 'Staff Retention'
-        when
-            survey_name in (
-                'KIPP Forward Career Launch Survey',
-                'Career Launch Survey invalid response'
-                ' reconciliation'
-            )
-        then 'College & Career'
-    end as subject_area,
-
-    case
-        when survey_name like '%Alchemer%' or survey_name like '%historic_alchemer%'
-        then 'Alchemer'
-        when survey_name = 'PowerSchool Family School Community Diagnostic'
-        then 'PowerSchool'
-        else 'Google Forms'
-    end as platform,
-from all_surveys
+    coalesce(c.survey_type, 'Other') as survey_type,
+    c.subject_area,
+    s.platform,
+from all_surveys as s
+left join survey_classification as c on s.survey_name = c.survey_name

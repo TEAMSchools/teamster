@@ -1,6 +1,7 @@
 with
     survey_terms as (
-        select
+        -- TODO: upstream at response grain, not admin grain (#3629)
+        select distinct
             sr.survey_id,
             sr.survey_title,
 
@@ -19,11 +20,11 @@ with
             and sr.academic_year = rt.academic_year
             and rt.type = 'SURVEY'
         where sr.academic_year is not null
-        group by 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
     ),
 
     manager_terms as (
-        select
+        -- TODO: upstream at response grain, not admin grain (#3629)
+        select distinct
             ms.survey_id,
             ms.survey_title,
 
@@ -43,11 +44,11 @@ with
             and ms.campaign_reporting_term = rt.code
             and rt.type = 'SURVEY'
         where ms.campaign_academic_year is not null
-        group by 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
     ),
 
     support_terms as (
-        select
+        -- TODO: upstream at response grain, not admin grain (#3629)
+        select distinct
             ss.survey_id,
             ss.survey_title,
 
@@ -71,7 +72,6 @@ with
             and ss.term_code = rt.code
             and rt.type = 'SURVEY'
         where ss.survey_title = 'Support Survey' and ss.academic_year is not null
-        group by 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
     ),
 
     all_administrations as (
@@ -85,8 +85,10 @@ with
         from support_terms
     ),
 
+    -- TODO: upstream response-grain models produce duplicates;
+    -- distinct until definition-grain upstreams exist (#3629, #3635)
     deduped as (
-        select
+        select distinct
             survey_id,
             survey_title,
             term_type,
@@ -98,7 +100,6 @@ with
             region,
             school_id,
         from all_administrations
-        group by 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
     )
 
 select

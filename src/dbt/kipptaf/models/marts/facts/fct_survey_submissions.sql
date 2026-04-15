@@ -1,7 +1,8 @@
 with
     /* Staff survey submissions from int_surveys__survey_responses */
     staff_submissions as (
-        select
+        -- TODO: upstream at response grain (#3629)
+        select distinct
             sr.survey_id,
             sr.survey_response_id,
             sr.respondent_employee_number,
@@ -24,6 +25,7 @@ with
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on sr.survey_title = rt.`name`
             and sr.academic_year = rt.academic_year
+            and sr.term_code = rt.code
             and rt.type = 'SURVEY'
         where
             sr.respondent_employee_number is not null
@@ -31,7 +33,6 @@ with
                 'School Community Diagnostic Staff Survey',
                 'Engagement & Support Surveys'
             )
-        group by 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
     ),
 
     /* Student SCD submissions */
@@ -65,6 +66,7 @@ with
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on sr.survey_title = rt.`name`
             and sr.academic_year = rt.academic_year
+            and sr.term_code = rt.code
             and rt.type = 'SURVEY'
         inner join
             {{ ref("int_extracts__student_enrollments") }} as enr
@@ -98,7 +100,8 @@ with
 
     /* Family SCD submissions from rpt_tableau__school_community_diagnostic */
     family_gforms as (
-        select
+        -- TODO: upstream at response grain (#3629)
+        select distinct
             sr.survey_id,
             sr.survey_response_id,
             sr.date_submitted,
@@ -118,6 +121,7 @@ with
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on sr.survey_title = rt.`name`
             and sr.academic_year = rt.academic_year
+            and sr.term_code = rt.code
             and rt.type = 'SURVEY'
         where
             sr.survey_title in (
@@ -125,12 +129,12 @@ with
                 'KIPP Miami Re-Commitment Form'
                 ' & Family School Community Diagnostic'
             )
-        group by 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
     ),
 
     /* Manager Survey submissions */
     manager_submissions as (
-        select
+        -- TODO: upstream at response grain (#3629)
+        select distinct
             ms.survey_id,
             ms.respondent_df_employee_number as respondent_employee_number,
             ms.subject_df_employee_number as subject_employee_number,
@@ -165,7 +169,6 @@ with
             and ms.campaign_reporting_term = rt.code
             and rt.type = 'SURVEY'
         where ms.campaign_academic_year is not null
-        group by 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
     ),
 
     /* Combine all staff-type submissions */
@@ -276,7 +279,11 @@ with
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["survey_id", "survey_response_id", "respondent_employee_number"]
+            [
+                "survey_id",
+                "survey_response_id",
+                "respondent_employee_number",
+            ]
         )
     }} as survey_submission_key,
 

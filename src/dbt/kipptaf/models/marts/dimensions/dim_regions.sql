@@ -1,4 +1,6 @@
 with
+    /* All regions use America/New_York (Eastern) as reporting convention — */
+    /* Miami observes ET in practice and FL permanent-EST has not taken effect */
     regions as (
         select
             'Newark' as region,

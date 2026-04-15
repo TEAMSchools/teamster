@@ -22,7 +22,9 @@ models:
       - name: student_key
         data_type: string
         description: >-
-          FK to dim_students. Derived from student_number.
+          FK to dim_students. Derived from student_number, falling back to
+          state_student_id for FL state assessments where student_number is
+          null. FL fallback keys do not resolve in dim_students (#3626).
 
       - name: test_date_key
         data_type: date

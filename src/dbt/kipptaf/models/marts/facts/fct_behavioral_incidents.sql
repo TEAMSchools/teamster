@@ -1,16 +1,4 @@
 with
-    locations as (
-        -- TODO: int_people__location_crosswalk has duplicate rows (#3633)
-        select distinct
-            location_deanslist_school_id,
-            location_dagster_code_location,
-            location_clean_name,
-        from {{ ref("int_people__location_crosswalk") }}
-        where
-            not location_is_pathways
-            and location_clean_name <> 'KIPP Whittier Elementary'
-    ),
-
     enrollments as (
         select
             student_number,
@@ -71,7 +59,3 @@ inner join
     and i.create_ts_academic_year = enr.academic_year
     and {{ union_dataset_join_clause(left_alias="i", right_alias="enr") }}
     and enr.rn = 1
-left join
-    locations as loc
-    on i.school_id = loc.location_deanslist_school_id
-    and {{ extract_code_location("i") }} = loc.location_dagster_code_location
