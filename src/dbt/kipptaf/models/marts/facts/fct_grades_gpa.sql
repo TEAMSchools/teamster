@@ -3,12 +3,12 @@ with
         select
             _dbt_source_relation,
             studentid,
+            schoolid,
             yearid,
             student_number,
             entrydate,
             exitdate,
             academic_year,
-            rn_year,
         from {{ ref("base_powerschool__student_enrollments") }}
     ),
 
@@ -82,10 +82,10 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "gt.studentid",
-                "gt._dbt_source_relation",
-                "gt.schoolid",
-                "gt.yearid",
+                "enr.student_number",
+                "enr._dbt_source_relation",
+                "enr.academic_year",
+                "enr.entrydate",
                 "gt.term_name",
             ]
         )
@@ -145,9 +145,9 @@ from gpa_term as gt
 inner join
     student_enrollments as enr
     on gt.studentid = enr.studentid
+    and gt.schoolid = enr.schoolid
     and gt.yearid = enr.yearid
     and {{ union_dataset_join_clause(left_alias="gt", right_alias="enr") }}
-    and enr.rn_year = 1
 left join
     reporting_terms as rt
     on gt.term_name = rt.code
