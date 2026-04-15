@@ -165,6 +165,37 @@ data_tests:
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
 
+### Generic test syntax (dbt 1.11+)
+
+All generic tests (`relationships`, `accepted_values`,
+`dbt_utils.unique_combination_of_columns`, etc.) require `arguments:` nesting.
+The flat form (without `arguments:`) triggers a deprecation warning:
+
+```yaml
+# wrong — flat
+- accepted_values:
+    values: [a, b]
+
+# right — nested under arguments
+- accepted_values:
+    arguments:
+      values: [a, b]
+```
+
+### Date-range joins
+
+Use half-open intervals for enrollment date-range joins — `BETWEEN` causes
+fan-out when consecutive enrollments share a boundary date:
+
+```sql
+-- wrong: matches both enrollments on the shared boundary
+and cc.dateenrolled between enr.entrydate and enr.exitdate
+
+-- right: half-open interval
+and enr.entrydate <= cc.dateenrolled
+and enr.exitdate > cc.dateenrolled
+```
+
 ### SQL conventions
 
 - **Soft-delete filters**: Apply in the **staging model**, not in downstream
