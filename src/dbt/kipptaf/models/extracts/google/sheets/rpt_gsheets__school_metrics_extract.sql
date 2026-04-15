@@ -31,11 +31,36 @@ with
             team,
             academic_year,
             yearid,
+            advisor_teachernumber,
         from {{ ref("int_extracts__student_enrollments") }}
         where
             academic_year = {{ var("current_academic_year") }}
             and rn_year = 1
             and enroll_status = 0
+    ),
+
+    /* ============================================================
+     * TEACHER MANAGER LOOKUP — homeroom advisor's "reports to"
+     * ============================================================ */
+    team_manager_raw as (
+        select
+            e.school,
+            e.team,
+            sr.reports_to_formatted_name as manager,
+        from enrollments as e
+        left join
+            {{ ref("int_people__staff_roster") }} as sr
+            on e.advisor_teachernumber = sr.powerschool_teacher_number
+    ),
+
+    team_manager as (
+        {{
+            dbt_utils.deduplicate(
+                relation="team_manager_raw",
+                partition_by="school, team",
+                order_by="manager",
+            )
+        }}
     ),
 
     /* ============================================================
@@ -71,15 +96,26 @@ with
 
     ada_homeroom_week as (
         select
-            region,
-            school,
-            team,
-            week_start_monday,
+            asbw.region,
+            asbw.school,
+            asbw.team,
+            asbw.week_start_monday,
 
-            avg(ada_running) as metric_value,
-        from ada_by_student_week
-        where ada_running is not null
-        group by region, school, team, week_start_monday
+            tm.manager,
+
+            avg(asbw.ada_running) as metric_value,
+        from ada_by_student_week as asbw
+        left join
+            team_manager as tm
+            on asbw.school = tm.school
+            and asbw.team = tm.team
+        where asbw.ada_running is not null
+        group by
+            asbw.region,
+            asbw.school,
+            asbw.team,
+            asbw.week_start_monday,
+            tm.manager
     ),
 
     ada_gradelevel_week as (
@@ -97,14 +133,27 @@ with
 
     chronic_homeroom_week as (
         select
-            region,
-            school,
-            team,
-            week_start_monday,
+            asbw.region,
+            asbw.school,
+            asbw.team,
+            asbw.week_start_monday,
 
-            avg(if(ada_running is not null, is_chronic_absent, null)) as metric_value,
-        from ada_by_student_week
-        group by region, school, team, week_start_monday
+            tm.manager,
+
+            avg(
+                if(asbw.ada_running is not null, asbw.is_chronic_absent, null)
+            ) as metric_value,
+        from ada_by_student_week as asbw
+        left join
+            team_manager as tm
+            on asbw.school = tm.school
+            and asbw.team = tm.team
+        group by
+            asbw.region,
+            asbw.school,
+            asbw.team,
+            asbw.week_start_monday,
+            tm.manager
     ),
 
     chronic_gradelevel_week as (
@@ -149,19 +198,26 @@ with
             a.discipline,
             a.module_code,
 
+            tm.manager,
+
             avg(a.is_mastery_num) as metric_value,
         from assessment_responses as a
         inner join
             enrollments as e
             on a.powerschool_student_number = e.student_number
             and a.academic_year = e.academic_year
+        left join
+            team_manager as tm
+            on e.school = tm.school
+            and e.team = tm.team
         group by
             e.region,
             e.school,
             e.team,
             a.week_start_monday,
             a.discipline,
-            a.module_code
+            a.module_code,
+            tm.manager
     ),
 
     proficiency_gradelevel_week as (
@@ -214,6 +270,8 @@ with
             ew.team,
             ew.week_start_monday,
 
+            tm.manager,
+
             count(
                 distinct if(dl.referral_tier = 'High', dl.incident_id, null)
             ) as referral_high,
@@ -231,7 +289,11 @@ with
             and ew.academic_year = dl.create_ts_academic_year
             and ew.deanslist_school_id = dl.deanslist_school_id
             and ew.week_start_monday = dl.week_start_monday
-        group by ew.region, ew.school, ew.team, ew.week_start_monday
+        left join
+            team_manager as tm
+            on ew.school = tm.school
+            and ew.team = tm.team
+        group by ew.region, ew.school, ew.team, ew.week_start_monday, tm.manager
     ),
 
     dl_gradelevel_week as (
@@ -303,6 +365,31 @@ with
         where academic_year = {{ var("current_academic_year") }}
     ),
 
+    section_teacher_manager_raw as (
+        select
+            enr._dbt_source_relation,
+            enr.cc_sectionid,
+            sr.reports_to_formatted_name as manager,
+        from section_enrollments_dedup as enr
+        left join
+            {{ ref("base_powerschool__sections") }} as sec
+            on enr.cc_sectionid = sec.sections_id
+            and {{ union_dataset_join_clause(left_alias="enr", right_alias="sec") }}
+        left join
+            {{ ref("int_people__staff_roster") }} as sr
+            on sec.teachernumber = sr.powerschool_teacher_number
+    ),
+
+    section_teacher_manager as (
+        {{
+            dbt_utils.deduplicate(
+                relation="section_teacher_manager_raw",
+                partition_by="_dbt_source_relation, cc_sectionid",
+                order_by="manager",
+            )
+        }}
+    ),
+
     section_grades_raw as (
         select
             sc.region,
@@ -310,6 +397,7 @@ with
             enr.sections_section_number,
             enr.courses_course_name,
             fg.storecode,
+            stm.manager,
 
             count(enr.cc_studentid) as n_students,
             countif(fg.y1_letter_grade_adjusted in ('F', 'F*')) as n_failing,
@@ -325,13 +413,18 @@ with
             on enr.cc_studentid = sc.studentid
             and enr.cc_schoolid = sc.schoolid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="sc") }}
+        left join
+            section_teacher_manager as stm
+            on enr.cc_sectionid = stm.cc_sectionid
+            and {{ union_dataset_join_clause(left_alias="enr", right_alias="stm") }}
         where fg.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
         group by
             sc.region,
             sc.school,
             enr.sections_section_number,
             enr.courses_course_name,
-            fg.storecode
+            fg.storecode,
+            stm.manager
     ),
 
     /* ============================================================
@@ -344,6 +437,8 @@ with
             e.team,
             g.term_name,
 
+            tm.manager,
+
             avg(g.gpa_y1) as metric_value,
         from enrollments as e
         left join
@@ -352,8 +447,12 @@ with
             and e.yearid = g.yearid
             and e.schoolid = g.schoolid
             and {{ union_dataset_join_clause(left_alias="e", right_alias="g") }}
+        left join
+            team_manager as tm
+            on e.school = tm.school
+            and e.team = tm.team
         where g.gpa_y1 is not null
-        group by e.region, e.school, e.team, g.term_name
+        group by e.region, e.school, e.team, g.term_name, tm.manager
     )
 
 /* ============================================================
@@ -372,6 +471,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    manager,
     metric_value as value,
 from ada_homeroom_week
 
@@ -389,6 +489,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as manager,
     metric_value as value,
 from ada_gradelevel_week
 
@@ -406,6 +507,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    manager,
     metric_value as value,
 from chronic_homeroom_week
 
@@ -423,6 +525,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as manager,
     metric_value as value,
 from chronic_gradelevel_week
 
@@ -440,6 +543,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    manager,
     metric_value as value,
 from proficiency_homeroom_week
 
@@ -457,6 +561,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as manager,
     metric_value as value,
 from proficiency_gradelevel_week
 
@@ -474,6 +579,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    manager,
     cast(referral_all as float64) as value,
 from dl_homeroom_week
 
@@ -491,6 +597,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    manager,
     cast(referral_high as float64) as value,
 from dl_homeroom_week
 
@@ -508,6 +615,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    manager,
     cast(referral_middle as float64) as value,
 from dl_homeroom_week
 
@@ -525,6 +633,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    manager,
     cast(referral_low as float64) as value,
 from dl_homeroom_week
 
@@ -542,6 +651,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as manager,
     cast(referral_all as float64) as value,
 from dl_gradelevel_week
 
@@ -559,6 +669,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as manager,
     cast(referral_high as float64) as value,
 from dl_gradelevel_week
 
@@ -576,6 +687,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as manager,
     cast(referral_middle as float64) as value,
 from dl_gradelevel_week
 
@@ -593,6 +705,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as manager,
     cast(referral_low as float64) as value,
 from dl_gradelevel_week
 
@@ -610,6 +723,7 @@ select
     school,
     'Section' as grain_type,
     sections_section_number as grain,
+    manager,
     safe_divide(n_failing, n_students) as value,
 from section_grades_raw
 
@@ -627,5 +741,6 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    manager,
     metric_value as value,
 from gpa_homeroom_term
