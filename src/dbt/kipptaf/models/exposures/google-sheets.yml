@@ -791,3 +791,16 @@ exposures:
   #   url: https://docs.google.com/spreadsheets/d/1aeeF4klM4lmxdqIcdcoq0K65gfn3qTJLZY8Ym8OFRWA
   #   depends_on:
   #     - ref("base_people__staff_roster")
+  - name: school_metrics_extract
+    label: School Metrics Extract
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/TBD
+    depends_on:
+      - ref("rpt_gsheets__school_metrics_extract")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
