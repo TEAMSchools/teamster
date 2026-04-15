@@ -17,6 +17,7 @@ with
         where
             academic_year = {{ var("current_academic_year") }}
             and is_enrolled_week
+            and grade_level <= 8
             and week_start_monday >= date_add(
                 date_trunc(
                     current_date('{{ var("local_timezone") }}'), week(monday)
@@ -43,6 +44,7 @@ with
             academic_year = {{ var("current_academic_year") }}
             and rn_year = 1
             and enroll_status = 0
+            and grade_level <= 8
     ),
 
     /* ============================================================
@@ -432,7 +434,9 @@ with
             school,
             region,
         from {{ ref("int_extracts__student_enrollments") }}
-        where academic_year = {{ var("current_academic_year") }}
+        where
+            academic_year = {{ var("current_academic_year") }}
+            and grade_level <= 8
     ),
 
     section_teacher_manager_raw as (
