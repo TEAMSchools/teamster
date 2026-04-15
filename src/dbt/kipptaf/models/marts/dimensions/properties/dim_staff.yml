@@ -1,0 +1,96 @@
+models:
+  - name: dim_staff
+    description: >-
+      Staff person dimension. One row per person. Driven by
+      stg_people__employee_numbers (active records) with LEFT JOIN to roster
+      history for person attributes, ensuring all employee_numbers referenced by
+      fact tables are represented. Person attributes may be null for employees
+      not yet in roster history. Work assignments are in
+      dim_staff_work_assignments, which foreign-keys to this model via
+      staff_key.
+    columns:
+      - name: staff_key
+        data_type: string
+        description: >-
+          Surrogate key derived from employee_number. Primary key for the staff
+          dimension. Generated with generate_surrogate_key(["employee_number"]).
+        data_tests:
+          - unique
+          - not_null
+
+      - name: employee_number
+        data_type: int64
+        description: >-
+          KIPP-assigned unique identifier for all staff members across all
+          entities.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: formatted_name
+        data_type: string
+        description: Staff member's preferred name in Last, First Middle format.
+
+      - name: given_name
+        data_type: string
+        description: Staff member's preferred first name.
+
+      - name: family_name_1
+        data_type: string
+        description: Staff member's preferred last name.
+
+      - name: birth_date
+        data_type: date
+        description: Staff member's date of birth.
+
+      - name: gender_identity
+        data_type: string
+        description: >-
+          Staff member's preferred gender identity as reported in the staff
+          information survey, with ADP gender_code as fallback.
+
+      - name: race_ethnicity_reporting
+        data_type: string
+        description: >-
+          Staff member's race/ethnicity for reporting purposes, sourced from the
+          staff information survey with ADP as fallback.
+
+      - name: is_hispanic
+        data_type: boolean
+        description: >-
+          TRUE if the staff member identified as Hispanic/Latino/Latinx in the
+          staff information survey or ADP ethnicity record.
+
+      - name: work_email
+        data_type: string
+        description: Staff member's work email address from ADP.
+
+      - name: personal_email
+        data_type: string
+        description: Staff member's personal email address from ADP.
+
+      - name: personal_cell
+        data_type: string
+        description: Staff member's personal cell phone number from ADP.
+
+      - name: sam_account_name
+        data_type: string
+        description: >-
+          Staff member's Active Directory SAM account name (lowercased), used as
+          a cross-system identifier.
+
+      - name: google_email
+        data_type: string
+        description: Staff member's Google Workspace email address from LDAP.
+
+      - name: original_hire_date
+        data_type: date
+        description: >-
+          The date the staff member was originally hired at KIPP, from
+          worker_dates in ADP.
+
+      - name: rehire_date
+        data_type: date
+        description: >-
+          The most recent rehire date for the staff member, if rehired, from
+          worker_dates in ADP.

@@ -1,0 +1,142 @@
+models:
+  - name: dim_staffing_positions
+    description: >-
+      Staffing position dimension. Type 2 slowly-changing dimension — one row
+      per budgeted position per version (snapshot interval). Sourced from the
+      AppSheet seat tracker via dbt snapshot. Contains department, job title,
+      location, entity, grade band, staffing status, plan status, and
+      mid-year-hire flag for each position version. Foreign keys to
+      dim_locations (location_key), and dim_staff for the assigned teammate and
+      recruiter as role-playing dimensions (both nullable).
+    columns:
+      - name: staffing_position_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from dbt_scd_id (snapshot row
+          identifier). Generated with generate_surrogate_key(["dbt_scd_id"]).
+        data_tests:
+          - unique
+          - not_null
+
+      - name: location_key
+        data_type: string
+        description: >-
+          Foreign key to dim_locations. Surrogate key derived from adp_location
+          (home work location name).
+
+      - name: teammate_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff for the assigned teammate. Surrogate key
+          derived from the teammate employee number. Nullable — open positions
+          have no assigned teammate.
+
+      - name: recruiter_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff for the assigned recruiter. Surrogate key
+          derived from the recruiter employee number. Nullable — positions may
+          have no assigned recruiter.
+
+      - name: staffing_position_natural_key
+        data_type: string
+        description: >-
+          The dbt snapshot SCD identifier (dbt_scd_id). Uniquely identifies this
+          specific version of a staffing position.
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year this position version belongs to.
+
+      - name: staffing_model_id
+        data_type: string
+        description: >-
+          AppSheet seat tracker identifier for the staffing model (position
+          slot). Multiple versions of the same position share this ID.
+
+      - name: entity
+        data_type: string
+        description: >-
+          Legal entity or organizational unit this position belongs to (e.g.,
+          KIPP NJ, KIPP Miami).
+
+      - name: grade_band
+        data_type: string
+        description: >-
+          Grade band served by this position (e.g., ES, MS, HS).
+
+      - name: recruitment_group
+        data_type: string
+        description: >-
+          Grouping used to assign recruiting responsibility for this position.
+
+      - name: home_department_name
+        data_type: string
+        description: >-
+          ADP department name for this position (adp_dept from seat tracker).
+
+      - name: job_title
+        data_type: string
+        description:
+          ADP job title for this position (adp_title from seat tracker).
+
+      - name: home_work_location_name
+        data_type: string
+        description: >-
+          ADP location name for this position. Used to join to dim_locations via
+          location_key.
+
+      - name: location_short_name
+        data_type: string
+        description:
+          Short display name for the work location (short_name from seat
+          tracker).
+
+      - name: recruiter_employee_number
+        data_type: int64
+        description: >-
+          KIPP employee number of the recruiter assigned to this position.
+          Nullable.
+
+      - name: teammate_employee_number
+        data_type: int64
+        description: >-
+          KIPP employee number of the teammate (staff member) filling this
+          position. Nullable for open positions.
+
+      - name: plan_status
+        data_type: string
+        description: >-
+          Whether this position is active in the staffing plan (e.g., Active,
+          Inactive).
+
+      - name: staffing_status
+        data_type: string
+        description: >-
+          Current staffing status of this position version (e.g., Open,
+          Staffed).
+
+      - name: status_detail
+        data_type: string
+        description: >-
+          Detailed status label providing context for staffing_status (e.g., New
+          Hire, Transfer In, Backfill).
+
+      - name: is_mid_year_hire
+        data_type: boolean
+        description: >-
+          TRUE if this position is flagged as a mid-year hire in the seat
+          tracker.
+
+      - name: effective_date_start
+        data_type: date
+        description: >-
+          Date this version of the position became effective (dbt_valid_from
+          cast to date).
+
+      - name: effective_date_end
+        data_type: date
+        description: >-
+          Date this version of the position expired (dbt_valid_to cast to date).
+          NULL for the current active version.

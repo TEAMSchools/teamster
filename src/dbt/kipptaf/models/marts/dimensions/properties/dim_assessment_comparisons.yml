@@ -1,0 +1,73 @@
+models:
+  - name: dim_assessment_comparisons
+    description: >-
+      External benchmark comparisons for state assessments. One row per
+      assessment test code x academic year x region. Pivots city, state, and
+      neighborhood-school percent proficient and total students from the state
+      test comparison Google Sheet. Joinable to state assessment facts via
+      test_code, region, and academic_year business keys.
+    columns:
+      - name: assessment_comparison_key
+        data_type: string
+        description: >-
+          Surrogate key derived from academic_year, test_name, test_code, and
+          region. Primary key.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: region_key
+        data_type: string
+        description: >-
+          FK to dim_regions. Derived from region using
+          generate_surrogate_key(["region"]).
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year the comparison data applies to.
+
+      - name: test_name
+        data_type: string
+        description: >-
+          State assessment name (e.g., NJSLA, NJGPA).
+
+      - name: test_code
+        data_type: string
+        description: >-
+          State assessment test code (e.g., ELA05, ALG1, SCI08).
+
+      - name: region
+        data_type: string
+        description: >-
+          Network region (Newark, Camden, Miami, Paterson).
+
+      - name: city_percent_proficient
+        data_type: float64
+        description: >-
+          City-wide percent of students scoring proficient or above.
+
+      - name: state_percent_proficient
+        data_type: float64
+        description: >-
+          State-wide percent of students scoring proficient or above.
+
+      - name: neighborhood_schools_percent_proficient
+        data_type: float64
+        description: >-
+          Neighborhood schools percent of students scoring proficient or above.
+
+      - name: city_total_students
+        data_type: int64
+        description: >-
+          Total students tested city-wide.
+
+      - name: state_total_students
+        data_type: int64
+        description: >-
+          Total students tested state-wide.
+
+      - name: neighborhood_schools_total_students
+        data_type: int64
+        description: >-
+          Total students tested at neighborhood schools.
