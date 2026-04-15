@@ -19,11 +19,10 @@ Single `model: haiku` Agent call. Compute time window:
 - ET = UTC-4 (EDT Mar–Nov) or UTC-5 (EST Nov–Mar). Compute RFC 3339 + epoch.
 
 Replace `{EPOCH}`, `{UTC_START}`, `{UTC_END}`, `{DATE}` below. Run
-`mkdir -p "$(readlink dagster-tmp 2>/dev/null || echo dagster-tmp)/day2/{DATE}"`
-before dispatching.
+`mkdir -p .claude/scratch/day2/{DATE}` before dispatching.
 
 ```text
-Gather Dagster+GCP data. Write each step's JSON to dagster-tmp/day2/{DATE}/
+Gather Dagster+GCP data. Write each step's JSON to .claude/scratch/day2/{DATE}/
 via Write tool. No prose. Classification fields expected.
 
 Parallelization: 1,3,4,5,6,7,8,10,11 independent. 2,9 depend on 1.
@@ -58,12 +57,14 @@ Then IN PARALLEL:
 - Per run: mcp__dagster__get_run_logs(run_id=<id>,
     filter_types=["ExecutionStepFailureEvent","RunFailureEvent","EngineEvent"],
     limit=500).
-- list_runs(statuses=["SUCCESS"], created_after={EPOCH}, limit=100).
-  MUST paginate via cursor until a page returns < 100, summing pages into a
-  count. Write ONLY {count: N, pages: P, lastPageSize: M, complete: M<100} —
-  do NOT include the full run list (response is too large for the Write tool).
+- list_runs(statuses=["SUCCESS"], created_after={EPOCH}, limit=25).
+  MUST paginate via cursor until a page returns < 25, summing pages into a
+  count. Write ONLY {count: N, pages: P, lastPageSize: M, complete: M<25} —
+  do NOT include the full run list (response is too large for the MCP tool's
+  token limit at higher page sizes). Use limit=25 — full run details (asset
+  selections, tags, step stats) make each run ~1.5KB of JSON.
   If you write count without paginating to a short page, the count is wrong.
-- list_runs(statuses=["CANCELED"], created_after={EPOCH}, limit=100). Same
+- list_runs(statuses=["CANCELED"], created_after={EPOCH}, limit=25). Same
   count-only treatment, same pagination requirement.
 
 Per failed run: runId, jobName, dagster/code_location, startTime, endTime,
@@ -238,7 +239,7 @@ list_time_series(name="projects/teamster-332318",
   filter='metric.type="kubernetes.io/container/memory/used_bytes"
     AND resource.labels.pod_name=starts_with("<prefix>")',
   interval={startTime: "<run_start-5m>", endTime: "<run_end+5m>"},
-  aggregation={alignmentPeriod: "60", perSeriesAligner: "ALIGN_MAX"}).
+  aggregation={alignmentPeriod: "60s", perSeriesAligner: "ALIGN_MAX"}).
 Pod prefix: <loc>-prod-* (code server), dagster-run-* (coordinator),
 dagster-step-* (step). Collect: peak bytes, limit bytes.
 
@@ -254,7 +255,7 @@ IN PARALLEL: list_backfills(status="REQUESTED", limit=10),
 list_backfills(status="FAILED", created_after={EPOCH}, limit=10).
 Collect: backfillId, status, numPartitions, timestamp, error.
 
-Write JSON to dagster-tmp/day2/{DATE}/:
+Write JSON to .claude/scratch/day2/{DATE}/:
   step-1-failed-runs.json, step-2-retries.json, step-3-ticks.json,
   step-3a-load-failures.json, step-3b-schedule-ticks.json,
   step-4-agents.json, step-4a-agent-pod-churn.json,
@@ -285,7 +286,7 @@ Return JSON manifest: {filename: absolute_path}.
 
 ## Phase 2: Correlate and report
 
-Read from `dagster-tmp/day2/{DATE}/` per manifest.
+Read from `.claude/scratch/day2/{DATE}/` per manifest.
 
 **Pagination gate (run BEFORE any analysis)**: For each per-step JSON, check
 `pagination.complete`. If any file has `complete: false`, do NOT draw
@@ -433,4 +434,4 @@ Flag truncation if any query hit pagination limits.
 
 Reference `.k8s/CLAUDE.md` for scheduling, topology, security, config.
 
-Write report to `dagster-tmp/day2/{DATE}/report.md`.
+Write report to `.claude/scratch/day2/{DATE}/report.md`.

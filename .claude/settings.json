@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(cat)",
       "Bash(gh api user -q .login)",
       "Bash(gh issue list)",
       "Bash(gh issue status)",
@@ -12,10 +13,10 @@
       "Bash(git diff)",
       "Bash(git status)",
       "Bash(git worktree list)",
-      "Bash(trunk check)",
-      "Bash(trunk fmt)",
       "Bash(uv tool list)",
       "Edit(/.claude/skills/**)",
+      "Edit(/.claude/scratch/**)",
+      "Edit(/.worktrees/**)",
       "mcp__bigquery__analyze_contribution",
       "mcp__bigquery__execute_sql",
       "mcp__bigquery__forecast",
@@ -45,6 +46,7 @@
       "mcp__dagster__list_schedules",
       "mcp__dagster__list_sensors",
       "mcp__dagster__search_assets",
+      "mcp__dbt__show",
       "mcp__gke__get_cluster",
       "mcp__gke__get_gke_release_notes",
       "mcp__gke__get_k8s_changelog",
@@ -54,16 +56,22 @@
       "mcp__gke__list_recommendations",
       "mcp__gke__query_logs",
       "mcp__observability__get_trace",
+      "mcp__observability__list_alert_policies",
       "mcp__observability__list_alerts",
       "mcp__observability__list_group_stats",
       "mcp__observability__list_log_entries",
       "mcp__observability__list_time_series",
       "mcp__plugin_context7_context7__query-docs",
       "mcp__plugin_context7_context7__resolve-library-id",
+      "Read(/.claude/scratch/**)",
+      "Read(/.worktrees/**)",
+      "Read(//home/vscode/.claude/**)",
       "Read(//tmp/dagster/**)",
       "Read(//workspaces/teamster/**)",
-      "Read(~/.claude/plugins/**)",
-      "Skill(claude-md-management:revise-claude-md:*)"
+      "Skill(claude-md-management:revise-claude-md:*)",
+      "Skill(dbt:using-dbt-for-analytics-engineering:*)",
+      "Write(/.claude/scratch/**)",
+      "Write(/.worktrees/**)"
     ],
     "deny": [
       "Bash(* gcloud *)",
@@ -83,7 +91,7 @@
       "Edit(/.git/hooks/**)",
       "Edit(/.trunk/config/**)",
       "Edit(/.trunk/trunk.yaml)",
-      "Edit(~/.claude/shell-snapshots/**)",
+      "Edit(//home/vscode/.claude/shell-snapshots/**)",
       "Read(**/.env.*)",
       "Read(**/.env)",
       "Read(**/*.cer)",
@@ -94,15 +102,12 @@
       "Read(/.devcontainer/tpl/**)",
       "Read(//dev/fd/**)",
       "Read(//etc/secret-volume/**)",
+      "Read(//home/vscode/.kube/**)",
+      "Read(//home/vscode/.ssh/**)",
       "Read(//proc/**)",
-      "Read(/env/**)",
-      "Read(~/.kube/**)",
-      "Read(~/.ssh/**)"
+      "Read(/env/**)"
     ],
-    "additionalDirectories": [
-      "/workspaces/teamster/dagster-tmp/",
-      "/tmp/dagster"
-    ]
+    "additionalDirectories": ["/workspaces/teamster/.worktrees/**"]
   },
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
   "hooks": {
