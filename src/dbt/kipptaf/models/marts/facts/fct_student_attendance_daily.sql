@@ -12,8 +12,15 @@ with
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["ada.student_number", "ada.calendardate"]) }}
-    as student_attendance_daily_key,
+    {{
+        dbt_utils.generate_surrogate_key(
+            [
+                "ada.student_number",
+                "ada._dbt_source_relation",
+                "ada.calendardate",
+            ]
+        )
+    }} as student_attendance_daily_key,
 
     {{
         dbt_utils.generate_surrogate_key(
@@ -53,7 +60,8 @@ inner join
     {{ ref("base_powerschool__student_enrollments") }} as enr
     on ada.studentid = enr.studentid
     and ada.schoolid = enr.schoolid
-    and ada.calendardate between enr.entrydate and enr.exitdate
+    and ada.calendardate >= enr.entrydate
+    and ada.calendardate < enr.exitdate
     and {{ union_dataset_join_clause(left_alias="ada", right_alias="enr") }}
 left join
     locations as loc

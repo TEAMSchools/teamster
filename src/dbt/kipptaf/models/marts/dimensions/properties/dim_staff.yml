@@ -1,9 +1,12 @@
 models:
   - name: dim_staff
     description: >-
-      Staff person dimension. One row per person. Contains stable person-level
-      attributes only. Work assignments are in dim_staff_work_assignments, which
-      foreign-keys to this model via staff_key.
+      Staff person dimension. One row per person. Sourced from roster history
+      deduplicated to the most recent primary assignment per employee_number,
+      ensuring all current and historical staff are included for referential
+      integrity with fact tables. Contains stable person-level attributes only.
+      Work assignments are in dim_staff_work_assignments, which foreign-keys to
+      this model via staff_key.
     columns:
       - name: staff_key
         data_type: string

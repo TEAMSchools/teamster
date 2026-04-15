@@ -84,6 +84,7 @@ select
             [
                 "gt.studentid",
                 "gt._dbt_source_relation",
+                "gt.schoolid",
                 "gt.yearid",
                 "gt.term_name",
             ]

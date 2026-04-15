@@ -12,8 +12,8 @@ models:
       - name: student_attendance_daily_key
         data_type: string
         description: >-
-          Surrogate key derived from student_number and calendardate. Primary
-          key for this fact.
+          Surrogate key derived from student_number, _dbt_source_relation, and
+          calendardate. Primary key for this fact.
         data_tests:
           - unique
           - not_null

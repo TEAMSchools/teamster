@@ -17,6 +17,7 @@ with
         select
             _dbt_source_relation,
             studentid,
+            schoolid,
             yearid,
             student_number,
             entrydate,
@@ -104,6 +105,7 @@ inner join
 inner join
     student_enrollments as enr
     on ce.cc_studentid = enr.studentid
+    and ce.cc_schoolid = enr.schoolid
     and ce.cc_academic_year - 1990 = enr.yearid
     and asg.duedate >= enr.entrydate
     and asg.duedate < enr.exitdate

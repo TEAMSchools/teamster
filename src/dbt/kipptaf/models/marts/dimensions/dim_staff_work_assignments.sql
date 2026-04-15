@@ -67,7 +67,6 @@ select
     wa.worker_time_profile__time_service_supervisor__position_id,
     wa.worker_time_profile__time_service_supervisor__worker_id__id_value,
 from work_assignments as wa
-inner join
+left join
     {{ ref("stg_people__employee_numbers") }} as en
     on wa.associate_oid = en.adp_associate_id
-    and en.is_active

@@ -165,7 +165,7 @@ with
             and ms.campaign_reporting_term = rt.code
             and rt.type = 'SURVEY'
         where ms.campaign_academic_year is not null
-        group by 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13
+        group by 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
     ),
 
     /* Combine all staff-type submissions */

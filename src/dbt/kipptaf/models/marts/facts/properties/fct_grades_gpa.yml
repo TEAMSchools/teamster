@@ -11,8 +11,8 @@ models:
       - name: grades_gpa_key
         data_type: string
         description: >-
-          Surrogate key derived from studentid, _dbt_source_relation, yearid,
-          and term_name. Primary key for this fact.
+          Surrogate key derived from studentid, _dbt_source_relation, schoolid,
+          yearid, and term_name. Primary key for this fact.
         data_tests:
           - unique
           - not_null

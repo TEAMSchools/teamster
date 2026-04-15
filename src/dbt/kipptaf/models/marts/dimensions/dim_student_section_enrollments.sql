@@ -3,6 +3,7 @@ with
         select
             _dbt_source_relation,
             studentid,
+            schoolid,
             yearid,
             student_number,
             entrydate,
@@ -55,6 +56,7 @@ from {{ ref("base_powerschool__course_enrollments") }} as cc
 left join
     student_enrollments as enr
     on cc.cc_studentid = enr.studentid
+    and cc.sections_schoolid = enr.schoolid
     and cc.cc_yearid = enr.yearid
     and cc.cc_dateenrolled >= enr.entrydate
     and cc.cc_dateenrolled < enr.exitdate

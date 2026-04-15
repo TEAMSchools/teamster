@@ -10,8 +10,8 @@ models:
       - name: student_attendance_streak_key
         data_type: string
         description: >-
-          Surrogate key identifying the streak. Derived from project, studentid,
-          yearid, attendance code/value, and gap-and-island group number.
+          Surrogate key derived from streak_id and _dbt_source_relation. Primary
+          key for this fact.
         data_tests:
           - unique
           - not_null

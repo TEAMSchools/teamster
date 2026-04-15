@@ -15,6 +15,25 @@ with
         where n.record_found_y_n = 'Y'
     ),
 
+    nsc_with_max_end as (
+        select
+            contact_id,
+            college_code_branch,
+            enrollment_begin,
+            enrollment_end,
+            enrollment_status,
+            graduated,
+            two_year_four_year,
+            degree_title,
+            enrollment_major_1,
+            class_level,
+
+            max(enrollment_end) over (
+                partition by contact_id, college_code_branch
+            ) as max_enrollment_end,
+        from nsc_with_account
+    ),
+
     nsc_tenure as (
         select
             contact_id,
@@ -27,51 +46,21 @@ with
             countif(enrollment_status = 'W') > 0 as is_withdrawn,
 
             max(
-                if(
-                    enrollment_end = max(enrollment_end) over (
-                        partition by contact_id, college_code_branch
-                    ),
-                    enrollment_status,
-                    null
-                )
+                if(enrollment_end = max_enrollment_end, enrollment_status, null)
             ) as latest_enrollment_status,
             max(
-                if(
-                    enrollment_end = max(enrollment_end) over (
-                        partition by contact_id, college_code_branch
-                    ),
-                    two_year_four_year,
-                    null
-                )
+                if(enrollment_end = max_enrollment_end, two_year_four_year, null)
             ) as degree_pursued,
             max(
-                if(
-                    enrollment_end = max(enrollment_end) over (
-                        partition by contact_id, college_code_branch
-                    ),
-                    degree_title,
-                    null
-                )
+                if(enrollment_end = max_enrollment_end, degree_title, null)
             ) as degree_title,
             max(
-                if(
-                    enrollment_end = max(enrollment_end) over (
-                        partition by contact_id, college_code_branch
-                    ),
-                    enrollment_major_1,
-                    null
-                )
+                if(enrollment_end = max_enrollment_end, enrollment_major_1, null)
             ) as major,
             max(
-                if(
-                    enrollment_end = max(enrollment_end) over (
-                        partition by contact_id, college_code_branch
-                    ),
-                    class_level,
-                    null
-                )
+                if(enrollment_end = max_enrollment_end, class_level, null)
             ) as class_level,
-        from nsc_with_account
+        from nsc_with_max_end
         group by contact_id, college_code_branch
     )
 
