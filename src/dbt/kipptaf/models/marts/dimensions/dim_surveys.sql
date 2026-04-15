@@ -81,6 +81,7 @@ with
                     ),
                     struct(
                         'KIPP Miami Re-Commitment Form'
+                        -- trunk-ignore(sqlfluff/RF05): string continuation
                         ' & Family School Community Diagnostic',
                         'School Community Diagnostic',
                         'School Culture'
@@ -127,6 +128,7 @@ with
                     ),
                     struct(
                         'Career Launch Survey invalid response'
+                        -- trunk-ignore(sqlfluff/RF05): string continuation
                         ' reconciliation',
                         'Career Launch',
                         'College & Career'
