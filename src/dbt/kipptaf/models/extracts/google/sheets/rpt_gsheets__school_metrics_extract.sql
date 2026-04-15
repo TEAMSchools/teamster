@@ -497,6 +497,29 @@ with
                 interval -9 week
             )
         group by e.region, e.school, e.team, g.week_start_monday, tm.manager
+    ),
+
+    gpa_gradelevel_week as (
+        select
+            e.region,
+            e.school,
+            e.grade_level,
+            g.week_start_monday,
+
+            avg(g.gpa_y1) as metric_value,
+        from enrollments as e
+        inner join
+            {{ ref("int_topline__gpa_term_weekly") }} as g
+            on e.student_number = g.student_number
+            and e.academic_year = g.academic_year
+        where
+            g.gpa_y1 is not null
+            and g.academic_year = {{ var("current_academic_year") }}
+            and g.week_start_monday >= date_add(
+                date_trunc(current_date('{{ var("local_timezone") }}'), week(monday)),
+                interval -9 week
+            )
+        group by e.region, e.school, e.grade_level, g.week_start_monday
     )
 
 /* ============================================================
@@ -823,3 +846,21 @@ select
     manager,
     metric_value as value,
 from gpa_homeroom_week
+
+union all
+
+/* 19. Avg weighted Y1 GPA by grade level + week */
+select
+    'Academics' as domain,
+    cast(null as string) as discipline,
+    cast(null as string) as course_name,
+    cast(null as string) as module_code,
+    'Avg Y1 GPA (Weighted)' as metric,
+    concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
+    region,
+    school,
+    'Grade Level' as grain_type,
+    cast(grade_level as string) as grain,
+    cast(null as string) as manager,
+    metric_value as value,
+from gpa_gradelevel_week
