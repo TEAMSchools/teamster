@@ -97,3 +97,14 @@ def test_domain_for_model_course() -> None:
 def test_domain_for_model_unknown_returns_uncategorized() -> None:
     module = _load_script()
     assert module._domain_for_model("dim_wild_card_thing") == "Uncategorized"
+
+
+def test_plumbing_columns_includes_dbt_source_relation() -> None:
+    module = _load_script()
+    assert "_dbt_source_relation" in module._plumbing_columns()
+
+
+def test_plumbing_columns_returns_frozenset() -> None:
+    module = _load_script()
+    result = module._plumbing_columns()
+    assert isinstance(result, frozenset)

@@ -83,6 +83,18 @@ def _domain_for_model(model_name: str) -> str:
     return "Uncategorized"
 
 
+_PLUMBING_COLUMNS: frozenset[str] = frozenset(
+    [
+        "_dbt_source_relation",
+    ]
+)
+
+
+def _plumbing_columns() -> frozenset[str]:
+    """Columns whose default audit action is 'remove' (plumbing)."""
+    return _PLUMBING_COLUMNS
+
+
 def main() -> None:
     raise NotImplementedError
 
