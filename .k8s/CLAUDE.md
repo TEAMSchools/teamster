@@ -215,6 +215,9 @@ a different pod type.
   `resource.type="gce_subnetwork"` +
   `logName=".../compute.googleapis.com%2Ffirewall"` → `instance.zone` +
   `remote_instance.zone`. Filter `dest_port=4000` for agent→code-server gRPC.
+- **Autopilot node pre-warming**: Not possible — no DaemonSets, no image
+  pre-pulling, no node lifecycle control. Only levers for cold-node startup
+  latency: image size reduction and Dagster timeout increases.
 
 ## Agent Error Observability
 
@@ -228,6 +231,15 @@ a different pod type.
 - **Hybrid daemon location** — sensor / asset / schedule daemons run in the
   Dagster Cloud control plane, NOT in the local agent. OSS `dagster.yaml`
   settings (`max_tick_retries`, `auto_materialize.*`, etc.) do not apply; the
-  Dagster+ full deployment settings expose only `concurrency`, `run_monitoring`,
-  `run_retries`, `sso_default_role` — no tick-retry knob. Terminal
-  `DagsterUserCodeUnreachableError` ticks remain terminal.
+  Dagster+ full deployment settings (see Dagster+ Deployment Settings section)
+  expose no tick-retry knob. Terminal `DagsterUserCodeUnreachableError` ticks
+  remain terminal.
+
+## Dagster+ Deployment Settings
+
+`dagster-cloud deployment settings get/set-from-file` — requires
+`DAGSTER_CLOUD_API_TOKEN` (not in codespace; user must run or supply token).
+Full settings list: `run_monitoring`, `run_retries`, `concurrency`,
+`sso_default_role`, `default_sensor_timeout`, `default_schedule_timeout`,
+`non_isolated_runs`, `auto_materialize`, `branch_deployments`. The
+sensor/schedule timeouts (default 300s) ARE configurable.
