@@ -203,6 +203,10 @@ with
             )
     ),
 
+    -- Note: joins to `enrollments` (rn_year=1 snapshot), not enrollments_weeks.
+    -- For mid-year transfers, assessments are attributed to the student's latest
+    -- enrollment homeroom, not the homeroom at the time of the assessment.
+    -- Acceptable approximation for a stable enrollment body.
     proficiency_homeroom_week as (
         select
             e.region,
@@ -294,7 +298,7 @@ with
                 distinct if(dl.referral_tier = 'Middle', dl.incident_id, null)
             ) as referral_middle,
             count(
-                distinct if(dl.referral_tier = 'low', dl.incident_id, null)
+                distinct if(dl.referral_tier = 'Low', dl.incident_id, null)
             ) as referral_low,
             count(distinct dl.incident_id) as referral_all,
         from enrollments_weeks as ew
@@ -325,7 +329,7 @@ with
                 distinct if(dl.referral_tier = 'Middle', dl.incident_id, null)
             ) as referral_middle,
             count(
-                distinct if(dl.referral_tier = 'low', dl.incident_id, null)
+                distinct if(dl.referral_tier = 'Low', dl.incident_id, null)
             ) as referral_low,
             count(distinct dl.incident_id) as referral_all,
         from enrollments_weeks as ew
@@ -338,6 +342,11 @@ with
         group by ew.region, ew.school, ew.grade_level, ew.week_start_monday
     ),
 
+    -- Intentional: WHERE on right-side column makes this an INNER JOIN by effect.
+    -- Category rows are sparse — we only emit a row when at least one incident of
+    -- that category occurred in the week. Quiet weeks produce no row (not 0),
+    -- which differs from the tier CTEs above. This is by design: the downstream
+    -- sheet uses category rows for drill-down, not time-series completeness.
     dl_category_homeroom_week as (
         select
             ew.region,
@@ -370,6 +379,7 @@ with
             tm.manager
     ),
 
+    -- Same sparse-row design as dl_category_homeroom_week above.
     dl_category_gradelevel_week as (
         select
             ew.region,
@@ -426,6 +436,12 @@ with
         }}
     ),
 
+    -- TODO: #3633 — SELECT DISTINCT needed because
+    -- base_powerschool__student_enrollments has genuinely overlapping date
+    -- ranges for some students, producing duplicate (studentid, schoolid) rows.
+    -- enroll_status filter intentionally omitted: a wider net is needed here so
+    -- that transferred students' section records still resolve to a school/region
+    -- even if their latest enrollment row has enroll_status != 0.
     section_school_context as (
         select distinct
             _dbt_source_relation,
@@ -491,6 +507,10 @@ with
             section_teacher_manager as stm
             on enr.cc_sectionid = stm.cc_sectionid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="stm") }}
+        -- storecode filter on right-side column makes the fg LEFT JOIN an
+        -- effective INNER JOIN: sections with no final-grade records are
+        -- silently excluded. This is intentional — failure rate is undefined
+        -- for ungraded sections.
         where fg.storecode in ('Q1', 'Q2', 'Q3', 'Q4')
         group by
             sc.region,
@@ -503,6 +523,8 @@ with
 
     /* ============================================================
      * ACADEMICS — Avg weighted Y1 GPA by homeroom + week
+     * (MS only in practice — int_topline__gpa_term_weekly filters school_level)
+     * Note: same snapshot-enrollment attribution caveat as proficiency above.
      * ============================================================ */
     gpa_homeroom_week as (
         select
