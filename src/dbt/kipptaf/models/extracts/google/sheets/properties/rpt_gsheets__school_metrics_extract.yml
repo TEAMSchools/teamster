@@ -35,25 +35,25 @@ models:
         data_type: string
       - name: course_name
         description: >
-          PowerSchool course name. Populated only for Grades domain
-          (failure rate by section). Null for all other domains.
+          PowerSchool course name. Populated only for Grades domain (failure
+          rate by section). Null for all other domains.
         data_type: string
       - name: module_code
         description: >
           Assessment module code (e.g., specific unit or interim assessment
           identifier). Populated only for Assessment domain so that separate
-          assessments in the same discipline/week appear on separate rows.
-          Null for all other domains.
+          assessments in the same discipline/week appear on separate rows. Null
+          for all other domains.
         data_type: string
       - name: metric
         description: >
           Name of the specific metric. Tier-level referral metrics use fixed
           labels: Referrals - All, Referrals - High, Referrals - Middle,
           Referrals - Low. Category-level referral metrics use the DeansList
-          category name prefixed with "Referrals - " (e.g.,
-          "Referrals - Disrespect to Staff"). Other examples: Weekly ADA,
-          % Chronically Absent (ADA <= 90%), Proficiency (Mastery Rate),
-          Failure Rate (Y1), Avg Y1 GPA (Weighted).
+          category name prefixed with "Referrals - " (e.g., "Referrals -
+          Disrespect to Staff"). Other examples: Weekly ADA, % Chronically
+          Absent (ADA <= 90%), Proficiency (Mastery Rate), Failure Rate (Y1),
+          Avg Y1 GPA (Weighted).
         data_type: string
       - name: time_scale
         description: >
@@ -69,14 +69,14 @@ models:
         data_type: string
       - name: grain_type
         description: >
-          Level of aggregation. One of: Homeroom (advisory section),
-          Grade Level, Section (academic course section).
+          Level of aggregation. One of: Homeroom (advisory section), Grade
+          Level, Section (academic course section).
         data_type: string
       - name: grain
         description: >
           Actual identifier for the grain. Homeroom advisory section number
-          (e.g., 3FSU), numeric grade level as string (e.g., 8), or
-          PowerSchool section number for academic courses.
+          (e.g., 3FSU), numeric grade level as string (e.g., 8), or PowerSchool
+          section number for academic courses.
         data_type: string
       - name: manager
         description: >
@@ -86,5 +86,7 @@ models:
           identified. Null for Grade Level aggregations.
         data_type: string
       - name: value
-        description: Numeric metric value. Rates and averages are expressed as decimals (0-1).
+        description:
+          Numeric metric value. Rates and averages are expressed as decimals
+          (0-1).
         data_type: float64

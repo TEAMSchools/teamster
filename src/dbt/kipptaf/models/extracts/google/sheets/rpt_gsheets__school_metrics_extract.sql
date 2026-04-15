@@ -19,9 +19,7 @@ with
             and is_enrolled_week
             and grade_level <= 8
             and week_start_monday >= date_add(
-                date_trunc(
-                    current_date('{{ var("local_timezone") }}'), week(monday)
-                ),
+                date_trunc(current_date('{{ var("local_timezone") }}'), week(monday)),
                 interval -9 week
             )
     ),
@@ -51,10 +49,7 @@ with
      * TEACHER MANAGER LOOKUP — homeroom advisor's "reports to"
      * ============================================================ */
     team_manager_raw as (
-        select
-            e.school,
-            e.team,
-            sr.reports_to_formatted_name as manager,
+        select e.school, e.team, sr.reports_to_formatted_name as manager,
         from enrollments as e
         left join
             {{ ref("int_people__staff_roster") }} as sr
@@ -75,11 +70,7 @@ with
      * ATTENDANCE — ADA and Chronic Absence (weekly, by homeroom/grade)
      * ============================================================ */
     ada_running as (
-        select
-            student_number,
-            academic_year,
-            week_start_monday,
-            ada_running,
+        select student_number, academic_year, week_start_monday, ada_running,
         from {{ ref("int_topline__ada_running_weekly") }}
         where academic_year = {{ var("current_academic_year") }}
     ),
@@ -113,17 +104,9 @@ with
 
             avg(asbw.ada_running) as metric_value,
         from ada_by_student_week as asbw
-        left join
-            team_manager as tm
-            on asbw.school = tm.school
-            and asbw.team = tm.team
+        left join team_manager as tm on asbw.school = tm.school and asbw.team = tm.team
         where asbw.ada_running is not null
-        group by
-            asbw.region,
-            asbw.school,
-            asbw.team,
-            asbw.week_start_monday,
-            tm.manager
+        group by asbw.region, asbw.school, asbw.team, asbw.week_start_monday, tm.manager
     ),
 
     ada_gradelevel_week as (
@@ -152,16 +135,8 @@ with
                 if(asbw.ada_running is not null, asbw.is_chronic_absent, null)
             ) as metric_value,
         from ada_by_student_week as asbw
-        left join
-            team_manager as tm
-            on asbw.school = tm.school
-            and asbw.team = tm.team
-        group by
-            asbw.region,
-            asbw.school,
-            asbw.team,
-            asbw.week_start_monday,
-            tm.manager
+        left join team_manager as tm on asbw.school = tm.school and asbw.team = tm.team
+        group by asbw.region, asbw.school, asbw.team, asbw.week_start_monday, tm.manager
     ),
 
     chronic_gradelevel_week as (
@@ -196,9 +171,7 @@ with
             and is_mastery is not null
             and discipline in ('ELA', 'Math')
             and date_trunc(administered_at, week(monday)) >= date_add(
-                date_trunc(
-                    current_date('{{ var("local_timezone") }}'), week(monday)
-                ),
+                date_trunc(current_date('{{ var("local_timezone") }}'), week(monday)),
                 interval -9 week
             )
     ),
@@ -220,10 +193,7 @@ with
             enrollments as e
             on a.powerschool_student_number = e.student_number
             and a.academic_year = e.academic_year
-        left join
-            team_manager as tm
-            on e.school = tm.school
-            and e.team = tm.team
+        left join team_manager as tm on e.school = tm.school and e.team = tm.team
         group by
             e.region,
             e.school,
@@ -304,10 +274,7 @@ with
             and ew.academic_year = dl.create_ts_academic_year
             and ew.deanslist_school_id = dl.deanslist_school_id
             and ew.week_start_monday = dl.week_start_monday
-        left join
-            team_manager as tm
-            on ew.school = tm.school
-            and ew.team = tm.team
+        left join team_manager as tm on ew.school = tm.school and ew.team = tm.team
         group by ew.region, ew.school, ew.team, ew.week_start_monday, tm.manager
     ),
 
@@ -356,18 +323,10 @@ with
             and ew.academic_year = dl.create_ts_academic_year
             and ew.deanslist_school_id = dl.deanslist_school_id
             and ew.week_start_monday = dl.week_start_monday
-        left join
-            team_manager as tm
-            on ew.school = tm.school
-            and ew.team = tm.team
+        left join team_manager as tm on ew.school = tm.school and ew.team = tm.team
         where dl.category is not null
         group by
-            ew.region,
-            ew.school,
-            ew.team,
-            ew.week_start_monday,
-            dl.category,
-            tm.manager
+            ew.region, ew.school, ew.team, ew.week_start_monday, dl.category, tm.manager
     ),
 
     dl_category_gradelevel_week as (
@@ -387,12 +346,7 @@ with
             and ew.deanslist_school_id = dl.deanslist_school_id
             and ew.week_start_monday = dl.week_start_monday
         where dl.category is not null
-        group by
-            ew.region,
-            ew.school,
-            ew.grade_level,
-            ew.week_start_monday,
-            dl.category
+        group by ew.region, ew.school, ew.grade_level, ew.week_start_monday, dl.category
     ),
 
     /* ============================================================
@@ -427,16 +381,9 @@ with
     ),
 
     section_school_context as (
-        select distinct
-            _dbt_source_relation,
-            studentid,
-            schoolid,
-            school,
-            region,
+        select distinct _dbt_source_relation, studentid, schoolid, school, region,
         from {{ ref("int_extracts__student_enrollments") }}
-        where
-            academic_year = {{ var("current_academic_year") }}
-            and grade_level <= 8
+        where academic_year = {{ var("current_academic_year") }} and grade_level <= 8
     ),
 
     section_teacher_manager_raw as (
@@ -519,17 +466,12 @@ with
             {{ ref("int_topline__gpa_term_weekly") }} as g
             on e.student_number = g.student_number
             and e.academic_year = g.academic_year
-        left join
-            team_manager as tm
-            on e.school = tm.school
-            and e.team = tm.team
+        left join team_manager as tm on e.school = tm.school and e.team = tm.team
         where
             g.gpa_y1 is not null
             and g.academic_year = {{ var("current_academic_year") }}
             and g.week_start_monday >= date_add(
-                date_trunc(
-                    current_date('{{ var("local_timezone") }}'), week(monday)
-                ),
+                date_trunc(current_date('{{ var("local_timezone") }}'), week(monday)),
                 interval -9 week
             )
         group by e.region, e.school, e.team, g.week_start_monday, tm.manager
@@ -538,7 +480,6 @@ with
 /* ============================================================
  * FINAL UNION — all metrics in long format
  * ============================================================ */
-
 /* 1. ADA by homeroom + week */
 select
     'Attendance' as domain,
