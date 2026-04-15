@@ -14,6 +14,7 @@ models:
               - domain
               - discipline
               - course_name
+              - module_code
               - metric
               - time_scale
               - region
@@ -35,6 +36,13 @@ models:
         description: >
           PowerSchool course name. Populated only for Grades domain
           (failure rate by section). Null for all other domains.
+        data_type: string
+      - name: module_code
+        description: >
+          Assessment module code (e.g., specific unit or interim assessment
+          identifier). Populated only for Assessment domain so that separate
+          assessments in the same discipline/week appear on separate rows.
+          Null for all other domains.
         data_type: string
       - name: metric
         description: >

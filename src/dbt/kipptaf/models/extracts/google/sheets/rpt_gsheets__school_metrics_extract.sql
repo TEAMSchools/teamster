@@ -127,6 +127,7 @@ with
             powerschool_student_number,
             academic_year,
             discipline,
+            module_code,
 
             date_trunc(administered_at, week(monday)) as week_start_monday,
             if(is_mastery, 1.0, 0.0) as is_mastery_num,
@@ -146,6 +147,7 @@ with
             e.team,
             a.week_start_monday,
             a.discipline,
+            a.module_code,
 
             avg(a.is_mastery_num) as metric_value,
         from assessment_responses as a
@@ -153,7 +155,13 @@ with
             enrollments as e
             on a.powerschool_student_number = e.student_number
             and a.academic_year = e.academic_year
-        group by e.region, e.school, e.team, a.week_start_monday, a.discipline
+        group by
+            e.region,
+            e.school,
+            e.team,
+            a.week_start_monday,
+            a.discipline,
+            a.module_code
     ),
 
     proficiency_gradelevel_week as (
@@ -163,6 +171,7 @@ with
             e.grade_level,
             a.week_start_monday,
             a.discipline,
+            a.module_code,
 
             avg(a.is_mastery_num) as metric_value,
         from assessment_responses as a
@@ -170,7 +179,13 @@ with
             enrollments as e
             on a.powerschool_student_number = e.student_number
             and a.academic_year = e.academic_year
-        group by e.region, e.school, e.grade_level, a.week_start_monday, a.discipline
+        group by
+            e.region,
+            e.school,
+            e.grade_level,
+            a.week_start_monday,
+            a.discipline,
+            a.module_code
     ),
 
     /* ============================================================
@@ -350,6 +365,7 @@ select
     'Attendance' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
+    cast(null as string) as module_code,
     'Weekly ADA' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -366,6 +382,7 @@ select
     'Attendance' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
+    cast(null as string) as module_code,
     'Weekly ADA' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -382,6 +399,7 @@ select
     'Attendance' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
+    cast(null as string) as module_code,
     '% Chronically Absent (ADA <= 90%)' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -398,6 +416,7 @@ select
     'Attendance' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
+    cast(null as string) as module_code,
     '% Chronically Absent (ADA <= 90%)' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -414,6 +433,7 @@ select
     'Assessment' as domain,
     discipline,
     cast(null as string) as course_name,
+    module_code,
     'Proficiency (Mastery Rate)' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -430,6 +450,7 @@ select
     'Assessment' as domain,
     discipline,
     cast(null as string) as course_name,
+    module_code,
     'Proficiency (Mastery Rate)' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -446,6 +467,7 @@ select
     'Culture' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
+    cast(null as string) as module_code,
     'Referrals - All' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -462,6 +484,7 @@ select
     'Culture' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
+    cast(null as string) as module_code,
     'Referrals - High' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -478,6 +501,7 @@ select
     'Culture' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
+    cast(null as string) as module_code,
     'Referrals - Middle' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -494,6 +518,7 @@ select
     'Culture' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
+    cast(null as string) as module_code,
     'Referrals - Low' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -510,6 +535,7 @@ select
     'Culture' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
+    cast(null as string) as module_code,
     'Referrals - All' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -526,6 +552,7 @@ select
     'Culture' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
+    cast(null as string) as module_code,
     'Referrals - High' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -542,6 +569,7 @@ select
     'Culture' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
+    cast(null as string) as module_code,
     'Referrals - Middle' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -558,6 +586,7 @@ select
     'Culture' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
+    cast(null as string) as module_code,
     'Referrals - Low' as metric,
     concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
@@ -574,6 +603,7 @@ select
     'Grades' as domain,
     cast(null as string) as discipline,
     courses_course_name as course_name,
+    cast(null as string) as module_code,
     'Failure Rate (Y1)' as metric,
     storecode as time_scale,
     region,
@@ -590,6 +620,7 @@ select
     'Academics' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
+    cast(null as string) as module_code,
     'Avg Y1 GPA (Weighted)' as metric,
     term_name as time_scale,
     region,
