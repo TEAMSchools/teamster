@@ -198,6 +198,9 @@ models:
       +schema: marts
       +contract:
         enforced: true
+      +meta:
+        dagster:
+          skip_automation: true
     nsc:
       +schema: nsc
       staging:

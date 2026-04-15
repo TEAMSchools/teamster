@@ -39,6 +39,15 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     def get_automation_condition(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> AutomationCondition | None:
+        dbt_meta = dbt_resource_props.get("config", {}).get(
+            "meta", {}
+        ) or dbt_resource_props.get("meta", {})
+
+        # opt-out flag for models that should not auto-materialize
+        # (e.g., marts under development, awaiting Cube wire-up)
+        if dbt_meta.get("dagster", {}).get("skip_automation"):
+            return None
+
         materialized = dbt_resource_props.get("config", {}).get("materialized", "view")
 
         # union_relations views need dep-aware refresh: their compiled SQL
