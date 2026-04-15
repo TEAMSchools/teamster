@@ -507,7 +507,7 @@ with
             team_manager as tm
             on e.school = tm.school
             and e.team = tm.team
-        where g.gpa_y1 is not null
+        where g.gpa_y1 is not null and g.academic_year = {{ var("current_academic_year") }}
         group by e.region, e.school, e.team, g.week_start_monday, tm.manager
     )
 
