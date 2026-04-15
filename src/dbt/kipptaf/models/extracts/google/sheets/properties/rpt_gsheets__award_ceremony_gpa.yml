@@ -1,5 +1,29 @@
 models:
   - name: rpt_gsheets__award_ceremony_gpa
-    config:
-      contract:
-        enforced: false
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - school
+              - student_number
+    columns:
+      - name: school
+        data_type: string
+      - name: student_number
+        data_type: int64
+      - name: student_name
+        data_type: string
+      - name: english
+        data_type: float64
+      - name: math
+        data_type: float64
+      - name: science
+        data_type: float64
+      - name: social_studies
+        data_type: float64
+      - name: world_language
+        data_type: float64
+      - name: vpa
+        data_type: float64
+      - name: physed
+        data_type: float64
