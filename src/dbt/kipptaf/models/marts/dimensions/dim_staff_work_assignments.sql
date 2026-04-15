@@ -36,7 +36,11 @@ with
 select
     {{ dbt_utils.generate_surrogate_key(["wa.item_id"]) }} as work_assignment_key,
 
-    {{ dbt_utils.generate_surrogate_key(["en.employee_number"]) }} as staff_key,
+    if(
+        en.employee_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["en.employee_number"]) }},
+        cast(null as string)
+    ) as staff_key,
 
     en.employee_number,
     wa.item_id,
