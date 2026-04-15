@@ -110,7 +110,7 @@
     ],
     "additionalDirectories": [
       "/workspaces/teamster/.worktrees/**",
-      "/workspaces/teamster/.claude/**"
+      "/workspaces/teamster/.claude/scratch"
     ]
   },
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
