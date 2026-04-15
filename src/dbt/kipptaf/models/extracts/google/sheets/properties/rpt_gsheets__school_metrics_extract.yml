@@ -47,9 +47,13 @@ models:
         data_type: string
       - name: metric
         description: >
-          Name of the specific metric. Examples: Weekly ADA,
+          Name of the specific metric. Tier-level referral metrics use fixed
+          labels: Referrals - All, Referrals - High, Referrals - Middle,
+          Referrals - Low. Category-level referral metrics use the DeansList
+          category name prefixed with "Referrals - " (e.g.,
+          "Referrals - Disrespect to Staff"). Other examples: Weekly ADA,
           % Chronically Absent (ADA <= 90%), Proficiency (Mastery Rate),
-          Referrals - High, Failure Rate (Y1), Avg Y1 GPA (Weighted).
+          Failure Rate (Y1), Avg Y1 GPA (Weighted).
         data_type: string
       - name: time_scale
         description: >

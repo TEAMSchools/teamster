@@ -254,6 +254,7 @@ with
             school_id as deanslist_school_id,
             incident_id,
             referral_tier,
+            category,
 
             date_trunc(start_date, week(monday)) as week_start_monday,
         from {{ ref("int_deanslist__incidents__penalties") }}
@@ -321,6 +322,63 @@ with
             and ew.deanslist_school_id = dl.deanslist_school_id
             and ew.week_start_monday = dl.week_start_monday
         group by ew.region, ew.school, ew.grade_level, ew.week_start_monday
+    ),
+
+    dl_category_homeroom_week as (
+        select
+            ew.region,
+            ew.school,
+            ew.team,
+            ew.week_start_monday,
+            dl.category,
+
+            tm.manager,
+
+            count(distinct dl.incident_id) as referral_count,
+        from enrollments_weeks as ew
+        left join
+            dl_incidents as dl
+            on ew.student_number = dl.student_school_id
+            and ew.academic_year = dl.create_ts_academic_year
+            and ew.deanslist_school_id = dl.deanslist_school_id
+            and ew.week_start_monday = dl.week_start_monday
+        left join
+            team_manager as tm
+            on ew.school = tm.school
+            and ew.team = tm.team
+        where dl.category is not null
+        group by
+            ew.region,
+            ew.school,
+            ew.team,
+            ew.week_start_monday,
+            dl.category,
+            tm.manager
+    ),
+
+    dl_category_gradelevel_week as (
+        select
+            ew.region,
+            ew.school,
+            ew.grade_level,
+            ew.week_start_monday,
+            dl.category,
+
+            count(distinct dl.incident_id) as referral_count,
+        from enrollments_weeks as ew
+        left join
+            dl_incidents as dl
+            on ew.student_number = dl.student_school_id
+            and ew.academic_year = dl.create_ts_academic_year
+            and ew.deanslist_school_id = dl.deanslist_school_id
+            and ew.week_start_monday = dl.week_start_monday
+        where dl.category is not null
+        group by
+            ew.region,
+            ew.school,
+            ew.grade_level,
+            ew.week_start_monday,
+            dl.category
     ),
 
     /* ============================================================
@@ -709,7 +767,43 @@ from dl_gradelevel_week
 
 union all
 
-/* 15. Failure rate by section + term */
+/* 15. DeansList referrals by category, homeroom + week */
+select
+    'Culture' as domain,
+    cast(null as string) as discipline,
+    cast(null as string) as course_name,
+    cast(null as string) as module_code,
+    concat('Referrals - ', category) as metric,
+    concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
+    region,
+    school,
+    'Homeroom' as grain_type,
+    team as grain,
+    manager,
+    cast(referral_count as float64) as value,
+from dl_category_homeroom_week
+
+union all
+
+/* 16. DeansList referrals by category, grade level + week */
+select
+    'Culture' as domain,
+    cast(null as string) as discipline,
+    cast(null as string) as course_name,
+    cast(null as string) as module_code,
+    concat('Referrals - ', category) as metric,
+    concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
+    region,
+    school,
+    'Grade Level' as grain_type,
+    cast(grade_level as string) as grain,
+    cast(null as string) as manager,
+    cast(referral_count as float64) as value,
+from dl_category_gradelevel_week
+
+union all
+
+/* 17. Failure rate by section + term */
 select
     'Grades' as domain,
     cast(null as string) as discipline,
@@ -727,7 +821,7 @@ from section_grades_raw
 
 union all
 
-/* 16. Avg weighted Y1 GPA by homeroom + week */
+/* 18. Avg weighted Y1 GPA by homeroom + week */
 select
     'Academics' as domain,
     cast(null as string) as discipline,
