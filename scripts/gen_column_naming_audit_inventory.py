@@ -21,6 +21,17 @@ Design reference:
 
 from __future__ import annotations
 
+import re
+
+_WS_RE = re.compile(r"\s+")
+
+
+def _flatten_description(text: str | None) -> str:
+    """Collapse whitespace runs to single spaces and strip edges."""
+    if not text:
+        return ""
+    return _WS_RE.sub(" ", text).strip()
+
 
 def main() -> None:
     raise NotImplementedError

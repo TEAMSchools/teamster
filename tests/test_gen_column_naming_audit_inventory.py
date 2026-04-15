@@ -29,3 +29,21 @@ def _load_script() -> ModuleType:
 def test_script_module_loads() -> None:
     module = _load_script()
     assert callable(module.main)
+
+
+def test_flatten_description_collapses_internal_whitespace() -> None:
+    module = _load_script()
+    result = module._flatten_description("Student\n  date   of\tbirth.")
+    assert result == "Student date of birth."
+
+
+def test_flatten_description_strips_edges() -> None:
+    module = _load_script()
+    result = module._flatten_description("\n  hello world  \n")
+    assert result == "hello world"
+
+
+def test_flatten_description_handles_empty_and_none() -> None:
+    module = _load_script()
+    assert module._flatten_description("") == ""
+    assert module._flatten_description(None) == ""
