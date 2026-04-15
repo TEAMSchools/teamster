@@ -71,15 +71,15 @@ cube-school-{slug}-summary   # one school, aggregates only
 `{region}` matches `location_region` values from `dim_locations` (lowercased,
 hyphenated). `{slug}` matches `location_abbreviation` from `dim_locations`.
 
-`detail` is a superset of `summary` access — a user with
-`cube-school-{slug}-detail` implicitly has row-level access for their school.
-`cube-school-{slug}-summary` exists for users who should see aggregated data
-only (e.g., a community partner).
+A user with `-detail` access can see everything a `-summary` user can see, plus
+individual rows. `cube-school-{slug}-summary` exists for users who should see
+aggregated data only (e.g., a user from another school) — they do not need a
+`-detail` group.
 
 **Access groups** (control which columns or cubes a user can see):
 
 ```text
-cube-access-student-data         # student-domain cubes visible at all
+cube-access-student-data         # student-domain cubes visible
                                  #   (attendance, behavior, grades, assessments,
                                  #   surveys, etc.) — users without this group
                                  #   see no student cubes in schema introspection
@@ -89,6 +89,14 @@ cube-access-staff-compensation   # salary and pay rate fields on staff cubes
 cube-access-staff-all            # bypass org-hierarchy filter — see all staff
                                  #   records, not just your reporting chain
 ```
+
+**Groups are additive.** A user's effective permissions are the union of all
+their `cube-*` groups — there is no role hierarchy to configure. Assign whatever
+combination of scope and access groups matches what the person actually needs.
+For example, a Newark Head of Schools with `cube-region-newark-detail` and
+`cube-access-staff-all` sees all Newark staff (location scope from the first
+group, org-hierarchy filter removed by the second) — but not staff in other
+regions. Network-wide staff access requires `cube-network-detail`.
 
 **Examples:**
 
