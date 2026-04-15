@@ -67,3 +67,12 @@ left join
     locations as loc
     on ada.schoolid = loc.location_powerschool_school_id
     and {{ extract_code_location("ada") }} = loc.location_dagster_code_location
+
+-- TODO: overlapping enrollment records at same school cause join
+-- fan-out; qualify picks latest entrydate (#3633)
+qualify
+    row_number() over (
+        partition by ada.student_number, ada._dbt_source_relation, ada.calendardate
+        order by enr.entrydate desc
+    )
+    = 1

@@ -66,3 +66,11 @@ left join
     on cc.cc_abs_termid = rt.powerschool_term_id
     and cc.sections_schoolid = rt.school_id
     and cc.region = rt.region
+
+-- TODO: overlapping enrollment records at same school cause join
+-- fan-out; qualify picks latest entrydate (#3633)
+qualify
+    row_number() over (
+        partition by cc.cc_dcid, cc._dbt_source_relation order by enr.entrydate desc
+    )
+    = 1

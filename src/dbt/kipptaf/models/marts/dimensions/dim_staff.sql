@@ -1,5 +1,11 @@
 with
-    staff as (
+    employee_numbers as (
+        select employee_number,
+        from {{ ref("stg_people__employee_numbers") }}
+        where is_active
+    ),
+
+    staff_history as (
         {{
             dbt_utils.deduplicate(
                 relation=ref("int_people__staff_roster_history"),
@@ -10,27 +16,28 @@ with
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["employee_number"]) }} as staff_key,
+    {{ dbt_utils.generate_surrogate_key(["en.employee_number"]) }} as staff_key,
 
-    employee_number,
+    en.employee_number,
 
-    formatted_name,
-    given_name,
-    family_name_1,
+    sh.formatted_name,
+    sh.given_name,
+    sh.family_name_1,
 
-    birth_date,
+    sh.birth_date,
 
-    gender_identity,
-    race_ethnicity_reporting,
-    is_hispanic,
+    sh.gender_identity,
+    sh.race_ethnicity_reporting,
+    sh.is_hispanic,
 
-    work_email,
-    personal_email,
-    personal_cell,
+    sh.work_email,
+    sh.personal_email,
+    sh.personal_cell,
 
-    sam_account_name,
-    google_email,
+    sh.sam_account_name,
+    sh.google_email,
 
-    worker_original_hire_date as original_hire_date,
-    worker_rehire_date as rehire_date,
-from staff
+    sh.worker_original_hire_date as original_hire_date,
+    sh.worker_rehire_date as rehire_date,
+from employee_numbers as en
+left join staff_history as sh on en.employee_number = sh.employee_number
