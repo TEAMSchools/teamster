@@ -22,6 +22,9 @@ Design reference:
 from __future__ import annotations
 
 import re
+from pathlib import Path
+
+import yaml
 
 _WS_RE = re.compile(r"\s+")
 
@@ -164,6 +167,48 @@ def _structural_additions() -> list[dict[str, str]]:
             "proposed_name": "microsoft_365_email",
         },
     ]
+
+
+def _read_mart_yaml(path: Path) -> list[dict[str, str]]:
+    """Parse a single mart properties YAML into audit-row dicts."""
+    with path.open(encoding="utf-8") as fh:
+        doc = yaml.safe_load(fh)
+
+    plumbing = _plumbing_columns()
+    rows: list[dict[str, str]] = []
+
+    for model in doc.get("models", []) or []:
+        model_name = model["name"]
+        domain = _domain_for_model(model_name)
+        for column in model.get("columns", []) or []:
+            col_name = column["name"]
+            row: dict[str, str] = {
+                "domain": domain,
+                "model": model_name,
+                "current_column": col_name,
+                "data_type": column.get("data_type", "") or "",
+                "current_description": _flatten_description(column.get("description")),
+                "action": "keep",
+                "proposed_name": "",
+                "rule_ref": "",
+                "review_status": "not_reviewed",
+                "reviewer_notes": "",
+            }
+
+            if col_name in plumbing:
+                row["action"] = "remove"
+                row["rule_ref"] = "plumbing"
+            else:
+                guess = _initial_rename_guess(col_name)
+                if guess is not None:
+                    proposed, rule_ref = guess
+                    row["action"] = "rename"
+                    row["proposed_name"] = proposed
+                    row["rule_ref"] = rule_ref
+
+            rows.append(row)
+
+    return rows
 
 
 def main() -> None:

@@ -182,3 +182,66 @@ def test_structural_additions_all_have_required_keys() -> None:
     }
     for row in module._structural_additions():
         assert set(row.keys()) == required, f"keys differ for {row}"
+
+
+_FIXTURE = _REPO_ROOT / "tests" / "fixtures" / "mart_yaml" / "dim_sample.yml"
+
+
+def test_read_mart_yaml_emits_one_row_per_column() -> None:
+    module = _load_script()
+    rows = module._read_mart_yaml(_FIXTURE)
+    assert len(rows) == 4
+
+
+def test_read_mart_yaml_sets_model_and_domain() -> None:
+    module = _load_script()
+    rows = module._read_mart_yaml(_FIXTURE)
+    assert all(r["model"] == "dim_sample" for r in rows)
+    # dim_sample is unknown — falls through to Uncategorized
+    assert all(r["domain"] == "Uncategorized" for r in rows)
+
+
+def test_read_mart_yaml_flattens_description() -> None:
+    module = _load_script()
+    rows = module._read_mart_yaml(_FIXTURE)
+    by_name = {r["current_column"]: r for r in rows}
+    assert by_name["sample_key"]["current_description"] == (
+        "Surrogate key for sample. Spanning multiple lines."
+    )
+
+
+def test_read_mart_yaml_applies_plumbing_default() -> None:
+    module = _load_script()
+    rows = module._read_mart_yaml(_FIXTURE)
+    by_name = {r["current_column"]: r for r in rows}
+    plumb = by_name["_dbt_source_relation"]
+    assert plumb["action"] == "remove"
+    assert plumb["rule_ref"] == "plumbing"
+    assert plumb["proposed_name"] == ""
+
+
+def test_read_mart_yaml_applies_rename_guess() -> None:
+    module = _load_script()
+    rows = module._read_mart_yaml(_FIXTURE)
+    by_name = {r["current_column"]: r for r in rows}
+    sn = by_name["student_number"]
+    assert sn["action"] == "rename"
+    assert sn["proposed_name"] == "local_student_identifier"
+    assert sn["rule_ref"] == "R1"
+
+
+def test_read_mart_yaml_default_is_keep() -> None:
+    module = _load_script()
+    rows = module._read_mart_yaml(_FIXTURE)
+    by_name = {r["current_column"]: r for r in rows}
+    ord_row = by_name["ordinary_column"]
+    assert ord_row["action"] == "keep"
+    assert ord_row["proposed_name"] == ""
+    assert ord_row["rule_ref"] == ""
+
+
+def test_read_mart_yaml_review_status_not_reviewed() -> None:
+    module = _load_script()
+    rows = module._read_mart_yaml(_FIXTURE)
+    assert all(r["review_status"] == "not_reviewed" for r in rows)
+    assert all(r["reviewer_notes"] == "" for r in rows)
