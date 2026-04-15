@@ -165,6 +165,52 @@ data_tests:
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
 
+### dbt_utils test syntax (dbt 1.11+)
+
+`dbt_utils.unique_combination_of_columns` and `relationships` tests require
+`arguments:` nesting. The flat form (without `arguments:`) triggers a
+deprecation warning.
+
+### Date-range joins
+
+Use half-open intervals for enrollment date-range joins — `BETWEEN` causes
+fan-out when consecutive enrollments share a boundary date:
+
+```sql
+-- wrong: matches both enrollments on the shared boundary
+and cc.dateenrolled between enr.entrydate and enr.exitdate
+
+-- right: half-open interval
+and enr.entrydate <= cc.dateenrolled
+and enr.exitdate > cc.dateenrolled
+```
+
+### Enrollment join fan-out (known upstream issue)
+
+`base_powerschool__student_enrollments` and
+`base_powerschool__course_enrollments` have genuinely overlapping date ranges
+for some students at the same school/section (not just boundary overlaps).
+Half-open interval joins reduce but don't eliminate fan-out. When a date-range
+enrollment/CC join still produces duplicates, add a `qualify` tiebreaker picking
+the latest `entrydate` / `cc_dateenrolled`, with a `-- TODO: #3633` comment.
+
+### Nullable surrogate keys
+
+`dbt_utils.generate_surrogate_key()` hashes NULL inputs into a deterministic
+placeholder string — it never returns NULL. When a surrogate key column can be
+null (e.g., from a LEFT JOIN), wrap the call:
+
+```sql
+if(
+    source_column is not null,
+    {{ dbt_utils.generate_surrogate_key(["source_column"]) }},
+    cast(null as string)
+) as fk_column,
+```
+
+Without this, relationship tests check the placeholder hash against the parent
+dimension and fail.
+
 ### SQL conventions
 
 - **Soft-delete filters**: Apply in the **staging model**, not in downstream
