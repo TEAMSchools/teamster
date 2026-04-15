@@ -47,3 +47,53 @@ def test_flatten_description_handles_empty_and_none() -> None:
     module = _load_script()
     assert module._flatten_description("") == ""
     assert module._flatten_description(None) == ""
+
+
+def test_domain_for_model_conformed() -> None:
+    module = _load_script()
+    assert module._domain_for_model("dim_dates") == "Conformed"
+    assert module._domain_for_model("dim_locations") == "Conformed"
+    assert module._domain_for_model("dim_regions") == "Conformed"
+    assert module._domain_for_model("dim_school_calendars") == "Conformed"
+    assert module._domain_for_model("dim_terms") == "Conformed"
+
+
+def test_domain_for_model_student() -> None:
+    module = _load_script()
+    assert module._domain_for_model("dim_students") == "Student"
+    assert module._domain_for_model("dim_student_enrollments") == "Student"
+    assert module._domain_for_model("bridge_student_contacts") == "Student"
+    assert module._domain_for_model("fct_student_attendance_daily") == "Attendance"
+
+
+def test_domain_for_model_staff() -> None:
+    module = _load_script()
+    assert module._domain_for_model("dim_staff") == "Staff"
+    assert module._domain_for_model("dim_staff_work_assignments") == "Staff"
+    assert module._domain_for_model("dim_staff_observation_types") == "Observation"
+    assert module._domain_for_model("fct_staff_observations") == "Observation"
+
+
+def test_domain_for_model_other_domains() -> None:
+    module = _load_script()
+    assert module._domain_for_model("dim_assessments") == "Assessment"
+    assert module._domain_for_model("dim_colleges") == "College"
+    assert module._domain_for_model("fct_behavioral_incidents") == "Behavioral"
+    assert module._domain_for_model("fct_family_communications") == "Behavioral"
+    assert module._domain_for_model("fct_grades_term") == "Gradebook"
+    assert module._domain_for_model("dim_surveys") == "Survey"
+    assert module._domain_for_model("dim_job_postings") == "Talent"
+    assert module._domain_for_model("dim_staffing_positions") == "Staffing"
+    assert module._domain_for_model("fct_support_tickets") == "IT"
+
+
+def test_domain_for_model_course() -> None:
+    module = _load_script()
+    assert module._domain_for_model("dim_courses") == "Course"
+    assert module._domain_for_model("dim_course_sections") == "Course"
+    assert module._domain_for_model("bridge_course_section_teachers") == "Course"
+
+
+def test_domain_for_model_unknown_returns_uncategorized() -> None:
+    module = _load_script()
+    assert module._domain_for_model("dim_wild_card_thing") == "Uncategorized"

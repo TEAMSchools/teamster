@@ -33,6 +33,56 @@ def _flatten_description(text: str | None) -> str:
     return _WS_RE.sub(" ", text).strip()
 
 
+_DOMAIN_RULES: tuple[tuple[str, str], ...] = (
+    # (substring-in-model-name, domain). Order matters — first match wins.
+    ("staff_observation", "Observation"),
+    ("staff_attrition", "Staff"),
+    ("staff_benefits", "Staff"),
+    ("staff_membership", "Staff"),
+    ("staff_status", "Staff"),
+    ("staff_work_assignment", "Staff"),
+    ("work_assignment", "Staff"),
+    ("staffing", "Staffing"),
+    ("student_attendance", "Attendance"),
+    ("student_contact", "Student"),
+    ("student_section_enrollment", "Student"),
+    ("student_enrollment", "Student"),
+    ("student_assessment_expectation", "Assessment"),
+    ("behavioral", "Behavioral"),
+    ("family_communication", "Behavioral"),
+    ("grade", "Gradebook"),
+    ("assessment", "Assessment"),
+    ("college", "College"),
+    ("survey", "Survey"),
+    ("course", "Course"),
+    ("job_candidate", "Talent"),
+    ("job_posting", "Talent"),
+    ("support_ticket", "IT"),
+    ("student", "Student"),
+    ("staff", "Staff"),
+)
+
+_CONFORMED_MODELS = frozenset(
+    [
+        "dim_dates",
+        "dim_locations",
+        "dim_regions",
+        "dim_school_calendars",
+        "dim_terms",
+    ]
+)
+
+
+def _domain_for_model(model_name: str) -> str:
+    """Classify a mart model name into an audit-review domain."""
+    if model_name in _CONFORMED_MODELS:
+        return "Conformed"
+    for substring, domain in _DOMAIN_RULES:
+        if substring in model_name:
+            return domain
+    return "Uncategorized"
+
+
 def main() -> None:
     raise NotImplementedError
 
