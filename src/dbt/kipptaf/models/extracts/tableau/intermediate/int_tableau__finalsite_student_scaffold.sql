@@ -404,6 +404,4 @@ left join
     on r.enrollment_academic_year = e.academic_year
     and r.finalsite_id = e.infosnap_id
     and e.rn_year = 1
-where
-    r.goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
-    -- noqa
+where r.goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
