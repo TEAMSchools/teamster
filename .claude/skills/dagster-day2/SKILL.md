@@ -71,51 +71,108 @@ Per failed run: runId, jobName, dagster/code_location, startTime, endTime,
 RunFailureEvent message, dagster/will_retry, dagster/auto_retry_run_id.
 Totals: failureCount, successCount, canceledCount.
 
-Classify by first match:
+Classify by the FIRST rule that matches, checked in this order. The error
+CLASS (first line of error.message) takes precedence over the stack trace —
+a traceback that passes through `ssh_resource` or `k8s_client` does NOT
+mean network or API failure; the caller's class name is what matters.
+
+  Preemption/Interrupt: error class `DagsterExecutionInterruptedError`
+    OR EngineEvent message "Step execution terminated by interrupt"
+    OR EngineEvent message "received SIGTERM"
   Node OOM/eviction: "low on resource: memory", exit 137, "Evicted"
   Scheduling failure: "FailedScheduling", "Insufficient cpu/memory", taints
-  K8s API failure: "DagsterK8sUnrecoverableAPIError"
+  K8s API failure: error class `DagsterK8sUnrecoverableAPIError`
   Backoff limit: "BackoffLimitExceeded"
-  Network/SSH: "ssh:", "SSH tunnel", "port 22", "port 5484"
-  Connection failure: "Connection timed out/refused", "gRPC Error code: UNAVAILABLE" (no "ssh:")
-  Code error: ExecutionStepFailureEvent with Python traceback
-  Infra timeout: "run worker failed" without above signals
-  Unclassified: no match — include full message
+  Network/SSH: error class `paramiko.*`, `socket.timeout`, `OSError: [Errno`,
+    or explicit "SSH tunnel failed"/"port 22"/"port 5484" in the error
+    message (NOT just the stack) — stack traces through ssh_resource.py do
+    NOT count; they're incidental when a step gets interrupted mid-call
+  Connection failure: error class starts with "grpc." OR
+    "gRPC Error code: UNAVAILABLE" in message (no Interrupt signal above)
+  Code error: ExecutionStepFailureEvent with Python traceback AND no
+    Interrupt signal above
+  Infra timeout: "run worker failed" without any above signals
+  Unclassified: no match — include full message AND first 3 stack frames
 Add "category" field per run.
+
+Cross-reference rule (run in Phase 2, NOT Phase 1): if a run classified as
+Preemption/Interrupt has a startTime..endTime window that contains a
+`Preempted` event for a pod matching `dagster-step-<md5>-*` or
+`dagster-run-*` from step 6, note that the pod preemption IS the cause —
+they are the same event, not two correlated findings. Match by (a) the
+pod preemption timestamp falling within the run window AND (b) the
+EngineEvent "Step execution terminated by interrupt" timestamp within ±2s
+of the pod Preempted timestamp.
 
 ## 2. Retry verification (depends on 1)
 
 Skip if no dagster/auto_retry_run_id. Otherwise list_runs(run_ids=<all>).
 Collect: runId, status, startTime, endTime. Fetch logs only for FAILURE retries.
 
-## 3. Failed ticks
+## 3. Failed sensor/schedule ticks
 
-list_code_locations → names + loadStatus. Per LOADED location IN PARALLEL:
-  get_tick_history(name="<loc>__automation_condition_sensor",
-    repository_location_name="<loc>", statuses=["FAILURE"], limit=100,
-    after_timestamp={EPOCH}).
+list_code_locations → names + loadStatus.
+
+Per LOADED location IN PARALLEL:
+  list_sensors(repository_location_name="<loc>", sensor_status="RUNNING") →
+    collect ALL sensor names (AUTO_MATERIALIZE and STANDARD types).
+  list_schedules(repository_location_name="<loc>", schedule_status="RUNNING") →
+    collect schedule names (used in 3b).
+
+CRITICAL: do NOT hardcode `<loc>__automation_condition_sensor` or any other
+sensor name. A location has one automation-condition sensor plus many
+STANDARD sensors (SFTP, Google Sheets, BigQuery, forms, Couchdrop, etc.).
+Missing any of them means missing failures — e.g., a STANDARD sensor stuck
+for 10 h on `DagsterUnknownPartitionError` will be invisible if only the
+automation sensor is queried.
+
+Then IN PARALLEL across all (location, sensor) pairs:
+  get_tick_history(name="<sensor>", repository_location_name="<loc>",
+    statuses=["FAILURE"], limit=100, after_timestamp={EPOCH}).
   MUST paginate: if a page returns 100 ticks, re-query with
   before_timestamp=<oldest_returned_timestamp - 1>, after_timestamp={EPOCH}.
   Loop until a page returns < 100. Concatenate pages.
-  list_schedules(repository_location_name="<loc>", schedule_status="RUNNING").
 
-Collect per failure tick: tickId, timestamp, location, grpcIp (extracted from
-"ipv4:<ip>:<port>"), error (300 chars). Note locations with 0 failures. Flag
-non-LOADED for 3a.
+A single sensor with 60+ failures can blow the tool-result token budget. If
+a single get_tick_history page exceeds the token limit, the tool will error
+with a file path — read with jq and extract only tickId/timestamp/error
+(first 300 chars), discarding stack frames.
 
-Per location write ALL failure ticks as an array (not count + sample).
-CRITICAL: write every tick — do not summarize, sample, or truncate. If the
-response is large, still write every entry. Format:
-  [{tickId, timestamp, grpcIp, error}]
+Collect per failure tick: tickId, timestamp, location, sensorName,
+sensorType (AUTO_MATERIALIZE or STANDARD), grpcIp (extracted from
+"ipv4:<ip>:<port>" if present in error — mostly relevant for
+AUTO_MATERIALIZE sensors, STANDARD sensor failures rarely have gRPC IPs),
+error (300 chars, first-line class + first exception message). Note
+locations with 0 failures across all sensors. Flag non-LOADED for 3a.
 
-For locations with failures, also fetch get_location_load_history(limit=5)
-and include deploy timestamps in the output. Note: load history returns N
-most recent deploys regardless of timestamp — filter to in-window deploys.
-Then fetch context ticks
-(ALL statuses):
+Per sensor write ALL failure ticks as an array (not count + sample).
+CRITICAL: write every tick — do not summarize, sample, or truncate.
+Format:
+  {
+    "<location>": {
+      "<sensor>": {
+        "sensorType": "...",
+        "failureCount": N,
+        "ticks": [{tickId, timestamp, grpcIp, error}]
+      }
+    }
+  }
+
+For locations with AUTO_MATERIALIZE sensor failures, also fetch
+get_location_load_history(limit=5) and include deploy timestamps in the
+output. (STANDARD sensor failures are almost always data-definition bugs,
+not deploy-correlated — skip load history for those.) Note: load history
+returns N most recent deploys regardless of timestamp — filter to in-window
+deploys. Then fetch context ticks (ALL statuses) for each sensor with
+failures:
   get_tick_history(same sensor, after_timestamp=<first_fail - 60>,
     before_timestamp=<last_fail + 60>, limit=50).
-Per context tick: timestamp, status, gRPC IP if present. Flat array.
+Per context tick: timestamp, status, gRPC IP if present. Flat array per
+sensor.
+
+Bucket failures by error-class fingerprint (first line of error.message)
+in Phase 2 analysis — 61 identical `DagsterUnknownPartitionError` ticks on
+one sensor is one finding, not 61.
 
 ## 3a. Location load failures (depends on 3)
 
@@ -182,7 +239,12 @@ unhealthy. Skip lastHeartbeatTime (null on Cloud).
 
 ## 6. GKE critical events
 
-Two queries IN PARALLEL:
+Two queries IN PARALLEL. CRITICAL: include `format=` on query_logs and the
+`jsonPayload.reason=(...)` clause on both — without either, the tools return
+full JSON per log entry (hundreds of bytes each) and WILL exceed the
+tool-result token limit. If the subagent hits "response exceeds token limit",
+it means the query or format was malformed — retry with the exact template
+below, NOT a smaller time window.
 
 mcp__observability__list_log_entries(
   resourceNames=["projects/teamster-332318"],
@@ -201,8 +263,18 @@ mcp__gke__query_logs(project_id="teamster-332318",
     AND resource.labels.namespace_name="dagster-cloud"
     AND jsonPayload.reason=("Preempted" OR "Evicted" OR "OOMKilling"
       OR "Preempting" OR "BackOff")',
-  time_range={startTime: "{UTC_START}", endTime: "{UTC_END}"}, limit=100,
-  format="{{.timestamp}} {{.resource.labels.pod_name}} {{.jsonPayload.reason}} {{.jsonPayload.message}}").
+  time_range={start_time: "{UTC_START}", end_time: "{UTC_END}"}, limit=100,
+  format="{{.timestamp}}|{{.resource.labels.pod_name}}|{{.jsonPayload.reason}}|{{.jsonPayload.message}}").
+
+The `format=` parameter is MANDATORY. Omitting it makes query_logs return the
+full JSON representation of each entry (resource labels, operation, insertId,
+receiveTimestamp, etc.) — even 1 matching event can be ~1KB, and 100 events
+blow the tool-result token limit. The pipe-delimited template above keeps each
+event under ~200 bytes.
+
+Note: `mcp__gke__query_logs` uses snake_case `time_range` keys
+(`start_time`/`end_time`), NOT camelCase. camelCase is silently accepted but
+ignored, yielding an unbounded query.
 
 Per entry: timestamp, reason, pod/object name, message. Verify all entries
 have timestamps within {UTC_START}–{UTC_END} before writing — discard any
@@ -214,6 +286,11 @@ timestamp. MUST paginate: if a page returns 100 (truncated), re-query with
 Loop until a page returns < 100. Deduplicate by timestamp + pod name across
 pages. Same rule for `mcp__observability__list_log_entries` (use
 nextPageToken or oldest timestamp).
+
+If a response still exceeds token limits AFTER confirming format= and
+reason-filter are correct, split by reason: run one query per reason value
+and concatenate results. Do NOT skip the step or write empty results with a
+"deferred" note — the Phase 2 correlation depends on real pod events.
 
 ## 7. Alerts
 

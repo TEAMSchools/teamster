@@ -1,0 +1,56 @@
+models:
+  - name: dim_student_contact_persons
+    description: >-
+      Contact person dimension. One row per unique contact person, deduplicated
+      across students. A parent linked to multiple students (siblings) appears
+      once here and has multiple rows in bridge_student_contacts. Person
+      attributes (name, phone, email, address) are stable across student-contact
+      pairs and live on this dimension.
+
+    columns:
+      - name: student_contact_person_key
+        data_type: string
+        description: >-
+          Surrogate key derived from _dbt_source_relation and
+          powerschool_person_id. Primary key for this dimension.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: _dbt_source_relation
+        data_type: string
+        description: >-
+          Source district identifier from dbt_utils.union_relations, carrying
+          the schema and table name of the originating PowerSchool instance.
+
+      - name: powerschool_person_id
+        data_type: int64
+        description: >-
+          PowerSchool person.id for the contact. Scoped to a single district
+          instance — not globally unique across districts. Use
+          student_contact_person_key for cross-district uniqueness.
+
+      - name: contact_name
+        data_type: string
+        description: >-
+          Full name of the contact person (first + last, trimmed) as stored in
+          PowerSchool.
+
+      - name: phone
+        data_type: string
+        description: >-
+          Primary phone number for the contact person. Prefers Mobile over Home
+          over Daytime over Work. Formatted as (NXX) NXX-XXXX. NULL if no phone
+          is recorded.
+
+      - name: email
+        data_type: string
+        description: >-
+          Current email address for the contact person. NULL if no email is
+          recorded in PowerSchool.
+
+      - name: address
+        data_type: string
+        description: >-
+          Home address for the contact person, formatted as street, city, state
+          zip. NULL if no home address is recorded.

@@ -1,0 +1,124 @@
+models:
+  - name: fct_student_attendance_daily
+    description: >-
+      Student daily attendance fact table. One row per student x calendar date
+      with attendance recorded. Contains attendance code, present/absent/tardy
+      indicators, and membership value. School calendar attributes
+      (is_in_session, is_membership_day) are reached via compound join on
+      (date_key, location_key) to dim_school_calendars, avoiding a diamond path
+      through dim_locations. FK to dim_student_enrollments, dim_dates, and
+      dim_school_calendars.
+    columns:
+      - name: student_attendance_daily_key
+        data_type: string
+        description: >-
+          Surrogate key derived from student_number, _dbt_source_relation, and
+          calendardate. Primary key for this fact.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_relation, academic_year, and entrydate.
+        data_tests:
+          - not_null
+
+      - name: date_key
+        data_type: date
+        description: >-
+          Calendar date of the attendance record. FK to dim_dates. Also used
+          with location_key to join dim_school_calendars.
+
+      - name: location_key
+        data_type: string
+        description: >-
+          FK to dim_locations. Surrogate key derived from location_clean_name.
+          Used with date_key to join dim_school_calendars.
+
+      - name: student_number
+        data_type: int64
+        description: >-
+          PowerSchool student number. Degenerate dimension for filtering.
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year (July start) in which this attendance date falls.
+
+      - name: attendance_code
+        data_type: string
+        description: >-
+          PowerSchool attendance code (e.g., A, T, T10, AD, OS, ISS). Null when
+          present with no code recorded.
+
+      - name: attendance_value
+        data_type: float64
+        description: >-
+          PowerSchool attendance value. 1.0 = present, 0.0 = absent.
+
+      - name: membership_value
+        data_type: float64
+        description: >-
+          PowerSchool membership value. Indicates whether the student was
+          counted as a member on this day.
+
+      - name: is_absent
+        data_type: float64
+        description: >-
+          1.0 if the student was absent, 0.0 if present. Derived as
+          abs(attendancevalue - 1).
+
+      - name: is_present_weighted
+        data_type: float64
+        description: >-
+          Weighted presence value. 0.67 for tardy (T-prefix codes), otherwise
+          equals attendancevalue.
+
+      - name: is_tardy
+        data_type: float64
+        description: >-
+          1.0 if the student was tardy (T-prefix attendance code), 0.0
+          otherwise.
+
+      - name: is_ontime
+        data_type: float64
+        description: >-
+          1.0 if the student arrived on time (non-tardy), 0.0 if tardy.
+
+      - name: is_oss
+        data_type: float64
+        description: >-
+          1.0 if the student received out-of-school suspension on this date (OS,
+          OSS, OSSP, SHI codes).
+
+      - name: is_iss
+        data_type: float64
+        description: >-
+          1.0 if the student received in-school suspension on this date (S, ISS
+          codes).
+
+      - name: is_suspended
+        data_type: float64
+        description: >-
+          1.0 if the student was suspended (any type) on this date. Union of
+          is_oss and is_iss codes.
+
+      - name: is_truant
+        data_type: boolean
+        description: >-
+          TRUE if the student meets regional truancy criteria. Miami: 15+
+          absences in 90-day rolling window. NJ regions: projected absences
+          reach 50+ for the year.
+
+      - name: semester
+        data_type: string
+        description: >-
+          Semester code for the attendance date (e.g., S1, S2).
+
+      - name: term
+        data_type: string
+        description: >-
+          Term code for the attendance date (e.g., Q1, Q2, Q3, Q4).

@@ -1,0 +1,99 @@
+models:
+  - name: fct_family_communications
+    description: >-
+      Family communication fact table. One row per communication event from
+      DeansList comm log. General-purpose model covering all communication types
+      (attendance calls, truancy outreach, general family contact). Scoped to
+      enrolled-student recipients only. FK to dim_student_enrollments and
+      dim_dates.
+    columns:
+      - name: family_communication_key
+        data_type: string
+        description: >-
+          Surrogate key derived from record_id and _dbt_source_relation. Primary
+          key for this fact.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_relation, academic_year, and entrydate.
+        data_tests:
+          - not_null
+
+      - name: date_key
+        data_type: date
+        description: >-
+          Date the communication occurred. FK to dim_dates.
+
+      - name: student_number
+        data_type: int64
+        description: >-
+          PowerSchool student number. Degenerate dimension for filtering.
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year (July start) for this communication.
+
+      - name: record_id
+        data_type: int64
+        description: >-
+          DeansList unique identifier for the communication log entry.
+
+      - name: communication_method
+        data_type: string
+        description: >-
+          Method of communication (e.g., Phone Call, Home Visit, Text, Email).
+
+      - name: topic
+        data_type: string
+        description: >-
+          Topic selected for the communication.
+
+      - name: reason
+        data_type: string
+        description: >-
+          Reason category for the communication (e.g., 'Att: Absent', 'Chronic
+          Absence: 4', general reasons).
+
+      - name: status
+        data_type: string
+        description: >-
+          Status of the communication attempt (e.g., Completed, Attempted, Left
+          Message).
+
+      - name: notes
+        data_type: string
+        description: >-
+          Free-text response notes from the communication.
+
+      - name: staff_name
+        data_type: string
+        description: >-
+          Full name of the staff member who logged the communication.
+
+      - name: communication_date
+        data_type: date
+        description: >-
+          Date the communication was logged.
+
+      - name: communication_datetime
+        data_type: datetime
+        description: >-
+          Datetime the communication was logged, preserving time of day.
+
+      - name: is_attendance_call
+        data_type: boolean
+        description: >-
+          TRUE if the communication reason starts with 'Att:' indicating it is
+          an attendance-related call.
+
+      - name: is_truancy_call
+        data_type: boolean
+        description: >-
+          TRUE if the communication reason starts with 'Chronic Absence:'
+          indicating it is a truancy intervention call.

@@ -183,8 +183,12 @@ a different pod type.
   Multiple commits in quick succession → multiple deployments → pods competing
   for resources.
 - **GKE log queries**: Filter by `resource.labels.pod_name:<prefix>` for
-  container logs, `resource.type="k8s_cluster"` for k8s events (scheduling,
-  scaling, eviction). Use `jsonPayload.reason` to filter event types.
+  container logs. For k8s events (log_name `.../logs/events`), resource type
+  depends on event scope: pod-level kubelet/scheduler events (`Preempted`,
+  `Evicted`, `OOMKilling`, `Killing`) are `resource.type="k8s_pod"`;
+  cluster-level events (`ScaleUpFailed`, `FailedScheduling`, `NodeNotReady`,
+  `FailedCreate`) are `resource.type="k8s_cluster"`. Use `jsonPayload.reason` to
+  filter event types.
 - **Pathlib `AttributeError` on code server startup**: `PosixPath` missing
   `_str`/`_drv` slots = SIGTERM hit during Python module import (preemption or
   eviction). Pods self-heal on restart. Safe to mute in GCP Error Reporting.
@@ -218,6 +222,11 @@ a different pod type.
 - **Autopilot node pre-warming**: Not possible — no DaemonSets, no image
   pre-pulling, no node lifecycle control. Only levers for cold-node startup
   latency: image size reduction and Dagster timeout increases.
+- **CPU limit alert sensitivity**: `GKE Container - High CPU Limit Utilization`
+  fires at >90% `ALIGN_MEAN` over 60s with `count=1`. When an asset's `op_tags`
+  CPU limit alerts, bump by 250m — re-measure peak with
+  `kubernetes.io/container/cpu/core_usage_time` `ALIGN_RATE` before each
+  subsequent bump.
 
 ## Agent Error Observability
 

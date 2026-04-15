@@ -1,0 +1,70 @@
+models:
+  - name: dim_assessments
+    description: >-
+      Assessment definition dimension. One row per unique assessment definition.
+      Covers internal Illuminate assessments, NJ and FL state assessments, and
+      college-entrance assessments (SAT, ACT, AP). assessment_scope indicates
+      whether scores are linked at the enrollment level or student level.
+    columns:
+      - name: assessment_key
+        data_type: string
+        description: >-
+          Surrogate key derived from assessment_type, title, subject_area,
+          scope, module_code, and grade_level_tested. Primary key.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: assessment_type
+        data_type: string
+        description: >-
+          Source system category: illuminate (internal KIPP), state (NJSLA,
+          FAST, NJGPA), or college (SAT, ACT, PSAT, AP).
+
+      - name: title
+        data_type: string
+        description: >-
+          Display name of the assessment.
+
+      - name: subject_area
+        data_type: string
+        description: >-
+          Subject tested (e.g., Mathematics, English Language Arts, Reading,
+          Science, Composite).
+
+      - name: scope
+        data_type: string
+        description: >-
+          Assessment scope or family (e.g., CMA, CGI for internal; NJSLA, FAST
+          for state; SAT, ACT for college).
+
+      - name: module_code
+        data_type: string
+        description: >-
+          Module or test code that identifies the specific assessment variant
+          (e.g., QA1, ELA05, act_composite, sat_total_score).
+
+      - name: module_type
+        data_type: string
+        description: >-
+          Module type for internal Illuminate assessments (e.g., QA, CR). Null
+          for state and college assessments.
+
+      - name: grade_level_tested
+        data_type: int64
+        description: >-
+          Grade level the assessment targets. Null for college-entrance
+          assessments which are not grade-specific.
+
+      - name: is_internal_assessment
+        data_type: boolean
+        description: >-
+          TRUE for KIPP-created internal assessments administered via
+          Illuminate. FALSE for external state and college assessments.
+
+      - name: assessment_scope
+        data_type: string
+        description: >-
+          Determines how scores link to students: enrollment (scores are tied to
+          a section enrollment) or student (scores follow the student with no
+          enrollment context, e.g., SAT, ACT, AP).

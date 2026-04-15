@@ -1,0 +1,69 @@
+models:
+  - name: dim_students
+    description: >-
+      Student person dimension. One row per student. Contains stable
+      person-level attributes only. Enrollment history is in
+      dim_student_enrollments, which foreign-keys to this model via student_key.
+    columns:
+      - name: student_key
+        data_type: string
+        description: >-
+          Surrogate key derived from student_number. Primary key for the student
+          dimension.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: local_student_identifier
+        data_type: int64
+        description: >-
+          PowerSchool student_number. Local district-assigned student ID.
+
+      - name: state_student_identifier
+        data_type: string
+        description: >-
+          State-assigned student identifier (state_studentnumber in
+          PowerSchool).
+
+      - name: student_name
+        data_type: string
+        description: >-
+          Full name of the student (last, first format from PowerSchool).
+
+      - name: birth_date
+        data_type: date
+        description: >-
+          Student date of birth.
+
+      - name: gender
+        data_type: string
+        description: >-
+          Student gender as recorded in PowerSchool.
+
+      - name: lunch_status
+        data_type: string
+        description: >-
+          Meal eligibility status (e.g., Free, Reduced, Paid).
+
+      - name: is_gifted
+        data_type: boolean
+        description: >-
+          TRUE if the student has a non-null gifted_and_talented value in
+          PowerSchool, indicating gifted and talented identification.
+
+      - name: is_ell
+        data_type: boolean
+        description: >-
+          TRUE if the student has a non-null lep_status, indicating active
+          English Language Learner classification.
+
+      - name: has_iep
+        data_type: boolean
+        description: >-
+          TRUE if the student's iep_status is 'With IEP'.
+
+      - name: ethnicity
+        data_type: string
+        description: >-
+          Student race/ethnicity mapped to standard category labels from
+          PowerSchool single-character codes.
