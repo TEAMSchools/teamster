@@ -1,51 +1,113 @@
 models:
   - name: int_reporting__promotional_status
+    description: >
+      Per-student, per-term promotional status for all active enrollments.
+      Combines attendance, academic performance, and assessment data to produce
+      attendance, academic, and overall promotion status flags used by the
+      promo dashboard and DeansList extract.
     columns:
       - name: student_number
         data_type: int64
+        description: PowerSchool student number.
       - name: academic_year
         data_type: int64
+        description: Academic year (e.g. 2025 for the 2024–25 school year).
       - name: term_name
         data_type: string
+        description: Reporting term name (e.g. RT1, RT2).
+      - name: is_current
+        data_type: boolean
+        description: True if this is the most recent completed or active reporting term.
       - name: ada_term_running
         data_type: float64
+        description: Average daily attendance rate accumulated through the end of the term.
       - name: n_absences_y1_running
         data_type: float64
+        description: >
+          Total absences year-to-date through the end of the term, including
+          suspensions and tardy-converted absences.
       - name: n_absences_y1_running_non_susp
         data_type: float64
+        description: >
+          Absences year-to-date excluding suspension codes (ISS, OSS, OS, OSSP,
+          SHI), plus a tardy penalty of floor(tardies / 3). Used for Camden HS
+          promotion thresholds.
       - name: n_absences_y1_running_non_susp_no_tardy
         data_type: float64
+        description: >
+          Absences year-to-date excluding suspension codes (ISS, OSS, OS, OSSP,
+          SHI) with no tardy penalty applied. Used for Newark HS promotion
+          thresholds.
       - name: iready_reading_recent
         data_type: string
+        description: Most recent iReady reading overall relative placement for the year.
       - name: iready_math_recent
         data_type: string
+        description: Most recent iReady math overall relative placement for the year.
       - name: n_failing
         data_type: int64
+        description: Number of courses with a failing grade as of the term.
       - name: n_failing_core
         data_type: int64
+        description: Number of core courses with a failing grade as of the term.
       - name: projected_credits_cum
         data_type: float64
+        description: >
+          Projected cumulative credits earned through end of year, combining
+          projected year credits with historical earned credits.
       - name: projected_credits_y1_term
         data_type: float64
+        description: Projected credits to be earned in the current academic year through the term.
       - name: dibels_composite_level_recent_str
         data_type: string
+        description: Most recent DIBELS composite benchmark level label for the year.
       - name: dibels_composite_level_recent
         data_type: int64
+        description: >
+          Most recent DIBELS composite benchmark level as an integer (lower is
+          more at-risk).
       - name: star_math_level_recent
         data_type: int64
+        description: Most recent Renaissance STAR math achievement level for the year.
       - name: star_reading_level_recent
         data_type: int64
+        description: Most recent Renaissance STAR reading achievement level for the year.
       - name: fast_ela_level_recent
         data_type: int64
+        description: Most recent FAST ELA achievement level for the year (Florida only).
       - name: fast_math_level_recent
         data_type: int64
+        description: Most recent FAST math achievement level for the year (Florida only).
       - name: attendance_status
         data_type: string
+        description: >
+          On-Track or Off-Track based on attendance thresholds appropriate for
+          the student's region and grade level.
       - name: attendance_status_hs_detail
         data_type: string
+        description: >
+          Detailed attendance status for HS students: On-Track,
+          Off-Track (Approaching threshold), or Off-Track (Already reached
+          threshold). Identical to attendance_status for non-HS grades.
       - name: academic_status
         data_type: string
+        description: >
+          On-Track or Off-Track based on academic criteria (assessment levels,
+          course failures, or credit accumulation) for the student's region
+          and grade level.
       - name: exemption
         data_type: string
+        description: >
+          Populated when a student is exempt from retention criteria:
+          Exempt - Special Education or Exempt - Manual Override.
+      - name: manual_retention
+        data_type: string
+        description: >
+          Populated with 'Manual Retention' when a staff member has logged a
+          force-retention entry in PowerSchool regardless of other criteria.
       - name: overall_status
         data_type: string
+        description: >
+          Combined On-Track or Off-Track promotional status derived from
+          attendance_status and academic_status according to region- and
+          grade-level-specific promotion rules.

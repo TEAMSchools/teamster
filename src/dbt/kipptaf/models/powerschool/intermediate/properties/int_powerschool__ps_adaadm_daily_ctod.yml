@@ -29,3 +29,19 @@ models:
         data_type: float64
       - name: membershipvalue
         data_type: float64
+      - name: is_absent
+        data_type: float64
+      - name: is_present_weighted
+        data_type: float64
+      - name: is_tardy
+        data_type: float64
+      - name: is_ontime
+        data_type: float64
+      - name: is_oss
+        data_type: float64
+      - name: is_iss
+        data_type: float64
+      - name: is_suspended
+        data_type: float64
+      - name: is_absent_non_susp
+        data_type: float64

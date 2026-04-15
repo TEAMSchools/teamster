@@ -40,20 +40,6 @@ with
                 mem._dbt_source_relation, r'(kipp\w+)_'
             ) as _dbt_source_project,
 
-            {# TODO: move calcs to powerschool package #}
-            abs(mem.attendancevalue - 1) as is_absent,
-
-            if(
-                mem.att_code like 'T%', 0.67, mem.attendancevalue
-            ) as is_present_weighted,
-            if(mem.att_code like 'T%', 1.0, 0.0) as is_tardy,
-            if(mem.att_code like 'T%', 0.0, 1.0) as is_ontime,
-            if(mem.att_code in ('OS', 'OSS', 'OSSP', 'SHI'), 1.0, 0.0) as is_oss,
-            if(mem.att_code in ('S', 'ISS'), 1.0, 0.0) as is_iss,
-            if(
-                mem.att_code in ('OS', 'OSS', 'OSSP', 'S', 'ISS', 'SHI'), 1.0, 0.0
-            ) as is_suspended,
-
         from union_relations as mem
         inner join
             {{ ref("int_powerschool__terms") }} as t
@@ -120,6 +106,7 @@ select
     is_oss,
     is_iss,
     is_suspended,
+    is_absent_non_susp,
     n_absent_running_90,
     pct_absent_running_student_year,
     n_membership_student_year,
