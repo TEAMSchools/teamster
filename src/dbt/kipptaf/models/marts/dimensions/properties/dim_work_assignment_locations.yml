@@ -1,0 +1,102 @@
+models:
+  - name: dim_work_assignment_locations
+    description: >-
+      Work assignment location dimension with derived Type 2 SCD tracking. One
+      row per assignment x location change point. Detects changes to
+      homeWorkLocation name code and address fields via daily payload-hash
+      comparison. FK to dim_staff_work_assignments via work_assignment_key.
+    columns:
+      - name: work_assignment_location_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from item_id and effective_date_start.
+          Generated with generate_surrogate_key(["item_id",
+          "effective_date_start"]).
+        data_tests:
+          - unique
+          - not_null
+
+      - name: work_assignment_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_work_assignments. Surrogate key derived from
+          item_id. Generated with generate_surrogate_key(["item_id"]).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff_work_assignments')
+                field: work_assignment_key
+
+      - name: location_code
+        data_type: string
+        description: >-
+          ADP home work location name code value, from
+          homeWorkLocation.nameCode.codeValue.
+
+      - name: location_name
+        data_type: string
+        description: >-
+          Display name for the home work location, coalesced from longName and
+          shortName of homeWorkLocation.nameCode.
+
+      - name: address_line_one
+        data_type: string
+        description: >-
+          First line of the work location street address, from
+          homeWorkLocation.address.lineOne.
+
+      - name: address_line_two
+        data_type: string
+        description: >-
+          Second line of the work location street address, from
+          homeWorkLocation.address.lineTwo.
+
+      - name: address_line_three
+        data_type: string
+        description: >-
+          Third line of the work location street address, from
+          homeWorkLocation.address.lineThree.
+
+      - name: city_name
+        data_type: string
+        description: >-
+          City name of the work location address, from
+          homeWorkLocation.address.cityName.
+
+      - name: postal_code
+        data_type: string
+        description: >-
+          Postal code of the work location address, from
+          homeWorkLocation.address.postalCode.
+
+      - name: country_code
+        data_type: string
+        description: >-
+          Country code of the work location address, from
+          homeWorkLocation.address.countryCode.
+
+      - name: state_code
+        data_type: string
+        description: >-
+          State or province code of the work location address, from
+          homeWorkLocation.address.countrySubdivisionLevel1.codeValue.
+
+      - name: effective_date_start
+        data_type: date
+        description: >-
+          Date this location version was first observed, derived from the daily
+          partition date where the location attribute hash changed.
+
+      - name: effective_date_end
+        data_type: date
+        description: >-
+          Last date this location version was effective. Computed as one day
+          before the next version's effective_date_start, or 9999-12-31 for the
+          current version.
+
+      - name: is_current_record
+        data_type: boolean
+        description: >-
+          TRUE if this is the most recent location version for the work
+          assignment (effective_date_end = 9999-12-31).

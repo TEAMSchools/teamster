@@ -1,0 +1,49 @@
+models:
+  - name: dim_courses
+    description: >-
+      Course catalog dimension. One row per course per source region. Course
+      numbers are not unique across regions, so the surrogate key includes the
+      source relation. Attributes represent the most recent non-null values from
+      the PowerSchool course table as observed in enrollment records.
+    columns:
+      - name: course_key
+        data_type: string
+        description: >-
+          Surrogate key derived from courses_course_number and
+          _dbt_source_relation. Primary key for this dimension.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: course_number
+        data_type: string
+        description: >-
+          PowerSchool course number. Unique within a region but may overlap
+          across regions.
+        data_tests:
+          - not_null
+
+      - name: course_name
+        data_type: string
+        description: >-
+          Display name of the course as recorded in PowerSchool.
+
+      - name: credit_type
+        data_type: string
+        description: >-
+          Normalized PowerSchool credit type code (e.g., MATH, ENG, SCI, HR).
+          Variant codes from a 2023 PowerSchool plugin glitch are normalized
+          upstream in base_powerschool__course_enrollments.
+
+      - name: discipline
+        data_type: string
+        description: >-
+          Subject area discipline mapped from course number via the course
+          subject crosswalk. Null when the course number is not in the
+          crosswalk.
+
+      - name: credit_hours
+        data_type: float64
+        description: >-
+          Number of credit hours awarded for completing the course, as recorded
+          in PowerSchool.

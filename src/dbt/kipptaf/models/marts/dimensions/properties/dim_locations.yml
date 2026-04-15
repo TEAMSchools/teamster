@@ -1,0 +1,55 @@
+models:
+  - name: dim_locations
+    description: >-
+      School and office location dimension. One row per school or office.
+      Conformed dimension. Region context is reached by joining this model's
+      region column to dim_regions. Campus is a physical site grouping where
+      multiple schools share a building.
+    columns:
+      - name: location_key
+        data_type: string
+        description: >-
+          Surrogate key derived from location name.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: location_name
+        data_type: string
+        description: >-
+          Canonical location name.
+
+      - name: abbreviation
+        data_type: string
+        description: >-
+          Short display name for the location.
+
+      - name: region
+        data_type: string
+        description: >-
+          Region this location belongs to (Newark, Camden, Miami, Paterson).
+
+      - name: grade_band
+        data_type: string
+        description: >-
+          Grade band served (ES, MS, HS).
+
+      - name: campus
+        data_type: string
+        description: >-
+          Physical campus name. Multiple schools may share a campus.
+
+      - name: is_campus
+        data_type: boolean
+        description: >-
+          TRUE if this location record represents a campus-level entity.
+
+      - name: powerschool_school_id
+        data_type: int64
+        description: >-
+          PowerSchool school_id for joining to PowerSchool tables.
+
+      - name: deanslist_school_id
+        data_type: int64
+        description: >-
+          DeansList school_id for joining to DeansList tables.

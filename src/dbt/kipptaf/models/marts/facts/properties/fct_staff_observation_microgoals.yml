@@ -1,0 +1,96 @@
+models:
+  - name: fct_staff_observation_microgoals
+    description: >-
+      Staff observation microgoal assignment fact table. One row per teacher x
+      goal assignment. Records each microgoal or look-for assigned to a teacher
+      through SchoolMint Grow assignments, linked to the 4-level goal taxonomy.
+      Foreign keys to dim_staff (teacher and creator as role-playing dimensions)
+      and dim_staff_observation_microgoal_types.
+    columns:
+      - name: staff_observation_microgoal_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from teacher employee number,
+          assignment_id, and goal tag_id. Generated with
+          generate_surrogate_key(["gu.internal_id_int", "a.assignment_id",
+          "m.tag_id"]).
+        data_tests:
+          - unique
+          - not_null
+
+      - name: teacher_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff for the teacher receiving the microgoal.
+          Surrogate key derived from employee_number.
+        data_tests:
+          - not_null
+
+      - name: creator_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff for the person who created the assignment.
+          Surrogate key derived from creator employee_number. May be null if the
+          creator cannot be matched to the staff roster.
+
+      - name: staff_observation_microgoal_type_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_observation_microgoal_types. Surrogate key
+          derived from the goal tag_id.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff_observation_microgoal_types')
+                field: staff_observation_microgoal_type_key
+
+      - name: assignment_id
+        data_type: string
+        description: >-
+          SchoolMint Grow unique identifier for the assignment.
+
+      - name: teacher_employee_number
+        data_type: int64
+        description: >-
+          KIPP employee number of the teacher receiving the microgoal.
+
+      - name: creator_name
+        data_type: string
+        description: >-
+          Display name of the person who created the assignment.
+
+      - name: goal_name
+        data_type: string
+        description: >-
+          Name of the specific microgoal or look-for assigned.
+
+      - name: strand_name
+        data_type: string
+        description: >-
+          Strand (second taxonomy level) the goal belongs to.
+
+      - name: bucket_name
+        data_type: string
+        description: >-
+          Bucket (third taxonomy level) the goal belongs to.
+
+      - name: goal_type_name
+        data_type: string
+        description: >-
+          Top-level goal type category (e.g., Instructional, Cultural).
+
+      - name: assignment_date
+        data_type: date
+        description: >-
+          Local date when the assignment was created.
+
+      - name: assignment_created_at
+        data_type: timestamp
+        description: >-
+          UTC timestamp when the assignment was created.
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year derived from the assignment creation date.

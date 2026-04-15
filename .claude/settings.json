@@ -14,7 +14,7 @@
       "Bash(git status)",
       "Bash(git worktree list)",
       "Bash(uv tool list)",
-      "Edit(/.claude/skills/**)",
+      "Edit(/.claude/skills/dagster-day2/**)",
       "Edit(/.claude/scratch/**)",
       "Edit(/.worktrees/**)",
       "mcp__bigquery__analyze_contribution",
@@ -70,6 +70,7 @@
       "Read(//workspaces/teamster/**)",
       "Skill(claude-md-management:revise-claude-md:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)",
+      "Write(/.worktrees/**)",
       "Write(/.claude/scratch/**)",
       "Write(/.worktrees/**)"
     ],
@@ -107,7 +108,10 @@
       "Read(//proc/**)",
       "Read(/env/**)"
     ],
-    "additionalDirectories": ["/workspaces/teamster/.worktrees/**"]
+    "additionalDirectories": [
+      "/workspaces/teamster/.worktrees/**",
+      "/workspaces/teamster/.claude/**"
+    ]
   },
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
   "hooks": {

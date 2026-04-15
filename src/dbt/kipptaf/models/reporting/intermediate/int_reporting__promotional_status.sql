@@ -14,8 +14,9 @@ with
             coalesce(sum(mem.is_absent_non_susp), 0)
             + floor(sum(mem.is_tardy) / 3) as n_absences_y1_running_non_susp,
 
-            coalesce(sum(mem.is_absent_non_susp), 0)
-            as n_absences_y1_running_non_susp_no_tardy,
+            coalesce(
+                sum(mem.is_absent_non_susp), 0
+            ) as n_absences_y1_running_non_susp_no_tardy,
 
             case
                 regexp_extract(mem._dbt_source_relation, r'(kipp\w+)_')

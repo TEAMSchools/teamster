@@ -113,6 +113,10 @@ Rules for home-dir paths must use `~` (e.g.
 `Edit(~/.claude/shell-snapshots/**)`). Using `/` for a home-dir path silently
 fails — the rule never matches.
 
+Glob depth: `Edit(/.claude/skills/**)` may not match deeply nested paths. When
+an approval prompt appears despite an apparently-covering rule, accept it — the
+dialog auto-adds a narrower per-subdirectory rule that works.
+
 ## Settings file integrity
 
 Hooks and `permissions.deny` rules are defined in `.claude/settings.json`
