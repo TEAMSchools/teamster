@@ -53,8 +53,9 @@ models:
         data_type: string
       - name: time_scale
         description: >
-          Reporting period for the metric. Weekly metrics use
-          "week of YYYY-MM-DD" (Monday start). Term metrics use Q1, Q2, Q3, Q4.
+          Reporting period for the metric. All metrics except Failure Rate use
+          "week of YYYY-MM-DD" (Monday start). Failure Rate uses Q1, Q2, Q3, Q4
+          (PowerSchool storecode).
         data_type: string
       - name: region
         description: Region name (e.g., Newark, Camden, Miami, Paterson).

@@ -428,31 +428,29 @@ with
     ),
 
     /* ============================================================
-     * ACADEMICS — Avg weighted Y1 GPA by homeroom + term
+     * ACADEMICS — Avg weighted Y1 GPA by homeroom + week
      * ============================================================ */
-    gpa_homeroom_term as (
+    gpa_homeroom_week as (
         select
             e.region,
             e.school,
             e.team,
-            g.term_name,
+            g.week_start_monday,
 
             tm.manager,
 
             avg(g.gpa_y1) as metric_value,
         from enrollments as e
-        left join
-            {{ ref("int_powerschool__gpa_term") }} as g
-            on e.studentid = g.studentid
-            and e.yearid = g.yearid
-            and e.schoolid = g.schoolid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="g") }}
+        inner join
+            {{ ref("int_topline__gpa_term_weekly") }} as g
+            on e.student_number = g.student_number
+            and e.academic_year = g.academic_year
         left join
             team_manager as tm
             on e.school = tm.school
             and e.team = tm.team
         where g.gpa_y1 is not null
-        group by e.region, e.school, e.team, g.term_name, tm.manager
+        group by e.region, e.school, e.team, g.week_start_monday, tm.manager
     )
 
 /* ============================================================
@@ -729,18 +727,18 @@ from section_grades_raw
 
 union all
 
-/* 16. Avg weighted Y1 GPA by homeroom + term */
+/* 16. Avg weighted Y1 GPA by homeroom + week */
 select
     'Academics' as domain,
     cast(null as string) as discipline,
     cast(null as string) as course_name,
     cast(null as string) as module_code,
     'Avg Y1 GPA (Weighted)' as metric,
-    term_name as time_scale,
+    concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
     region,
     school,
     'Homeroom' as grain_type,
     team as grain,
     manager,
     metric_value as value,
-from gpa_homeroom_term
+from gpa_homeroom_week
