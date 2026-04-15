@@ -7,7 +7,9 @@ keeping the import pattern local to this test file.
 
 from __future__ import annotations
 
+import csv
 import importlib.util
+import io
 from pathlib import Path
 from types import ModuleType
 
@@ -245,10 +247,6 @@ def test_read_mart_yaml_review_status_not_reviewed() -> None:
     rows = module._read_mart_yaml(_FIXTURE)
     assert all(r["review_status"] == "not_reviewed" for r in rows)
     assert all(r["reviewer_notes"] == "" for r in rows)
-
-
-import csv
-import io
 
 
 def test_write_csv_emits_header_and_rows() -> None:
