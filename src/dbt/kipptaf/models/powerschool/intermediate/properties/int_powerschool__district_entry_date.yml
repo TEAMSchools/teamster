@@ -14,6 +14,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__attendance
             source_column: studentid
+            column_role: foreign_key
       - name: entrydate
         data_type: date
         description:

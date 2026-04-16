@@ -4,6 +4,8 @@ models:
       - name: dcid
         data_type: int64
         description: Unique identifier for this table. Indexed. Required.
+        constraints:
+          - type: primary_key
       - name: id
         data_type: int64
         data_tests:
@@ -17,6 +19,8 @@ models:
         data_type: int64
         description:
           The internal number and ID of the associated Students record.
+        constraints:
+          - type: foreign_key
       - name: testscoreid
         data_type: int64
         description:
@@ -49,6 +53,8 @@ models:
           If used, a unique identifier for the row. Currently applicable to
           multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
+        constraints:
+          - type: primary_key
       - name: notes
         data_type: string
         description: Descriptive notes about the student's test performance.

@@ -12,6 +12,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__attendance
             source_column: studentid
+            column_role: foreign_key
       - name: yearid
         data_type: int64
         description:
@@ -42,6 +43,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__cc
             source_column: sectionid
+            column_role: foreign_key
       - name: storecode
         data_type: string
         description:

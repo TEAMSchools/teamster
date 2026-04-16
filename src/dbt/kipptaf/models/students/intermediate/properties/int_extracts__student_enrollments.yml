@@ -25,6 +25,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__attendance
             source_column: studentid
+            column_role: foreign_key
       - name: students_dcid
         data_type: int64
       - name: student_number

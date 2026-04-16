@@ -58,17 +58,36 @@ def _flatten(text: str | None) -> str:
     return _WS_RE.sub(" ", text).strip()
 
 
+_PK_PATTERNS: tuple[str, ...] = (
+    "primary key",
+    "unique identifier for this table",
+    "unique identifier for the row",
+    "unique sequential number generated",
+    "unique number generated",
+)
+
+_FK_PATTERNS: tuple[str, ...] = (
+    "foreign key",
+    "internal number for the associated",
+    "internal number and id of the associated",
+)
+
+
 def _infer_column_role(description: str) -> str:
     """Infer primary_key or foreign_key from a column description.
 
-    PowerSchool data dictionary descriptions explicitly label columns as
-    'Primary key' or 'Foreign key'.
+    PowerSchool data dictionary descriptions use several phrasings for
+    keys: explicit labels ('Primary key', 'Foreign key') and implicit
+    patterns ('Unique identifier for this table', 'Internal number for
+    the associated...').
     """
     lower = description.lower()
-    if "primary key" in lower:
-        return "primary_key"
-    if "foreign key" in lower:
-        return "foreign_key"
+    for pattern in _PK_PATTERNS:
+        if pattern in lower:
+            return "primary_key"
+    for pattern in _FK_PATTERNS:
+        if pattern in lower:
+            return "foreign_key"
     return ""
 
 

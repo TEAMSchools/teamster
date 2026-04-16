@@ -11,14 +11,20 @@ models:
               config:
                 severity: error
         description: Unique identifier for this table. Indexed. Required.
+        constraints:
+          - type: primary_key
       - name: studentid
         data_type: int64
         description:
           The internal number and ID of the associated Students record.
+        constraints:
+          - type: foreign_key
       - name: sectionid
         data_type: int64
         description:
           The internal number and ID of the associated Sections record.
+        constraints:
+          - type: foreign_key
       - name: termid
         data_type: int64
         description:
@@ -129,6 +135,8 @@ models:
         description:
           The internal number and ID of the associated Grade Replacement Policy
           record.
+        constraints:
+          - type: foreign_key
       - name: whomodifiedid
         data_type: int64
         description:
@@ -258,6 +266,8 @@ models:
           Plus.If used, a unique identifier for the row.Currently applicable to
           multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
+        constraints:
+          - type: primary_key
       - name: replaced_grade
         data_type: string
         description:

@@ -11,6 +11,8 @@ models:
               config:
                 severity: error
         description: Unique identifier for this table. Indexed. Required.
+        constraints:
+          - type: primary_key
       - name: entrydate
         data_type: date
         description:
@@ -65,12 +67,16 @@ models:
         data_type: string
         description:
           Globally unique identifier for this table for SIF compliancy. Indexed.
+        constraints:
+          - type: primary_key
       - name: psguid
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
           multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
+        constraints:
+          - type: primary_key
       - name: id
         data_type: int64
         description:
@@ -81,6 +87,8 @@ models:
         data_type: int64
         description:
           The internal number and ID of the associated Students record.
+        constraints:
+          - type: foreign_key
       - name: schoolid
         data_type: int64
         description: The School_Number of the associated Schools record.

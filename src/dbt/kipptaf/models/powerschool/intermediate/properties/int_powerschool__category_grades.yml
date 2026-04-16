@@ -12,6 +12,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__cc
             source_column: sectionid
+            column_role: foreign_key
       - name: studentid
         data_type: int64
         description:
@@ -21,6 +22,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__attendance
             source_column: studentid
+            column_role: foreign_key
       - name: schoolid
         data_type: int64
         description: The School_Number of the associated Schools record.
