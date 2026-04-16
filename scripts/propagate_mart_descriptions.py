@@ -21,6 +21,7 @@ Design reference:
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -329,3 +330,116 @@ def _build_source_mapping(manifest: dict) -> dict[str, dict]:
             "package": _strip_region_prefix(source_name),
         }
     return result
+
+
+KIPPTAF_PROJECT = Path("src/dbt/kipptaf")
+MANIFEST_PATH = KIPPTAF_PROJECT / "target" / "manifest.json"
+COMPILED_DIR = KIPPTAF_PROJECT / "target" / "compiled" / "kipptaf" / "models"
+
+# Source-system package staging YAML directories
+STAGING_YAML_DIRS: tuple[Path, ...] = (
+    Path("src/dbt/amplify/models/dds/staging/properties"),
+    Path("src/dbt/amplify/models/mclass/api/staging/properties"),
+    Path("src/dbt/amplify/models/mclass/sftp/staging/properties"),
+    Path("src/dbt/deanslist/models/staging/properties"),
+    Path("src/dbt/edplan/models/staging/properties"),
+    Path("src/dbt/finalsite/models/staging/properties"),
+    Path("src/dbt/iready/models/staging/properties"),
+    Path("src/dbt/overgrad/models/staging/properties"),
+    Path("src/dbt/pearson/models/staging/properties"),
+    Path("src/dbt/powerschool/models/sis/staging/properties"),
+    Path("src/dbt/renlearn/models/staging/properties"),
+    Path("src/dbt/titan/models/staging/properties"),
+)
+
+# Skip these directory patterns (staging already enriched, extracts/rpt out of scope)
+_SKIP_PATTERNS: tuple[str, ...] = ("staging", "extracts", "rpt_")
+
+
+def _discover_kipptaf_yaml_dirs() -> list[Path]:
+    """Find all properties/ directories under kipptaf models, excluding staging/extracts/rpt."""
+    base = KIPPTAF_PROJECT / "models"
+    dirs: list[Path] = []
+    for props_dir in sorted(base.rglob("properties")):
+        if not props_dir.is_dir():
+            continue
+        rel = str(props_dir.relative_to(base))
+        if any(skip in rel for skip in _SKIP_PATTERNS):
+            continue
+        dirs.append(props_dir)
+    return dirs
+
+
+def _find_compiled_sql(model_name: str) -> Path | None:
+    """Find the compiled SQL file for a kipptaf model."""
+    for sql_path in COMPILED_DIR.rglob(f"{model_name}.sql"):
+        return sql_path
+    return None
+
+
+def main() -> None:
+    # Load manifest
+    if not MANIFEST_PATH.exists():
+        msg = f"Manifest not found at {MANIFEST_PATH}. Run: uv run dbt compile --project-dir {KIPPTAF_PROJECT}"
+        raise FileNotFoundError(msg)
+
+    with MANIFEST_PATH.open() as fh:
+        manifest = json.load(fh)
+
+    # Build lookup dicts
+    staging_dict = _build_staging_description_dict(
+        [d for d in STAGING_YAML_DIRS if d.exists()]
+    )
+    source_mapping = _build_source_mapping(manifest)
+
+    print(f"Loaded {len(staging_dict)} staging descriptions")
+    print(f"Loaded {len(source_mapping)} source mappings")
+
+    # Discover target YAML dirs
+    target_dirs = _discover_kipptaf_yaml_dirs()
+    print(f"Found {len(target_dirs)} target YAML directories")
+
+    total_enriched = 0
+    total_files = 0
+
+    for props_dir in target_dirs:
+        for yml_path in sorted(props_dir.glob("*.yml")):
+            with yml_path.open(encoding="utf-8") as fh:
+                doc = yaml.safe_load(fh)
+
+            if not doc or not doc.get("models"):
+                continue
+
+            # For each model in the YAML, extract lineage from compiled SQL
+            file_enriched = 0
+            for model in doc.get("models", []) or []:
+                model_name = model["name"]
+                compiled_path = _find_compiled_sql(model_name)
+                if not compiled_path:
+                    continue
+
+                sql = compiled_path.read_text(encoding="utf-8")
+                lineage = _extract_column_lineage(sql)
+
+                file_enriched += _enrich_yaml_descriptions(
+                    doc, lineage, source_mapping, staging_dict
+                )
+
+            if file_enriched > 0:
+                with yml_path.open("w", encoding="utf-8") as fh:
+                    yaml.dump(
+                        doc,
+                        fh,
+                        sort_keys=False,
+                        default_flow_style=False,
+                        width=88,
+                        allow_unicode=True,
+                    )
+                total_enriched += file_enriched
+                total_files += 1
+
+    print(f"Enriched {total_enriched} columns across {total_files} files")
+
+
+if __name__ == "__main__":
+    main()
