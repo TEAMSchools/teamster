@@ -41,8 +41,10 @@ models:
           Plus.
       - name: whomodifiedtype
         data_type: string
+        description: Type of user account that last modified the record.
       - name: ip_address
         data_type: string
+        description: IP address of the client that initiated the transaction.
       - name: dcid
         data_type: int64
         description: Unique identifier for this table. Indexed. Required.
@@ -116,6 +118,8 @@ models:
           on reports and/or custom pages.
       - name: whomodifiedid
         data_type: int64
+        description:
+          Internal identifier of the user who last modified the record.
       - name: week_start_date
         data_type: date
       - name: week_end_date

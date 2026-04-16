@@ -20,12 +20,16 @@ models:
           Plus.
       - name: ip_address
         data_type: string
+        description: IP address of the client that initiated the transaction.
       - name: whomodifiedtype
         data_type: string
+        description: Type of user account that last modified the record.
       - name: transaction_date
         data_type: timestamp
+        description: Date and time of the database transaction.
       - name: executionid
         data_type: string
+        description: Unique identifier for the database transaction.
       - name: dcid
         data_type: int64
         description: Unique identifier for this table. Indexed. Required.
@@ -53,3 +57,5 @@ models:
           User ID of the person associated with this preference record. Indexed.
       - name: whomodifiedid
         data_type: int64
+        description:
+          Internal identifier of the user who last modified the record.

@@ -131,6 +131,8 @@ models:
           record.
       - name: whomodifiedid
         data_type: int64
+        description:
+          Internal identifier of the user who last modified the record.
       - name: storecode
         data_type: string
         description:
@@ -274,12 +276,16 @@ models:
           permanently store grades.
       - name: ip_address
         data_type: string
+        description: IP address of the client that initiated the transaction.
       - name: whomodifiedtype
         data_type: string
+        description: Type of user account that last modified the record.
       - name: transaction_date
         data_type: timestamp
+        description: Date and time of the database transaction.
       - name: executionid
         data_type: string
+        description: Unique identifier for the database transaction.
       - name: percent_decimal
         data_type: float64
       - name: storecode_type

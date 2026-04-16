@@ -479,10 +479,13 @@ models:
           Plus.
       - name: ip_address
         data_type: string
+        description: IP address of the client that initiated the transaction.
       - name: whomodifiedtype
         data_type: string
+        description: Type of user account that last modified the record.
       - name: transaction_date
         data_type: timestamp
+        description: Date and time of the database transaction.
       - name: allowwebaccess
         data_type: int64
         description:
@@ -717,6 +720,8 @@ models:
           student. For AZ: 1=State-funded 2=Privately paid or no tuition"
       - name: whomodifiedid
         data_type: int64
+        description:
+          Internal identifier of the user who last modified the record.
       - name: wm_createtime
         data_type: int64
         description:
