@@ -1,0 +1,101 @@
+models:
+  - name: rpt_gsheets__deanslist_mod_audit
+    description: >
+      Row-level QA view exposing the individual assessment scores that feed the
+      three DeansList mod CDO extracts: mod_assessment, mod_standards, and
+      mod_standards_domains. Each row is one pre-aggregation response from
+      int_assessments__response_rollup with filters and joins that mirror each
+      published model exactly. Use computed_avg_pct_correct to verify that the
+      published model averages match the underlying data.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - source_model
+              - report_type
+              - student_number
+              - academic_year
+              - assessment_id
+              - response_type
+              - response_type_description
+    columns:
+      - name: source_model
+        data_type: string
+        description: >
+          Which published CDO model this row feeds: mod_assessment,
+          mod_standards, or mod_standards_domains.
+      - name: report_type
+        data_type: string
+        description: >
+          Report type for mod_standards_domains rows (Progress Report or
+          Report Card); null for mod_assessment and mod_standards.
+      - name: student_number
+        data_type: int64
+        description: PowerSchool student number.
+      - name: academic_year
+        data_type: int64
+        description: Academic year (e.g. 2024 for the 2024-25 school year).
+      - name: grade_level
+        data_type: int64
+        description: >
+          Student grade level from enrollment; null for mod_standards rows,
+          which do not join to student enrollments.
+      - name: region
+        data_type: string
+        description: >
+          Student enrolled region; null for mod_standards rows, which do not
+          join to student enrollments.
+      - name: assessment_id
+        data_type: int64
+        description: >
+          Illuminate assessment ID. For internal multipart assessments this is
+          the min assessment_id across the module, as normalized by
+          int_assessments__response_rollup.
+      - name: title
+        data_type: string
+        description: Assessment title.
+      - name: scope
+        data_type: string
+        description: Assessment scope as recorded in Illuminate (e.g. Unit Assessment).
+      - name: subject_area
+        data_type: string
+        description: Illuminate subject area before any CDO-level renaming or mapping.
+      - name: term_administered
+        data_type: string
+        description: >
+          Reporting term in which the assessment was administered, resolved
+          from the administered_at date against the reporting terms calendar.
+      - name: response_type
+        data_type: string
+        description: >
+          Response granularity from Illuminate: overall, standard, or group.
+      - name: response_type_description
+        data_type: string
+        description: >
+          Standard or reporting group label; null for overall response rows.
+      - name: standard_domain
+        data_type: string
+        description: >
+          Standard domain from the standard_domains reference table; populated
+          only for mod_standards_domains Report Card rows.
+      - name: percent_correct
+        data_type: numeric
+        description: Individual assessment score as a percentage.
+      - name: performance_band_label
+        data_type: string
+        description: Performance band label assigned to the individual score.
+      - name: is_internal_assessment
+        data_type: boolean
+        description: True if the assessment was internally administered by KIPP.
+      - name: computed_avg_pct_correct
+        data_type: numeric
+        description: >
+          Average of percent_correct over the same grouping used by the
+          corresponding published model. For mod_assessment and
+          mod_standards_domains Progress Report, this partitions by
+          (source_model, student, year, subject, term). For mod_standards, it
+          also partitions by response_type_description (one average per
+          reporting group). For mod_standards_domains Report Card, it also
+          partitions by standard_domain. Should equal the published model's
+          avg_pct_correct or avg_percent_correct for the same student, subject,
+          and term.
