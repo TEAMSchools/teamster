@@ -215,6 +215,12 @@ select
     performance_band_label,
     is_internal_assessment,
 
+    concat(
+        'https://kippteamschools.illuminateed.com/live/?assessment_id=',
+        cast(assessment_id as string),
+        '&prebuilt_report_id=1&page=Assessment_StudentController'
+    ) as illuminate_student_responses,
+
     case grade_level
         when 0 then 'K'
         else cast(grade_level as string)

@@ -87,6 +87,11 @@ models:
       - name: is_internal_assessment
         data_type: boolean
         description: True if the assessment was internally administered by KIPP.
+      - name: illuminate_student_responses
+        data_type: string
+        description: >
+          Direct link to the student responses report for this assessment in
+          Illuminate, constructed from the assessment_id.
       - name: grade_level_display
         data_type: string
         description: Grade level formatted for display (K for grade 0, otherwise the grade number).
