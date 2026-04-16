@@ -73,6 +73,8 @@ models:
                 severity: error
         description:
           DCID (unique identifier) of the associated User record. Indexed.
+        constraints:
+          - type: foreign_key
       - name: smart_salary
         data_type: int64
       - name: smart_yearsinlea

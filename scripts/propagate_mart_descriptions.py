@@ -62,6 +62,8 @@ _PK_PATTERNS: tuple[str, ...] = (
     "primary key",
     "unique identifier for this table",
     "unique identifier for the row",
+    "unique identifier for the database",
+    "unique identifier of the row",
     "unique sequential number generated",
     "unique number generated",
 )
@@ -70,7 +72,12 @@ _FK_PATTERNS: tuple[str, ...] = (
     "foreign key",
     "internal number for the associated",
     "internal number and id of the associated",
+    "unique identifier) of the associated",
 )
+
+# Bare "unique identifier" (without "of the associated" which is FK)
+# matches standalone PKs like "Unique identifier." or "Unique identifier\n"
+_BARE_PK_PATTERN = "unique identifier"
 
 
 def _infer_column_role(description: str) -> str:
@@ -82,12 +89,16 @@ def _infer_column_role(description: str) -> str:
     the associated...').
     """
     lower = description.lower()
-    for pattern in _PK_PATTERNS:
-        if pattern in lower:
-            return "primary_key"
+    # Check FK first — "unique identifier) of the associated" is FK, not PK
     for pattern in _FK_PATTERNS:
         if pattern in lower:
             return "foreign_key"
+    for pattern in _PK_PATTERNS:
+        if pattern in lower:
+            return "primary_key"
+    # Bare "unique identifier" without FK context → PK
+    if _BARE_PK_PATTERN in lower:
+        return "primary_key"
     return ""
 
 

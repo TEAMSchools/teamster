@@ -296,6 +296,8 @@ models:
       - name: executionid
         data_type: string
         description: Unique identifier for the database transaction.
+        constraints:
+          - type: primary_key
       - name: percent_decimal
         data_type: float64
       - name: storecode_type

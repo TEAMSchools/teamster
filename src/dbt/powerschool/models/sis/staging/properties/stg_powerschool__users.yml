@@ -215,6 +215,8 @@ models:
         description:
           Used by the Power School SIF Agent that requires a state-level unique
           identifier for teachers. To beused in the SIF Staff Personal object.
+        constraints:
+          - type: primary_key
       - name: psguid
         data_type: string
         description:

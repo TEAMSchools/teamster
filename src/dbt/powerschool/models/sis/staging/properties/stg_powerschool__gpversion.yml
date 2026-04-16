@@ -11,6 +11,8 @@ models:
               config:
                 severity: error
         description: Unique identifier.
+        constraints:
+          - type: primary_key
       - name: gpamethod
         data_type: string
         description:

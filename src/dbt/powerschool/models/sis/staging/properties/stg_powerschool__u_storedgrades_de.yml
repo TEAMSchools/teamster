@@ -12,6 +12,8 @@ models:
         description:
           DCID (unique identifier) of the associated Storedgrade record.
           Indexed.
+        constraints:
+          - type: foreign_key
       - name: de_course_name
         data_type: string
       - name: de_institution

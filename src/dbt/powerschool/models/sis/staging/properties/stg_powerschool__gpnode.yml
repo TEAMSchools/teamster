@@ -11,6 +11,8 @@ models:
               config:
                 severity: error
         description: Unique identifier.
+        constraints:
+          - type: primary_key
       - name: name
         data_type: string
         description: Name of this node.

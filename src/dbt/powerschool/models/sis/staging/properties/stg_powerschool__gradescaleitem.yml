@@ -263,3 +263,5 @@ models:
         description:
           DCID (unique identifier) of the associated Parentgradescale record.
           Indexed.
+        constraints:
+          - type: foreign_key

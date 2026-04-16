@@ -32,6 +32,8 @@ models:
       - name: executionid
         data_type: string
         description: Unique identifier for the database transaction.
+        constraints:
+          - type: primary_key
       - name: dcid
         data_type: int64
         description: Unique identifier for this table. Indexed. Required.
