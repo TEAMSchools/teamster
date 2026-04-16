@@ -313,6 +313,9 @@ models:
       - name: prefixcodesetid
         data_type: int64
         description: Foreign key to codeset table of category prefix.
+        config:
+          meta:
+            column_role: foreign_key
       - name: whomodifiedid
         data_type: int64
         description:

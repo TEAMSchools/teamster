@@ -70,11 +70,17 @@ models:
         description:
           Foreign key. Internal number for the associated Sections.DCID record.
           Required. Indexed.
+        config:
+          meta:
+            column_role: foreign_key
       - name: gradeformulasetid
         data_type: int64
         description:
           Foreign key. Internal number for the associated Grade Formula
           Set.Grade Formula Set IDrecord. Indexed.
+        config:
+          meta:
+            column_role: foreign_key
       - name: defaultdecimalcount
         data_type: int64
         description:

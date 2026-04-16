@@ -33,6 +33,9 @@ models:
           Foreign key to Historic version which was migrated to create this
           Advanced version. Null if theversion was created directly, not
           migrated.
+        config:
+          meta:
+            column_role: foreign_key
       - name: useallcoursesforgpacalc
         data_type: string
         description:
@@ -42,6 +45,9 @@ models:
       - name: gradplanid
         data_type: int64
         description: Foreign key to Grad Plan.ID.
+        config:
+          meta:
+            column_role: foreign_key
       - name: startyear
         data_type: int64
         description:

@@ -72,6 +72,50 @@ def _infer_column_role(description: str) -> str:
     return ""
 
 
+def _enrich_staging_column_roles(yaml_dirs: list[Path], ryaml) -> int:
+    """Write column_role to staging YAML where descriptions identify PK/FK.
+
+    Reads each staging YAML, infers column_role from description text,
+    and writes it into config.meta.column_role. Only modifies files
+    where at least one column gains a new role.
+
+    Returns the number of columns enriched.
+    """
+    enriched = 0
+    for directory in yaml_dirs:
+        for yml_path in sorted(directory.glob("*.yml")):
+            with yml_path.open(encoding="utf-8") as fh:
+                doc = ryaml.load(fh)
+            if not doc:
+                continue
+
+            file_changed = False
+            for model in doc.get("models", []) or []:
+                for col in model.get("columns", []) or []:
+                    desc = _flatten(col.get("description"))
+                    if not desc:
+                        continue
+                    role = _infer_column_role(desc)
+                    if not role:
+                        continue
+                    existing_role = (
+                        col.get("config", {}).get("meta", {}).get("column_role")
+                    )
+                    if existing_role:
+                        continue
+                    col.setdefault("config", {}).setdefault("meta", {})[
+                        "column_role"
+                    ] = role
+                    enriched += 1
+                    file_changed = True
+
+            if file_changed:
+                with yml_path.open("w", encoding="utf-8") as fh:
+                    ryaml.dump(doc, fh)
+
+    return enriched
+
+
 def _build_staging_description_dict(
     yaml_dirs: list[Path],
 ) -> dict[tuple[str, str], dict]:
@@ -96,10 +140,12 @@ def _build_staging_description_dict(
                     pii = (
                         col.get("config", {}).get("meta", {}).get("contains_pii", False)
                     )
+                    meta = col.get("config", {}).get("meta", {})
+                    role = meta.get("column_role") or _infer_column_role(desc)
                     result[(model_name, col["name"])] = {
                         "description": desc,
                         "contains_pii": bool(pii),
-                        "column_role": _infer_column_role(desc),
+                        "column_role": role,
                     }
     return result
 
@@ -767,10 +813,15 @@ def main() -> None:
     with MANIFEST_PATH.open(encoding="utf-8") as fh:
         manifest = json.load(fh)
 
-    # Build lookup dicts
-    staging_dict = _build_staging_description_dict(
-        [d for d in STAGING_YAML_DIRS if d.exists()]
-    )
+    # Step 1: Enrich staging YAML with column_role where descriptions
+    # identify primary/foreign keys
+    staging_dirs = [d for d in STAGING_YAML_DIRS if d.exists()]
+    staging_enriched = _enrich_staging_column_roles(staging_dirs, ryaml)
+    if staging_enriched:
+        print(f"Enriched {staging_enriched} staging columns with column_role")
+
+    # Build lookup dicts (after staging enrichment so roles are captured)
+    staging_dict = _build_staging_description_dict(staging_dirs)
     source_mapping = _build_source_mapping(manifest)
 
     print(f"Loaded {len(staging_dict)} staging descriptions")
