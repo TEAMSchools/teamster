@@ -440,6 +440,70 @@ def _extract_field_name(text: str) -> str:
     return " ".join(field_words) if field_words else text
 
 
+# Directories containing ADP staging YAML files
+ADP_YAML_DIRS: tuple[Path, ...] = (
+    Path("src/dbt/kipptaf/models/adp/workforce_now/api/staging/properties"),
+)
+
+
+def adp_path_to_column(schema_path: str) -> str:
+    """Convert an ADP JSON path to a staging YAML column name.
+
+    Strips the /workers/ prefix, converts each remaining camelCase segment
+    to snake_case, and joins with '__'.
+
+    Examples:
+        /workers/person/birthDate -> person__birth_date
+        /workers/workerDates/originalHireDate -> worker_dates__original_hire_date
+    """
+    path = schema_path
+    if path.startswith("/workers/"):
+        path = path[len("/workers/") :]
+    elif path.startswith("/workers"):
+        path = path[len("/workers") :]
+
+    segments = [s for s in path.split("/") if s]
+    snake_segments = [camel_to_snake(seg) for seg in segments]
+    return "__".join(snake_segments)
+
+
+def build_adp_yaml_index() -> dict[str, dict[str, set[str]]]:
+    """Build an index of ADP model columns from staging YAMLs.
+
+    Returns:
+        Dict mapping model_name -> {
+            "columns": set of scalar column names,
+            "skip_columns": set of ARRAY<STRUCT<...>> column names,
+        }
+    """
+    index: dict[str, dict[str, set[str]]] = {}
+
+    for directory in ADP_YAML_DIRS:
+        if not directory.exists():
+            continue
+        for yaml_path in sorted(directory.glob("stg_adp_*.yml")):
+            with yaml_path.open(encoding="utf-8") as fh:
+                doc = yaml.safe_load(fh)
+            if not doc:
+                continue
+            for model in doc.get("models", []) or []:
+                model_name = model["name"]
+                columns: set[str] = set()
+                skip_columns: set[str] = set()
+                for col in model.get("columns", []) or []:
+                    data_type = str(col.get("data_type", "")).strip()
+                    if data_type.startswith("ARRAY<STRUCT<"):
+                        skip_columns.add(col["name"])
+                    else:
+                        columns.add(col["name"])
+                index[model_name] = {
+                    "columns": columns,
+                    "skip_columns": skip_columns,
+                }
+
+    return index
+
+
 def _extract_adp(pdf_path: str) -> dict:
     """Extract ADP data dictionary from PDF."""
     raise NotImplementedError("ADP extraction not yet implemented")

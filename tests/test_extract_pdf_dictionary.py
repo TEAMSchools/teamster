@@ -519,3 +519,76 @@ class TestAdpPathParser:
         assert len(entries) >= 1
         paths = {e["schema_path"] for e in entries}
         assert "/workers/person/disabledIndicator" in paths
+
+
+class TestAdpPathToColumn:
+    """Test converting ADP JSON paths to staging YAML column names."""
+
+    def test_simple_path(self) -> None:
+        module = _load_script()
+        assert (
+            module.adp_path_to_column("/workers/person/birthDate")
+            == "person__birth_date"
+        )
+
+    def test_nested_path(self) -> None:
+        module = _load_script()
+        assert (
+            module.adp_path_to_column("/workers/person/legalName/givenName")
+            == "person__legal_name__given_name"
+        )
+
+    def test_worker_dates(self) -> None:
+        module = _load_script()
+        assert (
+            module.adp_path_to_column("/workers/workerDates/originalHireDate")
+            == "worker_dates__original_hire_date"
+        )
+
+    def test_worker_id(self) -> None:
+        module = _load_script()
+        assert (
+            module.adp_path_to_column("/workers/workerID/idValue")
+            == "worker_id__id_value"
+        )
+
+    def test_deep_nested(self) -> None:
+        module = _load_script()
+        assert (
+            module.adp_path_to_column(
+                "/workers/person/legalAddress/countrySubdivisionLevel1"
+            )
+            == "person__legal_address__country_subdivision_level_1"
+        )
+
+    def test_communication_emails(self) -> None:
+        module = _load_script()
+        assert (
+            module.adp_path_to_column("/workers/person/communication/emails/emailUri")
+            == "person__communication__emails__email_uri"
+        )
+
+
+class TestBuildAdpYamlIndex:
+    """Test building the ADP YAML column lookup index."""
+
+    def test_index_contains_workers(self) -> None:
+        module = _load_script()
+        index = module.build_adp_yaml_index()
+        assert "stg_adp_workforce_now__workers" in index
+
+    def test_workers_has_scalar_columns(self) -> None:
+        module = _load_script()
+        index = module.build_adp_yaml_index()
+        workers = index["stg_adp_workforce_now__workers"]
+        # These are scalar columns that should be in the index
+        assert "person__birth_date" in workers["columns"]
+        assert "associate_oid" in workers["columns"]
+
+    def test_array_struct_columns_flagged(self) -> None:
+        module = _load_script()
+        index = module.build_adp_yaml_index()
+        workers = index["stg_adp_workforce_now__workers"]
+        # ARRAY<STRUCT<...>> columns should be in skip set
+        assert "work_assignments" in workers["skip_columns"]
+        assert "photos" in workers["skip_columns"]
