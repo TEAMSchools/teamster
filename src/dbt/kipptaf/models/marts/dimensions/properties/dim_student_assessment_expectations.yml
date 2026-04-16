@@ -10,7 +10,8 @@ models:
       - name: student_assessment_expectation_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from powerschool_student_number, assessment_id,
+          and administered_at. Primary key.
         data_tests:
           - unique
           - not_null
@@ -18,15 +19,15 @@ models:
       - name: assessment_key
         data_type: string
         description: >-
-          Stores a title name for the teacher and is used for sorting purposes.
-          Surrogate key.
+          FK to dim_assessments. Derived from assessment_type, title,
+          subject_area, scope, module_code, and grade_level_id.
 
       - name: term_key
         data_type: string
         description: >-
-          The code value that is stored in the database, such as Home and Work
-          for phone types and Mand F for gender types. Indexed with the Code
-          Type column. Required Surrogate key.
+          FK to dim_terms. Derived from reporting term type, code, name,
+          start_date, region, and school_id. Null when the administration date
+          does not fall within any reporting term.
 
       - name: student_number
         data_type: int64

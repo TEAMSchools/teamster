@@ -9,7 +9,10 @@ models:
       - name: staff_membership_enrollment_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate primary key derived from employee_number, membership_code,
+          and effective_date. Generated with
+          generate_surrogate_key(["employee_number", "membership_code",
+          "effective_date"]).
         data_tests:
           - unique
           - not_null
@@ -17,7 +20,8 @@ models:
       - name: staff_key
         data_type: string
         description: >-
-          Surrogate key.
+          Foreign key to dim_staff. Surrogate key derived from employee_number.
+          Generated with generate_surrogate_key(["employee_number"]).
         data_tests:
           - not_null
           - relationships:

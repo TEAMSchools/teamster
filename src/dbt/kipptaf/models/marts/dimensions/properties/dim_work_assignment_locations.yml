@@ -9,7 +9,9 @@ models:
       - name: work_assignment_location_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate primary key derived from item_id and effective_date_start.
+          Generated with generate_surrogate_key(["item_id",
+          "effective_date_start"]).
         data_tests:
           - unique
           - not_null
@@ -17,7 +19,8 @@ models:
       - name: work_assignment_key
         data_type: string
         description: >-
-          Surrogate key.
+          Foreign key to dim_staff_work_assignments. Surrogate key derived from
+          item_id. Generated with generate_surrogate_key(["item_id"]).
         data_tests:
           - not_null
           - relationships:
@@ -95,4 +98,5 @@ models:
       - name: is_current_record
         data_type: boolean
         description: >-
-          Conditional on effective_date_end.
+          TRUE if this is the most recent location version for the work
+          assignment (effective_date_end = 9999-12-31).

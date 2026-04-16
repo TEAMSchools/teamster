@@ -10,7 +10,9 @@ models:
       - name: college_enrollment_key
         data_type: string
         description: >-
-          District-assigned student identification number. Surrogate key.
+          Surrogate primary key derived from student_number and
+          college_code_branch. Generated with
+          generate_surrogate_key(["student_number", "college_code_branch"]).
         data_tests:
           - unique
           - not_null
@@ -18,14 +20,14 @@ models:
       - name: student_key
         data_type: string
         description: >-
-          District-assigned student identification number. Surrogate key.
+          Surrogate key derived from student_number. FK to dim_students.
         data_tests:
           - not_null
 
       - name: college_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from college_code_branch. FK to dim_colleges.
         data_tests:
           - not_null
 

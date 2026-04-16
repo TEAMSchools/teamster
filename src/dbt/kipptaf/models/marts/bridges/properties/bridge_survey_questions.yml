@@ -10,7 +10,8 @@ models:
       - name: survey_question_bridge_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from survey_id and question_shortname. Primary
+          key for this bridge.
         data_tests:
           - unique
           - not_null
@@ -18,14 +19,15 @@ models:
       - name: survey_key
         data_type: string
         description: >-
-          Surrogate key.
+          FK to dim_surveys. Surrogate key derived from survey_id.
         data_tests:
           - not_null
 
       - name: survey_question_key
         data_type: string
         description: >-
-          Surrogate key.
+          FK to dim_survey_questions. Surrogate key derived from
+          question_shortname.
         data_tests:
           - not_null
 

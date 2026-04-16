@@ -10,7 +10,8 @@ models:
       - name: intervention_type_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from region and commlog_reason. Primary key for
+          this dimension.
         data_tests:
           - unique
           - not_null

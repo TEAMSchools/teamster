@@ -9,7 +9,9 @@ models:
       - name: staff_status_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate primary key derived from employee_number and
+          effective_date_start. Generated with
+          generate_surrogate_key(["employee_number", "effective_date_start"]).
         data_tests:
           - unique
           - not_null
@@ -17,7 +19,8 @@ models:
       - name: staff_key
         data_type: string
         description: >-
-          Surrogate key.
+          Foreign key to dim_staff. Surrogate key derived from employee_number.
+          Generated with generate_surrogate_key(["employee_number"]).
         data_tests:
           - not_null
           - relationships:
@@ -53,4 +56,5 @@ models:
       - name: is_current_record
         data_type: boolean
         description: >-
-          Conditional on effective_date_end.
+          TRUE if this is the most recent status version for the worker
+          (effective_date_end = 9999-12-31).

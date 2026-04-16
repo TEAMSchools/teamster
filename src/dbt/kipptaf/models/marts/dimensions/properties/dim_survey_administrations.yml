@@ -10,7 +10,8 @@ models:
       - name: survey_administration_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from survey_id and term composite fields.
+          Primary key for this dimension.
         data_tests:
           - unique
           - not_null
@@ -18,14 +19,15 @@ models:
       - name: survey_key
         data_type: string
         description: >-
-          Surrogate key.
+          FK to dim_surveys. Surrogate key derived from survey_id.
         data_tests:
           - not_null
 
       - name: term_key
         data_type: string
         description: >-
-          Surrogate key.
+          FK to dim_terms. Surrogate key derived from term composite fields
+          (type, code, name, start_date, region, school_id).
         data_tests:
           - not_null
 
@@ -57,7 +59,8 @@ models:
       - name: administration_status
         data_type: string
         description: >-
-          Categorical mapping of term_end_date, term_start_date.
+          Current status of the administration window: open (currently accepting
+          responses), closed (past deadline), or upcoming (not yet started).
 
       - name: response_deadline
         data_type: date

@@ -10,7 +10,8 @@ models:
       - name: behavioral_incident_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from incident_id and _dbt_source_relation.
+          Primary key for this fact.
         data_tests:
           - unique
           - not_null
@@ -18,8 +19,8 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          The school enrollment entry date from the student table for EOY it the
-          next schools beginning date.Indexed. Surrogate key.
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_relation, academic_year, and entrydate.
         data_tests:
           - not_null
 

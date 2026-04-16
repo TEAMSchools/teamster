@@ -10,7 +10,8 @@ models:
       - name: student_attendance_streak_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from streak_id and _dbt_source_relation. Primary
+          key for this fact.
         data_tests:
           - unique
           - not_null
@@ -18,8 +19,8 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          The school enrollment entry date from the student table for EOY it the
-          next schools beginning date.Indexed. Surrogate key.
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_relation, academic_year, and entrydate.
         data_tests:
           - not_null
 
@@ -50,9 +51,7 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          A number representing which year the term belongs to, such as 13 for
-          2003-2004. The numberis equal to the ID of the year term divided by
-          100. Maintained in the Terms table. Derived from yearid.
+          KIPP academic year (July start) derived from yearid + 1990.
 
       - name: streak_type
         data_type: string

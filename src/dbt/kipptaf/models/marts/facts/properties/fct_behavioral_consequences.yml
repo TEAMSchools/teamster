@@ -10,7 +10,8 @@ models:
       - name: behavioral_consequence_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from incident_id, incident_penalty_id, and
+          _dbt_source_relation. Primary key for this fact.
         data_tests:
           - unique
           - not_null
@@ -18,7 +19,8 @@ models:
       - name: behavioral_incident_key
         data_type: string
         description: >-
-          Surrogate key.
+          FK to fct_behavioral_incidents. Surrogate key derived from incident_id
+          and _dbt_source_relation.
         data_tests:
           - not_null
 

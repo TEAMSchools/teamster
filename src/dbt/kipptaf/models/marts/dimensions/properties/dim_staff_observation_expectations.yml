@@ -10,7 +10,10 @@ models:
       - name: staff_observation_expectation_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate primary key derived from employee_number and term composite
+          fields. Generated with generate_surrogate_key(["srh.employee_number",
+          "t.type", "t.code", "t.name", "t.start_date", "t.region",
+          "t.school_id"]).
         data_tests:
           - unique
           - not_null
@@ -18,7 +21,7 @@ models:
       - name: staff_key
         data_type: string
         description: >-
-          Surrogate key.
+          Foreign key to dim_staff. Surrogate key derived from employee_number.
         data_tests:
           - not_null
           - relationships:
@@ -29,7 +32,8 @@ models:
       - name: term_key
         data_type: string
         description: >-
-          Surrogate key.
+          Foreign key to dim_terms. Surrogate key derived from term type, code,
+          name, start_date, region, and school_id.
         data_tests:
           - not_null
 

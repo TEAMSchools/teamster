@@ -809,31 +809,38 @@ def _enrich_yaml_descriptions(
                 continue
 
             # Phase 4: computed column description from SQL expression
-            if cache is not None and staging_index is not None:
+            # Only fill empty descriptions — don't overwrite human-written ones
+            existing_desc = _flatten(col.get("description"))
+            if not existing_desc and cache is not None and staging_index is not None:
                 expr_map = cache.expressions.get(model_name, {})
                 expr_entry = expr_map.get(col_name)
                 if expr_entry:
                     summary, source_cols = expr_entry
 
-                    # Try to find upstream description for source columns
-                    upstream_desc = ""
-                    for src_col in source_cols:
-                        upstream = _resolve_column_to_staging(
-                            src_col,
-                            referenced_tables,
-                            staging_dict,
-                            cache,
-                            staging_index,
-                        )
-                        if upstream:
-                            stg = staging_dict[(upstream[0], upstream[1])]
-                            upstream_desc = stg["description"]
-                            break
-
-                    if upstream_desc:
-                        col["description"] = f"{upstream_desc} {summary}"
-                    else:
+                    # Surrogate keys are hashes of multiple columns —
+                    # don't prepend a single upstream column's description
+                    if summary == "Surrogate key.":
                         col["description"] = summary
+                    else:
+                        # Try to find upstream description for source columns
+                        upstream_desc = ""
+                        for src_col in source_cols:
+                            upstream = _resolve_column_to_staging(
+                                src_col,
+                                referenced_tables,
+                                staging_dict,
+                                cache,
+                                staging_index,
+                            )
+                            if upstream:
+                                stg = staging_dict[(upstream[0], upstream[1])]
+                                upstream_desc = stg["description"]
+                                break
+
+                        if upstream_desc:
+                            col["description"] = f"{upstream_desc} {summary}"
+                        else:
+                            col["description"] = summary
                     enriched += 1
                     continue
 

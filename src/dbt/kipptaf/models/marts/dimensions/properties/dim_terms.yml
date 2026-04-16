@@ -10,7 +10,8 @@ models:
       - name: term_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from term type, code, name, start date, region,
+          and school ID.
         data_tests:
           - unique
           - not_null

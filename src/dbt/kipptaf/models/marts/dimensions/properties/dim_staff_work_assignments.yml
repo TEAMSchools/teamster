@@ -15,7 +15,8 @@ models:
       - name: work_assignment_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from item_id. Primary key for this dimension.
+          Generated with generate_surrogate_key(["item_id"]).
         data_tests:
           - unique
           - not_null
@@ -23,7 +24,10 @@ models:
       - name: staff_key
         data_type: string
         description: >-
-          Conditional on employee_number.
+          Surrogate key derived from employee_number. FK to dim_staff. Generated
+          with generate_surrogate_key(["employee_number"]). Null when the
+          associate_oid has no active number mapping in
+          stg_people__employee_numbers.
         data_tests:
           - relationships:
               arguments:

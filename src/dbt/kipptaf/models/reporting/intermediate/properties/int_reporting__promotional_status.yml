@@ -132,8 +132,7 @@ models:
           force-retention entry in PowerSchool regardless of other criteria.
       - name: overall_status
         data_type: string
-        description: >-
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. Categorical
-          mapping of academic_status, attendance_status, grade_level,
-          n_failing_core, region.
+        description: >
+          Combined On-Track or Off-Track promotional status derived from
+          attendance_status and academic_status according to region- and
+          grade-level-specific promotion rules.

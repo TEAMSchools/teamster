@@ -10,7 +10,8 @@ models:
       - name: assessment_comparison_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from academic_year, test_name, test_code, and
+          region. Primary key.
         data_tests:
           - unique
           - not_null
@@ -18,7 +19,8 @@ models:
       - name: region_key
         data_type: string
         description: >-
-          Surrogate key.
+          FK to dim_regions. Derived from region using
+          generate_surrogate_key(["region"]).
 
       - name: academic_year
         data_type: int64

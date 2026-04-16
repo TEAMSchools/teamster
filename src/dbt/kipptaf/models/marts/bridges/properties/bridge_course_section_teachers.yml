@@ -11,14 +11,15 @@ models:
       - name: course_section_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from sections_dcid and _dbt_source_relation. FK
+          to dim_course_sections.
         data_tests:
           - not_null
 
       - name: staff_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from employee_number. FK to dim_staff.
         data_tests:
           - not_null
 

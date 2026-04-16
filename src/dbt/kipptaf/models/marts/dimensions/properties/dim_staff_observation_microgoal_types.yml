@@ -9,7 +9,8 @@ models:
       - name: staff_observation_microgoal_type_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate primary key derived from the goal tag ID. Generated with
+          generate_surrogate_key(["tag_id"]).
         data_tests:
           - unique
           - not_null

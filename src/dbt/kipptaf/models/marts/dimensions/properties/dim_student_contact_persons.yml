@@ -11,9 +11,8 @@ models:
       - name: student_contact_person_key
         data_type: string
         description: >-
-          Identification number of the associated Person table row pertaining to
-          the phone number. Indexedwith Address Priority Order. Required.
-          Surrogate key.
+          Surrogate key derived from _dbt_source_relation and
+          powerschool_person_id. Primary key for this dimension.
         data_tests:
           - unique
           - not_null

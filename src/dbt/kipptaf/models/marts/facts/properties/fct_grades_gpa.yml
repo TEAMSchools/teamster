@@ -11,8 +11,9 @@ models:
       - name: grades_gpa_key
         data_type: string
         description: >-
-          The school enrollment entry date from the student table for EOY it the
-          next schools beginning date.Indexed. Surrogate key.
+          Surrogate key derived from student_number, _dbt_source_relation,
+          academic_year, entrydate, and term_name. Grain: one row per
+          student_enrollment x term, per spec.
         data_tests:
           - unique
           - not_null
@@ -20,17 +21,17 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          The school enrollment entry date from the student table for EOY it the
-          next schools beginning date.Indexed. Surrogate key.
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_relation, academic_year, and entrydate.
         data_tests:
           - not_null
 
       - name: term_key
         data_type: string
         description: >-
-          The code value that is stored in the database, such as Home and Work
-          for phone types and Mand F for gender types. Indexed with the Code
-          Type column. Required Surrogate key.
+          FK to dim_terms. Surrogate key derived from type, code, name,
+          start_date, region, and school_id. Null when term_name does not map to
+          a reporting term for the school and region.
 
       - name: student_number
         data_type: int64
@@ -142,4 +143,6 @@ models:
       - name: is_current_row
         data_type: boolean
         description: >-
-          Conditional on rn_current.
+          TRUE for the most recent snapshot per student x school, ordered by
+          yearid desc then term desc. Use this flag to collapse to the latest
+          GPA state.

@@ -7,7 +7,7 @@ models:
       - name: region_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from region name.
         data_tests:
           - unique
           - not_null

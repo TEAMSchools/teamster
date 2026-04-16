@@ -12,7 +12,8 @@ models:
       - name: student_section_enrollment_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from cc_dcid and _dbt_source_relation. Primary
+          key for this dimension — unique per CC record per region.
         data_tests:
           - unique
           - not_null
@@ -20,22 +21,25 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          The school enrollment entry date from the student table for EOY it the
-          next schools beginning date.Indexed. Surrogate key.
+          Surrogate key derived from student_number, _dbt_source_relation,
+          academic_year, and entrydate. FK to dim_student_enrollments. Null when
+          no matching student enrollment record covers the CC dateenrolled.
 
       - name: course_section_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from sections_dcid and _dbt_source_relation. FK
+          to dim_course_sections.
         data_tests:
           - not_null
 
       - name: term_key
         data_type: string
         description: >-
-          The code value that is stored in the database, such as Home and Work
-          for phone types and Mand F for gender types. Indexed with the Code
-          Type column. Required Surrogate key.
+          Surrogate key derived from type, code, name, start_date, region, and
+          school_id of the matching reporting term. FK to dim_terms. Null when
+          cc_abs_termid does not match any reporting term powerschool_term_id
+          for the section's school and region.
 
       - name: student_number
         data_type: int64

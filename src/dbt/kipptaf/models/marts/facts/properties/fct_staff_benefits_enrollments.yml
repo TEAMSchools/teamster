@@ -9,7 +9,10 @@ models:
       - name: staff_benefits_enrollment_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate primary key derived from employee_number, plan_type,
+          plan_name, and enrollment_start_date. Generated with
+          generate_surrogate_key(["employee_number", "plan_type", "plan_name",
+          "enrollment_start_date"]).
         data_tests:
           - unique
           - not_null
@@ -17,7 +20,8 @@ models:
       - name: staff_key
         data_type: string
         description: >-
-          Surrogate key.
+          Foreign key to dim_staff. Surrogate key derived from employee_number.
+          Generated with generate_surrogate_key(["employee_number"]).
         data_tests:
           - not_null
           - relationships:

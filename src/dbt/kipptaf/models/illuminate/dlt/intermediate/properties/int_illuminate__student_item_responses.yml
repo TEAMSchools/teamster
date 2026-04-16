@@ -73,4 +73,5 @@ models:
       - name: percent_correct
         data_type: float64
         description: >-
-          Derived from maximum, points.
+          Ratio of points to maximum (via safe_divide). NULL when points or
+          maximum is NULL. 1.0 = full credit; 0.0 = no credit.

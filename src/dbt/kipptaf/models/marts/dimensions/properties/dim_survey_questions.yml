@@ -11,7 +11,9 @@ models:
       - name: survey_question_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from question_shortname. Primary key for this
+          dimension. Generated with
+          generate_surrogate_key(["question_shortname"]).
         data_tests:
           - unique
           - not_null

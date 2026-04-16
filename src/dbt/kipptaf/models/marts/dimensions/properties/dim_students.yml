@@ -8,7 +8,8 @@ models:
       - name: student_key
         data_type: string
         description: >-
-          District-assigned student identification number. Surrogate key.
+          Surrogate key derived from student_number. Primary key for the student
+          dimension.
         data_tests:
           - unique
           - not_null
@@ -77,18 +78,19 @@ models:
       - name: is_gifted
         data_type: boolean
         description: >-
-          True when gifted_and_talented is not null.
+          TRUE if the student has a non-null gifted_and_talented value in
+          PowerSchool, indicating gifted and talented identification.
 
       - name: is_ell
         data_type: boolean
         description: >-
-          Student Limited English Proficiency status. True when lep_status is
-          not null.
+          TRUE if the student has a non-null lep_status, indicating active
+          English Language Learner classification.
 
       - name: has_iep
         data_type: boolean
         description: >-
-          Derived from iep_status.
+          TRUE if the student's iep_status is 'With IEP'.
 
       - name: ethnicity
         data_type: string

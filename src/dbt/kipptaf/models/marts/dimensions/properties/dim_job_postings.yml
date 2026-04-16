@@ -9,7 +9,9 @@ models:
       - name: job_posting_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate primary key derived from job_title, department_internal, and
+          job_city. Generated with generate_surrogate_key(["job_title",
+          "department_internal", "job_city"]).
         data_tests:
           - unique
           - not_null

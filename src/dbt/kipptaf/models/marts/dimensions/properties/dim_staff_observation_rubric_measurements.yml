@@ -9,7 +9,9 @@ models:
       - name: staff_observation_rubric_measurement_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate primary key derived from rubric_id and measurement_id.
+          Generated with generate_surrogate_key(["mgm.rubric_id",
+          "mgm.measurement_id"]).
         data_tests:
           - unique
           - not_null
@@ -17,7 +19,8 @@ models:
       - name: staff_observation_rubric_key
         data_type: string
         description: >-
-          Surrogate key.
+          Foreign key to dim_staff_observation_rubrics. Surrogate key derived
+          from rubric_id.
         data_tests:
           - not_null
           - relationships:

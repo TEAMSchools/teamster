@@ -10,16 +10,16 @@ models:
       - name: course_section_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from sections_dcid and _dbt_source_relation. FK
+          to dim_course_sections.
         data_tests:
           - not_null
 
       - name: term_key
         data_type: string
         description: >-
-          The code value that is stored in the database, such as Home and Work
-          for phone types and Mand F for gender types. Indexed with the Code
-          Type column. Required Surrogate key.
+          Surrogate key derived from type, code, name, start_date, region, and
+          school_id of the matching reporting term. FK to dim_terms.
         data_tests:
           - not_null
 

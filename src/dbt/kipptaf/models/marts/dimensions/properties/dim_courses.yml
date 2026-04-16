@@ -9,7 +9,8 @@ models:
       - name: course_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from courses_course_number and
+          _dbt_source_relation. Primary key for this dimension.
         data_tests:
           - unique
           - not_null

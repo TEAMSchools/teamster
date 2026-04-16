@@ -10,7 +10,10 @@ models:
       - name: staff_observation_microgoal_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate primary key derived from teacher employee number,
+          assignment_id, and goal tag_id. Generated with
+          generate_surrogate_key(["gu.internal_id_int", "a.assignment_id",
+          "m.tag_id"]).
         data_tests:
           - unique
           - not_null
@@ -18,19 +21,23 @@ models:
       - name: teacher_staff_key
         data_type: string
         description: >-
-          Surrogate key.
+          Foreign key to dim_staff for the teacher receiving the microgoal.
+          Surrogate key derived from employee_number.
         data_tests:
           - not_null
 
       - name: creator_staff_key
         data_type: string
         description: >-
-          Surrogate key.
+          Foreign key to dim_staff for the person who created the assignment.
+          Surrogate key derived from creator employee_number. May be null if the
+          creator cannot be matched to the staff roster.
 
       - name: staff_observation_microgoal_type_key
         data_type: string
         description: >-
-          Surrogate key.
+          Foreign key to dim_staff_observation_microgoal_types. Surrogate key
+          derived from the goal tag_id.
         data_tests:
           - not_null
           - relationships:
@@ -86,4 +93,4 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          Conditional on created_date_local.
+          Academic year derived from the assignment creation date.

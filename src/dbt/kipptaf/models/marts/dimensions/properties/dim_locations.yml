@@ -9,7 +9,7 @@ models:
       - name: location_key
         data_type: string
         description: >-
-          Surrogate key.
+          Surrogate key derived from location name.
         data_tests:
           - unique
           - not_null
@@ -22,7 +22,7 @@ models:
       - name: abbreviation
         data_type: string
         description: >-
-          First non-null of location_abbreviation, location_clean_name.
+          Short display name for the location.
 
       - name: region
         data_type: string

@@ -487,7 +487,9 @@ models:
         description: Conditional on ap_course_subject.
       - name: courses_credittype
         description: >-
-          Categorical mapping of courses_credittype.
+          Normalizes variant credit type codes (ELA → ENG, Math → MATH, Science
+          → SCI, Homeroom → HR) caused by a 2023 PowerSchool plugin glitch in
+          one region that produced non-standard values for that year's records.
         data_type: string
       - name: rn_student_year_illuminate_subject_desc
         data_type: int64

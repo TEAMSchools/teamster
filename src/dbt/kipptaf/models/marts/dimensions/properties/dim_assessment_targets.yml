@@ -9,8 +9,9 @@ models:
       - name: assessment_target_key
         data_type: string
         description: >-
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. Surrogate key.
+          Surrogate key derived from academic_year, school_id,
+          state_assessment_code, grade_level, and illuminate_subject_area.
+          Primary key.
         data_tests:
           - unique
           - not_null
@@ -18,7 +19,8 @@ models:
       - name: location_key
         data_type: string
         description: >-
-          Surrogate key.
+          FK to dim_locations. Derived from location_clean_name. Null when the
+          school does not appear in the location crosswalk.
 
       - name: academic_year
         data_type: int64
