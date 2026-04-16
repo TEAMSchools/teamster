@@ -50,15 +50,24 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          KIPP academic year (July start) derived from yearid + 1990.
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
 
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: streak_type
         data_type: string
         description: >-
-          Attendance code or attendancevalue string that defines the streak
-          (e.g., 'A' for absent, 'P' for present, '1.0' for present-value
-          streaks).
+          Attendance identifier set by school. Examples Tardy, Absent, etc.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance_code
+            source_column: att_code
       - name: streak_start_date
         data_type: date
         description: >-

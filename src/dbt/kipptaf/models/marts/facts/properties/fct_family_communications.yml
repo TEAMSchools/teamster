@@ -43,8 +43,14 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          KIPP academic year (July start) for this communication.
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
 
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: record_id
         data_type: int64
         description: >-
@@ -69,14 +75,24 @@ models:
       - name: status
         data_type: string
         description: >-
-          Status of the communication attempt (e.g., Completed, Attempted, Left
-          Message).
+          Indicates if the course was made either by a user or automatically by
+          an import. Validvalues: 0=user-created, 3=auto-created.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__courses
+            source_column: status
       - name: notes
         data_type: string
         description: >-
-          Free-text response notes from the communication.
+          Miscellaneous notes.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: notes
       - name: staff_name
         data_type: string
         description: >-

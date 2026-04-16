@@ -275,10 +275,9 @@ def _resolve_column_to_staging(
 ) -> tuple[str, str, str] | None:
     """Resolve a column name to a staging model by walking referenced tables.
 
-    Three-phase resolution:
-    1. Direct passthrough match in referenced tables
-    2. Alias tracing through compiled SQL for simple renames
-    3. Package-wide fallback when neither works
+    At each intermediate model, checks the alias map to follow renames
+    (e.g., ``dob AS birth_date`` in model A means when tracing
+    ``birth_date`` through A, we continue looking for ``dob`` upstream).
 
     Returns (staging_model, staging_column, package) or None.
     """
@@ -294,17 +293,21 @@ def _resolve_column_to_staging(
             continue
         visited.add(trace_key)
 
-        # Phase 1: direct passthrough match
+        # Direct passthrough match in staging
         if (table_name, col_name) in staging_dict:
             return (table_name, col_name, _infer_package(table_name))
 
-        # Not staging — recurse into this table's references
+        # Not staging — check this model's alias map for renames
         upstream_tables = cache.tables.get(table_name)
         if upstream_tables is None:
             continue
 
+        alias_map = cache.aliases.get(table_name, {})
+        # If this model renames col_name, follow the alias upstream
+        upstream_col = alias_map.get(col_name, col_name)
+
         result = _resolve_column_to_staging(
-            col_name, upstream_tables, staging_dict, cache, staging_index, visited
+            upstream_col, upstream_tables, staging_dict, cache, staging_index, visited
         )
         if result is not None:
             return result
@@ -362,14 +365,15 @@ def _enrich_yaml_descriptions(
 
                 # Phase 3: package-wide fallback
                 if resolved is None:
+                    pkg = _infer_package_from_model(model_name)
                     for lookup_col in [col_name, alias_map.get(col_name, "")]:
                         if not lookup_col:
                             continue
                         candidates = staging_index.get(lookup_col, [])
-                        pkg = _infer_package_from_model(model_name)
                         for stg_model, stg_col in candidates:
-                            if pkg and _infer_package(stg_model) == pkg:
-                                resolved = (stg_model, stg_col, pkg)
+                            stg_pkg = _infer_package(stg_model)
+                            if pkg is None or stg_pkg == pkg:
+                                resolved = (stg_model, stg_col, stg_pkg)
                                 break
                         if resolved:
                             break

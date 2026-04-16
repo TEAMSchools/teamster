@@ -10,11 +10,17 @@ models:
       - name: date_key
         data_type: date
         description: >-
-          Calendar date. Primary key and join target for all mart models.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed.
         data_tests:
           - unique
           - not_null
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__calendar_day
+            source_column: date_value
       - name: date_timestamp
         data_type: timestamp
         description: >-
@@ -73,9 +79,14 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          KIPP academic year (July start). The calendar year in which the
-          academic year begins (e.g., 2025 for the 2025-26 school year).
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
 
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: fiscal_year
         data_type: int64
         description: >-

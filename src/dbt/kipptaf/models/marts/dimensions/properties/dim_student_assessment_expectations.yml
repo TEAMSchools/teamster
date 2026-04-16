@@ -48,8 +48,14 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          Academic year of the expected assessment.
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
 
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: administered_at
         data_type: date
         description: >-
@@ -58,8 +64,13 @@ models:
       - name: assessment_title
         data_type: string
         description: >-
-          Display name of the assessment.
+          Stores a title name for the teacher and is used for sorting purposes.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: title
       - name: subject_area
         data_type: string
         description: >-

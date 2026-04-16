@@ -43,9 +43,14 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          KIPP academic year (July start) derived from the incident creation
-          timestamp.
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
 
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: incident_id
         data_type: int64
         description: >-
@@ -79,8 +84,14 @@ models:
       - name: incident_status
         data_type: string
         description: >-
-          Current workflow status of the incident in DeansList.
+          Indicates if the course was made either by a user or automatically by
+          an import. Validvalues: 0=user-created, 3=auto-created.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__courses
+            source_column: status
       - name: referral_tier
         data_type: string
         description: >-

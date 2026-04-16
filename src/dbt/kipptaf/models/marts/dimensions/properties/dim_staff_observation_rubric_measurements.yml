@@ -41,13 +41,24 @@ models:
       - name: measurement_name
         data_type: string
         description: >-
-          Display name of the measurement item from the measurements catalog.
+          Name of the assignment, such as Essay, Homework, etc. Required.
+          Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: name
       - name: measurement_description
         data_type: string
         description: >-
-          Description of the measurement item from the measurements catalog.
+          The description of the assignment.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: description
       - name: measurement_row_style
         data_type: string
         description: >-

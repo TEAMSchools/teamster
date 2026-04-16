@@ -45,9 +45,15 @@ models:
       - name: contact_priority
         data_type: int64
         description: >-
-          Contact priority order for this student-contact pair. Lower numbers
-          indicate higher priority contacts.
+          Indicates the preferred order in which the student's contacts will be
+          selected.Valid values: 1-n. Defaults to 1. Indexed with Student DCID.
+          Required.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcontactassoc
+            source_column: contactpriorityorder
       - name: is_emergency
         data_type: boolean
         description: >-

@@ -34,34 +34,58 @@ models:
       - name: entry_date_key
         data_type: date
         description: >-
-          Date the student entered this enrollment. FK to dim_dates
-          (role-playing as entry date).
+          The school enrollment entry date from the student table for EOY it the
+          next schools beginning date.Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: entrydate
       - name: exit_date_key
         data_type: date
         description: >-
-          Date the student exited this enrollment. FK to dim_dates (role-playing
-          as exit date). Null for open enrollments.
+          The school enrollment exit date from the student table. If EOY it's
+          the schools next end-of-year dateor effective date for other
+          re-enrollment purposes. Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: exitdate
       - name: academic_year
         data_type: int64
         description: >-
-          KIPP academic year (July start) in which this enrollment falls. The
-          calendar year in which the academic year begins (e.g., 2025 for the
-          2025-26 school year).
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
 
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: grade_level
         data_type: int64
         description: >-
-          Grade level of the student during this enrollment as recorded in
-          PowerSchool.
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: grade_level
       - name: graduation_year
         data_type: int64
         description: >-
-          Expected graduation year (cohort_primary from PowerSchool). Represents
-          the calendar year the student is projected to graduate high school.
+          Student graduation year.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: graduation_year
       - name: school_level
         data_type: string
         description: >-
@@ -70,10 +94,13 @@ models:
       - name: enroll_status
         data_type: int64
         description: >-
-          PowerSchool enrollment status code. 0 = currently enrolled, 1 =
-          inactive, 2 = transferred out, 3 = graduated, -1 = pre-registered, -2
-          = inactive, 4 = imported as historical.
+          The enrollment status of the student.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: enroll_status
       - name: is_retained_year
         data_type: boolean
         description: >-

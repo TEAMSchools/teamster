@@ -45,8 +45,14 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          Academic year the assessment was administered.
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
 
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: assessment_title
         data_type: string
         description: >-
@@ -75,9 +81,13 @@ models:
       - name: test_date
         data_type: date
         description: >-
-          Date the assessment was taken. Null for state assessments where only
-          the administration window is recorded.
+          The date this test was given. Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studenttest
+            source_column: test_date
       - name: scale_score
         data_type: numeric
         description: >-

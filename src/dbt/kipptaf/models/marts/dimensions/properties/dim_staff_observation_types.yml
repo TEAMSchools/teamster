@@ -26,10 +26,20 @@ models:
       - name: observation_type_name
         data_type: string
         description: >-
-          Full display name of the observation type (e.g., Walkthrough,
-          One-on-One, PM Semester).
+          Name of the assignment, such as Essay, Homework, etc. Required.
+          Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: name
       - name: observation_type_abbreviation
         data_type: string
         description: >-
-          Short code for the observation type (e.g., WT, O3, PMS).
+          A short 1 or 2 character version of the Name, such as A.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__cycle_day
+            source_column: abbreviation
