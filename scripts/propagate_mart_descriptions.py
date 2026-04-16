@@ -676,17 +676,27 @@ def _resolve_column_to_staging(
 
     # Staging index fallback — the column name exists in staging but the
     # recursive walk couldn't reach it (cross-project boundary). Prefer
-    # packages seen during the walk.
+    # packages seen during the walk. When multiple candidates share a
+    # package, prefer the model with more described columns (main entity).
     candidates = staging_index.get(col_name, [])
     if candidates:
         walked_pkgs = {
             _infer_package(_extract_table_name(t)) for t in referenced_tables
         }
         walked_pkgs.discard(None)
-        for stg_model, stg_col in candidates:
-            stg_pkg = _infer_package(stg_model)
-            if stg_pkg and stg_pkg in walked_pkgs:
-                return (stg_model, stg_col, stg_pkg)
+        pkg_matches = [
+            (stg_model, stg_col, _infer_package(stg_model) or stg_model)
+            for stg_model, stg_col in candidates
+            if (_infer_package(stg_model) or "") in walked_pkgs
+        ]
+        if pkg_matches:
+            # Prefer the model with the most entries in staging_dict
+            # (main entity table > extension/lookup table)
+            pkg_matches.sort(
+                key=lambda m: sum(1 for k in staging_dict if k[0] == m[0]),
+                reverse=True,
+            )
+            return pkg_matches[0]
 
     return None
 

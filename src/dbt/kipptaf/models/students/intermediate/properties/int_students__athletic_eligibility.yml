@@ -13,12 +13,12 @@ models:
 
         description:
           A number representing which year the term belongs to, such as 13 for
-          2003-2004. The numberis equal to the ID of the year term divided by
-          100. Maintained in the Terms table.
+          2003-2004. Thenumber is equal to the ID of the year term divided by
+          100. Maintained in the Terms table.Required. Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__assignmentcategoryassoc
+            source_model: stg_powerschool__gradeschoolconfig
             source_column: yearid
       - name: schoolid
         data_type: int64
@@ -33,11 +33,11 @@ models:
       - name: student_number
         data_type: int64
 
-        description: District-assigned student identification number.
+        description: Student Number assigned by the school. Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__student_email
+            source_model: stg_powerschool__students
             source_column: student_number
             contains_pii: true
             column_role: primary_key

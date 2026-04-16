@@ -12,37 +12,41 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__attendance
+            source_model: stg_powerschool__storedgrades
             source_column: studentid
             column_role: foreign_key
       - name: entrydate
         data_type: date
         description:
-          The school enrollment entry date from the student table for EOY it the
-          next schools beginning date.Indexed.
+          The date the student enrolled in school for the current enrollment.
+          Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: entrydate
       - name: exitdate
         data_type: date
         description:
-          The school enrollment exit date from the student table. If EOY it's
-          the schools next end-of-year dateor effective date for other
-          re-enrollment purposes. Indexed.
+          The date the student exited for the current/last enrollment. This is
+          the day after a student-attended class. For example, if the last day
+          the student is in school is a Wednesday, Thursdayis the exit day.
+          Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: exitdate
       - name: entrycode
         data_type: string
-        description: The Enrollment code from the student table.
+        description:
+          The code representing how or why the student entered school. These
+          codes are stored in Gen Table [6] cat=entrycodes. These are set in
+          school setup.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: entrycode
       - name: exitcode_prev
         data_type: string

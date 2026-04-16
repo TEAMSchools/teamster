@@ -12,7 +12,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__attendance
+            source_model: stg_powerschool__storedgrades
             source_column: studentid
             column_role: foreign_key
       - name: sectionid
@@ -22,41 +22,38 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__cc
+            source_model: stg_powerschool__storedgrades
             source_column: sectionid
             column_role: foreign_key
       - name: course_number
         data_type: string
         description:
-          The course number associated with this class. This is implied by the
-          Section ID but stored here forconvenience. Indexed.
+          The number the school assigns to a particular course. Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__cc
+            source_model: stg_powerschool__courses
             source_column: course_number
       - name: yearid
         data_type: int64
         description:
           A number representing which year the term belongs to, such as 13 for
-          2003-2004. The numberis equal to the ID of the year term divided by
-          100. Maintained in the Terms table.
+          2003-2004. Thenumber is equal to the ID of the year term divided by
+          100. Maintained in the Terms table.Required. Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__assignmentcategoryassoc
+            source_model: stg_powerschool__gradeschoolconfig
             source_column: yearid
       - name: academic_year
         data_type: int64
       - name: termid
         data_type: int64
-        description:
-          The internal number for the term to which this CC record is
-          associated. Indexed.
+        description: The internal number for the term for this section. Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__cc
+            source_model: stg_powerschool__sections
             source_column: termid
       - name: dateenrolled
         data_type: date
@@ -80,7 +77,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__attendance
+            source_model: stg_powerschool__students
             source_column: schoolid
       - name: course_name
         data_type: string
@@ -105,11 +102,11 @@ models:
       - name: storecode
         data_type: string
         description:
-          The code used to represent this grade level to term ID and school ID.
+          The code used to represent this grade level to Term ID and School ID.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__gradecalcformulaweight
+            source_model: stg_powerschool__storedgrades
             source_column: storecode
       - name: term_percent_grade
         data_type: float64
@@ -210,11 +207,12 @@ models:
       - name: comment_value
         data_type: string
         description:
-          Information regarding this Conversion Item to help in its clarity.
+          in5.2.0 BLOB An optional area to describe any information about this
+          item in one field.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__attendance_conversion_items
+            source_model: stg_powerschool__sections
             source_column: comment_value
       - name: y1_grade_points
         data_type: float64

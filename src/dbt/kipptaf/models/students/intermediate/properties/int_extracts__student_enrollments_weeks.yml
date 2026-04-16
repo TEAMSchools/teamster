@@ -21,18 +21,18 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__attendance
+            source_model: stg_powerschool__storedgrades
             source_column: studentid
             column_role: foreign_key
       - name: students_dcid
         data_type: int64
       - name: student_number
         data_type: int64
-        description: District-assigned student identification number.
+        description: Student Number assigned by the school. Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__student_email
+            source_model: stg_powerschool__students
             source_column: student_number
             contains_pii: true
             column_role: primary_key
@@ -86,54 +86,55 @@ models:
         data_type: int64
         description:
           A number representing which year the term belongs to, such as 13 for
-          2003-2004. The numberis equal to the ID of the year term divided by
-          100. Maintained in the Terms table.
+          2003-2004. Thenumber is equal to the ID of the year term divided by
+          100. Maintained in the Terms table.Required. Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__assignmentcategoryassoc
+            source_model: stg_powerschool__gradeschoolconfig
             source_column: yearid
       - name: academic_year
         data_type: int64
       - name: entrydate
         data_type: date
         description:
-          The school enrollment entry date from the student table for EOY it the
-          next schools beginning date.Indexed.
+          The date the student enrolled in school for the current enrollment.
+          Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: entrydate
       - name: exitdate
         data_type: date
         description:
-          The school enrollment exit date from the student table. If EOY it's
-          the schools next end-of-year dateor effective date for other
-          re-enrollment purposes. Indexed.
+          The date the student exited for the current/last enrollment. This is
+          the day after a student-attended class. For example, if the last day
+          the student is in school is a Wednesday, Thursdayis the exit day.
+          Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: exitdate
       - name: exitcode
         data_type: string
         description:
-          The school specified exit code from the student table for EOY or for
-          re-enrollment purposes, suchas S=Transfer.
+          The code representing how or why the student exited the school. These
+          codes are stored in Gen Table [6] cat=exitcodes. These are set in
+          school setup.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: exitcode
       - name: exitcomment
         data_type: string
-        description:
-          The exit comment from the student table as specified for this record.
+        description: Any comments for the student exiting this school.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: exitcomment
       - name: region
         data_type: string
@@ -145,7 +146,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__attendance
+            source_model: stg_powerschool__students
             source_column: schoolid
       - name: reporting_schoolid
         data_type: int64
@@ -156,12 +157,12 @@ models:
       - name: grade_level
         data_type: int64
         description:
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted.
+          "The grade the student is in. Since this is an integer: 0=Kindergarten
+          1, -2=Preschool. Indexed."
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: grade_level
       - name: grade_level_prev
         data_type: int64
@@ -170,14 +171,18 @@ models:
       - name: team
         data_type: string
         description:
-          This field identifies the team to which the section is assigned, if
-          any, and is necessary to continuesupport of scheduling students by
-          team in Automated Walk-In scheduling. This will be capturedduring the
-          Power Scheduler commit process from Schedule Sections:Team.
+          This field is necessary to capture the team value assigned in Power
+          Scheduler to a student.This will need to be moved from
+          Students:Sched_Next Year Team during the End-of-Yearprocess.
+          Sched_Next Year Team captures the record ID from the Gen table (Cat
+          =Teacher Groups). Current_Team cannot capture the ID since this record
+          is part of Power Scheduler and may be changed when scheduling for a
+          future year. An acceptablecompromise is to capture the value instead
+          (i.e. Blue) and store this.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__sections
+            source_model: stg_powerschool__students
             source_column: team
       - name: advisor_lastfirst
         data_type: string

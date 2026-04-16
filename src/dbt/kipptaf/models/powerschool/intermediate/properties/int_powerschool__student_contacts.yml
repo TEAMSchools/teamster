@@ -5,11 +5,11 @@ models:
         data_type: string
       - name: student_number
         data_type: int64
-        description: District-assigned student identification number.
+        description: Student Number assigned by the school. Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__student_email
+            source_model: stg_powerschool__students
             source_column: student_number
             contains_pii: true
             column_role: primary_key

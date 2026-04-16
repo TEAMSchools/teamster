@@ -34,25 +34,26 @@ models:
       - name: entry_date_key
         data_type: date
         description: >-
-          The school enrollment entry date from the student table for EOY it the
-          next schools beginning date.Indexed.
+          The date the student enrolled in school for the current enrollment.
+          Indexed.
 
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: entrydate
       - name: exit_date_key
         data_type: date
         description: >-
-          The school enrollment exit date from the student table. If EOY it's
-          the schools next end-of-year dateor effective date for other
-          re-enrollment purposes. Indexed.
+          The date the student exited for the current/last enrollment. This is
+          the day after a student-attended class. For example, if the last day
+          the student is in school is a Wednesday, Thursdayis the exit day.
+          Indexed.
 
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: exitdate
       - name: academic_year
         data_type: int64
@@ -64,13 +65,13 @@ models:
       - name: grade_level
         data_type: int64
         description: >-
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted.
+          The grade the student is in. Since this is an integer: 0=Kindergarten
+          1, -2=Preschool. Indexed.
 
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: grade_level
       - name: graduation_year
         data_type: int64

@@ -10,7 +10,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__attendance
+            source_model: stg_powerschool__storedgrades
             source_column: studentid
             column_role: foreign_key
       - name: academic_year

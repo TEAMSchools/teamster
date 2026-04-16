@@ -16,11 +16,11 @@ models:
       - name: student_number
         data_type: int64
         description: |-
-          District-assigned student identification number.
+          Student Number assigned by the school. Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__student_email
+            source_model: stg_powerschool__students
             source_column: student_number
             contains_pii: true
             column_role: primary_key
@@ -33,7 +33,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__attendance
+            source_model: stg_powerschool__storedgrades
             source_column: studentid
             column_role: foreign_key
       - name: students_dcid
@@ -43,12 +43,12 @@ models:
       - name: grade_level
         data_type: int64
         description:
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted.
+          "The grade the student is in. Since this is an integer: 0=Kindergarten
+          1, -2=Preschool. Indexed."
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: grade_level
       - name: schoolid
         data_type: int64
@@ -56,66 +56,69 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__attendance
+            source_model: stg_powerschool__students
             source_column: schoolid
       - name: entrydate
         data_type: date
         description:
-          The school enrollment entry date from the student table for EOY it the
-          next schools beginning date.Indexed.
+          The date the student enrolled in school for the current enrollment.
+          Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: entrydate
       - name: exitdate
         data_type: date
         description:
-          The school enrollment exit date from the student table. If EOY it's
-          the schools next end-of-year dateor effective date for other
-          re-enrollment purposes. Indexed.
+          The date the student exited for the current/last enrollment. This is
+          the day after a student-attended class. For example, if the last day
+          the student is in school is a Wednesday, Thursdayis the exit day.
+          Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: exitdate
       - name: entrycode
         data_type: string
-        description: The Enrollment code from the student table.
+        description:
+          The code representing how or why the student entered school. These
+          codes are stored in Gen Table [6] cat=entrycodes. These are set in
+          school setup.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: entrycode
       - name: exitcode
         data_type: string
         description:
-          The school specified exit code from the student table for EOY or for
-          re-enrollment purposes, suchas S=Transfer.
+          The code representing how or why the student exited the school. These
+          codes are stored in Gen Table [6] cat=exitcodes. These are set in
+          school setup.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: exitcode
       - name: exitcomment
         data_type: string
-        description:
-          The exit comment from the student table as specified for this record.
+        description: Any comments for the student exiting this school.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: exitcomment
       - name: lunchstatus
         data_type: string
         description:
-          "This is the Lunch status copied from the student table. Represents
-          the portion of lunch a studentmust pay for: Blank=No status P=Full pay
-          R=Reduced F=Free E=Exempt T=Temporary FDC=Free-DC"
+          "Represents the portion of lunch a student must pay for: Blank=No
+          status P=Full pay R=Reduced F=Free E=Exempt T=Temporary FDC=Free-DC."
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: lunchstatus
       - name: fteid
         data_type: int64
@@ -125,7 +128,7 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__attendance_conversion_items
+            source_model: stg_powerschool__students
             source_column: fteid
       - name: state_studentnumber
         data_type: string
@@ -193,22 +196,20 @@ models:
             contains_pii: true
       - name: street
         data_type: string
-        description:
-          The street name and number element of the address. Usually line one of
-          the address. Indexed with Line Two and Unit. Optional.
+        description: Student's street address.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__personaddress
+            source_model: stg_powerschool__students
             source_column: street
             contains_pii: true
       - name: city
         data_type: string
-        description: The city element of the address. Optional.
+        description: City element of the students address.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__personaddress
+            source_model: stg_powerschool__students
             source_column: city
             contains_pii: true
       - name: state
@@ -292,12 +293,12 @@ models:
         data_type: int64
         description:
           A number representing which year the term belongs to, such as 13 for
-          2003-2004. The numberis equal to the ID of the year term divided by
-          100. Maintained in the Terms table.
+          2003-2004. Thenumber is equal to the ID of the year term divided by
+          100. Maintained in the Terms table.Required. Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__assignmentcategoryassoc
+            source_model: stg_powerschool__gradeschoolconfig
             source_column: yearid
       - name: academic_year
         data_type: int64
@@ -308,12 +309,12 @@ models:
       - name: track
         data_type: string
         description:
-          The track the student was in during this enrollment from student
-          table.
+          A-H or blank. This represents the times of year a student goes to
+          school. This is most commonwith year-round schools.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
+            source_model: stg_powerschool__students
             source_column: track
       - name: cohort_primary
         data_type: int64

@@ -18,15 +18,14 @@ models:
       - name: course_number
         data_type: string
         description: >-
-          The course number associated with this class. This is implied by the
-          Section ID but stored here forconvenience. Indexed.
+          The number the school assigns to a particular course. Indexed.
         data_tests:
           - not_null
 
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__cc
+            source_model: stg_powerschool__courses
             source_column: course_number
       - name: course_name
         data_type: string
