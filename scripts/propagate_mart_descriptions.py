@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["pyyaml>=6.0", "sqlglot>=28.0"]
+# dependencies = ["pyyaml>=6.0", "ruamel.yaml>=0.18", "sqlglot>=28.0"]
 # ///
 
 """Propagate staging descriptions into intermediate and mart YAML.
@@ -28,6 +28,23 @@ from pathlib import Path
 import sqlglot
 import yaml
 from sqlglot import exp
+
+
+def _get_ryaml():
+    """Lazy-load ruamel.yaml for round-trip YAML editing.
+
+    ruamel.yaml is declared in the PEP 723 script dependencies and
+    available when running via ``uv run``.  Tests that import this
+    module via ``importlib`` don't need it — they never call ``main()``.
+    """
+    from ruamel.yaml import YAML
+
+    ry = YAML()
+    ry.preserve_quotes = True
+    ry.width = 88
+    ry.indent(mapping=2, sequence=4, offset=2)
+    return ry
+
 
 _WS_RE = re.compile(r"\s+")
 
@@ -351,6 +368,8 @@ def _discover_kipptaf_yaml_dirs() -> list[Path]:
 
 
 def main() -> None:
+    ryaml = _get_ryaml()
+
     # Load manifest
     if not MANIFEST_PATH.exists():
         msg = f"Manifest not found at {MANIFEST_PATH}. Run: uv run dbt compile --project-dir {KIPPTAF_PROJECT}"
@@ -382,7 +401,7 @@ def main() -> None:
     for props_dir in target_dirs:
         for yml_path in sorted(props_dir.glob("*.yml")):
             with yml_path.open(encoding="utf-8") as fh:
-                doc = yaml.safe_load(fh)
+                doc = ryaml.load(fh)
 
             if not doc or not doc.get("models"):
                 continue
@@ -405,14 +424,7 @@ def main() -> None:
 
             if file_enriched > 0:
                 with yml_path.open("w", encoding="utf-8") as fh:
-                    yaml.dump(
-                        doc,
-                        fh,
-                        sort_keys=False,
-                        default_flow_style=False,
-                        width=88,
-                        allow_unicode=True,
-                    )
+                    ryaml.dump(doc, fh)
                 total_enriched += file_enriched
                 total_files += 1
 
