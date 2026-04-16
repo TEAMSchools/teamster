@@ -22,6 +22,7 @@ models:
               - grain_type
               - grain
               - manager
+              - manager_job_title
     columns:
       - name: domain
         description: >
@@ -84,6 +85,13 @@ models:
           int_people__staff_roster reports_to_formatted_name). Populated for
           Homeroom and Section grain types where a single lead teacher can be
           identified. Null for Grade Level aggregations.
+        data_type: string
+      - name: manager_job_title
+        description: >
+          Job title of the lead teacher's direct manager (from
+          int_people__staff_roster job_title, looked up via
+          reports_to_employee_number). Populated for Homeroom and Section grain
+          types. Null for Grade Level aggregations.
         data_type: string
       - name: value
         description:
