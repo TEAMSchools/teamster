@@ -7,10 +7,21 @@ models:
         data_type: string
       - name: schoolid
         data_type: int64
+        description:
+          "The School_Number of the associated Schools record. Source:
+          PowerSchool stg_powerschool__attendance.schoolid."
       - name: yearid
         data_type: int64
+        description:
+          "A number representing which year the term belongs to, such as 13 for
+          2003-2004. The numberis equal to the ID of the year term divided by
+          100. Maintained in the Terms table. Source: PowerSchool
+          stg_powerschool__assignmentcategoryassoc.yearid."
       - name: track
         data_type: string
+        description:
+          "The track the student was in during this enrollment from student
+          table. Source: PowerSchool stg_powerschool__reenrollments.track."
       - name: min_calendardate
         data_type: date
       - name: max_calendardate

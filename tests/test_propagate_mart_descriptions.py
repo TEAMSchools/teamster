@@ -173,7 +173,7 @@ def test_enrich_writes_description_where_empty() -> None:
     doc = _sample_yaml_doc()
     module._enrich_yaml_descriptions(
         doc,
-        _sample_referenced_tables(),
+        "dim_sample",
         _sample_source_mapping(),
         _sample_staging_dict(),
     )
@@ -188,7 +188,7 @@ def test_enrich_overwrites_existing_description() -> None:
     doc = _sample_yaml_doc()
     module._enrich_yaml_descriptions(
         doc,
-        _sample_referenced_tables(),
+        "dim_sample",
         _sample_source_mapping(),
         _sample_staging_dict(),
     )
@@ -202,7 +202,7 @@ def test_enrich_propagates_pii_flag() -> None:
     doc = _sample_yaml_doc()
     module._enrich_yaml_descriptions(
         doc,
-        _sample_referenced_tables(),
+        "dim_sample",
         _sample_source_mapping(),
         _sample_staging_dict(),
     )
@@ -215,7 +215,7 @@ def test_enrich_no_pii_flag_when_false() -> None:
     doc = _sample_yaml_doc()
     module._enrich_yaml_descriptions(
         doc,
-        _sample_referenced_tables(),
+        "dim_sample",
         _sample_source_mapping(),
         _sample_staging_dict(),
     )

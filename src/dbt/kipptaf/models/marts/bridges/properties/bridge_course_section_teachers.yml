@@ -43,7 +43,9 @@ models:
       - name: teacher_role
         data_type: string
         description: >-
-          Role name from PowerSchool roledef (e.g., Lead Teacher, Co-Teacher).
+          User configurable name uniquely identifying the role to the user
+          within a Role Module Required. Source: PowerSchool
+          stg_powerschool__roledef.name.
 
       - name: effective_date_start
         data_type: date

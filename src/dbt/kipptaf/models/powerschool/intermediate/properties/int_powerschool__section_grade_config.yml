@@ -11,6 +11,9 @@ models:
         data_type: string
       - name: storecode
         data_type: string
+        description:
+          "The code used to represent this grade level to term ID and school ID.
+          Source: PowerSchool stg_powerschool__gradecalcformulaweight.storecode."
       - name: storecode_type
         data_type: string
       - name: storecode_order

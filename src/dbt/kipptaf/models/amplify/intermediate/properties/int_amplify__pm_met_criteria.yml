@@ -3,14 +3,24 @@ models:
     columns:
       - name: academic_year
         data_type: int64
+        description:
+          "Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026'). Source: Amplify
+          stg_amplify__mclass__sftp__pm_student_summary_aimline.academic_year."
       - name: region
         data_type: string
       - name: admin_season
         data_type: string
       - name: assessment_grade
         data_type: string
+        description:
+          "Grade level of the assessment administered. Source: Amplify
+          stg_amplify__mclass__sftp__pm_student_summary_aimline.assessment_grade."
       - name: assessment_grade_int
         data_type: int64
+        description:
+          "Assessment grade as integer (K mapped to 0). Source: Amplify
+          stg_amplify__mclass__sftp__pm_student_summary_aimline.assessment_grade_int."
       - name: measure_standard
         data_type: string
       - name: round_number
@@ -33,8 +43,17 @@ models:
             contains_pii: true
       - name: measure_name_code
         data_type: string
+        description:
+          "Short measure abbreviation extracted from the expanded measure name
+          parenthetical (e.g., 'ORF' from 'Reading Fluency (ORF)'). Source:
+          Amplify
+          stg_amplify__mclass__sftp__pm_student_summary_aimline.measure_name_code."
       - name: measure_standard_score
         data_type: float64
+        description:
+          "Raw assessment score, cast from the source score column. Source:
+          Amplify
+          stg_amplify__mclass__sftp__pm_student_summary_aimline.measure_standard_score."
       - name: start_date
         data_type: date
       - name: end_date

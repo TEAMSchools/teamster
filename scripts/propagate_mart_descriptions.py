@@ -128,6 +128,86 @@ def _extract_referenced_tables(sql: str) -> list[str]:
     return tables
 
 
+def _extract_alias_map(sql: str) -> dict[str, str]:
+    """Extract column alias mappings from compiled SQL.
+
+    Returns {output_alias: source_column} for simple renames like
+    ``dob AS birth_date``. Only traces through CTE chains; skips
+    computed expressions.
+    """
+    try:
+        stmts = sqlglot.parse(sql, read="bigquery")
+    except Exception:
+        return {}
+
+    if not stmts or stmts[0] is None:
+        return {}
+
+    stmt = stmts[0]
+
+    # Collect CTEs
+    ctes: dict[str, exp.Expression] = {}
+    for cte in stmt.find_all(exp.CTE):
+        ctes[cte.alias] = cte.this
+
+    # Find the outermost select — resolve SELECT * FROM cte
+    def _resolve_star(select: exp.Expression) -> exp.Expression:
+        if not isinstance(select, exp.Select):
+            return select
+        exprs = select.expressions
+        if len(exprs) == 1 and isinstance(exprs[0], exp.Star):
+            from_clause = select.find(exp.From)
+            if from_clause:
+                table = from_clause.this
+                if isinstance(table, exp.Table) and table.name in ctes:
+                    return _resolve_star(ctes[table.name])
+        return select
+
+    resolved = _resolve_star(stmt)
+    if not isinstance(resolved, exp.Select):
+        return {}
+
+    result: dict[str, str] = {}
+    for expression in resolved.expressions:
+        if isinstance(expression, exp.Alias) and isinstance(
+            expression.this, exp.Column
+        ):
+            alias = expression.alias
+            source_col = expression.this.name
+            if alias != source_col:
+                result[alias] = source_col
+    return result
+
+
+def _infer_package_from_model(model_name: str) -> str | None:
+    """Infer the source package from a kipptaf model name.
+
+    'base_powerschool__student_enrollments' → 'powerschool'
+    'int_deanslist__incidents' → 'deanslist'
+    'dim_students' → None (no clear package)
+    """
+    for prefix in ("base_", "int_", "stg_"):
+        if model_name.startswith(prefix):
+            remainder = model_name[len(prefix) :]
+            package_slug = remainder.split("__", 1)[0]
+            return package_slug
+    return None
+
+
+def _build_staging_index(
+    staging_dict: dict[tuple[str, str], dict],
+) -> dict[str, list[tuple[str, str]]]:
+    """Build {column_name: [(staging_model, column_name), ...]} index.
+
+    Used for package-wide fallback searches.
+    """
+    index: dict[str, list[tuple[str, str]]] = {}
+    for model_col in staging_dict:
+        col = model_col[1]
+        index.setdefault(col, []).append(model_col)
+    return index
+
+
 _PACKAGE_DISPLAY_NAMES: dict[str, str] = {
     "adp": "ADP",
     "amplify": "Amplify",
@@ -165,39 +245,34 @@ def _extract_table_name(relation: str) -> str:
     return parts[-1] if parts else relation
 
 
-def _build_compiled_sql_cache(
-    compiled_dir: Path,
-) -> tuple[dict[str, Path], dict[str, list[str]]]:
-    """Build caches of compiled SQL paths and their referenced tables.
+class _CompiledCache:
+    """Pre-parsed compiled SQL cache: table references and alias maps."""
 
-    Returns (path_cache, tables_cache) where:
-    - path_cache: {model_name: Path}
-    - tables_cache: {model_name: [referenced_table_names]}
-    """
-    path_cache: dict[str, Path] = {}
-    for sql_path in compiled_dir.rglob("*.sql"):
-        path_cache[sql_path.stem] = sql_path
+    def __init__(self, compiled_dir: Path) -> None:
+        self.tables: dict[str, list[str]] = {}
+        self.aliases: dict[str, dict[str, str]] = {}
 
-    tables_cache: dict[str, list[str]] = {}
-    for model_name, sql_path in path_cache.items():
-        sql = sql_path.read_text(encoding="utf-8")
-        tables_cache[model_name] = _extract_referenced_tables(sql)
-
-    return path_cache, tables_cache
+        for sql_path in compiled_dir.rglob("*.sql"):
+            model_name = sql_path.stem
+            sql = sql_path.read_text(encoding="utf-8")
+            self.tables[model_name] = _extract_referenced_tables(sql)
+            self.aliases[model_name] = _extract_alias_map(sql)
 
 
 def _resolve_column_to_staging(
     col_name: str,
     referenced_tables: list[str],
     staging_dict: dict[tuple[str, str], dict],
-    tables_cache: dict[str, list[str]],
+    cache: _CompiledCache,
+    staging_index: dict[str, list[tuple[str, str]]],
     visited: set[str] | None = None,
 ) -> tuple[str, str, str] | None:
     """Resolve a column name to a staging model by walking referenced tables.
 
-    Assumes union_relations and deduplicate are column-passthrough — their
-    output columns match their inputs. Recursively follows intermediate
-    models until a staging description is found.
+    Three-phase resolution:
+    1. Direct passthrough match in referenced tables
+    2. Alias tracing through compiled SQL for simple renames
+    3. Package-wide fallback when neither works
 
     Returns (staging_model, staging_column, package) or None.
     """
@@ -213,17 +288,17 @@ def _resolve_column_to_staging(
             continue
         visited.add(trace_key)
 
-        # Direct match in staging dict
+        # Phase 1: direct passthrough match
         if (table_name, col_name) in staging_dict:
             return (table_name, col_name, _infer_package(table_name))
 
-        # Not staging — try to follow through this table's pre-parsed refs
-        upstream_tables = tables_cache.get(table_name)
+        # Not staging — recurse into this table's references
+        upstream_tables = cache.tables.get(table_name)
         if upstream_tables is None:
             continue
 
         result = _resolve_column_to_staging(
-            col_name, upstream_tables, staging_dict, tables_cache, visited
+            col_name, upstream_tables, staging_dict, cache, staging_index, visited
         )
         if result is not None:
             return result
@@ -233,41 +308,74 @@ def _resolve_column_to_staging(
 
 def _enrich_yaml_descriptions(
     doc: dict,
-    referenced_tables: list[str],
+    model_name: str,
     source_mapping: dict[str, dict],
     staging_dict: dict[tuple[str, str], dict],
-    tables_cache: dict[str, list[str]] | None = None,
+    cache: _CompiledCache | None = None,
+    staging_index: dict[str, list[tuple[str, str]]] | None = None,
 ) -> int:
     """Enrich a YAML doc's column descriptions from staging sources.
 
+    Three-phase resolution per column:
+    1. Passthrough — column name matches a staging column in referenced tables
+    2. Alias trace — column is an alias for a staging column (e.g., dob AS birth_date)
+    3. Package fallback — search all staging in the inferred package
+
     Overwrites existing descriptions when a staging source is traceable.
-    Assumes union_relations and deduplicate are column-passthrough.
     Mutates doc in place. Returns the number of columns enriched.
     """
+    referenced_tables = cache.tables.get(model_name, []) if cache else []
+    alias_map = cache.aliases.get(model_name, {}) if cache else {}
+
     enriched = 0
     for model in doc.get("models", []) or []:
         for col in model.get("columns", []) or []:
             col_name = col["name"]
+            resolved = None
 
-            if tables_cache is not None:
+            if cache is not None and staging_index is not None:
+                # Phase 1: passthrough match via recursive table walk
                 resolved = _resolve_column_to_staging(
-                    col_name, referenced_tables, staging_dict, tables_cache
+                    col_name,
+                    referenced_tables,
+                    staging_dict,
+                    cache,
+                    staging_index,
                 )
+
+                # Phase 2: alias trace — check if col_name is an alias
+                if resolved is None and col_name in alias_map:
+                    source_col = alias_map[col_name]
+                    resolved = _resolve_column_to_staging(
+                        source_col,
+                        referenced_tables,
+                        staging_dict,
+                        cache,
+                        staging_index,
+                    )
+
+                # Phase 3: package-wide fallback
+                if resolved is None:
+                    for lookup_col in [col_name, alias_map.get(col_name, "")]:
+                        if not lookup_col:
+                            continue
+                        candidates = staging_index.get(lookup_col, [])
+                        pkg = _infer_package_from_model(model_name)
+                        for stg_model, stg_col in candidates:
+                            if pkg and _infer_package(stg_model) == pkg:
+                                resolved = (stg_model, stg_col, pkg)
+                                break
+                        if resolved:
+                            break
             else:
-                # Non-recursive path (for tests with simple fixtures)
-                resolved = None
-                for table in referenced_tables:
-                    table_name = _extract_table_name(table)
-                    mapping = source_mapping.get(table)
-                    if mapping and (mapping["table_name"], col_name) in staging_dict:
+                # Non-recursive path (for tests): use source_mapping keys
+                for relation, mapping in source_mapping.items():
+                    if (mapping["table_name"], col_name) in staging_dict:
                         resolved = (
                             mapping["table_name"],
                             col_name,
                             mapping["package"],
                         )
-                        break
-                    if (table_name, col_name) in staging_dict:
-                        resolved = (table_name, col_name, _infer_package(table_name))
                         break
 
             if resolved is None:
@@ -387,9 +495,12 @@ def main() -> None:
     print(f"Loaded {len(staging_dict)} staging descriptions")
     print(f"Loaded {len(source_mapping)} source mappings")
 
-    # Build compiled SQL cache
-    path_cache, tables_cache = _build_compiled_sql_cache(COMPILED_DIR)
-    print(f"Cached {len(path_cache)} compiled SQL files")
+    # Build caches
+    cache = _CompiledCache(COMPILED_DIR)
+    staging_index = _build_staging_index(staging_dict)
+    print(
+        f"Cached {len(cache.tables)} compiled SQL files, {len(cache.aliases)} alias maps"
+    )
 
     # Discover target YAML dirs
     target_dirs = _discover_kipptaf_yaml_dirs()
@@ -406,20 +517,19 @@ def main() -> None:
             if not doc or not doc.get("models"):
                 continue
 
-            # For each model in the YAML, extract referenced tables from compiled SQL
             file_enriched = 0
             for model in doc.get("models", []) or []:
                 model_name = model["name"]
-                model_tables = tables_cache.get(model_name)
-                if model_tables is None:
+                if model_name not in cache.tables:
                     continue
 
                 file_enriched += _enrich_yaml_descriptions(
                     doc,
-                    model_tables,
+                    model_name,
                     source_mapping,
                     staging_dict,
-                    tables_cache,
+                    cache,
+                    staging_index,
                 )
 
             if file_enriched > 0:

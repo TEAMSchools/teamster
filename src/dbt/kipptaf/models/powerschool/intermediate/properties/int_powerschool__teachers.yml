@@ -7,197 +7,570 @@ models:
         data_type: string
       - name: lastfirst
         data_type: string
+        description:
+          "Last, First, Mi. Indexed. Source: PowerSchool
+          stg_powerschool__students.lastfirst."
+        config:
+          meta:
+            contains_pii: true
       - name: first_name
         data_type: string
+        description:
+          "Students' first name. Source: PowerSchool
+          stg_powerschool__students.first_name."
+        config:
+          meta:
+            contains_pii: true
       - name: middle_name
         data_type: string
+        description:
+          "Student's middle name. Source: PowerSchool
+          stg_powerschool__students.middle_name."
+        config:
+          meta:
+            contains_pii: true
       - name: last_name
         data_type: string
+        description:
+          "Students last name. Source: PowerSchool
+          stg_powerschool__students.last_name."
+        config:
+          meta:
+            contains_pii: true
       - name: title
         data_type: string
+        description:
+          "Stores a title name for the teacher and is used for sorting purposes.
+          Source: PowerSchool stg_powerschool__users.title."
       - name: homeroom
         data_type: string
+        description:
+          "This string does appear on some pages but does not impact any
+          calculations. Source: PowerSchool stg_powerschool__users.homeroom."
       - name: email_addr
         data_type: string
+        description:
+          "Stores the teachers email address and is used for email notifications
+          to the teacher, such as studentenrollment information. Source:
+          PowerSchool stg_powerschool__users.email_addr."
+        config:
+          meta:
+            contains_pii: true
       - name: password
         data_type: string
+        description:
+          "The Power School login password. Source: PowerSchool
+          stg_powerschool__users.password."
       - name: ipaddrrestrict
         data_type: string
+        description:
+          "The list of IP addresses the user is allowed to log in from. If
+          blank, he or she can log in from any IPaddress. Source: PowerSchool
+          stg_powerschool__users.ipaddrrestrict."
       - name: accessvalue
         data_type: string
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custom pages. Source: PowerSchool
+          stg_powerschool__users.accessvalue."
       - name: homepage
         data_type: string
+        description:
+          "The page that appears when logging in to Power School. Source:
+          PowerSchool stg_powerschool__users.homepage."
       - name: loginid
         data_type: string
+        description:
+          "The Power School login name. Indexed. Source: PowerSchool
+          stg_powerschool__users.loginid."
       - name: defaultstudscrn
         data_type: string
+        description:
+          "The student page the user wants to appear by default. Source:
+          PowerSchool stg_powerschool__users.defaultstudscrn."
       - name: teachernumber
         data_type: string
+        description:
+          "The number the district assigns to track the teacher. Source:
+          PowerSchool stg_powerschool__users.teachernumber."
       - name: ssn
         data_type: string
+        description:
+          "Students Social Security number. Indexed. Source: PowerSchool
+          stg_powerschool__students.ssn."
+        config:
+          meta:
+            contains_pii: true
       - name: home_phone
         data_type: string
+        description:
+          "Home phone number for the student. Indexed. Source: PowerSchool
+          stg_powerschool__students.home_phone."
+        config:
+          meta:
+            contains_pii: true
       - name: school_phone
         data_type: string
+        description:
+          "Changed name from School_phone. Phone number at the school assigned
+          to this staff member. Notcurrently used by any application code.
+          Source: PowerSchool stg_powerschool__users.school_phone."
+        config:
+          meta:
+            contains_pii: true
       - name: street
         data_type: string
+        description:
+          "The street name and number element of the address. Usually line one
+          of the address. Indexed with Line Two and Unit. Optional. Source:
+          PowerSchool stg_powerschool__personaddress.street."
+        config:
+          meta:
+            contains_pii: true
       - name: city
         data_type: string
+        description:
+          "The city element of the address. Optional. Source: PowerSchool
+          stg_powerschool__personaddress.city."
+        config:
+          meta:
+            contains_pii: true
       - name: state
         data_type: string
+        description:
+          "State element of address. Source: PowerSchool
+          stg_powerschool__students.state."
       - name: zip
         data_type: string
+        description:
+          "Students zip code. Source: PowerSchool stg_powerschool__students.zip."
+        config:
+          meta:
+            contains_pii: true
       - name: periodsavail
         data_type: string
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custom pages. Source: PowerSchool
+          stg_powerschool__users.periodsavail."
       - name: powergradepw
         data_type: string
+        description:
+          "No longer used by application. This field may still be referenced on
+          reports and/or custom pages. Source: PowerSchool
+          stg_powerschool__users.powergradepw."
       - name: canchangeschool
         data_type: string
+        description:
+          "Semicolon delimited list of Schools.School_Number values the Admin
+          can switch to when logged intothe Admin portal. Source: PowerSchool
+          stg_powerschool__users.canchangeschool."
       - name: teacherloginpw
         data_type: string
+        description:
+          "The login password for Power Teacher. Source: PowerSchool
+          stg_powerschool__users.teacherloginpw."
       - name: nameasimported
         data_type: string
+        description:
+          "Used as a matching tool when importing teacher information. Source:
+          PowerSchool stg_powerschool__users.nameasimported."
       - name: teacherloginid
         data_type: string
+        description:
+          "The login name for Power Teacher. Source: PowerSchool
+          stg_powerschool__users.teacherloginid."
       - name: teacherloginip
         data_type: string
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custom pages. Source: PowerSchool
+          stg_powerschool__users.teacherloginip."
       - name: wm_status
         data_type: string
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__students.wm_status."
       - name: wm_statusdate
         data_type: date
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__students.wm_statusdate."
       - name: wm_address
         data_type: string
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__students.wm_address."
       - name: wm_password
         data_type: string
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__students.wm_password."
       - name: wm_createdate
         data_type: date
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__students.wm_createdate."
       - name: wm_ta_flag
         data_type: string
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__students.wm_ta_flag."
       - name: wm_ta_date
         data_type: date
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__students.wm_ta_date."
       - name: wm_alias
         data_type: string
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custom pages. Source: PowerSchool
+          stg_powerschool__users.wm_alias."
       - name: ethnicity
         data_type: string
+        description:
+          "Heritage background of a student. The codes assigned here are stored
+          in the Gen Table [6]Cat=Ethnicity. These are set in school setup.
+          Source: PowerSchool stg_powerschool__students.ethnicity."
       - name: preferredname
         data_type: string
+        description:
+          "Name the user prefers to use. Source: PowerSchool
+          stg_powerschool__users.preferredname."
       - name: lastmeal
         data_type: string
+        description:
+          "Stores the date of last lunch purchase. Source: PowerSchool
+          stg_powerschool__students.lastmeal."
       - name: staffpers_guid
         data_type: string
+        description:
+          "Globally unique identifier for this table for SIF compliancy.
+          Indexed. Source: PowerSchool stg_powerschool__users.staffpers_guid."
       - name: sif_stateprid
         data_type: string
+        description:
+          "SIF specific Identifier. Source: PowerSchool
+          stg_powerschool__schools.sif_stateprid."
       - name: dcid
         data_type: int64
+        description:
+          "Unique identifier for this table. Indexed. Required. Source:
+          PowerSchool stg_powerschool__attendance_code.dcid."
       - name: homeschoolid
         data_type: int64
+        description:
+          "The teacher's home school. This ID is linked to the School_Number
+          from the School table. Indexed. Source: PowerSchool
+          stg_powerschool__users.homeschoolid."
       - name: photo
         data_type: int64
+        description:
+          "Set to 1 if a photo exists for this user. Source: PowerSchool
+          stg_powerschool__users.photo."
       - name: numlogins
         data_type: int64
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custom pages. Source: PowerSchool
+          stg_powerschool__users.numlogins."
       - name: allowloginstart
         data_type: int64
+        description:
+          "Time-restricted login. This is the start of the time that teachers
+          can log in. Source: PowerSchool
+          stg_powerschool__users.allowloginstart."
       - name: allowloginend
         data_type: int64
+        description:
+          "Time-restricted login. This is the end time that teachers can log in.
+          Source: PowerSchool stg_powerschool__users.allowloginend."
       - name: psaccess
         data_type: int64
+        description:
+          "Indicates whether the user can log in to Power School Admin. Valid
+          values: 0=No, 1=Yes. Source: PowerSchool
+          stg_powerschool__users.psaccess."
       - name: groupvalue
         data_type: int64
+        description:
+          "The security group (from Gen table) this user belongs to in Power
+          School. This determines which pagesthe user has access to. Source:
+          PowerSchool stg_powerschool__users.groupvalue."
       - name: lunch_id
         data_type: float64
+        description:
+          "The students Power Lunch number. Indexed. Source: PowerSchool
+          stg_powerschool__students.lunch_id."
       - name: supportcontact
         data_type: int64
+        description:
+          "Value of 1 indicates that this user is an authorized support contact.
+          Source: PowerSchool stg_powerschool__users.supportcontact."
       - name: wm_tier
         data_type: int64
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__students.wm_tier."
       - name: wm_createtime
         data_type: int64
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__students.wm_createtime."
       - name: wm_exclude
         data_type: int64
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custom pages. Source: PowerSchool
+          stg_powerschool__users.wm_exclude."
       - name: adminldapenabled
         data_type: int64
       - name: teacherldapenabled
         data_type: int64
       - name: maximum_load
         data_type: int64
+        description:
+          "Maximum student load permissible for this Teacher. Source:
+          PowerSchool stg_powerschool__users.maximum_load."
       - name: gradebooktype
         data_type: int64
+        description:
+          "Indicates the type of gradebook used by the teacher. Valid values:
+          0=Power Grade, 1=Power Teacher Gradebook, 2=Power Teacher Pro. Source:
+          PowerSchool stg_powerschool__pgfinalgrades.gradebooktype."
       - name: fedethnicity
         data_type: int64
+        description:
+          'Numerical answer to the question "Is the student Hispanic or Latino?"
+          Valid values : Source: PowerSchool
+          stg_powerschool__students.fedethnicity.'
       - name: fedracedecline
         data_type: int64
+        description:
+          "Valid values: Source: PowerSchool
+          stg_powerschool__students.fedracedecline."
       - name: ptaccess
         data_type: int64
+        description:
+          "Indicates whether the user can log in to Power Teacher. Valid values:
+          0=No, 1=Yes. Source: PowerSchool stg_powerschool__users.ptaccess."
       - name: classpua
         data_type: string
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__schoolstaff.classpua."
       - name: custom
         data_type: string
+        description:
+          "This field holds all the storedgrades' custom data in name/value
+          pairs delimited by non-printablecharacters. Source: PowerSchool
+          stg_powerschool__storedgrades.custom."
       - name: log
         data_type: string
+        description:
+          "Log of what this record, such as GPA calculation methods or report
+          Builds. Source: PowerSchool stg_powerschool__gen.log."
       - name: sched_gender
         data_type: string
+        description:
+          "Valid values: M = Male, F = Female. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_gender."
       - name: sched_classroom
         data_type: string
+        description:
+          "The classroom this teacher is in most of the time. Source:
+          PowerSchool stg_powerschool__schoolstaff.sched_classroom."
       - name: sched_homeroom
         data_type: string
+        description:
+          "The teachers' homeroom. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_homeroom."
       - name: sched_department
         data_type: string
+        description:
+          "The department this course belongs to. Source: PowerSchool
+          stg_powerschool__courses.sched_department."
       - name: sched_housecode
         data_type: string
+        description:
+          "The house to which the teacher belongs. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_housecode."
       - name: sched_buildingcode
         data_type: string
+        description:
+          "The building the teacher is in. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_buildingcode."
       - name: sched_activitystatuscode
         data_type: string
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_activitystatuscode."
       - name: sched_primaryschoolcode
         data_type: string
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_primaryschoolcode."
       - name: sched_team
         data_type: string
+        description:
+          "The team the teacher is on. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_team."
       - name: notes
         data_type: string
+        description:
+          "Miscellaneous notes. Source: PowerSchool
+          stg_powerschool__schoolstaff.notes."
       - name: id
         data_type: int64
+        description:
+          "Sequential number generated by the application, but uniqueness in the
+          table is not guaranteed. Indexed. Source: PowerSchool
+          stg_powerschool__attendance.id."
       - name: schoolid
         data_type: int64
+        description:
+          "The School_Number of the associated Schools record. Source:
+          PowerSchool stg_powerschool__attendance.schoolid."
       - name: balance1
         data_type: float64
+        description:
+          "Lunch balance. Source: PowerSchool
+          stg_powerschool__schoolstaff.balance1."
       - name: balance2
         data_type: float64
+        description:
+          "Beginning lunch balance for the year, copied from balance 1 in the
+          end-of-year process. Source: PowerSchool
+          stg_powerschool__schoolstaff.balance2."
       - name: balance3
         data_type: float64
+        description:
+          "Fees balance. Source: PowerSchool
+          stg_powerschool__schoolstaff.balance3."
       - name: balance4
         data_type: float64
+        description:
+          "Beginning fee balance for the year, copied from balance 3 in the
+          end-of-year process. Source: PowerSchool
+          stg_powerschool__schoolstaff.balance4."
       - name: noofcurclasses
         data_type: int64
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__schoolstaff.noofcurclasses."
       - name: staffstatus
         data_type: int64
+        description:
+          "Current title for staff. Valid values: 0 = Not Assigned, 1 = Teacher,
+          2 = Staff, 3 = Lunch Staff, 4= Substitute. Indexed. Source:
+          PowerSchool stg_powerschool__schoolstaff.staffstatus."
       - name: status
         data_type: int64
+        description:
+          "Indicates if the course was made either by a user or automatically by
+          an import. Validvalues: 0=user-created, 3=auto-created. Source:
+          PowerSchool stg_powerschool__courses.status."
       - name: sched_maximumcourses
         data_type: int64
+        description:
+          "The maximum number of courses the teacher can teach. Source:
+          PowerSchool stg_powerschool__schoolstaff.sched_maximumcourses."
       - name: sched_maximumduty
         data_type: int64
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_maximumduty."
       - name: sched_maximumfree
         data_type: int64
+        description:
+          "The maximum number of preparatory periods the teacher can have.
+          Source: PowerSchool stg_powerschool__schoolstaff.sched_maximumfree."
       - name: sched_totalcourses
         data_type: int64
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_totalcourses."
       - name: sched_maximumconsecutive
         data_type: int64
+        description:
+          "The most courses a teacher can teach in a row without a break.
+          Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_maximumconsecutive."
       - name: sched_isteacherfree
         data_type: int64
+        description:
+          "Flag stating weather the teacher is always free. True=no limit on how
+          many courses a teachercan teach at a time, most often used with fake
+          or SPED teachers. False= teacher can onlyteach one class at a time
+          unless other wise specified at the course level. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_isteacherfree."
       - name: sched_teachermoreoneschool
         data_type: int64
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_teachermoreoneschool."
       - name: sched_substitute
         data_type: int64
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_substitute."
       - name: sched_scheduled
         data_type: int64
+        description:
+          "A flag-indicating if this course has been built into the schedule.
+          True (Checked) means ithas been build into the schedule and will not
+          be build next time the engine is run unless theengine is told to
+          reschedule regardless of this flag. False (unchecked) the engine will
+          buildinto the next schedule. Source: PowerSchool
+          stg_powerschool__courses.sched_scheduled."
       - name: sched_usebuilding
         data_type: int64
+        description:
+          "No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_usebuilding."
       - name: sched_usehouse
         data_type: int64
       - name: sched_lunch
         data_type: int64
+        description:
+          "Identifies the teacher to the engine as one who should be assigned a
+          lunch period for eachvalid lunch day (according to the lunch courses
+          valid days) when automated lunch isscheduled. This flag is used in
+          lieu of creating course assignments for lunch. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_lunch."
       - name: sched_maxpers
         data_type: int64
+        description:
+          "Reflects a long-standing setting in the Engine for Max Periods Per
+          Day the Teacher is to bescheduled. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_maxpers."
       - name: sched_maxpreps
         data_type: int64
+        description:
+          "Reflects the setting in the Engine for Max Prep Codes (per Term) a
+          Teacher is to be scheduled. Source: PowerSchool
+          stg_powerschool__schoolstaff.sched_maxpreps."
       - name: prefixcodesetid
         data_type: int64
+        description:
+          "Indicates person’s prefix, such as Mr. or Mrs. Indexed. Optional.
+          Source: PowerSchool stg_powerschool__person.prefixcodesetid."

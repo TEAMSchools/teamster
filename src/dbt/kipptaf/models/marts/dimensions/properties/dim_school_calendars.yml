@@ -16,7 +16,9 @@ models:
       - name: date_key
         data_type: date
         description: >-
-          Calendar date. FK to dim_dates.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Source: PowerSchool
+          stg_powerschool__calendar_day.date_value.
         data_tests:
           - not_null
 

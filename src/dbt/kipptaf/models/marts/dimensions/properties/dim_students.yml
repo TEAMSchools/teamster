@@ -17,8 +17,12 @@ models:
       - name: local_student_identifier
         data_type: int64
         description: >-
-          PowerSchool student_number. Local district-assigned student ID.
+          District-assigned student identification number. Source: PowerSchool
+          stg_powerschool__student_email.student_number.
 
+        config:
+          meta:
+            contains_pii: true
       - name: state_student_identifier
         data_type: string
         description: >-
