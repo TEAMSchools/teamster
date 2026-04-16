@@ -450,3 +450,72 @@ class TestBuildPsMapping:
         assert stats["matched"] > 0
         assert isinstance(stats["pdf_entries"], int)
         assert isinstance(stats["unmatched_pdf"], int)
+
+
+# Representative text blocks extracted from real ADP PDF pages.
+
+ADP_FIXTURE_PAGE = """\
+/workers/person/birthDate Birth Date Masked by default. Y
+/workers/person/raceCode Race Y
+/workers/person/genderCode Gender Y
+/workers/person/communication/emails/emailUri Personal Email Y
+/workers/person/legalAddress/postalCode Postal Code Y
+/workers/workerDates/originalHireDate Original Hire Date Y
+/workers/workerDates/terminationDate Termination Date Y
+"""
+
+ADP_FIXTURE_PAGE_2 = """\
+/workers/person/legalName/givenName Legal First Name Y
+/workers/person/legalName/familyName1 Legal Last Name Y
+/workers/person/legalName/formattedName Legal Full Name Y
+/workers/person/preferredName/givenName Preferred First Name Y
+/workers/person/highestEducationLevelCode Highest Education Level Y
+/workers/workerID/idValue Worker ID Y
+"""
+
+ADP_FIXTURE_WITH_NA = """\
+/workers/person/disabledIndicator Disabled Indicator NA
+/workers/customFieldGroup/codeFields Custom Code Fields Y
+"""
+
+
+class TestAdpPathParser:
+    """Test extracting ADP schema location + field name from PDF text."""
+
+    def test_parses_simple_paths(self) -> None:
+        module = _load_script()
+        entries = module.parse_adp_entries(ADP_FIXTURE_PAGE)
+        assert len(entries) >= 5
+
+        paths = {e["schema_path"] for e in entries}
+        assert "/workers/person/birthDate" in paths
+        assert "/workers/person/communication/emails/emailUri" in paths
+
+    def test_extracts_field_name(self) -> None:
+        module = _load_script()
+        entries = module.parse_adp_entries(ADP_FIXTURE_PAGE)
+        by_path = {e["schema_path"]: e for e in entries}
+        assert by_path["/workers/person/birthDate"]["field_name"] == "Birth Date"
+
+    def test_extracts_description_with_note(self) -> None:
+        module = _load_script()
+        entries = module.parse_adp_entries(ADP_FIXTURE_PAGE)
+        by_path = {e["schema_path"]: e for e in entries}
+        birth = by_path["/workers/person/birthDate"]
+        assert "Masked by default" in birth["description"]
+
+    def test_field_name_only_no_note(self) -> None:
+        module = _load_script()
+        entries = module.parse_adp_entries(ADP_FIXTURE_PAGE)
+        by_path = {e["schema_path"]: e for e in entries}
+        race = by_path["/workers/person/raceCode"]
+        assert race["field_name"] == "Race"
+        # Description should be just the field name when no note
+        assert race["description"] == "Race"
+
+    def test_na_entries_included(self) -> None:
+        module = _load_script()
+        entries = module.parse_adp_entries(ADP_FIXTURE_WITH_NA)
+        assert len(entries) >= 1
+        paths = {e["schema_path"] for e in entries}
+        assert "/workers/person/disabledIndicator" in paths

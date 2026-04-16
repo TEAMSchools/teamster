@@ -355,6 +355,91 @@ def build_ps_mapping(
     }
 
 
+# Matches ADP data dictionary lines like:
+#   "/workers/person/birthDate Birth Date Masked by default. Y"
+# Schema path starts with /workers/, then field name(s), optional note, Y/NA
+_ADP_ENTRY_RE = re.compile(
+    r"^(/workers/\S+)\s+"  # schema path
+    r"(.+?)\s+"  # field name + optional note (greedy middle)
+    r"(Y|NA)\s*$"  # WFN Next Gen flag
+)
+
+
+def parse_adp_entries(page_text: str) -> list[dict[str, str]]:
+    """Parse ADP data dictionary entries from PDF page text.
+
+    Returns a list of dicts with keys: schema_path, field_name, description.
+    The description includes the field name and any note text.
+    """
+    entries: list[dict[str, str]] = []
+
+    for line in page_text.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+
+        match = _ADP_ENTRY_RE.match(line)
+        if not match:
+            continue
+
+        schema_path = match.group(1)
+        middle_text = match.group(2).strip()
+
+        # The middle text contains the field name and optionally a note.
+        # Always extract the field name using the heuristic; use the full
+        # middle text as the description (which may include the note).
+        field_name = _extract_field_name(middle_text)
+        description = middle_text
+
+        entries.append(
+            {
+                "schema_path": schema_path,
+                "field_name": field_name,
+                "description": description,
+            }
+        )
+
+    return entries
+
+
+_ADP_NOTE_START_WORDS: frozenset[str] = frozenset(
+    {
+        "masked",
+        "required",
+        "a",
+        "an",
+        "the",
+        "if",
+        "not",
+        "only",
+        "used",
+        "this",
+    }
+)
+
+
+def _extract_field_name(text: str) -> str:
+    """Extract the field name label from ADP middle text.
+
+    The field name is typically 1-4 capitalized words at the start,
+    before any note text (which often starts with a verb or lowercase).
+    """
+    words = text.split()
+    field_words: list[str] = []
+    for i, word in enumerate(words):
+        if i > 0:
+            # Stop at any known note-starter word (case-insensitive)
+            if word.lower() in _ADP_NOTE_START_WORDS:
+                break
+            # Stop if word is lowercase (start of note prose)
+            if word[0].islower():
+                break
+        field_words.append(word.rstrip("."))
+        if len(field_words) >= 5:
+            break
+    return " ".join(field_words) if field_words else text
+
+
 def _extract_adp(pdf_path: str) -> dict:
     """Extract ADP data dictionary from PDF."""
     raise NotImplementedError("ADP extraction not yet implemented")
