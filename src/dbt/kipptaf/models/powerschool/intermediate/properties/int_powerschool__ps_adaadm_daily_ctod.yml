@@ -12,6 +12,8 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__attendance
             source_column: studentid
+      - name: student_number
+        data_type: int64
       - name: schoolid
         data_type: int64
         description: The School_Number of the associated Schools record.
@@ -69,6 +71,8 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__assignmentcategoryassoc
             source_column: yearid
+      - name: att_code
+        data_type: string
       - name: attendancevalue
         data_type: float64
       - name: potential_attendancevalue
@@ -85,3 +89,43 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__calendar_day
             source_column: membershipvalue
+      - name: academic_year
+        data_type: int64
+      - name: semester
+        data_type: int64
+      - name: term
+        data_type: int64
+      - name: week_start_monday
+        data_type: date
+      - name: week_end_sunday
+        data_type: date
+      - name: week_number_academic_year
+        data_type: int64
+      - name: _dbt_source_project
+        data_type: string
+      - name: is_absent
+        data_type: float64
+      - name: is_present_weighted
+        data_type: float64
+      - name: is_tardy
+        data_type: float64
+      - name: is_ontime
+        data_type: float64
+      - name: is_oss
+        data_type: float64
+      - name: is_iss
+        data_type: float64
+      - name: is_suspended
+        data_type: float64
+      - name: is_absent_non_susp
+        data_type: float64
+      - name: n_absent_running_90
+        data_type: float64
+      - name: pct_absent_running_student_year
+        data_type: float64
+      - name: n_membership_student_year
+        data_type: float64
+      - name: n_absent_projected
+        data_type: float64
+      - name: is_truant
+        data_type: boolean
