@@ -58,12 +58,27 @@ def _flatten(text: str | None) -> str:
     return _WS_RE.sub(" ", text).strip()
 
 
+def _infer_column_role(description: str) -> str:
+    """Infer primary_key or foreign_key from a column description.
+
+    PowerSchool data dictionary descriptions explicitly label columns as
+    'Primary key' or 'Foreign key'.
+    """
+    lower = description.lower()
+    if "primary key" in lower:
+        return "primary_key"
+    if "foreign key" in lower:
+        return "foreign_key"
+    return ""
+
+
 def _build_staging_description_dict(
     yaml_dirs: list[Path],
 ) -> dict[tuple[str, str], dict]:
-    """Build {(model_name, column_name): {description, contains_pii}} from staging YAMLs.
+    """Build {(model_name, column_name): {description, contains_pii, column_role}}.
 
     Skips columns with empty or absent descriptions.
+    Infers column_role (primary_key/foreign_key) from description text.
     """
     result: dict[tuple[str, str], dict] = {}
     for directory in yaml_dirs:
@@ -84,6 +99,7 @@ def _build_staging_description_dict(
                     result[(model_name, col["name"])] = {
                         "description": desc,
                         "contains_pii": bool(pii),
+                        "column_role": _infer_column_role(desc),
                     }
     return result
 
@@ -647,9 +663,11 @@ def _enrich_yaml_descriptions(
                     col, package or staging_model, staging_model, staging_col
                 )
 
-                # Propagate PII flag
+                # Propagate PII flag and column role
                 if staging["contains_pii"]:
                     col["config"]["meta"]["contains_pii"] = True
+                if staging.get("column_role"):
+                    col["config"]["meta"]["column_role"] = staging["column_role"]
                 continue
 
             # Phase 4: computed column description from SQL expression

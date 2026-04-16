@@ -13,6 +13,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__assignmentcategoryassoc
             source_column: assignmentsectionid
+            column_role: foreign_key
       - name: sectionsdcid
         data_type: int64
         description:
@@ -23,6 +24,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__assignmentsection
             source_column: sectionsdcid
+            column_role: foreign_key
       - name: assignmentid
         data_type: int64
         description:
@@ -33,6 +35,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__assignmentsection
             source_column: assignmentid
+            column_role: foreign_key
       - name: assignment_name
         data_type: string
       - name: duedate

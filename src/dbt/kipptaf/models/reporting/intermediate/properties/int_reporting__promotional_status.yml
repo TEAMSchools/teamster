@@ -8,10 +8,23 @@ models:
     columns:
       - name: student_number
         data_type: int64
-        description: PowerSchool student number.
+        description: District-assigned student identification number.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
+            contains_pii: true
       - name: academic_year
         data_type: int64
-        description: Academic year (e.g. 2025 for the 2024–25 school year).
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: term_name
         data_type: string
         description: Reporting term name (e.g. RT1, RT2).
@@ -118,7 +131,8 @@ models:
           force-retention entry in PowerSchool regardless of other criteria.
       - name: overall_status
         data_type: string
-        description: >
-          Combined On-Track or Off-Track promotional status derived from
-          attendance_status and academic_status according to region- and
-          grade-level-specific promotion rules.
+        description: >-
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted. Categorical
+          mapping of academic_status, attendance_status, grade_level,
+          n_failing_core, region.
