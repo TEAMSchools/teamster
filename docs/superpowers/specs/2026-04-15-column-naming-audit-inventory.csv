@@ -39,7 +39,7 @@ Assessment,dim_assessments,assessment_scope,string,"Determines how scores link t
 Assessment,dim_student_assessment_expectations,student_assessment_expectation_key,string,"Surrogate key derived from powerschool_student_number, assessment_id, and administered_at. Primary key.",keep,,,not_reviewed,
 Assessment,dim_student_assessment_expectations,assessment_key,string,"FK to dim_assessments. Derived from assessment_type, title, subject_area, scope, module_code, and grade_level_id.",keep,,,not_reviewed,
 Assessment,dim_student_assessment_expectations,term_key,string,"FK to dim_terms. Derived from reporting term type, code, name, start_date, region, and school_id. Null when the administration date does not fall within any reporting term.",keep,,,not_reviewed,
-Assessment,dim_student_assessment_expectations,student_number,int64,PowerSchool student number.,rename,local_student_identifier,R1,not_reviewed,
+Assessment,dim_student_assessment_expectations,student_number,int64,PowerSchool student number.,rename,,R6,not_reviewed,Ed-Fi cognate: local_student_identifier
 Assessment,dim_student_assessment_expectations,assessment_id,int64,Illuminate assessment ID.,keep,,,not_reviewed,
 Assessment,dim_student_assessment_expectations,academic_year,int64,Academic year of the expected assessment.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Assessment,dim_student_assessment_expectations,administered_at,date,Scheduled administration date for the assessment.,keep,,,not_reviewed,
@@ -49,7 +49,7 @@ Assessment,dim_student_assessment_expectations,scope,string,"Assessment scope (e
 Assessment,dim_student_assessment_expectations,module_type,string,"Module type (e.g., QA, CR).",remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
 Assessment,dim_student_assessment_expectations,module_code,string,Module code identifying the assessment variant.,remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
 Assessment,dim_student_assessment_expectations,grade_level_id,int64,Grade level ID the assessment targets.,remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
-Assessment,dim_student_assessment_expectations,powerschool_school_id,int64,PowerSchool school ID where the student is enrolled.,rename,sis_school_id,R1,not_reviewed,
+Assessment,dim_student_assessment_expectations,powerschool_school_id,int64,PowerSchool school ID where the student is enrolled.,rename,,R1,not_reviewed,source-system prefix: powerschool_
 Assessment,dim_student_assessment_expectations,region,string,"Network region (Newark, Camden, Miami, Paterson).",remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Assessment,dim_student_assessment_expectations,is_internal_assessment,boolean,"Always TRUE for this model, which only includes internal Illuminate assessments.",keep,,,not_reviewed,
 Assessment,fct_assessment_scores_enrollment_scoped,assessment_score_key,string,Surrogate key. Primary key for this fact table.,keep,,,not_reviewed,
@@ -199,7 +199,7 @@ College,dim_college_enrollments,student_key,string,Surrogate key derived from st
 College,dim_college_enrollments,college_key,string,Surrogate key derived from college_code_branch. FK to dim_colleges.,keep,,,not_reviewed,
 College,dim_college_enrollments,start_date_key,date,Earliest enrollment_begin date across all NSC records for this student x college combination. FK to dim_dates (role-playing as enrollment start date).,keep,,,not_reviewed,
 College,dim_college_enrollments,end_date_key,date,Latest enrollment_end date across all NSC records for this student x college combination. FK to dim_dates (role-playing as enrollment end date).,keep,,,not_reviewed,
-College,dim_college_enrollments,student_number,int64,"KIPP student identifier from the kippadb roster, joining NSC contact records to PowerSchool students.",rename,local_student_identifier,R1,not_reviewed,
+College,dim_college_enrollments,student_number,int64,"KIPP student identifier from the kippadb roster, joining NSC contact records to PowerSchool students.",rename,,R6,not_reviewed,Ed-Fi cognate: local_student_identifier
 College,dim_college_enrollments,college_code_branch,string,NSC college code including branch suffix. Natural identifier for the college in this enrollment record.,keep,,,not_reviewed,
 College,dim_college_enrollments,enrollment_status,string,"Latest NSC enrollment status code for this student x college tenure (e.g., ""F"" = full-time, ""H"" = half-time, ""W"" = withdrawn, ""G"" = graduated).",keep,,,not_reviewed,
 College,dim_college_enrollments,degree_pursued,string,"Two-year or four-year classification of the degree being pursued, derived from the latest NSC enrollment record for this tenure.",keep,,,not_reviewed,
@@ -244,8 +244,8 @@ Conformed,dim_locations,region,string,"Region this location belongs to (Newark, 
 Conformed,dim_locations,grade_band,string,"Grade band served (ES, MS, HS).",keep,,,not_reviewed,
 Conformed,dim_locations,campus,string,Physical campus name. Multiple schools may share a campus.,keep,,,not_reviewed,
 Conformed,dim_locations,is_campus,boolean,TRUE if this location record represents a campus-level entity.,keep,,,not_reviewed,
-Conformed,dim_locations,powerschool_school_id,int64,PowerSchool school_id for joining to PowerSchool tables.,rename,sis_school_id,R1,not_reviewed,
-Conformed,dim_locations,deanslist_school_id,int64,DeansList school_id for joining to DeansList tables.,rename,behavior_system_school_id,R1,not_reviewed,
+Conformed,dim_locations,powerschool_school_id,int64,PowerSchool school_id for joining to PowerSchool tables.,rename,,R1,not_reviewed,source-system prefix: powerschool_
+Conformed,dim_locations,deanslist_school_id,int64,DeansList school_id for joining to DeansList tables.,rename,,R1,not_reviewed,source-system prefix: deanslist_
 Conformed,dim_regions,region_key,string,Surrogate key derived from region name.,keep,,,not_reviewed,
 Conformed,dim_regions,region,string,"Region name (Newark, Camden, Miami, Paterson).",keep,,,not_reviewed,
 Conformed,dim_regions,state,string,US state (NJ or FL).,keep,,,not_reviewed,
@@ -268,19 +268,19 @@ Conformed,dim_terms,school_id,int64,PowerSchool school ID. Nullable when the per
 Conformed,dim_terms,grade_band,string,"Grade band (ES, MS, HS). Nullable when not school-specific.",keep,,,not_reviewed,
 Conformed,dim_terms,lockbox_date,date,Date after which grades are locked for this period.,keep,,,not_reviewed,
 Conformed,dim_terms,is_current,boolean,"TRUE if the current date falls within this period, or if the period is the latest for its type in a past academic year.",keep,,,not_reviewed,
-Conformed,dim_terms,powerschool_year_id,int64,PowerSchool year_id for joining to PowerSchool term tables.,rename,sis_year_id,R1,not_reviewed,
-Conformed,dim_terms,powerschool_term_id,int64,PowerSchool term_id for joining to PowerSchool term tables.,rename,sis_term_id,R1,not_reviewed,
+Conformed,dim_terms,powerschool_year_id,int64,PowerSchool year_id for joining to PowerSchool term tables.,rename,,R1,not_reviewed,source-system prefix: powerschool_
+Conformed,dim_terms,powerschool_term_id,int64,PowerSchool term_id for joining to PowerSchool term tables.,rename,,R1,not_reviewed,source-system prefix: powerschool_
 Course,bridge_course_section_teachers,course_section_key,string,Surrogate key derived from sections_dcid and _dbt_source_relation. FK to dim_course_sections.,keep,,,not_reviewed,
 Course,bridge_course_section_teachers,staff_key,string,Surrogate key derived from employee_number. FK to dim_staff.,keep,,,not_reviewed,
-Course,bridge_course_section_teachers,sections_dcid,int64,PowerSchool sections DCID. Natural key for the section.,rename,section_id,R1,not_reviewed,
+Course,bridge_course_section_teachers,sections_dcid,int64,PowerSchool sections DCID. Natural key for the section.,rename,,R1,not_reviewed,source-system term
 Course,bridge_course_section_teachers,employee_number,int64,KIPP-assigned unique identifier for the staff member. Natural key for the staff dimension.,remove,,R9,not_reviewed,reachable via staff_key → dim_staff
-Course,bridge_course_section_teachers,teachernumber,string,PowerSchool teacher number for the assigned teacher. Retained for diagnostic traceability back to the source system.,rename,teacher_number,R1,not_reviewed,
+Course,bridge_course_section_teachers,teachernumber,string,PowerSchool teacher number for the assigned teacher. Retained for diagnostic traceability back to the source system.,rename,,R1,not_reviewed,source-system term
 Course,bridge_course_section_teachers,teacher_role,string,"Role name from PowerSchool roledef (e.g., Lead Teacher, Co-Teacher).",keep,,,not_reviewed,
 Course,bridge_course_section_teachers,effective_date_start,date,Date the teacher's assignment to this section became effective.,keep,,,not_reviewed,
 Course,bridge_course_section_teachers,effective_date_end,date,Date the teacher's assignment to this section ended. Null if the assignment is still active.,keep,,,not_reviewed,
 Course,bridge_course_section_terms,course_section_key,string,Surrogate key derived from sections_dcid and _dbt_source_relation. FK to dim_course_sections.,keep,,,not_reviewed,
 Course,bridge_course_section_terms,term_key,string,"Surrogate key derived from type, code, name, start_date, region, and school_id of the matching reporting term. FK to dim_terms.",keep,,,not_reviewed,
-Course,bridge_course_section_terms,sections_dcid,int64,PowerSchool sections DCID. Natural key for the section.,rename,section_id,R1,not_reviewed,
+Course,bridge_course_section_terms,sections_dcid,int64,PowerSchool sections DCID. Natural key for the section.,rename,,R1,not_reviewed,source-system term
 Course,bridge_course_section_terms,term_code,string,"Reporting term code (e.g., Q1, Q2) from the Google Sheets reporting terms reference table.",remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Course,bridge_course_section_terms,academic_year,int64,"KIPP academic year in which this reporting term falls. The calendar year in which the academic year begins (e.g., 2025 for the 2025-26 school year).",remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Course,dim_course_sections,course_section_key,string,Surrogate key derived from sections_dcid and _dbt_source_relation. Primary key for this dimension.,keep,,,not_reviewed,
@@ -290,7 +290,7 @@ Course,dim_course_sections,section_number,string,PowerSchool section number. Ide
 Course,dim_course_sections,period,string,"Period expression for this section as stored in PowerSchool (sections_expression). Encodes the days and periods when the section meets (e.g., '1(A-F)').",keep,,,not_reviewed,
 Course,dim_course_sections,room,string,Room assignment for this section as recorded in PowerSchool.,keep,,,not_reviewed,
 Course,dim_courses,course_key,string,Surrogate key derived from courses_course_number and _dbt_source_relation. Primary key for this dimension.,keep,,,not_reviewed,
-Course,dim_courses,course_number,string,PowerSchool course number. Unique within a region but may overlap across regions.,keep,,,not_reviewed,
+Course,dim_courses,course_number,string,PowerSchool course number. Unique within a region but may overlap across regions.,rename,,R6,not_reviewed,Ed-Fi cognate: course_code
 Course,dim_courses,course_name,string,Display name of the course as recorded in PowerSchool.,keep,,,not_reviewed,
 Course,dim_courses,credit_type,string,"Normalized PowerSchool credit type code (e.g., MATH, ENG, SCI, HR). Variant codes from a 2023 PowerSchool plugin glitch are normalized upstream in base_powerschool__course_enrollments.",keep,,,not_reviewed,
 Course,dim_courses,discipline,string,Subject area discipline mapped from course number via the course subject crosswalk. Null when the course number is not in the crosswalk.,keep,,,not_reviewed,
@@ -412,7 +412,7 @@ Observation,dim_staff_observation_expectations,region,string,Region the observat
 Observation,dim_staff_observation_expectations,is_current,boolean,TRUE if the current date falls within this observation period.,keep,,,not_reviewed,
 Observation,dim_staff_observation_expectations,job_title,string,Staff member's job title during the observation period.,keep,,,not_reviewed,
 Observation,dim_staff_observation_expectations,assignment_status,string,Staff member's assignment status during the observation period.,keep,,,not_reviewed,
-Observation,dim_staff_observation_microgoal_types,staff_observation_microgoal_type_key,string,"Surrogate primary key derived from the goal tag ID. Generated with generate_surrogate_key([""tag_id""]).",keep,,,not_reviewed,
+Observation,dim_staff_observation_microgoal_types,staff_observation_microgoal_type_key,string,"Surrogate primary key derived from the goal tag ID. Generated with generate_surrogate_key([""tag_id""]).",rename,,R2,not_reviewed,KIPP-specific term: microgoal
 Observation,dim_staff_observation_microgoal_types,goal_tag_id,string,SchoolMint Grow generic tag identifier for the leaf-level goal.,keep,,,not_reviewed,
 Observation,dim_staff_observation_microgoal_types,goal_name,string,Display name of the specific microgoal or look-for.,keep,,,not_reviewed,
 Observation,dim_staff_observation_microgoal_types,strand_name,string,Name of the strand (second level in the taxonomy) this goal belongs to.,keep,,,not_reviewed,
@@ -452,10 +452,10 @@ Observation,dim_staff_observation_types,staff_observation_type_key,string,"Surro
 Observation,dim_staff_observation_types,observation_type_id,string,SchoolMint Grow generic tag identifier for the observation type.,keep,,,not_reviewed,
 Observation,dim_staff_observation_types,observation_type_name,string,"Full display name of the observation type (e.g., Walkthrough, One-on-One, PM Semester).",keep,,,not_reviewed,
 Observation,dim_staff_observation_types,observation_type_abbreviation,string,"Short code for the observation type (e.g., WT, O3, PMS).",keep,,,not_reviewed,
-Observation,fct_staff_observation_microgoals,staff_observation_microgoal_key,string,"Surrogate primary key derived from teacher employee number, assignment_id, and goal tag_id. Generated with generate_surrogate_key([""gu.internal_id_int"", ""a.assignment_id"", ""m.tag_id""]).",keep,,,not_reviewed,
+Observation,fct_staff_observation_microgoals,staff_observation_microgoal_key,string,"Surrogate primary key derived from teacher employee number, assignment_id, and goal tag_id. Generated with generate_surrogate_key([""gu.internal_id_int"", ""a.assignment_id"", ""m.tag_id""]).",rename,,R2,not_reviewed,KIPP-specific term: microgoal
 Observation,fct_staff_observation_microgoals,teacher_staff_key,string,Foreign key to dim_staff for the teacher receiving the microgoal. Surrogate key derived from employee_number.,keep,,,not_reviewed,
 Observation,fct_staff_observation_microgoals,creator_staff_key,string,Foreign key to dim_staff for the person who created the assignment. Surrogate key derived from creator employee_number. May be null if the creator cannot be matched to the staff roster.,keep,,,not_reviewed,
-Observation,fct_staff_observation_microgoals,staff_observation_microgoal_type_key,string,Foreign key to dim_staff_observation_microgoal_types. Surrogate key derived from the goal tag_id.,keep,,,not_reviewed,
+Observation,fct_staff_observation_microgoals,staff_observation_microgoal_type_key,string,Foreign key to dim_staff_observation_microgoal_types. Surrogate key derived from the goal tag_id.,rename,,R2,not_reviewed,KIPP-specific term: microgoal
 Observation,fct_staff_observation_microgoals,assignment_id,string,SchoolMint Grow unique identifier for the assignment.,keep,,,not_reviewed,
 Observation,fct_staff_observation_microgoals,teacher_employee_number,int64,KIPP employee number of the teacher receiving the microgoal.,remove,,R9,not_reviewed,reachable via teacher_staff_key → dim_staff
 Observation,fct_staff_observation_microgoals,creator_name,string,Display name of the person who created the assignment.,remove,,R9,not_reviewed,reachable via creator_staff_key → dim_staff
@@ -501,10 +501,10 @@ Observation,fct_staff_observations,term_code,string,Code of the reporting term t
 Observation,fct_staff_observations,term_name,string,Name of the reporting term this observation falls within.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Observation,fct_staff_observations,eval_date,date,Evaluation date assigned based on PM round logic. Null for non-PM observation types.,keep,,,not_reviewed,
 Staff,dim_staff,staff_key,string,"Surrogate key derived from employee_number. Primary key for the staff dimension. Generated with generate_surrogate_key([""employee_number""]).",keep,,,not_reviewed,
-Staff,dim_staff,employee_number,int64,KIPP-assigned unique identifier for all staff members across all entities.,rename,local_staff_identifier,R2,not_reviewed,
-Staff,dim_staff,formatted_name,string,"Staff member's preferred name in Last, First Middle format.",rename,full_name,R6,not_reviewed,
-Staff,dim_staff,given_name,string,Staff member's preferred first name.,rename,first_name,R6,not_reviewed,
-Staff,dim_staff,family_name_1,string,Staff member's preferred last name.,rename,last_name,R6,not_reviewed,
+Staff,dim_staff,employee_number,int64,KIPP-assigned unique identifier for all staff members across all entities.,rename,,R6,not_reviewed,Ed-Fi cognate: local_staff_identifier
+Staff,dim_staff,formatted_name,string,"Staff member's preferred name in Last, First Middle format.",rename,,R6,not_reviewed,Ed-Fi cognate: full_name
+Staff,dim_staff,given_name,string,Staff member's preferred first name.,rename,,R6,not_reviewed,Ed-Fi cognate: first_name
+Staff,dim_staff,family_name_1,string,Staff member's preferred last name.,rename,,R6,not_reviewed,Ed-Fi cognate: last_name
 Staff,dim_staff,birth_date,date,Staff member's date of birth.,keep,,,not_reviewed,
 Staff,dim_staff,gender_identity,string,"Staff member's preferred gender identity as reported in the staff information survey, with ADP gender_code as fallback.",keep,,,not_reviewed,
 Staff,dim_staff,race_ethnicity_reporting,string,"Staff member's race/ethnicity for reporting purposes, sourced from the staff information survey with ADP as fallback.",keep,,,not_reviewed,
@@ -512,7 +512,7 @@ Staff,dim_staff,is_hispanic,boolean,TRUE if the staff member identified as Hispa
 Staff,dim_staff,work_email,string,Staff member's work email address from ADP.,keep,,,not_reviewed,
 Staff,dim_staff,personal_email,string,Staff member's personal email address from ADP.,keep,,,not_reviewed,
 Staff,dim_staff,personal_cell,string,Staff member's personal cell phone number from ADP.,keep,,,not_reviewed,
-Staff,dim_staff,sam_account_name,string,"Staff member's Active Directory SAM account name (lowercased), used as a cross-system identifier.",keep,,,not_reviewed,
+Staff,dim_staff,sam_account_name,string,"Staff member's Active Directory SAM account name (lowercased), used as a cross-system identifier.",rename,,R1,not_reviewed,source-system term
 Staff,dim_staff,google_email,string,Staff member's Google Workspace email address from LDAP.,keep,,,not_reviewed,
 Staff,dim_staff,original_hire_date,date,"The date the staff member was originally hired at KIPP, from worker_dates in ADP.",keep,,,not_reviewed,
 Staff,dim_staff,rehire_date,date,"The most recent rehire date for the staff member, if rehired, from worker_dates in ADP.",keep,,,not_reviewed,
@@ -526,7 +526,7 @@ Staff,dim_staff_status,effective_date_end,date,"Last date this status version wa
 Staff,dim_staff_status,is_current_record,boolean,TRUE if this is the most recent status version for the worker (effective_date_end = 9999-12-31).,keep,,,not_reviewed,
 Staff,dim_staff_work_assignments,work_assignment_key,string,"Surrogate key derived from item_id. Primary key for this dimension. Generated with generate_surrogate_key([""item_id""]).",keep,,,not_reviewed,
 Staff,dim_staff_work_assignments,staff_key,string,"Surrogate key derived from employee_number. FK to dim_staff. Generated with generate_surrogate_key([""employee_number""]). Null when the associate_oid has no active number mapping in stg_people__employee_numbers.",keep,,,not_reviewed,
-Staff,dim_staff_work_assignments,employee_number,int64,"KIPP-assigned unique identifier for the staff member who holds this work assignment, from stg_people__employee_numbers. Null when the associate_oid has no active number mapping.",rename,local_staff_identifier,R2,not_reviewed,
+Staff,dim_staff_work_assignments,employee_number,int64,"KIPP-assigned unique identifier for the staff member who holds this work assignment, from stg_people__employee_numbers. Null when the associate_oid has no active number mapping.",rename,,R6,not_reviewed,Ed-Fi cognate: local_staff_identifier
 Staff,dim_staff_work_assignments,item_id,string,ADP-assigned unique identifier for the work assignment (WorkAssignment itemID). Natural key for the assignment.,keep,,,not_reviewed,
 Staff,dim_staff_work_assignments,position_id,string,ADP position identifier associated with this work assignment (WorkAssignment positionID).,keep,,,not_reviewed,
 Staff,dim_staff_work_assignments,primary_indicator,boolean,TRUE if this is the primary work assignment for the worker. A worker may have multiple assignments; at most one is primary.,keep,,,not_reviewed,
@@ -593,9 +593,9 @@ Staff,dim_work_assignment_reporting_relationships,work_assignment_key,string,"Fo
 Staff,dim_work_assignment_reporting_relationships,manager_associate_oid,string,"ADP associate OID of the reporting manager, from reportsTo[].associateOID.",keep,,,not_reviewed,
 Staff,dim_work_assignment_reporting_relationships,manager_position_id,string,"Position ID of the reporting manager, from reportsTo[].positionID.",keep,,,not_reviewed,
 Staff,dim_work_assignment_reporting_relationships,manager_worker_id,string,"Worker ID (idValue) of the reporting manager, from reportsTo[].workerID.idValue.",keep,,,not_reviewed,
-Staff,dim_work_assignment_reporting_relationships,manager_formatted_name,string,"Formatted name of the reporting manager, from reportsTo[].reportsToWorkerName.formattedName.",rename,manager_full_name,R6,not_reviewed,
-Staff,dim_work_assignment_reporting_relationships,manager_given_name,string,"Given (first) name of the reporting manager, from reportsTo[].reportsToWorkerName.givenName.",rename,manager_first_name,R6,not_reviewed,
-Staff,dim_work_assignment_reporting_relationships,manager_family_name_1,string,"Family (last) name of the reporting manager, from reportsTo[].reportsToWorkerName.familyName1.",rename,manager_last_name,R6,not_reviewed,
+Staff,dim_work_assignment_reporting_relationships,manager_formatted_name,string,"Formatted name of the reporting manager, from reportsTo[].reportsToWorkerName.formattedName.",rename,,R6,not_reviewed,Ed-Fi cognate: manager_full_name
+Staff,dim_work_assignment_reporting_relationships,manager_given_name,string,"Given (first) name of the reporting manager, from reportsTo[].reportsToWorkerName.givenName.",rename,,R6,not_reviewed,Ed-Fi cognate: manager_first_name
+Staff,dim_work_assignment_reporting_relationships,manager_family_name_1,string,"Family (last) name of the reporting manager, from reportsTo[].reportsToWorkerName.familyName1.",rename,,R6,not_reviewed,Ed-Fi cognate: manager_last_name
 Staff,dim_work_assignment_reporting_relationships,effective_date_start,date,"Date this reporting relationship version was first observed, derived from the daily partition date where the manager attribute hash changed.",keep,,,not_reviewed,
 Staff,dim_work_assignment_reporting_relationships,effective_date_end,date,"Last date this reporting relationship version was effective. Computed as one day before the next version's effective_date_start, or 9999-12-31 for the current version.",keep,,,not_reviewed,
 Staff,dim_work_assignment_reporting_relationships,is_current_record,boolean,TRUE if this is the most recent reporting relationship version for the work assignment (effective_date_end = 9999-12-31).,keep,,,not_reviewed,
@@ -663,7 +663,7 @@ Staff,fct_work_assignment_compensation,effective_date_end,date,"Last date this c
 Staff,fct_work_assignment_compensation,is_current_record,boolean,TRUE if this is the most recent compensation version for the work assignment (effective_date_end = 9999-12-31).,keep,,,not_reviewed,
 Staffing,dim_staffing_positions,staffing_position_key,string,"Surrogate primary key derived from dbt_scd_id (snapshot row identifier). Generated with generate_surrogate_key([""dbt_scd_id""]).",keep,,,not_reviewed,
 Staffing,dim_staffing_positions,location_key,string,Foreign key to dim_locations. Surrogate key derived from adp_location (home work location name).,keep,,,not_reviewed,
-Staffing,dim_staffing_positions,teammate_staff_key,string,Foreign key to dim_staff for the assigned teammate. Surrogate key derived from the teammate employee number. Nullable — open positions have no assigned teammate.,keep,,,not_reviewed,
+Staffing,dim_staffing_positions,teammate_staff_key,string,Foreign key to dim_staff for the assigned teammate. Surrogate key derived from the teammate employee number. Nullable — open positions have no assigned teammate.,rename,,R2,not_reviewed,KIPP-specific term: teammate
 Staffing,dim_staffing_positions,recruiter_staff_key,string,Foreign key to dim_staff for the assigned recruiter. Surrogate key derived from the recruiter employee number. Nullable — positions may have no assigned recruiter.,keep,,,not_reviewed,
 Staffing,dim_staffing_positions,staffing_position_natural_key,string,The dbt snapshot SCD identifier (dbt_scd_id). Uniquely identifies this specific version of a staffing position.,keep,,,not_reviewed,
 Staffing,dim_staffing_positions,academic_year,int64,Academic year this position version belongs to.,keep,,,not_reviewed,
@@ -694,7 +694,7 @@ Student,bridge_student_contacts,is_custodial,boolean,TRUE if this contact has cu
 Student,bridge_student_contacts,lives_with,boolean,TRUE if the student lives with this contact person.,keep,,,not_reviewed,
 Student,dim_student_contact_persons,student_contact_person_key,string,Surrogate key derived from _dbt_source_relation and powerschool_person_id. Primary key for this dimension.,keep,,,not_reviewed,
 Student,dim_student_contact_persons,_dbt_source_relation,string,"Source district identifier from dbt_utils.union_relations, carrying the schema and table name of the originating PowerSchool instance.",remove,,plumbing,not_reviewed,
-Student,dim_student_contact_persons,powerschool_person_id,int64,PowerSchool person.id for the contact. Scoped to a single district instance — not globally unique across districts. Use student_contact_person_key for cross-district uniqueness.,rename,contact_person_id,R1,not_reviewed,
+Student,dim_student_contact_persons,powerschool_person_id,int64,PowerSchool person.id for the contact. Scoped to a single district instance — not globally unique across districts. Use student_contact_person_key for cross-district uniqueness.,rename,,R1,not_reviewed,source-system prefix: powerschool_
 Student,dim_student_contact_persons,contact_name,string,"Full name of the contact person (first + last, trimmed) as stored in PowerSchool.",keep,,,not_reviewed,
 Student,dim_student_contact_persons,phone,string,Primary phone number for the contact person. Prefers Mobile over Home over Daytime over Work. Formatted as (NXX) NXX-XXXX. NULL if no phone is recorded.,keep,,,not_reviewed,
 Student,dim_student_contact_persons,email,string,Current email address for the contact person. NULL if no email is recorded in PowerSchool.,keep,,,not_reviewed,
@@ -726,7 +726,7 @@ Student,dim_students,state_student_identifier,string,State-assigned student iden
 Student,dim_students,student_name,string,"Full name of the student (last, first format from PowerSchool).",keep,,,not_reviewed,
 Student,dim_students,birth_date,date,Student date of birth.,keep,,,not_reviewed,
 Student,dim_students,gender,string,Student gender as recorded in PowerSchool.,keep,,,not_reviewed,
-Student,dim_students,lunch_status,string,"Meal eligibility status (e.g., Free, Reduced, Paid).",keep,,,not_reviewed,
+Student,dim_students,lunch_status,string,"Meal eligibility status (e.g., Free, Reduced, Paid).",rename,,R6,not_reviewed,Ed-Fi cognate: food_service_eligibility
 Student,dim_students,is_gifted,boolean,"TRUE if the student has a non-null gifted_and_talented value in PowerSchool, indicating gifted and talented identification.",keep,,,not_reviewed,
 Student,dim_students,is_ell,boolean,"TRUE if the student has a non-null lep_status, indicating active English Language Learner classification.",keep,,,not_reviewed,
 Student,dim_students,has_iep,boolean,TRUE if the student's iep_status is 'With IEP'.,keep,,,not_reviewed,

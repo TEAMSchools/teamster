@@ -112,28 +112,67 @@ def test_plumbing_columns_returns_frozenset() -> None:
     assert isinstance(result, frozenset)
 
 
-def test_initial_rename_guess_student_number() -> None:
+def test_check_naming_rules_edfi_cognate() -> None:
     module = _load_script()
-    result = module._initial_rename_guess("student_number")
-    assert result == ("local_student_identifier", "R1")
+    result = module._check_naming_rules("student_number")
+    assert result is not None
+    rule_ref, note = result
+    assert rule_ref == "R6"
+    assert "Ed-Fi cognate" in note
+    assert "local_student_identifier" in note
 
 
-def test_initial_rename_guess_employee_number() -> None:
+def test_check_naming_rules_source_prefix() -> None:
     module = _load_script()
-    result = module._initial_rename_guess("employee_number")
-    assert result == ("local_staff_identifier", "R2")
+    result = module._check_naming_rules("powerschool_school_id")
+    assert result is not None
+    rule_ref, note = result
+    assert rule_ref == "R1"
+    assert "source-system prefix" in note
 
 
-def test_initial_rename_guess_formatted_name() -> None:
+def test_check_naming_rules_source_term() -> None:
     module = _load_script()
-    result = module._initial_rename_guess("formatted_name")
-    assert result == ("full_name", "R6")
+    result = module._check_naming_rules("sam_account_name")
+    assert result is not None
+    rule_ref, note = result
+    assert rule_ref == "R1"
+    assert "source-system term" in note
 
 
-def test_initial_rename_guess_unmapped_returns_none() -> None:
+def test_check_naming_rules_kipp_term() -> None:
     module = _load_script()
-    assert module._initial_rename_guess("student_key") is None
-    assert module._initial_rename_guess("made_up_column") is None
+    result = module._check_naming_rules("teacher_employee_number")
+    assert result is not None
+    rule_ref, note = result
+    assert rule_ref == "R2"
+    assert "KIPP-specific term" in note
+
+
+def test_check_naming_rules_edfi_takes_priority_over_kipp() -> None:
+    module = _load_script()
+    # "employee_number" is both an Ed-Fi cognate AND contains a KIPP term.
+    # R6 (Ed-Fi) should win because it's checked first.
+    result = module._check_naming_rules("employee_number")
+    assert result is not None
+    rule_ref, _ = result
+    assert rule_ref == "R6"
+
+
+def test_check_naming_rules_internal_acronym() -> None:
+    module = _load_script()
+    result = module._check_naming_rules("sections_dcid")
+    assert result is not None
+    # sections_dcid is in _SOURCE_TERMS (R1) — R1 is checked before R7
+    rule_ref, _ = result
+    assert rule_ref == "R1"
+
+
+def test_check_naming_rules_no_match() -> None:
+    module = _load_script()
+    assert module._check_naming_rules("student_key") is None
+    assert module._check_naming_rules("birth_date") is None
+    assert module._check_naming_rules("is_gifted") is None
 
 
 def test_structural_additions_includes_mdcps() -> None:
@@ -222,14 +261,15 @@ def test_read_mart_yaml_applies_plumbing_default() -> None:
     assert plumb["proposed_name"] == ""
 
 
-def test_read_mart_yaml_applies_rename_guess() -> None:
+def test_read_mart_yaml_applies_naming_rules() -> None:
     module = _load_script()
     rows = module._read_mart_yaml(_FIXTURE)
     by_name = {r["current_column"]: r for r in rows}
     sn = by_name["student_number"]
     assert sn["action"] == "rename"
-    assert sn["proposed_name"] == "local_student_identifier"
-    assert sn["rule_ref"] == "R1"
+    assert sn["proposed_name"] == ""
+    assert sn["rule_ref"] == "R6"
+    assert "Ed-Fi cognate" in sn["reviewer_notes"]
 
 
 def test_read_mart_yaml_default_is_keep() -> None:
@@ -246,7 +286,6 @@ def test_read_mart_yaml_review_status_not_reviewed() -> None:
     module = _load_script()
     rows = module._read_mart_yaml(_FIXTURE)
     assert all(r["review_status"] == "not_reviewed" for r in rows)
-    assert all(r["reviewer_notes"] == "" for r in rows)
 
 
 def test_write_csv_emits_header_and_rows() -> None:

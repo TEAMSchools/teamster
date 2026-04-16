@@ -100,40 +100,82 @@ def _plumbing_columns() -> frozenset[str]:
     return _PLUMBING_COLUMNS
 
 
-# Pre-populated rename guesses carried over from the original 67-column
-# audit. Each entry is (current_name, (proposed_name, rule_ref)). The rule
-# references the rubric section in
-# docs/superpowers/specs/2026-04-15-column-naming-audit.md.
-_RENAME_GUESSES: dict[str, tuple[str, str]] = {
-    # Rule 1 — strip source-system names (student identifier)
-    "student_number": ("local_student_identifier", "R1"),
-    # Rule 2 — no KIPP-specific language (staff identifier)
-    "employee_number": ("local_staff_identifier", "R2"),
-    "teacher_employee_number": ("teacher_staff_identifier", "R2"),
-    "observer_employee_number": ("observer_staff_identifier", "R2"),
-    "teammate_employee_number": ("teammate_staff_identifier", "R2"),
-    "recruiter_employee_number": ("recruiter_staff_identifier", "R2"),
-    # Rule 6 — Ed-Fi / plain English for person names
-    "formatted_name": ("full_name", "R6"),
-    "family_name_1": ("last_name", "R6"),
-    "given_name": ("first_name", "R6"),
-    "manager_formatted_name": ("manager_full_name", "R6"),
-    "manager_family_name_1": ("manager_last_name", "R6"),
-    "manager_given_name": ("manager_first_name", "R6"),
-    # Rule 1 — PowerSchool identifier stripping
-    "powerschool_school_id": ("sis_school_id", "R1"),
-    "deanslist_school_id": ("behavior_system_school_id", "R1"),
-    "powerschool_term_id": ("sis_term_id", "R1"),
-    "powerschool_year_id": ("sis_year_id", "R1"),
-    "powerschool_person_id": ("contact_person_id", "R1"),
-    "sections_dcid": ("section_id", "R1"),
-    "teachernumber": ("teacher_number", "R1"),
+# Ed-Fi Unified Data Model cognates. When a column name matches the left
+# side, R6 flags it with the Ed-Fi snake_case equivalent as a suggestion.
+# Reviewer decides whether to adopt or deviate with justification.
+_EDFI_COGNATES: dict[str, str] = {
+    # Person identifiers (Ed-Fi: studentIdentificationCode / staffIdentificationCode)
+    "student_number": "local_student_identifier",
+    "employee_number": "local_staff_identifier",
+    # Person names (Ed-Fi: name → firstName, lastSurname)
+    "formatted_name": "full_name",
+    "family_name_1": "last_name",
+    "given_name": "first_name",
+    "manager_formatted_name": "manager_full_name",
+    "manager_family_name_1": "manager_last_name",
+    "manager_given_name": "manager_first_name",
+    # Course (Ed-Fi: courseCode)
+    "course_number": "course_code",
+    # Student attributes (Ed-Fi: schoolFoodServiceEligibility)
+    "lunch_status": "food_service_eligibility",
 }
 
+# R1: source-system prefixes and terms that leak system-specific naming.
+_SOURCE_PREFIXES: tuple[str, ...] = (
+    "deanslist_",
+    "powerschool_",
+)
+_SOURCE_TERMS: frozenset[str] = frozenset(
+    [
+        "sam_account_name",
+        "sections_dcid",
+        "teachernumber",
+    ]
+)
 
-def _initial_rename_guess(column_name: str) -> tuple[str, str] | None:
-    """Return (proposed_name, rule_ref) for known renames, else None."""
-    return _RENAME_GUESSES.get(column_name)
+# R2: KIPP-specific jargon substrings.
+_KIPP_TERMS: tuple[str, ...] = (
+    "employee_number",
+    "microgoal",
+    "teammate",
+)
+
+# R7: internal-only acronyms that should be spelled out or removed.
+_INTERNAL_ACRONYMS: tuple[str, ...] = ("dcid",)
+
+
+def _check_naming_rules(col_name: str) -> tuple[str, str] | None:
+    """Check a column name against pattern-based naming rules.
+
+    Returns (rule_ref, reviewer_note) if a rule matches, else None.
+    Does not prescribe the replacement — the reviewer decides.
+    Priority: R6 (Ed-Fi) > R1 (source-system) > R2 (KIPP) > R7 (acronyms).
+    """
+    # R6: Ed-Fi cognates (most specific — suggests an alternative)
+    cognate = _EDFI_COGNATES.get(col_name)
+    if cognate is not None:
+        return ("R6", f"Ed-Fi cognate: {cognate}")
+
+    # R1: source-system prefixes
+    for prefix in _SOURCE_PREFIXES:
+        if col_name.startswith(prefix):
+            return ("R1", f"source-system prefix: {prefix}")
+
+    # R1: source-system exact terms
+    if col_name in _SOURCE_TERMS:
+        return ("R1", "source-system term")
+
+    # R2: KIPP-specific jargon (substring match)
+    for term in _KIPP_TERMS:
+        if term in col_name:
+            return ("R2", f"KIPP-specific term: {term}")
+
+    # R7: internal acronyms (substring match)
+    for acronym in _INTERNAL_ACRONYMS:
+        if acronym in col_name:
+            return ("R7", f"internal acronym: {acronym}")
+
+    return None
 
 
 # Model-specific columns flagged for removal because their values are
@@ -489,12 +531,12 @@ def _read_mart_yaml(path: Path) -> list[dict[str, str]]:
                 row["rule_ref"] = "R9"
                 row["reviewer_notes"] = _REDUNDANT_COLUMNS[(model_name, col_name)]
             else:
-                guess = _initial_rename_guess(col_name)
-                if guess is not None:
-                    proposed, rule_ref = guess
+                pattern = _check_naming_rules(col_name)
+                if pattern is not None:
+                    rule_ref, note = pattern
                     row["action"] = "rename"
-                    row["proposed_name"] = proposed
                     row["rule_ref"] = rule_ref
+                    row["reviewer_notes"] = note
 
             rows.append(row)
 
