@@ -239,7 +239,8 @@ select
     ) as illuminate_student_responses,
 
     academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
-    term_administered in (select `name` from current_terms) as is_current_term,
+    term_administered
+    in (select ct.`name`, from current_terms as ct) as is_current_term,
 
     case
         grade_level when 0 then 'K' else cast(grade_level as string)
