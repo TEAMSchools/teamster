@@ -9,26 +9,49 @@ models:
                 severity: error
       - name: type
         data_type: string
+        description:
+          "Determines if the formula is defined by the Power School
+          administrator or the teacher.Valid values: Admin, Teacher. Required.
+          Indexed."
       - name: defaultroundingrule
         data_type: string
       - name: stndcalculationmetric
         data_type: string
       - name: recentscoreweightlist
         data_type: string
+        description:
+          Indicates the weighting across the most recent scores. The number of
+          weight valuesentered provides the number of most recent scores. Stored
+          as a comma separated list.Defaults to Null.
       - name: higherlevelstndmetric
         data_type: string
       - name: calcmetricsectionfromstnd
         data_type: string
       - name: whocreated
         data_type: string
+        description:
+          The user login that created the record. Defaults to database user.
+          Required.
       - name: whencreated
         data_type: timestamp
+        description:
+          Date and time the record was created. Defaults to system date.
+          Required.
       - name: whomodified
         data_type: string
+        description:
+          The user login that modified the record. Defaults to database user.
+          Required.
       - name: whenmodified
         data_type: timestamp
+        description:
+          Date and time the record was modified. Defaults to system date.
+          Required.
       - name: sectionsdcid
         data_type: int64
+        description:
+          Foreign key. Internal number for the associated Sections.DCID record.
+          Required. Indexed.
       - name: gradeformulasetid
         data_type: int64
       - name: defaultdecimalcount
@@ -59,7 +82,3 @@ models:
         data_type: int64
       - name: isusingpercentforstndautocalc
         data_type: int64
-      # - name: ismulticategoryeditable
-      #   data_type: int64
-      # - name: ismulticategoryallowed
-      #   data_type: int64

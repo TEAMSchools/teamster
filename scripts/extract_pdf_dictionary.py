@@ -206,18 +206,20 @@ def extract_ps_table_description(page_text: str) -> str | None:
 
 # Matches column entry lines like:
 #   "ColumnName 3.6.1 DataType(size) Description text..."
+#   "Abbreviation3.6.1 Varchar(3)A short version..."  (no spaces — pypdf artifact)
 # Version: digits.digits[.digits]*
 # Data type: word characters, optional parenthesized size like (10,0)
+# Space between fields is optional (\s*) because pypdf sometimes drops spaces.
 _PS_COLUMN_RE = re.compile(
-    r"^([A-Za-z_][A-Za-z0-9_]*)\s+"  # column name
-    r"(\d+\.\d+(?:\.\d+)*)\s+"  # version
-    r"([A-Za-z0-9]+(?:\([^)]*\))?)\s+"  # data type (with optional size)
-    r"(.+)$"  # description (rest of line)
+    r"^([A-Za-z_][A-Za-z0-9_]*)\s*"  # column name (space optional)
+    r"(\d+\.\d+(?:\.\d+)*)\s*"  # version (space optional)
+    r"([A-Za-z0-9]+(?:\([^)]*\))?)"  # data type
+    r"(.+)$"  # description (rest of line, may start without space)
 )
 
 # Lines to skip
 _PS_SKIP_PATTERNS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"^Column\s+Name\s+InitialVersion\s+Data\s+Type\s+Description"),
+    re.compile(r"^Column\s*Name\s*Initial\s*Version\s*Data\s*Type\s*Description"),
     re.compile(r"^\d+$"),  # page numbers
     _PS_TABLE_HEADER_RE,
     re.compile(r"PowerSchool\s+Private\s+Information"),
