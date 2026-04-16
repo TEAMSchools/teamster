@@ -14,8 +14,10 @@ with
         from {{ ref("int_assessments__response_rollup") }}
         where
             scope = 'Unit Assessment'
+            and response_type = 'overall'
             and subject_area not in ('Text Study', 'Mathematics')
             and academic_year = {{ var("current_academic_year") }}
+            and term_administered is not null
         group by
             powerschool_student_number, academic_year, subject_area, term_administered
     )
