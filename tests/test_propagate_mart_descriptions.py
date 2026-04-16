@@ -98,3 +98,39 @@ def test_build_source_mapping_non_regional_source() -> None:
     result = module._build_source_mapping(manifest)
     key = "`teamster-332318`.`kipptaf_kippadb`.`Contact`"
     assert result[key]["package"] == "kippadb"
+
+
+COMPILED_FIXTURE = Path("tests/fixtures/compiled_sql/dim_sample.sql")
+
+
+def test_extract_lineage_simple_rename() -> None:
+    module = _load_script()
+    sql = COMPILED_FIXTURE.read_text()
+    lineage = module._extract_column_lineage(sql)
+    assert "birth_date" in lineage
+    assert lineage["birth_date"]["source_column"] == "dob"
+    assert "stg_powerschool__students" in lineage["birth_date"]["source_table"]
+
+
+def test_extract_lineage_passthrough() -> None:
+    module = _load_script()
+    sql = COMPILED_FIXTURE.read_text()
+    lineage = module._extract_column_lineage(sql)
+    assert "student_number" in lineage
+    assert lineage["student_number"]["source_column"] == "student_number"
+
+
+def test_extract_lineage_computed_is_none() -> None:
+    module = _load_script()
+    sql = COMPILED_FIXTURE.read_text()
+    lineage = module._extract_column_lineage(sql)
+    assert "ethnicity_label" in lineage
+    assert lineage["ethnicity_label"]["source_column"] is None
+
+
+def test_extract_lineage_returns_source_table() -> None:
+    module = _load_script()
+    sql = COMPILED_FIXTURE.read_text()
+    lineage = module._extract_column_lineage(sql)
+    for col in ["birth_date", "student_number", "student_name"]:
+        assert "stg_powerschool__students" in lineage[col]["source_table"]
