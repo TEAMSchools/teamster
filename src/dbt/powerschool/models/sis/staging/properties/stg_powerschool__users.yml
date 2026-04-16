@@ -1,5 +1,11 @@
 models:
   - name: stg_powerschool__users
+    description:
+      "This table maintains teacher demographic information and their
+      preferences. Note: The Teachers table is no longer used and has been
+      renamed Teachers_ncf31. The SchoolStaff table and Users table have been
+      created in its place. Theinformation that appeared in the Teachers table
+      can now be viewed in the Teachers reporting view."
     columns:
       - name: dcid
         data_type: int64
@@ -7,145 +13,307 @@ models:
           - unique:
               config:
                 severity: error
+        description: Unique identifier for this table. Indexed. Required.
       - name: lastfirst
         data_type: string
+        description: Last, First, Mi. Indexed.
+        config:
+          meta:
+            contains_pii: true
       - name: first_name
         data_type: string
+        description: First name.
+        config:
+          meta:
+            contains_pii: true
       - name: middle_name
         data_type: string
+        description: Middle name.
+        config:
+          meta:
+            contains_pii: true
       - name: last_name
         data_type: string
+        description: Last name.
+        config:
+          meta:
+            contains_pii: true
       - name: title
         data_type: string
+        description:
+          Stores a title name for the teacher and is used for sorting purposes.
       - name: homeroom
         data_type: string
+        description:
+          This string does appear on some pages but does not impact any
+          calculations.
       - name: email_addr
         data_type: string
+        description:
+          Stores the teachers email address and is used for email notifications
+          to the teacher, such as studentenrollment information.
+        config:
+          meta:
+            contains_pii: true
       - name: password
         data_type: string
+        description: The Power School login password.
       - name: ipaddrrestrict
         data_type: string
+        description:
+          The list of IP addresses the user is allowed to log in from. If blank,
+          he or she can log in from any IPaddress.
       - name: accessvalue
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: homepage
         data_type: string
+        description: The page that appears when logging in to Power School.
       - name: loginid
         data_type: string
+        description: The Power School login name. Indexed.
       - name: defaultstudscrn
         data_type: string
+        description: The student page the user wants to appear by default.
       - name: teachernumber
         data_type: string
+        description: The number the district assigns to track the teacher.
       - name: ssn
         data_type: string
+        description: This users Social Security number.
+        config:
+          meta:
+            contains_pii: true
       - name: home_phone
         data_type: string
+        description:
+          Changed name from Home_phone. Home phone number for the staff member.
+        config:
+          meta:
+            contains_pii: true
       - name: school_phone
         data_type: string
+        description:
+          Changed name from School_phone. Phone number at the school assigned to
+          this staff member. Notcurrently used by any application code.
+        config:
+          meta:
+            contains_pii: true
       - name: street
         data_type: string
+        description: Street element of the users address.
+        config:
+          meta:
+            contains_pii: true
       - name: city
         data_type: string
+        description: City element of the users address.
+        config:
+          meta:
+            contains_pii: true
       - name: state
         data_type: string
+        description: State element of the users address.
       - name: zip
         data_type: string
+        description: Zip code element of the users address.
+        config:
+          meta:
+            contains_pii: true
       - name: periodsavail
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: powergradepw
         data_type: string
+        description:
+          No longer used by application. This field may still be referenced on
+          reports and/or custom pages.
       - name: canchangeschool
         data_type: string
+        description:
+          Semicolon delimited list of Schools.School_Number values the Admin can
+          switch to when logged intothe Admin portal.
       - name: teacherloginpw
         data_type: string
+        description: The login password for Power Teacher.
       - name: nameasimported
         data_type: string
+        description: Used as a matching tool when importing teacher information.
       - name: teacherloginid
         data_type: string
+        description: The login name for Power Teacher.
       - name: teacherloginip
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: wm_status
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: wm_statusdate
         data_type: date
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: wm_address
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: wm_password
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: wm_createdate
         data_type: date
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: wm_ta_flag
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: wm_ta_date
         data_type: date
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: wm_alias
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: ethnicity
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: preferredname
         data_type: string
+        description: Name the user prefers to use.
       - name: lastmeal
         data_type: string
+        description: Stores the date of last lunch purchase.
       - name: staffpers_guid
         data_type: string
+        description:
+          Globally unique identifier for this table for SIF compliancy. Indexed.
       - name: sif_stateprid
         data_type: string
+        description:
+          Used by the Power School SIF Agent that requires a state-level unique
+          identifier for teachers. To beused in the SIF Staff Personal object.
       - name: psguid
         data_type: string
+        description:
+          If used, a unique identifier for the row. Currently applicable to
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
+          Plus.
       - name: ip_address
         data_type: string
+        description: IP address of the client that initiated the transaction.
       - name: whomodifiedtype
         data_type: string
+        description: Type of user account that last modified the record.
       - name: transaction_date
         data_type: timestamp
+        description: Date and time of the database transaction.
       - name: homeschoolid
         data_type: int64
+        description:
+          The teacher's home school. This ID is linked to the School_Number from
+          the School table. Indexed.
       - name: photo
         data_type: int64
+        description: Set to 1 if a photo exists for this user.
       - name: numlogins
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: allowloginstart
         data_type: int64
+        description:
+          Time-restricted login. This is the start of the time that teachers can
+          log in.
       - name: allowloginend
         data_type: int64
+        description:
+          Time-restricted login. This is the end time that teachers can log in.
       - name: psaccess
         data_type: int64
+        description:
+          "Indicates whether the user can log in to Power School Admin. Valid
+          values: 0=No, 1=Yes."
       - name: groupvalue
         data_type: int64
+        description:
+          The security group (from Gen table) this user belongs to in Power
+          School. This determines which pagesthe user has access to.
       - name: lunch_id
         data_type: float64
+        description: The Power Lunch number. Indexed.
       - name: supportcontact
         data_type: int64
+        description:
+          Value of 1 indicates that this user is an authorized support contact.
       - name: wm_tier
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: wm_createtime
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: wm_exclude
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
       - name: adminldapenabled
         data_type: int64
       - name: teacherldapenabled
         data_type: int64
       - name: maximum_load
         data_type: int64
+        description: Maximum student load permissible for this Teacher.
       - name: gradebooktype
         data_type: int64
+        description:
+          "Indicates the type of gradebook in use by the teacher. Valid values:
+          0 = Power Grade, 1 =Power Teacher gradebook."
       - name: fedethnicity
         data_type: int64
+        description:
+          'Numerical answer to the question "Is the staff member Hispanic or
+          Latino?" Valid values : -1 = Defaultvalue, user has not yet made a
+          selection, 0 = No, 1 = Yes, 2 = User-defined answer specified on the
+          Federal Ethnicity and Race Settings page.'
       - name: fedracedecline
         data_type: int64
+        description:
+          "Valid values: 0 = Value assigned by default or one or more values
+          specified in the Teacher Race table,1 = Declined to specify race (no
+          rows should appear in the Teacher Race table)."
       - name: ptaccess
         data_type: int64
+        description:
+          "Indicates whether the user can log in to Power Teacher. Valid values:
+          0=No, 1=Yes."
       - name: prefixcodesetid
         data_type: int64
+        description: Foreign key to codeset table of category prefix.
       - name: whomodifiedid
         data_type: int64
-      # - name: executionid
-      #   data_type: string
-      # - name: whocreated
-      #   data_type: string
-      # - name: whencreated
-      #   data_type: timestamp
-      # - name: whomodified
-      #   data_type: string
-      # - name: whenmodified
-      #   data_type: timestamp
+        description:
+          Internal identifier of the user who last modified the record.
