@@ -668,6 +668,13 @@ def _enrich_yaml_descriptions(
     return enriched
 
 
+_STAGING_SLUG_MAP: dict[str, str] = {
+    "adp_workforce_now": "adp",
+    "adp_workforce_manager": "adp",
+    "adp_payroll": "adp",
+}
+
+
 def _infer_package(staging_model: str) -> str:
     """Infer the package name from a staging model name.
 
@@ -680,14 +687,8 @@ def _infer_package(staging_model: str) -> str:
     remainder = staging_model[4:]
     parts = remainder.split("__", 1)
     slug = parts[0] if parts else remainder
-    # Map known multi-word slugs to package names
-    _SLUG_MAP = {
-        "adp_workforce_now": "adp",
-        "adp_workforce_manager": "adp",
-        "adp_payroll": "adp",
-    }
-    if slug in _SLUG_MAP:
-        return _SLUG_MAP[slug]
+    if slug in _STAGING_SLUG_MAP:
+        return _STAGING_SLUG_MAP[slug]
     return slug
 
 
@@ -753,7 +754,7 @@ def main() -> None:
         msg = f"Manifest not found at {MANIFEST_PATH}. Run: uv run dbt compile --project-dir {KIPPTAF_PROJECT}"
         raise FileNotFoundError(msg)
 
-    with MANIFEST_PATH.open() as fh:
+    with MANIFEST_PATH.open(encoding="utf-8") as fh:
         manifest = json.load(fh)
 
     # Build lookup dicts
