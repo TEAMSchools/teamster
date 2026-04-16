@@ -13,12 +13,18 @@ models:
         data_type: string
       - name: whocreated
         data_type: string
+        description: User login that created the record.
       - name: whencreated
         data_type: timestamp
+        description:
+          Date and time the record was created. Defaults to system date.
       - name: whomodified
         data_type: string
+        description: User login that last modified the record.
       - name: whenmodified
         data_type: timestamp
+        description:
+          Date and time the record was last modified. Defaults to system date.
       - name: formername
         data_type: string
       - name: generationcodesuffix
@@ -65,6 +71,8 @@ models:
           - unique:
               config:
                 severity: error
+        description:
+          DCID (unique identifier) of the associated User record. Indexed.
       - name: smart_salary
         data_type: int64
       - name: smart_yearsinlea
