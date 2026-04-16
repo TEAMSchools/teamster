@@ -16,12 +16,21 @@ models:
         data_type: int64
       - name: student_number
         data_type: int64
+        description:
+          "District-assigned student identification number. Source: PowerSchool
+          stg_powerschool__student_email.student_number."
+        config:
+          meta:
+            contains_pii: true
       - name: state_studentnumber
         data_type: string
       - name: salesforce_id
         data_type: string
       - name: grade_level
         data_type: int64
+        description:
+          "Grade level of the student taking this test. Source: PowerSchool
+          stg_powerschool__studenttest.grade_level."
       - name: cohort
         data_type: int64
       - name: discipline
@@ -99,5 +108,9 @@ models:
                   - Math Only / No FAFSA
       - name: test_type
         data_type: string
+        description:
+          "The type of test being administered. 1 = National, 2 = State, 3 =
+          Local, 4 =District, 5 = School, 6 = Other, 7 = Fitness (as of 20.11.0)
+          Source: PowerSchool stg_powerschool__test.test_type."
       - name: rn_discipline_distict
         data_type: int64

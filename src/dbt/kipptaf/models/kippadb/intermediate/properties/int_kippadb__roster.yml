@@ -7,3 +7,9 @@ models:
           - unique:
               config:
                 severity: error
+        description:
+          "District-assigned student identification number. Source: PowerSchool
+          stg_powerschool__student_email.student_number."
+        config:
+          meta:
+            contains_pii: true

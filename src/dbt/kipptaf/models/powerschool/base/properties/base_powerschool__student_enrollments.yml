@@ -15,15 +15,11 @@ models:
     columns:
       - name: student_number
         data_type: int64
-        description: |
-          Unique student identifier. Source: `stg_powerschool__students`.
-          For students registered during and after the 18-19 school year, the 
-          student_number is 6 digits in length, with the first digit indicating the 
-          student's region:
-            - 1 = Newark
-            - 2 = Camden
-            - 3 = Miami
-            - 4 = Paterson
+        description: |-
+          District-assigned student identification number. Source: PowerSchool stg_powerschool__student_email.student_number.
+        config:
+          meta:
+            contains_pii: true
       - name: _dbt_source_relation
         data_type: string
       - name: studentid

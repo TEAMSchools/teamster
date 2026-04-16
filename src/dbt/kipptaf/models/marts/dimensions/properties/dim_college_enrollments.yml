@@ -48,9 +48,12 @@ models:
       - name: student_number
         data_type: int64
         description: >-
-          KIPP student identifier from the kippadb roster, joining NSC contact
-          records to PowerSchool students.
+          District-assigned student identification number. Source: PowerSchool
+          stg_powerschool__student_email.student_number.
 
+        config:
+          meta:
+            contains_pii: true
       - name: college_code_branch
         data_type: string
         description: >-

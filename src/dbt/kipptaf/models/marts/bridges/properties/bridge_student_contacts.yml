@@ -29,8 +29,8 @@ models:
       - name: student_number
         data_type: int64
         description: >-
-          PowerSchool student_number. Natural key for the student side of the
-          relationship.
+          Student Number assigned by the school. Indexed. Source: PowerSchool
+          stg_powerschool__students.student_number.
 
       - name: relationship_type
         data_type: string
