@@ -238,7 +238,7 @@ select
         '&prebuilt_report_id=1&page=Assessment_StudentController'
     ) as illuminate_student_responses,
 
-    ar.academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
+    academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
     term_administered in (select `name` from current_terms) as is_current_term,
 
     case
