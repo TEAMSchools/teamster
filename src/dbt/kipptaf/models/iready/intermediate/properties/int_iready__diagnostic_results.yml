@@ -284,7 +284,9 @@ models:
         data_type: string
       - name: rn_subj_round
         data_type: int64
-        description: ROWNUMBER of value.
+        description:
+          ROWNUMBER of value partitioned by _dbt_source_relation, student_id,
+          academic_year, subject, name ordered by completion_date.
       - name: round_number
         data_type: string
         description: Derived from code.

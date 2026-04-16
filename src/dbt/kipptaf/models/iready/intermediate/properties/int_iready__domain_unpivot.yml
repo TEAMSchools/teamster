@@ -19,4 +19,7 @@ models:
         data_type: string
       - name: rn_subject_test
         data_type: int64
-        description: ROWNUMBER of value.
+        description:
+          ROWNUMBER of value partitioned by _dbt_source_relation, student_id,
+          subject, academic_year_int, start_date, completion_date ordered by
+          domain_name.

@@ -49,4 +49,6 @@ models:
         description: Conditional on scale_high, scale_score, sublevel_number.
       - name: scale_score_prev
         data_type: int64
-        description: LAG of scale_score.
+        description:
+          LAG of scale_score partitioned by student_id, academic_year,
+          assessment_subject ordered by administration_window.

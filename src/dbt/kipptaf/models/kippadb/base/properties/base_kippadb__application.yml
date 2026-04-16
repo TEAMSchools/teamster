@@ -265,4 +265,6 @@ models:
         description: Conditional on is_accepted, is_certificate, is_submitted.
       - name: rn_application_school
         data_type: int64
-        description: ROWNUMBER of value.
+        description:
+          ROWNUMBER of value partitioned by applicant, school ordered by
+          is_matriculated, is_accepted, is_submitted.

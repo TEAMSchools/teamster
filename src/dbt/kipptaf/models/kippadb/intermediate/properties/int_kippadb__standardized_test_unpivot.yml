@@ -34,7 +34,9 @@ models:
         description: Categorical mapping of score_type, test_subject.
       - name: rn_highest
         data_type: int64
-        description: ROWNUMBER of value.
+        description:
+          ROWNUMBER of value partitioned by contact, test_type, score_type,
+          ap_course_name ordered by score.
       - name: row_count_by_test_date
         data_type: int64
       - name: average_rows

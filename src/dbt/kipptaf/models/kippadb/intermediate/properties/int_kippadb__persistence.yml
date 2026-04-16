@@ -94,7 +94,8 @@ models:
       - name: n_semester
         data_type: int64
         description:
-          District-assigned student identification number. DENSERANK of value.
+          District-assigned student identification number. DENSERANK of value
+          partitioned by student_number ordered by persistence_year, semester.
       - name: progress_multiplier_4yr
         data_type: float64
         description:

@@ -129,4 +129,6 @@ models:
         data_type: date
       - name: assignment_status__status_code__name__lag
         data_type: string
-        description: LAG of assignment_status__status_code__name.
+        description:
+          LAG of assignment_status__status_code__name partitioned by
+          associate_oid ordered by assignment_status__effective_date.

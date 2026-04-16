@@ -70,26 +70,29 @@ models:
         data_type: int64
         description:
           District-assigned student identification number. MAX of
-          psat89_count_ytd.
+          psat89_count_ytd partitioned by student_number.
       - name: psat10_count_lifetime
         data_type: int64
         description:
           District-assigned student identification number. MAX of
-          psat10_count_ytd.
+          psat10_count_ytd partitioned by student_number.
       - name: psatnmsqt_count_lifetime
         data_type: int64
         description:
           District-assigned student identification number. MAX of
-          psatnmsqt_count_ytd.
+          psatnmsqt_count_ytd partitioned by student_number.
       - name: sat_count_lifetime
         data_type: int64
         description:
-          District-assigned student identification number. MAX of sat_count_ytd.
+          District-assigned student identification number. MAX of sat_count_ytd
+          partitioned by student_number.
       - name: act_count_lifetime
         data_type: int64
         description:
-          District-assigned student identification number. MAX of act_count_ytd.
+          District-assigned student identification number. MAX of act_count_ytd
+          partitioned by student_number.
       - name: rn_lifetime
         data_type: int64
         description:
-          District-assigned student identification number. ROWNUMBER of value.
+          District-assigned student identification number. ROWNUMBER of value
+          partitioned by student_number.

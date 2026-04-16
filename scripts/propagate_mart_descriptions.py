@@ -278,14 +278,23 @@ def _summarize_expression(node: exp.Expression) -> str:
         func = node.this
         func_name = type(func).__name__.upper()
         inner_cols = [c.name for c in func.find_all(exp.Column)]
-        partition = node.find(exp.PartitionedByProperty)
-        part_cols = (
-            [c.name for c in partition.find_all(exp.Column)] if partition else []
-        )
         col_str = ", ".join(inner_cols) if inner_cols else "value"
-        if part_cols:
-            return f"{func_name} of {col_str} partitioned by {', '.join(part_cols)}."
-        return f"{func_name} of {col_str}."
+
+        parts: list[str] = [f"{func_name} of {col_str}"]
+
+        partition_by = node.args.get("partition_by")
+        if partition_by:
+            part_cols = [c.name for c in partition_by if isinstance(c, exp.Column)]
+            if part_cols:
+                parts.append(f"partitioned by {', '.join(part_cols)}")
+
+        order = node.args.get("order")
+        if order:
+            order_cols = [c.name for c in order.find_all(exp.Column)]
+            if order_cols:
+                parts.append(f"ordered by {', '.join(order_cols)}")
+
+        return " ".join(parts) + "."
 
     # COALESCE
     if isinstance(node, exp.Coalesce):
