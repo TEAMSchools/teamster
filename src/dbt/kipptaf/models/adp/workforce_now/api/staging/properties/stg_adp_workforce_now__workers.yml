@@ -87,18 +87,28 @@ models:
             contains_pii: true
       - name: person__legal_name__nick_name
         data_type: string
+        description:
+          Preferred Name This field is remaining for legacy API user support.
+          User should use the preferredName object going forward
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_name__generation_affix_code__code_value
         data_type: string
+        description: Generation Suffix
       - name: person__legal_name__generation_affix_code__long_name
         data_type: string
       - name: person__legal_name__generation_affix_code__short_name
         data_type: string
+        description: Generation Suffix
       - name: person__legal_name__qualification_affix_code__code_value
         data_type: string
+        description: Professional Suffix
       - name: person__legal_name__qualification_affix_code__long_name
         data_type: string
       - name: person__legal_name__qualification_affix_code__short_name
         data_type: string
+        description: Professional Suffix
       - name: person__preferred_name__formatted_name
         data_type: string
       - name: person__preferred_name__given_name
@@ -171,10 +181,22 @@ models:
         data_type: string
       - name: person__legal_address__line_one
         data_type: string
+        description: Address Line 1
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_address__line_two
         data_type: string
+        description: Address Line 2
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_address__line_three
         data_type: string
+        description: Address Line 3
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_address__city_name
         data_type: string
         description: City
@@ -192,20 +214,28 @@ models:
         description: Country
       - name: person__legal_address__country_subdivision_level_1__subdivision_type
         data_type: string
+        description: State / Territory
       - name: person__legal_address__country_subdivision_level_1__code_value
         data_type: string
+        description: State / Territory
       - name: person__legal_address__country_subdivision_level_1__long_name
         data_type: string
+        description: State / Territory
       - name: person__legal_address__country_subdivision_level_1__short_name
         data_type: string
+        description: State / Territory
       - name: person__legal_address__country_subdivision_level_2__subdivision_type
         data_type: string
+        description: County
       - name: person__legal_address__country_subdivision_level_2__code_value
         data_type: string
+        description: County
       - name: person__legal_address__country_subdivision_level_2__long_name
         data_type: string
+        description: County
       - name: person__legal_address__country_subdivision_level_2__short_name
         data_type: string
+        description: County
       - name: person__legal_address__name_code__code_value
         data_type: string
       - name: person__legal_address__name_code__long_name
@@ -252,10 +282,12 @@ models:
         description: Race
       - name: person__race_code__identification_method_code__code_value
         data_type: string
+        description: Not Displayed
       - name: person__race_code__identification_method_code__long_name
         data_type: string
       - name: person__race_code__identification_method_code__short_name
         data_type: string
+        description: Race ID Method
       - name: worker_dates__original_hire_date
         data_type: date
         description: Original Hire Date
@@ -300,6 +332,7 @@ models:
         data_type: date
       - name: person__marital_status_code__effective_date
         data_type: date
+        description: Marital Effective Date
       - name: person__military_status_code__effective_date
         data_type: date
       - name: person__preferred_gender_pronoun_code__effective_date
@@ -310,6 +343,10 @@ models:
         data_type: date
       - name: person__birth_date
         data_type: date
+        description: Birth Date Masked by default.
+        config:
+          meta:
+            contains_pii: true
       - name: effective_date_start_timestamp
         data_type: timestamp
       - name: worker_status__status_code__code_value_lag

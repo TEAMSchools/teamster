@@ -29,6 +29,23 @@ from pathlib import Path
 
 import yaml
 
+# Unicode ligatures commonly produced by PDF text extraction
+_LIGATURE_MAP: dict[str, str] = {
+    "\ufb00": "ff",
+    "\ufb01": "fi",
+    "\ufb02": "fl",
+    "\ufb03": "ffi",
+    "\ufb04": "ffl",
+}
+_LIGATURE_RE = re.compile("|".join(re.escape(k) for k in _LIGATURE_MAP))
+
+
+def normalize_ligatures(text: str) -> str:
+    """Replace Unicode ligatures (ﬁ, ﬂ, ﬀ, etc.) with ASCII equivalents."""
+    if not _LIGATURE_RE.search(text):
+        return text
+    return _LIGATURE_RE.sub(lambda m: _LIGATURE_MAP[m.group()], text)
+
 
 def pascal_to_snake(name: str) -> str:
     """Convert PascalCase or MixedCase to snake_case.
@@ -411,6 +428,62 @@ def build_ps_mapping(
             else:
                 unmatched_pdf.append({"table": table_name, "column": pdf_col})
 
+    # Conformed columns: appear across many PS tables with identical meaning.
+    # Match any unmatched YAML column that fits these patterns.
+    _CONFORMED_COLUMNS: dict[str, tuple[str, bool]] = {
+        # (description, contains_pii)
+        # Audit columns (Dagster-injected)
+        "executionid": ("Dagster run execution identifier.", False),
+        "ip_address": ("IP address of the client that made the change.", True),
+        "transaction_date": ("Timestamp of the database transaction.", False),
+        "whomodifiedid": (
+            "Identifier of the user who last modified the record.",
+            False,
+        ),
+        "whomodifiedtype": ("Type of user who last modified the record.", False),
+        # PS system audit columns
+        "whencreated": ("Timestamp when the record was created.", False),
+        "whenmodified": ("Timestamp when the record was last modified.", False),
+        "whocreated": ("Username of the account that created the record.", False),
+        "whomodified": (
+            "Username of the account that last modified the record.",
+            False,
+        ),
+        # PS system identifiers
+        "psguid": ("PowerSchool globally unique identifier for the record.", False),
+        "student_number": (
+            "District-assigned student number, unique within the district.",
+            True,
+        ),
+    }
+    # Suffix patterns: any column ending with "dcid" is a PS internal identifier
+    _CONFORMED_SUFFIXES: dict[str, tuple[str, bool]] = {
+        "dcid": ("PowerSchool internal database record identifier (DCID).", False),
+    }
+
+    for model_name, yaml_cols in yaml_index.items():
+        matched_cols = all_matched_yaml_columns.get(model_name, set())
+        for col in yaml_cols - matched_cols:
+            desc_pii = _CONFORMED_COLUMNS.get(col)
+            if desc_pii is None:
+                for suffix, dp in _CONFORMED_SUFFIXES.items():
+                    if col.endswith(suffix):
+                        desc_pii = dp
+                        break
+            if desc_pii is not None:
+                description, is_pii = desc_pii
+                matched_entries.append(
+                    {
+                        "source_table": "(conformed)",
+                        "source_column": col,
+                        "model": model_name,
+                        "column": col,
+                        "description": description,
+                        "contains_pii": is_pii,
+                    }
+                )
+                all_matched_yaml_columns.setdefault(model_name, set()).add(col)
+
     # Find unmatched YAML columns
     unmatched_yaml: list[dict[str, str]] = []
     for model_name, yaml_cols in yaml_index.items():
@@ -451,6 +524,58 @@ _ADP_ENTRY_RE = re.compile(
 )
 
 
+def _rejoin_adp_lines(page_text: str) -> list[str]:
+    """Rejoin ADP entry lines split by PDF text extraction.
+
+    pypdf sometimes splits camelCase path segments across lines, e.g.:
+        /workers/person/raceCode/identificationMethodCode/short
+        Name Short Name Y
+    This joins such continuations into single lines.
+    """
+    raw_lines = page_text.split("\n")
+    joined: list[str] = []
+    pending: str | None = None
+
+    for raw in raw_lines:
+        line = raw.strip()
+        if not line:
+            continue
+        if pending is not None:
+            line = pending + " " + line
+            pending = None
+        # Incomplete path entry: starts with /workers/ but no Y/NA terminator
+        if line.startswith("/workers/") and not _ADP_ENTRY_RE.match(line):
+            pending = line
+        else:
+            joined.append(line)
+
+    if pending:
+        joined.append(pending)
+    return joined
+
+
+def _rejoin_camel_segment(schema_path: str, middle_text: str) -> tuple[str, str]:
+    """Fix split camelCase in ADP paths.
+
+    pypdf can insert a space inside camelCase: /workers/.../short Name ...
+    The regex captures path="/workers/.../short", middle="Name Short Name".
+    Detect this by checking if the last path segment is all-lowercase (fragment)
+    and the middle starts with an uppercase word (the continuation).
+    """
+    last_segment = schema_path.rsplit("/", 1)[-1]
+    if last_segment != last_segment.lower():
+        return schema_path, middle_text
+    if not middle_text or not middle_text[0].isupper():
+        return schema_path, middle_text
+
+    parts = middle_text.split(None, 1)
+    suffix = parts[0]
+    if suffix.isalpha():
+        schema_path = schema_path + suffix
+        middle_text = parts[1].strip() if len(parts) > 1 else ""
+    return schema_path, middle_text
+
+
 def parse_adp_entries(page_text: str) -> list[dict[str, str]]:
     """Parse ADP data dictionary entries from PDF page text.
 
@@ -459,11 +584,7 @@ def parse_adp_entries(page_text: str) -> list[dict[str, str]]:
     """
     entries: list[dict[str, str]] = []
 
-    for line in page_text.split("\n"):
-        line = line.strip()
-        if not line:
-            continue
-
+    for line in _rejoin_adp_lines(page_text):
         match = _ADP_ENTRY_RE.match(line)
         if not match:
             continue
@@ -471,9 +592,9 @@ def parse_adp_entries(page_text: str) -> list[dict[str, str]]:
         schema_path = match.group(1)
         middle_text = match.group(2).strip()
 
-        # The middle text contains the field name and optionally a note.
-        # Always extract the field name using the heuristic; use the full
-        # middle text as the description (which may include the note).
+        # Fix split camelCase segments (e.g., /short + Name → /shortName)
+        schema_path, middle_text = _rejoin_camel_segment(schema_path, middle_text)
+
         field_name = _extract_field_name(middle_text)
         description = middle_text
 
@@ -624,8 +745,28 @@ def build_adp_mapping(
     matched_yaml_cols: set[str] = set()
 
     for entry in all_entries:
-        column_name = adp_path_to_column(entry["schema_path"])
+        schema_path = entry["schema_path"]
         description = entry.get("description", "")
+        column_name = adp_path_to_column(schema_path)
+
+        if column_name in skip_columns:
+            continue
+
+        # Progressive word-join: if the path doesn't match, try absorbing
+        # words from the description into the path.  pypdf splits path
+        # segments at arbitrary points (e.g., "codeValue" → "co deValue",
+        # "shortName" → "short Name"), so we progressively rejoin up to 3
+        # words from the description until we find a YAML match.
+        if column_name not in all_yaml_columns and description:
+            words = description.split()
+            for i in range(1, min(4, len(words) + 1)):
+                candidate_path = schema_path + "".join(words[:i])
+                candidate_col = adp_path_to_column(candidate_path)
+                if candidate_col in all_yaml_columns or candidate_col in skip_columns:
+                    schema_path = candidate_path
+                    column_name = candidate_col
+                    description = " ".join(words[i:])
+                    break
 
         if column_name in skip_columns:
             continue
@@ -634,7 +775,7 @@ def build_adp_mapping(
             model_name = all_yaml_columns[column_name][0]
             matched_entries.append(
                 {
-                    "source_path": entry["schema_path"],
+                    "source_path": schema_path,
                     "source_field": entry["field_name"],
                     "model": model_name,
                     "column": column_name,
@@ -651,7 +792,7 @@ def build_adp_mapping(
             if not is_parent:
                 unmatched_pdf.append(
                     {
-                        "path": entry["schema_path"],
+                        "path": schema_path,
                         "field_name": entry["field_name"],
                     }
                 )
@@ -689,7 +830,7 @@ def _extract_adp(pdf_path: str) -> dict:
     from pypdf import PdfReader
 
     reader = PdfReader(pdf_path)
-    pages = [page.extract_text() or "" for page in reader.pages]
+    pages = [normalize_ligatures(page.extract_text() or "") for page in reader.pages]
     yaml_index = build_adp_yaml_index()
     return build_adp_mapping(pages, yaml_index)
 
@@ -699,7 +840,7 @@ def _extract_powerschool(pdf_path: str) -> dict:
     from pypdf import PdfReader
 
     reader = PdfReader(pdf_path)
-    pages = [page.extract_text() or "" for page in reader.pages]
+    pages = [normalize_ligatures(page.extract_text() or "") for page in reader.pages]
     yaml_index = build_ps_yaml_index()
     return build_ps_mapping(pages, yaml_index)
 

@@ -8,7 +8,6 @@ keeping the import pattern local to this test file.
 from __future__ import annotations
 
 import importlib.util
-import json
 from pathlib import Path
 from types import ModuleType
 
@@ -28,6 +27,29 @@ def _load_script() -> ModuleType:
 def test_script_module_loads() -> None:
     module = _load_script()
     assert callable(module.main)
+
+
+class TestNormalizeLigatures:
+    def test_fi_ligature(self) -> None:
+        module = _load_script()
+        assert module.normalize_ligatures("identi\ufb01cationMethodCode") == (
+            "identificationMethodCode"
+        )
+
+    def test_fl_ligature(self) -> None:
+        module = _load_script()
+        assert module.normalize_ligatures("over\ufb02ow") == "overflow"
+
+    def test_no_ligatures_unchanged(self) -> None:
+        module = _load_script()
+        text = "/workers/person/birthDate"
+        assert module.normalize_ligatures(text) == text
+
+    def test_multiple_ligatures(self) -> None:
+        module = _load_script()
+        assert module.normalize_ligatures("quali\ufb01cationA\ufb03xCode") == (
+            "qualificationAffixCode"
+        )
 
 
 class TestPascalToSnake:
@@ -449,6 +471,30 @@ class TestBuildPsMapping:
         assert isinstance(stats["pdf_entries"], int)
         assert isinstance(stats["unmatched_pdf"], int)
 
+    def test_conformed_columns_matched(self) -> None:
+        module = _load_script()
+        pages = [PS_FIXTURE_PAGE_WITH_HEADER]
+        yaml_index = {
+            "stg_powerschool__students": {
+                "alert_discipline",
+                "whencreated",
+                "whenmodified",
+                "dcid",
+                "executionid",
+                "psguid",
+            },
+        }
+        result = module.build_ps_mapping(pages, yaml_index)
+        matched_cols = {e["column"] for e in result["entries"]}
+        assert "whencreated" in matched_cols
+        assert "whenmodified" in matched_cols
+        assert "dcid" in matched_cols
+        assert "executionid" in matched_cols
+        assert "psguid" in matched_cols
+        # Verify they don't appear in unmatched
+        unmatched_cols = {e["column"] for e in result["unmatched_yaml"]}
+        assert "whencreated" not in unmatched_cols
+
 
 # Representative text blocks extracted from real ADP PDF pages.
 
@@ -517,6 +563,38 @@ class TestAdpPathParser:
         assert len(entries) >= 1
         paths = {e["schema_path"] for e in entries}
         assert "/workers/person/disabledIndicator" in paths
+
+    def test_split_camel_line_break(self) -> None:
+        """pypdf splits shortName across a line break."""
+        module = _load_script()
+        text = (
+            "/workers/person/raceCode/identificationMethodCode/short\n"
+            "Name Short Name Y\n"
+        )
+        entries = module.parse_adp_entries(text)
+        assert len(entries) == 1
+        assert (
+            entries[0]["schema_path"]
+            == "/workers/person/raceCode/identificationMethodCode/shortName"
+        )
+        assert entries[0]["field_name"] == "Short Name"
+
+    def test_split_camel_inline_space(self) -> None:
+        """pypdf inserts space inside camelCase on same line."""
+        module = _load_script()
+        text = "/workers/person/raceCode/code Value Not Displayed Y\n"
+        entries = module.parse_adp_entries(text)
+        assert len(entries) == 1
+        assert entries[0]["schema_path"] == "/workers/person/raceCode/codeValue"
+
+    def test_no_false_rejoin(self) -> None:
+        """Normal entries should not have their field name eaten by rejoin."""
+        module = _load_script()
+        text = "/workers/person/birthDate Birth Date Masked by default. Y\n"
+        entries = module.parse_adp_entries(text)
+        assert len(entries) == 1
+        assert entries[0]["schema_path"] == "/workers/person/birthDate"
+        assert "Birth Date" in entries[0]["description"]
 
 
 class TestAdpPathToColumn:
