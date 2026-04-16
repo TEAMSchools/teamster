@@ -233,6 +233,88 @@ def _extract_column_lineage(sql: str) -> dict[str, dict]:
     return result
 
 
+_PACKAGE_DISPLAY_NAMES: dict[str, str] = {
+    "adp": "ADP",
+    "amplify": "Amplify",
+    "deanslist": "DeansList",
+    "edplan": "EdPlan",
+    "finalsite": "Finalsite",
+    "iready": "iReady",
+    "kippadb": "KIPPADB",
+    "overgrad": "Overgrad",
+    "pearson": "Pearson",
+    "powerschool": "PowerSchool",
+    "renlearn": "Renaissance",
+    "titan": "Titan",
+}
+
+
+def _format_propagated_description(
+    staging_desc: str,
+    package: str,
+    staging_model: str,
+    staging_column: str,
+) -> str:
+    """Format a propagated description with source attribution."""
+    display = _PACKAGE_DISPLAY_NAMES.get(package, package)
+    return f"{staging_desc} Source: {display} {staging_model}.{staging_column}."
+
+
+def _enrich_yaml_descriptions(
+    doc: dict,
+    lineage: dict[str, dict],
+    source_mapping: dict[str, dict],
+    staging_dict: dict[tuple[str, str], dict],
+) -> int:
+    """Enrich a YAML doc's column descriptions using lineage.
+
+    Mutates doc in place. Returns the number of columns enriched.
+    """
+    enriched = 0
+    for model in doc.get("models", []) or []:
+        for col in model.get("columns", []) or []:
+            col_name = col["name"]
+
+            # Skip if description already exists
+            existing = _flatten(col.get("description"))
+            if existing:
+                continue
+
+            # Look up lineage
+            lin = lineage.get(col_name)
+            if not lin or lin["source_column"] is None:
+                continue
+
+            source_table = lin["source_table"]
+            source_col = lin["source_column"]
+
+            # Resolve source boundary
+            mapping = source_mapping.get(source_table)
+            if not mapping:
+                continue
+
+            package = mapping["package"]
+            staging_model = mapping["table_name"]
+
+            # Look up staging description
+            staging = staging_dict.get((staging_model, source_col))
+            if not staging or not staging["description"]:
+                continue
+
+            col["description"] = _format_propagated_description(
+                staging["description"], package, staging_model, source_col
+            )
+            enriched += 1
+
+            # Propagate PII flag
+            if staging["contains_pii"]:
+                col.setdefault("config", {}).setdefault("meta", {})["contains_pii"] = (
+                    True
+                )
+
+    return enriched
+
+
 def _build_source_mapping(manifest: dict) -> dict[str, dict]:
     """Build {relation_name: {source_name, table_name, package}} from manifest sources."""
     result: dict[str, dict] = {}

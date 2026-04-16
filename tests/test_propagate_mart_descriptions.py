@@ -134,3 +134,100 @@ def test_extract_lineage_returns_source_table() -> None:
     lineage = module._extract_column_lineage(sql)
     for col in ["birth_date", "student_number", "student_name"]:
         assert "stg_powerschool__students" in lineage[col]["source_table"]
+
+
+def _sample_yaml_doc() -> dict:
+    return {
+        "models": [
+            {
+                "name": "dim_sample",
+                "columns": [
+                    {"name": "birth_date", "data_type": "date"},
+                    {
+                        "name": "student_name",
+                        "data_type": "string",
+                        "description": "Existing description.",
+                    },
+                    {"name": "student_number", "data_type": "int64"},
+                ],
+            },
+        ],
+    }
+
+
+def _sample_lineage() -> dict:
+    base = "`teamster-332318`.`kippnewark_powerschool`.`stg_powerschool__students`"
+    return {
+        "birth_date": {"source_table": base, "source_column": "dob"},
+        "student_name": {"source_table": base, "source_column": "lastfirst"},
+        "student_number": {"source_table": base, "source_column": "student_number"},
+    }
+
+
+def _sample_source_mapping() -> dict:
+    return {
+        "`teamster-332318`.`kippnewark_powerschool`.`stg_powerschool__students`": {
+            "source_name": "kippnewark_powerschool",
+            "table_name": "stg_powerschool__students",
+            "package": "powerschool",
+        },
+    }
+
+
+def _sample_staging_dict() -> dict:
+    return {
+        ("stg_powerschool__students", "dob"): {
+            "description": "Date of Birth.",
+            "contains_pii": True,
+        },
+        ("stg_powerschool__students", "lastfirst"): {
+            "description": "Last, First, Mi. Indexed.",
+            "contains_pii": True,
+        },
+        ("stg_powerschool__students", "student_number"): {
+            "description": "The unique student number assigned by the school.",
+            "contains_pii": False,
+        },
+    }
+
+
+def test_enrich_writes_description_where_empty() -> None:
+    module = _load_script()
+    doc = _sample_yaml_doc()
+    module._enrich_yaml_descriptions(
+        doc, _sample_lineage(), _sample_source_mapping(), _sample_staging_dict()
+    )
+    col = doc["models"][0]["columns"][0]  # birth_date
+    assert "Date of Birth." in col["description"]
+    assert "PowerSchool" in col["description"]
+    assert "stg_powerschool__students.dob" in col["description"]
+
+
+def test_enrich_preserves_existing_description() -> None:
+    module = _load_script()
+    doc = _sample_yaml_doc()
+    module._enrich_yaml_descriptions(
+        doc, _sample_lineage(), _sample_source_mapping(), _sample_staging_dict()
+    )
+    col = doc["models"][0]["columns"][1]  # student_name
+    assert col["description"] == "Existing description."
+
+
+def test_enrich_propagates_pii_flag() -> None:
+    module = _load_script()
+    doc = _sample_yaml_doc()
+    module._enrich_yaml_descriptions(
+        doc, _sample_lineage(), _sample_source_mapping(), _sample_staging_dict()
+    )
+    col = doc["models"][0]["columns"][0]  # birth_date
+    assert col["config"]["meta"]["contains_pii"] is True
+
+
+def test_enrich_no_pii_flag_when_false() -> None:
+    module = _load_script()
+    doc = _sample_yaml_doc()
+    module._enrich_yaml_descriptions(
+        doc, _sample_lineage(), _sample_source_mapping(), _sample_staging_dict()
+    )
+    col = doc["models"][0]["columns"][2]  # student_number
+    assert "contains_pii" not in col.get("config", {}).get("meta", {})
