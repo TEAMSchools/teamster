@@ -47,8 +47,6 @@ models:
         data_type: int64
         description:
           Unique identifier of the row in the table. Indexed. Required.
-        constraints:
-          - type: primary_key
       - name: emailtypecodesetid
         data_type: int64
         description:
