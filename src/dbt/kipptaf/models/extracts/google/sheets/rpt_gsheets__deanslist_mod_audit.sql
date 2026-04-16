@@ -238,9 +238,8 @@ select
         '&prebuilt_report_id=1&page=Assessment_StudentController'
     ) as illuminate_student_responses,
 
-    academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
-    term_administered
-    in (select ct.`name`, from current_terms as ct) as is_current_term,
+    ar.academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
+    ct.`name` is not null as is_current_term,
 
     case
         grade_level when 0 then 'K' else cast(grade_level as string)
@@ -276,4 +275,5 @@ select
         ),
         0
     ) as computed_avg_pct_correct,
-from all_responses
+from all_responses as ar
+left join current_terms as ct on ar.term_administered = ct.`name`
