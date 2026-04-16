@@ -103,37 +103,16 @@ def test_build_source_mapping_non_regional_source() -> None:
 COMPILED_FIXTURE = Path("tests/fixtures/compiled_sql/dim_sample.sql")
 
 
-def test_extract_lineage_simple_rename() -> None:
+def test_extract_referenced_tables() -> None:
     module = _load_script()
     sql = COMPILED_FIXTURE.read_text()
-    lineage = module._extract_column_lineage(sql)
-    assert "birth_date" in lineage
-    assert lineage["birth_date"]["source_column"] == "dob"
-    assert "stg_powerschool__students" in lineage["birth_date"]["source_table"]
+    tables = module._extract_referenced_tables(sql)
+    assert any("stg_powerschool__students" in t for t in tables)
 
 
-def test_extract_lineage_passthrough() -> None:
+def test_extract_referenced_tables_empty_sql() -> None:
     module = _load_script()
-    sql = COMPILED_FIXTURE.read_text()
-    lineage = module._extract_column_lineage(sql)
-    assert "student_number" in lineage
-    assert lineage["student_number"]["source_column"] == "student_number"
-
-
-def test_extract_lineage_computed_is_none() -> None:
-    module = _load_script()
-    sql = COMPILED_FIXTURE.read_text()
-    lineage = module._extract_column_lineage(sql)
-    assert "ethnicity_label" in lineage
-    assert lineage["ethnicity_label"]["source_column"] is None
-
-
-def test_extract_lineage_returns_source_table() -> None:
-    module = _load_script()
-    sql = COMPILED_FIXTURE.read_text()
-    lineage = module._extract_column_lineage(sql)
-    for col in ["birth_date", "student_number", "student_name"]:
-        assert "stg_powerschool__students" in lineage[col]["source_table"]
+    assert module._extract_referenced_tables("") == []
 
 
 def _sample_yaml_doc() -> dict:
@@ -142,26 +121,24 @@ def _sample_yaml_doc() -> dict:
             {
                 "name": "dim_sample",
                 "columns": [
-                    {"name": "birth_date", "data_type": "date"},
+                    {"name": "dob", "data_type": "date"},
                     {
-                        "name": "student_name",
+                        "name": "lastfirst",
                         "data_type": "string",
                         "description": "Existing description.",
                     },
                     {"name": "student_number", "data_type": "int64"},
+                    {"name": "computed_col", "data_type": "string"},
                 ],
             },
         ],
     }
 
 
-def _sample_lineage() -> dict:
-    base = "`teamster-332318`.`kippnewark_powerschool`.`stg_powerschool__students`"
-    return {
-        "birth_date": {"source_table": base, "source_column": "dob"},
-        "student_name": {"source_table": base, "source_column": "lastfirst"},
-        "student_number": {"source_table": base, "source_column": "student_number"},
-    }
+def _sample_referenced_tables() -> list[str]:
+    return [
+        "`teamster-332318`.`kippnewark_powerschool`.`stg_powerschool__students`",
+    ]
 
 
 def _sample_source_mapping() -> dict:
@@ -195,31 +172,41 @@ def test_enrich_writes_description_where_empty() -> None:
     module = _load_script()
     doc = _sample_yaml_doc()
     module._enrich_yaml_descriptions(
-        doc, _sample_lineage(), _sample_source_mapping(), _sample_staging_dict()
+        doc,
+        _sample_referenced_tables(),
+        _sample_source_mapping(),
+        _sample_staging_dict(),
     )
-    col = doc["models"][0]["columns"][0]  # birth_date
+    col = doc["models"][0]["columns"][0]  # dob
     assert "Date of Birth." in col["description"]
     assert "PowerSchool" in col["description"]
     assert "stg_powerschool__students.dob" in col["description"]
 
 
-def test_enrich_preserves_existing_description() -> None:
+def test_enrich_overwrites_existing_description() -> None:
     module = _load_script()
     doc = _sample_yaml_doc()
     module._enrich_yaml_descriptions(
-        doc, _sample_lineage(), _sample_source_mapping(), _sample_staging_dict()
+        doc,
+        _sample_referenced_tables(),
+        _sample_source_mapping(),
+        _sample_staging_dict(),
     )
-    col = doc["models"][0]["columns"][1]  # student_name
-    assert col["description"] == "Existing description."
+    col = doc["models"][0]["columns"][1]  # lastfirst — had "Existing description."
+    assert "Last, First, Mi." in col["description"]
+    assert "PowerSchool" in col["description"]
 
 
 def test_enrich_propagates_pii_flag() -> None:
     module = _load_script()
     doc = _sample_yaml_doc()
     module._enrich_yaml_descriptions(
-        doc, _sample_lineage(), _sample_source_mapping(), _sample_staging_dict()
+        doc,
+        _sample_referenced_tables(),
+        _sample_source_mapping(),
+        _sample_staging_dict(),
     )
-    col = doc["models"][0]["columns"][0]  # birth_date
+    col = doc["models"][0]["columns"][0]  # dob
     assert col["config"]["meta"]["contains_pii"] is True
 
 
@@ -227,7 +214,10 @@ def test_enrich_no_pii_flag_when_false() -> None:
     module = _load_script()
     doc = _sample_yaml_doc()
     module._enrich_yaml_descriptions(
-        doc, _sample_lineage(), _sample_source_mapping(), _sample_staging_dict()
+        doc,
+        _sample_referenced_tables(),
+        _sample_source_mapping(),
+        _sample_staging_dict(),
     )
     col = doc["models"][0]["columns"][2]  # student_number
     assert "contains_pii" not in col.get("config", {}).get("meta", {})

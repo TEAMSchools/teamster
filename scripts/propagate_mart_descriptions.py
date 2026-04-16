@@ -88,150 +88,27 @@ def _strip_region_prefix(source_name: str) -> str:
     return source_name
 
 
-def _extract_column_lineage(sql: str) -> dict[str, dict]:
-    """Extract column lineage from compiled BigQuery SQL.
+def _extract_referenced_tables(sql: str) -> list[str]:
+    """Extract bare table names from all physical table references in compiled SQL.
 
-    Takes compiled SQL (all Jinja resolved) and returns a mapping of output
-    column aliases to their source information::
-
-        {
-            "birth_date": {
-                "source_table": "`teamster-332318`.`kippnewark_powerschool`.`stg_powerschool__students`",
-                "source_column": "dob",
-            },
-            "student_name": {"source_table": "...", "source_column": "lastfirst"},
-            "ethnicity_label": {"source_table": "...", "source_column": None},
-        }
-
-    For simple renames (``dob AS birth_date``), traces back to the source table
-    and column.  For passthroughs (``student_number`` with no alias), traces
-    back to the source table.  For computed expressions (CASE, COALESCE, etc.),
-    sets ``source_column`` to ``None``.
+    Parses the SQL with sqlglot and finds all Table nodes, returning
+    their unqualified names. Assumes union_relations and deduplicate
+    are column-passthrough — their output columns match their inputs.
     """
-    stmt = sqlglot.parse(sql, read="bigquery")[0]
+    try:
+        stmts = sqlglot.parse(sql, read="bigquery")
+    except Exception:
+        return []
 
-    # Collect CTEs: {name: Select node}
-    ctes: dict[str, exp.Select] = {}
-    with_clause = stmt.find(exp.With)
-    if with_clause:
-        for cte in with_clause.expressions:
-            ctes[cte.alias] = cte.this
-
-    def _resolve_physical_table(select_node: exp.Select) -> str | None:
-        """Walk FROM clauses through CTEs until a physical table is found."""
-        from_clause = select_node.find(exp.From)
-        if from_clause is None:
-            return None
-        table = from_clause.this
-        if not isinstance(table, exp.Table):
-            return None
-        table_name = table.name
-        if table_name in ctes:
-            return _resolve_physical_table(ctes[table_name])
-        return table.sql(dialect="bigquery")
-
-    def _resolve_select(select_node: exp.Select) -> exp.Select:
-        """If select is ``SELECT * FROM cte``, resolve into the CTE's select."""
-        if len(select_node.expressions) == 1 and isinstance(
-            select_node.expressions[0], exp.Star
-        ):
-            from_clause = select_node.find(exp.From)
-            if from_clause is not None:
-                table = from_clause.this
-                if isinstance(table, exp.Table) and table.name in ctes:
-                    return _resolve_select(ctes[table.name])
-        return select_node
-
-    def _is_simple_column(node: exp.Expression) -> bool:
-        """Check if a node is a simple column reference (no computation)."""
-        return isinstance(node, exp.Column)
-
-    def _trace_column_through_ctes(
-        col_name: str, current_select: exp.Select
-    ) -> tuple[str | None, str | None]:
-        """Trace a column name back through CTEs to find physical table and column.
-
-        Returns (source_table, source_column).
-        """
-        from_clause = current_select.find(exp.From)
-        if from_clause is None:
-            return None, col_name
-
-        table = from_clause.this
-        if not isinstance(table, exp.Table):
-            return None, col_name
-
-        table_name = table.name
-
-        # If FROM references a CTE, look inside that CTE
-        if table_name in ctes:
-            cte_select = ctes[table_name]
-
-            # If the CTE is SELECT *, recurse into its source
-            if len(cte_select.expressions) == 1 and isinstance(
-                cte_select.expressions[0], exp.Star
-            ):
-                return _trace_column_through_ctes(col_name, cte_select)
-
-            # Look for the column in the CTE's expressions
-            for cte_expr in cte_select.expressions:
-                if isinstance(cte_expr, exp.Alias):
-                    alias_name = cte_expr.alias
-                    if alias_name == col_name:
-                        # Found it — if the inner expression is a simple column,
-                        # trace further; otherwise it's computed
-                        if _is_simple_column(cte_expr.this):
-                            inner_col = cte_expr.this.name
-                            return _trace_column_through_ctes(inner_col, cte_select)
-                        return _resolve_physical_table(cte_select), None
-                elif isinstance(cte_expr, exp.Column):
-                    if cte_expr.name == col_name:
-                        return _trace_column_through_ctes(col_name, cte_select)
-
-            # Column not found explicitly — might come from a SELECT *
-            return _resolve_physical_table(cte_select), col_name
-
-        # Physical table — we've reached the bottom
-        physical = table.sql(dialect="bigquery")
-        return physical, col_name
-
-    # Resolve the outermost SELECT (handles SELECT * FROM cte)
-    resolved = _resolve_select(stmt)
-    result: dict[str, dict] = {}
-
-    for expression in resolved.expressions:
-        if isinstance(expression, exp.Star):
-            # Can't resolve individual columns from a bare star at the leaf
+    tables: list[str] = []
+    for stmt in stmts:
+        if stmt is None:
             continue
-
-        if isinstance(expression, exp.Alias):
-            alias_name = expression.alias
-            inner = expression.this
-
-            if _is_simple_column(inner):
-                source_table, source_column = _trace_column_through_ctes(
-                    inner.name, resolved
-                )
-                result[alias_name] = {
-                    "source_table": source_table,
-                    "source_column": source_column,
-                }
-            else:
-                # Computed expression
-                result[alias_name] = {
-                    "source_table": _resolve_physical_table(resolved),
-                    "source_column": None,
-                }
-
-        elif isinstance(expression, exp.Column):
-            col_name = expression.name
-            source_table, source_column = _trace_column_through_ctes(col_name, resolved)
-            result[col_name] = {
-                "source_table": source_table,
-                "source_column": source_column,
-            }
-
-    return result
+        for table in stmt.find_all(exp.Table):
+            name = table.name
+            if name:
+                tables.append(name)
+    return tables
 
 
 _PACKAGE_DISPLAY_NAMES: dict[str, str] = {
@@ -261,14 +138,93 @@ def _format_propagated_description(
     return f"{staging_desc} Source: {display} {staging_model}.{staging_column}."
 
 
+def _extract_table_name(relation: str) -> str:
+    """Extract the bare table name from a fully qualified BigQuery relation.
+
+    '`teamster-332318`.`zz_cbini_kipptaf_powerschool`.`stg_powerschool__students`'
+    → 'stg_powerschool__students'
+    """
+    parts = relation.replace("`", "").split(".")
+    return parts[-1] if parts else relation
+
+
+def _build_compiled_sql_cache(
+    compiled_dir: Path,
+) -> tuple[dict[str, Path], dict[str, list[str]]]:
+    """Build caches of compiled SQL paths and their referenced tables.
+
+    Returns (path_cache, tables_cache) where:
+    - path_cache: {model_name: Path}
+    - tables_cache: {model_name: [referenced_table_names]}
+    """
+    path_cache: dict[str, Path] = {}
+    for sql_path in compiled_dir.rglob("*.sql"):
+        path_cache[sql_path.stem] = sql_path
+
+    tables_cache: dict[str, list[str]] = {}
+    for model_name, sql_path in path_cache.items():
+        sql = sql_path.read_text(encoding="utf-8")
+        tables_cache[model_name] = _extract_referenced_tables(sql)
+
+    return path_cache, tables_cache
+
+
+def _resolve_column_to_staging(
+    col_name: str,
+    referenced_tables: list[str],
+    staging_dict: dict[tuple[str, str], dict],
+    tables_cache: dict[str, list[str]],
+    visited: set[str] | None = None,
+) -> tuple[str, str, str] | None:
+    """Resolve a column name to a staging model by walking referenced tables.
+
+    Assumes union_relations and deduplicate are column-passthrough — their
+    output columns match their inputs. Recursively follows intermediate
+    models until a staging description is found.
+
+    Returns (staging_model, staging_column, package) or None.
+    """
+    if visited is None:
+        visited = set()
+
+    for table in referenced_tables:
+        table_name = _extract_table_name(table)
+
+        # Prevent infinite loops
+        trace_key = f"{table_name}.{col_name}"
+        if trace_key in visited:
+            continue
+        visited.add(trace_key)
+
+        # Direct match in staging dict
+        if (table_name, col_name) in staging_dict:
+            return (table_name, col_name, _infer_package(table_name))
+
+        # Not staging — try to follow through this table's pre-parsed refs
+        upstream_tables = tables_cache.get(table_name)
+        if upstream_tables is None:
+            continue
+
+        result = _resolve_column_to_staging(
+            col_name, upstream_tables, staging_dict, tables_cache, visited
+        )
+        if result is not None:
+            return result
+
+    return None
+
+
 def _enrich_yaml_descriptions(
     doc: dict,
-    lineage: dict[str, dict],
+    referenced_tables: list[str],
     source_mapping: dict[str, dict],
     staging_dict: dict[tuple[str, str], dict],
+    tables_cache: dict[str, list[str]] | None = None,
 ) -> int:
-    """Enrich a YAML doc's column descriptions using lineage.
+    """Enrich a YAML doc's column descriptions from staging sources.
 
+    Overwrites existing descriptions when a staging source is traceable.
+    Assumes union_relations and deduplicate are column-passthrough.
     Mutates doc in place. Returns the number of columns enriched.
     """
     enriched = 0
@@ -276,34 +232,35 @@ def _enrich_yaml_descriptions(
         for col in model.get("columns", []) or []:
             col_name = col["name"]
 
-            # Skip if description already exists
-            existing = _flatten(col.get("description"))
-            if existing:
+            if tables_cache is not None:
+                resolved = _resolve_column_to_staging(
+                    col_name, referenced_tables, staging_dict, tables_cache
+                )
+            else:
+                # Non-recursive path (for tests with simple fixtures)
+                resolved = None
+                for table in referenced_tables:
+                    table_name = _extract_table_name(table)
+                    mapping = source_mapping.get(table)
+                    if mapping and (mapping["table_name"], col_name) in staging_dict:
+                        resolved = (
+                            mapping["table_name"],
+                            col_name,
+                            mapping["package"],
+                        )
+                        break
+                    if (table_name, col_name) in staging_dict:
+                        resolved = (table_name, col_name, _infer_package(table_name))
+                        break
+
+            if resolved is None:
                 continue
 
-            # Look up lineage
-            lin = lineage.get(col_name)
-            if not lin or lin["source_column"] is None:
-                continue
-
-            source_table = lin["source_table"]
-            source_col = lin["source_column"]
-
-            # Resolve source boundary
-            mapping = source_mapping.get(source_table)
-            if not mapping:
-                continue
-
-            package = mapping["package"]
-            staging_model = mapping["table_name"]
-
-            # Look up staging description
-            staging = staging_dict.get((staging_model, source_col))
-            if not staging or not staging["description"]:
-                continue
+            staging_model, staging_col, package = resolved
+            staging = staging_dict[(staging_model, staging_col)]
 
             col["description"] = _format_propagated_description(
-                staging["description"], package, staging_model, source_col
+                staging["description"], package, staging_model, staging_col
             )
             enriched += 1
 
@@ -314,6 +271,29 @@ def _enrich_yaml_descriptions(
                 )
 
     return enriched
+
+
+def _infer_package(staging_model: str) -> str:
+    """Infer the package name from a staging model name.
+
+    'stg_powerschool__students' → 'powerschool'
+    'stg_adp_workforce_now__workers' → 'adp'
+    """
+    if not staging_model.startswith("stg_"):
+        return staging_model
+    # Strip 'stg_' prefix and take the first segment before '__'
+    remainder = staging_model[4:]
+    parts = remainder.split("__", 1)
+    slug = parts[0] if parts else remainder
+    # Map known multi-word slugs to package names
+    _SLUG_MAP = {
+        "adp_workforce_now": "adp",
+        "adp_workforce_manager": "adp",
+        "adp_payroll": "adp",
+    }
+    if slug in _SLUG_MAP:
+        return _SLUG_MAP[slug]
+    return slug
 
 
 def _build_source_mapping(manifest: dict) -> dict[str, dict]:
@@ -370,13 +350,6 @@ def _discover_kipptaf_yaml_dirs() -> list[Path]:
     return dirs
 
 
-def _find_compiled_sql(model_name: str) -> Path | None:
-    """Find the compiled SQL file for a kipptaf model."""
-    for sql_path in COMPILED_DIR.rglob(f"{model_name}.sql"):
-        return sql_path
-    return None
-
-
 def main() -> None:
     # Load manifest
     if not MANIFEST_PATH.exists():
@@ -395,6 +368,10 @@ def main() -> None:
     print(f"Loaded {len(staging_dict)} staging descriptions")
     print(f"Loaded {len(source_mapping)} source mappings")
 
+    # Build compiled SQL cache
+    path_cache, tables_cache = _build_compiled_sql_cache(COMPILED_DIR)
+    print(f"Cached {len(path_cache)} compiled SQL files")
+
     # Discover target YAML dirs
     target_dirs = _discover_kipptaf_yaml_dirs()
     print(f"Found {len(target_dirs)} target YAML directories")
@@ -410,19 +387,20 @@ def main() -> None:
             if not doc or not doc.get("models"):
                 continue
 
-            # For each model in the YAML, extract lineage from compiled SQL
+            # For each model in the YAML, extract referenced tables from compiled SQL
             file_enriched = 0
             for model in doc.get("models", []) or []:
                 model_name = model["name"]
-                compiled_path = _find_compiled_sql(model_name)
-                if not compiled_path:
+                model_tables = tables_cache.get(model_name)
+                if model_tables is None:
                     continue
 
-                sql = compiled_path.read_text(encoding="utf-8")
-                lineage = _extract_column_lineage(sql)
-
                 file_enriched += _enrich_yaml_descriptions(
-                    doc, lineage, source_mapping, staging_dict
+                    doc,
+                    model_tables,
+                    source_mapping,
+                    staging_dict,
+                    tables_cache,
                 )
 
             if file_enriched > 0:
