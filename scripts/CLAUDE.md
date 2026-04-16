@@ -14,6 +14,8 @@ scripts: `bash scripts/<name>.sh`.
 | `dbt-manifest.py`                             | Extract dbt manifest model list to CSV              |
 | VS Code task: **dbt: Stage External Sources** | (see below)                                         |
 | `dbt-yaml.py`                                 | Parse and transform dbt YAML files                  |
+| `enrich_staging_descriptions.py`              | Write descriptions + PII flags to staging YAMLs     |
+| `extract_pdf_dictionary.py`                   | Extract column descriptions from source-system PDFs |
 | `gen-automations-doc.py`                      | Regenerate `docs/reference/automations.md`          |
 | `gen_column_naming_audit_inventory.py`        | Generate mart column naming audit inventory CSV     |
 | `init_sftp_integration.py`                    | Inspect SFTP servers and scaffold new integrations  |
