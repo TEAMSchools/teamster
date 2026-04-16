@@ -504,9 +504,108 @@ def build_adp_yaml_index() -> dict[str, dict[str, set[str]]]:
     return index
 
 
+def build_adp_mapping(
+    pages: list[str],
+    yaml_index: dict[str, dict[str, set[str]]],
+) -> dict:
+    """Build the ADP PDF-to-YAML mapping.
+
+    Args:
+        pages: List of text strings, one per PDF page.
+        yaml_index: Model name -> {"columns": set, "skip_columns": set}.
+
+    Returns:
+        Mapping dict with entries, unmatched lists, and stats.
+    """
+    # Parse all entries from all pages
+    all_entries: list[dict[str, str]] = []
+    for page_text in pages:
+        all_entries.extend(parse_adp_entries(page_text))
+
+    # Build a flat lookup of all YAML columns across all models
+    all_yaml_columns: dict[str, tuple[str, set[str]]] = {}
+    for model_name, model_info in yaml_index.items():
+        for col in model_info["columns"]:
+            all_yaml_columns[col] = (model_name, model_info["columns"])
+
+    # Build skip set (ARRAY<STRUCT> columns)
+    skip_columns: set[str] = set()
+    for model_info in yaml_index.values():
+        skip_columns.update(model_info["skip_columns"])
+
+    matched_entries: list[dict] = []
+    unmatched_pdf: list[dict[str, str]] = []
+    matched_yaml_cols: set[str] = set()
+
+    for entry in all_entries:
+        column_name = adp_path_to_column(entry["schema_path"])
+        description = entry.get("description", "")
+
+        if column_name in skip_columns:
+            continue
+
+        if column_name in all_yaml_columns:
+            model_name = all_yaml_columns[column_name][0]
+            matched_entries.append(
+                {
+                    "source_path": entry["schema_path"],
+                    "source_field": entry["field_name"],
+                    "model": model_name,
+                    "column": column_name,
+                    "description": description,
+                    "contains_pii": classify_pii(column_name, description),
+                }
+            )
+            matched_yaml_cols.add(column_name)
+        else:
+            # Check if this is a parent path (any YAML col starts with it + __)
+            is_parent = any(
+                yaml_col.startswith(column_name + "__") for yaml_col in all_yaml_columns
+            )
+            if not is_parent:
+                unmatched_pdf.append(
+                    {
+                        "path": entry["schema_path"],
+                        "field_name": entry["field_name"],
+                    }
+                )
+
+    # Find unmatched YAML columns
+    all_scalar_cols: set[str] = set()
+    for model_info in yaml_index.values():
+        all_scalar_cols.update(model_info["columns"])
+
+    unmatched_yaml: list[dict[str, str]] = []
+    for col in sorted(all_scalar_cols - matched_yaml_cols):
+        for model_name, model_info in yaml_index.items():
+            if col in model_info["columns"]:
+                unmatched_yaml.append({"model": model_name, "column": col})
+                break
+
+    return {
+        "source": "adp",
+        "extracted_at": datetime.now(timezone.utc).isoformat(),
+        "stats": {
+            "pdf_entries": len(all_entries),
+            "yaml_columns": len(all_scalar_cols),
+            "matched": len(matched_entries),
+            "unmatched_pdf": len(unmatched_pdf),
+            "unmatched_yaml": len(unmatched_yaml),
+        },
+        "entries": matched_entries,
+        "unmatched_pdf": unmatched_pdf,
+        "unmatched_yaml": unmatched_yaml,
+    }
+
+
 def _extract_adp(pdf_path: str) -> dict:
     """Extract ADP data dictionary from PDF."""
-    raise NotImplementedError("ADP extraction not yet implemented")
+    from pypdf import PdfReader
+
+    reader = PdfReader(pdf_path)
+    pages = [page.extract_text() or "" for page in reader.pages]
+    yaml_index = build_adp_yaml_index()
+    return build_adp_mapping(pages, yaml_index)
 
 
 def _extract_powerschool(pdf_path: str) -> dict:
@@ -559,7 +658,10 @@ def main() -> None:
     if result["unmatched_pdf"][:10]:
         print("\nTop unmatched PDF entries:")
         for entry in result["unmatched_pdf"][:10]:
-            print(f"  {entry['table']}.{entry['column']}")
+            if "table" in entry:
+                print(f"  {entry['table']}.{entry['column']}")
+            else:
+                print(f"  {entry['path']} ({entry['field_name']})")
     if result["unmatched_yaml"][:10]:
         print("\nTop unmatched YAML columns:")
         for entry in result["unmatched_yaml"][:10]:

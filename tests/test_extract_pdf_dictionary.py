@@ -592,3 +592,55 @@ class TestBuildAdpYamlIndex:
         # ARRAY<STRUCT<...>> columns should be in skip set
         assert "work_assignments" in workers["skip_columns"]
         assert "photos" in workers["skip_columns"]
+
+
+class TestBuildAdpMapping:
+    """Test the ADP PDF-to-JSON mapping builder."""
+
+    def test_mapping_structure(self) -> None:
+        module = _load_script()
+        pages = [ADP_FIXTURE_PAGE, ADP_FIXTURE_PAGE_2]
+        yaml_index = {
+            "stg_adp_workforce_now__workers": {
+                "columns": {
+                    "person__birth_date",
+                    "person__race_code__code_value",
+                    "person__gender_code__code_value",
+                    "person__legal_name__given_name",
+                    "person__legal_name__family_name_1",
+                    "worker_dates__original_hire_date",
+                    "worker_dates__termination_date",
+                    "worker_id__id_value",
+                },
+                "skip_columns": {"work_assignments", "photos"},
+            },
+        }
+        result = module.build_adp_mapping(pages, yaml_index)
+
+        assert result["source"] == "adp"
+        assert "entries" in result
+        assert "stats" in result
+        assert len(result["entries"]) > 0
+
+    def test_pii_in_adp_mapping(self) -> None:
+        module = _load_script()
+        pages = [ADP_FIXTURE_PAGE]
+        yaml_index = {
+            "stg_adp_workforce_now__workers": {
+                "columns": {
+                    "person__birth_date",
+                    "person__legal_address__postal_code",
+                },
+                "skip_columns": set(),
+            },
+        }
+        result = module.build_adp_mapping(pages, yaml_index)
+        entries_by_col = {e["column"]: e for e in result["entries"]}
+
+        if "person__birth_date" in entries_by_col:
+            assert entries_by_col["person__birth_date"]["contains_pii"] is True
+        if "person__legal_address__postal_code" in entries_by_col:
+            assert (
+                entries_by_col["person__legal_address__postal_code"]["contains_pii"]
+                is True
+            )
