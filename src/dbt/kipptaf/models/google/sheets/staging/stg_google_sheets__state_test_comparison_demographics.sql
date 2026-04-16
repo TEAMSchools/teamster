@@ -10,6 +10,7 @@ with
             aligned_test_code,
             region,
             comparison_entity,
+            remove_row,
 
             if(
                 comparison_demographic_group = 'Grade',
@@ -48,6 +49,7 @@ with
             aligned_test_code,
             region,
             comparison_entity,
+            remove_row,
 
             'Total' as comparison_demographic_group,
             'All Students' as comparison_demographic_subgroup,
@@ -71,7 +73,8 @@ with
             discipline,
             aligned_test_code,
             region,
-            comparison_entity
+            comparison_entity,
+            remove_row
     )
 
 select
