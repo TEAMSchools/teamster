@@ -53,6 +53,7 @@ with
             e.school,
             e.team,
 
+            sr.formatted_name as teacher_name,
             sr.reports_to_formatted_name as manager,
             mgr.job_title as manager_job_title,
         from enrollments as e
@@ -108,6 +109,7 @@ with
             asbw.team,
             asbw.week_start_monday,
 
+            tm.teacher_name,
             tm.manager,
             tm.manager_job_title,
 
@@ -120,6 +122,7 @@ with
             asbw.school,
             asbw.team,
             asbw.week_start_monday,
+            tm.teacher_name,
             tm.manager,
             tm.manager_job_title
     ),
@@ -144,6 +147,7 @@ with
             asbw.team,
             asbw.week_start_monday,
 
+            tm.teacher_name,
             tm.manager,
             tm.manager_job_title,
 
@@ -157,6 +161,7 @@ with
             asbw.school,
             asbw.team,
             asbw.week_start_monday,
+            tm.teacher_name,
             tm.manager,
             tm.manager_job_title
     ),
@@ -211,6 +216,7 @@ with
             a.discipline,
             a.module_code,
 
+            tm.teacher_name,
             tm.manager,
             tm.manager_job_title,
 
@@ -228,6 +234,7 @@ with
             a.week_start_monday,
             a.discipline,
             a.module_code,
+            tm.teacher_name,
             tm.manager,
             tm.manager_job_title
     ),
@@ -283,6 +290,7 @@ with
             ew.team,
             ew.week_start_monday,
 
+            tm.teacher_name,
             tm.manager,
             tm.manager_job_title,
 
@@ -305,7 +313,12 @@ with
             and ew.week_start_monday = dl.week_start_monday
         left join team_manager as tm on ew.school = tm.school and ew.team = tm.team
         group by
-            ew.region, ew.school, ew.team, ew.week_start_monday, tm.manager,
+            ew.region,
+            ew.school,
+            ew.team,
+            ew.week_start_monday,
+            tm.teacher_name,
+            tm.manager,
             tm.manager_job_title
     ),
 
@@ -349,6 +362,7 @@ with
             ew.week_start_monday,
             dl.category,
 
+            tm.teacher_name,
             tm.manager,
             tm.manager_job_title,
 
@@ -368,6 +382,7 @@ with
             ew.team,
             ew.week_start_monday,
             dl.category,
+            tm.teacher_name,
             tm.manager,
             tm.manager_job_title
     ),
@@ -441,6 +456,7 @@ with
             enr._dbt_source_relation,
             enr.cc_sectionid,
 
+            sr.formatted_name as teacher_name,
             sr.reports_to_formatted_name as manager,
             mgr.job_title as manager_job_title,
         from section_enrollments_dedup as enr
@@ -473,6 +489,7 @@ with
             enr.sections_section_number,
             enr.courses_course_name,
             fg.storecode,
+            stm.teacher_name,
             stm.manager,
             stm.manager_job_title,
 
@@ -505,6 +522,7 @@ with
             enr.sections_section_number,
             enr.courses_course_name,
             fg.storecode,
+            stm.teacher_name,
             stm.manager,
             stm.manager_job_title
     ),
@@ -521,6 +539,7 @@ with
             e.team,
             g.week_start_monday,
 
+            tm.teacher_name,
             tm.manager,
             tm.manager_job_title,
 
@@ -539,7 +558,12 @@ with
                 interval -9 week
             )
         group by
-            e.region, e.school, e.team, g.week_start_monday, tm.manager,
+            e.region,
+            e.school,
+            e.team,
+            g.week_start_monday,
+            tm.teacher_name,
+            tm.manager,
             tm.manager_job_title
     ),
 
@@ -581,6 +605,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    teacher_name,
     manager,
     manager_job_title,
     metric_value as value,
@@ -600,6 +625,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as teacher_name,
     cast(null as string) as manager,
     cast(null as string) as manager_job_title,
     metric_value as value,
@@ -619,6 +645,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    teacher_name,
     manager,
     manager_job_title,
     metric_value as value,
@@ -638,6 +665,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as teacher_name,
     cast(null as string) as manager,
     cast(null as string) as manager_job_title,
     metric_value as value,
@@ -657,6 +685,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    teacher_name,
     manager,
     manager_job_title,
     metric_value as value,
@@ -676,6 +705,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as teacher_name,
     cast(null as string) as manager,
     cast(null as string) as manager_job_title,
     metric_value as value,
@@ -695,6 +725,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    teacher_name,
     manager,
     manager_job_title,
     cast(referral_all as float64) as value,
@@ -714,6 +745,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    teacher_name,
     manager,
     manager_job_title,
     cast(referral_high as float64) as value,
@@ -733,6 +765,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    teacher_name,
     manager,
     manager_job_title,
     cast(referral_middle as float64) as value,
@@ -752,6 +785,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    teacher_name,
     manager,
     manager_job_title,
     cast(referral_low as float64) as value,
@@ -771,6 +805,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as teacher_name,
     cast(null as string) as manager,
     cast(null as string) as manager_job_title,
     cast(referral_all as float64) as value,
@@ -790,6 +825,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as teacher_name,
     cast(null as string) as manager,
     cast(null as string) as manager_job_title,
     cast(referral_high as float64) as value,
@@ -809,6 +845,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as teacher_name,
     cast(null as string) as manager,
     cast(null as string) as manager_job_title,
     cast(referral_middle as float64) as value,
@@ -828,6 +865,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as teacher_name,
     cast(null as string) as manager,
     cast(null as string) as manager_job_title,
     cast(referral_low as float64) as value,
@@ -847,6 +885,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    teacher_name,
     manager,
     manager_job_title,
     cast(referral_count as float64) as value,
@@ -866,6 +905,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as teacher_name,
     cast(null as string) as manager,
     cast(null as string) as manager_job_title,
     cast(referral_count as float64) as value,
@@ -885,6 +925,7 @@ select
     school,
     'Section' as grain_type,
     sections_section_number as grain,
+    teacher_name,
     manager,
     manager_job_title,
     safe_divide(n_failing, n_students) as value,
@@ -904,6 +945,7 @@ select
     school,
     'Homeroom' as grain_type,
     team as grain,
+    teacher_name,
     manager,
     manager_job_title,
     metric_value as value,
@@ -923,6 +965,7 @@ select
     school,
     'Grade Level' as grain_type,
     cast(grade_level as string) as grain,
+    cast(null as string) as teacher_name,
     cast(null as string) as manager,
     cast(null as string) as manager_job_title,
     metric_value as value,

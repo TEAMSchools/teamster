@@ -21,6 +21,7 @@ models:
               - school
               - grain_type
               - grain
+              - teacher_name
               - manager
               - manager_job_title
     columns:
@@ -78,6 +79,12 @@ models:
           Actual identifier for the grain. Homeroom advisory section number
           (e.g., 3FSU), numeric grade level as string (e.g., 8), or PowerSchool
           section number for academic courses.
+        data_type: string
+      - name: teacher_name
+        description: >
+          Formatted name of the lead teacher (homeroom advisor or section
+          teacher). Populated for Homeroom and Section grain types. Null for
+          Grade Level aggregations.
         data_type: string
       - name: manager
         description: >
