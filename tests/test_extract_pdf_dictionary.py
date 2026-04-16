@@ -27,3 +27,83 @@ def _load_script() -> ModuleType:
 def test_script_module_loads() -> None:
     module = _load_script()
     assert callable(module.main)
+
+
+class TestPascalToSnake:
+    def test_simple(self) -> None:
+        module = _load_script()
+        assert module.pascal_to_snake("StudentNumber") == "student_number"
+
+    def test_all_caps_short(self) -> None:
+        module = _load_script()
+        assert module.pascal_to_snake("ID") == "id"
+
+    def test_mixed_caps_and_pascal(self) -> None:
+        module = _load_script()
+        assert module.pascal_to_snake("DCid") == "dcid"
+
+    def test_consecutive_caps(self) -> None:
+        module = _load_script()
+        assert module.pascal_to_snake("SSN") == "ssn"
+
+    def test_single_word(self) -> None:
+        module = _load_script()
+        assert module.pascal_to_snake("Gender") == "gender"
+
+    def test_already_lowercase(self) -> None:
+        module = _load_script()
+        assert module.pascal_to_snake("schoolid") == "schoolid"
+
+    def test_underscore_preserved(self) -> None:
+        module = _load_script()
+        assert module.pascal_to_snake("Alert_Discipline") == "alert_discipline"
+
+    def test_trailing_caps(self) -> None:
+        module = _load_script()
+        assert module.pascal_to_snake("StudentID") == "student_id"
+
+    def test_complex_mixed(self) -> None:
+        module = _load_script()
+        assert module.pascal_to_snake("GPAPoints") == "gpa_points"
+
+    def test_s_nj_prefix(self) -> None:
+        """Extension table names like S_NJ_STU_X stay lowercase."""
+        module = _load_script()
+        assert module.pascal_to_snake("s_nj_stu_x") == "s_nj_stu_x"
+
+
+class TestCamelToSnake:
+    def test_simple(self) -> None:
+        module = _load_script()
+        assert module.camel_to_snake("birthDate") == "birth_date"
+
+    def test_single_word(self) -> None:
+        module = _load_script()
+        assert module.camel_to_snake("person") == "person"
+
+    def test_multi_segment(self) -> None:
+        module = _load_script()
+        assert module.camel_to_snake("genderCode") == "gender_code"
+
+    def test_consecutive_upper(self) -> None:
+        module = _load_script()
+        assert module.camel_to_snake("emailURI") == "email_uri"
+
+    def test_already_snake(self) -> None:
+        module = _load_script()
+        assert module.camel_to_snake("birth_date") == "birth_date"
+
+    def test_code_value(self) -> None:
+        module = _load_script()
+        assert module.camel_to_snake("codeValue") == "code_value"
+
+    def test_long_camel(self) -> None:
+        module = _load_script()
+        assert (
+            module.camel_to_snake("countrySubdivisionLevel1")
+            == "country_subdivision_level_1"
+        )
+
+    def test_formatted_name(self) -> None:
+        module = _load_script()
+        assert module.camel_to_snake("formattedName") == "formatted_name"
