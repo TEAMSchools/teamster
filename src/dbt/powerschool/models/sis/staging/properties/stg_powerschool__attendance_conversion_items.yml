@@ -30,6 +30,7 @@ models:
           which record to use to return the Attendance_Value."
       - name: dcid
         data_type: int64
+        description: Unique identifier for this table record. Indexed.
       - name: attendance_conversion_id
         data_type: int64
         description:

@@ -242,12 +242,18 @@ models:
         description: Student custom field.
       - name: whocreated
         data_type: string
+        description: User login that created the record.
       - name: whencreated
         data_type: timestamp
+        description:
+          Date and time the record was created. Defaults to system date.
       - name: whomodified
         data_type: string
+        description: User login that last modified the record.
       - name: whenmodified
         data_type: timestamp
+        description:
+          Date and time the record was last modified. Defaults to system date.
       - name: autosend_attendancedetail
         data_type: string
         description:
@@ -470,6 +476,8 @@ models:
           - unique:
               config:
                 severity: error
+        description:
+          DCID (unique identifier) of the associated Student record. Indexed.
       - name: lep_status
         data_type: boolean
         description: Student Limited English Proficiency status.

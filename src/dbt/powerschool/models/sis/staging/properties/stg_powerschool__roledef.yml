@@ -17,6 +17,7 @@ models:
         description: User configurable description.
       - name: whocreated
         data_type: string
+        description: User login that created the record.
       - name: whencreated
         data_type: timestamp
         description:

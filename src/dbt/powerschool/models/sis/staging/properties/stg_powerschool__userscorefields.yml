@@ -11,6 +11,8 @@ models:
           - unique:
               config:
                 severity: error
+        description:
+          DCID (unique identifier) of the associated User record. Indexed.
       - name: dob
         data_type: date
         description: Staff date of birth.
