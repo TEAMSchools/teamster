@@ -17,7 +17,22 @@ Design reference:
 
 from __future__ import annotations
 
+import json
+import sys
+from pathlib import Path
+from typing import TextIO
+
 import yaml
+
+# All directories that may contain staging YAML files
+STAGING_YAML_DIRS: tuple[Path, ...] = (
+    Path("src/dbt/powerschool/models/sis/staging/properties"),
+    Path("src/dbt/kipptaf/models/powerschool/staging/properties"),
+    Path("src/dbt/kipptaf/models/adp/workforce_now/api/staging/properties"),
+    Path("src/dbt/kipptaf/models/adp/workforce_now/sftp/staging/properties"),
+    Path("src/dbt/kipptaf/models/adp/workforce_manager/staging/properties"),
+    Path("src/dbt/kipptaf/models/adp/payroll/staging/properties"),
+)
 
 
 def enrich_yaml_data(
@@ -77,8 +92,115 @@ def enrich_yaml_data(
     return doc
 
 
+def find_yaml_file(model_name: str) -> Path | None:
+    """Find the YAML properties file for a given staging model name.
+
+    Searches all known staging YAML directories for a file named
+    <model_name>.yml.
+    """
+    for directory in STAGING_YAML_DIRS:
+        if not directory.exists():
+            continue
+        candidate = directory / f"{model_name}.yml"
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def write_yaml(doc: dict, fh: TextIO) -> None:
+    """Write YAML document preserving key order."""
+    yaml.dump(
+        doc,
+        fh,
+        default_flow_style=False,
+        sort_keys=False,
+        allow_unicode=True,
+        width=88,
+    )
+
+
 def main() -> None:
-    raise NotImplementedError
+    if len(sys.argv) < 2:
+        print(
+            "Usage: uv run scripts/enrich_staging_descriptions.py "
+            "<json_path> [<json_path> ...]",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # Load all mapping files
+    all_entries: list[dict] = []
+    for json_path in sys.argv[1:]:
+        with open(json_path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        all_entries.extend(data.get("entries", []))
+        print(f"Loaded {len(data.get('entries', []))} entries from {json_path}")
+
+    # Also load table descriptions if present
+    table_descriptions: dict[str, str] = {}
+    for json_path in sys.argv[1:]:
+        with open(json_path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        table_descriptions.update(data.get("table_descriptions", {}))
+
+    # Group entries by model
+    entries_by_model: dict[str, list[dict]] = {}
+    for entry in all_entries:
+        model = entry["model"]
+        entries_by_model.setdefault(model, []).append(entry)
+
+    # Process each model
+    total_enriched = 0
+    total_skipped = 0
+    total_columns = 0
+    files_modified = 0
+
+    for model_name in sorted(entries_by_model):
+        yaml_path = find_yaml_file(model_name)
+        if yaml_path is None:
+            print(f"  SKIP {model_name}: YAML file not found")
+            continue
+
+        with yaml_path.open(encoding="utf-8") as fh:
+            doc = yaml.safe_load(fh)
+
+        if not doc:
+            print(f"  SKIP {model_name}: empty YAML")
+            continue
+
+        # Enrich model-level description from table_descriptions
+        if model_name in table_descriptions:
+            for model in doc.get("models", []) or []:
+                if model["name"] == model_name:
+                    existing = model.get("description", "")
+                    if not existing or not str(existing).strip():
+                        model["description"] = table_descriptions[model_name]
+
+        result, stats = enrich_yaml_data(
+            doc, entries_by_model[model_name], return_stats=True
+        )
+
+        if stats["enriched"] > 0:
+            with yaml_path.open("w", encoding="utf-8") as fh:
+                write_yaml(result, fh)
+            files_modified += 1
+
+        total_enriched += stats["enriched"]
+        total_skipped += stats["skipped"]
+        total_columns += stats["total"]
+
+        print(
+            f"  {model_name}: "
+            f"{stats['enriched']} enriched, "
+            f"{stats['skipped']} skipped (existing), "
+            f"{stats['total']} total"
+        )
+
+    print("\nSummary:")
+    print(f"  Files modified: {files_modified}")
+    print(f"  Columns enriched: {total_enriched}")
+    print(f"  Columns skipped (existing desc): {total_skipped}")
+    print(f"  Total columns processed: {total_columns}")
 
 
 if __name__ == "__main__":

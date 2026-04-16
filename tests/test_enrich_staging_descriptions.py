@@ -8,6 +8,7 @@ keeping the import pattern local to this test file.
 from __future__ import annotations
 
 import importlib.util
+import tempfile
 from pathlib import Path
 from types import ModuleType
 
@@ -158,3 +159,69 @@ class TestEnrichYamlData:
         by_name = {c["name"]: c for c in columns}
         assert "description" not in by_name["first_name"]
         assert "config" not in by_name["first_name"]
+
+
+class TestFindYamlFile:
+    """Test finding the YAML file for a given model name."""
+
+    def test_finds_powerschool_students(self) -> None:
+        module = _load_script()
+        path = module.find_yaml_file("stg_powerschool__students")
+        assert path is not None
+        assert path.name == "stg_powerschool__students.yml"
+        assert path.exists()
+
+    def test_finds_adp_workers(self) -> None:
+        module = _load_script()
+        path = module.find_yaml_file("stg_adp_workforce_now__workers")
+        assert path is not None
+        assert path.name == "stg_adp_workforce_now__workers.yml"
+        assert path.exists()
+
+    def test_returns_none_for_nonexistent(self) -> None:
+        module = _load_script()
+        path = module.find_yaml_file("stg_nonexistent__model")
+        assert path is None
+
+
+class TestWriteYaml:
+    """Test YAML write output format."""
+
+    def test_write_preserves_key_order(self) -> None:
+        module = _load_script()
+        doc = yaml.safe_load(YAML_FIXTURE)
+        result = module.enrich_yaml_data(doc, MAPPING_ENTRIES)
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as fh:
+            module.write_yaml(result, fh)
+            tmp_path = Path(fh.name)
+
+        try:
+            content = tmp_path.read_text(encoding="utf-8")
+            # models: should appear before columns
+            assert content.index("models:") < content.index("columns:")
+            # name: should appear before data_type:
+            assert content.index("- name:") < content.index("data_type:")
+        finally:
+            tmp_path.unlink()
+
+    def test_write_roundtrip(self) -> None:
+        module = _load_script()
+        doc = yaml.safe_load(YAML_FIXTURE)
+        result = module.enrich_yaml_data(doc, MAPPING_ENTRIES)
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as fh:
+            module.write_yaml(result, fh)
+            tmp_path = Path(fh.name)
+
+        try:
+            with tmp_path.open(encoding="utf-8") as fh:
+                reloaded = yaml.safe_load(fh)
+            columns = reloaded["models"][0]["columns"]
+            by_name = {c["name"]: c for c in columns}
+            assert by_name["first_name"]["description"] == (
+                "The student's legal first name."
+            )
+            assert by_name["ssn"]["config"]["meta"]["contains_pii"] is True
+        finally:
+            tmp_path.unlink()
