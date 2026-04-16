@@ -119,6 +119,8 @@ models:
           - unique:
               config:
                 severity: error
+        description:
+          DCID (unique identifier) of the associated Student record. Indexed.
       - name: excludefromedfi
         data_type: int64
       - name: repeatgradeindicator
