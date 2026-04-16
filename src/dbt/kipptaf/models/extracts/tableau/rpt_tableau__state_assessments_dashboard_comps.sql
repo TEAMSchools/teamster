@@ -20,7 +20,7 @@ with
             if(region is null, regions, region) as region,
 
         from {{ ref("int_tableau__state_assessments_demographic_comps") }}
-        cross join unnest(['Camden', 'Newark']) as regions
+        cross join unnest(['Camden', 'Newark', 'Paterson']) as regions
         where
             district_state = 'KTAF NJ'
             and (region is null or region = regions)
