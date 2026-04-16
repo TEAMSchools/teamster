@@ -1,13 +1,29 @@
 models:
   - name: stg_adp_workforce_now__workers
+    description: >-
+      Worker records from the ADP Workforce Now Worker Management API
+      (/hr/v2/workers). A worker is a person who performs duties and
+      responsibilities for an organization, filling one or more positions
+      through work assignments as an employee or contractor. Includes personal
+      demographics, employment status, and organizational assignments. All
+      PII/SPI data (birth date, government IDs, pay rates) is masked by default
+      and requires API-Central project configuration to unmask. Code objects
+      have short_name and long_name sub-fields; ADP returns long_name instead of
+      short_name when the value exceeds 20 characters. legal_address is the
+      primary or secondary legal address; other_personal_addresses contains
+      non-legal addresses.
     columns:
       - name: associate_oid
         data_type: string
+        description: >-
+          Unique identifier across all of ADP. A worker with multiple positions
+          has one associate_oid, one worker_id, and one position_id per
+          position.
       - name: effective_date_start
         data_type: date
       - name: worker_id__id_value
         data_type: string
-        description: Associate ID
+        description: Worker ID, unique to a client's employee.
       - name: worker_id__scheme_code__code_value
         data_type: string
       - name: worker_id__scheme_code__long_name
@@ -16,13 +32,15 @@ models:
         data_type: string
       - name: worker_status__status_code__code_value
         data_type: string
-        description: Status
+        description: >-
+          Employment status code indicating whether the worker is currently
+          employed (A = Active). Based on primary work assignment.
       - name: worker_status__status_code__long_name
         data_type: string
-        description: Status
+        description: Employment status long name.
       - name: worker_status__status_code__short_name
         data_type: string
-        description: Status
+        description: Employment status short name.
       - name: language_code__code_value
         data_type: string
       - name: language_code__long_name
