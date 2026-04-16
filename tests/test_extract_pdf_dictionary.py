@@ -185,3 +185,69 @@ class TestClassifyPii:
             module.classify_pii("emerg_contact_1", "Emergency contact information.")
             is True
         )
+
+
+# Representative text blocks extracted from real PowerSchool PDF pages.
+# These are minimal fixtures -- not full pages.
+
+PS_FIXTURE_PAGE_WITH_HEADER = """\
+736
+This table maintains Student demographics and other School related information such as Lunch ID, Grade Level and scheduling data.
+Column Name InitialVersion Data Type Description
+Alert_Discipline 3.6.1 CLOB One of many various alerts in PowerSchool. This field stores the text tied to the alert.
+Alert_DisciplineExpires 3.6.1 Date An expiration date for the Discipline alert.
+StudentNumber 3.6.1 Number(10,0) The student's assigned number.
+Students, 167 (ver3.6.1)
+PowerSchool Private Information \u2013 Confidential
+"""
+
+PS_FIXTURE_PAGE_CONTINUATION = """\
+737
+SSN 3.6.1 Varchar2(12) Social security number. Masked by default.
+FedEthnicity 5.0.3 Number(10,0) Federal ethnicity code.
+Mailing_Street 3.6.1 Varchar2(70) Mailing street address.
+Students, 167 (ver3.6.1)
+PowerSchool Private Information \u2013 Confidential
+"""
+
+PS_FIXTURE_NEW_TABLE = """\
+800
+This table contains CC (Current Class) data.
+Column Name InitialVersion Data Type Description
+StudentID 3.6.1 Number(10,0) Links to students table.
+SectionID 3.6.1 Number(10,0) Links to sections table.
+DateEnrolled 3.6.1 Date Date enrolled into section.
+CC (ver3.6.1)
+"""
+
+PS_FIXTURE_TABLE_WITH_COUNT = """\
+50
+AssignmentSectionID 3.6.1 Number(10,0) Related assignment section.
+Points 3.6.1 Number(10,0) Points earned.
+AssignmentScore, 2 (ver3.6.1)
+PowerSchool Private Information \u2013 Confidential
+"""
+
+
+class TestPsTableNameExtractor:
+    """Test extracting the table name from a page's footer-style header."""
+
+    def test_extracts_table_with_count(self) -> None:
+        module = _load_script()
+        result = module.extract_ps_table_name(PS_FIXTURE_PAGE_WITH_HEADER)
+        assert result == "Students"
+
+    def test_extracts_table_without_count(self) -> None:
+        module = _load_script()
+        result = module.extract_ps_table_name(PS_FIXTURE_NEW_TABLE)
+        assert result == "CC"
+
+    def test_extracts_table_from_score_page(self) -> None:
+        module = _load_script()
+        result = module.extract_ps_table_name(PS_FIXTURE_TABLE_WITH_COUNT)
+        assert result == "AssignmentScore"
+
+    def test_returns_none_for_no_header(self) -> None:
+        module = _load_script()
+        result = module.extract_ps_table_name("Some random text\nwithout headers\n")
+        assert result is None

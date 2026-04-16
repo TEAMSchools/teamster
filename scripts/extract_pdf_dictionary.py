@@ -139,6 +139,28 @@ def classify_pii(column_name: str, description: str) -> bool:
     return False
 
 
+# Matches table name headers like:
+#   "Students, 167 (ver3.6.1)"
+#   "CC (ver3.6.1)"
+#   "AssignmentScore, 2 (ver3.6.1)"
+_PS_TABLE_HEADER_RE = re.compile(
+    r"^([A-Za-z_][A-Za-z0-9_]*)(?:,\s*\d+)?\s+\(ver\d+\.\d+(?:\.\d+)*\)\s*$",
+    re.MULTILINE,
+)
+
+
+def extract_ps_table_name(page_text: str) -> str | None:
+    """Extract the PowerSchool table name from a page's text.
+
+    Table name headers appear as footers: 'TableName, N (verX.Y.Z)' or
+    'TableName (verX.Y.Z)'. Returns the table name or None if not found.
+    """
+    match = _PS_TABLE_HEADER_RE.search(page_text)
+    if match:
+        return match.group(1)
+    return None
+
+
 def main() -> None:
     raise NotImplementedError
 
