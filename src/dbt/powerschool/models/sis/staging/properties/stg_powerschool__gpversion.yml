@@ -9,25 +9,99 @@ models:
           - unique:
               config:
                 severity: error
+        description: Unique identifier.
+        config:
+          meta:
+            contains_pii: false
       - name: gpamethod
         data_type: string
+        description:
+          If set, it specifies which GPA method is used to calculate the
+          student's earned GPA for coursecredits applied to this graduation
+          plan.
+        config:
+          meta:
+            contains_pii: false
       - name: minimumgrade
         data_type: string
+        description:
+          If set, the minimum letter grade is required to fulfill this
+          graduation plan.
+        config:
+          meta:
+            contains_pii: false
       - name: minimumgpa
         data_type: string
+        description:
+          If set, the minimum GPA for course credits is applied to this
+          graduation plan. Must be greater than0 if set.
+        config:
+          meta:
+            contains_pii: false
       - name: sourceid
         data_type: string
+        description:
+          Foreign key to Historic version which was migrated to create this
+          Advanced version. Null if theversion was created directly, not
+          migrated.
+        config:
+          meta:
+            contains_pii: false
       - name: useallcoursesforgpacalc
         data_type: string
+        description:
+          If set, indicates to use all courses that the student has credits in
+          for GPA. If zero, restricts GPAcalculation to courses named in the
+          Graduation Plan.
+        config:
+          meta:
+            contains_pii: false
       - name: gradplanid
         data_type: int64
+        description: Foreign key to GradPlan.ID.
+        config:
+          meta:
+            contains_pii: false
       - name: startyear
         data_type: int64
+        description:
+          The earliest Student.GPEntryYear (for Grad Contract) or
+          Student.Sched_YearOfGraduation (forPost-Secondary plans), which will
+          automatically get this version when assigned to the plan.
+        config:
+          meta:
+            contains_pii: false
       - name: endyear
         data_type: int64
+        description:
+          The latest Student.GPEntryYear (for Grad Contract) or
+          Student.Sched_YearOfGraduation (forPost-Secondary plans), which will
+          automatically get this version when assigned to the plan.
+        config:
+          meta:
+            contains_pii: false
       - name: minimumgradepercentage
         data_type: float64
+        description:
+          If set, the minimum percent grade is required to fulfill the
+          graduation plan. Valid value is between 0and 100.
+        config:
+          meta:
+            contains_pii: false
       - name: verifyminimumgradefirst
         data_type: int64
+        description:
+          If true, letter grades are verified before percent grades. Else
+          percent grades are verified first.
+        config:
+          meta:
+            contains_pii: false
       - name: isadvancedplan
         data_type: int64
+        description:
+          Column holds Boolean value indicating if the plan version is Advanced
+          (value=1) orlegacy/deprecated (value=0). Required.
+        config:
+          meta:
+            contains_pii: false
+    description: A specific version of a GradPlan (range of years).

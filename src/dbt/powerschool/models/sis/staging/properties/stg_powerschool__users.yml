@@ -7,90 +7,306 @@ models:
           - unique:
               config:
                 severity: error
+        description: Unique identifier for this table. Indexed. Required.
+        config:
+          meta:
+            contains_pii: false
       - name: lastfirst
         data_type: string
+        description: Last, First, Mi. Indexed.
+        config:
+          meta:
+            contains_pii: true
       - name: first_name
         data_type: string
+        description: First name.
+        config:
+          meta:
+            contains_pii: true
       - name: middle_name
         data_type: string
+        description: Middle name.
+        config:
+          meta:
+            contains_pii: true
       - name: last_name
         data_type: string
+        description: Last name.
+        config:
+          meta:
+            contains_pii: true
       - name: title
         data_type: string
+        description:
+          Stores a title name for the teacher and is used for sorting purposes.
+        config:
+          meta:
+            contains_pii: false
       - name: homeroom
         data_type: string
+        description:
+          This string does appear on some pages but does not impact any
+          calculations.
+        config:
+          meta:
+            contains_pii: false
       - name: email_addr
         data_type: string
+        description:
+          Stores the teachers email address and is used for email notifications
+          to the teacher, such as studentenrollment information.
+        config:
+          meta:
+            contains_pii: true
       - name: password
         data_type: string
+        description: The PowerSchool login password.
+        config:
+          meta:
+            contains_pii: false
       - name: ipaddrrestrict
         data_type: string
+        description:
+          The list of IP addresses the user is allowed to log in from. If blank,
+          he or she can log in from any IPaddress.
+        config:
+          meta:
+            contains_pii: false
       - name: accessvalue
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: homepage
         data_type: string
+        description: The page that appears when logging in to PowerSchool.
+        config:
+          meta:
+            contains_pii: false
       - name: loginid
         data_type: string
+        description: The PowerSchool login name. Indexed.
+        config:
+          meta:
+            contains_pii: false
       - name: defaultstudscrn
         data_type: string
+        description: The student page the user wants to appear by default.
+        config:
+          meta:
+            contains_pii: false
       - name: teachernumber
         data_type: string
+        description: The number the district assigns to track the teacher.
+        config:
+          meta:
+            contains_pii: false
       - name: ssn
         data_type: string
+        description: This users Social Security number.
+        config:
+          meta:
+            contains_pii: true
       - name: home_phone
         data_type: string
+        description:
+          Changed name from Home_phone. Home phone number for the staff member.
+        config:
+          meta:
+            contains_pii: true
       - name: school_phone
         data_type: string
+        description:
+          Changed name from School_phone. Phone number at the school assigned to
+          this staff member. Notcurrently used by any application code.
+        config:
+          meta:
+            contains_pii: true
       - name: street
         data_type: string
+        description: Street element of the users address.
+        config:
+          meta:
+            contains_pii: true
       - name: city
         data_type: string
+        description: City element of the users address.
+        config:
+          meta:
+            contains_pii: true
       - name: state
         data_type: string
+        description: State element of the users address.
+        config:
+          meta:
+            contains_pii: false
       - name: zip
         data_type: string
+        description: Zip code element of the users address.
+        config:
+          meta:
+            contains_pii: true
       - name: periodsavail
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: powergradepw
         data_type: string
+        description:
+          No longer used by application. This field may still be referenced on
+          reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: canchangeschool
         data_type: string
+        description:
+          Semicolon delimited list of Schools.School_Number values the Admin can
+          switch to when logged intothe Admin portal.
+        config:
+          meta:
+            contains_pii: false
       - name: teacherloginpw
         data_type: string
+        description: The login password for PowerTeacher.
+        config:
+          meta:
+            contains_pii: false
       - name: nameasimported
         data_type: string
+        description: Used as a matching tool when importing teacher information.
+        config:
+          meta:
+            contains_pii: false
       - name: teacherloginid
         data_type: string
+        description: The login name for PowerTeacher.
+        config:
+          meta:
+            contains_pii: false
       - name: teacherloginip
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: wm_status
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: wm_statusdate
         data_type: date
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: wm_address
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: wm_password
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: wm_createdate
         data_type: date
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: wm_ta_flag
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: wm_ta_date
         data_type: date
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: wm_alias
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: ethnicity
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: preferredname
         data_type: string
+        description: Name the user prefers to use.
+        config:
+          meta:
+            contains_pii: false
       - name: lastmeal
         data_type: string
+        description: Stores the date of last lunch purchase.
+        config:
+          meta:
+            contains_pii: false
       - name: staffpers_guid
         data_type: string
+        description:
+          Globally unique identifier for this table for SIF compliancy. Indexed.
+        config:
+          meta:
+            contains_pii: false
       - name: sif_stateprid
         data_type: string
+        description:
+          Used by the PowerSchool SIF Agent that requires a state-level unique
+          identifier for teachers. To beused in the SIF StaffPersonal object.
+        config:
+          meta:
+            contains_pii: false
       - name: psguid
         data_type: string
+        description:
+          If used, a unique identifier for the row. Currently applicable to
+          multi-tenant, Schoolnet, and PearsonSuccessNet/Pearson SuccessNet
+          Plus.
+        config:
+          meta:
+            contains_pii: false
       - name: ip_address
         data_type: string
       - name: whomodifiedtype
@@ -99,53 +315,150 @@ models:
         data_type: timestamp
       - name: homeschoolid
         data_type: int64
+        description:
+          The teacher's home school. This ID is linked to the School_Number from
+          the School table. Indexed.
+        config:
+          meta:
+            contains_pii: false
       - name: photo
         data_type: int64
+        description: Set to 1 if a photo exists for this user.
+        config:
+          meta:
+            contains_pii: false
       - name: numlogins
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: allowloginstart
         data_type: int64
+        description:
+          Time-restricted login. This is the start of the time that teachers can
+          log in.
+        config:
+          meta:
+            contains_pii: false
       - name: allowloginend
         data_type: int64
+        description:
+          Time-restricted login. This is the end time that teachers can log in.
+        config:
+          meta:
+            contains_pii: false
       - name: psaccess
         data_type: int64
+        description:
+          "Indicates whether the user can log in to PowerSchool Admin. Valid
+          values: 0=No, 1=Yes."
+        config:
+          meta:
+            contains_pii: false
       - name: groupvalue
         data_type: int64
+        description:
+          The security group (from Gen table) this user belongs to in
+          PowerSchool. This determines which pagesthe user has access to.
+        config:
+          meta:
+            contains_pii: false
       - name: lunch_id
         data_type: float64
+        description: The PowerLunch number. Indexed.
+        config:
+          meta:
+            contains_pii: false
       - name: supportcontact
         data_type: int64
+        description:
+          Value of 1 indicates that this user is an authorized support contact.
+        config:
+          meta:
+            contains_pii: false
       - name: wm_tier
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: wm_createtime
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: wm_exclude
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            contains_pii: false
       - name: adminldapenabled
         data_type: int64
       - name: teacherldapenabled
         data_type: int64
       - name: maximum_load
         data_type: int64
+        description: Maximum student load permissible for this Teacher.
+        config:
+          meta:
+            contains_pii: false
       - name: gradebooktype
         data_type: int64
+        description:
+          "Indicates the type of gradebook in use by the teacher. Valid values:
+          0 = PowerGrade, 1 =PowerTeacher gradebook."
+        config:
+          meta:
+            contains_pii: false
       - name: fedethnicity
         data_type: int64
+        description:
+          'Numerical answer to the question "Is the staff member Hispanic or
+          Latino?" Valid values : -1 = Defaultvalue, user has not yet made a
+          selection, 0 = No, 1 = Yes, 2 = User-defined answer specified on
+          theFederal Ethnicity and Race Settings page.'
+        config:
+          meta:
+            contains_pii: false
       - name: fedracedecline
         data_type: int64
+        description:
+          "Valid values: 0 = Value assigned by default or one or more values
+          specified in the TeacherRace table,1 = Declined to specify race (no
+          rows should appear in the TeacherRace table)."
+        config:
+          meta:
+            contains_pii: false
       - name: ptaccess
         data_type: int64
+        description:
+          "Indicates whether the user can log in to PowerTeacher. Valid values:
+          0=No, 1=Yes."
+        config:
+          meta:
+            contains_pii: false
       - name: prefixcodesetid
         data_type: int64
+        description: Foreign key to codeset table of category prefix.
+        config:
+          meta:
+            contains_pii: false
       - name: whomodifiedid
         data_type: int64
-      # - name: executionid
-      #   data_type: string
-      # - name: whocreated
-      #   data_type: string
-      # - name: whencreated
-      #   data_type: timestamp
-      # - name: whomodified
-      #   data_type: string
-      # - name: whenmodified
-      #   data_type: timestamp
+    description:
+      "This table maintains teacher demographic information and their
+      preferences. Note: The Teachers table is no longer used and has been
+      renamed Teachers_ncf31. The SchoolStaff table and Users table have been
+      created in its place. Theinformation that appeared in the Teachers table
+      can now be viewed in the Teachers reporting view."
