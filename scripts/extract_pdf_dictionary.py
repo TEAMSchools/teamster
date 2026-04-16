@@ -359,23 +359,40 @@ def build_ps_mapping(
     unmatched_pdf: list[dict[str, str]] = []
     all_matched_yaml_columns: dict[str, set[str]] = {}
 
+    # Build alpha-only reverse lookup per model for fallback matching.
+    # Strips non-alpha chars so "CalcMetric1" matches "calcmetric".
+    _alpha_re = re.compile(r"[^a-z]")
+    yaml_alpha_index: dict[str, dict[str, list[str]]] = {}
+    for model_name, cols in yaml_index.items():
+        alpha_map: dict[str, list[str]] = {}
+        for col in cols:
+            norm = _alpha_re.sub("", col.lower())
+            alpha_map.setdefault(norm, []).append(col)
+        yaml_alpha_index[model_name] = alpha_map
+
     for table_name, col_entries in table_columns.items():
         model_name = ps_table_to_model_name(table_name)
         yaml_columns = yaml_index.get(model_name, set())
+        alpha_map = yaml_alpha_index.get(model_name, {})
 
         for entry in col_entries:
             pdf_col = entry["source_column"]
             snake_col = pascal_to_snake(pdf_col)
             lower_col = pdf_col.lower()
+            alpha_col = _alpha_re.sub("", pdf_col.lower())
             description = entry.get("description", "")
 
-            # Try snake_case first, then raw lowercase (PS staging YAMLs
-            # use lowercased DB column names without underscore insertion)
+            # Try snake_case first, then raw lowercase, then alpha-only
+            # normalization (catches trailing digits like "Config1" → "config")
             matched_col = None
             if snake_col in yaml_columns:
                 matched_col = snake_col
             elif lower_col in yaml_columns:
                 matched_col = lower_col
+            elif alpha_col in alpha_map:
+                candidates = alpha_map[alpha_col]
+                if len(candidates) == 1:
+                    matched_col = candidates[0]
 
             if matched_col is not None:
                 matched_entries.append(
