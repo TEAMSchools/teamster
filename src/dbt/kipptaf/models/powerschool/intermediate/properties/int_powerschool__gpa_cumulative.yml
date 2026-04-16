@@ -8,13 +8,20 @@ models:
       - name: studentid
         data_type: int64
         description:
-          "The internal number and ID of the associated Students record. Source:
-          PowerSchool stg_powerschool__attendance.studentid."
+          "The internal number and ID of the associated Students record."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance
+            source_column: studentid
       - name: schoolid
         data_type: int64
-        description:
-          "The School_Number of the associated Schools record. Source:
-          PowerSchool stg_powerschool__attendance.schoolid."
+        description: "The School_Number of the associated Schools record."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance
+            source_column: schoolid
       - name: earned_credits_cum
         data_type: float64
       - name: potential_credits_cum

@@ -7,40 +7,79 @@ models:
         data_type: string
       - name: plan_id
         data_type: int64
-        description:
-          "Unique identifier. Source: PowerSchool stg_powerschool__gpnode.id."
+        description: "Unique identifier."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gpnode
+            source_column: id
       - name: plan_name
         data_type: string
-        description:
-          "Name of this node. Source: PowerSchool stg_powerschool__gpnode.name."
+        description: "Name of this node."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gpnode
+            source_column: name
       - name: plan_credit_capacity
         data_type: numeric
         description:
           "The number of credits required at this node for it to be fully
-          satisfied. Source: PowerSchool stg_powerschool__gpnode.creditcapacity."
+          satisfied."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gpnode
+            source_column: creditcapacity
       - name: discipline_id
         data_type: int64
-        description:
-          "Unique identifier. Source: PowerSchool stg_powerschool__gpnode.id."
+        description: "Unique identifier."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gpnode
+            source_column: id
       - name: discipline_name
         data_type: string
-        description:
-          "Name of this node. Source: PowerSchool stg_powerschool__gpnode.name."
+        description: "Name of this node."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gpnode
+            source_column: name
       - name: discipline_credit_capacity
         data_type: numeric
         description:
           "The number of credits required at this node for it to be fully
-          satisfied. Source: PowerSchool stg_powerschool__gpnode.creditcapacity."
+          satisfied."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gpnode
+            source_column: creditcapacity
       - name: subject_id
         data_type: int64
-        description:
-          "Unique identifier. Source: PowerSchool stg_powerschool__gpnode.id."
+        description: "Unique identifier."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gpnode
+            source_column: id
       - name: subject_name
         data_type: string
-        description:
-          "Name of this node. Source: PowerSchool stg_powerschool__gpnode.name."
+        description: "Name of this node."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gpnode
+            source_column: name
       - name: subject_credit_capacity
         data_type: numeric
         description:
           "The number of credits required at this node for it to be fully
-          satisfied. Source: PowerSchool stg_powerschool__gpnode.creditcapacity."
+          satisfied."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gpnode
+            source_column: creditcapacity

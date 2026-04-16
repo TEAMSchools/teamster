@@ -8,26 +8,41 @@ models:
       - name: studentid
         data_type: int64
         description:
-          "The internal number and ID of the associated Students record. Source:
-          PowerSchool stg_powerschool__attendance.studentid."
+          "The internal number and ID of the associated Students record."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance
+            source_column: studentid
       - name: entrydate
         data_type: date
         description:
           "The school enrollment entry date from the student table for EOY it
-          the next schools beginning date.Indexed. Source: PowerSchool
-          stg_powerschool__reenrollments.entrydate."
+          the next schools beginning date.Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: entrydate
       - name: exitdate
         data_type: date
         description:
           "The school enrollment exit date from the student table. If EOY it's
           the schools next end-of-year dateor effective date for other
-          re-enrollment purposes. Indexed. Source: PowerSchool
-          stg_powerschool__reenrollments.exitdate."
+          re-enrollment purposes. Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: exitdate
       - name: entrycode
         data_type: string
-        description:
-          "The Enrollment code from the student table. Source: PowerSchool
-          stg_powerschool__reenrollments.entrycode."
+        description: "The Enrollment code from the student table."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: entrycode
       - name: exitcode_prev
         data_type: string
       - name: rn_entry

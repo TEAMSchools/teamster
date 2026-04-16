@@ -16,21 +16,25 @@ models:
         data_type: int64
       - name: student_number
         data_type: int64
-        description:
-          "District-assigned student identification number. Source: PowerSchool
-          stg_powerschool__student_email.student_number."
+        description: "District-assigned student identification number."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
       - name: state_studentnumber
         data_type: string
       - name: salesforce_id
         data_type: string
       - name: grade_level
         data_type: int64
-        description:
-          "Grade level of the student taking this test. Source: PowerSchool
-          stg_powerschool__studenttest.grade_level."
+        description: "Grade level of the student taking this test."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studenttest
+            source_column: grade_level
       - name: cohort
         data_type: int64
       - name: discipline
@@ -110,7 +114,11 @@ models:
         data_type: string
         description:
           "The type of test being administered. 1 = National, 2 = State, 3 =
-          Local, 4 =District, 5 = School, 6 = Other, 7 = Fitness (as of 20.11.0)
-          Source: PowerSchool stg_powerschool__test.test_type."
+          Local, 4 =District, 5 = School, 6 = Other, 7 = Fitness (as of 20.11.0)"
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__test
+            source_column: test_type
       - name: rn_discipline_distict
         data_type: int64

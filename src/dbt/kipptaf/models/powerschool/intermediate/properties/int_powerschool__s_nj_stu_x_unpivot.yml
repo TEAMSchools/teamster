@@ -8,8 +8,12 @@ models:
       - name: studentsdcid
         data_type: int64
         description:
-          "DCID (unique identifier) of the associated Student record. Indexed.
-          Source: PowerSchool stg_powerschool__s_nj_stu_x.studentsdcid."
+          "DCID (unique identifier) of the associated Student record. Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__s_nj_stu_x
+            source_column: studentsdcid
       - name: name_column
         data_type: string
       - name: values_column

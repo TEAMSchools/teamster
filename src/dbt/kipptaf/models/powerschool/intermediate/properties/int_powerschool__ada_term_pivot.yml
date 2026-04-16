@@ -17,8 +17,12 @@ models:
       - name: studentid
         data_type: int64
         description:
-          "The internal number and ID of the associated Students record. Source:
-          PowerSchool stg_powerschool__attendance.studentid."
+          "The internal number and ID of the associated Students record."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance
+            source_column: studentid
       - name: academic_year
         data_type: int64
       - name: ada_term_q1

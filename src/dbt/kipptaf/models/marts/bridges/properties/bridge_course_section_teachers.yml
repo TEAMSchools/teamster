@@ -44,9 +44,13 @@ models:
         data_type: string
         description: >-
           User configurable name uniquely identifying the role to the user
-          within a Role Module Required. Source: PowerSchool
-          stg_powerschool__roledef.name.
+          within a Role Module Required.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__roledef
+            source_column: name
       - name: effective_date_start
         data_type: date
         description: >-

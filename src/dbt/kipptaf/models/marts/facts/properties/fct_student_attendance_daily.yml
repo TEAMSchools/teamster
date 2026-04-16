@@ -41,12 +41,14 @@ models:
       - name: student_number
         data_type: int64
         description: >-
-          District-assigned student identification number. Source: PowerSchool
-          stg_powerschool__student_email.student_number.
+          District-assigned student identification number.
 
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
       - name: academic_year
         data_type: int64
         description: >-

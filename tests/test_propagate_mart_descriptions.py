@@ -178,9 +178,7 @@ def test_enrich_writes_description_where_empty() -> None:
         _sample_staging_dict(),
     )
     col = doc["models"][0]["columns"][0]  # dob
-    assert "Date of Birth." in col["description"]
-    assert "PowerSchool" in col["description"]
-    assert "stg_powerschool__students.dob" in col["description"]
+    assert col["description"] == "Date of Birth."
 
 
 def test_enrich_overwrites_existing_description() -> None:
@@ -193,8 +191,23 @@ def test_enrich_overwrites_existing_description() -> None:
         _sample_staging_dict(),
     )
     col = doc["models"][0]["columns"][1]  # lastfirst — had "Existing description."
-    assert "Last, First, Mi." in col["description"]
-    assert "PowerSchool" in col["description"]
+    assert col["description"] == "Last, First, Mi. Indexed."
+
+
+def test_enrich_sets_structured_provenance() -> None:
+    module = _load_script()
+    doc = _sample_yaml_doc()
+    module._enrich_yaml_descriptions(
+        doc,
+        "dim_sample",
+        _sample_source_mapping(),
+        _sample_staging_dict(),
+    )
+    col = doc["models"][0]["columns"][0]  # dob
+    meta = col["config"]["meta"]
+    assert meta["source_system"] == "PowerSchool"
+    assert meta["source_model"] == "stg_powerschool__students"
+    assert meta["source_column"] == "dob"
 
 
 def test_enrich_propagates_pii_flag() -> None:
@@ -220,4 +233,7 @@ def test_enrich_no_pii_flag_when_false() -> None:
         _sample_staging_dict(),
     )
     col = doc["models"][0]["columns"][2]  # student_number
-    assert "contains_pii" not in col.get("config", {}).get("meta", {})
+    meta = col["config"]["meta"]
+    # Provenance is set but contains_pii is not
+    assert meta["source_system"] == "PowerSchool"
+    assert "contains_pii" not in meta

@@ -7,9 +7,12 @@ models:
         data_type: string
       - name: schoolid
         data_type: int64
-        description:
-          "The School_Number of the associated Schools record. Source:
-          PowerSchool stg_powerschool__attendance.schoolid."
+        description: "The School_Number of the associated Schools record."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance
+            source_column: schoolid
       - name: week_start_date
         data_type: date
       - name: week_end_date
@@ -21,8 +24,12 @@ models:
         description:
           "A number representing which year the term belongs to, such as 13 for
           2003-2004. The numberis equal to the ID of the year term divided by
-          100. Maintained in the Terms table. Source: PowerSchool
-          stg_powerschool__assignmentcategoryassoc.yearid."
+          100. Maintained in the Terms table."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentcategoryassoc
+            source_column: yearid
       - name: academic_year
         data_type: int64
       - name: quarter

@@ -10,30 +10,43 @@ models:
       - name: schoolid
         data_type: int64
         description:
-          "The School_Number of the associated Schools record. Indexed. Source:
-          PowerSchool stg_powerschool__storedgrades.schoolid."
+          "The School_Number of the associated Schools record. Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: schoolid
       - name: student_number
         data_type: int64
-        description:
-          "District-assigned student identification number. Source: PowerSchool
-          stg_powerschool__student_email.student_number."
+        description: "District-assigned student identification number."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
       - name: students_dcid
         data_type: int64
       - name: studentid
         data_type: int64
         description:
-          "The internal number and ID of the associated Students record. Source:
-          PowerSchool stg_powerschool__storedgrades.studentid."
+          "The internal number and ID of the associated Students record."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: studentid
       - name: grade_level
         data_type: int64
         description:
           "The grade level the student was in when the grade was stored. This
           simply copies the students'current grade level in to this field.
-          Indexed. Source: PowerSchool
-          stg_powerschool__storedgrades.grade_level."
+          Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: grade_level
       - name: grade_level_prev
         data_type: int64
       - name: dob

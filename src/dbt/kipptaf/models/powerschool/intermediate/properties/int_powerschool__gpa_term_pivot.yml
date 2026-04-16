@@ -15,15 +15,23 @@ models:
       - name: studentid
         data_type: int64
         description:
-          "The internal number and ID of the associated Students record. Source:
-          PowerSchool stg_powerschool__attendance.studentid."
+          "The internal number and ID of the associated Students record."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance
+            source_column: studentid
       - name: yearid
         data_type: int64
         description:
           "A number representing which year the term belongs to, such as 13 for
           2003-2004. The numberis equal to the ID of the year term divided by
-          100. Maintained in the Terms table. Source: PowerSchool
-          stg_powerschool__assignmentcategoryassoc.yearid."
+          100. Maintained in the Terms table."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentcategoryassoc
+            source_column: yearid
       - name: gpa_term_cur
         data_type: float64
       - name: gpa_term_q1

@@ -224,15 +224,18 @@ _PACKAGE_DISPLAY_NAMES: dict[str, str] = {
 }
 
 
-def _format_propagated_description(
-    staging_desc: str,
+def _set_provenance(
+    col: dict,
     package: str,
     staging_model: str,
     staging_column: str,
-) -> str:
-    """Format a propagated description with source attribution."""
+) -> None:
+    """Set structured provenance meta attributes on a column."""
     display = _PACKAGE_DISPLAY_NAMES.get(package, package)
-    return f"{staging_desc} Source: {display} {staging_model}.{staging_column}."
+    meta = col.setdefault("config", {}).setdefault("meta", {})
+    meta["source_system"] = display
+    meta["source_model"] = staging_model
+    meta["source_column"] = staging_column
 
 
 def _extract_table_name(relation: str) -> str:
@@ -384,16 +387,16 @@ def _enrich_yaml_descriptions(
             staging_model, staging_col, package = resolved
             staging = staging_dict[(staging_model, staging_col)]
 
-            col["description"] = _format_propagated_description(
-                staging["description"], package, staging_model, staging_col
-            )
+            # Carry staging description as-is
+            col["description"] = staging["description"]
             enriched += 1
+
+            # Structured provenance
+            _set_provenance(col, package, staging_model, staging_col)
 
             # Propagate PII flag
             if staging["contains_pii"]:
-                col.setdefault("config", {}).setdefault("meta", {})["contains_pii"] = (
-                    True
-                )
+                col["config"]["meta"]["contains_pii"] = True
 
     return enriched
 

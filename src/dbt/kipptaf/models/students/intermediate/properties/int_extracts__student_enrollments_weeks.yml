@@ -20,12 +20,13 @@ models:
         data_type: int64
       - name: student_number
         data_type: int64
-        description:
-          "District-assigned student identification number. Source: PowerSchool
-          stg_powerschool__student_email.student_number."
+        description: "District-assigned student identification number."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
       - name: student_name
         data_type: string
       - name: student_last_name

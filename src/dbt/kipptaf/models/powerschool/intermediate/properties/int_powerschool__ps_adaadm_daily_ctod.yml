@@ -6,33 +6,52 @@ models:
       - name: studentid
         data_type: int64
         description:
-          "The internal number and ID of the associated Students record. Source:
-          PowerSchool stg_powerschool__attendance.studentid."
+          "The internal number and ID of the associated Students record."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance
+            source_column: studentid
       - name: schoolid
         data_type: int64
-        description:
-          "The School_Number of the associated Schools record. Source:
-          PowerSchool stg_powerschool__attendance.schoolid."
+        description: "The School_Number of the associated Schools record."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance
+            source_column: schoolid
       - name: calendardate
         data_type: date
       - name: fteid
         data_type: int64
         description:
           "The internal number for the FTE with which this record is associated.
-          Indexed. Source: PowerSchool
-          stg_powerschool__attendance_conversion_items.fteid."
+          Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance_conversion_items
+            source_column: fteid
       - name: attendance_conversion_id
         data_type: int64
         description:
           "The internal number for the Attendance Conversion with which this
-          record is associated. Indexed. Source: PowerSchool
-          stg_powerschool__attendance_conversion_items.attendance_conversion_id."
+          record is associated. Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance_conversion_items
+            source_column: attendance_conversion_id
       - name: grade_level
         data_type: int64
         description:
           "The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. Source:
-          PowerSchool stg_powerschool__reenrollments.grade_level."
+          next grade level unless thestudent is being demoted."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: grade_level
       - name: ontrack
         data_type: int64
       - name: offtrack
@@ -44,8 +63,12 @@ models:
         description:
           "A number representing which year the term belongs to, such as 13 for
           2003-2004. The numberis equal to the ID of the year term divided by
-          100. Maintained in the Terms table. Source: PowerSchool
-          stg_powerschool__assignmentcategoryassoc.yearid."
+          100. Maintained in the Terms table."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentcategoryassoc
+            source_column: yearid
       - name: attendancevalue
         data_type: float64
       - name: potential_attendancevalue
@@ -56,5 +79,9 @@ models:
           "The amount of a student's membership this school claims. If a student
           attends more than one school eachone will only be able to claim a
           certain portion of the membership. The largest number for this will
-          usually be1 and fractions expressed as decimals. Like .5 or .25.
-          Source: PowerSchool stg_powerschool__calendar_day.membershipvalue."
+          usually be1 and fractions expressed as decimals. Like .5 or .25."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__calendar_day
+            source_column: membershipvalue

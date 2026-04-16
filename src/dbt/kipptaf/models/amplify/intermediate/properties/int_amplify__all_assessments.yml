@@ -5,8 +5,12 @@ models:
         data_type: int64
         description:
           "Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026'). Source: Amplify
-          stg_amplify__mclass__sftp__pm_student_summary_aimline.academic_year."
+          (e.g., 2025 from '2025-2026')."
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: region
         data_type: string
       - name: student_number
@@ -15,14 +19,20 @@ models:
         data_type: string
       - name: assessment_grade
         data_type: string
-        description:
-          "Grade level of the assessment administered. Source: Amplify
-          stg_amplify__mclass__sftp__pm_student_summary_aimline.assessment_grade."
+        description: "Grade level of the assessment administered."
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: assessment_grade
       - name: assessment_grade_int
         data_type: int64
-        description:
-          "Assessment grade as integer (K mapped to 0). Source: Amplify
-          stg_amplify__mclass__sftp__pm_student_summary_aimline.assessment_grade_int."
+        description: "Assessment grade as integer (K mapped to 0)."
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: assessment_grade_int
       - name: period
         data_type: string
       - name: round_number
@@ -39,30 +49,42 @@ models:
         data_type: date
       - name: sync_date
         data_type: date
-        description:
-          "Date the assessment data was synced. Source: Amplify
-          stg_amplify__mclass__sftp__pm_student_summary_aimline.sync_date."
+        description: "Date the assessment data was synced."
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: sync_date
       - name: measure_name
         data_type: string
         description:
           "Full measure name derived from measure_name_code (e.g., 'Oral Reading
-          Fluency'). Source: Amplify
-          stg_amplify__mclass__sftp__pm_student_summary_aimline.measure_name."
+          Fluency')."
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: measure_name
       - name: measure_name_code
         data_type: string
         description:
           "Short measure abbreviation extracted from the expanded measure name
-          parenthetical (e.g., 'ORF' from 'Reading Fluency (ORF)'). Source:
-          Amplify
-          stg_amplify__mclass__sftp__pm_student_summary_aimline.measure_name_code."
+          parenthetical (e.g., 'ORF' from 'Reading Fluency (ORF)')."
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: measure_name_code
       - name: measure_standard
         data_type: string
       - name: measure_standard_score
         data_type: float64
-        description:
-          "Raw assessment score, cast from the source score column. Source:
-          Amplify
-          stg_amplify__mclass__sftp__pm_student_summary_aimline.measure_standard_score."
+        description: "Raw assessment score, cast from the source score column."
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: measure_standard_score
       - name: measure_standard_level
         data_type: string
       - name: measure_standard_level_int
@@ -75,14 +97,20 @@ models:
         data_type: string
       - name: probe_number
         data_type: int64
-        description:
-          "Probe sequence number within the PM period. Source: Amplify
-          stg_amplify__mclass__sftp__pm_student_summary_aimline.probe_number."
+        description: "Probe sequence number within the PM period."
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: probe_number
       - name: total_number_of_probes
         data_type: int64
-        description:
-          "Total number of probes expected in the PM period. Source: Amplify
-          stg_amplify__mclass__sftp__pm_student_summary_aimline.total_number_of_probes."
+        description: "Total number of probes expected in the PM period."
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: total_number_of_probes
       - name: score_change
         data_type: numeric
       - name: boy_probe_eligible

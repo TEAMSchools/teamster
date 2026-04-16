@@ -16,17 +16,24 @@ models:
       - name: student_number
         data_type: int64
         description: |-
-          District-assigned student identification number. Source: PowerSchool stg_powerschool__student_email.student_number.
+          District-assigned student identification number.
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
       - name: _dbt_source_relation
         data_type: string
       - name: studentid
         data_type: int64
         description:
-          "The internal number and ID of the associated Students record. Source:
-          PowerSchool stg_powerschool__attendance.studentid."
+          "The internal number and ID of the associated Students record."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance
+            source_column: studentid
       - name: students_dcid
         data_type: int64
       - name: reenrollments_dcid
@@ -35,184 +42,261 @@ models:
         data_type: int64
         description:
           "The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. Source:
-          PowerSchool stg_powerschool__reenrollments.grade_level."
+          next grade level unless thestudent is being demoted."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: grade_level
       - name: schoolid
         data_type: int64
-        description:
-          "The School_Number of the associated Schools record. Source:
-          PowerSchool stg_powerschool__attendance.schoolid."
+        description: "The School_Number of the associated Schools record."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance
+            source_column: schoolid
       - name: entrydate
         data_type: date
         description:
           "The school enrollment entry date from the student table for EOY it
-          the next schools beginning date.Indexed. Source: PowerSchool
-          stg_powerschool__reenrollments.entrydate."
+          the next schools beginning date.Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: entrydate
       - name: exitdate
         data_type: date
         description:
           "The school enrollment exit date from the student table. If EOY it's
           the schools next end-of-year dateor effective date for other
-          re-enrollment purposes. Indexed. Source: PowerSchool
-          stg_powerschool__reenrollments.exitdate."
+          re-enrollment purposes. Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: exitdate
       - name: entrycode
         data_type: string
-        description:
-          "The Enrollment code from the student table. Source: PowerSchool
-          stg_powerschool__reenrollments.entrycode."
+        description: "The Enrollment code from the student table."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: entrycode
       - name: exitcode
         data_type: string
         description:
           "The school specified exit code from the student table for EOY or for
-          re-enrollment purposes, suchas S=Transfer. Source: PowerSchool
-          stg_powerschool__reenrollments.exitcode."
+          re-enrollment purposes, suchas S=Transfer."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: exitcode
       - name: exitcomment
         data_type: string
         description:
-          "The exit comment from the student table as specified for this record.
-          Source: PowerSchool stg_powerschool__reenrollments.exitcomment."
+          "The exit comment from the student table as specified for this record."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: exitcomment
       - name: lunchstatus
         data_type: string
         description:
           "This is the Lunch status copied from the student table. Represents
           the portion of lunch a studentmust pay for: Blank=No status P=Full pay
-          R=Reduced F=Free E=Exempt T=Temporary FDC=Free-DC Source: PowerSchool
-          stg_powerschool__reenrollments.lunchstatus."
+          R=Reduced F=Free E=Exempt T=Temporary FDC=Free-DC"
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: lunchstatus
       - name: fteid
         data_type: int64
         description:
           "The internal number for the FTE with which this record is associated.
-          Indexed. Source: PowerSchool
-          stg_powerschool__attendance_conversion_items.fteid."
+          Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance_conversion_items
+            source_column: fteid
       - name: state_studentnumber
         data_type: string
         description:
           "The state-assigned student number for the student. In most cases,
-          this number should stay thesame from school to school. Source:
-          PowerSchool stg_powerschool__students.state_studentnumber."
+          this number should stay thesame from school to school."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: state_studentnumber
       - name: first_name
         data_type: string
-        description:
-          "Students' first name. Source: PowerSchool
-          stg_powerschool__students.first_name."
+        description: "Students' first name."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: first_name
       - name: middle_name
         data_type: string
-        description:
-          "Student's middle name. Source: PowerSchool
-          stg_powerschool__students.middle_name."
+        description: "Student's middle name."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: middle_name
       - name: last_name
         data_type: string
-        description:
-          "Students last name. Source: PowerSchool
-          stg_powerschool__students.last_name."
+        description: "Students last name."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: last_name
       - name: lastfirst
         data_type: string
-        description:
-          "Last, First, Mi. Indexed. Source: PowerSchool
-          stg_powerschool__students.lastfirst."
+        description: "Last, First, Mi. Indexed."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: lastfirst
       - name: enroll_status
         data_type: int64
-        description:
-          "The enrollment status of the student. Source: PowerSchool
-          stg_powerschool__students.enroll_status."
+        description: "The enrollment status of the student."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: enroll_status
       - name: dob
         data_type: date
-        description:
-          "Date of birth. Source: PowerSchool stg_powerschool__students.dob."
+        description: "Date of birth."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: dob
       - name: street
         data_type: string
         description:
           "The street name and number element of the address. Usually line one
-          of the address. Indexed with Line Two and Unit. Optional. Source:
-          PowerSchool stg_powerschool__personaddress.street."
+          of the address. Indexed with Line Two and Unit. Optional."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__personaddress
+            source_column: street
       - name: city
         data_type: string
-        description:
-          "The city element of the address. Optional. Source: PowerSchool
-          stg_powerschool__personaddress.city."
+        description: "The city element of the address. Optional."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__personaddress
+            source_column: city
       - name: state
         data_type: string
-        description:
-          "State element of address. Source: PowerSchool
-          stg_powerschool__students.state."
+        description: "State element of address."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: state
       - name: zip
         data_type: string
-        description:
-          "Students zip code. Source: PowerSchool stg_powerschool__students.zip."
+        description: "Students zip code."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: zip
       - name: home_phone
         data_type: string
-        description:
-          "Home phone number for the student. Indexed. Source: PowerSchool
-          stg_powerschool__students.home_phone."
+        description: "Home phone number for the student. Indexed."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: home_phone
       - name: fedethnicity
         data_type: int64
         description:
           'Numerical answer to the question "Is the student Hispanic or Latino?"
-          Valid values : Source: PowerSchool
-          stg_powerschool__students.fedethnicity.'
+          Valid values :'
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: fedethnicity
       - name: next_school
         data_type: int64
         description:
           "The school the student will be attending the next school year. It is
           likely this will be the sameschool. The information is stored as the
-          internal ID on the schools table for that school. Source: PowerSchool
-          stg_powerschool__students.next_school."
+          internal ID on the schools table for that school."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: next_school
       - name: sched_nextyeargrade
         data_type: int64
         description:
           "The grade the student is going to be in next year. If the student is
-          being retained, this shouldbe the same as the current grade level.
-          Source: PowerSchool stg_powerschool__students.sched_nextyeargrade."
+          being retained, this shouldbe the same as the current grade level."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: sched_nextyeargrade
       - name: highest_grade_level_achieved
         data_type: int64
       - name: gender
         data_type: string
-        description:
-          "M=Male F=Female. Indexed. Source: PowerSchool
-          stg_powerschool__students.gender."
+        description: "M=Male F=Female. Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: gender
       - name: ethnicity
         data_type: string
         description:
           "Heritage background of a student. The codes assigned here are stored
-          in the Gen Table [6]Cat=Ethnicity. These are set in school setup.
-          Source: PowerSchool stg_powerschool__students.ethnicity."
+          in the Gen Table [6]Cat=Ethnicity. These are set in school setup."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: ethnicity
       - name: yearid
         data_type: int64
         description:
           "A number representing which year the term belongs to, such as 13 for
           2003-2004. The numberis equal to the ID of the year term divided by
-          100. Maintained in the Terms table. Source: PowerSchool
-          stg_powerschool__assignmentcategoryassoc.yearid."
+          100. Maintained in the Terms table."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentcategoryassoc
+            source_column: yearid
       - name: academic_year
         data_type: int64
       - name: exit_code_kf
@@ -223,7 +307,12 @@ models:
         data_type: string
         description:
           "The track the student was in during this enrollment from student
-          table. Source: PowerSchool stg_powerschool__reenrollments.track."
+          table."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: track
       - name: cohort_primary
         data_type: int64
       - name: rn_all
@@ -445,16 +534,21 @@ models:
       - name: student_web_id
         data_type: string
         description:
-          "The student user ID for logging in to Power School Parent. Indexed.
-          Source: PowerSchool stg_powerschool__students.student_web_id."
+          "The student user ID for logging in to Power School Parent. Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_web_id
       - name: student_web_password
         data_type: string
-        description:
-          "The password for Student_Web_ID. Source: PowerSchool
-          stg_powerschool__students.student_web_password."
+        description: "The password for Student_Web_ID."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_web_password
       - name: student_email_google
         data_type: string
       - name: fleid
@@ -528,21 +622,31 @@ models:
       - name: spedlep
         data_type: string
         description:
-          "Database extension field associated to the Students table. Source:
-          PowerSchool stg_powerschool__studentcorefields.spedlep."
+          "Database extension field associated to the Students table."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: spedlep
       - name: lep_status
         data_type: boolean
-        description:
-          "Student Limited English Proficiency status. Source: PowerSchool
-          stg_powerschool__studentcorefields.lep_status."
+        description: "Student Limited English Proficiency status."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: lep_status
       - name: lunch_status
         data_type: string
       - name: lunch_application_status
         data_type: string
       - name: graduation_year
         data_type: int64
-        description:
-          "Student graduation year. Source: PowerSchool
-          stg_powerschool__studentcorefields.graduation_year."
+        description: "Student graduation year."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: graduation_year
       - name: pearson_local_student_identifier
         data_type: int64

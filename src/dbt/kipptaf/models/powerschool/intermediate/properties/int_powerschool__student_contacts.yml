@@ -5,18 +5,23 @@ models:
         data_type: string
       - name: student_number
         data_type: int64
-        description:
-          "District-assigned student identification number. Source: PowerSchool
-          stg_powerschool__student_email.student_number."
+        description: "District-assigned student identification number."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
       - name: family_ident
         data_type: string
         description:
           "No longer used by the application. This field may still be referenced
-          on reports and/or custompages. Source: PowerSchool
-          stg_powerschool__students.family_ident."
+          on reports and/or custompages."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: family_ident
       - name: person_type
         data_type: string
       - name: relationship_type
@@ -25,17 +30,23 @@ models:
         data_type: int64
         description:
           "Indicates whether or not the contact is designated as an emergency
-          contact. Valid values:0=No, 1=Yes. Defaults to 0. Required. Source:
-          PowerSchool stg_powerschool__studentcontactdetail.isemergency."
+          contact. Valid values:0=No, 1=Yes. Defaults to 0. Required."
         config:
           meta:
             contains_pii: true
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcontactdetail
+            source_column: isemergency
       - name: schoolpickupflg
         data_type: int64
         description:
           "Indicates whether or not the the student can be picked up by the
-          contact. Valid values: 0=No,1=Yes. Defaults to 0. Required. Source:
-          PowerSchool stg_powerschool__studentcontactdetail.schoolpickupflg."
+          contact. Valid values: 0=No,1=Yes. Defaults to 0. Required."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcontactdetail
+            source_column: schoolpickupflg
       - name: contact_category
         data_type: string
       - name: contact
