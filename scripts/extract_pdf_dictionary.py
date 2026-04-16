@@ -22,6 +22,9 @@ Design reference:
 from __future__ import annotations
 
 import re
+from pathlib import Path
+
+import yaml
 
 
 def pascal_to_snake(name: str) -> str:
@@ -216,6 +219,53 @@ def parse_ps_columns(page_text: str) -> list[dict[str, str]]:
             )
 
     return entries
+
+
+# Directories containing PowerSchool staging YAML files
+PS_YAML_DIRS: tuple[Path, ...] = (
+    Path("src/dbt/powerschool/models/sis/staging/properties"),
+    Path("src/dbt/kipptaf/models/powerschool/staging/properties"),
+)
+
+
+def ps_table_to_model_name(table_name: str) -> str:
+    """Convert a PowerSchool PDF table name to a dbt staging model name.
+
+    Examples:
+        Students -> stg_powerschool__students
+        CC -> stg_powerschool__cc
+        S_NJ_STU_X -> stg_powerschool__s_nj_stu_x
+        StoredGrades -> stg_powerschool__storedgrades
+    """
+    return f"stg_powerschool__{table_name.lower()}"
+
+
+def build_ps_yaml_index() -> dict[str, set[str]]:
+    """Build an index of model_name -> set of column names from PS YAMLs.
+
+    Scans all PowerSchool staging YAML directories and collects column names
+    for each model. If the same model appears in multiple directories,
+    columns are merged.
+    """
+    index: dict[str, set[str]] = {}
+
+    for directory in PS_YAML_DIRS:
+        if not directory.exists():
+            continue
+        for yaml_path in sorted(directory.glob("stg_powerschool__*.yml")):
+            with yaml_path.open(encoding="utf-8") as fh:
+                doc = yaml.safe_load(fh)
+            if not doc:
+                continue
+            for model in doc.get("models", []) or []:
+                model_name = model["name"]
+                columns = {col["name"] for col in (model.get("columns", []) or [])}
+                if model_name in index:
+                    index[model_name].update(columns)
+                else:
+                    index[model_name] = columns
+
+    return index
 
 
 def main() -> None:

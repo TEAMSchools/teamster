@@ -318,3 +318,61 @@ class TestPsColumnParser:
         text = "Alert_Discipline 3.6.1 CLOB One of many various alerts."
         entries = module.parse_ps_columns(text)
         assert entries[0]["description"] == "One of many various alerts."
+
+
+class TestPsTableToModelName:
+    """Test converting PDF table names to dbt model names."""
+
+    def test_simple_table(self) -> None:
+        module = _load_script()
+        assert module.ps_table_to_model_name("Students") == "stg_powerschool__students"
+
+    def test_mixed_case(self) -> None:
+        module = _load_script()
+        assert (
+            module.ps_table_to_model_name("StoredGrades")
+            == "stg_powerschool__storedgrades"
+        )
+
+    def test_short_name(self) -> None:
+        module = _load_script()
+        assert module.ps_table_to_model_name("CC") == "stg_powerschool__cc"
+
+    def test_extension_table(self) -> None:
+        module = _load_script()
+        assert (
+            module.ps_table_to_model_name("S_NJ_STU_X") == "stg_powerschool__s_nj_stu_x"
+        )
+
+    def test_camel_compound(self) -> None:
+        module = _load_script()
+        assert (
+            module.ps_table_to_model_name("AssignmentScore")
+            == "stg_powerschool__assignmentscore"
+        )
+
+    def test_person_table(self) -> None:
+        module = _load_script()
+        assert module.ps_table_to_model_name("Person") == "stg_powerschool__person"
+
+
+class TestBuildPsYamlIndex:
+    """Test building the YAML column lookup index."""
+
+    def test_index_contains_students_columns(self) -> None:
+        module = _load_script()
+        index = module.build_ps_yaml_index()
+        # stg_powerschool__students.yml exists and has columns
+        assert "stg_powerschool__students" in index
+        columns = index["stg_powerschool__students"]
+        assert "first_name" in columns
+        assert "student_number" not in columns or "id" in columns
+        # Verify it's a set
+        assert isinstance(columns, set)
+
+    def test_index_contains_cc_columns(self) -> None:
+        module = _load_script()
+        index = module.build_ps_yaml_index()
+        assert "stg_powerschool__cc" in index
+        columns = index["stg_powerschool__cc"]
+        assert "studentid" in columns or "dcid" in columns
