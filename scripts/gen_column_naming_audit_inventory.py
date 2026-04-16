@@ -309,6 +309,17 @@ def _read_mart_yaml(
                     row["action"] = "rename"
                     row["rule_ref"] = rule_ref
                     row["reviewer_notes"] = note
+                elif (
+                    row["source_column"]
+                    and row["source_column"] == col_name
+                    and not col_name.endswith("_key")
+                ):
+                    row["action"] = "rename"
+                    row["rule_ref"] = "R1"
+                    row["reviewer_notes"] = (
+                        f"source-system passthrough from "
+                        f"{row['source_system']} {row['source_model']}"
+                    )
 
             if edfi is not None:
                 _append_edfi_notes(row, col_name, edfi)
