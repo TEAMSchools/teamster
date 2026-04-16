@@ -1,47 +1,168 @@
 models:
   - name: int_powerschool__ps_adaadm_daily_ctod
+    description: >
+      Daily per-student attendance records for all districts, unioned from each
+      district's PowerSchool instance. Combines membership, attendance codes, and
+      calendar week data to produce row-level presence/absence flags and
+      running aggregates used for ADA, truancy, and promotional status
+      calculations.
     columns:
       - name: _dbt_source_relation
         data_type: string
+        description: >
+          Full dbt source relation string identifying the originating district
+          PowerSchool instance (e.g., schema.table).
       - name: studentid
         data_type: int64
+        description: PowerSchool internal student ID scoped to the district instance.
+      - name: student_number
+        data_type: int64
+        description: PowerSchool student number, the primary cross-system identifier.
       - name: schoolid
         data_type: int64
+        description: PowerSchool school ID.
       - name: calendardate
         data_type: date
+        description: Calendar date of the membership/attendance record.
       - name: fteid
         data_type: int64
+        description: >
+          Full-time equivalency ID used to look up the attendance conversion
+          schedule for the student's enrollment.
       - name: attendance_conversion_id
         data_type: int64
+        description: >
+          References the attendance conversion table that maps attendance codes
+          to numeric values for this student's schedule.
       - name: grade_level
         data_type: int64
+        description: Student's grade level on the calendar date.
       - name: ontrack
         data_type: int64
+        description: >
+          Binary flag (1/0) indicating the student is on the active instructional
+          track for this date; used to zero out membership and attendance values
+          for off-track days.
       - name: offtrack
         data_type: int64
+        description: >
+          Binary flag (1/0) indicating the student is on an off-track schedule
+          for this date.
       - name: student_track
         data_type: string
+        description: Track identifier string from the student's schedule (e.g., A, B).
       - name: yearid
         data_type: int64
+        description: >
+          PowerSchool year ID. Equals (academic_year - 1991); e.g., 34 for the
+          2025-26 school year.
+      - name: att_code
+        data_type: string
+        description: >
+          Attendance code for the day (e.g., null = Present, A = Absent,
+          TA = Tardy, ISS = In-School Suspension). Null when the student was
+          present with no code entered.
       - name: attendancevalue
         data_type: float64
+        description: >
+          Numeric ADA value for the day from the attendance conversion table.
+          Typically 1.0 for present and 0.0 for absent; tardy codes have
+          attendancevalue = 1.0 (full day present).
       - name: potential_attendancevalue
         data_type: float64
+        description: >
+          Maximum possible ADA value for the day, used as the denominator in
+          ADA rate calculations.
       - name: membershipvalue
         data_type: float64
+        description: >
+          Membership value for the day (1.0 when the student is enrolled and
+          counted in ADM, 0.0 otherwise).
+      - name: academic_year
+        data_type: int64
+        description: >
+          Academic year (e.g., 2025 for the 2024-25 school year), joined from
+          the terms table.
+      - name: semester
+        data_type: int64
+        description: Semester number (1 or 2) containing the calendar date.
+      - name: term
+        data_type: int64
+        description: Term number within the school year containing the calendar date.
+      - name: week_start_monday
+        data_type: date
+        description: Monday of the calendar week containing the calendar date.
+      - name: week_end_sunday
+        data_type: date
+        description: Sunday of the calendar week containing the calendar date.
+      - name: week_number_academic_year
+        data_type: int64
+        description: Sequential week number within the academic year (1-based).
+      - name: _dbt_source_project
+        data_type: string
+        description: >
+          Short project identifier extracted from _dbt_source_relation
+          (e.g., kippnewark, kippcamden). Used for region-specific logic.
       - name: is_absent
         data_type: float64
+        description: >
+          1.0 if the student was absent (attendancevalue = 0), 0.0 otherwise.
+          Computed as abs(attendancevalue - 1).
       - name: is_present_weighted
         data_type: float64
+        description: >
+          Attendance value adjusted for tardies: 0.67 for tardy codes (T%),
+          otherwise equal to attendancevalue.
       - name: is_tardy
         data_type: float64
+        description: 1.0 if the attendance code begins with T (tardy), 0.0 otherwise.
       - name: is_ontime
         data_type: float64
+        description: 1.0 if the attendance code does not begin with T, 0.0 if tardy.
       - name: is_oss
         data_type: float64
+        description: >
+          1.0 if the attendance code is an out-of-school suspension (OS, OSS,
+          OSSP, SHI), 0.0 otherwise.
       - name: is_iss
         data_type: float64
+        description: >
+          1.0 if the attendance code is an in-school suspension (S or ISS),
+          0.0 otherwise.
       - name: is_suspended
         data_type: float64
+        description: >
+          1.0 if the attendance code is any suspension type (OS, OSS, OSSP, S,
+          ISS, SHI), 0.0 otherwise.
       - name: is_absent_non_susp
         data_type: float64
+        description: >
+          1.0 if the student was absent and the absence is not a suspension
+          code (ISS, OSS, OS, OSSP, SHI), 0.0 otherwise. Used as the base for
+          promotion attendance thresholds.
+      - name: n_absent_running_90
+        data_type: float64
+        description: >
+          Rolling 90-day count of absent days for the student, ordered by
+          calendar date within the academic year.
+      - name: pct_absent_running_student_year
+        data_type: float64
+        description: >
+          Year-to-date absence rate (avg of is_absent) for the student within
+          the academic year, ordered by calendar date.
+      - name: n_membership_student_year
+        data_type: float64
+        description: >
+          Total membership days for the student in the academic year across all
+          calendar dates.
+      - name: n_absent_projected
+        data_type: float64
+        description: >
+          Projected total absences for the full academic year, calculated as
+          pct_absent_running_student_year × n_membership_student_year.
+      - name: is_truant
+        data_type: boolean
+        description: >
+          True when the student meets the truancy threshold: ≥ 15 absences in
+          the rolling 90 days for Miami, or projected total absences ≥ 50 for
+          Newark, Camden, and Paterson.
