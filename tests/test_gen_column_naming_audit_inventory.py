@@ -111,79 +111,24 @@ def test_plumbing_columns_returns_frozenset() -> None:
     assert isinstance(module._PLUMBING_COLUMNS, frozenset)
 
 
-def test_initial_rename_guess_student_number() -> None:
+def test_check_naming_rules_source_prefix() -> None:
     module = _load_script()
-    result = module._initial_rename_guess("student_number")
-    assert result == ("local_student_identifier", "R1")
+    result = module._check_naming_rules("powerschool_school_id")
+    assert result is not None
+    assert result[0] == "R1"
 
 
-def test_initial_rename_guess_employee_number() -> None:
+def test_check_naming_rules_kipp_jargon() -> None:
     module = _load_script()
-    result = module._initial_rename_guess("employee_number")
-    assert result == ("local_staff_identifier", "R2")
+    result = module._check_naming_rules("employee_number")
+    assert result is not None
+    assert result[0] == "R2"
 
 
-def test_initial_rename_guess_powerschool_prefix() -> None:
+def test_check_naming_rules_no_match() -> None:
     module = _load_script()
-    result = module._initial_rename_guess("powerschool_school_id")
-    assert result == ("sis_school_id", "R1")
-
-
-def test_initial_rename_guess_unmapped_returns_none() -> None:
-    module = _load_script()
-    assert module._initial_rename_guess("student_key") is None
-    assert module._initial_rename_guess("formatted_name") is None
-    assert module._initial_rename_guess("made_up_column") is None
-
-
-def test_structural_additions_includes_mdcps() -> None:
-    module = _load_script()
-    rows = module._structural_additions()
-    matches = [r for r in rows if r["proposed_name"] == "mdcps_student_identifier"]
-    assert len(matches) == 1
-    row = matches[0]
-    assert row["domain"] == "Student"
-    assert row["model"] == "dim_students"
-    assert row["action"] == "add"
-    assert row["rule_ref"] == "structural"
-    assert row["current_column"] == ""
-    assert row["review_status"] == "not_reviewed"
-
-
-def test_structural_additions_includes_salesforce() -> None:
-    module = _load_script()
-    rows = module._structural_additions()
-    assert any(
-        r["proposed_name"] == "salesforce_contact_id" and r["model"] == "dim_students"
-        for r in rows
-    )
-
-
-def test_structural_additions_includes_microsoft_365_email() -> None:
-    module = _load_script()
-    rows = module._structural_additions()
-    assert any(
-        r["proposed_name"] == "microsoft_365_email" and r["model"] == "dim_staff"
-        for r in rows
-    )
-
-
-def test_structural_additions_all_have_required_keys() -> None:
-    module = _load_script()
-    required = {
-        "domain",
-        "model",
-        "current_column",
-        "data_type",
-        "current_description",
-        "action",
-        "proposed_name",
-        "rule_ref",
-        "review_status",
-        "reviewer_notes",
-    }
-    for row in module._structural_additions():
-        assert set(row.keys()) == required, f"keys differ for {row}"
+    assert module._check_naming_rules("student_key") is None
+    assert module._check_naming_rules("birth_date") is None
 
 
 _FIXTURE = _REPO_ROOT / "tests" / "fixtures" / "mart_yaml" / "dim_sample.yml"
@@ -192,7 +137,7 @@ _FIXTURE = _REPO_ROOT / "tests" / "fixtures" / "mart_yaml" / "dim_sample.yml"
 def test_read_mart_yaml_emits_one_row_per_column() -> None:
     module = _load_script()
     rows = module._read_mart_yaml(_FIXTURE)
-    assert len(rows) == 4
+    assert len(rows) == 5
 
 
 def test_read_mart_yaml_sets_model_and_domain() -> None:
@@ -222,14 +167,14 @@ def test_read_mart_yaml_applies_plumbing_default() -> None:
     assert plumb["proposed_name"] == ""
 
 
-def test_read_mart_yaml_applies_rename_guess() -> None:
+def test_read_mart_yaml_applies_naming_rules() -> None:
     module = _load_script()
     rows = module._read_mart_yaml(_FIXTURE)
     by_name = {r["current_column"]: r for r in rows}
-    sn = by_name["student_number"]
-    assert sn["action"] == "rename"
-    assert sn["proposed_name"] == "local_student_identifier"
-    assert sn["rule_ref"] == "R1"
+    ps = by_name["powerschool_school_id"]
+    assert ps["action"] == "rename"
+    assert ps["rule_ref"] == "R1"
+    assert "source-system prefix" in ps["reviewer_notes"]
 
 
 def test_read_mart_yaml_default_is_keep() -> None:
@@ -246,7 +191,6 @@ def test_read_mart_yaml_review_status_not_reviewed() -> None:
     module = _load_script()
     rows = module._read_mart_yaml(_FIXTURE)
     assert all(r["review_status"] == "not_reviewed" for r in rows)
-    assert all(r["reviewer_notes"] == "" for r in rows)
 
 
 def test_write_csv_emits_header_and_rows() -> None:
@@ -258,6 +202,9 @@ def test_write_csv_emits_header_and_rows() -> None:
             "current_column": "student_number",
             "data_type": "int64",
             "current_description": "Local student ID.",
+            "source_system": "PowerSchool",
+            "source_model": "stg_powerschool__students",
+            "source_column": "student_number",
             "action": "rename",
             "proposed_name": "local_student_identifier",
             "rule_ref": "R1",
@@ -270,18 +217,7 @@ def test_write_csv_emits_header_and_rows() -> None:
     buf.seek(0)
     reader = csv.DictReader(buf)
     header = reader.fieldnames
-    assert header == [
-        "domain",
-        "model",
-        "current_column",
-        "data_type",
-        "current_description",
-        "action",
-        "proposed_name",
-        "rule_ref",
-        "review_status",
-        "reviewer_notes",
-    ]
+    assert header == list(module.CSV_FIELDS)
     parsed = list(reader)
     assert len(parsed) == 1
     assert parsed[0]["proposed_name"] == "local_student_identifier"

@@ -96,33 +96,46 @@ _PLUMBING_COLUMNS: frozenset[str] = frozenset(
 )
 
 
-# Pre-populated rename guesses carried over from the original 67-column
-# audit. Each entry is (current_name, (proposed_name, rule_ref)). The rule
-# references the rubric section in
-# docs/superpowers/specs/2026-04-15-column-naming-audit.md.
-_RENAME_GUESSES: dict[str, tuple[str, str]] = {
-    # Rule 1 — strip source-system names (student identifier)
-    "student_number": ("local_student_identifier", "R1"),
-    # Rule 2 — no KIPP-specific language (staff identifier)
-    "employee_number": ("local_staff_identifier", "R2"),
-    "teacher_employee_number": ("teacher_staff_identifier", "R2"),
-    "observer_employee_number": ("observer_staff_identifier", "R2"),
-    "teammate_employee_number": ("teammate_staff_identifier", "R2"),
-    "recruiter_employee_number": ("recruiter_staff_identifier", "R2"),
-    # Rule 1 — PowerSchool identifier stripping
-    "powerschool_school_id": ("sis_school_id", "R1"),
-    "deanslist_school_id": ("behavior_system_school_id", "R1"),
-    "powerschool_term_id": ("sis_term_id", "R1"),
-    "powerschool_year_id": ("sis_year_id", "R1"),
-    "powerschool_person_id": ("contact_person_id", "R1"),
-    "sections_dcid": ("section_id", "R1"),
-    "teachernumber": ("teacher_number", "R1"),
-}
+_SOURCE_PREFIXES: tuple[str, ...] = (
+    "deanslist_",
+    "powerschool_",
+)
+
+_SOURCE_TERMS: frozenset[str] = frozenset(
+    [
+        "sam_account_name",
+        "sections_dcid",
+        "teachernumber",
+    ]
+)
+
+_KIPP_TERMS: tuple[str, ...] = (
+    "employee_number",
+    "microgoal",
+    "teammate",
+)
 
 
-def _initial_rename_guess(column_name: str) -> tuple[str, str] | None:
-    """Return (proposed_name, rule_ref) for known renames, else None."""
-    return _RENAME_GUESSES.get(column_name)
+def _check_naming_rules(col_name: str) -> tuple[str, str] | None:
+    """Check a column name against pattern-based naming rules.
+
+    Returns (rule_ref, reviewer_note) if a rule matches, else None.
+    """
+    # R1: source-system prefixes
+    for prefix in _SOURCE_PREFIXES:
+        if col_name.startswith(prefix):
+            return ("R1", f"source-system prefix: {prefix}")
+
+    # R1: source-system exact terms
+    if col_name in _SOURCE_TERMS:
+        return ("R1", "source-system term")
+
+    # R2: KIPP-specific jargon (substring match)
+    for term in _KIPP_TERMS:
+        if term in col_name:
+            return ("R2", f"KIPP-specific term: {term}")
+
+    return None
 
 
 def _load_edfi_extract(fh: TextIO) -> dict[str, list[dict[str, str]]]:
@@ -221,8 +234,9 @@ def _append_edfi_notes(
         exact = _edfi_exact_match(col_name, edfi)
         if exact is not None:
             proposed, note = exact
-            row["action"] = "rename"
-            row["proposed_name"] = proposed
+            if proposed != col_name:
+                row["action"] = "rename"
+                row["proposed_name"] = proposed
             row["rule_ref"] = "R6"
             row["reviewer_notes"] = _join_notes(row.get("reviewer_notes", ""), note)
             return
@@ -244,41 +258,6 @@ def _append_edfi_notes(
             row["reviewer_notes"] = _join_notes(row.get("reviewer_notes", ""), fuzzy)
 
 
-def _structural_additions() -> list[dict[str, str]]:
-    """Pre-populated add-rows for structural columns defined in the spec."""
-    template = {
-        "current_column": "",
-        "current_description": "",
-        "action": "add",
-        "rule_ref": "structural",
-        "review_status": "not_reviewed",
-        "reviewer_notes": "",
-    }
-    return [
-        {
-            **template,
-            "domain": "Student",
-            "model": "dim_students",
-            "data_type": "string",
-            "proposed_name": "mdcps_student_identifier",
-        },
-        {
-            **template,
-            "domain": "Student",
-            "model": "dim_students",
-            "data_type": "string",
-            "proposed_name": "salesforce_contact_id",
-        },
-        {
-            **template,
-            "domain": "Staff",
-            "model": "dim_staff",
-            "data_type": "string",
-            "proposed_name": "microsoft_365_email",
-        },
-    ]
-
-
 def _read_mart_yaml(
     path: Path, edfi: dict[str, list[dict[str, str]]] | None = None
 ) -> list[dict[str, str]]:
@@ -294,12 +273,16 @@ def _read_mart_yaml(
         domain = _domain_for_model(model_name)
         for column in model.get("columns", []) or []:
             col_name = column["name"]
+            meta = column.get("config", {}).get("meta", {})
             row: dict[str, str] = {
                 "domain": domain,
                 "model": model_name,
                 "current_column": col_name,
                 "data_type": column.get("data_type", "") or "",
                 "current_description": _flatten_description(column.get("description")),
+                "source_system": meta.get("source_system", ""),
+                "source_model": meta.get("source_model", ""),
+                "source_column": meta.get("source_column", ""),
                 "action": "keep",
                 "proposed_name": "",
                 "rule_ref": "",
@@ -311,12 +294,12 @@ def _read_mart_yaml(
                 row["action"] = "remove"
                 row["rule_ref"] = "plumbing"
             else:
-                guess = _initial_rename_guess(col_name)
-                if guess is not None:
-                    proposed, rule_ref = guess
+                rule = _check_naming_rules(col_name)
+                if rule is not None:
+                    rule_ref, note = rule
                     row["action"] = "rename"
-                    row["proposed_name"] = proposed
                     row["rule_ref"] = rule_ref
+                    row["reviewer_notes"] = note
 
             if edfi is not None:
                 _append_edfi_notes(row, col_name, edfi)
@@ -332,6 +315,9 @@ CSV_FIELDS: tuple[str, ...] = (
     "current_column",
     "data_type",
     "current_description",
+    "source_system",
+    "source_model",
+    "source_column",
     "action",
     "proposed_name",
     "rule_ref",
@@ -354,6 +340,90 @@ def _sort_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     return sorted(rows, key=lambda r: (r["domain"], r["model"]))
 
 
+def _infer_dimension(fk_name: str) -> str | None:
+    """Infer a dimension model name from a FK column name.
+
+    'student_key' → 'dim_students'
+    'student_enrollment_key' → 'dim_student_enrollments'
+    'term_key' → 'dim_terms'
+    'date_key' → 'dim_dates'
+    """
+    if not fk_name.endswith("_key"):
+        return None
+    stem = fk_name[: -len("_key")]
+    # Try plural first (most common), then singular
+    for suffix in ("s", ""):
+        candidate = f"dim_{stem}{suffix}"
+        if candidate in _CONFORMED_MODELS or candidate.startswith("dim_"):
+            return candidate
+    return f"dim_{stem}s"
+
+
+def _apply_r9(rows: list[dict[str, str]]) -> int:
+    """Flag redundant columns (R9) reachable via FK joins to dimensions.
+
+    A non-key column on a fact/bridge is redundant if a FK in the same
+    model points to a dimension that contains a column with the same
+    source_column provenance.
+
+    Mutates rows in place. Returns the number flagged.
+    """
+    # Build dimension provenance: {dim_name: {source_column: dim_col_name}}
+    dim_provenance: dict[str, dict[str, str]] = {}
+    for row in rows:
+        model = row["model"]
+        if model.startswith("dim_") and row["source_column"]:
+            dim_provenance.setdefault(model, {})[row["source_column"]] = row[
+                "current_column"
+            ]
+
+    # For each model, find FKs and check non-FK columns
+    # Group rows by model
+    by_model: dict[str, list[dict[str, str]]] = {}
+    for row in rows:
+        by_model.setdefault(row["model"], []).append(row)
+
+    flagged = 0
+    for model_name, model_rows in by_model.items():
+        if not (model_name.startswith("fct_") or model_name.startswith("bridge_")):
+            continue
+
+        # Find FK columns and their target dimensions
+        fk_dims: list[str] = []
+        for row in model_rows:
+            if row["current_column"].endswith("_key"):
+                dim = _infer_dimension(row["current_column"])
+                if dim and dim in dim_provenance:
+                    fk_dims.append(dim)
+
+        if not fk_dims:
+            continue
+
+        # Check non-FK columns with provenance
+        for row in model_rows:
+            col = row["current_column"]
+            if col.endswith("_key") or not row["source_column"]:
+                continue
+            # Already flagged by another rule
+            if row["action"] == "remove":
+                continue
+
+            src_col = row["source_column"]
+            for dim in fk_dims:
+                if src_col in dim_provenance[dim]:
+                    dim_col = dim_provenance[dim][src_col]
+                    row["action"] = "remove"
+                    row["rule_ref"] = "R9"
+                    row["reviewer_notes"] = _join_notes(
+                        row["reviewer_notes"],
+                        f"reachable via FK → {dim}.{dim_col}",
+                    )
+                    flagged += 1
+                    break
+
+    return flagged
+
+
 def _write_csv(rows: list[dict[str, str]], fh: TextIO) -> None:
     writer = csv.DictWriter(fh, fieldnames=list(CSV_FIELDS))
     writer.writeheader()
@@ -372,7 +442,9 @@ def main() -> None:
     for directory in MART_YAML_DIRS:
         for yaml_path in sorted(directory.glob("*.yml")):
             rows.extend(_read_mart_yaml(yaml_path, edfi=edfi))
-    rows.extend(_structural_additions())
+    r9_count = _apply_r9(rows)
+    if r9_count:
+        print(f"Flagged {r9_count} redundant columns (R9)")
     sorted_rows = _sort_rows(rows)
 
     OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
