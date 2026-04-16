@@ -16,6 +16,7 @@ with
             percent_proficient,
 
             if(test_code like 'ALG01%', 'ALG01', test_code) as test_code,
+
             if(region is null, regions, region) as region,
 
         from {{ ref("int_tableau__state_assessments_demographic_comps") }}
@@ -44,6 +45,7 @@ with
             percent_proficient,
 
             if(test_code like 'ALG01%', 'ALG01', test_code) as test_code,
+
             coalesce(region, 'Miami') as region,
 
         from {{ ref("int_tableau__state_assessments_demographic_comps") }}
