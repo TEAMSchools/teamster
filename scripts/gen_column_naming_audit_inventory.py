@@ -294,6 +294,14 @@ def _read_mart_yaml(
             if col_name in plumbing:
                 row["action"] = "remove"
                 row["rule_ref"] = "plumbing"
+            elif row["column_role"] == "foreign_key":
+                row["action"] = "remove"
+                row["rule_ref"] = "plumbing"
+                row["reviewer_notes"] = "source-system FK"
+            elif row["column_role"] == "primary_key":
+                row["action"] = "remove"
+                row["rule_ref"] = "plumbing"
+                row["reviewer_notes"] = "source-system PK"
             else:
                 rule = _check_naming_rules(col_name)
                 if rule is not None:
