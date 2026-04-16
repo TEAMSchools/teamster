@@ -46,6 +46,14 @@ class PowerSchoolODBCResource(ConfigurableResource):
     retry_count: int = 0
     retry_delay: int = 1
     tcp_connect_timeout: float = 5.0
+    call_timeout: int = 300_000
+    """Per-call timeout in milliseconds (default 5 min).
+
+    Limits each individual Oracle round-trip (execute, fetchmany, etc.).
+    If the SSH tunnel drops mid-transfer, the call fails with a timeout
+    error instead of blocking indefinitely, allowing the retry loop to
+    recover.
+    """
 
     _connect_params: ConnectParams = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
@@ -88,7 +96,9 @@ class PowerSchoolODBCResource(ConfigurableResource):
             An open oracledb Connection object.
         """
         self._log.debug("Opening connection to database")
-        return connect(params=self._connect_params)
+        conn = connect(params=self._connect_params)
+        conn.call_timeout = self.call_timeout
+        return conn
 
     def execute_query(
         self,
