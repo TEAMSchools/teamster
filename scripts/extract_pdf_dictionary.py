@@ -161,6 +161,63 @@ def extract_ps_table_name(page_text: str) -> str | None:
     return None
 
 
+# Matches column entry lines like:
+#   "ColumnName 3.6.1 DataType(size) Description text..."
+# Version: digits.digits[.digits]*
+# Data type: word characters, optional parenthesized size like (10,0)
+_PS_COLUMN_RE = re.compile(
+    r"^([A-Za-z_][A-Za-z0-9_]*)\s+"  # column name
+    r"(\d+\.\d+(?:\.\d+)*)\s+"  # version
+    r"([A-Za-z0-9]+(?:\([^)]*\))?)\s+"  # data type (with optional size)
+    r"(.+)$"  # description (rest of line)
+)
+
+# Lines to skip
+_PS_SKIP_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"^Column\s+Name\s+InitialVersion\s+Data\s+Type\s+Description"),
+    re.compile(r"^\d+$"),  # page numbers
+    _PS_TABLE_HEADER_RE,
+    re.compile(r"PowerSchool\s+Private\s+Information"),
+    re.compile(r"^\s*$"),  # blank lines
+)
+
+
+def parse_ps_columns(page_text: str) -> list[dict[str, str]]:
+    """Parse PowerSchool column entries from PDF page text.
+
+    Returns a list of dicts with keys: source_column, description.
+    Skips header lines, page numbers, table footers, and confidentiality
+    notices.
+    """
+    entries: list[dict[str, str]] = []
+
+    for line in page_text.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+
+        # Skip known non-column lines
+        skip = False
+        for pattern in _PS_SKIP_PATTERNS:
+            if pattern.match(line):
+                skip = True
+                break
+        if skip:
+            continue
+
+        # Skip table description paragraphs (no version number pattern)
+        match = _PS_COLUMN_RE.match(line)
+        if match:
+            entries.append(
+                {
+                    "source_column": match.group(1),
+                    "description": match.group(4).strip(),
+                }
+            )
+
+    return entries
+
+
 def main() -> None:
     raise NotImplementedError
 

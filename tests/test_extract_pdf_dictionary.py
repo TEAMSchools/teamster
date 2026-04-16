@@ -251,3 +251,70 @@ class TestPsTableNameExtractor:
         module = _load_script()
         result = module.extract_ps_table_name("Some random text\nwithout headers\n")
         assert result is None
+
+
+class TestPsColumnParser:
+    """Test parsing individual column lines from PS PDF text."""
+
+    def test_parses_simple_column(self) -> None:
+        module = _load_script()
+        text = "StudentNumber 3.6.1 Number(10,0) The student's assigned number."
+        entries = module.parse_ps_columns(text)
+        assert len(entries) == 1
+        assert entries[0]["source_column"] == "StudentNumber"
+        assert entries[0]["description"] == "The student's assigned number."
+
+    def test_parses_multiple_columns(self) -> None:
+        module = _load_script()
+        text = (
+            "Alert_Discipline 3.6.1 CLOB "
+            "One of many various alerts in PowerSchool. "
+            "This field stores the text tied to the alert.\n"
+            "StudentNumber 3.6.1 Number(10,0) "
+            "The student's assigned number.\n"
+        )
+        entries = module.parse_ps_columns(text)
+        assert len(entries) == 2
+        assert entries[0]["source_column"] == "Alert_Discipline"
+        assert entries[1]["source_column"] == "StudentNumber"
+
+    def test_skips_header_line(self) -> None:
+        module = _load_script()
+        text = (
+            "Column Name InitialVersion Data Type Description\n"
+            "StudentNumber 3.6.1 Number(10,0) The student's assigned number."
+        )
+        entries = module.parse_ps_columns(text)
+        assert len(entries) == 1
+        assert entries[0]["source_column"] == "StudentNumber"
+
+    def test_skips_page_number_and_footer(self) -> None:
+        module = _load_script()
+        text = (
+            "736\n"
+            "StudentNumber 3.6.1 Number(10,0) The student's assigned number.\n"
+            "Students, 167 (ver3.6.1)\n"
+            "PowerSchool Private Information \u2013 Confidential\n"
+        )
+        entries = module.parse_ps_columns(text)
+        assert len(entries) == 1
+        assert entries[0]["source_column"] == "StudentNumber"
+
+    def test_various_data_types(self) -> None:
+        module = _load_script()
+        text = (
+            "Alert_Discipline 3.6.1 CLOB Alert text.\n"
+            "FedEthnicity 5.0.3 Number(10,0) Federal ethnicity.\n"
+            "SSN 3.6.1 Varchar2(12) Social security number.\n"
+            "DOB 3.6.1 Date Date of birth.\n"
+        )
+        entries = module.parse_ps_columns(text)
+        assert len(entries) == 4
+        assert entries[0]["source_column"] == "Alert_Discipline"
+        assert entries[2]["source_column"] == "SSN"
+
+    def test_clob_description_extracted(self) -> None:
+        module = _load_script()
+        text = "Alert_Discipline 3.6.1 CLOB One of many various alerts."
+        entries = module.parse_ps_columns(text)
+        assert entries[0]["description"] == "One of many various alerts."
