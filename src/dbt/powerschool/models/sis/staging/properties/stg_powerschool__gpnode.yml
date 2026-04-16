@@ -11,6 +11,8 @@ models:
               config:
                 severity: error
         description: Unique identifier.
+        constraints:
+          - type: primary_key
       - name: name
         data_type: string
         description: Name of this node.
@@ -57,6 +59,8 @@ models:
       - name: gpversionid
         data_type: int64
         description: Foreign key to GPVersion.ID.
+        constraints:
+          - type: foreign_key
       - name: ishidden
         data_type: int64
         description:

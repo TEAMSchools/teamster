@@ -7,6 +7,8 @@ models:
           - unique:
               config:
                 severity: error
+        constraints:
+          - type: primary_key
       - name: assignment
         data_type: string
       - name: behavior

@@ -103,87 +103,32 @@ def test_domain_for_model_unknown_returns_uncategorized() -> None:
 
 def test_plumbing_columns_includes_dbt_source_relation() -> None:
     module = _load_script()
-    assert "_dbt_source_relation" in module._plumbing_columns()
+    assert "_dbt_source_relation" in module._PLUMBING_COLUMNS
 
 
 def test_plumbing_columns_returns_frozenset() -> None:
     module = _load_script()
-    result = module._plumbing_columns()
-    assert isinstance(result, frozenset)
+    assert isinstance(module._PLUMBING_COLUMNS, frozenset)
 
 
-def test_initial_rename_guess_student_number() -> None:
+def test_check_naming_rules_source_prefix() -> None:
     module = _load_script()
-    result = module._initial_rename_guess("student_number")
-    assert result == ("local_student_identifier", "R1")
+    result = module._check_naming_rules("powerschool_school_id")
+    assert result is not None
+    assert result[0] == "R1"
 
 
-def test_initial_rename_guess_employee_number() -> None:
+def test_check_naming_rules_kipp_jargon() -> None:
     module = _load_script()
-    result = module._initial_rename_guess("employee_number")
-    assert result == ("local_staff_identifier", "R2")
+    result = module._check_naming_rules("employee_number")
+    assert result is not None
+    assert result[0] == "R2"
 
 
-def test_initial_rename_guess_formatted_name() -> None:
+def test_check_naming_rules_no_match() -> None:
     module = _load_script()
-    result = module._initial_rename_guess("formatted_name")
-    assert result == ("full_name", "R6")
-
-
-def test_initial_rename_guess_unmapped_returns_none() -> None:
-    module = _load_script()
-    assert module._initial_rename_guess("student_key") is None
-    assert module._initial_rename_guess("made_up_column") is None
-
-
-def test_structural_additions_includes_mdcps() -> None:
-    module = _load_script()
-    rows = module._structural_additions()
-    matches = [r for r in rows if r["proposed_name"] == "mdcps_student_identifier"]
-    assert len(matches) == 1
-    row = matches[0]
-    assert row["domain"] == "Student"
-    assert row["model"] == "dim_students"
-    assert row["action"] == "add"
-    assert row["rule_ref"] == "structural"
-    assert row["current_column"] == ""
-    assert row["review_status"] == "not_reviewed"
-
-
-def test_structural_additions_includes_salesforce() -> None:
-    module = _load_script()
-    rows = module._structural_additions()
-    assert any(
-        r["proposed_name"] == "salesforce_contact_id" and r["model"] == "dim_students"
-        for r in rows
-    )
-
-
-def test_structural_additions_includes_microsoft_365_email() -> None:
-    module = _load_script()
-    rows = module._structural_additions()
-    assert any(
-        r["proposed_name"] == "microsoft_365_email" and r["model"] == "dim_staff"
-        for r in rows
-    )
-
-
-def test_structural_additions_all_have_required_keys() -> None:
-    module = _load_script()
-    required = {
-        "domain",
-        "model",
-        "current_column",
-        "data_type",
-        "current_description",
-        "action",
-        "proposed_name",
-        "rule_ref",
-        "review_status",
-        "reviewer_notes",
-    }
-    for row in module._structural_additions():
-        assert set(row.keys()) == required, f"keys differ for {row}"
+    assert module._check_naming_rules("student_key") is None
+    assert module._check_naming_rules("birth_date") is None
 
 
 _FIXTURE = _REPO_ROOT / "tests" / "fixtures" / "mart_yaml" / "dim_sample.yml"
@@ -192,7 +137,7 @@ _FIXTURE = _REPO_ROOT / "tests" / "fixtures" / "mart_yaml" / "dim_sample.yml"
 def test_read_mart_yaml_emits_one_row_per_column() -> None:
     module = _load_script()
     rows = module._read_mart_yaml(_FIXTURE)
-    assert len(rows) == 4
+    assert len(rows) == 5
 
 
 def test_read_mart_yaml_sets_model_and_domain() -> None:
@@ -222,14 +167,14 @@ def test_read_mart_yaml_applies_plumbing_default() -> None:
     assert plumb["proposed_name"] == ""
 
 
-def test_read_mart_yaml_applies_rename_guess() -> None:
+def test_read_mart_yaml_applies_naming_rules() -> None:
     module = _load_script()
     rows = module._read_mart_yaml(_FIXTURE)
     by_name = {r["current_column"]: r for r in rows}
-    sn = by_name["student_number"]
-    assert sn["action"] == "rename"
-    assert sn["proposed_name"] == "local_student_identifier"
-    assert sn["rule_ref"] == "R1"
+    ps = by_name["powerschool_school_id"]
+    assert ps["action"] == "rename"
+    assert ps["rule_ref"] == "R1"
+    assert "source-system prefix" in ps["reviewer_notes"]
 
 
 def test_read_mart_yaml_default_is_keep() -> None:
@@ -246,7 +191,6 @@ def test_read_mart_yaml_review_status_not_reviewed() -> None:
     module = _load_script()
     rows = module._read_mart_yaml(_FIXTURE)
     assert all(r["review_status"] == "not_reviewed" for r in rows)
-    assert all(r["reviewer_notes"] == "" for r in rows)
 
 
 def test_write_csv_emits_header_and_rows() -> None:
@@ -258,6 +202,9 @@ def test_write_csv_emits_header_and_rows() -> None:
             "current_column": "student_number",
             "data_type": "int64",
             "current_description": "Local student ID.",
+            "source_system": "PowerSchool",
+            "source_model": "stg_powerschool__students",
+            "source_column": "student_number",
             "action": "rename",
             "proposed_name": "local_student_identifier",
             "rule_ref": "R1",
@@ -270,18 +217,7 @@ def test_write_csv_emits_header_and_rows() -> None:
     buf.seek(0)
     reader = csv.DictReader(buf)
     header = reader.fieldnames
-    assert header == [
-        "domain",
-        "model",
-        "current_column",
-        "data_type",
-        "current_description",
-        "action",
-        "proposed_name",
-        "rule_ref",
-        "review_status",
-        "reviewer_notes",
-    ]
+    assert header == list(module.CSV_FIELDS)
     parsed = list(reader)
     assert len(parsed) == 1
     assert parsed[0]["proposed_name"] == "local_student_identifier"
@@ -300,3 +236,120 @@ def test_sort_rows_groups_by_domain_then_model() -> None:
     # Within a model, preserve column order from the YAML (stable sort).
     student_rows = [r for r in out if r["domain"] == "Student"]
     assert [r["current_column"] for r in student_rows] == ["b", "a"]
+
+
+def test_load_edfi_extract() -> None:
+    module = _load_script()
+    csv_content = (
+        "entity,attribute_camel,attribute_snake,description\n"
+        "edFi_student,birthDate,birth_date,Date of birth.\n"
+        "edFi_staff,birthDate,birth_date,Date of birth.\n"
+        "edFi_student,firstName,first_name,First name.\n"
+    )
+    buf = io.StringIO(csv_content)
+    result = module._load_edfi_extract(buf)
+    assert "birth_date" in result
+    assert len(result["birth_date"]) == 2
+    assert "first_name" in result
+    assert len(result["first_name"]) == 1
+
+
+def _sample_edfi_dict() -> dict:
+    return {
+        "birth_date": [
+            {
+                "entity": "edFi_student",
+                "attribute_camel": "birthDate",
+                "description": "Date of birth.",
+            },
+            {
+                "entity": "edFi_staff",
+                "attribute_camel": "birthDate",
+                "description": "Date of birth.",
+            },
+        ],
+        "first_name": [
+            {
+                "entity": "edFi_student",
+                "attribute_camel": "firstName",
+                "description": "First name.",
+            },
+        ],
+        "entry_date": [
+            {
+                "entity": "edFi_studentSchoolAssociation",
+                "attribute_camel": "entryDate",
+                "description": "The date on which an individual enters.",
+            },
+        ],
+    }
+
+
+def test_edfi_exact_match_found() -> None:
+    module = _load_script()
+    edfi = _sample_edfi_dict()
+    result = module._edfi_exact_match("birth_date", edfi)
+    assert result is not None
+    proposed, note = result
+    assert proposed == "birth_date"
+    assert "edFi_student" in note
+    assert "edFi_staff" in note
+
+
+def test_edfi_exact_match_not_found() -> None:
+    module = _load_script()
+    edfi = _sample_edfi_dict()
+    assert module._edfi_exact_match("student_key", edfi) is None
+
+
+def test_edfi_fuzzy_match_above_threshold() -> None:
+    module = _load_script()
+    edfi = _sample_edfi_dict()
+    result = module._edfi_fuzzy_match("entry_dates", edfi, threshold=0.6)
+    assert result is not None
+    assert "entry_date" in result
+
+
+def test_edfi_fuzzy_match_below_threshold() -> None:
+    module = _load_script()
+    edfi = _sample_edfi_dict()
+    result = module._edfi_fuzzy_match("completely_unrelated", edfi, threshold=0.6)
+    assert result is None
+
+
+def test_edfi_notes_appended_to_existing_rule() -> None:
+    module = _load_script()
+    edfi = {
+        "employee_number": [
+            {
+                "entity": "edFi_staff",
+                "attribute_camel": "staffUniqueId",
+                "description": "A unique ID assigned to a staff.",
+            },
+        ],
+    }
+    row = {
+        "action": "rename",
+        "rule_ref": "R2",
+        "proposed_name": "",
+        "reviewer_notes": "KIPP-specific term: employee_number",
+    }
+    module._append_edfi_notes(row, "employee_number", edfi)
+    assert "KIPP-specific term" in row["reviewer_notes"]
+    assert "Ed-Fi" in row["reviewer_notes"]
+
+
+def test_edfi_notes_not_appended_when_no_match() -> None:
+    module = _load_script()
+    edfi = {
+        "birth_date": [
+            {
+                "entity": "edFi_student",
+                "attribute_camel": "birthDate",
+                "description": "DOB.",
+            }
+        ]
+    }
+    row = {"action": "keep", "rule_ref": "", "proposed_name": "", "reviewer_notes": ""}
+    module._append_edfi_notes(row, "student_key", edfi)
+    assert row["reviewer_notes"] == ""

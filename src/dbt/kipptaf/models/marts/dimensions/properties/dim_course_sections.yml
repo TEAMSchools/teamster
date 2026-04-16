@@ -33,9 +33,14 @@ models:
       - name: section_number
         data_type: string
         description: >-
-          PowerSchool section number. Identifies this specific section within
-          the course at the school.
+          The section number associated with this class. This is implied by the
+          Section ID but stored here forconvenience.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__cc
+            source_column: section_number
       - name: period
         data_type: string
         description: >-
@@ -46,4 +51,10 @@ models:
       - name: room
         data_type: string
         description: >-
-          Room assignment for this section as recorded in PowerSchool.
+          The room number the section is in. This is not presently tied to Power
+          Scheduler, so it will need to beimported or entered manually. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sections
+            source_column: room

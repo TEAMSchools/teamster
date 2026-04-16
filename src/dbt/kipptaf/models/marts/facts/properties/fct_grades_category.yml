@@ -35,8 +35,15 @@ models:
       - name: student_number
         data_type: int64
         description: >-
-          PowerSchool student number. Degenerate dimension for filtering.
+          District-assigned student identification number.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
       - name: academic_year
         data_type: int64
         description: >-
@@ -45,9 +52,13 @@ models:
       - name: term_code
         data_type: string
         description: >-
-          PowerSchool storecode identifying the term or category period (e.g.,
-          Q1, Q2, E1, E2).
+          The code used to represent this grade level to term ID and school ID.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gradecalcformulaweight
+            source_column: storecode
       - name: category_type
         data_type: string
         description: >-

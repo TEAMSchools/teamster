@@ -14,6 +14,8 @@ models:
               config:
                 severity: error
         description: Unique identifier for this table. Indexed. Required.
+        constraints:
+          - type: primary_key
       - name: lastfirst
         data_type: string
         description: Last, First, Mi. Indexed.
@@ -313,6 +315,8 @@ models:
       - name: prefixcodesetid
         data_type: int64
         description: Foreign key to codeset table of category prefix.
+        constraints:
+          - type: foreign_key
       - name: whomodifiedid
         data_type: int64
         description:

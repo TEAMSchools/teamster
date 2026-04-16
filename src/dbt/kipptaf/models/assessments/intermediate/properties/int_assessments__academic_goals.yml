@@ -7,6 +7,14 @@ models:
         data_type: int64
       - name: grade_level
         data_type: int64
+        description:
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: grade_level
       - name: state_assessment_code
         data_type: string
       - name: illuminate_subject_area
@@ -25,3 +33,4 @@ models:
         data_type: string
       - name: region
         data_type: string
+        description: Derived from _dbt_source_relation.

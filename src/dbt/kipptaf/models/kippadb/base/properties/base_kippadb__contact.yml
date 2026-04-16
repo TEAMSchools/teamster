@@ -147,5 +147,7 @@ models:
         data_type: string
       - name: contact_lastfirst
         data_type: string
+        description: Derived from first_name, last_name.
       - name: years_out_of_hs
         data_type: int64
+        description: Derived from actual_hs_graduation_date.

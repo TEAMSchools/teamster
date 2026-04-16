@@ -72,7 +72,8 @@
       "Skill(dbt:using-dbt-for-analytics-engineering:*)",
       "Write(/.worktrees/**)",
       "Write(/.claude/scratch/**)",
-      "Write(/.worktrees/**)"
+      "Write(/.worktrees/**)",
+      "Skill(commit-commands:commit:*)"
     ],
     "deny": [
       "Bash(* gcloud *)",

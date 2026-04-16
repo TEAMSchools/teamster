@@ -5,18 +5,64 @@ models:
         data_type: string
       - name: studentid
         data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance
+            source_column: studentid
+            column_role: foreign_key
       - name: student_number
         data_type: int64
+        description: District-assigned student identification number.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
       - name: schoolid
         data_type: int64
+        description: The School_Number of the associated Schools record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance
+            source_column: schoolid
       - name: calendardate
         data_type: date
       - name: fteid
         data_type: int64
+        description:
+          The internal number for the FTE with which this record is associated.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance_conversion_items
+            source_column: fteid
       - name: attendance_conversion_id
         data_type: int64
+        description:
+          The internal number for the Attendance Conversion with which this
+          record is associated. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance_conversion_items
+            source_column: attendance_conversion_id
       - name: grade_level
         data_type: int64
+        description:
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: grade_level
       - name: ontrack
         data_type: int64
       - name: offtrack
@@ -25,14 +71,40 @@ models:
         data_type: string
       - name: yearid
         data_type: int64
+        description:
+          A number representing which year the term belongs to, such as 13 for
+          2003-2004. The numberis equal to the ID of the year term divided by
+          100. Maintained in the Terms table.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentcategoryassoc
+            source_column: yearid
       - name: att_code
         data_type: string
+        description:
+          Attendance identifier set by school. Examples Tardy, Absent, etc.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance_code
+            source_column: att_code
       - name: attendancevalue
         data_type: float64
       - name: potential_attendancevalue
         data_type: float64
       - name: membershipvalue
         data_type: float64
+        description:
+          The amount of a student's membership this school claims. If a student
+          attends more than one school eachone will only be able to claim a
+          certain portion of the membership. The largest number for this will
+          usually be1 and fractions expressed as decimals. Like .5 or .25.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__calendar_day
+            source_column: membershipvalue
       - name: academic_year
         data_type: int64
       - name: semester
@@ -71,5 +143,11 @@ models:
         data_type: float64
       - name: n_absent_projected
         data_type: float64
+        description:
+          Derived from n_membership_student_year,
+          pct_absent_running_student_year.
       - name: is_truant
         data_type: boolean
+        description:
+          Categorical mapping of _dbt_source_project, n_absent_running_90,
+          n_membership_student_year, pct_absent_running_student_year.

@@ -27,3 +27,4 @@ models:
         data_type: date
       - name: valid_to
         data_type: date
+        description: Conditional on valid_from, valid_to.

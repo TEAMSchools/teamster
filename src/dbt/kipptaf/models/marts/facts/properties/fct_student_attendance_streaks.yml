@@ -39,8 +39,15 @@ models:
       - name: student_number
         data_type: int64
         description: >-
-          PowerSchool student number. Degenerate dimension for filtering.
+          District-assigned student identification number.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
       - name: academic_year
         data_type: int64
         description: >-
@@ -49,10 +56,13 @@ models:
       - name: streak_type
         data_type: string
         description: >-
-          Attendance code or attendancevalue string that defines the streak
-          (e.g., 'A' for absent, 'P' for present, '1.0' for present-value
-          streaks).
+          Attendance identifier set by school. Examples Tardy, Absent, etc.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance_code
+            source_column: att_code
       - name: streak_start_date
         data_type: date
         description: >-

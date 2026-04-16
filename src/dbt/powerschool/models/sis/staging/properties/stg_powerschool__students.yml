@@ -531,6 +531,8 @@ models:
       - name: dcid
         data_type: int64
         description: Unique identifier for this table. Indexed. Required.
+        constraints:
+          - type: primary_key
       - name: districtentrygradelevel
         data_type: int64
         description:

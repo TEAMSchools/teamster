@@ -19,5 +19,9 @@ models:
         data_type: float64
       - name: years_experience_total
         data_type: float64
+        description: Derived from years_at_kipp, years_exp_outside_kipp.
       - name: years_teaching_total
         data_type: float64
+        description:
+          Derived from years_teaching_at_kipp, years_teaching_in_njfl,
+          years_teaching_outside_njfl.
