@@ -376,3 +376,77 @@ class TestBuildPsYamlIndex:
         assert "stg_powerschool__cc" in index
         columns = index["stg_powerschool__cc"]
         assert "studentid" in columns or "dcid" in columns
+
+
+import json
+
+
+class TestBuildPsMapping:
+    """Test the PowerSchool PDF-to-JSON mapping builder."""
+
+    def test_mapping_structure_from_fixture_pages(self) -> None:
+        module = _load_script()
+        # Simulate extracted pages
+        pages = [PS_FIXTURE_PAGE_WITH_HEADER, PS_FIXTURE_PAGE_CONTINUATION]
+        yaml_index = {
+            "stg_powerschool__students": {
+                "alert_discipline",
+                "alert_disciplineexpires",
+                "student_number",
+                "ssn",
+                "fedethnicity",
+                "mailing_street",
+            },
+        }
+        result = module.build_ps_mapping(pages, yaml_index)
+
+        assert result["source"] == "powerschool"
+        assert "extracted_at" in result
+        assert "stats" in result
+        assert "entries" in result
+        assert "unmatched_pdf" in result
+        assert "unmatched_yaml" in result
+
+        # Check that matched entries exist
+        matched_cols = {e["column"] for e in result["entries"]}
+        assert "student_number" in matched_cols
+        assert "alert_discipline" in matched_cols
+
+    def test_pii_classification_in_mapping(self) -> None:
+        module = _load_script()
+        pages = [PS_FIXTURE_PAGE_WITH_HEADER, PS_FIXTURE_PAGE_CONTINUATION]
+        yaml_index = {
+            "stg_powerschool__students": {
+                "alert_discipline",
+                "student_number",
+                "ssn",
+                "mailing_street",
+            },
+        }
+        result = module.build_ps_mapping(pages, yaml_index)
+
+        entries_by_col = {e["column"]: e for e in result["entries"]}
+        # SSN should be PII
+        if "ssn" in entries_by_col:
+            assert entries_by_col["ssn"]["contains_pii"] is True
+        # alert_discipline should not be PII
+        if "alert_discipline" in entries_by_col:
+            assert entries_by_col["alert_discipline"]["contains_pii"] is False
+        # mailing_street should be PII
+        if "mailing_street" in entries_by_col:
+            assert entries_by_col["mailing_street"]["contains_pii"] is True
+
+    def test_stats_counts(self) -> None:
+        module = _load_script()
+        pages = [PS_FIXTURE_PAGE_WITH_HEADER]
+        yaml_index = {
+            "stg_powerschool__students": {
+                "alert_discipline",
+                "student_number",
+            },
+        }
+        result = module.build_ps_mapping(pages, yaml_index)
+        stats = result["stats"]
+        assert stats["matched"] > 0
+        assert isinstance(stats["pdf_entries"], int)
+        assert isinstance(stats["unmatched_pdf"], int)
