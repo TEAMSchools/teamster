@@ -9,8 +9,7 @@ models:
       - name: assessment_key
         data_type: string
         description: >-
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. Surrogate key.
+          Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -24,13 +23,8 @@ models:
       - name: title
         data_type: string
         description: >-
-          Stores a title name for the teacher and is used for sorting purposes.
+          Display name of the assessment.
 
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__users
-            source_column: title
       - name: subject_area
         data_type: string
         description: >-
@@ -58,14 +52,9 @@ models:
       - name: grade_level_tested
         data_type: int64
         description: >-
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted.
+          Grade level the assessment targets. Null for college-entrance
+          assessments which are not grade-specific.
 
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
-            source_column: grade_level
       - name: is_internal_assessment
         data_type: boolean
         description: >-

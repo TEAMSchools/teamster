@@ -21,38 +21,16 @@ models:
     columns:
       - name: academic_year
         data_type: int64
-        description:
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026').
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: academic_year
       - name: org
         data_type: string
       - name: region
         data_type: string
       - name: schoolid
         data_type: int64
-        description: The School_Number of the associated Schools record.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__attendance
-            source_column: schoolid
       - name: school
         data_type: string
       - name: grade_level
         data_type: int64
-        description:
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__reenrollments
-            source_column: grade_level
       - name: school_level
         data_type: string
       - name: goal_granularity

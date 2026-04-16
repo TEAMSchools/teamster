@@ -299,14 +299,6 @@ models:
             source_column: yearid
       - name: academic_year
         data_type: int64
-        description:
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026').
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: academic_year
       - name: exit_code_kf
         data_type: string
       - name: exit_code_ts
@@ -365,12 +357,6 @@ models:
         data_type: int64
       - name: school_name
         data_type: string
-        description: School name.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: school_name
       - name: school_abbreviation
         data_type: string
       - name: is_homeless
@@ -661,16 +647,19 @@ models:
       - name: lunch_status
         data_type: string
         description:
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026'). Categorical mapping of academic_year,
-          eligibility_name, is_directly_certified, lunchstatus, region, rn_year.
+          "This is the Lunch status copied from the student table. Represents
+          the portion of lunch a studentmust pay for: Blank=No status P=Full pay
+          R=Reduced F=Free E=Exempt T=Temporary FDC=Free-DC Categorical mapping
+          of academic_year, eligibility_name, is_directly_certified,
+          lunchstatus, region, rn_year."
       - name: lunch_application_status
         data_type: string
         description:
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026'). Categorical mapping of academic_year,
-          eligibility, eligibility_determination_reason, is_directly_certified,
-          lunchstatus, region, rn_year.
+          "This is the Lunch status copied from the student table. Represents
+          the portion of lunch a studentmust pay for: Blank=No status P=Full pay
+          R=Reduced F=Free E=Exempt T=Temporary FDC=Free-DC Categorical mapping
+          of academic_year, eligibility, eligibility_determination_reason,
+          is_directly_certified, lunchstatus, region, rn_year."
       - name: graduation_year
         data_type: int64
         description: Student graduation year.
@@ -682,6 +671,5 @@ models:
       - name: pearson_local_student_identifier
         data_type: int64
         description:
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026'). Conditional on academic_year,
+          Student previous student ID number. Conditional on academic_year,
           prevstudentid, region, student_number.

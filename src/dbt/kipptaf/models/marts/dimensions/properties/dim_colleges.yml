@@ -64,14 +64,9 @@ models:
       - name: account_type
         data_type: string
         description: >-
-          Indicates the Type of the day, such as Holiday, In Session, or Not in
-          Session.
+          Salesforce account type for the college (e.g., "4-year
+          College/University", "2-year Community College").
 
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__calendar_day
-            source_column: type
       - name: is_hbcu
         data_type: boolean
         description: >-

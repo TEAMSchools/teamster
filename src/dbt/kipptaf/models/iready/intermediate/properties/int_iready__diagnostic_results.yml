@@ -16,78 +16,32 @@ models:
         data_type: string
       - name: academic_year
         data_type: string
-        description:
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026').
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: academic_year
       - name: class_es
         data_type: string
       - name: class_teacher_s
         data_type: string
       - name: economically_disadvantaged
         data_type: string
-        description: Economically disadvantaged indicator.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: economically_disadvantaged
       - name: english_language_learner
         data_type: string
       - name: enrolled
         data_type: string
       - name: first_name
         data_type: string
-        description: Students' first name.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: first_name
-            contains_pii: true
       - name: hispanic_or_latino
         data_type: string
       - name: last_name
         data_type: string
-        description: Students last name.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: last_name
-            contains_pii: true
       - name: migrant
         data_type: string
-        description: Migrant status indicator.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: migrant
       - name: race
         data_type: string
-        description: Student race.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: race
       - name: report_group_s
         data_type: string
       - name: sex
         data_type: string
       - name: special_education
         data_type: string
-        description: Special education status.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: special_education
       - name: user_name
         data_type: string
       - name: algebra_and_algebraic_thinking_placement
@@ -210,13 +164,6 @@ models:
         data_type: int64
       - name: start_date
         data_type: date
-        description:
-          The start date of the association of this teacher to this section.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__sectionteacher
-            source_column: start_date
       - name: completion_date
         data_type: date
       - name: most_recent_diagnostic_ytd_y_n
@@ -285,12 +232,6 @@ models:
         data_type: string
       - name: schoolid
         data_type: int64
-        description: The School_Number of the associated Schools record.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__attendance
-            source_column: schoolid
       - name: state_assessment_type
         data_type: string
       - name: is_proficient_with_typical
@@ -343,15 +284,10 @@ models:
         data_type: string
       - name: rn_subj_round
         data_type: int64
-        description:
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026'). ROWNUMBER of value.
+        description: ROWNUMBER of value.
       - name: round_number
         data_type: string
-        description:
-          The code value that is stored in the database, such as Home and Work
-          for phone types and Mand F for gender types. Indexed with the Code
-          Type column. Required Derived from code.
+        description: Derived from code.
       - name: scale_points_to_proficiency
         data_type: int64
         description: Conditional on most_recent_overall_scale_score, scale_low.
@@ -361,6 +297,4 @@ models:
         data_type: string
       - name: test_round
         data_type: string
-        description:
-          Name of the assignment, such as Essay, Homework, etc. Required.
-          Indexed. First non-null of name.
+        description: First non-null of name.

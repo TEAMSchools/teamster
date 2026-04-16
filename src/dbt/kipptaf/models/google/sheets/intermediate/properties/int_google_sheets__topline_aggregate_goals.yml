@@ -25,12 +25,6 @@ models:
         data_type: string
       - name: goal
         data_type: numeric
-        description: End-of-period aimline goal score.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: goal
       - name: aggregation_hash
         data_type: string
       - name: Indicator_Display
@@ -42,5 +36,5 @@ models:
       - name: aggregation_display
         data_type: string
         description:
-          A short 1 or 2 character version of the Name, such as A. Categorical
+          The short name for the school displayed on most screens. Categorical
           mapping of abbreviation, entity, grade_band, layer, org_level.

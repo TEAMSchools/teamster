@@ -30,14 +30,6 @@ models:
         data_type: date
       - name: academic_year
         data_type: int64
-        description:
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026').
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: academic_year
       - name: is_published
         data_type: boolean
       - name: employee_number
@@ -48,32 +40,10 @@ models:
         data_type: string
       - name: observation_type_abbreviation
         data_type: string
-        description: A short 1 or 2 character version of the Name, such as A.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__cycle_day
-            source_column: abbreviation
       - name: observation_course
         data_type: string
-        description:
-          Name of the assignment, such as Essay, Homework, etc. Required.
-          Indexed.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__assignmentsection
-            source_column: name
       - name: observation_grade
         data_type: string
-        description:
-          Name of the assignment, such as Essay, Homework, etc. Required.
-          Indexed.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__assignmentsection
-            source_column: name
       - name: observation_notes
         data_type: string
       - name: term_code

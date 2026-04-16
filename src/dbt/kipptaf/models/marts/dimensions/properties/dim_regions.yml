@@ -20,13 +20,8 @@ models:
       - name: state
         data_type: string
         description: >-
-          State abbreviation.
+          US state (NJ or FL).
 
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: state
       - name: timezone
         data_type: string
         description: >-

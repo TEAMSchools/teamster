@@ -237,14 +237,6 @@ models:
         data_type: date
       - name: surrogate_key
         data_type: string
-        description:
-          Hash of student_primary_id, school_year, pm_period, measure, and
-          probe_number.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: surrogate_key
       - name: additional_remunerations__rate__amount_value__sum
         data_type: float64
         description: Derived from additional_remunerations, amountvalue.

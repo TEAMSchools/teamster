@@ -51,14 +51,8 @@ models:
       - name: creator_name
         data_type: string
         description: >-
-          Name of the assignment, such as Essay, Homework, etc. Required.
-          Indexed.
+          Display name of the person who created the assignment.
 
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__assignmentsection
-            source_column: name
       - name: goal_name
         data_type: string
         description: >-
@@ -92,10 +86,4 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026').
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: academic_year
+          Conditional on created_date_local.

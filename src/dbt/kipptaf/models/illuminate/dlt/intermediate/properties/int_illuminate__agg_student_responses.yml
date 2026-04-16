@@ -41,17 +41,10 @@ models:
         description: First non-null of standard_id, reporting_group_id.
       - name: response_type_description
         data_type: string
-        description:
-          The description of the assignment. First non-null of
-          standard_description, label.
+        description: First non-null of standard_description, label.
       - name: points_possible
         data_type: numeric
         description: First non-null of points_possible, raw_score_possible.
       - name: points
         data_type: numeric
-        description: The actual points student received for this section.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__pgfinalgrades
-            source_column: points
+        description: First non-null of points, raw_score.

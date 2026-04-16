@@ -17,12 +17,6 @@ models:
         data_type: string
       - name: district_name
         data_type: string
-        description: District name.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: district_name
       - name: name_last
         data_type: string
       - name: name_first
@@ -31,12 +25,6 @@ models:
         data_type: string
       - name: gender
         data_type: string
-        description: Student gender.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: gender
       - name: secondary_id
         data_type: string
       - name: district_student_id
@@ -203,11 +191,4 @@ models:
         description: Computed expression.
       - name: test_type
         data_type: string
-        description:
-          The type of test being administered. 1 = National, 2 = State, 3 =
-          Local, 4 =District, 5 = School, 6 = Other, 7 = Fitness (as of 20.11.0)
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__test
-            source_column: test_type
+        description: Computed expression.

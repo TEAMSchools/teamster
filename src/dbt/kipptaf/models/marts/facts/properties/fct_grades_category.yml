@@ -45,14 +45,8 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026').
+          KIPP academic year (July start) in which this category grade falls.
 
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: academic_year
       - name: term_code
         data_type: string
         description: >-

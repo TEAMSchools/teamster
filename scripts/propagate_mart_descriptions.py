@@ -505,9 +505,6 @@ def _resolve_column_to_staging(
             stg_pkg = _infer_package(stg_model)
             if stg_pkg in walked_pkgs:
                 return (stg_model, stg_col, stg_pkg)
-        # No package preference — take first candidate
-        stg_model, stg_col = candidates[0]
-        return (stg_model, stg_col, _infer_package(stg_model))
 
     return None
 
@@ -603,20 +600,6 @@ def _enrich_yaml_descriptions(
                                 break
                         if resolved:
                             break
-                    # Last resort: accept any candidate
-                    if resolved is None:
-                        for lookup_col in [col_name, alias_col_name]:
-                            if not lookup_col:
-                                continue
-                            candidates = staging_index.get(lookup_col, [])
-                            if candidates:
-                                stg_model, stg_col = candidates[0]
-                                resolved = (
-                                    stg_model,
-                                    stg_col,
-                                    _infer_package(stg_model),
-                                )
-                                break
             else:
                 # Non-recursive path (for tests): use source_mapping keys
                 for _relation, mapping in source_mapping.items():

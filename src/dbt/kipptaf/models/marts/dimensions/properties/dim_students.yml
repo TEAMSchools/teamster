@@ -87,7 +87,7 @@ models:
       - name: has_iep
         data_type: boolean
         description: >-
-          Individualized Education Program status. Derived from iep_status.
+          Derived from iep_status.
 
       - name: ethnicity
         data_type: string

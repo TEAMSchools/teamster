@@ -5,21 +5,8 @@ models:
         data_type: int64
       - name: title
         data_type: string
-        description:
-          Stores a title name for the teacher and is used for sorting purposes.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__users
-            source_column: title
       - name: description
         data_type: string
-        description: The description of the assignment.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__assignmentsection
-            source_column: description
       - name: user_id
         data_type: int64
       - name: created_at
@@ -36,14 +23,6 @@ models:
         data_type: int64
       - name: academic_year
         data_type: int64
-        description:
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026').
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: academic_year
       - name: local_assessment_id
         data_type: string
       - name: intel_assess_guid
@@ -84,32 +63,12 @@ models:
         data_type: string
       - name: creator_first_name
         data_type: string
-        description: Students' first name.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: first_name
-            contains_pii: true
       - name: creator_last_name
         data_type: string
-        description: Students last name.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: last_name
-            contains_pii: true
       - name: creator_email_1
         data_type: string
       - name: performance_band_set_description
         data_type: string
-        description: The description of the assignment.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__assignmentsection
-            source_column: description
       - name: scope
         data_type: string
         description: Conditional on code_translation, is_grade_k_1.
@@ -117,6 +76,4 @@ models:
         data_type: string
       - name: academic_year_clean
         data_type: int64
-        description:
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026'). Derived from academic_year.
+        description: Derived from academic_year.

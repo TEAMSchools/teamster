@@ -21,12 +21,6 @@ models:
         data_type: string
       - name: description
         data_type: string
-        description: The description of the assignment.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__assignmentsection
-            source_column: description
       - name: due_date
         data_type: string
       - name: group
@@ -47,14 +41,6 @@ models:
         data_type: string
       - name: status
         data_type: string
-        description:
-          "Indicates if the course was made either by a user or automatically by
-          an import. Validvalues: 0=user-created, 3=auto-created."
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__courses
-            source_column: status
       - name: subject
         data_type: string
       - name: tech_tier
@@ -67,13 +53,5 @@ models:
         data_type: string
       - name: type
         data_type: string
-        description:
-          Indicates the Type of the day, such as Holiday, In Session, or Not in
-          Session.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__calendar_day
-            source_column: type
       - name: vendor
         data_type: string

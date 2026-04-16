@@ -19,18 +19,9 @@ models:
         data_type: string
       - name: localstudentidentifier
         data_type: int64
-        description:
-          District-assigned student identification number. First non-null of
-          student_number, localstudentidentifier.
+        description: First non-null of student_number, localstudentidentifier.
       - name: firstname
         data_type: string
-        description: The person's first name. Indexed. Optional.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__person
-            source_column: firstname
-            contains_pii: true
       - name: lastorsurname
         data_type: string
       - name: nativehawaiianorotherpacificislander
@@ -57,14 +48,6 @@ models:
         data_type: string
       - name: academic_year
         data_type: int64
-        description:
-          Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026').
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: academic_year
       - name: test_grade
         data_type: int64
       - name: discipline
@@ -82,20 +65,10 @@ models:
         description: First non-null of studentwithdisabilities.
       - name: lep_status
         data_type: boolean
-        description: Student Limited English Proficiency status.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__studentcorefields
-            source_column: lep_status
+        description: Conditional on englishlearnerel.
       - name: iep_status
         data_type: string
-        description: Individualized Education Program status.
-        config:
-          meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
-            source_column: iep_status
+        description: Conditional on studentwithdisabilities.
       - name: race_ethnicity
         data_type: string
         description:

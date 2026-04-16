@@ -69,14 +69,8 @@ models:
         description: The response label chosen by the student (e.g., "A", "3").
       - name: points
         data_type: bignumeric
-        description: The actual points student received for this section.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__pgfinalgrades
-            source_column: points
+        description: Points awarded for this response.
       - name: percent_correct
         data_type: float64
         description: >-
-          The actual points student received for this section. Derived from
-          maximum, points.
+          Derived from maximum, points.
