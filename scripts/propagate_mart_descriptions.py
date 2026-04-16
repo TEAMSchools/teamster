@@ -72,12 +72,13 @@ def _infer_column_role(description: str) -> str:
     return ""
 
 
-def _enrich_staging_column_roles(yaml_dirs: list[Path], ryaml) -> int:
-    """Write column_role to staging YAML where descriptions identify PK/FK.
+def _enrich_staging_constraints(yaml_dirs: list[Path], ryaml) -> int:
+    """Write dbt constraints to staging YAML where descriptions identify PK/FK.
 
-    Reads each staging YAML, infers column_role from description text,
-    and writes it into config.meta.column_role. Only modifies files
-    where at least one column gains a new role.
+    Reads each staging YAML, infers primary_key/foreign_key from
+    description text, and writes native dbt ``constraints`` on the
+    column. Only modifies files where at least one column gains a
+    new constraint.
 
     Returns the number of columns enriched.
     """
@@ -98,14 +99,14 @@ def _enrich_staging_column_roles(yaml_dirs: list[Path], ryaml) -> int:
                     role = _infer_column_role(desc)
                     if not role:
                         continue
-                    existing_role = (
-                        col.get("config", {}).get("meta", {}).get("column_role")
-                    )
-                    if existing_role:
+                    # Check if constraint already exists
+                    existing = col.get("constraints", []) or []
+                    if any(
+                        c.get("type") in ("primary_key", "foreign_key")
+                        for c in existing
+                    ):
                         continue
-                    col.setdefault("config", {}).setdefault("meta", {})[
-                        "column_role"
-                    ] = role
+                    col.setdefault("constraints", []).append({"type": role})
                     enriched += 1
                     file_changed = True
 
@@ -140,8 +141,16 @@ def _build_staging_description_dict(
                     pii = (
                         col.get("config", {}).get("meta", {}).get("contains_pii", False)
                     )
-                    meta = col.get("config", {}).get("meta", {})
-                    role = meta.get("column_role") or _infer_column_role(desc)
+                    # Read role from dbt constraints (staging) or meta (downstream)
+                    constraints = col.get("constraints", []) or []
+                    role = ""
+                    for c in constraints:
+                        if c.get("type") in ("primary_key", "foreign_key"):
+                            role = c["type"]
+                            break
+                    if not role:
+                        meta = col.get("config", {}).get("meta", {})
+                        role = meta.get("column_role") or _infer_column_role(desc)
                     result[(model_name, col["name"])] = {
                         "description": desc,
                         "contains_pii": bool(pii),
@@ -816,7 +825,7 @@ def main() -> None:
     # Step 1: Enrich staging YAML with column_role where descriptions
     # identify primary/foreign keys
     staging_dirs = [d for d in STAGING_YAML_DIRS if d.exists()]
-    staging_enriched = _enrich_staging_column_roles(staging_dirs, ryaml)
+    staging_enriched = _enrich_staging_constraints(staging_dirs, ryaml)
     if staging_enriched:
         print(f"Enriched {staging_enriched} staging columns with column_role")
 

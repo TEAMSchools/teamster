@@ -270,9 +270,8 @@ models:
       - name: programid
         data_type: int64
         description: Foreign key to the Programs table. Indexed.
-        config:
-          meta:
-            column_role: foreign_key
+        constraints:
+          - type: foreign_key
       - name: excludefromstoredgrades
         data_type: int64
         description:
