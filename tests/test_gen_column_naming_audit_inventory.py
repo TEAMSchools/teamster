@@ -124,15 +124,16 @@ def test_initial_rename_guess_employee_number() -> None:
     assert result == ("local_staff_identifier", "R2")
 
 
-def test_initial_rename_guess_formatted_name() -> None:
+def test_initial_rename_guess_powerschool_prefix() -> None:
     module = _load_script()
-    result = module._initial_rename_guess("formatted_name")
-    assert result == ("full_name", "R6")
+    result = module._initial_rename_guess("powerschool_school_id")
+    assert result == ("sis_school_id", "R1")
 
 
 def test_initial_rename_guess_unmapped_returns_none() -> None:
     module = _load_script()
     assert module._initial_rename_guess("student_key") is None
+    assert module._initial_rename_guess("formatted_name") is None
     assert module._initial_rename_guess("made_up_column") is None
 
 
@@ -300,3 +301,120 @@ def test_sort_rows_groups_by_domain_then_model() -> None:
     # Within a model, preserve column order from the YAML (stable sort).
     student_rows = [r for r in out if r["domain"] == "Student"]
     assert [r["current_column"] for r in student_rows] == ["b", "a"]
+
+
+def test_load_edfi_extract() -> None:
+    module = _load_script()
+    csv_content = (
+        "entity,attribute_camel,attribute_snake,description\n"
+        "edFi_student,birthDate,birth_date,Date of birth.\n"
+        "edFi_staff,birthDate,birth_date,Date of birth.\n"
+        "edFi_student,firstName,first_name,First name.\n"
+    )
+    buf = io.StringIO(csv_content)
+    result = module._load_edfi_extract(buf)
+    assert "birth_date" in result
+    assert len(result["birth_date"]) == 2
+    assert "first_name" in result
+    assert len(result["first_name"]) == 1
+
+
+def _sample_edfi_dict() -> dict:
+    return {
+        "birth_date": [
+            {
+                "entity": "edFi_student",
+                "attribute_camel": "birthDate",
+                "description": "Date of birth.",
+            },
+            {
+                "entity": "edFi_staff",
+                "attribute_camel": "birthDate",
+                "description": "Date of birth.",
+            },
+        ],
+        "first_name": [
+            {
+                "entity": "edFi_student",
+                "attribute_camel": "firstName",
+                "description": "First name.",
+            },
+        ],
+        "entry_date": [
+            {
+                "entity": "edFi_studentSchoolAssociation",
+                "attribute_camel": "entryDate",
+                "description": "The date on which an individual enters.",
+            },
+        ],
+    }
+
+
+def test_edfi_exact_match_found() -> None:
+    module = _load_script()
+    edfi = _sample_edfi_dict()
+    result = module._edfi_exact_match("birth_date", edfi)
+    assert result is not None
+    proposed, note = result
+    assert proposed == "birth_date"
+    assert "edFi_student" in note
+    assert "edFi_staff" in note
+
+
+def test_edfi_exact_match_not_found() -> None:
+    module = _load_script()
+    edfi = _sample_edfi_dict()
+    assert module._edfi_exact_match("student_key", edfi) is None
+
+
+def test_edfi_fuzzy_match_above_threshold() -> None:
+    module = _load_script()
+    edfi = _sample_edfi_dict()
+    result = module._edfi_fuzzy_match("entry_dates", edfi, threshold=0.6)
+    assert result is not None
+    assert "entry_date" in result
+
+
+def test_edfi_fuzzy_match_below_threshold() -> None:
+    module = _load_script()
+    edfi = _sample_edfi_dict()
+    result = module._edfi_fuzzy_match("completely_unrelated", edfi, threshold=0.6)
+    assert result is None
+
+
+def test_edfi_notes_appended_to_existing_rule() -> None:
+    module = _load_script()
+    edfi = {
+        "employee_number": [
+            {
+                "entity": "edFi_staff",
+                "attribute_camel": "staffUniqueId",
+                "description": "A unique ID assigned to a staff.",
+            },
+        ],
+    }
+    row = {
+        "action": "rename",
+        "rule_ref": "R2",
+        "proposed_name": "",
+        "reviewer_notes": "KIPP-specific term: employee_number",
+    }
+    module._append_edfi_notes(row, "employee_number", edfi)
+    assert "KIPP-specific term" in row["reviewer_notes"]
+    assert "Ed-Fi" in row["reviewer_notes"]
+
+
+def test_edfi_notes_not_appended_when_no_match() -> None:
+    module = _load_script()
+    edfi = {
+        "birth_date": [
+            {
+                "entity": "edFi_student",
+                "attribute_camel": "birthDate",
+                "description": "DOB.",
+            }
+        ]
+    }
+    row = {"action": "keep", "rule_ref": "", "proposed_name": "", "reviewer_notes": ""}
+    module._append_edfi_notes(row, "student_key", edfi)
+    assert row["reviewer_notes"] == ""

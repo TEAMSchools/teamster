@@ -22,6 +22,7 @@ Design reference:
 from __future__ import annotations
 
 import csv
+import difflib
 import re
 from pathlib import Path
 from typing import TextIO
@@ -113,13 +114,6 @@ _RENAME_GUESSES: dict[str, tuple[str, str]] = {
     "observer_employee_number": ("observer_staff_identifier", "R2"),
     "teammate_employee_number": ("teammate_staff_identifier", "R2"),
     "recruiter_employee_number": ("recruiter_staff_identifier", "R2"),
-    # Rule 6 — Ed-Fi / plain English for person names
-    "formatted_name": ("full_name", "R6"),
-    "family_name_1": ("last_name", "R6"),
-    "given_name": ("first_name", "R6"),
-    "manager_formatted_name": ("manager_full_name", "R6"),
-    "manager_family_name_1": ("manager_last_name", "R6"),
-    "manager_given_name": ("manager_first_name", "R6"),
     # Rule 1 — PowerSchool identifier stripping
     "powerschool_school_id": ("sis_school_id", "R1"),
     "deanslist_school_id": ("behavior_system_school_id", "R1"),
@@ -134,6 +128,125 @@ _RENAME_GUESSES: dict[str, tuple[str, str]] = {
 def _initial_rename_guess(column_name: str) -> tuple[str, str] | None:
     """Return (proposed_name, rule_ref) for known renames, else None."""
     return _RENAME_GUESSES.get(column_name)
+
+
+def _load_edfi_extract(fh: TextIO) -> dict[str, list[dict[str, str]]]:
+    """Load the vendored Ed-Fi attribute CSV into a lookup dict.
+
+    Returns {attribute_snake: [{entity, attribute_camel, description}, ...]}.
+    """
+    result: dict[str, list[dict[str, str]]] = {}
+    reader = csv.DictReader(fh)
+    for row in reader:
+        snake = row["attribute_snake"]
+        result.setdefault(snake, []).append(
+            {
+                "entity": row["entity"],
+                "attribute_camel": row["attribute_camel"],
+                "description": row["description"],
+            }
+        )
+    return result
+
+
+def _edfi_exact_match(
+    col_name: str, edfi: dict[str, list[dict[str, str]]]
+) -> tuple[str, str] | None:
+    """Tier 1: exact token-set match against Ed-Fi attributes.
+
+    Returns (proposed_name, reviewer_note) or None.
+    """
+    col_tokens = frozenset(col_name.split("_"))
+    for snake, entries in edfi.items():
+        edfi_tokens = frozenset(snake.split("_"))
+        if col_tokens == edfi_tokens:
+            parts = []
+            for e in entries:
+                desc_preview = e["description"][:80] if e["description"] else ""
+                parts.append(f"{e['entity']}.{e['attribute_camel']} — {desc_preview}")
+            note = "Ed-Fi exact: " + "; ".join(parts)
+            return (snake, note)
+    return None
+
+
+def _edfi_fuzzy_match(
+    col_name: str,
+    edfi: dict[str, list[dict[str, str]]],
+    threshold: float = 0.6,
+    max_candidates: int = 3,
+) -> str | None:
+    """Tier 2: fuzzy match using SequenceMatcher.
+
+    Returns a reviewer_note string with candidates, or None.
+    """
+    candidates: list[tuple[float, str, list[dict[str, str]]]] = []
+    for snake, entries in edfi.items():
+        ratio = difflib.SequenceMatcher(None, col_name, snake).ratio()
+        if ratio >= threshold:
+            candidates.append((ratio, snake, entries))
+
+    if not candidates:
+        return None
+
+    candidates.sort(key=lambda c: c[0], reverse=True)
+    top = candidates[:max_candidates]
+
+    parts = []
+    for _ratio, snake, entries in top:
+        for e in entries:
+            desc_preview = e["description"][:80] if e["description"] else ""
+            parts.append(
+                f"{snake} ({e['entity']}.{e['attribute_camel']} — {desc_preview})"
+            )
+    return "Ed-Fi candidates: " + "; ".join(parts)
+
+
+def _join_notes(existing: str, new: str) -> str:
+    """Join reviewer notes with a separator."""
+    if not existing:
+        return new
+    return f"{existing}. {new}"
+
+
+def _append_edfi_notes(
+    row: dict[str, str],
+    col_name: str,
+    edfi: dict[str, list[dict[str, str]]],
+) -> None:
+    """Append Ed-Fi matching notes to a row's reviewer_notes.
+
+    If the row has no action from another rule, exact matches set
+    action=rename and fuzzy matches add candidates. If another rule
+    already set the action, Ed-Fi candidates are appended as
+    informational notes.
+    """
+    existing_action = row.get("action", "keep")
+
+    if existing_action == "keep" and not row.get("rule_ref"):
+        exact = _edfi_exact_match(col_name, edfi)
+        if exact is not None:
+            proposed, note = exact
+            row["action"] = "rename"
+            row["proposed_name"] = proposed
+            row["rule_ref"] = "R6"
+            row["reviewer_notes"] = _join_notes(row.get("reviewer_notes", ""), note)
+            return
+
+        fuzzy = _edfi_fuzzy_match(col_name, edfi)
+        if fuzzy is not None:
+            row["rule_ref"] = "R6"
+            row["reviewer_notes"] = _join_notes(row.get("reviewer_notes", ""), fuzzy)
+            return
+    else:
+        exact = _edfi_exact_match(col_name, edfi)
+        if exact is not None:
+            _, note = exact
+            row["reviewer_notes"] = _join_notes(row.get("reviewer_notes", ""), note)
+            return
+
+        fuzzy = _edfi_fuzzy_match(col_name, edfi)
+        if fuzzy is not None:
+            row["reviewer_notes"] = _join_notes(row.get("reviewer_notes", ""), fuzzy)
 
 
 def _structural_additions() -> list[dict[str, str]]:
@@ -171,7 +284,9 @@ def _structural_additions() -> list[dict[str, str]]:
     ]
 
 
-def _read_mart_yaml(path: Path) -> list[dict[str, str]]:
+def _read_mart_yaml(
+    path: Path, edfi: dict[str, list[dict[str, str]]] | None = None
+) -> list[dict[str, str]]:
     """Parse a single mart properties YAML into audit-row dicts."""
     with path.open(encoding="utf-8") as fh:
         doc = yaml.safe_load(fh)
@@ -208,6 +323,9 @@ def _read_mart_yaml(path: Path) -> list[dict[str, str]]:
                     row["proposed_name"] = proposed
                     row["rule_ref"] = rule_ref
 
+            if edfi is not None:
+                _append_edfi_notes(row, col_name, edfi)
+
             rows.append(row)
 
     return rows
@@ -233,6 +351,7 @@ MART_YAML_DIRS: tuple[Path, ...] = (
 )
 
 OUTPUT_CSV = Path("docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv")
+EDFI_CSV = Path("docs/superpowers/specs/edfi-v6.1.0-attributes.csv")
 
 
 def _sort_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
@@ -248,10 +367,16 @@ def _write_csv(rows: list[dict[str, str]], fh: TextIO) -> None:
 
 
 def main() -> None:
+    edfi: dict[str, list[dict[str, str]]] | None = None
+    if EDFI_CSV.exists():
+        with EDFI_CSV.open(encoding="utf-8") as fh:
+            edfi = _load_edfi_extract(fh)
+        print(f"Loaded {sum(len(v) for v in edfi.values())} Ed-Fi attributes")
+
     rows: list[dict[str, str]] = []
     for directory in MART_YAML_DIRS:
         for yaml_path in sorted(directory.glob("*.yml")):
-            rows.extend(_read_mart_yaml(yaml_path))
+            rows.extend(_read_mart_yaml(yaml_path, edfi=edfi))
     rows.extend(_structural_additions())
     sorted_rows = _sort_rows(rows)
 
