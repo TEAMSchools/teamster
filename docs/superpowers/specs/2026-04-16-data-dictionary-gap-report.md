@@ -4,14 +4,14 @@ Generated from the extraction run against PowerSchool and ADP PDFs. These
 columns have no description from the source-system data dictionary. They need
 hand-written descriptions or a different source document.
 
-**PowerSchool**: 1377 matched / 2201 YAML columns (62%) **ADP**: 35 matched /
+**PowerSchool**: 1420 matched / 2201 YAML columns (64%) **ADP**: 35 matched /
 135 YAML columns (25%)
 
 ---
 
 ## PowerSchool — Extension Tables (KIPP custom, not in PDF)
 
-669 columns across 8 models. These are KIPP-specific custom fields. Descriptions
+637 columns across 8 models. These are KIPP-specific custom fields. Descriptions
 must be hand-written.
 
 ### `stg_powerschool__s_nj_crs_x`
@@ -23,7 +23,6 @@ must be hand-written.
 - `course_sequence_code`
 - `course_span`
 - `course_type`
-- `coursesdcid`
 - `cte_test_name_code`
 - `ctecollegecredits`
 - `ctetestdevelopercode`
@@ -35,10 +34,6 @@ must be hand-written.
 - `nces_subject_area`
 - `school_code_override`
 - `sla_include_tf`
-- `whencreated`
-- `whenmodified`
-- `whocreated`
-- `whomodified`
 
 ### `stg_powerschool__s_nj_ren_x`
 
@@ -97,7 +92,6 @@ must be hand-written.
 - `nonpublic`
 - `pid_504_tf`
 - `programtypecode`
-- `reenrollmentsdcid`
 - `remotedaysabsent`
 - `remotedayspresent`
 - `reportedsharedvoc_yn`
@@ -126,10 +120,6 @@ must be hand-written.
 - `titleimath_yn`
 - `titleiscience_yn`
 - `tuition_code`
-- `whencreated`
-- `whenmodified`
-- `whocreated`
-- `whomodified`
 - `withdrawal_date`
 
 ### `stg_powerschool__s_nj_stu_x`
@@ -524,7 +514,6 @@ must be hand-written.
 - `state_lep_status`
 - `stateofbirth`
 - `student_type`
-- `studentsdcid`
 - `studentslearningmodel`
 - `stureporting_name`
 - `supplementaleduserv`
@@ -546,10 +535,6 @@ must be hand-written.
 - `tuition_code`
 - `typeofearnedcollegecredits`
 - `typeofworkbasedlearning`
-- `whencreated`
-- `whenmodified`
-- `whocreated`
-- `whomodified`
 - `withdrawal_date`
 - `worldlang_assessed1`
 - `worldlang_assessed1_name`
@@ -600,11 +585,6 @@ must be hand-written.
 - `smart_yearsinnj`
 - `smart_yearsofexp`
 - `staffmemberid`
-- `usersdcid`
-- `whencreated`
-- `whenmodified`
-- `whocreated`
-- `whomodified`
 
 ### `stg_powerschool__s_stu_x`
 
@@ -661,7 +641,6 @@ must be hand-written.
 - `section504_yn`
 - `singleparent`
 - `steamstemparticipant`
-- `studentsdcid`
 - `suffix`
 - `tribal_affiliation_1`
 - `tribal_affiliation_2`
@@ -678,24 +657,14 @@ must be hand-written.
 - `exit_code`
 - `exit_date`
 - `id`
-- `studentsdcid`
 - `when_modified_or_created`
-- `whencreated`
-- `whenmodified`
-- `whocreated`
-- `whomodified`
 
 ### `stg_powerschool__u_clg_et_stu_alt`
 
 - `exit_code`
 - `exit_date`
 - `id`
-- `studentsdcid`
 - `when_modified_or_created`
-- `whencreated`
-- `whenmodified`
-- `whocreated`
-- `whomodified`
 
 ### `stg_powerschool__u_storedgrades_de`
 
@@ -705,58 +674,6 @@ must be hand-written.
 - `de_score`
 - `de_semester`
 - `id`
-- `storedgradesdcid`
-
----
-
-## PowerSchool — Audit Columns
-
-75 columns across 17 models. Standard PS audit fields. Template descriptions:
-
-| Column             | Description                                                   |
-| ------------------ | ------------------------------------------------------------- |
-| `executionid`      | Unique identifier for the database transaction.               |
-| `ip_address`       | IP address of the client that initiated the transaction.      |
-| `transaction_date` | Date and time of the database transaction.                    |
-| `whomodifiedid`    | Internal identifier of the user who last modified the record. |
-| `whomodifiedtype`  | Type of user account that last modified the record.           |
-
-Models with audit columns:
-
-- `stg_powerschool__assignmentcategoryassoc`: `executionid`, `ip_address`,
-  `transaction_date`, `whomodifiedid`, `whomodifiedtype`
-- `stg_powerschool__assignmentsection`: `executionid`, `ip_address`,
-  `transaction_date`, `whomodifiedid`, `whomodifiedtype`
-- `stg_powerschool__calendar_day`: `ip_address`, `whomodifiedid`,
-  `whomodifiedtype`
-- `stg_powerschool__courses`: `ip_address`, `transaction_date`, `whomodifiedid`,
-  `whomodifiedtype`
-- `stg_powerschool__districtteachercategory`: `executionid`, `ip_address`,
-  `transaction_date`, `whomodifiedid`, `whomodifiedtype`
-- `stg_powerschool__pgfinalgrades`: `executionid`, `ip_address`,
-  `transaction_date`, `whomodifiedid`, `whomodifiedtype`
-- `stg_powerschool__prefs`: `executionid`, `ip_address`, `transaction_date`,
-  `whomodifiedid`, `whomodifiedtype`
-- `stg_powerschool__schools`: `ip_address`, `transaction_date`, `whomodifiedid`,
-  `whomodifiedtype`
-- `stg_powerschool__schoolstaff`: `ip_address`, `transaction_date`,
-  `whomodifiedid`, `whomodifiedtype`
-- `stg_powerschool__sections`: `ip_address`, `transaction_date`,
-  `whomodifiedid`, `whomodifiedtype`
-- `stg_powerschool__sectionteacher`: `executionid`, `ip_address`,
-  `transaction_date`, `whomodifiedid`, `whomodifiedtype`
-- `stg_powerschool__storedgrades`: `executionid`, `ip_address`,
-  `transaction_date`, `whomodifiedid`, `whomodifiedtype`
-- `stg_powerschool__students`: `ip_address`, `transaction_date`,
-  `whomodifiedid`, `whomodifiedtype`
-- `stg_powerschool__teachercategory`: `executionid`, `ip_address`,
-  `transaction_date`, `whomodifiedid`, `whomodifiedtype`
-- `stg_powerschool__termbins`: `ip_address`, `transaction_date`,
-  `whomodifiedid`, `whomodifiedtype`
-- `stg_powerschool__terms`: `ip_address`, `transaction_date`, `whomodifiedid`,
-  `whomodifiedtype`
-- `stg_powerschool__users`: `ip_address`, `transaction_date`, `whomodifiedid`,
-  `whomodifiedtype`
 
 ---
 
@@ -787,22 +704,55 @@ PowerSchool database. Descriptions should reference the transformation logic.
 
 ## PowerSchool — Core Unmatched (likely in PDF but parser missed)
 
-59 columns across 21 models. These columns are likely in the PDF data dictionary
-but the parser could not match them due to column-name formatting differences.
+123 columns across 27 models. These columns are likely in the PDF data
+dictionary but the parser could not match them due to column-name formatting
+differences.
+
+### `stg_powerschool__assignmentcategoryassoc`
+
+- `executionid`
+- `ip_address`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
+
+### `stg_powerschool__assignmentsection`
+
+- `executionid`
+- `ip_address`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
 
 ### `stg_powerschool__attendance_conversion_items`
 
 - `daypartid`
-- `dcid`
+
+### `stg_powerschool__calendar_day`
+
+- `ip_address`
+- `whomodifiedid`
+- `whomodifiedtype`
 
 ### `stg_powerschool__cc`
 
 - `abs_sectionid`
 - `abs_termid`
 
-### `stg_powerschool__fte`
+### `stg_powerschool__courses`
 
-- `dcid`
+- `ip_address`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
+
+### `stg_powerschool__districtteachercategory`
+
+- `executionid`
+- `ip_address`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
 
 ### `stg_powerschool__gpprogresssubject`
 
@@ -813,10 +763,6 @@ but the parser could not match them due to column-name formatting differences.
 ### `stg_powerschool__gradecalculationtype`
 
 - `ismulticategoryeditable`
-
-### `stg_powerschool__gradescaleitem`
-
-- `parentgradescaledcid`
 
 ### `stg_powerschool__gradeschoolconfig`
 
@@ -834,18 +780,41 @@ but the parser could not match them due to column-name formatting differences.
 - `issectstndweighteditable`
 - `minimumassignmentvalue`
 
+### `stg_powerschool__pgfinalgrades`
+
+- `executionid`
+- `ip_address`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
+
+### `stg_powerschool__prefs`
+
+- `executionid`
+- `ip_address`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
+
 ### `stg_powerschool__roledef`
 
 - `productname`
-- `whocreated`
 
 ### `stg_powerschool__schools`
 
 - `fee_exemption_status`
+- `ip_address`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
 
 ### `stg_powerschool__schoolstaff`
 
+- `ip_address`
 - `sched_usehouse`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
 
 ### `stg_powerschool__sections`
 
@@ -853,47 +822,78 @@ but the parser could not match them due to column-name formatting differences.
 - `exclude_ada`
 - `excludefromclassrank`
 - `excludefromhonorroll`
+- `ip_address`
 - `parent_section_id`
 - `section_number`
 - `section_type`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
+
+### `stg_powerschool__sectionteacher`
+
+- `executionid`
+- `ip_address`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
 
 ### `stg_powerschool__storedgrades`
 
 - `ab_course_eva_pro_cd`
 - `ab_pri_del_met_cd`
 - `comment_value`
+- `executionid`
+- `ip_address`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
 
 ### `stg_powerschool__student_email`
 
 - `email`
-- `student_number`
 
 ### `stg_powerschool__studentcorefields`
 
 - `c_504_information`
 - `ipt_oral_curdate`
-- `studentsdcid`
-- `whencreated`
-- `whenmodified`
-- `whocreated`
-- `whomodified`
 
 ### `stg_powerschool__students`
 
 - `customrank_gpa`
 - `exclude_fr_rank`
 - `gradreqsetid`
+- `ip_address`
 - `ldapenabled`
 - `studentpers_guid`
 - `studentpict_guid`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
 
 ### `stg_powerschool__teachercategory`
 
 - `defaultscoreentrypoints`
+- `executionid`
+- `ip_address`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
 
 ### `stg_powerschool__termbins`
 
 - `currentgrade`
+- `ip_address`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
+
+### `stg_powerschool__terms`
+
+- `ip_address`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
 
 ### `stg_powerschool__test`
 
@@ -906,11 +906,11 @@ but the parser could not match them due to column-name formatting differences.
 ### `stg_powerschool__users`
 
 - `adminldapenabled`
+- `ip_address`
 - `teacherldapenabled`
-
-### `stg_powerschool__userscorefields`
-
-- `usersdcid`
+- `transaction_date`
+- `whomodifiedid`
+- `whomodifiedtype`
 
 ---
 
@@ -1028,9 +1028,8 @@ deeply nested struct fields not individually documented in the ADP API guide.
 
 | Category                   | Columns | Models | Action                                  |
 | -------------------------- | ------- | ------ | --------------------------------------- |
-| PS Extension (KIPP custom) | 669     | 8      | Hand-write descriptions                 |
-| PS Audit                   | 75      | 17     | Apply template descriptions             |
+| PS Extension (KIPP custom) | 637     | 8      | Hand-write descriptions                 |
 | PS Derived                 | 35      | 12     | Describe from staging SQL logic         |
-| PS Core unmatched          | 59      | 21     | Manual PDF lookup or parser improvement |
+| PS Core unmatched          | 123     | 27     | Manual PDF lookup or parser improvement |
 | ADP unmatched              | 100     | 1      | Describe from staging SQL or API docs   |
-| **Total unmatched**        | **938** |        |                                         |
+| **Total unmatched**        | **895** |        |                                         |
