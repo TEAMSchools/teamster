@@ -241,15 +241,18 @@ select
     ar.academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
     ct.`name` is not null as is_current_term,
 
-    case ar.grade_level
-        when 0 then 'K'
-        else cast(ar.grade_level as string)
+    case
+        ar.grade_level when 0 then 'K' else cast(ar.grade_level as string)
     end as grade_level_display,
 
-    case ar.source_model
-        when 'mod_assessment' then 'Enrichment Grades'
-        when 'mod_standards' then 'ELA/Math Standards'
-        when 'mod_standards_domains' then 'Progress Report / Report Card'
+    case
+        ar.source_model
+        when 'mod_assessment'
+        then 'Enrichment Grades'
+        when 'mod_standards'
+        then 'ELA/Math Standards'
+        when 'mod_standards_domains'
+        then 'Progress Report / Report Card'
     end as source_model_label,
 
     round(
@@ -263,7 +266,9 @@ select
                 ar.term_administered,
                 if(ar.source_model = 'mod_standards', ar.response_type, null),
                 if(
-                    ar.source_model = 'mod_standards', ar.response_type_description, null
+                    ar.source_model = 'mod_standards',
+                    ar.response_type_description,
+                    null
                 ),
                 if(
                     ar.source_model = 'mod_standards_domains'
