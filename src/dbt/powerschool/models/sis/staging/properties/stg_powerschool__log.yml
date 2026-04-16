@@ -8,36 +8,21 @@ models:
               config:
                 severity: error
         description: Unique identifier for this table. Indexed. Required.
-        config:
-          meta:
-            contains_pii: false
       - name: studentid
         data_type: int64
         description:
           The internal number and ID of the associated Students record.
-        config:
-          meta:
-            contains_pii: false
       - name: logtypeid
         data_type: int64
         description:
           The internal number for the Gen table associated with the log entry.
           The name is taken fromhere.
-        config:
-          meta:
-            contains_pii: false
       - name: entry_date
         data_type: date
         description: The date the log entry was made. Indexed.
-        config:
-          meta:
-            contains_pii: false
       - name: entry
         data_type: string
         description: The actual description of the log.
-        config:
-          meta:
-            contains_pii: false
     description:
       This table stored student log entries for various purposes. Administrators
       or teachers enter this free text in order to keep track of necessary

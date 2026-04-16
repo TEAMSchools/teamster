@@ -4,82 +4,43 @@ models:
       - name: act_composite
         data_type: string
         description: Student ACT test composite score.
-        config:
-          meta:
-            contains_pii: false
       - name: act_date
         data_type: string
         description: Student ACT test date.
-        config:
-          meta:
-            contains_pii: false
       - name: act_english
         data_type: string
         description: Student ACT English test score.
-        config:
-          meta:
-            contains_pii: false
       - name: act_math
         data_type: string
         description: Student ACT Math test score.
-        config:
-          meta:
-            contains_pii: false
       - name: act_reading
         data_type: string
         description: Student ACT Reading test score.
-        config:
-          meta:
-            contains_pii: false
       - name: act_science
         data_type: string
         description: Student ACT Science test score.
-        config:
-          meta:
-            contains_pii: false
       - name: afdc
         data_type: string
         description: Student Aid to Families with Dependent Children.
-        config:
-          meta:
-            contains_pii: false
       - name: afdcappnum
         data_type: string
         description:
           Student Aid to Families with Dependent Children application number.
-        config:
-          meta:
-            contains_pii: false
       - name: allergies
         data_type: string
         description: Student allergies information.
-        config:
-          meta:
-            contains_pii: false
       - name: area
         data_type: string
         description: Student residence area.
-        config:
-          meta:
-            contains_pii: false
       - name: ate_skill_cert
         data_type: string
         description: Student custom field.
-        config:
-          meta:
-            contains_pii: false
       - name: dateofentryintousa
         data_type: string
         description: Student date of entry into the USA.
-        config:
-          meta:
-            contains_pii: false
       - name: dentist_name
         data_type: string
         description: Student dentist's name.
-        config:
-          meta:
-            contains_pii: false
       - name: dentist_phone
         data_type: string
         description: Student dentist's phone.
@@ -91,9 +52,6 @@ models:
         description:
           "[From Codeset for Originalcontactmap emergency1] Student first
           emergency phone type."
-        config:
-          meta:
-            contains_pii: false
       - name: emerg_1_rel
         data_type: string
         description:
@@ -107,9 +65,6 @@ models:
         description:
           "[From Codeset for Originalcontactmap emergency2] Student second
           emergency phonetype."
-        config:
-          meta:
-            contains_pii: false
       - name: emerg_2_rel
         data_type: string
         description:
@@ -131,9 +86,6 @@ models:
         description:
           "[From Codeset for Originalcontactmap emergency3] Student third
           emergency phone type."
-        config:
-          meta:
-            contains_pii: false
       - name: emerg_3_rel
         data_type: string
         description:
@@ -153,29 +105,17 @@ models:
       - name: equipstudent
         data_type: string
         description: Student custom field.
-        config:
-          meta:
-            contains_pii: false
       - name: esl_placement
         data_type: string
         description: English as a Second Language placement.
-        config:
-          meta:
-            contains_pii: false
       - name: family_rep
         data_type: string
         description: Student custom field.
-        config:
-          meta:
-            contains_pii: false
       - name: father_employer
         data_type: string
         description:
           "[From Person for Codetype Relationship Father ] Student father's
           employer."
-        config:
-          meta:
-            contains_pii: false
       - name: father_home_phone
         data_type: string
         description:
@@ -189,139 +129,76 @@ models:
         description:
           "[From Phonenumber for Codetype Relationship Father] Student father's
           daytime phonenumber."
-        config:
-          meta:
-            contains_pii: false
       - name: graduation_year
         data_type: string
         description: Student graduation year.
-        config:
-          meta:
-            contains_pii: false
       - name: guardian
         data_type: string
         description: Student guardian.
-        config:
-          meta:
-            contains_pii: false
       - name: guardian_fn
         data_type: string
         description:
           "[From Person for Originalcontactmap guardian ] Student guardian's
           first name."
-        config:
-          meta:
-            contains_pii: false
       - name: guardian_ln
         data_type: string
         description:
           "[From Person for Originalcontactmap guardian] Student guardian's last
           name."
-        config:
-          meta:
-            contains_pii: false
       - name: guardian_mn
         data_type: string
         description:
           "[From Person for Originalcontactmap guardian] Student guardian's
           middle name."
-        config:
-          meta:
-            contains_pii: false
       - name: guardiandayphone
         data_type: string
         description:
           "[From Phonenumber for Originalcontactmap guardian ] Student
           guardian's daytime phonenumber."
-        config:
-          meta:
-            contains_pii: false
       - name: guardianrelcode
         data_type: string
         description: Student relationship code.
-        config:
-          meta:
-            contains_pii: false
       - name: guardianship
         data_type: string
         description: Student custom field.
-        config:
-          meta:
-            contains_pii: false
       - name: hln
         data_type: string
         description: Student custom field.
-        config:
-          meta:
-            contains_pii: false
       - name: homeless_code
         data_type: string
         description: Student homeless code value.
-        config:
-          meta:
-            contains_pii: false
       - name: ildp
         data_type: string
         description: Student custom field.
-        config:
-          meta:
-            contains_pii: false
       - name: immunizaton_dpt
         data_type: string
         description: Student DPT immunization status.
-        config:
-          meta:
-            contains_pii: false
       - name: immunizaton_mmr
         data_type: string
         description: Student MMR immunization status.
-        config:
-          meta:
-            contains_pii: false
       - name: immunizaton_polio
         data_type: string
         description: Student Polio immunization status.
-        config:
-          meta:
-            contains_pii: false
       - name: lep_exit_date
         data_type: string
         description: Student Limited English Proficiency exit date.
-        config:
-          meta:
-            contains_pii: false
       - name: lpac_date
         data_type: string
         description: Student Language Proficiency Assessment Committee date.
-        config:
-          meta:
-            contains_pii: false
       - name: medical_considerations
         data_type: string
         description: Student medical considerations.
-        config:
-          meta:
-            contains_pii: false
       - name: mesa
         data_type: string
         description: Student Mathematics Engineering Science Achievement.
-        config:
-          meta:
-            contains_pii: false
       - name: monitor_date
         data_type: string
         description: Student custom field.
-        config:
-          meta:
-            contains_pii: false
       - name: mother_employer
         data_type: string
         description:
           "[From Person for Codetype Relationship Mother] Student mother's
           employer."
-        config:
-          meta:
-            contains_pii: false
       - name: mother_home_phone
         data_type: string
         description:
@@ -335,57 +212,30 @@ models:
         description:
           "[From Phonenumber for Codetype Relationship Mother] Student mother's
           daytime phonenumber."
-        config:
-          meta:
-            contains_pii: false
       - name: parttimestudent
         data_type: string
         description: Student part time status.
-        config:
-          meta:
-            contains_pii: false
       - name: phlote
         data_type: string
         description: Student Primary Home Language Other Than English.
-        config:
-          meta:
-            contains_pii: false
       - name: prevstudentid
         data_type: int64
         description: Student previous student ID number.
-        config:
-          meta:
-            contains_pii: false
       - name: primarylanguage
         data_type: string
         description: Student primary language.
-        config:
-          meta:
-            contains_pii: false
       - name: sat
         data_type: string
         description: Student SAT test score.
-        config:
-          meta:
-            contains_pii: false
       - name: secondarylanguage
         data_type: string
         description: Student secondary language.
-        config:
-          meta:
-            contains_pii: false
       - name: singleparenthshldflag
         data_type: string
         description: Student in single parent household flag.
-        config:
-          meta:
-            contains_pii: false
       - name: tracker
         data_type: string
         description: Student custom field.
-        config:
-          meta:
-            contains_pii: false
       - name: whocreated
         data_type: string
       - name: whencreated
@@ -400,322 +250,172 @@ models:
           No longer used by the application. See GuardianStudent table for
           superseding field. Thisfield may still be referenced on reports and/or
           custom pages.
-        config:
-          meta:
-            contains_pii: false
       - name: autosend_balancealert
         data_type: string
         description:
           No longer used by the application. See GuardianStudent table for
           superseding field. Thisfield may still be referenced on reports and/or
           custom pages.
-        config:
-          meta:
-            contains_pii: false
       - name: autosend_gradedetail
         data_type: string
         description:
           No longer used by the application. See GuardianStudent table for
           superseding field. Thisfield may still be referenced on reports and/or
           custom pages.
-        config:
-          meta:
-            contains_pii: false
       - name: autosend_howoften
         data_type: string
         description:
           No longer used by the application. See GuardianStudent table for
           superseding field. Thisfield may still be referenced on reports and/or
           custom pages.
-        config:
-          meta:
-            contains_pii: false
       - name: autosend_schoolannouncements
         data_type: string
         description:
           No longer used by the application. See GuardianStudent table for
           superseding field. Thisfield may still be referenced on reports and/or
           custom pages.
-        config:
-          meta:
-            contains_pii: false
       - name: autosend_summary
         data_type: string
         description:
           No longer used by the application. See GuardianStudent table for
           superseding field. Thisfield may still be referenced on reports and/or
           custom pages.
-        config:
-          meta:
-            contains_pii: false
       - name: awards
         data_type: string
         description: Awards for a student.
-        config:
-          meta:
-            contains_pii: false
       - name: c_504_information
         data_type: string
       - name: career_goal
         data_type: string
         description: Student stated career goal.
-        config:
-          meta:
-            contains_pii: false
       - name: cip_code
         data_type: string
         description: The classification of instructional program code.
-        config:
-          meta:
-            contains_pii: false
       - name: competencies
         data_type: string
         description: Student competencies.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_7thmath
         data_type: string
         description: 7th grade math criterion referenced test.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_7thscience
         data_type: string
         description: 7th grade science criterion referenced test.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_8thscience
         data_type: string
         description: 8th grade science criterion referenced test.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_applemath2
         data_type: string
         description: Database extension field associated to the Students table.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_applmath1
         data_type: string
         description: Database extension field associated to the Students table.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_biology
         data_type: string
         description: Biology criterion referenced test score.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_chemistry
         data_type: string
         description: Chemistry criterion referenced test score.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_earthsys
         data_type: string
         description: Earth sciences criterion referenced test score.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_elemalg
         data_type: string
         description: Elementary Algebra criterion referenced test score.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_elemmath
         data_type: string
         description: Elementary math criterion referenced test score.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_elemread
         data_type: string
         description: Elementary reading criterion referenced test score.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_humanbiol
         data_type: string
         description: Human Biology criterion referenced test score.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_interalg
         data_type: string
         description: Intermediate algebra criterion referenced test score.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_physics
         data_type: string
         description: Physics criterion referenced test score.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_prealg
         data_type: string
         description: Pre-Algebra criterion referenced test score.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_secmath
         data_type: string
         description: Secondary math criterion referenced test score.
-        config:
-          meta:
-            contains_pii: false
       - name: crt_secscience
         data_type: string
         description: Secondary science criterion referenced test score.
-        config:
-          meta:
-            contains_pii: false
       - name: ec_athletics
         data_type: string
         description: Early childhood athletics.
-        config:
-          meta:
-            contains_pii: false
       - name: ec_clubs
         data_type: string
         description: Early childhood clubs.
-        config:
-          meta:
-            contains_pii: false
       - name: ec_community
         data_type: string
         description: Early childhood community.
-        config:
-          meta:
-            contains_pii: false
       - name: ec_leadership
         data_type: string
         description: Early childhood leadership.
-        config:
-          meta:
-            contains_pii: false
       - name: ipt_oral_curdate
         data_type: string
       - name: ipt_oral_currentscore
         data_type: string
         description: IDEA Proficiency test score.
-        config:
-          meta:
-            contains_pii: false
       - name: ipt_oral_origdate
         data_type: string
         description: IDEA Proficiency test original date taken.
-        config:
-          meta:
-            contains_pii: false
       - name: ipt_oral_origscore
         data_type: string
         description: IDEA Proficiency test original score.
-        config:
-          meta:
-            contains_pii: false
       - name: ipt_reading_curdate
         data_type: string
         description: IDEA Proficiency test date for reading.
-        config:
-          meta:
-            contains_pii: false
       - name: ipt_reading_currentscore
         data_type: string
         description: IDEA Proficiency test last date administered for reading.
-        config:
-          meta:
-            contains_pii: false
       - name: ipt_reading_origdate
         data_type: string
         description: IDEA Proficiency test original date taken for reading.
-        config:
-          meta:
-            contains_pii: false
       - name: ipt_reading_origscore
         data_type: string
         description: IDEA Proficiency test original score for reading.
-        config:
-          meta:
-            contains_pii: false
       - name: ipt_writing_curdate
         data_type: string
         description: IDEA Proficiency test date for writing.
-        config:
-          meta:
-            contains_pii: false
       - name: ipt_writing_currentscore
         data_type: string
         description: IDEA Proficiency test last date administered for writing.
-        config:
-          meta:
-            contains_pii: false
       - name: ipt_writing_origdate
         data_type: string
         description: IDEA Proficiency test original date taken for writing.
-        config:
-          meta:
-            contains_pii: false
       - name: ipt_writing_origscore
         data_type: string
         description: IDEA Proficiency test original score for writing.
-        config:
-          meta:
-            contains_pii: false
       - name: language_form
         data_type: string
         description: Database extension field associated to the Students table.
-        config:
-          meta:
-            contains_pii: false
       - name: lunchapplicno
         data_type: string
         description: Lunch application number.
-        config:
-          meta:
-            contains_pii: false
       - name: post_secondary_objectives
         data_type: string
         description: Students stated post secondary objectives.
-        config:
-          meta:
-            contains_pii: false
       - name: primary_pathway
         data_type: string
         description: Pathway to primary objective.
-        config:
-          meta:
-            contains_pii: false
       - name: secondary_pathway
         data_type: string
         description: Pathway to secondary objective.
-        config:
-          meta:
-            contains_pii: false
       - name: seop_notes
         data_type: string
         description: Student Education and Occupation Plan notes.
-        config:
-          meta:
-            contains_pii: false
       - name: spedlep
         data_type: string
         description: Database extension field associated to the Students table.
-        config:
-          meta:
-            contains_pii: false
       - name: test_comments
         data_type: string
         description: Test comments.
-        config:
-          meta:
-            contains_pii: false
       - name: pscore_legal_first_name
         data_type: string
         description:
@@ -729,9 +429,6 @@ models:
         description:
           Student's legal gender. Currently this field only used by State
           Reporting. However, it mayalso be used on any PowerSchool custom page.
-        config:
-          meta:
-            contains_pii: false
       - name: pscore_legal_last_name
         data_type: string
         description:
@@ -753,17 +450,11 @@ models:
         description:
           Student's legal suffix. Currently this field only used by State
           Reporting. However, it mayalso be used on any PowerSchool custom page.
-        config:
-          meta:
-            contains_pii: false
       - name: photolastupdated
         data_type: string
         description:
           Date student photo was last updated. String formatted using ISO-8601,
           "yyyy-mm-ddThh:mm:ssZ".
-        config:
-          meta:
-            contains_pii: false
       - name: studentsdcid
         data_type: int64
         data_tests:
@@ -773,9 +464,6 @@ models:
       - name: lep_status
         data_type: boolean
         description: Student Limited English Proficiency status.
-        config:
-          meta:
-            contains_pii: false
       - name: is_homeless
         data_type: boolean
     description:

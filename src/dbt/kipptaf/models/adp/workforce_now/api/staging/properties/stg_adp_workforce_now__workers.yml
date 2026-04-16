@@ -8,9 +8,6 @@ models:
       - name: worker_id__id_value
         data_type: string
         description: Associate ID
-        config:
-          meta:
-            contains_pii: false
       - name: worker_id__scheme_code__code_value
         data_type: string
       - name: worker_id__scheme_code__long_name
@@ -20,21 +17,12 @@ models:
       - name: worker_status__status_code__code_value
         data_type: string
         description: Status
-        config:
-          meta:
-            contains_pii: false
       - name: worker_status__status_code__long_name
         data_type: string
         description: Status
-        config:
-          meta:
-            contains_pii: false
       - name: worker_status__status_code__short_name
         data_type: string
         description: Status
-        config:
-          meta:
-            contains_pii: false
       - name: language_code__code_value
         data_type: string
       - name: language_code__long_name
@@ -148,67 +136,37 @@ models:
       - name: person__ethnicity_code__code_value
         data_type: string
         description: ethnicityCode
-        config:
-          meta:
-            contains_pii: false
       - name: person__ethnicity_code__long_name
         data_type: string
         description: ethnicityCode
-        config:
-          meta:
-            contains_pii: false
       - name: person__ethnicity_code__short_name
         data_type: string
         description: ethnicityCode
-        config:
-          meta:
-            contains_pii: false
       - name: person__gender_code__code_value
         data_type: string
         description: Gender
-        config:
-          meta:
-            contains_pii: false
       - name: person__gender_code__long_name
         data_type: string
       - name: person__gender_code__short_name
         data_type: string
         description: Gender
-        config:
-          meta:
-            contains_pii: false
       - name: person__gender_self_identity_code__code_value
         data_type: string
         description: Gender (self ID)
-        config:
-          meta:
-            contains_pii: false
       - name: person__gender_self_identity_code__long_name
         data_type: string
       - name: person__gender_self_identity_code__short_name
         data_type: string
         description: Gender (self ID)
-        config:
-          meta:
-            contains_pii: false
       - name: person__highest_education_level_code__code_value
         data_type: string
         description: Educational Level
-        config:
-          meta:
-            contains_pii: false
       - name: person__highest_education_level_code__long_name
         data_type: string
         description: Educational Level
-        config:
-          meta:
-            contains_pii: false
       - name: person__highest_education_level_code__short_name
         data_type: string
         description: Educational Level
-        config:
-          meta:
-            contains_pii: false
       - name: person__legal_address__item_id
         data_type: string
       - name: person__legal_address__line_one
@@ -232,9 +190,6 @@ models:
       - name: person__legal_address__country_code
         data_type: string
         description: Country
-        config:
-          meta:
-            contains_pii: false
       - name: person__legal_address__country_subdivision_level_1__subdivision_type
         data_type: string
       - name: person__legal_address__country_subdivision_level_1__code_value
@@ -266,17 +221,11 @@ models:
       - name: person__marital_status_code__code_value
         data_type: string
         description: Marital Status
-        config:
-          meta:
-            contains_pii: false
       - name: person__marital_status_code__long_name
         data_type: string
       - name: person__marital_status_code__short_name
         data_type: string
         description: Marital Status
-        config:
-          meta:
-            contains_pii: false
       - name: person__military_status_code__code_value
         data_type: string
       - name: person__military_status_code__long_name
@@ -286,39 +235,21 @@ models:
       - name: person__preferred_gender_pronoun_code__code_value
         data_type: string
         description: Pronoun
-        config:
-          meta:
-            contains_pii: false
       - name: person__preferred_gender_pronoun_code__long_name
         data_type: string
         description: Pronoun
-        config:
-          meta:
-            contains_pii: false
       - name: person__preferred_gender_pronoun_code__short_name
         data_type: string
         description: Pronoun
-        config:
-          meta:
-            contains_pii: false
       - name: person__race_code__code_value
         data_type: string
         description: Race
-        config:
-          meta:
-            contains_pii: false
       - name: person__race_code__long_name
         data_type: string
         description: Race
-        config:
-          meta:
-            contains_pii: false
       - name: person__race_code__short_name
         data_type: string
         description: Race
-        config:
-          meta:
-            contains_pii: false
       - name: person__race_code__identification_method_code__code_value
         data_type: string
       - name: person__race_code__identification_method_code__long_name
@@ -328,15 +259,9 @@ models:
       - name: worker_dates__original_hire_date
         data_type: date
         description: Original Hire Date
-        config:
-          meta:
-            contains_pii: false
       - name: worker_dates__rehire_date
         data_type: date
         description: Rehire Date
-        config:
-          meta:
-            contains_pii: false
       - name: worker_dates__termination_date
         data_type: date
       - name: worker_id__scheme_code__effective_date

@@ -52,7 +52,7 @@ def enrich_yaml_data(
 
     Behavior:
         - description: added only if absent or empty.
-        - config.meta.contains_pii: always written (authoritative).
+        - config.meta.contains_pii: written only when true (absence = not PII).
         - Columns with no mapping entry are not modified.
     """
     # Build lookup: (model, column) -> entry
@@ -82,10 +82,11 @@ def enrich_yaml_data(
                 column["description"] = entry["description"]
                 stats["enriched"] += 1
 
-            # PII flag: always write (authoritative)
-            config = column.setdefault("config", {})
-            meta = config.setdefault("meta", {})
-            meta["contains_pii"] = entry["contains_pii"]
+            # PII flag: write only when true (absence = not PII)
+            if entry["contains_pii"]:
+                config = column.setdefault("config", {})
+                meta = config.setdefault("meta", {})
+                meta["contains_pii"] = True
 
     if return_stats:
         return doc, stats

@@ -113,7 +113,8 @@ class TestEnrichYamlData:
         columns = result["models"][0]["columns"]
         by_name = {c["name"]: c for c in columns}
         assert by_name["ssn"]["config"]["meta"]["contains_pii"] is True
-        assert by_name["id"]["config"]["meta"]["contains_pii"] is False
+        # Non-PII columns should NOT have config.meta.contains_pii
+        assert "config" not in by_name["id"]
 
     def test_pii_flag_overwrites_existing(self) -> None:
         """PII classification from PDF is authoritative -- overwrites."""

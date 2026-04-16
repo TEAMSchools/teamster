@@ -16,17 +16,11 @@ models:
       - name: gender
         data_type: string
         description: Staff gender.
-        config:
-          meta:
-            contains_pii: false
       - name: photolastupdated
         data_type: string
         description:
           Date user photo was last updated. String formatted using ISO-8601,
           "yyyy-mm-ddThh:mm:ssZ".
-        config:
-          meta:
-            contains_pii: false
       - name: pscore_legal_first_name
         data_type: string
         description:
@@ -40,9 +34,6 @@ models:
         description:
           Staff legal gender. Currently, this field only used by State
           Reporting. However, it may alsobe used on any PowerSchool custom page.
-        config:
-          meta:
-            contains_pii: false
       - name: pscore_legal_last_name
         data_type: string
         description:
@@ -64,9 +55,6 @@ models:
         description:
           Staff legal suffix. Currently, this field only used by State
           Reporting. However, it may also beused on any PowerSchool custom page.
-        config:
-          meta:
-            contains_pii: false
     description:
       Schema extension table associated to the Users table. Fields include those
       that were migrated from PowerSchool custom fields. These fields store
