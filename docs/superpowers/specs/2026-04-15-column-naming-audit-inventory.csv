@@ -4,7 +4,7 @@ Assessment,dim_assessment_comparisons,region_key,string,"FK to dim_regions. Deri
 Assessment,dim_assessment_comparisons,academic_year,int64,Academic year the comparison data applies to.,keep,,,not_reviewed,
 Assessment,dim_assessment_comparisons,test_name,string,"State assessment name (e.g., NJSLA, NJGPA).",keep,,,not_reviewed,
 Assessment,dim_assessment_comparisons,test_code,string,"State assessment test code (e.g., ELA05, ALG1, SCI08).",keep,,,not_reviewed,
-Assessment,dim_assessment_comparisons,region,string,"Network region (Newark, Camden, Miami, Paterson).",keep,,,not_reviewed,
+Assessment,dim_assessment_comparisons,region,string,"Network region (Newark, Camden, Miami, Paterson).",remove,,R9,not_reviewed,reachable via region_key → dim_regions
 Assessment,dim_assessment_comparisons,city_percent_proficient,float64,City-wide percent of students scoring proficient or above.,keep,,,not_reviewed,
 Assessment,dim_assessment_comparisons,state_percent_proficient,float64,State-wide percent of students scoring proficient or above.,keep,,,not_reviewed,
 Assessment,dim_assessment_comparisons,neighborhood_schools_percent_proficient,float64,Neighborhood schools percent of students scoring proficient or above.,keep,,,not_reviewed,
@@ -25,7 +25,7 @@ Assessment,dim_assessment_targets,organization_goal,float64,Organization-wide ta
 Assessment,dim_assessment_targets,grade_band_goal,float64,"Target percent proficient for this grade band (ES, MS, HS).",keep,,,not_reviewed,
 Assessment,dim_assessment_targets,assessment_band_goal,float64,Target percent proficient for this assessment band.,keep,,,not_reviewed,
 Assessment,dim_assessment_targets,school_level,string,"School level classification (ES, MS, HS).",keep,,,not_reviewed,
-Assessment,dim_assessment_targets,region,string,"Network region (Newark, Camden, Miami, Paterson).",keep,,,not_reviewed,
+Assessment,dim_assessment_targets,region,string,"Network region (Newark, Camden, Miami, Paterson).",remove,,R9,not_reviewed,reachable via location_key → dim_locations
 Assessment,dim_assessments,assessment_key,string,"Surrogate key derived from assessment_type, title, subject_area, scope, module_code, and grade_level_tested. Primary key.",keep,,,not_reviewed,
 Assessment,dim_assessments,assessment_type,string,"Source system category: illuminate (internal KIPP), state (NJSLA, FAST, NJGPA), or college (SAT, ACT, PSAT, AP).",keep,,,not_reviewed,
 Assessment,dim_assessments,title,string,Display name of the assessment.,keep,,,not_reviewed,
@@ -41,29 +41,29 @@ Assessment,dim_student_assessment_expectations,assessment_key,string,"FK to dim_
 Assessment,dim_student_assessment_expectations,term_key,string,"FK to dim_terms. Derived from reporting term type, code, name, start_date, region, and school_id. Null when the administration date does not fall within any reporting term.",keep,,,not_reviewed,
 Assessment,dim_student_assessment_expectations,student_number,int64,PowerSchool student number.,rename,local_student_identifier,R1,not_reviewed,
 Assessment,dim_student_assessment_expectations,assessment_id,int64,Illuminate assessment ID.,keep,,,not_reviewed,
-Assessment,dim_student_assessment_expectations,academic_year,int64,Academic year of the expected assessment.,keep,,,not_reviewed,
+Assessment,dim_student_assessment_expectations,academic_year,int64,Academic year of the expected assessment.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Assessment,dim_student_assessment_expectations,administered_at,date,Scheduled administration date for the assessment.,keep,,,not_reviewed,
-Assessment,dim_student_assessment_expectations,assessment_title,string,Display name of the assessment.,keep,,,not_reviewed,
-Assessment,dim_student_assessment_expectations,subject_area,string,Subject area of the assessment.,keep,,,not_reviewed,
-Assessment,dim_student_assessment_expectations,scope,string,"Assessment scope (e.g., CMA, CGI).",keep,,,not_reviewed,
-Assessment,dim_student_assessment_expectations,module_type,string,"Module type (e.g., QA, CR).",keep,,,not_reviewed,
-Assessment,dim_student_assessment_expectations,module_code,string,Module code identifying the assessment variant.,keep,,,not_reviewed,
-Assessment,dim_student_assessment_expectations,grade_level_id,int64,Grade level ID the assessment targets.,keep,,,not_reviewed,
+Assessment,dim_student_assessment_expectations,assessment_title,string,Display name of the assessment.,remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
+Assessment,dim_student_assessment_expectations,subject_area,string,Subject area of the assessment.,remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
+Assessment,dim_student_assessment_expectations,scope,string,"Assessment scope (e.g., CMA, CGI).",remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
+Assessment,dim_student_assessment_expectations,module_type,string,"Module type (e.g., QA, CR).",remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
+Assessment,dim_student_assessment_expectations,module_code,string,Module code identifying the assessment variant.,remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
+Assessment,dim_student_assessment_expectations,grade_level_id,int64,Grade level ID the assessment targets.,remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
 Assessment,dim_student_assessment_expectations,powerschool_school_id,int64,PowerSchool school ID where the student is enrolled.,rename,sis_school_id,R1,not_reviewed,
-Assessment,dim_student_assessment_expectations,region,string,"Network region (Newark, Camden, Miami, Paterson).",keep,,,not_reviewed,
+Assessment,dim_student_assessment_expectations,region,string,"Network region (Newark, Camden, Miami, Paterson).",remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Assessment,dim_student_assessment_expectations,is_internal_assessment,boolean,"Always TRUE for this model, which only includes internal Illuminate assessments.",keep,,,not_reviewed,
 Assessment,fct_assessment_scores_enrollment_scoped,assessment_score_key,string,Surrogate key. Primary key for this fact table.,keep,,,not_reviewed,
 Assessment,fct_assessment_scores_enrollment_scoped,assessment_key,string,FK to dim_assessments.,keep,,,not_reviewed,
 Assessment,fct_assessment_scores_enrollment_scoped,student_key,string,"FK to dim_students. Derived from student_number, falling back to state_student_id for FL state assessments where student_number is null. FL fallback keys do not resolve in dim_students (#3626).",keep,,,not_reviewed,
 Assessment,fct_assessment_scores_enrollment_scoped,test_date_key,date,FK to dim_dates. The date the assessment was taken.,keep,,,not_reviewed,
-Assessment,fct_assessment_scores_enrollment_scoped,student_number,int64,PowerSchool student number. Null for FL state assessments that only carry a state student ID.,rename,local_student_identifier,R1,not_reviewed,
-Assessment,fct_assessment_scores_enrollment_scoped,academic_year,int64,Academic year the assessment was administered.,keep,,,not_reviewed,
-Assessment,fct_assessment_scores_enrollment_scoped,assessment_title,string,Display name of the assessment.,keep,,,not_reviewed,
-Assessment,fct_assessment_scores_enrollment_scoped,scope,string,Assessment scope or discipline.,keep,,,not_reviewed,
-Assessment,fct_assessment_scores_enrollment_scoped,subject_area,string,Subject tested.,keep,,,not_reviewed,
-Assessment,fct_assessment_scores_enrollment_scoped,module_code,string,Module or test code for the specific assessment variant.,keep,,,not_reviewed,
+Assessment,fct_assessment_scores_enrollment_scoped,student_number,int64,PowerSchool student number. Null for FL state assessments that only carry a state student ID.,remove,,R9,not_reviewed,reachable via student_key → dim_students
+Assessment,fct_assessment_scores_enrollment_scoped,academic_year,int64,Academic year the assessment was administered.,remove,,R9,not_reviewed,reachable via test_date_key → dim_dates
+Assessment,fct_assessment_scores_enrollment_scoped,assessment_title,string,Display name of the assessment.,remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
+Assessment,fct_assessment_scores_enrollment_scoped,scope,string,Assessment scope or discipline.,remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
+Assessment,fct_assessment_scores_enrollment_scoped,subject_area,string,Subject tested.,remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
+Assessment,fct_assessment_scores_enrollment_scoped,module_code,string,Module or test code for the specific assessment variant.,remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
 Assessment,fct_assessment_scores_enrollment_scoped,region,string,Network region or season identifier.,keep,,,not_reviewed,
-Assessment,fct_assessment_scores_enrollment_scoped,test_date,date,Date the assessment was taken. Null for state assessments where only the administration window is recorded.,keep,,,not_reviewed,
+Assessment,fct_assessment_scores_enrollment_scoped,test_date,date,Date the assessment was taken. Null for state assessments where only the administration window is recorded.,remove,,R9,not_reviewed,duplicate of test_date_key
 Assessment,fct_assessment_scores_enrollment_scoped,scale_score,numeric,Scale score achieved. Null for internal assessments that use percent correct instead.,keep,,,not_reviewed,
 Assessment,fct_assessment_scores_enrollment_scoped,percent_correct,numeric,Percent of questions answered correctly. Null for state assessments.,keep,,,not_reviewed,
 Assessment,fct_assessment_scores_enrollment_scoped,proficiency_level,string,"Proficiency band label (e.g., performance band for internal, achievement level for state).",keep,,,not_reviewed,
@@ -74,10 +74,10 @@ Assessment,fct_assessment_scores_student_scoped,assessment_score_key,string,Surr
 Assessment,fct_assessment_scores_student_scoped,student_key,string,FK to dim_students. Derived from student_number.,keep,,,not_reviewed,
 Assessment,fct_assessment_scores_student_scoped,assessment_key,string,FK to dim_assessments.,keep,,,not_reviewed,
 Assessment,fct_assessment_scores_student_scoped,test_date_key,date,FK to dim_dates. The date the assessment was taken. Null for AP exams where only the academic year is recorded.,keep,,,not_reviewed,
-Assessment,fct_assessment_scores_student_scoped,student_number,int64,PowerSchool student number.,rename,local_student_identifier,R1,not_reviewed,
-Assessment,fct_assessment_scores_student_scoped,academic_year,int64,Academic year the assessment was administered.,keep,,,not_reviewed,
+Assessment,fct_assessment_scores_student_scoped,student_number,int64,PowerSchool student number.,remove,,R9,not_reviewed,reachable via student_key → dim_students
+Assessment,fct_assessment_scores_student_scoped,academic_year,int64,Academic year the assessment was administered.,remove,,R9,not_reviewed,reachable via test_date_key → dim_dates
 Assessment,fct_assessment_scores_student_scoped,assessment_scope,string,"Assessment family (SAT, ACT, PSAT, AP).",keep,,,not_reviewed,
-Assessment,fct_assessment_scores_student_scoped,subject_area,string,"Subject or section tested (e.g., Math, Reading, Composite, Combined, or AP subject name).",keep,,,not_reviewed,
+Assessment,fct_assessment_scores_student_scoped,subject_area,string,"Subject or section tested (e.g., Math, Reading, Composite, Combined, or AP subject name).",remove,,R9,not_reviewed,reachable via assessment_key → dim_assessments
 Assessment,fct_assessment_scores_student_scoped,score_type,string,"Specific score variant (e.g., act_composite, sat_total_score, sat_ebrw, or AP course subject code).",keep,,,not_reviewed,
 Assessment,fct_assessment_scores_student_scoped,scale_score,numeric,"Scale score achieved on this test section. For AP exams, the exam grade (1-5).",keep,,,not_reviewed,
 Assessment,fct_assessment_scores_student_scoped,percent_correct,numeric,Percent correct where available. Null for most college assessments.,keep,,,not_reviewed,
@@ -100,8 +100,8 @@ Attendance,fct_student_attendance_daily,student_attendance_daily_key,string,"Sur
 Attendance,fct_student_attendance_daily,student_enrollment_key,string,"FK to dim_student_enrollments. Surrogate key derived from student_number, _dbt_source_relation, academic_year, and entrydate.",keep,,,not_reviewed,
 Attendance,fct_student_attendance_daily,date_key,date,Calendar date of the attendance record. FK to dim_dates. Also used with location_key to join dim_school_calendars.,keep,,,not_reviewed,
 Attendance,fct_student_attendance_daily,location_key,string,FK to dim_locations. Surrogate key derived from location_clean_name. Used with date_key to join dim_school_calendars.,keep,,,not_reviewed,
-Attendance,fct_student_attendance_daily,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,rename,local_student_identifier,R1,not_reviewed,
-Attendance,fct_student_attendance_daily,academic_year,int64,KIPP academic year (July start) in which this attendance date falls.,keep,,,not_reviewed,
+Attendance,fct_student_attendance_daily,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,remove,,R9,not_reviewed,reachable via student_enrollment_key → dim_student_enrollments
+Attendance,fct_student_attendance_daily,academic_year,int64,KIPP academic year (July start) in which this attendance date falls.,remove,,R9,not_reviewed,reachable via student_enrollment_key → dim_student_enrollments
 Attendance,fct_student_attendance_daily,attendance_code,string,"PowerSchool attendance code (e.g., A, T, T10, AD, OS, ISS). Null when present with no code recorded.",keep,,,not_reviewed,
 Attendance,fct_student_attendance_daily,attendance_value,float64,"PowerSchool attendance value. 1.0 = present, 0.0 = absent.",keep,,,not_reviewed,
 Attendance,fct_student_attendance_daily,membership_value,float64,PowerSchool membership value. Indicates whether the student was counted as a member on this day.,keep,,,not_reviewed,
@@ -119,14 +119,14 @@ Attendance,fct_student_attendance_interventions,student_attendance_intervention_
 Attendance,fct_student_attendance_interventions,student_enrollment_key,string,"FK to dim_student_enrollments. Surrogate key derived from student_number, _dbt_source_relation, academic_year, and entrydate.",keep,,,not_reviewed,
 Attendance,fct_student_attendance_interventions,intervention_type_key,string,FK to dim_student_attendance_intervention_types. Surrogate key derived from region and commlog_reason.,keep,,,not_reviewed,
 Attendance,fct_student_attendance_interventions,date_key,date,Date the communication was logged. FK to dim_dates. Null when the intervention is missing (not yet completed).,keep,,,not_reviewed,
-Attendance,fct_student_attendance_interventions,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,rename,local_student_identifier,R1,not_reviewed,
-Attendance,fct_student_attendance_interventions,academic_year,int64,KIPP academic year (July start) for this intervention record.,keep,,,not_reviewed,
-Attendance,fct_student_attendance_interventions,commlog_reason,string,"DeansList comm log reason value matching the intervention type (e.g., 'Chronic Absence: 4').",keep,,,not_reviewed,
-Attendance,fct_student_attendance_interventions,absence_threshold,int64,Number of unexcused absences that triggered this intervention.,keep,,,not_reviewed,
+Attendance,fct_student_attendance_interventions,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,remove,,R9,not_reviewed,reachable via student_enrollment_key → dim_student_enrollments
+Attendance,fct_student_attendance_interventions,academic_year,int64,KIPP academic year (July start) for this intervention record.,remove,,R9,not_reviewed,reachable via student_enrollment_key → dim_student_enrollments
+Attendance,fct_student_attendance_interventions,commlog_reason,string,"DeansList comm log reason value matching the intervention type (e.g., 'Chronic Absence: 4').",remove,,R9,not_reviewed,reachable via intervention_type_key → dim_student_attendance_intervention_types
+Attendance,fct_student_attendance_interventions,absence_threshold,int64,Number of unexcused absences that triggered this intervention.,remove,,R9,not_reviewed,reachable via intervention_type_key → dim_student_attendance_intervention_types
 Attendance,fct_student_attendance_interventions,days_absent_unexcused,float64,Student's year-to-date unexcused absence count at the time of evaluation.,keep,,,not_reviewed,
 Attendance,fct_student_attendance_interventions,commlog_notes,string,Free-text response notes from the communication log entry.,keep,,,not_reviewed,
 Attendance,fct_student_attendance_interventions,commlog_topic,string,Topic selected for the communication log entry.,keep,,,not_reviewed,
-Attendance,fct_student_attendance_interventions,commlog_date,date,Date the communication was logged in DeansList. Null when the intervention is missing.,keep,,,not_reviewed,
+Attendance,fct_student_attendance_interventions,commlog_date,date,Date the communication was logged in DeansList. Null when the intervention is missing.,remove,,R9,not_reviewed,duplicate of date_key
 Attendance,fct_student_attendance_interventions,commlog_status,string,"Status of the communication (e.g., Completed, Attempted).",keep,,,not_reviewed,
 Attendance,fct_student_attendance_interventions,commlog_type,string,"Type of communication (e.g., Phone Call, Home Visit, IP).",keep,,,not_reviewed,
 Attendance,fct_student_attendance_interventions,commlog_staff_name,string,Full name of the staff member who logged the communication.,keep,,,not_reviewed,
@@ -137,11 +137,11 @@ Attendance,fct_student_attendance_streaks,student_attendance_streak_key,string,S
 Attendance,fct_student_attendance_streaks,student_enrollment_key,string,"FK to dim_student_enrollments. Surrogate key derived from student_number, _dbt_source_relation, academic_year, and entrydate.",keep,,,not_reviewed,
 Attendance,fct_student_attendance_streaks,streak_start_date_key,date,First date of the streak. FK to dim_dates (role-playing as streak start date).,keep,,,not_reviewed,
 Attendance,fct_student_attendance_streaks,streak_end_date_key,date,Last date of the streak. FK to dim_dates (role-playing as streak end date).,keep,,,not_reviewed,
-Attendance,fct_student_attendance_streaks,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,rename,local_student_identifier,R1,not_reviewed,
-Attendance,fct_student_attendance_streaks,academic_year,int64,KIPP academic year (July start) derived from yearid + 1990.,keep,,,not_reviewed,
+Attendance,fct_student_attendance_streaks,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,remove,,R9,not_reviewed,reachable via student_enrollment_key → dim_student_enrollments
+Attendance,fct_student_attendance_streaks,academic_year,int64,KIPP academic year (July start) derived from yearid + 1990.,remove,,R9,not_reviewed,reachable via student_enrollment_key → dim_student_enrollments
 Attendance,fct_student_attendance_streaks,streak_type,string,"Attendance code or attendancevalue string that defines the streak (e.g., 'A' for absent, 'P' for present, '1.0' for present-value streaks).",keep,,,not_reviewed,
-Attendance,fct_student_attendance_streaks,streak_start_date,date,First calendar date of the streak.,keep,,,not_reviewed,
-Attendance,fct_student_attendance_streaks,streak_end_date,date,Last calendar date of the streak.,keep,,,not_reviewed,
+Attendance,fct_student_attendance_streaks,streak_start_date,date,First calendar date of the streak.,remove,,R9,not_reviewed,duplicate of streak_start_date_key
+Attendance,fct_student_attendance_streaks,streak_end_date,date,Last calendar date of the streak.,remove,,R9,not_reviewed,duplicate of streak_end_date_key
 Attendance,fct_student_attendance_streaks,streak_length_membership,int64,Number of membership days in the streak (count of school days).,keep,,,not_reviewed,
 Attendance,fct_student_attendance_streaks,streak_length_calendar,int64,"Number of calendar days in the streak (end_date - start_date + 1), including weekends and holidays.",keep,,,not_reviewed,
 Behavioral,fct_behavioral_consequences,behavioral_consequence_key,string,"Surrogate key derived from incident_id, incident_penalty_id, and _dbt_source_relation. Primary key for this fact.",keep,,,not_reviewed,
@@ -156,13 +156,13 @@ Behavioral,fct_behavioral_consequences,num_days,float64,Number of days assigned 
 Behavioral,fct_behavioral_consequences,num_periods,numeric,Number of class periods assigned for this consequence. Null when measured in days instead.,keep,,,not_reviewed,
 Behavioral,fct_behavioral_consequences,is_suspension,boolean,TRUE if this consequence is classified as a suspension in DeansList.,keep,,,not_reviewed,
 Behavioral,fct_behavioral_consequences,is_reportable,boolean,TRUE if this consequence is flagged as reportable for state reporting.,keep,,,not_reviewed,
-Behavioral,fct_behavioral_consequences,consequence_start_date,date,Start date of the consequence period.,keep,,,not_reviewed,
-Behavioral,fct_behavioral_consequences,consequence_end_date,date,End date of the consequence period.,keep,,,not_reviewed,
+Behavioral,fct_behavioral_consequences,consequence_start_date,date,Start date of the consequence period.,remove,,R9,not_reviewed,duplicate of start_date_key
+Behavioral,fct_behavioral_consequences,consequence_end_date,date,End date of the consequence period.,remove,,R9,not_reviewed,duplicate of end_date_key
 Behavioral,fct_behavioral_incidents,behavioral_incident_key,string,Surrogate key derived from incident_id and _dbt_source_relation. Primary key for this fact.,keep,,,not_reviewed,
 Behavioral,fct_behavioral_incidents,student_enrollment_key,string,"FK to dim_student_enrollments. Surrogate key derived from student_number, _dbt_source_relation, academic_year, and entrydate.",keep,,,not_reviewed,
 Behavioral,fct_behavioral_incidents,date_key,date,Date the incident was created. FK to dim_dates.,keep,,,not_reviewed,
-Behavioral,fct_behavioral_incidents,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,rename,local_student_identifier,R1,not_reviewed,
-Behavioral,fct_behavioral_incidents,academic_year,int64,KIPP academic year (July start) derived from the incident creation timestamp.,keep,,,not_reviewed,
+Behavioral,fct_behavioral_incidents,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,remove,,R9,not_reviewed,reachable via student_enrollment_key → dim_student_enrollments
+Behavioral,fct_behavioral_incidents,academic_year,int64,KIPP academic year (July start) derived from the incident creation timestamp.,remove,,R9,not_reviewed,reachable via student_enrollment_key → dim_student_enrollments
 Behavioral,fct_behavioral_incidents,incident_id,int64,DeansList unique identifier for the incident.,keep,,,not_reviewed,
 Behavioral,fct_behavioral_incidents,incident_category,string,Category assigned to the incident in DeansList.,keep,,,not_reviewed,
 Behavioral,fct_behavioral_incidents,category_tier,string,"Tier code from DeansList (T1, T2, T3, SW, TX, etc.).",keep,,,not_reviewed,
@@ -175,14 +175,14 @@ Behavioral,fct_behavioral_incidents,referring_staff_name,string,"Last, First nam
 Behavioral,fct_behavioral_incidents,referring_staff_id,string,DeansList user identifier of the staff member who created the incident.,keep,,,not_reviewed,
 Behavioral,fct_behavioral_incidents,is_referral,boolean,TRUE if the incident is flagged as a referral in DeansList.,keep,,,not_reviewed,
 Behavioral,fct_behavioral_incidents,is_active,boolean,TRUE if the incident is currently active (not archived/closed).,keep,,,not_reviewed,
-Behavioral,fct_behavioral_incidents,incident_date,date,"Date the incident was created, cast from create_ts_date.",keep,,,not_reviewed,
+Behavioral,fct_behavioral_incidents,incident_date,date,"Date the incident was created, cast from create_ts_date.",remove,,R9,not_reviewed,duplicate of date_key
 Behavioral,fct_behavioral_incidents,close_date,date,Date the incident was closed. Null if still open.,keep,,,not_reviewed,
 Behavioral,fct_behavioral_incidents,return_date,date,Date the student is expected to return. Null if not applicable.,keep,,,not_reviewed,
 Behavioral,fct_family_communications,family_communication_key,string,Surrogate key derived from record_id and _dbt_source_relation. Primary key for this fact.,keep,,,not_reviewed,
 Behavioral,fct_family_communications,student_enrollment_key,string,"FK to dim_student_enrollments. Surrogate key derived from student_number, _dbt_source_relation, academic_year, and entrydate.",keep,,,not_reviewed,
 Behavioral,fct_family_communications,date_key,date,Date the communication occurred. FK to dim_dates.,keep,,,not_reviewed,
-Behavioral,fct_family_communications,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,rename,local_student_identifier,R1,not_reviewed,
-Behavioral,fct_family_communications,academic_year,int64,KIPP academic year (July start) for this communication.,keep,,,not_reviewed,
+Behavioral,fct_family_communications,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,remove,,R9,not_reviewed,reachable via student_enrollment_key → dim_student_enrollments
+Behavioral,fct_family_communications,academic_year,int64,KIPP academic year (July start) for this communication.,remove,,R9,not_reviewed,reachable via student_enrollment_key → dim_student_enrollments
 Behavioral,fct_family_communications,record_id,int64,DeansList unique identifier for the communication log entry.,keep,,,not_reviewed,
 Behavioral,fct_family_communications,communication_method,string,"Method of communication (e.g., Phone Call, Home Visit, Text, Email).",keep,,,not_reviewed,
 Behavioral,fct_family_communications,topic,string,Topic selected for the communication.,keep,,,not_reviewed,
@@ -190,7 +190,7 @@ Behavioral,fct_family_communications,reason,string,"Reason category for the comm
 Behavioral,fct_family_communications,status,string,"Status of the communication attempt (e.g., Completed, Attempted, Left Message).",keep,,,not_reviewed,
 Behavioral,fct_family_communications,notes,string,Free-text response notes from the communication.,keep,,,not_reviewed,
 Behavioral,fct_family_communications,staff_name,string,Full name of the staff member who logged the communication.,keep,,,not_reviewed,
-Behavioral,fct_family_communications,communication_date,date,Date the communication was logged.,keep,,,not_reviewed,
+Behavioral,fct_family_communications,communication_date,date,Date the communication was logged.,remove,,R9,not_reviewed,duplicate of date_key
 Behavioral,fct_family_communications,communication_datetime,datetime,"Datetime the communication was logged, preserving time of day.",keep,,,not_reviewed,
 Behavioral,fct_family_communications,is_attendance_call,boolean,TRUE if the communication reason starts with 'Att:' indicating it is an attendance-related call.,keep,,,not_reviewed,
 Behavioral,fct_family_communications,is_truancy_call,boolean,TRUE if the communication reason starts with 'Chronic Absence:' indicating it is a truancy intervention call.,keep,,,not_reviewed,
@@ -273,7 +273,7 @@ Conformed,dim_terms,powerschool_term_id,int64,PowerSchool term_id for joining to
 Course,bridge_course_section_teachers,course_section_key,string,Surrogate key derived from sections_dcid and _dbt_source_relation. FK to dim_course_sections.,keep,,,not_reviewed,
 Course,bridge_course_section_teachers,staff_key,string,Surrogate key derived from employee_number. FK to dim_staff.,keep,,,not_reviewed,
 Course,bridge_course_section_teachers,sections_dcid,int64,PowerSchool sections DCID. Natural key for the section.,rename,section_id,R1,not_reviewed,
-Course,bridge_course_section_teachers,employee_number,int64,KIPP-assigned unique identifier for the staff member. Natural key for the staff dimension.,rename,local_staff_identifier,R2,not_reviewed,
+Course,bridge_course_section_teachers,employee_number,int64,KIPP-assigned unique identifier for the staff member. Natural key for the staff dimension.,remove,,R9,not_reviewed,reachable via staff_key → dim_staff
 Course,bridge_course_section_teachers,teachernumber,string,PowerSchool teacher number for the assigned teacher. Retained for diagnostic traceability back to the source system.,rename,teacher_number,R1,not_reviewed,
 Course,bridge_course_section_teachers,teacher_role,string,"Role name from PowerSchool roledef (e.g., Lead Teacher, Co-Teacher).",keep,,,not_reviewed,
 Course,bridge_course_section_teachers,effective_date_start,date,Date the teacher's assignment to this section became effective.,keep,,,not_reviewed,
@@ -281,8 +281,8 @@ Course,bridge_course_section_teachers,effective_date_end,date,Date the teacher's
 Course,bridge_course_section_terms,course_section_key,string,Surrogate key derived from sections_dcid and _dbt_source_relation. FK to dim_course_sections.,keep,,,not_reviewed,
 Course,bridge_course_section_terms,term_key,string,"Surrogate key derived from type, code, name, start_date, region, and school_id of the matching reporting term. FK to dim_terms.",keep,,,not_reviewed,
 Course,bridge_course_section_terms,sections_dcid,int64,PowerSchool sections DCID. Natural key for the section.,rename,section_id,R1,not_reviewed,
-Course,bridge_course_section_terms,term_code,string,"Reporting term code (e.g., Q1, Q2) from the Google Sheets reporting terms reference table.",keep,,,not_reviewed,
-Course,bridge_course_section_terms,academic_year,int64,"KIPP academic year in which this reporting term falls. The calendar year in which the academic year begins (e.g., 2025 for the 2025-26 school year).",keep,,,not_reviewed,
+Course,bridge_course_section_terms,term_code,string,"Reporting term code (e.g., Q1, Q2) from the Google Sheets reporting terms reference table.",remove,,R9,not_reviewed,reachable via term_key → dim_terms
+Course,bridge_course_section_terms,academic_year,int64,"KIPP academic year in which this reporting term falls. The calendar year in which the academic year begins (e.g., 2025 for the 2025-26 school year).",remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Course,dim_course_sections,course_section_key,string,Surrogate key derived from sections_dcid and _dbt_source_relation. Primary key for this dimension.,keep,,,not_reviewed,
 Course,dim_course_sections,course_key,string,Surrogate key derived from courses_course_number and _dbt_source_relation. FK to dim_courses.,keep,,,not_reviewed,
 Course,dim_course_sections,location_key,string,Surrogate key derived from location_clean_name. FK to dim_locations. Null when sections_schoolid does not match any location in the crosswalk.,keep,,,not_reviewed,
@@ -300,8 +300,8 @@ Gradebook,fct_grades_assignments,student_section_enrollment_key,string,FK to dim
 Gradebook,fct_grades_assignments,student_enrollment_key,string,"FK to dim_student_enrollments. Surrogate key derived from student_number, _dbt_source_relation, academic_year, and entrydate.",keep,,,not_reviewed,
 Gradebook,fct_grades_assignments,term_key,string,"FK to dim_terms. Surrogate key derived from type, code, name, start_date, region, and school_id. Null when due_date does not fall within any reporting term for the school and region.",keep,,,not_reviewed,
 Gradebook,fct_grades_assignments,due_date_key,date,Assignment due date. FK to dim_dates (role-playing as due date).,keep,,,not_reviewed,
-Gradebook,fct_grades_assignments,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,rename,local_student_identifier,R1,not_reviewed,
-Gradebook,fct_grades_assignments,academic_year,int64,KIPP academic year (July start) in which this assignment falls.,keep,,,not_reviewed,
+Gradebook,fct_grades_assignments,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,remove,,R9,not_reviewed,reachable via student_section_enrollment_key → dim_student_section_enrollments
+Gradebook,fct_grades_assignments,academic_year,int64,KIPP academic year (July start) in which this assignment falls.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Gradebook,fct_grades_assignments,assignment_name,string,Name of the assignment as entered in the PowerSchool gradebook.,keep,,,not_reviewed,
 Gradebook,fct_grades_assignments,category_name,string,"Gradebook category name the assignment belongs to (e.g., Homework, Classwork, Assessment).",keep,,,not_reviewed,
 Gradebook,fct_grades_assignments,category_code,string,Short code for the gradebook category.,keep,,,not_reviewed,
@@ -317,9 +317,9 @@ Gradebook,fct_grades_assignments,is_counted_in_final_grade,boolean,TRUE if this 
 Gradebook,fct_grades_category,grades_category_key,string,"Surrogate key derived from cc_dcid, _dbt_source_relation, storecode, and storecode_type. Primary key for this fact.",keep,,,not_reviewed,
 Gradebook,fct_grades_category,student_section_enrollment_key,string,FK to dim_student_section_enrollments. Surrogate key derived from cc_dcid and _dbt_source_relation.,keep,,,not_reviewed,
 Gradebook,fct_grades_category,term_key,string,"FK to dim_terms. Surrogate key derived from type, code, name, start_date, region, and school_id. Null when storecode does not map to a reporting term for the school and region.",keep,,,not_reviewed,
-Gradebook,fct_grades_category,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,rename,local_student_identifier,R1,not_reviewed,
-Gradebook,fct_grades_category,academic_year,int64,KIPP academic year (July start) in which this category grade falls.,keep,,,not_reviewed,
-Gradebook,fct_grades_category,term_code,string,"PowerSchool storecode identifying the term or category period (e.g., Q1, Q2, E1, E2).",keep,,,not_reviewed,
+Gradebook,fct_grades_category,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,remove,,R9,not_reviewed,reachable via student_section_enrollment_key → dim_student_section_enrollments
+Gradebook,fct_grades_category,academic_year,int64,KIPP academic year (July start) in which this category grade falls.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
+Gradebook,fct_grades_category,term_code,string,"PowerSchool storecode identifying the term or category period (e.g., Q1, Q2, E1, E2).",remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Gradebook,fct_grades_category,category_type,string,Type code distinguishing quarter grades (Q) from exam grades (E).,keep,,,not_reviewed,
 Gradebook,fct_grades_category,category_order,string,"Numeric ordering of the category within its type (e.g., 1 for Q1 or E1, 2 for Q2 or E2).",keep,,,not_reviewed,
 Gradebook,fct_grades_category,reporting_term,string,"Reporting term label (e.g., RT1, RT2) derived from storecode_order.",keep,,,not_reviewed,
@@ -331,9 +331,9 @@ Gradebook,fct_grades_category,is_current,boolean,TRUE if this category grade fal
 Gradebook,fct_grades_gpa,grades_gpa_key,string,"Surrogate key derived from student_number, _dbt_source_relation, academic_year, entrydate, and term_name. Grain: one row per student_enrollment x term, per spec.",keep,,,not_reviewed,
 Gradebook,fct_grades_gpa,student_enrollment_key,string,"FK to dim_student_enrollments. Surrogate key derived from student_number, _dbt_source_relation, academic_year, and entrydate.",keep,,,not_reviewed,
 Gradebook,fct_grades_gpa,term_key,string,"FK to dim_terms. Surrogate key derived from type, code, name, start_date, region, and school_id. Null when term_name does not map to a reporting term for the school and region.",keep,,,not_reviewed,
-Gradebook,fct_grades_gpa,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,rename,local_student_identifier,R1,not_reviewed,
-Gradebook,fct_grades_gpa,academic_year,int64,KIPP academic year (July start) in which this GPA snapshot falls.,keep,,,not_reviewed,
-Gradebook,fct_grades_gpa,term_name,string,"Term identifier (e.g., Q1, Q2, Q3, Q4).",keep,,,not_reviewed,
+Gradebook,fct_grades_gpa,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,remove,,R9,not_reviewed,reachable via student_enrollment_key → dim_student_enrollments
+Gradebook,fct_grades_gpa,academic_year,int64,KIPP academic year (July start) in which this GPA snapshot falls.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
+Gradebook,fct_grades_gpa,term_name,string,"Term identifier (e.g., Q1, Q2, Q3, Q4).",remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Gradebook,fct_grades_gpa,semester,string,"Semester code (S1 for Q1/Q2, S2 for Q3/Q4).",keep,,,not_reviewed,
 Gradebook,fct_grades_gpa,gpa_term,float64,"Weighted GPA for this term only, calculated as weighted grade points divided by credit hours for the term.",keep,,,not_reviewed,
 Gradebook,fct_grades_gpa,gpa_y1,float64,Year-to-date weighted GPA across all terms in the academic year.,keep,,,not_reviewed,
@@ -357,9 +357,9 @@ Gradebook,fct_grades_term,student_enrollment_key,string,"FK to dim_student_enrol
 Gradebook,fct_grades_term,term_key,string,"FK to dim_terms. Surrogate key derived from type, code, name, start_date, region, and school_id. Null when storecode does not map to a reporting term for the school and region.",keep,,,not_reviewed,
 Gradebook,fct_grades_term,term_start_date_key,date,Start date of the term bin. FK to dim_dates (role-playing as term start date).,keep,,,not_reviewed,
 Gradebook,fct_grades_term,term_end_date_key,date,End date of the term bin. FK to dim_dates (role-playing as term end date).,keep,,,not_reviewed,
-Gradebook,fct_grades_term,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,rename,local_student_identifier,R1,not_reviewed,
-Gradebook,fct_grades_term,academic_year,int64,KIPP academic year (July start) in which this grade record falls.,keep,,,not_reviewed,
-Gradebook,fct_grades_term,term_code,string,"PowerSchool storecode identifying the term (e.g., Q1, Q2, Q3, Q4, E1, E2).",keep,,,not_reviewed,
+Gradebook,fct_grades_term,student_number,int64,PowerSchool student number. Degenerate dimension for filtering.,remove,,R9,not_reviewed,reachable via student_section_enrollment_key → dim_student_section_enrollments
+Gradebook,fct_grades_term,academic_year,int64,KIPP academic year (July start) in which this grade record falls.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
+Gradebook,fct_grades_term,term_code,string,"PowerSchool storecode identifying the term (e.g., Q1, Q2, Q3, Q4, E1, E2).",remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Gradebook,fct_grades_term,percent_grade,float64,Term percent grade. Coalesced from storedgrades (if stored) or pgfinalgrades (in-progress). Scaled 0-100.,keep,,,not_reviewed,
 Gradebook,fct_grades_term,letter_grade,string,Term letter grade. Coalesced from storedgrades or pgfinalgrades.,keep,,,not_reviewed,
 Gradebook,fct_grades_term,percent_grade_adjusted,float64,"Adjusted term percent grade. Uses storedgrades if available, otherwise the adjusted pgfinalgrades value.",keep,,,not_reviewed,
@@ -386,13 +386,13 @@ IT,fct_support_tickets,ticket_status,string,"Current Zendesk ticket status (new,
 IT,fct_support_tickets,ticket_subject,string,Subject line of the ticket as entered by the submitter.,keep,,,not_reviewed,
 IT,fct_support_tickets,category,string,"Ticket category from the Zendesk custom Category field (e.g., Hardware, Software, Access).",keep,,,not_reviewed,
 IT,fct_support_tickets,tech_tier,string,"Technology tier classification from the Zendesk custom Tech Tier field, indicating complexity or routing level.",keep,,,not_reviewed,
-IT,fct_support_tickets,ticket_location,string,Location value from the Zendesk custom Location field on the ticket.,keep,,,not_reviewed,
+IT,fct_support_tickets,ticket_location,string,Location value from the Zendesk custom Location field on the ticket.,remove,,R9,not_reviewed,reachable via location_key → dim_locations
 IT,fct_support_tickets,reply_count,int64,Total number of public replies on the ticket from ticket_metrics.,keep,,,not_reviewed,
 IT,fct_support_tickets,business_minutes_to_solve,int64,Total time to full resolution in business-hours minutes (full_resolution_time_in_minutes.business from ticket_metrics).,keep,,,not_reviewed,
 IT,fct_support_tickets,reply_time_in_minutes_business,int64,Time to first reply in business-hours minutes (reply_time_in_minutes.business from ticket_metrics).,keep,,,not_reviewed,
 IT,fct_support_tickets,assignee_stations,int64,Number of times the ticket was assigned to a different agent.,keep,,,not_reviewed,
 IT,fct_support_tickets,group_stations,int64,Number of times the ticket was assigned to a different group.,keep,,,not_reviewed,
-IT,fct_support_tickets,created_date,date,Calendar date the ticket was created.,keep,,,not_reviewed,
+IT,fct_support_tickets,created_date,date,Calendar date the ticket was created.,remove,,R9,not_reviewed,duplicate of created_date_key
 IT,fct_support_tickets,created_at,timestamp,Timestamp when the ticket was created in Zendesk.,keep,,,not_reviewed,
 IT,fct_support_tickets,initially_assigned_at,timestamp,Timestamp when the ticket was first assigned to an agent.,keep,,,not_reviewed,
 IT,fct_support_tickets,assignee_updated_at,timestamp,Timestamp when the ticket assignee was last updated.,keep,,,not_reviewed,
@@ -401,14 +401,14 @@ IT,fct_support_tickets,ticket_url,string,Direct URL to the ticket in the Zendesk
 Observation,dim_staff_observation_expectations,staff_observation_expectation_key,string,"Surrogate primary key derived from employee_number and term composite fields. Generated with generate_surrogate_key([""srh.employee_number"", ""t.type"", ""t.code"", ""t.name"", ""t.start_date"", ""t.region"", ""t.school_id""]).",keep,,,not_reviewed,
 Observation,dim_staff_observation_expectations,staff_key,string,Foreign key to dim_staff. Surrogate key derived from employee_number.,keep,,,not_reviewed,
 Observation,dim_staff_observation_expectations,term_key,string,"Foreign key to dim_terms. Surrogate key derived from term type, code, name, start_date, region, and school_id.",keep,,,not_reviewed,
-Observation,dim_staff_observation_expectations,employee_number,int64,KIPP-assigned unique identifier for the staff member.,rename,local_staff_identifier,R2,not_reviewed,
-Observation,dim_staff_observation_expectations,term_type,string,"Type of the observation term (PMS, PMC, TR, WT, O3).",keep,,,not_reviewed,
-Observation,dim_staff_observation_expectations,term_code,string,Short code for the observation period.,keep,,,not_reviewed,
-Observation,dim_staff_observation_expectations,term_name,string,Display name for the observation period.,keep,,,not_reviewed,
-Observation,dim_staff_observation_expectations,academic_year,int64,Academic year of the observation expectation.,keep,,,not_reviewed,
-Observation,dim_staff_observation_expectations,term_start_date,date,First day of the observation period.,keep,,,not_reviewed,
-Observation,dim_staff_observation_expectations,term_end_date,date,Last day of the observation period.,keep,,,not_reviewed,
-Observation,dim_staff_observation_expectations,region,string,Region the observation expectation applies to.,keep,,,not_reviewed,
+Observation,dim_staff_observation_expectations,employee_number,int64,KIPP-assigned unique identifier for the staff member.,remove,,R9,not_reviewed,reachable via staff_key → dim_staff
+Observation,dim_staff_observation_expectations,term_type,string,"Type of the observation term (PMS, PMC, TR, WT, O3).",remove,,R9,not_reviewed,reachable via term_key → dim_terms
+Observation,dim_staff_observation_expectations,term_code,string,Short code for the observation period.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
+Observation,dim_staff_observation_expectations,term_name,string,Display name for the observation period.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
+Observation,dim_staff_observation_expectations,academic_year,int64,Academic year of the observation expectation.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
+Observation,dim_staff_observation_expectations,term_start_date,date,First day of the observation period.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
+Observation,dim_staff_observation_expectations,term_end_date,date,Last day of the observation period.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
+Observation,dim_staff_observation_expectations,region,string,Region the observation expectation applies to.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Observation,dim_staff_observation_expectations,is_current,boolean,TRUE if the current date falls within this observation period.,keep,,,not_reviewed,
 Observation,dim_staff_observation_expectations,job_title,string,Staff member's job title during the observation period.,keep,,,not_reviewed,
 Observation,dim_staff_observation_expectations,assignment_status,string,Staff member's assignment status during the observation period.,keep,,,not_reviewed,
@@ -457,21 +457,21 @@ Observation,fct_staff_observation_microgoals,teacher_staff_key,string,Foreign ke
 Observation,fct_staff_observation_microgoals,creator_staff_key,string,Foreign key to dim_staff for the person who created the assignment. Surrogate key derived from creator employee_number. May be null if the creator cannot be matched to the staff roster.,keep,,,not_reviewed,
 Observation,fct_staff_observation_microgoals,staff_observation_microgoal_type_key,string,Foreign key to dim_staff_observation_microgoal_types. Surrogate key derived from the goal tag_id.,keep,,,not_reviewed,
 Observation,fct_staff_observation_microgoals,assignment_id,string,SchoolMint Grow unique identifier for the assignment.,keep,,,not_reviewed,
-Observation,fct_staff_observation_microgoals,teacher_employee_number,int64,KIPP employee number of the teacher receiving the microgoal.,rename,teacher_staff_identifier,R2,not_reviewed,
-Observation,fct_staff_observation_microgoals,creator_name,string,Display name of the person who created the assignment.,keep,,,not_reviewed,
-Observation,fct_staff_observation_microgoals,goal_name,string,Name of the specific microgoal or look-for assigned.,keep,,,not_reviewed,
-Observation,fct_staff_observation_microgoals,strand_name,string,Strand (second taxonomy level) the goal belongs to.,keep,,,not_reviewed,
-Observation,fct_staff_observation_microgoals,bucket_name,string,Bucket (third taxonomy level) the goal belongs to.,keep,,,not_reviewed,
-Observation,fct_staff_observation_microgoals,goal_type_name,string,"Top-level goal type category (e.g., Instructional, Cultural).",keep,,,not_reviewed,
+Observation,fct_staff_observation_microgoals,teacher_employee_number,int64,KIPP employee number of the teacher receiving the microgoal.,remove,,R9,not_reviewed,reachable via teacher_staff_key → dim_staff
+Observation,fct_staff_observation_microgoals,creator_name,string,Display name of the person who created the assignment.,remove,,R9,not_reviewed,reachable via creator_staff_key → dim_staff
+Observation,fct_staff_observation_microgoals,goal_name,string,Name of the specific microgoal or look-for assigned.,remove,,R9,not_reviewed,reachable via staff_observation_microgoal_type_key → dim_staff_observation_microgoal_types
+Observation,fct_staff_observation_microgoals,strand_name,string,Strand (second taxonomy level) the goal belongs to.,remove,,R9,not_reviewed,reachable via staff_observation_microgoal_type_key → dim_staff_observation_microgoal_types
+Observation,fct_staff_observation_microgoals,bucket_name,string,Bucket (third taxonomy level) the goal belongs to.,remove,,R9,not_reviewed,reachable via staff_observation_microgoal_type_key → dim_staff_observation_microgoal_types
+Observation,fct_staff_observation_microgoals,goal_type_name,string,"Top-level goal type category (e.g., Instructional, Cultural).",remove,,R9,not_reviewed,reachable via staff_observation_microgoal_type_key → dim_staff_observation_microgoal_types
 Observation,fct_staff_observation_microgoals,assignment_date,date,Local date when the assignment was created.,keep,,,not_reviewed,
 Observation,fct_staff_observation_microgoals,assignment_created_at,timestamp,UTC timestamp when the assignment was created.,keep,,,not_reviewed,
 Observation,fct_staff_observation_microgoals,academic_year,int64,Academic year derived from the assignment creation date.,keep,,,not_reviewed,
 Observation,fct_staff_observation_scores,staff_observation_score_key,string,"Surrogate primary key derived from observation_id and measurement_id. Generated with generate_surrogate_key([""sd.observation_id"", ""sd.measurement_id""]).",keep,,,not_reviewed,
 Observation,fct_staff_observation_scores,staff_observation_key,string,Foreign key to fct_staff_observations. Surrogate key derived from observation_id.,keep,,,not_reviewed,
 Observation,fct_staff_observation_scores,staff_observation_rubric_measurement_key,string,Foreign key to dim_staff_observation_rubric_measurements. Surrogate key derived from rubric_id and measurement_id.,keep,,,not_reviewed,
-Observation,fct_staff_observation_scores,observation_id,string,SchoolMint Grow observation identifier.,keep,,,not_reviewed,
+Observation,fct_staff_observation_scores,observation_id,string,SchoolMint Grow observation identifier.,remove,,R9,not_reviewed,reachable via staff_observation_key → fct_staff_observations
 Observation,fct_staff_observation_scores,measurement_id,string,SchoolMint Grow measurement identifier scored in this row.,keep,,,not_reviewed,
-Observation,fct_staff_observation_scores,measurement_group_id,string,SchoolMint Grow measurement group (strand) identifier.,keep,,,not_reviewed,
+Observation,fct_staff_observation_scores,measurement_group_id,string,SchoolMint Grow measurement group (strand) identifier.,remove,,R9,not_reviewed,reachable via staff_observation_rubric_measurement_key → dim_staff_observation_rubric_measurements
 Observation,fct_staff_observation_scores,value_score,int64,Numeric score assigned to this measurement item.,keep,,,not_reviewed,
 Observation,fct_staff_observation_scores,value_text,string,Dropdown text selection for this measurement item.,keep,,,not_reviewed,
 Observation,fct_staff_observation_scores,percentage,float64,"Percentage score for this measurement item, if applicable.",keep,,,not_reviewed,
@@ -483,9 +483,9 @@ Observation,fct_staff_observations,observer_staff_key,string,Foreign key to dim_
 Observation,fct_staff_observations,location_key,string,Foreign key to dim_locations. Surrogate key derived from the school's location_clean_name.,keep,,,not_reviewed,
 Observation,fct_staff_observations,term_key,string,Foreign key to dim_terms. Surrogate key derived from term composite fields.,keep,,,not_reviewed,
 Observation,fct_staff_observations,observation_id,string,SchoolMint Grow unique identifier for the observation event.,keep,,,not_reviewed,
-Observation,fct_staff_observations,teacher_employee_number,int64,KIPP employee number of the observed teacher.,rename,teacher_staff_identifier,R2,not_reviewed,
-Observation,fct_staff_observations,observer_employee_number,int64,KIPP employee number of the observer.,rename,observer_staff_identifier,R2,not_reviewed,
-Observation,fct_staff_observations,academic_year,int64,Academic year the observation occurred in.,keep,,,not_reviewed,
+Observation,fct_staff_observations,teacher_employee_number,int64,KIPP employee number of the observed teacher.,remove,,R9,not_reviewed,reachable via teacher_staff_key → dim_staff
+Observation,fct_staff_observations,observer_employee_number,int64,KIPP employee number of the observer.,remove,,R9,not_reviewed,reachable via observer_staff_key → dim_staff
+Observation,fct_staff_observations,academic_year,int64,Academic year the observation occurred in.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Observation,fct_staff_observations,observed_at_date,date,Local date the observation was conducted.,keep,,,not_reviewed,
 Observation,fct_staff_observations,observed_at_timestamp,timestamp,UTC timestamp when the observation was conducted.,keep,,,not_reviewed,
 Observation,fct_staff_observations,observation_score,float64,"Overall numeric score for the observation, averaged across measurement items.",keep,,,not_reviewed,
@@ -497,8 +497,8 @@ Observation,fct_staff_observations,observation_notes,string,Free-text observatio
 Observation,fct_staff_observations,rubric_name,string,Name of the rubric used for this observation.,keep,,,not_reviewed,
 Observation,fct_staff_observations,observation_type,string,"Full name of the observation type (e.g., Walkthrough, One-on-One).",keep,,,not_reviewed,
 Observation,fct_staff_observations,observation_type_abbreviation,string,"Short code for the observation type (e.g., WT, O3, PMS).",keep,,,not_reviewed,
-Observation,fct_staff_observations,term_code,string,Code of the reporting term this observation falls within.,keep,,,not_reviewed,
-Observation,fct_staff_observations,term_name,string,Name of the reporting term this observation falls within.,keep,,,not_reviewed,
+Observation,fct_staff_observations,term_code,string,Code of the reporting term this observation falls within.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
+Observation,fct_staff_observations,term_name,string,Name of the reporting term this observation falls within.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Observation,fct_staff_observations,eval_date,date,Evaluation date assigned based on PM round logic. Null for non-PM observation types.,keep,,,not_reviewed,
 Staff,dim_staff,staff_key,string,"Surrogate key derived from employee_number. Primary key for the staff dimension. Generated with generate_surrogate_key([""employee_number""]).",keep,,,not_reviewed,
 Staff,dim_staff,employee_number,int64,KIPP-assigned unique identifier for all staff members across all entities.,rename,local_staff_identifier,R2,not_reviewed,
@@ -626,7 +626,7 @@ Staff,fct_staff_attrition,termination_reason,string,Assignment status reason for
 Staff,fct_staff_attrition,termination_effective_date,date,Effective date of the first termination event within the attrition window. Null for retained staff.,keep,,,not_reviewed,
 Staff,fct_staff_benefits_enrollments,staff_benefits_enrollment_key,string,"Surrogate primary key derived from employee_number, plan_type, plan_name, and enrollment_start_date. Generated with generate_surrogate_key([""employee_number"", ""plan_type"", ""plan_name"", ""enrollment_start_date""]).",keep,,,not_reviewed,
 Staff,fct_staff_benefits_enrollments,staff_key,string,"Foreign key to dim_staff. Surrogate key derived from employee_number. Generated with generate_surrogate_key([""employee_number""]).",keep,,,not_reviewed,
-Staff,fct_staff_benefits_enrollments,employee_number,int64,KIPP-assigned unique identifier for the staff member.,rename,local_staff_identifier,R2,not_reviewed,
+Staff,fct_staff_benefits_enrollments,employee_number,int64,KIPP-assigned unique identifier for the staff member.,remove,,R9,not_reviewed,reachable via staff_key → dim_staff
 Staff,fct_staff_benefits_enrollments,plan_type,string,"Degenerate dimension. The category of the benefit plan (e.g., Medical, Dental, Vision, 401k).",keep,,,not_reviewed,
 Staff,fct_staff_benefits_enrollments,plan_name,string,Degenerate dimension. The specific benefit plan name the employee is enrolled in.,keep,,,not_reviewed,
 Staff,fct_staff_benefits_enrollments,coverage_level,string,"Degenerate dimension. The tier of coverage selected (e.g., Employee Only, Employee + Spouse, Family).",keep,,,not_reviewed,
@@ -635,7 +635,7 @@ Staff,fct_staff_benefits_enrollments,enrollment_start_date,date,Date key (role-p
 Staff,fct_staff_benefits_enrollments,enrollment_end_date,date,Date key (role-playing to dim_dates) for the end of the enrollment period. Defaults to 9999-12-31 for open-ended enrollments.,keep,,,not_reviewed,
 Staff,fct_staff_membership_enrollments,staff_membership_enrollment_key,string,"Surrogate primary key derived from employee_number, membership_code, and effective_date. Generated with generate_surrogate_key([""employee_number"", ""membership_code"", ""effective_date""]).",keep,,,not_reviewed,
 Staff,fct_staff_membership_enrollments,staff_key,string,"Foreign key to dim_staff. Surrogate key derived from employee_number. Generated with generate_surrogate_key([""employee_number""]).",keep,,,not_reviewed,
-Staff,fct_staff_membership_enrollments,employee_number,int64,KIPP-assigned unique identifier for the staff member.,rename,local_staff_identifier,R2,not_reviewed,
+Staff,fct_staff_membership_enrollments,employee_number,int64,KIPP-assigned unique identifier for the staff member.,remove,,R9,not_reviewed,reachable via staff_key → dim_staff
 Staff,fct_staff_membership_enrollments,membership_code,string,"Degenerate dimension. Short code identifying the membership or program (e.g., NJPRINC, NJTEACH).",keep,,,not_reviewed,
 Staff,fct_staff_membership_enrollments,membership_description,string,Degenerate dimension. Human-readable description of the membership or program.,keep,,,not_reviewed,
 Staff,fct_staff_membership_enrollments,category_code,string,"Degenerate dimension. Short code identifying the membership category (e.g., LDRDEV, TCHDEV).",keep,,,not_reviewed,
@@ -673,10 +673,10 @@ Staffing,dim_staffing_positions,grade_band,string,"Grade band served by this pos
 Staffing,dim_staffing_positions,recruitment_group,string,Grouping used to assign recruiting responsibility for this position.,keep,,,not_reviewed,
 Staffing,dim_staffing_positions,home_department_name,string,ADP department name for this position (adp_dept from seat tracker).,keep,,,not_reviewed,
 Staffing,dim_staffing_positions,job_title,string,ADP job title for this position (adp_title from seat tracker).,keep,,,not_reviewed,
-Staffing,dim_staffing_positions,home_work_location_name,string,ADP location name for this position. Used to join to dim_locations via location_key.,keep,,,not_reviewed,
+Staffing,dim_staffing_positions,home_work_location_name,string,ADP location name for this position. Used to join to dim_locations via location_key.,remove,,R9,not_reviewed,reachable via location_key → dim_locations
 Staffing,dim_staffing_positions,location_short_name,string,Short display name for the work location (short_name from seat tracker).,keep,,,not_reviewed,
-Staffing,dim_staffing_positions,recruiter_employee_number,int64,KIPP employee number of the recruiter assigned to this position. Nullable.,rename,recruiter_staff_identifier,R2,not_reviewed,
-Staffing,dim_staffing_positions,teammate_employee_number,int64,KIPP employee number of the teammate (staff member) filling this position. Nullable for open positions.,rename,teammate_staff_identifier,R2,not_reviewed,
+Staffing,dim_staffing_positions,recruiter_employee_number,int64,KIPP employee number of the recruiter assigned to this position. Nullable.,remove,,R9,not_reviewed,reachable via recruiter_staff_key → dim_staff
+Staffing,dim_staffing_positions,teammate_employee_number,int64,KIPP employee number of the teammate (staff member) filling this position. Nullable for open positions.,remove,,R9,not_reviewed,reachable via teammate_staff_key → dim_staff
 Staffing,dim_staffing_positions,plan_status,string,"Whether this position is active in the staffing plan (e.g., Active, Inactive).",keep,,,not_reviewed,
 Staffing,dim_staffing_positions,staffing_status,string,"Current staffing status of this position version (e.g., Open, Staffed).",keep,,,not_reviewed,
 Staffing,dim_staffing_positions,status_detail,string,"Detailed status label providing context for staffing_status (e.g., New Hire, Transfer In, Backfill).",keep,,,not_reviewed,
@@ -685,7 +685,7 @@ Staffing,dim_staffing_positions,effective_date_start,date,Date this version of t
 Staffing,dim_staffing_positions,effective_date_end,date,Date this version of the position expired (dbt_valid_to cast to date). NULL for the current active version.,keep,,,not_reviewed,
 Student,bridge_student_contacts,student_key,string,Surrogate key for the student. Foreign key to dim_students. Derived from student_number via generate_surrogate_key.,keep,,,not_reviewed,
 Student,bridge_student_contacts,student_contact_person_key,string,Surrogate key for the contact person. Foreign key to dim_student_contact_persons. Derived from _dbt_source_relation and powerschool_person_id.,keep,,,not_reviewed,
-Student,bridge_student_contacts,student_number,int64,PowerSchool student_number. Natural key for the student side of the relationship.,rename,local_student_identifier,R1,not_reviewed,
+Student,bridge_student_contacts,student_number,int64,PowerSchool student_number. Natural key for the student side of the relationship.,remove,,R9,not_reviewed,reachable via student_key → dim_students
 Student,bridge_student_contacts,relationship_type,string,"Relationship between the contact person and the student (e.g., Mother, Father, Grandparent) as coded in PowerSchool.",keep,,,not_reviewed,
 Student,bridge_student_contacts,contact_priority,int64,Contact priority order for this student-contact pair. Lower numbers indicate higher priority contacts.,keep,,,not_reviewed,
 Student,bridge_student_contacts,is_emergency,boolean,TRUE if this contact is designated as an emergency contact for this student.,keep,,,not_reviewed,
@@ -714,8 +714,8 @@ Student,dim_student_section_enrollments,student_section_enrollment_key,string,Su
 Student,dim_student_section_enrollments,student_enrollment_key,string,"Surrogate key derived from student_number, _dbt_source_relation, academic_year, and entrydate. FK to dim_student_enrollments. Null when no matching student enrollment record covers the CC dateenrolled.",keep,,,not_reviewed,
 Student,dim_student_section_enrollments,course_section_key,string,Surrogate key derived from sections_dcid and _dbt_source_relation. FK to dim_course_sections.,keep,,,not_reviewed,
 Student,dim_student_section_enrollments,term_key,string,"Surrogate key derived from type, code, name, start_date, region, and school_id of the matching reporting term. FK to dim_terms. Null when cc_abs_termid does not match any reporting term powerschool_term_id for the section's school and region.",keep,,,not_reviewed,
-Student,dim_student_section_enrollments,student_number,int64,PowerSchool student_number. Natural key for the student.,rename,local_student_identifier,R1,not_reviewed,
-Student,dim_student_section_enrollments,academic_year,int64,"KIPP academic year in which this section enrollment falls. The calendar year in which the academic year begins (e.g., 2025 for the 2025-26 school year).",keep,,,not_reviewed,
+Student,dim_student_section_enrollments,student_number,int64,PowerSchool student_number. Natural key for the student.,remove,,R9,not_reviewed,reachable via student_enrollment_key → dim_student_enrollments
+Student,dim_student_section_enrollments,academic_year,int64,"KIPP academic year in which this section enrollment falls. The calendar year in which the academic year begins (e.g., 2025 for the 2025-26 school year).",remove,,R9,not_reviewed,reachable via student_enrollment_key → dim_student_enrollments
 Student,dim_student_section_enrollments,date_enrolled,date,Date the student enrolled in this section (cc_dateenrolled from PowerSchool).,keep,,,not_reviewed,
 Student,dim_student_section_enrollments,date_left,date,Date the student left this section (cc_dateleft from PowerSchool).,keep,,,not_reviewed,
 Student,dim_student_section_enrollments,is_dropped_section,boolean,"TRUE if this specific section enrollment was dropped by the student mid-term, as determined by PowerSchool sectionid sign and exit date logic.",keep,,,not_reviewed,
@@ -736,17 +736,17 @@ Student,dim_students,,string,,add,salesforce_contact_id,structural,not_reviewed,
 Survey,bridge_survey_questions,survey_question_bridge_key,string,Surrogate key derived from survey_id and question_shortname. Primary key for this bridge.,keep,,,not_reviewed,
 Survey,bridge_survey_questions,survey_key,string,FK to dim_surveys. Surrogate key derived from survey_id.,keep,,,not_reviewed,
 Survey,bridge_survey_questions,survey_question_key,string,FK to dim_survey_questions. Surrogate key derived from question_shortname.,keep,,,not_reviewed,
-Survey,bridge_survey_questions,survey_id,string,Source system identifier for the survey instrument.,keep,,,not_reviewed,
-Survey,bridge_survey_questions,question_shortname,string,"Abbreviated identifier for the question within this survey context (e.g., scd_01, Q_1, SF1).",keep,,,not_reviewed,
+Survey,bridge_survey_questions,survey_id,string,Source system identifier for the survey instrument.,remove,,R9,not_reviewed,reachable via survey_key → dim_surveys
+Survey,bridge_survey_questions,question_shortname,string,"Abbreviated identifier for the question within this survey context (e.g., scd_01, Q_1, SF1).",remove,,R9,not_reviewed,reachable via survey_question_key → dim_survey_questions
 Survey,bridge_survey_questions,is_required,boolean,TRUE if the question is required for survey completion. From Google Forms question_required flag; always true for SCD scale items.,keep,,,not_reviewed,
 Survey,dim_survey_administrations,survey_administration_key,string,Surrogate key derived from survey_id and term composite fields. Primary key for this dimension.,keep,,,not_reviewed,
 Survey,dim_survey_administrations,survey_key,string,FK to dim_surveys. Surrogate key derived from survey_id.,keep,,,not_reviewed,
 Survey,dim_survey_administrations,term_key,string,"FK to dim_terms. Surrogate key derived from term composite fields (type, code, name, start_date, region, school_id).",keep,,,not_reviewed,
-Survey,dim_survey_administrations,survey_id,string,Source system identifier for the survey instrument.,keep,,,not_reviewed,
-Survey,dim_survey_administrations,survey_name,string,Display name of the survey instrument for this administration.,keep,,,not_reviewed,
-Survey,dim_survey_administrations,term_code,string,"Short code for the administration period (e.g., SCD, MGR1, SUP1).",keep,,,not_reviewed,
-Survey,dim_survey_administrations,term_name,string,Display name for the administration period from reporting terms.,keep,,,not_reviewed,
-Survey,dim_survey_administrations,academic_year,int64,Academic year this administration falls within.,keep,,,not_reviewed,
+Survey,dim_survey_administrations,survey_id,string,Source system identifier for the survey instrument.,remove,,R9,not_reviewed,reachable via survey_key → dim_surveys
+Survey,dim_survey_administrations,survey_name,string,Display name of the survey instrument for this administration.,remove,,R9,not_reviewed,reachable via survey_key → dim_surveys
+Survey,dim_survey_administrations,term_code,string,"Short code for the administration period (e.g., SCD, MGR1, SUP1).",remove,,R9,not_reviewed,reachable via term_key → dim_terms
+Survey,dim_survey_administrations,term_name,string,Display name for the administration period from reporting terms.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
+Survey,dim_survey_administrations,academic_year,int64,Academic year this administration falls within.,remove,,R9,not_reviewed,reachable via term_key → dim_terms
 Survey,dim_survey_administrations,administration_status,string,"Current status of the administration window: open (currently accepting responses), closed (past deadline), or upcoming (not yet started).",keep,,,not_reviewed,
 Survey,dim_survey_administrations,response_deadline,date,"Last date responses are accepted, derived from the term end date.",keep,,,not_reviewed,
 Survey,dim_survey_expectations,survey_expectation_key,string,"Surrogate key derived from survey_administration_key, respondent_population, and the three respondent FK columns. Primary key for this dimension.",keep,,,not_reviewed,
@@ -770,7 +770,7 @@ Survey,fct_survey_responses,survey_submission_key,string,FK to fct_survey_submis
 Survey,fct_survey_responses,survey_question_key,string,FK to dim_survey_questions. Identifies which question this response answers.,keep,,,not_reviewed,
 Survey,fct_survey_responses,survey_id,string,Source system identifier for the survey instrument.,keep,,,not_reviewed,
 Survey,fct_survey_responses,survey_response_id,string,Source system identifier for the individual survey response.,keep,,,not_reviewed,
-Survey,fct_survey_responses,question_shortname,string,Abbreviated identifier for the question being answered. Matches the grain of dim_survey_questions.,keep,,,not_reviewed,
+Survey,fct_survey_responses,question_shortname,string,Abbreviated identifier for the question being answered. Matches the grain of dim_survey_questions.,remove,,R9,not_reviewed,reachable via survey_question_key → dim_survey_questions
 Survey,fct_survey_responses,response_value,numeric,"Numeric value of the response, when applicable. Null for open-ended text responses. Cast from the raw answer text.",keep,,,not_reviewed,
 Survey,fct_survey_responses,response_text,string,Raw text of the response as submitted by the respondent.,keep,,,not_reviewed,
 Survey,fct_survey_submissions,survey_submission_key,string,"Surrogate key derived from survey_id, survey_response_id, and respondent identifier. Primary key for this fact.",keep,,,not_reviewed,
@@ -781,10 +781,10 @@ Survey,fct_survey_submissions,staff_key,string,FK to dim_staff for the responden
 Survey,fct_survey_submissions,student_enrollment_key,string,FK to dim_student_enrollments for the respondent. Populated when respondent_population is student. Null for staff and family.,keep,,,not_reviewed,
 Survey,fct_survey_submissions,student_contact_person_key,string,FK to dim_student_contact_persons for the respondent. Populated when respondent_population is family. Null for staff and student.,keep,,,not_reviewed,
 Survey,fct_survey_submissions,subject_staff_key,string,Role-playing FK to dim_staff for the subject being evaluated. Populated only for Manager Survey submissions where the respondent (direct report) evaluates their manager (subject). Null for all other survey types.,keep,,,not_reviewed,
-Survey,fct_survey_submissions,survey_id,string,Source system identifier for the survey instrument.,keep,,,not_reviewed,
+Survey,fct_survey_submissions,survey_id,string,Source system identifier for the survey instrument.,remove,,R9,not_reviewed,reachable via survey_administration_key → dim_survey_administrations
 Survey,fct_survey_submissions,survey_response_id,string,Source system identifier for the individual survey response.,keep,,,not_reviewed,
 Survey,fct_survey_submissions,date_submitted,timestamp,UTC timestamp when the survey response was submitted.,keep,,,not_reviewed,
-Survey,fct_survey_submissions,academic_year,int64,Academic year this submission falls within.,keep,,,not_reviewed,
+Survey,fct_survey_submissions,academic_year,int64,Academic year this submission falls within.,remove,,R9,not_reviewed,reachable via survey_administration_key → dim_survey_administrations
 Talent,dim_job_candidates,job_candidate_key,string,"Surrogate primary key derived from candidate_id. Generated with generate_surrogate_key([""candidate_id""]).",keep,,,not_reviewed,
 Talent,dim_job_candidates,candidate_id,string,SmartRecruiters unique identifier for the candidate.,keep,,,not_reviewed,
 Talent,dim_job_candidates,candidate_first_name,string,Candidate's first name as entered in SmartRecruiters.,keep,,,not_reviewed,
@@ -806,11 +806,11 @@ Talent,fct_job_candidate_applications,job_posting_key,string,"Foreign key to dim
 Talent,fct_job_candidate_applications,created_date_key,date,Foreign key to dim_dates for the date the application entered the New stage. Matches dim_dates.date_key.,keep,,,not_reviewed,
 Talent,fct_job_candidate_applications,application_id,string,SmartRecruiters unique identifier for the application.,keep,,,not_reviewed,
 Talent,fct_job_candidate_applications,candidate_id,string,SmartRecruiters unique identifier for the candidate.,keep,,,not_reviewed,
-Talent,fct_job_candidate_applications,job_title,string,Title of the job posting the candidate applied to.,keep,,,not_reviewed,
-Talent,fct_job_candidate_applications,department_internal,string,Internal department classification for the job posting.,keep,,,not_reviewed,
-Talent,fct_job_candidate_applications,department_org_field_value,string,Organizational field value for the department.,keep,,,not_reviewed,
-Talent,fct_job_candidate_applications,job_city,string,City where the job posting is located.,keep,,,not_reviewed,
-Talent,fct_job_candidate_applications,recruiters,string,Name(s) of recruiter(s) assigned to this application.,keep,,,not_reviewed,
+Talent,fct_job_candidate_applications,job_title,string,Title of the job posting the candidate applied to.,remove,,R9,not_reviewed,reachable via job_posting_key → dim_job_postings
+Talent,fct_job_candidate_applications,department_internal,string,Internal department classification for the job posting.,remove,,R9,not_reviewed,reachable via job_posting_key → dim_job_postings
+Talent,fct_job_candidate_applications,department_org_field_value,string,Organizational field value for the department.,remove,,R9,not_reviewed,reachable via job_posting_key → dim_job_postings
+Talent,fct_job_candidate_applications,job_city,string,City where the job posting is located.,remove,,R9,not_reviewed,reachable via job_posting_key → dim_job_postings
+Talent,fct_job_candidate_applications,recruiters,string,Name(s) of recruiter(s) assigned to this application.,remove,,R9,not_reviewed,reachable via job_posting_key → dim_job_postings
 Talent,fct_job_candidate_applications,application_state,string,"Current high-level application state (New, Lead, In Review, Interview, Offered, Hired, Rejected, Withdrawn).",keep,,,not_reviewed,
 Talent,fct_job_candidate_applications,application_status,string,More granular status within the current application state.,keep,,,not_reviewed,
 Talent,fct_job_candidate_applications,application_custom_step,string,"Custom pipeline step for the application, if configured.",keep,,,not_reviewed,
@@ -818,9 +818,9 @@ Talent,fct_job_candidate_applications,application_reason_for_rejection,string,"R
 Talent,fct_job_candidate_applications,application_reason_for_withdrawal,string,"Reason code for why the candidate withdrew, if applicable.",keep,,,not_reviewed,
 Talent,fct_job_candidate_applications,application_status_before_rejection,string,The application status immediately before rejection.,keep,,,not_reviewed,
 Talent,fct_job_candidate_applications,application_status_before_withdrawal,string,The application status immediately before withdrawal.,keep,,,not_reviewed,
-Talent,fct_job_candidate_applications,candidate_source,string,Primary source channel for the candidate on this application.,keep,,,not_reviewed,
-Talent,fct_job_candidate_applications,candidate_source_type,string,Broad source type category for the candidate on this application.,keep,,,not_reviewed,
-Talent,fct_job_candidate_applications,candidate_source_subtype,string,Granular source subtype for the candidate on this application.,keep,,,not_reviewed,
+Talent,fct_job_candidate_applications,candidate_source,string,Primary source channel for the candidate on this application.,remove,,R9,not_reviewed,reachable via job_candidate_key → dim_job_candidates
+Talent,fct_job_candidate_applications,candidate_source_type,string,Broad source type category for the candidate on this application.,remove,,R9,not_reviewed,reachable via job_candidate_key → dim_job_candidates
+Talent,fct_job_candidate_applications,candidate_source_subtype,string,Granular source subtype for the candidate on this application.,remove,,R9,not_reviewed,reachable via job_candidate_key → dim_job_candidates
 Talent,fct_job_candidate_applications,source,string,Application-level source channel.,keep,,,not_reviewed,
 Talent,fct_job_candidate_applications,source_type,string,Application-level source type.,keep,,,not_reviewed,
 Talent,fct_job_candidate_applications,source_subtype,string,Application-level source subtype.,keep,,,not_reviewed,

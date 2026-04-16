@@ -52,6 +52,12 @@ Applied to every column in every mart model during audit:
    `oid`, `lep`, etc. — reviewed during audit).
 8. **Plumbing columns removed** from mart SELECTs. They remain in intermediate
    layers where joins happen.
+9. **Remove dimension attributes reachable via FK.** Facts and child dimensions
+   carry only surrogate FKs, true degenerate dimensions (text attributes with no
+   corresponding dim), and measures. Any column whose value is reachable by
+   traversing an FK to a dimension is removed — Cube handles join traversal.
+   This includes natural keys that duplicate a surrogate FK and date columns
+   that duplicate a date-key FK.
 
 Degenerate-dimension text columns (e.g., `incident_type`, `consequence_type`,
 `assignment_type`) drop `_code` / `_name` suffixes unless a code AND a human
@@ -187,8 +193,7 @@ these columns:
 
 Valid `action` values: `keep`, `rename`, `remove`, `add`.
 
-Valid `review_status` values: `not_reviewed`, `approved`, `needs_discussion`,
-`rejected`, `alt_suggested`.
+Valid `review_status` values: `not_reviewed`, `approved`, `needs_discussion`.
 
 Valid `rule_ref` values: `R1`–`R8` (rubric rules), `structural` (new column),
 `plumbing` (removal), `exception` (specific-use jargon exception),
@@ -217,7 +222,8 @@ pre-populated in the inventory with `action: add`.
    docs/superpowers/specs/2026-04-15-column-naming-audit-approved.csv
    ```
 
-**Sheet URL**: _TBD — added to this section when the sheet is created._
+**Sheet URL**:
+https://docs.google.com/spreadsheets/d/1-2HyPIJzaXMsIgY3e9rLOU4W0HLOk7foDKXFU0NCa-4
 
 ### Implementation
 

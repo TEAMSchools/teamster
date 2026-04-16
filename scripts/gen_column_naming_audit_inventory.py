@@ -136,6 +136,290 @@ def _initial_rename_guess(column_name: str) -> tuple[str, str] | None:
     return _RENAME_GUESSES.get(column_name)
 
 
+# Model-specific columns flagged for removal because their values are
+# reachable via an FK join to a dimension. Keyed by (model_name, column_name).
+# Rule R9 in docs/superpowers/specs/2026-04-15-column-naming-audit.md.
+_REDUNDANT_COLUMNS: dict[tuple[str, str], str] = {
+    # ── bridges ─────────────────────────────────────────────────────────────
+    ("bridge_course_section_teachers", "employee_number"): (
+        "reachable via staff_key → dim_staff"
+    ),
+    ("bridge_course_section_terms", "academic_year"): (
+        "reachable via term_key → dim_terms"
+    ),
+    ("bridge_course_section_terms", "term_code"): (
+        "reachable via term_key → dim_terms"
+    ),
+    ("bridge_student_contacts", "student_number"): (
+        "reachable via student_key → dim_students"
+    ),
+    ("bridge_survey_questions", "question_shortname"): (
+        "reachable via survey_question_key → dim_survey_questions"
+    ),
+    ("bridge_survey_questions", "survey_id"): (
+        "reachable via survey_key → dim_surveys"
+    ),
+    # ── child dimensions ────────────────────────────────────────────────────
+    ("dim_assessment_comparisons", "region"): (
+        "reachable via region_key → dim_regions"
+    ),
+    ("dim_assessment_targets", "region"): (
+        "reachable via location_key → dim_locations"
+    ),
+    ("dim_staff_observation_expectations", "academic_year"): (
+        "reachable via term_key → dim_terms"
+    ),
+    ("dim_staff_observation_expectations", "employee_number"): (
+        "reachable via staff_key → dim_staff"
+    ),
+    ("dim_staff_observation_expectations", "region"): (
+        "reachable via term_key → dim_terms"
+    ),
+    ("dim_staff_observation_expectations", "term_code"): (
+        "reachable via term_key → dim_terms"
+    ),
+    ("dim_staff_observation_expectations", "term_end_date"): (
+        "reachable via term_key → dim_terms"
+    ),
+    ("dim_staff_observation_expectations", "term_name"): (
+        "reachable via term_key → dim_terms"
+    ),
+    ("dim_staff_observation_expectations", "term_start_date"): (
+        "reachable via term_key → dim_terms"
+    ),
+    ("dim_staff_observation_expectations", "term_type"): (
+        "reachable via term_key → dim_terms"
+    ),
+    ("dim_staffing_positions", "home_work_location_name"): (
+        "reachable via location_key → dim_locations"
+    ),
+    ("dim_staffing_positions", "recruiter_employee_number"): (
+        "reachable via recruiter_staff_key → dim_staff"
+    ),
+    ("dim_staffing_positions", "teammate_employee_number"): (
+        "reachable via teammate_staff_key → dim_staff"
+    ),
+    ("dim_student_assessment_expectations", "academic_year"): (
+        "reachable via term_key → dim_terms"
+    ),
+    ("dim_student_assessment_expectations", "assessment_title"): (
+        "reachable via assessment_key → dim_assessments"
+    ),
+    ("dim_student_assessment_expectations", "grade_level_id"): (
+        "reachable via assessment_key → dim_assessments"
+    ),
+    ("dim_student_assessment_expectations", "module_code"): (
+        "reachable via assessment_key → dim_assessments"
+    ),
+    ("dim_student_assessment_expectations", "module_type"): (
+        "reachable via assessment_key → dim_assessments"
+    ),
+    ("dim_student_assessment_expectations", "region"): (
+        "reachable via term_key → dim_terms"
+    ),
+    ("dim_student_assessment_expectations", "scope"): (
+        "reachable via assessment_key → dim_assessments"
+    ),
+    ("dim_student_assessment_expectations", "subject_area"): (
+        "reachable via assessment_key → dim_assessments"
+    ),
+    ("dim_student_section_enrollments", "academic_year"): (
+        "reachable via student_enrollment_key → dim_student_enrollments"
+    ),
+    ("dim_student_section_enrollments", "student_number"): (
+        "reachable via student_enrollment_key → dim_student_enrollments"
+    ),
+    ("dim_survey_administrations", "academic_year"): (
+        "reachable via term_key → dim_terms"
+    ),
+    ("dim_survey_administrations", "survey_id"): (
+        "reachable via survey_key → dim_surveys"
+    ),
+    ("dim_survey_administrations", "survey_name"): (
+        "reachable via survey_key → dim_surveys"
+    ),
+    ("dim_survey_administrations", "term_code"): ("reachable via term_key → dim_terms"),
+    ("dim_survey_administrations", "term_name"): ("reachable via term_key → dim_terms"),
+    # ── facts ───────────────────────────────────────────────────────────────
+    ("fct_assessment_scores_enrollment_scoped", "academic_year"): (
+        "reachable via test_date_key → dim_dates"
+    ),
+    ("fct_assessment_scores_enrollment_scoped", "assessment_title"): (
+        "reachable via assessment_key → dim_assessments"
+    ),
+    ("fct_assessment_scores_enrollment_scoped", "module_code"): (
+        "reachable via assessment_key → dim_assessments"
+    ),
+    ("fct_assessment_scores_enrollment_scoped", "scope"): (
+        "reachable via assessment_key → dim_assessments"
+    ),
+    ("fct_assessment_scores_enrollment_scoped", "student_number"): (
+        "reachable via student_key → dim_students"
+    ),
+    ("fct_assessment_scores_enrollment_scoped", "subject_area"): (
+        "reachable via assessment_key → dim_assessments"
+    ),
+    ("fct_assessment_scores_enrollment_scoped", "test_date"): (
+        "duplicate of test_date_key"
+    ),
+    ("fct_assessment_scores_student_scoped", "academic_year"): (
+        "reachable via test_date_key → dim_dates"
+    ),
+    ("fct_assessment_scores_student_scoped", "student_number"): (
+        "reachable via student_key → dim_students"
+    ),
+    ("fct_assessment_scores_student_scoped", "subject_area"): (
+        "reachable via assessment_key → dim_assessments"
+    ),
+    ("fct_behavioral_consequences", "consequence_end_date"): (
+        "duplicate of end_date_key"
+    ),
+    ("fct_behavioral_consequences", "consequence_start_date"): (
+        "duplicate of start_date_key"
+    ),
+    ("fct_behavioral_incidents", "academic_year"): (
+        "reachable via student_enrollment_key → dim_student_enrollments"
+    ),
+    ("fct_behavioral_incidents", "incident_date"): ("duplicate of date_key"),
+    ("fct_behavioral_incidents", "student_number"): (
+        "reachable via student_enrollment_key → dim_student_enrollments"
+    ),
+    ("fct_family_communications", "academic_year"): (
+        "reachable via student_enrollment_key → dim_student_enrollments"
+    ),
+    ("fct_family_communications", "communication_date"): ("duplicate of date_key"),
+    ("fct_family_communications", "student_number"): (
+        "reachable via student_enrollment_key → dim_student_enrollments"
+    ),
+    ("fct_grades_assignments", "academic_year"): ("reachable via term_key → dim_terms"),
+    ("fct_grades_assignments", "student_number"): (
+        "reachable via student_section_enrollment_key → dim_student_section_enrollments"
+    ),
+    ("fct_grades_category", "academic_year"): ("reachable via term_key → dim_terms"),
+    ("fct_grades_category", "student_number"): (
+        "reachable via student_section_enrollment_key → dim_student_section_enrollments"
+    ),
+    ("fct_grades_category", "term_code"): ("reachable via term_key → dim_terms"),
+    ("fct_grades_gpa", "academic_year"): ("reachable via term_key → dim_terms"),
+    ("fct_grades_gpa", "student_number"): (
+        "reachable via student_enrollment_key → dim_student_enrollments"
+    ),
+    ("fct_grades_gpa", "term_name"): ("reachable via term_key → dim_terms"),
+    ("fct_grades_term", "academic_year"): ("reachable via term_key → dim_terms"),
+    ("fct_grades_term", "student_number"): (
+        "reachable via student_section_enrollment_key → dim_student_section_enrollments"
+    ),
+    ("fct_grades_term", "term_code"): ("reachable via term_key → dim_terms"),
+    ("fct_job_candidate_applications", "candidate_source"): (
+        "reachable via job_candidate_key → dim_job_candidates"
+    ),
+    ("fct_job_candidate_applications", "candidate_source_subtype"): (
+        "reachable via job_candidate_key → dim_job_candidates"
+    ),
+    ("fct_job_candidate_applications", "candidate_source_type"): (
+        "reachable via job_candidate_key → dim_job_candidates"
+    ),
+    ("fct_job_candidate_applications", "department_internal"): (
+        "reachable via job_posting_key → dim_job_postings"
+    ),
+    ("fct_job_candidate_applications", "department_org_field_value"): (
+        "reachable via job_posting_key → dim_job_postings"
+    ),
+    ("fct_job_candidate_applications", "job_city"): (
+        "reachable via job_posting_key → dim_job_postings"
+    ),
+    ("fct_job_candidate_applications", "job_title"): (
+        "reachable via job_posting_key → dim_job_postings"
+    ),
+    ("fct_job_candidate_applications", "recruiters"): (
+        "reachable via job_posting_key → dim_job_postings"
+    ),
+    ("fct_staff_benefits_enrollments", "employee_number"): (
+        "reachable via staff_key → dim_staff"
+    ),
+    ("fct_staff_membership_enrollments", "employee_number"): (
+        "reachable via staff_key → dim_staff"
+    ),
+    ("fct_staff_observation_microgoals", "bucket_name"): (
+        "reachable via staff_observation_microgoal_type_key → dim_staff_observation_microgoal_types"
+    ),
+    ("fct_staff_observation_microgoals", "creator_name"): (
+        "reachable via creator_staff_key → dim_staff"
+    ),
+    ("fct_staff_observation_microgoals", "goal_name"): (
+        "reachable via staff_observation_microgoal_type_key → dim_staff_observation_microgoal_types"
+    ),
+    ("fct_staff_observation_microgoals", "goal_type_name"): (
+        "reachable via staff_observation_microgoal_type_key → dim_staff_observation_microgoal_types"
+    ),
+    ("fct_staff_observation_microgoals", "strand_name"): (
+        "reachable via staff_observation_microgoal_type_key → dim_staff_observation_microgoal_types"
+    ),
+    ("fct_staff_observation_microgoals", "teacher_employee_number"): (
+        "reachable via teacher_staff_key → dim_staff"
+    ),
+    ("fct_staff_observation_scores", "measurement_group_id"): (
+        "reachable via staff_observation_rubric_measurement_key → dim_staff_observation_rubric_measurements"
+    ),
+    ("fct_staff_observation_scores", "observation_id"): (
+        "reachable via staff_observation_key → fct_staff_observations"
+    ),
+    ("fct_staff_observations", "academic_year"): ("reachable via term_key → dim_terms"),
+    ("fct_staff_observations", "observer_employee_number"): (
+        "reachable via observer_staff_key → dim_staff"
+    ),
+    ("fct_staff_observations", "teacher_employee_number"): (
+        "reachable via teacher_staff_key → dim_staff"
+    ),
+    ("fct_staff_observations", "term_code"): ("reachable via term_key → dim_terms"),
+    ("fct_staff_observations", "term_name"): ("reachable via term_key → dim_terms"),
+    ("fct_student_attendance_daily", "academic_year"): (
+        "reachable via student_enrollment_key → dim_student_enrollments"
+    ),
+    ("fct_student_attendance_daily", "student_number"): (
+        "reachable via student_enrollment_key → dim_student_enrollments"
+    ),
+    ("fct_student_attendance_interventions", "absence_threshold"): (
+        "reachable via intervention_type_key → dim_student_attendance_intervention_types"
+    ),
+    ("fct_student_attendance_interventions", "academic_year"): (
+        "reachable via student_enrollment_key → dim_student_enrollments"
+    ),
+    ("fct_student_attendance_interventions", "commlog_date"): ("duplicate of date_key"),
+    ("fct_student_attendance_interventions", "commlog_reason"): (
+        "reachable via intervention_type_key → dim_student_attendance_intervention_types"
+    ),
+    ("fct_student_attendance_interventions", "student_number"): (
+        "reachable via student_enrollment_key → dim_student_enrollments"
+    ),
+    ("fct_student_attendance_streaks", "academic_year"): (
+        "reachable via student_enrollment_key → dim_student_enrollments"
+    ),
+    ("fct_student_attendance_streaks", "streak_end_date"): (
+        "duplicate of streak_end_date_key"
+    ),
+    ("fct_student_attendance_streaks", "streak_start_date"): (
+        "duplicate of streak_start_date_key"
+    ),
+    ("fct_student_attendance_streaks", "student_number"): (
+        "reachable via student_enrollment_key → dim_student_enrollments"
+    ),
+    ("fct_support_tickets", "created_date"): ("duplicate of created_date_key"),
+    ("fct_support_tickets", "ticket_location"): (
+        "reachable via location_key → dim_locations"
+    ),
+    ("fct_survey_responses", "question_shortname"): (
+        "reachable via survey_question_key → dim_survey_questions"
+    ),
+    ("fct_survey_submissions", "academic_year"): (
+        "reachable via survey_administration_key → dim_survey_administrations"
+    ),
+    ("fct_survey_submissions", "survey_id"): (
+        "reachable via survey_administration_key → dim_survey_administrations"
+    ),
+}
+
+
 def _structural_additions() -> list[dict[str, str]]:
     """Pre-populated add-rows for structural columns defined in the spec."""
     template = {
@@ -200,6 +484,10 @@ def _read_mart_yaml(path: Path) -> list[dict[str, str]]:
             if col_name in plumbing:
                 row["action"] = "remove"
                 row["rule_ref"] = "plumbing"
+            elif (model_name, col_name) in _REDUNDANT_COLUMNS:
+                row["action"] = "remove"
+                row["rule_ref"] = "R9"
+                row["reviewer_notes"] = _REDUNDANT_COLUMNS[(model_name, col_name)]
             else:
                 guess = _initial_rename_guess(col_name)
                 if guess is not None:

@@ -300,3 +300,35 @@ def test_sort_rows_groups_by_domain_then_model() -> None:
     # Within a model, preserve column order from the YAML (stable sort).
     student_rows = [r for r in out if r["domain"] == "Student"]
     assert [r["current_column"] for r in student_rows] == ["b", "a"]
+
+
+_FIXTURE_R9 = (
+    _REPO_ROOT / "tests" / "fixtures" / "mart_yaml" / "fct_sample_attendance.yml"
+)
+
+
+def test_read_mart_yaml_applies_r9_redundancy() -> None:
+    module = _load_script()
+    rows = module._read_mart_yaml(_FIXTURE_R9)
+    by_name = {r["current_column"]: r for r in rows}
+    ay = by_name["academic_year"]
+    assert ay["action"] == "remove"
+    assert ay["rule_ref"] == "R9"
+    assert "reachable via" in ay["reviewer_notes"]
+
+
+def test_read_mart_yaml_r9_does_not_flag_fk_columns() -> None:
+    module = _load_script()
+    rows = module._read_mart_yaml(_FIXTURE_R9)
+    by_name = {r["current_column"]: r for r in rows}
+    assert by_name["student_enrollment_key"]["action"] == "keep"
+    assert by_name["attendance_key"]["action"] == "keep"
+
+
+def test_read_mart_yaml_r9_student_number_on_fact() -> None:
+    module = _load_script()
+    rows = module._read_mart_yaml(_FIXTURE_R9)
+    by_name = {r["current_column"]: r for r in rows}
+    sn = by_name["student_number"]
+    assert sn["action"] == "remove"
+    assert sn["rule_ref"] == "R9"
