@@ -114,6 +114,10 @@ SSH_EDPLAN = SSHResource(
     remote_port=22,
     username=EnvVar("EDPLAN_SFTP_USERNAME"),
     password=EnvVar("EDPLAN_SFTP_PASSWORD"),
+    # Upstream default is 10s. secureftp.easyiep.com TCP handshakes from GKE
+    # occasionally exceed that during peak periods, causing transient TimeoutError
+    # on connect. 30s tolerates those without masking a truly unreachable host.
+    timeout=30,
 )
 
 SSH_IREADY = SSHResource(

@@ -751,6 +751,20 @@ exposures:
           kinds:
             - googlesheets
 
+  - name: rpt_gsheets__award_ceremony_gpa
+    label: Award Ceremony GPA
+    type: analysis
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1270459PDpJu_HYxEYTPPBi7Q4yScJjUIBV7MC_OJqXI
+    depends_on:
+      - ref("rpt_gsheets__award_ceremony_gpa")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
+
   # - name: hro_2425_renewal_workbook_data_team_workspace
   #   label: HRO 24-25 Renewal Workbook - Data Team Workspace
   #   type: application
@@ -791,3 +805,16 @@ exposures:
   #   url: https://docs.google.com/spreadsheets/d/1aeeF4klM4lmxdqIcdcoq0K65gfn3qTJLZY8Ym8OFRWA
   #   depends_on:
   #     - ref("base_people__staff_roster")
+  - name: school_metrics_extract
+    label: School Metrics Extract
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1hR5eTZHL-IjGyemODL-Xznj_Yz1GQXvsoNooVLMtRwQ/edit?usp=sharing
+    depends_on:
+      - ref("rpt_gsheets__school_metrics_extract")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets

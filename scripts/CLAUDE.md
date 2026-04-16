@@ -15,6 +15,7 @@ scripts: `bash scripts/<name>.sh`.
 | VS Code task: **dbt: Stage External Sources** | (see below)                                         |
 | `dbt-yaml.py`                                 | Parse and transform dbt YAML files                  |
 | `gen-automations-doc.py`                      | Regenerate `docs/reference/automations.md`          |
+| `gen_column_naming_audit_inventory.py`        | Generate mart column naming audit inventory CSV     |
 | `init_sftp_integration.py`                    | Inspect SFTP servers and scaffold new integrations  |
 | `json2py.py`                                  | Generate Pydantic models from JSON schemas          |
 | `migrate-asset-key.py`                        | Migrate asset materialization history to new key    |

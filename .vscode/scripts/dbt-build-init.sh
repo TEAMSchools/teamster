@@ -12,8 +12,7 @@ run_project() {
   uv run dbt run-operation stage_external_sources \
     --project-dir "src/dbt/${project}/" \
     --target defer \
-    --vars "{\"ext_full_refresh\": \"true\", \"cloud_storage_uri_base\": \"gs://teamster-${project}/dagster/${project}\"}" \
-    --args 'select: *'
+    --vars "{\"ext_full_refresh\": \"true\", \"cloud_storage_uri_base\": \"gs://teamster-${project}/dagster/${project}\"}"
   uv run dbt build --full-refresh --project-dir="src/dbt/${project}/"
 }
 

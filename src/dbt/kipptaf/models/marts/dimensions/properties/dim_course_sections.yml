@@ -1,0 +1,49 @@
+models:
+  - name: dim_course_sections
+    description: >-
+      Course section dimension. One row per section instance per source region.
+      Sections are discrete scheduled offerings of a course at a school. Teacher
+      and term relationships are on bridge tables, not on this model. FK to
+      dim_courses via course_key and dim_locations via location_key.
+    columns:
+      - name: course_section_key
+        data_type: string
+        description: >-
+          Surrogate key derived from sections_dcid and _dbt_source_relation.
+          Primary key for this dimension.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: course_key
+        data_type: string
+        description: >-
+          Surrogate key derived from courses_course_number and
+          _dbt_source_relation. FK to dim_courses.
+        data_tests:
+          - not_null
+
+      - name: location_key
+        data_type: string
+        description: >-
+          Surrogate key derived from location_clean_name. FK to dim_locations.
+          Null when sections_schoolid does not match any location in the
+          crosswalk.
+
+      - name: section_number
+        data_type: string
+        description: >-
+          PowerSchool section number. Identifies this specific section within
+          the course at the school.
+
+      - name: period
+        data_type: string
+        description: >-
+          Period expression for this section as stored in PowerSchool
+          (sections_expression). Encodes the days and periods when the section
+          meets (e.g., '1(A-F)').
+
+      - name: room
+        data_type: string
+        description: >-
+          Room assignment for this section as recorded in PowerSchool.
