@@ -7,5 +7,9 @@ models:
           - unique:
               config:
                 severity: error
+        description: District-assigned student identification number.
+        config:
+          meta:
+            contains_pii: true
       - name: email
         data_type: string

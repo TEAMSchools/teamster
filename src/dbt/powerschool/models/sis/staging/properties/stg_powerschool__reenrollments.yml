@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__reenrollments
+    description:
+      This table stores all enrollments, except the current one, for a student
+      such as the ones for end-of-year (EOY) processing or in-term transfers.
     columns:
       - name: dcid
         data_type: int64
@@ -7,51 +10,114 @@ models:
           - unique:
               config:
                 severity: error
+        description: Unique identifier for this table. Indexed. Required.
       - name: entrydate
         data_type: date
+        description:
+          The school enrollment entry date from the student table for EOY it the
+          next schools beginning date.Indexed.
       - name: entrycode
         data_type: string
+        description: The Enrollment code from the student table.
       - name: entrycomment
         data_type: string
+        description: The comment for the enrollment from the Student table.
       - name: exitdate
         data_type: date
+        description:
+          The school enrollment exit date from the student table. If EOY it's
+          the schools next end-of-year dateor effective date for other
+          re-enrollment purposes. Indexed.
       - name: exitcode
         data_type: string
+        description:
+          The school specified exit code from the student table for EOY or for
+          re-enrollment purposes, suchas S=Transfer.
       - name: exitcomment
         data_type: string
+        description:
+          The exit comment from the student table as specified for this record.
       - name: track
         data_type: string
+        description:
+          The track the student was in during this enrollment from student
+          table.
       - name: districtofresidence
         data_type: string
+        description:
+          The district of residence the student was in during this enrollment
+          from student table. This is usedfor state reports like AZ SAIS.
       - name: enrollmenttype
         data_type: string
+        description:
+          The special enrollment type code for state reporting associated with
+          this enrollment record fromstudent table.
       - name: lunchstatus
         data_type: string
+        description:
+          "This is the Lunch status copied from the student table. Represents
+          the portion of lunch a studentmust pay for: Blank=No status P=Full pay
+          R=Reduced F=Free E=Exempt T=Temporary FDC=Free-DC"
       - name: withdrawal_reason_code
         data_type: string
+        description: Reason code provided when a student withdraws from school.
       - name: studentschlenrl_guid
         data_type: string
+        description:
+          Globally unique identifier for this table for SIF compliancy. Indexed.
       - name: psguid
         data_type: string
+        description:
+          If used, a unique identifier for the row. Currently applicable to
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
+          Plus.
       - name: id
         data_type: int64
+        description:
+          Except for summer school enrollments, this is the value from
+          Students.Enrollment ID when anenrollment becomes inactive and is
+          transferred to this table. Indexed.
       - name: studentid
         data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
       - name: schoolid
         data_type: int64
+        description: The School_Number of the associated Schools record.
       - name: grade_level
         data_type: int64
+        description:
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted.
       - name: type
         data_type: int64
+        description:
+          Type of reenrollment record, 0=re-enrollment record made by system or
+          1=hand created re-enrollment record. Required.
       - name: enrollmentcode
         data_type: int64
+        description:
+          The special enrollment code for state reporting associated with this
+          enrollment record from studenttable.
       - name: fulltimeequiv_obsolete
         data_type: float64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
       - name: membershipshare
         data_type: float64
+        description:
+          The amount of a student's membership this school claims. If a student
+          attends more than oneschool each one will only be able to claim a
+          certain portion of the membership. The largest numberfor this will
+          usually be 1 and fractions expressed as decimals. Like .5 or .25.
       - name: tuitionpayer
         data_type: int64
+        description:
+          Person who is the tuition payer for the student for this enrollment
+          from the Student table.
       - name: fteid
         data_type: int64
-      # - name: custom
-      #   data_type: string
+        description:
+          The internal number for the FTE with which this record is associated.
+          Indexed.
