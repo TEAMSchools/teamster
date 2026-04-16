@@ -201,13 +201,13 @@ with
     ),
 
     all_responses as (
-        select *
+        select *,
         from mod_assessment
         union all
-        select *
+        select *,
         from mod_standards
         union all
-        select *
+        select *,
         from mod_standards_domains
     )
 
