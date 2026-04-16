@@ -25,47 +25,81 @@ models:
             source_column: studentid
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: ada_term_q1
         data_type: float64
+        description: Derived from ada_term_q1.
       - name: ada_term_q2
         data_type: float64
+        description: Derived from ada_term_q2.
       - name: ada_term_q3
         data_type: float64
+        description: Derived from ada_term_q3.
       - name: ada_term_q4
         data_type: float64
+        description: Derived from ada_term_q4.
       - name: ada_weighted_term_q1
         data_type: float64
+        description: Derived from ada_weighted_term_q1.
       - name: ada_weighted_term_q2
         data_type: float64
+        description: Derived from ada_weighted_term_q2.
       - name: ada_weighted_term_q3
         data_type: float64
+        description: Derived from ada_weighted_term_q3.
       - name: ada_weighted_term_q4
         data_type: float64
+        description: Derived from ada_weighted_term_q4.
       - name: ada_year_running_q1
         data_type: float64
+        description: Derived from ada_year_running_q1.
       - name: ada_year_running_q2
         data_type: float64
+        description: Derived from ada_year_running_q2.
       - name: ada_year_running_q3
         data_type: float64
+        description: Derived from ada_year_running_q3.
       - name: ada_year_running_q4
         data_type: float64
+        description: Derived from ada_year_running_q4.
       - name: ada_weighted_year_running_q1
         data_type: float64
+        description: Derived from ada_weighted_year_running_q1.
       - name: ada_weighted_year_running_q2
         data_type: float64
+        description: Derived from ada_weighted_year_running_q2.
       - name: ada_weighted_year_running_q3
         data_type: float64
+        description: Derived from ada_weighted_year_running_q3.
       - name: ada_weighted_year_running_q4
         data_type: float64
+        description: Derived from ada_weighted_year_running_q4.
       - name: ada_semester_s1
         data_type: float64
+        description: Derived from ada_semester_q1, ada_semester_q2.
       - name: ada_semester_s2
         data_type: float64
+        description: Derived from ada_semester_q3, ada_semester_q4.
       - name: ada_year
         data_type: float64
+        description:
+          Derived from ada_year_q1, ada_year_q2, ada_year_q3, ada_year_q4.
       - name: ada_weighted_semester_s1
         data_type: float64
+        description:
+          Derived from ada_weighted_semester_q1, ada_weighted_semester_q2.
       - name: ada_weighted_semester_s2
         data_type: float64
+        description:
+          Derived from ada_weighted_semester_q3, ada_weighted_semester_q4.
       - name: ada_weighted_year
         data_type: float64
+        description:
+          Derived from ada_year_q1, ada_year_q2, ada_year_q3, ada_year_q4.

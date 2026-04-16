@@ -3,6 +3,14 @@ models:
     columns:
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: powerschool_student_number
         data_type: int64
       - name: scope
@@ -11,6 +19,14 @@ models:
         data_type: string
       - name: test_type
         data_type: string
+        description:
+          The type of test being administered. 1 = National, 2 = State, 3 =
+          Local, 4 =District, 5 = School, 6 = Other, 7 = Fitness (as of 20.11.0)
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__test
+            source_column: test_type
       - name: assessment_id
         data_type: int64
       - name: assessment_title
@@ -23,6 +39,12 @@ models:
         data_type: string
       - name: test_date
         data_type: date
+        description: The date this test was given. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studenttest
+            source_column: test_date
       - name: test_month
         data_type: string
       - name: response_type
@@ -31,6 +53,12 @@ models:
         data_type: string
       - name: points
         data_type: numeric
+        description: The actual points student received for this section.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__pgfinalgrades
+            source_column: points
       - name: percent_correct
         data_type: numeric
       - name: total_subjects_tested

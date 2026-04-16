@@ -122,6 +122,12 @@ models:
         data_type: int64
       - name: text_value
         data_type: string
+        description: The value of the item stored in an alpha field.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gen
+            source_column: value
       - name: text_is_null_value
         data_type: boolean
       - name: file_upload_file_id

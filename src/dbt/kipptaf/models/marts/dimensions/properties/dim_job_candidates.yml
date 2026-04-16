@@ -8,8 +8,7 @@ models:
       - name: job_candidate_key
         data_type: string
         description: >-
-          Surrogate primary key derived from candidate_id. Generated with
-          generate_surrogate_key(["candidate_id"]).
+          Surrogate key.
         data_tests:
           - unique
           - not_null

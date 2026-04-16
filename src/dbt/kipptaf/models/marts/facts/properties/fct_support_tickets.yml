@@ -13,8 +13,7 @@ models:
       - name: support_ticket_key
         data_type: string
         description: >-
-          Surrogate primary key derived from ticket id. Generated with
-          generate_surrogate_key(["t.id"]).
+          Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -22,30 +21,24 @@ models:
       - name: submitter_staff_key
         data_type: string
         description: >-
-          Foreign key to dim_staff for the ticket submitter. Surrogate key
-          derived from submitter employee_number.
+          Surrogate key.
         data_tests:
           - not_null
 
       - name: assignee_staff_key
         data_type: string
         description: >-
-          Foreign key to dim_staff for the current ticket assignee. Surrogate
-          key derived from assignee employee_number. Nullable — unassigned
-          tickets have no assignee.
+          Surrogate key.
 
       - name: original_assignee_staff_key
         data_type: string
         description: >-
-          Foreign key to dim_staff for the original assignee at ticket creation.
-          Surrogate key derived from original assignee employee_number. Nullable
-          — not all tickets have a creation-time assignee.
+          Surrogate key.
 
       - name: location_key
         data_type: string
         description: >-
-          Foreign key to dim_locations. Surrogate key derived from the Location
-          custom field value on the ticket.
+          Surrogate key.
 
       - name: created_date_key
         data_type: date
@@ -158,4 +151,4 @@ models:
 
       - name: ticket_url
         data_type: string
-        description: Direct URL to the ticket in the Zendesk agent interface.
+        description: Derived from id.

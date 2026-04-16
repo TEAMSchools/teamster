@@ -31,6 +31,13 @@ models:
         data_type: string
       - name: reports_to_worker_name__middle_name
         data_type: string
+        description: The person's middle name. Optional.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__person
+            source_column: middlename
+            contains_pii: true
       - name: reports_to_worker_name__family_name_1
         data_type: string
       - name: reports_to_worker_name__nick_name
@@ -57,7 +64,10 @@ models:
         data_type: string
       - name: reports_to_worker_id__scheme_code__effective_date
         data_type: date
+        description: Derived from effectivedate.
       - name: reports_to_worker_name__generation_affix_code__effective_date
         data_type: date
+        description: Derived from effectivedate.
       - name: reports_to_worker_name__qualification_affix_code__effective_date
         data_type: date
+        description: Derived from effectivedate.

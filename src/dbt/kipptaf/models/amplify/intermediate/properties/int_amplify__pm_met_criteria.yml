@@ -72,8 +72,22 @@ models:
             source_column: measure_standard_score
       - name: start_date
         data_type: date
+        description:
+          The start date of the association of this teacher to this section.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sectionteacher
+            source_column: start_date
       - name: end_date
         data_type: date
+        description:
+          The end date of the association of this teacher to this section.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sectionteacher
+            source_column: end_date
       - name: completed_test_round
         data_type: boolean
       - name: met_measure_standard_goal
@@ -86,3 +100,6 @@ models:
         data_type: int64
       - name: met_pm_round_overall_criteria
         data_type: int64
+        description:
+          Categorical mapping of completed_test_round, met_pm_round_criteria,
+          pm_goal_criteria.

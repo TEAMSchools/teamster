@@ -5,12 +5,33 @@ models:
         data_type: int64
       - name: title
         data_type: string
+        description:
+          Stores a title name for the teacher and is used for sorting purposes.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: title
       - name: description
         data_type: string
+        description: The description of the assignment.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: description
       - name: user_id
         data_type: int64
       - name: type
         data_type: string
+        description:
+          Indicates the Type of the day, such as Holiday, In Session, or Not in
+          Session.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__calendar_day
+            source_column: type
       - name: created_at
         data_type: timestamp
       - name: updated_at
@@ -35,8 +56,22 @@ models:
         data_type: string
       - name: creator_first_name
         data_type: string
+        description: Students' first name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: first_name
+            contains_pii: true
       - name: creator_last_name
         data_type: string
+        description: Students last name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: last_name
+            contains_pii: true
       - name: creator_email_1
         data_type: string
       - name: scope

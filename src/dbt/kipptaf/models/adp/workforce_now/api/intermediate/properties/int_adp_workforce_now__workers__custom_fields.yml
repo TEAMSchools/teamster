@@ -15,6 +15,14 @@ models:
         data_type: string
       - name: date_value
         data_type: string
+        description:
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__calendar_day
+            source_column: date_value
       - name: indicator_value
         data_type: boolean
       - name: number_value

@@ -10,8 +10,7 @@ models:
       - name: student_assessment_expectation_key
         data_type: string
         description: >-
-          Surrogate key derived from powerschool_student_number, assessment_id,
-          and administered_at. Primary key.
+          Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -19,15 +18,12 @@ models:
       - name: assessment_key
         data_type: string
         description: >-
-          FK to dim_assessments. Derived from assessment_type, title,
-          subject_area, scope, module_code, and grade_level_id.
+          Surrogate key.
 
       - name: term_key
         data_type: string
         description: >-
-          FK to dim_terms. Derived from reporting term type, code, name,
-          start_date, region, and school_id. Null when the administration date
-          does not fall within any reporting term.
+          Surrogate key.
 
       - name: student_number
         data_type: int64

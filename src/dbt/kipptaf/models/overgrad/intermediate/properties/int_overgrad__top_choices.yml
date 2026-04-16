@@ -15,39 +15,30 @@ models:
                 severity: error
       - name: has_overgrad_1st_choice
         data_type: boolean
-        description: >
-          True if the student has tagged at least one school as #1 Choice in
-          Overgrad.
+        description: >-
+          Derived from top_choice_schools.
       - name: overgrad_1st_choice_school_name
         data_type: string
-        description: >
-          Name of the student's #1 Choice school in Overgrad. When multiple
-          schools share the #1 Choice rank, the first alphabetically is used.
+        description: >-
+          Derived from rn_choice_dedup, top_choice_schools, university_name.
       - name: overgrad_2nd_choice_school_name
         data_type: string
-        description: >
-          Name of the student's #2 Choice school in Overgrad. When multiple
-          schools share the #2 Choice rank, the first alphabetically is used.
+        description: >-
+          Derived from rn_choice_dedup, top_choice_schools, university_name.
       - name: overgrad_3rd_choice_school_name
         data_type: string
-        description: >
-          Name of the student's #3 Choice school in Overgrad. When multiple
-          schools share the #3 Choice rank, the first alphabetically is used.
+        description: >-
+          Derived from rn_choice_dedup, top_choice_schools, university_name.
       - name: overgrad_1st_choice_ecc
         data_type: numeric
-        description: >
-          Adjusted 6-year minority graduation rate (ECC) for the student's #1
-          Choice school, sourced from the KIPPADB account record matched on
-          IPEDS ID. Null if the school has no matching KIPPADB account.
+        description: >-
+          Derived from adjusted_6_year_minority_graduation_rate,
+          rn_choice_dedup, top_choice_schools.
       - name: overgrad_1st_choice_is_submitted
         data_type: boolean
-        description: >
-          True if the student has a submitted KIPPADB application to their #1
-          Choice school. False if a KIPPADB application exists but has not been
-          submitted. Null if no matching KIPPADB application record exists.
+        description: >-
+          Derived from is_submitted, rn_choice_dedup, top_choice_schools.
       - name: overgrad_1st_choice_is_accepted
         data_type: boolean
-        description: >
-          True if the student has an accepted KIPPADB application to their #1
-          Choice school. False if a KIPPADB application exists but was not
-          accepted. Null if no matching KIPPADB application record exists.
+        description: >-
+          Derived from is_accepted, rn_choice_dedup, top_choice_schools.

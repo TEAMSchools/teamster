@@ -7,5 +7,13 @@ models:
         data_type: string
       - name: tag_name
         data_type: string
+        description:
+          Name of the assignment, such as Essay, Homework, etc. Required.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: name
       - name: tag_url
         data_type: string

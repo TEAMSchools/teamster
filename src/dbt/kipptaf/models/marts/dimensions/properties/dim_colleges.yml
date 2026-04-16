@@ -9,8 +9,7 @@ models:
       - name: college_key
         data_type: string
         description: >-
-          Surrogate primary key derived from college_code_branch. Generated with
-          generate_surrogate_key(["college_code_branch"]).
+          Surrogate key.
         data_tests:
           - unique
           - not_null

@@ -463,6 +463,12 @@ models:
         data_type: string
       - name: schoolid
         data_type: int64
+        description: The School_Number of the associated Schools record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance
+            source_column: schoolid
       - name: _dagster_partition_key
         data_type: string
         description: Dagster partition key (school year).
@@ -585,23 +591,53 @@ models:
         data_type: numeric
       - name: official_teacher_staff_id
         data_type: string
+        description:
+          First non-null of enrollment_teacher_staff_id,
+          official_teacher_staff_id.
       - name: official_teacher_name
         data_type: string
+        description:
+          First non-null of enrollment_teacher_name, official_teacher_name.
       - name: client_date
         data_type: date
+        description: First non-null of device_date, client_date.
       - name: dibels_composite_score_lexile
         data_type: string
+        description:
+          First non-null of composite_score_lexile,
+          dibels_composite_score_lexile.
       - name: reading_comprehension_maze_score
         data_type: numeric
+        description:
+          First non-null of basic_comprehension_maze_score,
+          reading_comprehension_maze_score.
       - name: reading_comprehension_maze_semester_growth
         data_type: string
+        description:
+          First non-null of basic_comprehension_maze_semester_growth,
+          reading_comprehension_maze_semester_growth.
       - name: reading_comprehension_maze_year_growth
         data_type: string
+        description:
+          First non-null of basic_comprehension_maze_year_growth,
+          reading_comprehension_maze_year_growth.
       - name: reading_comprehension_maze_national_norm_percentile
         data_type: numeric
+        description:
+          First non-null of basic_comprehension_maze_national_norm_percentile,
+          reading_comprehension_maze_national_norm_percentile.
       - name: reading_comprehension_maze_level
         data_type: string
+        description:
+          First non-null of basic_comprehension_maze_level,
+          reading_comprehension_maze_level.
       - name: reading_comprehension_maze_tested_out
         data_type: boolean
+        description:
+          First non-null of basic_comprehension_maze_tested_out,
+          reading_comprehension_maze_tested_out.
       - name: reading_comprehension_maze_discontinued
         data_type: boolean
+        description:
+          First non-null of basic_comprehension_maze_discontinued,
+          reading_comprehension_maze_discontinued.

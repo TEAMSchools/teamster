@@ -5,8 +5,23 @@ models:
         data_type: int64
       - name: title
         data_type: string
+        description:
+          Stores a title name for the teacher and is used for sorting purposes.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: title
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: academic_year_clean
         data_type: int64
       - name: scope
@@ -29,6 +44,14 @@ models:
         data_type: int64
       - name: grade_level
         data_type: int64
+        description:
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: grade_level
       - name: illuminate_grade_level_id
         data_type: int64
       - name: regions_assessed
@@ -39,7 +62,10 @@ models:
         data_type: string
       - name: administered_at
         data_type: date
+        description: First non-null of administered_at, administered_at.
       - name: subject_area
         data_type: string
+        description: First non-null of subject, subject_area.
       - name: is_internal_assessment
         data_type: boolean
+        description: Conditional on assessment_id.

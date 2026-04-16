@@ -11,8 +11,21 @@ models:
         data_type: string
       - name: value
         data_type: string
+        description: The value of the item stored in an alpha field.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gen
+            source_column: value
       - name: title
         data_type: string
+        description:
+          Stores a title name for the teacher and is used for sorting purposes.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: title
       - name: scope
         data_type: string
       - name: subject_area

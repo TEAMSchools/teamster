@@ -10,8 +10,7 @@ models:
       - name: staff_observation_key
         data_type: string
         description: >-
-          Surrogate primary key derived from observation_id. Generated with
-          generate_surrogate_key(["o.observation_id"]).
+          Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -19,28 +18,24 @@ models:
       - name: teacher_staff_key
         data_type: string
         description: >-
-          Foreign key to dim_staff for the observed teacher. Surrogate key
-          derived from employee_number.
+          Surrogate key.
         data_tests:
           - not_null
 
       - name: observer_staff_key
         data_type: string
         description: >-
-          Foreign key to dim_staff for the observer. Surrogate key derived from
-          observer_employee_number.
+          Surrogate key.
 
       - name: location_key
         data_type: string
         description: >-
-          Foreign key to dim_locations. Surrogate key derived from the school's
-          location_clean_name.
+          Surrogate key.
 
       - name: term_key
         data_type: string
         description: >-
-          Foreign key to dim_terms. Surrogate key derived from term composite
-          fields.
+          Surrogate key.
 
       - name: observation_id
         data_type: string

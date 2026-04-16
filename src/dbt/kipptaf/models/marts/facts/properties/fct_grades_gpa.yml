@@ -11,9 +11,7 @@ models:
       - name: grades_gpa_key
         data_type: string
         description: >-
-          Surrogate key derived from student_number, _dbt_source_relation,
-          academic_year, entrydate, and term_name. Grain: one row per
-          student_enrollment x term, per spec.
+          District-assigned student identification number. Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -21,17 +19,14 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          FK to dim_student_enrollments. Surrogate key derived from
-          student_number, _dbt_source_relation, academic_year, and entrydate.
+          District-assigned student identification number. Surrogate key.
         data_tests:
           - not_null
 
       - name: term_key
         data_type: string
         description: >-
-          FK to dim_terms. Surrogate key derived from type, code, name,
-          start_date, region, and school_id. Null when term_name does not map to
-          a reporting term for the school and region.
+          Surrogate key.
 
       - name: student_number
         data_type: int64
@@ -148,6 +143,4 @@ models:
       - name: is_current_row
         data_type: boolean
         description: >-
-          TRUE for the most recent snapshot per student x school, ordered by
-          yearid desc then term desc. Use this flag to collapse to the latest
-          GPA state.
+          Conditional on rn_current.

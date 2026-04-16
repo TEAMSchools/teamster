@@ -12,8 +12,8 @@ models:
       - name: grades_assignment_key
         data_type: string
         description: >-
-          Surrogate key derived from assignmentsectionid, _dbt_source_relation,
-          and students_dcid. Primary key for this fact.
+          Foreign key. Internal number for the associated Assignment Section
+          Assignment Section IDrecord. Required. Indexed. Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -21,25 +21,21 @@ models:
       - name: student_section_enrollment_key
         data_type: string
         description: >-
-          FK to dim_student_section_enrollments. Surrogate key derived from
-          cc_dcid and _dbt_source_relation.
+          Surrogate key.
         data_tests:
           - not_null
 
       - name: student_enrollment_key
         data_type: string
         description: >-
-          FK to dim_student_enrollments. Surrogate key derived from
-          student_number, _dbt_source_relation, academic_year, and entrydate.
+          District-assigned student identification number. Surrogate key.
         data_tests:
           - not_null
 
       - name: term_key
         data_type: string
         description: >-
-          FK to dim_terms. Surrogate key derived from type, code, name,
-          start_date, region, and school_id. Null when due_date does not fall
-          within any reporting term for the school and region.
+          The name of the school. Indexed. Surrogate key.
 
       - name: due_date_key
         data_type: date
@@ -129,17 +125,17 @@ models:
       - name: is_missing
         data_type: boolean
         description: >-
-          TRUE if the assignment is flagged as missing in PowerSchool.
+          Conditional on is_missing.
 
       - name: is_late
         data_type: boolean
         description: >-
-          TRUE if the assignment is flagged as late in PowerSchool.
+          Conditional on is_late.
 
       - name: is_exempt
         data_type: boolean
         description: >-
-          TRUE if the assignment is flagged as exempt (not counted).
+          Conditional on is_exempt.
 
       - name: is_expected
         data_type: boolean
@@ -150,4 +146,4 @@ models:
       - name: is_counted_in_final_grade
         data_type: boolean
         description: >-
-          TRUE if this assignment contributes to the final grade calculation.
+          Conditional on iscountedinfinalgrade.

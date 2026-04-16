@@ -14,6 +14,14 @@ models:
         data_type: string
       - name: grade_level
         data_type: int64
+        description:
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: grade_level
       - name: psat89_count
         data_type: int64
       - name: psat10_count
@@ -60,13 +68,28 @@ models:
         data_type: int64
       - name: psat89_count_lifetime
         data_type: int64
+        description:
+          District-assigned student identification number. MAX of
+          psat89_count_ytd.
       - name: psat10_count_lifetime
         data_type: int64
+        description:
+          District-assigned student identification number. MAX of
+          psat10_count_ytd.
       - name: psatnmsqt_count_lifetime
         data_type: int64
+        description:
+          District-assigned student identification number. MAX of
+          psatnmsqt_count_ytd.
       - name: sat_count_lifetime
         data_type: int64
+        description:
+          District-assigned student identification number. MAX of sat_count_ytd.
       - name: act_count_lifetime
         data_type: int64
+        description:
+          District-assigned student identification number. MAX of act_count_ytd.
       - name: rn_lifetime
         data_type: int64
+        description:
+          District-assigned student identification number. ROWNUMBER of value.

@@ -17,19 +17,19 @@ models:
                 severity: error
       - name: n_overgrad_1st_choice
         data_type: int64
-        description: Count of schools this student has tagged as #1 Choice in Overgrad.
+        description: Derived from top_choice_schools. #1 Choice in Overgrad.
       - name: n_overgrad_2nd_choice
         data_type: int64
-        description: Count of schools this student has tagged as #2 Choice in Overgrad.
+        description: Derived from top_choice_schools. #2 Choice in Overgrad.
       - name: n_overgrad_3rd_choice
         data_type: int64
-        description: Count of schools this student has tagged as #3 Choice in Overgrad.
+        description: Derived from top_choice_schools. #3 Choice in Overgrad.
       - name: has_duplicate_overgrad_1st_choice
         data_type: boolean
-        description: True if the student has tagged more than one school as #1 Choice.
+        description: Derived from top_choice_schools. #1 Choice.
       - name: has_duplicate_overgrad_2nd_choice
         data_type: boolean
-        description: True if the student has tagged more than one school as #2 Choice.
+        description: Derived from top_choice_schools. #2 Choice.
       - name: has_duplicate_overgrad_3rd_choice
         data_type: boolean
-        description: True if the student has tagged more than one school as #3 Choice.
+        description: Derived from top_choice_schools. #3 Choice.

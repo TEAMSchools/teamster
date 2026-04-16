@@ -20,11 +20,16 @@ models:
         data_type: string
       - name: is_portfolio_eligible
         data_type: boolean
+        description: Conditional on values_column.
       - name: is_iep_eligible
         data_type: boolean
+        description: Conditional on values_column.
       - name: met_requirement
         data_type: boolean
+        description: Conditional on values_column.
       - name: value_type
         data_type: string
+        description: Categorical mapping of name_column.
       - name: discipline
         data_type: string
+        description: Categorical mapping of name_column.

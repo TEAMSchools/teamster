@@ -29,16 +29,23 @@ models:
       - name: location_key
         data_type: string
         description: >-
-          Surrogate key for the school. FK to dim_locations.
+          Surrogate key.
         data_tests:
           - not_null
 
       - name: is_in_session
         data_type: boolean
         description: >-
-          TRUE if this date is an instructional day at this school.
+          Indicates whether this day of the year is an actual school
+          day.1=insession, 0=no (holiday, weekend, etc.)This is only used if all
+          students attend school on the same date. Otherwise Tracks A-F are used
+          to indicateinsession days. Derived from insession.
 
       - name: is_membership_day
         data_type: boolean
         description: >-
-          TRUE if this date counts toward student membership at this school.
+          The amount of a student's membership this school claims. If a student
+          attends more than one school eachone will only be able to claim a
+          certain portion of the membership. The largest number for this will
+          usually be1 and fractions expressed as decimals. Like .5 or .25.
+          Derived from membershipvalue.

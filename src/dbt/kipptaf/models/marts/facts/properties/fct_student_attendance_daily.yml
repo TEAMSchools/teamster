@@ -12,8 +12,7 @@ models:
       - name: student_attendance_daily_key
         data_type: string
         description: >-
-          Surrogate key derived from student_number, _dbt_source_relation, and
-          calendardate. Primary key for this fact.
+          District-assigned student identification number. Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -21,8 +20,7 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          FK to dim_student_enrollments. Surrogate key derived from
-          student_number, _dbt_source_relation, academic_year, and entrydate.
+          District-assigned student identification number. Surrogate key.
         data_tests:
           - not_null
 
@@ -35,8 +33,7 @@ models:
       - name: location_key
         data_type: string
         description: >-
-          FK to dim_locations. Surrogate key derived from location_clean_name.
-          Used with date_key to join dim_school_calendars.
+          Surrogate key.
 
       - name: student_number
         data_type: int64

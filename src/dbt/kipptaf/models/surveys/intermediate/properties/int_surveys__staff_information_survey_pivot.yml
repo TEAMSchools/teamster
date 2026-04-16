@@ -101,19 +101,28 @@ models:
         data_type: numeric
       - name: alumni_status
         data_type: string
+        description: Derived from alumni_status.
       - name: path_to_education
         data_type: string
+        description: Derived from path_to_education.
       - name: relay_status
         data_type: string
+        description: Derived from relay_status.
       - name: community_grew_up
         data_type: string
+        description: Derived from community_grew_up.
       - name: community_professional_exp
         data_type: string
+        description: Derived from community_professional_exp.
       - name: cert_required
         data_type: boolean
+        description: Conditional on cert_required.
       - name: fl_additional_cert_1
         data_type: boolean
+        description: Conditional on fl_additional_cert_1.
       - name: nj_cert_additional_1
         data_type: boolean
+        description: Conditional on nj_cert_additional_1.
       - name: race_ethnicity_reporting
         data_type: string
+        description: Categorical mapping of race_ethnicity.

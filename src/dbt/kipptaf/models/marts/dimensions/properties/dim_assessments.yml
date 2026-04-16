@@ -9,8 +9,7 @@ models:
       - name: assessment_key
         data_type: string
         description: >-
-          Surrogate key derived from assessment_type, title, subject_area,
-          scope, module_code, and grade_level_tested. Primary key.
+          Surrogate key.
         data_tests:
           - unique
           - not_null

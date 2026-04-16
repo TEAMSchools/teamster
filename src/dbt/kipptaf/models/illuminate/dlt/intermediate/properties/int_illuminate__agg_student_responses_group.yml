@@ -17,6 +17,12 @@ models:
         data_type: boolean
       - name: points
         data_type: numeric
+        description: The actual points student received for this section.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__pgfinalgrades
+            source_column: points
       - name: points_possible
         data_type: numeric
       - name: answered

@@ -185,12 +185,35 @@ models:
         data_type: string
       - name: ugrad_school_name
         data_type: string
+        description:
+          Name of the assignment, such as Essay, Homework, etc. Required.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: name
       - name: ugrad_pursuing_degree_type
         data_type: string
       - name: ugrad_status
         data_type: string
+        description:
+          "Indicates if the course was made either by a user or automatically by
+          an import. Validvalues: 0=user-created, 3=auto-created."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__courses
+            source_column: status
       - name: ugrad_start_date
         data_type: date
+        description:
+          The start date of the association of this teacher to this section.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sectionteacher
+            source_column: start_date
       - name: ugrad_actual_end_date
         data_type: date
       - name: ugrad_anticipated_graduation
@@ -209,6 +232,14 @@ models:
         data_type: numeric
       - name: ugrad_account_name
         data_type: string
+        description:
+          Name of the assignment, such as Essay, Homework, etc. Required.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: name
       - name: ugrad_billing_state
         data_type: string
       - name: ugrad_nces_id
@@ -221,3 +252,5 @@ models:
         data_type: numeric
       - name: is_never_enrolled
         data_type: boolean
+        description:
+          Conditional on aa_enrollment_id, ba_enrollment_id, cte_enrollment_id.

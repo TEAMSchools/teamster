@@ -8,8 +8,7 @@ models:
       - name: student_key
         data_type: string
         description: >-
-          Surrogate key derived from student_number. Primary key for the student
-          dimension.
+          District-assigned student identification number. Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -56,12 +55,12 @@ models:
       - name: gender
         data_type: string
         description: >-
-          Student gender.
+          M=Male F=Female. Indexed.
 
         config:
           meta:
-            source_system: Amplify
-            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
             source_column: gender
       - name: lunch_status
         data_type: string
@@ -71,19 +70,17 @@ models:
       - name: is_gifted
         data_type: boolean
         description: >-
-          TRUE if the student has a non-null gifted_and_talented value in
-          PowerSchool, indicating gifted and talented identification.
+          True when gifted_and_talented is not null.
 
       - name: is_ell
         data_type: boolean
         description: >-
-          TRUE if the student has a non-null lep_status, indicating active
-          English Language Learner classification.
+          True when lep_status is not null.
 
       - name: has_iep
         data_type: boolean
         description: >-
-          TRUE if the student's iep_status is 'With IEP'.
+          Derived from iep_status.
 
       - name: ethnicity
         data_type: string

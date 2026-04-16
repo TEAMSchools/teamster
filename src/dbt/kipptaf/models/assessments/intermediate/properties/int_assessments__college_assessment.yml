@@ -3,12 +3,33 @@ models:
     columns:
       - name: student_number
         data_type: int64
+        description: District-assigned student identification number.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
+            contains_pii: true
       - name: administration_round
         data_type: string
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: test_date
         data_type: date
+        description: The date this test was given. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studenttest
+            source_column: test_date
       - name: scope
         data_type: string
       - name: subject_area
@@ -27,12 +48,21 @@ models:
         data_type: int64
       - name: aligned_subject_area
         data_type: string
+        description: Conditional on subject_area.
       - name: strategy_case
         data_type: string
       - name: running_max_scale_score
         data_type: numeric
       - name: surrogate_key
         data_type: string
+        description:
+          Hash of student_primary_id, school_year, pm_period, measure, and
+          probe_number.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: surrogate_key
       - name: max_scale_score
         data_type: numeric
       - name: previous_total_score_change
@@ -45,9 +75,22 @@ models:
         data_type: numeric
       - name: test_type
         data_type: string
+        description:
+          The type of test being administered. 1 = National, 2 = State, 3 =
+          Local, 4 =District, 5 = School, 6 = Other, 7 = Fitness (as of 20.11.0)
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__test
+            source_column: test_type
       - name: aligned_subject
         data_type: string
+        description: Categorical mapping of score_type, subject_area.
       - name: test_month
         data_type: string
+        description: Derived from test_date.
       - name: runnning_superscore
         data_type: numeric
+        description:
+          Derived from avg_running_max_superscore, scope,
+          sum_running_max_superscore.

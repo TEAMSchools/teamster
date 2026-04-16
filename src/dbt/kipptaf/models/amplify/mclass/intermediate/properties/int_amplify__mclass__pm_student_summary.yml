@@ -229,6 +229,8 @@ models:
         data_type: int64
       - name: student_id_state_id
         data_type: string
+        description:
+          First non-null of student_id_state_id, secondary_student_id_stateid.
       - name: student_last_name
         data_type: string
         description: Student last name.
@@ -463,7 +465,13 @@ models:
         data_type: string
       - name: official_teacher_staff_id
         data_type: string
+        description:
+          First non-null of enrollment_teacher_staff_id_teachernumber,
+          official_teacher_staff_id.
       - name: official_teacher_name
         data_type: string
+        description:
+          First non-null of enrollment_teacher_name, official_teacher_name.
       - name: client_date
         data_type: date
+        description: First non-null of device_date, client_date.

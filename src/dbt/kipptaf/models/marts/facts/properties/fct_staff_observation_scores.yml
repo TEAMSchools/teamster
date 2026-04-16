@@ -10,9 +10,7 @@ models:
       - name: staff_observation_score_key
         data_type: string
         description: >-
-          Surrogate primary key derived from observation_id and measurement_id.
-          Generated with generate_surrogate_key(["sd.observation_id",
-          "sd.measurement_id"]).
+          Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -20,8 +18,7 @@ models:
       - name: staff_observation_key
         data_type: string
         description: >-
-          Foreign key to fct_staff_observations. Surrogate key derived from
-          observation_id.
+          Surrogate key.
         data_tests:
           - not_null
           - relationships:
@@ -32,8 +29,7 @@ models:
       - name: staff_observation_rubric_measurement_key
         data_type: string
         description: >-
-          Foreign key to dim_staff_observation_rubric_measurements. Surrogate
-          key derived from rubric_id and measurement_id.
+          Surrogate key.
 
       - name: observation_id
         data_type: string

@@ -8,9 +8,26 @@ models:
       - name: academic_year
         data_type: int64
 
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: yearid
         data_type: int64
 
+        description:
+          A number representing which year the term belongs to, such as 13 for
+          2003-2004. The numberis equal to the ID of the year term divided by
+          100. Maintained in the Terms table.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentcategoryassoc
+            source_column: yearid
       - name: schoolid
         data_type: int64
 
@@ -62,6 +79,13 @@ models:
       - name: dob
         data_type: date
 
+        description: Date of birth.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: dob
+            contains_pii: true
       - name: ada
         data_type: float64
 
@@ -113,11 +137,32 @@ models:
       - name: q1_ae_status
         data_type: string
 
+        description:
+          The grade level the student was in when the grade was stored. This
+          simply copies the students'current grade level in to this field.
+          Indexed. Categorical mapping of grade_level, is_age_eligible,
+          is_first_time_ninth, met_py_credits, py_y1_gpa, py_y1_unweighted_ada.
       - name: q2_ae_status
         data_type: string
 
+        description:
+          The grade level the student was in when the grade was stored. This
+          simply copies the students'current grade level in to this field.
+          Indexed. Categorical mapping of ada, cy_q1_gpa, cy_weighted_term_q1,
+          cy_y1_gpa, grade_level, is_age_eligible, is_first_time_ninth,
+          met_py_credits.
       - name: q3_ae_status
         data_type: string
 
+        description:
+          The grade level the student was in when the grade was stored. This
+          simply copies the students'current grade level in to this field.
+          Indexed. Categorical mapping of ada, cy_s1_gpa, cy_weighted_s1_ada,
+          cy_y1_gpa, grade_level, is_age_eligible, met_cy_credits.
       - name: q4_ae_status
         data_type: string
+        description:
+          The grade level the student was in when the grade was stored. This
+          simply copies the students'current grade level in to this field.
+          Indexed. Categorical mapping of ada, cy_s1_gpa, cy_weighted_s1_ada,
+          cy_y1_gpa, grade_level, is_age_eligible, met_cy_credits.

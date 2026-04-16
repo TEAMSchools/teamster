@@ -12,12 +12,21 @@ models:
                 field: name
       - name: _dbt_source_relation
         data_type: string
+        description: Derived from _dbt_source_relation, dagster_code_location.
       - name: academic_year_int
         data_type: int64
       - name: student_id
         data_type: int64
       - name: academic_year
         data_type: string
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: subject
         data_type: string
       - name: domain

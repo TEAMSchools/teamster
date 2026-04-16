@@ -13,10 +13,7 @@ models:
       - name: staff_attrition_key
         data_type: string
         description: >-
-          Surrogate primary key derived from employee_number, academic_year, and
-          attrition_type. Generated with
-          generate_surrogate_key(["employee_number", "academic_year",
-          "attrition_type"]).
+          Surrogate key.
         data_tests:
           - unique
           - not_null

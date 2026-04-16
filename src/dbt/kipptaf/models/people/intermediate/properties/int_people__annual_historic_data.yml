@@ -29,6 +29,12 @@ models:
         data_type: string
       - name: gender
         data_type: string
+        description: M=Male F=Female. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: gender
       - name: samaccountname
         data_type: string
       - name: current_manager
@@ -51,6 +57,14 @@ models:
         data_type: date
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: historic_legal_entity
         data_type: string
       - name: historic_location
@@ -73,15 +87,23 @@ models:
         data_type: int64
       - name: pm_term
         data_type: int64
+        description: Computed expression.
       - name: etr_score
         data_type: int64
+        description: Computed expression.
       - name: etr_tier
         data_type: int64
+        description: Computed expression.
       - name: so_score
         data_type: int64
+        description: Computed expression.
       - name: so_tier
         data_type: int64
+        description: Computed expression.
       - name: most_recent_hire_date
         data_type: date
+        description:
+          First non-null of worker_rehire_date, worker_original_hire_date.
       - name: is_hispanic
         data_type: boolean
+        description: Conditional on ethnicity_code.

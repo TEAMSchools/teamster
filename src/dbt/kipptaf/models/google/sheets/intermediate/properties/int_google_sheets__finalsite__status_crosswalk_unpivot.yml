@@ -17,6 +17,12 @@ models:
         data_type: int64
       - name: _dagster_partition_key
         data_type: string
+        description: Dagster partition key (school year).
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: _dagster_partition_key
       - name: enrollment_type
         data_type: string
       - name: detailed_status
@@ -37,5 +43,7 @@ models:
         data_type: string
       - name: grouped_status_order
         data_type: int64
+        description: Categorical mapping of status_group_value.
       - name: grouped_status_timeframe
         data_type: string
+        description: Categorical mapping of status_group_value.

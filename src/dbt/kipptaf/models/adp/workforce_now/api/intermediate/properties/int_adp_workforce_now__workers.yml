@@ -121,9 +121,12 @@ models:
         data_type: string
       - name: person__formatted_name
         data_type: string
+        description: Derived from person__family_name_1, person__given_name.
       - name: reports_to_formatted_name
         data_type: string
+        description: Derived from person__family_name_1, person__given_name.
       - name: worker_hire_date_recent
         data_type: date
       - name: assignment_status__status_code__name__lag
         data_type: string
+        description: LAG of assignment_status__status_code__name.

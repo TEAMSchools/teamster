@@ -389,3 +389,4 @@ models:
         data_type: int64
       - name: is_ap_course
         data_type: boolean
+        description: Conditional on ap_course_subject.

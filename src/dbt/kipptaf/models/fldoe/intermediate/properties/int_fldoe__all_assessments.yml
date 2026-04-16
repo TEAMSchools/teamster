@@ -7,6 +7,14 @@ models:
         data_type: string
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: administration_window
         data_type: string
       - name: season
@@ -23,6 +31,12 @@ models:
         data_type: boolean
       - name: assessment_grade
         data_type: string
+        description: Grade level of the assessment administered.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: assessment_grade
       - name: performance_level
         data_type: int64
       - name: student_id
@@ -37,11 +51,16 @@ models:
         data_type: int64
       - name: scale_for_proficiency
         data_type: int64
+        description: Conditional on scale_low, sublevel_number.
       - name: points_to_proficiency
         data_type: int64
+        description: Conditional on scale_low, scale_score, sublevel_number.
       - name: scale_for_growth
         data_type: int64
+        description: Conditional on scale_high, sublevel_number.
       - name: points_to_growth
         data_type: int64
+        description: Conditional on scale_high, scale_score, sublevel_number.
       - name: scale_score_prev
         data_type: int64
+        description: LAG of scale_score.

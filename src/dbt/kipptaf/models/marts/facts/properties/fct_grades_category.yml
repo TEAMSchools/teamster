@@ -11,8 +11,7 @@ models:
       - name: grades_category_key
         data_type: string
         description: >-
-          Surrogate key derived from cc_dcid, _dbt_source_relation, storecode,
-          and storecode_type. Primary key for this fact.
+          Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -20,17 +19,14 @@ models:
       - name: student_section_enrollment_key
         data_type: string
         description: >-
-          FK to dim_student_section_enrollments. Surrogate key derived from
-          cc_dcid and _dbt_source_relation.
+          Surrogate key.
         data_tests:
           - not_null
 
       - name: term_key
         data_type: string
         description: >-
-          FK to dim_terms. Surrogate key derived from type, code, name,
-          start_date, region, and school_id. Null when storecode does not map to
-          a reporting term for the school and region.
+          Surrogate key.
 
       - name: student_number
         data_type: int64

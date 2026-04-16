@@ -9,8 +9,7 @@ models:
       - name: survey_key
         data_type: string
         description: >-
-          Surrogate key derived from survey_id. Primary key for the survey
-          dimension. Generated with generate_surrogate_key(["survey_id"]).
+          Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -34,8 +33,7 @@ models:
       - name: survey_type
         data_type: string
         description: >-
-          Classification of the survey instrument (e.g., School Community
-          Diagnostic, Manager Survey, Support Survey, Climate Survey).
+          First non-null of survey_type.
 
       - name: subject_area
         data_type: string

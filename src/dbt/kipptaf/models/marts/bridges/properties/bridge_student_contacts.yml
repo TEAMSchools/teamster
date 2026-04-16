@@ -12,17 +12,14 @@ models:
       - name: student_key
         data_type: string
         description: >-
-          Surrogate key for the student. Foreign key to dim_students. Derived
-          from student_number via generate_surrogate_key.
+          Student Number assigned by the school. Indexed. Surrogate key.
         data_tests:
           - not_null
 
       - name: student_contact_person_key
         data_type: string
         description: >-
-          Surrogate key for the contact person. Foreign key to
-          dim_student_contact_persons. Derived from _dbt_source_relation and
-          powerschool_person_id.
+          Surrogate key.
         data_tests:
           - not_null
 
@@ -57,23 +54,22 @@ models:
       - name: is_emergency
         data_type: boolean
         description: >-
-          TRUE if this contact is designated as an emergency contact for this
-          student.
+          Derived from isemergency.
 
       - name: is_pickup
         data_type: boolean
         description: >-
-          TRUE if this contact is authorized for school pickup for this student.
+          Derived from schoolpickupflg.
 
       - name: is_custodial
         data_type: boolean
         description: >-
-          TRUE if this contact has custodial rights for this student.
+          Derived from iscustodial.
 
       - name: lives_with
         data_type: boolean
         description: >-
-          TRUE if the student lives with this contact person.
+          Derived from liveswithflg.
 
     data_tests:
       - dbt_utils.unique_combination_of_columns:

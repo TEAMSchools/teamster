@@ -8,6 +8,9 @@ models:
               arguments:
                 to: ref("stg_google_sheets__people__location_crosswalk")
                 field: name
+        description:
+          First non-null of home_work_location__name_code__long_name,
+          home_work_location__name_code__short_name.
       - name: associate_oid
         data_type: string
       - name: effective_date_start
@@ -234,20 +237,45 @@ models:
         data_type: date
       - name: surrogate_key
         data_type: string
+        description:
+          Hash of student_primary_id, school_year, pm_period, measure, and
+          probe_number.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: surrogate_key
       - name: additional_remunerations__rate__amount_value__sum
         data_type: float64
+        description: Derived from additional_remunerations, amountvalue.
       - name: benefits_eligibility_class__group_code__name
         data_type: string
+        description: Derived from codevalue, longname, shortname, worker_groups.
       - name: worker_type_code__name
         data_type: string
+        description:
+          First non-null of worker_type_code__long_name,
+          worker_type_code__short_name.
       - name: assignment_status__status_code__name
         data_type: string
+        description:
+          First non-null of assignment_status__status_code__long_name,
+          assignment_status__status_code__short_name.
       - name: assignment_status__reason_code__name
         data_type: string
+        description:
+          First non-null of assignment_status__reason_code__long_name,
+          assignment_status__reason_code__short_name.
       - name: wage_law_coverage__coverage_code__name
         data_type: string
+        description:
+          First non-null of wage_law_coverage__coverage_code__long_name,
+          wage_law_coverage__coverage_code__short_name.
       - name: wage_law_coverage__wage_law_name_code__name
         data_type: string
+        description:
+          First non-null of wage_law_coverage__wage_law_name_code__long_name,
+          wage_law_coverage__wage_law_name_code__short_name.
       - name: additional_remunerations
         data_type: |
           ARRAY<STRUCT<itemID STRING, effectiveDate STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, rate STRUCT<amountValue FLOAT64, currencyCode STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>

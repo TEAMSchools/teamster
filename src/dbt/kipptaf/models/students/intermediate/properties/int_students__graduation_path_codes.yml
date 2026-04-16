@@ -25,6 +25,15 @@ models:
             contains_pii: true
       - name: state_studentnumber
         data_type: string
+        description:
+          The state-assigned student number for the student. In most cases, this
+          number should stay thesame from school to school.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: state_studentnumber
+            contains_pii: true
       - name: salesforce_id
         data_type: string
       - name: grade_level
@@ -94,8 +103,13 @@ models:
         data_type: int64
       - name: points_short
         data_type: numeric
+        description: Conditional on cutoff, scale_score.
       - name: final_grad_path_code
         data_type: string
+        description:
+          Grade level of the student taking this test. Categorical mapping of
+          grade_level, met_act, met_njgpa, met_psat10, met_psat_nmsqt, met_sat,
+          njgpa_attempt, ps_grad_path_code.
       - name: grad_eligibility
         data_type: string
         data_tests:
@@ -110,6 +124,9 @@ models:
                   - FAFSA Only
                   - ELA Only / No FAFSA
                   - Math Only / No FAFSA
+        description:
+          Grade level of the student taking this test. First non-null of
+          grad_eligibility, grade_level, grade_level.
       - name: test_type
         data_type: string
         description:

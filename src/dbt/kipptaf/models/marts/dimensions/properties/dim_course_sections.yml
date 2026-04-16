@@ -9,8 +9,7 @@ models:
       - name: course_section_key
         data_type: string
         description: >-
-          Surrogate key derived from sections_dcid and _dbt_source_relation.
-          Primary key for this dimension.
+          Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -18,17 +17,14 @@ models:
       - name: course_key
         data_type: string
         description: >-
-          Surrogate key derived from courses_course_number and
-          _dbt_source_relation. FK to dim_courses.
+          Surrogate key.
         data_tests:
           - not_null
 
       - name: location_key
         data_type: string
         description: >-
-          Surrogate key derived from location_clean_name. FK to dim_locations.
-          Null when sections_schoolid does not match any location in the
-          crosswalk.
+          Surrogate key.
 
       - name: section_number
         data_type: string

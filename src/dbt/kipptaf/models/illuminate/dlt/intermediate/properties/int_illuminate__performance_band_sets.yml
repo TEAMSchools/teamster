@@ -7,6 +7,12 @@ models:
         data_type: int64
       - name: description
         data_type: string
+        description: The description of the assignment.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: description
       - name: district_default
         data_type: boolean
       - name: hidden
@@ -23,6 +29,14 @@ models:
         data_type: int64
       - name: color
         data_type: string
+        description:
+          "Indicates the color displayed for the assignment. Valid values: Red,
+          Yellow, Blue, Orange,Purple, Green, etc... Required."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__districtteachercategory
+            source_column: color
       - name: is_mastery
         data_type: boolean
       - name: label
@@ -33,3 +47,5 @@ models:
         data_type: float64
       - name: maximum_value
         data_type: float64
+        description:
+          Derived from label_number, minimum_value, performance_band_set_id.

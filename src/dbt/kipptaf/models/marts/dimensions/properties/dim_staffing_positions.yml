@@ -12,8 +12,7 @@ models:
       - name: staffing_position_key
         data_type: string
         description: >-
-          Surrogate primary key derived from dbt_scd_id (snapshot row
-          identifier). Generated with generate_surrogate_key(["dbt_scd_id"]).
+          Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -21,22 +20,17 @@ models:
       - name: location_key
         data_type: string
         description: >-
-          Foreign key to dim_locations. Surrogate key derived from adp_location
-          (home work location name).
+          Surrogate key.
 
       - name: teammate_staff_key
         data_type: string
         description: >-
-          Foreign key to dim_staff for the assigned teammate. Surrogate key
-          derived from the teammate employee number. Nullable — open positions
-          have no assigned teammate.
+          Surrogate key.
 
       - name: recruiter_staff_key
         data_type: string
         description: >-
-          Foreign key to dim_staff for the assigned recruiter. Surrogate key
-          derived from the recruiter employee number. Nullable — positions may
-          have no assigned recruiter.
+          Surrogate key.
 
       - name: staffing_position_natural_key
         data_type: string

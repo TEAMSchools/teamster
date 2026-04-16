@@ -18,12 +18,28 @@ models:
         data_type: int64
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: administration_round
         data_type: string
       - name: latest_psat_date
         data_type: date
       - name: test_type
         data_type: string
+        description:
+          The type of test being administered. 1 = National, 2 = State, 3 =
+          Local, 4 =District, 5 = School, 6 = Other, 7 = Fitness (as of 20.11.0)
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__test
+            source_column: test_type
       - name: test_subject
         data_type: string
       - name: course_discipline
@@ -34,5 +50,7 @@ models:
         data_type: numeric
       - name: discipline
         data_type: string
+        description: Categorical mapping of course_discipline.
       - name: rn_highest
         data_type: int64
+        description: ROWNUMBER of value.

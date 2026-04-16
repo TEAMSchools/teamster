@@ -5,6 +5,14 @@ models:
         data_type: int64
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: home_business_unit_name
         data_type: string
       - name: ay_salary
@@ -23,11 +31,30 @@ models:
         data_type: int64
       - name: salary_or_hourly
         data_type: string
+        description: Conditional on worker_type_code.
       - name: ay_hourly_salary_rate
         data_type: numeric
+        description:
+          Conditional on base_remuneration_annual_rate_amount,
+          base_remuneration_hourly_rate_amount, worker_type_code.
       - name: salary_rule
         data_type: string
+        description: First non-null of salary_rule, salary_rule, salary_rule.
       - name: ny_salary
         data_type: numeric
+        description:
+          First non-null of scale_ny_salary, scale_ny_salary,
+          base_remuneration_annual_rate_amount, salary_rule,
+          base_remuneration_annual_rate_amount, scale_ny_salary,
+          base_remuneration_annual_rate_amount,
+          base_remuneration_annual_rate_amount,
+          base_remuneration_annual_rate_amount,
+          base_remuneration_annual_rate_amount,
+          base_remuneration_annual_rate_amount,
+          base_remuneration_annual_rate_amount,
+          base_remuneration_annual_rate_amount,
+          base_remuneration_annual_rate_amount,
+          base_remuneration_annual_rate_amount.
       - name: ny_hourly
         data_type: numeric
+        description: Derived from base_remuneration_hourly_rate_amount.

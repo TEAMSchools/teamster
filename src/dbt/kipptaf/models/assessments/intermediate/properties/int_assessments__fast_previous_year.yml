@@ -21,8 +21,24 @@ models:
             contains_pii: true
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: grade_level
         data_type: int64
+        description:
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: grade_level
       - name: student_id
         data_type: string
       - name: assessment_subject
@@ -49,7 +65,11 @@ models:
         data_type: int64
       - name: scale_points_to_growth_pm3
         data_type: int64
+        description:
+          Categorical mapping of prev_pm3_level_int, prev_pm3_scale,
+          prev_pm3_sublevel_number, scale_low, sublevel_number.
       - name: scale_points_to_proficiency_pm3
         data_type: int64
+        description: Conditional on prev_pm3_scale, scale_low.
       - name: fldoe_dynamic_percentile_rank
         data_type: float64

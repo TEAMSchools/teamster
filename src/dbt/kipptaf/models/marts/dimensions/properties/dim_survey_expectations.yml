@@ -12,9 +12,7 @@ models:
       - name: survey_expectation_key
         data_type: string
         description: >-
-          Surrogate key derived from survey_administration_key,
-          respondent_population, and the three respondent FK columns. Primary
-          key for this dimension.
+          Surrogate key.
         data_tests:
           - unique
           - not_null

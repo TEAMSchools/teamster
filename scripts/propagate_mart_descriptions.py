@@ -131,11 +131,44 @@ def _extract_referenced_tables(sql: str) -> list[str]:
     return tables
 
 
-def _extract_alias_map(sql: str) -> dict[str, str]:
+def _resolve_star(
+    select: exp.Expression, ctes: dict[str, exp.Expression]
+) -> exp.Expression:
+    """If select is ``SELECT * FROM cte``, resolve into the CTE's select."""
+    if not isinstance(select, exp.Select):
+        return select
+    exprs = select.expressions
+    if len(exprs) == 1 and isinstance(exprs[0], exp.Star):
+        from_clause = select.find(exp.From)
+        if from_clause:
+            table = from_clause.this
+            if isinstance(table, exp.Table) and table.name in ctes:
+                return _resolve_star(ctes[table.name], ctes)
+    return select
+
+
+def _resolve_table_aliases(
+    select: exp.Expression,
+) -> dict[str, str]:
+    """Map table aliases to their actual table names.
+
+    ``FROM stg_powerschool__students AS se`` → ``{'se': 'stg_powerschool__students'}``
+    """
+    result: dict[str, str] = {}
+    for table in select.find_all(exp.Table):
+        if table.alias:
+            result[table.alias] = table.name
+        else:
+            result[table.name] = table.name
+    return result
+
+
+def _extract_alias_map(sql: str) -> dict[str, tuple[str, str]]:
     """Extract column alias mappings from compiled SQL.
 
-    Returns {output_alias: source_column} for simple renames like
-    ``dob AS birth_date``. Only traces through CTE chains; skips
+    Returns {output_alias: (source_table, source_column)} for simple
+    renames like ``se.dob AS birth_date``. Tracks which table/CTE the
+    source column comes from to avoid cross-contamination. Skips
     computed expressions.
     """
     try:
@@ -148,37 +181,37 @@ def _extract_alias_map(sql: str) -> dict[str, str]:
 
     stmt = stmts[0]
 
-    # Collect CTEs
     ctes: dict[str, exp.Expression] = {}
     for cte in stmt.find_all(exp.CTE):
         ctes[cte.alias] = cte.this
 
-    # Find the outermost select — resolve SELECT * FROM cte
-    def _resolve_star(select: exp.Expression) -> exp.Expression:
-        if not isinstance(select, exp.Select):
-            return select
-        exprs = select.expressions
-        if len(exprs) == 1 and isinstance(exprs[0], exp.Star):
-            from_clause = select.find(exp.From)
-            if from_clause:
-                table = from_clause.this
-                if isinstance(table, exp.Table) and table.name in ctes:
-                    return _resolve_star(ctes[table.name])
-        return select
-
-    resolved = _resolve_star(stmt)
+    resolved = _resolve_star(stmt, ctes)
     if not isinstance(resolved, exp.Select):
         return {}
 
-    result: dict[str, str] = {}
+    table_aliases = _resolve_table_aliases(resolved)
+
+    def _unwrap_column(node: exp.Expression) -> exp.Column | None:
+        """Unwrap a Column from transparent wrappers (CAST, etc.)."""
+        if isinstance(node, exp.Column):
+            return node
+        if isinstance(node, exp.Cast):
+            return _unwrap_column(node.this)
+        return None
+
+    result: dict[str, tuple[str, str]] = {}
     for expression in resolved.expressions:
-        if isinstance(expression, exp.Alias) and isinstance(
-            expression.this, exp.Column
-        ):
-            alias = expression.alias
-            source_col = expression.this.name
-            if alias != source_col:
-                result[alias] = source_col
+        if not isinstance(expression, exp.Alias):
+            continue
+        alias = expression.alias
+        col = _unwrap_column(expression.this)
+        if col is None:
+            continue
+        source_col = col.name
+        table_qual = col.table or ""
+        source_table = table_aliases.get(table_qual, table_qual)
+        if alias != source_col:
+            result[alias] = (source_table, source_col)
     return result
 
 
@@ -209,6 +242,122 @@ def _build_staging_index(
         col = model_col[1]
         index.setdefault(col, []).append(model_col)
     return index
+
+
+def _summarize_expression(node: exp.Expression) -> str:
+    """Generate a plain-text description of a SQL expression.
+
+    Returns a concise summary suitable for a dbt column description.
+    """
+    # CAST → transparent, handled by alias map
+    if isinstance(node, exp.Cast):
+        return ""
+
+    # CASE → categorical mapping
+    if isinstance(node, exp.Case):
+        source_cols = sorted({c.name for c in node.find_all(exp.Column)})
+        if source_cols:
+            return f"Categorical mapping of {', '.join(source_cols)}."
+        return "Categorical mapping."
+
+    # IS NULL / IS NOT NULL boolean check
+    if isinstance(node, exp.Not) and node.find(exp.Is):
+        inner_cols = [c.name for c in node.find_all(exp.Column)]
+        if inner_cols:
+            return f"True when {inner_cols[0]} is not null."
+        return "Null check."
+
+    if isinstance(node, exp.Is):
+        inner_cols = [c.name for c in node.find_all(exp.Column)]
+        if inner_cols:
+            return f"True when {inner_cols[0]} is null."
+        return "Null check."
+
+    # Window function
+    if isinstance(node, exp.Window):
+        func = node.this
+        func_name = type(func).__name__.upper()
+        inner_cols = [c.name for c in func.find_all(exp.Column)]
+        partition = node.find(exp.PartitionedByProperty)
+        part_cols = (
+            [c.name for c in partition.find_all(exp.Column)] if partition else []
+        )
+        col_str = ", ".join(inner_cols) if inner_cols else "value"
+        if part_cols:
+            return f"{func_name} of {col_str} partitioned by {', '.join(part_cols)}."
+        return f"{func_name} of {col_str}."
+
+    # COALESCE
+    if isinstance(node, exp.Coalesce):
+        inner_cols = [c.name for c in node.find_all(exp.Column)]
+        if inner_cols:
+            return f"First non-null of {', '.join(inner_cols)}."
+        return "Coalesce expression."
+
+    # IF
+    if isinstance(node, exp.If):
+        source_cols = sorted({c.name for c in node.find_all(exp.Column)})
+        if source_cols:
+            return f"Conditional on {', '.join(source_cols)}."
+        return "Conditional expression."
+
+    # Hash / MD5 / surrogate key
+    if isinstance(node, exp.Func) and node.sql_name() in ("MD5", "TO_HEX", "SHA256"):
+        return "Surrogate key."
+    # Nested TO_HEX(MD5(...))
+    if isinstance(node, exp.Anonymous) and node.name.upper() == "TO_HEX":
+        return "Surrogate key."
+    hex_funcs = list(node.find_all(exp.Anonymous))
+    if any(f.name.upper() == "TO_HEX" for f in hex_funcs):
+        return "Surrogate key."
+
+    # Fallback: list source columns
+    source_cols = sorted({c.name for c in node.find_all(exp.Column)})
+    if source_cols:
+        return f"Derived from {', '.join(source_cols)}."
+    return "Computed expression."
+
+
+def _extract_expression_map(sql: str) -> dict[str, tuple[str, list[str]]]:
+    """Extract computed column expression summaries from compiled SQL.
+
+    Returns {output_alias: (plain_text_summary, [source_column_names])}
+    for non-simple columns (CASE, window functions, etc.). Simple column
+    references, passthroughs, and CASTs are excluded (handled by alias map).
+    """
+    try:
+        stmts = sqlglot.parse(sql, read="bigquery")
+    except Exception:
+        return {}
+
+    if not stmts or stmts[0] is None:
+        return {}
+
+    stmt = stmts[0]
+    ctes: dict[str, exp.Expression] = {}
+    for cte in stmt.find_all(exp.CTE):
+        ctes[cte.alias] = cte.this
+
+    resolved = _resolve_star(stmt, ctes)
+    if not isinstance(resolved, exp.Select):
+        return {}
+
+    result: dict[str, tuple[str, list[str]]] = {}
+    for expression in resolved.expressions:
+        if isinstance(expression, exp.Alias):
+            inner = expression.this
+            # Skip simple columns and CASTs (handled by alias map)
+            if isinstance(inner, exp.Column):
+                continue
+            if isinstance(inner, exp.Cast):
+                continue
+            summary = _summarize_expression(inner)
+            if not summary:
+                continue
+            source_cols = sorted({c.name for c in inner.find_all(exp.Column)})
+            result[expression.alias] = (summary, source_cols)
+
+    return result
 
 
 _PACKAGE_DISPLAY_NAMES: dict[str, str] = {
@@ -252,17 +401,19 @@ def _extract_table_name(relation: str) -> str:
 
 
 class _CompiledCache:
-    """Pre-parsed compiled SQL cache: table references and alias maps."""
+    """Pre-parsed compiled SQL cache: table references, alias maps, and expression summaries."""
 
     def __init__(self, compiled_dir: Path) -> None:
         self.tables: dict[str, list[str]] = {}
-        self.aliases: dict[str, dict[str, str]] = {}
+        self.aliases: dict[str, dict[str, tuple[str, str]]] = {}
+        self.expressions: dict[str, dict[str, tuple[str, list[str]]]] = {}
 
         for sql_path in compiled_dir.rglob("*.sql"):
             model_name = sql_path.stem
             sql = sql_path.read_text(encoding="utf-8")
             self.tables[model_name] = _extract_referenced_tables(sql)
             self.aliases[model_name] = _extract_alias_map(sql)
+            self.expressions[model_name] = _extract_expression_map(sql)
 
 
 def _resolve_column_to_staging(
@@ -303,12 +454,41 @@ def _resolve_column_to_staging(
             continue
 
         alias_map = cache.aliases.get(table_name, {})
-        # If this model renames col_name, follow the alias upstream
-        upstream_col = alias_map.get(col_name, col_name)
+        alias_entry = alias_map.get(col_name)
 
-        result = _resolve_column_to_staging(
-            upstream_col, upstream_tables, staging_dict, cache, staging_index, visited
-        )
+        if alias_entry is not None:
+            # Column is renamed — follow into the specific source table
+            alias_table, alias_col = alias_entry
+            if alias_table:
+                # Scoped: only look in the table the alias came from
+                result = _resolve_column_to_staging(
+                    alias_col,
+                    [alias_table],
+                    staging_dict,
+                    cache,
+                    staging_index,
+                    visited,
+                )
+            else:
+                # No table qualifier — search all upstream tables
+                result = _resolve_column_to_staging(
+                    alias_col,
+                    upstream_tables,
+                    staging_dict,
+                    cache,
+                    staging_index,
+                    visited,
+                )
+        else:
+            # Column passes through unchanged
+            result = _resolve_column_to_staging(
+                col_name,
+                upstream_tables,
+                staging_dict,
+                cache,
+                staging_index,
+                visited,
+            )
         if result is not None:
             return result
 
@@ -354,29 +534,72 @@ def _enrich_yaml_descriptions(
 
                 # Phase 2: alias trace — check if col_name is an alias
                 if resolved is None and col_name in alias_map:
-                    source_col = alias_map[col_name]
-                    resolved = _resolve_column_to_staging(
-                        source_col,
-                        referenced_tables,
-                        staging_dict,
-                        cache,
-                        staging_index,
-                    )
+                    alias_table, alias_col = alias_map[col_name]
+                    if alias_table:
+                        resolved = _resolve_column_to_staging(
+                            alias_col,
+                            [alias_table],
+                            staging_dict,
+                            cache,
+                            staging_index,
+                        )
+                    else:
+                        resolved = _resolve_column_to_staging(
+                            alias_col,
+                            referenced_tables,
+                            staging_dict,
+                            cache,
+                            staging_index,
+                        )
 
                 # Phase 3: package-wide fallback
                 if resolved is None:
+                    # Infer preferred packages from the reference chain
+                    # (scan 2 levels deep to find source packages)
+                    ref_pkgs: set[str] = set()
+                    for t in referenced_tables:
+                        tn = _extract_table_name(t)
+                        p = _infer_package_from_model(tn)
+                        if p:
+                            ref_pkgs.add(p)
+                        for t2 in cache.tables.get(tn, []):
+                            p2 = _infer_package_from_model(_extract_table_name(t2))
+                            if p2:
+                                ref_pkgs.add(p2)
                     pkg = _infer_package_from_model(model_name)
-                    for lookup_col in [col_name, alias_map.get(col_name, "")]:
+
+                    alias_entry = alias_map.get(col_name)
+                    alias_col_name = alias_entry[1] if alias_entry else ""
+                    for lookup_col in [col_name, alias_col_name]:
                         if not lookup_col:
                             continue
                         candidates = staging_index.get(lookup_col, [])
+                        # Prefer candidates from the model's package or
+                        # its reference chain's packages
                         for stg_model, stg_col in candidates:
                             stg_pkg = _infer_package(stg_model)
-                            if pkg is None or stg_pkg == pkg:
+                            if pkg and stg_pkg == pkg:
+                                resolved = (stg_model, stg_col, stg_pkg)
+                                break
+                            if stg_pkg in ref_pkgs:
                                 resolved = (stg_model, stg_col, stg_pkg)
                                 break
                         if resolved:
                             break
+                    # Last resort: accept any candidate
+                    if resolved is None:
+                        for lookup_col in [col_name, alias_col_name]:
+                            if not lookup_col:
+                                continue
+                            candidates = staging_index.get(lookup_col, [])
+                            if candidates:
+                                stg_model, stg_col = candidates[0]
+                                resolved = (
+                                    stg_model,
+                                    stg_col,
+                                    _infer_package(stg_model),
+                                )
+                                break
             else:
                 # Non-recursive path (for tests): use source_mapping keys
                 for _relation, mapping in source_mapping.items():
@@ -388,22 +611,50 @@ def _enrich_yaml_descriptions(
                         )
                         break
 
-            if resolved is None:
+            if resolved is not None:
+                staging_model, staging_col, package = resolved
+                staging = staging_dict[(staging_model, staging_col)]
+
+                # Carry staging description as-is
+                col["description"] = staging["description"]
+                enriched += 1
+
+                # Structured provenance
+                _set_provenance(col, package, staging_model, staging_col)
+
+                # Propagate PII flag
+                if staging["contains_pii"]:
+                    col["config"]["meta"]["contains_pii"] = True
                 continue
 
-            staging_model, staging_col, package = resolved
-            staging = staging_dict[(staging_model, staging_col)]
+            # Phase 4: computed column description from SQL expression
+            if cache is not None and staging_index is not None:
+                expr_map = cache.expressions.get(model_name, {})
+                expr_entry = expr_map.get(col_name)
+                if expr_entry:
+                    summary, source_cols = expr_entry
 
-            # Carry staging description as-is
-            col["description"] = staging["description"]
-            enriched += 1
+                    # Try to find upstream description for source columns
+                    upstream_desc = ""
+                    for src_col in source_cols:
+                        upstream = _resolve_column_to_staging(
+                            src_col,
+                            referenced_tables,
+                            staging_dict,
+                            cache,
+                            staging_index,
+                        )
+                        if upstream:
+                            stg = staging_dict[(upstream[0], upstream[1])]
+                            upstream_desc = stg["description"]
+                            break
 
-            # Structured provenance
-            _set_provenance(col, package, staging_model, staging_col)
-
-            # Propagate PII flag
-            if staging["contains_pii"]:
-                col["config"]["meta"]["contains_pii"] = True
+                    if upstream_desc:
+                        col["description"] = f"{upstream_desc} {summary}"
+                    else:
+                        col["description"] = summary
+                    enriched += 1
+                    continue
 
     return enriched
 

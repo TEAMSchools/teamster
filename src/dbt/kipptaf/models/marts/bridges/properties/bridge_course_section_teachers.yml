@@ -11,15 +11,14 @@ models:
       - name: course_section_key
         data_type: string
         description: >-
-          Surrogate key derived from sections_dcid and _dbt_source_relation. FK
-          to dim_course_sections.
+          Surrogate key.
         data_tests:
           - not_null
 
       - name: staff_key
         data_type: string
         description: >-
-          Surrogate key derived from employee_number. FK to dim_staff.
+          Surrogate key.
         data_tests:
           - not_null
 
@@ -58,14 +57,23 @@ models:
       - name: effective_date_start
         data_type: date
         description: >-
-          Date the teacher's assignment to this section became effective.
+          The start date of the association of this teacher to this section.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sectionteacher
+            source_column: start_date
       - name: effective_date_end
         data_type: date
         description: >-
-          Date the teacher's assignment to this section ended. Null if the
-          assignment is still active.
+          The end date of the association of this teacher to this section.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sectionteacher
+            source_column: end_date
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
