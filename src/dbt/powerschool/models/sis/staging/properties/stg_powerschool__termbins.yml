@@ -1,5 +1,7 @@
 models:
   - name: stg_powerschool__termbins
+    description:
+      Term information associated for Grading is maintained in this table.
     columns:
       - name: dcid
         data_type: int64
@@ -19,7 +21,7 @@ models:
       - name: creditstring
         data_type: string
         description:
-          Converted CreditPct field to a string with the % symbol in it.
+          Converted Credit Pct field to a string with the % symbol in it.
       - name: collectiondate
         data_type: date
         description:
@@ -112,5 +114,3 @@ models:
         data_type: boolean
       - name: semester
         data_type: string
-    description:
-      Term information associated for Grading is maintained in this table.

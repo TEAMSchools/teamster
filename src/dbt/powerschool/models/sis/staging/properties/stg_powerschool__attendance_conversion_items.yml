@@ -1,5 +1,9 @@
 models:
   - name: stg_powerschool__attendance_conversion_items
+    description:
+      Defines the number of periods in which the student must be present in
+      order to receive the number of points defined, such as full attendance =
+      1.
     columns:
       - name: id
         data_type: int64
@@ -22,7 +26,7 @@ models:
           conversion mode associated with the specific conversionitem. Section
           attendance will use periodday, daily attendance will use codeday and
           all can usetimeday. Used in conjunction with Input_Value and FTEID
-          (and DayPartID, if day part processing isenabled) that determines
+          (and Day Part ID, if day part processing isenabled) that determines
           which record to use to return the Attendance_Value."
       - name: dcid
         data_type: int64
@@ -43,8 +47,8 @@ models:
         description:
           Changed name from Membership_Percentage to better reflect the data.
           This is the attendancevalue to use for a student for a day based on
-          the Conversion_Mode_CD, FTEID and Input_Valuespecified (and DayPartID,
-          if day part processing is enabled). This value is a real number
+          the Conversion_Mode_CD, FTEID and Input_Valuespecified (and Day Part
+          ID, if day part processing is enabled). This value is a real number
           andtypically, but not necessarily, reflects a fraction of 1 where 1 is
           a full attendance value. Used inconjunction with ADA to aggregate
           attendance.
@@ -58,7 +62,3 @@ models:
         description: Unused at this time.
       - name: daypartid
         data_type: int64
-    description:
-      Defines the number of periods in which the student must be present in
-      order to receive the number of points defined, such as full attendance =
-      1.

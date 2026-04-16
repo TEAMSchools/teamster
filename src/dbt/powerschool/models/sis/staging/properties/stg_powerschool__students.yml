@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__students
+    description:
+      This table maintains Student demographics and other School related
+      information such as Lunch ID, Grade Level and scheduling data.
     columns:
       - name: id
         data_type: int64
@@ -52,10 +55,10 @@ models:
       - name: web_id
         data_type: string
         description:
-          The parent user ID for logging in to PowerSchool Parent. Indexed.
+          The parent user ID for logging in to Power School Parent. Indexed.
       - name: web_password
         data_type: string
-        description: The parent password for logging in to PowerSchool Parent.
+        description: The parent password for logging in to Power School Parent.
         config:
           meta:
             contains_pii: true
@@ -113,19 +116,19 @@ models:
         data_type: string
         description:
           The code representing how or why the student entered school. These
-          codes are stored in GenTable [6] cat=entrycodes. These are set in
+          codes are stored in Gen Table [6] cat=entrycodes. These are set in
           school setup.
       - name: exitcode
         data_type: string
         description:
           The code representing how or why the student exited the school. These
-          codes are stored inGen Table [6] cat=exitcodes. These are set in
+          codes are stored in Gen Table [6] cat=exitcodes. These are set in
           school setup.
       - name: lunchstatus
         data_type: string
         description:
           "Represents the portion of lunch a student must pay for: Blank=No
-          status P=Full payR=Reduced F=Free E=Exempt T=Temporary FDC=Free-DC."
+          status P=Full pay R=Reduced F=Free E=Exempt T=Temporary FDC=Free-DC."
       - name: ethnicity
         data_type: string
         description:
@@ -136,7 +139,7 @@ models:
         description: Stores the date of last lunch purchase.
       - name: pl_language
         data_type: string
-        description: PowerLink language, which is either Spanish or English.
+        description: Power Link language, which is either Spanish or English.
       - name: family_ident
         data_type: string
         description:
@@ -168,7 +171,7 @@ models:
       - name: student_web_id
         data_type: string
         description:
-          The student user ID for logging in to PowerSchool Parent. Indexed.
+          The student user ID for logging in to Power School Parent. Indexed.
       - name: student_web_password
         data_type: string
         description: The password for Student_Web_ID.
@@ -340,42 +343,42 @@ models:
       - name: alert_discipline
         data_type: string
         description:
-          One of many various alerts in PowerSchool. This field stores the text
+          One of many various alerts in Power School. This field stores the text
           tied to the alert.
       - name: alert_disciplineexpires
         data_type: date
         description:
-          One of many various alerts in PowerSchool. This field stores the
+          One of many various alerts in Power School. This field stores the
           expiration date tied to thealert.
       - name: alert_guardian
         data_type: string
         description:
-          One of many various alerts in PowerSchool. This field stores the text
+          One of many various alerts in Power School. This field stores the text
           tied to the alert.
       - name: alert_guardianexpires
         data_type: date
         description:
-          One of many various alerts in PowerSchool. This field stores the
+          One of many various alerts in Power School. This field stores the
           expiration date tied to thealert.
       - name: alert_medical
         data_type: string
         description:
-          One of many various alerts in PowerSchool. This field stores the text
+          One of many various alerts in Power School. This field stores the text
           tied to the alert.
       - name: alert_medicalexpires
         data_type: date
         description:
-          One of many various alerts in PowerSchool. This field stores the
+          One of many various alerts in Power School. This field stores the
           expiration date tied to thealert.
       - name: alert_other
         data_type: string
         description:
-          One of many various alerts in PowerSchool. This field stores the text
+          One of many various alerts in Power School. This field stores the text
           tied to the alert.
       - name: alert_otherexpires
         data_type: date
         description:
-          One of many various alerts in PowerSchool. This field stores the
+          One of many various alerts in Power School. This field stores the
           expiration date tied to thealert.
       - name: state_studentnumber
         data_type: string
@@ -408,28 +411,28 @@ models:
       - name: team
         data_type: string
         description:
-          This field is necessary to capture the team value assigned in
-          PowerScheduler to a student.This will need to be moved from
-          Students:Sched_NextYearTeam during the End-of-Yearprocess.
-          Sched_NextYearTeam captures the record ID from the Gen table (Cat
-          =TeacherGroups). Current_Team cannot capture the ID since this record
-          is part ofPowerScheduler and may be changed when scheduling for a
+          This field is necessary to capture the team value assigned in Power
+          Scheduler to a student.This will need to be moved from
+          Students:Sched_Next Year Team during the End-of-Yearprocess.
+          Sched_Next Year Team captures the record ID from the Gen table (Cat
+          =Teacher Groups). Current_Team cannot capture the ID since this record
+          is part of Power Scheduler and may be changed when scheduling for a
           future year. An acceptablecompromise is to capture the value instead
           (i.e. Blue) and store this.
       - name: house
         data_type: string
         description:
-          This field is necessary to capture the house value assigned in
-          PowerScheduler to a student.This will need to be moved from
-          Students:Sched_NextYearHouse during the End-of-Yearprocess. The field
-          stores the text value of house (i.e. Hawthorne).
+          This field is necessary to capture the house value assigned in Power
+          Scheduler to a student.This will need to be moved from
+          Students:Sched_Next Year House during the End-of-Yearprocess. The
+          field stores the text value of house (i.e. Hawthorne).
       - name: building
         data_type: string
         description:
           No longer used by the application. This field may still be referenced
           on reports and/or custompages. This field is necessary to capture the
-          building value assigned in PowerScheduler to astudent. This will need
-          to be moved from Students:Sched_NextYearBuilding during the
+          building value assigned in Power Scheduler to astudent. This will need
+          to be moved from Students:Sched_Next Year Building during the
           End-of-Year process. The field stores the text value of building
           (i.e.Building1).
       - name: withdrawal_reason_code
@@ -470,10 +473,10 @@ models:
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, andPearson SuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.If used, a unique identifier for the row.Currently applicable to
-          multi-tenant, Schoolnet, and Pearson SuccessNet/Pearson
-          SuccessNetPlus.
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
+          Plus.
       - name: ip_address
         data_type: string
       - name: whomodifiedtype
@@ -599,7 +602,7 @@ models:
         data_type: int64
       - name: lunch_id
         data_type: float64
-        description: The students PowerLunch number. Indexed.
+        description: The students Power Lunch number. Indexed.
       - name: membershipshare
         data_type: float64
         description:
@@ -618,7 +621,7 @@ models:
         description: The related person in the Relationship table. Indexed.
       - name: phone_id
         data_type: int64
-        description: The number for the student on PowerLink. Indexed.
+        description: The number for the student on Power Link. Indexed.
         config:
           meta:
             contains_pii: true
@@ -636,7 +639,7 @@ models:
         data_type: int64
         description:
           "True/False: True (selected)=Do not allow the schedule to be changed
-          by PowerScheduler.False (deselected)=Schedule this student when the
+          by Power Scheduler.False (deselected)=Schedule this student when the
           scheduling engine is run."
       - name: sched_nextyeargrade
         data_type: int64
@@ -696,7 +699,8 @@ models:
       - name: student_allowwebaccess
         data_type: int64
         description:
-          "Allow student user webID to log in to parent/student page: 1=Yes 0=No"
+          "Allow student user web ID to log in to parent/student page: 1=Yes
+          0=No"
       - name: summerschoolid
         data_type: int64
         description:
@@ -727,6 +731,3 @@ models:
         data_type: string
       - name: ethnicity_code
         data_type: string
-    description:
-      This table maintains Student demographics and other School related
-      information such as Lunch ID, Grade Level and scheduling data.

@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__studentcontactdetail
+    description:
+      This table provides details for a Student Contact record for a period of
+      time beginning on the start date and ending on the end date.
     columns:
       - name: relationshipnote
         data_type: string
@@ -10,8 +13,8 @@ models:
         description:
           Start date of the relationship between the contact and the student.
           Does not relate to lives withor school pick up columns. Null date
-          implies that the relationship is permanent. Indexed
-          withStudentContactAssocID. Optional.
+          implies that the relationship is permanent. Indexed with Student
+          Contact Assoc ID. Optional.
       - name: enddate
         data_type: date
         description:
@@ -50,23 +53,23 @@ models:
       - name: studentcontactassocid
         data_type: int64
         description:
-          Identification number of the related StudentContactAssoc table row.
+          Identification number of the related Student Contact Assoc table row.
           Indexed. Required.
       - name: relationshiptypecodesetid
         data_type: int64
         description:
-          Identification number of the related CodeSet table row. Indexed.
+          Identification number of the related Code Set table row. Indexed.
           Required.
       - name: isactive
         data_type: int64
         description:
           "Flag indicating if this record is the currently active record among
-          all records associated withthe same parent StudentContactAssoc record.
-          The active record will be the one that has thecurrent date contained
-          by the start and end date values. If no record contains the current
-          date,active will be the record with the closest future start date. If
-          there are also no future records,active will be the one with the
-          closest past end date. Valid values: 0=No, 1=Yes. Defaults to
+          all records associated withthe same parent Student Contact Assoc
+          record. The active record will be the one that has thecurrent date
+          contained by the start and end date values. If no record contains the
+          current date,active will be the record with the closest future start
+          date. If there are also no future records,active will be the one with
+          the closest past end date. Valid values: 0=No, 1=Yes. Defaults to
           0.Required."
       - name: isemergency
         data_type: int64
@@ -113,6 +116,3 @@ models:
           "Indicates whether or not the contact will receive confidential
           information for the selectedstudent. Valid values: 0=No, 1=Yes.
           Defaults to 0. Reserved for Unified Home Communication."
-    description:
-      This table provides details for a Student Contact record for a period of
-      time beginning on the start date and ending on the end date.

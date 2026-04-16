@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__gpnode
+    description:
+      Details of the nodes of the GradPlan. Hierarchy with each node containing
+      a capacity.
     columns:
       - name: id
         data_type: int64
@@ -96,6 +99,3 @@ models:
         description:
           If set, the minimum percent grade is required to fulfill this node of
           the graduation plan. Valid valueis between 0 and 100.
-    description:
-      Details of the nodes of the GradPlan. Hierarchy with each node containing
-      a capacity.

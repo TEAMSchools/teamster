@@ -1,5 +1,11 @@
 models:
   - name: stg_powerschool__users
+    description:
+      "This table maintains teacher demographic information and their
+      preferences. Note: The Teachers table is no longer used and has been
+      renamed Teachers_ncf31. The SchoolStaff table and Users table have been
+      created in its place. Theinformation that appeared in the Teachers table
+      can now be viewed in the Teachers reporting view."
     columns:
       - name: dcid
         data_type: int64
@@ -51,7 +57,7 @@ models:
             contains_pii: true
       - name: password
         data_type: string
-        description: The PowerSchool login password.
+        description: The Power School login password.
       - name: ipaddrrestrict
         data_type: string
         description:
@@ -64,10 +70,10 @@ models:
           on reports and/or custom pages.
       - name: homepage
         data_type: string
-        description: The page that appears when logging in to PowerSchool.
+        description: The page that appears when logging in to Power School.
       - name: loginid
         data_type: string
-        description: The PowerSchool login name. Indexed.
+        description: The Power School login name. Indexed.
       - name: defaultstudscrn
         data_type: string
         description: The student page the user wants to appear by default.
@@ -133,13 +139,13 @@ models:
           switch to when logged intothe Admin portal.
       - name: teacherloginpw
         data_type: string
-        description: The login password for PowerTeacher.
+        description: The login password for Power Teacher.
       - name: nameasimported
         data_type: string
         description: Used as a matching tool when importing teacher information.
       - name: teacherloginid
         data_type: string
-        description: The login name for PowerTeacher.
+        description: The login name for Power Teacher.
       - name: teacherloginip
         data_type: string
         description:
@@ -203,13 +209,13 @@ models:
       - name: sif_stateprid
         data_type: string
         description:
-          Used by the PowerSchool SIF Agent that requires a state-level unique
-          identifier for teachers. To beused in the SIF StaffPersonal object.
+          Used by the Power School SIF Agent that requires a state-level unique
+          identifier for teachers. To beused in the SIF Staff Personal object.
       - name: psguid
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, and PearsonSuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
       - name: ip_address
         data_type: string
@@ -242,16 +248,16 @@ models:
       - name: psaccess
         data_type: int64
         description:
-          "Indicates whether the user can log in to PowerSchool Admin. Valid
+          "Indicates whether the user can log in to Power School Admin. Valid
           values: 0=No, 1=Yes."
       - name: groupvalue
         data_type: int64
         description:
-          The security group (from Gen table) this user belongs to in
-          PowerSchool. This determines which pagesthe user has access to.
+          The security group (from Gen table) this user belongs to in Power
+          School. This determines which pagesthe user has access to.
       - name: lunch_id
         data_type: float64
-        description: The PowerLunch number. Indexed.
+        description: The Power Lunch number. Indexed.
       - name: supportcontact
         data_type: int64
         description:
@@ -282,33 +288,27 @@ models:
         data_type: int64
         description:
           "Indicates the type of gradebook in use by the teacher. Valid values:
-          0 = PowerGrade, 1 =PowerTeacher gradebook."
+          0 = Power Grade, 1 =Power Teacher gradebook."
       - name: fedethnicity
         data_type: int64
         description:
           'Numerical answer to the question "Is the staff member Hispanic or
           Latino?" Valid values : -1 = Defaultvalue, user has not yet made a
-          selection, 0 = No, 1 = Yes, 2 = User-defined answer specified on
-          theFederal Ethnicity and Race Settings page.'
+          selection, 0 = No, 1 = Yes, 2 = User-defined answer specified on the
+          Federal Ethnicity and Race Settings page.'
       - name: fedracedecline
         data_type: int64
         description:
           "Valid values: 0 = Value assigned by default or one or more values
-          specified in the TeacherRace table,1 = Declined to specify race (no
-          rows should appear in the TeacherRace table)."
+          specified in the Teacher Race table,1 = Declined to specify race (no
+          rows should appear in the Teacher Race table)."
       - name: ptaccess
         data_type: int64
         description:
-          "Indicates whether the user can log in to PowerTeacher. Valid values:
+          "Indicates whether the user can log in to Power Teacher. Valid values:
           0=No, 1=Yes."
       - name: prefixcodesetid
         data_type: int64
         description: Foreign key to codeset table of category prefix.
       - name: whomodifiedid
         data_type: int64
-    description:
-      "This table maintains teacher demographic information and their
-      preferences. Note: The Teachers table is no longer used and has been
-      renamed Teachers_ncf31. The SchoolStaff table and Users table have been
-      created in its place. Theinformation that appeared in the Teachers table
-      can now be viewed in the Teachers reporting view."

@@ -1,20 +1,25 @@
 models:
   - name: stg_powerschool__phonenumber
+    description:
+      This table is used to store all the phone numbers related to any Person.
     columns:
       - name: phonenumber
         data_type: string
         description:
-          Phone number of the person in digits only. Indexed. Required.
-          PhoneNumber with PhoneNumberExt mustbe unique.
+          Phone number of the person in digits only. Indexed. Required. Phone
+          Number with Phone Number Ext mustbe unique.
         config:
           meta:
             contains_pii: true
       - name: phonenumberext
         data_type: string
         description:
-          Extension digits extracted from
-          PersonPhoneNumberAssoc.phonenumberasentered. Characters limited
-          tonumbers only. Indexed with PhoneNumber. Optional.
+          Extension digits extracted from Person Phone Number
+          Assoc.phonenumberasentered. Characters limited tonumbers only. Indexed
+          with Phone Number. Optional.
+        config:
+          meta:
+            contains_pii: true
       - name: whocreated
         data_type: string
         description:
@@ -49,5 +54,3 @@ models:
         description:
           "Indicates whether or not the SMS feature is enabled. Valid values: 1=
           Enabled, 0=Disabled. Defaults to 0.Required."
-    description:
-      This table is used to store all the phone numbers related to any Person.

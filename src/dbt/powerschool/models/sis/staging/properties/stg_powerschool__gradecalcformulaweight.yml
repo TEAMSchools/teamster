@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__gradecalcformulaweight
+    description:
+      "Contains the specific weighting of items used in a calculation formula.
+      One row represents each item weighted.  For example: HW 50%, Tests 50%."
     columns:
       - name: storecode
         data_type: string
@@ -49,30 +52,27 @@ models:
       - name: gradecalculationtypeid
         data_type: int64
         description:
-          Foreign key. Internal number for the associated GradeCalculationType
-          GradeCalculationTypeIDrecord. Required. Indexed.
+          Foreign key. Internal number for the associated Grade Calculation Type
+          Grade Calculation Type IDrecord. Required. Indexed.
       - name: teachercategoryid
         data_type: int64
         description:
-          Foreign key. Internal number for the associated TeacherCategory
-          TeacherCategoryID record.Indexed.
+          Foreign key. Internal number for the associated Teacher Category
+          Teacher Category ID record.Indexed.
       - name: districtteachercategoryid
         data_type: int64
         description:
-          Foreign key. Internal number for the associated
-          DistrictTeacherCategoryDistrictTeacherCategoryID record. This allows
+          Foreign key. Internal number for the associated District Teacher
+          Category District Teacher Category ID record. This allows
           administrators be able to set up district categoryweights. Indexed.
       - name: assignmentid
         data_type: int64
         description:
-          Foreign key. Internal number for the associated Assignment
-          AssignmentID record. Indexed.
+          Foreign key. Internal number for the associated Assignment Assignment
+          ID record. Indexed.
       - name: weight
         data_type: numeric
         description:
           The weight associated with one of the grading elements. A numerical
           value which will becompared with other related rows to determine its
           actual percentage of the whole. Defaults to 1.0
-    description:
-      "Contains the specific weighting of items used in a calculation formula.
-      One row represents each item weighted.  For example: HW 50%, Tests 50%."

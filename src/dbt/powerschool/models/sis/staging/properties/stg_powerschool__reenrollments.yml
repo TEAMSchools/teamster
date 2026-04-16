@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__reenrollments
+    description:
+      This table stores all enrollments, except the current one, for a student
+      such as the ones for end-of-year (EOY) processing or in-term transfers.
     columns:
       - name: dcid
         data_type: int64
@@ -66,13 +69,13 @@ models:
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, and PearsonSuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
       - name: id
         data_type: int64
         description:
           Except for summer school enrollments, this is the value from
-          Students.EnrollmentID when anenrollment becomes inactive and is
+          Students.Enrollment ID when anenrollment becomes inactive and is
           transferred to this table. Indexed.
       - name: studentid
         data_type: int64
@@ -118,6 +121,3 @@ models:
         description:
           The internal number for the FTE with which this record is associated.
           Indexed.
-    description:
-      This table stores all enrollments, except the current one, for a student
-      such as the ones for end-of-year (EOY) processing or in-term transfers.

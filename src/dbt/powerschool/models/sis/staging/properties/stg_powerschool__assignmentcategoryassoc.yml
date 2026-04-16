@@ -1,5 +1,7 @@
 models:
   - name: stg_powerschool__assignmentcategoryassoc
+    description:
+      This table allows the association of multiple categories to an assignment.
     columns:
       - name: assignmentcategoryassocid
         data_type: int64
@@ -49,13 +51,13 @@ models:
       - name: assignmentsectionid
         data_type: int64
         description:
-          Foreign key. Internal number for the associated
-          AssignmentSection.AssignmentSectionIDrecord. Required. Indexed.
+          Foreign key. Internal number for the associated Assignment
+          Section.Assignment Section IDrecord. Required. Indexed.
       - name: teachercategoryid
         data_type: int64
         description:
-          Foreign key. Internal number for the associated
-          TeacherCategory.TeacherCategoryID record.Required. Indexed.
+          Foreign key. Internal number for the associated Teacher
+          Category.Teacher Category ID record.Required. Indexed.
       - name: yearid
         data_type: int64
         description:
@@ -69,5 +71,3 @@ models:
           1=Yes, 0=No. Required."
       - name: whomodifiedid
         data_type: int64
-    description:
-      This table allows the association of multiple categories to an assignment.

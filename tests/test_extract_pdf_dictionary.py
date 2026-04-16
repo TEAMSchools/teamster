@@ -8,6 +8,7 @@ keeping the import pattern local to this test file.
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 from types import ModuleType
 
@@ -376,9 +377,6 @@ class TestBuildPsYamlIndex:
         assert "stg_powerschool__cc" in index
         columns = index["stg_powerschool__cc"]
         assert "studentid" in columns or "dcid" in columns
-
-
-import json
 
 
 class TestBuildPsMapping:

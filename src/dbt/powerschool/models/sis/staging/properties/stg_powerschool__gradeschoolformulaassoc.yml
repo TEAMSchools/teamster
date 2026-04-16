@@ -1,5 +1,7 @@
 models:
   - name: stg_powerschool__gradeschoolformulaassoc
+    description:
+      This table associates grade school configurations with grade formula sets.
     columns:
       - name: whocreated
         data_type: string
@@ -33,17 +35,15 @@ models:
       - name: gradeformulasetid
         data_type: int64
         description:
-          Foreign key. Internal number for the associated
-          GradeFormulaSet.GradeFormulaSetIDrecord. Required. Indexed.
+          Foreign key. Internal number for the associated Grade Formula
+          Set.Grade Formula Set IDrecord. Required. Indexed.
       - name: gradeschoolconfigid
         data_type: int64
         description:
-          Foreign key. Internal number for the associated
-          GradeSchoolConfig.GradeSchoolConfigIdrecord. Required. Indexed.
+          Foreign key. Internal number for the associated Grade School
+          Config.Grade School Config Idrecord. Required. Indexed.
       - name: isdefaultformulaset
         data_type: int64
         description:
           "Indicates whether this is the default formula set. Valid values:
           1=Yes, 0=No. Defaults to 0.Required."
-    description:
-      This table associates grade school configurations with grade formula sets.

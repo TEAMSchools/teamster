@@ -1,12 +1,16 @@
 models:
   - name: stg_powerschool__originalcontactmap
+    description:
+      This table is created to support a single contact having more than one
+      legacy contact association. It is used by the Students view to populate
+      legacy contact columns.
     columns:
       - name: originalcontacttype
         data_type: string
         description:
           "Indicates six legacy contact types (case sensitive): mother, father,
           emergency1, emergency2,emergency3, guardian. Indexed along with the
-          StudentContactAssocID column. Required."
+          Student Contact Assoc ID column. Required."
       - name: whocreated
         data_type: string
         description:
@@ -39,9 +43,5 @@ models:
       - name: studentcontactassocid
         data_type: int64
         description:
-          Identification number of the associated StudentContactAssoc table row.
-          Indexed along with theOriginalContactType column. Required.
-    description:
-      This table is created to support a single contact having more than one
-      legacy contact association. It is used by the Students view to populate
-      legacy contact columns.
+          Identification number of the associated Student Contact Assoc table
+          row. Indexed along with the Original Contact Type column. Required.

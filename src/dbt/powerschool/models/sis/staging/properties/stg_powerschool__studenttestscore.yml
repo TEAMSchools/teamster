@@ -47,7 +47,7 @@ models:
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, and PearsonSuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
       - name: notes
         data_type: string

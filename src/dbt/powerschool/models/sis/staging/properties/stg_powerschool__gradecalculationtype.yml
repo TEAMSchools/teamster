@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__gradecalculationtype
+    description:
+      This table defines the grade calculation formula for a reporting term.
+      Individual item weights can be found in the GradeCalcFormulaWeight table.
     columns:
       - name: gradecalculationtypeid
         data_type: int64
@@ -53,8 +56,8 @@ models:
       - name: gradeformulasetid
         data_type: int64
         description:
-          Foreign key. Internal number for the associated GradeFormulaSet
-          GradeFormulaSetID record.Required. Indexed.
+          Foreign key. Internal number for the associated Grade Formula Set
+          Grade Formula Set ID record.Required. Indexed.
       - name: yearid
         data_type: int64
         description:
@@ -87,6 +90,3 @@ models:
           Valid values: 1=Yes, 0=No, Null.Defaults to Null."
       - name: ismulticategoryeditable
         data_type: int64
-    description:
-      This table defines the grade calculation formula for a reporting term.
-      Individual item weights can be found in the GradeCalcFormulaWeight table.

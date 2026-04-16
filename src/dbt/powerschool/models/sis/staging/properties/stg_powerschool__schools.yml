@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__schools
+    description:
+      "Information held on each of the schools. Note: This table includes schema
+      extension. For more information, see _C_SCHOOL_REGISTRAR{_}."
     columns:
       - name: dcid
         data_type: int64
@@ -18,7 +21,8 @@ models:
         description: The name of the school. Indexed.
       - name: address
         data_type: string
-        description: The physical address of the school. Also see SchoolAddress.
+        description:
+          The physical address of the school. Also see School Address.
       - name: pscomm_path
         data_type: string
         description:
@@ -41,7 +45,7 @@ models:
             contains_pii: true
       - name: sysemailfrom
         data_type: string
-        description: The email address PowerSchool says it is from.
+        description: The email address Power School says it is from.
         config:
           meta:
             contains_pii: true
@@ -138,7 +142,7 @@ models:
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, andPearson SuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
       - name: ip_address
         data_type: string
@@ -211,6 +215,3 @@ models:
         data_type: int64
       - name: school_level
         data_type: string
-    description:
-      "Information held on each of the schools. Note: This table includes schema
-      extension. For more information, see _C_SCHOOL_REGISTRAR{_}."

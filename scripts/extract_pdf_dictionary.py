@@ -98,7 +98,7 @@ def camel_to_snake(name: str) -> str:
 _PII_NAME_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"(^|_)(first|last|middle|given|family|nick)_?name", re.IGNORECASE),
     re.compile(r"(^|_)formatted_name", re.IGNORECASE),
-    re.compile(r"(^|__)lastfirst($|_)", re.IGNORECASE),
+    re.compile(r"(^|_)lastfirst($|_)", re.IGNORECASE),
     re.compile(r"(^|_)dob($|_)", re.IGNORECASE),
     re.compile(r"birth_date", re.IGNORECASE),
     re.compile(r"(^|_)ssn($|_)", re.IGNORECASE),
@@ -251,10 +251,13 @@ def parse_ps_columns(page_text: str) -> list[dict[str, str]]:
         # Skip table description paragraphs (no version number pattern)
         match = _PS_COLUMN_RE.match(line)
         if match:
+            # Fix word-join artifacts from pypdf text extraction
+            # (adjacent text streams lose spaces: "notguaranteed")
+            desc = re.sub(r"([a-z])([A-Z])", r"\1 \2", match.group(4).strip())
             entries.append(
                 {
                     "source_column": match.group(1),
-                    "description": match.group(4).strip(),
+                    "description": desc,
                 }
             )
 

@@ -1,5 +1,9 @@
 models:
   - name: stg_powerschool__gradeschoolconfig
+    description:
+      This table contains configuration settings at the school level that can
+      affect how grades are calculated and who may edit those settings. In some
+      cases, these settingsmay be overridden by course-specific settings.
     columns:
       - name: gradeschoolconfigid
         data_type: int64
@@ -49,15 +53,15 @@ models:
         data_type: string
         description:
           Defines how sections are differentiated/displayed for teachers at a
-          school. Valid values:PeriodAndDay, SectionNumber, Alphabetical.
-          Defaults to PeriodAndDay. Required.
+          school. Valid values:Period And Day, Section Number, Alphabetical.
+          Defaults to Period And Day. Required.
       - name: standardtraditionalorder
         data_type: string
         description:
           "When both Traditional and Standards are used, which appears first in
-          the gradebook. Validvalues: TraditionalFirst=Order by Traditional then
-          Standards, StandardsFirst=Order byStandards then Traditional. Defaults
-          to TraditionalFirst. Required."
+          the gradebook. Validvalues: Traditional First=Order by Traditional
+          then Standards, Standards First=Order by Standards then Traditional.
+          Defaults to Traditional First. Required."
       - name: whocreated
         data_type: string
         description:
@@ -188,8 +192,8 @@ models:
       - name: startingpagekey
         data_type: string
         description:
-          The URL specified in StartingPageURL may contain one or more pages
-          that can bedisplayed.  This StartingPageKey uniquely identifies the
+          The URL specified in Starting Page URL may contain one or more pages
+          that can bedisplayed.  This Starting Page Key uniquely identifies the
           page to display as the starting page.
       - name: startingpageurl
         data_type: string
@@ -201,7 +205,3 @@ models:
         data_type: int64
       - name: ismulticategoryeditable
         data_type: int64
-    description:
-      This table contains configuration settings at the school level that can
-      affect how grades are calculated and who may edit those settings. In some
-      cases, these settingsmay be overridden by course-specific settings.

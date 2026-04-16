@@ -1,5 +1,7 @@
 models:
   - name: stg_powerschool__personaddressassoc
+    description:
+      This table links a Person record with a person’s address information.
     columns:
       - name: startdate
         data_type: date
@@ -44,7 +46,7 @@ models:
         data_type: int64
         description:
           Identification number of the associated Person table row pertaining to
-          the phone number. Indexedwith AddressPriorityOrder. Required.
+          the phone number. Indexedwith Address Priority Order. Required.
         config:
           meta:
             contains_pii: true
@@ -56,12 +58,10 @@ models:
       - name: addresstypecodesetid
         data_type: int64
         description:
-          Identification number of the associated CodeSet table row. Indexed.
+          Identification number of the associated Code Set table row. Indexed.
           Required.
       - name: addresspriorityorder
         data_type: int64
         description:
           Indicates the preferred order in which the person’s addresses will be
-          selected. Indexed withPersonID. Defaults to 1. Required.
-    description:
-      This table links a Person record with a person’s address information.
+          selected. Indexed with Person ID. Defaults to 1. Required.

@@ -1,5 +1,11 @@
 models:
   - name: stg_powerschool__schoolstaff
+    description:
+      "This table maintains School information related to the one or more
+      teachers are assigned to. Note: The Teachers table is no longer used and
+      has been renamed Teachers_ncf31. The SchoolStaff table and Users table
+      have been created in its place. Theinformation that appeared in the
+      Teachers table can now be viewed in the Teachers reporting view."
     columns:
       - name: dcid
         data_type: int64
@@ -54,7 +60,7 @@ models:
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, andPearson SuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
       - name: ip_address
         data_type: string
@@ -174,9 +180,3 @@ models:
           Teacher is to be scheduled.
       - name: whomodifiedid
         data_type: int64
-    description:
-      "This table maintains School information related to the one or more
-      teachers are assigned to. Note: The Teachers table is no longer used and
-      has been renamed Teachers_ncf31. The SchoolStaff table and Users table
-      have been created in its place. Theinformation that appeared in the
-      Teachers table can now be viewed in the Teachers reporting view."

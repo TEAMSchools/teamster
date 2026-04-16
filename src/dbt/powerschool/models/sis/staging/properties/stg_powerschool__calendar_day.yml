@@ -1,5 +1,10 @@
 models:
   - name: stg_powerschool__calendar_day
+    description:
+      School year calendar is maintained is this table. It's used for Bell
+      Schedules, ADM/ADA reports and overall attendance by showing which days
+      are in-session withindifferent tracks or overall. This used to be named
+      DailySchedules.
     columns:
       - name: id
         data_type: int64
@@ -32,7 +37,7 @@ models:
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, and PearsonSuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
       - name: whomodifiedtype
         data_type: string
@@ -115,8 +120,3 @@ models:
         data_type: date
       - name: week_end_date
         data_type: date
-    description:
-      School year calendar is maintained is this table. It's used for Bell
-      Schedules, ADM/ADA reports and overall attendance by showing which days
-      are in-session withindifferent tracks or overall. This used to be named
-      DailySchedules.

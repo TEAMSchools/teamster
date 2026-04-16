@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__courses
+    description:
+      This table lists course information such as the Course Name, Number, and
+      Scheduling data.
     columns:
       - name: dcid
         data_type: int64
@@ -29,41 +32,41 @@ models:
         data_type: string
         description:
           Used to store the value for Course Notes. No longer related to Course
-          Prerequisites. Thevalue is copied to ScheduleCourseCatalog table.
+          Prerequisites. Thevalue is copied to Schedule Course Catalog table.
       - name: corequisites
         data_type: string
         description:
-          Value is copied from the ScheduleCourseCatalogs table. These are other
-          courses that mustbe taken with this course at the same term.
+          Value is copied from the Schedule Course Catalogs table. These are
+          other courses that mustbe taken with this course at the same term.
       - name: powerlink
         data_type: string
         description:
-          The name PowerLink will use over the phone to phonetically spell a
+          The name Power Link will use over the phone to phonetically spell a
           course in English.
       - name: powerlinkspan
         data_type: string
         description:
-          The name PowerLink will use over the phone to phonetically spell a
+          The name Power Link will use over the phone to phonetically spell a
           course in Spanish.
       - name: reggradelevels
         data_type: string
         description:
-          The value is copied to ScheduleCourseCatalog table, but not used
+          The value is copied to Schedule Course Catalog table, but not used
           anywhere.
       - name: regteachers
         data_type: string
         description:
-          The value is copied to ScheduleCourseCatalog table, but not used
+          The value is copied to Schedule Course Catalog table, but not used
           anywhere.
       - name: regcoursegroup
         data_type: string
         description:
-          The value is copied to ScheduleCourseCatalog table, but not used
+          The value is copied to Schedule Course Catalog table, but not used
           anywhere.
       - name: multiterm
         data_type: string
         description:
-          The value is copied to ScheduleCourseCatalog table, but not used
+          The value is copied to Schedule Course Catalog table, but not used
           anywhere.
       - name: termsoffered
         data_type: string
@@ -79,7 +82,7 @@ models:
       - name: sched_coursesubjectareacode
         data_type: string
         description:
-          The value is copied to ScheduleCourseCatalog table, but not used
+          The value is copied to Schedule Course Catalog table, but not used
           anywhere.
       - name: sched_fullcatalogdescription
         data_type: string
@@ -89,14 +92,14 @@ models:
       - name: sched_coursepkgcontents
         data_type: string
         description:
-          If the Sched_CoursePackage is selected, these are the courses that are
-          part of theparticular package to which this course belongs. Includes
-          this course.
+          If the Sched_Course Package is selected, these are the courses that
+          are part of theparticular package to which this course belongs.
+          Includes this course.
       - name: sched_scheduletypecode
         data_type: string
         description:
-          "The course type this is going to be built as: Standard, Lab,
-          LabFloat, Float, and Custom."
+          "The course type this is going to be built as: Standard, Lab, Lab
+          Float, Float, and Custom."
       - name: sched_validstartperiods
         data_type: string
         description: When this course meets, it must start one of these periods.
@@ -106,12 +109,12 @@ models:
       - name: validextradaycombinations
         data_type: string
         description:
-          The value is copied to ScheduleCourseCatalog table, but not used
+          The value is copied to Schedule Course Catalog table, but not used
           anywhere.
       - name: sched_extradayscheduletypecode
         data_type: string
         description:
-          The value is copied to ScheduleCourseCatalog table, but not used
+          The value is copied to Schedule Course Catalog table, but not used
           anywhere.
       - name: sched_facilities
         data_type: string
@@ -119,22 +122,22 @@ models:
       - name: sched_loadtype
         data_type: string
         description:
-          Is this an academic or elective class? PowerScheduler will try to
+          Is this an academic or elective class? Power Scheduler will try to
           balance the two forstudents.
       - name: sched_globalsubstitution1
         data_type: string
         description:
-          If Sched_SubstitutionAllowed is True, this is the first course to try
+          If Sched_Substitution Allowed is True, this is the first course to try
           if this course is notpossible.
       - name: sched_globalsubstitution2
         data_type: string
         description:
-          If Sched_SubstitutionAllowed is True, this is the second course to try
-          if this course is notpossible.
+          If Sched_Substitution Allowed is True, this is the second course to
+          try if this course is notpossible.
       - name: sched_globalsubstitution3
         data_type: string
         description:
-          If Sched_SubstitutionAllowed is True, this is the third course to try
+          If Sched_Substitution Allowed is True, this is the third course to try
           if this course is notpossible.
       - name: sched_balancepriority
         data_type: string
@@ -143,7 +146,7 @@ models:
           students into the classes.Section=Try to keep the sections as even as
           possible in the number of students,Gender=Try to keep the number of
           boys and girls even in classes, Grade=try to get an evennumber of
-          grade levels represented in each section, EthnicCode=Try to racially
+          grade levels represented in each section, Ethnic Code=Try to racially
           balance thesections, house=try to balance the sections with house
           members. Please note foreverything except section if the requests are
           not there sections will not be able to bebalanced. For example, if 3
@@ -153,7 +156,7 @@ models:
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, andPearson SuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
       - name: ip_address
         data_type: string
@@ -175,7 +178,7 @@ models:
       - name: regavailable
         data_type: int64
         description:
-          The value is copied to ScheduleCourseCatalog table, but not used
+          The value is copied to Schedule Course Catalog table, but not used
           anywhere.
       - name: targetclasssize
         data_type: int64
@@ -187,18 +190,18 @@ models:
         description:
           The maximum number of students for this classroom. This is the number
           that appears onthe master schedule and is used for allowing manual
-          entry into a class. This number shouldbe the same as
-          Sched_MaximumEnrollment on the ScheduleCourseCatalog table.
+          entry into a class. This number shouldbe the same as Sched_Maximum
+          Enrollment on the Schedule Course Catalog table.
       - name: sectionstooffer
         data_type: int64
         description:
-          The number of sections for the year. This is not tied to
-          PowerScheduler; in order to specifysections for scheduling, it will
-          need to be set up in the course catalog.
+          The number of sections for the year. This is not tied to Power
+          Scheduler; in order to specifysections for scheduling, it will need to
+          be set up in the course catalog.
       - name: schoolgroup
         data_type: int64
         description:
-          The value is copied to ScheduleCourseCatalog table, but not used
+          The value is copied to Schedule Course Catalog table, but not used
           anywhere.
       - name: vocational
         data_type: int64
@@ -216,7 +219,7 @@ models:
       - name: sched_year
         data_type: int64
         description:
-          The value is copied to ScheduleCourseCatalog table, but not used
+          The value is copied to Schedule Course Catalog table, but not used
           anywhere.
       - name: sched_coursepackage
         data_type: int64
@@ -277,7 +280,7 @@ models:
       - name: sched_blockstart
         data_type: int64
         description:
-          The value is copied to ScheduleCourseCatalog table, but not used
+          The value is copied to Schedule Course Catalog table, but not used
           anywhere.
       - name: sched_lengthinnumberofterms
         data_type: int64
@@ -286,7 +289,7 @@ models:
         data_type: int64
         description:
           "If this course spans terms, indicates if they must be back-to-back:
-          True (selected)=YesFalse (deselected)=No."
+          True (selected)=Yes False (deselected)=No."
       - name: sched_balanceterms
         data_type: int64
         description:
@@ -299,12 +302,12 @@ models:
       - name: sched_concurrentflag
         data_type: int64
         description:
-          The value is copied to ScheduleCourseCatalog table, but not used
+          The value is copied to Schedule Course Catalog table, but not used
           anywhere.
       - name: sched_multiplerooms
         data_type: int64
         description:
-          The value is copied to ScheduleCourseCatalog table, but not used
+          The value is copied to Schedule Course Catalog table, but not used
           anywhere.
       - name: sched_labflag
         data_type: int64
@@ -314,7 +317,7 @@ models:
       - name: sched_labfrequency
         data_type: int64
         description:
-          If Sched_LabFlag is True, how often does the lab need to meet in the
+          If Sched_Lab Flag is True, how often does the lab need to meet in the
           cycle.
       - name: sched_labperiodspermeeting
         data_type: int64
@@ -339,9 +342,9 @@ models:
         data_type: int64
         description:
           To maintain the consistency of capturing committed information
-          from[ScheduleCourseCatalog] since Sched_UsePreestablishedTeams is also
-          new. As with theother Sched fields in the Courses table it is not used
-          in any current functionality.
+          from[Schedule Course Catalog] since Sched_Use Preestablished Teams is
+          also new. As with theother Sched fields in the Courses table it is not
+          used in any current functionality.
       - name: sched_closesectionaftermax
         data_type: int64
         description:
@@ -360,12 +363,12 @@ models:
         data_type: int64
         description:
           The ID for the grade scale attached to this course. Relates to the
-          GradescaleItem table.
+          Gradescale Item table.
       - name: gpa_addedvalue
         data_type: float64
         description:
           Number to be added to GPA for this course. Usually, for AP courses
-          there is a bump to theGPA, such as 0.125.
+          there is a bump to the GPA, such as 0.125.
       - name: excludefromgpa
         data_type: int64
         description:
@@ -386,7 +389,7 @@ models:
         description:
           Introduced for v3.7 as a way of allowing the user to specify which
           course is the lunchcourse. This information is used during the build
-          process in PowerScheduler by thescheduling engine. The scheduling
+          process in Power Scheduler by thescheduling engine. The scheduling
           engine automatically assigns teachers to this course ifthe teacher has
           been assigned to lunch (see Teachers:Sched_Lunch field). There can
           onlybe one course with this flag set to true.
@@ -398,7 +401,7 @@ models:
           Cards and Transcripts. It was initiallyimplemented for Lunch courses
           but there are additional types of courses that, in effect, arenot
           gradable courses and should not be included on those two reports. One
-          example isStudy Hall courses.
+          example is Study Hall courses.
       - name: exclude_ada
         data_type: int64
         description: "Indicates whether or not to exclude ADA. Valid values:"
@@ -431,7 +434,5 @@ models:
         data_type: int64
         description:
           "Indicates whether this course will be alerted to a PE Waiver. Valid
-          values: 1=True, will seePE Waiver alert, 0=False. Required. Default 0."
-    description:
-      This table lists course information such as the Course Name, Number, and
-      Scheduling data.
+          values: 1=True, will see PE Waiver alert, 0=False. Required. Default
+          0."

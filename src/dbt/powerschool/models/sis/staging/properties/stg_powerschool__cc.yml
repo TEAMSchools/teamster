@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__cc
+    description:
+      This table maintains the student schedules. It contains information such
+      as Section ID, Student ID, Term ID and Teacher ID.
     columns:
       - name: id
         data_type: int64
@@ -25,14 +28,14 @@ models:
         data_type: string
         description:
           The section number associated with this class. This is implied by the
-          SectionID but stored here forconvenience.
+          Section ID but stored here forconvenience.
       - name: schoolid
         data_type: int64
         description: The School_Number of the associated Schools record.
       - name: studyear
         data_type: int64
         description:
-          The Student ID * 100 + YearID. Speeds selection of student courses
+          The Student ID * 100 + Year ID. Speeds selection of student courses
           this year. Indexed.
       - name: termid
         data_type: int64
@@ -49,12 +52,12 @@ models:
         data_type: string
         description:
           The course number associated with this class. This is implied by the
-          SectionID but stored here forconvenience. Indexed.
+          Section ID but stored here forconvenience. Indexed.
       - name: teacherid
         data_type: int64
         description:
           The internal identification number of the teacher in the associated
-          SchoolStaff record. Indexed.
+          School Staff record. Indexed.
       - name: currentabsences
         data_type: int64
         description:
@@ -73,6 +76,3 @@ models:
         data_type: int64
       - name: fiscal_year
         data_type: int64
-    description:
-      This table maintains the student schedules. It contains information such
-      as Section ID, Student ID, Term ID and Teacher ID.

@@ -1,5 +1,9 @@
 models:
   - name: stg_powerschool__studentcorefields
+    description:
+      "Database extension table associated with the Students table, which has
+      been migrated from PowerSchool custom fields. These fields store general
+      information. Note: Columns in this table were previously custom fields."
     columns:
       - name: act_composite
         data_type: string
@@ -55,7 +59,7 @@ models:
       - name: emerg_1_rel
         data_type: string
         description:
-          "[FromCodeset for Originalcontactmap emergency1] Student first
+          "[From Codeset for Originalcontactmap emergency1] Student first
           emergency contactrelationship."
         config:
           meta:
@@ -247,37 +251,37 @@ models:
       - name: autosend_attendancedetail
         data_type: string
         description:
-          No longer used by the application. See GuardianStudent table for
+          No longer used by the application. See Guardian Student table for
           superseding field. Thisfield may still be referenced on reports and/or
           custom pages.
       - name: autosend_balancealert
         data_type: string
         description:
-          No longer used by the application. See GuardianStudent table for
+          No longer used by the application. See Guardian Student table for
           superseding field. Thisfield may still be referenced on reports and/or
           custom pages.
       - name: autosend_gradedetail
         data_type: string
         description:
-          No longer used by the application. See GuardianStudent table for
+          No longer used by the application. See Guardian Student table for
           superseding field. Thisfield may still be referenced on reports and/or
           custom pages.
       - name: autosend_howoften
         data_type: string
         description:
-          No longer used by the application. See GuardianStudent table for
+          No longer used by the application. See Guardian Student table for
           superseding field. Thisfield may still be referenced on reports and/or
           custom pages.
       - name: autosend_schoolannouncements
         data_type: string
         description:
-          No longer used by the application. See GuardianStudent table for
+          No longer used by the application. See Guardian Student table for
           superseding field. Thisfield may still be referenced on reports and/or
           custom pages.
       - name: autosend_summary
         data_type: string
         description:
-          No longer used by the application. See GuardianStudent table for
+          No longer used by the application. See Guardian Student table for
           superseding field. Thisfield may still be referenced on reports and/or
           custom pages.
       - name: awards
@@ -420,7 +424,8 @@ models:
         data_type: string
         description:
           Student's legal first name. Currently this field only used by State
-          Reporting. However, itmay also be used on any PowerSchool custom page.
+          Reporting. However, itmay also be used on any Power School custom
+          page.
         config:
           meta:
             contains_pii: true
@@ -428,12 +433,14 @@ models:
         data_type: string
         description:
           Student's legal gender. Currently this field only used by State
-          Reporting. However, it mayalso be used on any PowerSchool custom page.
+          Reporting. However, it mayalso be used on any Power School custom
+          page.
       - name: pscore_legal_last_name
         data_type: string
         description:
           Student's legal last name. Currently this field only used by State
-          Reporting. However, itmay also be used on any PowerSchool custom page.
+          Reporting. However, itmay also be used on any Power School custom
+          page.
         config:
           meta:
             contains_pii: true
@@ -441,7 +448,8 @@ models:
         data_type: string
         description:
           Student's legal middle name. Currently this field only used by State
-          Reporting. However, itmay also be used on any PowerSchool custom page.
+          Reporting. However, itmay also be used on any Power School custom
+          page.
         config:
           meta:
             contains_pii: true
@@ -449,12 +457,13 @@ models:
         data_type: string
         description:
           Student's legal suffix. Currently this field only used by State
-          Reporting. However, it mayalso be used on any PowerSchool custom page.
+          Reporting. However, it mayalso be used on any Power School custom
+          page.
       - name: photolastupdated
         data_type: string
         description:
           Date student photo was last updated. String formatted using ISO-8601,
-          "yyyy-mm-ddThh:mm:ssZ".
+          "yyyy-mm-dd Thh:mm:ss Z".
       - name: studentsdcid
         data_type: int64
         data_tests:
@@ -466,7 +475,3 @@ models:
         description: Student Limited English Proficiency status.
       - name: is_homeless
         data_type: boolean
-    description:
-      "Database extension table associated with the Students table, which has
-      been migrated from PowerSchool custom fields. These fields store general
-      information. Note: Columns in this table were previously custom fields."

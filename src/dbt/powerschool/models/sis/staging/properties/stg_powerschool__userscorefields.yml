@@ -1,5 +1,9 @@
 models:
   - name: stg_powerschool__userscorefields
+    description:
+      Schema extension table associated to the Users table. Fields include those
+      that were migrated from PowerSchool custom fields. These fields store
+      generalinformation.
     columns:
       - name: usersdcid
         data_type: int64
@@ -20,12 +24,13 @@ models:
         data_type: string
         description:
           Date user photo was last updated. String formatted using ISO-8601,
-          "yyyy-mm-ddThh:mm:ssZ".
+          "yyyy-mm-dd Thh:mm:ss Z".
       - name: pscore_legal_first_name
         data_type: string
         description:
           Staff legal first name. Currently, this field only used by State
-          Reporting. However, it mayalso be used on any PowerSchool custom page.
+          Reporting. However, it mayalso be used on any Power School custom
+          page.
         config:
           meta:
             contains_pii: true
@@ -33,12 +38,14 @@ models:
         data_type: string
         description:
           Staff legal gender. Currently, this field only used by State
-          Reporting. However, it may alsobe used on any PowerSchool custom page.
+          Reporting. However, it may alsobe used on any Power School custom
+          page.
       - name: pscore_legal_last_name
         data_type: string
         description:
           Staff legal last name. Currently, this field only used by State
-          Reporting. However, it mayalso be used on any PowerSchool custom page.
+          Reporting. However, it mayalso be used on any Power School custom
+          page.
         config:
           meta:
             contains_pii: true
@@ -46,7 +53,8 @@ models:
         data_type: string
         description:
           Staff legal middle name. Currently, this field only used by State
-          Reporting. However, it mayalso be used on any PowerSchool custom page.
+          Reporting. However, it mayalso be used on any Power School custom
+          page.
         config:
           meta:
             contains_pii: true
@@ -54,8 +62,5 @@ models:
         data_type: string
         description:
           Staff legal suffix. Currently, this field only used by State
-          Reporting. However, it may also beused on any PowerSchool custom page.
-    description:
-      Schema extension table associated to the Users table. Fields include those
-      that were migrated from PowerSchool custom fields. These fields store
-      generalinformation.
+          Reporting. However, it may also beused on any Power School custom
+          page.

@@ -1,5 +1,11 @@
 models:
   - name: stg_powerschool__assignmentsection
+    description:
+      This table identifies sections that are associated to an assignment.
+      Typically, there will only be one section associated to an assignment. It
+      is possible to have multiplesections associated to the same assignment, in
+      which case one row appears for each section associated to an assignment.
+      The properties of an assignment can bechanged for each section.
     columns:
       - name: assignmentsectionid
         data_type: int64
@@ -29,10 +35,10 @@ models:
       - name: publishoption
         data_type: string
         description:
-          "Indicates when the assignment is available to view in the PowerSchool
-          Student and Parent portal,and in PowerSchool Mobile. Valid values:
-          Immediately, OnSpecificDate, DaysBeforeDue,OnDueDate, Never. Defaults
-          to Immediately. Required."
+          "Indicates when the assignment is available to view in the Power
+          School Student and Parent portal,and in Power School Mobile. Valid
+          values: Immediately, On Specific Date, Days Before Due,On Due Date,
+          Never. Defaults to Immediately. Required."
       - name: publishonspecificdate
         data_type: date
         description:
@@ -121,18 +127,18 @@ models:
       - name: publishedscoretypeid
         data_type: int64
         description:
-          Indicates if the scores appear on the PowerSchool Student and Parent
-          portal, and in PowerSchoolMobile. This is separate from the
+          Indicates if the scores appear on the Power School Student and Parent
+          portal, and in Power School Mobile. This is separate from the
           assignments publish status. For example, an assignment may
           bepublished, but the teacher does not want the score to appear to
           parents or students.
       - name: relatedgradescaleitemdcid
         data_type: int64
         description:
-          Foreign key. Internal number for the associated Assignment
-          AssignmentID record. Ties theassignment to a grade scale. It will only
-          be set if the grade scale used for the AssignmentSection isnot the
-          section's main grade scale. Indexed.
+          Foreign key. Internal number for the associated Assignment Assignment
+          ID record. Ties theassignment to a grade scale. It will only be set if
+          the grade scale used for the Assignment Section isnot the section's
+          main grade scale. Indexed.
       - name: sectionsdcid
         data_type: int64
         description:
@@ -161,9 +167,3 @@ models:
           This is the total weighted points that the assignment is worth. If the
           entry points are 25, and theweight is 4, then the total point value is
           100.
-    description:
-      This table identifies sections that are associated to an assignment.
-      Typically, there will only be one section associated to an assignment. It
-      is possible to have multiplesections associated to the same assignment, in
-      which case one row appears for each section associated to an assignment.
-      The properties of an assignment can bechanged for each section.

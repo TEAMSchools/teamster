@@ -1,5 +1,6 @@
 models:
   - name: stg_powerschool__gpversion
+    description: A specific version of a GradPlan (range of years).
     config:
       enabled: false
     columns:
@@ -40,19 +41,19 @@ models:
           Graduation Plan.
       - name: gradplanid
         data_type: int64
-        description: Foreign key to GradPlan.ID.
+        description: Foreign key to Grad Plan.ID.
       - name: startyear
         data_type: int64
         description:
-          The earliest Student.GPEntryYear (for Grad Contract) or
-          Student.Sched_YearOfGraduation (forPost-Secondary plans), which will
-          automatically get this version when assigned to the plan.
+          The earliest Student.GPEntry Year (for Grad Contract) or
+          Student.Sched_Year Of Graduation (for Post-Secondary plans), which
+          will automatically get this version when assigned to the plan.
       - name: endyear
         data_type: int64
         description:
-          The latest Student.GPEntryYear (for Grad Contract) or
-          Student.Sched_YearOfGraduation (forPost-Secondary plans), which will
-          automatically get this version when assigned to the plan.
+          The latest Student.GPEntry Year (for Grad Contract) or
+          Student.Sched_Year Of Graduation (for Post-Secondary plans), which
+          will automatically get this version when assigned to the plan.
       - name: minimumgradepercentage
         data_type: float64
         description:
@@ -68,4 +69,3 @@ models:
         description:
           Column holds Boolean value indicating if the plan version is Advanced
           (value=1) orlegacy/deprecated (value=0). Required.
-    description: A specific version of a GradPlan (range of years).

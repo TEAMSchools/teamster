@@ -129,20 +129,15 @@ def main() -> None:
         )
         sys.exit(1)
 
-    # Load all mapping files
+    # Load all mapping files (single pass)
     all_entries: list[dict] = []
-    for json_path in sys.argv[1:]:
-        with open(json_path, encoding="utf-8") as fh:
-            data = json.load(fh)
-        all_entries.extend(data.get("entries", []))
-        print(f"Loaded {len(data.get('entries', []))} entries from {json_path}")
-
-    # Also load table descriptions if present
     table_descriptions: dict[str, str] = {}
     for json_path in sys.argv[1:]:
         with open(json_path, encoding="utf-8") as fh:
             data = json.load(fh)
+        all_entries.extend(data.get("entries", []))
         table_descriptions.update(data.get("table_descriptions", {}))
+        print(f"Loaded {len(data.get('entries', []))} entries from {json_path}")
 
     # Group entries by model
     entries_by_model: dict[str, list[dict]] = {}
@@ -170,18 +165,29 @@ def main() -> None:
             continue
 
         # Enrich model-level description from table_descriptions
+        model_desc_added = False
         if model_name in table_descriptions:
             for model in doc.get("models", []) or []:
                 if model["name"] == model_name:
                     existing = model.get("description", "")
                     if not existing or not str(existing).strip():
-                        model["description"] = table_descriptions[model_name]
+                        # Rebuild dict with description before columns
+                        new_model = {
+                            "name": model["name"],
+                            "description": table_descriptions[model_name],
+                        }
+                        new_model.update(
+                            {k: v for k, v in model.items() if k != "name"}
+                        )
+                        model.clear()
+                        model.update(new_model)
+                        model_desc_added = True
 
         result, stats = enrich_yaml_data(
             doc, entries_by_model[model_name], return_stats=True
         )
 
-        if stats["enriched"] > 0:
+        if stats["enriched"] > 0 or model_desc_added:
             with yaml_path.open("w", encoding="utf-8") as fh:
                 write_yaml(result, fh)
             files_modified += 1

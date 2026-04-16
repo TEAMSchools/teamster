@@ -1,5 +1,16 @@
 models:
   - name: stg_powerschool__person
+    description:
+      "This table is now used to manage unlimited contacts. Person ID is used to
+      associate a person's contact information with the person. This table is
+      utilized in FamilyManagement. Due to the integral place this table holds
+      for the Student Contact functionality, it is no longer available in DDA
+      and is no longer considered a core tableable to be referenced by table
+      number. Note: There is expanded data in this table, both in content and
+      types of records created. The Person table will contain information for
+      Students, Parents, Guardians,Emergency Contacts, etc. now. If there are
+      any customizations or reports that access the Person table, they should be
+      retested with this content."
     columns:
       - name: firstname
         data_type: string
@@ -86,14 +97,3 @@ models:
         description:
           "Indicates if this contact is excluded from reporting to state. Valid
           values: 1=Exclude, 0=Do notexclude. Defaults to 0. Required."
-    description:
-      "This table is now used to manage unlimited contacts. Person ID is used to
-      associate a person's contact information with the person. This table is
-      utilized in FamilyManagement. Due to the integral place this table holds
-      for the Student Contact functionality, it is no longer available in DDA
-      and is no longer considered a core tableable to be referenced by table
-      number. Note: There is expanded data in this table, both in content and
-      types of records created. The Person table will contain information for
-      Students, Parents, Guardians,Emergency Contacts, etc. now. If there are
-      any customizations or reports that access the Person table, they should be
-      retested with this content."

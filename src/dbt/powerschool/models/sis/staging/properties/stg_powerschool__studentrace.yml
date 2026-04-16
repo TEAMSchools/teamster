@@ -5,8 +5,8 @@ models:
         data_type: string
         description:
           User-defined code for the race of the indicated student. Corresponds
-          to name in Gen where cat = 'Race'.Gen.value indicates FedCode,
-          gen.valueT indicates description and gen.value2 indicates the SIF
+          to name in Gen where cat = 'Race'.Gen.value indicates Fed Code,
+          gen.value T indicates description and gen.value2 indicates the SIF
           code.
       - name: whocreated
         data_type: string
@@ -26,9 +26,9 @@ models:
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, and PearsonSuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, and Pearson SuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
       - name: dcid
         data_type: int64

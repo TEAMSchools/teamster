@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__studentcontactassoc
+    description:
+      This table links a Student Contact record with a student's contact
+      information.
     columns:
       - name: whocreated
         data_type: string
@@ -44,14 +47,11 @@ models:
         data_type: int64
         description:
           "Indicates the preferred order in which the student's contacts will be
-          selected.Valid values: 1-n. Defaults to 1. Indexed with StudentDCID.
+          selected.Valid values: 1-n. Defaults to 1. Indexed with Student DCID.
           Required."
       - name: currreltypecodesetid
         data_type: int64
         description:
-          Indicates the RelationshipTypeCodeSetId of the active
-          StudentContactDetail child record. A trigger isin place to keep it
+          Indicates the Relationship Type Code Set Id of the active Student
+          Contact Detail child record. A trigger isin place to keep it
           synchronized. Indexed. Optional.
-    description:
-      This table links a Student Contact record with a student's contact
-      information.

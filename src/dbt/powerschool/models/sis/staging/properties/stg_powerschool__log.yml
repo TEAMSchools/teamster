@@ -1,5 +1,9 @@
 models:
   - name: stg_powerschool__log
+    description:
+      This table stored student log entries for various purposes. Administrators
+      or teachers enter this free text in order to keep track of necessary
+      information.
     columns:
       - name: dcid
         data_type: int64
@@ -23,7 +27,3 @@ models:
       - name: entry
         data_type: string
         description: The actual description of the log.
-    description:
-      This table stored student log entries for various purposes. Administrators
-      or teachers enter this free text in order to keep track of necessary
-      information.

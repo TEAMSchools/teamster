@@ -1,5 +1,10 @@
 models:
   - name: stg_powerschool__gradescaleitem
+    description:
+      "This table contains grade scale and grade label information. Note: The
+      GradeScaleItem (ver3.6.1) table is no longer used by the application and
+      has been renamed GradeScaleItem_Backup. For more information, seethe
+      GradeScaleItem_Backup table."
     columns:
       - name: name
         data_type: string
@@ -13,25 +18,25 @@ models:
       - name: gradescaletype
         data_type: string
         description:
-          "Within PowerTeacher Pro, type used when scoring this grade scale.
+          "Within Power Teacher Pro, type used when scoring this grade scale.
           Valid values: Alpha,Numeric, Special. Required."
       - name: color
         data_type: string
         description:
-          "Within PowerTeacher Pro, indicates the color to be used for this
+          "Within Power Teacher Pro, indicates the color to be used for this
           grade label. Is paired withproficiency setting. Valid values: 1,2 =
           not proficient, 3,4,5 = proficient"
       - name: numericextras
         data_type: string
         description:
-          "Within PowerTeacher Pro, for zero decimal numeric grade scales, this
+          "Within Power Teacher Pro, for zero decimal numeric grade scales, this
           value determines ifadditional discrete options are valid:  (HALF_PLUS
           = +, THIRD_PLUS_MINUS = +/-,HALF_POINT_5 = 0.5, THIRD_POINT_33 = 0.33,
           QUARTER_POINT_25 = 0.25, NONE)."
       - name: conversiontonumeric
         data_type: string
         description:
-          Within PowerTeacher Pro, when scoring standards this value indicates
+          Within Power Teacher Pro, when scoring standards this value indicates
           the method of convertingother scales into a numeric scales. Determines
           if a decimal value is allowed. Valid values:Cutoff,  Percent. Defaults
           to NULL.
@@ -44,7 +49,7 @@ models:
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, andPearson SuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
       - name: whocreated
         data_type: string
@@ -69,8 +74,8 @@ models:
       - name: numericmode
         data_type: string
         description:
-          For Scales, where GradeScaleType is NUMERIC, and isForCourseGrade is
-          1, determineswhether the PERCENT or LEVEL will be used when
+          For Scales, where Grade Scale Type is NUMERIC, and is For Course Grade
+          is 1, determineswhether the PERCENT or LEVEL will be used when
           calculating course final grades
       - name: dcid
         data_type: int64
@@ -93,13 +98,13 @@ models:
       - name: isforcoursegrade
         data_type: int64
         description:
-          "Within PowerTeacher Pro, indicates if this gradescale applies for the
-          final grade for a courseValid values: 0 = No, 1 = Yes. Defaults to 1.
-          Required."
+          "Within Power Teacher Pro, indicates if this gradescale applies for
+          the final grade for a course Valid values: 0 = No, 1 = Yes. Defaults
+          to 1. Required."
       - name: isforstandards
         data_type: int64
         description:
-          "Within PowerTeacher Pro, indicates if this gradescale applies to
+          "Within Power Teacher Pro, indicates if this gradescale applies to
           standards and standard finalgrades Valid values: 0 = No, 1 = Yes.
           Defaults to 1. Required."
       - name: isgpashown
@@ -115,7 +120,7 @@ models:
       - name: displayposition
         data_type: int64
         description:
-          Within PowerTeacher Pro, the sort order of the score codes and other
+          Within Power Teacher Pro, the sort order of the score codes and other
           special grade labels willappear. For an alpha scale, it also
           determines which item is the default zero cut-off grade labelwhen
           multiple zero cutoffs exist.
@@ -127,7 +132,7 @@ models:
         data_type: int64
         description:
           Number to be added to GPA for this grade scale. Usually for AP courses
-          there is a bump to theGPA, such as 0.125.
+          there is a bump to the GPA, such as 0.125.
       - name: graduationcredit
         data_type: int64
         description:
@@ -149,20 +154,20 @@ models:
       - name: colorlevels
         data_type: int64
         description:
-          Within PowerTeacher Pro, indicates the number of initial available
+          Within Power Teacher Pro, indicates the number of initial available
           color levels for the gradescale.
       - name: isproficient
         data_type: int64
         description:
-          "Within PowerTeacher Pro, indicates this grade label is considered to
+          "Within Power Teacher Pro, indicates this grade label is considered to
           be proficient. Is paired withthe Color Valid values: 0=No, 1=Yes.
           Defaults to 1. Required."
       - name: isscorecodeonassignments
         data_type: int64
         description:
-          "Within PowerTeacher Pro, for Special Grade Scales, a 1 indicates that
-          the grade label can alsobe used on assignments by the teacher. It is
-          an attribute of the item. Valid values: 0=No, 1=Yes."
+          "Within Power Teacher Pro, for Special Grade Scales, a 1 indicates
+          that the grade label can alsobe used on assignments by the teacher. It
+          is an attribute of the item. Valid values: 0=No, 1=Yes."
       - name: modify_code
         data_type: int64
         description:
@@ -171,42 +176,42 @@ models:
       - name: numericmin
         data_type: int64
         description:
-          Within PowerTeacher Pro, for a numeric scale, this value indicates the
-          minimum numeric integervalue allowed for the grade scale item.
+          Within Power Teacher Pro, for a numeric scale, this value indicates
+          the minimum numeric integervalue allowed for the grade scale item.
       - name: numericmax
         data_type: int64
         description:
-          Within PowerTeacher Pro, for a numeric scale, this value indicates the
-          maximum numericinteger value allowed for the grade scale.
+          Within Power Teacher Pro, for a numeric scale, this value indicates
+          the maximum numericinteger value allowed for the grade scale.
       - name: numericdecimals
         data_type: int64
         description:
-          Within PowerTeacher Pro, the number of decimal places to be used for
+          Within Power Teacher Pro, the number of decimal places to be used for
           numeric scales.
       - name: numericcutoff
         data_type: numeric
         description:
-          Within PowerTeacher Pro, for a numeric scale, anything at or above
+          Within Power Teacher Pro, for a numeric scale, anything at or above
           this numeric value (lessthan the next record) receives the numeric
           grade of this record.
       - name: numericvalue
         data_type: numeric
         description:
-          "Within PowerTeacher Pro,. For a numeric scale, the numeric value of
+          "Within Power Teacher Pro,. For a numeric scale, the numeric value of
           the scale item. Necessaryfor mapping numeric items with extras. ex: 4-
           = 3.67"
       - name: hasspecialgrades
         data_type: int64
         description:
-          "Within PowerTeacher Pro, 1 indicates a special grade scale is used in
-          conjunction with thisgrade scale. Valid values: 0 = No, 1 = Yes.
+          "Within Power Teacher Pro, 1 indicates a special grade scale is used
+          in conjunction with thisgrade scale. Valid values: 0 = No, 1 = Yes.
           Defaults to 0. Required."
       - name: specialgradescaledcid
         data_type: int64
         description:
-          Within PowerTeacher Pro, internal number of the associated grade scale
-          item record containingthe special grade scale. No value for grade
-          label records.
+          Within Power Teacher Pro, internal number of the associated grade
+          scale item record containingthe special grade scale. No value for
+          grade label records.
       - name: hasrelatedscales
         data_type: int64
         description:
@@ -251,8 +256,3 @@ models:
           Defaults to 0."
       - name: parentgradescaledcid
         data_type: int64
-    description:
-      "This table contains grade scale and grade label information. Note: The
-      GradeScaleItem (ver3.6.1) table is no longer used by the application and
-      has been renamed GradeScaleItem_Backup. For more information, seethe
-      GradeScaleItem_Backup table."

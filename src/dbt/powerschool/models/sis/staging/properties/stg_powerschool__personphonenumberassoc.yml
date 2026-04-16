@@ -1,5 +1,7 @@
 models:
   - name: stg_powerschool__personphonenumberassoc
+    description:
+      This table links a Person record with a person’s phone number information.
     columns:
       - name: phonenumberasentered
         data_type: string
@@ -38,27 +40,33 @@ models:
       - name: personid
         data_type: int64
         description:
-          PersonID of the associated Person table row pertaining to the phone
-          number. Indexed withPhoneTypeCodeSetID and PhoneNumberID. Also Indexed
-          with PhoneNumberPriorityOrder.Required.
+          Person ID of the associated Person table row pertaining to the phone
+          number. Indexed with Phone Type Code Set ID and Phone Number ID. Also
+          Indexed with Phone Number Priority Order.Required.
         config:
           meta:
             contains_pii: true
       - name: phonenumberid
         data_type: int64
         description:
-          PhoneNumberID of the associated PhoneNumber table row. Indexed with
-          PhoneTypeCodeSetIDand PersonID. Required.
+          Phone Number ID of the associated Phone Number table row. Indexed with
+          Phone Type Code Set IDand Person ID. Required.
+        config:
+          meta:
+            contains_pii: true
       - name: phonetypecodesetid
         data_type: int64
         description:
-          PhoneTypeCodeSetID of the associated CodeSet table row. Indexed with
-          PhoneNumberID andPersonID. Required.
+          Phone Type Code Set ID of the associated Code Set table row. Indexed
+          with Phone Number ID and Person ID. Required.
+        config:
+          meta:
+            contains_pii: true
       - name: phonenumberpriorityorder
         data_type: int64
         description:
           Indicates the preferred order in which the person’s phone numbers will
-          be selected anddisplayed. Defaults to 1. Indexed with PersonID.
+          be selected anddisplayed. Defaults to 1. Indexed with Person ID.
           Required.
         config:
           meta:
@@ -72,5 +80,3 @@ models:
         config:
           meta:
             contains_pii: true
-    description:
-      This table links a Person record with a person’s phone number information.

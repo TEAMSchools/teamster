@@ -1,5 +1,9 @@
 models:
   - name: stg_powerschool__attendance_code
+    description:
+      The attendance codes that a school set up are maintained in this table.
+      These could be codes for when student is tardy, present, absent or
+      whatever they prefer torelate to attendance.
     columns:
       - name: id
         data_type: int64
@@ -17,8 +21,8 @@ models:
       - name: alternate_code
         data_type: string
         description:
-          If there is an alternate code that can be used. Shows up on
-          PowerTeacher and PowerGrade.
+          If there is an alternate code that can be used. Shows up on Power
+          Teacher and Power Grade.
       - name: description
         data_type: string
         description:
@@ -39,7 +43,7 @@ models:
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, andPearson SuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
       - name: lock_teacher_yn
         data_type: int64
@@ -66,7 +70,7 @@ models:
       - name: assignment_filter_yn
         data_type: int64
         description:
-          Flag used to filter code options in PowerTeacher and PowerGrade.
+          Flag used to filter code options in Power Teacher and Power Grade.
       - name: calculate_ada_yn
         data_type: int64
         description:
@@ -80,7 +84,3 @@ models:
       - name: sortorder
         data_type: int64
         description: Order codes are displayed in UI.
-    description:
-      The attendance codes that a school set up are maintained in this table.
-      These could be codes for when student is tardy, present, absent or
-      whatever they prefer torelate to attendance.

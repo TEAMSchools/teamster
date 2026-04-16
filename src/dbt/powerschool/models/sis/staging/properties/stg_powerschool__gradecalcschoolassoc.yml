@@ -1,5 +1,7 @@
 models:
   - name: stg_powerschool__gradecalcschoolassoc
+    description:
+      This table associates GradeCalculationType records to Schools records.
     columns:
       - name: whocreated
         data_type: string
@@ -33,12 +35,10 @@ models:
       - name: gradecalculationtypeid
         data_type: int64
         description:
-          Foreign key. Internal number for the associated GradeCalculationType
-          GradeCalculationTypeIdrecord. Required. Indexed.
+          Foreign key. Internal number for the associated Grade Calculation Type
+          Grade Calculation Type Idrecord. Required. Indexed.
       - name: schoolsdcid
         data_type: int64
         description:
           Foreign key. Internal number for the associated Schools DCID record.
           Required. Indexed.
-    description:
-      This table associates GradeCalculationType records to Schools records.

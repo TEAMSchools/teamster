@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__storedgrades
+    description:
+      All of the students' historical grade information is maintained in this
+      table.
     columns:
       - name: dcid
         data_type: int64
@@ -26,7 +29,7 @@ models:
         data_type: float64
         description:
           The percentage grade earned at the time. This is copied from the
-          students' current percent intheir PGFinaGrades record at the time of
+          students' current percent intheir PGFina Grades record at the time of
           storage.
       - name: absences
         data_type: float64
@@ -93,13 +96,13 @@ models:
       - name: isearnedcrhrsfromgb
         data_type: int64
         description:
-          1 indicates the EarnedCrHrs value has been applied from
-          EarnedVarCreditValue inPGFinalGradeAttrib.
+          1 indicates the Earned Cr Hrs value has been applied from Earned Var
+          Credit Value in PGFinal Grade Attrib.
       - name: ispotentialcrhrsfromgb
         data_type: int64
         description:
-          1 indicates the PotentialCrHrs value has been applied from
-          PotentialVarCreditValue inPGFinalGradeAttrib.
+          1 indicates the Potential Cr Hrs value has been applied from Potential
+          Var Credit Value in PGFinal Grade Attrib.
       - name: excludefromtranscripts
         data_type: int64
         description:
@@ -124,25 +127,25 @@ models:
       - name: gradereplacementpolicy_id
         data_type: int64
         description:
-          The internal number and ID of the associated GradeReplacementPolicy
+          The internal number and ID of the associated Grade Replacement Policy
           record.
       - name: whomodifiedid
         data_type: int64
       - name: storecode
         data_type: string
         description:
-          The code used to represent this grade level to TermID and SchoolID.
+          The code used to represent this grade level to Term ID and School ID.
       - name: datestored
         data_type: date
         description: The date the grade was stored.
       - name: grade
         data_type: string
         description:
-          The letter grade for this student for this section from PGFinalGrades
+          The letter grade for this student for this section from PGFinal Grades
           unless the attendancethreshold is not met.
       - name: behavior
         data_type: string
-        description: The Citizenship field in PGFinalGrades.
+        description: The Citizenship field in PGFinal Grades.
       - name: comment_value
         data_type: string
       - name: course_name
@@ -158,12 +161,12 @@ models:
       - name: credit_type
         data_type: string
         description:
-          Copied from the CreditType field in the Course table. The type of
+          Copied from the Credit Type field in the Course table. The type of
           credit this counts as towardgraduation, such as Math or elective.
       - name: log
         data_type: string
         description:
-          Tracks the date, time, userID, SchoolID and whether the record was
+          Tracks the date, time, user ID, School ID and whether the record was
           created or modified.
       - name: course_equiv
         data_type: string
@@ -189,10 +192,10 @@ models:
         data_type: string
         description:
           Used by Texas State Reporting. Stores Explanation Code. This indicates
-          Honors course, HighSchool course satisfactorily completed before grade
-          9, Course taken for Local Credit, etc. Alsoto store this information
-          at the Course and Section level, but it could possibly be stored
-          gradespecific.
+          Honors course, High School course satisfactorily completed before
+          grade 9, Course taken for Local Credit, etc. Alsoto store this
+          information at the Course and Section level, but it could possibly be
+          stored gradespecific.
       - name: custom
         data_type: string
         description:
@@ -244,15 +247,15 @@ models:
       - name: termbinsname
         data_type: string
         description:
-          The TermBin name for the source TermBin of this stored grade.
+          The Term Bin name for the source Term Bin of this stored grade.
       - name: psguid
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, andPearson SuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.If used, a unique identifier for the row.Currently applicable to
-          multi-tenant, Schoolnet, and Pearson SuccessNet/Pearson
-          SuccessNetPlus.
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
+          Plus.
       - name: replaced_grade
         data_type: string
         description:
@@ -289,6 +292,3 @@ models:
         data_type: int64
       - name: gradescale_name_unweighted
         data_type: string
-    description:
-      All of the students' historical grade information is maintained in this
-      table.

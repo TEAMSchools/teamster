@@ -1,15 +1,16 @@
 models:
   - name: stg_powerschool__roledef
+    description: This table stores roles for a given RoleModule.
     columns:
       - name: name
         data_type: string
         description:
           User configurable name uniquely identifying the role to the user
-          within a RoleModule Required.
+          within a Role Module Required.
       - name: rolekey
         data_type: string
         description:
-          Internal code uniquely identifying a role within a RoleModule.
+          Internal code uniquely identifying a role within a Role Module.
           Required.
       - name: description
         data_type: string
@@ -42,7 +43,7 @@ models:
       - name: rolemoduleid
         data_type: int64
         description:
-          Internal number for the associated RoleModule record. Indexed.
+          Internal number for the associated Role Module record. Indexed.
           Required.
       - name: islocked
         data_type: int64
@@ -63,7 +64,6 @@ models:
         data_type: int64
         description:
           Determines the order in which this item appears in the list of roles
-          from lowest to highest numberDefaults to 0. Required.
+          from lowest to highest number Defaults to 0. Required.
       - name: productname
         data_type: string
-    description: This table stores roles for a given RoleModule.

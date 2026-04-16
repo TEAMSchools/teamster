@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__personemailaddressassoc
+    description:
+      This table links a Person record with a person’s email address
+      information.
     columns:
       - name: whocreated
         data_type: string
@@ -45,7 +48,7 @@ models:
       - name: emailtypecodesetid
         data_type: int64
         description:
-          Identification number of the associated CodeSet table row. Indexed.
+          Identification number of the associated Code Set table row. Indexed.
           Required.
       - name: isprimaryemailaddress
         data_type: int64
@@ -64,6 +67,3 @@ models:
         config:
           meta:
             contains_pii: true
-    description:
-      This table links a Person record with a person’s email address
-      information.

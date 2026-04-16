@@ -1,5 +1,11 @@
 models:
   - name: stg_powerschool__assignmentscore
+    description:
+      This table tracks assignment scores entered for a student in a specific
+      section. Comments associated with the assignment score record, whether
+      there are retakes ornot, display a Null value in the
+      AssignmentRetakeScoreID field of the AssignmentScoreComment field.
+      Properties related to the score are also stored in this table.
     columns:
       - name: assignmentscoreid
         data_type: int64
@@ -13,8 +19,8 @@ models:
       - name: assignmentsectionid
         data_type: int64
         description:
-          Foreign key. Internal number for the associated AssignmentSection
-          AssignmentSectionIDrecord. Required. Indexed.
+          Foreign key. Internal number for the associated Assignment Section
+          Assignment Section IDrecord. Required. Indexed.
       - name: isexempt
         data_type: int64
         description:
@@ -43,9 +49,3 @@ models:
         description:
           Identifies the score entered for this assignment. This field may be
           Null.
-    description:
-      This table tracks assignment scores entered for a student in a specific
-      section. Comments associated with the assignment score record, whether
-      there are retakes ornot, display a Null value in the
-      AssignmentRetakeScoreID field of the AssignmentScoreComment field.
-      Properties related to the score are also stored in this table.

@@ -1,5 +1,9 @@
 models:
   - name: stg_powerschool__districtteachercategory
+    description:
+      This table contains all of the categories defined by the district.
+      Categories are then associated for use in specific schools using the
+      CategorySchoolAssoc table.
     columns:
       - name: name
         data_type: string
@@ -100,7 +104,3 @@ models:
         description: The default days before due.
       - name: whomodifiedid
         data_type: int64
-    description:
-      This table contains all of the categories defined by the district.
-      Categories are then associated for use in specific schools using the
-      CategorySchoolAssoc table.

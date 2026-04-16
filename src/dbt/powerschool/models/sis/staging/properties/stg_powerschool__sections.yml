@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__sections
+    description:
+      Section maintains occurrences of courses in a period and other related
+      information such as Teacher and Grade level.
     columns:
       - name: dcid
         data_type: int64
@@ -26,9 +29,8 @@ models:
       - name: room
         data_type: string
         description:
-          The room number the section is in. This is not presently tied to
-          PowerScheduler, so it will need to beimported or entered manually.
-          Indexed.
+          The room number the section is in. This is not presently tied to Power
+          Scheduler, so it will need to beimported or entered manually. Indexed.
       - name: fastperlist
         data_type: string
         description:
@@ -48,11 +50,12 @@ models:
         data_type: date
         description:
           The date a teacher last took attendance in this class using either
-          PowerTeacher or PowerGrade.Indexed.
+          Power Teacher or Power Grade.Indexed.
       - name: pgflags
         data_type: string
         description:
-          This field holds all the PowerGrade flags for this particular section.
+          This field holds all the Power Grade flags for this particular
+          section.
       - name: days_obsolete
         data_type: string
         description:
@@ -64,18 +67,18 @@ models:
       - name: log
         data_type: string
         description:
-          Used with AutoComm for determining which duplicate section to use or
+          Used with Auto Comm for determining which duplicate section to use or
           not.
       - name: teacherdescr
         data_type: string
         description:
-          The teachers' description for the class entered in PowerGrade that
-          appears in PowerSchool Parent.
+          The teachers' description for the class entered in Power Grade that
+          appears in Power School Parent.
       - name: blockperiods_obsolete
         data_type: string
         description:
           Used for backward compatibility. These indicate the block of periods
-          this section spans. Changed toExpressions.
+          this section spans. Changed to Expressions.
       - name: dependent_secs
         data_type: string
         description:
@@ -111,16 +114,16 @@ models:
           This field identifies the team to which the section is assigned, if
           any, and is necessary to continuesupport of scheduling students by
           team in Automated Walk-In scheduling. This will be capturedduring the
-          PowerScheduler commit process from ScheduleSections:Team.
+          Power Scheduler commit process from Schedule Sections:Team.
       - name: house
         data_type: string
         description:
           This field identifies the house to which the section is assigned, if
           any, and is necessary to continuesupport of scheduling students by
           house in Automated Walk-In scheduling. This field will becaptured
-          during the PowerScheduler commit process from ScheduleSections:House.
-          There is nocurrent effort identified to expose this field for editing
-          or viewing in PowerAdmin.
+          during the Power Scheduler commit process from Schedule
+          Sections:House. There is nocurrent effort identified to expose this
+          field for editing or viewing in Power Admin.
       - name: instruction_lang
         data_type: string
         description:
@@ -141,7 +144,7 @@ models:
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
-          multi-tenant, Schoolnet, and PearsonSuccessNet/Pearson SuccessNet
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus. Indexed.
       - name: external_expression
         data_type: string
@@ -149,7 +152,7 @@ models:
           The external schedule expression for the section is similar to the
           expression (internal) however theexternal expression is represented
           using the school/year period and day abbreviations.  Populatedfor
-          Sections.TermID >= 2500.
+          Sections.Term ID >= 2500.
       - name: ip_address
         data_type: string
       - name: whomodifiedtype
@@ -196,13 +199,13 @@ models:
         data_type: int64
         description:
           Roster-modified serial number. This number is incremented by one each
-          time a sections roster ischanged. PowerGrade checks to see if the
+          time a sections roster ischanged. Power Grade checks to see if the
           numbers match. If not, the roster and serial number aresynchronized.
       - name: pgversion
         data_type: int64
         description:
-          Changed datatype from Integer to Integer in 4.0. The version of
-          PowerGrade the teacher is using.
+          Changed datatype from Integer to Integer in 4.0. The version of Power
+          Grade the teacher is using.
       - name: grade_level
         data_type: int64
         description: Maintains the grade level for the section.
@@ -235,7 +238,7 @@ models:
         data_type: int64
         description:
           District ID of where this section is being taught if other than
-          current district. 0=CurrentDistrict.
+          current district. 0=Current District.
       - name: excludefromclassrank
         data_type: int64
       - name: excludefromhonorroll
@@ -249,10 +252,10 @@ models:
         data_type: int64
         description:
           This field identifies whether or not enrollment of new students should
-          be allowed after the maxenrollment Sections:MaxEnrollment has been
+          be allowed after the maxenrollment Sections:Max Enrollment has been
           reached. This is necessary to support max enrollmentin Automated
-          Walk-In scheduling. This field will be captured during the
-          PowerScheduler commitprocess from ScheduleSections:MaxCut.
+          Walk-In scheduling. This field will be captured during the Power
+          Scheduler commitprocess from Schedule Sections:Max Cut.
       - name: exclude_state_rpt_yn
         data_type: int64
         description:
@@ -274,9 +277,6 @@ models:
         description:
           "Indicates which gradebook is associated to this section. Valid
           values: Null, 1, 2. Null=Legacy, 1=Thissection is used by PTG, 2=This
-          section is used by PowerTeacher Pro."
+          section is used by Power Teacher Pro."
       - name: whomodifiedid
         data_type: int64
-    description:
-      Section maintains occurrences of courses in a period and other related
-      information such as Teacher and Grade level.
