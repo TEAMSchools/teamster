@@ -77,6 +77,7 @@ def _write_csv(rows: list[dict[str, str]], fh: TextIO) -> None:
 
 def _fetch_spec() -> dict:
     """Fetch the Ed-Fi OpenAPI spec from GitHub."""
+    # trunk-ignore(bandit/B603,bandit/B607): gh CLI path is trusted
     result = subprocess.run(
         [
             "gh",

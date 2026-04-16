@@ -6,8 +6,8 @@ models:
       - name: assignmentsectionid
         data_type: int64
         description:
-          "Foreign key. Internal number for the associated Assignment Section
-          Assignment Section IDrecord. Required. Indexed."
+          Foreign key. Internal number for the associated Assignment Section
+          Assignment Section IDrecord. Required. Indexed.
         config:
           meta:
             source_system: PowerSchool
@@ -16,8 +16,8 @@ models:
       - name: sectionsdcid
         data_type: int64
         description:
-          "Foreign key. Internal number for the associated sections.DCID record.
-          Required. Indexed."
+          Foreign key. Internal number for the associated sections.DCID record.
+          Required. Indexed.
         config:
           meta:
             source_system: PowerSchool
@@ -26,8 +26,8 @@ models:
       - name: assignmentid
         data_type: int64
         description:
-          "Foreign key. Internal number for the associated Assignment.ID record.
-          Required. Indexed."
+          Foreign key. Internal number for the associated Assignment.ID record.
+          Required. Indexed.
         config:
           meta:
             source_system: PowerSchool
@@ -38,8 +38,8 @@ models:
       - name: duedate
         data_type: date
         description:
-          "The date the assignment is due. Defaults to Default is the system
-          date + 1 day. Indexed."
+          The date the assignment is due. Defaults to Default is the system date
+          + 1 day. Indexed.
         config:
           meta:
             source_system: PowerSchool
@@ -47,7 +47,7 @@ models:
             source_column: duedate
       - name: scoretype
         data_type: string
-        description: "Indicates if this score is a letter grade or percent."
+        description: Indicates if this score is a letter grade or percent.
         config:
           meta:
             source_system: PowerSchool
@@ -56,9 +56,9 @@ models:
       - name: totalpointvalue
         data_type: float64
         description:
-          "This is the total weighted points that the assignment is worth. If
-          the entry points are 25, and theweight is 4, then the total point
-          value is 100."
+          This is the total weighted points that the assignment is worth. If the
+          entry points are 25, and theweight is 4, then the total point value is
+          100.
         config:
           meta:
             source_system: PowerSchool
@@ -81,7 +81,7 @@ models:
             source_column: iscountedinfinalgrade
       - name: scorepoints
         data_type: float64
-        description: "Indicates the number of points for a score."
+        description: Indicates the number of points for a score.
         config:
           meta:
             source_system: PowerSchool
@@ -90,8 +90,8 @@ models:
       - name: actualscoreentered
         data_type: string
         description:
-          "Identifies the score entered for this assignment. This field may be
-          Null."
+          Identifies the score entered for this assignment. This field may be
+          Null.
         config:
           meta:
             source_system: PowerSchool

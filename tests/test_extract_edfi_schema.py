@@ -14,6 +14,7 @@ _SCRIPT = Path("scripts/extract_edfi_schema.py")
 
 def _load_script():
     spec = importlib.util.spec_from_file_location("extract_edfi_schema", _SCRIPT)
+    assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod

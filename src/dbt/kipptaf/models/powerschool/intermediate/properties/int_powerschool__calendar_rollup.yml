@@ -7,7 +7,7 @@ models:
         data_type: string
       - name: schoolid
         data_type: int64
-        description: "The School_Number of the associated Schools record."
+        description: The School_Number of the associated Schools record.
         config:
           meta:
             source_system: PowerSchool
@@ -16,9 +16,9 @@ models:
       - name: yearid
         data_type: int64
         description:
-          "A number representing which year the term belongs to, such as 13 for
+          A number representing which year the term belongs to, such as 13 for
           2003-2004. The numberis equal to the ID of the year term divided by
-          100. Maintained in the Terms table."
+          100. Maintained in the Terms table.
         config:
           meta:
             source_system: PowerSchool
@@ -27,8 +27,8 @@ models:
       - name: track
         data_type: string
         description:
-          "The track the student was in during this enrollment from student
-          table."
+          The track the student was in during this enrollment from student
+          table.
         config:
           meta:
             source_system: PowerSchool

@@ -6,7 +6,7 @@ models:
       - name: studentid
         data_type: int64
         description:
-          "The internal number and ID of the associated Students record."
+          The internal number and ID of the associated Students record.
         config:
           meta:
             source_system: PowerSchool

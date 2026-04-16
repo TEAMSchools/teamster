@@ -22,13 +22,13 @@ models:
         data_type: int64
       - name: student_number
         data_type: int64
-        description: "District-assigned student identification number."
+        description: District-assigned student identification number.
         config:
           meta:
-            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__student_email
             source_column: student_number
+            contains_pii: true
       - name: reenrollments_dcid
         data_type: int64
       - name: grade_level

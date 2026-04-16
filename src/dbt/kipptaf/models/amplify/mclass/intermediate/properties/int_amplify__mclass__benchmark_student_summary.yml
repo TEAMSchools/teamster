@@ -13,7 +13,7 @@ models:
         data_type: string
       - name: assessing_teacher_name
         data_type: string
-        description: "Name of the teacher who administered the assessment."
+        description: Name of the teacher who administered the assessment.
         config:
           meta:
             source_system: Amplify
@@ -21,7 +21,7 @@ models:
             source_column: assessing_teacher_name
       - name: assessment_edition
         data_type: string
-        description: "Assessment edition (e.g., 'DIBELS 8th Edition')."
+        description: Assessment edition (e.g., 'DIBELS 8th Edition').
         config:
           meta:
             source_system: Amplify
@@ -29,7 +29,7 @@ models:
             source_column: assessment_edition
       - name: assessment
         data_type: string
-        description: "Assessment name (e.g., 'mCLASS')."
+        description: Assessment name (e.g., 'mCLASS').
         config:
           meta:
             source_system: Amplify
@@ -39,7 +39,7 @@ models:
         data_type: string
       - name: date_of_birth
         data_type: string
-        description: "Student date of birth."
+        description: Student date of birth.
         config:
           meta:
             source_system: Amplify
@@ -47,7 +47,7 @@ models:
             source_column: date_of_birth
       - name: disability
         data_type: string
-        description: "Disability indicator."
+        description: Disability indicator.
         config:
           meta:
             source_system: Amplify
@@ -55,7 +55,7 @@ models:
             source_column: disability
       - name: district_name
         data_type: string
-        description: "District name."
+        description: District name.
         config:
           meta:
             source_system: Amplify
@@ -63,7 +63,7 @@ models:
             source_column: district_name
       - name: district_primary_id
         data_type: string
-        description: "District primary identifier."
+        description: District primary identifier.
         config:
           meta:
             source_system: Amplify
@@ -71,7 +71,7 @@ models:
             source_column: district_primary_id
       - name: economically_disadvantaged
         data_type: string
-        description: "Economically disadvantaged indicator."
+        description: Economically disadvantaged indicator.
         config:
           meta:
             source_system: Amplify
@@ -79,7 +79,7 @@ models:
             source_column: economically_disadvantaged
       - name: ell_status
         data_type: string
-        description: "English Language Learner status."
+        description: English Language Learner status.
         config:
           meta:
             source_system: Amplify
@@ -93,7 +93,7 @@ models:
         data_type: string
       - name: gender
         data_type: string
-        description: "Student gender."
+        description: Student gender.
         config:
           meta:
             source_system: Amplify
@@ -101,7 +101,7 @@ models:
             source_column: gender
       - name: hispanic_or_latino_ethnicity
         data_type: string
-        description: "Hispanic or Latino ethnicity indicator."
+        description: Hispanic or Latino ethnicity indicator.
         config:
           meta:
             source_system: Amplify
@@ -109,7 +109,7 @@ models:
             source_column: hispanic_or_latino_ethnicity
       - name: home_language
         data_type: string
-        description: "Student home language."
+        description: Student home language.
         config:
           meta:
             source_system: Amplify
@@ -117,7 +117,7 @@ models:
             source_column: home_language
       - name: iep_status
         data_type: string
-        description: "Individualized Education Program status."
+        description: Individualized Education Program status.
         config:
           meta:
             source_system: Amplify
@@ -127,7 +127,7 @@ models:
         data_type: string
       - name: meal_status
         data_type: string
-        description: "Free/reduced meal status."
+        description: Free/reduced meal status.
         config:
           meta:
             source_system: Amplify
@@ -135,7 +135,7 @@ models:
             source_column: meal_status
       - name: migrant
         data_type: string
-        description: "Migrant status indicator."
+        description: Migrant status indicator.
         config:
           meta:
             source_system: Amplify
@@ -149,7 +149,7 @@ models:
         data_type: int64
       - name: race
         data_type: string
-        description: "Student race."
+        description: Student race.
         config:
           meta:
             source_system: Amplify
@@ -161,7 +161,7 @@ models:
         data_type: string
       - name: school_name
         data_type: string
-        description: "School name."
+        description: School name.
         config:
           meta:
             source_system: Amplify
@@ -169,7 +169,7 @@ models:
             source_column: school_name
       - name: school_year
         data_type: string
-        description: "School year range (e.g., '2025-2026')."
+        description: School year range (e.g., '2025-2026').
         config:
           meta:
             source_system: Amplify
@@ -179,7 +179,7 @@ models:
         data_type: string
       - name: section_504
         data_type: string
-        description: "Section 504 plan indicator."
+        description: Section 504 plan indicator.
         config:
           meta:
             source_system: Amplify
@@ -187,7 +187,7 @@ models:
             source_column: section_504
       - name: special_education
         data_type: string
-        description: "Special education status."
+        description: Special education status.
         config:
           meta:
             source_system: Amplify
@@ -195,7 +195,7 @@ models:
             source_column: special_education
       - name: specific_disability
         data_type: string
-        description: "Specific disability category."
+        description: Specific disability category.
         config:
           meta:
             source_system: Amplify
@@ -203,7 +203,7 @@ models:
             source_column: specific_disability
       - name: state
         data_type: string
-        description: "State abbreviation."
+        description: State abbreviation.
         config:
           meta:
             source_system: Amplify
@@ -211,7 +211,7 @@ models:
             source_column: state
       - name: student_first_name
         data_type: string
-        description: "Student first name."
+        description: Student first name.
         config:
           meta:
             source_system: Amplify
@@ -223,7 +223,7 @@ models:
         data_type: string
       - name: student_last_name
         data_type: string
-        description: "Student last name."
+        description: Student last name.
         config:
           meta:
             source_system: Amplify
@@ -233,7 +233,7 @@ models:
         data_type: string
       - name: student_primary_id
         data_type: int64
-        description: "Student primary identifier (student number)."
+        description: Student primary identifier (student number).
         config:
           meta:
             source_system: Amplify
@@ -243,7 +243,7 @@ models:
         data_type: string
       - name: assessing_teacher_staff_id
         data_type: string
-        description: "Staff ID of the assessing teacher."
+        description: Staff ID of the assessing teacher.
         config:
           meta:
             source_system: Amplify
@@ -288,8 +288,8 @@ models:
       - name: academic_year
         data_type: int64
         description:
-          "Starting calendar year of the school year, extracted from school_year
-          (e.g., 2025 from '2025-2026')."
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
         config:
           meta:
             source_system: Amplify
@@ -343,7 +343,7 @@ models:
         data_type: string
       - name: sync_date
         data_type: date
-        description: "Date the assessment data was synced."
+        description: Date the assessment data was synced.
         config:
           meta:
             source_system: Amplify
@@ -351,7 +351,7 @@ models:
             source_column: sync_date
       - name: assessment_grade
         data_type: string
-        description: "Grade level of the assessment administered."
+        description: Grade level of the assessment administered.
         config:
           meta:
             source_system: Amplify
@@ -359,7 +359,7 @@ models:
             source_column: assessment_grade
       - name: enrollment_grade
         data_type: string
-        description: "Student enrollment grade level."
+        description: Student enrollment grade level.
         config:
           meta:
             source_system: Amplify
@@ -433,7 +433,7 @@ models:
         data_type: boolean
       - name: assessment_grade_int
         data_type: int64
-        description: "Assessment grade as integer (K mapped to 0)."
+        description: Assessment grade as integer (K mapped to 0).
         config:
           meta:
             source_system: Amplify
@@ -441,7 +441,7 @@ models:
             source_column: assessment_grade_int
       - name: enrollment_grade_int
         data_type: int64
-        description: "Enrollment grade as integer (K mapped to 0)."
+        description: Enrollment grade as integer (K mapped to 0).
         config:
           meta:
             source_system: Amplify
@@ -450,8 +450,8 @@ models:
       - name: surrogate_key
         data_type: string
         description:
-          "Hash of student_primary_id, school_year, pm_period, measure, and
-          probe_number."
+          Hash of student_primary_id, school_year, pm_period, measure, and
+          probe_number.
         config:
           meta:
             source_system: Amplify
@@ -465,7 +465,7 @@ models:
         data_type: int64
       - name: _dagster_partition_key
         data_type: string
-        description: "Dagster partition key (school year)."
+        description: Dagster partition key (school year).
         config:
           meta:
             source_system: Amplify
@@ -473,7 +473,7 @@ models:
             source_column: _dagster_partition_key
       - name: multi_district_organization_name
         data_type: string
-        description: "Multi-district organization name."
+        description: Multi-district organization name.
         config:
           meta:
             source_system: Amplify
@@ -481,7 +481,7 @@ models:
             source_column: multi_district_organization_name
       - name: reporting_group_name
         data_type: string
-        description: "Reporting group name."
+        description: Reporting group name.
         config:
           meta:
             source_system: Amplify
@@ -489,7 +489,7 @@ models:
             source_column: reporting_group_name
       - name: school_primary_id
         data_type: string
-        description: "School primary identifier."
+        description: School primary identifier.
         config:
           meta:
             source_system: Amplify
@@ -497,7 +497,7 @@ models:
             source_column: school_primary_id
       - name: enrollment_class_name
         data_type: string
-        description: "Enrollment class name(s), pipe-delimited when multiple."
+        description: Enrollment class name(s), pipe-delimited when multiple.
         config:
           meta:
             source_system: Amplify
@@ -505,7 +505,7 @@ models:
             source_column: enrollment_class_name
       - name: enrollment_class_id
         data_type: string
-        description: "Enrollment class ID(s), pipe-delimited when multiple."
+        description: Enrollment class ID(s), pipe-delimited when multiple.
         config:
           meta:
             source_system: Amplify
@@ -513,7 +513,7 @@ models:
             source_column: enrollment_class_id
       - name: assessment_class_name
         data_type: string
-        description: "Class name for the assessment context."
+        description: Class name for the assessment context.
         config:
           meta:
             source_system: Amplify
@@ -521,7 +521,7 @@ models:
             source_column: assessment_class_name
       - name: assessment_class_id
         data_type: string
-        description: "Class ID for the assessment context."
+        description: Class ID for the assessment context.
         config:
           meta:
             source_system: Amplify
@@ -533,7 +533,7 @@ models:
         data_type: string
       - name: title_i
         data_type: string
-        description: "Title I participation indicator."
+        description: Title I participation indicator.
         config:
           meta:
             source_system: Amplify
@@ -541,7 +541,7 @@ models:
             source_column: title_i
       - name: secondary_student_id
         data_type: string
-        description: "Secondary student identifier (state ID)."
+        description: Secondary student identifier (state ID).
         config:
           meta:
             source_system: Amplify
@@ -549,7 +549,7 @@ models:
             source_column: secondary_student_id
       - name: additional_student_id
         data_type: string
-        description: "Additional student identifier."
+        description: Additional student identifier.
         config:
           meta:
             source_system: Amplify

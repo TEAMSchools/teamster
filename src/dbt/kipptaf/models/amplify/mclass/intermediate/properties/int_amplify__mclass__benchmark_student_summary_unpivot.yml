@@ -6,8 +6,8 @@ models:
       - name: surrogate_key
         data_type: string
         description:
-          "Hash of student_primary_id, school_year, pm_period, measure, and
-          probe_number."
+          Hash of student_primary_id, school_year, pm_period, measure, and
+          probe_number.
         config:
           meta:
             source_system: Amplify

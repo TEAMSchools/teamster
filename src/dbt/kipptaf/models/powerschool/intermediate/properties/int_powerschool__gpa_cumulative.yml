@@ -8,7 +8,7 @@ models:
       - name: studentid
         data_type: int64
         description:
-          "The internal number and ID of the associated Students record."
+          The internal number and ID of the associated Students record.
         config:
           meta:
             source_system: PowerSchool
@@ -16,7 +16,7 @@ models:
             source_column: studentid
       - name: schoolid
         data_type: int64
-        description: "The School_Number of the associated Schools record."
+        description: The School_Number of the associated Schools record.
         config:
           meta:
             source_system: PowerSchool

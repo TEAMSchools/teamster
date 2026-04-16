@@ -37,7 +37,10 @@ def _get_ryaml():
     available when running via ``uv run``.  Tests that import this
     module via ``importlib`` don't need it — they never call ``main()``.
     """
+    # trunk-ignore-begin(pyright/reportMissingImports): PEP 723 dep
     from ruamel.yaml import YAML
+
+    # trunk-ignore-end(pyright/reportMissingImports)
 
     ry = YAML()
     ry.preserve_quotes = True
@@ -372,7 +375,7 @@ def _enrich_yaml_descriptions(
                             break
             else:
                 # Non-recursive path (for tests): use source_mapping keys
-                for relation, mapping in source_mapping.items():
+                for _relation, mapping in source_mapping.items():
                     if (mapping["table_name"], col_name) in staging_dict:
                         resolved = (
                             mapping["table_name"],

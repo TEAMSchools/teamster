@@ -6,7 +6,7 @@ models:
       - name: studentid
         data_type: int64
         description:
-          "The internal number and ID of the associated Students record."
+          The internal number and ID of the associated Students record.
         config:
           meta:
             source_system: PowerSchool
@@ -15,9 +15,9 @@ models:
       - name: yearid
         data_type: int64
         description:
-          "A number representing which year the term belongs to, such as 13 for
+          A number representing which year the term belongs to, such as 13 for
           2003-2004. The numberis equal to the ID of the year term divided by
-          100. Maintained in the Terms table."
+          100. Maintained in the Terms table.
         config:
           meta:
             source_system: PowerSchool
@@ -26,7 +26,7 @@ models:
       - name: att_code
         data_type: string
         description:
-          "Attendance identifier set by school. Examples Tardy, Absent, etc."
+          Attendance identifier set by school. Examples Tardy, Absent, etc.
         config:
           meta:
             source_system: PowerSchool

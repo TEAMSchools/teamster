@@ -12,6 +12,7 @@ def _load_script():
     spec = importlib.util.spec_from_file_location(
         "propagate_mart_descriptions", _SCRIPT
     )
+    assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -133,12 +134,6 @@ def _sample_yaml_doc() -> dict:
             },
         ],
     }
-
-
-def _sample_referenced_tables() -> list[str]:
-    return [
-        "`teamster-332318`.`kippnewark_powerschool`.`stg_powerschool__students`",
-    ]
 
 
 def _sample_source_mapping() -> dict:

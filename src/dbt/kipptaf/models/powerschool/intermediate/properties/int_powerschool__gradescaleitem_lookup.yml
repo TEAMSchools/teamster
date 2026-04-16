@@ -8,8 +8,8 @@ models:
       - name: gradescaleid
         data_type: int64
         description:
-          "The ID for the grade scale attached to this course. Relates to the
-          Gradescale Item table."
+          The ID for the grade scale attached to this course. Relates to the
+          Gradescale Item table.
         config:
           meta:
             source_system: PowerSchool
@@ -17,7 +17,7 @@ models:
             source_column: gradescaleid
       - name: gradescale_name
         data_type: string
-        description: "Name of the Gradescale associated to the Section ID."
+        description: Name of the Gradescale associated to the Section ID.
         config:
           meta:
             source_system: PowerSchool
@@ -28,7 +28,7 @@ models:
       - name: grade_points
         data_type: float64
         description:
-          "Points associated to this grade. For example, 4 to A, 3 to B, etc."
+          Points associated to this grade. For example, 4 to A, 3 to B, etc.
         config:
           meta:
             source_system: PowerSchool

@@ -8,7 +8,7 @@ models:
       - name: studentsdcid
         data_type: int64
         description:
-          "DCID (unique identifier) of the associated Student record. Indexed."
+          DCID (unique identifier) of the associated Student record. Indexed.
         config:
           meta:
             source_system: PowerSchool

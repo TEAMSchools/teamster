@@ -7,44 +7,44 @@ models:
         data_type: string
       - name: lastfirst
         data_type: string
-        description: "Last, First, Mi. Indexed."
+        description: Last, First, Mi. Indexed.
         config:
           meta:
-            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: lastfirst
+            contains_pii: true
       - name: first_name
         data_type: string
-        description: "Students' first name."
+        description: Students' first name.
         config:
           meta:
-            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: first_name
+            contains_pii: true
       - name: middle_name
         data_type: string
-        description: "Student's middle name."
+        description: Student's middle name.
         config:
           meta:
-            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: middle_name
+            contains_pii: true
       - name: last_name
         data_type: string
-        description: "Students last name."
+        description: Students last name.
         config:
           meta:
-            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: last_name
+            contains_pii: true
       - name: title
         data_type: string
         description:
-          "Stores a title name for the teacher and is used for sorting purposes."
+          Stores a title name for the teacher and is used for sorting purposes.
         config:
           meta:
             source_system: PowerSchool
@@ -53,8 +53,8 @@ models:
       - name: homeroom
         data_type: string
         description:
-          "This string does appear on some pages but does not impact any
-          calculations."
+          This string does appear on some pages but does not impact any
+          calculations.
         config:
           meta:
             source_system: PowerSchool
@@ -63,17 +63,17 @@ models:
       - name: email_addr
         data_type: string
         description:
-          "Stores the teachers email address and is used for email notifications
-          to the teacher, such as studentenrollment information."
+          Stores the teachers email address and is used for email notifications
+          to the teacher, such as studentenrollment information.
         config:
           meta:
-            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__users
             source_column: email_addr
+            contains_pii: true
       - name: password
         data_type: string
-        description: "The Power School login password."
+        description: The Power School login password.
         config:
           meta:
             source_system: PowerSchool
@@ -82,8 +82,8 @@ models:
       - name: ipaddrrestrict
         data_type: string
         description:
-          "The list of IP addresses the user is allowed to log in from. If
-          blank, he or she can log in from any IPaddress."
+          The list of IP addresses the user is allowed to log in from. If blank,
+          he or she can log in from any IPaddress.
         config:
           meta:
             source_system: PowerSchool
@@ -92,8 +92,8 @@ models:
       - name: accessvalue
         data_type: string
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custom pages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
         config:
           meta:
             source_system: PowerSchool
@@ -101,7 +101,7 @@ models:
             source_column: accessvalue
       - name: homepage
         data_type: string
-        description: "The page that appears when logging in to Power School."
+        description: The page that appears when logging in to Power School.
         config:
           meta:
             source_system: PowerSchool
@@ -109,7 +109,7 @@ models:
             source_column: homepage
       - name: loginid
         data_type: string
-        description: "The Power School login name. Indexed."
+        description: The Power School login name. Indexed.
         config:
           meta:
             source_system: PowerSchool
@@ -117,7 +117,7 @@ models:
             source_column: loginid
       - name: defaultstudscrn
         data_type: string
-        description: "The student page the user wants to appear by default."
+        description: The student page the user wants to appear by default.
         config:
           meta:
             source_system: PowerSchool
@@ -125,7 +125,7 @@ models:
             source_column: defaultstudscrn
       - name: teachernumber
         data_type: string
-        description: "The number the district assigns to track the teacher."
+        description: The number the district assigns to track the teacher.
         config:
           meta:
             source_system: PowerSchool
@@ -133,56 +133,56 @@ models:
             source_column: teachernumber
       - name: ssn
         data_type: string
-        description: "Students Social Security number. Indexed."
+        description: Students Social Security number. Indexed.
         config:
           meta:
-            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: ssn
+            contains_pii: true
       - name: home_phone
         data_type: string
-        description: "Home phone number for the student. Indexed."
+        description: Home phone number for the student. Indexed.
         config:
           meta:
-            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: home_phone
+            contains_pii: true
       - name: school_phone
         data_type: string
         description:
-          "Changed name from School_phone. Phone number at the school assigned
-          to this staff member. Notcurrently used by any application code."
+          Changed name from School_phone. Phone number at the school assigned to
+          this staff member. Notcurrently used by any application code.
         config:
           meta:
-            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__users
             source_column: school_phone
+            contains_pii: true
       - name: street
         data_type: string
         description:
-          "The street name and number element of the address. Usually line one
-          of the address. Indexed with Line Two and Unit. Optional."
+          The street name and number element of the address. Usually line one of
+          the address. Indexed with Line Two and Unit. Optional.
         config:
           meta:
-            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__personaddress
             source_column: street
+            contains_pii: true
       - name: city
         data_type: string
-        description: "The city element of the address. Optional."
+        description: The city element of the address. Optional.
         config:
           meta:
-            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__personaddress
             source_column: city
+            contains_pii: true
       - name: state
         data_type: string
-        description: "State element of address."
+        description: State element of address.
         config:
           meta:
             source_system: PowerSchool
@@ -190,18 +190,18 @@ models:
             source_column: state
       - name: zip
         data_type: string
-        description: "Students zip code."
+        description: Students zip code.
         config:
           meta:
-            contains_pii: true
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: zip
+            contains_pii: true
       - name: periodsavail
         data_type: string
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custom pages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
         config:
           meta:
             source_system: PowerSchool
@@ -210,8 +210,8 @@ models:
       - name: powergradepw
         data_type: string
         description:
-          "No longer used by application. This field may still be referenced on
-          reports and/or custom pages."
+          No longer used by application. This field may still be referenced on
+          reports and/or custom pages.
         config:
           meta:
             source_system: PowerSchool
@@ -220,8 +220,8 @@ models:
       - name: canchangeschool
         data_type: string
         description:
-          "Semicolon delimited list of Schools.School_Number values the Admin
-          can switch to when logged intothe Admin portal."
+          Semicolon delimited list of Schools.School_Number values the Admin can
+          switch to when logged intothe Admin portal.
         config:
           meta:
             source_system: PowerSchool
@@ -229,7 +229,7 @@ models:
             source_column: canchangeschool
       - name: teacherloginpw
         data_type: string
-        description: "The login password for Power Teacher."
+        description: The login password for Power Teacher.
         config:
           meta:
             source_system: PowerSchool
@@ -237,8 +237,7 @@ models:
             source_column: teacherloginpw
       - name: nameasimported
         data_type: string
-        description:
-          "Used as a matching tool when importing teacher information."
+        description: Used as a matching tool when importing teacher information.
         config:
           meta:
             source_system: PowerSchool
@@ -246,7 +245,7 @@ models:
             source_column: nameasimported
       - name: teacherloginid
         data_type: string
-        description: "The login name for Power Teacher."
+        description: The login name for Power Teacher.
         config:
           meta:
             source_system: PowerSchool
@@ -255,8 +254,8 @@ models:
       - name: teacherloginip
         data_type: string
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custom pages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
         config:
           meta:
             source_system: PowerSchool
@@ -265,8 +264,8 @@ models:
       - name: wm_status
         data_type: string
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -275,8 +274,8 @@ models:
       - name: wm_statusdate
         data_type: date
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -285,8 +284,8 @@ models:
       - name: wm_address
         data_type: string
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -295,8 +294,8 @@ models:
       - name: wm_password
         data_type: string
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -305,8 +304,8 @@ models:
       - name: wm_createdate
         data_type: date
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -315,8 +314,8 @@ models:
       - name: wm_ta_flag
         data_type: string
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -325,8 +324,8 @@ models:
       - name: wm_ta_date
         data_type: date
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -335,8 +334,8 @@ models:
       - name: wm_alias
         data_type: string
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custom pages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
         config:
           meta:
             source_system: PowerSchool
@@ -345,8 +344,8 @@ models:
       - name: ethnicity
         data_type: string
         description:
-          "Heritage background of a student. The codes assigned here are stored
-          in the Gen Table [6]Cat=Ethnicity. These are set in school setup."
+          Heritage background of a student. The codes assigned here are stored
+          in the Gen Table [6]Cat=Ethnicity. These are set in school setup.
         config:
           meta:
             source_system: PowerSchool
@@ -354,7 +353,7 @@ models:
             source_column: ethnicity
       - name: preferredname
         data_type: string
-        description: "Name the user prefers to use."
+        description: Name the user prefers to use.
         config:
           meta:
             source_system: PowerSchool
@@ -362,7 +361,7 @@ models:
             source_column: preferredname
       - name: lastmeal
         data_type: string
-        description: "Stores the date of last lunch purchase."
+        description: Stores the date of last lunch purchase.
         config:
           meta:
             source_system: PowerSchool
@@ -371,8 +370,7 @@ models:
       - name: staffpers_guid
         data_type: string
         description:
-          "Globally unique identifier for this table for SIF compliancy.
-          Indexed."
+          Globally unique identifier for this table for SIF compliancy. Indexed.
         config:
           meta:
             source_system: PowerSchool
@@ -380,7 +378,7 @@ models:
             source_column: staffpers_guid
       - name: sif_stateprid
         data_type: string
-        description: "SIF specific Identifier."
+        description: SIF specific Identifier.
         config:
           meta:
             source_system: PowerSchool
@@ -388,7 +386,7 @@ models:
             source_column: sif_stateprid
       - name: dcid
         data_type: int64
-        description: "Unique identifier for this table. Indexed. Required."
+        description: Unique identifier for this table. Indexed. Required.
         config:
           meta:
             source_system: PowerSchool
@@ -397,8 +395,8 @@ models:
       - name: homeschoolid
         data_type: int64
         description:
-          "The teacher's home school. This ID is linked to the School_Number
-          from the School table. Indexed."
+          The teacher's home school. This ID is linked to the School_Number from
+          the School table. Indexed.
         config:
           meta:
             source_system: PowerSchool
@@ -406,7 +404,7 @@ models:
             source_column: homeschoolid
       - name: photo
         data_type: int64
-        description: "Set to 1 if a photo exists for this user."
+        description: Set to 1 if a photo exists for this user.
         config:
           meta:
             source_system: PowerSchool
@@ -415,8 +413,8 @@ models:
       - name: numlogins
         data_type: int64
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custom pages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
         config:
           meta:
             source_system: PowerSchool
@@ -425,8 +423,8 @@ models:
       - name: allowloginstart
         data_type: int64
         description:
-          "Time-restricted login. This is the start of the time that teachers
-          can log in."
+          Time-restricted login. This is the start of the time that teachers can
+          log in.
         config:
           meta:
             source_system: PowerSchool
@@ -435,7 +433,7 @@ models:
       - name: allowloginend
         data_type: int64
         description:
-          "Time-restricted login. This is the end time that teachers can log in."
+          Time-restricted login. This is the end time that teachers can log in.
         config:
           meta:
             source_system: PowerSchool
@@ -454,8 +452,8 @@ models:
       - name: groupvalue
         data_type: int64
         description:
-          "The security group (from Gen table) this user belongs to in Power
-          School. This determines which pagesthe user has access to."
+          The security group (from Gen table) this user belongs to in Power
+          School. This determines which pagesthe user has access to.
         config:
           meta:
             source_system: PowerSchool
@@ -463,7 +461,7 @@ models:
             source_column: groupvalue
       - name: lunch_id
         data_type: float64
-        description: "The students Power Lunch number. Indexed."
+        description: The students Power Lunch number. Indexed.
         config:
           meta:
             source_system: PowerSchool
@@ -472,7 +470,7 @@ models:
       - name: supportcontact
         data_type: int64
         description:
-          "Value of 1 indicates that this user is an authorized support contact."
+          Value of 1 indicates that this user is an authorized support contact.
         config:
           meta:
             source_system: PowerSchool
@@ -481,8 +479,8 @@ models:
       - name: wm_tier
         data_type: int64
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -491,8 +489,8 @@ models:
       - name: wm_createtime
         data_type: int64
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -501,8 +499,8 @@ models:
       - name: wm_exclude
         data_type: int64
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custom pages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
         config:
           meta:
             source_system: PowerSchool
@@ -514,7 +512,7 @@ models:
         data_type: int64
       - name: maximum_load
         data_type: int64
-        description: "Maximum student load permissible for this Teacher."
+        description: Maximum student load permissible for this Teacher.
         config:
           meta:
             source_system: PowerSchool
@@ -561,8 +559,8 @@ models:
       - name: classpua
         data_type: string
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -571,8 +569,8 @@ models:
       - name: custom
         data_type: string
         description:
-          "This field holds all the storedgrades' custom data in name/value
-          pairs delimited by non-printablecharacters."
+          This field holds all the storedgrades' custom data in name/value pairs
+          delimited by non-printablecharacters.
         config:
           meta:
             source_system: PowerSchool
@@ -581,8 +579,8 @@ models:
       - name: log
         data_type: string
         description:
-          "Log of what this record, such as GPA calculation methods or report
-          Builds."
+          Log of what this record, such as GPA calculation methods or report
+          Builds.
         config:
           meta:
             source_system: PowerSchool
@@ -598,7 +596,7 @@ models:
             source_column: sched_gender
       - name: sched_classroom
         data_type: string
-        description: "The classroom this teacher is in most of the time."
+        description: The classroom this teacher is in most of the time.
         config:
           meta:
             source_system: PowerSchool
@@ -606,7 +604,7 @@ models:
             source_column: sched_classroom
       - name: sched_homeroom
         data_type: string
-        description: "The teachers' homeroom."
+        description: The teachers' homeroom.
         config:
           meta:
             source_system: PowerSchool
@@ -614,7 +612,7 @@ models:
             source_column: sched_homeroom
       - name: sched_department
         data_type: string
-        description: "The department this course belongs to."
+        description: The department this course belongs to.
         config:
           meta:
             source_system: PowerSchool
@@ -622,7 +620,7 @@ models:
             source_column: sched_department
       - name: sched_housecode
         data_type: string
-        description: "The house to which the teacher belongs."
+        description: The house to which the teacher belongs.
         config:
           meta:
             source_system: PowerSchool
@@ -630,7 +628,7 @@ models:
             source_column: sched_housecode
       - name: sched_buildingcode
         data_type: string
-        description: "The building the teacher is in."
+        description: The building the teacher is in.
         config:
           meta:
             source_system: PowerSchool
@@ -639,8 +637,8 @@ models:
       - name: sched_activitystatuscode
         data_type: string
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -649,8 +647,8 @@ models:
       - name: sched_primaryschoolcode
         data_type: string
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -658,7 +656,7 @@ models:
             source_column: sched_primaryschoolcode
       - name: sched_team
         data_type: string
-        description: "The team the teacher is on."
+        description: The team the teacher is on.
         config:
           meta:
             source_system: PowerSchool
@@ -666,7 +664,7 @@ models:
             source_column: sched_team
       - name: notes
         data_type: string
-        description: "Miscellaneous notes."
+        description: Miscellaneous notes.
         config:
           meta:
             source_system: PowerSchool
@@ -675,8 +673,8 @@ models:
       - name: id
         data_type: int64
         description:
-          "Sequential number generated by the application, but uniqueness in the
-          table is not guaranteed. Indexed."
+          Sequential number generated by the application, but uniqueness in the
+          table is not guaranteed. Indexed.
         config:
           meta:
             source_system: PowerSchool
@@ -684,7 +682,7 @@ models:
             source_column: id
       - name: schoolid
         data_type: int64
-        description: "The School_Number of the associated Schools record."
+        description: The School_Number of the associated Schools record.
         config:
           meta:
             source_system: PowerSchool
@@ -692,7 +690,7 @@ models:
             source_column: schoolid
       - name: balance1
         data_type: float64
-        description: "Lunch balance."
+        description: Lunch balance.
         config:
           meta:
             source_system: PowerSchool
@@ -701,8 +699,8 @@ models:
       - name: balance2
         data_type: float64
         description:
-          "Beginning lunch balance for the year, copied from balance 1 in the
-          end-of-year process."
+          Beginning lunch balance for the year, copied from balance 1 in the
+          end-of-year process.
         config:
           meta:
             source_system: PowerSchool
@@ -710,7 +708,7 @@ models:
             source_column: balance2
       - name: balance3
         data_type: float64
-        description: "Fees balance."
+        description: Fees balance.
         config:
           meta:
             source_system: PowerSchool
@@ -719,8 +717,8 @@ models:
       - name: balance4
         data_type: float64
         description:
-          "Beginning fee balance for the year, copied from balance 3 in the
-          end-of-year process."
+          Beginning fee balance for the year, copied from balance 3 in the
+          end-of-year process.
         config:
           meta:
             source_system: PowerSchool
@@ -729,8 +727,8 @@ models:
       - name: noofcurclasses
         data_type: int64
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -758,7 +756,7 @@ models:
             source_column: status
       - name: sched_maximumcourses
         data_type: int64
-        description: "The maximum number of courses the teacher can teach."
+        description: The maximum number of courses the teacher can teach.
         config:
           meta:
             source_system: PowerSchool
@@ -767,8 +765,8 @@ models:
       - name: sched_maximumduty
         data_type: int64
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -777,7 +775,7 @@ models:
       - name: sched_maximumfree
         data_type: int64
         description:
-          "The maximum number of preparatory periods the teacher can have."
+          The maximum number of preparatory periods the teacher can have.
         config:
           meta:
             source_system: PowerSchool
@@ -786,8 +784,8 @@ models:
       - name: sched_totalcourses
         data_type: int64
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -796,7 +794,7 @@ models:
       - name: sched_maximumconsecutive
         data_type: int64
         description:
-          "The most courses a teacher can teach in a row without a break."
+          The most courses a teacher can teach in a row without a break.
         config:
           meta:
             source_system: PowerSchool
@@ -805,10 +803,10 @@ models:
       - name: sched_isteacherfree
         data_type: int64
         description:
-          "Flag stating weather the teacher is always free. True=no limit on how
+          Flag stating weather the teacher is always free. True=no limit on how
           many courses a teachercan teach at a time, most often used with fake
           or SPED teachers. False= teacher can onlyteach one class at a time
-          unless other wise specified at the course level."
+          unless other wise specified at the course level.
         config:
           meta:
             source_system: PowerSchool
@@ -817,8 +815,8 @@ models:
       - name: sched_teachermoreoneschool
         data_type: int64
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -827,8 +825,8 @@ models:
       - name: sched_substitute
         data_type: int64
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -837,11 +835,11 @@ models:
       - name: sched_scheduled
         data_type: int64
         description:
-          "A flag-indicating if this course has been built into the schedule.
+          A flag-indicating if this course has been built into the schedule.
           True (Checked) means ithas been build into the schedule and will not
           be build next time the engine is run unless theengine is told to
           reschedule regardless of this flag. False (unchecked) the engine will
-          buildinto the next schedule."
+          buildinto the next schedule.
         config:
           meta:
             source_system: PowerSchool
@@ -850,8 +848,8 @@ models:
       - name: sched_usebuilding
         data_type: int64
         description:
-          "No longer used by the application. This field may still be referenced
-          on reports and/or custompages."
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
         config:
           meta:
             source_system: PowerSchool
@@ -862,10 +860,10 @@ models:
       - name: sched_lunch
         data_type: int64
         description:
-          "Identifies the teacher to the engine as one who should be assigned a
+          Identifies the teacher to the engine as one who should be assigned a
           lunch period for eachvalid lunch day (according to the lunch courses
           valid days) when automated lunch isscheduled. This flag is used in
-          lieu of creating course assignments for lunch."
+          lieu of creating course assignments for lunch.
         config:
           meta:
             source_system: PowerSchool
@@ -874,8 +872,8 @@ models:
       - name: sched_maxpers
         data_type: int64
         description:
-          "Reflects a long-standing setting in the Engine for Max Periods Per
-          Day the Teacher is to bescheduled."
+          Reflects a long-standing setting in the Engine for Max Periods Per Day
+          the Teacher is to bescheduled.
         config:
           meta:
             source_system: PowerSchool
@@ -884,8 +882,8 @@ models:
       - name: sched_maxpreps
         data_type: int64
         description:
-          "Reflects the setting in the Engine for Max Prep Codes (per Term) a
-          Teacher is to be scheduled."
+          Reflects the setting in the Engine for Max Prep Codes (per Term) a
+          Teacher is to be scheduled.
         config:
           meta:
             source_system: PowerSchool
@@ -894,7 +892,7 @@ models:
       - name: prefixcodesetid
         data_type: int64
         description:
-          "Indicates person’s prefix, such as Mr. or Mrs. Indexed. Optional."
+          Indicates person’s prefix, such as Mr. or Mrs. Indexed. Optional.
         config:
           meta:
             source_system: PowerSchool

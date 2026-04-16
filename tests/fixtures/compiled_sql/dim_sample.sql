@@ -1,6 +1,6 @@
 with
     source as (
-        select *
+        select *,
         from `teamster-332318`.`kippnewark_powerschool`.`stg_powerschool__students`
     ),
 
@@ -15,5 +15,5 @@ with
         from source
     )
 
-select *
+select *,
 from renamed

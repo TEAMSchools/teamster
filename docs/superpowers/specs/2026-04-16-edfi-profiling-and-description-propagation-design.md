@@ -231,7 +231,7 @@ Ed-Fi notes are always appended regardless of which rule set the action.
 
 ## Execution order and prerequisites
 
-**Step 1: Compile dbt models**
+### Step 1: Compile dbt models
 
 ```bash
 uv run dbt compile --project-dir src/dbt/kipptaf
@@ -240,7 +240,7 @@ uv run dbt compile --project-dir src/dbt/kipptaf
 Produces compiled SQL under `target/compiled/` with all Jinja resolved. Required
 for the propagation script.
 
-**Step 2: Extract Ed-Fi schema** (can run in parallel with step 1)
+### Step 2: Extract Ed-Fi schema (can run in parallel with step 1)
 
 ```bash
 uv run scripts/extract_edfi_schema.py
@@ -249,7 +249,7 @@ uv run scripts/extract_edfi_schema.py
 Fetches the OpenAPI spec from GitHub, writes
 `docs/superpowers/specs/edfi-v6.1.0-attributes.csv`.
 
-**Step 3: Propagate mart descriptions** (depends on step 1)
+### Step 3: Propagate mart descriptions (depends on step 1)
 
 ```bash
 uv run scripts/propagate_mart_descriptions.py
@@ -258,7 +258,7 @@ uv run scripts/propagate_mart_descriptions.py
 Reads compiled SQL + staging YAML → writes descriptions into intermediate and
 mart YAML.
 
-**Step 4: Regenerate inventory** (depends on steps 2 and 3)
+### Step 4: Regenerate inventory (depends on steps 2 and 3)
 
 ```bash
 uv run scripts/gen_column_naming_audit_inventory.py
@@ -266,7 +266,7 @@ uv run scripts/gen_column_naming_audit_inventory.py
 
 Reads mart YAML (now enriched) + Ed-Fi extract → writes updated inventory CSV.
 
-**Step 5: Re-import to Google Sheet** (manual)
+### Step 5: Re-import to Google Sheet (manual)
 
 Project owner imports the updated CSV into the existing sheet, replacing the
 previous import.
