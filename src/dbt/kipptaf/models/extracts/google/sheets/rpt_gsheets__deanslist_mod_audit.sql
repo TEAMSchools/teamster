@@ -212,64 +212,63 @@ with
     )
 
 select
-    source_model,
-    report_type,
-    student_number,
-    student_name,
-    academic_year_display as academic_year,
-    school,
-    grade_level,
-    region,
-    assessment_id,
-    title,
-    scope,
-    subject_area,
-    term_administered,
-    response_type,
-    response_type_description,
-    standard_domain,
-    percent_correct,
-    performance_band_label,
-    is_internal_assessment,
+    ar.source_model,
+    ar.report_type,
+    ar.student_number,
+    ar.student_name,
+    ar.academic_year_display as academic_year,
+    ar.school,
+    ar.grade_level,
+    ar.region,
+    ar.assessment_id,
+    ar.title,
+    ar.scope,
+    ar.subject_area,
+    ar.term_administered,
+    ar.response_type,
+    ar.response_type_description,
+    ar.standard_domain,
+    ar.percent_correct,
+    ar.performance_band_label,
+    ar.is_internal_assessment,
 
     concat(
         'https://kippteamschools.illuminateed.com/live/?assessment_id=',
-        cast(assessment_id as string),
+        cast(ar.assessment_id as string),
         '&prebuilt_report_id=1&page=Assessment_StudentController'
     ) as illuminate_student_responses,
 
     ar.academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
     ct.`name` is not null as is_current_term,
 
-    case
-        grade_level when 0 then 'K' else cast(grade_level as string)
+    case ar.grade_level
+        when 0 then 'K'
+        else cast(ar.grade_level as string)
     end as grade_level_display,
 
-    case
-        source_model
-        when 'mod_assessment'
-        then 'Enrichment Grades'
-        when 'mod_standards'
-        then 'ELA/Math Standards'
-        when 'mod_standards_domains'
-        then 'Progress Report / Report Card'
+    case ar.source_model
+        when 'mod_assessment' then 'Enrichment Grades'
+        when 'mod_standards' then 'ELA/Math Standards'
+        when 'mod_standards_domains' then 'Progress Report / Report Card'
     end as source_model_label,
 
     round(
-        avg(percent_correct) over (
+        avg(ar.percent_correct) over (
             partition by
-                source_model,
-                report_type,
-                student_number,
-                academic_year_display,
-                subject_area,
-                term_administered,
-                if(source_model = 'mod_standards', response_type, null),
-                if(source_model = 'mod_standards', response_type_description, null),
+                ar.source_model,
+                ar.report_type,
+                ar.student_number,
+                ar.academic_year_display,
+                ar.subject_area,
+                ar.term_administered,
+                if(ar.source_model = 'mod_standards', ar.response_type, null),
                 if(
-                    source_model = 'mod_standards_domains'
-                    and report_type = 'Report Card',
-                    standard_domain,
+                    ar.source_model = 'mod_standards', ar.response_type_description, null
+                ),
+                if(
+                    ar.source_model = 'mod_standards_domains'
+                    and ar.report_type = 'Report Card',
+                    ar.standard_domain,
                     null
                 )
         ),
