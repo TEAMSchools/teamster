@@ -32,6 +32,9 @@ with
 
             co.grade_level,
             co.region,
+            co.school,
+            co.student_name,
+            co.academic_year_display,
 
             cast(null as string) as standard_domain,
 
@@ -72,13 +75,22 @@ with
             ar.performance_band_label,
             ar.is_internal_assessment,
 
-            cast(null as int64) as grade_level,
-            cast(null as string) as region,
+            co.grade_level,
+            co.region,
+            co.school,
+            co.student_name,
+            co.academic_year_display,
+
             cast(null as string) as standard_domain,
 
             'mod_standards' as source_model,
             cast(null as string) as report_type,
         from {{ ref("int_assessments__response_rollup") }} as ar
+        inner join
+            {{ ref("int_extracts__student_enrollments") }} as co
+            on ar.academic_year = co.academic_year
+            and ar.powerschool_student_number = co.student_number
+            and co.rn_year = 1
         where
             ar.is_internal_assessment
             and ar.response_type = 'group'
@@ -104,6 +116,9 @@ with
 
             co.grade_level,
             co.region,
+            co.school,
+            co.student_name,
+            co.academic_year_display,
 
             cast(null as string) as standard_domain,
 
@@ -143,6 +158,9 @@ with
 
             co.grade_level,
             co.region,
+            co.school,
+            co.student_name,
+            co.academic_year_display,
 
             sd.standard_domain,
 
@@ -180,7 +198,9 @@ select
     source_model,
     report_type,
     student_number,
-    academic_year,
+    student_name,
+    academic_year_display as academic_year,
+    school,
     grade_level,
     region,
     assessment_id,
@@ -195,13 +215,24 @@ select
     performance_band_label,
     is_internal_assessment,
 
+    case grade_level
+        when 0 then 'K'
+        else cast(grade_level as string)
+    end as grade_level_display,
+
+    case source_model
+        when 'mod_assessment' then 'Enrichment Grades'
+        when 'mod_standards' then 'ELA/Math Standards'
+        when 'mod_standards_domains' then 'Progress Report / Report Card'
+    end as source_model_label,
+
     round(
         avg(percent_correct) over (
             partition by
                 source_model,
                 report_type,
                 student_number,
-                academic_year,
+                academic_year_display,
                 subject_area,
                 term_administered,
                 if(source_model = 'mod_standards', response_type, null),

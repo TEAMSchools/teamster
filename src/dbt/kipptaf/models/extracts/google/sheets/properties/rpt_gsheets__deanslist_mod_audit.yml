@@ -22,7 +22,7 @@ models:
       - name: source_model
         data_type: string
         description: >
-          Which published CDO model this row feeds: mod_assessment,
+          Internal name of the CDO model this row feeds: mod_assessment,
           mod_standards, or mod_standards_domains.
       - name: report_type
         data_type: string
@@ -32,19 +32,21 @@ models:
       - name: student_number
         data_type: int64
         description: PowerSchool student number.
+      - name: student_name
+        data_type: string
+        description: Student full name.
       - name: academic_year
-        data_type: int64
-        description: Academic year (e.g. 2024 for the 2024-25 school year).
+        data_type: string
+        description: School year formatted for display (e.g. 2024-25).
+      - name: school
+        data_type: string
+        description: Name of the school the student is enrolled in.
       - name: grade_level
         data_type: int64
-        description: >
-          Student grade level from enrollment; null for mod_standards rows,
-          which do not join to student enrollments.
+        description: Student grade level as an integer (0 = Kindergarten).
       - name: region
         data_type: string
-        description: >
-          Student enrolled region; null for mod_standards rows, which do not
-          join to student enrollments.
+        description: Student enrolled region.
       - name: assessment_id
         data_type: int64
         description: >
@@ -67,12 +69,10 @@ models:
           from the administered_at date against the reporting terms calendar.
       - name: response_type
         data_type: string
-        description: >
-          Response granularity from Illuminate: overall, standard, or group.
+        description: Response granularity from Illuminate (overall, standard, or group).
       - name: response_type_description
         data_type: string
-        description: >
-          Standard or reporting group label; null for overall response rows.
+        description: Standard or reporting group label; null for overall response rows.
       - name: standard_domain
         data_type: string
         description: >
@@ -87,6 +87,14 @@ models:
       - name: is_internal_assessment
         data_type: boolean
         description: True if the assessment was internally administered by KIPP.
+      - name: grade_level_display
+        data_type: string
+        description: Grade level formatted for display (K for grade 0, otherwise the grade number).
+      - name: source_model_label
+        data_type: string
+        description: >
+          Human-readable label for the CDO model this row feeds: Enrichment
+          Grades, ELA/Math Standards, or Progress Report / Report Card.
       - name: computed_avg_pct_correct
         data_type: numeric
         description: >
