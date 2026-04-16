@@ -288,18 +288,23 @@ def build_ps_mapping(
     Returns:
         Mapping dict with entries, unmatched lists, and stats.
     """
-    # Collect all (table_name, column_entries) from pages
+    # Collect all (table_name, column_entries) from pages.
+    # Table name headers appear on the first page of each table section.
+    # Continuation pages have column entries but no header — they inherit
+    # the most recent table name.
     table_columns: dict[str, list[dict[str, str]]] = {}
+    current_table: str | None = None
 
     for page_text in pages:
-        table_name = extract_ps_table_name(page_text)
-        if table_name is None:
-            continue
+        detected_table = extract_ps_table_name(page_text)
+        if detected_table is not None:
+            current_table = detected_table
 
         entries = parse_ps_columns(page_text)
-        if table_name not in table_columns:
-            table_columns[table_name] = []
-        table_columns[table_name].extend(entries)
+        if entries and current_table is not None:
+            if current_table not in table_columns:
+                table_columns[current_table] = []
+            table_columns[current_table].extend(entries)
 
     # Match against YAML index
     matched_entries: list[dict] = []
