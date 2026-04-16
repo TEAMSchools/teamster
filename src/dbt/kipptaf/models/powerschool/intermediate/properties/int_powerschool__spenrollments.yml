@@ -24,6 +24,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__attendance
             source_column: id
+            column_role: primary_key
       - name: studentid
         data_type: int64
         description:

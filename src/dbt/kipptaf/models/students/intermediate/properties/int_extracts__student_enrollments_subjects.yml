@@ -38,6 +38,7 @@ models:
             source_model: stg_powerschool__student_email
             source_column: student_number
             contains_pii: true
+            column_role: primary_key
       - name: student_name
         data_type: string
         description: Last, First, Mi. Indexed.

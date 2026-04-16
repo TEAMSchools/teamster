@@ -457,6 +457,7 @@ models:
             source_system: Amplify
             source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
             source_column: surrogate_key
+            column_role: primary_key
       - name: region
         data_type: string
       - name: school

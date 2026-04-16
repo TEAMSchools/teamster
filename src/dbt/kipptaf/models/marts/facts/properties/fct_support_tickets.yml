@@ -70,6 +70,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__attendance
             source_column: id
+            column_role: primary_key
       - name: ticket_status
         data_type: string
         description: >-

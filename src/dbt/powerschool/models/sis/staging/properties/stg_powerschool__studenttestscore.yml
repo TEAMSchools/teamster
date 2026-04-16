@@ -53,8 +53,6 @@ models:
           If used, a unique identifier for the row. Currently applicable to
           multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
-        constraints:
-          - type: primary_key
       - name: notes
         data_type: string
         description: Descriptive notes about the student's test performance.

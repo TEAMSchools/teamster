@@ -376,7 +376,6 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__users
             source_column: staffpers_guid
-            column_role: primary_key
       - name: sif_stateprid
         data_type: string
         description: SIF specific Identifier.
@@ -682,6 +681,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__attendance
             source_column: id
+            column_role: primary_key
       - name: schoolid
         data_type: int64
         description: The School_Number of the associated Schools record.

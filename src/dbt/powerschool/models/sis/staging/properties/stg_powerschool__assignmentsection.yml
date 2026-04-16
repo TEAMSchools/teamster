@@ -83,8 +83,6 @@ models:
       - name: executionid
         data_type: string
         description: Unique identifier for the database transaction.
-        constraints:
-          - type: primary_key
       - name: _dagster_partition_fiscal_year
         data_type: int64
       - name: _dagster_partition_date

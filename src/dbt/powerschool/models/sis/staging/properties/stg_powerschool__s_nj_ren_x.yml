@@ -160,6 +160,7 @@ models:
           Indexed.
         constraints:
           - type: foreign_key
+          - type: primary_key
       - name: lep_tf
         data_type: int64
       - name: cumulativedaysabsent

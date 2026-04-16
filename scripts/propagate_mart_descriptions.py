@@ -61,8 +61,6 @@ def _flatten(text: str | None) -> str:
 _PK_PATTERNS: tuple[str, ...] = (
     "primary key",
     "unique identifier for this table",
-    "unique identifier for the row",
-    "unique identifier for the database",
     "unique identifier of the row",
     "unique sequential number generated",
     "unique number generated",
@@ -75,8 +73,16 @@ _FK_PATTERNS: tuple[str, ...] = (
     "unique identifier) of the associated",
 )
 
-# Bare "unique identifier" (without "of the associated" which is FK)
-# matches standalone PKs like "Unique identifier." or "Unique identifier\n"
+# Non-PK unique identifiers — these are alternate IDs, not operational PKs
+_EXCLUDE_PK_PATTERNS: tuple[str, ...] = (
+    "unique identifier for the database transaction",
+    "a unique identifier for the row. currently applicab",
+    "globally unique identifier for this table for sif",
+    "state-level unique identifier",
+)
+
+# Bare "unique identifier" (without FK/exclusion context) used as
+# fallback only when the column also has a unique test
 _BARE_PK_PATTERN = "unique identifier"
 
 
@@ -93,13 +99,20 @@ def _infer_column_role(description: str) -> str:
     for pattern in _FK_PATTERNS:
         if pattern in lower:
             return "foreign_key"
+    # Exclude alternate IDs (GUIDs, execution IDs, SIF IDs)
+    for pattern in _EXCLUDE_PK_PATTERNS:
+        if pattern in lower:
+            return ""
     for pattern in _PK_PATTERNS:
         if pattern in lower:
             return "primary_key"
-    # Bare "unique identifier" without FK context → PK
-    if _BARE_PK_PATTERN in lower:
-        return "primary_key"
     return ""
+
+
+def _has_unique_test(col: dict) -> bool:
+    """Check if a column has a unique data test."""
+    tests = col.get("data_tests", []) or []
+    return any(t == "unique" or (isinstance(t, dict) and "unique" in t) for t in tests)
 
 
 def _enrich_staging_constraints(yaml_dirs: list[Path], ryaml) -> int:
@@ -107,8 +120,8 @@ def _enrich_staging_constraints(yaml_dirs: list[Path], ryaml) -> int:
 
     Reads each staging YAML, infers primary_key/foreign_key from
     description text, and writes native dbt ``constraints`` on the
-    column. Only modifies files where at least one column gains a
-    new constraint.
+    column. Enforces at most one primary_key per model (dbt requirement).
+    Falls back to unique test for models with no description-based PK.
 
     Returns the number of columns enriched.
     """
@@ -122,22 +135,62 @@ def _enrich_staging_constraints(yaml_dirs: list[Path], ryaml) -> int:
 
             file_changed = False
             for model in doc.get("models", []) or []:
-                for col in model.get("columns", []) or []:
-                    desc = _flatten(col.get("description"))
-                    if not desc:
-                        continue
-                    role = _infer_column_role(desc)
-                    if not role:
-                        continue
-                    # Check if constraint already exists
+                columns = model.get("columns", []) or []
+
+                # First pass: assign FK constraints and find PK candidates
+                pk_candidate = None
+                for col in columns:
                     existing = col.get("constraints", []) or []
                     if any(
                         c.get("type") in ("primary_key", "foreign_key")
                         for c in existing
                     ):
                         continue
-                    col.setdefault("constraints", []).append({"type": role})
-                    enriched += 1
+                    desc = _flatten(col.get("description"))
+                    if not desc:
+                        continue
+                    role = _infer_column_role(desc)
+                    if role == "foreign_key":
+                        col.setdefault("constraints", []).append(
+                            {"type": "foreign_key"}
+                        )
+                        enriched += 1
+                        file_changed = True
+                    elif role == "primary_key" and pk_candidate is None:
+                        pk_candidate = col
+
+                # Bare "unique identifier" fallback — only if no PK found yet
+                if pk_candidate is None:
+                    for col in columns:
+                        existing = col.get("constraints", []) or []
+                        if any(c.get("type") == "primary_key" for c in existing):
+                            pk_candidate = col
+                            break
+                        desc = _flatten(col.get("description"))
+                        if (
+                            desc
+                            and _BARE_PK_PATTERN in desc.lower()
+                            and _has_unique_test(col)
+                        ):
+                            pk_candidate = col
+                            break
+
+                # Unique test fallback — if still no PK
+                if pk_candidate is None:
+                    for col in columns:
+                        if _has_unique_test(col):
+                            pk_candidate = col
+                            break
+
+                # Assign the single PK constraint
+                if pk_candidate is not None:
+                    existing = pk_candidate.get("constraints", []) or []
+                    if not any(c.get("type") == "primary_key" for c in existing):
+                        pk_candidate.setdefault("constraints", []).append(
+                            {"type": "primary_key"}
+                        )
+                        enriched += 1
+                        file_changed = True
                     file_changed = True
 
             if file_changed:

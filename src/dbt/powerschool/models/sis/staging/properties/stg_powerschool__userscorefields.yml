@@ -15,6 +15,7 @@ models:
           DCID (unique identifier) of the associated User record. Indexed.
         constraints:
           - type: foreign_key
+          - type: primary_key
       - name: dob
         data_type: date
         description: Staff date of birth.

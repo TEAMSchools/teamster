@@ -480,6 +480,7 @@ models:
           DCID (unique identifier) of the associated Student record. Indexed.
         constraints:
           - type: foreign_key
+          - type: primary_key
       - name: lep_status
         data_type: boolean
         description: Student Limited English Proficiency status.

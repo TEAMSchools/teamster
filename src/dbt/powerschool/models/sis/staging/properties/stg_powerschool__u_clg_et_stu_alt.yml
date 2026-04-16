@@ -25,6 +25,8 @@ models:
           - unique:
               config:
                 severity: error
+        constraints:
+          - type: primary_key
       - name: studentsdcid
         data_type: int64
         description:

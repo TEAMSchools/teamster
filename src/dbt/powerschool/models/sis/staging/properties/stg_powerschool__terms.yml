@@ -34,16 +34,12 @@ models:
         data_type: string
         description:
           Globally unique identifier for this table for SIF compliancy. Indexed.
-        constraints:
-          - type: primary_key
       - name: psguid
         data_type: string
         description:
           If used, a unique identifier for the row. Currently applicable to
           multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
-        constraints:
-          - type: primary_key
       - name: ip_address
         data_type: string
         description: IP address of the client that initiated the transaction.

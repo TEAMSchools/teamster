@@ -266,8 +266,6 @@ models:
           Plus.If used, a unique identifier for the row.Currently applicable to
           multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
           Plus.
-        constraints:
-          - type: primary_key
       - name: replaced_grade
         data_type: string
         description:
@@ -296,8 +294,6 @@ models:
       - name: executionid
         data_type: string
         description: Unique identifier for the database transaction.
-        constraints:
-          - type: primary_key
       - name: percent_decimal
         data_type: float64
       - name: storecode_type
