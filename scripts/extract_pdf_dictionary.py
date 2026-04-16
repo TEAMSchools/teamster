@@ -262,7 +262,11 @@ def build_ps_yaml_index() -> dict[str, set[str]]:
                 continue
             for model in doc.get("models", []) or []:
                 model_name = model["name"]
-                columns = {col["name"] for col in (model.get("columns", []) or [])}
+                columns = {
+                    col["name"]
+                    for col in (model.get("columns", []) or [])
+                    if not col["name"].startswith("_dagster_")
+                }
                 if model_name in index:
                     index[model_name].update(columns)
                 else:
@@ -309,22 +313,31 @@ def build_ps_mapping(
         for entry in col_entries:
             pdf_col = entry["source_column"]
             snake_col = pascal_to_snake(pdf_col)
+            lower_col = pdf_col.lower()
             description = entry.get("description", "")
 
+            # Try snake_case first, then raw lowercase (PS staging YAMLs
+            # use lowercased DB column names without underscore insertion)
+            matched_col = None
             if snake_col in yaml_columns:
+                matched_col = snake_col
+            elif lower_col in yaml_columns:
+                matched_col = lower_col
+
+            if matched_col is not None:
                 matched_entries.append(
                     {
                         "source_table": table_name,
                         "source_column": pdf_col,
                         "model": model_name,
-                        "column": snake_col,
+                        "column": matched_col,
                         "description": description,
-                        "contains_pii": classify_pii(snake_col, description),
+                        "contains_pii": classify_pii(matched_col, description),
                     }
                 )
                 if model_name not in all_matched_yaml_columns:
                     all_matched_yaml_columns[model_name] = set()
-                all_matched_yaml_columns[model_name].add(snake_col)
+                all_matched_yaml_columns[model_name].add(matched_col)
             else:
                 unmatched_pdf.append({"table": table_name, "column": pdf_col})
 
