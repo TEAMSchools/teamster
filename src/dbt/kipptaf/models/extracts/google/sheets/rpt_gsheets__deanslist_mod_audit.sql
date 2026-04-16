@@ -51,7 +51,8 @@ with
         where
             ar.response_type = 'overall'
             and ar.subject_area not in ('Text Study', 'Mathematics')
-            and ar.academic_year = {{ var("current_academic_year") }}
+            and ar.academic_year
+            in ({{ var("current_academic_year") }}, {{ var("current_academic_year") }} - 1)
             and ar.term_administered is not null
             and (ar.scope = 'Unit Assessment' or rcr.report_card_region is not null)
     ),
@@ -81,7 +82,8 @@ with
         where
             ar.is_internal_assessment
             and ar.response_type = 'group'
-            and ar.academic_year = {{ var("current_academic_year") }}
+            and ar.academic_year
+            in ({{ var("current_academic_year") }}, {{ var("current_academic_year") }} - 1)
             and ar.subject_area in ('Text Study', 'Mathematics', 'Writing')
     ),
 
@@ -120,7 +122,8 @@ with
             and co.region = prr.progress_report_region
         where
             ar.response_type = 'overall'
-            and ar.academic_year = {{ var("current_academic_year") }}
+            and ar.academic_year
+            in ({{ var("current_academic_year") }}, {{ var("current_academic_year") }} - 1)
 
         union all
 
@@ -161,7 +164,8 @@ with
             and co.region = rcr.report_card_region
         where
             ar.response_type = 'standard'
-            and ar.academic_year = {{ var("current_academic_year") }}
+            and ar.academic_year
+            in ({{ var("current_academic_year") }}, {{ var("current_academic_year") }} - 1)
     ),
 
     all_responses as (
