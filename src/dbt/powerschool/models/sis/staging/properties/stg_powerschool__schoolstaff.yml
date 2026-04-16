@@ -14,6 +14,8 @@ models:
               config:
                 severity: error
         description: Unique identifier for this table. Indexed. Required.
+        constraints:
+          - type: primary_key
       - name: classpua
         data_type: string
         description:
@@ -83,6 +85,8 @@ models:
         data_type: int64
         description:
           Internal number for the associated User record. Indexed. Required.
+        constraints:
+          - type: foreign_key
       - name: balance1
         data_type: float64
         description: Lunch balance.

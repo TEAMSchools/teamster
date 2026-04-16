@@ -21,6 +21,8 @@ models:
       - name: dcid
         data_type: int64
         description: Unique identifier for this table. Indexed. Required.
+        constraints:
+          - type: primary_key
       - name: id
         data_type: int64
         data_tests:

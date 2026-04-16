@@ -9,6 +9,9 @@ models:
                 severity: error
         description:
           DCID (unique identifier) of the associated Student record. Indexed.
+        constraints:
+          - type: foreign_key
+          - type: primary_key
       - name: examiner_smid
         data_type: string
       - name: parcc_braille_paper

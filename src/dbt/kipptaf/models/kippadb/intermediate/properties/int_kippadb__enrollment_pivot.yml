@@ -221,3 +221,5 @@ models:
         data_type: numeric
       - name: is_never_enrolled
         data_type: boolean
+        description:
+          Conditional on aa_enrollment_id, ba_enrollment_id, cte_enrollment_id.

@@ -11,27 +11,75 @@ models:
       - name: yearid
         data_type: int64
 
+        description:
+          A number representing which year the term belongs to, such as 13 for
+          2003-2004. The numberis equal to the ID of the year term divided by
+          100. Maintained in the Terms table.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentcategoryassoc
+            source_column: yearid
       - name: schoolid
         data_type: int64
 
+        description:
+          The School_Number of the associated Schools record. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: schoolid
       - name: student_number
         data_type: int64
 
+        description: District-assigned student identification number.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
       - name: students_dcid
         data_type: int64
 
       - name: studentid
         data_type: int64
 
+        description:
+          The internal number and ID of the associated Students record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: studentid
+            column_role: foreign_key
       - name: grade_level
         data_type: int64
 
+        description:
+          The grade level the student was in when the grade was stored. This
+          simply copies the students'current grade level in to this field.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: grade_level
       - name: grade_level_prev
         data_type: int64
 
       - name: dob
         data_type: date
 
+        description: Date of birth.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: dob
+            contains_pii: true
       - name: ada
         data_type: float64
 
@@ -83,11 +131,32 @@ models:
       - name: q1_ae_status
         data_type: string
 
+        description:
+          The grade level the student was in when the grade was stored. This
+          simply copies the students'current grade level in to this field.
+          Indexed. Categorical mapping of grade_level, is_age_eligible,
+          is_first_time_ninth, met_py_credits, py_y1_gpa, py_y1_unweighted_ada.
       - name: q2_ae_status
         data_type: string
 
+        description:
+          The grade level the student was in when the grade was stored. This
+          simply copies the students'current grade level in to this field.
+          Indexed. Categorical mapping of ada, cy_q1_gpa, cy_weighted_term_q1,
+          cy_y1_gpa, grade_level, is_age_eligible, is_first_time_ninth,
+          met_py_credits.
       - name: q3_ae_status
         data_type: string
 
+        description:
+          The grade level the student was in when the grade was stored. This
+          simply copies the students'current grade level in to this field.
+          Indexed. Categorical mapping of ada, cy_s1_gpa, cy_weighted_s1_ada,
+          cy_y1_gpa, grade_level, is_age_eligible, met_cy_credits.
       - name: q4_ae_status
         data_type: string
+        description:
+          The grade level the student was in when the grade was stored. This
+          simply copies the students'current grade level in to this field.
+          Indexed. Categorical mapping of ada, cy_s1_gpa, cy_weighted_s1_ada,
+          cy_y1_gpa, grade_level, is_age_eligible, met_cy_credits.

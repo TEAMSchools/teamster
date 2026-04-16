@@ -5,24 +5,108 @@ models:
         data_type: string
       - name: assignmentsectionid
         data_type: int64
+        description:
+          Foreign key. Internal number for the associated Assignment
+          Section.Assignment Section IDrecord. Required. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentcategoryassoc
+            source_column: assignmentsectionid
+            column_role: foreign_key
       - name: sectionsdcid
         data_type: int64
+        description:
+          Foreign key. Internal number for the associated sections.DCID record.
+          Required. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: sectionsdcid
+            column_role: foreign_key
       - name: assignmentid
         data_type: int64
+        description:
+          Foreign key. Internal number for the associated Assignment.ID record.
+          Required. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: assignmentid
+            column_role: foreign_key
       - name: name
         data_type: string
+        description:
+          Name of the assignment, such as Essay, Homework, etc. Required.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: name
       - name: duedate
         data_type: date
+        description:
+          The date the assignment is due. Defaults to Default is the system date
+          + 1 day. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: duedate
       - name: scoretype
         data_type: string
+        description: Indicates if this score is a letter grade or percent.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: scoretype
       - name: totalpointvalue
         data_type: float64
+        description:
+          This is the total weighted points that the assignment is worth. If the
+          entry points are 25, and theweight is 4, then the total point value is
+          100.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: totalpointvalue
       - name: extracreditpoints
         data_type: numeric
+        description:
+          Indicates the number of extra credit points available for this
+          assignment.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: extracreditpoints
       - name: weight
         data_type: numeric
+        description:
+          The overall weight of this assignment. This value multiplied by Points
+          Possible shows the actualpoints of this assignment for total possible
+          points for this section. Defaults to 1.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: weight
       - name: iscountedinfinalgrade
         data_type: int64
+        description:
+          "Indicates if the assignment will count toward the final grade. Valid
+          values: 0=Does not count towardfinal grade, 1=Counts toward final
+          grade. Defaults to 1. Required."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: iscountedinfinalgrade
       - name: category_id
         data_type: int64
       - name: category_name

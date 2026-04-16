@@ -3,10 +3,26 @@ models:
     columns:
       - name: student_number
         data_type: int64
+        description: District-assigned student identification number.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
       - name: salesforce_id
         data_type: string
       - name: grade_level
         data_type: int64
+        description:
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: grade_level
       - name: psat89_count
         data_type: int64
       - name: psat10_count
@@ -53,13 +69,31 @@ models:
         data_type: int64
       - name: psat89_count_lifetime
         data_type: int64
+        description:
+          District-assigned student identification number. MAX of
+          psat89_count_ytd partitioned by student_number.
       - name: psat10_count_lifetime
         data_type: int64
+        description:
+          District-assigned student identification number. MAX of
+          psat10_count_ytd partitioned by student_number.
       - name: psatnmsqt_count_lifetime
         data_type: int64
+        description:
+          District-assigned student identification number. MAX of
+          psatnmsqt_count_ytd partitioned by student_number.
       - name: sat_count_lifetime
         data_type: int64
+        description:
+          District-assigned student identification number. MAX of sat_count_ytd
+          partitioned by student_number.
       - name: act_count_lifetime
         data_type: int64
+        description:
+          District-assigned student identification number. MAX of act_count_ytd
+          partitioned by student_number.
       - name: rn_lifetime
         data_type: int64
+        description:
+          District-assigned student identification number. ROWNUMBER of value
+          partitioned by student_number.

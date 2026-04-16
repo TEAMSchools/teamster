@@ -7,7 +7,10 @@ models:
         data_type: int
       - name: is_leader_development_program
         data_type: boolean
+        description: Derived from is_leader_development_program.
       - name: is_teacher_development_program
         data_type: boolean
+        description: Derived from is_teacher_development_program.
       - name: memberships
         data_type: string
+        description: Derived from membership_description.

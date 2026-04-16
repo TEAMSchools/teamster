@@ -11,5 +11,7 @@ models:
         config:
           meta:
             contains_pii: true
+        constraints:
+          - type: primary_key
       - name: email
         data_type: string

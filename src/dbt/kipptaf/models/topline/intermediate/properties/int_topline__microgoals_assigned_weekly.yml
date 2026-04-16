@@ -19,3 +19,4 @@ models:
         data_type: date
       - name: microgoals_assigned
         data_type: int64
+        description: Derived from assignment_id.

@@ -12,14 +12,44 @@ models:
     columns:
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: region
         data_type: string
       - name: student_number
         data_type: int64
+        description: District-assigned student identification number.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__student_email
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
       - name: grade_level
         data_type: int64
+        description:
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__reenrollments
+            source_column: grade_level
       - name: enroll_status
         data_type: int64
+        description: The enrollment status of the student.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: enroll_status
       - name: assessment_type
         data_type: string
       - name: admin_season
@@ -34,3 +64,4 @@ models:
         data_type: boolean
       - name: completed_test_round_int
         data_type: int64
+        description: Conditional on completed_test_round.
