@@ -1,18 +1,15 @@
 with
     progress_report_region as (
         select iae.assessment_id, progress_report_region,
-        from
-            {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
+        from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
         cross join
             unnest(split(iae.regions_progress_report, ' , ')) as progress_report_region
     ),
 
     report_card_region as (
         select iae.assessment_id, report_card_region,
-        from
-            {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
-        cross join
-            unnest(split(iae.regions_report_card, ' , ')) as report_card_region
+        from {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
+        cross join unnest(split(iae.regions_report_card, ' , ')) as report_card_region
     ),
 
     mod_assessment as (
@@ -54,8 +51,10 @@ with
         where
             ar.response_type = 'overall'
             and ar.subject_area not in ('Text Study', 'Mathematics')
-            and ar.academic_year
-            in ({{ var("current_academic_year") }}, {{ var("current_academic_year") }} - 1)
+            and ar.academic_year in (
+                {{ var("current_academic_year") }},
+                {{ var("current_academic_year") }} - 1
+            )
             and ar.term_administered is not null
             and (ar.scope = 'Unit Assessment' or rcr.report_card_region is not null)
     ),
@@ -94,8 +93,10 @@ with
         where
             ar.is_internal_assessment
             and ar.response_type = 'group'
-            and ar.academic_year
-            in ({{ var("current_academic_year") }}, {{ var("current_academic_year") }} - 1)
+            and ar.academic_year in (
+                {{ var("current_academic_year") }},
+                {{ var("current_academic_year") }} - 1
+            )
             and ar.subject_area in ('Text Study', 'Mathematics', 'Writing')
     ),
 
@@ -137,8 +138,10 @@ with
             and co.region = prr.progress_report_region
         where
             ar.response_type = 'overall'
-            and ar.academic_year
-            in ({{ var("current_academic_year") }}, {{ var("current_academic_year") }} - 1)
+            and ar.academic_year in (
+                {{ var("current_academic_year") }},
+                {{ var("current_academic_year") }} - 1
+            )
 
         union all
 
@@ -182,8 +185,10 @@ with
             and co.region = rcr.report_card_region
         where
             ar.response_type = 'standard'
-            and ar.academic_year
-            in ({{ var("current_academic_year") }}, {{ var("current_academic_year") }} - 1)
+            and ar.academic_year in (
+                {{ var("current_academic_year") }},
+                {{ var("current_academic_year") }} - 1
+            )
     ),
 
     current_terms as (
@@ -196,11 +201,14 @@ with
     ),
 
     all_responses as (
-        select * from mod_assessment
+        select *
+        from mod_assessment
         union all
-        select * from mod_standards
+        select *
+        from mod_standards
         union all
-        select * from mod_standards_domains
+        select *
+        from mod_standards_domains
     )
 
 select
@@ -233,15 +241,18 @@ select
     ar.academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
     term_administered in (select `name` from current_terms) as is_current_term,
 
-    case grade_level
-        when 0 then 'K'
-        else cast(grade_level as string)
+    case
+        grade_level when 0 then 'K' else cast(grade_level as string)
     end as grade_level_display,
 
-    case source_model
-        when 'mod_assessment' then 'Enrichment Grades'
-        when 'mod_standards' then 'ELA/Math Standards'
-        when 'mod_standards_domains' then 'Progress Report / Report Card'
+    case
+        source_model
+        when 'mod_assessment'
+        then 'Enrichment Grades'
+        when 'mod_standards'
+        then 'ELA/Math Standards'
+        when 'mod_standards_domains'
+        then 'Progress Report / Report Card'
     end as source_model_label,
 
     round(

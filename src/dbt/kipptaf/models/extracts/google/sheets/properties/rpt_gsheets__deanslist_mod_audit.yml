@@ -29,8 +29,8 @@ models:
       - name: report_type
         data_type: string
         description: >
-          Report type for mod_standards_domains rows (Progress Report or
-          Report Card); null for mod_assessment and mod_standards.
+          Report type for mod_standards_domains rows (Progress Report or Report
+          Card); null for mod_assessment and mod_standards.
       - name: student_number
         data_type: int64
         description: PowerSchool student number.
@@ -60,21 +60,25 @@ models:
         description: Assessment title.
       - name: scope
         data_type: string
-        description: Assessment scope as recorded in Illuminate (e.g. Unit Assessment).
+        description:
+          Assessment scope as recorded in Illuminate (e.g. Unit Assessment).
       - name: subject_area
         data_type: string
-        description: Illuminate subject area before any CDO-level renaming or mapping.
+        description:
+          Illuminate subject area before any CDO-level renaming or mapping.
       - name: term_administered
         data_type: string
         description: >
-          Reporting term in which the assessment was administered, resolved
-          from the administered_at date against the reporting terms calendar.
+          Reporting term in which the assessment was administered, resolved from
+          the administered_at date against the reporting terms calendar.
       - name: response_type
         data_type: string
-        description: Response granularity from Illuminate (overall, standard, or group).
+        description:
+          Response granularity from Illuminate (overall, standard, or group).
       - name: response_type_description
         data_type: string
-        description: Standard or reporting group label; null for overall response rows.
+        description:
+          Standard or reporting group label; null for overall response rows.
       - name: standard_domain
         data_type: string
         description: >
@@ -104,7 +108,9 @@ models:
           contains today.
       - name: grade_level_display
         data_type: string
-        description: Grade level formatted for display (K for grade 0, otherwise the grade number).
+        description:
+          Grade level formatted for display (K for grade 0, otherwise the grade
+          number).
       - name: source_model_label
         data_type: string
         description: >
