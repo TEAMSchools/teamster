@@ -275,4 +275,4 @@ select
         ),
         0
     ) as computed_avg_pct_correct,
-from all_responses as ar
+from all_responses
