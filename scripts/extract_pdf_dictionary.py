@@ -167,6 +167,43 @@ def extract_ps_table_name(page_text: str) -> str | None:
     return None
 
 
+_PS_COL_HEADER_RE = re.compile(
+    r"^Column\s+Name\s+(?:Initial\s*Version|InitialVersion)\s+Data\s+Type\s+Description",
+    re.MULTILINE,
+)
+
+
+def extract_ps_table_description(page_text: str) -> str | None:
+    """Extract the table-level description paragraph from a PS PDF page.
+
+    The description appears between the page number and the 'Column Name
+    InitialVersion Data Type Description' header. Returns None if no
+    description is found (e.g., continuation pages).
+    """
+    col_header = _PS_COL_HEADER_RE.search(page_text)
+    if col_header is None:
+        return None
+
+    # Text before the column header, after the page number line
+    preamble = page_text[: col_header.start()].strip()
+    lines = preamble.split("\n")
+
+    # Skip the first line (page number) and any blank lines
+    desc_lines = [
+        line.strip()
+        for line in lines[1:]
+        if line.strip() and not line.strip().isdigit()
+    ]
+    if not desc_lines:
+        return None
+
+    description = " ".join(desc_lines)
+    # Skip if it looks like a table name header, not a description
+    if _PS_TABLE_HEADER_RE.match(description):
+        return None
+    return description
+
+
 # Matches column entry lines like:
 #   "ColumnName 3.6.1 DataType(size) Description text..."
 # Version: digits.digits[.digits]*
@@ -293,12 +330,18 @@ def build_ps_mapping(
     # Continuation pages have column entries but no header — they inherit
     # the most recent table name.
     table_columns: dict[str, list[dict[str, str]]] = {}
+    table_descriptions: dict[str, str] = {}
     current_table: str | None = None
 
     for page_text in pages:
         detected_table = extract_ps_table_name(page_text)
         if detected_table is not None:
             current_table = detected_table
+            # Capture table-level description (only on the first page)
+            if current_table not in table_descriptions:
+                desc = extract_ps_table_description(page_text)
+                if desc:
+                    table_descriptions[current_table] = desc
 
         entries = parse_ps_columns(page_text)
         if entries and current_table is not None:
@@ -366,6 +409,9 @@ def build_ps_mapping(
             "matched": len(matched_entries),
             "unmatched_pdf": len(unmatched_pdf),
             "unmatched_yaml": len(unmatched_yaml),
+        },
+        "table_descriptions": {
+            ps_table_to_model_name(t): d for t, d in table_descriptions.items()
         },
         "entries": matched_entries,
         "unmatched_pdf": unmatched_pdf,
