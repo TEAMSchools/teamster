@@ -20,12 +20,13 @@ models:
         description: PowerSchool student number.
       - name: academic_year
         data_type: int64
-        description: Academic year as a four-digit integer (e.g. 2025 for 2024-25).
+        description:
+          Academic year as a four-digit integer (e.g. 2025 for 2024-25).
       - name: term_administered
         data_type: string
         description: >
-          Reporting term in which the assessment was administered (e.g. Q1,
-          Q2). Derived from the administered_at date in Illuminate.
+          Reporting term in which the assessment was administered (e.g. Q1, Q2).
+          Derived from the administered_at date in Illuminate.
       - name: subject_area_label
         data_type: string
         description: >
@@ -44,8 +45,8 @@ models:
       - name: proficiency_label
         data_type: string
         description: >
-          Performance band label (e.g. Proficient, Developing) corresponding
-          to avg_pct_correct on the Illuminate performance band set for this
+          Performance band label (e.g. Proficient, Developing) corresponding to
+          avg_pct_correct on the Illuminate performance band set for this
           subject.
       - name: subject_area
         data_type: string
@@ -54,7 +55,8 @@ models:
           enrichment grade CDO.
       - name: scope
         data_type: string
-        description: Fixed value 'UA', identifying these rows as Unit Assessment scope.
+        description:
+          Fixed value 'UA', identifying these rows as Unit Assessment scope.
       - name: rn_unit
         data_type: int64
         description: >
