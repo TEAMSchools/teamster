@@ -107,3 +107,81 @@ class TestCamelToSnake:
     def test_formatted_name(self) -> None:
         module = _load_script()
         assert module.camel_to_snake("formattedName") == "formatted_name"
+
+
+class TestClassifyPii:
+    """Test the PII heuristic classifier."""
+
+    def test_name_columns_are_pii(self) -> None:
+        module = _load_script()
+        assert module.classify_pii("first_name", "") is True
+        assert module.classify_pii("last_name", "") is True
+        assert module.classify_pii("middle_name", "") is True
+        assert module.classify_pii("formatted_name", "") is True
+        assert module.classify_pii("family_name_1", "") is True
+        assert module.classify_pii("given_name", "") is True
+        assert module.classify_pii("nick_name", "") is True
+        assert module.classify_pii("lastfirst", "") is True
+
+    def test_dob_is_pii(self) -> None:
+        module = _load_script()
+        assert module.classify_pii("dob", "") is True
+        assert module.classify_pii("birth_date", "") is True
+        assert module.classify_pii("person__birth_date", "") is True
+
+    def test_ssn_is_pii(self) -> None:
+        module = _load_script()
+        assert module.classify_pii("ssn", "") is True
+        assert module.classify_pii("social_security", "") is True
+
+    def test_address_is_pii(self) -> None:
+        module = _load_script()
+        assert module.classify_pii("street", "") is True
+        assert module.classify_pii("city", "") is True
+        assert module.classify_pii("zip", "") is True
+        assert module.classify_pii("postal_code", "") is True
+        assert module.classify_pii("line_one", "Legal address line one.") is True
+        assert module.classify_pii("city_name", "") is True
+
+    def test_phone_is_pii(self) -> None:
+        module = _load_script()
+        assert module.classify_pii("home_phone", "") is True
+        assert module.classify_pii("dial_number", "") is True
+        assert module.classify_pii("guardianfax", "") is True
+
+    def test_email_is_pii(self) -> None:
+        module = _load_script()
+        assert module.classify_pii("guardianemail", "") is True
+        assert module.classify_pii("email_uri", "") is True
+
+    def test_description_keyword_triggers_pii(self) -> None:
+        module = _load_script()
+        assert module.classify_pii("some_field", "Social Security Number") is True
+        assert (
+            module.classify_pii("some_field", "Date of birth for the student") is True
+        )
+        assert module.classify_pii("some_field", "Home address of the worker") is True
+        assert (
+            module.classify_pii("some_field", "Emergency contact phone number") is True
+        )
+
+    def test_non_pii_columns(self) -> None:
+        module = _load_script()
+        assert module.classify_pii("schoolid", "") is False
+        assert module.classify_pii("grade_level", "") is False
+        assert module.classify_pii("entrydate", "") is False
+        assert module.classify_pii("termid", "") is False
+        assert module.classify_pii("code_value", "") is False
+        assert module.classify_pii("effective_date", "") is False
+
+    def test_government_id_is_pii(self) -> None:
+        module = _load_script()
+        assert module.classify_pii("state_studentnumber", "") is True
+        assert module.classify_pii("web_password", "") is True
+
+    def test_emergency_contact_is_pii(self) -> None:
+        module = _load_script()
+        assert (
+            module.classify_pii("emerg_contact_1", "Emergency contact information.")
+            is True
+        )

@@ -88,6 +88,57 @@ def camel_to_snake(name: str) -> str:
     return s.lower()
 
 
+# PII column name patterns (checked against snake_case column name)
+_PII_NAME_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"(^|_)(first|last|middle|given|family|nick)_?name", re.IGNORECASE),
+    re.compile(r"(^|_)formatted_name", re.IGNORECASE),
+    re.compile(r"(^|__)lastfirst($|_)", re.IGNORECASE),
+    re.compile(r"(^|_)dob($|_)", re.IGNORECASE),
+    re.compile(r"birth_date", re.IGNORECASE),
+    re.compile(r"(^|_)ssn($|_)", re.IGNORECASE),
+    re.compile(r"social_security", re.IGNORECASE),
+    re.compile(r"(^|_)(street|city|zip|postal_code|city_name)($|_)", re.IGNORECASE),
+    re.compile(r"(^|_)line_(one|two|three)($|_)", re.IGNORECASE),
+    re.compile(r"(^|_)(home_)?phone($|_)", re.IGNORECASE),
+    re.compile(r"dial_number", re.IGNORECASE),
+    re.compile(r"(^|_)fax($|_)", re.IGNORECASE),
+    re.compile(r"guardian(email|fax|phone)", re.IGNORECASE),
+    re.compile(r"email_uri", re.IGNORECASE),
+    re.compile(r"(^|_)email($|_)", re.IGNORECASE),
+    re.compile(r"state_studentnumber", re.IGNORECASE),
+    re.compile(r"web_password", re.IGNORECASE),
+    re.compile(r"emerg_contact", re.IGNORECASE),
+)
+
+# PII description keywords (checked against description text)
+_PII_DESC_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"social\s+security", re.IGNORECASE),
+    re.compile(r"date\s+of\s+birth", re.IGNORECASE),
+    re.compile(r"home\s+address", re.IGNORECASE),
+    re.compile(r"emergency\s+contact", re.IGNORECASE),
+    re.compile(r"phone\s+number", re.IGNORECASE),
+    re.compile(r"email\s+address", re.IGNORECASE),
+    re.compile(r"\bSSN\b"),
+    re.compile(r"\bDOB\b"),
+)
+
+
+def classify_pii(column_name: str, description: str) -> bool:
+    """Classify whether a column contains PII.
+
+    Returns True for names, dates of birth, SSN/tax IDs, addresses,
+    phone numbers, email addresses, government IDs, passwords,
+    and emergency contacts.
+    """
+    for pattern in _PII_NAME_PATTERNS:
+        if pattern.search(column_name):
+            return True
+    for pattern in _PII_DESC_PATTERNS:
+        if pattern.search(description):
+            return True
+    return False
+
+
 def main() -> None:
     raise NotImplementedError
 
