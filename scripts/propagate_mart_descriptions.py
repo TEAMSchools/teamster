@@ -137,6 +137,13 @@ def _enrich_staging_constraints(yaml_dirs: list[Path], ryaml) -> int:
             for model in doc.get("models", []) or []:
                 columns = model.get("columns", []) or []
 
+                # Check if model already has a PK constraint
+                has_existing_pk = any(
+                    c.get("type") == "primary_key"
+                    for col in columns
+                    for c in col.get("constraints", []) or []
+                )
+
                 # First pass: assign FK constraints and find PK candidates
                 pk_candidate = None
                 for col in columns:
@@ -156,11 +163,15 @@ def _enrich_staging_constraints(yaml_dirs: list[Path], ryaml) -> int:
                         )
                         enriched += 1
                         file_changed = True
-                    elif role == "primary_key" and pk_candidate is None:
+                    elif (
+                        role == "primary_key"
+                        and pk_candidate is None
+                        and not has_existing_pk
+                    ):
                         pk_candidate = col
 
                 # Bare "unique identifier" fallback — only if no PK found yet
-                if pk_candidate is None:
+                if pk_candidate is None and not has_existing_pk:
                     for col in columns:
                         existing = col.get("constraints", []) or []
                         if any(c.get("type") == "primary_key" for c in existing):
@@ -176,7 +187,7 @@ def _enrich_staging_constraints(yaml_dirs: list[Path], ryaml) -> int:
                             break
 
                 # Unique test fallback — if still no PK
-                if pk_candidate is None:
+                if pk_candidate is None and not has_existing_pk:
                     for col in columns:
                         if _has_unique_test(col):
                             pk_candidate = col
@@ -579,23 +590,29 @@ def _extract_table_name(relation: str) -> str:
 class _CompiledCache:
     """Pre-parsed compiled SQL cache: table references, alias maps, and expression summaries."""
 
-    def __init__(self, compiled_dir: Path) -> None:
+    def __init__(self, compiled_dirs: list[Path]) -> None:
         self.tables: dict[str, list[str]] = {}
         self.aliases: dict[str, dict[str, tuple[str, str]]] = {}
         self.expressions: dict[str, dict[str, tuple[str, list[str]]]] = {}
         self.parse_failures: list[str] = []
 
-        for sql_path in compiled_dir.rglob("*.sql"):
-            model_name = sql_path.stem
-            sql = sql_path.read_text(encoding="utf-8")
-            tables = _extract_referenced_tables(sql)
-            aliases = _extract_alias_map(sql)
-            expressions = _extract_expression_map(sql)
-            if not tables and not aliases and not expressions:
-                self.parse_failures.append(model_name)
-            self.tables[model_name] = tables
-            self.aliases[model_name] = aliases
-            self.expressions[model_name] = expressions
+        for compiled_dir in compiled_dirs:
+            if not compiled_dir.exists():
+                continue
+            for sql_path in compiled_dir.rglob("*.sql"):
+                model_name = sql_path.stem
+                # Don't overwrite kipptaf entries with regional ones
+                if model_name in self.tables:
+                    continue
+                sql = sql_path.read_text(encoding="utf-8")
+                tables = _extract_referenced_tables(sql)
+                aliases = _extract_alias_map(sql)
+                expressions = _extract_expression_map(sql)
+                if not tables and not aliases and not expressions:
+                    self.parse_failures.append(model_name)
+                self.tables[model_name] = tables
+                self.aliases[model_name] = aliases
+                self.expressions[model_name] = expressions
 
 
 def _resolve_column_to_staging(
@@ -880,7 +897,16 @@ def _build_source_mapping(manifest: dict) -> dict[str, dict]:
 
 KIPPTAF_PROJECT = Path("src/dbt/kipptaf")
 MANIFEST_PATH = KIPPTAF_PROJECT / "target" / "manifest.json"
-COMPILED_DIR = KIPPTAF_PROJECT / "target" / "compiled" / "kipptaf" / "models"
+
+# Compiled SQL directories — kipptaf first (primary), regional projects as
+# fallback for cross-project lineage through union_relations models.
+COMPILED_DIRS: list[Path] = [
+    KIPPTAF_PROJECT / "target" / "compiled" / "kipptaf" / "models",
+    Path("src/dbt/kippnewark/target/compiled/kippnewark/models"),
+    Path("src/dbt/kippcamden/target/compiled/kippcamden/models"),
+    Path("src/dbt/kippmiami/target/compiled/kippmiami/models"),
+    Path("src/dbt/kipppaterson/target/compiled/kipppaterson/models"),
+]
 
 # Source-system package staging YAML directories
 STAGING_YAML_DIRS: tuple[Path, ...] = (
@@ -942,7 +968,7 @@ def main() -> None:
     print(f"Loaded {len(source_mapping)} source mappings")
 
     # Build caches
-    cache = _CompiledCache(COMPILED_DIR)
+    cache = _CompiledCache(COMPILED_DIRS)
     staging_index = _build_staging_index(staging_dict)
     print(
         f"Cached {len(cache.tables)} compiled SQL files, {len(cache.aliases)} alias maps"
