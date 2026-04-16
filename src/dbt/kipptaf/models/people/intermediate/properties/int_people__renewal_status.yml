@@ -27,8 +27,22 @@ models:
         data_type: numeric
       - name: ay_school_shortname
         data_type: string
+        description: A short 1 or 2 character version of the Name, such as A.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__cycle_day
+            source_column: abbreviation
       - name: ay_campus_name
         data_type: string
+        description:
+          Name of the assignment, such as Essay, Homework, etc. Required.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: name
       - name: ay_head_of_school_samaccount
         data_type: string
       - name: ay_pm4_overall_score
@@ -77,8 +91,22 @@ models:
         data_type: string
       - name: ny_school_shortname
         data_type: string
+        description: A short 1 or 2 character version of the Name, such as A.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__cycle_day
+            source_column: abbreviation
       - name: ny_campus_name
         data_type: string
+        description:
+          Name of the assignment, such as Essay, Homework, etc. Required.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: name
       - name: ny_head_of_school_samaccount
         data_type: string
       - name: nonrenewal_reason

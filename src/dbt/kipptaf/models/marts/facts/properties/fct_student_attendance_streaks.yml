@@ -18,7 +18,8 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          District-assigned student identification number. Surrogate key.
+          The school enrollment entry date from the student table for EOY it the
+          next schools beginning date.Indexed. Surrogate key.
         data_tests:
           - not_null
 

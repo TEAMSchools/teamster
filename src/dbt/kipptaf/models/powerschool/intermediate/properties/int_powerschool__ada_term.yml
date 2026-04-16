@@ -30,38 +30,45 @@ models:
       - name: ada_semester
         data_type: float64
         description:
-          Derived from _dbt_source_relation, academic_year,
-          count_attendance_value_term, semester, studentid,
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026'). Derived from _dbt_source_relation,
+          academic_year, count_attendance_value_term, semester, studentid,
           sum_attendance_value_term.
       - name: ada_year
         data_type: float64
         description:
-          Derived from _dbt_source_relation, academic_year,
-          count_attendance_value_term, studentid, sum_attendance_value_term.
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026'). Derived from _dbt_source_relation,
+          academic_year, count_attendance_value_term, studentid,
+          sum_attendance_value_term.
       - name: ada_year_running
         data_type: float64
         description:
-          Derived from _dbt_source_relation, academic_year,
-          count_attendance_value_term, studentid, sum_attendance_value_term,
-          term.
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026'). Derived from _dbt_source_relation,
+          academic_year, count_attendance_value_term, studentid,
+          sum_attendance_value_term, term.
       - name: ada_weighted_term
         data_type: float64
         description: Derived from sum_attendance_value_weighted_term.
       - name: ada_weighted_semester
         data_type: float64
         description:
-          Derived from _dbt_source_relation, academic_year,
-          count_attendance_value_term, semester, studentid,
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026'). Derived from _dbt_source_relation,
+          academic_year, count_attendance_value_term, semester, studentid,
           sum_attendance_value_weighted_term.
       - name: ada_weighted_year
         data_type: float64
         description:
-          Derived from _dbt_source_relation, academic_year,
-          count_attendance_value_term, studentid,
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026'). Derived from _dbt_source_relation,
+          academic_year, count_attendance_value_term, studentid,
           sum_attendance_value_weighted_term.
       - name: ada_weighted_year_running
         data_type: float64
         description:
-          Derived from _dbt_source_relation, academic_year,
-          count_attendance_value_term, studentid,
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026'). Derived from _dbt_source_relation,
+          academic_year, count_attendance_value_term, studentid,
           sum_attendance_value_weighted_term, term.

@@ -58,7 +58,10 @@ models:
         description: Categorical mapping of score_type, test_subject.
       - name: rn_highest
         data_type: int64
-        description: ROWNUMBER of value.
+        description:
+          The type of test being administered. 1 = National, 2 = State, 3 =
+          Local, 4 =District, 5 = School, 6 = Other, 7 = Fitness (as of 20.11.0)
+          ROWNUMBER of value.
       - name: row_count_by_test_date
         data_type: int64
       - name: average_rows

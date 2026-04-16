@@ -11,7 +11,8 @@ models:
       - name: grades_gpa_key
         data_type: string
         description: >-
-          District-assigned student identification number. Surrogate key.
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026'). Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -19,14 +20,17 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          District-assigned student identification number. Surrogate key.
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026'). Surrogate key.
         data_tests:
           - not_null
 
       - name: term_key
         data_type: string
         description: >-
-          Surrogate key.
+          The code value that is stored in the database, such as Home and Work
+          for phone types and Mand F for gender types. Indexed with the Code
+          Type column. Required Surrogate key.
 
       - name: student_number
         data_type: int64

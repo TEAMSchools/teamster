@@ -24,10 +24,23 @@ models:
         data_type: string
       - name: info_title
         data_type: string
+        description:
+          Stores a title name for the teacher and is used for sorting purposes.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: title
       - name: info_document_title
         data_type: string
       - name: info_description
         data_type: string
+        description: The description of the assignment.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: description
       - name: settings_quiz_settings_is_quiz
         data_type: boolean
       - name: item_id
@@ -106,6 +119,12 @@ models:
         data_type: string
       - name: item_abbreviation
         data_type: string
+        description: A short 1 or 2 character version of the Name, such as A.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__cycle_day
+            source_column: abbreviation
       - name: item_url_id
         data_type: string
       - name: response_id

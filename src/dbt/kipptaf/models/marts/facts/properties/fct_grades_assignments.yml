@@ -12,8 +12,8 @@ models:
       - name: grades_assignment_key
         data_type: string
         description: >-
-          Foreign key. Internal number for the associated Assignment Section
-          Assignment Section IDrecord. Required. Indexed. Surrogate key.
+          Foreign key. Internal number for the associated Assignment
+          Section.Assignment Section IDrecord. Required. Indexed. Surrogate key.
         data_tests:
           - unique
           - not_null
@@ -28,14 +28,17 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          District-assigned student identification number. Surrogate key.
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026'). Surrogate key.
         data_tests:
           - not_null
 
       - name: term_key
         data_type: string
         description: >-
-          The name of the school. Indexed. Surrogate key.
+          The code value that is stored in the database, such as Home and Work
+          for phone types and Mand F for gender types. Indexed with the Code
+          Type column. Required Surrogate key.
 
       - name: due_date_key
         data_type: date
@@ -146,4 +149,6 @@ models:
       - name: is_counted_in_final_grade
         data_type: boolean
         description: >-
-          Conditional on iscountedinfinalgrade.
+          Indicates if the assignment will count toward the final grade. Valid
+          values: 0=Does not count towardfinal grade, 1=Counts toward final
+          grade. Defaults to 1. Required. Conditional on iscountedinfinalgrade.

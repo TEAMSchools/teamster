@@ -123,8 +123,13 @@ models:
       - name: observation_type_abbreviation
         data_type: string
         description: >-
-          Short code for the observation type (e.g., WT, O3, PMS).
+          A short 1 or 2 character version of the Name, such as A.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__cycle_day
+            source_column: abbreviation
       - name: term_code
         data_type: string
         description: >-

@@ -10,7 +10,9 @@ models:
       - name: term_key
         data_type: string
         description: >-
-          Surrogate key.
+          The code value that is stored in the database, such as Home and Work
+          for phone types and Mand F for gender types. Indexed with the Code
+          Type column. Required Surrogate key.
         data_tests:
           - unique
           - not_null

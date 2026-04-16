@@ -51,8 +51,14 @@ models:
       - name: creator_name
         data_type: string
         description: >-
-          Display name of the person who created the assignment.
+          Name of the assignment, such as Essay, Homework, etc. Required.
+          Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: name
       - name: goal_name
         data_type: string
         description: >-

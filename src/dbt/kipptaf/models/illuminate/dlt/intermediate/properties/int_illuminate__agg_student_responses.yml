@@ -41,7 +41,9 @@ models:
         description: First non-null of standard_id, reporting_group_id.
       - name: response_type_description
         data_type: string
-        description: First non-null of standard_description, label.
+        description:
+          The description of the assignment. First non-null of
+          standard_description, label.
       - name: points_possible
         data_type: numeric
         description: First non-null of points_possible, raw_score_possible.

@@ -18,12 +18,15 @@ models:
       - name: assessment_key
         data_type: string
         description: >-
+          Stores a title name for the teacher and is used for sorting purposes.
           Surrogate key.
 
       - name: term_key
         data_type: string
         description: >-
-          Surrogate key.
+          The code value that is stored in the database, such as Home and Work
+          for phone types and Mand F for gender types. Indexed with the Code
+          Type column. Required Surrogate key.
 
       - name: student_number
         data_type: int64

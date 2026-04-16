@@ -78,4 +78,5 @@ models:
       - name: percent_correct
         data_type: float64
         description: >-
-          Derived from maximum, points.
+          The actual points student received for this section. Derived from
+          maximum, points.

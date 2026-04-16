@@ -6,12 +6,12 @@ models:
       - name: assignmentsectionid
         data_type: int64
         description:
-          Foreign key. Internal number for the associated Assignment Section
-          Assignment Section IDrecord. Required. Indexed.
+          Foreign key. Internal number for the associated Assignment
+          Section.Assignment Section IDrecord. Required. Indexed.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__assignmentscore
+            source_model: stg_powerschool__assignmentcategoryassoc
             source_column: assignmentsectionid
       - name: sectionsdcid
         data_type: int64

@@ -63,5 +63,7 @@ models:
       - name: overall_status
         data_type: string
         description:
-          Categorical mapping of academic_status, attendance_status,
-          grade_level, n_failing_core, region.
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted. Categorical
+          mapping of academic_status, attendance_status, grade_level,
+          n_failing_core, region.

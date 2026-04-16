@@ -471,7 +471,10 @@ models:
       - name: official_teacher_name
         data_type: string
         description:
-          First non-null of enrollment_teacher_name, official_teacher_name.
+          Enrollment teacher name(s), pipe-delimited when multiple. First
+          non-null of enrollment_teacher_name, official_teacher_name.
       - name: client_date
         data_type: date
-        description: First non-null of device_date, client_date.
+        description:
+          Date the assessment was administered on the device. First non-null of
+          device_date, client_date.

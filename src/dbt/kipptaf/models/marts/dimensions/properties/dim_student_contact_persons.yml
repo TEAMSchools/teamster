@@ -11,6 +11,8 @@ models:
       - name: student_contact_person_key
         data_type: string
         description: >-
+          Identification number of the associated Person table row pertaining to
+          the phone number. Indexedwith Address Priority Order. Required.
           Surrogate key.
         data_tests:
           - unique

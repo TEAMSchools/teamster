@@ -117,4 +117,6 @@ models:
         data_type: string
       - name: academic_year_clean
         data_type: int64
-        description: Derived from academic_year.
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026'). Derived from academic_year.

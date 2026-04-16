@@ -492,6 +492,23 @@ def _resolve_column_to_staging(
         if result is not None:
             return result
 
+    # Staging index fallback — the column name exists in staging but the
+    # recursive walk couldn't reach it (cross-project boundary). Prefer
+    # packages seen during the walk.
+    candidates = staging_index.get(col_name, [])
+    if candidates:
+        walked_pkgs = {
+            _infer_package_from_model(_extract_table_name(t)) for t in referenced_tables
+        }
+        walked_pkgs.discard(None)
+        for stg_model, stg_col in candidates:
+            stg_pkg = _infer_package(stg_model)
+            if stg_pkg in walked_pkgs:
+                return (stg_model, stg_col, stg_pkg)
+        # No package preference — take first candidate
+        stg_model, stg_col = candidates[0]
+        return (stg_model, stg_col, _infer_package(stg_model))
+
     return None
 
 

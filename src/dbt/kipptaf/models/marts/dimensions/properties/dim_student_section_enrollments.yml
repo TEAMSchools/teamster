@@ -20,7 +20,8 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          District-assigned student identification number. Surrogate key.
+          The school enrollment entry date from the student table for EOY it the
+          next schools beginning date.Indexed. Surrogate key.
 
       - name: course_section_key
         data_type: string
@@ -32,7 +33,9 @@ models:
       - name: term_key
         data_type: string
         description: >-
-          Surrogate key.
+          The code value that is stored in the database, such as Home and Work
+          for phone types and Mand F for gender types. Indexed with the Code
+          Type column. Required Surrogate key.
 
       - name: student_number
         data_type: int64

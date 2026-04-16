@@ -35,52 +35,62 @@ models:
       - name: day_of_week
         data_type: int64
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.
 
       - name: day_of_week_name
         data_type: string
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.
 
       - name: day_of_month
         data_type: int64
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.
 
       - name: day_of_year
         data_type: int64
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.
 
       - name: week_of_year
         data_type: int64
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.
 
       - name: month_number
         data_type: int64
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.
 
       - name: month_name
         data_type: string
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.
 
       - name: quarter_number
         data_type: int64
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.
 
       - name: year_number
         data_type: int64
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.
 
       - name: is_weekday
         data_type: boolean
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.
 
       - name: academic_year
         data_type: int64
@@ -96,24 +106,29 @@ models:
       - name: fiscal_year
         data_type: int64
         description: >-
-          Conditional on date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Conditional on date_value.
 
       - name: week_start_date
         data_type: date
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.
 
       - name: week_end_date
         data_type: date
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.
 
       - name: week_start_monday
         data_type: date
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.
 
       - name: week_end_sunday
         data_type: date
         description: >-
-          Derived from date_value.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Derived from date_value.

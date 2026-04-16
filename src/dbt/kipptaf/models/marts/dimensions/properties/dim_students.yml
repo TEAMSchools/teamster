@@ -39,8 +39,14 @@ models:
       - name: student_name
         data_type: string
         description: >-
-          Full name of the student (last, first format from PowerSchool).
+          Last, First, Mi. Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: lastfirst
+            contains_pii: true
       - name: birth_date
         data_type: date
         description: >-
@@ -75,12 +81,13 @@ models:
       - name: is_ell
         data_type: boolean
         description: >-
-          True when lep_status is not null.
+          Student Limited English Proficiency status. True when lep_status is
+          not null.
 
       - name: has_iep
         data_type: boolean
         description: >-
-          Derived from iep_status.
+          Individualized Education Program status. Derived from iep_status.
 
       - name: ethnicity
         data_type: string

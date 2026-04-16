@@ -63,4 +63,6 @@ models:
         description: Conditional on scale_high, scale_score, sublevel_number.
       - name: scale_score_prev
         data_type: int64
-        description: LAG of scale_score.
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026'). LAG of scale_score.

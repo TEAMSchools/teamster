@@ -28,8 +28,22 @@ models:
         data_type: string
       - name: creator_first_name
         data_type: string
+        description: Students' first name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: first_name
+            contains_pii: true
       - name: creator_last_name
         data_type: string
+        description: Students last name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: last_name
+            contains_pii: true
       - name: performance_band_set_id
         data_type: int64
       - name: assessment_type

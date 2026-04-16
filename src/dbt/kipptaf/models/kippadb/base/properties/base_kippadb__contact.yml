@@ -41,12 +41,12 @@ models:
         data_type: string
       - name: contact_first_name
         data_type: string
-        description: Students' first name.
+        description: The person's first name. Indexed. Optional.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: first_name
+            source_model: stg_powerschool__person
+            source_column: firstname
             contains_pii: true
       - name: contact_home_phone
         data_type: string
@@ -59,12 +59,12 @@ models:
             contains_pii: true
       - name: contact_last_name
         data_type: string
-        description: Students last name.
+        description: The person's last name. Indexed. Optional.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: last_name
+            source_model: stg_powerschool__person
+            source_column: lastname
             contains_pii: true
       - name: contact_mobile_phone
         data_type: string
@@ -212,6 +212,14 @@ models:
         data_type: timestamp
       - name: record_type_is_active
         data_type: bool
+        description:
+          "Indicates if the assignment is active. Valid values: 1=Yes=Active,
+          0=No=Disabled. Defaults to 1.Required."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__districtteachercategory
+            source_column: isactive
       - name: record_type_business_process_id
         data_type: string
       - name: record_type_system_modstamp
@@ -240,7 +248,9 @@ models:
             source_column: name
       - name: contact_lastfirst
         data_type: string
-        description: Derived from first_name, last_name.
+        description:
+          The person's first name. Indexed. Optional. Derived from first_name,
+          last_name.
       - name: years_out_of_hs
         data_type: int64
         description: Derived from actual_hs_graduation_date.

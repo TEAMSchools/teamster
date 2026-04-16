@@ -17,8 +17,14 @@ models:
       - name: location_name
         data_type: string
         description: >-
-          Canonical location name.
+          Name of the assignment, such as Essay, Homework, etc. Required.
+          Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: name
       - name: abbreviation
         data_type: string
         description: >-
@@ -42,8 +48,14 @@ models:
       - name: campus
         data_type: string
         description: >-
-          Physical campus name. Multiple schools may share a campus.
+          Name of the assignment, such as Essay, Homework, etc. Required.
+          Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: name
       - name: is_campus
         data_type: boolean
         description: >-
