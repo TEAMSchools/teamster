@@ -39,7 +39,7 @@ models:
         data_type: string
       - name: administered_at
         data_type: date
-        description: First non-null of administered_at, administered_at.
+        description: First non-null of administered_at.
       - name: subject_area
         data_type: string
         description: First non-null of subject, subject_area.

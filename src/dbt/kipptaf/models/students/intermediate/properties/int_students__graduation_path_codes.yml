@@ -131,7 +131,7 @@ models:
         description:
           The grade level the student was in for this enrollment or if EOY, the
           next grade level unless thestudent is being demoted. First non-null of
-          grad_eligibility, grade_level, grade_level.
+          grad_eligibility, grade_level.
       - name: test_type
         data_type: string
         description:

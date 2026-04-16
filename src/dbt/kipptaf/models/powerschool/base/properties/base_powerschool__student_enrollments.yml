@@ -610,7 +610,7 @@ models:
         data_type: date
       - name: gifted_and_talented
         data_type: string
-        description: First non-null of gifted_and_talented, gifted_and_talented.
+        description: First non-null of gifted_and_talented.
       - name: lunch_balance
         data_type: float64
       - name: is_504

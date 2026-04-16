@@ -460,7 +460,12 @@ def _summarize_expression(node: exp.Expression) -> str:
 
     # COALESCE
     if isinstance(node, exp.Coalesce):
-        inner_cols = [c.name for c in node.find_all(exp.Column)]
+        seen: set[str] = set()
+        inner_cols: list[str] = []
+        for c in node.find_all(exp.Column):
+            if c.name not in seen:
+                seen.add(c.name)
+                inner_cols.append(c.name)
         if inner_cols:
             return f"First non-null of {', '.join(inner_cols)}."
         return "Coalesce expression."

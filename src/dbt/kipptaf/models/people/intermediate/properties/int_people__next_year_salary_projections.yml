@@ -31,22 +31,12 @@ models:
           base_remuneration_hourly_rate_amount, worker_type_code.
       - name: salary_rule
         data_type: string
-        description: First non-null of salary_rule, salary_rule, salary_rule.
+        description: First non-null of salary_rule.
       - name: ny_salary
         data_type: numeric
         description:
-          First non-null of scale_ny_salary, scale_ny_salary,
-          base_remuneration_annual_rate_amount, salary_rule,
-          base_remuneration_annual_rate_amount, scale_ny_salary,
-          base_remuneration_annual_rate_amount,
-          base_remuneration_annual_rate_amount,
-          base_remuneration_annual_rate_amount,
-          base_remuneration_annual_rate_amount,
-          base_remuneration_annual_rate_amount,
-          base_remuneration_annual_rate_amount,
-          base_remuneration_annual_rate_amount,
-          base_remuneration_annual_rate_amount,
-          base_remuneration_annual_rate_amount.
+          First non-null of scale_ny_salary,
+          base_remuneration_annual_rate_amount, salary_rule.
       - name: ny_hourly
         data_type: numeric
         description: Derived from base_remuneration_hourly_rate_amount.

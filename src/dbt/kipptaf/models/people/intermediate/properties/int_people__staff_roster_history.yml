@@ -227,8 +227,7 @@ models:
           First non-null of reports_to_employee_number, employee_number.
       - name: race_ethnicity_reporting
         data_type: string
-        description:
-          First non-null of race_ethnicity_reporting, race_ethnicity_reporting.
+        description: First non-null of race_ethnicity_reporting.
       - name: gender_identity
         data_type: string
         description: Categorical mapping of gender_code, gender_identity.
