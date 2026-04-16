@@ -215,18 +215,26 @@ def _extract_alias_map(sql: str) -> dict[str, tuple[str, str]]:
     return result
 
 
-def _infer_package_from_model(model_name: str) -> str | None:
-    """Infer the source package from a kipptaf model name.
+_STAGING_SLUG_MAP: dict[str, str] = {
+    "adp_workforce_now": "adp",
+    "adp_workforce_manager": "adp",
+    "adp_payroll": "adp",
+}
 
+
+def _infer_package(model_name: str) -> str | None:
+    """Infer the source package from a model name.
+
+    'stg_powerschool__students' → 'powerschool'
     'base_powerschool__student_enrollments' → 'powerschool'
-    'int_deanslist__incidents' → 'deanslist'
+    'int_adp_workforce_now__workers' → 'adp'
     'dim_students' → None (no clear package)
     """
     for prefix in ("base_", "int_", "stg_"):
         if model_name.startswith(prefix):
             remainder = model_name[len(prefix) :]
-            package_slug = remainder.split("__", 1)[0]
-            return package_slug
+            slug = remainder.split("__", 1)[0]
+            return _STAGING_SLUG_MAP.get(slug, slug)
     return None
 
 
@@ -416,13 +424,19 @@ class _CompiledCache:
         self.tables: dict[str, list[str]] = {}
         self.aliases: dict[str, dict[str, tuple[str, str]]] = {}
         self.expressions: dict[str, dict[str, tuple[str, list[str]]]] = {}
+        self.parse_failures: list[str] = []
 
         for sql_path in compiled_dir.rglob("*.sql"):
             model_name = sql_path.stem
             sql = sql_path.read_text(encoding="utf-8")
-            self.tables[model_name] = _extract_referenced_tables(sql)
-            self.aliases[model_name] = _extract_alias_map(sql)
-            self.expressions[model_name] = _extract_expression_map(sql)
+            tables = _extract_referenced_tables(sql)
+            aliases = _extract_alias_map(sql)
+            expressions = _extract_expression_map(sql)
+            if not tables and not aliases and not expressions:
+                self.parse_failures.append(model_name)
+            self.tables[model_name] = tables
+            self.aliases[model_name] = aliases
+            self.expressions[model_name] = expressions
 
 
 def _resolve_column_to_staging(
@@ -455,7 +469,7 @@ def _resolve_column_to_staging(
 
         # Direct passthrough match in staging
         if (table_name, col_name) in staging_dict:
-            return (table_name, col_name, _infer_package(table_name))
+            return (table_name, col_name, _infer_package(table_name) or table_name)
 
         # Not staging — check this model's alias map for renames
         upstream_tables = cache.tables.get(table_name)
@@ -507,12 +521,12 @@ def _resolve_column_to_staging(
     candidates = staging_index.get(col_name, [])
     if candidates:
         walked_pkgs = {
-            _infer_package_from_model(_extract_table_name(t)) for t in referenced_tables
+            _infer_package(_extract_table_name(t)) for t in referenced_tables
         }
         walked_pkgs.discard(None)
         for stg_model, stg_col in candidates:
             stg_pkg = _infer_package(stg_model)
-            if stg_pkg in walked_pkgs:
+            if stg_pkg and stg_pkg in walked_pkgs:
                 return (stg_model, stg_col, stg_pkg)
 
     return None
@@ -582,14 +596,14 @@ def _enrich_yaml_descriptions(
                     ref_pkgs: set[str] = set()
                     for t in referenced_tables:
                         tn = _extract_table_name(t)
-                        p = _infer_package_from_model(tn)
+                        p = _infer_package(tn)
                         if p:
                             ref_pkgs.add(p)
                         for t2 in cache.tables.get(tn, []):
-                            p2 = _infer_package_from_model(_extract_table_name(t2))
+                            p2 = _infer_package(_extract_table_name(t2))
                             if p2:
                                 ref_pkgs.add(p2)
-                    pkg = _infer_package_from_model(model_name)
+                    pkg = _infer_package(model_name)
 
                     alias_entry = alias_map.get(col_name)
                     alias_col_name = alias_entry[1] if alias_entry else ""
@@ -629,7 +643,9 @@ def _enrich_yaml_descriptions(
                 enriched += 1
 
                 # Structured provenance
-                _set_provenance(col, package, staging_model, staging_col)
+                _set_provenance(
+                    col, package or staging_model, staging_model, staging_col
+                )
 
                 # Propagate PII flag
                 if staging["contains_pii"]:
@@ -666,30 +682,6 @@ def _enrich_yaml_descriptions(
                     continue
 
     return enriched
-
-
-_STAGING_SLUG_MAP: dict[str, str] = {
-    "adp_workforce_now": "adp",
-    "adp_workforce_manager": "adp",
-    "adp_payroll": "adp",
-}
-
-
-def _infer_package(staging_model: str) -> str:
-    """Infer the package name from a staging model name.
-
-    'stg_powerschool__students' → 'powerschool'
-    'stg_adp_workforce_now__workers' → 'adp'
-    """
-    if not staging_model.startswith("stg_"):
-        return staging_model
-    # Strip 'stg_' prefix and take the first segment before '__'
-    remainder = staging_model[4:]
-    parts = remainder.split("__", 1)
-    slug = parts[0] if parts else remainder
-    if slug in _STAGING_SLUG_MAP:
-        return _STAGING_SLUG_MAP[slug]
-    return slug
 
 
 def _build_source_mapping(manifest: dict) -> dict[str, dict]:
@@ -772,6 +764,12 @@ def main() -> None:
     print(
         f"Cached {len(cache.tables)} compiled SQL files, {len(cache.aliases)} alias maps"
     )
+    if cache.parse_failures:
+        print(
+            f"Warning: {len(cache.parse_failures)} models returned no parsed data: "
+            f"{', '.join(cache.parse_failures[:10])}"
+            f"{'...' if len(cache.parse_failures) > 10 else ''}"
+        )
 
     # Discover target YAML dirs
     target_dirs = _discover_kipptaf_yaml_dirs()

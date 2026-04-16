@@ -96,11 +96,6 @@ _PLUMBING_COLUMNS: frozenset[str] = frozenset(
 )
 
 
-def _plumbing_columns() -> frozenset[str]:
-    """Columns whose default audit action is 'remove' (plumbing)."""
-    return _PLUMBING_COLUMNS
-
-
 # Pre-populated rename guesses carried over from the original 67-column
 # audit. Each entry is (current_name, (proposed_name, rule_ref)). The rule
 # references the rubric section in
@@ -291,7 +286,7 @@ def _read_mart_yaml(
     with path.open(encoding="utf-8") as fh:
         doc = yaml.safe_load(fh)
 
-    plumbing = _plumbing_columns()
+    plumbing = _PLUMBING_COLUMNS
     rows: list[dict[str, str]] = []
 
     for model in doc.get("models", []) or []:
