@@ -92,6 +92,14 @@ models:
         description: >
           Direct link to the student responses report for this assessment in
           Illuminate, constructed from the assessment_id.
+      - name: is_current_academic_year
+        data_type: boolean
+        description: True if this row belongs to the current academic year.
+      - name: is_current_term
+        data_type: boolean
+        description: >
+          True if term_administered is a reporting term whose date range
+          contains today.
       - name: grade_level_display
         data_type: string
         description: Grade level formatted for display (K for grade 0, otherwise the grade number).

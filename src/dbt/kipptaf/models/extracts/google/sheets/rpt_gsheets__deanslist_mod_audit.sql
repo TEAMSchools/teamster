@@ -186,6 +186,15 @@ with
             in ({{ var("current_academic_year") }}, {{ var("current_academic_year") }} - 1)
     ),
 
+    current_terms as (
+        select distinct `name`,
+        from {{ ref("stg_google_sheets__reporting__terms") }}
+        where
+            `type` = 'RT'
+            and current_date('{{ var("local_timezone") }}')
+            between `start_date` and end_date
+    ),
+
     all_responses as (
         select * from mod_assessment
         union all
@@ -221,6 +230,9 @@ select
         '&prebuilt_report_id=1&page=Assessment_StudentController'
     ) as illuminate_student_responses,
 
+    ar.academic_year = {{ var("current_academic_year") }} as is_current_academic_year,
+    term_administered in (select `name` from current_terms) as is_current_term,
+
     case grade_level
         when 0 then 'K'
         else cast(grade_level as string)
@@ -252,4 +264,4 @@ select
         ),
         0
     ) as computed_avg_pct_correct,
-from all_responses
+from all_responses as ar
