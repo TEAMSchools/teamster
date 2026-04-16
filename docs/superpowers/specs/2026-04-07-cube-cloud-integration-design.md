@@ -47,17 +47,16 @@ src/cube/
     cubes/                 # One YAML file per mart (carried from feature branch)
       dim_dates.yml
       dim_locations.yml
-      dim_seats.yml
       dim_staff.yml        # salary/compensation → cube-perm-hr access policy
       dim_students.yml     # PII fields → cube-perm-pii access policy
       dim_terms.yml
-      fct_attendance.yml
-      fct_attendance_communications.yml
-      fct_attendance_interventions.yml
-      fct_additional_earnings.yml
-      fct_microgoals.yml
+      fct_family_communications.yml
       fct_staff_attrition.yml
       fct_staff_benefits_enrollments.yml
+      fct_staff_observation_microgoals.yml
+      fct_student_attendance_daily.yml
+      fct_student_attendance_interventions.yml
+      fct_work_assignment_additional_earnings.yml
     views/
       attendance_metrics.yml
       staff_information_metrics.yml
@@ -202,7 +201,7 @@ tool — they are absent from schema introspection and query results.
 ## New dbt Model
 
 **`dim_staff_hierarchy`** — transitive closure of the org chart. New model in
-`src/dbt/kipptaf/models/marts/`.
+`src/dbt/kipptaf/models/marts/dimensions/`.
 
 Schema:
 
@@ -251,11 +250,11 @@ BigQuery is only queried during scheduled refreshes.
 Refresh schedule is configured in Cube Cloud per pre-aggregation, aligned to the
 dbt run cadence. Exact timing is a setup detail.
 
-| Cube                  | Detail grain             | Trends grain           |
-| --------------------- | ------------------------ | ---------------------- |
-| `fct_attendance`      | school + student + date  | school + month         |
-| `fct_staff_attrition` | school + employee + date | school + academic_year |
-| `dim_staff`           | school + employee        | school                 |
+| Cube                           | Detail grain             | Trends grain           |
+| ------------------------------ | ------------------------ | ---------------------- |
+| `fct_student_attendance_daily` | school + student + date  | school + month         |
+| `fct_staff_attrition`          | school + employee + date | school + academic_year |
+| `dim_staff`                    | school + employee        | school                 |
 
 Lower-volume cubes fall through to BigQuery until pre-aggregations are added in
 a follow-on PR — acceptable for infrequently queried data.
@@ -361,11 +360,12 @@ Performed in the Cube Cloud UI:
 `src/dbt/kipptaf/models/exposures/cube.yml` requires two updates:
 
 1. Add `url:` once the Cube Cloud deployment URL is known
-2. Expand `depends_on` to include all 14 cube model files in scope. Five mart
-   models are intentionally excluded: `fct_internal_assessments` and
-   `fct_state_assessments` (deferred to assessment spec), and
-   `dim_assessment_goals`, `dim_state_assessment_benchmarks`,
-   `fct_student_course_enrollments` (no cube model file for these).
+2. Expand `depends_on` to include all 12 cube model files in scope: `dim_dates`,
+   `dim_locations`, `dim_staff`, `dim_students`, `dim_terms`,
+   `fct_family_communications`, `fct_staff_attrition`,
+   `fct_staff_benefits_enrollments`, `fct_staff_observation_microgoals`,
+   `fct_student_attendance_daily`, `fct_student_attendance_interventions`,
+   `fct_work_assignment_additional_earnings`.
 
 ## Day-to-Day Development Cycle
 
