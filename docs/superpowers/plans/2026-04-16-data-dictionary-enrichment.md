@@ -1592,9 +1592,9 @@ uv run pytest tests/test_extract_pdf_dictionary.py -v -k "AdpPathParser"
 
 Expected: all five pass.
 
-**Note:** The field-name extraction heuristic may need tuning against the real
-PDF. The test fixtures establish the contract; implementation can be adjusted in
-Task 11.
+**Note:** The field-name extraction heuristic may not match all entries on the
+first run. The test fixtures establish the contract; unmatched columns are
+handled by cleanup agents in Task 11.
 
 - [ ] **Step 5: Commit**
 
@@ -2026,18 +2026,20 @@ Tracked on #3516."
 
 ---
 
-## Task 11: Run Script 1 against real PDFs, tune parsing, commit JSON inspection
+## Task 11: Run Script 1 against real PDFs + dispatch cleanup for unmatched columns
 
-**Purpose:** Run the extraction script against the actual PDFs stored in
-`.claude/scratch/`. Inspect the output JSON, identify parsing failures, and tune
-regex patterns. This is an iterative task -- the implementer should adjust
-patterns and re-run until match rates are reasonable.
+**Purpose:** Run the extraction script once against the actual PDFs. Accept the
+initial match rate (don't iterate on regex tuning). Inspect the unmatched
+report. Then dispatch parallel cleanup agents to write descriptions for YAML
+columns the parser missed, by reading the relevant PDF pages directly.
 
 **Files:**
 
-- Modify: `scripts/extract_pdf_dictionary.py` (tune regexes as needed)
 - Inspect: `.claude/scratch/powerschool_dictionary.json`
 - Inspect: `.claude/scratch/adp_dictionary.json`
+- Modify: `.claude/scratch/powerschool_dictionary.json` (cleanup agents append
+  entries)
+- Modify: `.claude/scratch/adp_dictionary.json` (cleanup agents append entries)
 
 - [ ] **Step 1: Run PowerSchool extraction**
 
@@ -2046,93 +2048,75 @@ uv run scripts/extract_pdf_dictionary.py \
     .claude/scratch/PSDB_PSSISDD_20241701.pdf powerschool
 ```
 
-Inspect the summary output. Expected: several hundred matched entries out of
-~3000+ PDF entries. The match rate depends on how many PS tables have
-corresponding staging YAMLs.
+Record the match rate from stdout. Accept whatever the parser produces -- do not
+tune regex patterns.
 
-- [ ] **Step 2: Inspect PowerSchool JSON**
-
-```bash
-uv run python -c "
-import json
-with open('.claude/scratch/powerschool_dictionary.json') as f:
-    data = json.load(f)
-print('Stats:', json.dumps(data['stats'], indent=2))
-print('First 5 entries:')
-for e in data['entries'][:5]:
-    print(f\"  {e['model']}.{e['column']}: {e['description'][:60]}\")
-print('First 10 unmatched PDF:')
-for e in data['unmatched_pdf'][:10]:
-    print(f\"  {e['table']}.{e['column']}\")
-print('First 10 unmatched YAML:')
-for e in data['unmatched_yaml'][:10]:
-    print(f\"  {e['model']}.{e['column']}\")
-"
-```
-
-Review the output. Common issues to fix:
-
-- Table names that don't convert properly (e.g., `GPNode` should become
-  `stg_powerschool__gpnode`)
-- Column names that need special-case `pascal_to_snake` handling
-- Multi-line descriptions that span page breaks
-- Table description paragraphs being parsed as column entries
-
-Tune `pascal_to_snake`, `_PS_COLUMN_RE`, and `extract_ps_table_name` as needed.
-Re-run tests after each change.
-
-- [ ] **Step 3: Run ADP extraction**
+- [ ] **Step 2: Run ADP extraction**
 
 ```bash
 uv run scripts/extract_pdf_dictionary.py \
     .claude/scratch/Worker_Management_API_Guide_for_ADP_Workforce_Now.pdf adp
 ```
 
-Inspect the summary. Expected: moderate match rate -- the ADP PDF covers the
-full API but the staging YAML only has `stg_adp_workforce_now__workers`.
+Record the match rate from stdout.
 
-- [ ] **Step 4: Inspect ADP JSON**
+- [ ] **Step 3: Inspect unmatched YAML columns**
 
 ```bash
 uv run python -c "
 import json
-with open('.claude/scratch/adp_dictionary.json') as f:
-    data = json.load(f)
-print('Stats:', json.dumps(data['stats'], indent=2))
-print('First 5 entries:')
-for e in data['entries'][:5]:
-    print(f\"  {e['model']}.{e['column']}: {e['description'][:60]}\")
-print('First 10 unmatched YAML:')
-for e in data['unmatched_yaml'][:10]:
-    print(f\"  {e['model']}.{e['column']}\")
+for source in ['powerschool', 'adp']:
+    with open(f'.claude/scratch/{source}_dictionary.json') as f:
+        data = json.load(f)
+    print(f'=== {source} ===')
+    print(f'Matched: {data[\"stats\"][\"matched\"]}')
+    print(f'Unmatched YAML: {data[\"stats\"][\"unmatched_yaml\"]}')
+    for e in data['unmatched_yaml']:
+        print(f'  {e[\"model\"]}.{e[\"column\"]}')
+    print()
 "
 ```
 
-Tune `parse_adp_entries`, `_extract_field_name`, and `adp_path_to_column` as
-needed. Common issues:
+The unmatched YAML columns are ones the parser couldn't match to a PDF entry.
+These need descriptions written by reading the PDF directly.
 
-- Path segments with consecutive capitals (e.g., `workerID`)
-- Nested paths that match parent YAML columns instead of leaf columns
-- Field name extraction splitting incorrectly
+- [ ] **Step 4: Dispatch parallel cleanup agents**
 
-- [ ] **Step 5: Re-run all unit tests to confirm tuning didn't break anything**
+Group the unmatched YAML columns by source table / PDF section. Dispatch one
+agent per batch (5-10 tables per agent). Each agent:
+
+1. Reads the relevant PDF pages using the Read tool with page ranges (the TOC
+   provides page numbers per table).
+2. For each unmatched column, finds the description in the PDF text.
+3. Appends the entry to the JSON mapping file with the correct schema.
+
+Agents run in parallel since they write to different sections of the JSON file
+(or produce partial JSON that gets merged).
+
+After all cleanup agents complete, re-validate the JSON files.
+
+- [ ] **Step 5: Verify all unit tests still pass**
 
 ```bash
 uv run pytest tests/test_extract_pdf_dictionary.py -v
 ```
 
-Expected: all tests pass.
+Expected: all tests pass (script code unchanged -- only JSON artifacts updated).
 
-- [ ] **Step 6: Commit any tuning changes**
+- [ ] **Step 6: Commit the JSON artifacts for inspection**
+
+The JSON files are gitignored (`.claude/scratch/`), so this step is just a
+checkpoint -- verify the files exist and contain the expected structure.
 
 ```bash
-git add scripts/extract_pdf_dictionary.py \
-        tests/test_extract_pdf_dictionary.py
-git commit -m "fix(scripts): tune PDF parsing for real PowerSchool and ADP PDFs
-
-Adjusted regex patterns and case conversion after running against actual
-source-system PDFs. Match rates validated via JSON output inspection.
-Tracked on #3516."
+uv run python -c "
+import json
+for source in ['powerschool', 'adp']:
+    with open(f'.claude/scratch/{source}_dictionary.json') as f:
+        data = json.load(f)
+    print(f'{source}: {data[\"stats\"][\"matched\"]} matched, '
+          f'{len(data[\"entries\"])} total entries')
+"
 ```
 
 ---
@@ -2790,9 +2774,9 @@ The PR diff shows all YAML changes inline. Reviewers should:
 - **Key reordering:** `pyyaml` with `sort_keys=False` preserves insertion order
   but may not perfectly match the original file's key order. `trunk fmt`
   normalizes formatting afterward.
-- **Iterative tuning:** Tasks 11 and 14 are inherently iterative. The first run
-  against real PDFs will likely require regex adjustments. The test fixtures
-  establish the contract; implementation details may shift.
+- **First-pass + cleanup:** Task 11 runs the parser once and accepts the initial
+  match rate. Unmatched YAML columns are handled by parallel cleanup agents that
+  read the PDF directly, rather than iterating on regex tuning.
 - **ADP SFTP models:** The ADP PDF covers the API only. The 4 SFTP staging
   models (`additional_earnings_report`, `employee_memberships`,
   `pension_and_benefits_enrollments`, `workers`) are not enriched by this
