@@ -1,0 +1,17 @@
+models:
+  - name: stg_source__table
+    columns:
+      - name: dob
+        description: Date of Birth.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_number
+        description: The unique student number assigned by the school.
+      - name: lastfirst
+        description: "Last, First, Mi. Indexed."
+        config:
+          meta:
+            contains_pii: true
+      - name: computed_col
+        description: ""
