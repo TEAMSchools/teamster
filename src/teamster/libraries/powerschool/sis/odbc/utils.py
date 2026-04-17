@@ -104,7 +104,8 @@ def with_powerschool_retry[_T](
             if attempt == max_attempts:
                 raise
             log.warning(
-                f"PowerSchool attempt {attempt}/{max_attempts} failed, retrying..."
+                f"PowerSchool attempt {attempt}/{max_attempts} failed, retrying...",
+                exc_info=True,
             )
 
     raise AssertionError("unreachable: max_attempts must be >= 1")

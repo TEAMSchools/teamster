@@ -10,6 +10,8 @@ models:
               config:
                 severity: error
         description: Unique identifier for this table. Indexed. Required.
+        constraints:
+          - type: primary_key
       - name: storecode
         data_type: string
         description:

@@ -31,6 +31,8 @@ models:
       - name: dcid
         data_type: int64
         description: Unique identifier for this table record. Indexed.
+        constraints:
+          - type: primary_key
       - name: attendance_conversion_id
         data_type: int64
         description:

@@ -48,6 +48,8 @@ models:
       - name: dcid
         data_type: int64
         description: Unique identifier for this table. Indexed. Required.
+        constraints:
+          - type: primary_key
       - name: schoolid
         data_type: int64
         description: The School_Number of the associated Schools record.

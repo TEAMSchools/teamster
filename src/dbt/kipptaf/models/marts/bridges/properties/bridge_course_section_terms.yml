@@ -31,9 +31,15 @@ models:
       - name: term_code
         data_type: string
         description: >-
-          Reporting term code (e.g., Q1, Q2) from the Google Sheets reporting
-          terms reference table.
+          The code value that is stored in the database, such as Home and Work
+          for phone types and Mand F for gender types. Indexed with the Code
+          Type column. Required
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__codeset
+            source_column: code
       - name: academic_year
         data_type: int64
         description: >-

@@ -7,6 +7,8 @@ models:
           - unique:
               config:
                 severity: error
+        constraints:
+          - type: primary_key
       - name: c_first
         data_type: string
       - name: c_last

@@ -34,9 +34,15 @@ models:
       - name: student_number
         data_type: int64
         description: >-
-          PowerSchool student number. Null for FL state assessments that only
-          carry a state student ID.
+          Student Number assigned by the school. Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
       - name: academic_year
         data_type: int64
         description: >-
@@ -70,9 +76,13 @@ models:
       - name: test_date
         data_type: date
         description: >-
-          Date the assessment was taken. Null for state assessments where only
-          the administration window is recorded.
+          The date this test was given. Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studenttest
+            source_column: test_date
       - name: scale_score
         data_type: numeric
         description: >-

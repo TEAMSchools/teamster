@@ -15,6 +15,8 @@ models:
               config:
                 severity: error
         description: Unique identifier.
+        constraints:
+          - type: primary_key
       - name: plantype
         data_type: int64
         description:

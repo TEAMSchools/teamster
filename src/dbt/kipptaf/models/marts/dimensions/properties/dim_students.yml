@@ -17,29 +17,59 @@ models:
       - name: local_student_identifier
         data_type: int64
         description: >-
-          PowerSchool student_number. Local district-assigned student ID.
+          Student Number assigned by the school. Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
       - name: state_student_identifier
         data_type: string
         description: >-
-          State-assigned student identifier (state_studentnumber in
-          PowerSchool).
+          The state-assigned student number for the student. In most cases, this
+          number should stay thesame from school to school.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: state_studentnumber
+            contains_pii: true
       - name: student_name
         data_type: string
         description: >-
-          Full name of the student (last, first format from PowerSchool).
+          Last, First, Mi. Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: lastfirst
+            contains_pii: true
       - name: birth_date
         data_type: date
         description: >-
-          Student date of birth.
+          Date of birth.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: dob
+            contains_pii: true
       - name: gender
         data_type: string
         description: >-
-          Student gender as recorded in PowerSchool.
+          M=Male F=Female. Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: gender
       - name: lunch_status
         data_type: string
         description: >-
@@ -65,5 +95,10 @@ models:
       - name: ethnicity
         data_type: string
         description: >-
-          Student race/ethnicity mapped to standard category labels from
-          PowerSchool single-character codes.
+          Heritage background of a student. The codes assigned here are stored
+          in the Gen Table [6]Cat=Ethnicity. These are set in school setup.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: ethnicity

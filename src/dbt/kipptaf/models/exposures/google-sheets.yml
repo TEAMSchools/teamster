@@ -818,3 +818,16 @@ exposures:
         dagster:
           kinds:
             - googlesheets
+  - name: deanslist_mod_audit
+    label: DeansList Mod Audit
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1_gjIB_EOjEDxAkX_5XqZP4CmpR_Cz4GmD7qE_C0O-zM/edit?usp=sharing
+    depends_on:
+      - ref("rpt_gsheets__deanslist_mod_audit")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets

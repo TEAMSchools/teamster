@@ -18,23 +18,36 @@ models:
       - name: course_number
         data_type: string
         description: >-
-          PowerSchool course number. Unique within a region but may overlap
-          across regions.
+          The number the school assigns to a particular course. Indexed.
         data_tests:
           - not_null
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__courses
+            source_column: course_number
       - name: course_name
         data_type: string
         description: >-
-          Display name of the course as recorded in PowerSchool.
+          The name of the course, such as Algebra.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__courses
+            source_column: course_name
       - name: credit_type
         data_type: string
         description: >-
-          Normalized PowerSchool credit type code (e.g., MATH, ENG, SCI, HR).
-          Variant codes from a 2023 PowerSchool plugin glitch are normalized
-          upstream in base_powerschool__course_enrollments.
+          Copied from the Credit Type field in the Course table. The type of
+          credit this counts as towardgraduation, such as Math or elective.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: credit_type
       - name: discipline
         data_type: string
         description: >-
@@ -45,5 +58,9 @@ models:
       - name: credit_hours
         data_type: float64
         description: >-
-          Number of credit hours awarded for completing the course, as recorded
-          in PowerSchool.
+          The amount of credit awarded for completing a course.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__courses
+            source_column: credit_hours

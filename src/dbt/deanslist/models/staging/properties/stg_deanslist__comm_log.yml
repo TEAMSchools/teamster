@@ -7,6 +7,8 @@ models:
           - unique:
               config:
                 severity: error
+        constraints:
+          - type: primary_key
       - name: is_draft
         data_type: boolean
       - name: call_status_id

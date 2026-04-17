@@ -32,8 +32,15 @@ models:
       - name: student_number
         data_type: int64
         description: >-
-          PowerSchool student number. Degenerate dimension for filtering.
+          Student Number assigned by the school. Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
       - name: academic_year
         data_type: int64
         description: >-
@@ -73,8 +80,14 @@ models:
       - name: incident_status
         data_type: string
         description: >-
-          Current workflow status of the incident in DeansList.
+          Indicates if the course was made either by a user or automatically by
+          an import. Validvalues: 0=user-created, 3=auto-created.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__courses
+            source_column: status
       - name: referral_tier
         data_type: string
         description: >-

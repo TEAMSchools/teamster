@@ -27,15 +27,23 @@ models:
       - name: start_date_key
         data_type: date
         description: >-
-          Start date of the consequence. FK to dim_dates (role-playing as
-          consequence start date). Null if not recorded.
+          The start date of the association of this teacher to this section.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sectionteacher
+            source_column: start_date
       - name: end_date_key
         data_type: date
         description: >-
-          End date of the consequence. FK to dim_dates (role-playing as
-          consequence end date). Null if not recorded.
+          The end date of the association of this teacher to this section.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sectionteacher
+            source_column: end_date
       - name: incident_id
         data_type: int64
         description: >-
@@ -83,9 +91,19 @@ models:
       - name: consequence_start_date
         data_type: date
         description: >-
-          Start date of the consequence period.
+          The start date of the association of this teacher to this section.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sectionteacher
+            source_column: start_date
       - name: consequence_end_date
         data_type: date
         description: >-
-          End date of the consequence period.
+          The end date of the association of this teacher to this section.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sectionteacher
+            source_column: end_date
