@@ -47,6 +47,7 @@ with
         left join
             {{ ref("int_pearson__all_assessments") }} as p
             on pa.academic_year = p.academic_year
+            -- test_type in prelim data matches assessment_name in official records
             and pa.test_type = p.assessment_name
             and p.`admin` = 'Spring'
         group by pa.academic_year, pa.test_type

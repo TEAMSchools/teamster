@@ -66,6 +66,21 @@ models:
           Specific demographic value for the active dimension (e.g. All
           Students, Female, African American, Economically Disadvantaged, ML,
           Students With Disabilities).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - African American
+                  - Asian
+                  - American Indian
+                  - Hispanic
+                  - Native Hawaiian
+                  - Other
+                  - White
+                  - Blank
+              config:
+                severity: warn
+                where: comparison_demographic_group = 'Aggregate Ethnicity'
       - name: comparison_entity
         data_type: string
         description: >
