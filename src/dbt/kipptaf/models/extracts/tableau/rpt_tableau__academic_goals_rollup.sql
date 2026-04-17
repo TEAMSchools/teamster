@@ -46,11 +46,9 @@ with
             is_below_int,
 
             case
-                when `subject` like 'English%'
+                when illuminate_subject = 'Text Study'
                 then 'Reading'
-                when
-                    `subject` like 'Algebra%'
-                    or `subject` in ('Mathematics', 'Geometry')
+                when illuminate_subject = 'Mathematics'
                 then 'Math'
             end as `subject`,
 
@@ -76,9 +74,7 @@ with
             f.is_approaching_int,
             f.is_below_int,
 
-            if(
-                f.assessment_subject = 'English Language Arts', 'Reading', 'Math'
-            ) as `subject`,
+            if(f.illuminate_subject = 'Text Study', 'Reading', 'Math') as `subject`,
 
         from {{ ref("int_fldoe__all_assessments") }} as f
         inner join
@@ -112,9 +108,7 @@ with
             f.is_approaching_int,
             f.is_below_int,
 
-            if(
-                f.assessment_subject = 'English Language Arts', 'Reading', 'Math'
-            ) as `subject`,
+            if(f.illuminate_subject = 'Text Study', 'Reading', 'Math') as `subject`,
 
         from {{ ref("int_fldoe__all_assessments") }} as f
         inner join

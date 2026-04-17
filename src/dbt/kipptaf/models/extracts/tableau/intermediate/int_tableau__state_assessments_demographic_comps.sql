@@ -245,7 +245,9 @@ select
     round(
         avg(s.is_proficient_int) * count(s.student_number), 0
     ) as total_proficient_students,
+
     count(s.student_number) as total_students,
+
     avg(s.is_proficient_int) as percent_proficient,
 
     /* (a) focus_level + demographic labels */

@@ -131,7 +131,7 @@ with
 
             cast(assessment_grade as string) as grade_level,
 
-            round(avg(if(is_proficient, 1, 0)), 2) as criteria,
+            round(avg(is_proficient_int), 2) as criteria,
         from {{ ref("int_fldoe__all_assessments") }}
         where administration_window = 'PM3'
         group by academic_year, assessment_name, assessment_subject, assessment_grade
@@ -145,7 +145,7 @@ with
 
             gs.school as grade_level,
 
-            round(avg(if(fl.is_proficient, 1, 0)), 2) as criteria,
+            round(avg(fl.is_proficient_int), 2) as criteria,
         from {{ ref("int_fldoe__all_assessments") }} as fl
         inner join school_grade_cw as gs on fl.assessment_grade = gs.grade_level
         where fl.administration_window = 'PM3' and fl.assessment_name = 'FAST'

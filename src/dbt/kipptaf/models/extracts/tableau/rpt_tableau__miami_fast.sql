@@ -175,7 +175,7 @@ select
         0
     ) as gr3_retention_flag,
 
-    case ft.is_proficient when true then 1.0 when false then 0.0 end as is_proficient,
+    ft.is_proficient_int as is_proficient,
 
     case
         when

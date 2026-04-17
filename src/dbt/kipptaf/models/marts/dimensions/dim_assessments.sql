@@ -26,24 +26,11 @@ with
 
             assessment_name as title,
 
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as subject_area,
+            aligned_subject as subject_area,
 
             discipline as scope,
 
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as module_code,
+            aligned_test_code as module_code,
 
             cast(null as string) as module_type,
 

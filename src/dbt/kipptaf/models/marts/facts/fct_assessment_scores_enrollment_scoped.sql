@@ -52,24 +52,11 @@ with
             localstudentidentifier as student_number,
             academic_year,
 
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as subject_area,
+            aligned_subject as subject_area,
 
             discipline,
 
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as module_code,
+            aligned_test_code as module_code,
 
             test_grade as grade_level,
             testscalescore as scale_score,
@@ -77,9 +64,9 @@ with
             testperformancelevel_text as performance_band,
             testperformancelevel as performance_band_level,
 
-            if(`period` = 'FallBlock', 'Fall', `period`) as administration_window,
+            `admin` as administration_window,
 
-            if(`period` = 'FallBlock', 'Fall', `period`) as season,
+            `admin` as season,
 
             assessment_name as title,
 
