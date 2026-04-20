@@ -10,7 +10,6 @@ from teamster.code_locations.kipptaf.extracts.assets import (
     idauto_extract,
     illuminate_extract_assets,
     littlesis_extract,
-    nsc_clearinghouse_extract,
 )
 
 coupa_extract_asset_job = define_asset_job(
@@ -53,7 +52,3 @@ illuminate_extract_asset_job = define_asset_job(
     selection=illuminate_extract_assets,
 )
 
-nsc_clearinghouse_extract_asset_job = define_asset_job(
-    name=f"{nsc_clearinghouse_extract.key.to_python_identifier()}__asset_job",
-    selection=[nsc_clearinghouse_extract],
-)
