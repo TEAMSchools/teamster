@@ -18,12 +18,13 @@ models:
       - name: row_order
         data_type: int64
         description: >
-          Sort key for NSC file ordering. 1 is the H1 header, 2 is for D1
-          detail records, 3 is for the T1 trailer. Sort ascending before
-          downloading and omit from the submitted file.
+          Sort key for NSC file ordering. 1 is the H1 header, 2 is for D1 detail
+          records, 3 is for the T1 trailer. Sort ascending before downloading
+          and omit from the submitted file.
       - name: field_1
         data_type: string
-        description: Record type identifier. H1 for header, D1 for detail, T1 for trailer.
+        description:
+          Record type identifier. H1 for header, D1 for detail, T1 for trailer.
       - name: field_2
         data_type: string
         description: >
