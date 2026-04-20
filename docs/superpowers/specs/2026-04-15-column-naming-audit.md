@@ -39,7 +39,11 @@ Applied to every column in every mart model during audit:
 1. **Strip source-system prefixes/names** (`powerschool_`, `adp_`, `deanslist_`)
    unless disambiguating unified columns.
 2. **No KIPP-specific language** (`teammate`, `employee_number`, `microgoal`).
-3. **Boolean fields use `is_` / `has_` prefix**.
+3. **Boolean fields use `is_` / `has_` prefix**. On fact tables, countable 0/1
+   flags may use `INT64` rather than `BOOLEAN` so analyst `SUM(is_x)` and
+   `AVG(is_x)` aggregations read naturally without casting. Reserve `FLOAT64`
+   for genuinely non-binary weighted measures (e.g., `present_weight`), and name
+   those without the `is_` prefix.
 4. **Dates end `_date`; timestamps end `_timestamp`**.
 5. **Well-known external acronyms** allowed for specific-use IDs — bound list
    below.
@@ -170,6 +174,78 @@ accounts are supplementary for Google products, surfaced as `google_email`. An
 earlier proposal to add a fourth `microsoft_365_email` column was dropped —
 `work_email` from ADP already covers that role, and AD-vs-M365 distinction is a
 deployment detail that does not need a dedicated column.
+
+## Structural follow-ups (out of scope for column naming)
+
+Surfaced during the audit and empirical null-rate scan; tracked for separate
+implementation PRs.
+
+### `dim_colleges` — source from KIPPADB, not NSC
+
+`dim_colleges` currently blends three sources: NSC (`stg_nsc__student_tracker`),
+a gsheet crosswalk, and KIPPADB Salesforce (`stg_kippadb__account`). NSC is the
+wrong authoritative source for static college metadata — it is a per-student
+search dataset with sparse coverage (e.g., the audit's empirical null-rate scan
+found `two_year_four_year` 0/1919 populated upstream). KIPPADB Account carries
+150+ authoritative college attributes (selectivity, HBCU flag, academic rigor,
+ACT/SAT ranges, retention rates) and is the college master at KIPP.
+
+Refactor so the dim sources college attributes from KIPPADB first and falls back
+to NSC only for records with no Salesforce match. `account_type` already encodes
+2yr/4yr (values: `Private 4 yr`, `Public 4 yr`, `Public 2 yr`, `Private 2 yr`),
+which made the NSC-sourced `two_year_four_year` both dead and redundant —
+removed during this audit.
+
+### Model bugs discovered during dead-column scan
+
+The empirical null-rate scan flagged several columns as 100% null in production
+that should not be. These are model bugs, not dead columns; they are kept in the
+dim and tracked for separate fixes.
+
+| Model                         | Column           | Issue                                                                                                                                       |
+| ----------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dim_student_contact_persons` | `email`, `phone` | Upstream `int_powerschool__student_contacts` has 72k `email` contacts and 120k `mobile`. Dim's pivot from the long-format source is broken. |
+| `dim_college_enrollments`     | `degree_title`   | Upstream NSC has data (53/1919); dim has 0/74. Join issue.                                                                                  |
+| `dim_staff_status`            | all columns      | Entire table has 0 rows in production. Model logic is broken.                                                                               |
+
+### `dim_assessments` — `scope` vs `assessment_scope` untangling
+
+`dim_assessments` currently has two columns that appear to represent overlapping
+concepts:
+
+- `scope` — values like `CMA - End-of-Module`, `CGI Quiz`, `Test Prep` for
+  internal assessments, and `SAT` / `ACT` / `AP` / `PSAT NMSQT` for college
+  assessments.
+- `assessment_scope` — value is `"enrollment"` for all internal assessments
+  inspected during the audit.
+
+The planned rename `scope` → `assessment_category` (Ed-Fi R6) collides
+semantically with the existing `assessment_scope` column. Before applying the
+rename, audit `assessment_scope` to determine (a) what it represents across
+internal, state, and college assessments; (b) whether it is redundant with
+`scope`; (c) which column should survive and under what canonical name.
+
+### Region traversal cascade — blocks multiple R9 removes
+
+Empirical check during Staffing-domain review revealed three compounding data
+issues that block planned R9 removes of `dim_staffing_positions.entity` and
+`.grade_band`:
+
+1. `dim_regions.legal_entity` is 100% null in production. The column exists but
+   has never been populated.
+2. `dim_locations.region` is populated with **legal-entity names** ("TEAM
+   Academy Charter School", "KIPP Cooper Norcross Academy", "KIPP Miami", "KIPP
+   Paterson") rather than region names (Newark / Camden / Miami / Paterson).
+   This is a data bug, not just a naming inconsistency.
+3. 1,849 rows on `dim_staffing_positions` link to **campus-level** locations
+   (`is_campus = true`), which have null `grade_band` on `dim_locations`. To
+   remove `grade_band` from the staffing positions dim, positions need to link
+   to school-specific locations rather than campus rollups.
+
+Fix order: (1) populate `dim_regions.legal_entity` from ADP; (2) correct
+`dim_locations.region` values; (3) relink campus-level staffing positions to
+school locations. Only then can the R9 removes of
+`dim_staffing_positions.entity` and `.grade_band` ship without information loss.
 
 ## Hash-change posture
 
