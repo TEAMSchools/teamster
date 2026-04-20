@@ -19,6 +19,7 @@ select
     e.gifted_and_talented,
     e.salesforce_id as contact_id,
     e.ktc_cohort,
+    e.graduation_year,
 
     s.cc_dateenrolled as ap_date_enrolled,
     s.cc_dateleft as ap_date_left,
