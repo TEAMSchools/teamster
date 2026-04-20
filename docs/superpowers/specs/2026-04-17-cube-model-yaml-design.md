@@ -149,6 +149,24 @@ shared key per the star schema spec). The staffing cube is standalone.
 
 ## Cube Patterns
 
+### `sql_table:` vs `sql:` — when to use each
+
+Use `sql_table:` whenever the cube maps to a single dbt model with no JOINs
+needed in the SQL. Cube generates the SELECT internally; dimension `sql:` fields
+are the explicit column references. A column rename in dbt breaks immediately
+with a clear BigQuery error pointing to the exact dimension — no silent
+failures.
+
+Use `sql:` only when JOINs or window functions are required (inlining lookup
+dims, period intersection). When you do, always enumerate columns explicitly —
+never use wildcard aliases (`f.*`, `table.*`, `SELECT *`). A wildcard silently
+drops renamed columns from the result set without failing at parse time;
+explicit references fail loudly at query time and point directly to the broken
+dimension.
+
+**Rule:** `sql_table:` by default. `sql:` with explicit column list when JOINs
+are unavoidable.
+
 ### Pattern 1 — Conformed cubes
 
 Thin wrappers exposing a single dbt model's columns as dimensions. No
@@ -683,28 +701,35 @@ See Pattern 3 — SCD2 period intersection reference above (`staff_work_history`
 
 ### Assessment
 
-`assessment_scores.yml` — fact-based. Domain-specific dims (`dim_assessments`,
-`dim_assessment_targets`) inlined via SQL JOIN since they are only used in this
-domain.
+`assessment_scores.yml` — fact-based. `fct_assessment_scores_enrollment_scoped`
+already carries `assessment_title` and `subject_area` — no `dim_assessments`
+join needed for those fields. `dim_assessment_targets` is inlined for
+proficiency benchmark data not present on the fact. Join key between fact and
+targets is `assessment_key` (not `assessment_id`).
 
 ```yaml
 cubes:
   - name: assessment_scores
     sql: |
       SELECT
-        f.*,
-        a.assessment_name,
-        a.assessment_subject,
-        a.assessment_type,
+        f.assessment_score_key,
+        f.student_number,
+        f.test_date,
+        f.assessment_key,
+        f.assessment_title,
+        f.subject_area,
+        f.scale_score,
+        f.percent_correct,
+        f.proficiency_level,
+        f.is_mastery,
+        f.region,
         t.target_name,
         t.target_category,
         t.benchmark_value
       FROM kipptaf_marts.fct_assessment_scores_enrollment_scoped f
-      LEFT JOIN kipptaf_marts.dim_assessments a
-        ON f.assessment_id = a.assessment_id
       LEFT JOIN kipptaf_marts.dim_assessment_targets t
-        ON f.assessment_id = t.assessment_id
-        AND f.score_value BETWEEN t.score_min AND t.score_max
+        ON f.assessment_key = t.assessment_key
+        AND f.scale_score BETWEEN t.score_min AND t.score_max
 
     joins:
       - name: dim_dates
@@ -712,7 +737,7 @@ cubes:
         relationship: many_to_one
 
       - name: dim_locations
-        sql: "{dim_locations.location_id} = {CUBE}.location_id"
+        sql: "{dim_locations.location_abbreviation} = {CUBE}.region"
         relationship: many_to_one
 
       - name: dim_students
@@ -725,21 +750,25 @@ cubes:
         type: string
         primary_key: true
 
-      - name: assessment_name
-        sql: assessment_name
+      - name: assessment_title
+        sql: assessment_title
         type: string
 
-      - name: assessment_subject
-        sql: assessment_subject
+      - name: subject_area
+        sql: subject_area
         type: string
 
-      - name: score_value
-        sql: score_value
+      - name: proficiency_level
+        sql: proficiency_level
+        type: string
+
+      - name: scale_score
+        sql: scale_score
         type: number
 
     measures:
       - name: avg_scale_score
-        sql: score_value
+        sql: scale_score
         type: avg
 
       - name: count_testers
@@ -878,28 +907,18 @@ cubes:
 
 ### Observations
 
-`observations.yml` — fact-based. Staff observation dims are inlined via SQL
-since all are specific to this domain.
+`observations.yml` — fact-based. `fct_staff_observations` already carries
+`rubric_name` and `observation_type` directly — no dim joins needed. Use
+`sql_table:` with explicit dimension column references.
 
 ```yaml
 cubes:
   - name: observations
-    sql: |
-      SELECT
-        o.*,
-        r.rubric_name,
-        r.rubric_type,
-        t.type_name          AS observation_type_name,
-        t.type_category
-      FROM kipptaf_marts.fct_staff_observations o
-      LEFT JOIN kipptaf_marts.dim_staff_observation_rubrics r
-        ON o.rubric_id = r.rubric_id
-      LEFT JOIN kipptaf_marts.dim_staff_observation_types t
-        ON o.observation_type_id = t.observation_type_id
+    sql_table: kipptaf_marts.fct_staff_observations
 
     joins:
       - name: dim_dates
-        sql: "{dim_dates.date_day} = CAST({CUBE}.observation_date AS TIMESTAMP)"
+        sql: "{dim_dates.date_day} = CAST({CUBE}.observed_at_date AS TIMESTAMP)"
         relationship: many_to_one
 
       - name: dim_locations
@@ -907,12 +926,12 @@ cubes:
         relationship: many_to_one
 
       - name: dim_staff
-        sql: "{dim_staff.employee_number} = {CUBE}.employee_number"
+        sql: "{dim_staff.employee_number} = {CUBE}.teacher_employee_number"
         relationship: many_to_one
 
     dimensions:
-      - name: observation_key
-        sql: observation_key
+      - name: staff_observation_key
+        sql: staff_observation_key
         type: string
         primary_key: true
 
@@ -920,17 +939,17 @@ cubes:
         sql: rubric_name
         type: string
 
-      - name: observation_type_name
-        sql: observation_type_name
+      - name: observation_type
+        sql: observation_type
         type: string
 
     measures:
       - name: count_observations
-        sql: observation_key
+        sql: staff_observation_key
         type: count_distinct
 
       - name: count_observed_staff
-        sql: employee_number
+        sql: teacher_employee_number
         type: count_distinct
 ```
 
@@ -945,29 +964,29 @@ cubes:
   - name: surveys
     sql: |
       SELECT
-        ss.*,
-        s.survey_title,
-        s.survey_type,
+        ss.survey_submission_key,
+        ss.survey_administration_key,
+        ss.date_submitted,
+        ss.respondent_employee_number,
+        ss.respondent_population,
         sa.administration_name,
-        sa.academic_year      AS survey_academic_year
+        sa.academic_year      AS survey_academic_year,
+        s.survey_title,
+        s.survey_type
       FROM kipptaf_marts.fct_survey_submissions ss
       LEFT JOIN kipptaf_marts.dim_survey_administrations sa
-        ON ss.survey_administration_id = sa.survey_administration_id
+        ON ss.survey_administration_key = sa.survey_administration_key
       LEFT JOIN kipptaf_marts.dim_surveys s
         ON sa.survey_id = s.survey_id
 
     joins:
       - name: dim_dates
-        sql: "{dim_dates.date_day} = CAST({CUBE}.submission_date AS TIMESTAMP)"
-        relationship: many_to_one
-
-      - name: dim_locations
-        sql: "{dim_locations.location_id} = {CUBE}.location_id"
+        sql: "{dim_dates.date_day} = CAST({CUBE}.date_submitted AS TIMESTAMP)"
         relationship: many_to_one
 
     dimensions:
-      - name: submission_key
-        sql: submission_key
+      - name: survey_submission_key
+        sql: survey_submission_key
         type: string
         primary_key: true
 
@@ -979,36 +998,54 @@ cubes:
         sql: administration_name
         type: string
 
+      - name: respondent_population
+        sql: respondent_population
+        type: string
+
     measures:
       - name: count_submissions
-        sql: submission_key
+        sql: survey_submission_key
         type: count_distinct
 
       - name: count_respondents
-        sql: respondent_id
+        sql: respondent_employee_number
         type: count_distinct
 ```
 
 ### College
 
-`college.yml` — fact-based. `dim_colleges` inlined since it is only used here.
+`college.yml` — SCD2 enrollment period cube. `dim_college_enrollments` records
+enrollment spans (`start_date_key` / `end_date_key`); the BETWEEN join to
+`dim_dates` makes enrollment queryable at any point in time. `dim_colleges` is
+inlined via natural key `college_code_branch`.
 
 ```yaml
 cubes:
   - name: college
     sql: |
       SELECT
-        ce.*,
+        ce.college_enrollment_key,
+        ce.student_number,
+        ce.college_code_branch,
+        ce.start_date_key,
+        ce.end_date_key,
+        ce.enrollment_status,
+        ce.degree_pursued,
+        ce.degree_title,
+        ce.is_graduated,
+        ce.is_withdrawn,
         c.college_name,
         c.college_type,
         c.state_code
       FROM kipptaf_marts.dim_college_enrollments ce
       LEFT JOIN kipptaf_marts.dim_colleges c
-        ON ce.college_id = c.college_id
+        ON ce.college_code_branch = c.college_code_branch
 
     joins:
       - name: dim_dates
-        sql: "{dim_dates.date_day} = CAST({CUBE}.enrollment_date AS TIMESTAMP)"
+        sql: >
+          {dim_dates.date_day} BETWEEN CAST({CUBE}.start_date_key AS TIMESTAMP)
+          AND CAST({CUBE}.end_date_key AS TIMESTAMP)
         relationship: many_to_one
 
       - name: dim_students
@@ -1049,44 +1086,52 @@ cubes:
   - name: talent
     sql: |
       SELECT
-        a.*,
+        a.job_candidate_application_key,
+        a.job_candidate_key,
+        a.job_posting_key,
+        a.new_date,
+        a.job_title,
+        a.department_internal,
+        a.job_city,
+        a.application_state,
+        a.application_status,
+        a.candidate_source,
+        a.candidate_source_type,
         p.posting_title,
-        p.posting_department,
-        p.posting_location_name,
-        c.candidate_name,
-        c.candidate_source
+        p.posting_status,
+        c.candidate_name
       FROM kipptaf_marts.fct_job_candidate_applications a
       LEFT JOIN kipptaf_marts.dim_job_postings p
-        ON a.posting_id = p.posting_id
+        ON a.job_posting_key = p.job_posting_key
       LEFT JOIN kipptaf_marts.dim_job_candidates c
-        ON a.candidate_id = c.candidate_id
+        ON a.job_candidate_key = c.job_candidate_key
 
     joins:
       - name: dim_dates
-        sql: "{dim_dates.date_day} = CAST({CUBE}.application_date AS TIMESTAMP)"
+        sql: "{dim_dates.date_day} = CAST({CUBE}.new_date AS TIMESTAMP)"
         relationship: many_to_one
 
     dimensions:
-      - name: application_key
-        sql: application_key
+      - name: job_candidate_application_key
+        sql: job_candidate_application_key
         type: string
         primary_key: true
 
-      - name: posting_title
-        sql: posting_title
+      - name: job_title
+        sql: job_title
         type: string
 
-      - name: application_stage
-        sql: application_stage
+      - name: application_state
+        sql: application_state
         type: string
 
     measures:
       - name: count_applications
-        sql: application_key
+        sql: job_candidate_application_key
         type: count_distinct
 
       - name: count_candidates
-        sql: candidate_id
+        sql: job_candidate_key
         type: count_distinct
 ```
 
