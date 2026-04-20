@@ -21,12 +21,18 @@ models:
         data_type: boolean
       - name: assessment_grade
         data_type: string
+      - name: achievement_level_int
+        data_type: int64
       - name: results_type
         data_type: string
       - name: district_state
         data_type: string
-      - name: performance_level
-        data_type: int64
+      - name: admin
+        data_type: string
+        quote: true
+      - name: subject
+        data_type: string
+        quote: true
       - name: student_id
         data_type: string
       - name: assessment_name

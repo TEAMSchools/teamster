@@ -78,6 +78,28 @@ with
 select
     *,
 
+    case
+        when test_type = 'NJSLA' and performance_band_level <= 2
+        then 'Not Proficient (1-2)'
+        when test_type = 'NJSLA' and performance_band_level = 3
+        then 'Bubble (3)'
+        when test_type = 'NJSLA' and performance_band_level >= 4
+        then 'Proficient (4-5)'
+    end as njsla_performance_band_group_label,
+
+    case
+        when performance_level = 'Did Not Yet Meet'
+        then 'Lvl 1'
+        when performance_level = 'Partially Met'
+        then 'Lvl 2'
+        when performance_level in ('Approached', 'Not Yet Graduation Ready')
+        then 'Lvl 3'
+        when performance_level in ('Met', 'Graduation Ready')
+        then 'Lvl 4'
+        when performance_level = 'Exceeded'
+        then 'Lvl 5'
+    end as aligned_performance_band_group,
+
     if(
         performance_level
         in ('Met Expectations', 'Exceeded Expectations', 'Graduation Ready'),

@@ -89,6 +89,28 @@ select
         then 'At/Above'
     end as fast_aggregated_proficiency,
 
+    case
+        when fl.performance_level = 1
+        then 'Not Proficient (1)'
+        when fl.performance_level = 2
+        then 'Bubble (2)'
+        when fl.performance_level >= 3
+        then 'Proficient (3-5)'
+    end as fast_performance_band_group_label,
+
+    case
+        when fl.achievement_level in ('Inadequate', 'Level 1')
+        then 'Lvl 1'
+        when fl.achievement_level in ('Below Satisfactory', 'Level 2')
+        then 'Lvl 2'
+        when fl.achievement_level in ('Satisfactory', 'Level 3')
+        then 'Lvl 3'
+        when fl.achievement_level in ('Proficient', 'Level 4')
+        then 'Lvl 4'
+        when fl.achievement_level in ('Mastery', 'Level 5')
+        then 'Lvl 5'
+    end as aligned_performance_band_group,
+
     if(fl.is_proficient, 1, 0) as is_proficient_int,
 
     if(fl.performance_level = 2, 1, 0) as is_approaching_int,

@@ -7,6 +7,8 @@ models:
         data_type: string
       - name: region
         data_type: string
+      - name: state
+        data_type: string
       - name: schoolid
         data_type: int64
       - name: school
@@ -75,6 +77,10 @@ models:
         data_type: string
       - name: performance_band_level
         data_type: int64
+      - name: performance_band_group_label
+        data_type: string
+      - name: aligned_performance_band_group
+        data_type: string
       - name: is_proficient
         data_type: boolean
       - name: results_type

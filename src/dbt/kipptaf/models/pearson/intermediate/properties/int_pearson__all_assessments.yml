@@ -186,6 +186,13 @@ models:
           level 3 = 'Approaching', level 4+ = 'At/Above'; null for non-NJSLA
           assessments.
 
+      - name: njsla_performance_band_group_label
+        data_type: string
+        description: >
+          Performance band group label for NJSLA: levels 1-2 = 'Not Proficient
+          (1-2)', level 3 = 'Bubble (3)', level 4+ = 'Proficient (4-5)'; null
+          for non-NJSLA assessments.
+
       - name: lep_status
         data_type: boolean
         description: >

@@ -156,6 +156,30 @@ models:
           Points needed to reach the next sublevel (scale_for_growth minus
           scale_score); null if already at the highest sublevel (8).
 
+      - name: fast_performance_band_group_label
+        data_type: string
+        description: >
+          Performance band group label for FAST: level 1 = 'Not Proficient (1)',
+          level 2 = 'Bubble (2)', level 3+ = 'Proficient (3-5)'.
+
+      - name: aligned_performance_band_group
+        data_type: string
+        description: >
+          Aligned performance band group using level labels (e.g. Lvl 1–Lvl 5)
+          derived from achievement_level strings.
+
+      - name: is_approaching_int
+        data_type: int64
+        description: >
+          Integer flag for approaching proficiency (1 = approaching, 0 =
+          otherwise) — performance_level = 2.
+
+      - name: is_below_int
+        data_type: int64
+        description: >
+          Integer flag for below proficiency (1 = below, 0 = otherwise) —
+          performance_level < 2.
+
       - name: scale_score_prev
         data_type: int64
         description: >

@@ -131,6 +131,30 @@ with
             end as njsla_aggregated_proficiency,
 
             case
+                when u.assessment_name = 'NJSLA' and u.testperformancelevel <= 2
+                then 'Not Proficient (1-2)'
+                when u.assessment_name = 'NJSLA' and u.testperformancelevel = 3
+                then 'Bubble (3)'
+                when u.assessment_name = 'NJSLA' and u.testperformancelevel >= 4
+                then 'Proficient (4-5)'
+            end as njsla_performance_band_group_label,
+
+            case
+                when u.testperformancelevel_text = 'Did Not Yet Meet'
+                then 'Lvl 1'
+                when u.testperformancelevel_text = 'Partially Met'
+                then 'Lvl 2'
+                when
+                    u.testperformancelevel_text
+                    in ('Approached', 'Not Yet Graduation Ready')
+                then 'Lvl 3'
+                when u.testperformancelevel_text in ('Met', 'Graduation Ready')
+                then 'Lvl 4'
+                when u.testperformancelevel_text = 'Exceeded'
+                then 'Lvl 5'
+            end as aligned_performance_band_group,
+
+            case
                 when u.assessment_name = 'NJGPA'
                 then 0
                 when u.assessment_name = 'NJSLA Science' and u.testperformancelevel = 2
