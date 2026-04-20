@@ -4,6 +4,13 @@ models:
       AP assessment scores joined to student enrollment and course schedules for
       Tableau reporting. One row per student per AP course subject, including
       students enrolled in AP courses who did not take the exam.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - student_number
+              - ap_course_subject
     columns:
       - name: academic_year
         data_type: int64

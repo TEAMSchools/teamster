@@ -38,14 +38,39 @@ with
             )
     )
 
-select *,
+select
+    student_number,
+    test_type,
+    scope,
+    score_type,
+    subject_area,
+    aligned_subject_area,
+    scale_score,
+    max_scale_score,
+    region,
+    school,
+    graduation_year,
+    ktc_cohort,
+    benchmark_name,
 from base
 cross join unnest(['College-Ready', 'HS-Ready', 'EA/ED-Ready']) as benchmark_name
 where aligned_subject_area = 'Total'
 
 union all
 
--- trunk-ignore(sqlfluff/AM04)
-select *, aligned_subject_area as benchmark_name,
+select
+    student_number,
+    test_type,
+    scope,
+    score_type,
+    subject_area,
+    aligned_subject_area,
+    scale_score,
+    max_scale_score,
+    region,
+    school,
+    graduation_year,
+    ktc_cohort,
+    aligned_subject_area as benchmark_name,
 from base
 where aligned_subject_area in ('EBRW', 'Math')
