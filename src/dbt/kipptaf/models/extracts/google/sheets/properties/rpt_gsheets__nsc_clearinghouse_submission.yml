@@ -5,7 +5,7 @@ models:
       manual upload to the National Student Clearinghouse. One H1 header record,
       one D1 inquiry record per KIPP alum within the 6-year HS graduation
       window, and one T1 trailer record. Sort ascending by row_order before
-      downloading; exclude row_order from the submitted file.
+      downloading and exclude row_order from the submitted file.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -18,57 +18,67 @@ models:
       - name: row_order
         data_type: int64
         description: >
-          Sort key for correct NSC file ordering: 1 = H1 header, 2 = D1 detail
-          records, 3 = T1 trailer. Sort ascending before downloading; omit from
-          the submitted file.
+          Sort key for NSC file ordering. 1 is the H1 header, 2 is for D1
+          detail records, 3 is for the T1 trailer. Sort ascending before
+          downloading and omit from the submitted file.
       - name: field_1
         data_type: string
-        description: Record type identifier: H1 (header), D1 (detail), or T1 (trailer).
+        description: Record type identifier. H1 for header, D1 for detail, T1 for trailer.
       - name: field_2
         data_type: string
         description: >
-          H1: 6-digit NSC entity code (601193). D1: blank. T1: row number of
-          the trailer record (total student count + 2).
+          Header row contains the 6-digit NSC entity code (601193). Detail rows
+          are blank. Trailer row contains the row number of the trailer record
+          (total student count plus 2).
       - name: field_3
         data_type: string
-        description: H1: branch code (00). D1: student first name. T1: blank.
+        description: >
+          Header row contains the branch code (00). Detail rows contain the
+          student first name. Trailer row is blank.
       - name: field_4
         data_type: string
-        description: H1: organization name. D1: middle initial (blank). T1: blank.
+        description: >
+          Header row contains the organization name. Detail rows contain the
+          middle initial (blank). Trailer row is blank.
       - name: field_5
         data_type: string
         description: >
-          H1: file creation date (YYYYMMDD). D1: student last name. T1: blank.
+          Header row contains the file creation date in YYYYMMDD format. Detail
+          rows contain the student last name. Trailer row is blank.
       - name: field_6
         data_type: string
-        description: H1: inquiry purpose (DA). D1: name suffix (blank). T1: blank.
+        description: >
+          Header row contains the inquiry purpose (DA). Detail rows contain the
+          name suffix (blank). Trailer row is blank.
       - name: field_7
         data_type: string
         description: >
-          H1: enrollment type (S). D1: student date of birth (YYYYMMDD).
-          T1: blank.
+          Header row contains the enrollment type (S). Detail rows contain the
+          student date of birth in YYYYMMDD format. Trailer row is blank.
       - name: field_8
         data_type: string
         description: >
-          H1: blank. D1: search begin date (YYYYMMDD) — start of the enrollment
-          period to query. Defaults to the start of the most recently completed
-          submission window (Jul–Nov → June 1; Dec → Nov 1; Apr–Jun → Mar 1;
-          Jan–Mar → Nov 1 prior year). Override with the nsc_search_begin_date
-          dbt variable. T1: blank.
+          Header row is blank. Detail rows contain the search begin date in
+          YYYYMMDD format, representing the start of the enrollment period to
+          query. Defaults to the start of the most recently completed submission
+          window (Jul through Nov maps to June 1, Dec maps to Nov 1, Apr through
+          Jun maps to Mar 1, Jan through Mar maps to Nov 1 of the prior year).
+          Override with the nsc_search_begin_date dbt variable. Trailer row is
+          blank.
       - name: field_9
         data_type: string
-        description: H1: blank. D1: blank. T1: blank.
+        description: Blank for all row types.
       - name: field_10
         data_type: string
-        description: H1: blank. D1: blank. T1: blank.
+        description: Blank for all row types.
       - name: field_11
         data_type: string
         description: >
-          H1: blank. D1: NSC school code search scope (00 = all schools).
-          T1: blank.
+          Header row is blank. Detail rows contain the NSC school code search
+          scope (00 for all schools). Trailer row is blank.
       - name: field_12
         data_type: string
         description: >
-          H1: blank. D1: Salesforce Contact ID used as the requester return
-          field; returned as-is in the NSC response for student matching.
-          T1: blank.
+          Header row is blank. Detail rows contain the Salesforce Contact ID
+          used as the requester return field, returned as-is in the NSC response
+          for student matching. Trailer row is blank.
