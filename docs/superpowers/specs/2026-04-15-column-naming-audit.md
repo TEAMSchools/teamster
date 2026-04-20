@@ -67,20 +67,21 @@ name coexist in the same table — in which case both suffixes stay.
 
 User-facing acronyms explicitly preserved in column names:
 
-| Acronym        | Meaning                          | Context                                   |
-| -------------- | -------------------------------- | ----------------------------------------- |
-| `gpa`          | grade point average              | student grades                            |
-| `ada`          | average daily attendance         | student attendance                        |
-| `fte`          | full-time equivalent             | staff assignments                         |
-| `dob`          | date of birth                    | person attributes                         |
-| `ell`          | English language learner         | student attributes                        |
-| `iep`          | individualized education plan    | student attributes                        |
-| `sat` / `psat` | College Board assessments        | assessment scores                         |
-| `act`          | ACT assessment                   | assessment scores                         |
-| `ap`           | Advanced Placement               | assessment scores                         |
-| `mdcps`        | Miami-Dade County Public Schools | Miami student identifier                  |
-| `fleid`        | Florida Education Identifier     | Florida state identifier                  |
-| `smid`         | State Management ID              | New Jersey state identifier (if surfaced) |
+| Acronym        | Meaning                                  | Context                                   |
+| -------------- | ---------------------------------------- | ----------------------------------------- |
+| `gpa`          | grade point average                      | student grades                            |
+| `ada`          | average daily attendance                 | student attendance                        |
+| `fte`          | full-time equivalent                     | staff assignments                         |
+| `dob`          | date of birth                            | person attributes                         |
+| `ell`          | English language learner                 | student attributes                        |
+| `iep`          | individualized education plan            | student attributes                        |
+| `sat` / `psat` | College Board assessments                | assessment scores                         |
+| `act`          | ACT assessment                           | assessment scores                         |
+| `ap`           | Advanced Placement                       | assessment scores                         |
+| `lea`          | local education agency                   | KIPP-assigned student/staff identifiers   |
+| `nces`         | National Center for Education Statistics | federal college/school cross-reference ID |
+| `fleid`        | Florida Education Identifier             | Florida state identifier                  |
+| `smid`         | State Management ID                      | New Jersey state identifier (if surfaced) |
 
 Additional acronyms can be added to this list during audit review — each
 addition requires a documented specific-use justification.
@@ -113,34 +114,62 @@ presentation layer.
 
 ### `dim_students` — multi-ID
 
-Surface the identifiers analysts cross-reference against external systems. Four
-ID columns total:
+KIPP is a charter-LEA operating within a host school district (Newark Public
+Schools, Camden City SD, Paterson Public Schools, Miami-Dade County Public
+Schools). Students have identifiers at four distinct issuer levels, each
+surfaced as its own column on the dim:
 
-| Column                     | Nullability | Source                                                                                                   |
-| -------------------------- | ----------- | -------------------------------------------------------------------------------------------------------- |
-| `local_student_identifier` | NOT NULL    | PowerSchool `student_number` for NJ; Focus local ID for Miami (future). Unified column.                  |
-| `state_student_identifier` | nullable    | PowerSchool `state_studentnumber` (SMID for NJ, FLEID for FL); Focus state ID for Miami. Unified column. |
-| `mdcps_student_identifier` | nullable    | Miami-Dade County Public Schools ID, populated for Miami students only.                                  |
-| `salesforce_contact_id`    | nullable    | KIPPADB (Salesforce) contact ID, populated where the student has a KIPPADB record.                       |
+| Column                        | Nullability | Issuer                      | Source                                                                                                                                                                             |
+| ----------------------------- | ----------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lea_student_identifier`      | NOT NULL    | KIPP (the LEA)              | PowerSchool `student_number` for NJ; Focus local ID for Miami (future). Unified column. Maps to Ed-Fi `District` / CEDS `District-assigned number` from KIPP-as-LEA's perspective. |
+| `district_student_identifier` | nullable    | Host public school district | MDCPS for Miami students; Newark/Camden/Paterson Public Schools IDs for NJ where surfaced. Generalizes beyond Miami.                                                               |
+| `state_student_identifier`    | nullable    | State education agency      | PowerSchool `state_studentnumber` (SMID for NJ, FLEID for FL); Focus state ID for Miami. Unified column.                                                                           |
+| `salesforce_contact_id`       | nullable    | External (KIPPADB)          | KIPPADB (Salesforce) contact ID, populated where the student has a KIPPADB record.                                                                                                 |
 
-`local_student_identifier` and `state_student_identifier` are unified across SIS
+`lea_student_identifier` and `state_student_identifier` are unified across SIS
 sources — one column each, values sourced from PowerSchool or Focus depending on
 the student's region. This unification changes hash values for Focus students
 when Focus lands (see [Hash-change posture](#hash-change-posture)).
 
-### `dim_staff` — email split
+Neither Ed-Fi nor CEDS V14 exposes "LEA's own ID" vs. "host district's ID" as
+distinct canonical attributes — both standards model identifiers as a single
+`PersonIdentifier` / `StudentIdentificationCode` collection keyed by a
+`*IdentificationSystemDescriptor`. The four columns are a deliberate flattening
+that makes the KIPP-specific LEA-within-host-district hierarchy explicit for
+analysts.
 
-Replace the previously proposed single `organization_email` with two columns so
-staff from Google Workspace regions and Microsoft 365 regions both have their
-primary email surfaced:
+### Model renames
 
-| Column                | Nullability | Source                                             |
-| --------------------- | ----------- | -------------------------------------------------- |
-| `google_email`        | nullable    | Google Workspace email (from LDAP).                |
-| `microsoft_365_email` | nullable    | Microsoft 365 email (from LDAP or directory sync). |
+Two model names carry KIPP-specific "microgoal" jargon (rubric rule R2). Renamed
+as companion changes to the per-column decisions in the audit inventory — the
+column-level audit surfaced the jargon, and leaving the model names unchanged
+would leave the jargon half-removed.
 
-The exact name `microsoft_365_email` vs. alternatives (`m365_email`,
-`office_365_email`) is confirmed during audit review.
+| Current                                 | Renamed                            |
+| --------------------------------------- | ---------------------------------- |
+| `dim_staff_observation_microgoal_types` | `dim_staff_observation_goal_types` |
+| `fct_staff_observation_microgoals`      | `fct_staff_observation_goals`      |
+
+All `*_microgoal_*` column renames in the inventory derive from these model
+renames.
+
+### `dim_staff` — email addresses
+
+The existing three-column split on `dim_staff` is the final state. No structural
+additions needed:
+
+| Column           | Nullability | Source                                                      |
+| ---------------- | ----------- | ----------------------------------------------------------- |
+| `work_email`     | nullable    | ADP HR record (`communication__work_email__email_uri`).     |
+| `personal_email` | nullable    | ADP HR record (`communication__personal_email__email_uri`). |
+| `google_email`   | nullable    | Google Workspace account email (from LDAP).                 |
+
+Active Directory is KIPP's primary identity system; `active_directory_username`
+(renamed from `sam_account_name`) carries the AD login. Google Workspace
+accounts are supplementary for Google products, surfaced as `google_email`. An
+earlier proposal to add a fourth `microsoft_365_email` column was dropped —
+`work_email` from ADP already covers that role, and AD-vs-M365 distinction is a
+deployment detail that does not need a dedicated column.
 
 ## Hash-change posture
 
@@ -150,7 +179,7 @@ downstream consumers.
 Hash values for surrogate keys change **only** when:
 
 - **Values unify** — e.g., consolidating PS and Focus IDs into one
-  `local_student_identifier` column changes the underlying value for Focus
+  `lea_student_identifier` column changes the underlying value for Focus
   students.
 - **Types change** — e.g., casting `int64` to `string` alters the concatenation
   input.
