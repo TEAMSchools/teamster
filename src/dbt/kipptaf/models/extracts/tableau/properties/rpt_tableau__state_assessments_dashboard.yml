@@ -13,6 +13,8 @@ models:
         data_type: string
       - name: school_name
         data_type: string
+      - name: school_level
+        data_type: string
       - name: student_number
         data_type: int64
       - name: state_studentnumber
@@ -27,8 +29,6 @@ models:
         data_type: string
       - name: grade_level
         data_type: int64
-      - name: most_recent_grade_level
-        data_type: int64
       - name: cohort
         data_type: int64
       - name: enroll_status
@@ -39,6 +39,12 @@ models:
         data_type: string
       - name: gifted_and_talented
         data_type: string
+      - name: ms_attended
+        data_type: string
+      - name: advisory
+        data_type: string
+      - name: year_in_network
+        data_type: int64
       - name: race_ethnicity
         data_type: string
       - name: lep_status
@@ -49,12 +55,6 @@ models:
         data_type: string
       - name: dob
         data_type: date
-      - name: ms_attended
-        data_type: string
-      - name: advisory
-        data_type: string
-      - name: year_in_network
-        data_type: int64
       - name: assessment_name
         data_type: string
       - name: discipline
@@ -77,9 +77,19 @@ models:
         data_type: int64
       - name: is_proficient
         data_type: boolean
+      - name: results_type
+        data_type: string
       - name: proficiency_city
         data_type: float64
       - name: proficiency_state
+        data_type: float64
+      - name: proficiency_neighborhood_schools
+        data_type: float64
+      - name: total_students_city
+        data_type: float64
+      - name: total_students_state
+        data_type: float64
+      - name: total_students_neighborhood_schools
         data_type: float64
       - name: assessment_grade_level
         data_type: int64
@@ -90,6 +100,8 @@ models:
       - name: region_goal
         data_type: float64
       - name: organization_goal
+        data_type: float64
+      - name: assessment_band_goal
         data_type: float64
       - name: nj_student_tier
         data_type: string
@@ -111,17 +123,7 @@ models:
         data_type: string
       - name: teacher_name_current
         data_type: string
-      - name: results_type
+      - name: grade_band
         data_type: string
-      - name: assessment_band_goal
-        data_type: float64
-      - name: proficiency_neighborhood_schools
-        data_type: float64
-      - name: school_level
-        data_type: string
-      - name: total_students_city
-        data_type: float64
-      - name: total_students_neighborhood_schools
-        data_type: float64
-      - name: total_students_state
-        data_type: float64
+      - name: most_recent_grade_level
+        data_type: int64

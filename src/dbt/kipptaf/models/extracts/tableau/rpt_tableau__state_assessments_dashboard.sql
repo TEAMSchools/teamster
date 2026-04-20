@@ -311,6 +311,15 @@ select
     m.teachernumber_current,
     m.teacher_name_current,
 
+    case
+        when
+            (e.grade_level >= 9 and a.test_code = 'ALG01')
+            or a.test_code
+            in ('ALG02', 'GEO01', 'MATGP', 'ELA09', 'ELA10', 'ELA11', 'ELAGP', 'SCI11')
+        then 'HS'
+        else '3-8'
+    end as grade_band,
+
     max(e.grade_level) over (partition by e.student_number) as most_recent_grade_level,
 
 from assessment_scores as a
@@ -430,6 +439,15 @@ select
     m.school_current,
     m.teachernumber_current,
     m.teacher_name_current,
+
+    case
+        when
+            (e.grade_level >= 9 and a.test_code = 'ALG01')
+            or a.test_code
+            in ('ALG02', 'GEO01', 'MATGP', 'ELA09', 'ELA10', 'ELA11', 'ELAGP', 'SCI11')
+        then 'HS'
+        else '3-8'
+    end as grade_band,
 
     max(e.grade_level) over (partition by e.student_number) as most_recent_grade_level,
 
@@ -551,6 +569,15 @@ select
     m.school_current,
     m.teachernumber_current,
     m.teacher_name_current,
+
+    case
+        when
+            (e.grade_level >= 9 and a.test_code = 'ALG01')
+            or a.test_code
+            in ('ALG02', 'GEO01', 'MATGP', 'ELA09', 'ELA10', 'ELA11', 'ELAGP', 'SCI11')
+        then 'HS'
+        else '3-8'
+    end as grade_band,
 
     max(e.grade_level) over (partition by e.student_number) as most_recent_grade_level,
 
