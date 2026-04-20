@@ -175,6 +175,29 @@ littlesis_extract = build_bigquery_query_sftp_asset(
     destination_config={"name": "littlesis"},
 )
 
+nsc_clearinghouse_extract = build_bigquery_query_sftp_asset(
+    code_location=CODE_LOCATION,
+    timezone=LOCAL_TIMEZONE,
+    query_config={
+        "type": "schema",
+        "value": {
+            "table": {
+                "name": "rpt_nsc__clearinghouse_submission",
+                "schema": "kipptaf_extracts",
+            }
+        },
+    },
+    file_config={
+        "stem": "nsc_clearinghouse_{today}",
+        "suffix": "txt",
+        "format": {"header": False, "delimiter": "|"},
+    },
+    destination_config={
+        "name": "couchdrop",
+        "path": "/data-team/kipptaf/nsc/clearinghouse",
+    },
+)
+
 assets = [
     coupa_extract,
     deanslist_continuous_extract,
@@ -182,6 +205,7 @@ assets = [
     idauto_extract,
     intacct_extract,
     littlesis_extract,
+    nsc_clearinghouse_extract,
     *clever_extract_assets,
     *deanslist_annual_extract_assets,
     *illuminate_extract_assets,
