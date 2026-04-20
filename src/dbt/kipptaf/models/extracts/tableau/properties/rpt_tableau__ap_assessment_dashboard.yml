@@ -1,81 +1,142 @@
 models:
   - name: rpt_tableau__ap_assessment_dashboard
+    description: >
+      AP assessment scores joined to student enrollment and course schedules for
+      Tableau reporting. One row per student per AP course subject, including
+      students enrolled in AP courses who did not take the exam.
     columns:
       - name: academic_year
         data_type: int64
+        description: Academic year of enrollment.
       - name: academic_year_display
         data_type: string
+        description: Academic year formatted for display (e.g. 2024-25).
       - name: region
         data_type: string
+        description: KIPP region of the student's enrollment.
       - name: schoolid
         data_type: int64
+        description: The School_Number of the associated Schools record.
       - name: school
         data_type: string
+        description: School abbreviation.
       - name: student_number
         data_type: int64
+        description: Student Number assigned by the school. Indexed.
       - name: student_name
         data_type: string
+        description: Student full name (last, first).
       - name: grade_level
         data_type: int64
+        description: >
+          The grade the student is in. Since this is an integer: 0=Kindergarten
+          1, -2=Preschool. Indexed.
       - name: enroll_status
         data_type: int64
+        description: The enrollment status of the student.
       - name: entrydate
         data_type: date
+        description: >
+          The date the student enrolled in school for the current enrollment.
+          Indexed.
       - name: exitdate
         data_type: date
+        description: >
+          The date the student exited for the current/last enrollment. This is
+          the day after a student-attended class. Indexed.
       - name: cohort
         data_type: int64
+        description: Student cohort (expected graduation year).
       - name: advisory
         data_type: string
+        description: Advisory or homeroom assignment.
       - name: is_enrolled_recent
         data_type: boolean
+        description: Whether the student was recently enrolled.
       - name: is_enrolled_y1
         data_type: boolean
+        description: Whether the student was enrolled for the full year.
       - name: c_504_status
         data_type: boolean
+        description: Whether the student has a 504 plan.
       - name: lep_status
         data_type: boolean
+        description: Student Limited English Proficiency status.
       - name: gifted_and_talented
         data_type: string
+        description: Gifted and talented program designation.
       - name: contact_id
         data_type: string
+        description: Salesforce contact ID.
       - name: ktc_cohort
         data_type: int64
+        description: KIPP Through College cohort year.
       - name: graduation_year
         data_type: int64
+        description: Student graduation year.
       - name: ap_date_enrolled
         data_type: date
+        description: Date the student enrolled in the AP course section.
       - name: ap_date_left
         data_type: date
+        description: Date the student left the AP course section.
       - name: ap_course_section
         data_type: string
+        description: External expression (period/section) of the AP course.
       - name: ap_teacher_name
         data_type: string
+        description: AP course teacher name (last, first).
       - name: ap_course_subject
         data_type: string
+        description: AP subject code from PowerSchool course enrollments.
       - name: test_name
         data_type: string
+        description: AP exam name as reported by College Board.
       - name: test_subject
         data_type: string
+        description: AP exam subject as reported by College Board.
       - name: exam_score
         data_type: numeric
+        description: AP exam score (1–5).
       - name: irregularity_code_1
         data_type: string
+        description: First exam irregularity code, if any.
       - name: irregularity_code_2
         data_type: string
+        description: Second exam irregularity code, if any.
       - name: data_source
         data_type: string
+        description: Source of the AP score record (e.g. CB File).
       - name: ps_ap_course_subject_code
         data_type: string
+        description:
+          AP subject code used to join PowerSchool and College Board data.
       - name: ap_course_name
         data_type: string
+        description: >
+          AP course name from the College Board crosswalk; 'Not an AP course' if
+          no match found.
       - name: course_name
         data_type: string
+        description: >
+          PowerSchool course name; 'Not an AP course' if student has no AP
+          course enrollment.
       - name: test_subject_area
         data_type: string
+        description: >
+          Derived field indicating exam relationship to course: 'Not applicable'
+          if no AP course, 'Took course, but not AP exam.' if enrolled but did
+          not test, otherwise the College Board AP course name.
       - name: sped
         data_type: int64
+        description: Special education indicator (1 = has IEP, 0 = no IEP).
       - name: expected_scope
         data_type: string
+        description: >
+          'AP' if student is enrolled in an AP course, 'Not applicable'
+          otherwise.
       - name: expected_test_type
         data_type: string
+        description: >
+          'Official' if student is enrolled in an AP course, 'Not applicable'
+          otherwise.
