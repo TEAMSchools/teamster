@@ -3,9 +3,7 @@ with
         select
             current_date('{{ var("local_timezone") }}') as today,
             if(
-                extract(
-                    month from current_date('{{ var("local_timezone") }}')
-                ) >= 9,
+                extract(month from current_date('{{ var("local_timezone") }}')) >= 9,
                 extract(year from current_date('{{ var("local_timezone") }}')),
                 extract(year from current_date('{{ var("local_timezone") }}')) - 1
             ) as max_graduation_year,
@@ -14,17 +12,17 @@ with
     search_begin_date as (
         select
             {%- if var("nsc_search_begin_date", none) is not none %}
-            date('{{ var("nsc_search_begin_date") }}') as search_begin_date,
+                date('{{ var("nsc_search_begin_date") }}') as search_begin_date,
             {%- else %}
-            case
-                when extract(month from today) between 7 and 11
+                case
+                    when extract(month from today) between 7 and 11
                     then date(extract(year from today), 6, 1)
-                when extract(month from today) = 12
+                    when extract(month from today) = 12
                     then date(extract(year from today), 11, 1)
-                when extract(month from today) between 4 and 6
+                    when extract(month from today) between 4 and 6
                     then date(extract(year from today), 3, 1)
-                else date(extract(year from today) - 1, 11, 1)
-            end as search_begin_date,
+                    else date(extract(year from today) - 1, 11, 1)
+                end as search_begin_date,
             {%- endif %}
         from today
     ),
@@ -48,7 +46,8 @@ with
 
     record_count as (select count(*) as n from detail_records),
 
-    -- trunk-ignore(sqlfluff/ST06): positional NSC file format requires fixed column order
+    -- trunk-ignore(sqlfluff/ST06): positional NSC file format requires fixed column
+    -- order
     header as (
         select
             1 as row_order,
@@ -67,7 +66,8 @@ with
         from today as t
     ),
 
-    -- trunk-ignore(sqlfluff/ST06): positional NSC file format requires fixed column order
+    -- trunk-ignore(sqlfluff/ST06): positional NSC file format requires fixed column
+    -- order
     formatted_details as (
         select
             2 as row_order,
@@ -90,7 +90,8 @@ with
         from detail_records
     ),
 
-    -- trunk-ignore(sqlfluff/ST06): positional NSC file format requires fixed column order
+    -- trunk-ignore(sqlfluff/ST06): positional NSC file format requires fixed column
+    -- order
     trailer as (
         select
             3 as row_order,
