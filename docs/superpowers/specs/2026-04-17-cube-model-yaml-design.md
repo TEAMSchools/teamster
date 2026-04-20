@@ -167,6 +167,37 @@ dimension.
 **Rule:** `sql_table:` by default. `sql:` with explicit column list when JOINs
 are unavoidable.
 
+### Keeping Cube in sync when dbt column names change
+
+There is no automatic cross-tool check out of the box. Three layers of
+protection cover it:
+
+**Layer 1 — dbt contracts (already enforced)** All `dim_*` and `fct_*` models
+have `contract: enforced: true`. Renaming a column requires updating the
+properties YAML or the dbt build fails in CI. That required edit is the natural
+moment to check whether any Cube YAML in `src/cube/model/` references the old
+column name. Treat the contract YAML diff in PR review as the signal: if a
+column name changes there, grep `src/cube/model/` for it.
+
+**Layer 2 — Cube query-time errors (reactive)** With explicit column references
+in every `sql:` field, a broken reference produces a clear BigQuery error the
+first time someone queries that dimension — not a silent wrong result. It points
+directly to the broken field.
+
+**Layer 3 — `cube validate` in CI (target state)** Cube's `cube validate`
+command parses all YAML and dry-runs the SQL against the warehouse. Adding this
+step to the CI pipeline catches broken column references at merge time, before
+they reach production. This should be wired up as part of the infrastructure
+work — it is the right long-term answer and removes the manual grep step from PR
+review.
+
+**Analyst-facing name vs. source column name** The Cube `name:` field (what
+analysts see in the UI and API) and the `sql:` field (the BigQuery column
+reference) are independent. A dbt column rename requires updating `sql:` only —
+the analyst-facing `name:` is stable. Renaming a field in the UI requires
+updating `name:` only — no BigQuery query changes. Keep these two concerns
+separate when reviewing rename PRs.
+
 ### Pattern 1 — Conformed cubes
 
 Thin wrappers exposing a single dbt model's columns as dimensions. No
