@@ -27,16 +27,10 @@ models:
           College name as reported by NSC, deduplicated to the most recent
           value.
 
-      - name: college_state
+      - name: state_abbreviation
         data_type: string
         description:
           Two-letter state abbreviation for the college as reported by NSC.
-
-      - name: two_year_four_year
-        data_type: string
-        description: >-
-          NSC classification of the college as a two-year or four-year
-          institution (e.g., "2-year", "4-year").
 
       - name: nces_id
         data_type: int64
@@ -50,13 +44,13 @@ models:
           TRUE if the college meets 100% of demonstrated financial need for
           admitted students, per the NSC crosswalk.
 
-      - name: is_strong_oos_option
+      - name: is_strong_out_of_state_option
         data_type: boolean
         description: >-
           TRUE if the college is considered a strong out-of-state option for
           KIPP students, per the NSC crosswalk.
 
-      - name: selectivity
+      - name: selectivity_tier
         data_type: string
         description: >-
           Selectivity tier of the college from the Salesforce account

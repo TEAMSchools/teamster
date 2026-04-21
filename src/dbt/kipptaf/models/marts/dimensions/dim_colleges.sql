@@ -1,7 +1,7 @@
 with
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     nsc_colleges as (
-        select college_code_branch, college_name, college_state, two_year_four_year,
+        select college_code_branch, college_name, college_state,
         from {{ ref("stg_nsc__student_tracker") }}
         where record_found_y_n = 'Y'
     ),
@@ -19,14 +19,13 @@ with
 select
     d.college_code_branch,
     d.college_name,
-    d.college_state,
-    d.two_year_four_year,
+    d.college_state as state_abbreviation,
 
     x.nces_id,
     x.meets_full_need,
-    x.is_strong_oos_option,
+    x.is_strong_oos_option as is_strong_out_of_state_option,
 
-    a.competitiveness_ranking as selectivity,
+    a.competitiveness_ranking as selectivity_tier,
     a.`type` as account_type,
     a.hbcu as is_hbcu,
 
