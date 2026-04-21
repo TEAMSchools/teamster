@@ -24,12 +24,12 @@ models:
           Foreign key to dim_locations. Surrogate key derived from adp_location
           (home work location name).
 
-      - name: teammate_staff_key
+      - name: incumbent_staff_key
         data_type: string
         description: >-
-          Foreign key to dim_staff for the assigned teammate. Surrogate key
-          derived from the teammate employee number. Nullable — open positions
-          have no assigned teammate.
+          Foreign key to dim_staff for the incumbent (staff member filling the
+          position). Surrogate key derived from the teammate employee number.
+          Nullable — open positions have no incumbent.
 
       - name: recruiter_staff_key
         data_type: string
@@ -49,23 +49,6 @@ models:
         description: >-
           Academic year this position version belongs to.
 
-      - name: staffing_model_id
-        data_type: string
-        description: >-
-          AppSheet seat tracker identifier for the staffing model (position
-          slot). Multiple versions of the same position share this ID.
-
-      - name: entity
-        data_type: string
-        description: >-
-          Legal entity or organizational unit this position belongs to (e.g.,
-          KIPP NJ, KIPP Miami).
-
-      - name: grade_band
-        data_type: string
-        description: >-
-          Grade band served by this position (e.g., ES, MS, HS).
-
       - name: recruitment_group
         data_type: string
         description: >-
@@ -76,40 +59,16 @@ models:
         description: >-
           ADP department name for this position (adp_dept from seat tracker).
 
-      - name: job_title
+      - name: position_title
         data_type: string
         description:
           ADP job title for this position (adp_title from seat tracker).
 
-      - name: home_work_location_name
-        data_type: string
+      - name: is_active
+        data_type: boolean
         description: >-
-          ADP location name for this position. Used to join to dim_locations via
-          location_key.
-
-      - name: location_short_name
-        data_type: string
-        description:
-          Short display name for the work location (short_name from seat
-          tracker).
-
-      - name: recruiter_employee_number
-        data_type: int64
-        description: >-
-          KIPP employee number of the recruiter assigned to this position.
-          Nullable.
-
-      - name: teammate_employee_number
-        data_type: int64
-        description: >-
-          KIPP employee number of the teammate (staff member) filling this
-          position. Nullable for open positions.
-
-      - name: plan_status
-        data_type: string
-        description: >-
-          Whether this position is active in the staffing plan (e.g., Active,
-          Inactive).
+          Whether this position is active in the staffing plan. True for Active,
+          false for Inactive.
 
       - name: staffing_status
         data_type: string
@@ -129,13 +88,13 @@ models:
           TRUE if this position is flagged as a mid-year hire in the seat
           tracker.
 
-      - name: effective_date_start
+      - name: effective_start_date
         data_type: date
         description: >-
           Date this version of the position became effective (dbt_valid_from
           cast to date).
 
-      - name: effective_date_end
+      - name: effective_end_date
         data_type: date
         description: >-
           Date this version of the position expired (dbt_valid_to cast to date).
