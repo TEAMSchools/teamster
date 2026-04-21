@@ -108,7 +108,7 @@ models:
         description: Date the application entered the New state.
 
       - name: new_timestamp
-        data_type: timestamp
+        data_type: datetime
         description: Timestamp the application entered the New state.
 
       - name: lead_date
@@ -116,7 +116,7 @@ models:
         description: Date the application entered the Lead state.
 
       - name: lead_timestamp
-        data_type: timestamp
+        data_type: datetime
         description: Timestamp the application entered the Lead state.
 
       - name: hired_date
@@ -124,7 +124,7 @@ models:
         description: Date the application reached the Hired state.
 
       - name: hired_timestamp
-        data_type: timestamp
+        data_type: datetime
         description: Timestamp the application reached the Hired state.
 
       - name: offer_date
@@ -132,7 +132,7 @@ models:
         description: Date an offer was made.
 
       - name: offer_timestamp
-        data_type: timestamp
+        data_type: datetime
         description: Timestamp an offer was made.
 
       - name: rejected_date
@@ -140,7 +140,7 @@ models:
         description: Date the application was rejected.
 
       - name: rejected_timestamp
-        data_type: timestamp
+        data_type: datetime
         description: Timestamp the application was rejected.
 
       - name: last_updated_date
@@ -148,7 +148,7 @@ models:
         description: Date the application record was last updated.
 
       - name: last_update_timestamp
-        data_type: timestamp
+        data_type: datetime
         description: Timestamp the application record was last updated.
 
       - name: demo_date
@@ -156,7 +156,7 @@ models:
         description: Date of the demo/teaching demonstration interview step.
 
       - name: demo_timestamp
-        data_type: timestamp
+        data_type: datetime
         description:
           Timestamp of the demo/teaching demonstration interview step.
 
@@ -165,7 +165,7 @@ models:
         description: Date the phone screen was requested.
 
       - name: phone_screen_requested_timestamp
-        data_type: timestamp
+        data_type: datetime
         description: Timestamp the phone screen was requested.
 
       - name: phone_screen_complete_date
@@ -173,11 +173,11 @@ models:
         description: Date the phone screen was completed.
 
       - name: phone_screen_complete_timestamp
-        data_type: timestamp
+        data_type: datetime
         description: Timestamp the phone screen was completed.
 
       - name: invited_to_selection_day_timestamp
-        data_type: timestamp
+        data_type: datetime
         description: Timestamp the candidate was invited to Selection Day.
 
       - name: selection_day_date
@@ -185,7 +185,7 @@ models:
         description: Date of the candidate's Selection Day event.
 
       - name: selection_day_timestamp
-        data_type: timestamp
+        data_type: datetime
         description: Timestamp of the candidate's Selection Day event.
 
       - name: time_in_application_state_new

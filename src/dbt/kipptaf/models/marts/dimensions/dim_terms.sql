@@ -1,10 +1,15 @@
 with
     terms as (select * from {{ ref("stg_google_sheets__reporting__terms") }}),
 
+    /* exclude school_id = 0 sentinel rows (admin/campus pseudo-locations) so */
+    /* school-level joins resolve to at most one physical school per region */
     locations_lookup as (
         select powerschool_school_id, location_name, region,
         from {{ ref("stg_people__locations") }}
-        where not is_pathways and location_name <> 'KIPP Whittier Elementary'
+        where
+            not is_pathways
+            and location_name <> 'KIPP Whittier Elementary'
+            and powerschool_school_id <> 0
     )
 
 select
@@ -22,8 +27,8 @@ select
     }} as term_key,
 
     if(
-        ll.region is not null,
-        {{ dbt_utils.generate_surrogate_key(["ll.region"]) }},
+        t.city is not null,
+        {{ dbt_utils.generate_surrogate_key(["t.city"]) }},
         cast(null as string)
     ) as region_key,
 
@@ -44,4 +49,7 @@ select
     t.lockbox_date as data_freeze_date,
     t.is_current,
 from terms as t
-left join locations_lookup as ll on t.school_id = ll.powerschool_school_id
+left join
+    locations_lookup as ll
+    on t.school_id = ll.powerschool_school_id
+    and t.city = ll.region
