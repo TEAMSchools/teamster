@@ -323,5 +323,5 @@ from attrition as a
 left join
     {{ ref("dim_staff_status") }} as ss
     on {{ dbt_utils.generate_surrogate_key(["a.employee_number"]) }} = ss.staff_key
-    and a.outcome_determination_date >= ss.effective_date_start
-    and a.outcome_determination_date <= ss.effective_date_end
+    and a.outcome_determination_date >= ss.effective_start_date
+    and a.outcome_determination_date <= ss.effective_end_date
