@@ -93,7 +93,11 @@ provisioned for. Pushing to other org repos requires bypassing it:
   `.claude/scratch/commit-msg.txt` using the Write tool, then
   `git commit -F .claude/scratch/commit-msg.txt`. The Write tool's `content`
   field is exempt from path/keyword scanning. The Bash tool `description` field
-  is also scanned — keep it generic (e.g. "Commit changes").
+  is also scanned — keep it generic (e.g. "Commit changes"). Delete any stale
+  file first (`rm -f .claude/scratch/commit-msg.txt`) — if it exists from a
+  prior session, Write fails ("File has not been read yet") but a batched
+  `git commit -F` still runs and consumes the old content, producing a commit
+  with the wrong message.
 
 ## Scratch directory
 
