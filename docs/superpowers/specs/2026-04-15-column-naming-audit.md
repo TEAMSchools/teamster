@@ -274,6 +274,42 @@ Fix order: (1) populate `dim_regions.legal_entity` from ADP; (2) correct
 school locations. Only then can the R9 removes of
 `dim_staffing_positions.entity` and `.grade_band` ship without information loss.
 
+**Resolution — canonical region derivation in staging.** The region cascade is
+unblocked in this PR by deriving canonical region in `stg_people__locations`
+from `dagster_code_location` (values `kippnewark` / `kippcamden` / `kippmiami` /
+`kipppaterson`), not from the raw Google Sheet's `region` column. The existing
+legal-entity values in that column ("TEAM Academy Charter School", "KIPP Cooper
+Norcross Academy", etc., matching `dim_regions.legal_entity`) are preserved by
+renaming the column to `business_unit`. This aligns with the ADP/staff-side
+naming convention on `dim_work_assignment_organizational_units.business_unit_*`.
+
+### Staff → region traversal via `dim_work_assignment_locations` — Group 3 deferral
+
+Completing the
+`dim_staff → dim_staff_work_assignments → dim_work_assignment_locations → dim_locations → dim_regions`
+chain requires three coordinated structural changes, all deferred from this PR:
+
+1. **`dim_locations` address unification.** Add `address_line_one`,
+   `address_line_two`, `city`, `postal_code` to the conformed locations dim so
+   downstream work-location dims can drop their copies and traverse via FK.
+2. **`dim_work_assignment_locations.location_key` FK.** Remove the 8 ADP-sourced
+   address columns (`line_one`/`two`/`three`, `city_name`, `postal_code`,
+   `country_code`, `state_code`, `location_code`, `location_name`), add a
+   `location_key` FK to `dim_locations`. Blocked by (1) and by a reliable
+   mapping from ADP `home_work_location__name_code__code_value` to
+   `dim_locations.location_name` (expected to surface the same name-mismatch
+   class of problem as the Talent domain's `shared_with_location_key`).
+3. **Business-unit / region FK parity.**
+   `dim_work_assignment_organizational_units` exposes `business_unit_code` /
+   `business_unit_name` as degenerate attributes (values `KCNA`, `KIPP_MIAMI`,
+   `KIPP_TAF`, `KPAT`, `TEAM`; names identical to `dim_regions.legal_entity`).
+   Adding `business_unit_code` to `dim_regions` would enable direct FK from
+   staff to regions for staff not attached to a physical work location (HQ,
+   remote, network roles). Requires alignment on canonical business-unit code
+   values across ADP and the conformed region master.
+
+Tracked in [#3631](https://github.com/TEAMSchools/teamster/issues/3631).
+
 ## Hash-change posture
 
 This refactor is prerelease. No backward compatibility is preserved for
