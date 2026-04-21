@@ -3,9 +3,10 @@ models:
     description: >-
       Behavioral incident fact table. One row per student x incident from
       DeansList. Contains incident category, tier, infraction, and referral
-      information as degenerate dimensions. Referring staff identified by name
-      (no employee_number available from DeansList). FK to
-      dim_student_enrollments and dim_dates.
+      information as degenerate dimensions. Referring staff resolved to
+      dim_staff via the DeansList user's email matched against
+      int_people__staff_roster.work_email (nullable — see referring_staff_key).
+      FK to dim_student_enrollments, dim_staff, and dim_dates.
     columns:
       - name: behavioral_incident_key
         data_type: string

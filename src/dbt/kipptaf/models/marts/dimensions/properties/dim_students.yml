@@ -120,10 +120,9 @@ models:
         data_type: string
         description: >-
           Racial category for the student. Decoded from PowerSchool ethnicity
-          code to the full racial category label (e.g., Black/African American,
-          Hispanic or Latino, Two or More Races, White). Cross-model consistency
-          with dim_staff.race; Hispanic vs. non-Hispanic ethnicity lives
-          separately as the is_hispanic boolean.
+          code to a full category label (e.g., Black/African American, Hispanic
+          or Latino, Not Hispanic or Latino, Two or More Races, White).
+          Cross-model consistency with dim_staff.race.
         config:
           meta:
             source_system: PowerSchool
