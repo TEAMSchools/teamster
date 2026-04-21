@@ -123,107 +123,102 @@ One commit per Phase 2 task covering all models in the domain. Commit message:
 
 ## Phase 1 — Upstream dedups
 
-### Task 1: Deduplicate `stg_people__employee_numbers` (#3637)
+### Task 1: Filter dead-weight rows in `dim_staff` (#3637)
+
+**Background:** The root cause of the 91-duplicate pattern in
+`stg_people__employee_numbers` is an incremental-MERGE-on-NULL bug — 91
+employee_numbers have NULL `adp_associate_id` and get re-inserted every run
+because MERGE on NULL never matches. Upstream investigation found that the
+staging model is also the employee-number provisioner — its incremental branch
+computes `MAX(employee_number) FROM {{ this }}` to assign next-available numbers
+for new hires. Filtering, `unique_key` changes, or `--full-refresh` at staging
+all risk altering issued employee_numbers, which project policy forbids.
+
+The clean workaround: filter dead-weight rows **downstream in `dim_staff`**
+instead of staging. Empirical check found:
+
+- 91 "orphan" employee_numbers: NULL `adp_associate_id`, `is_active=true`, all
+  downstream ADP columns NULL (terminated/pre-migration)
+- 7 additional employee_numbers: populated `adp_associate_id`,
+  `is_active=false`, downstream ADP columns all NULL (ADP worker record not
+  resolving — deleted from ADP or join miss)
+
+Combined filter `WHERE adp_associate_id IS NOT NULL AND is_active` removes all
+98 dead-weight rows (91 + 7) and leaves 4,521 real staff records. Since the
+filter collapses `stg_people__employee_numbers` to 1 row per `employee_number`
+(the dup pattern lives entirely in the NULL-id rows), the `SELECT DISTINCT`
+workaround is no longer needed — drop it.
 
 **Files:**
 
-- Modify:
-  `src/dbt/kipptaf/models/people/staging/stg_people__employee_numbers.sql`
-- Modify:
-  `src/dbt/kipptaf/models/people/staging/properties/stg_people__employee_numbers.yml`
-  (or wherever the model's properties live — verify during step 1)
-- Modify: `src/dbt/kipptaf/models/marts/dimensions/dim_staff.sql` (remove
-  workaround)
+- Modify: `src/dbt/kipptaf/models/marts/dimensions/dim_staff.sql` (replace
+  DISTINCT workaround CTE with a filtered SELECT)
+- No changes to `stg_people__employee_numbers.sql` (staging provisioning
+  invariant preserved)
 
-- [ ] **Step 1: Read the current staging model + properties**
+- [ ] **Step 1: Read `dim_staff.sql`.** Locate the CTE containing
+      `SELECT DISTINCT employee_number FROM ... stg_people__employee_numbers`
+      with the `-- TODO: #3637` comment.
 
-Read `stg_people__employee_numbers.sql` and its properties YAML. Identify the
-columns available (especially `is_active`, any date/timestamp column that could
-order "most recent"). Confirm the source table.
+- [ ] **Step 2: Replace the DISTINCT CTE with a filtered SELECT:**
 
-- [ ] **Step 2: Confirm duplicate pattern empirically**
+  ```sql
+  -- Before
+  select distinct employee_number
+  from {{ ref("stg_people__employee_numbers") }}
+  -- TODO: #3637
 
-Run (adjust project path as needed):
+  -- After
+  select employee_number
+  from {{ ref("stg_people__employee_numbers") }}
+  where adp_associate_id is not null and is_active
+  ```
 
-```sql
-select employee_number, count(*) as n
-from `teamster-332318.kipptaf_people.stg_people__employee_numbers`
-group by 1 having count(*) > 1
-order by n desc
-```
+  Remove the `-- TODO: #3637` comment; the downstream workaround is now the
+  intended behavior.
 
-Expected: 91 employee_numbers with n>1. Inspect a sample of duplicates to
-identify the ordering column for `active-then-recent`.
+- [ ] **Step 3: Verify locally:**
 
-- [ ] **Step 3: Apply `dbt_utils.deduplicate`**
+  ```bash
+  uv run dbt parse --project-dir src/dbt/kipptaf
+  uv run dbt build --project-dir src/dbt/kipptaf \
+      --select dim_staff --target defer
+  ```
 
-Wrap the final `select` in a deduplicate call:
+  Expected: the `unique_dim_staff_staff_key` test passes without a `distinct`.
+  `dim_staff` row count is 4,521 (down from 4,612).
 
-```sql
-with base as (
-    -- existing logic
-)
-select * from base
-qualify row_number() over (
-    partition by employee_number
-    order by is_active desc, <recent_column> desc
-) = 1
-```
+- [ ] **Step 4: Update `stg_people__employee_numbers` follow-up note.** In
+      `docs/superpowers/specs/2026-04-15-column-naming-audit.md` "Structural
+      follow-ups" section, add a bullet documenting that the upstream MERGE-on-
+      NULL bug in `stg_people__employee_numbers` was not fixed in this PR
+      (requires `--full-refresh`, which is denied). Reference #3637 as the issue
+      that will address it with operational planning.
 
-Or equivalently with `dbt_utils.deduplicate` macro per `src/dbt/CLAUDE.md`
-conventions. Per CLAUDE.md, prefer the macro over manual `qualify`:
+- [ ] **Step 5: Commit.**
 
-```sql
-{{ dbt_utils.deduplicate(
-    relation="base",
-    partition_by="employee_number",
-    order_by="is_active desc, <recent_column> desc"
-) }}
-```
+  ```bash
+  git add src/dbt/kipptaf/models/marts/dimensions/dim_staff.sql \
+          docs/superpowers/specs/2026-04-15-column-naming-audit.md
+  git commit -m "fix(dbt): filter dead-weight rows downstream in dim_staff (#3637)
 
-Choose `<recent_column>` based on Step 2 findings — document the choice in a SQL
-comment.
+  The 91 NULL-adp_associate_id rows + 7 inactive-with-ADP rows in
+  stg_people__employee_numbers are all dead weight (all downstream ADP
+  fields NULL). Filtering them at dim_staff with
+  WHERE adp_associate_id IS NOT NULL AND is_active removes them cleanly
+  and drops dim_staff from 4,612 to 4,521 rows. Replaces the
+  SELECT DISTINCT workaround.
 
-- [ ] **Step 4: Add uniqueness test in properties YAML**
+  Leaves stg_people__employee_numbers untouched — it is the employee-
+  number provisioner (computes MAX(employee_number) for next-hire
+  assignment) and the --full-refresh needed to fix the incremental
+  MERGE-on-NULL bug is policy-denied. The upstream fix is tracked
+  separately in #3637."
+  ```
 
-```yaml
-- name: employee_number
-  data_type: int64
-  description: <existing or updated>
-  data_tests:
-    - unique
-    - not_null
-```
-
-- [ ] **Step 5: Remove `dim_staff` workaround**
-
-Open `src/dbt/kipptaf/models/marts/dimensions/dim_staff.sql`. Find the
-`SELECT DISTINCT employee_number` CTE with the `-- TODO: #3637` comment. Replace
-it with a plain `SELECT employee_number` (the CTE itself may become redundant
-and can be inlined).
-
-- [ ] **Step 6: Verify — parse + test**
-
-```bash
-uv run dbt parse --project-dir src/dbt/kipptaf
-uv run dbt build --project-dir src/dbt/kipptaf --select stg_people__employee_numbers+ --target defer
-```
-
-Expected: parse succeeds, the new `unique` test passes, `dim_staff` (now without
-the DISTINCT) still materializes with a unique `staff_key`.
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add src/dbt/kipptaf/models/people/staging/stg_people__employee_numbers.sql \
-        src/dbt/kipptaf/models/people/staging/properties/stg_people__employee_numbers.yml \
-        src/dbt/kipptaf/models/marts/dimensions/dim_staff.sql
-git commit -m "fix(dbt): deduplicate stg_people__employee_numbers (#3637)
-
-Closes #3637. Picks canonical adp_associate_id per employee_number by
-active-then-recent ordering. Removes the SELECT DISTINCT workaround in
-dim_staff."
-```
+Exploratory commits `36cb93c7f` (applied `dbt_utils.deduplicate` at staging) and
+`bfdeca7d7` (revert) remain in the branch history as documentation of the
+investigation path.
 
 ---
 

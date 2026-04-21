@@ -21,9 +21,18 @@ One PR combining three project-#4 issues:
 - **#3633** (Tier 2 — broad correctness): deduplicate
   `int_people__location_crosswalk` upstream so the 8 mart models that carry
   `SELECT DISTINCT` workarounds can drop them.
-- **#3637** (Tier 2 — broad correctness): deduplicate
-  `stg_people__employee_numbers` upstream so `dim_staff` can drop its
-  `SELECT DISTINCT` + `-- TODO: #3637` workaround.
+- **#3637** (Tier 2 — broad correctness): address the
+  `stg_people__employee_numbers` duplicates at the `dim_staff` consumer layer
+  rather than upstream. Investigation revealed the staging model is the
+  employee-number provisioner — its incremental branch computes
+  `MAX(employee_number)` to assign next-available numbers. Upstream filtering,
+  `unique_key` changes, or `--full-refresh` (denied by policy) all risk altering
+  issued employee_numbers. The downstream filter
+  `WHERE adp_associate_id IS NOT NULL AND is_active` in `dim_staff` removes 98
+  dead-weight rows (91 NULL-adp orphans + 7 inactive with unresolved ADP
+  workers) and replaces the `SELECT DISTINCT` workaround without touching the
+  sensitive staging table. The upstream MERGE-on-NULL bug remains tracked in
+  #3637 for a dedicated operational follow-up.
 
 ### Structural adds split
 
