@@ -5,6 +5,12 @@ from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import Response, Session
 from requests.exceptions import HTTPError
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 
 
 class OvergradResource(ConfigurableResource):
@@ -29,7 +35,11 @@ class OvergradResource(ConfigurableResource):
         else:
             return f"{versioned_url}/{path}"
 
-    # TODO: use exponential backoff
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential_jitter(initial=2, max=60),
+        retry=retry_if_exception_type(HTTPError),
+    )
     def _request(self, method: str, url: str, **kwargs) -> Response:
         response = self._session.request(
             method=method, url=url, timeout=self.request_timeout, **kwargs
@@ -37,11 +47,12 @@ class OvergradResource(ConfigurableResource):
 
         try:
             response.raise_for_status()
-
             return response
-        except HTTPError as e:
-            self._log.exception(e)
-            raise HTTPError(response.text) from e
+        except HTTPError:
+            if response.status_code == 429 or response.status_code >= 500:
+                raise  # retryable via tenacity
+
+            raise Exception(response.text) from None
 
     def get(self, path: str, *args: str, **kwargs) -> Response:
         url = self._get_url(path, *args)
