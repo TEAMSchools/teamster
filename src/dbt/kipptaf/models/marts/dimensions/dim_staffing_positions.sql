@@ -17,9 +17,7 @@ select
     status_detail,
     mid_year_hire as is_mid_year_hire,
 
-    case
-        plan_status when 'Active' then true when 'Inactive' then false
-    end as is_active,
+    if(plan_status in ('Active', 'TRUE'), true, false) as is_active,
 
     cast(dbt_valid_from as date) as effective_start_date,
     cast(dbt_valid_to as date) as effective_end_date,

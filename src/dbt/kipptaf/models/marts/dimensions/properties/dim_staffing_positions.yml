@@ -3,11 +3,11 @@ models:
     description: >-
       Staffing position dimension. Type 2 slowly-changing dimension — one row
       per budgeted position per version (snapshot interval). Sourced from the
-      AppSheet seat tracker via dbt snapshot. Contains department, job title,
-      location, entity, grade band, staffing status, plan status, and
-      mid-year-hire flag for each position version. Foreign keys to
-      dim_locations (location_key), and dim_staff for the assigned teammate and
-      recruiter as role-playing dimensions (both nullable).
+      AppSheet seat tracker via dbt snapshot. Contains department, position
+      title, location, staffing status, active flag, and mid-year-hire flag for
+      each position version. Foreign keys to dim_locations (location_key) and
+      dim_staff for the position incumbent and recruiter as role-playing
+      dimensions (both nullable).
     columns:
       - name: staffing_position_key
         data_type: string
@@ -67,8 +67,9 @@ models:
       - name: is_active
         data_type: boolean
         description: >-
-          Whether this position is active in the staffing plan. True for Active,
-          false for Inactive.
+          Whether this position is active in the staffing plan. True when
+          plan_status is 'Active' or 'TRUE'; false otherwise (including
+          'Inactive' and null).
 
       - name: staffing_status
         data_type: string
