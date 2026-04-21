@@ -208,6 +208,33 @@ dim and tracked for separate fixes.
 | `dim_college_enrollments`     | `degree_title`   | Upstream NSC has data (53/1919); dim has 0/74. Join issue.                                                                                  |
 | `dim_staff_status`            | all columns      | Entire table has 0 rows in production. Model logic is broken.                                                                               |
 
+### `stg_people__employee_numbers` — incremental MERGE-on-NULL duplication
+
+`stg_people__employee_numbers` accumulates 16 duplicate rows per run for each of
+91 `employee_number` values whose `adp_associate_id` is `NULL` (1,456 duplicate
+rows total). The incremental MERGE predicate never matches when the merge key is
+`NULL`, so those orphan rows re-insert on every run. All downstream ADP columns
+(name, email, hire date, rehire date) are `NULL` on these rows — they are dead
+weight, not real staff records. A further 7 rows have populated
+`adp_associate_id` but `is_active = false` and likewise carry `NULL` ADP
+columns.
+
+**Why the fix is downstream, not upstream**: the staging model is the
+employee-number provisioner — its incremental branch computes
+`MAX(employee_number) FROM {{ this }}` to assign the next-available number for
+new hires. The `--full-refresh` needed to clear the accumulated duplicates is
+policy-denied on this table because it would break sequential provisioning.
+
+**Downstream workaround**: the `dim_staff` consumer filters dead weight with
+`WHERE adp_associate_id IS NOT NULL AND is_active`, which collapses the 91
+orphan groups to zero rows and drops the 7 inactive-with-ADP rows. This removes
+all 98 dead-weight rows and lets `dim_staff` pass its `unique` test without a
+`SELECT DISTINCT` workaround.
+
+Tracked in GitHub issue
+[#3637](https://github.com/TEAMSchools/teamster/issues/3637) for a dedicated
+operational-planning PR that addresses the upstream MERGE-on-NULL behavior.
+
 ### `dim_assessments` — `scope` vs `assessment_scope` untangling
 
 `dim_assessments` currently has two columns that appear to represent overlapping
