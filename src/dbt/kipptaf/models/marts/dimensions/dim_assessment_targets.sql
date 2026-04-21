@@ -60,7 +60,7 @@ select
     d.academic_year,
     d.school_id,
     d.state_assessment_code,
-    d.illuminate_subject_area,
+    d.illuminate_subject_area as academic_subject,
     d.grade_level as assessment_grade_level,
     d.grade_goal,
     d.school_goal,
@@ -68,7 +68,5 @@ select
     d.organization_goal,
     d.grade_band_goal,
     d.assessment_band_goal,
-    d.school_level,
-    d.region,
 from deduplicated as d
 left join locations as loc on d.school_id = loc.powerschool_school_id

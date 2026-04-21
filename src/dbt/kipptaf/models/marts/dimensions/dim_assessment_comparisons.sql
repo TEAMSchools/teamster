@@ -46,7 +46,6 @@ select
     academic_year,
     test_name,
     test_code,
-    region,
     city_percent_proficient,
     state_percent_proficient,
     neighborhood_schools_percent_proficient,

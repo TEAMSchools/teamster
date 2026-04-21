@@ -21,22 +21,24 @@ models:
           Source system category: illuminate (internal KIPP), state (NJSLA,
           FAST, NJGPA), or college (SAT, ACT, PSAT, AP).
 
-      - name: title
+      - name: assessment_title
         data_type: string
         description: >-
-          Display name of the assessment.
+          Display name of the assessment (Ed-Fi
+          edFi_assessment.assessmentTitle).
 
-      - name: subject_area
+      - name: academic_subject
         data_type: string
         description: >-
           Subject tested (e.g., Mathematics, English Language Arts, Reading,
-          Science, Composite).
+          Science, Composite). Ed-Fi academic_subject_descriptor.
 
-      - name: scope
+      - name: assessment_category
         data_type: string
         description: >-
-          Assessment scope or family (e.g., CMA, CGI for internal; NJSLA, FAST
-          for state; SAT, ACT for college).
+          Assessment category based on format and content (Ed-Fi
+          assessment_category_descriptor). Examples: CMA, CGI for internal;
+          NJSLA, FAST for state; SAT, ACT for college.
 
       - name: module_code
         data_type: string

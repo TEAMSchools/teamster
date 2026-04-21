@@ -81,17 +81,13 @@ select
 
     ca.test_date as test_date_key,
 
-    ca.student_number,
     ca.academic_year,
-    ca.scope as assessment_scope,
-    ca.subject_area,
     ca.score_type,
     ca.scale_score,
-    ca.percent_correct,
     ca.administration_round,
     ca.course_discipline,
     ca.test_type,
-    ca.rn_highest,
+    ca.rn_highest as score_rank,
     ca.max_scale_score,
     ca.superscore,
     ca.running_max_scale_score,
@@ -100,7 +96,7 @@ select
 
     cast(null as string) as proficiency_level,
 
-    ca.score_source,
+    ca.score_source as score_provider,
 from college_assessments as ca
 
 union all
@@ -135,23 +131,17 @@ select
 
     cast(null as date) as test_date_key,
 
-    ap.student_number,
     ap.academic_year,
-
-    'AP' as assessment_scope,
-
-    ap.test_subject as subject_area,
     ap.ps_ap_course_subject_code as score_type,
 
     cast(ap.exam_score as numeric) as scale_score,
 
-    cast(null as numeric) as percent_correct,
     cast(null as string) as administration_round,
     cast(null as string) as course_discipline,
 
     'Official' as test_type,
 
-    ap.rn_highest,
+    ap.rn_highest as score_rank,
 
     cast(null as numeric) as max_scale_score,
     cast(null as numeric) as superscore,
@@ -163,5 +153,5 @@ select
         when ap.exam_score >= 3 then 'Qualified' else 'Not Qualified'
     end as proficiency_level,
 
-    ap.score_source,
+    ap.score_source as score_provider,
 from ap_assessments as ap

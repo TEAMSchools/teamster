@@ -147,9 +147,9 @@ select
     }} as assessment_key,
 
     assessment_type,
-    title,
-    subject_area,
-    scope,
+    title as assessment_title,
+    subject_area as academic_subject,
+    scope as assessment_category,
     module_code,
     module_type,
     grade_level as grade_level_tested,

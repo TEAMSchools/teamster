@@ -31,26 +31,10 @@ models:
           FK to dim_dates. The date the assessment was taken. Null for AP exams
           where only the academic year is recorded.
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          PowerSchool student number.
-
       - name: academic_year
         data_type: int64
         description: >-
           Academic year the assessment was administered.
-
-      - name: assessment_scope
-        data_type: string
-        description: >-
-          Assessment family (SAT, ACT, PSAT, AP).
-
-      - name: subject_area
-        data_type: string
-        description: >-
-          Subject or section tested (e.g., Math, Reading, Composite, Combined,
-          or AP subject name).
 
       - name: score_type
         data_type: string
@@ -63,11 +47,6 @@ models:
         description: >-
           Scale score achieved on this test section. For AP exams, the exam
           grade (1-5).
-
-      - name: percent_correct
-        data_type: numeric
-        description: >-
-          Percent correct where available. Null for most college assessments.
 
       - name: administration_round
         data_type: string
@@ -84,11 +63,11 @@ models:
         description: >-
           Official or Practice.
 
-      - name: rn_highest
+      - name: score_rank
         data_type: int64
         description: >-
-          Row number ranking by highest score within student x score_type
-          (college) or student x AP course (AP). 1 = best score.
+          Rank by highest score within student x score_type (college) or student
+          x AP course (AP). 1 = best score.
 
       - name: max_scale_score
         data_type: numeric
@@ -124,7 +103,7 @@ models:
           Proficiency classification. For AP: Qualified (score >= 3) or Not
           Qualified. Null for college-entrance assessments.
 
-      - name: score_source
+      - name: score_provider
         data_type: string
         description: >-
-          Source system: college (SAT/ACT/PSAT) or ap.
+          Source provider: college (SAT/ACT/PSAT) or ap.
