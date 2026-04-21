@@ -53,11 +53,6 @@ models:
         description: >-
           Administration round label. Null for AP exams.
 
-      - name: course_discipline
-        data_type: string
-        description: >-
-          Course discipline alignment (e.g., ENG, MATH). Null for AP exams.
-
       - name: test_type
         data_type: string
         description: >-
@@ -85,17 +80,6 @@ models:
         data_type: numeric
         description: >-
           Running maximum scale score up to this test date. Null for AP.
-
-      - name: aligned_subject_area
-        data_type: string
-        description: >-
-          Standardized subject area for cross-test comparison (e.g., Total,
-          Math, EBRW/Reading). Null for AP.
-
-      - name: aligned_subject
-        data_type: string
-        description: >-
-          Aligned subject for grouping across SAT and ACT. Null for AP.
 
       - name: proficiency_level
         data_type: string

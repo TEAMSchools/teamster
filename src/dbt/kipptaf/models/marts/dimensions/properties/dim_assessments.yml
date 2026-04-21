@@ -70,3 +70,26 @@ models:
           Determines how scores link to students: enrollment (scores are tied to
           a section enrollment) or student (scores follow the student with no
           enrollment context, e.g., SAT, ACT, AP).
+
+      - name: combined_academic_subject
+        data_type: string
+        description: >-
+          Cross-test-family normalized bucket for comparing scores across SAT
+          and ACT (e.g., EBRW and Reading combine into EBRW/Reading). Populated
+          for college-entrance assessments; null for AP, state, and internal
+          Illuminate rows.
+
+      - name: aligned_academic_subject
+        data_type: string
+        description: >-
+          Within-test-family normalized academic subject used for cross-test
+          comparison (e.g., SAT EBRW and PSAT EBRW both align to EBRW). Ed-Fi
+          academic_subject_descriptor alignment. Populated for college-entrance
+          assessments; null for AP, state, and internal Illuminate rows.
+
+      - name: credit_category
+        data_type: string
+        description: >-
+          Ed-Fi credit_category_descriptor capturing graduation-requirement
+          categorization (e.g., ENG, MATH, SCI). Populated for college-entrance
+          assessments; null for AP, state, and internal Illuminate rows.
