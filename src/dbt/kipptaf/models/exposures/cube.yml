@@ -12,7 +12,7 @@ exposures:
       - ref("dim_students")
       - ref("dim_terms")
       - ref("fct_student_attendance_daily")
-      - ref("fct_staff_observation_microgoals")
+      - ref("fct_staff_observation_goals")
     config:
       meta:
         dagster:

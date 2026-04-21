@@ -3,9 +3,8 @@ models:
     description: >-
       Staff observation score fact table. One row per measurement item per
       observation. Captures the full response payload: numeric score, dropdown
-      selection, HTML-cleaned text box content, and aggregated checkbox
-      selections. Foreign keys to fct_staff_observations and
-      dim_staff_observation_rubric_measurements.
+      selection, and HTML-cleaned text box content. Foreign keys to
+      fct_staff_observations and dim_staff_observation_rubric_measurements.
     columns:
       - name: staff_observation_score_key
         data_type: string
@@ -35,44 +34,18 @@ models:
           Foreign key to dim_staff_observation_rubric_measurements. Surrogate
           key derived from rubric_id and measurement_id.
 
-      - name: observation_id
-        data_type: string
-        description: >-
-          SchoolMint Grow observation identifier.
-
-      - name: measurement_id
-        data_type: string
-        description: >-
-          SchoolMint Grow measurement identifier scored in this row.
-
-      - name: measurement_group_id
-        data_type: string
-        description: >-
-          SchoolMint Grow measurement group (strand) identifier.
-
-      - name: value_score
-        data_type: int64
-        description: >-
-          Numeric score assigned to this measurement item.
-
-      - name: value_text
-        data_type: string
-        description: >-
-          Dropdown text selection for this measurement item.
-
-      - name: percentage
-        data_type: float64
-        description: >-
-          Percentage score for this measurement item, if applicable.
-
       - name: text_box_content
         data_type: string
         description: >-
           HTML-cleaned open text content from the measurement's text box
           response.
 
-      - name: checkbox_values
+      - name: score_value
+        data_type: int64
+        description: >-
+          Numeric score assigned to this measurement item.
+
+      - name: response_text
         data_type: string
         description: >-
-          Comma-separated list of checkbox labels that were checked (value =
-          true) for this measurement item.
+          Dropdown text selection for this measurement item.

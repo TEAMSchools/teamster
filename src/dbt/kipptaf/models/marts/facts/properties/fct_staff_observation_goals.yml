@@ -1,0 +1,61 @@
+models:
+  - name: fct_staff_observation_goals
+    description: >-
+      Staff observation goal assignment fact table. One row per teacher x goal
+      assignment. Records each goal or look-for assigned to a teacher through
+      SchoolMint Grow assignments, linked to the 4-level goal taxonomy. Foreign
+      keys to dim_staff (teacher and creator as role-playing dimensions) and
+      dim_staff_observation_goal_types.
+    columns:
+      - name: staff_observation_goal_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from teacher employee number,
+          assignment_id, and goal tag_id. Generated with
+          generate_surrogate_key(["gu.internal_id_int", "a.assignment_id",
+          "m.tag_id"]).
+        data_tests:
+          - unique
+          - not_null
+
+      - name: teacher_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff for the teacher receiving the goal. Surrogate
+          key derived from employee_number.
+        data_tests:
+          - not_null
+
+      - name: staff_observation_goal_type_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_observation_goal_types. Surrogate key derived
+          from the goal tag_id.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff_observation_goal_types')
+                field: staff_observation_goal_type_key
+
+      - name: creator_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff for the person who created the assignment.
+          Surrogate key derived from creator employee_number. May be null if the
+          creator cannot be matched to the staff roster.
+
+      - name: assignment_date
+        data_type: date
+        description: >-
+          Local date when the assignment was created.
+
+      - name: assignment_created_timestamp
+        data_type: timestamp
+        description: >-
+          UTC timestamp when the assignment was created.
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year derived from the assignment creation date.

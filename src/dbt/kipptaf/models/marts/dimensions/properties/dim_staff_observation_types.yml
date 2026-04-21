@@ -15,14 +15,6 @@ models:
           - unique
           - not_null
 
-      - name: observation_type_id
-        data_type: string
-        description: >-
-          SchoolMint Grow generic tag identifier for the observation type.
-        data_tests:
-          - unique
-          - not_null
-
       - name: observation_type_name
         data_type: string
         description: >-

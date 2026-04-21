@@ -28,16 +28,6 @@ models:
                 to: ref('dim_staff_observation_rubrics')
                 field: staff_observation_rubric_key
 
-      - name: rubric_id
-        data_type: string
-        description: >-
-          SchoolMint Grow rubric identifier this measurement belongs to.
-
-      - name: measurement_id
-        data_type: string
-        description: >-
-          SchoolMint Grow unique identifier for the measurement item.
-
       - name: measurement_name
         data_type: string
         description: >-
@@ -48,11 +38,6 @@ models:
         description: >-
           Description of the measurement item from the measurements catalog.
 
-      - name: measurement_row_style
-        data_type: string
-        description: >-
-          Row display style for the measurement in SchoolMint Grow UI.
-
       - name: measurement_scale_min
         data_type: int64
         description: >-
@@ -62,11 +47,6 @@ models:
         data_type: int64
         description: >-
           Maximum possible score for this individual measurement.
-
-      - name: measurement_group_id
-        data_type: string
-        description: >-
-          SchoolMint Grow identifier for the measurement group (strand).
 
       - name: strand_name
         data_type: string
@@ -103,12 +83,12 @@ models:
         description: >-
           TRUE if this measurement is marked private within the rubric.
 
-      - name: require_measurement
+      - name: is_required
         data_type: boolean
         description: >-
           TRUE if this measurement is required to be scored during observation.
 
-      - name: exclude_measurement
+      - name: is_excluded
         data_type: boolean
         description: >-
           TRUE if this measurement is excluded from scoring calculations.

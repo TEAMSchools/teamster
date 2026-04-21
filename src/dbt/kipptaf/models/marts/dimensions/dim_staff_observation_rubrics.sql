@@ -4,7 +4,6 @@ with
         select
             rubric_id,
             `name` as rubric_name,
-            district,
             scale_min,
             scale_max,
             is_private,
@@ -30,14 +29,13 @@ select
     {{ dbt_utils.generate_surrogate_key(["rubric_id"]) }}
     as staff_observation_rubric_key,
 
-    rubric_id,
     rubric_name,
-    district,
     scale_min,
     scale_max,
     is_private,
     is_published,
-    archived_at,
-    created,
-    last_modified,
+
+    archived_at as archived_timestamp,
+    created as created_timestamp,
+    last_modified as last_modified_timestamp,
 from deduplicate

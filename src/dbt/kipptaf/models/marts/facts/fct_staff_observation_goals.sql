@@ -3,7 +3,7 @@ select
         dbt_utils.generate_surrogate_key(
             ["gu.internal_id_int", "a.assignment_id", "m.tag_id"]
         )
-    }} as staff_observation_microgoal_key,
+    }} as staff_observation_goal_key,
 
     {{ dbt_utils.generate_surrogate_key(["gu.internal_id_int"]) }} as teacher_staff_key,
 
@@ -11,19 +11,10 @@ select
     as creator_staff_key,
 
     {{ dbt_utils.generate_surrogate_key(["m.tag_id"]) }}
-    as staff_observation_microgoal_type_key,
-
-    a.assignment_id,
-    gu.internal_id_int as teacher_employee_number,
-    a.creator_name,
-
-    m.tag_name as goal_name,
-    m.strand_name,
-    m.bucket_name,
-    m.goal_type_name,
+    as staff_observation_goal_type_key,
 
     a.created_date_local as assignment_date,
-    a.created as assignment_created_at,
+    a.created as assignment_created_timestamp,
 
     {{
         date_to_fiscal_year(

@@ -16,23 +16,10 @@ models:
           - unique
           - not_null
 
-      - name: rubric_id
-        data_type: string
-        description: >-
-          SchoolMint Grow unique identifier for the rubric.
-        data_tests:
-          - unique
-          - not_null
-
       - name: rubric_name
         data_type: string
         description: >-
           Display name of the rubric in SchoolMint Grow.
-
-      - name: district
-        data_type: string
-        description: >-
-          SchoolMint Grow district identifier the rubric belongs to.
 
       - name: scale_min
         data_type: int64
@@ -54,17 +41,17 @@ models:
         description: >-
           TRUE if the rubric has been published for use.
 
-      - name: archived_at
+      - name: archived_timestamp
         data_type: timestamp
         description: >-
           Timestamp when the rubric was archived. Null if still active.
 
-      - name: created
+      - name: created_timestamp
         data_type: timestamp
         description: >-
           Timestamp when the rubric was created in SchoolMint Grow.
 
-      - name: last_modified
+      - name: last_modified_timestamp
         data_type: timestamp
         description: >-
           Timestamp of the most recent modification to the rubric.
