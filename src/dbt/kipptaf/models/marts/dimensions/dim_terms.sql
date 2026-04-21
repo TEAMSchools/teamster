@@ -1,5 +1,5 @@
 with
-    terms as (select * from {{ ref("stg_google_sheets__reporting__terms") }}),
+    terms as (select *, from {{ ref("stg_google_sheets__reporting__terms") }}),
 
     /* exclude school_id = 0 sentinel rows (admin/campus pseudo-locations) so */
     /* school-level joins resolve to at most one physical school per region */
