@@ -1,11 +1,8 @@
 with
     locations as (
-        -- TODO: int_people__location_crosswalk has duplicate rows (#3633)
-        select distinct location_powerschool_school_id, location_clean_name,
-        from {{ ref("int_people__location_crosswalk") }}
-        where
-            not location_is_pathways
-            and location_clean_name <> 'KIPP Whittier Elementary'
+        select powerschool_school_id, location_name,
+        from {{ ref("stg_people__locations") }}
+        where not is_pathways and location_name <> 'KIPP Whittier Elementary'
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
@@ -58,7 +55,7 @@ select
         )
     }} as assessment_target_key,
 
-    {{ dbt_utils.generate_surrogate_key(["loc.location_clean_name"]) }} as location_key,
+    {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }} as location_key,
 
     d.academic_year,
     d.school_id,
@@ -74,4 +71,4 @@ select
     d.school_level,
     d.region,
 from deduplicated as d
-left join locations as loc on d.school_id = loc.location_powerschool_school_id
+left join locations as loc on d.school_id = loc.powerschool_school_id

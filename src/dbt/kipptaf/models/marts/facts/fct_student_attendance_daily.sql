@@ -1,14 +1,8 @@
 with
     locations as (
-        -- TODO: int_people__location_crosswalk has duplicate rows (#3633)
-        select distinct
-            location_powerschool_school_id,
-            location_dagster_code_location,
-            location_clean_name,
-        from {{ ref("int_people__location_crosswalk") }}
-        where
-            not location_is_pathways
-            and location_clean_name <> 'KIPP Whittier Elementary'
+        select powerschool_school_id, dagster_code_location, location_name,
+        from {{ ref("stg_people__locations") }}
+        where not is_pathways and location_name <> 'KIPP Whittier Elementary'
     )
 
 select
@@ -35,7 +29,7 @@ select
 
     ada.calendardate as date_key,
 
-    {{ dbt_utils.generate_surrogate_key(["loc.location_clean_name"]) }} as location_key,
+    {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }} as location_key,
 
     ada.student_number,
     ada.academic_year,
@@ -65,8 +59,8 @@ inner join
     and {{ union_dataset_join_clause(left_alias="ada", right_alias="enr") }}
 left join
     locations as loc
-    on ada.schoolid = loc.location_powerschool_school_id
-    and {{ extract_code_location("ada") }} = loc.location_dagster_code_location
+    on ada.schoolid = loc.powerschool_school_id
+    and {{ extract_code_location("ada") }} = loc.dagster_code_location
 
 -- TODO: overlapping enrollment records at same school cause join
 -- fan-out; qualify picks latest entrydate (#3633)

@@ -1,0 +1,87 @@
+models:
+  - name: stg_people__locations
+    description: |
+      One row per logical school (canonical location). Built by collapsing the
+      per-alias rows in the Google Sheet source down to a single row per
+      (powerschool_school_id, dagster_code_location, location_name,
+      is_pathways) group. Used by consumers that join to PowerSchool via
+      powerschool_school_id and do not need the alternate-name aliases. For
+      per-alias joins (e.g., ADP work location names or SchoolMint observation
+      school names), use int_people__location_crosswalk instead.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - powerschool_school_id
+              - dagster_code_location
+              - location_name
+              - is_pathways
+    columns:
+      - name: powerschool_school_id
+        data_type: int64
+        description: |
+          PowerSchool school ID. Join key for PowerSchool data.
+        data_tests:
+          - not_null
+      - name: dagster_code_location
+        data_type: string
+        description: |
+          Dagster code location (e.g., kippnewark, kippcamden, kippmiami,
+          kipppaterson). Used with powerschool_school_id for cross-region
+          joins via extract_code_location().
+        data_tests:
+          - not_null
+      - name: location_name
+        data_type: string
+        description: |
+          Canonical school name. Single canonical spelling used across network
+          reporting. In the underlying Google Sheet this is the `Clean_Name`
+          column.
+        data_tests:
+          - not_null
+      - name: is_pathways
+        data_type: boolean
+        description: |
+          True when the location is a KIPP Forward / Pathways post-secondary
+          program rather than a K-12 school.
+        data_tests:
+          - not_null
+      - name: abbreviation
+        data_type: string
+        description: |
+          Short location abbreviation (e.g., SPARK, NCA). Not always populated
+          for every location.
+      - name: region
+        data_type: string
+        description: |
+          KIPP region the school belongs to (Newark, Camden, Miami, Paterson,
+          or TAF for network-level).
+      - name: grade_band
+        data_type: string
+        description: |
+          Grade band served by the location (e.g., ES, MS, HS).
+      - name: deanslist_school_id
+        data_type: int64
+        description: |
+          DeansList school ID (nullable — not every school is in DeansList).
+      - name: reporting_school_id
+        data_type: int64
+        description: |
+          Reporting school ID used to roll multi-campus schools up to a single
+          reporting unit.
+      - name: is_campus
+        data_type: boolean
+        description: |
+          True when the location represents a physical campus (vs. an
+          administrative unit).
+      - name: head_of_schools_employee_number
+        data_type: int64
+        description: |
+          Employee number of the head of schools responsible for this location.
+      - name: campus_name
+        data_type: string
+        description: |
+          Parent campus name for multi-school campuses (e.g., two schools that
+          share a building). Populated by joining to the campus_crosswalk sheet
+          on location_name. Null when the location is not grouped under a
+          named campus.
