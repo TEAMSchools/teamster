@@ -67,10 +67,10 @@ the exposure's `asset.metadata`; if the workbook is refreshed by another system
 
 See `src/dbt/kipptaf/CLAUDE.md` for the full exposure YAML reference.
 
-## Asset Checks
+## Freshness Policies
 
-`asset_checks.py` defines freshness checks on ADP WFN people models (deadline
-1:15am, 45-minute window).
+`freshness.py` attaches `FreshnessPolicy.cron` to ADP WFN people models
+(deadline 1:15am, 45-minute window).
 
 ## Illuminate DLT Schedule Split
 
