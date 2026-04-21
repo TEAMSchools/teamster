@@ -18,23 +18,23 @@ with
 select
     {{ dbt_utils.generate_surrogate_key(["en.employee_number"]) }} as staff_key,
 
-    en.employee_number,
+    en.employee_number as staff_unique_id,
 
-    sh.formatted_name,
-    sh.given_name,
-    sh.family_name_1,
+    sh.formatted_name as full_name,
+    sh.given_name as first_name,
+    sh.family_name_1 as last_name,
 
     sh.birth_date,
 
     sh.gender_identity,
-    sh.race_ethnicity_reporting,
+    sh.race_ethnicity_reporting as race,
     sh.is_hispanic,
 
     sh.work_email,
     sh.personal_email,
-    sh.personal_cell,
+    sh.personal_cell as personal_cell_phone,
 
-    sh.sam_account_name,
+    sh.sam_account_name as active_directory_username,
     sh.google_email,
 
     sh.worker_original_hire_date as original_hire_date,

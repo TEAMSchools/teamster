@@ -35,16 +35,16 @@ models:
           Role-playing foreign key to dim_dates. The effective date of this
           compensation version as a raw DATE value matching dim_dates.date_key.
 
-      - name: annual_rate
+      - name: annual_wage
         data_type: numeric
         description: >-
-          Annual salary rate for this compensation version, from ADP
+          Annual wage for this compensation version, from ADP
           baseRemuneration.annualRateAmount.amountValue.
 
-      - name: hourly_rate
+      - name: hourly_wage
         data_type: numeric
         description: >-
-          Hourly pay rate for this compensation version, from ADP
+          Hourly wage for this compensation version, from ADP
           baseRemuneration.hourlyRateAmount.amountValue. Null for salaried
           assignments.
 
@@ -61,21 +61,21 @@ models:
           Pay-period rate for this compensation version, from ADP
           baseRemuneration.payPeriodRateAmount.amountValue.
 
-      - name: effective_date_start
+      - name: effective_start_date
         data_type: date
         description: >-
           Date this compensation version became effective, from ADP
           baseRemuneration.effectiveDate.
 
-      - name: effective_date_end
+      - name: effective_end_date
         data_type: date
         description: >-
           Last date this compensation version was effective. Computed as one day
-          before the next version's effective_date_start, or 9999-12-31 for the
+          before the next version's effective_start_date, or 9999-12-31 for the
           current version.
 
-      - name: is_current_record
+      - name: is_current
         data_type: boolean
         description: >-
           TRUE if this is the most recent compensation version for the work
-          assignment (effective_date_end = 9999-12-31).
+          assignment (effective_end_date = 9999-12-31).

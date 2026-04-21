@@ -29,10 +29,6 @@ models:
                 to: ref('dim_staff')
                 field: staff_key
 
-      - name: employee_number
-        data_type: int64
-        description: KIPP-assigned unique identifier for the staff member.
-
       - name: plan_type
         data_type: string
         description: >-
@@ -50,11 +46,6 @@ models:
         description: >-
           Degenerate dimension. The tier of coverage selected (e.g., Employee
           Only, Employee + Spouse, Family).
-
-      - name: enrollment_status
-        data_type: string
-        description:
-          The current status of the enrollment record (e.g., Active, Inactive).
 
       - name: enrollment_start_date
         data_type: date

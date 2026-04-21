@@ -55,21 +55,21 @@ models:
           Dollar amount of the additional earning rate for this version, from
           additionalRemunerations.rate.amountValue.
 
-      - name: effective_date_start
+      - name: effective_start_date
         data_type: date
         description: >-
           Date this earnings version became effective, from
           additionalRemunerations.effectiveDate.
 
-      - name: effective_date_end
+      - name: effective_end_date
         data_type: date
         description: >-
           Last date this earnings version was effective. Computed as one day
-          before the next version's effective_date_start (within the same
+          before the next version's effective_start_date (within the same
           assignment and earning type), or 9999-12-31 for the current version.
 
-      - name: is_current_record
+      - name: is_current
         data_type: boolean
         description: >-
           TRUE if this is the most recent earnings version for the assignment
-          and earning type (effective_date_end = 9999-12-31).
+          and earning type (effective_end_date = 9999-12-31).

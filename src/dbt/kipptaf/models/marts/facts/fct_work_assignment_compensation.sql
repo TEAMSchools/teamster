@@ -40,12 +40,12 @@ select
 
     effective_date_start as effective_date_key,
 
-    annual_rate,
-    hourly_rate,
+    annual_rate as annual_wage,
+    hourly_rate as hourly_wage,
     daily_rate,
     period_rate,
-    effective_date_start,
-    effective_date_end,
+    effective_date_start as effective_start_date,
+    effective_date_end as effective_end_date,
 
-    if(effective_date_end = '9999-12-31', true, false) as is_current_record,
+    if(effective_date_end = '9999-12-31', true, false) as is_current,
 from windowed

@@ -48,21 +48,21 @@ models:
           workerGroups[] where nameCode = 'Benefits Eligibility Class',
           coalesced from groupCode longName and shortName.
 
-      - name: effective_date_start
+      - name: effective_start_date
         data_type: date
         description: >-
           Date this type version was first observed, derived from the daily
           partition date where the type attribute hash changed.
 
-      - name: effective_date_end
+      - name: effective_end_date
         data_type: date
         description: >-
           Last date this type version was effective. Computed as one day before
-          the next version's effective_date_start, or 9999-12-31 for the current
+          the next version's effective_start_date, or 9999-12-31 for the current
           version.
 
-      - name: is_current_record
+      - name: is_current
         data_type: boolean
         description: >-
           TRUE if this is the most recent type version for the work assignment
-          (effective_date_end = 9999-12-31).
+          (effective_end_date = 9999-12-31).
