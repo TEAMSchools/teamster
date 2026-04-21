@@ -315,24 +315,61 @@ Tracked in [#3631](https://github.com/TEAMSchools/teamster/issues/3631).
 This refactor is prerelease. No backward compatibility is preserved for
 downstream consumers.
 
-Hash values for surrogate keys change **only** when:
+Hash values for surrogate keys change **only** when one of these causes applies:
 
-- **Values unify** — e.g., consolidating PS and Focus IDs into one
-  `lea_student_identifier` column changes the underlying value for Focus
-  students.
-- **Types change** — e.g., casting `int64` to `string` alters the concatenation
-  input.
-- **Composition changes** — e.g., adding or removing a column from the composite
-  surrogate-key input list of `dbt_utils.generate_surrogate_key()`.
-- **Null handling changes** — e.g., wrapping a previously-unwrapped nullable key
-  in the `if(x is not null, hash(x), null)` pattern.
+- **Values unify** — consolidating two source columns into one canonical column
+  changes the underlying value (e.g., PS + Focus IDs into one
+  `lea_student_identifier`).
+- **Types change** — casting `int64` to `string` alters the concatenation input.
+- **Composition changes** — adding or removing a column from the input list of
+  `dbt_utils.generate_surrogate_key()`.
+- **Null handling changes** — wrapping a previously-unwrapped nullable key in
+  the `if(x is not null, hash(x), null)` pattern.
+- **Structural add** — a new FK/degenerate surrogate is introduced where none
+  existed before (no "before" hash to compare).
 
 **Pure renames** — same value, same type, same composition, just a new column
-label — produce identical hashes. Most of the 67 originally flagged renames fall
-here.
+label — produce identical hashes. Most of the 168 in-scope renames fall here.
 
-The audit inventory flags each row that affects surrogate keys with the specific
-hash-change cause.
+### Enumerated surrogate-key changes
+
+| Model.Column                                                      | Before derivation                                                                                              | After derivation                                                                                                                                                           | Cause                                              |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `dim_terms.region_key`                                            | not present                                                                                                    | `generate_surrogate_key(["t.city"])` (derived from canonical city column on the terms row)                                                                                 | Structural add                                     |
+| `dim_terms.location_key`                                          | not present                                                                                                    | `generate_surrogate_key(["ll.location_name"])` via left join to `stg_people__locations` on `(school_id, city → region)`                                                    | Structural add                                     |
+| `dim_locations.region_key`                                        | not present                                                                                                    | `generate_surrogate_key(["region"])` on canonical region from `stg_people__locations`                                                                                      | Structural add                                     |
+| `dim_student_attendance_intervention_types.region_key`            | not present                                                                                                    | `generate_surrogate_key(["region_name"])`                                                                                                                                  | Structural add                                     |
+| `dim_student_attendance_intervention_types.intervention_type_key` | `generate_surrogate_key(["region", "commlog_reason"])` with mixed-case region (legal-entity and city variants) | `generate_surrogate_key(["region_name", "family_communication_reason"])` with canonical city-only region                                                                   | Composition changes (input value + column renamed) |
+| `fct_student_attendance_interventions.intervention_type_key`      | `generate_surrogate_key([<regex on _dbt_source_relation without initcap>, "commlog_reason"])`                  | `generate_surrogate_key(["initcap(regexp_extract(ai._dbt_source_relation, r'kipp(\\w+)_'))", "ai.commlog_reason"])` to match the dim's canonical region form               | Values unify (region casing realigned)             |
+| `fct_student_attendance_interventions.family_communication_key`   | not present                                                                                                    | `generate_surrogate_key(["c.record_id", "c._dbt_source_relation"])` via join to `int_deanslist__comm_log`, wrapped in null-guard                                           | Structural add                                     |
+| `fct_behavioral_incidents.referring_staff_key`                    | not present                                                                                                    | `generate_surrogate_key(["sr.employee_number"])` via DeansList email lookup chain, wrapped in null-guard                                                                   | Structural add                                     |
+| `fct_family_communications.staff_key`                             | not present                                                                                                    | `generate_surrogate_key(["sr.employee_number"])` via same DeansList chain, wrapped in null-guard                                                                           | Structural add                                     |
+| `fct_job_candidate_applications.shared_with_location_key`         | not present                                                                                                    | `generate_surrogate_key(["school_shared_with"])`, wrapped in null-guard; warn-severity relationships test per [#3672](https://github.com/TEAMSchools/teamster/issues/3672) | Structural add                                     |
+| `dim_staff_work_assignments.time_service_supervisor_staff_key`    | not present                                                                                                    | `generate_surrogate_key(["sup.employee_number"])` via second self-join on `stg_people__employee_numbers`, null-guarded                                                     | Structural add                                     |
+| `dim_work_assignment_reporting_relationships.manager_staff_key`   | not present                                                                                                    | `generate_surrogate_key(["mgr.employee_number"])` via same pattern, null-guarded                                                                                           | Structural add                                     |
+
+### Unchanged surrogate keys (explicit confirmation)
+
+Values preserved despite visible column renames elsewhere on the row:
+
+- `dim_students.student_key` — still hashes `student_number`. Renames
+  `local_student_identifier` → `lea_student_identifier`, `gender` →
+  `gender_identity`, etc. are pure mart-layer aliases of pre-existing columns;
+  they do not feed the hash.
+- `dim_staff.staff_key` — still hashes `employee_number`. The `staff_unique_id`
+  surface name is an alias of the same column the hash reads.
+- `dim_regions.region_key` — still hashes the CTE-local `region` value inside
+  the UNION ALL. The `region → region_name` output rename is a pure alias after
+  the hash is computed.
+- All Course, Talent, Survey, College, Gradebook, Assessment, Observation, and
+  Staffing domain keys on models whose SQL was renamed only — the hash input
+  columns were not touched. Scanned via compiled-SQL grep post-rebuild and
+  confirmed identical derivations.
+
+SCD2 dims renamed `is_current_record` → `is_current`, `is_current_record_group`
+→ `is_current_group`, and similar — these are boolean flags on SCD output rows,
+not surrogate-key hash inputs, so they are not in the list above even though
+they were renamed in this PR.
 
 ## Audit inventory workflow
 
