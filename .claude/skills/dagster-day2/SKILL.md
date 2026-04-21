@@ -109,6 +109,16 @@ of the pod Preempted timestamp.
 Skip if no dagster/auto_retry_run_id. Otherwise list_runs(run_ids=<all>).
 Collect: runId, status, startTime, endTime. Fetch logs only for FAILURE retries.
 
+CRITICAL: `list_runs(run_ids=...)` status can disagree with the run's event
+log. For every retry (not just FAILURE), fetch the terminal event via
+`get_run_logs(run_id=<id>,
+filter_types=["RunSuccessEvent","RunFailureEvent"], limit=5)`. If the
+terminal event is `RunFailureEvent`, record retryStatus=FAILURE regardless
+of what list_runs reported, and fetch the full failure logs. Phase 2
+depends on accurate retry outcomes — a retry silently reported as non-
+FAILURE while its event log ends in RunFailureEvent will point root-cause
+analysis in the wrong direction.
+
 ## 3. Failed sensor/schedule ticks
 
 list_code_locations → names + loadStatus.
@@ -530,6 +540,16 @@ if none. For step 8, split the Emerging Issues section into two subsections:
 - **Stale open groups** (step 8 `staleOpen`): OPEN groups last-seen before the
   window. Treat as cleanup candidates. Note the last-seen date and whether the
   stack matches a retry-wrapped helper. These do not belong in the timeline.
+
+When attributing an error group to a file, identify what is logging at ERROR
+severity — GCP Error Reporting fires on ERROR logs, not on stack frames. A
+traceback that passes through a file does NOT mean that file is the emitter.
+`SIGTERM` during run preemption unwinds the stack through wherever execution was
+when the signal arrived, so the top frames of the traceback will name whatever
+helper was in-flight. Before proposing a fix to a file, confirm the file itself
+emits ERROR-level logs for this path (read the source — not just that it appears
+in the stack). Retry-wrapped helpers in `teamster/CLAUDE.md` log at WARNING and
+do NOT file groups; stack frames through them are incidental.
 
 **Actions**: No action (transient + retry success), Monitor
 (recurring/emerging), Investigate (retry failure), Escalate (sustained platform
