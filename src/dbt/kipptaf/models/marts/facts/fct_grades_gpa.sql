@@ -115,9 +115,7 @@ select
         )
     }} as term_key,
 
-    enr.student_number,
     enr.academic_year,
-    gt.term_name,
     gt.semester,
 
     gt.gpa_term,
@@ -127,9 +125,9 @@ select
     gt.grade_avg_term,
     gt.grade_avg_y1,
 
-    gt.cumulative_y1_gpa,
-    gt.cumulative_y1_gpa_unweighted,
-    gt.cumulative_y1_gpa_projected,
+    gt.cumulative_y1_gpa as cumulative_gpa,
+    gt.cumulative_y1_gpa_unweighted as cumulative_gpa_unweighted,
+    gt.cumulative_y1_gpa_projected as cumulative_gpa_projected,
 
     gt.total_credit_hours_term as credit_hours_term,
     gt.total_credit_hours_y1 as credit_hours_y1,

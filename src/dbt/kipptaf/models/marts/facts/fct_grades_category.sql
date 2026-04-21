@@ -55,10 +55,8 @@ select
         )
     }} as term_key,
 
-    ce.students_student_number as student_number,
     ce.cc_academic_year as academic_year,
 
-    cg.storecode as term_code,
     cg.storecode_type as category_type,
     cg.storecode_order as category_order,
     cg.reporting_term,

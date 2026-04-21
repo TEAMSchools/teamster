@@ -81,7 +81,6 @@ select
 
     asg.duedate as due_date_key,
 
-    ce.students_student_number as student_number,
     asg.academic_year,
 
     asg.assignment_name,
@@ -90,7 +89,7 @@ select
     asg.scoretype as score_type,
 
     asg.score_entered as score,
-    asg.totalpointvalue as points_possible,
+    asg.totalpointvalue as max_points,
     asg.assign_final_score_percent as score_percent,
 
     if(asg.is_missing = 1, true, false) as is_missing,
