@@ -66,7 +66,7 @@ models:
         description: >-
           Grade band (ES, MS, HS). Nullable when not school-specific.
 
-      - name: data_freeze_date
+      - name: lockbox_date
         data_type: date
         description: >-
           Date after which grades are locked for this period.
@@ -76,3 +76,13 @@ models:
         description: >-
           TRUE if the current date falls within this period, or if the period is
           the latest for its type in a past academic year.
+
+      - name: powerschool_year_id
+        data_type: int64
+        description: >-
+          PowerSchool year_id for joining to PowerSchool term tables.
+
+      - name: powerschool_term_id
+        data_type: int64
+        description: >-
+          PowerSchool term_id for joining to PowerSchool term tables.

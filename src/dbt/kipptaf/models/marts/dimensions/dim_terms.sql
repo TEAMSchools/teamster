@@ -15,6 +15,8 @@ select
     region,
     school_id,
     grade_band,
-    lockbox_date as data_freeze_date,
+    lockbox_date,
     is_current,
+    powerschool_year_id,
+    powerschool_term_id,
 from {{ ref("stg_google_sheets__reporting__terms") }}
