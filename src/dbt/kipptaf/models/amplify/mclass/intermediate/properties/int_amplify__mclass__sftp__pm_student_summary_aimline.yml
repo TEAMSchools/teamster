@@ -8,17 +8,14 @@ models:
       district SFTP files become available.
     config:
       materialized: table
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - surrogate_key
     columns:
       - name: surrogate_key
         data_type: string
         description: >-
           Hash of student_primary_id, school_year, pm_period, measure, and
           probe_number.
+        data_tests:
+          - unique
       - name: school_name
         data_type: string
         description: School name as provided in the vendor file.
@@ -32,6 +29,8 @@ models:
         description: >-
           Source relation rewritten to reflect the school's actual
           dagster_code_location via the location crosswalk.
+        data_tests:
+          - not_null
       - name: region
         data_type: string
         description: Region derived from the location crosswalk.
