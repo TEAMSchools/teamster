@@ -19,6 +19,14 @@ models:
         description: >-
           Hash of student_primary_id, school_year, pm_period, measure, and
           probe_number.
+      - name: school_name
+        data_type: string
+        description: School name as provided in the vendor file.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("stg_google_sheets__people__location_crosswalk")
+                field: name
       - name: _dbt_source_relation
         data_type: string
         description: >-
@@ -54,9 +62,6 @@ models:
       - name: district_primary_id
         data_type: string
         description: District primary identifier.
-      - name: school_name
-        data_type: string
-        description: School name as provided in the vendor file.
       - name: school_primary_id
         data_type: int64
         description: School primary identifier from the mCLASS source.
