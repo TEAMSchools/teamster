@@ -11,8 +11,9 @@ models:
       - name: student_attendance_intervention_key
         data_type: string
         description: >-
-          Surrogate key derived from student_number, academic_year, and
-          commlog_reason. Primary key for this fact.
+          Surrogate key derived from student_number, academic_year, and the comm
+          log reason that identifies the intervention type. Primary key for this
+          fact.
         data_tests:
           - unique
           - not_null
@@ -29,7 +30,7 @@ models:
         data_type: string
         description: >-
           FK to dim_student_attendance_intervention_types. Surrogate key derived
-          from region and commlog_reason.
+          from region_name and family_communication_reason.
 
       - name: family_communication_key
         data_type: string
@@ -53,12 +54,6 @@ models:
         data_type: int64
         description: >-
           KIPP academic year (July start) for this intervention record.
-
-      - name: commlog_reason
-        data_type: string
-        description: >-
-          DeansList comm log reason value matching the intervention type (e.g.,
-          'Chronic Absence: 4').
 
       - name: absence_threshold
         data_type: int64

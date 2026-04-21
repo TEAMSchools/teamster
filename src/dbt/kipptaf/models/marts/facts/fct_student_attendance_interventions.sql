@@ -43,7 +43,7 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "regexp_extract(ai._dbt_source_relation, r'(kipp\\w+)_')",
+                "initcap(regexp_extract(ai._dbt_source_relation, r'kipp(\\w+)_'))",
                 "ai.commlog_reason",
             ]
         )
@@ -62,7 +62,6 @@ select
     ai.commlog_date as date_key,
 
     ai.academic_year,
-    ai.commlog_reason,
     ai.absence_threshold,
     ai.days_absent_unexcused,
 
