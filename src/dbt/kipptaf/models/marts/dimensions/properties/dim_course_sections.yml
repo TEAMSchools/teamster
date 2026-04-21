@@ -30,7 +30,7 @@ models:
           Null when sections_schoolid does not match any location in the
           crosswalk.
 
-      - name: section_number
+      - name: section_identifier
         data_type: string
         description: >-
           The section number associated with this class. This is implied by the

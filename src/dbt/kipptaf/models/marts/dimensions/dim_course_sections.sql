@@ -20,7 +20,7 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }} as location_key,
 
-    sec.sections_section_number as section_number,
+    sec.sections_section_number as section_identifier,
     sec.sections_expression as period,
     sec.sections_room as room,
 
