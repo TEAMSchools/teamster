@@ -12,8 +12,8 @@ models:
       - name: surrogate_key
         data_type: string
         description: >-
-          Hash of student_primary_id, school_year, pm_period, measure, and
-          probe_number.
+          Hash of student_primary_id, school_year, pm_period, measure,
+          probe_number, and device_date.
         data_tests:
           - unique
       - name: school_name
@@ -115,10 +115,9 @@ models:
         description: Progress monitoring period (e.g., 'BOY->MOY').
       - name: device_date
         data_type: date
-        description: Date the assessment was administered on the device.
-      - name: sync_date
-        data_type: date
-        description: Date the assessment data was synced.
+        description: >-
+          Date the assessment was administered on the device. First non-null of
+          device_date, sync_date.
       - name: measure
         data_type: string
         description: >-

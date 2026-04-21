@@ -11,8 +11,31 @@ with
                 ]
             )
         }}
+    ),
+
+    transformations as (
+        -- trunk-ignore(sqlfluff/AM04): union_relations produces dynamic columns
+        select
+            * except (sync_date, surrogate_key) replace (
+                coalesce(device_date, sync_date) as device_date
+            ),
+        from union_relations
     )
 
--- trunk-ignore(sqlfluff/AM04): union_relations produces dynamic columns
-select *,
-from union_relations
+select
+    *,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            [
+                "student_primary_id",
+                "school_year",
+                "pm_period",
+                "measure",
+                "probe_number",
+                "device_date",
+            ]
+        )
+    }} as surrogate_key,
+
+from transformations
