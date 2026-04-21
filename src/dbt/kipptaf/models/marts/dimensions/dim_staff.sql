@@ -1,8 +1,6 @@
 with
     employee_numbers as (
-        -- TODO: stg_people__employee_numbers has duplicate employee_numbers
-        -- from multiple associate_id mappings; distinct until resolved (#3637)
-        select distinct employee_number,
+        select employee_number,
         from {{ ref("stg_people__employee_numbers") }}
         where is_active
     ),
