@@ -17,18 +17,4 @@ policies: dict[AssetKey, FreshnessPolicy] = {
     AssetKey(
         ["kipptaf", "adp_workforce_now", "stg_adp_workforce_now__workers"]
     ): adp_wfn_policy,
-    AssetKey(
-        [
-            "kipptaf",
-            "adp_workforce_now",
-            "int_adp_workforce_now__workers__work_assignments",
-        ]
-    ): adp_wfn_policy,
-    AssetKey(
-        [
-            "kipptaf",
-            "adp_workforce_now",
-            "int_adp_workforce_now__workers__work_assignments__reports_to",
-        ]
-    ): adp_wfn_policy,
 }
