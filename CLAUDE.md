@@ -23,9 +23,11 @@ this step.**
 
 ## Working Conventions
 
-- **Before writing any spec or plan**: create a GitHub issue (`gh issue create`;
-  label with conventional commit type, related source systems, and
-  `dagster`/`dbt` when applicable). Quick fixes do not require one.
+- **Before writing any spec or plan**: STOP and explicitly ask the user whether
+  to open a GitHub issue first. Required for specs/plans; not required for quick
+  fixes. Do not write anything until the user answers. If opening:
+  `gh issue create`; label with conventional commit type, related source
+  systems, and `dagster`/`dbt` when applicable.
 
 - **Before creating a branch**: ask the user — worktree or branch switch? Do not
   choose for them.
