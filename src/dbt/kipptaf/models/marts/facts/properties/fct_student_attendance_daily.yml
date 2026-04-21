@@ -38,18 +38,6 @@ models:
           FK to dim_locations. Surrogate key derived from location_clean_name.
           Used with date_key to join dim_school_calendars.
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          Student Number assigned by the school. Indexed.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_number
-            contains_pii: true
-            column_role: primary_key
       - name: academic_year
         data_type: int64
         description: >-
@@ -94,46 +82,11 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__calendar_day
             source_column: membershipvalue
-      - name: is_absent
-        data_type: float64
-        description: >-
-          1.0 if the student was absent, 0.0 if present. Derived as
-          abs(attendancevalue - 1).
-
-      - name: is_present_weighted
+      - name: present_weight
         data_type: float64
         description: >-
           Weighted presence value. 0.67 for tardy (T-prefix codes), otherwise
-          equals attendancevalue.
-
-      - name: is_tardy
-        data_type: float64
-        description: >-
-          1.0 if the student was tardy (T-prefix attendance code), 0.0
-          otherwise.
-
-      - name: is_ontime
-        data_type: float64
-        description: >-
-          1.0 if the student arrived on time (non-tardy), 0.0 if tardy.
-
-      - name: is_oss
-        data_type: float64
-        description: >-
-          1.0 if the student received out-of-school suspension on this date (OS,
-          OSS, OSSP, SHI codes).
-
-      - name: is_iss
-        data_type: float64
-        description: >-
-          1.0 if the student received in-school suspension on this date (S, ISS
-          codes).
-
-      - name: is_suspended
-        data_type: float64
-        description: >-
-          1.0 if the student was suspended (any type) on this date. Union of
-          is_oss and is_iss codes.
+          equals attendancevalue. Fractional by design — not a 0/1 flag.
 
       - name: is_truant
         data_type: boolean
@@ -147,7 +100,40 @@ models:
         description: >-
           Semester code for the attendance date (e.g., S1, S2).
 
-      - name: term
+      - name: term_code
         data_type: string
         description: >-
           Term code for the attendance date (e.g., Q1, Q2, Q3, Q4).
+
+      - name: is_absent
+        data_type: int64
+        description: >-
+          1 if the student was absent, 0 if present. Sum-friendly flag.
+
+      - name: is_tardy
+        data_type: int64
+        description: >-
+          1 if the student was tardy (T-prefix attendance code), 0 otherwise.
+
+      - name: is_ontime
+        data_type: int64
+        description: >-
+          1 if the student arrived on time (non-tardy), 0 if tardy.
+
+      - name: is_oss
+        data_type: int64
+        description: >-
+          1 if the student received out-of-school suspension on this date (OS,
+          OSS, OSSP, SHI codes), 0 otherwise.
+
+      - name: is_iss
+        data_type: int64
+        description: >-
+          1 if the student received in-school suspension on this date (S, ISS
+          codes), 0 otherwise.
+
+      - name: is_suspended
+        data_type: int64
+        description: >-
+          1 if the student was suspended (any type) on this date. Union of
+          is_oss and is_iss codes.
