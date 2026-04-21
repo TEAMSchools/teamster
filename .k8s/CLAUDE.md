@@ -23,15 +23,12 @@ on GKE Autopilot.
 
 ## Scheduling
 
-- **Autopilot NAP only provisions nodes for `required` or `nodeSelector`
-  constraints** — `preferred` alone leaves pods on default N4 amd64. Each pod
-  type pairs `requiredDuringSchedulingIgnoredDuringExecution` with multiple ORed
-  `nodeSelectorTerms` (menu for STOCKOUT fallbacks) +
-  `preferredDuringSchedulingIgnoredDuringExecution` to rank within the menu.
-  Compute-class preference: Scale-Out arm64 > General-Purpose > Scale-Out amd64.
-  Balanced excluded — separation/extended-duration minimums (1 vCPU / 4 GiB)
-  exceed our requests (500m / 2 GiB). Spot adds +50 on code server pods only
-  (agent/run use `safe-to-evict: false`, mutually exclusive with spot).
+- Weighted `nodeAffinity` preferences (no hard `nodeSelector`). Compute-class
+  tiers: Scale-Out arm64 > General-Purpose > Scale-Out x86. Balanced removed —
+  its separation/extended-duration minimums (1 vCPU / 4 GiB) exceed our requests
+  (500m / 2 GiB), which would cause pod admission rejection if anti-affinity is
+  ever applied. Spot adds +50 on code server pods (not agent or run pods).
+  Autopilot bills per-pod, so fallback tiers have no cost penalty.
 - Agent pods use `safe-to-evict: "false"` (extended-duration) to prevent
   Autopilot scale-down churn, which is mutually exclusive with spot. Agent pods
   exclude arm64 tiers (image is x86-only).

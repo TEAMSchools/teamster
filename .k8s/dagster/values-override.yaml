@@ -67,26 +67,6 @@ dagsterCloudAgent:
 
   affinity:
     nodeAffinity:
-      # Autopilot NAP only provisions for `required` (or nodeSelector), not
-      # `preferred` — without this, pods land on default N4 amd64. Multiple
-      # nodeSelectorTerms are ORed, giving STOCKOUT fallbacks while `preferred`
-      # ranks candidates among them. Agent image is amd64-only, so no arm64.
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: cloud.google.com/compute-class
-                operator: In
-                values:
-                  - General-Purpose
-          - matchExpressions:
-              - key: cloud.google.com/compute-class
-                operator: In
-                values:
-                  - Scale-Out
-              - key: kubernetes.io/arch
-                operator: In
-                values:
-                  - amd64
       preferredDuringSchedulingIgnoredDuringExecution:
         - weight: 30
           preference:
@@ -102,10 +82,6 @@ dagsterCloudAgent:
                 operator: In
                 values:
                   - Scale-Out
-              - key: kubernetes.io/arch
-                operator: In
-                values:
-                  - amd64
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         - labelSelector:
@@ -158,39 +134,7 @@ workspace:
     podSpecConfig:
       affinity:
         nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - Scale-Out
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - arm64
-              - matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - General-Purpose
-              - matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - Scale-Out
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - amd64
           preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 50
-              preference:
-                matchExpressions:
-                  - key: cloud.google.com/gke-spot
-                    operator: In
-                    values:
-                      - "true"
             - weight: 40
               preference:
                 matchExpressions:
@@ -291,33 +235,6 @@ workspace:
       priorityClassName: dagster-run
       affinity:
         nodeAffinity:
-          # No spot preference — run pods use safe-to-evict: "false" (extended
-          # duration), mutually exclusive with spot on Autopilot.
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - Scale-Out
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - arm64
-              - matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - General-Purpose
-              - matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - Scale-Out
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - amd64
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 40
               preference:
