@@ -3,9 +3,9 @@ models:
     description: >-
       Survey submission fact table. One row per respondent x
       survey_administration. Records survey completion events across all
-      populations (staff, student, family). The respondent_population
-      discriminator determines which respondent FK is populated (exactly one per
-      row). Nullable subject_staff_key is populated only for Manager Survey
+      populations (staff, student, family). The respondent_type discriminator
+      determines which respondent FK is populated (exactly one per row).
+      Nullable subject_staff_key is populated only for Manager Survey
       submissions (role-playing FK to dim_staff for the manager being
       evaluated). FK to dim_survey_administrations and dim_dates.
     columns:
@@ -32,7 +32,7 @@ models:
           FK to dim_dates (role-playing as submission date). The local date the
           survey was submitted.
 
-      - name: respondent_population
+      - name: respondent_type
         data_type: string
         description: >-
           Discriminator for respondent type: staff, student, or family.
@@ -49,20 +49,20 @@ models:
       - name: staff_key
         data_type: string
         description: >-
-          FK to dim_staff for the respondent. Populated when
-          respondent_population is staff. Null for student and family.
+          FK to dim_staff for the respondent. Populated when respondent_type is
+          staff. Null for student and family.
 
       - name: student_enrollment_key
         data_type: string
         description: >-
           FK to dim_student_enrollments for the respondent. Populated when
-          respondent_population is student. Null for staff and family.
+          respondent_type is student. Null for staff and family.
 
       - name: student_contact_person_key
         data_type: string
         description: >-
           FK to dim_student_contact_persons for the respondent. Populated when
-          respondent_population is family. Null for staff and student.
+          respondent_type is family. Null for staff and student.
 
       - name: subject_staff_key
         data_type: string
@@ -72,22 +72,12 @@ models:
           (direct report) evaluates their manager (subject). Null for all other
           survey types.
 
-      - name: survey_id
-        data_type: string
-        description: >-
-          Source system identifier for the survey instrument.
-
-      - name: survey_response_id
-        data_type: string
-        description: >-
-          Source system identifier for the individual survey response.
-
-      - name: date_submitted
-        data_type: timestamp
-        description: >-
-          UTC timestamp when the survey response was submitted.
-
       - name: academic_year
         data_type: int64
         description: >-
           Academic year this submission falls within.
+
+      - name: submission_timestamp
+        data_type: timestamp
+        description: >-
+          UTC timestamp when the survey response was submitted.

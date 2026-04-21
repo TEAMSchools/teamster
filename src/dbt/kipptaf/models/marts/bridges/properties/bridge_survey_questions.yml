@@ -31,11 +31,6 @@ models:
         data_tests:
           - not_null
 
-      - name: survey_id
-        data_type: string
-        description: >-
-          Source system identifier for the survey instrument.
-
       - name: question_shortname
         data_type: string
         description: >-

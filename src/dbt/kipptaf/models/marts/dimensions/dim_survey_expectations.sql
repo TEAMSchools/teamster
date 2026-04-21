@@ -7,15 +7,15 @@ with
 
     survey_admin as (
         select
-            survey_administration_key,
-            survey_key,
-            term_key,
-            survey_id,
-            survey_name,
-            term_code,
-            academic_year,
-            response_deadline,
-        from {{ ref("dim_survey_administrations") }}
+            sa.survey_administration_key,
+            sa.survey_key,
+            sa.term_key,
+            sa.academic_year,
+            sa.response_deadline_date,
+
+            s.survey_name,
+        from {{ ref("dim_survey_administrations") }} as sa
+        inner join {{ ref("dim_surveys") }} as s on sa.survey_key = s.survey_key
     ),
 
     /* Staff SCD expectations: active staff during SCD window */
@@ -25,7 +25,7 @@ with
             sa.survey_key,
             sa.term_key,
 
-            'staff' as respondent_population,
+            'staff' as respondent_type,
 
             {{ dbt_utils.generate_surrogate_key(["srh.employee_number"]) }}
             as staff_key,
@@ -37,7 +37,7 @@ with
         from survey_admin as sa
         inner join
             {{ ref("int_people__staff_roster_history") }} as srh
-            on sa.response_deadline
+            on sa.response_deadline_date
             between srh.work_assignment_actual_start_date and srh.effective_date_end
             and srh.primary_indicator
             and srh.assignment_status = 'Active'
@@ -51,7 +51,7 @@ with
             sa.survey_key,
             sa.term_key,
 
-            'staff' as respondent_population,
+            'staff' as respondent_type,
 
             {{ dbt_utils.generate_surrogate_key(["srh.employee_number"]) }}
             as staff_key,
@@ -63,7 +63,7 @@ with
         from survey_admin as sa
         inner join
             {{ ref("int_people__staff_roster_history") }} as srh
-            on sa.response_deadline
+            on sa.response_deadline_date
             between srh.work_assignment_actual_start_date and srh.effective_date_end
             and srh.primary_indicator
             and srh.assignment_status = 'Active'
@@ -77,7 +77,7 @@ with
             sa.survey_key,
             sa.term_key,
 
-            'staff' as respondent_population,
+            'staff' as respondent_type,
 
             {{ dbt_utils.generate_surrogate_key(["srh.employee_number"]) }}
             as staff_key,
@@ -89,7 +89,7 @@ with
         from survey_admin as sa
         inner join
             {{ ref("int_people__staff_roster_history") }} as srh
-            on sa.response_deadline
+            on sa.response_deadline_date
             between srh.work_assignment_actual_start_date and srh.effective_date_end
             and srh.primary_indicator
             and srh.assignment_status = 'Active'
@@ -103,7 +103,7 @@ with
             sa.survey_key,
             sa.term_key,
 
-            'student' as respondent_population,
+            'student' as respondent_type,
 
             cast(null as string) as staff_key,
 
@@ -137,7 +137,7 @@ with
             sa.survey_key,
             sa.term_key,
 
-            'family' as respondent_population,
+            'family' as respondent_type,
 
             cast(null as string) as staff_key,
             cast(null as string) as student_enrollment_key,
@@ -159,7 +159,7 @@ with
             survey_administration_key,
             survey_key,
             term_key,
-            respondent_population,
+            respondent_type,
             staff_key,
             student_enrollment_key,
             student_contact_person_key,
@@ -169,7 +169,7 @@ with
             survey_administration_key,
             survey_key,
             term_key,
-            respondent_population,
+            respondent_type,
             staff_key,
             student_enrollment_key,
             student_contact_person_key,
@@ -179,7 +179,7 @@ with
             survey_administration_key,
             survey_key,
             term_key,
-            respondent_population,
+            respondent_type,
             staff_key,
             student_enrollment_key,
             student_contact_person_key,
@@ -189,7 +189,7 @@ with
             survey_administration_key,
             survey_key,
             term_key,
-            respondent_population,
+            respondent_type,
             staff_key,
             student_enrollment_key,
             student_contact_person_key,
@@ -199,7 +199,7 @@ with
             survey_administration_key,
             survey_key,
             term_key,
-            respondent_population,
+            respondent_type,
             staff_key,
             student_enrollment_key,
             student_contact_person_key,
@@ -212,7 +212,7 @@ select distinct
         dbt_utils.generate_surrogate_key(
             [
                 "survey_administration_key",
-                "respondent_population",
+                "respondent_type",
                 "staff_key",
                 "student_enrollment_key",
                 "student_contact_person_key",
@@ -221,7 +221,7 @@ select distinct
     }} as survey_expectation_key,
 
     survey_administration_key,
-    respondent_population,
+    respondent_type,
     staff_key,
     student_enrollment_key,
     student_contact_person_key,

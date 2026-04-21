@@ -132,11 +132,9 @@ select
         )
     }} as term_key,
 
-    survey_id,
-    survey_title as survey_name,
-    term_code,
-    term_name,
     academic_year,
+
+    term_end_date as response_deadline_date,
 
     case
         when term_end_date < current_date('{{ var("local_timezone") }}')
@@ -145,6 +143,4 @@ select
         then 'open'
         else 'upcoming'
     end as administration_status,
-
-    term_end_date as response_deadline,
 from deduped
