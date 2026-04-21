@@ -16,6 +16,30 @@ models:
           - unique
           - not_null
 
+      - name: region_key
+        data_type: string
+        description: >-
+          Foreign key to dim_regions. Surrogate key derived from the canonical
+          region. Nullable for org-wide periods and for terms whose school is
+          not mapped to a region.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_regions')
+                field: region_key
+
+      - name: location_key
+        data_type: string
+        description: >-
+          Foreign key to dim_locations. Surrogate key derived from the location
+          name. Nullable when the period is region-wide or when the school is
+          not present in dim_locations.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+
       - name: term_type
         data_type: string
         description: >-
@@ -51,22 +75,12 @@ models:
         description: >-
           Fiscal year this period falls within.
 
-      - name: region
-        data_type: string
-        description: >-
-          Region this period applies to. Nullable for org-wide periods.
-
-      - name: school_id
-        data_type: int64
-        description: >-
-          PowerSchool school ID. Nullable when the period is region-wide.
-
       - name: grade_band
         data_type: string
         description: >-
           Grade band (ES, MS, HS). Nullable when not school-specific.
 
-      - name: lockbox_date
+      - name: data_freeze_date
         data_type: date
         description: >-
           Date after which grades are locked for this period.
@@ -76,13 +90,3 @@ models:
         description: >-
           TRUE if the current date falls within this period, or if the period is
           the latest for its type in a past academic year.
-
-      - name: powerschool_year_id
-        data_type: int64
-        description: >-
-          PowerSchool year_id for joining to PowerSchool term tables.
-
-      - name: powerschool_term_id
-        data_type: int64
-        description: >-
-          PowerSchool term_id for joining to PowerSchool term tables.
