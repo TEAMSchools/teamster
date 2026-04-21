@@ -5,7 +5,6 @@ with
             lc.name,
             lc.abbreviation,
             lc.grade_band,
-            lc.region,
             lc.powerschool_school_id,
             lc.deanslist_school_id,
             lc.reporting_school_id,
@@ -15,8 +14,21 @@ with
             lc.head_of_schools_employee_number,
 
             lc.clean_name as location_name,
+            lc.region as business_unit,
 
             cc.name as campus_name,
+
+            case
+                lc.dagster_code_location
+                when 'kippnewark'
+                then 'Newark'
+                when 'kippcamden'
+                then 'Camden'
+                when 'kippmiami'
+                then 'Miami'
+                when 'kipppaterson'
+                then 'Paterson'
+            end as region,
         from
             {{
                 source(
@@ -54,6 +66,7 @@ select
 
     abbreviation,
     region,
+    business_unit,
     grade_band,
     deanslist_school_id,
     reporting_school_id,

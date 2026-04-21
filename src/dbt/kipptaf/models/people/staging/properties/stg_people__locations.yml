@@ -54,8 +54,17 @@ models:
       - name: region
         data_type: string
         description: |
-          KIPP region the school belongs to (Newark, Camden, Miami, Paterson,
-          or TAF for network-level).
+          Canonical region name derived from dagster_code_location. One of
+          Newark, Camden, Miami, Paterson; null for non-regional rows (e.g.,
+          network-level locations under kipptaf).
+      - name: business_unit
+        data_type: string
+        description: |
+          Legal-entity name the location rolls up to. Identical to
+          dim_regions.legal_entity (e.g., "TEAM Academy Charter School",
+          "KIPP Cooper Norcross Academy"). Sourced from the
+          location_crosswalk Google Sheet's `region` column — the sheet
+          captures legal entities rather than canonical regions.
       - name: grade_band
         data_type: string
         description: |
