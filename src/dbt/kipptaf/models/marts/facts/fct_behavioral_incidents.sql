@@ -29,22 +29,23 @@ select
         )
     }} as student_enrollment_key,
 
+    if(
+        sr.employee_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["sr.employee_number"]) }},
+        cast(null as string)
+    ) as referring_staff_key,
+
     cast(i.create_ts_date as date) as date_key,
 
-    enr.student_number,
     i.create_ts_academic_year as academic_year,
 
-    i.incident_id,
     i.category as incident_category,
     i.category_tier,
-    i.infraction,
+    i.infraction as infraction_description,
     i.location as incident_location,
     i.context as incident_context,
     i.status as incident_status,
     i.referral_tier,
-
-    i.create_lastfirst as referring_staff_name,
-    i.create_by as referring_staff_id,
 
     i.is_referral,
     i.is_active,
@@ -59,3 +60,5 @@ inner join
     and i.create_ts_academic_year = enr.academic_year
     and {{ union_dataset_join_clause(left_alias="i", right_alias="enr") }}
     and enr.rn = 1
+left join {{ ref("stg_deanslist__users") }} as u on i.create_by = u.dl_user_id
+left join {{ ref("int_people__staff_roster") }} as sr on u.email = sr.work_email

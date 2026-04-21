@@ -30,12 +30,10 @@ select
     p.start_date as start_date_key,
     p.end_date as end_date_key,
 
-    p.incident_id,
-    p.incident_penalty_id,
     p.penalty_name as consequence_type,
     p.suspension_type,
-    p.num_days,
-    p.num_periods,
+    p.num_days as days_assigned,
+    p.num_periods as periods_assigned,
 
     p.is_suspension,
     p.is_reportable,

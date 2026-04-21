@@ -24,32 +24,28 @@ models:
         data_tests:
           - not_null
 
+      - name: staff_key
+        data_type: string
+        description: >-
+          FK to dim_staff for the staff member who logged the communication.
+          Derived from the DeansList user's email resolved to an employee_number
+          via int_people__staff_roster, then hashed with generate_surrogate_key.
+          Nullable when the DeansList user cannot be matched to a staff record.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
       - name: date_key
         data_type: date
         description: >-
           Date the communication occurred. FK to dim_dates.
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          Student Number assigned by the school. Indexed.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_number
-            contains_pii: true
-            column_role: primary_key
       - name: academic_year
         data_type: int64
         description: >-
           KIPP academic year (July start) for this communication.
-
-      - name: record_id
-        data_type: int64
-        description: >-
-          DeansList unique identifier for the communication log entry.
 
       - name: communication_method
         data_type: string
@@ -67,17 +63,13 @@ models:
           Reason category for the communication (e.g., 'Att: Absent', 'Chronic
           Absence: 4', general reasons).
 
-      - name: status
+      - name: communication_outcome
         data_type: string
         description: >-
-          Indicates if the course was made either by a user or automatically by
-          an import. Validvalues: 0=user-created, 3=auto-created.
+          Result of the call attempt as logged in DeansList. Distinct from
+          PowerSchool-style status codes — values describe whether the call
+          connected, went to voicemail, etc.
 
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__courses
-            source_column: status
       - name: notes
         data_type: string
         description: >-
@@ -88,20 +80,16 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__schoolstaff
             source_column: notes
-      - name: staff_name
-        data_type: string
-        description: >-
-          Full name of the staff member who logged the communication.
-
       - name: communication_date
         data_type: date
         description: >-
           Date the communication was logged.
 
-      - name: communication_datetime
-        data_type: datetime
+      - name: communication_timestamp
+        data_type: timestamp
         description: >-
-          Datetime the communication was logged, preserving time of day.
+          Timestamp the communication was logged, preserving time of day. Cast
+          from the DeansList datetime to timestamp per R4 suffix convention.
 
       - name: is_attendance_call
         data_type: boolean

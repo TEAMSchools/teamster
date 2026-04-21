@@ -24,33 +24,29 @@ models:
         data_tests:
           - not_null
 
+      - name: referring_staff_key
+        data_type: string
+        description: >-
+          FK to dim_staff for the staff member who created the incident. Derived
+          from the DeansList user's email resolved to an employee_number via
+          int_people__staff_roster, then hashed with generate_surrogate_key.
+          Nullable when the DeansList user cannot be matched to a staff record.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
       - name: date_key
         data_type: date
         description: >-
           Date the incident was created. FK to dim_dates.
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          Student Number assigned by the school. Indexed.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_number
-            contains_pii: true
-            column_role: primary_key
       - name: academic_year
         data_type: int64
         description: >-
           KIPP academic year (July start) derived from the incident creation
           timestamp.
-
-      - name: incident_id
-        data_type: int64
-        description: >-
-          DeansList unique identifier for the incident.
 
       - name: incident_category
         data_type: string
@@ -62,7 +58,7 @@ models:
         description: >-
           Tier code from DeansList (T1, T2, T3, SW, TX, etc.).
 
-      - name: infraction
+      - name: infraction_description
         data_type: string
         description: >-
           Specific infraction description recorded in DeansList.
@@ -94,17 +90,6 @@ models:
           Normalized severity tier (Low, Middle, High, Social Work,
           Non-Behavioral, Other). Derived from category_tier with
           region-specific mappings.
-
-      - name: referring_staff_name
-        data_type: string
-        description: >-
-          Last, First name of the staff member who created the incident.
-
-      - name: referring_staff_id
-        data_type: string
-        description: >-
-          DeansList user identifier of the staff member who created the
-          incident.
 
       - name: is_referral
         data_type: boolean
