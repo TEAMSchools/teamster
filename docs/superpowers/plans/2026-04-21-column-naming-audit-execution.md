@@ -5,53 +5,108 @@
 > superpowers:executing-plans to implement this plan task-by-task. Steps use
 > checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Execute all approved decisions from the column-naming audit against
-mart SQL and YAML, bundled with the two upstream deduplication prerequisites.
+**Goal:** Apply the approved column-naming decisions to every mart model
+(dimensions, facts, bridges) so analyst-facing columns follow one rubric, with
+upstream prerequisite fixes that unblock the R9 FK traversals.
 
-**Architecture:** Three phases. Phase 1: upstream dedups (`#3637`, `#3633`) so
-downstream `SELECT DISTINCT` workarounds can be removed. Phase 2: apply
-per-domain mart changes from the authoritative inventory CSV — 170 renames, 180
-removes, 19 structural adds (Groups 1 + 2; Group 3 defers). Phase 3: verify,
-sweep exposures, document hash-change impact.
+**Architecture:** Three phases executed as a single PR on branch
+`cbini/feat/claude-column-naming-audit`. Phase 1 fixes upstream blockers so R9
+removes + structural FK adds work downstream. Phase 2 applies per-domain mart
+changes from the authoritative inventory CSV. Phase 3 sweeps exposures,
+documents hash-change impact, and opens the PR.
 
-**Tech Stack:** dbt 1.11 on BigQuery, `dbt_utils`, Python (for inventory reading
-only), no new code dependencies.
+**Tech Stack:** dbt 1.11 on BigQuery, `dbt_utils`, Python (for inventory
+filtering via `pandas`), no new code dependencies.
 
 **Authoritative sources:**
 
-- Decisions:
+- Decisions (168 renames, 180 removes, 25 adds, 520 keeps across 67 mart
+  models):
   [docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv](../specs/2026-04-15-column-naming-audit-inventory.csv)
-  — the source of truth
 - Rubric + rationale:
   [docs/superpowers/specs/2026-04-15-column-naming-audit.md](../specs/2026-04-15-column-naming-audit.md)
-- Execution design:
-  [docs/superpowers/specs/2026-04-21-column-naming-audit-execution-design.md](../specs/2026-04-21-column-naming-audit-execution-design.md)
+
+**Workspace:** Worktree at
+`/workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit`. All
+`git` and `uv run` commands execute from the worktree (the main repo and
+worktree have separate HEADs).
 
 ---
 
-## Procedure — Per-model change pattern
+## File structure
 
-Each Phase 2 task applies this pattern per model in the domain. Reference this
-section from domain tasks; do not repeat it.
+Every touched file is listed below. New code files are rare — this is mostly
+edits to existing mart SQL + their properties YAML.
+
+### Created
+
+- `src/dbt/kipptaf/models/people/staging/stg_people__locations.sql` — new
+  canonical-grain locations staging model (1 row per logical school).
+- `src/dbt/kipptaf/models/people/staging/properties/stg_people__locations.yml` —
+  YAML contract for the above.
+
+### Modified — upstream prerequisites (Phase 1)
+
+- `src/dbt/kipptaf/models/marts/dimensions/dim_staff.sql` — dead-weight row
+  filter.
+- `src/dbt/kipptaf/models/people/staging/stg_people__locations.sql` — `region`
+  column renamed to `business_unit`; new canonical `region` derived from
+  `dagster_code_location`.
+- `src/dbt/kipptaf/models/people/staging/properties/stg_people__locations.yml` —
+  matching rename + add.
+- 7 canonical-seeking consumers rerouted from `int_people__location_crosswalk`
+  to `stg_people__locations`.
+
+### Modified — mart SQL + YAML (Phase 2)
+
+67 mart models across 14 domains in
+`src/dbt/kipptaf/models/marts/{dimensions,facts,bridges}/` and their
+`properties/` YAML siblings. See per-domain tasks for full model lists.
+
+### Modified — exposures (Phase 3)
+
+- `src/dbt/kipptaf/models/exposures/**/*.yml` — any exposure referencing a
+  renamed mart column.
+
+### Modified — spec + plan (Phase 3)
+
+- `docs/superpowers/specs/2026-04-15-column-naming-audit.md` — enumerated
+  surrogate keys whose hash changed and why.
+
+---
+
+## Procedure — per-model change pattern
+
+Every Phase 2 task applies this pattern once per model in the domain. Reference
+this section; do not repeat it in per-task step lists.
 
 ### Inputs
 
 - Mart SQL:
-  `src/dbt/kipptaf/models/marts/{dimensions,facts,bridges}/<model_name>.sql`
-- Mart YAML: adjacent `properties/<model_name>.yml`
-- Inventory rows (filter by `model`):
-  `docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv`
+  `src/dbt/kipptaf/models/marts/{dimensions,facts,bridges}/<model>.sql`
+- Mart YAML: adjacent `properties/<model>.yml`
+- Inventory rows filtered by model:
 
-### Actions
+  ```bash
+  cd /workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit
+  uv run --with pandas python <<'PY'
+  import pandas as pd
+  df = pd.read_csv(
+      'docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv',
+      keep_default_na=False, na_values=[''],
+  )
+  u = df[df['model'] == '<model_name>']
+  print(u[['current_column','action','proposed_name','rule_ref','reviewer_notes']].to_string(max_colwidth=200))
+  PY
+  ```
 
-For each inventory row for the model, apply per `action` column:
+### Actions, per inventory `action` column
 
-#### `rename` (170 total)
+#### `rename`
 
-SQL: change the column alias at the final `SELECT` (or rename in the CTE that
-produced it). Do **not** rename the upstream source column — the rename is
-mart-layer only unless the inventory's `reviewer_notes` explicitly calls for an
-upstream rename.
+SQL: change the column alias at the final `SELECT`. Do **not** rename the
+upstream source column — the rename is mart-layer only unless the
+`reviewer_notes` explicitly calls for an upstream rename.
 
 ```sql
 -- Before
@@ -62,40 +117,32 @@ select
     old_name as new_name,
 ```
 
-YAML: update `name:` to the proposed name and update the `description:` if the
-inventory's `current_description` is more accurate than the existing one.
+YAML: update `name:`. Preserve `data_tests:` and `config.meta` blocks on the
+renamed column (migrate them intact). Update the `description:` only when the
+current YAML description is clearly stale (e.g., still names the old column,
+references a removed sibling, or was copy-pasted from an unrelated upstream
+model). When the rename is followed by a type coercion (see below), adjust
+`data_type:` to match the new output type and refresh the description to reflect
+the new semantics.
 
-```yaml
-# Before
-- name: old_name
-  data_type: string
-  description: <old description>
-# After
-- name: new_name
-  data_type: string
-  description: <new description if present in inventory; else keep>
-```
+#### `remove`
 
-Preserve all `data_tests:` and `config.meta` blocks — migrate them to the
-renamed column.
-
-#### `remove` (180 total)
-
-SQL: strip the column from the final `SELECT`. If it was derived in a CTE not
-used by any surviving column, remove the derivation too. For `SELECT DISTINCT`
-workaround CTEs freed by Phase 1 dedups, remove the entire `SELECT DISTINCT`
-CTE.
+SQL: strip the column from the final `SELECT`. If the removed column was derived
+in a CTE whose only surviving consumers also dropped it, remove the derivation
+too.
 
 YAML: delete the column block entirely.
 
-If a removed column was a data-test target (e.g., `unique` on a natural key
-being removed), verify the replacement key carries the test.
+If the removed column carried a `data_tests:` entry (e.g., `unique` on a natural
+key being removed), verify the replacement key (usually the surrogate `*_key`)
+already carries the equivalent test. If not, add it on the replacement.
 
-#### `add` (25 total; 19 in-scope for this PR per Groups 1 + 2)
+#### `add`
 
-SQL: add the new column to the final `SELECT`. For FK adds, derive via
-`dbt_utils.generate_surrogate_key` wrapping the natural key with the
-nullable-wrap helper when the key can be null:
+SQL: add the new column to the final `SELECT`.
+
+For FK adds, derive via `dbt_utils.generate_surrogate_key` wrapped with the
+nullable-wrap helper when the source key can be null:
 
 ```sql
 if(
@@ -105,56 +152,139 @@ if(
 ) as fk_column,
 ```
 
-YAML: add the column block. For FK adds, include `not_null` (unless nullable)
-and `relationships` tests pointing to the parent dim's `*_key` column.
+The hash **must** match the parent dim's `*_key` derivation. If the parent
+hashes a different field (e.g. a join-resolved name rather than the raw source
+key on this model), derive the FK via a lookup in a CTE so the input matches.
 
-### Verify after each model
+YAML: add the column block with:
 
-- Run: `uv run dbt parse --project-dir src/dbt/kipptaf`
-- Run: `uv run dbt compile --project-dir src/dbt/kipptaf --select <model_name>`
-- Expected: parse succeeds, compile emits SQL without warnings for the model.
+- `data_type:` matching the SQL output.
+- `description:` qualitative, analyst-facing (no stats; describe meaning, not
+  distribution).
+- FK adds: `relationships` test pointing to the parent dim's `*_key`. Include
+  `not_null` only when the source is guaranteed non-null; otherwise rely on
+  nullable-wrap + `relationships`.
 
-### Commit after each domain
+#### Coverage-gap exception — `severity: warn` + TODO issue
 
-One commit per Phase 2 task covering all models in the domain. Commit message:
-`refactor(dbt): rename mart columns — <domain> domain per #3643`.
+When an FK derivation is correct but upstream data coverage is incomplete (some
+source values don't resolve in the parent dim), downgrade the `relationships`
+test severity and reference a tracked issue:
+
+```yaml
+data_tests:
+  # TODO: #<issue> — <match %> rows fail FK; promote to error once crosswalk
+  # covers the unresolved values.
+  - relationships:
+      arguments:
+        to: ref('<parent_dim>')
+        field: <parent_key>
+      config:
+        severity: warn
+```
+
+Open the issue first (`gh issue create`), capture its number, then write the
+TODO. Issues created during this PR:
+
+- [#3672](https://github.com/TEAMSchools/teamster/issues/3672) —
+  `fct_job_candidate_applications.shared_with_location_key` ~20% FK miss.
+
+### Per-model verification (required)
+
+```bash
+cd /workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit
+uv run dbt compile --project-dir src/dbt/kipptaf --select <model_name>
+```
+
+Expected: exit 0, SQL emitted without warnings. `dbt compile` parses the full
+project first — a separate `dbt parse` call is redundant.
+
+### Per-domain commit
+
+One commit per Phase 2 domain task, covering all models in the domain.
+Conventional-commits form with the domain name:
+
+```text
+refactor(dbt): rename mart columns - <Domain> domain per #3643
+```
+
+Stage files explicitly (`git add <paths>`, never `-u`/`-A`/`.`). Do not use
+`--no-verify`. If the pre-commit hook reformats files via trunk, it modifies
+them in place and the commit succeeds.
 
 ---
 
-## Phase 1 — Upstream dedups
+## Rubric recap (spec lines 35–98)
+
+Numbering used in inventory `rule_ref` column:
+
+| Rule | Summary                                                                                                                                                                                           |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1   | Strip source-system prefixes/jargon (`powerschool_`, `adp_`, etc.) unless disambiguating.                                                                                                         |
+| R2   | No KIPP-specific language (`teammate`, `employee_number`, `microgoal`, `commlog`).                                                                                                                |
+| R3   | `is_`/`has_` prefix for booleans. Fact-table countable 0/1 flags may use INT64 so `SUM`/`AVG` work without casting; `FLOAT64` reserved for genuinely non-binary weights (e.g., `present_weight`). |
+| R4   | Dates end `_date`; timestamps end `_timestamp`. Strict suffix convention.                                                                                                                         |
+| R5   | Well-known external acronyms allowed for specific-use IDs.                                                                                                                                        |
+| R6   | Ed-Fi Unified Data Model nomenclature is the default; deviate toward plain English for awkward descriptive attributes.                                                                            |
+| R7   | Keep ubiquitous acronyms (`gpa`, `ada`, `fte`, `dob`, `ell`, `iep`, `sat`, `psat`, `act`, `ap`, `lea`, `nces`, `fleid`, `smid`); spell out internal ones.                                         |
+| R8   | Plumbing columns removed from mart SELECTs (remain in staging/intermediate).                                                                                                                      |
+| R9   | Remove dimension attributes reachable via FK traversal (denormalized copies).                                                                                                                     |
+
+`structural` (new column add) and `exception` (specific-use jargon allowed) are
+non-rubric tags used in the inventory.
+
+---
+
+## Group 3 — structural deferrals (out of scope this PR)
+
+The inventory includes structural adds that require upstream work beyond this
+PR's scope. Leave these unapplied; tracked in
+[#3631](https://github.com/TEAMSchools/teamster/issues/3631):
+
+1. **`fct_grades_assignments` score split** — adds `points_earned` +
+   `numeric_grade_earned`; removes `score` + `score_type`. Requires staging
+   changes to compute the split from the upstream score field.
+2. **`dim_locations` address unification** — adds `address_line_one`,
+   `address_line_two`, `city`, `postal_code`. Prerequisite for the work-location
+   FK below.
+3. **`dim_work_assignment_locations` FK to `dim_locations`** — removes 8 ADP
+   address columns, adds `location_key`. Blocked by (2) and by a reliable
+   mapping from ADP `home_work_location__name_code__code_value` to
+   `dim_locations.location_name`.
+4. **Business-unit / region FK parity** — optional: add `business_unit_code` to
+   `dim_regions` so staff-side business_unit can FK directly. Requires alignment
+   on canonical business-unit code values.
+
+These four items together enable the
+`dim_staff → dim_staff_work_assignments → dim_work_assignment_locations → dim_locations → dim_regions`
+chain, currently left as attribute-only via `business_unit_name` string.
+
+For each deferral, the inventory has `add` / `remove` rows that this plan
+explicitly skips — see per-domain task notes.
+
+---
+
+## Phase 1 — Upstream prerequisites
+
+Two independent fixes that unblock downstream R9 removes and FK adds. One commit
+each.
 
 ### Task 1: Filter dead-weight rows in `dim_staff` (#3637)
 
-**Background:** The root cause of the 91-duplicate pattern in
-`stg_people__employee_numbers` is an incremental-MERGE-on-NULL bug — 91
-employee_numbers have NULL `adp_associate_id` and get re-inserted every run
-because MERGE on NULL never matches. Upstream investigation found that the
-staging model is also the employee-number provisioner — its incremental branch
-computes `MAX(employee_number) FROM {{ this }}` to assign next-available numbers
-for new hires. Filtering, `unique_key` changes, or `--full-refresh` at staging
-all risk altering issued employee_numbers, which project policy forbids.
+**Background:** `stg_people__employee_numbers` accumulates NULL-keyed duplicate
+rows because its incremental MERGE never matches on NULL merge keys. 91
+`employee_number` values with `NULL adp_associate_id` accumulate 16 dup rows per
+run; 7 additional `is_active = false` rows carry NULL ADP columns. All 98 are
+dead weight.
 
-The clean workaround: filter dead-weight rows **downstream in `dim_staff`**
-instead of staging. Empirical check found:
-
-- 91 "orphan" employee_numbers: NULL `adp_associate_id`, `is_active=true`, all
-  downstream ADP columns NULL (terminated/pre-migration)
-- 7 additional employee_numbers: populated `adp_associate_id`,
-  `is_active=false`, downstream ADP columns all NULL (ADP worker record not
-  resolving — deleted from ADP or join miss)
-
-Combined filter `WHERE adp_associate_id IS NOT NULL AND is_active` removes all
-98 dead-weight rows (91 + 7) and leaves 4,521 real staff records. Since the
-filter collapses `stg_people__employee_numbers` to 1 row per `employee_number`
-(the dup pattern lives entirely in the NULL-id rows), the `SELECT DISTINCT`
-workaround is no longer needed — drop it.
+The staging model is the employee-number provisioner (computes
+`MAX(employee_number)` to assign the next-available number for new hires), so
+`--full-refresh` at staging is policy-denied. Fix the symptom downstream in
+`dim_staff` instead.
 
 **Files:**
 
-- Modify: `src/dbt/kipptaf/models/marts/dimensions/dim_staff.sql` (replace
-  DISTINCT workaround CTE with a filtered SELECT)
-- No changes to `stg_people__employee_numbers.sql` (staging provisioning
-  invariant preserved)
+- Modify: `src/dbt/kipptaf/models/marts/dimensions/dim_staff.sql`
 
 - [ ] **Step 1: Read `dim_staff.sql`.** Locate the CTE containing
       `SELECT DISTINCT employee_number FROM ... stg_people__employee_numbers`
@@ -174,71 +304,45 @@ workaround is no longer needed — drop it.
   where adp_associate_id is not null and is_active
   ```
 
-  Remove the `-- TODO: #3637` comment; the downstream workaround is now the
-  intended behavior.
+  Remove the `-- TODO: #3637` comment — the downstream filter is now the
+  intended behavior, not a workaround.
 
-- [ ] **Step 3: Verify locally:**
-
-  ```bash
-  uv run dbt parse --project-dir src/dbt/kipptaf
-  uv run dbt build --project-dir src/dbt/kipptaf \
-      --select dim_staff --target defer
-  ```
-
-  Expected: the `unique_dim_staff_staff_key` test passes without a `distinct`.
-  `dim_staff` row count is 4,521 (down from 4,612).
-
-- [ ] **Step 4: Update `stg_people__employee_numbers` follow-up note.** In
-      `docs/superpowers/specs/2026-04-15-column-naming-audit.md` "Structural
-      follow-ups" section, add a bullet documenting that the upstream MERGE-on-
-      NULL bug in `stg_people__employee_numbers` was not fixed in this PR
-      (requires `--full-refresh`, which is denied). Reference #3637 as the issue
-      that will address it with operational planning.
-
-- [ ] **Step 5: Commit.**
+- [ ] **Step 3: Verify:**
 
   ```bash
-  git add src/dbt/kipptaf/models/marts/dimensions/dim_staff.sql \
-          docs/superpowers/specs/2026-04-15-column-naming-audit.md
-  git commit -m "fix(dbt): filter dead-weight rows downstream in dim_staff (#3637)
-
-  The 91 NULL-adp_associate_id rows + 7 inactive-with-ADP rows in
-  stg_people__employee_numbers are all dead weight (all downstream ADP
-  fields NULL). Filtering them at dim_staff with
-  WHERE adp_associate_id IS NOT NULL AND is_active removes them cleanly
-  and drops dim_staff from 4,612 to 4,521 rows. Replaces the
-  SELECT DISTINCT workaround.
-
-  Leaves stg_people__employee_numbers untouched — it is the employee-
-  number provisioner (computes MAX(employee_number) for next-hire
-  assignment) and the --full-refresh needed to fix the incremental
-  MERGE-on-NULL bug is policy-denied. The upstream fix is tracked
-  separately in #3637."
+  uv run dbt compile --project-dir src/dbt/kipptaf --select dim_staff
   ```
 
-Exploratory commits `36cb93c7f` (applied `dbt_utils.deduplicate` at staging) and
-`bfdeca7d7` (revert) remain in the branch history as documentation of the
-investigation path.
+  Expected: clean compile.
 
----
+- [ ] **Step 4: Commit.**
 
-### Task 2: Split location crosswalk grains — new `stg_people__locations` (#3633)
+  ```bash
+  git add src/dbt/kipptaf/models/marts/dimensions/dim_staff.sql
+  git commit -m "fix(dbt): filter dead-weight rows downstream in dim_staff (#3637)"
+  ```
 
-**Background:** Investigation found that `int_people__location_crosswalk`
-produces 1 row per **alias** (alternate spelling of `location_name`) — the
-"duplicates" flagged in #3633 are by design, not a bug. The source Google Sheet
-has multiple rows per logical school (e.g., PS `73257` has 15 aliases for "KIPP
-Life Academy"). Two consumers actively rely on the alias grain —
-`fct_staff_observations` joins on `gro.school_name`, and
-`int_topline__seats_staffed_weekly_aggregations` joins on `st.adp_location` — so
-in-place dedup would silently drop matches.
+### Task 2: Split location crosswalk grains + canonical region derivation (#3633)
 
-**Approach:** split the data into two models by grain, keep the existing alias
-model for alias-seeking consumers, and create a new staging model at
-canonical-logical-school grain for the consumers that only want 1 row per
-school. The new model reads from `src_google_sheets__people__location_crosswalk`
-directly (skipping the existing `stg_google_sheets__people__location_crosswalk`)
-so a future source refactor with cleaner grain can reuse the same model name.
+**Background:** `int_people__location_crosswalk` is 1 row per **alias**
+(alternate spelling of `location_name`) — the source Google Sheet has multiple
+rows per logical school. Two consumers rely on the alias grain
+(`fct_staff_observations`, `int_topline__seats_staffed_weekly_aggregations`);
+the other 7 canonical-seeking consumers use `SELECT DISTINCT` workarounds.
+
+**Two coordinated changes:**
+
+1. Create a new `stg_people__locations` staging model at canonical-school grain
+   (1 row per logical school).
+2. Derive canonical `region` from `dagster_code_location` (values `kippnewark` /
+   `kippcamden` / `kippmiami` / `kipppaterson`), and rename the existing
+   `region` column (which holds legal-entity names like "TEAM Academy Charter
+   School", matching `dim_regions.legal_entity`) to `business_unit` — aligning
+   with the ADP/staff-side convention on
+   `dim_work_assignment_organizational_units.business_unit_*`.
+
+The canonical region derivation is what unblocks Conformed-domain R9 removes and
+structural FK adds in Phase 2.
 
 **Files:**
 
@@ -247,500 +351,697 @@ so a future source refactor with cleaner grain can reuse the same model name.
   `src/dbt/kipptaf/models/people/staging/properties/stg_people__locations.yml`
 - Modify:
   `src/dbt/kipptaf/models/people/intermediate/properties/int_people__location_crosswalk.yml`
-  (add `unique` test on `location_name` documenting the alias grain)
+  (add `unique` test on `location_name` to document the alias grain).
 - Modify 7 canonical-seeking consumers to use `stg_people__locations`:
   `dim_locations.sql`, `dim_school_calendars.sql`,
   `dim_student_enrollments.sql`, `dim_course_sections.sql`,
   `dim_assessment_targets.sql`, `fct_student_attendance_daily.sql`,
-  `fct_student_attendance_interventions.sql`
+  `fct_student_attendance_interventions.sql`.
+- Modify: `src/dbt/kipptaf/CLAUDE.md` — "Known Upstream Issues" section gets the
+  grain split documented.
 
-  (Earlier plan drafts listed `fct_behavioral_incidents.sql` in this set; it
-  does not actually consume `int_people__location_crosswalk` and is
-  intentionally excluded.)
+- [ ] **Step 1: Rediscover the consumer set.**
 
-- Do NOT modify the 3 alias-seeking consumers — they continue using
-  `int_people__location_crosswalk`: `fct_staff_observations.sql`,
-  `int_people__staff_roster_history.sql`,
-  `int_topline__seats_staffed_weekly_aggregations.sql`
+  ```bash
+  grep -rn "int_people__location_crosswalk" src/dbt/kipptaf/models/
+  grep -rn "#3633" src/dbt/kipptaf/models/
+  ```
 
-- [ ] **Step 1: Rediscover the consumer set.** Use
-      `grep -rn "int_people__location_crosswalk" src/dbt/kipptaf/models/` plus
-      `grep -rn "#3633" src/dbt/kipptaf/models/`. For each hit, classify it as
-      canonical-seeking (had a `SELECT DISTINCT` + `-- TODO: #3633`) or
-      alias-seeking (joins on `location_name` as an alternate spelling).
+  Classify each hit:
+  - Canonical-seeking: has `SELECT DISTINCT` + `-- TODO: #3633` on the crosswalk
+    CTE.
+  - Alias-seeking: joins on `location_name` as an alternate spelling (e.g.
+    `fct_staff_observations` on `gro.school_name`).
 
-- [ ] **Step 2: Create `stg_people__locations.sql`.** Read from
-      `{{ source("google_sheets", "src_google_sheets__people__location_crosswalk") }}`;
-      left-join `stg_google_sheets__people__campus_crosswalk` (or the raw
-      `src_google_sheets__people__campus_crosswalk` source) to populate
-      `campus_name`; apply the column renames from the existing
-      `stg_google_sheets__people__location_crosswalk.sql` to expose canonical
-      names (`location_name` from `clean_name`, `powerschool_school_id`, etc.);
-      dedup via `dbt_utils.deduplicate` macro with
-      `partition_by="powerschool_school_id, dagster_code_location, location_name, is_pathways"`
-      and an `order_by` that is deterministic (e.g. `name asc`). Document the
-      `order_by` choice in a SQL comment. Expected output: 41 rows.
+  Canonical-seeking consumers (7) get rerouted. Alias-seeking consumers (3:
+  `fct_staff_observations`, `int_people__staff_roster_history`,
+  `int_topline__seats_staffed_weekly_aggregations`) stay on the int model.
 
-- [ ] **Step 3: Create the properties YAML.** Declare 12 columns with
-      `data_type` and `description`; rely on directory-level
-      `+contract.enforced: true` from `dbt_project.yml`; add a
-      `dbt_utils.unique_combination_of_columns` test on the four-column grain
-      key; add `not_null` on the four grain-key columns. List the four grain-key
-      columns first in the YAML (per `src/dbt/CLAUDE.md`: columns with
-      `data_tests:` sort to the top of the `columns:` list).
+- [ ] **Step 2: Create `stg_people__locations.sql`.**
 
-- [ ] **Step 4: Document the alias grain on the existing int model.** Add a
-      `unique` test on `location_name` to `int_people__location_crosswalk.yml`
-      so the alias grain is asserted and self-documenting.
+  Read from
+  `{{ source("google_sheets", "src_google_sheets__people__location_crosswalk") }}`
+  directly (skip the existing `stg_google_sheets__people__location_crosswalk` so
+  a future Google-Sheet refactor with cleaner grain can reuse this model name).
+  Left-join `src_google_sheets__people__campus_crosswalk` to populate
+  `campus_name`.
 
-- [ ] **Step 5: Reroute the 7 canonical-seeking consumers.** For each file from
-      Step 1's canonical-seeking list: replace the
-      `SELECT DISTINCT ... FROM ref("int_people__location_crosswalk")` CTE with
-      `SELECT ... FROM ref("stg_people__locations")`. Drop the `location_`
-      prefix from join keys and surrogate-key inputs that came from the
-      previously-prefixed intermediate columns (`location_powerschool_school_id`
-      → `powerschool_school_id`, `location_clean_name` → `location_name`,
-      `location_dagster_code_location` → `dagster_code_location`). Preserve
-      per-consumer filters (`not is_pathways`, Whittier exclusion) — do not
-      centralize them in the new staging model. Remove `-- TODO: #3633` comments
-      from these files.
+  Apply these column transformations in the `renamed` CTE:
 
-- [ ] **Step 6: Verify:**
+  ```sql
+  lc.name,
+  lc.abbreviation,
+  lc.grade_band,
+  lc.powerschool_school_id,
+  lc.deanslist_school_id,
+  lc.reporting_school_id,
+  lc.is_campus,
+  lc.is_pathways,
+  lc.dagster_code_location,
+  lc.head_of_schools_employee_number,
+  lc.clean_name as location_name,
+  lc.region as business_unit,
 
-```bash
-uv run dbt parse --project-dir src/dbt/kipptaf
-uv run dbt build --project-dir src/dbt/kipptaf \
-    --select stg_people__locations+ int_people__location_crosswalk --target defer
-```
+  case lc.dagster_code_location
+      when 'kippnewark' then 'Newark'
+      when 'kippcamden' then 'Camden'
+      when 'kippmiami' then 'Miami'
+      when 'kipppaterson' then 'Paterson'
+  end as region,
 
-Expected: parse clean; `stg_people__locations` materializes 41 rows;
-`unique_combination_of_columns` test on the grain key passes;
-`unique_location_name` on `int_people__location_crosswalk` passes; the 7
-canonical-seeking consumers materialize without duplicate errors.
+  cc.name as campus_name,
+  ```
 
-- [ ] **Step 7: Update `src/dbt/kipptaf/CLAUDE.md` "Known Upstream Issues"
-      section.** Replace the stale description of
-      `int_people__location_crosswalk` as "duplicate" with the grain split: this
-      model is the alias grain, `stg_people__locations` is the canonical grain.
-      Prevents future Claude sessions from reintroducing `DISTINCT`.
+  Dedup via `dbt_utils.deduplicate` with
+  `partition_by="powerschool_school_id, dagster_code_location, location_name, is_pathways"`
+  and `order_by="name asc"` (deterministic tie-breaker; document the choice in a
+  SQL comment).
 
-- [ ] **Step 8: Commit:**
+- [ ] **Step 3: Create the properties YAML.**
 
-```bash
-git add src/dbt/kipptaf/models/people/staging/stg_people__locations.sql \
-        src/dbt/kipptaf/models/people/staging/properties/stg_people__locations.yml \
-        src/dbt/kipptaf/models/people/intermediate/properties/int_people__location_crosswalk.yml \
-        src/dbt/kipptaf/models/marts/dimensions/dim_locations.sql \
-        src/dbt/kipptaf/models/marts/dimensions/dim_school_calendars.sql \
-        src/dbt/kipptaf/models/marts/dimensions/dim_student_enrollments.sql \
-        src/dbt/kipptaf/models/marts/dimensions/dim_course_sections.sql \
-        src/dbt/kipptaf/models/marts/dimensions/dim_assessment_targets.sql \
-        src/dbt/kipptaf/models/marts/facts/fct_student_attendance_daily.sql \
-        src/dbt/kipptaf/models/marts/facts/fct_student_attendance_interventions.sql \
-        src/dbt/kipptaf/CLAUDE.md
-git commit -m "feat(dbt): add stg_people__locations canonical-grain crosswalk (#3633)
+  Declare 13 columns (the 12 in the final SELECT plus the new `region`) with
+  `data_type` and qualitative descriptions. Add a
+  `dbt_utils.unique_combination_of_columns` test on the four-column grain key.
+  Add `not_null` on the grain-key columns. List columns with `data_tests:`
+  first.
 
-Closes #3633. int_people__location_crosswalk is 1 row per location alias
-(by design — fct_staff_observations and other consumers join on alternate
-school name spellings). Canonical-seeking consumers want 1 row per logical
-school and worked around the grain with SELECT DISTINCT.
+- [ ] **Step 4: Add `unique` test on
+      `int_people__location_crosswalk.location_name`** to document the alias
+      grain.
 
-Adds stg_people__locations (41 rows, unique on
-(powerschool_school_id, dagster_code_location, location_name, is_pathways)),
-reading directly from the Google Sheet source so a future source refactor
-with cleaner grain can reuse the same model name. Reroutes 7
-previously-DISTINCT consumers to the new model. Adds a unique test on
-location_name to int_people__location_crosswalk to document the alias grain.
-Updates the kipptaf CLAUDE.md Known Upstream Issues section to reflect the
-new grain split."
-```
+- [ ] **Step 5: Reroute 7 canonical-seeking consumers.** For each file from Step
+      1's canonical-seeking list:
+  - Replace the `SELECT DISTINCT ... FROM ref("int_people__location_crosswalk")`
+    CTE with `SELECT ... FROM ref("stg_people__locations")`.
+  - Drop the `location_` prefix from join keys / surrogate-key inputs that came
+    from the previously-prefixed intermediate columns
+    (`location_powerschool_school_id` → `powerschool_school_id`,
+    `location_clean_name` → `location_name`, etc.).
+  - Preserve per-consumer filters (`not is_pathways`, Whittier exclusion).
+  - Remove `-- TODO: #3633` comments.
+
+- [ ] **Step 6: Update `src/dbt/kipptaf/CLAUDE.md`** "Known Upstream Issues"
+      section. Replace the stale "duplicate" description of
+      `int_people__location_crosswalk` with the grain split: this model is the
+      alias grain, `stg_people__locations` is the canonical grain.
+
+- [ ] **Step 7: Verify.**
+
+  ```bash
+  uv run dbt compile --project-dir src/dbt/kipptaf --select stg_people__locations+
+  ```
+
+  Expected: `stg_people__locations` compiles; all 7 rerouted consumers compile
+  without the DISTINCT workaround.
+
+- [ ] **Step 8: Commit.**
+
+  ```bash
+  git add src/dbt/kipptaf/models/people/staging/stg_people__locations.sql \
+          src/dbt/kipptaf/models/people/staging/properties/stg_people__locations.yml \
+          src/dbt/kipptaf/models/people/intermediate/properties/int_people__location_crosswalk.yml \
+          src/dbt/kipptaf/models/marts/dimensions/dim_locations.sql \
+          src/dbt/kipptaf/models/marts/dimensions/dim_school_calendars.sql \
+          src/dbt/kipptaf/models/marts/dimensions/dim_student_enrollments.sql \
+          src/dbt/kipptaf/models/marts/dimensions/dim_course_sections.sql \
+          src/dbt/kipptaf/models/marts/dimensions/dim_assessment_targets.sql \
+          src/dbt/kipptaf/models/marts/facts/fct_student_attendance_daily.sql \
+          src/dbt/kipptaf/models/marts/facts/fct_student_attendance_interventions.sql \
+          src/dbt/kipptaf/CLAUDE.md
+  git commit -m "feat(dbt): add stg_people__locations canonical-grain crosswalk with canonical region (#3633)"
+  ```
 
 ---
 
 ## Phase 2 — Per-domain mart changes
 
-Each task below applies the Procedure section to the listed models. The
-inventory CSV is the source of truth for the specific rename targets, remove
-sets, and add derivations. Use `pandas` or `uv run python` to filter inventory
-rows per model during execution.
-
-For each domain task, the commit message is:
+Each task below applies the Procedure section once per listed model, using the
+inventory as the source of truth for specific rename targets, remove sets, and
+add derivations. One commit per domain; commit message template:
 
 ```text
-refactor(dbt): rename mart columns — <domain> domain per #3643
-
-Applies <N renames, N removes, N adds> per the audit inventory.
+refactor(dbt): rename mart columns - <Domain> domain per #3643
 ```
 
-### Task 3: IT domain (1 model, validation)
+Where per-domain notes below call out Group 3 deferrals, special type coercions,
+or coverage-gap exceptions, follow those exactly — the inventory on its own does
+not encode those qualifications.
 
-**Models:**
+Recommended execution order: Conformed first (cross-cutting FKs land before
+downstream facts reference them), then IT / Course / Staffing as warm-up, then
+the medium domains, then Observation (model renames cascade via `ref()`), then
+Staff (largest). Completed tasks follow this order.
 
-- `fct_support_tickets` — 9 renames, 1 remove, 0 adds
+### Task 3: IT domain (1 model — `fct_support_tickets`)
 
-- [ ] **Step 1: Filter inventory**
+**Inventory counts:** 9 renames, 1 remove.
 
-```bash
-uv run --with pandas python <<'PY'
-import pandas as pd
-df = pd.read_csv('docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv', keep_default_na=False, na_values=[''])
-u = df[(df['domain']=='IT') & (df['action'].isin(['rename','remove','add']))]
-print(u[['model','current_column','action','proposed_name']].to_string())
-PY
-```
+**Key changes:**
 
-- [ ] **Step 2: Apply the Procedure to `fct_support_tickets`**
+- Rename pattern R4 on timestamps: `created_at`, `initially_assigned_at`,
+  `assignee_updated_at`, `solved_at` → `*_timestamp` suffix; `created_date` →
+  `ticket_created_date` for parallelism with `ticket_subject` / `ticket_url`.
+- Rename pattern R2 on Zendesk jargon: `assignee_stations` →
+  `agent_reassignment_count`, `group_stations` → `group_reassignment_count`.
+- Rename R6: `category` → `ticket_category`, `reply_time_in_minutes_business` →
+  `business_minutes_to_first_reply`.
+- Remove `ticket_id` (R9 via `support_ticket_key`; its unique+not_null test is
+  redundant with the surrogate key's).
+- Description fix on `ticket_status`: current YAML description is a PowerSchool
+  copy-paste ("0=user-created, 3=auto-created"); replace with
+  `Zendesk ticket workflow status (closed, open, new, pending, solved).` and
+  delete the erroneous `config.meta` block.
 
-Per inventory: rename `ticket_subject` (keep), `category` → `ticket_category`,
-`reply_time_in_minutes_business` → `business_minutes_to_first_reply`,
-`assignee_stations` → `agent_reassignment_count`, `group_stations` →
-`group_reassignment_count`, `created_date` → `ticket_created_date`, `created_at`
-→ `created_timestamp`, `initially_assigned_at` → `initially_assigned_timestamp`,
-`assignee_updated_at` → `assignee_updated_timestamp`, `solved_at` →
-`solved_timestamp`. Remove `ticket_id`. Fix stale description on `ticket_status`
-per inventory `current_description`.
-
-- [ ] **Step 3: Verify**
-
-```bash
-uv run dbt parse --project-dir src/dbt/kipptaf
-uv run dbt compile --project-dir src/dbt/kipptaf --select fct_support_tickets
-```
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add src/dbt/kipptaf/models/marts/facts/fct_support_tickets.sql \
-        src/dbt/kipptaf/models/marts/facts/properties/fct_support_tickets.yml
-git commit -m "refactor(dbt): rename mart columns — IT domain per #3643"
-```
-
----
+- [ ] **Step 1:** Filter inventory for `model='fct_support_tickets'`.
+- [ ] **Step 2:** Apply the Procedure to `fct_support_tickets`.
+- [ ] **Step 3:** `uv run dbt compile ... --select fct_support_tickets`.
+- [ ] **Step 4:** Commit.
 
 ### Task 4: Course domain (4 models)
 
-**Models:**
+**Models:** `bridge_course_section_teachers`, `bridge_course_section_terms`,
+`dim_course_sections`, `dim_courses`.
 
-- `bridge_course_section_teachers`, `bridge_course_section_terms`,
-  `dim_course_sections`, `dim_courses` — 7 renames, 5 removes
+**Inventory counts:** 7 renames, 5 removes.
 
-- [ ] **Step 1: Filter inventory by `domain='Course'` for
-      `action in ('rename','remove')`**
-- [ ] **Step 2: Apply Procedure per model. Key renames include
-      `dim_courses.discipline` → `academic_subject`.**
-- [ ] **Step 3: Verify**
+**Key changes:**
 
-```bash
-uv run dbt parse --project-dir src/dbt/kipptaf
-uv run dbt compile --project-dir src/dbt/kipptaf --select bridge_course_section_teachers bridge_course_section_terms dim_course_sections dim_courses
-```
+- `bridge_course_section_teachers`: effective-date SCD renames
+  (`effective_date_start` → `effective_start_date`, `effective_date_end` →
+  `effective_end_date`); remove `sections_dcid`, `employee_number`,
+  `teachernumber` (R9 via FK traversal). Update the
+  `unique_combination_of_columns` test to reference the renamed
+  `effective_start_date`.
+- `bridge_course_section_terms`: remove `sections_dcid`, `term_code` (R9).
+- `dim_course_sections`: rename `section_number` → `section_identifier` (R6,
+  Ed-Fi `edFi_gradeReference.sectionIdentifier`).
+- `dim_courses`: rename `course_number` → `course_code`, `course_name` →
+  `course_title`, `discipline` → `academic_subject`, `credit_hours` → `credits`
+  (R6, all Ed-Fi cognates).
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 1:** Filter inventory for `domain='Course'`.
+- [ ] **Step 2:** Apply the Procedure to each of the 4 models.
+- [ ] **Step 3:**
+      `uv run dbt compile ... --select bridge_course_section_teachers bridge_course_section_terms dim_course_sections dim_courses`.
+- [ ] **Step 4:** Commit.
 
-```bash
-git add src/dbt/kipptaf/models/marts/bridges/bridge_course_section_teachers.sql \
-        src/dbt/kipptaf/models/marts/bridges/bridge_course_section_terms.sql \
-        src/dbt/kipptaf/models/marts/dimensions/dim_course_sections.sql \
-        src/dbt/kipptaf/models/marts/dimensions/dim_courses.sql \
-        src/dbt/kipptaf/models/marts/**/properties/bridge_course_section_teachers.yml \
-        src/dbt/kipptaf/models/marts/**/properties/bridge_course_section_terms.yml \
-        src/dbt/kipptaf/models/marts/**/properties/dim_course_sections.yml \
-        src/dbt/kipptaf/models/marts/**/properties/dim_courses.yml
-git commit -m "refactor(dbt): rename mart columns — Course domain per #3643"
-```
+### Task 5: Staffing domain (1 model — `dim_staffing_positions`)
 
----
+**Inventory counts:** 5 renames, 7 removes.
 
-### Task 5: Staffing domain (1 model)
+**Key changes + special cases:**
 
-**Models:**
+- Rename R2: `teammate_staff_key` → `incumbent_staff_key` (KIPP jargon);
+  description must be rewritten — existing copy still references "teammate" as
+  the column identity. Replace with:
+  `Foreign key to dim_staff for the incumbent (staff member filling the position). Surrogate key derived from the teammate employee number. Nullable — open positions have no incumbent.`
+- Rename R3 with type coercion: `plan_status` → `is_active` (string → boolean).
+  SQL:
 
-- `dim_staffing_positions` — 5 renames, 7 removes, 0 adds
+  ```sql
+  if(plan_status in ('Active', 'TRUE'), true, false) as is_active,
+  ```
 
-Apply Procedure. Key changes: `entity` → REMOVE (blocked by spec follow-up; per
-audit notes the cascade requires dim_regions.legal_entity; for this task: remove
-the column and accept the traversal loss documented in the spec's Region cascade
-section), `grade_band` → REMOVE, `plan_status` → `is_active` (with type coercion
-string → boolean), `staffing_status` → keep, `job_title` → `position_title`.
+  This matches the sibling `int_seat_tracker__snapshot` /
+  `stg_google_appsheet__seat_tracker__log_archive` pattern. YAML
+  `data_type: boolean`; description reads
+  `Whether this position is active in the staffing plan. True when plan_status is 'Active' or 'TRUE'; false otherwise (including 'Inactive' and null).`
 
-- [ ] **Step 1: Filter inventory**
-- [ ] **Step 2: Apply Procedure. Special case — for `plan_status` rename, cast
-      to boolean in SQL:
-      `case plan_status when 'Active' then true when 'Inactive' then false end as is_active`.**
-- [ ] **Step 3: Verify (`dbt compile --select dim_staffing_positions`)**
-- [ ] **Step 4: Commit**
+- Rename R6: `job_title` → `position_title` (Ed-Fi
+  `openStaffPosition.position_title`).
+- Rename R4: `effective_date_start` / `effective_date_end` →
+  `effective_start_date` / `effective_end_date`.
+- Removes: `staffing_model_id` (plumbing); `entity`, `grade_band` (R9, blocked
+  cascade — accept traversal loss per spec Region cascade section);
+  `home_work_location_name`, `location_short_name`, `recruiter_employee_number`,
+  `teammate_employee_number` (R9 via FK).
+- Model-level description rewrite: existing enumerates removed/renamed columns
+  (`entity`, `grade_band`, `plan status`, `job title`, `teammate`). Replace to
+  reflect new identities.
 
----
+- [ ] **Step 1:** Filter inventory for `model='dim_staffing_positions'`.
+- [ ] **Step 2:** Apply the Procedure with special cases above.
+- [ ] **Step 3:** `uv run dbt compile ... --select dim_staffing_positions`.
+- [ ] **Step 4:** Commit.
 
 ### Task 6: Talent domain (3 models)
 
-**Models:**
+**Models:** `dim_job_candidates`, `dim_job_postings`,
+`fct_job_candidate_applications`.
 
-- `dim_job_candidates`, `dim_job_postings`, `fct_job_candidate_applications` —
-  24 renames, 26 removes, 1 add
+**Inventory counts:** 24 renames, 26 removes, 1 add.
 
-Key changes:
+**Key changes + special cases:**
 
-- `candidate_email` → `email`; `candidate_first_and_last_name` → `full_name`;
-  `candidate_first_name` → `first_name`; `candidate_last_name` → `last_name`
-- `dim_job_postings.job_title` → `position_title`; `.job_city` → `city`;
-  `.department_internal` → `department_name`; `.department_org_field_value` →
-  `organizational_hierarchy`; `.recruiters` → `recruiter_names`
-- `fct_job_candidate_applications.source` → `application_source`;
-  `application_field_phone_interview_score` → `phone_interview_score`;
-  `application_status_interview_performance_task_date` →
-  `application_status_interview_performance_task_timestamp`; `last_update_date`
-  → `last_updated_date`
-- Removes include `candidate_id`, `candidate_source*` (6 dead cols),
-  `job_title`/`department_internal`/`department_org_field_value`/`job_city`/`recruiters`
-  on the fact (R9 via `job_posting_key`), `application_status` (dead), 10
-  application\_\* dead SmartRecruiters fields, `school_shared_with`
-- ADD: `shared_with_location_key` (FK to dim_locations)
+- `dim_job_candidates`: 4 R6 renames stripping `candidate_` prefix
+  (`candidate_first_name` → `first_name`, etc.); 4 plumbing removes.
+- `dim_job_postings`: 5 R6 renames (`job_title` → `position_title`,
+  `department_internal` → `department_name`, `department_org_field_value` →
+  `organizational_hierarchy`, etc.). The surrogate-key macro
+  `generate_surrogate_key(["job_title", "department_internal", "job_city"])`
+  references CTE-internal column names — do NOT change the macro input.
+- `fct_job_candidate_applications`: 15 renames (11 R4 `_datetime` →
+  `_timestamp`, `source` → `application_source`, others); 22 plumbing/R9
+  removes; 1 structural add `shared_with_location_key`.
+  - **R4 type coercion** on `application_status_interview_performance_task_date`
+    → `application_status_interview_performance_task_timestamp`: upstream is
+    string; coerce at the mart layer (minimize blast radius vs. staging edit):
 
-- [ ] **Step 1: Filter inventory for `domain='Talent'`**
-- [ ] **Step 2: Apply Procedure per model. For `shared_with_location_key`:
-      derive via
-      `{{ dbt_utils.generate_surrogate_key(["school_shared_with"]) }}` wrapped
-      for nullability.**
-- [ ] **Step 3: Verify**
-- [ ] **Step 4: Commit**
+    ```sql
+    safe_cast(
+        application_status_interview_performance_task_date as timestamp
+    ) as application_status_interview_performance_task_timestamp,
+    ```
 
----
+    YAML `data_type: timestamp`. `safe_cast` (not `cast`) so malformed strings
+    produce NULL rather than failing the model.
+
+  - **Structural add** `shared_with_location_key`: FK to `dim_locations` via
+    `generate_surrogate_key(["school_shared_with"])` wrapped for nullability
+    (`school_shared_with` is nullable). `dim_locations.location_key` hashes
+    `location_name`; `school_shared_with` holds school-name strings, so hashes
+    align for matched rows.
+  - **Coverage-gap exception** on `shared_with_location_key`: ~20% of rows carry
+    `school_shared_with` values that don't exist in
+    `dim_locations.location_name` (notably `KIPP High School`). Ship the
+    `relationships` test at `severity: warn` with a TODO referencing
+    [#3672](https://github.com/TEAMSchools/teamster/issues/3672). See the
+    Procedure's "Coverage-gap exception" section for the YAML shape.
+  - Model-level description update: current enumerates `dim_job_candidates` and
+    `dim_job_postings` FKs; add `dim_locations` after the structural add.
+
+- [ ] **Step 1:** Filter inventory for `domain='Talent'`.
+- [ ] **Step 2:** Apply the Procedure with special cases above.
+- [ ] **Step 3:**
+      `uv run dbt compile ... --select dim_job_candidates dim_job_postings fct_job_candidate_applications`.
+- [ ] **Step 4:** Commit.
 
 ### Task 7: Survey domain (7 models)
 
-**Models:**
+**Models:** `bridge_survey_questions`, `dim_survey_administrations`,
+`dim_survey_expectations`, `dim_survey_questions`, `dim_surveys`,
+`fct_survey_responses`, `fct_survey_submissions`.
 
-- `bridge_survey_questions`, `dim_survey_administrations`,
-  `dim_survey_expectations`, `dim_survey_questions`, `dim_surveys`,
-  `fct_survey_responses`, `fct_survey_submissions` — 5 renames, 11 removes, 0
-  adds
+**Inventory counts:** 5 renames, 11 removes.
 
-Key changes: `dim_surveys.subject_area` → `category`;
-`dim_survey_expectations.respondent_population` → `respondent_type`;
-`fct_survey_submissions.respondent_population` → `respondent_type`;
-`dim_survey_administrations.term_name` REMOVE;
-`fct_survey_responses.question_shortname` REMOVE.
+**Key changes:**
 
-- [ ] **Step 1–4: filter, apply, verify, commit**
+- `dim_surveys.subject_area` → `category` (R6);
+  `dim_survey_expectations.respondent_population` → `respondent_type` (R6);
+  `fct_survey_submissions.respondent_population` → `respondent_type` (R6);
+  `dim_survey_administrations.response_deadline` → `response_deadline_date`
+  (R4); `fct_survey_submissions.date_submitted` → `submission_timestamp` (R4 —
+  upstream `int_surveys__survey_responses` already emits `timestamp`, so this is
+  an alias rename with YAML `data_type` sanity check, no cast).
+- `dim_survey_administrations` removes `survey_id`, `survey_name`, `term_code`,
+  `term_name` (R9). The downstream `dim_survey_expectations` previously joined
+  to pick up `survey_name` from administrations; this task adds an inner-join to
+  `dim_surveys` so `survey_name` is sourced directly via `survey_key`.
+  `dim_surveys.survey_key` is unique, so the join cannot fan out.
+- Other removes: `fct_survey_responses.question_shortname`,
+  `survey_response_id`, `survey_id` (all R9 / plumbing).
 
----
+- [ ] **Step 1:** Filter inventory for `domain='Survey'`.
+- [ ] **Step 2:** Apply the Procedure to each of the 7 models. Ensure the
+      `dim_survey_expectations` CTE refactor preserves semantics.
+- [ ] **Step 3:**
+      `uv run dbt compile ... --select bridge_survey_questions dim_survey_administrations dim_survey_expectations dim_survey_questions dim_surveys fct_survey_responses fct_survey_submissions`.
+- [ ] **Step 4:** Commit.
 
 ### Task 8: College domain (2 models)
 
-**Models:**
+**Models:** `dim_college_enrollments`, `dim_colleges`.
 
-- `dim_college_enrollments`, `dim_colleges` — 3 renames, 4 removes, 0 adds
+**Inventory counts:** 3 renames, 4 removes.
 
-Key changes: `dim_colleges.college_state` → `state_abbreviation`;
-`.is_strong_oos_option` → `is_strong_out_of_state_option`; `.selectivity` →
-`selectivity_tier`; REMOVE `dim_college_enrollments.college_code_branch` (R9 via
-`college_key`), `two_year_four_year` (dead + redundant), `degree_pursued` (no
-upstream source), `candidate_source*` not applicable here.
+**Key changes:**
 
-- [ ] **Step 1–4**
+- `dim_colleges`: `college_state` → `state_abbreviation` (R6);
+  `is_strong_oos_option` → `is_strong_out_of_state_option` (R7, spell out
+  `oos`); `selectivity` → `selectivity_tier` (R6); remove `two_year_four_year`
+  (plumbing — dead in production; redundant with `account_type`). Upstream CTEs
+  may reference `two_year_four_year` only to feed the removed column — clean up
+  the dead derivation.
+- `dim_college_enrollments`: remove `student_number`, `college_code_branch` (R9
+  via FK); `degree_pursued` (plumbing — no upstream source). The upstream
+  `degree_pursued` aggregation (`max()`) in a CTE becomes dead — remove it.
 
----
+- [ ] **Step 1:** Filter inventory for `domain='College'`.
+- [ ] **Step 2:** Apply the Procedure to both models, cleaning dead upstream
+      derivations.
+- [ ] **Step 3:**
+      `uv run dbt compile ... --select dim_college_enrollments dim_colleges`.
+- [ ] **Step 4:** Commit.
 
 ### Task 9: Attendance domain (4 models)
 
-**Models:**
+**Models:** `dim_student_attendance_intervention_types`,
+`fct_student_attendance_daily`, `fct_student_attendance_interventions`,
+`fct_student_attendance_streaks`.
 
-- `dim_student_attendance_intervention_types`, `fct_student_attendance_daily`,
-  `fct_student_attendance_interventions`, `fct_student_attendance_streaks` — 6
-  renames, 12 removes, 2 adds
+**Inventory counts:** 6 renames, 12 removes, 2 adds.
 
-Key changes:
+**Key changes + special cases:**
 
-- `dim_student_attendance_intervention_types.commlog_reason` →
-  `family_communication_reason`, `region` REMOVE, ADD `region_key` FK
-- `fct_student_attendance_daily`: 6 float→int64 coercions on
-  `is_absent`/`is_tardy`/`is_ontime`/`is_oss`/`is_iss`/`is_suspended`;
-  `is_present_weighted` → `present_weight` (keep float64); `streak_type` on
-  sibling renamed to `attendance_code`
-- `fct_student_attendance_interventions`: `intervention_status` → `is_complete`
-  (string → boolean cast); `is_ca_exception` → `is_chronic_absence_exception`;
-  REMOVE 7 `commlog_*` columns (R9 via new family_communication_key); REMOVE
-  `intervention_status_required_int` (redundant); ADD `family_communication_key`
-  FK
+- `dim_student_attendance_intervention_types`: `commlog_reason` →
+  `family_communication_reason` (R2, DeansList jargon); remove `region` (R9);
+  add `region_key` FK to `dim_regions`. The derivation hashes the canonical
+  region value (from `stg_people__locations` lookup post-Phase-1) so hashes
+  match `dim_regions.region_key`.
+- `fct_student_attendance_daily`:
+  - **R3 type coercions on 6 countable flags:** `is_absent`, `is_tardy`,
+    `is_ontime`, `is_oss`, `is_iss`, `is_suspended` — float → int64:
 
-- [ ] **Step 1–4**
+    ```sql
+    cast(is_absent as int64) as is_absent,
+    ```
 
----
+    Update each YAML `data_type: float64` → `int64`. These are `keep` actions in
+    the inventory (no name change) — the coercion is a type-only change per the
+    updated R3 rule.
 
-### Task 10: Conformed domain (5 models)
+  - Rename `is_present_weighted` → `present_weight` (R3, **keep float64** — this
+    is the genuinely-fractional weight column).
+  - Rename `term` → `term_code` (R6).
+  - Remove `student_number` (R9).
 
-**Models:**
+- `fct_student_attendance_interventions`:
+  - Rename `intervention_status` → `is_complete` (R3, string → boolean cast):
 
-- `dim_locations`, `dim_regions`, `dim_school_calendars`, `dim_terms` — 6
-  renames, 7 removes, 7 adds
+    ```sql
+    case intervention_status
+        when 'Complete' then true
+        when 'Incomplete' then false
+    end as is_complete,
+    ```
 
-Key changes (cross-cutting cascade):
+    Read the actual string enum values first and adjust the case arms to match
+    production data. YAML `data_type: boolean`; description updated to reflect
+    boolean semantics.
 
-- `dim_regions.region` → `region_name`
-- `dim_locations.region` REMOVE, `powerschool_school_id` REMOVE,
-  `deanslist_school_id` REMOVE; ADD `region_key`
-- `dim_terms.region` REMOVE, `school_id` REMOVE; ADD `region_key`,
-  `location_key`; `lockbox_date` → `data_freeze_date`
-- `dim_dates`: 4 week\_\* renames (`week_start_date` →
-  `calendar_week_start_date`, `week_end_date` → `calendar_week_end_date`,
-  `week_start_monday` → `school_week_start_date`, `week_end_sunday` →
-  `school_week_end_date`)
+  - Rename `is_ca_exception` → `is_chronic_absence_exception` (R2).
+  - Remove 7 `commlog_*` columns (R9 via new `family_communication_key`) and
+    `intervention_status_required_int` (plumbing — redundant).
+  - Add `family_communication_key` FK: derive via
+    `generate_surrogate_key([<upstream commlog_id>])`, matching whatever
+    `fct_family_communications.family_communication_key` hashes. Check that
+    model's SQL to identify the input column. Wrap for nullability.
 
-- [ ] **Step 1: Filter inventory for `domain='Conformed'`**
-- [ ] **Step 2: Apply Procedure. The region_key FK derivation:**
+- `fct_student_attendance_streaks`: rename `streak_type` → `attendance_code`
+  (R6); remove `student_number` (R9).
 
-```sql
-if(
-    region_name is not null,
-    {{ dbt_utils.generate_surrogate_key(["region_name"]) }},
-    cast(null as string)
-) as region_key,
-```
+- [ ] **Step 1:** Filter inventory for `domain='Attendance'`.
+- [ ] **Step 2:** Apply the Procedure plus the type coercions and FK adds.
+- [ ] **Step 3:**
+      `uv run dbt compile ... --select dim_student_attendance_intervention_types fct_student_attendance_daily fct_student_attendance_interventions fct_student_attendance_streaks`.
+- [ ] **Step 4:** Commit.
 
-Ensure `dim_regions` PK logic produces the same hash (surrogate_key of `region`
-which stays stable as `region_name` string).
+### Task 10: Conformed domain (5 models, cross-cutting)
 
-- [ ] **Step 3: Verify. Include downstream models that already have `region_key`
-      FK (dim_assessment_comparisons) to confirm no cascade breakage.**
-- [ ] **Step 4: Commit**
+**Models:** `dim_dates`, `dim_locations`, `dim_regions`, `dim_school_calendars`,
+`dim_terms`.
 
----
+**Inventory counts:** 6 renames, 7 removes, 7 adds. **4 of the 7 adds are Group
+3 deferrals** (dim_locations address unification) — skip them.
+
+**In-scope changes (6 renames, 7 removes, 3 adds):**
+
+- `dim_dates`: 4 R6/R4 renames (`week_start_date` → `calendar_week_start_date`,
+  `week_end_date` → `calendar_week_end_date`, `week_start_monday` →
+  `school_week_start_date`, `week_end_sunday` → `school_week_end_date`).
+- `dim_regions`: rename `region` → `region_name` (R6). The `region_key`
+  surrogate hashes the upstream `region` value; that value is unchanged, so the
+  hash is byte-identical. Do NOT change the `generate_surrogate_key(["region"])`
+  input.
+- `dim_locations`:
+  - Remove `region` (R9 via new `region_key`), `powerschool_school_id`
+    (plumbing), `deanslist_school_id` (plumbing).
+  - Add `region_key` FK (Group 1/2 structural add). Derivation:
+
+    ```sql
+    if(
+        region is not null,
+        {{ dbt_utils.generate_surrogate_key(["region"]) }},
+        cast(null as string)
+    ) as region_key,
+    ```
+
+    The `region` input is now the canonical region from the Phase-1 staging fix
+    — hashes match `dim_regions.region_key`.
+
+  - **DEFERRED** (inventory rows 889–892, Group 3): `address_line_one`,
+    `address_line_two`, `city`, `postal_code` adds. Do NOT apply.
+
+- `dim_terms`:
+  - Remove `region`, `school_id` (R9 via new FKs); `powerschool_year_id`,
+    `powerschool_term_id` (plumbing).
+  - Add `region_key`, `location_key` FKs. Derive both via a CTE that joins to
+    `stg_people__locations` on
+    `dim_terms.school_id = stg_people__locations.powerschool_school_id` (filter
+    `not is_pathways and location_name <> 'KIPP Whittier Elementary'` to match
+    `dim_locations` dedup). The resulting `location_name` and `region` become
+    the hash inputs for the two FKs, matching the parent dims' derivations.
+  - `term_key` surrogate-key input stays
+    `["type", "code", "name", "start_date", "region", "school_id"]` (with
+    reserved-word backticks where needed) — the raw `region` / `school_id`
+    upstream values still exist in the source CTE; hash stable.
+  - Rename `lockbox_date` → `data_freeze_date` (R2, KIPP jargon).
+- `dim_school_calendars`: no changes per inventory (all `keep`). Include in the
+  verification `--select` to confirm no cascade breakage.
+
+- [ ] **Step 1:** Filter inventory for `domain='Conformed'`.
+- [ ] **Step 2:** Apply the Procedure per model, skipping the 4 deferred
+      `dim_locations` address adds. Confirm `dim_terms` uniqueness
+      (`count(*) = count(distinct term_key)`) after adding the lookup join.
+- [ ] **Step 3:**
+      `uv run dbt compile ... --select dim_dates dim_locations dim_regions dim_school_calendars dim_terms`;
+      also run full-project compile to confirm no cascade breakage.
+- [ ] **Step 4:** Commit.
 
 ### Task 11: Behavioral domain (3 models)
 
-**Models:**
+**Models:** `fct_behavioral_consequences`, `fct_behavioral_incidents`,
+`fct_family_communications`.
 
-- `fct_behavioral_consequences`, `fct_behavioral_incidents`,
-  `fct_family_communications` — 5 renames, 9 removes, 2 adds
+**Inventory counts:** 5 renames, 9 removes, 2 adds.
 
-Key changes: `num_days` → `days_assigned`; `num_periods` → `periods_assigned`;
-`infraction` → `infraction_description`; `fct_family_communications.status` →
-`communication_outcome`. ADDS: `referring_staff_key` on
-fct_behavioral_incidents, `staff_key` on fct_family_communications. Description
-fixes on `consequence_start_date`, `consequence_end_date`, `incident_status`.
+**Key changes + special cases:**
 
-- [ ] **Step 1–4**
+- `fct_behavioral_consequences`: `num_days` → `days_assigned`, `num_periods` →
+  `periods_assigned` (R6); remove `incident_id`, `incident_penalty_id`
+  (plumbing).
+- `fct_behavioral_incidents`:
+  - Rename `infraction` → `infraction_description` (R6).
+  - Remove `student_number`, `incident_id` (plumbing), `referring_staff_name`,
+    `referring_staff_id` (R9 via new FK).
+  - Add `referring_staff_key` FK to `dim_staff`. DeansList has no direct
+    `employee_number` crosswalk, so derive via the only available bridge:
+    `stg_deanslist__users` (on `dl_user_id`) → `email` →
+    `int_people__staff_roster` (on `work_email`) → `employee_number` →
+    `generate_surrogate_key(["sr.employee_number"])`. Both joins are LEFT so
+    unmatched fact rows are preserved. `int_people__staff_roster` is unique per
+    `employee_number` (verified in its YAML); no fan-out.
+  - Model-level description update: current version claims "no employee_number
+    available from DeansList" — this task adds that resolution. Update to
+    describe the FK resolution via email lookup.
+- `fct_family_communications`:
+  - Rename `status` → `communication_outcome` (R6); `communication_datetime` →
+    `communication_timestamp` (R4).
+  - Remove `student_number`, `record_id` (plumbing), `staff_name` (R9 via new
+    FK).
+  - Add `staff_key` FK to `dim_staff`. Same DeansList-email resolution as above.
 
----
+- [ ] **Step 1:** Filter inventory for `domain='Behavioral'`.
+- [ ] **Step 2:** Apply the Procedure with FK adds via the email-lookup chain;
+      update the `fct_behavioral_incidents` model-level description.
+- [ ] **Step 3:**
+      `uv run dbt compile ... --select fct_behavioral_consequences fct_behavioral_incidents fct_family_communications`.
+- [ ] **Step 4:** Commit.
 
 ### Task 12: Student domain (5 models)
 
-**Models:**
+**Models:** `bridge_student_contacts`, `dim_student_contact_persons`,
+`dim_student_enrollments`, `dim_student_section_enrollments`, `dim_students`.
 
-- `bridge_student_contacts`, `dim_student_contact_persons`,
-  `dim_student_enrollments`, `dim_student_section_enrollments`, `dim_students` —
-  8 renames, 5 removes, 2 adds
+**Inventory counts:** 8 renames, 5 removes, 2 adds.
 
-Key changes: `dim_students.lunch_status` → `meal_eligibility_status`; ADD
-`district_student_identifier` and `salesforce_contact_id` (per multi-ID
-structural additions in spec). Description fixes on
-`dim_student_contact_persons.email`/`phone` (flagged as model bug — KEEP with
-updated reviewer_notes).
+**Key changes + special cases:**
 
-- [ ] **Step 1–4**
+- `bridge_student_contacts`: remove `student_number` (R9).
+- `dim_student_contact_persons`: remove `_dbt_source_relation`,
+  `powerschool_person_id` (plumbing); rename `address` → `home_address` (R6).
+  `email` and `phone` are flagged as 100%-null model bugs in the spec — **KEEP**
+  them both; do not remove. The primary-key description should reference the
+  upstream `personid` column (not the removed `powerschool_person_id`).
+- `dim_student_enrollments`: remove `school_level` (R9 via location_key); rename
+  `enroll_status` → `enrollment_status` (R1, spell out).
+- `dim_student_section_enrollments`: remove `student_number` (R9); rename
+  `date_enrolled` → `entry_date` (R4), `date_left` → `exit_date` (R4).
+- `dim_students`:
+  - Renames: `local_student_identifier` → `lea_student_identifier` (R6,
+    KIPP-as-LEA perspective; **must have `not_null` test per spec** — see spec
+    "Structural additions" line 128); `gender` → `gender_identity` (R1);
+    `lunch_status` → `meal_eligibility_status` (R6); `ethnicity` → `race` (R1).
+    The `race` description must NOT claim Hispanic ethnicity is separated into
+    `is_hispanic` — no such column exists on `dim_students` (the inventory's
+    reviewer_notes on that row were inaccurate).
+  - Structural adds (per spec lines 117–145 — four-ID model):
+    - `district_student_identifier` (**`data_type: string`** — upstream
+      `int_extracts__student_enrollments.secondary_state_studentnumber` is
+      string). Host-district identifier: MDCPS for Miami; NULL for NJ regions
+      where the host-district ID is not surfaced upstream. Generalizes the
+      previously Miami-only concept.
+    - `salesforce_contact_id` (`data_type: string`). KIPPADB Salesforce contact
+      ID; sourced from upstream `salesforce_id` alias.
 
----
+- [ ] **Step 1:** Filter inventory for `domain='Student'`; read spec lines
+      117–180 for the multi-ID structural additions.
+- [ ] **Step 2:** Apply the Procedure per model. Confirm
+      `lea_student_identifier` carries `not_null`; `district_student_identifier`
+      is `string`.
+- [ ] **Step 3:**
+      `uv run dbt compile ... --select bridge_student_contacts dim_student_contact_persons dim_student_enrollments dim_student_section_enrollments dim_students`.
+- [ ] **Step 4:** Commit.
 
 ### Task 13: Gradebook domain (4 models)
 
-**Models:**
+**Models:** `fct_grades_assignments`, `fct_grades_category`, `fct_grades_gpa`,
+`fct_grades_term`.
 
-- `fct_grades_assignments`, `fct_grades_category`, `fct_grades_gpa`,
-  `fct_grades_term` — 7 renames, 9 removes, 2 adds
+**Inventory counts:** 7 renames, 9 removes, 2 adds. **Group 3 score-split
+deferred:** skip 2 removes (`score`, `score_type`) and 2 adds (`points_earned`,
+`numeric_grade_earned`) on `fct_grades_assignments`.
 
-**⚠ Group 3 structural split is DEFERRED for this PR** —
-`fct_grades_assignments.points_earned` + `numeric_grade_earned` stay as proposed
-adds in inventory but do not ship in this PR (they require staging changes). In
-this task:
+**In-scope changes (7 renames, 7 removes, 0 adds):**
 
-- Do NOT add `points_earned` or `numeric_grade_earned` to
-  `fct_grades_assignments`.
-- Do NOT remove `score` or `score_type` from `fct_grades_assignments` (they
-  depend on the split).
-- Update `fct_grades_assignments.points_possible` → `max_points` (Ed-Fi rename).
-- Apply the other 6 renames, 9 removes, and any other adds.
+- `fct_grades_assignments`: `points_possible` → `max_points` (R6, Ed-Fi); remove
+  `student_number` (R9). **Deferred:** keep `score`, `score_type`; do not add
+  `points_earned`, `numeric_grade_earned`.
+- `fct_grades_category`: remove `student_number`, `term_code` (R9).
+- `fct_grades_gpa`: rename 3 R6 (`cumulative_y1_gpa` → `cumulative_gpa`,
+  `cumulative_y1_gpa_unweighted` → `cumulative_gpa_unweighted`,
+  `cumulative_y1_gpa_projected` → `cumulative_gpa_projected`); remove
+  `student_number`, `term_name` (R9).
+- `fct_grades_term`: rename R1/R6 (`citizenship` → `citizenship_grade`,
+  `grade_points` → `grade_points_earned`); rename R3 with type coercion
+  `exclude_from_gpa` → `is_excluded_from_gpa` (int64 0/1 → boolean):
 
-- [ ] **Step 1: Filter inventory. Skip rows where `current_column` is `score`,
-      `score_type`, `points_earned`, or `numeric_grade_earned` on
-      fct_grades_assignments.**
-- [ ] **Step 2: Apply Procedure; `exclude_from_gpa` → `is_excluded_from_gpa`
-      requires type coercion int → boolean (or keep int64 per R3 flag convention
-      — inventory says "Convert int64 0/1 to BOOLEAN").**
-- [ ] **Step 3–4**
+  ```sql
+  cast(exclude_from_gpa as bool) as is_excluded_from_gpa,
+  ```
 
----
+  YAML `data_type: boolean`. Remove `student_number`, `term_code` (R9).
 
-### Task 14: Observation domain (8 models)
+- [ ] **Step 1:** Filter inventory for `domain='Gradebook'`; skip the 4 deferred
+      rows.
+- [ ] **Step 2:** Apply the Procedure with the int → bool cast.
+- [ ] **Step 3:**
+      `uv run dbt compile ... --select fct_grades_assignments fct_grades_category fct_grades_gpa fct_grades_term`.
+- [ ] **Step 4:** Commit.
 
-**Models:**
+### Task 14: Observation domain (8 models, includes model renames)
 
-- `dim_staff_observation_expectations`, `dim_staff_observation_microgoal_types`,
-  `dim_staff_observation_rubric_measurements`, `dim_staff_observation_rubrics`,
-  `dim_staff_observation_types`, `fct_staff_observation_microgoals`,
-  `fct_staff_observation_scores`, `fct_staff_observations` — 19 renames, 36
-  removes, 2 adds
+**Models:** `dim_staff_observation_expectations`,
+`dim_staff_observation_microgoal_types`,
+`dim_staff_observation_rubric_measurements`, `dim_staff_observation_rubrics`,
+`dim_staff_observation_types`, `fct_staff_observation_microgoals`,
+`fct_staff_observation_scores`, `fct_staff_observations`.
 
-Key changes:
+**Inventory counts:** 19 renames, 36 removes, 2 adds.
 
-- Model renames: `dim_staff_observation_microgoal_types` →
-  `dim_staff_observation_goal_types`; `fct_staff_observation_microgoals` →
-  `fct_staff_observation_goals`. **Model renames are non-trivial** — cascading
-  refactor of the SQL file name, `ref()` callers, and the `dbt_project.yml` if
-  the model is explicitly named there.
-- All `*_microgoal_*` column renames derive from these model renames.
-- `fct_staff_observations.glows` → `positive_feedback`; `.grows` →
-  `growth_areas`; `.observation_score` keep; remove `eval_date`,
-  `assignment_status`, `term_type`, `term_code`, `term_name`, `term_start_date`,
-  `term_end_date` (R9 via `term_key`)
-- `dim_staff_observation_rubric_measurements.measurement_row_style` REMOVE
-  (plumbing)
-- `dim_staff_observation_rubrics.district` REMOVE (plumbing)
-- ADDS: `staff_observation_type_key` and `staff_observation_rubric_key` on
-  fct_staff_observations
+**Model renames (spec lines 147–158):** two models carry KIPP `microgoal` jargon
+and get renamed:
 
-- [ ] **Step 1: Filter inventory for `domain='Observation'`**
-- [ ] **Step 2: Apply model renames first (affect file paths and refs), then
-      per-model column changes.**
-- [ ] **Step 3: Verify with `dbt parse` (both old names should be gone from
-      `ref()` calls).**
-- [ ] **Step 4: Commit**
+| Current                                 | Renamed                            |
+| --------------------------------------- | ---------------------------------- |
+| `dim_staff_observation_microgoal_types` | `dim_staff_observation_goal_types` |
+| `fct_staff_observation_microgoals`      | `fct_staff_observation_goals`      |
 
----
+All `*_microgoal_*` column renames in the inventory derive from these model
+renames — once the models are renamed, column renames follow naturally without
+needing per-column edits.
+
+Cascading changes:
+
+- Rename the `.sql` file and its `properties/<name>.yml` file.
+- Update every `ref()` to the old model names in the repo (use
+  `grep -rn "fct_staff_observation_microgoals\|dim_staff_observation_microgoal_types" src/dbt/kipptaf/`).
+- Check `dbt_project.yml` for any explicit per-model configuration at the old
+  names.
+
+**Other key changes:**
+
+- `fct_staff_observations`:
+  - Rename `glows` → `positive_feedback` (R2, KIPP jargon); `grows` →
+    `growth_areas` (R2).
+  - Keep `observation_score`.
+  - Remove `eval_date`, `assignment_status`, `term_type`, `term_code`,
+    `term_name`, `term_start_date`, `term_end_date` (R9 via `term_key`).
+  - Add `staff_observation_type_key` and `staff_observation_rubric_key` FKs.
+- `dim_staff_observation_rubric_measurements`: remove `measurement_row_style`
+  (plumbing).
+- `dim_staff_observation_rubrics`: remove `district` (plumbing).
+
+**Execution order:** apply model renames first (they affect file paths and
+refs); then per-model column changes.
+
+- [ ] **Step 1:** Filter inventory for `domain='Observation'`.
+- [ ] **Step 2:** Rename the two model files + YAMLs; grep and update all
+      `ref()` calls in the project; then apply the Procedure per model.
+- [ ] **Step 3:**
+      `uv run dbt compile ... --select dim_staff_observation_expectations dim_staff_observation_goal_types dim_staff_observation_rubric_measurements dim_staff_observation_rubrics dim_staff_observation_types fct_staff_observation_goals fct_staff_observation_scores fct_staff_observations`.
+- [ ] **Step 4:** Commit.
 
 ### Task 15: Assessment domain (6 models)
 
-**Models:**
+**Models:** `dim_assessment_comparisons`, `dim_assessment_targets`,
+`dim_assessments`, `dim_student_assessment_expectations`,
+`fct_assessment_scores_enrollment_scoped`,
+`fct_assessment_scores_student_scoped`.
 
-- `dim_assessment_comparisons`, `dim_assessment_targets`, `dim_assessments`,
-  `dim_student_assessment_expectations`,
-  `fct_assessment_scores_enrollment_scoped`,
-  `fct_assessment_scores_student_scoped` — 10 renames, 24 removes, 4 adds
+**Inventory counts:** 10 renames, 24 removes, 4 adds.
 
-Key changes:
+**Key changes + special cases:**
 
-- `dim_assessments.subject_area` → `academic_subject`; `.scope` →
-  `assessment_category` (⚠ **coexistence flag** — dim_assessments also has
-  `assessment_scope` per Structural follow-ups; keep both, verify they're
-  semantically distinct); `.title` → `assessment_title`
-- ADDS: `aligned_academic_subject`, `combined_academic_subject`,
-  `credit_category` on dim_assessments; `student_key` on
-  dim_student_assessment_expectations
-- REMOVES on `fct_assessment_scores_student_scoped`: `subject_area`,
-  `course_discipline`, `aligned_subject`, `aligned_subject_area`,
-  `assessment_scope` (R9 via assessment_key — all move to dim). Rename
-  `rn_highest` → `score_rank`; `score_source` → `score_provider`
-- REMOVES on `fct_assessment_scores_enrollment_scoped`: `subject_area`,
-  `module_code`, `region`, `assessment_category` denormalized — all R9 via
-  `assessment_key`. Rename `score_source` → `score_provider`
-- `dim_assessment_targets.illuminate_subject_area` → `academic_subject`;
-  `.school_level` REMOVE; `.region` REMOVE
+- `dim_assessments`:
+  - Rename `title` → `assessment_title`, `subject_area` → `academic_subject`,
+    `scope` → `assessment_category` (all R6). **Coexistence flag:**
+    `dim_assessments` also has an existing `assessment_scope` column per spec
+    "Structural follow-ups — `dim_assessments` scope vs assessment_scope
+    untangling". Keep both — the rename produces `assessment_category`
+    (internal/state/college grouping), while `assessment_scope` (values
+    "enrollment" etc.) remains its own column. Verify they're semantically
+    distinct during execution.
+  - Structural adds: `combined_academic_subject`, `aligned_academic_subject`,
+    `credit_category`. Determine upstream sources from `dim_assessments.sql` and
+    any relevant staging/intermediate models before implementing; if any of the
+    three lack clear upstream sources, flag BLOCKED.
+- `dim_assessment_targets`: rename `illuminate_subject_area` →
+  `academic_subject` (R1); remove `school_level`, `region` (R9).
+- `dim_student_assessment_expectations`: rename `administered_at` →
+  `administered_date` (R4 — verify upstream is actually a date-typed column
+  despite the `_at` suffix; if it's a timestamp, treat as R4 timestamp rename
+  instead); rename `scope` → `assessment_category` (R6); remove 8 columns
+  (R9/plumbing); add `student_key` FK to `dim_students` (match its hash
+  derivation).
+- `fct_assessment_scores_enrollment_scoped`: rename `scope` →
+  `assessment_category`, `score_source` → `score_provider` (R6); remove 6
+  columns (R9/plumbing).
+- `fct_assessment_scores_student_scoped`: rename `rn_highest` → `score_rank`
+  (R1), `score_source` → `score_provider` (R1); remove 8 columns
+  (`student_number`, `assessment_scope`, `subject_area`, `percent_correct`,
+  `course_discipline`, `aligned_subject_area`, `aligned_subject`).
+- `dim_assessment_comparisons`: remove `region` (R9).
 
-- [ ] **Step 1–4**
+- [ ] **Step 1:** Filter inventory for `domain='Assessment'`.
+- [ ] **Step 2:** Apply the Procedure per model. Handle the three
+      `dim_assessments` structural adds carefully; verify the `assessment_scope`
+      / `assessment_category` coexistence.
+- [ ] **Step 3:**
+      `uv run dbt compile ... --select dim_assessment_comparisons dim_assessment_targets dim_assessments dim_student_assessment_expectations fct_assessment_scores_enrollment_scoped fct_assessment_scores_student_scoped`.
+- [ ] **Step 4:** Commit.
 
----
-
-### Task 16: Staff domain (14 models)
+### Task 16: Staff domain (14 models, largest)
 
 **Models:** `dim_staff`, `dim_staff_status`, `dim_staff_work_assignments`,
 `dim_work_assignment_jobs`, `dim_work_assignment_locations`,
@@ -748,43 +1049,55 @@ Key changes:
 `dim_work_assignment_reporting_relationships`, `dim_work_assignment_status`,
 `dim_work_assignment_types`, `fct_staff_attrition`,
 `fct_staff_benefits_enrollments`, `fct_staff_membership_enrollments`,
-`fct_work_assignment_additional_earnings`, `fct_work_assignment_compensation` —
-54 renames, 24 removes, 3 adds
+`fct_work_assignment_additional_earnings`, `fct_work_assignment_compensation`.
 
-**⚠ Largest domain.** Consider splitting this commit into two if the diff is
-unreviewably large: `dim_staff` + `dim_staff_work_assignments` in one commit,
-the work*assignment*\* SCD2 dims + fcts in another. Still one Phase 2 task but
-two commits.
+**Inventory counts:** 54 renames, 24 removes, 3 adds. Largest domain — consider
+splitting the commit into two if the diff is unreviewably large: `dim_staff` +
+`dim_staff_work_assignments` first, then the SCD2 dims + facts. Same commit
+message; append `(part 1/2)` / `(part 2/2)` if split.
 
-**⚠ Group 3 structural split is DEFERRED** — on `dim_work_assignment_locations`,
-do NOT remove the 8 address columns (location_name, address_line_one/two,
-city_name, postal_code, country_code, state_code, location_code); do NOT add
-`location_key` FK. These all depend on `dim_locations` address unification
-(Group 3) which is out of scope.
+**Group 3 deferrals** on `dim_work_assignment_locations`: do NOT remove the 8
+address columns, do NOT add `location_key`. Apply only the 3 SCD-date renames
+(`effective_date_start` → `effective_start_date`, etc.) and `is_current_record`
+→ `is_current`.
 
-Key in-scope changes:
+**Key in-scope changes:**
 
-- `dim_staff`: `employee_number` → `staff_unique_id`, `formatted_name` →
-  `full_name`, `given_name` → `first_name`, `family_name_1` → `last_name`,
-  `race_ethnicity_reporting` → `race`, `personal_cell` → `personal_cell_phone`,
-  `sam_account_name` → `active_directory_username`
-- `dim_staff_work_assignments`: `full_time_equivalence_ratio` →
-  `full_time_equivalency`; 7 `*_code__code_value` / `*_name` ADP-structure
-  renames per inventory; 4 `worker_time_profile__*` renames;
-  `time_and_attendance_indicator` → `is_time_and_attendance_active`; ADD
-  `time_service_supervisor_staff_key`
-- All SCD2 dims: `effective_date_start` → `effective_start_date`,
-  `effective_date_end` → `effective_end_date`, `is_current_record` →
-  `is_current` (uniform pattern)
-- `dim_work_assignment_jobs.job_title` → `position_title`; `.job_code_name` →
-  `job_code_description`
-- `dim_work_assignment_reporting_relationships`: 6 manager\_\* column removes
-  (R9); ADD `manager_staff_key` FK
-- `fct_work_assignment_compensation`: `annual_rate` → `annual_wage`,
-  `hourly_rate` → `hourly_wage`
-- `fct_staff_benefits_enrollments.enrollment_status` REMOVE (100% Active, dead)
+- `dim_staff`:
+  - Rename `employee_number` → `staff_unique_id` (R6, Ed-Fi exact match);
+    `formatted_name` → `full_name` (R6, drop ADP jargon); `given_name` →
+    `first_name` (R6); `family_name_1` → `last_name` (R6);
+    `race_ethnicity_reporting` → `race` (R6); `personal_cell` →
+    `personal_cell_phone` (R6, parallel with `work_email`); `sam_account_name` →
+    `active_directory_username` (R1, drop Microsoft SAM legacy term).
+  - Type note on `staff_unique_id`: stays `int64`.
+    `dbt_utils.generate_surrogate_key` stringifies inputs — no hash change.
+- `dim_staff_work_assignments`:
+  - 12 renames incl. 7 `*_code__code_value` / `*_name` ADP-structure flattenings
+    (see inventory `reviewer_notes`); 4 `worker_time_profile__*` renames;
+    `time_and_attendance_indicator` → `is_time_and_attendance_active`;
+    `full_time_equivalence_ratio` → `full_time_equivalency`.
+  - Remove 6 columns.
+  - Add `time_service_supervisor_staff_key` FK to `dim_staff`.
+- All SCD2 dims uniform renames: `effective_date_start` →
+  `effective_start_date`, `effective_date_end` → `effective_end_date`,
+  `is_current_record` → `is_current`.
+- `dim_work_assignment_jobs`: `job_title` → `position_title`; `job_code_name` →
+  `job_code_description`.
+- `dim_work_assignment_reporting_relationships`: 6 `manager_*` removes (R9); add
+  `manager_staff_key` FK.
+- `fct_work_assignment_compensation`: `annual_rate` → `annual_wage`;
+  `hourly_rate` → `hourly_wage`.
+- `fct_staff_benefits_enrollments`: remove `enrollment_status` (100% `'Active'`
+  in production — dead).
 
-- [ ] **Step 1–4** (consider 2 commits per note above)
+- [ ] **Step 1:** Filter inventory for `domain='Staff'`.
+- [ ] **Step 2:** Apply the Procedure per model. Honor Group 3 deferrals on
+      `dim_work_assignment_locations`. Consider two commits if the diff is large
+      (`dim_staff` + `dim_staff_work_assignments` in one; remaining 12 models in
+      another).
+- [ ] **Step 3:** `uv run dbt compile ... --select <all 14 models>`.
+- [ ] **Step 4:** Commit (one or two commits per Step 2 decision).
 
 ---
 
@@ -792,139 +1105,162 @@ Key in-scope changes:
 
 ### Task 17: Exposure sweep
 
-**Files:**
+**Files:** `src/dbt/kipptaf/models/exposures/**/*.yml`.
 
-- Check: `src/dbt/kipptaf/models/exposures/**/*.yml`
+- [ ] **Step 1: Enumerate renamed columns.**
 
-- [ ] **Step 1: Enumerate renamed columns**
+  ```bash
+  cd /workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit
+  uv run --with pandas python <<'PY' > /tmp/renames.tsv
+  import pandas as pd
+  df = pd.read_csv(
+      'docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv',
+      keep_default_na=False, na_values=[''],
+  )
+  for _, r in df[df['action'] == 'rename'].iterrows():
+      print(f"{r['current_column']}\t{r['proposed_name']}")
+  PY
+  ```
 
-```bash
-uv run --with pandas python <<'PY'
-import pandas as pd
-df = pd.read_csv('docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv', keep_default_na=False, na_values=[''])
-for _, r in df[df['action']=='rename'].iterrows():
-    print(f"{r['current_column']}\t{r['proposed_name']}")
-PY
-```
+- [ ] **Step 2: Grep exposures for each old name.**
 
-- [ ] **Step 2: Grep exposures for renamed column names**
+  ```bash
+  cd src/dbt/kipptaf/models/exposures
+  while IFS=$'\t' read -r old_name new_name; do
+      matches=$(grep -rn "$old_name" . || true)
+      if [ -n "$matches" ]; then
+          echo "=== $old_name → $new_name ==="
+          echo "$matches"
+      fi
+  done < /tmp/renames.tsv
+  ```
 
-```bash
-cd src/dbt/kipptaf/models/exposures
-uv run python /tmp/check.py  # use output from Step 1
-# For each old name, run:
-# grep -rn "<old_name>" .
-```
+- [ ] **Step 3: Update each match.** Replace the old column name with the new
+      name in the exposure YAML. External tools (Tableau workbooks, Google
+      Sheets destinations) that reference these columns are outside the repo —
+      flag those as follow-up work but don't block this PR.
 
-- [ ] **Step 3: Update any matches**
+- [ ] **Step 4: Commit (only if exposures changed).**
 
-For each hit, update the exposure YAML to reference the new column name.
-External tools (Tableau workbooks, Google Sheets destinations) may also
-reference these — flag the list as follow-up work but don't block the PR.
+  ```bash
+  git add src/dbt/kipptaf/models/exposures/
+  git commit -m "refactor(dbt): update exposures for renamed mart columns per #3643"
+  ```
 
-- [ ] **Step 4: Commit (if changes)**
+### Task 18: Final verification + spec update + PR
 
-```bash
-git add src/dbt/kipptaf/models/exposures/
-git commit -m "refactor(dbt): update exposures for renamed mart columns per #3643"
-```
+- [ ] **Step 1: Full-project compile.**
 
----
+  ```bash
+  cd /workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit
+  uv run dbt compile --project-dir src/dbt/kipptaf
+  ```
 
-### Task 18: Final verification + spec update
+  Expected: zero errors.
 
-- [ ] **Step 1: Full-project parse + compile**
+- [ ] **Step 2: Targeted build on modified models.**
 
-```bash
-uv run dbt parse --project-dir src/dbt/kipptaf
-uv run dbt compile --project-dir src/dbt/kipptaf
-```
+  ```bash
+  uv run dbt build --project-dir src/dbt/kipptaf \
+      --select state:modified+ --target defer --full-refresh
+  ```
 
-Expected: zero errors.
+  Expected: all tests pass, all models build. `state:modified+` expands
+  downstream so any `relationships` tests that would fail due to hash-change
+  cascades are caught here. Warn-severity `relationships` tests on documented
+  coverage gaps (e.g. `shared_with_location_key` per #3672) will report
+  warnings, not fail.
 
-- [ ] **Step 2: Run a targeted build on the changed models**
+- [ ] **Step 3: Update spec's Hash-change posture with enumerated keys.**
 
-```bash
-uv run dbt build --project-dir src/dbt/kipptaf \
-    --select state:modified+ --target defer --full-refresh
-```
+  Edit
+  [docs/superpowers/specs/2026-04-15-column-naming-audit.md](../specs/2026-04-15-column-naming-audit.md)
+  section "Hash-change posture". Replace the prose description with an explicit
+  list of surrogate keys whose input composition changed, their before/after
+  derivation, and the expected hash-change cause. Use the compiled SQL from Step
+  2 to identify changed keys precisely.
 
-Expected: all tests pass, all models build. Note: hash-change surrogate keys
-will cause downstream reference tests to fail if the parent dim and the child
-fact are not both in the modified set — `state:modified+` expands downstream to
-catch this. If any `relationships` test fails because of hash drift that you did
-not intend, investigate rather than ignore.
+- [ ] **Step 4: Commit spec update.**
 
-- [ ] **Step 3: Update spec's Hash-change posture with enumerated keys**
+  ```bash
+  git add docs/superpowers/specs/2026-04-15-column-naming-audit.md
+  git commit -m "docs(spec): enumerate hash-change surrogate keys for #3643"
+  ```
 
-Edit `docs/superpowers/specs/2026-04-15-column-naming-audit.md` section
-"Hash-change posture". Replace the prose description with an explicit list of
-surrogate keys whose input composition changed, their before/after derivation,
-and the expected hash-change cause. Use the output of `dbt compile` diffs to
-identify them precisely.
+- [ ] **Step 5: Pre-push lint.** Trunk git hooks are not installed in worktrees,
+      so run the CI check manually before pushing:
 
-- [ ] **Step 4: Commit**
+  ```bash
+  cd /workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit
+  /workspaces/teamster/.trunk/tools/trunk check --ci
+  ```
 
-```bash
-git add docs/superpowers/specs/2026-04-15-column-naming-audit.md
-git commit -m "docs(spec): enumerate hash-change surrogate keys for #3643"
-```
+  Fix any reported issues.
 
-- [ ] **Step 5: Push branch and open PR**
+- [ ] **Step 6: Push branch and open PR.**
 
-```bash
-git push -u origin cbini/feat/claude-column-naming-audit
-gh pr create --title "refactor(dbt): mart column naming alignment + upstream dedups" --body "$(cat <<'EOF'
-## Summary
+  ```bash
+  git push -u origin cbini/feat/claude-column-naming-audit
+  gh pr create --title "refactor(dbt): mart column naming alignment + upstream prerequisites" --body "$(cat <<'EOF'
+  ## Summary
 
-Executes the column-naming audit (#3643) bundled with two upstream dedup
-blockers (#3633, #3637).
+  Executes the column-naming audit (#3643) bundled with the two upstream
+  prerequisite fixes (#3633, #3637).
 
-- Applies 170 renames, 180 removes, and 19 structural adds (Groups 1 + 2)
-  per the finalized audit inventory.
-- Deduplicates `stg_people__employee_numbers` and
-  `int_people__location_crosswalk` upstream, removing 9 downstream
-  `SELECT DISTINCT` workarounds.
-- Ed-Fi / CEDS aligned naming across assessment, staff, location, and
-  gradebook domains.
-- Group 3 structural adds (fct_grades_assignments score split,
-  dim_locations address unification) deferred to follow-up PRs under
-  issue #3631.
+  - Applies 168 renames, 180 removes, and structural adds (Groups 1 + 2)
+    per the finalized audit inventory across 67 mart models.
+  - Deduplicates `stg_people__employee_numbers` and
+    `int_people__location_crosswalk` upstream, removing downstream
+    `SELECT DISTINCT` workarounds.
+  - Derives canonical region from `dagster_code_location` in
+    `stg_people__locations`, unblocking Conformed-domain R9 removes + FK
+    adds; preserves the existing legal-entity names as `business_unit`.
+  - Ed-Fi / CEDS aligned naming across assessment, staff, location, and
+    gradebook domains.
+  - Group 3 structural adds (fct_grades_assignments score split,
+    dim_locations address unification + dim_work_assignment_locations FK)
+    deferred to follow-up PRs under issue #3631.
 
-## Test plan
+  ## Test plan
 
-- [ ] `dbt parse` clean
-- [ ] `dbt compile` clean
-- [ ] CI `dbt build` against staging passes
-- [ ] New uniqueness tests on `stg_people__employee_numbers` and
-      `int_people__location_crosswalk` pass
-- [ ] Hash-change posture in the spec is updated with the enumerated
-      surrogate keys whose composition changed
-- [ ] Exposure sweep complete; Tableau/Google Sheets follow-ups flagged
+  - [ ] `dbt compile` clean
+  - [ ] CI `dbt build` against staging passes (warn-severity
+        `shared_with_location_key` relationships test per #3672)
+  - [ ] New uniqueness tests on `stg_people__employee_numbers` and
+        `int_people__location_crosswalk` pass
+  - [ ] Hash-change posture in the spec is updated with the enumerated
+        surrogate keys whose composition changed
+  - [ ] Exposure sweep complete; Tableau/Google Sheets follow-ups flagged
 
-Closes #3643, #3633, #3637.
+  Closes #3643, #3633, #3637.
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-EOF
-)"
-```
+  🤖 Generated with [Claude Code](https://claude.com/claude-code)
+  EOF
+  )"
+  ```
 
 ---
 
 ## Execution notes
 
-- **Worktree posture**: user has said to continue in-place on this branch. All
-  commits land on `cbini/feat/claude-column-naming-audit`.
-- **Commit granularity**: one commit per domain task (two for Staff if diff is
-  large). Phase 1 is 2 commits, Phase 2 is 14–15 commits, Phase 3 is 2–3
-  commits. Total target: ~18–20 commits.
-- **No test runs between domains**: only parse + compile. Full `dbt build` is
-  Task 18 (Phase 3) to avoid redundant BQ costs.
-- **If a mart consumes a model that's been partially renamed**: consumer may
-  fail to compile. Mitigate by doing cross-cutting Conformed (Task 10) early
-  relative to consumers. Staff (Task 16) depends on nothing else in this PR.
-  Observation (Task 14) requires the model renames to cascade through ref()
-  calls — do that first within the domain.
-- **The inventory CSV is append-only during execution**: do NOT edit
+- **Worktree posture:** all execution in
+  `/workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit`. `cd`
+  to the worktree before any `git` or `uv run` command.
+- **Commit granularity:** one commit per Phase 2 task (two for Staff if large).
+  Phase 1 is 2 commits, Phase 2 is 14–15 commits, Phase 3 is 2–3 commits. Total
+  target: ~18–20 commits on the branch; single squash-merge PR.
+- **No test runs between domains:** only `dbt compile`. Full `dbt build` is Task
+  18 to avoid redundant BQ costs.
+- **Inventory CSV is append-only during execution.** Do NOT edit
   `reviewer_notes` or decisions during execution. If you discover an error, stop
-  and document it separately.
+  and document it separately (spec edit + issue).
+- **If a cross-domain consumer fails to compile** after a rename/remove:
+  classify the failing model's domain. If that domain is already completed
+  (earlier in execution order), investigate immediately — an earlier commit
+  missed a dependency. If the failing model is in a pending domain, log the
+  failure in the DONE_WITH_CONCERNS report for the current task; the pending
+  domain task will resolve it naturally.
+- **Coverage-gap exceptions** (warn-severity `relationships` tests) are allowed
+  but must reference a tracked GitHub issue. Do NOT downgrade to warn silently.
+- **Group 3 deferrals** are tracked in #3631. Leaving their inventory rows
+  unapplied is the correct behavior — the plan explicitly skips them.
