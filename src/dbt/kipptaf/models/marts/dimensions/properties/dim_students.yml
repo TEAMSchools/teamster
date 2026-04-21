@@ -23,6 +23,8 @@ models:
           student_number for NJ regions (and Focus local ID for Miami once Focus
           lands). Maps to Ed-Fi District / CEDS District-assigned number from
           KIPP-as-LEA's perspective.
+        data_tests:
+          - not_null
 
         config:
           meta:
@@ -32,7 +34,7 @@ models:
             contains_pii: true
             column_role: primary_key
       - name: district_student_identifier
-        data_type: int64
+        data_type: string
         description: >-
           Host public school district's identifier for the student. Populated
           for Miami (MDCPS student ID) and null for NJ regions where the host
