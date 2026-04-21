@@ -26,27 +26,25 @@ select
 
     cast(tm.solved_at as date) as solved_date_key,
 
-    t.id as ticket_id,
-
     t.status as ticket_status,
     t.subject as ticket_subject,
 
-    cf.category,
+    cf.category as ticket_category,
     cf.tech_tier,
     cf.location as ticket_location,
 
     tm.replies as reply_count,
     tm.full_resolution_time_in_minutes_business as business_minutes_to_solve,
-    tm.reply_time_in_minutes_business,
+    tm.reply_time_in_minutes_business as business_minutes_to_first_reply,
 
-    tm.assignee_stations,
-    tm.group_stations,
+    tm.assignee_stations as agent_reassignment_count,
+    tm.group_stations as group_reassignment_count,
 
-    cast(t.created_at as date) as created_date,
-    t.created_at,
-    tm.initially_assigned_at,
-    tm.assignee_updated_at,
-    tm.solved_at,
+    cast(t.created_at as date) as ticket_created_date,
+    t.created_at as created_timestamp,
+    tm.initially_assigned_at as initially_assigned_timestamp,
+    tm.assignee_updated_at as assignee_updated_timestamp,
+    tm.solved_at as solved_timestamp,
 
     concat('https://teamschools.zendesk.com/agent/tickets/', t.id) as ticket_url,
 from {{ source("zendesk", "tickets") }} as t
