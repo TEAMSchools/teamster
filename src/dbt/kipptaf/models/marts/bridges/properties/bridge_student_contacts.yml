@@ -26,16 +26,6 @@ models:
         data_tests:
           - not_null
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          Student Number assigned by the school. Indexed.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_number
       - name: relationship_type
         data_type: string
         description: >-

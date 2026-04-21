@@ -41,18 +41,6 @@ models:
           cc_abs_termid does not match any reporting term powerschool_term_id
           for the section's school and region.
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          Student Number assigned by the school. Indexed.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_number
-            contains_pii: true
-            column_role: primary_key
       - name: academic_year
         data_type: int64
         description: >-
@@ -60,13 +48,13 @@ models:
           calendar year in which the academic year begins (e.g., 2025 for the
           2025-26 school year).
 
-      - name: date_enrolled
+      - name: entry_date
         data_type: date
         description: >-
           Date the student enrolled in this section (cc_dateenrolled from
           PowerSchool).
 
-      - name: date_left
+      - name: exit_date
         data_type: date
         description: >-
           Date the student left this section (cc_dateleft from PowerSchool).

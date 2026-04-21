@@ -12,12 +12,14 @@ with
 select
     {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
 
-    student_number as local_student_identifier,
+    student_number as lea_student_identifier,
+    secondary_state_studentnumber as district_student_identifier,
     state_studentnumber as state_student_identifier,
+    salesforce_id as salesforce_contact_id,
     student_name,
     dob as birth_date,
-    gender,
-    lunch_status,
+    gender as gender_identity,
+    lunch_status as meal_eligibility_status,
 
     gifted_and_talented is not null as is_gifted,
 
@@ -42,5 +44,5 @@ select
         when ethnicity = 'N'
         then 'Not Hispanic or Latino'
         else 'Not Listed'
-    end as ethnicity,
+    end as race,
 from deduplicated

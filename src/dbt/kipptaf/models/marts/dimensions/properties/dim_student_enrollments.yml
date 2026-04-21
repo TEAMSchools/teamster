@@ -83,12 +83,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__studentcorefields
             source_column: graduation_year
-      - name: school_level
-        data_type: string
-        description: >-
-          School level abbreviation for the enrolling school (ES, MS, HS).
-
-      - name: enroll_status
+      - name: enrollment_status
         data_type: int64
         description: >-
           The enrollment status of the student.

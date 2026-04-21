@@ -45,10 +45,9 @@ select
         )
     }} as term_key,
 
-    cc.students_student_number as student_number,
     cc.cc_academic_year as academic_year,
-    cc.cc_dateenrolled as date_enrolled,
-    cc.cc_dateleft as date_left,
+    cc.cc_dateenrolled as entry_date,
+    cc.cc_dateleft as exit_date,
     cc.is_dropped_section,
     cc.is_dropped_course,
 

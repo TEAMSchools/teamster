@@ -14,10 +14,15 @@ models:
           - unique
           - not_null
 
-      - name: local_student_identifier
+      - name: lea_student_identifier
         data_type: int64
         description: >-
-          Student Number assigned by the school. Indexed.
+          KIPP's own SIS identifier for the student. KIPP is a charter-LEA
+          operating within a host public school district; this column is the
+          identifier issued by KIPP as the LEA. Sourced from PowerSchool
+          student_number for NJ regions (and Focus local ID for Miami once Focus
+          lands). Maps to Ed-Fi District / CEDS District-assigned number from
+          KIPP-as-LEA's perspective.
 
         config:
           meta:
@@ -26,6 +31,15 @@ models:
             source_column: student_number
             contains_pii: true
             column_role: primary_key
+      - name: district_student_identifier
+        data_type: int64
+        description: >-
+          Host public school district's identifier for the student. Populated
+          for Miami (MDCPS student ID) and null for NJ regions where the host
+          district's ID is not surfaced upstream. Generalizes the previously
+          Miami-only mdcps_student_identifier. Ed-Fi District / CEDS
+          District-assigned number from the host district's perspective.
+
       - name: state_student_identifier
         data_type: string
         description: >-
@@ -38,6 +52,13 @@ models:
             source_model: stg_powerschool__students
             source_column: state_studentnumber
             contains_pii: true
+      - name: salesforce_contact_id
+        data_type: string
+        description: >-
+          KIPPADB (Salesforce) contact identifier for the student. Populated
+          where the student has a KIPPADB record; null otherwise. Used across
+          KIPPADB consumer tools (Overgrad, alumni tracking, etc.).
+
       - name: student_name
         data_type: string
         description: >-
@@ -60,20 +81,21 @@ models:
             source_model: stg_powerschool__students
             source_column: dob
             contains_pii: true
-      - name: gender
+      - name: gender_identity
         data_type: string
         description: >-
-          M=Male F=Female. Indexed.
+          Self-identified gender for the student (e.g., M=Male F=Female).
+          Matches Ed-Fi's genderIdentity attribute (modern inclusive naming).
 
         config:
           meta:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: gender
-      - name: lunch_status
+      - name: meal_eligibility_status
         data_type: string
         description: >-
-          Meal eligibility status (e.g., Free, Reduced, Paid).
+          NSLP meal eligibility status (e.g., Free, Reduced, Paid).
 
       - name: is_gifted
         data_type: boolean
@@ -92,11 +114,14 @@ models:
         description: >-
           TRUE if the student's iep_status is 'With IEP'.
 
-      - name: ethnicity
+      - name: race
         data_type: string
         description: >-
-          Heritage background of a student. The codes assigned here are stored
-          in the Gen Table [6]Cat=Ethnicity. These are set in school setup.
+          Racial category for the student. Decoded from PowerSchool ethnicity
+          code to the full racial category label (e.g., Black/African American,
+          Hispanic or Latino, Two or More Races, White). Cross-model consistency
+          with dim_staff.race; Hispanic vs. non-Hispanic ethnicity lives
+          separately as the is_hispanic boolean.
         config:
           meta:
             source_system: PowerSchool

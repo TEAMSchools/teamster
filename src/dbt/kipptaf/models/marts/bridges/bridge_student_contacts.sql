@@ -23,7 +23,6 @@ select
     {{ dbt_utils.generate_surrogate_key(["c._dbt_source_relation", "c.personid"]) }}
     as student_contact_person_key,
 
-    s.student_number,
     c.relationship_type,
     c.contactpriorityorder as contact_priority,
 
