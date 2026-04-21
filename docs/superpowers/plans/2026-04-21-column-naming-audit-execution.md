@@ -222,89 +222,114 @@ investigation path.
 
 ---
 
-### Task 2: Deduplicate `int_people__location_crosswalk` (#3633)
+### Task 2: Split location crosswalk grains — new `stg_people__locations` (#3633)
+
+**Background:** Investigation found that `int_people__location_crosswalk`
+produces 1 row per **alias** (alternate spelling of `location_name`) — the
+"duplicates" flagged in #3633 are by design, not a bug. The source Google Sheet
+has multiple rows per logical school (e.g., PS `73257` has 15 aliases for "KIPP
+Life Academy"). Two consumers actively rely on the alias grain —
+`fct_staff_observations` joins on `gro.school_name`, and
+`int_topline__seats_staffed_weekly_aggregations` joins on `st.adp_location` — so
+in-place dedup would silently drop matches.
+
+**Approach:** split the data into two models by grain, keep the existing alias
+model for alias-seeking consumers, and create a new staging model at
+canonical-logical-school grain for the consumers that only want 1 row per
+school. The new model reads from `src_google_sheets__people__location_crosswalk`
+directly (skipping the existing `stg_google_sheets__people__location_crosswalk`)
+so a future source refactor with cleaner grain can reuse the same model name.
 
 **Files:**
 
+- Create: `src/dbt/kipptaf/models/people/staging/stg_people__locations.sql`
+- Create:
+  `src/dbt/kipptaf/models/people/staging/properties/stg_people__locations.yml`
 - Modify:
-  `src/dbt/kipptaf/models/people/intermediate/int_people__location_crosswalk.sql`
-  (verify exact path)
-- Modify: its properties YAML
-- Modify (8 files, remove DISTINCT workarounds): `dim_locations.sql`,
-  `dim_school_calendars.sql`, `dim_student_enrollments.sql`,
-  `dim_course_sections.sql`, `dim_assessment_targets.sql`,
-  `fct_student_attendance_daily.sql`,
-  `fct_student_attendance_interventions.sql`, `fct_behavioral_incidents.sql`
+  `src/dbt/kipptaf/models/people/intermediate/properties/int_people__location_crosswalk.yml`
+  (add `unique` test on `location_name` documenting the alias grain)
+- Modify 7 canonical-seeking consumers to use `stg_people__locations`:
+  `dim_locations.sql`, `dim_school_calendars.sql`,
+  `dim_student_enrollments.sql`, `dim_course_sections.sql`,
+  `dim_assessment_targets.sql`, `fct_student_attendance_daily.sql`,
+  `fct_student_attendance_interventions.sql`
 
-- [ ] **Step 1: Investigate root cause**
+  (Earlier plan drafts listed `fct_behavioral_incidents.sql` in this set; it
+  does not actually consume `int_people__location_crosswalk` and is
+  intentionally excluded.)
 
-Read `int_people__location_crosswalk.sql`. Per `src/dbt/kipptaf/CLAUDE.md`:
-"int_people\_\_location_crosswalk is NOT a union model — it has no
-\_dbt_source_relation ... produces duplicate rows per
-(location_powerschool_school_id, location_dagster_code_location)." Determine
-whether dedup belongs upstream (fixing an unintentional join fan-out) or at the
-crosswalk itself.
+- Do NOT modify the 3 alias-seeking consumers — they continue using
+  `int_people__location_crosswalk`: `fct_staff_observations.sql`,
+  `int_people__staff_roster_history.sql`,
+  `int_topline__seats_staffed_weekly_aggregations.sql`
 
-- [ ] **Step 2: Confirm duplicate pattern**
+- [ ] **Step 1: Rediscover the consumer set.** Use
+      `grep -rn "int_people__location_crosswalk" src/dbt/kipptaf/models/` plus
+      `grep -rn "#3633" src/dbt/kipptaf/models/`. For each hit, classify it as
+      canonical-seeking (had a `SELECT DISTINCT` + `-- TODO: #3633`) or
+      alias-seeking (joins on `location_name` as an alternate spelling).
 
-```sql
-select location_powerschool_school_id, location_dagster_code_location, count(*) as n
-from `teamster-332318.kipptaf_people.int_people__location_crosswalk`
-group by 1, 2 having count(*) > 1
-order by n desc
-```
+- [ ] **Step 2: Create `stg_people__locations.sql`.** Read from
+      `{{ source("google_sheets", "src_google_sheets__people__location_crosswalk") }}`;
+      left-join `stg_google_sheets__people__campus_crosswalk` (or the raw
+      `src_google_sheets__people__campus_crosswalk` source) to populate
+      `campus_name`; apply the column renames from the existing
+      `stg_google_sheets__people__location_crosswalk.sql` to expose canonical
+      names (`location_name` from `clean_name`, `powerschool_school_id`, etc.);
+      dedup via `dbt_utils.deduplicate` macro with
+      `partition_by="powerschool_school_id, dagster_code_location, location_name, is_pathways"`
+      and an `order_by` that is deterministic (e.g. `name asc`). Document the
+      `order_by` choice in a SQL comment. Expected output: 41 rows.
 
-Capture sample rows to determine which duplicate is canonical.
+- [ ] **Step 3: Create the properties YAML.** Declare 12 columns with
+      `data_type` and `description`; rely on directory-level
+      `+contract.enforced: true` from `dbt_project.yml`; add a
+      `dbt_utils.unique_combination_of_columns` test on the four-column grain
+      key; add `not_null` on the four grain-key columns. List the four grain-key
+      columns first in the YAML (per `src/dbt/CLAUDE.md`: columns with
+      `data_tests:` sort to the top of the `columns:` list).
 
-- [ ] **Step 3: Apply dedup**
+- [ ] **Step 4: Document the alias grain on the existing int model.** Add a
+      `unique` test on `location_name` to `int_people__location_crosswalk.yml`
+      so the alias grain is asserted and self-documenting.
 
-If Step 1 found the fan-out source, fix that. Otherwise, apply
-`dbt_utils.deduplicate` at
-`(location_powerschool_school_id, location_dagster_code_location)` with explicit
-`order_by`:
+- [ ] **Step 5: Reroute the 7 canonical-seeking consumers.** For each file from
+      Step 1's canonical-seeking list: replace the
+      `SELECT DISTINCT ... FROM ref("int_people__location_crosswalk")` CTE with
+      `SELECT ... FROM ref("stg_people__locations")`. Drop the `location_`
+      prefix from join keys and surrogate-key inputs that came from the
+      previously-prefixed intermediate columns (`location_powerschool_school_id`
+      → `powerschool_school_id`, `location_clean_name` → `location_name`,
+      `location_dagster_code_location` → `dagster_code_location`). Preserve
+      per-consumer filters (`not is_pathways`, Whittier exclusion) — do not
+      centralize them in the new staging model. Remove `-- TODO: #3633` comments
+      from these files.
 
-```sql
-{{ dbt_utils.deduplicate(
-    relation="base",
-    partition_by="location_powerschool_school_id, location_dagster_code_location",
-    order_by="<canonical_ordering>"
-) }}
-```
-
-- [ ] **Step 4: Add composite uniqueness test**
-
-```yaml
-data_tests:
-  - dbt_utils.unique_combination_of_columns:
-      arguments:
-        combination_of_columns:
-          - location_powerschool_school_id
-          - location_dagster_code_location
-```
-
-- [ ] **Step 5: Remove `SELECT DISTINCT` workarounds in 8 mart consumers**
-
-For each of the 8 files listed in #3633 (see Files above): find the CTE that
-does `SELECT DISTINCT` from `int_people__location_crosswalk` (and usually has a
-`-- TODO: #3633` comment). Replace with plain `SELECT`, or inline the reference
-directly.
-
-- [ ] **Step 6: Verify**
+- [ ] **Step 6: Verify:**
 
 ```bash
 uv run dbt parse --project-dir src/dbt/kipptaf
 uv run dbt build --project-dir src/dbt/kipptaf \
-    --select int_people__location_crosswalk+ --target defer
+    --select stg_people__locations+ int_people__location_crosswalk --target defer
 ```
 
-Expected: parse succeeds, new composite unique test passes, no duplicate errors
-in the 8 downstream marts.
+Expected: parse clean; `stg_people__locations` materializes 41 rows;
+`unique_combination_of_columns` test on the grain key passes;
+`unique_location_name` on `int_people__location_crosswalk` passes; the 7
+canonical-seeking consumers materialize without duplicate errors.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 7: Update `src/dbt/kipptaf/CLAUDE.md` "Known Upstream Issues"
+      section.** Replace the stale description of
+      `int_people__location_crosswalk` as "duplicate" with the grain split: this
+      model is the alias grain, `stg_people__locations` is the canonical grain.
+      Prevents future Claude sessions from reintroducing `DISTINCT`.
+
+- [ ] **Step 8: Commit:**
 
 ```bash
-git add src/dbt/kipptaf/models/people/intermediate/int_people__location_crosswalk.sql \
-        src/dbt/kipptaf/models/people/intermediate/properties/*.yml \
+git add src/dbt/kipptaf/models/people/staging/stg_people__locations.sql \
+        src/dbt/kipptaf/models/people/staging/properties/stg_people__locations.yml \
+        src/dbt/kipptaf/models/people/intermediate/properties/int_people__location_crosswalk.yml \
         src/dbt/kipptaf/models/marts/dimensions/dim_locations.sql \
         src/dbt/kipptaf/models/marts/dimensions/dim_school_calendars.sql \
         src/dbt/kipptaf/models/marts/dimensions/dim_student_enrollments.sql \
@@ -312,12 +337,22 @@ git add src/dbt/kipptaf/models/people/intermediate/int_people__location_crosswal
         src/dbt/kipptaf/models/marts/dimensions/dim_assessment_targets.sql \
         src/dbt/kipptaf/models/marts/facts/fct_student_attendance_daily.sql \
         src/dbt/kipptaf/models/marts/facts/fct_student_attendance_interventions.sql \
-        src/dbt/kipptaf/models/marts/facts/fct_behavioral_incidents.sql
-git commit -m "fix(dbt): deduplicate int_people__location_crosswalk (#3633)
+        src/dbt/kipptaf/CLAUDE.md
+git commit -m "feat(dbt): add stg_people__locations canonical-grain crosswalk (#3633)
 
-Closes #3633. Adds composite unique test on (location_powerschool_school_id,
-location_dagster_code_location). Removes the SELECT DISTINCT workarounds
-from the 8 mart consumers previously flagged with -- TODO: #3633."
+Closes #3633. int_people__location_crosswalk is 1 row per location alias
+(by design — fct_staff_observations and other consumers join on alternate
+school name spellings). Canonical-seeking consumers want 1 row per logical
+school and worked around the grain with SELECT DISTINCT.
+
+Adds stg_people__locations (41 rows, unique on
+(powerschool_school_id, dagster_code_location, location_name, is_pathways)),
+reading directly from the Google Sheet source so a future source refactor
+with cleaner grain can reuse the same model name. Reroutes 7
+previously-DISTINCT consumers to the new model. Adds a unique test on
+location_name to int_people__location_crosswalk to document the alias grain.
+Updates the kipptaf CLAUDE.md Known Upstream Issues section to reflect the
+new grain split."
 ```
 
 ---
