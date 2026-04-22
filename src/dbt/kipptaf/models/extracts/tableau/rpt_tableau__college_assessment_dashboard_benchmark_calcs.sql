@@ -71,6 +71,14 @@ with
                 scope in ('PSAT10', 'PSAT NMSQT'), 'PSAT10/NMSQT', scope
             ) as aligned_scope,
 
+            row_number() over (
+                partition by
+                    student_number,
+                    if(scope in ('PSAT10', 'PSAT NMSQT'), 'PSAT10/NMSQT', scope),
+                    subject_area
+                order by scale_score desc
+            ) as rn,
+
         from {{ ref("int_assessments__college_assessment") }}
         where
             rn_highest = 1
@@ -81,15 +89,7 @@ with
                 'sat_math_test_score',
                 'sat_reading_test_score'
             )
-        qualify
-            row_number() over (
-                partition by
-                    student_number,
-                    if(scope in ('PSAT10', 'PSAT NMSQT'), 'PSAT10/NMSQT', scope),
-                    subject_area
-                order by scale_score desc
-            )
-            = 1
+        qualify rn = 1
     ),
 
     base as (
