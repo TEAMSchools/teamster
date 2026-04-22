@@ -104,9 +104,9 @@ models:
       - name: enrollment_status
         data_type: string
         description: >-
-          Current enrollment status of the student, decoded from PowerSchool
-          enroll_status. Values: Currently Enrolled, Pre-registered, Inactive,
-          Transferred Out, Graduated, Imported as Historical.
+          Current enrollment status of the student. Values: Currently Enrolled,
+          Pre-registered, Inactive, Transferred Out, Graduated, Imported as
+          Historical.
 
         config:
           meta:
@@ -116,8 +116,7 @@ models:
       - name: is_gifted
         data_type: boolean
         description: >-
-          TRUE if the student has a non-null gifted_and_talented value in
-          PowerSchool, indicating gifted and talented identification.
+          TRUE if the student has a gifted-and-talented identification.
 
       - name: is_ell
         data_type: boolean
