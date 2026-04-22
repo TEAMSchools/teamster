@@ -45,7 +45,16 @@ models:
         data_type: string
         description: >-
           Foreign key to dim_locations. Surrogate key derived from the Location
-          custom field value on the ticket.
+          custom field value on the ticket. Currently fails 100% relationships
+          against dim_locations pending Zendesk-slug → canonical-location
+          crosswalk (#3709).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+              config:
+                severity: warn
 
       - name: created_date_key
         data_type: date
@@ -82,13 +91,6 @@ models:
         description: >-
           Technology tier classification from the Zendesk custom Tech Tier
           field, indicating complexity or routing level.
-
-      - name: location
-        data_type: string
-        description: >-
-          Raw Location value from the Zendesk custom Location field on the
-          ticket. Degenerate text; the surrogate-hashed FK to dim_locations is
-          exposed separately as location_key.
 
       - name: reply_count
         data_type: int64

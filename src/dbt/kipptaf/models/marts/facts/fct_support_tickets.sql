@@ -31,7 +31,6 @@ select
 
     cf.category,
     cf.tech_tier,
-    cf.location,
 
     tm.replies as reply_count,
     tm.full_resolution_time_in_minutes_business as business_minutes_to_solve,
