@@ -38,10 +38,11 @@ models:
                 to: ref('dim_staff')
                 field: staff_key
 
-      - name: date_key
+      - name: creation_date_key
         data_type: date
         description: >-
-          Date the incident was created. FK to dim_dates.
+          FK to dim_dates for the date the incident was created. Matches
+          dim_dates.date_key.
 
       - name: academic_year
         data_type: int64
@@ -102,12 +103,15 @@ models:
         description: >-
           TRUE if the incident is currently active (not archived/closed).
 
-      - name: close_date
+      - name: close_date_key
         data_type: date
         description: >-
-          Date the incident was closed. Null if still open.
+          FK to dim_dates for the date the incident was closed. Matches
+          dim_dates.date_key. Nullable — open incidents have no close date.
 
-      - name: return_date
+      - name: return_date_key
         data_type: date
         description: >-
-          Date the student is expected to return. Null if not applicable.
+          FK to dim_dates for the date the student is expected to return.
+          Matches dim_dates.date_key. Nullable — not all incidents have a return
+          date.

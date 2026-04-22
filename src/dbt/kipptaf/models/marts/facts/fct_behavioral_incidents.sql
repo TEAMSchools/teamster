@@ -35,7 +35,7 @@ select
         cast(null as string)
     ) as referring_staff_key,
 
-    cast(i.create_ts_date as date) as date_key,
+    cast(i.create_ts_date as date) as creation_date_key,
 
     i.create_ts_academic_year as academic_year,
 
@@ -50,8 +50,8 @@ select
     i.is_referral,
     i.is_active,
 
-    cast(i.close_ts_date as date) as close_date,
-    cast(i.return_date_date as date) as return_date,
+    cast(i.close_ts_date as date) as close_date_key,
+    cast(i.return_date_date as date) as return_date_key,
 from {{ ref("int_deanslist__incidents") }} as i
 inner join
     enrollments as enr
