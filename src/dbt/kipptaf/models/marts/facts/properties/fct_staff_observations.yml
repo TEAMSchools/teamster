@@ -121,6 +121,22 @@ models:
               arguments:
                 to: ref('dim_terms')
                 field: term_key
+
+      - name: observed_date_key
+        data_type: date
+        description: >-
+          Local date the observation was conducted. Foreign key to dim_dates.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
       - name: academic_year
         data_type: int64
         description: >-
@@ -144,11 +160,6 @@ models:
         data_type: string
         description: >-
           Free-text observation notes (magic notes or shared notes).
-
-      - name: observed_date
-        data_type: date
-        description: >-
-          Local date the observation was conducted.
 
       - name: observed_timestamp
         data_type: timestamp
