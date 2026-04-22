@@ -109,15 +109,12 @@ regions. Network-wide staff access requires `cube-network-detail`.
 
 ### Layer 1 — Identity resolution (`contextToGroups`)
 
-At request time, two lookups run in parallel, both cached 5 minutes per user:
+At request time, `contextToGroups` calls the Admin Directory API using
+`securityContext.email`, filters the result to `cube-*` groups only, and returns
+the group list. Results are cached 5 minutes per email.
 
-1. **Google Group memberships** — calls Admin Directory API, filters to `cube-*`
-   groups only
-2. **Employee number** — lookup against `dim_staff` by email, used for
-   org-hierarchy filtering on staff cubes
-
-Locally, `CUBE_GROUP_MAP` env var replaces both lookups. The `contextToGroups`
-function is `async`.
+Locally, `CUBE_GROUP_MAP` env var replaces the Directory API call. The
+`contextToGroups` function is `async`.
 
 ### Layer 2 — Row-level filtering (`queryRewrite`)
 
@@ -139,9 +136,11 @@ scope unless the user has `cube-access-staff-all`:
 
 ```sql
 WHERE employee_number IN (
-  SELECT descendant_employee_number
-  FROM kipptaf_marts.dim_staff_hierarchy
-  WHERE ancestor_employee_number = {current_user_employee_number}
+  SELECT h.descendant_employee_number
+  FROM kipptaf_marts.dim_staff_hierarchy h
+  JOIN kipptaf_marts.dim_staff s
+    ON s.employee_number = h.ancestor_employee_number
+  WHERE s.google_email = '{securityContext.email}'
 )
 ```
 
@@ -161,11 +160,53 @@ field list for each cube is enumerated during model YAML implementation.
 Users without `cube-access-student-data` have all student-domain cubes excluded
 from their query context entirely.
 
+## Authentication and Identity Flow
+
+Cube never handles Google OAuth directly. User identity enters Cube's
+`securityContext` via a signed JWT — the downstream tool is responsible for
+minting it using the shared `CUBEJS_API_SECRET`. The flow differs by tool type.
+
+### REST/GraphQL API path (Streamlit and future integrations)
+
+1. User logs into the app via Google OAuth
+2. App backend receives the user's Google identity
+3. App backend signs a Cube JWT using `CUBEJS_API_SECRET` with
+   `{ "email": "user@apps.teamschools.org" }` in the payload
+4. App includes the JWT in the `Authorization` header on every Cube API request
+5. Cube decodes the JWT — `securityContext.email` is available to
+   `contextToGroups` and `queryRewrite` for the duration of the request
+
+### SQL API path (Superset)
+
+Superset connects to Cube via the PostgreSQL wire protocol as a shared service
+account rather than as individual users. Per-user security context is
+established via SQL user switching on each query.
+
+1. Superset connects to Cube's SQL API as `cube-superset-service` (credentials
+   set via `CUBEJS_SQL_SUPER_USER`)
+2. For each end-user query, Superset issues
+   `SET ROLE 'user@apps.teamschools.org'`
+3. Cube calls
+   `canSwitchSqlUser('cube-superset-service', 'user@apps.teamschools.org')` —
+   passes only if `current_user === 'cube-superset-service'` and
+   `new_user.endsWith('@apps.teamschools.org')`; any other caller is blocked
+4. The switched user's email becomes `securityContext.email` for that query
+5. `contextToGroups` and `queryRewrite` run against the end-user's identity, not
+   the service account's — every row and column filter applies as if the user
+   queried Cube directly
+
+### What `securityContext.email` drives
+
+| Hook              | How it uses email                                                       |
+| ----------------- | ----------------------------------------------------------------------- |
+| `contextToGroups` | Key for Google Directory API call; key for 5-minute in-memory cache     |
+| `queryRewrite`    | Inserted into org-hierarchy subquery via `JOIN kipptaf_marts.dim_staff` |
+
 ## `cube.js` Configuration
 
 Four responsibilities:
 
-**1. dbt Cloud metadata integration**
+### 1. dbt Cloud metadata integration
 
 Cube fetches the compiled manifest from dbt Cloud project `211862` at startup
 using `DBT_CLOUD_TOKEN`. Column descriptions, model descriptions, and types
@@ -178,28 +219,34 @@ you are only editing cube YAML files, the existing manifest stays valid. Cube
 will query BigQuery correctly without an up-to-date manifest — you lose
 auto-populated column descriptions but nothing else.
 
-**2. `contextToGroups` — identity resolution**
+### 2. `contextToGroups` — identity resolution
 
 Async function. Checks `CUBE_GROUP_MAP` first (local dev fallback). In Cloud
-deployments, runs in parallel:
+deployments, calls the Admin Directory API using `securityContext.email`,
+filters to `cube-*` groups, and caches the result 5 minutes per email.
 
-- Admin Directory API call filtered to `cube-*` groups, 5-minute in-memory cache
-  per email
-- `dim_staff` employee number lookup by email
-
-**3. `queryRewrite` — row-level security**
+### 3. `queryRewrite` — row-level security
 
 Parses `cube-*` groups from the resolved context. Applies location and
 org-hierarchy filters as described in the security model. Default deny if no
 scope group matches. Users without `cube-access-student-data` have all
 student-domain cubes removed from their query context before evaluation.
 
-**4. `canSwitchSqlUser: () => true`**
+### 4. `canSwitchSqlUser`
 
 Enables per-user SQL API connections so each user's session carries their own
 security context rather than a shared service account. Required for Superset
 impersonation (downstream integration, follow-up spec) — included now since
 removing it later would be a breaking change.
+
+Scoped to the Superset service account only — any other SQL API user is blocked
+from switching:
+
+```javascript
+canSwitchSqlUser: (current_user, new_user) =>
+  current_user === "cube-superset-service" &&
+  new_user.endsWith("@apps.teamschools.org");
+```
 
 ## New dbt Model: `dim_staff_hierarchy`
 
@@ -253,8 +300,8 @@ Performed in the Cube Cloud UI:
 configured in the devcontainer. No service account key needed locally.
 
 **Group simulation** — set `CUBE_GROUP_MAP` in your local `.env` to a JSON
-string mapping your email to a list of `cube-*` groups. This bypasses both the
-Directory API call and the `dim_staff` employee number lookup.
+string mapping your email to a list of `cube-*` groups. This bypasses the
+Directory API call.
 
 **Warning:** do not use the Cube Playground's built-in Models tab. In dev mode,
 Cube treats it as a live editor and overwrites YAML files. Edit in VS Code only.
@@ -273,6 +320,7 @@ Cube treats it as a live editor and overwrites YAML files. Edit in VS Code only.
 | `DBT_CLOUD_TOKEN`               | omit (uses local manifest)         | dbt Cloud service token, read-only             |
 | `DBT_CLOUD_PROJECT_ID`          | omit                               | `211862`                                       |
 | `GOOGLE_DIRECTORY_SA_KEY`       | omit                               | SA with domain-wide delegation, base64-encoded |
+| `CUBEJS_SQL_SUPER_USER`         | omit                               | `cube-superset-service`                        |
 
 ## Google Group Creation
 
