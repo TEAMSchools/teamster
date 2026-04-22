@@ -314,8 +314,8 @@ select
     ss.staff_status_key,
 
     a.academic_year,
-    a.attrition_type,
-    a.attrition_cutoff_date,
+    a.attrition_type as `type`,
+    a.attrition_cutoff_date as cutoff_date,
     a.is_attrition,
     a.termination_reason,
     a.termination_effective_date,

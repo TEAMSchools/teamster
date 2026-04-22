@@ -16,7 +16,8 @@ models:
           - unique
           - not_null
 
-      - name: rubric_name
+      - name: name
+        quote: true
         data_type: string
         description: >-
           Display name of the rubric in SchoolMint Grow.

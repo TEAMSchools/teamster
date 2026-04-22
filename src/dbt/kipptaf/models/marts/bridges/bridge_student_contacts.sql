@@ -24,7 +24,7 @@ select
     as student_contact_person_key,
 
     c.relationship_type,
-    c.contactpriorityorder as contact_priority,
+    c.contactpriorityorder as priority,
 
     c.isemergency = 1 as is_emergency,
     c.schoolpickupflg = 1 as is_pickup,

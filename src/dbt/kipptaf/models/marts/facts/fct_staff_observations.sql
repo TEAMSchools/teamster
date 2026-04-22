@@ -88,9 +88,9 @@ select
     ) as staff_observation_rubric_key,
 
     academic_year,
-    observation_score,
+    observation_score as score,
     overall_tier,
-    observation_notes,
+    observation_notes as notes,
 
     observed_at_date as observed_date,
     observed_at_timestamp as observed_timestamp,

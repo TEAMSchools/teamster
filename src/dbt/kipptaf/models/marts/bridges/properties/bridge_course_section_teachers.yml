@@ -23,7 +23,7 @@ models:
         data_tests:
           - not_null
 
-      - name: teacher_role
+      - name: role
         data_type: string
         description: >-
           User configurable name uniquely identifying the role to the user
@@ -60,5 +60,5 @@ models:
             combination_of_columns:
               - course_section_key
               - staff_key
-              - teacher_role
+              - role
               - effective_start_date

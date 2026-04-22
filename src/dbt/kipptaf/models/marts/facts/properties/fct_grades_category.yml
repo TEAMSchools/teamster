@@ -37,12 +37,14 @@ models:
         description: >-
           KIPP academic year (July start) in which this category grade falls.
 
-      - name: category_type
+      - name: type
+        quote: true
         data_type: string
         description: >-
           Type code distinguishing quarter grades (Q) from exam grades (E).
 
-      - name: category_order
+      - name: order
+        quote: true
         data_type: string
         description: >-
           Numeric ordering of the category within its type (e.g., 1 for Q1 or

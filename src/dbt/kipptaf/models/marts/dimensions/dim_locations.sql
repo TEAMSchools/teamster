@@ -7,7 +7,7 @@ select
         cast(null as string)
     ) as region_key,
 
-    location_name,
+    location_name as `name`,
     grade_band,
     campus_name as campus,
     is_campus,

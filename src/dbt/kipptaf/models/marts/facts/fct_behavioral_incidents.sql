@@ -39,12 +39,12 @@ select
 
     i.create_ts_academic_year as academic_year,
 
-    i.category as incident_category,
+    i.category,
     i.category_tier,
     i.infraction as infraction_description,
-    i.location as incident_location,
-    i.context as incident_context,
-    i.status as incident_status,
+    i.location,
+    i.context,
+    i.status,
     i.referral_tier,
 
     i.is_referral,

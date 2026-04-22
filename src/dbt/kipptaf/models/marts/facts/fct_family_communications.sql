@@ -38,16 +38,16 @@ select
 
     c.academic_year,
 
-    c.call_type as communication_method,
+    c.call_type as method,
     c.topic,
     c.reason,
-    c.call_status as communication_outcome,
+    c.call_status as outcome,
     c.response as notes,
 
     c.is_attendance_call,
     c.is_truancy_call,
 
-    cast(c.call_date_time as timestamp) as communication_timestamp,
+    cast(c.call_date_time as timestamp) as `timestamp`,
 from {{ ref("int_deanslist__comm_log") }} as c
 inner join
     enrollments as enr

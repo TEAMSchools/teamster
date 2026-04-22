@@ -62,10 +62,23 @@ Applied to every column in every mart model during audit:
    traversing an FK to a dimension is removed — Cube handles join traversal.
    This includes natural keys that duplicate a surrogate FK and date columns
    that duplicate a date-key FK.
+10. **Entity qualification.** Qualify a descriptive column with the model's
+    entity prefix (`student_`, `ticket_`, `term_`, etc.) **only** when removing
+    the prefix would create a real ambiguity for a downstream consumer — e.g.
+    `student_name` disambiguates from staff / contact names when joining across
+    marts. Otherwise, let the model name provide the context; default to
+    unqualified. Applies to descriptive attributes and degenerate dimensions.
+    Primary keys (`<entity>_key`) and foreign keys (`<target>_key` /
+    `<role>_<target>_key`) are governed by their own patterns and are not
+    affected by R10. Added after the initial audit on review feedback that the
+    qualifier question was never in R1–R9 scope, so any existing consistency was
+    accidental. See the R10 sweep applied in the review follow-up commit.
 
 Degenerate-dimension text columns (e.g., `incident_type`, `consequence_type`,
 `assignment_type`) drop `_code` / `_name` suffixes unless a code AND a human
-name coexist in the same table — in which case both suffixes stay.
+name coexist in the same table — in which case both suffixes stay. Under R10,
+such code+name pairs also keep their entity prefix so both columns follow the
+same shape within the pair.
 
 ### Acronym allow-list
 
@@ -401,7 +414,7 @@ Valid `action` values: `keep`, `rename`, `remove`, `add`.
 
 Valid `review_status` values: `not_reviewed`, `approved`, `needs_discussion`.
 
-Valid `rule_ref` values: `R1`–`R8` (rubric rules), `structural` (new column),
+Valid `rule_ref` values: `R1`–`R10` (rubric rules), `structural` (new column),
 `plumbing` (removal), `exception` (specific-use jargon exception),
 `acronym_allowlist` (acronym preserved via allow-list).
 

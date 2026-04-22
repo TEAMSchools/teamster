@@ -52,30 +52,30 @@ models:
           Foreign key to dim_dates for the date the application entered the New
           stage. Matches dim_dates.date_key.
 
-      - name: application_state
+      - name: state
         data_type: string
         description: >-
           Current high-level application state (New, Lead, In Review, Interview,
           Offered, Hired, Rejected, Withdrawn).
 
-      - name: application_reason_for_rejection
+      - name: reason_for_rejection
         data_type: string
         description:
           Reason code for why the application was rejected, if applicable.
 
-      - name: application_reason_for_withdrawal
+      - name: reason_for_withdrawal
         data_type: string
         description: Reason code for why the candidate withdrew, if applicable.
 
-      - name: application_status_before_rejection
+      - name: status_before_rejection
         data_type: string
         description: The application status immediately before rejection.
 
-      - name: application_status_before_withdrawal
+      - name: status_before_withdrawal
         data_type: string
         description: The application status immediately before withdrawal.
 
-      - name: application_source
+      - name: source
         data_type: string
         description: Application-level source channel.
 
@@ -230,7 +230,7 @@ models:
         description:
           Number of days spent in the Interview — Phone Screen Complete status.
 
-      - name: application_status_interview_performance_task_timestamp
+      - name: status_interview_performance_task_timestamp
         data_type: timestamp
         description: >-
           Timestamp the application entered the Interview — Performance Task
@@ -240,6 +240,6 @@ models:
         data_type: string
         description: Score assigned during the phone interview.
 
-      - name: application_url
+      - name: url
         data_type: string
         description: Direct URL to the application in SmartRecruiters.

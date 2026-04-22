@@ -206,13 +206,11 @@ select
     ia.test_date as test_date_key,
 
     ia.academic_year,
-    ia.title as assessment_title,
-    ia.scope as assessment_category,
     ia.scale_score,
     ia.percent_correct,
     ia.proficiency_level,
     ia.is_mastery,
-    ia.score_source as score_provider,
+    ia.score_source as provider,
 from internal_assessments as ia
 
 union all
@@ -255,13 +253,11 @@ select
     su.test_date as test_date_key,
 
     su.academic_year,
-    su.title as assessment_title,
-    su.discipline as assessment_category,
     su.scale_score,
     su.percent_correct,
     su.performance_band as proficiency_level,
 
     su.is_proficient as is_mastery,
 
-    su.score_source as score_provider,
+    su.score_source as provider,
 from state_union as su

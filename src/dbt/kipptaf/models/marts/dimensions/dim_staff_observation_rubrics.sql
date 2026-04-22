@@ -3,7 +3,7 @@ with
     rubric_rows as (
         select
             rubric_id,
-            `name` as rubric_name,
+            `name`,
             scale_min,
             scale_max,
             is_private,
@@ -29,7 +29,7 @@ select
     {{ dbt_utils.generate_surrogate_key(["rubric_id"]) }}
     as staff_observation_rubric_key,
 
-    rubric_name,
+    `name`,
     scale_min,
     scale_max,
     is_private,

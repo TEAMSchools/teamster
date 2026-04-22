@@ -7,7 +7,7 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["sr.employee_number"]) }} as staff_key,
 
-    r.name as teacher_role,
+    r.name as `role`,
 
     cast(st.start_date as date) as effective_start_date,
     cast(st.end_date as date) as effective_end_date,

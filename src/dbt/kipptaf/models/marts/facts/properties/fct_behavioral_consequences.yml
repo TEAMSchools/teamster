@@ -44,7 +44,8 @@ models:
             source_system: DeansList
             source_model: int_deanslist__incidents__penalties
             source_column: end_date
-      - name: consequence_type
+      - name: type
+        quote: true
         data_type: string
         description: >-
           Name of the consequence/penalty assigned (e.g., Out of School

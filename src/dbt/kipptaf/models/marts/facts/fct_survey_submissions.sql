@@ -306,7 +306,7 @@ select
 
     academic_year,
 
-    date_submitted as submission_timestamp,
+    date_submitted as `timestamp`,
 from combined_staff
 
 union all
@@ -343,7 +343,7 @@ select
 
     academic_year,
 
-    date_submitted as submission_timestamp,
+    date_submitted as `timestamp`,
 from combined_student
 
 union all
@@ -366,5 +366,5 @@ select
 
     academic_year,
 
-    date_submitted as submission_timestamp,
+    date_submitted as `timestamp`,
 from combined_family

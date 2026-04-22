@@ -57,7 +57,8 @@ models:
         description: >-
           KIPP academic year (July start) in which this assignment falls.
 
-      - name: assignment_name
+      - name: name
+        quote: true
         data_type: string
         description: >-
           Name of the assignment as entered in the PowerSchool gradebook.

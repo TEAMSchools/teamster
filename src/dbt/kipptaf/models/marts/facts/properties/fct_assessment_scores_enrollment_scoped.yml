@@ -36,18 +36,6 @@ models:
         description: >-
           Academic year the assessment was administered.
 
-      - name: assessment_title
-        data_type: string
-        description: >-
-          Display name of the assessment.
-
-      - name: assessment_category
-        data_type: string
-        description: >-
-          Assessment category based on format and content (Ed-Fi
-          assessment_category_descriptor). Examples: CMA, CGI for internal;
-          NJSLA, FAST for state.
-
       - name: scale_score
         data_type: numeric
         description: >-
@@ -71,7 +59,7 @@ models:
           TRUE if the student met the mastery or proficiency threshold for this
           assessment.
 
-      - name: score_provider
+      - name: provider
         data_type: string
         description: >-
           Source provider: internal, state_nj, or state_fl.

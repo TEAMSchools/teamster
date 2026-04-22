@@ -3,25 +3,25 @@ models:
     description: >-
       Assessment definition dimension. One row per unique assessment definition.
       Covers internal Illuminate assessments, NJ and FL state assessments, and
-      college-entrance assessments (SAT, ACT, AP). assessment_scope indicates
-      whether scores are linked at the enrollment level or student level.
+      college-entrance assessments (SAT, ACT, AP). scope indicates whether
+      scores are linked at the enrollment level or student level.
     columns:
       - name: assessment_key
         data_type: string
         description: >-
-          Surrogate key derived from assessment_type, title, subject_area,
-          scope, module_code, and grade_level_tested. Primary key.
+          Surrogate key derived from type, title, subject_area, category,
+          module_code, and grade_level_tested. Primary key.
         data_tests:
           - unique
           - not_null
 
-      - name: assessment_type
+      - name: type
         data_type: string
         description: >-
           Source system category: illuminate (internal KIPP), state (NJSLA,
           FAST, NJGPA), or college (SAT, ACT, PSAT, AP).
 
-      - name: assessment_title
+      - name: title
         data_type: string
         description: >-
           Display name of the assessment (Ed-Fi
@@ -33,7 +33,7 @@ models:
           Subject tested (e.g., Mathematics, English Language Arts, Reading,
           Science, Composite). Ed-Fi academic_subject_descriptor.
 
-      - name: assessment_category
+      - name: category
         data_type: string
         description: >-
           Assessment category based on format and content (Ed-Fi
@@ -64,7 +64,7 @@ models:
           TRUE for KIPP-created internal assessments administered via
           Illuminate. FALSE for external state and college assessments.
 
-      - name: assessment_scope
+      - name: scope
         data_type: string
         description: >-
           Determines how scores link to students: enrollment (scores are tied to

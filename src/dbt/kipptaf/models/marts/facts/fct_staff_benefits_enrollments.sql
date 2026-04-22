@@ -29,7 +29,7 @@ select
     plan_name,
     coverage_level,
 
-    enrollment_start_date,
-    enrollment_end_date,
+    enrollment_start_date as start_date,
+    enrollment_end_date as end_date,
 from deduped
 where employee_number is not null

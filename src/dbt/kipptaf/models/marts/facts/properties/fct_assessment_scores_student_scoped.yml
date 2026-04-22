@@ -36,7 +36,8 @@ models:
         description: >-
           Academic year the assessment was administered.
 
-      - name: score_type
+      - name: type
+        quote: true
         data_type: string
         description: >-
           Specific score variant (e.g., act_composite, sat_total_score,
@@ -58,16 +59,17 @@ models:
         description: >-
           Official or Practice.
 
-      - name: score_rank
+      - name: rank
+        quote: true
         data_type: int64
         description: >-
-          Rank by highest score within student x score_type (college) or student
-          x AP course (AP). 1 = best score.
+          Rank by highest score within student x type (college) or student x AP
+          course (AP). 1 = best score.
 
       - name: max_scale_score
         data_type: numeric
         description: >-
-          Highest scale score for this student x score_type across all
+          Highest scale score for this student x type across all
           administrations. Null for AP.
 
       - name: superscore
@@ -87,7 +89,7 @@ models:
           Proficiency classification. For AP: Qualified (score >= 3) or Not
           Qualified. Null for college-entrance assessments.
 
-      - name: score_provider
+      - name: provider
         data_type: string
         description: >-
           Source provider: college (SAT/ACT/PSAT) or ap.

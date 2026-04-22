@@ -12,8 +12,8 @@ select
     academic_year,
     recruitment_group,
     adp_dept as home_department_name,
-    adp_title as position_title,
-    staffing_status,
+    adp_title as title,
+    staffing_status as status,
     status_detail,
     mid_year_hire as is_mid_year_hire,
 

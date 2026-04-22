@@ -17,11 +17,11 @@ models:
           - unique
           - not_null
 
-      - name: contact_name
+      - name: full_name
         data_type: string
         description: >-
           Full name of the contact person (first + last, trimmed) as stored in
-          PowerSchool.
+          PowerSchool. Matches dim_staff.full_name and dim_students.full_name.
 
       - name: phone
         data_type: string

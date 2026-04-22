@@ -31,7 +31,7 @@ models:
         data_tests:
           - not_null
 
-      - name: question_shortname
+      - name: shortname
         data_type: string
         description: >-
           Abbreviated identifier for the question within this survey context

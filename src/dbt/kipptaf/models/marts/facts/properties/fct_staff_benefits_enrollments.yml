@@ -47,13 +47,13 @@ models:
           Degenerate dimension. The tier of coverage selected (e.g., Employee
           Only, Employee + Spouse, Family).
 
-      - name: enrollment_start_date
+      - name: start_date
         data_type: date
         description: >-
           Date key (role-playing to dim_dates) for the start of the enrollment
           period.
 
-      - name: enrollment_end_date
+      - name: end_date
         data_type: date
         description: >-
           Date key (role-playing to dim_dates) for the end of the enrollment

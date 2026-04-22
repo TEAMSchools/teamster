@@ -35,6 +35,6 @@ select
     {{ dbt_utils.generate_surrogate_key(["question_shortname"]) }}
     as survey_question_key,
 
-    question_shortname,
+    question_shortname as shortname,
     is_required,
 from all_pairs

@@ -62,8 +62,6 @@ select
 
     sc.academic_year,
     sc.administered_at as administered_date,
-    sc.title as assessment_title,
-    sc.scope as assessment_category,
     sc.is_internal_assessment,
 from scaffold as sc
 left join

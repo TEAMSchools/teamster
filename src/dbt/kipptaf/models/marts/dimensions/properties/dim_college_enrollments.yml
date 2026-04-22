@@ -45,7 +45,7 @@ models:
           college combination. FK to dim_dates (role-playing as enrollment end
           date).
 
-      - name: enrollment_status
+      - name: status
         data_type: string
         description: >-
           Latest NSC enrollment status code for this student x college tenure

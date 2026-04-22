@@ -30,7 +30,7 @@ with
 select
     {{ dbt_utils.generate_surrogate_key(["region"]) }} as region_key,
 
-    region as region_name,
+    region as `name`,
     state,
     timezone,
     legal_entity,

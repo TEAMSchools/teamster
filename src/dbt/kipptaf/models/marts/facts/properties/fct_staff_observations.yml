@@ -72,7 +72,7 @@ models:
         description: >-
           Academic year the observation occurred in.
 
-      - name: observation_score
+      - name: score
         data_type: float64
         description: >-
           Overall numeric score for the observation, averaged across measurement
@@ -84,7 +84,7 @@ models:
           Performance tier (1-4) derived from the overall observation score
           using standard thresholds.
 
-      - name: observation_notes
+      - name: notes
         data_type: string
         description: >-
           Free-text observation notes (magic notes or shared notes).

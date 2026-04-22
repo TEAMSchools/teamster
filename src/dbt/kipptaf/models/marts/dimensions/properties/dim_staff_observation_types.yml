@@ -15,13 +15,14 @@ models:
           - unique
           - not_null
 
-      - name: observation_type_name
+      - name: name
+        quote: true
         data_type: string
         description: >-
           Full display name of the observation type (e.g., Walkthrough,
           One-on-One, PM Semester).
 
-      - name: observation_type_abbreviation
+      - name: abbreviation
         data_type: string
         description: >-
           Short code for the observation type (e.g., WT, O3, PMS).

@@ -18,12 +18,12 @@ select
 
     new_date as created_date_key,
 
-    application_state,
-    application_reason_for_rejection,
-    application_reason_for_withdrawal,
-    application_status_before_rejection,
-    application_status_before_withdrawal,
-    source as application_source,
+    application_state as state,
+    application_reason_for_rejection as reason_for_rejection,
+    application_reason_for_withdrawal as reason_for_withdrawal,
+    application_status_before_rejection as status_before_rejection,
+    application_status_before_withdrawal as status_before_withdrawal,
+    source,
     source_type,
     source_subtype,
     subject_preference,
@@ -63,9 +63,9 @@ select
     time_in_application_status_interview_phone_screen_complete,
 
     application_field_phone_interview_score as phone_interview_score,
-    application_url,
+    application_url as url,
 
     safe_cast(
         application_status_interview_performance_task_date as timestamp
-    ) as application_status_interview_performance_task_timestamp,
+    ) as status_interview_performance_task_timestamp,
 from {{ ref("stg_smartrecruiters__applications") }}

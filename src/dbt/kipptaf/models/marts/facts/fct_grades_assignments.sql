@@ -83,7 +83,7 @@ select
 
     asg.academic_year,
 
-    asg.assignment_name,
+    asg.assignment_name as `name`,
     asg.category_name,
     asg.category_code,
     asg.scoretype as score_type,

@@ -38,7 +38,7 @@ models:
           Subject area tested (Ed-Fi academic_subject_descriptor). Sourced from
           the Illuminate subject_area label.
 
-      - name: assessment_grade_level
+      - name: grade_level
         data_type: int64
         description: >-
           The grade level the student was in for this enrollment or if EOY, the

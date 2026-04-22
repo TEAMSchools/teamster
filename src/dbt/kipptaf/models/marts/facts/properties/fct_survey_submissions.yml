@@ -77,7 +77,8 @@ models:
         description: >-
           Academic year this submission falls within.
 
-      - name: submission_timestamp
+      - name: timestamp
+        quote: true
         data_type: timestamp
         description: >-
           UTC timestamp when the survey response was submitted.

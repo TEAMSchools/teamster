@@ -32,7 +32,7 @@ models:
           Relationship between the contact person and the student (e.g., Mother,
           Father, Grandparent) as coded in PowerSchool.
 
-      - name: contact_priority
+      - name: priority
         data_type: int64
         description: >-
           Indicates the preferred order in which the student's contacts will be

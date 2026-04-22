@@ -78,7 +78,7 @@ models:
         description: >-
           ADP department name for this position (adp_dept from seat tracker).
 
-      - name: position_title
+      - name: title
         data_type: string
         description:
           ADP job title for this position (adp_title from seat tracker).
@@ -90,7 +90,7 @@ models:
           plan_status is 'Active' or 'TRUE'; false otherwise (including
           'Inactive' and null).
 
-      - name: staffing_status
+      - name: status
         data_type: string
         description: >-
           Current staffing status of this position version (e.g., Open,
@@ -99,8 +99,8 @@ models:
       - name: status_detail
         data_type: string
         description: >-
-          Detailed status label providing context for staffing_status (e.g., New
-          Hire, Transfer In, Backfill).
+          Detailed status label providing context for status (e.g., New Hire,
+          Transfer In, Backfill).
 
       - name: is_mid_year_hire
         data_type: boolean

@@ -57,8 +57,8 @@ select
 
     ce.cc_academic_year as academic_year,
 
-    cg.storecode_type as category_type,
-    cg.storecode_order as category_order,
+    cg.storecode_type as `type`,
+    cg.storecode_order as `order`,
     cg.reporting_term,
     cg.quarter,
 

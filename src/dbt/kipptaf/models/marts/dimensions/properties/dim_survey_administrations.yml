@@ -41,7 +41,7 @@ models:
         description: >-
           Last date responses are accepted, derived from the term end date.
 
-      - name: administration_status
+      - name: status
         data_type: string
         description: >-
           Current status of the administration window: open (currently accepting

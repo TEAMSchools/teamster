@@ -15,13 +15,15 @@ models:
           - unique
           - not_null
 
-      - name: survey_name
+      - name: name
+        quote: true
         data_type: string
         description: >-
           Display name of the survey instrument (e.g., School Community
           Diagnostic Staff Survey, Manager Survey).
 
-      - name: survey_type
+      - name: type
+        quote: true
         data_type: string
         description: >-
           Classification of the survey instrument (e.g., School Community

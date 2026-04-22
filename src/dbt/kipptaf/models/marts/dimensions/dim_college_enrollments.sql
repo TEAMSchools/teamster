@@ -73,7 +73,7 @@ select
     t.enrollment_start_date as start_date_key,
     t.enrollment_end_date as end_date_key,
 
-    t.latest_enrollment_status as enrollment_status,
+    t.latest_enrollment_status as status,
     t.degree_title,
     t.major,
     t.class_level,

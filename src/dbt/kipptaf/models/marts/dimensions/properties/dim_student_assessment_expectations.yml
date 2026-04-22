@@ -50,17 +50,6 @@ models:
         description: >-
           Scheduled administration date for the assessment.
 
-      - name: assessment_title
-        data_type: string
-        description: >-
-          Display name of the assessment.
-
-      - name: assessment_category
-        data_type: string
-        description: >-
-          Assessment category based on format and content (Ed-Fi
-          assessment_category_descriptor). Examples: CMA, CGI.
-
       - name: is_internal_assessment
         data_type: boolean
         description: >-

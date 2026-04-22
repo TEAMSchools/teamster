@@ -79,18 +79,18 @@ select
     ca.test_date as test_date_key,
 
     ca.academic_year,
-    ca.score_type,
+    ca.score_type as `type`,
     ca.scale_score,
     ca.administration_round,
     ca.test_type,
-    ca.rn_highest as score_rank,
+    ca.rn_highest as rank,
     ca.max_scale_score,
     ca.superscore,
     ca.running_max_scale_score,
 
     cast(null as string) as proficiency_level,
 
-    ca.score_source as score_provider,
+    ca.score_source as provider,
 from college_assessments as ca
 
 union all
@@ -126,7 +126,7 @@ select
     cast(null as date) as test_date_key,
 
     ap.academic_year,
-    ap.ps_ap_course_subject_code as score_type,
+    ap.ps_ap_course_subject_code as `type`,
 
     cast(ap.exam_score as numeric) as scale_score,
 
@@ -134,7 +134,7 @@ select
 
     'Official' as test_type,
 
-    ap.rn_highest as score_rank,
+    ap.rn_highest as rank,
 
     cast(null as numeric) as max_scale_score,
     cast(null as numeric) as superscore,
@@ -144,5 +144,5 @@ select
         when ap.exam_score >= 3 then 'Qualified' else 'Not Qualified'
     end as proficiency_level,
 
-    ap.score_source as score_provider,
+    ap.score_source as provider,
 from ap_assessments as ap

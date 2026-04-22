@@ -142,5 +142,5 @@ select
         when term_start_date <= current_date('{{ var("local_timezone") }}')
         then 'open'
         else 'upcoming'
-    end as administration_status,
+    end as status,
 from deduped

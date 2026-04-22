@@ -47,7 +47,7 @@ models:
         description: >-
           KIPP academic year (July start) for this communication.
 
-      - name: communication_method
+      - name: method
         data_type: string
         description: >-
           Method of communication (e.g., Phone Call, Home Visit, Text, Email).
@@ -63,7 +63,7 @@ models:
           Reason category for the communication (e.g., 'Att: Absent', 'Chronic
           Absence: 4', general reasons).
 
-      - name: communication_outcome
+      - name: outcome
         data_type: string
         description: >-
           Result of the call attempt as logged in DeansList. Distinct from
@@ -81,7 +81,8 @@ models:
             source_system: DeansList
             source_model: int_deanslist__comm_log
             source_column: response
-      - name: communication_timestamp
+      - name: timestamp
+        quote: true
         data_type: timestamp
         description: >-
           Timestamp the communication was logged, preserving time of day. Cast

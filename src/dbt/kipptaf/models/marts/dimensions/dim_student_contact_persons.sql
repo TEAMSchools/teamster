@@ -118,7 +118,7 @@ select
     {{ dbt_utils.generate_surrogate_key(["c._dbt_source_relation", "c.personid"]) }}
     as student_contact_person_key,
 
-    c.contact_name,
+    c.contact_name as full_name,
 
     ph.phone,
     em.email,

@@ -59,7 +59,7 @@ select
     d.academic_year,
     d.state_assessment_code,
     d.illuminate_subject_area as academic_subject,
-    d.grade_level as assessment_grade_level,
+    d.grade_level,
     d.grade_goal,
     d.school_goal,
     d.region_goal,
