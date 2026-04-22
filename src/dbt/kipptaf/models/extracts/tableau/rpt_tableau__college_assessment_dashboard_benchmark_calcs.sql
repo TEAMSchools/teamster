@@ -59,7 +59,7 @@ with
             and not is_out_of_district
     ),
 
-    aligned_scores as (
+    aligned_scores_pre as (
         select
             student_number,
             test_type,
@@ -71,14 +71,6 @@ with
                 scope in ('PSAT10', 'PSAT NMSQT'), 'PSAT10/NMSQT', scope
             ) as aligned_scope,
 
-            row_number() over (
-                partition by
-                    student_number,
-                    if(scope in ('PSAT10', 'PSAT NMSQT'), 'PSAT10/NMSQT', scope),
-                    subject_area
-                order by scale_score desc
-            ) as rn,
-
         from {{ ref("int_assessments__college_assessment") }}
         where
             rn_highest = 1
@@ -89,7 +81,16 @@ with
                 'sat_math_test_score',
                 'sat_reading_test_score'
             )
-        qualify rn = 1
+    ),
+
+    aligned_scores as (
+        {{
+            dbt_utils.deduplicate(
+                relation="aligned_scores_pre",
+                partition_by="student_number, aligned_scope, subject_area",
+                order_by="scale_score desc",
+            )
+        }}
     ),
 
     base as (
