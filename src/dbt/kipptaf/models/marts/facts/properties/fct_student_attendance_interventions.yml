@@ -31,6 +31,11 @@ models:
         description: >-
           FK to dim_student_attendance_intervention_types. Surrogate key derived
           from region_name and family_communication_reason.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_attendance_intervention_types')
+                field: intervention_type_key
 
       - name: family_communication_key
         data_type: string

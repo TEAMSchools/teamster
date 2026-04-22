@@ -10,8 +10,10 @@ models:
       - name: term_key
         data_type: string
         description: >-
-          Surrogate key derived from term type, code, name, start date, region,
-          and school ID.
+          Surrogate key for this dimension. Hash composition uses term type,
+          code, name, start date, region, and school ID as internal inputs;
+          region and school ID are not exposed as mart columns (reachable via
+          region_key and location_key FK traversal).
         data_tests:
           - unique
           - not_null

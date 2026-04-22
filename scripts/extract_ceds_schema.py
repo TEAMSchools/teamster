@@ -30,6 +30,9 @@ from typing import TextIO
 # trunk-ignore(pyright/reportMissingModuleSource): openpyxl is a PEP 723 script dep
 from openpyxl import load_workbook
 
+# trunk-ignore(pyright/reportMissingModuleSource): openpyxl is a PEP 723 script dep
+from openpyxl.workbook import Workbook
+
 CEDS_VERSION = "V14.0.0.0"
 CEDS_XLSX_URL = (
     f"https://raw.githubusercontent.com/CEDStandards/CEDS-Elements/"
@@ -60,7 +63,7 @@ def _fetch_workbook() -> BytesIO:
         return BytesIO(resp.read())
 
 
-def _load_class_index(wb) -> dict[str, str]:
+def _load_class_index(wb: Workbook) -> dict[str, str]:
     """Build a lookup: Class IRI → Class Technical Name.
 
     Skips deprecated classes (detected via `(Deprecated)` prefix on the
@@ -84,7 +87,9 @@ def _load_class_index(wb) -> dict[str, str]:
     return index
 
 
-def _extract_attributes(wb, class_index: dict[str, str]) -> list[dict[str, str]]:
+def _extract_attributes(
+    wb: Workbook, class_index: dict[str, str]
+) -> list[dict[str, str]]:
     """Extract (entity, attribute, description) triples from the Properties sheet.
 
     Skips deprecated properties. Properties whose Domain Includes IRI
