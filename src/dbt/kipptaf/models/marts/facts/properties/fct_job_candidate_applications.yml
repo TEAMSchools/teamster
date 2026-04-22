@@ -103,9 +103,11 @@ models:
         description:
           Integer score assigned to the candidate's resume during review.
 
-      - name: new_timestamp
+      - name: created_timestamp
         data_type: datetime
-        description: Timestamp the application entered the New state.
+        description: >-
+          Timestamp the application was created (entered the SmartRecruiters New
+          state). Pairs with created_date_key.
 
       - name: lead_date
         data_type: date

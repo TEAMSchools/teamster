@@ -30,7 +30,7 @@ select
     average_rating,
     resume_score,
 
-    new_datetime as new_timestamp,
+    new_datetime as created_timestamp,
     lead_date,
     lead_datetime as lead_timestamp,
     hired_date,
