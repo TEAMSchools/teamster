@@ -8,32 +8,23 @@ models:
           arguments:
             combination_of_columns:
               - student_number
-              - academic_year
-              - score_type
+              - scope
               - benchmark_name
     columns:
-      - name: academic_year
-        data_type: int64
       - name: region
         data_type: string
       - name: school
         data_type: string
-      - name: grade_level
-        data_type: int64
       - name: student_number
         data_type: int64
-      - name: enroll_status
-        data_type: int64
+      - name: student_name
+        data_type: string
       - name: iep_status
         data_type: string
       - name: is_504
         data_type: boolean
-      - name: grad_iep_exempt_status_overall
-        data_type: string
       - name: lep_status
         data_type: boolean
-      - name: ktc_cohort
-        data_type: int64
       - name: graduation_year
         data_type: int64
       - name: year_in_network
@@ -42,25 +33,17 @@ models:
         data_type: numeric
       - name: college_match_gpa_bands
         data_type: string
-      - name: test_type
-        data_type: string
       - name: scope
+        data_type: string
+      - name: aligned_scope
+        data_type: string
+      - name: test_type
         data_type: string
       - name: score_type
         data_type: string
       - name: subject_area
         data_type: string
-      - name: aligned_subject_area
-        data_type: string
-      - name: test_date
-        data_type: date
-      - name: max_scale_score
+      - name: max_score
         data_type: numeric
-      - name: scale_score
-        data_type: numeric
-      - name: ccr_period
-        data_type: string
-      - name: ccr_teacher
-        data_type: string
       - name: benchmark_name
         data_type: string
