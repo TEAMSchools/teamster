@@ -54,18 +54,14 @@ select
         )
     }} as term_key,
 
-    sc.powerschool_student_number as student_number,
-    sc.assessment_id,
+    if(
+        sc.powerschool_student_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["sc.powerschool_student_number"]) }},
+        cast(null as string)
+    ) as student_key,
+
     sc.academic_year,
-    sc.administered_at,
-    sc.title as assessment_title,
-    sc.subject_area,
-    sc.scope,
-    sc.module_type,
-    sc.module_code,
-    sc.grade_level_id,
-    sc.powerschool_school_id,
-    sc.region,
+    sc.administered_at as administered_date,
     sc.is_internal_assessment,
 from scaffold as sc
 left join

@@ -61,33 +61,33 @@ models:
           Display name for the Department, coalesced from longName and shortName
           of the nameCode where typeCode = 'Department'.
 
-      - name: cost_number_code
+      - name: cost_center_code
         data_type: string
         description: >-
-          Code value for the Cost Number organizational unit, from
+          Code value for the Cost Center organizational unit, from
           nameCode.codeValue where typeCode = 'Cost Number'.
 
-      - name: cost_number_name
+      - name: cost_center_name
         data_type: string
         description: >-
-          Display name for the Cost Number, coalesced from longName and
+          Display name for the Cost Center, coalesced from longName and
           shortName of the nameCode where typeCode = 'Cost Number'.
 
-      - name: effective_date_start
+      - name: effective_start_date
         data_type: date
         description: >-
           Date this org unit version was first observed, derived from the daily
           partition date where the org unit attribute hash changed.
 
-      - name: effective_date_end
+      - name: effective_end_date
         data_type: date
         description: >-
           Last date this org unit version was effective. Computed as one day
-          before the next version's effective_date_start, or 9999-12-31 for the
+          before the next version's effective_start_date, or 9999-12-31 for the
           current version.
 
-      - name: is_current_record
+      - name: is_current
         data_type: boolean
         description: >-
           TRUE if this is the most recent org unit version for the work
-          assignment and assignment type (effective_date_end = 9999-12-31).
+          assignment and assignment type (effective_end_date = 9999-12-31).

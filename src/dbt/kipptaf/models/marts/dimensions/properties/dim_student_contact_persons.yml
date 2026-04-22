@@ -11,35 +11,17 @@ models:
       - name: student_contact_person_key
         data_type: string
         description: >-
-          Surrogate key derived from _dbt_source_relation and
-          powerschool_person_id. Primary key for this dimension.
+          Surrogate key derived from _dbt_source_relation and the PowerSchool
+          personid. Primary key for this dimension.
         data_tests:
           - unique
           - not_null
 
-      - name: _dbt_source_relation
-        data_type: string
-        description: >-
-          Source district identifier from dbt_utils.union_relations, carrying
-          the schema and table name of the originating PowerSchool instance.
-
-      - name: powerschool_person_id
-        data_type: int64
-        description: >-
-          Identification number of the associated Person table row pertaining to
-          the phone number. Indexedwith Address Priority Order. Required.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__personaddressassoc
-            source_column: personid
-            contains_pii: true
-      - name: contact_name
+      - name: full_name
         data_type: string
         description: >-
           Full name of the contact person (first + last, trimmed) as stored in
-          PowerSchool.
+          PowerSchool. Matches dim_staff.full_name and dim_students.full_name.
 
       - name: phone
         data_type: string
@@ -54,12 +36,9 @@ models:
           Current email address for the contact person. NULL if no email is
           recorded in PowerSchool.
 
-      - name: address
+      - name: home_address
         data_type: string
         description: >-
-          The physical address of the school. Also see School Address.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__schools
-            source_column: address
+          Primary home address for the contact person. Single concatenated
+          address string from the PowerSchool Home contact type. NULL if no home
+          address is recorded.

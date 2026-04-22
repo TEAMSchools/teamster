@@ -3,9 +3,9 @@ models:
     description: >-
       Job candidate application fact table. One row per application. Contains
       application status, stage, dates, and time-in-stage metrics from
-      SmartRecruiters. Foreign keys to dim_job_candidates and dim_job_postings.
-      No FK to dim_staff or dim_staffing_positions — SmartRecruiters is an
-      isolated domain.
+      SmartRecruiters. Foreign keys to dim_job_candidates, dim_job_postings, and
+      dim_locations. No FK to dim_staff or dim_staffing_positions —
+      SmartRecruiters is an isolated domain.
     columns:
       - name: job_candidate_application_key
         data_type: string
@@ -24,6 +24,22 @@ models:
         data_tests:
           - not_null
 
+      - name: shared_with_location_key
+        data_type: string
+        description: >-
+          Foreign key to dim_locations for the location this application is
+          shared with. Surrogate key derived from school_shared_with. Nullable
+          when the application has no shared location.
+        data_tests:
+          # TODO: #3672 — ~20% rows fail FK; promote to error
+          # once upstream crosswalk covers `KIPP High School` and siblings.
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+              config:
+                severity: warn
+
       - name: job_posting_key
         data_type: string
         description: >-
@@ -36,84 +52,28 @@ models:
           Foreign key to dim_dates for the date the application entered the New
           stage. Matches dim_dates.date_key.
 
-      - name: application_id
-        data_type: string
-        description: SmartRecruiters unique identifier for the application.
-        data_tests:
-          - unique
-          - not_null
-
-      - name: candidate_id
-        data_type: string
-        description: SmartRecruiters unique identifier for the candidate.
-        data_tests:
-          - not_null
-
-      - name: job_title
-        data_type: string
-        description: Title of the job posting the candidate applied to.
-
-      - name: department_internal
-        data_type: string
-        description: Internal department classification for the job posting.
-
-      - name: department_org_field_value
-        data_type: string
-        description: Organizational field value for the department.
-
-      - name: job_city
-        data_type: string
-        description: City where the job posting is located.
-
-      - name: recruiters
-        data_type: string
-        description: Name(s) of recruiter(s) assigned to this application.
-
-      - name: application_state
+      - name: state
         data_type: string
         description: >-
           Current high-level application state (New, Lead, In Review, Interview,
           Offered, Hired, Rejected, Withdrawn).
 
-      - name: application_status
-        data_type: string
-        description: More granular status within the current application state.
-
-      - name: application_custom_step
-        data_type: string
-        description: Custom pipeline step for the application, if configured.
-
-      - name: application_reason_for_rejection
+      - name: reason_for_rejection
         data_type: string
         description:
           Reason code for why the application was rejected, if applicable.
 
-      - name: application_reason_for_withdrawal
+      - name: reason_for_withdrawal
         data_type: string
         description: Reason code for why the candidate withdrew, if applicable.
 
-      - name: application_status_before_rejection
+      - name: status_before_rejection
         data_type: string
         description: The application status immediately before rejection.
 
-      - name: application_status_before_withdrawal
+      - name: status_before_withdrawal
         data_type: string
         description: The application status immediately before withdrawal.
-
-      - name: candidate_source
-        data_type: string
-        description: >-
-          Primary source channel for the candidate on this application.
-
-      - name: candidate_source_type
-        data_type: string
-        description:
-          Broad source type category for the candidate on this application.
-
-      - name: candidate_source_subtype
-        data_type: string
-        description:
-          Granular source subtype for the candidate on this application.
 
       - name: source
         data_type: string
@@ -133,11 +93,6 @@ models:
           Candidate's subject area preference for teaching roles. Defaults to
           'No Preference' when not specified.
 
-      - name: school_shared_with
-        data_type: string
-        description: >-
-          School(s) the application was shared with across NJ or Miami regions.
-
       - name: average_rating
         data_type: numeric
         description:
@@ -148,93 +103,92 @@ models:
         description:
           Integer score assigned to the candidate's resume during review.
 
-      - name: new_date
-        data_type: date
-        description: Date the application entered the New state.
-
-      - name: new_datetime
+      - name: created_timestamp
         data_type: datetime
-        description: Datetime the application entered the New state.
+        description: >-
+          Timestamp the application was created (entered the SmartRecruiters New
+          state). Pairs with created_date_key.
 
       - name: lead_date
         data_type: date
         description: Date the application entered the Lead state.
 
-      - name: lead_datetime
+      - name: lead_timestamp
         data_type: datetime
-        description: Datetime the application entered the Lead state.
+        description: Timestamp the application entered the Lead state.
 
       - name: hired_date
         data_type: date
         description: Date the application reached the Hired state.
 
-      - name: hired_datetime
+      - name: hired_timestamp
         data_type: datetime
-        description: Datetime the application reached the Hired state.
+        description: Timestamp the application reached the Hired state.
 
       - name: offer_date
         data_type: date
         description: Date an offer was made.
 
-      - name: offer_datetime
+      - name: offer_timestamp
         data_type: datetime
-        description: Datetime an offer was made.
+        description: Timestamp an offer was made.
 
       - name: rejected_date
         data_type: date
         description: Date the application was rejected.
 
-      - name: rejected_datetime
+      - name: rejected_timestamp
         data_type: datetime
-        description: Datetime the application was rejected.
+        description: Timestamp the application was rejected.
 
-      - name: last_update_date
+      - name: last_updated_date
         data_type: date
         description: Date the application record was last updated.
 
-      - name: last_update_datetime
+      - name: last_update_timestamp
         data_type: datetime
-        description: Datetime the application record was last updated.
+        description: Timestamp the application record was last updated.
 
       - name: demo_date
         data_type: date
         description: Date of the demo/teaching demonstration interview step.
 
-      - name: demo_datetime
+      - name: demo_timestamp
         data_type: datetime
-        description: Datetime of the demo/teaching demonstration interview step.
+        description:
+          Timestamp of the demo/teaching demonstration interview step.
 
       - name: phone_screen_requested_date
         data_type: date
         description: Date the phone screen was requested.
 
-      - name: phone_screen_requested_datetime
+      - name: phone_screen_requested_timestamp
         data_type: datetime
-        description: Datetime the phone screen was requested.
+        description: Timestamp the phone screen was requested.
 
       - name: phone_screen_complete_date
         data_type: date
         description: Date the phone screen was completed.
 
-      - name: phone_screen_complete_datetime
+      - name: phone_screen_complete_timestamp
         data_type: datetime
-        description: Datetime the phone screen was completed.
+        description: Timestamp the phone screen was completed.
 
       - name: invited_to_selection_day_date
         data_type: date
         description: Date the candidate was invited to Selection Day.
 
-      - name: invited_to_selection_day_datetime
+      - name: invited_to_selection_day_timestamp
         data_type: datetime
-        description: Datetime the candidate was invited to Selection Day.
+        description: Timestamp the candidate was invited to Selection Day.
 
       - name: selection_day_date
         data_type: date
         description: Date of the candidate's Selection Day event.
 
-      - name: selection_day_datetime
+      - name: selection_day_timestamp
         data_type: datetime
-        description: Datetime of the candidate's Selection Day event.
+        description: Timestamp of the candidate's Selection Day event.
 
       - name: time_in_application_state_new
         data_type: int64
@@ -278,56 +232,16 @@ models:
         description:
           Number of days spent in the Interview — Phone Screen Complete status.
 
-      - name: application_state_in_review_date
-        data_type: string
-        description:
-          Date the application entered the In Review state (string from source).
-
-      - name: application_state_interview_date
-        data_type: string
-        description:
-          Date the application entered the Interview state (string from source).
-
-      - name: application_state_transferred_date
-        data_type: string
-        description: Date the application was transferred (string from source).
-
-      - name: application_state_withdrawn_date
-        data_type: string
-        description: Date the application was withdrawn (string from source).
-
-      - name: application_status_in_review_performance_task_date
-        data_type: string
+      - name: status_interview_performance_task_timestamp
+        data_type: timestamp
         description: >-
-          Date the application entered the In Review — Performance Task status
-          (string from source).
+          Timestamp the application entered the Interview — Performance Task
+          status. Cast from source string at the mart layer.
 
-      - name: application_status_in_review_resume_review_date
-        data_type: string
-        description: >-
-          Date the application entered the In Review — Resume Review status
-          (string from source).
-
-      - name: application_status_interview_performance_task_date
-        data_type: string
-        description: >-
-          Date the application entered the Interview — Performance Task status
-          (string from source).
-
-      - name: application_field_application_review_score
-        data_type: string
-        description: Score assigned during the application review stage.
-
-      - name: application_field_job_title
-        data_type: string
-        description: >-
-          Custom job title field from the application form, may differ from the
-          posting title.
-
-      - name: application_field_phone_interview_score
+      - name: phone_interview_score
         data_type: string
         description: Score assigned during the phone interview.
 
-      - name: application_url
+      - name: url
         data_type: string
         description: Direct URL to the application in SmartRecruiters.

@@ -1,14 +1,28 @@
 with
     locations as (
-        -- TODO: int_people__location_crosswalk has duplicate rows (#3633)
-        select distinct
-            location_powerschool_school_id,
-            location_dagster_code_location,
-            location_clean_name,
-        from {{ ref("int_people__location_crosswalk") }}
-        where
-            not location_is_pathways
-            and location_clean_name <> 'KIPP Whittier Elementary'
+        select powerschool_school_id, dagster_code_location, location_name,
+        from {{ ref("stg_people__locations") }}
+    ),
+
+    terms as (
+        select
+            t.school_id,
+            t.code,
+            t.academic_year,
+
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "t.`type`",
+                        "t.code",
+                        "t.`name`",
+                        "t.`start_date`",
+                        "t.region",
+                        "t.school_id",
+                    ]
+                )
+            }} as term_key,
+        from {{ ref("stg_google_sheets__reporting__terms") }} as t
     )
 
 select
@@ -35,26 +49,40 @@ select
 
     ada.calendardate as date_key,
 
-    {{ dbt_utils.generate_surrogate_key(["loc.location_clean_name"]) }} as location_key,
+    {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }} as location_key,
 
-    ada.student_number,
+    t.term_key,
+
     ada.academic_year,
 
     ada.att_code as attendance_code,
     ada.attendancevalue as attendance_value,
     ada.membershipvalue as membership_value,
 
-    ada.is_absent,
-    ada.is_present_weighted,
-    ada.is_tardy,
-    ada.is_ontime,
-    ada.is_oss,
-    ada.is_iss,
-    ada.is_suspended,
+    ada.is_present_weighted as present_weight,
+
     ada.is_truant,
 
     ada.semester,
-    ada.term,
+
+    cast(ada.is_absent as int64) as is_absent,
+    cast(ada.is_tardy as int64) as is_tardy,
+    cast(ada.is_ontime as int64) as is_ontime,
+    cast(ada.is_oss as int64) as is_oss,
+    cast(ada.is_iss as int64) as is_iss,
+    cast(ada.is_suspended as int64) as is_suspended,
+
+    case
+        when ada.is_oss = 1
+        then 'Out-of-School Suspension'
+        when ada.is_iss = 1
+        then 'In-School Suspension'
+        when ada.is_absent = 1
+        then 'Absent'
+        when ada.is_tardy = 1
+        then 'Tardy'
+        else 'Present'
+    end as attendance_category,
 from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ada
 inner join
     {{ ref("base_powerschool__student_enrollments") }} as enr
@@ -65,8 +93,13 @@ inner join
     and {{ union_dataset_join_clause(left_alias="ada", right_alias="enr") }}
 left join
     locations as loc
-    on ada.schoolid = loc.location_powerschool_school_id
-    and {{ extract_code_location("ada") }} = loc.location_dagster_code_location
+    on ada.schoolid = loc.powerschool_school_id
+    and {{ extract_code_location("ada") }} = loc.dagster_code_location
+left join
+    terms as t
+    on ada.schoolid = t.school_id
+    and ada.term = t.code
+    and ada.academic_year = t.academic_year
 
 -- TODO: overlapping enrollment records at same school cause join
 -- fan-out; qualify picks latest entrydate (#3633)

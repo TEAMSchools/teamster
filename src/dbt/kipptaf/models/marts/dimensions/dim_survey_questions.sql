@@ -41,7 +41,7 @@ select
     {{ dbt_utils.generate_surrogate_key(["question_shortname"]) }}
     as survey_question_key,
 
-    question_shortname,
-    question_text,
-    question_type,
+    question_shortname as shortname,
+    question_text as `text`,
+    question_type as `type`,
 from deduped

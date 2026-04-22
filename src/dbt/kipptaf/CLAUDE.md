@@ -103,10 +103,11 @@ Facebook, Illuminate Fivetran, Instagram.
 
 **`int_people__location_crosswalk`** is NOT a union model — it has no
 `_dbt_source_relation`. Use `extract_code_location()` matched against
-`location_dagster_code_location` for cross-region joins. It also produces
-duplicate rows per
-`(location_powerschool_school_id, location_dagster_code_location)` — downstream
-models need `SELECT DISTINCT` CTEs when joining it (#3633).
+`location_dagster_code_location` for cross-region joins. Each row is one alias
+(alternate spelling of `location_name`) — consumers that join on an aliased name
+(e.g., `fct_staff_observations` on `gro.school_name`) must use this model.
+Canonical-grain consumers (1 row per logical school) should use
+`stg_people__locations` instead (#3633).
 
 ## Cross-Project Refs
 

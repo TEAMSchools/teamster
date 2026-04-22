@@ -29,57 +29,35 @@ models:
                 to: ref('dim_staff_work_assignments')
                 field: work_assignment_key
 
-      - name: manager_associate_oid
+      - name: manager_staff_key
         data_type: string
         description: >-
-          ADP associate OID of the reporting manager, from
-          reportsTo[].associateOID.
+          Surrogate key derived from the reporting manager's employee_number. FK
+          to dim_staff identifying the manager this work assignment reports to.
+          Null when the manager's associate_oid has no active number mapping in
+          stg_people__employee_numbers.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
 
-      - name: manager_position_id
-        data_type: string
-        description: >-
-          Position ID of the reporting manager, from reportsTo[].positionID.
-
-      - name: manager_worker_id
-        data_type: string
-        description: >-
-          Worker ID (idValue) of the reporting manager, from
-          reportsTo[].workerID.idValue.
-
-      - name: manager_formatted_name
-        data_type: string
-        description: >-
-          Formatted name of the reporting manager, from
-          reportsTo[].reportsToWorkerName.formattedName.
-
-      - name: manager_given_name
-        data_type: string
-        description: >-
-          Given (first) name of the reporting manager, from
-          reportsTo[].reportsToWorkerName.givenName.
-
-      - name: manager_family_name_1
-        data_type: string
-        description: >-
-          Family (last) name of the reporting manager, from
-          reportsTo[].reportsToWorkerName.familyName1.
-
-      - name: effective_date_start
+      - name: effective_start_date
         data_type: date
         description: >-
           Date this reporting relationship version was first observed, derived
           from the daily partition date where the manager attribute hash
           changed.
 
-      - name: effective_date_end
+      - name: effective_end_date
         data_type: date
         description: >-
           Last date this reporting relationship version was effective. Computed
-          as one day before the next version's effective_date_start, or
+          as one day before the next version's effective_start_date, or
           9999-12-31 for the current version.
 
-      - name: is_current_record
+      - name: is_current
         data_type: boolean
         description: >-
           TRUE if this is the most recent reporting relationship version for the
-          work assignment (effective_date_end = 9999-12-31).
+          work assignment (effective_end_date = 9999-12-31).

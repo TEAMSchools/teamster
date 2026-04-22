@@ -4,9 +4,9 @@ models:
       GPA periodic-snapshot fact table. One row per student enrollment x term.
       Contains term GPA, year-to-date GPA (weighted and unweighted), semester
       GPA, cumulative GPA, credit hours earned and attempted, and failing course
-      count. Preserves history across terms with is_current_row flag to collapse
-      to the most recent snapshot per student x school. FK to
-      dim_student_enrollments and dim_terms.
+      count. Preserves history across terms with is_current flag to collapse to
+      the most recent row per student x school. FK to dim_student_enrollments
+      and dim_terms.
     columns:
       - name: grades_gpa_key
         data_type: string
@@ -30,30 +30,19 @@ models:
         data_type: string
         description: >-
           FK to dim_terms. Surrogate key derived from type, code, name,
-          start_date, region, and school_id. Null when term_name does not map to
-          a reporting term for the school and region.
+          start_date, region, and school_id of the matching reporting term. Null
+          when the PowerSchool term / year / school does not map to a
+          reporting-term record.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          Student Number assigned by the school. Indexed.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_number
-            contains_pii: true
-            column_role: primary_key
       - name: academic_year
         data_type: int64
         description: >-
           KIPP academic year (July start) in which this GPA snapshot falls.
-
-      - name: term_name
-        data_type: string
-        description: >-
-          Term identifier (e.g., Q1, Q2, Q3, Q4).
 
       - name: semester
         data_type: string
@@ -66,12 +55,12 @@ models:
           Weighted GPA for this term only, calculated as weighted grade points
           divided by credit hours for the term.
 
-      - name: gpa_y1
+      - name: gpa_ytd
         data_type: float64
         description: >-
           Year-to-date weighted GPA across all terms in the academic year.
 
-      - name: gpa_y1_unweighted
+      - name: gpa_ytd_unweighted
         data_type: float64
         description: >-
           Year-to-date unweighted GPA using the unweighted grade scale.
@@ -86,23 +75,23 @@ models:
         description: >-
           Average percent grade across all courses for this term.
 
-      - name: grade_avg_y1
+      - name: grade_avg_ytd
         data_type: float64
         description: >-
           Year-to-date average percent grade across all courses.
 
-      - name: cumulative_y1_gpa
+      - name: cumulative_gpa
         data_type: float64
         description: >-
-          Cumulative weighted GPA across all stored Y1 grades plus current year
-          projected grades.
+          Cumulative weighted GPA across all stored end-of-year grades plus
+          current year projected grades.
 
-      - name: cumulative_y1_gpa_unweighted
+      - name: cumulative_gpa_unweighted
         data_type: float64
         description: >-
           Cumulative unweighted GPA across all stored and projected grades.
 
-      - name: cumulative_y1_gpa_projected
+      - name: cumulative_gpa_projected
         data_type: float64
         description: >-
           Projected cumulative GPA including current year in-progress grades.
@@ -112,7 +101,7 @@ models:
         description: >-
           Total credit hours for courses with grades in this term.
 
-      - name: credit_hours_y1
+      - name: credit_hours_ytd
         data_type: float64
         description: >-
           Total credit hours for courses with Y1 grades in the academic year.
@@ -129,20 +118,16 @@ models:
           Cumulative credit hours attempted (all enrolled courses) across all
           academic years.
 
-      - name: n_failing_y1
+      - name: n_failing_ytd
         data_type: int64
         description: >-
           Count of courses with a failing Y1 letter grade (F or F*) in the
           current academic year.
 
-      - name: is_current_term
+      - name: is_current
         data_type: boolean
         description: >-
-          TRUE if this term is the current active term based on today's date.
-
-      - name: is_current_row
-        data_type: boolean
-        description: >-
-          TRUE for the most recent snapshot per student x school, ordered by
-          yearid desc then term desc. Use this flag to collapse to the latest
-          GPA state.
+          TRUE for the most recent row per student x school, ordered by yearid
+          desc then term desc. Use this flag to collapse to the latest GPA state
+          per student-school. For "active term today" filters, traverse term_key
+          to dim_terms.is_current instead.

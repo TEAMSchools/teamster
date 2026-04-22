@@ -23,7 +23,7 @@ with
             school_id,
             powerschool_year_id,
         from {{ ref("stg_google_sheets__reporting__terms") }}
-        where `type` = 'quarter'
+        where `type` = 'RT'
     ),
 
     gpa_term as (
@@ -102,45 +102,45 @@ select
         )
     }} as student_enrollment_key,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "rt.type",
-                "rt.code",
-                "rt.name",
-                "rt.start_date",
-                "rt.region",
-                "rt.school_id",
-            ]
-        )
-    }} as term_key,
+    if(
+        rt.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "rt.type",
+                    "rt.code",
+                    "rt.name",
+                    "rt.start_date",
+                    "rt.region",
+                    "rt.school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
 
-    enr.student_number,
     enr.academic_year,
-    gt.term_name,
     gt.semester,
 
     gt.gpa_term,
-    gt.gpa_y1,
-    gt.gpa_y1_unweighted,
+    gt.gpa_y1 as gpa_ytd,
+    gt.gpa_y1_unweighted as gpa_ytd_unweighted,
     gt.gpa_semester,
     gt.grade_avg_term,
-    gt.grade_avg_y1,
+    gt.grade_avg_y1 as grade_avg_ytd,
 
-    gt.cumulative_y1_gpa,
-    gt.cumulative_y1_gpa_unweighted,
-    gt.cumulative_y1_gpa_projected,
+    gt.cumulative_y1_gpa as cumulative_gpa,
+    gt.cumulative_y1_gpa_unweighted as cumulative_gpa_unweighted,
+    gt.cumulative_y1_gpa_projected as cumulative_gpa_projected,
 
     gt.total_credit_hours_term as credit_hours_term,
-    gt.total_credit_hours_y1 as credit_hours_y1,
+    gt.total_credit_hours_y1 as credit_hours_ytd,
     gt.earned_credits_cum as credit_hours_earned_cumulative,
     gt.potential_credits_cum as credit_hours_attempted_cumulative,
 
-    gt.n_failing_y1,
+    gt.n_failing_y1 as n_failing_ytd,
 
-    gt.is_current as is_current_term,
-
-    if(gt.rn_current = 1, true, false) as is_current_row,
+    if(gt.rn_current = 1, true, false) as is_current,
 from gpa_term as gt
 inner join
     student_enrollments as enr
@@ -150,7 +150,6 @@ inner join
     and {{ union_dataset_join_clause(left_alias="gt", right_alias="enr") }}
 left join
     reporting_terms as rt
-    on gt.term_name = rt.code
+    on gt.term_name = rt.`name`
     and gt.schoolid = rt.school_id
-    and gt.region = rt.region
-    and gt.yearid = rt.powerschool_year_id - 1990
+    and gt.yearid = rt.powerschool_year_id

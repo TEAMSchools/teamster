@@ -27,34 +27,25 @@ models:
       - name: start_date_key
         data_type: date
         description: >-
-          The start date of the association of this teacher to this section.
+          FK to dim_dates. The date the consequence began.
 
         config:
           meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__sectionteacher
+            source_system: DeansList
+            source_model: int_deanslist__incidents__penalties
             source_column: start_date
       - name: end_date_key
         data_type: date
         description: >-
-          The end date of the association of this teacher to this section.
+          FK to dim_dates. The date the consequence ended.
 
         config:
           meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__sectionteacher
+            source_system: DeansList
+            source_model: int_deanslist__incidents__penalties
             source_column: end_date
-      - name: incident_id
-        data_type: int64
-        description: >-
-          DeansList incident identifier linking to the parent incident.
-
-      - name: incident_penalty_id
-        data_type: int64
-        description: >-
-          DeansList unique identifier for this specific consequence record.
-
-      - name: consequence_type
+      - name: type
+        quote: true
         data_type: string
         description: >-
           Name of the consequence/penalty assigned (e.g., Out of School
@@ -66,13 +57,13 @@ models:
           Normalized suspension type code (OSS or ISS). Null for non-suspension
           consequences.
 
-      - name: num_days
+      - name: days_assigned
         data_type: float64
         description: >-
           Number of days assigned for this consequence. May be fractional for
           partial-day consequences.
 
-      - name: num_periods
+      - name: periods_assigned
         data_type: numeric
         description: >-
           Number of class periods assigned for this consequence. Null when
@@ -86,24 +77,9 @@ models:
       - name: is_reportable
         data_type: boolean
         description: >-
-          TRUE if this consequence is flagged as reportable for state reporting.
-
-      - name: consequence_start_date
-        data_type: date
-        description: >-
-          The start date of the association of this teacher to this section.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__sectionteacher
-            source_column: start_date
-      - name: consequence_end_date
-        data_type: date
-        description: >-
-          The end date of the association of this teacher to this section.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__sectionteacher
-            source_column: end_date
+          TRUE if this consequence is flagged reportable in the DeansList
+          penalty configuration. The specific reporting frame (state DOE / EWEG
+          / federal CRDC / internal) is set per-penalty by DeansList admins and
+          is not encoded in the flag itself — verify the penalty's intended
+          reporting scope in DL config before aggregating for a compliance
+          submission.

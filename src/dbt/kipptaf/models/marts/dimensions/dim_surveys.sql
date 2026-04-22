@@ -140,11 +140,11 @@ with
 select
     {{ dbt_utils.generate_surrogate_key(["s.survey_id"]) }} as survey_key,
 
-    s.survey_id,
-    s.survey_name,
-
-    coalesce(c.survey_type, 'Other') as survey_type,
-    c.subject_area,
+    s.survey_name as `name`,
     s.platform,
+
+    c.subject_area as category,
+
+    coalesce(c.survey_type, 'Other') as `type`,
 from all_surveys as s
 left join survey_classification as c on s.survey_name = c.survey_name

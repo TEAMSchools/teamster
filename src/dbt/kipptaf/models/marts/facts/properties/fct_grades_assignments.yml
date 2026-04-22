@@ -52,24 +52,13 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__assignmentsection
             source_column: duedate
-      - name: student_number
-        data_type: int64
-        description: >-
-          Student Number assigned by the school. Indexed.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_number
-            contains_pii: true
-            column_role: primary_key
       - name: academic_year
         data_type: int64
         description: >-
           KIPP academic year (July start) in which this assignment falls.
 
-      - name: assignment_name
+      - name: name
+        quote: true
         data_type: string
         description: >-
           Name of the assignment as entered in the PowerSchool gradebook.
@@ -102,12 +91,12 @@ models:
           for PERCENT type this is the numeric value of actualscoreentered. Null
           when the student has no score recorded.
 
-      - name: points_possible
+      - name: max_points
         data_type: float64
         description: >-
-          This is the total weighted points that the assignment is worth. If the
-          entry points are 25, and theweight is 4, then the total point value is
-          100.
+          Maximum points possible for the assignment. Ed-Fi gradebookEntry
+          max_points. If the entry points are 25 and the weight is 4, then the
+          total point value is 100.
 
         config:
           meta:

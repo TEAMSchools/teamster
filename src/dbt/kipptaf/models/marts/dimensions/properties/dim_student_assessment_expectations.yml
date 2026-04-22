@@ -10,8 +10,8 @@ models:
       - name: student_assessment_expectation_key
         data_type: string
         description: >-
-          Surrogate key derived from powerschool_student_number, assessment_id,
-          and administered_at. Primary key.
+          Surrogate key derived from student_number, assessment_id, and
+          administered_at. Primary key.
         data_tests:
           - unique
           - not_null
@@ -29,72 +29,27 @@ models:
           start_date, region, and school_id. Null when the administration date
           does not fall within any reporting term.
 
-      - name: student_number
-        data_type: int64
+      - name: student_key
+        data_type: string
         description: >-
-          Student Number assigned by the school. Indexed.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_number
-            contains_pii: true
-            column_role: primary_key
-      - name: assessment_id
-        data_type: int64
-        description: >-
-          Illuminate assessment ID.
+          FK to dim_students. Surrogate key derived from student_number.
+        data_tests:
+          # TODO: #3711 — assessment scaffold includes students absent from
+          # PowerSchool enrollments. Promote to error once resolved.
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
 
       - name: academic_year
         data_type: int64
         description: >-
           Academic year of the expected assessment.
 
-      - name: administered_at
+      - name: administered_date
         data_type: date
         description: >-
           Scheduled administration date for the assessment.
-
-      - name: assessment_title
-        data_type: string
-        description: >-
-          Display name of the assessment.
-
-      - name: subject_area
-        data_type: string
-        description: >-
-          Subject area of the assessment.
-
-      - name: scope
-        data_type: string
-        description: >-
-          Assessment scope (e.g., CMA, CGI).
-
-      - name: module_type
-        data_type: string
-        description: >-
-          Module type (e.g., QA, CR).
-
-      - name: module_code
-        data_type: string
-        description: >-
-          Module code identifying the assessment variant.
-
-      - name: grade_level_id
-        data_type: int64
-        description: >-
-          Grade level ID the assessment targets.
-
-      - name: powerschool_school_id
-        data_type: int64
-        description: >-
-          PowerSchool school ID where the student is enrolled.
-
-      - name: region
-        data_type: string
-        description: >-
-          Network region (Newark, Camden, Miami, Paterson).
 
       - name: is_internal_assessment
         data_type: boolean

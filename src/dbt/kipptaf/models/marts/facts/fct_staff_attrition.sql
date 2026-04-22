@@ -1,6 +1,6 @@
 with
     teammate_history as (
-        -- TODO: roster history has multiple assignments per employee
+        -- TODO: #3687 — roster history has multiple assignments per employee
         select distinct
             effective_date_start,
             effective_date_end,
@@ -23,7 +23,7 @@ with
     ),
 
     academic_years as (
-        -- TODO: roster history has multiple assignments per employee
+        -- TODO: #3687 — roster history has multiple assignments per employee
         select distinct employee_number, academic_year, from teammate_history
     ),
 
@@ -48,7 +48,7 @@ with
     /* Foundation Attrition: any staff not in terminated or deceased status  */
     /* on 9/1 of the following academic year  */
     foundation_returner_cohort as (
-        -- TODO: roster history has multiple assignments per employee
+        -- TODO: #3687 — roster history has multiple assignments per employee
         select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
@@ -100,7 +100,7 @@ with
     /* New Jersey Compliance Attrition: any staff not in  */
     /* terminated or deceased status on 7/1 of the following academic year  */
     nj_returner_cohort as (
-        -- TODO: roster history has multiple assignments per employee
+        -- TODO: #3687 — roster history has multiple assignments per employee
         select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
@@ -152,7 +152,7 @@ with
     /* Recruitment Attrition: any staff not in terminated or deceased  */
     /* status on 9/1 of the following academic year  */
     recruitment_returner_cohort as (
-        -- TODO: roster history has multiple assignments per employee
+        -- TODO: #3687 — roster history has multiple assignments per employee
         select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
@@ -314,8 +314,8 @@ select
     ss.staff_status_key,
 
     a.academic_year,
-    a.attrition_type,
-    a.attrition_cutoff_date,
+    a.attrition_type as `type`,
+    a.attrition_cutoff_date as cutoff_date,
     a.is_attrition,
     a.termination_reason,
     a.termination_effective_date,
@@ -323,5 +323,5 @@ from attrition as a
 left join
     {{ ref("dim_staff_status") }} as ss
     on {{ dbt_utils.generate_surrogate_key(["a.employee_number"]) }} = ss.staff_key
-    and a.outcome_determination_date >= ss.effective_date_start
-    and a.outcome_determination_date <= ss.effective_date_end
+    and a.outcome_determination_date >= ss.effective_start_date
+    and a.outcome_determination_date <= ss.effective_end_date

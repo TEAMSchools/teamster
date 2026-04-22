@@ -26,23 +26,13 @@ models:
         data_tests:
           - not_null
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          Student Number assigned by the school. Indexed.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_number
       - name: relationship_type
         data_type: string
         description: >-
           Relationship between the contact person and the student (e.g., Mother,
           Father, Grandparent) as coded in PowerSchool.
 
-      - name: contact_priority
+      - name: priority
         data_type: int64
         description: >-
           Indicates the preferred order in which the student's contacts will be
@@ -70,10 +60,10 @@ models:
         description: >-
           TRUE if this contact has custodial rights for this student.
 
-      - name: lives_with
+      - name: is_household_member
         data_type: boolean
         description: >-
-          TRUE if the student lives with this contact person.
+          TRUE if the student lives with this contact person (household member).
 
     data_tests:
       - dbt_utils.unique_combination_of_columns:

@@ -55,21 +55,21 @@ models:
           Display name for the status reason, coalesced from longName and
           shortName of assignmentStatus.reasonCode.
 
-      - name: effective_date_start
+      - name: effective_start_date
         data_type: date
         description: >-
           Date this status version became effective, from ADP
           assignmentStatus.effectiveDate.
 
-      - name: effective_date_end
+      - name: effective_end_date
         data_type: date
         description: >-
           Last date this status version was effective. Computed as one day
-          before the next version's effective_date_start, or 9999-12-31 for the
+          before the next version's effective_start_date, or 9999-12-31 for the
           current version.
 
-      - name: is_current_record
+      - name: is_current
         data_type: boolean
         description: >-
           TRUE if this is the most recent status version for the work assignment
-          (effective_date_end = 9999-12-31).
+          (effective_end_date = 9999-12-31).

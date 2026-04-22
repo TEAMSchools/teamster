@@ -15,29 +15,21 @@ models:
           - unique
           - not_null
 
-      - name: survey_id
-        data_type: string
-        description: >-
-          Source system identifier for the survey. Google Forms form_id,
-          Alchemer survey_id (cast to string), or synthetic ID for archived and
-          PowerSchool sources.
-        data_tests:
-          - unique
-          - not_null
-
-      - name: survey_name
+      - name: name
+        quote: true
         data_type: string
         description: >-
           Display name of the survey instrument (e.g., School Community
           Diagnostic Staff Survey, Manager Survey).
 
-      - name: survey_type
+      - name: type
+        quote: true
         data_type: string
         description: >-
           Classification of the survey instrument (e.g., School Community
           Diagnostic, Manager Survey, Support Survey, Climate Survey).
 
-      - name: subject_area
+      - name: category
         data_type: string
         description: >-
           Broad domain the survey measures (e.g., School Culture, Staff

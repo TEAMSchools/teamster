@@ -1,10 +1,8 @@
 with
     employee_numbers as (
-        -- TODO: stg_people__employee_numbers has duplicate employee_numbers
-        -- from multiple associate_id mappings; distinct until resolved (#3637)
-        select distinct employee_number,
+        select employee_number,
         from {{ ref("stg_people__employee_numbers") }}
-        where is_active
+        where adp_associate_id is not null and is_active
     ),
 
     staff_history as (
@@ -20,23 +18,23 @@ with
 select
     {{ dbt_utils.generate_surrogate_key(["en.employee_number"]) }} as staff_key,
 
-    en.employee_number,
+    en.employee_number as staff_unique_id,
 
-    sh.formatted_name,
-    sh.given_name,
-    sh.family_name_1,
+    sh.formatted_name as full_name,
+    sh.given_name as first_name,
+    sh.family_name_1 as last_name,
 
     sh.birth_date,
 
     sh.gender_identity,
-    sh.race_ethnicity_reporting,
+    sh.race_ethnicity_reporting as race,
     sh.is_hispanic,
 
     sh.work_email,
     sh.personal_email,
-    sh.personal_cell,
+    sh.personal_cell as personal_cell_phone,
 
-    sh.sam_account_name,
+    sh.sam_account_name as active_directory_username,
     sh.google_email,
 
     sh.worker_original_hire_date as original_hire_date,

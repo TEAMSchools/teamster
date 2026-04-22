@@ -17,6 +17,7 @@ scripts: `bash scripts/<name>.sh`.
 | VS Code task: **dbt: Stage External Sources** | (see below)                                                                                 |
 | `dbt-yaml.py`                                 | Parse and transform dbt YAML files                                                          |
 | `enrich_staging_descriptions.py`              | Write descriptions + PII flags to staging YAMLs                                             |
+| `extract_ceds_schema.py`                      | Extract CEDS attribute names from GitHub XLSX                                               |
 | `extract_edfi_schema.py`                      | Extract Ed-Fi attribute names from OpenAPI spec                                             |
 | `extract_pdf_dictionary.py`                   | Extract column descriptions from source-system PDFs                                         |
 | `gen-automations-doc.py`                      | Regenerate `docs/reference/automations.md`                                                  |

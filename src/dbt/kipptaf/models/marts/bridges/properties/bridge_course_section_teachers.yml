@@ -23,28 +23,7 @@ models:
         data_tests:
           - not_null
 
-      - name: sections_dcid
-        data_type: int64
-        description: >-
-          PowerSchool sections DCID. Natural key for the section.
-
-      - name: employee_number
-        data_type: int64
-        description: >-
-          KIPP-assigned unique identifier for the staff member. Natural key for
-          the staff dimension.
-
-      - name: teachernumber
-        data_type: string
-        description: >-
-          The number the district assigns to track the teacher.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__users
-            source_column: teachernumber
-      - name: teacher_role
+      - name: role
         data_type: string
         description: >-
           User configurable name uniquely identifying the role to the user
@@ -55,7 +34,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__roledef
             source_column: name
-      - name: effective_date_start
+      - name: effective_start_date
         data_type: date
         description: >-
           The start date of the association of this teacher to this section.
@@ -65,7 +44,7 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__sectionteacher
             source_column: start_date
-      - name: effective_date_end
+      - name: effective_end_date
         data_type: date
         description: >-
           The end date of the association of this teacher to this section.
@@ -81,5 +60,5 @@ models:
             combination_of_columns:
               - course_section_key
               - staff_key
-              - teacher_role
-              - effective_date_start
+              - role
+              - effective_start_date
