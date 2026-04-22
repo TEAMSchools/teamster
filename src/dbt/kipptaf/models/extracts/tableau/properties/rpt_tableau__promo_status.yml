@@ -35,6 +35,10 @@ models:
         data_type: float64
       - name: n_absences_y1_running
         data_type: float64
+      - name: n_absences_y1_running_non_susp
+        data_type: float64
+      - name: n_absences_y1_running_non_susp_no_tardy
+        data_type: float64
       - name: iready_reading_recent
         data_type: string
       - name: iready_math_recent
