@@ -11,6 +11,9 @@ models:
         description: >-
           Surrogate primary key derived from college_code_branch. Generated with
           generate_surrogate_key(["college_code_branch"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null

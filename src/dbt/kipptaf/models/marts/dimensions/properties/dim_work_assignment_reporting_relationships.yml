@@ -13,6 +13,9 @@ models:
           Surrogate primary key derived from item_id and effective_date_start.
           Generated with generate_surrogate_key(["item_id",
           "effective_date_start"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -22,6 +25,11 @@ models:
         description: >-
           Foreign key to dim_staff_work_assignments. Surrogate key derived from
           item_id. Generated with generate_surrogate_key(["item_id"]).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_work_assignments')
+            to_columns: [work_assignment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:
@@ -36,6 +44,11 @@ models:
           to dim_staff identifying the manager this work assignment reports to.
           Null when the manager's associate_oid has no active number mapping in
           stg_people__employee_numbers.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:

@@ -17,6 +17,9 @@ models:
           attrition_type. Generated with
           generate_surrogate_key(["employee_number", "academic_year",
           "attrition_type"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -29,6 +32,11 @@ models:
           retained staff (9/1 for foundation/recruitment, 7/1 for
           nj_compliance), termination effective date for attritors. Null when no
           matching status version exists.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_status')
+            to_columns: [staff_status_key]
+            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:

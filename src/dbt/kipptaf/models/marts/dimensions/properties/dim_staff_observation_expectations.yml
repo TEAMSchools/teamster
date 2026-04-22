@@ -14,6 +14,9 @@ models:
           fields. Generated with generate_surrogate_key(["srh.employee_number",
           "t.type", "t.code", "t.name", "t.start_date", "t.region",
           "t.school_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -22,6 +25,11 @@ models:
         data_type: string
         description: >-
           Foreign key to dim_staff. Surrogate key derived from employee_number.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:
@@ -34,9 +42,18 @@ models:
         description: >-
           Foreign key to dim_terms. Surrogate key derived from term type, code,
           name, start_date, region, and school_id.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
       - name: academic_year
         data_type: int64
         description: >-

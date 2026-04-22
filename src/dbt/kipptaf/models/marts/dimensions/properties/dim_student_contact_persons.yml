@@ -13,6 +13,9 @@ models:
         description: >-
           Surrogate key derived from _dbt_source_relation and the PowerSchool
           personid. Primary key for this dimension.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null

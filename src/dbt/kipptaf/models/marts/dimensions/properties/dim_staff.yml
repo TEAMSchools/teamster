@@ -14,6 +14,9 @@ models:
         description: >-
           Surrogate key derived from employee_number. Primary key for the staff
           dimension. Generated with generate_surrogate_key(["employee_number"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null

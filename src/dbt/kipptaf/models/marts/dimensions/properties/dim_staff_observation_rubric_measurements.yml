@@ -12,6 +12,9 @@ models:
           Surrogate primary key derived from rubric_id and measurement_id.
           Generated with generate_surrogate_key(["mgm.rubric_id",
           "mgm.measurement_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -21,6 +24,11 @@ models:
         description: >-
           Foreign key to dim_staff_observation_rubrics. Surrogate key derived
           from rubric_id.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_observation_rubrics')
+            to_columns: [staff_observation_rubric_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:
@@ -55,11 +63,6 @@ models:
         description: >-
           Name of the measurement group (strand) this measurement belongs to.
 
-      - name: strand_key
-        data_type: string
-        description: >-
-          Short key code for the strand within the rubric.
-
       - name: strand_weight
         data_type: int64
         description: >-
@@ -69,11 +72,6 @@ models:
         data_type: string
         description: >-
           Description of the measurement group (strand).
-
-      - name: measurement_key
-        data_type: string
-        description: >-
-          Short key code for the measurement within its strand.
 
       - name: weight
         data_type: float64
