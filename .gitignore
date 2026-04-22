@@ -4,7 +4,6 @@ scripts/script_output/
 secret-volume
 dagster-tmp
 .claude/settings.local.json
-.superpowers/
 .claude/scratch/
 
 # Created by https://www.toptal.com/developers/gitignore/api/linux,macos,windows,python,dbt

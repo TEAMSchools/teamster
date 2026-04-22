@@ -1,4 +1,7 @@
 {
+  "dbt.enableNewLineagePanel": true,
+  "dbt.allowListFolders": ["src/dbt"],
+  "dbt.installDepsOnProjectInitialization": false,
   "diffEditor.experimental.showMoves": true,
   "diffEditor.ignoreTrimWhitespace": false,
   "editor.defaultFormatter": "trunk.io",
@@ -86,14 +89,6 @@
   },
   "python.analysis.typeCheckingMode": "off",
   "yaml.validate": false,
-  "dbtCoreTools.profilesDir": ".dbt",
-  "dbtCoreTools.deferManifestPath": {
-    "kipptaf": "src/dbt/kipptaf/target/prod",
-    "kippnewark": "src/dbt/kippnewark/target/prod",
-    "kippcamden": "src/dbt/kippcamden/target/prod",
-    "kippmiami": "src/dbt/kippmiami/target/prod",
-    "kipppaterson": "src/dbt/kipppaterson/target/prod"
-  },
   "dbt.deferConfigPerProject": {
     "src/dbt/kipptaf": {
       "deferToProduction": false,
