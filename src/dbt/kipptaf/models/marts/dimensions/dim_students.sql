@@ -20,6 +20,7 @@ select
     dob as birth_date,
     gender as gender_identity,
     lunch_status as meal_eligibility_status,
+    enroll_status_string as enrollment_status,
 
     gifted_and_talented is not null as is_gifted,
 

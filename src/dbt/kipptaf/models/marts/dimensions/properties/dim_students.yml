@@ -100,6 +100,18 @@ models:
         description: >-
           NSLP meal eligibility status (e.g., Free, Reduced, Paid).
 
+      - name: enrollment_status
+        data_type: string
+        description: >-
+          Current enrollment status of the student, decoded from PowerSchool
+          enroll_status. Values: Currently Enrolled, Pre-registered, Inactive,
+          Transferred Out, Graduated, Imported as Historical.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: enroll_status
       - name: is_gifted
         data_type: boolean
         description: >-

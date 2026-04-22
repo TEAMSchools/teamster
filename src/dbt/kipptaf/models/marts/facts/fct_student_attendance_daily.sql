@@ -71,6 +71,18 @@ select
     cast(ada.is_oss as int64) as is_oss,
     cast(ada.is_iss as int64) as is_iss,
     cast(ada.is_suspended as int64) as is_suspended,
+
+    case
+        when ada.is_oss = 1
+        then 'Out-of-School Suspension'
+        when ada.is_iss = 1
+        then 'In-School Suspension'
+        when ada.is_absent = 1
+        then 'Absent'
+        when ada.is_tardy = 1
+        then 'Tardy'
+        else 'Present'
+    end as attendance_category,
 from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ada
 inner join
     {{ ref("base_powerschool__student_enrollments") }} as enr

@@ -148,3 +148,12 @@ models:
         description: >-
           1 if the student was suspended (any type) on this date. Union of
           is_oss and is_iss codes.
+
+      - name: attendance_category
+        data_type: string
+        description: >-
+          Coarse attendance category derived from the is_* flags with priority
+          ordering (suspension > absent > tardy > present). Values:
+          Out-of-School Suspension, In-School Suspension, Absent, Tardy,
+          Present. Use this column for GROUP BY in BI tools; use the raw
+          attendance_code for specific-code drill-down.

@@ -26,7 +26,6 @@ select
     enr.academic_year,
     enr.grade_level,
     enr.cohort_primary as graduation_year,
-    enr.enroll_status as status,
     enr.is_retained_year,
 
 from {{ ref("base_powerschool__student_enrollments") }} as enr

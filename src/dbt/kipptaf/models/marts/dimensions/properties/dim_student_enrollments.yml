@@ -83,16 +83,6 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__studentcorefields
             source_column: graduation_year
-      - name: status
-        data_type: int64
-        description: >-
-          The enrollment status of the student.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: enroll_status
       - name: is_retained_year
         data_type: boolean
         description: >-
