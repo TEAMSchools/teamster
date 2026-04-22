@@ -13,38 +13,26 @@ with
             college_match_gpa,
             college_match_gpa_bands,
 
-            regexp_extract(benchmark_group, r'^(.+)_[^_]+_[^_]+$') as scope,
+            regexp_extract(benchmark_group, r'^(.+)_[^_]+_[^_]+$') as aligned_scope,
             regexp_extract(benchmark_group, r'^.+_([^_]+)_[^_]+$') as subject_area,
             regexp_extract(benchmark_group, r'_([^_]+)$') as benchmark_name,
-
-            if(
-                regexp_extract(benchmark_group, r'^(.+)_[^_]+_[^_]+$')
-                in ('PSAT10', 'PSAT NMSQT'),
-                'PSAT10/NMSQT',
-                regexp_extract(benchmark_group, r'^(.+)_[^_]+_[^_]+$')
-            ) as aligned_scope,
 
         from {{ ref("int_extracts__student_enrollments") }}
         cross join
             unnest(
                 [
                     'PSAT 8/9_EBRW_EBRW',
-                    'PSAT NMSQT_EBRW_EBRW',
-                    'PSAT10_EBRW_EBRW',
+                    'PSAT10/NMSQT_EBRW_EBRW',
                     'SAT_EBRW_EBRW',
                     'PSAT 8/9_Math_Math',
-                    'PSAT NMSQT_Math_Math',
-                    'PSAT10_Math_Math',
+                    'PSAT10/NMSQT_Math_Math',
                     'SAT_Math_Math',
                     'PSAT 8/9_Combined_College-Ready',
                     'PSAT 8/9_Combined_EA/ED-Ready',
                     'PSAT 8/9_Combined_HS-Ready',
-                    'PSAT NMSQT_Combined_College-Ready',
-                    'PSAT NMSQT_Combined_EA/ED-Ready',
-                    'PSAT NMSQT_Combined_HS-Ready',
-                    'PSAT10_Combined_College-Ready',
-                    'PSAT10_Combined_EA/ED-Ready',
-                    'PSAT10_Combined_HS-Ready',
+                    'PSAT10/NMSQT_Combined_College-Ready',
+                    'PSAT10/NMSQT_Combined_EA/ED-Ready',
+                    'PSAT10/NMSQT_Combined_HS-Ready',
                     'SAT_Combined_College-Ready',
                     'SAT_Combined_EA/ED-Ready',
                     'SAT_Combined_HS-Ready'
@@ -107,7 +95,6 @@ with
             e.year_in_network,
             e.college_match_gpa,
             e.college_match_gpa_bands,
-            e.scope,
             e.aligned_scope,
             e.subject_area,
             e.benchmark_name,
@@ -140,7 +127,6 @@ select
     year_in_network,
     college_match_gpa,
     college_match_gpa_bands,
-    scope,
     aligned_scope,
     test_type,
     score_type,
@@ -149,4 +135,3 @@ select
     benchmark_name,
 
 from base
-where scale_score = max_score or max_score is null

@@ -3,17 +3,17 @@ models:
     description: >
       Student-level college assessment scores used to calculate the percentage
       of students meeting readiness benchmarks for KIPP Forward use. One row per
-      student per (scope, benchmark_name) combination — including students with
-      no qualifying score (null max_score) so they count in the denominator.
-      Excludes IEP-exempt students and students without a graduation year.
-      Scores reflect each student's all-time best across administrations, not
-      scoped to the current academic year.
+      student per (aligned_scope, benchmark_name) combination — including
+      students with no qualifying score (null max_score) so they count in the
+      denominator. Excludes IEP-exempt students and students without a
+      graduation year. Scores reflect each student's all-time best across
+      administrations, not scoped to the current academic year.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - student_number
-              - scope
+              - aligned_scope
               - benchmark_name
     columns:
       - name: region
@@ -52,17 +52,11 @@ models:
       - name: college_match_gpa_bands
         description: GPA band grouping for college match purposes.
         data_type: string
-      - name: scope
-        description: >
-          Raw assessment scope from the scaffold (e.g., SAT, PSAT 8/9, PSAT10,
-          PSAT NMSQT). PSAT10 and PSAT NMSQT appear as separate scope rows even
-          though they share the same aligned_scope.
-        data_type: string
       - name: aligned_scope
         description: >
-          Assessment scope normalized for benchmark comparison. PSAT10 and PSAT
-          NMSQT are merged into PSAT10/NMSQT; all other scopes are unchanged.
-          Used as the join key between the scaffold and assessment scores.
+          Assessment scope used for benchmark comparison. PSAT10 and PSAT NMSQT
+          are merged into PSAT10/NMSQT; all other scopes (PSAT 8/9, SAT) are
+          unchanged.
         data_type: string
       - name: test_type
         description: Broad classification of the assessment (e.g., SAT Suite).
