@@ -1,8 +1,10 @@
 # CLAUDE.md — `marts/`
 
-Dimensional marts (star schema) consumed by Cube and Tableau. **Terminal layer**
-— marts are not referenced by other dbt models. Writing a `ref()` from another
-mart or an intermediate model to a mart here is a layering violation.
+Dimensional marts (star schema) consumed by Cube and Tableau. Most-downstream
+layer — no `ref()` from staging, intermediate, or reporting into marts.
+Intra-mart refs are permitted (e.g. `dim_survey_expectations → dim_surveys`,
+`fct_staff_attrition → dim_staff_status`). When renaming a mart column, grep
+`ref(...)` within `marts/` too — not just outside.
 
 ## Column-naming rubric
 
@@ -112,6 +114,24 @@ Surrogate-key hash values change for five reasons only:
 Pure output-alias renames don't change hashes. Any of the five above require an
 entry in the "Enumerated surrogate-key changes" table of the column-naming audit
 spec.
+
+## Verify source precision before R9 drops
+
+Staging cast chains (`cast(x as datetime)` → `cast(as date)`) and field names
+ending in `_date` are not reliable signals of value precision. Before dropping a
+column as redundant with its date/timestamp sibling, sample real values via
+BigQuery MCP:
+
+```sql
+select
+  countif(extract(time from col) = '00:00:00') as n_midnight,
+  count(*) as n_rows,
+from `<schema>.stg_<model>`
+```
+
+All midnight → drop is safe. Distributed times → column carries real
+time-of-day; keep. SmartRecruiters state-transition fields are the canonical
+trap — field names end in `_date` but values are full ISO timestamps.
 
 ## Stale metadata from copy-paste
 
