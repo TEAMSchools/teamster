@@ -206,7 +206,7 @@ with
         from family_scd
     )
 
--- TODO: roster history has multiple assignments per employee
+-- TODO: #3687 — roster history has multiple assignments per employee
 select distinct
     {{
         dbt_utils.generate_surrogate_key(

@@ -1,6 +1,6 @@
 with
     teammate_history as (
-        -- TODO: roster history has multiple assignments per employee
+        -- TODO: #3687 — roster history has multiple assignments per employee
         select distinct
             effective_date_start,
             effective_date_end,
@@ -23,7 +23,7 @@ with
     ),
 
     academic_years as (
-        -- TODO: roster history has multiple assignments per employee
+        -- TODO: #3687 — roster history has multiple assignments per employee
         select distinct employee_number, academic_year, from teammate_history
     ),
 
@@ -48,7 +48,7 @@ with
     /* Foundation Attrition: any staff not in terminated or deceased status  */
     /* on 9/1 of the following academic year  */
     foundation_returner_cohort as (
-        -- TODO: roster history has multiple assignments per employee
+        -- TODO: #3687 — roster history has multiple assignments per employee
         select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
@@ -100,7 +100,7 @@ with
     /* New Jersey Compliance Attrition: any staff not in  */
     /* terminated or deceased status on 7/1 of the following academic year  */
     nj_returner_cohort as (
-        -- TODO: roster history has multiple assignments per employee
+        -- TODO: #3687 — roster history has multiple assignments per employee
         select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
@@ -152,7 +152,7 @@ with
     /* Recruitment Attrition: any staff not in terminated or deceased  */
     /* status on 9/1 of the following academic year  */
     recruitment_returner_cohort as (
-        -- TODO: roster history has multiple assignments per employee
+        -- TODO: #3687 — roster history has multiple assignments per employee
         select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
