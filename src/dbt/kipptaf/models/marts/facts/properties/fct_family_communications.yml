@@ -73,13 +73,14 @@ models:
       - name: notes
         data_type: string
         description: >-
-          Miscellaneous notes.
+          Free-text response / notes entered by the staff member for this family
+          communication event.
 
         config:
           meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__schoolstaff
-            source_column: notes
+            source_system: DeansList
+            source_model: int_deanslist__comm_log
+            source_column: response
       - name: communication_date
         data_type: date
         description: >-
