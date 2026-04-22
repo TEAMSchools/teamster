@@ -59,6 +59,7 @@ with
             and not is_out_of_district
     ),
 
+    -- trunk-ignore(sqlfluff/ST03)
     aligned_scores_pre as (
         select
             student_number,
