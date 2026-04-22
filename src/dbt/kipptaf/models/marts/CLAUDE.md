@@ -161,6 +161,13 @@ Marts inherit `contract: enforced: true` and `materialized: view` from
 explicit uniqueness test on its PK (`unique` on a single column, or
 `dbt_utils.unique_combination_of_columns` for composite).
 
+## Constraints are informational (views)
+
+PK/FK `constraints:` blocks on marts are not enforced (views). dbt emits a parse
+warning per constraint unless `warn_unsupported: false` is set on the block.
+Constraint metadata still lands in `manifest.json` for downstream tooling (Cube)
+— set `warn_unsupported: false` on every constraint.
+
 ## Exposures are the consumer contract
 
 Every external consumer (Tableau, Google Sheets, Cube, AppSheet, etc.) that

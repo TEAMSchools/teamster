@@ -61,6 +61,10 @@ this step.**
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
 
+- **Transient Python deps**: Use `uv run --with <pkg> python script.py` for
+  one-off scripts needing a package not in `pyproject.toml` — don't
+  `uv add --dev` for throwaway tooling.
+
 - **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
   `uv run`, `gh`, `docker`, `trunk`, `ls`).

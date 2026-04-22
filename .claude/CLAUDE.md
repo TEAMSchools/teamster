@@ -76,6 +76,11 @@ The Codespace `GITHUB_TOKEN` (`ghu_*`) only has access to the repo it was
 provisioned for. Pushing to other org repos requires bypassing it:
 `GITHUB_TOKEN= git -c credential.helper='!gh auth git-credential' push`
 
+The Codespace token also lacks `project` and org-admin scopes. `gh` calls that
+mutate ProjectV2 items/fields fail with "Resource not accessible by integration"
+— prefix with `GITHUB_TOKEN=` to fall back to the user's OAuth token (`gho_*`)
+which has full scopes.
+
 ## Modifying protected files
 
 - Hook scripts (`.claude/hooks/**/*.sh`), `.devcontainer/scripts/`, and
