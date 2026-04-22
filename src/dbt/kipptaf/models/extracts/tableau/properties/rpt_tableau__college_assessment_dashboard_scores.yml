@@ -1,65 +1,29 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_scores
-    description: >
-      Max college assessment scores (SAT and PSAT variants) per student and
-      score type, joined to current enrollment for region and school context.
-      Expanded by benchmark_name for Tableau filtering — Total scores fan out to
-      three benchmark rows (College-Ready, HS-Ready, EA/ED-Ready); subject
-      scores produce one row each (EBRW, Math).
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - student_number
-              - score_type
-              - benchmark_name
     columns:
       - name: student_number
         data_type: int64
-        description: PowerSchool student number.
       - name: test_type
         data_type: string
-        description: Assessment test type (e.g. Official, School-Day).
       - name: scope
         data_type: string
-        description:
-          Assessment program (e.g. SAT, PSAT NMSQT, PSAT10, PSAT 8/9).
       - name: score_type
         data_type: string
-        description: >
-          Score dimension identifier (e.g. sat_total_score, sat_ebrw,
-          psat89_math_section).
       - name: subject_area
         data_type: string
-        description: Raw subject area label from the source system.
       - name: aligned_subject_area
         data_type: string
-        description: >
-          Normalized subject area (Total, EBRW, Math) used to assign
-          benchmark_name.
+      - name: test_date
+        data_type: date
       - name: scale_score
         data_type: numeric
-        description: Student's highest scale score for this score type.
       - name: max_scale_score
         data_type: numeric
-        description: >
-          Pre-computed max scale score from int_assessments__college_assessment,
-          used for superscore and goal calculations.
       - name: region
         data_type: string
-        description: KIPP region of the student's current enrollment.
       - name: school
         data_type: string
-        description: School abbreviation of the student's current enrollment.
       - name: graduation_year
         data_type: int64
-        description: Expected graduation year.
       - name: ktc_cohort
         data_type: int64
-        description: KIPP Through College cohort year.
-      - name: benchmark_name
-        data_type: string
-        description: >
-          Benchmark category for Tableau filtering. Total scores expand to
-          College-Ready, HS-Ready, and EA/ED-Ready; EBRW and Math scores use
-          their subject area directly.

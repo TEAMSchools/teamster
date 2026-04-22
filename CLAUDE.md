@@ -23,9 +23,11 @@ this step.**
 
 ## Working Conventions
 
-- **Before writing any spec or plan**: create a GitHub issue (`gh issue create`;
-  label with conventional commit type, related source systems, and
-  `dagster`/`dbt` when applicable). Quick fixes do not require one.
+- **Before writing any spec or plan**: STOP and explicitly ask the user whether
+  to open a GitHub issue first. Required for specs/plans; not required for quick
+  fixes. Do not write anything until the user answers. If opening:
+  `gh issue create`; label with conventional commit type, related source
+  systems, and `dagster`/`dbt` when applicable.
 
 - **Before creating a branch**: ask the user — worktree or branch switch? Do not
   choose for them.
@@ -100,6 +102,12 @@ this step.**
 Dagster+ MCP server: `dagster-plus-mcp` package (`dev` group) —
 [TEAMSchools/dagster-plus-mcp](https://github.com/TEAMSchools/dagster-plus-mcp).
 See that repo's CLAUDE.md for package internals.
+
+Authenticated via `scripts/dagster-mcp-launch.sh` (reads
+`/etc/secret-volume/.op-token`, exchanges for scoped `DAGSTER_CLOUD_API_TOKEN`
+via `op read`, execs). Do not revert to `op run` in `.mcp.json` —
+`OP_SERVICE_ACCOUNT_TOKEN` is scrubbed post-boot by `postStart.sh`, so `op run`
+silently breaks after the first Codespace restart.
 
 ### MCP tool selection
 

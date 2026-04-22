@@ -109,6 +109,16 @@ of the pod Preempted timestamp.
 Skip if no dagster/auto_retry_run_id. Otherwise list_runs(run_ids=<all>).
 Collect: runId, status, startTime, endTime. Fetch logs only for FAILURE retries.
 
+CRITICAL: `list_runs(run_ids=...)` status can disagree with the run's event
+log. For every retry (not just FAILURE), fetch the terminal event via
+`get_run_logs(run_id=<id>,
+filter_types=["RunSuccessEvent","RunFailureEvent"], limit=5)`. If the
+terminal event is `RunFailureEvent`, record retryStatus=FAILURE regardless
+of what list_runs reported, and fetch the full failure logs. Phase 2
+depends on accurate retry outcomes — a retry silently reported as non-
+FAILURE while its event log ends in RunFailureEvent will point root-cause
+analysis in the wrong direction.
+
 ## 3. Failed sensor/schedule ticks
 
 list_code_locations → names + loadStatus.
@@ -305,9 +315,31 @@ resource labels, metric type, policy. Pod type from name:
 
 ## 8. Error groups
 
-list_group_stats(projectName="projects/teamster-332318",
-  timeRangePeriod="PERIOD_1_DAY", order="COUNT_DESC", pageSize=10).
-Per group: ID, count, exception (300 chars), services.
+mcp__observability__list_group_stats(projectName="projects/teamster-332318",
+  timeRangePeriod="PERIOD_30_DAYS", order="LAST_SEEN_DESC", pageSize=25).
+MUST paginate via pageToken until a page returns < 25.
+
+Capture ALL groups with resolutionStatus="OPEN" regardless of when they were
+last seen — open groups are actionable cleanup targets whether or not they
+triggered in the day-2 window. `timeRangePeriod` caps the retrieval window at
+30 days; if the intent is a weekly cleanup pass, one month is wide enough.
+Use `PERIOD_30_DAYS` (not narrower), because `PERIOD_1_DAY` silently omits
+groups last-seen >24h ago even though they are still OPEN.
+
+Bucket in post-processing:
+  - inWindow: lastSeenTime within {UTC_START}–{UTC_END} → Phase 2 correlates
+    with runs/ticks for root-cause linkage
+  - staleOpen: lastSeenTime older than {UTC_START} → Phase 2 surfaces as
+    cleanup / emerging-issue candidates without correlating to timeline
+
+Many OPEN groups are false positives from retry-wrapped helpers that log
+`.exception()` at ERROR severity on transient failures the retry layer
+recovers from (see teamster/CLAUDE.md — "Don't log.exception inside
+retry-wrapped helpers"). Flag these patterns rather than treating them as
+active incidents.
+
+Per group: ID, count, firstSeenTime, lastSeenTime, exception (300 chars),
+services, resolutionStatus.
 
 ## 9. OOM drill-down (depends on 1)
 
@@ -498,7 +530,26 @@ outages, agent errors → tick failures, daemon issues → tick/run impacts, ale
 runs and backfills if present.
 
 **Emerging issues**: Error groups not yet causing failures but increasing. Omit
-if none.
+if none. For step 8, split the Emerging Issues section into two subsections:
+
+- **In-window groups** (step 8 `inWindow`): groups that surfaced during the
+  day-2 window. Correlate each with runs/ticks from the timeline — if the
+  group's stack trace matches a retry-recovered run, it is likely a
+  false-positive from a retry-wrapped helper (see teamster/CLAUDE.md). Recommend
+  changing the helper's log level in that case.
+- **Stale open groups** (step 8 `staleOpen`): OPEN groups last-seen before the
+  window. Treat as cleanup candidates. Note the last-seen date and whether the
+  stack matches a retry-wrapped helper. These do not belong in the timeline.
+
+When attributing an error group to a file, identify what is logging at ERROR
+severity — GCP Error Reporting fires on ERROR logs, not on stack frames. A
+traceback that passes through a file does NOT mean that file is the emitter.
+`SIGTERM` during run preemption unwinds the stack through wherever execution was
+when the signal arrived, so the top frames of the traceback will name whatever
+helper was in-flight. Before proposing a fix to a file, confirm the file itself
+emits ERROR-level logs for this path (read the source — not just that it appears
+in the stack). Retry-wrapped helpers in `teamster/CLAUDE.md` log at WARNING and
+do NOT file groups; stack frames through them are incidental.
 
 **Actions**: No action (transient + retry success), Monitor
 (recurring/emerging), Investigate (retry failure), Escalate (sustained platform

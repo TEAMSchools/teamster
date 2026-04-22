@@ -9,6 +9,7 @@ from dagster import (
 )
 from dagster_dbt import get_asset_key_for_model
 from dagster_shared import check
+from tableauserverclient.server.endpoint.exceptions import ServerResponseError
 
 from teamster.code_locations.kipptaf.dbt.assets import core_dbt_assets
 from teamster.core.asset_checks import (
@@ -41,7 +42,21 @@ def build_tableau_workbook_refresh_asset(
             context.assets_def.metadata_by_key[context.asset_key]["id"]
         )
 
-        tableau._server.workbooks.refresh(workbook)
+        try:
+            tableau._server.workbooks.refresh(workbook)
+        except ServerResponseError as e:
+            # Tableau 409093: a refresh for this workbook is already queued
+            # server-side. This happens when a prior run queued the refresh
+            # successfully before being preempted, and the auto-retry tries
+            # to queue it again. Re-queueing adds no value — the refresh
+            # will still run.
+            if getattr(e, "code", None) != "409093":
+                raise
+
+            context.log.info(
+                f"Refresh already queued for workbook {workbook.name!r}; "
+                "treating as success."
+            )
 
         return None
 
