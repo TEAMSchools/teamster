@@ -48,6 +48,7 @@
       "mcp__dagster__search_assets",
       "mcp__dbt__get_job_run_details",
       "mcp__dbt__get_job_run_error",
+      "mcp__dbt__list_jobs_runs",
       "mcp__dbt__list_jobs",
       "mcp__dbt__show",
       "mcp__gke__get_cluster",
