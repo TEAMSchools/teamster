@@ -154,3 +154,14 @@ wide tables, paginate with `WHERE ordinal_position > N`.
 Pre-merge queries against PR-branch schema use
 `dbt_cloud_pr_<ci_id>_<pr_num>_<schema>` — prod `<schema>` lacks unmerged
 renames.
+
+### dbt MCP
+
+Auth via `scripts/dbt-mcp-launch.sh` — do not add `DBT_TOKEN` to `.mcp.json`
+directly. `list_jobs` is hard-filtered to `DBT_PROD_ENV_ID`, currently staging
+(70403104014899); per-call `environment_id` / `project_id` args exposed by the
+schema are ignored. Run-inspection tools (`list_jobs_runs`,
+`get_job_run_details`, `get_job_run_error`) ignore env scope and work across
+environments by `job_id` / `run_id`. For successful runs, call
+`get_job_run_error` with `warning_only=true` to surface test warnings —
+status=Success does not mean warning-free.
