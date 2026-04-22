@@ -40,6 +40,8 @@ models:
           position). Surrogate key derived from the teammate employee number.
           Nullable — open positions have no incumbent.
         data_tests:
+          # TODO: #3710 — Seat Tracker retains historical incumbents outside
+          # dim_staff's active-primary scope. Promote to error once resolved.
           - relationships:
               arguments:
                 to: ref('dim_staff')
@@ -52,6 +54,8 @@ models:
           derived from the recruiter employee number. Nullable — positions may
           have no assigned recruiter.
         data_tests:
+          # TODO: #3710 — Seat Tracker recruiter values include staff outside
+          # dim_staff's active-primary scope. Promote to error once resolved.
           - relationships:
               arguments:
                 to: ref('dim_staff')

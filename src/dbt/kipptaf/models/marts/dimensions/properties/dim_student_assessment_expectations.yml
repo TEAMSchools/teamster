@@ -34,6 +34,8 @@ models:
         description: >-
           FK to dim_students. Surrogate key derived from student_number.
         data_tests:
+          # TODO: #3711 — assessment scaffold includes students absent from
+          # PowerSchool enrollments. Promote to error once resolved.
           - relationships:
               arguments:
                 to: ref('dim_students')
