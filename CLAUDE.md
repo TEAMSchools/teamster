@@ -46,7 +46,7 @@ this step.**
 - **Git naming**: Commit messages and branch names use
   [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch
   naming: `<gh-username>/<commit-type>/claude-<brief-description>` (get username
-  from `gh api user -q .login`).
+  from `mcp__github__get_me`).
 
 - **Git staging**: Prefer `git add -u` — naming protected paths triggers the
   hook, `git add -A` can stage unrelated files. Subagents must name specific
