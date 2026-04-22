@@ -13,7 +13,7 @@ with
             sa.academic_year,
             sa.response_deadline_date,
 
-            s.survey_name,
+            s.name,
         from {{ ref("dim_survey_administrations") }} as sa
         inner join {{ ref("dim_surveys") }} as s on sa.survey_key = s.survey_key
     ),
@@ -41,7 +41,7 @@ with
             between srh.work_assignment_actual_start_date and srh.effective_date_end
             and srh.primary_indicator
             and srh.assignment_status = 'Active'
-        where sa.survey_name = 'School Community Diagnostic Staff Survey'
+        where sa.name = 'School Community Diagnostic Staff Survey'
     ),
 
     /* Staff Manager Survey expectations: direct reports evaluate manager */
@@ -67,7 +67,7 @@ with
             between srh.work_assignment_actual_start_date and srh.effective_date_end
             and srh.primary_indicator
             and srh.assignment_status = 'Active'
-        where sa.survey_name = 'Manager Survey'
+        where sa.name = 'Manager Survey'
     ),
 
     /* Staff Support Survey expectations */
@@ -93,7 +93,7 @@ with
             between srh.work_assignment_actual_start_date and srh.effective_date_end
             and srh.primary_indicator
             and srh.assignment_status = 'Active'
-        where sa.survey_name = 'Support Survey'
+        where sa.name = 'Support Survey'
     ),
 
     /* Student SCD expectations: enrolled students */
@@ -127,7 +127,7 @@ with
             on sa.academic_year = enr.academic_year
             and enr.enroll_status = 0
             and enr.grade_level between 3 and 12
-        where sa.survey_name = 'School Community Diagnostic Student Survey'
+        where sa.name = 'School Community Diagnostic Student Survey'
     ),
 
     /* Family SCD expectations: one per contact person */
@@ -146,7 +146,7 @@ with
         from survey_admin as sa
         cross join contact_persons as cp
         where
-            sa.survey_name in (
+            sa.name in (
                 'KIPP NJ & KIPP Miami Family Survey',
                 'KIPP Miami Re-Commitment Form'
                 ' & Family School Community Diagnostic',
