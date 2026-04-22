@@ -18,7 +18,7 @@ models:
           - unique
           - not_null
 
-      - name: employee_number
+      - name: staff_unique_id
         data_type: int64
         description: >-
           KIPP-assigned unique identifier for all staff members across all
@@ -27,15 +27,15 @@ models:
           - unique
           - not_null
 
-      - name: formatted_name
+      - name: full_name
         data_type: string
         description: Staff member's preferred name in Last, First Middle format.
 
-      - name: given_name
+      - name: first_name
         data_type: string
         description: Staff member's preferred first name.
 
-      - name: family_name_1
+      - name: last_name
         data_type: string
         description: Staff member's preferred last name.
 
@@ -49,11 +49,11 @@ models:
           Staff member's preferred gender identity as reported in the staff
           information survey, with ADP gender_code as fallback.
 
-      - name: race_ethnicity_reporting
+      - name: race
         data_type: string
         description: >-
-          Staff member's race/ethnicity for reporting purposes, sourced from the
-          staff information survey with ADP as fallback.
+          Staff member's racial category for reporting purposes, sourced from
+          the staff information survey with ADP as fallback.
 
       - name: is_hispanic
         data_type: boolean
@@ -69,15 +69,15 @@ models:
         data_type: string
         description: Staff member's personal email address from ADP.
 
-      - name: personal_cell
+      - name: personal_cell_phone
         data_type: string
         description: Staff member's personal cell phone number from ADP.
 
-      - name: sam_account_name
+      - name: active_directory_username
         data_type: string
         description: >-
-          Staff member's Active Directory SAM account name (lowercased), used as
-          a cross-system identifier.
+          Staff member's Active Directory username (lowercased), used as a
+          cross-system identifier.
 
       - name: google_email
         data_type: string

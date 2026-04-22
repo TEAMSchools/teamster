@@ -65,109 +65,163 @@ models:
         data_type: date
       - name: as1
         data_type: int64
+        description: Conditional on as1.
       - name: as2
         data_type: int64
+        description: Conditional on as2.
       - name: as3
         data_type: int64
+        description: Conditional on as3.
       - name: as4
         data_type: int64
+        description: Conditional on as4.
       - name: as5
         data_type: int64
+        description: Conditional on as5.
       - name: as6
         data_type: int64
+        description: Conditional on as6.
       - name: as7
         data_type: int64
+        description: Conditional on as7.
       - name: as8
         data_type: int64
+        description: Conditional on as8.
       - name: as9
         data_type: int64
+        description: Conditional on as9.
       - name: as10
         data_type: int64
+        description: Conditional on as10.
       - name: as11
         data_type: int64
+        description: Conditional on as11.
       - name: as12
         data_type: int64
+        description: Conditional on as12.
       - name: as13
         data_type: int64
+        description: Conditional on as13.
       - name: as14
         data_type: int64
+        description: Conditional on as14.
       - name: as15
         data_type: int64
+        description: Conditional on as15.
       - name: as16
         data_type: int64
+        description: Conditional on as16.
       - name: as17
         data_type: int64
+        description: Conditional on as17.
       - name: as18
         data_type: int64
+        description: Conditional on as18.
       - name: as19
         data_type: int64
+        description: Conditional on as19.
       - name: as20
         data_type: int64
+        description: Conditional on as20.
       - name: as21
         data_type: int64
+        description: Conditional on as21.
       - name: as22
         data_type: int64
+        description: Conditional on as22.
       - name: as23
         data_type: int64
+        description: Conditional on as23.
       - name: as24
         data_type: int64
+        description: Conditional on as24.
       - name: bbb
         data_type: int64
+        description: Conditional on bbb.
       - name: bgp_2year
         data_type: int64
+        description: Conditional on bgp_2year.
       - name: bgp_4year
         data_type: int64
+        description: Conditional on bgp_4year.
       - name: bgp_cte
         data_type: int64
+        description: Conditional on bgp_cte.
       - name: bgp_military
         data_type: int64
+        description: Conditional on bgp_military.
       - name: bgp_unknown
         data_type: int64
+        description: Conditional on bgp_unknown.
       - name: bgp_workforce
         data_type: int64
+        description: Conditional on bgp_workforce.
       - name: bm
         data_type: int64
+        description: Conditional on bm.
       - name: cc1
         data_type: int64
+        description: Conditional on cc1.
       - name: cc2
         data_type: int64
+        description: Conditional on cc2.
       - name: cc3
         data_type: int64
+        description: Conditional on cc3.
       - name: cc4
         data_type: int64
+        description: Conditional on cc4.
       - name: cc5
         data_type: int64
+        description: Conditional on cc5.
       - name: ccdm
         data_type: int64
+        description: Conditional on ccdm.
       - name: dp_2year
         data_type: int64
+        description: Conditional on dp_2year.
       - name: dp_4year
         data_type: int64
+        description: Conditional on dp_4year.
       - name: dp_cte
         data_type: int64
+        description: Conditional on dp_cte.
       - name: dp_military
         data_type: int64
+        description: Conditional on dp_military.
       - name: dp_unknown
         data_type: int64
+        description: Conditional on dp_unknown.
       - name: dp_workforce
         data_type: int64
+        description: Conditional on dp_workforce.
       - name: gp
         data_type: int64
+        description: Conditional on gp.
       - name: hd_nr
         data_type: int64
+        description: Conditional on hd_nr.
       - name: hd_p
         data_type: int64
+        description: Conditional on hd_p.
       - name: hv
         data_type: int64
+        description: Conditional on hv.
       - name: mc1
         data_type: int64
+        description: Conditional on mc1.
       - name: mc2
         data_type: int64
+        description: Conditional on mc2.
       - name: psc
         data_type: int64
+        description: Conditional on psc.
       - name: sc
         data_type: int64
+        description: Conditional on sc.
       - name: td_nr
         data_type: int64
+        description: Conditional on td_nr.
       - name: td_p
         data_type: int64
+        description: Conditional on td_p.

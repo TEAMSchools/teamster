@@ -41,14 +41,15 @@ models:
           The academic year the staff member belongs to, derived from the fiscal
           year starting in July of that year (e.g., 2023 = July 2023–June 2024).
 
-      - name: attrition_type
+      - name: type
+        quote: true
         data_type: string
         description: >-
           Attrition methodology: foundation (9/1–4/30 window, return check 9/1),
           nj_compliance (7/1–6/30 window, return check 7/1), or recruitment
           (9/1–8/31 window, return check 9/1 of following year).
 
-      - name: attrition_cutoff_date
+      - name: cutoff_date
         data_type: date
         description: >-
           Window close date for retained staff (4/30 for foundation, 6/30 for

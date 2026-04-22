@@ -118,13 +118,12 @@ select
     {{ dbt_utils.generate_surrogate_key(["c._dbt_source_relation", "c.personid"]) }}
     as student_contact_person_key,
 
-    c._dbt_source_relation,
-    c.personid as powerschool_person_id,
-    c.contact_name,
+    c.contact_name as full_name,
 
     ph.phone,
     em.email,
-    ad.address,
+
+    ad.address as home_address,
 from contacts_deduped as c
 left join
     phone as ph

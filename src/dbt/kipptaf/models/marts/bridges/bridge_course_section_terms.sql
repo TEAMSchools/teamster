@@ -18,8 +18,6 @@ select
         )
     }} as term_key,
 
-    sec.sections_dcid,
-    rt.code as term_code,
     rt.academic_year,
 
 from {{ ref("base_powerschool__sections") }} as sec

@@ -7,14 +7,10 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["sr.employee_number"]) }} as staff_key,
 
-    sec.sections_dcid,
-    sr.employee_number,
-    t.teachernumber,
+    r.name as `role`,
 
-    r.name as teacher_role,
-
-    cast(st.start_date as date) as effective_date_start,
-    cast(st.end_date as date) as effective_date_end,
+    cast(st.start_date as date) as effective_start_date,
+    cast(st.end_date as date) as effective_end_date,
 
 from {{ ref("base_powerschool__sections") }} as sec
 inner join

@@ -34,5 +34,9 @@ models:
         data_type: numeric
       - name: discipline
         data_type: string
+        description: Categorical mapping of course_discipline.
       - name: rn_highest
         data_type: int64
+        description:
+          ROWNUMBER of value partitioned by powerschool_student_number,
+          test_type, score_type ordered by score.

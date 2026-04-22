@@ -33,22 +33,6 @@ models:
         data_tests:
           - not_null
 
-      - name: survey_id
-        data_type: string
-        description: >-
-          Source system identifier for the survey instrument.
-
-      - name: survey_response_id
-        data_type: string
-        description: >-
-          Source system identifier for the individual survey response.
-
-      - name: question_shortname
-        data_type: string
-        description: >-
-          Abbreviated identifier for the question being answered. Matches the
-          grain of dim_survey_questions.
-
       - name: response_value
         data_type: numeric
         description: >-

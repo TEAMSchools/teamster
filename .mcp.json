@@ -1,24 +1,8 @@
 {
   "mcpServers": {
     "dagster": {
-      "command": "op",
-      "args": [
-        "run",
-        "--no-masking",
-        "--",
-        "uv",
-        "run",
-        "--group",
-        "dev",
-        "python",
-        "-m",
-        "dagster_plus_mcp"
-      ],
-      "env": {
-        "DAGSTER_CLOUD_API_TOKEN": "op://Data Team/Dagster Cloud Agent/credential",
-        "DAGSTER_CLOUD_ORGANIZATION_ID": "kipptaf",
-        "DAGSTER_CLOUD_DEPLOYMENT": "prod"
-      }
+      "command": "/workspaces/teamster/scripts/dagster-mcp-launch.sh",
+      "args": []
     },
     "bigquery": {
       "command": "/usr/local/bin/toolbox",
@@ -29,12 +13,8 @@
       }
     },
     "dbt": {
-      "command": "uvx",
-      "args": ["dbt-mcp"],
-      "env": {
-        "DBT_PROJECT_DIR": "/workspaces/teamster/src/dbt/kipptaf",
-        "DBT_PATH": "/workspaces/teamster/.venv/bin/dbt"
-      }
+      "command": "/workspaces/teamster/scripts/dbt-mcp-launch.sh",
+      "args": []
     },
     "gke": {
       "command": "gke-mcp",

@@ -24,27 +24,30 @@ models:
         data_tests:
           - not_null
 
+      - name: communicator_staff_key
+        data_type: string
+        description: >-
+          FK to dim_staff for the staff member who logged the communication.
+          Derived from the DeansList user's email resolved to an employee_number
+          via int_people__staff_roster, then hashed with generate_surrogate_key.
+          Nullable when the DeansList user cannot be matched to a staff record.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
       - name: date_key
         data_type: date
         description: >-
           Date the communication occurred. FK to dim_dates.
-
-      - name: student_number
-        data_type: int64
-        description: >-
-          PowerSchool student number. Degenerate dimension for filtering.
 
       - name: academic_year
         data_type: int64
         description: >-
           KIPP academic year (July start) for this communication.
 
-      - name: record_id
-        data_type: int64
-        description: >-
-          DeansList unique identifier for the communication log entry.
-
-      - name: communication_method
+      - name: method
         data_type: string
         description: >-
           Method of communication (e.g., Phone Call, Home Visit, Text, Email).
@@ -60,40 +63,44 @@ models:
           Reason category for the communication (e.g., 'Att: Absent', 'Chronic
           Absence: 4', general reasons).
 
-      - name: status
+      - name: outcome
         data_type: string
         description: >-
-          Status of the communication attempt (e.g., Completed, Attempted, Left
-          Message).
+          Result of the call attempt as logged in DeansList. Distinct from
+          PowerSchool-style status codes — values describe whether the call
+          connected, went to voicemail, etc.
 
       - name: notes
         data_type: string
         description: >-
-          Free-text response notes from the communication.
+          Free-text response / notes entered by the staff member for this family
+          communication event.
 
-      - name: staff_name
-        data_type: string
+        config:
+          meta:
+            source_system: DeansList
+            source_model: int_deanslist__comm_log
+            source_column: response
+      - name: timestamp
+        quote: true
+        data_type: timestamp
         description: >-
-          Full name of the staff member who logged the communication.
-
-      - name: communication_date
-        data_type: date
-        description: >-
-          Date the communication was logged.
-
-      - name: communication_datetime
-        data_type: datetime
-        description: >-
-          Datetime the communication was logged, preserving time of day.
+          Timestamp the communication was logged, preserving time of day. Cast
+          from the DeansList datetime to timestamp per R4 suffix convention.
 
       - name: is_attendance_call
         data_type: boolean
         description: >-
-          TRUE if the communication reason starts with 'Att:' indicating it is
-          an attendance-related call.
+          TRUE if the communication reason starts with 'Att:' — routine
+          attendance outreach (absences, tardies). Mutually exclusive with
+          is_truancy_call; chronic-absence / truancy communications are tracked
+          separately. For a total count of attendance-related contacts, use
+          `is_attendance_call OR is_truancy_call`.
 
       - name: is_truancy_call
         data_type: boolean
         description: >-
-          TRUE if the communication reason starts with 'Chronic Absence:'
-          indicating it is a truancy intervention call.
+          TRUE if the communication reason starts with 'Chronic Absence:' — the
+          specific chronic-absence / truancy intervention workflow. Mutually
+          exclusive with is_attendance_call (which covers routine attendance
+          outreach); neither is a subset of the other.

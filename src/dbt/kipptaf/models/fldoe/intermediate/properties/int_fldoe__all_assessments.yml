@@ -37,11 +37,18 @@ models:
         data_type: int64
       - name: scale_for_proficiency
         data_type: int64
+        description: Conditional on scale_low, sublevel_number.
       - name: points_to_proficiency
         data_type: int64
+        description: Conditional on scale_low, scale_score, sublevel_number.
       - name: scale_for_growth
         data_type: int64
+        description: Conditional on scale_high, sublevel_number.
       - name: points_to_growth
         data_type: int64
+        description: Conditional on scale_high, scale_score, sublevel_number.
       - name: scale_score_prev
         data_type: int64
+        description:
+          LAG of scale_score partitioned by student_id, academic_year,
+          assessment_subject ordered by administration_window.

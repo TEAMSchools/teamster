@@ -27,23 +27,33 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from location_clean_name. FK to dim_locations.
-          Null when sections_schoolid does not match any location in the
+          Null when the section's school ID does not match any location in the
           crosswalk.
 
-      - name: section_number
+      - name: identifier
         data_type: string
         description: >-
-          PowerSchool section number. Identifies this specific section within
-          the course at the school.
+          The section number associated with this class. This is implied by the
+          Section ID but stored here forconvenience.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__cc
+            source_column: section_number
       - name: period
         data_type: string
         description: >-
-          Period expression for this section as stored in PowerSchool
-          (sections_expression). Encodes the days and periods when the section
-          meets (e.g., '1(A-F)').
+          Period expression for this section. Encodes the days and periods when
+          the section meets (e.g., '1(A-F)').
 
       - name: room
         data_type: string
         description: >-
-          Room assignment for this section as recorded in PowerSchool.
+          The room number the section is in. Not currently tied to the master
+          scheduler — imported or entered manually.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sections
+            source_column: room

@@ -34,15 +34,27 @@ models:
       - name: entry_date_key
         data_type: date
         description: >-
-          Date the student entered this enrollment. FK to dim_dates
-          (role-playing as entry date).
+          The date the student enrolled in school for the current enrollment.
+          Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: entrydate
       - name: exit_date_key
         data_type: date
         description: >-
-          Date the student exited this enrollment. FK to dim_dates (role-playing
-          as exit date). Null for open enrollments.
+          The date the student exited for the current/last enrollment. This is
+          the day after a student-attended class. For example, if the last day
+          the student is in school is a Wednesday, Thursdayis the exit day.
+          Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: exitdate
       - name: academic_year
         data_type: int64
         description: >-
@@ -53,27 +65,24 @@ models:
       - name: grade_level
         data_type: int64
         description: >-
-          Grade level of the student during this enrollment as recorded in
-          PowerSchool.
+          The grade the student is in. Since this is an integer: 0=Kindergarten
+          1, -2=Preschool. Indexed.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: grade_level
       - name: graduation_year
         data_type: int64
         description: >-
-          Expected graduation year (cohort_primary from PowerSchool). Represents
-          the calendar year the student is projected to graduate high school.
+          Student graduation year.
 
-      - name: school_level
-        data_type: string
-        description: >-
-          School level abbreviation for the enrolling school (ES, MS, HS).
-
-      - name: enroll_status
-        data_type: int64
-        description: >-
-          PowerSchool enrollment status code. 0 = currently enrolled, 1 =
-          inactive, 2 = transferred out, 3 = graduated, -1 = pre-registered, -2
-          = inactive, 4 = imported as historical.
-
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: graduation_year
       - name: is_retained_year
         data_type: boolean
         description: >-

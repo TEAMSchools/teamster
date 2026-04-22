@@ -7,7 +7,6 @@ with
             n.enrollment_end,
             n.enrollment_status,
             n.graduated,
-            n.two_year_four_year,
             n.degree_title,
             n.enrollment_major_1,
             n.class_level,
@@ -23,7 +22,6 @@ with
             enrollment_end,
             enrollment_status,
             graduated,
-            two_year_four_year,
             degree_title,
             enrollment_major_1,
             class_level,
@@ -48,9 +46,6 @@ with
             max(
                 if(enrollment_end = max_enrollment_end, enrollment_status, null)
             ) as latest_enrollment_status,
-            max(
-                if(enrollment_end = max_enrollment_end, two_year_four_year, null)
-            ) as degree_pursued,
             max(
                 if(enrollment_end = max_enrollment_end, degree_title, null)
             ) as degree_title,
@@ -78,10 +73,7 @@ select
     t.enrollment_start_date as start_date_key,
     t.enrollment_end_date as end_date_key,
 
-    r.student_number,
-    t.college_code_branch,
-    t.latest_enrollment_status as enrollment_status,
-    t.degree_pursued,
+    t.latest_enrollment_status as status,
     t.degree_title,
     t.major,
     t.class_level,

@@ -25,13 +25,11 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["employee_number"]) }} as staff_key,
 
-    employee_number,
     plan_type,
     plan_name,
     coverage_level,
-    enrollment_status,
 
-    enrollment_start_date,
-    enrollment_end_date,
+    enrollment_start_date as start_date,
+    enrollment_end_date as end_date,
 from deduped
 where employee_number is not null

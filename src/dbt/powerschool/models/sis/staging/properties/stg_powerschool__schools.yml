@@ -1,5 +1,8 @@
 models:
   - name: stg_powerschool__schools
+    description:
+      "Information held on each of the schools. Note: This table includes schema
+      extension. For more information, see _C_SCHOOL_REGISTRAR{_}."
     columns:
       - name: dcid
         data_type: int64
@@ -7,105 +10,215 @@ models:
           - unique:
               config:
                 severity: error
+        description: Unique identifier for this table. Indexed. Required.
+        constraints:
+          - type: primary_key
       - name: id
         data_type: int64
+        description:
+          Not used by the application. Uniqueness is not guaranteed. NOT to be
+          used as a key for thistable.
       - name: name
         data_type: string
+        description: The name of the school. Indexed.
       - name: address
         data_type: string
+        description:
+          The physical address of the school. Also see School Address.
       - name: pscomm_path
         data_type: string
+        description:
+          This was converted from GEN table for pscommpath field in the custom
+          field.
       - name: abbreviation
         data_type: string
+        description: The short name for the school displayed on most screens.
       - name: activecrslist
         data_type: string
+        description:
+          List of all the courses active in this school taken from district
+          list. This is the actual course catalogfor a school.
       - name: bulletinemail
         data_type: string
+        description:
+          Email address of the person who gets email for bulletin information.
+        config:
+          meta:
+            contains_pii: true
       - name: sysemailfrom
         data_type: string
+        description: The email address Power School says it is from.
+        config:
+          meta:
+            contains_pii: true
       - name: tchrlogentrto
         data_type: string
+        description:
+          When teachers submit a log entry the email address of the person who
+          is notified.
+        config:
+          meta:
+            contains_pii: true
       - name: portalid
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
       - name: schooladdress
         data_type: string
+        description: The street number and address of the school.
       - name: schoolcity
         data_type: string
+        description: The city the school is in.
       - name: schoolstate
         data_type: string
+        description: The state the school is in.
       - name: schoolzip
         data_type: string
+        description: The zip code of the school.
       - name: schoolphone
         data_type: string
+        description: The phone number of the school.
+        config:
+          meta:
+            contains_pii: true
       - name: schoolfax
         data_type: string
+        description: The fax number for the school.
       - name: schoolcountry
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
       - name: principal
         data_type: string
+        description: The name of the Principal.
       - name: principalphone
         data_type: string
+        description: The Principals phone number.
+        config:
+          meta:
+            contains_pii: true
       - name: principalemail
         data_type: string
+        description: The Principals email address.
+        config:
+          meta:
+            contains_pii: true
       - name: asstprincipalphone
         data_type: string
+        description: The Vice Principal's phone number.
+        config:
+          meta:
+            contains_pii: true
       - name: asstprincipalemail
         data_type: string
+        description: The Vice Principal's email address.
+        config:
+          meta:
+            contains_pii: true
       - name: countyname
         data_type: string
+        description: The name of the county the school is located at.
       - name: countynbr
         data_type: string
+        description: The abbreviation for the county or its number.
       - name: asstprincipal
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
       - name: schedulewhichschool
         data_type: string
+        description:
+          This was converted from PREF table for class to be scheduled for
+          school.
       - name: schoolinfo_guid
         data_type: string
+        description:
+          Globally unique identifier for this table for SIF compliancy. Indexed.
       - name: sif_stateprid
         data_type: string
+        description: SIF specific Identifier.
       - name: psguid
         data_type: string
+        description:
+          If used, a unique identifier for the row. Currently applicable to
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
+          Plus.
       - name: ip_address
         data_type: string
+        description: IP address of the client that initiated the transaction.
       - name: whomodifiedtype
         data_type: string
+        description: Type of user account that last modified the record.
       - name: transaction_date
         data_type: timestamp
+        description: Date and time of the database transaction.
       - name: district_number
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
       - name: school_number
         data_type: int64
+        description:
+          The school number the school for all non-district level entities must
+          be non zero unique positive.Indexed.
       - name: low_grade
         data_type: int64
+        description: The lowest grade level that will be attending this school.
       - name: high_grade
         data_type: int64
+        description: The highest grade that will be attending this school.
       - name: sortorder
         data_type: int64
+        description: The order the schools show on lists.
       - name: schoolgroup
         data_type: int64
+        description:
+          No longer used by the application, but is still being set as
+          Interprocess variable.
       - name: hist_low_grade
         data_type: int64
+        description:
+          The lowest historical grade level that will be used for Cumulative
+          GPA, etc.
       - name: hist_high_grade
         data_type: int64
+        description:
+          The highest historical grade level that will be used for Cumulative
+          GPA, etc.
       - name: dfltnextschool
         data_type: int64
+        description:
+          The default next school number on the students will be promoted after
+          this graduating from thisschool. 0= for none.
       - name: view_in_portal
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
       - name: state_excludefromreporting
         data_type: int64
+        description: Flag to stop state reports from updating.
       - name: alternate_school_number
         data_type: int64
+        description: An alternate school number used for state reporting.
       - name: fee_exemption_status
         data_type: int64
       - name: issummerschool
         data_type: int64
+        description:
+          Flag to determine whether or not this School is a Summer School.
       - name: schoolcategorycodesetid
         data_type: int64
+        description:
+          The ID of the School Category Code for the school. References record
+          in the Codeset table.
       - name: whomodifiedid
         data_type: int64
+        description:
+          Internal identifier of the user who last modified the record.
       - name: school_level
         data_type: string
-      # - name: custom
-      #   data_type: string
-      # - name: executionid
-      #   data_type: string

@@ -5,6 +5,7 @@ and staleness evaluation logic shared across assets, schedules, and sensors.
 """
 
 import logging
+import sys
 from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -103,8 +104,10 @@ def with_powerschool_retry[_T](
         except Exception:
             if attempt == max_attempts:
                 raise
+            exc = sys.exc_info()[1]
             log.warning(
-                f"PowerSchool attempt {attempt}/{max_attempts} failed, retrying..."
+                f"PowerSchool attempt {attempt}/{max_attempts} failed, retrying: "
+                f"{type(exc).__name__}: {exc}"
             )
 
     raise AssertionError("unreachable: max_attempts must be >= 1")

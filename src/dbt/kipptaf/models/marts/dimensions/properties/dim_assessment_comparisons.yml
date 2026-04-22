@@ -37,11 +37,6 @@ models:
         description: >-
           State assessment test code (e.g., ELA05, ALG1, SCI08).
 
-      - name: region
-        data_type: string
-        description: >-
-          Network region (Newark, Camden, Miami, Paterson).
-
       - name: city_percent_proficient
         data_type: float64
         description: >-

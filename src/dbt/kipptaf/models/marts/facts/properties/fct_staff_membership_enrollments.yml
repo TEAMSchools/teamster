@@ -29,10 +29,6 @@ models:
                 to: ref('dim_staff')
                 field: staff_key
 
-      - name: employee_number
-        data_type: int64
-        description: KIPP-assigned unique identifier for the staff member.
-
       - name: membership_code
         data_type: string
         description: >-
@@ -58,13 +54,13 @@ models:
           category (e.g., Program - Leader Development, Program - Teacher
           Development).
 
-      - name: effective_date
+      - name: effective_start_date
         data_type: date
         description: >-
           Date key (role-playing to dim_dates) for the start of the membership
           enrollment period.
 
-      - name: expiration_date
+      - name: effective_end_date
         data_type: date
         description: >-
           Date key (role-playing to dim_dates) for the end of the membership

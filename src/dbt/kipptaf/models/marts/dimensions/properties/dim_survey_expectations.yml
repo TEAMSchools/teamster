@@ -4,17 +4,15 @@ models:
       Survey expectation dimension. One row per respondent x
       survey_administration. Scaffolded from business rules defining which
       respondents should complete which survey administrations. The
-      respondent_population discriminator determines which respondent FK is
-      populated (exactly one per row). LEFT JOIN to fct_survey_submissions on
-      (respondent key, survey_administration_key) for expected-taken/missed
-      analysis.
+      respondent_type discriminator determines which respondent FK is populated
+      (exactly one per row). LEFT JOIN to fct_survey_submissions on (respondent
+      key, survey_administration_key) for expected-taken/missed analysis.
     columns:
       - name: survey_expectation_key
         data_type: string
         description: >-
-          Surrogate key derived from survey_administration_key,
-          respondent_population, and the three respondent FK columns. Primary
-          key for this dimension.
+          Surrogate key derived from survey_administration_key, respondent_type,
+          and the three respondent FK columns. Primary key for this dimension.
         data_tests:
           - unique
           - not_null
@@ -27,7 +25,7 @@ models:
         data_tests:
           - not_null
 
-      - name: respondent_population
+      - name: respondent_type
         data_type: string
         description: >-
           Discriminator for respondent type: staff, student, or family.
@@ -44,18 +42,17 @@ models:
       - name: staff_key
         data_type: string
         description: >-
-          FK to dim_staff. Populated when respondent_population is staff. Null
-          for student and family respondents.
+          FK to dim_staff. Populated when respondent_type is staff. Null for
+          student and family respondents.
 
       - name: student_enrollment_key
         data_type: string
         description: >-
-          FK to dim_student_enrollments. Populated when respondent_population is
+          FK to dim_student_enrollments. Populated when respondent_type is
           student. Null for staff and family respondents.
 
       - name: student_contact_person_key
         data_type: string
         description: >-
-          FK to dim_student_contact_persons. Populated when
-          respondent_population is family. Null for staff and student
-          respondents.
+          FK to dim_student_contact_persons. Populated when respondent_type is
+          family. Null for staff and student respondents.

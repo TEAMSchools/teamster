@@ -62,10 +62,10 @@ select
 
     cp.status_code,
     cp.status_name,
-    cp.effective_date_start,
-    cp.effective_date_end,
+    cp.effective_date_start as effective_start_date,
+    cp.effective_date_end as effective_end_date,
 
-    if(cp.effective_date_end = '9999-12-31', true, false) as is_current_record,
+    if(cp.effective_date_end = '9999-12-31', true, false) as is_current,
 from change_points as cp
 inner join
     {{ ref("stg_people__employee_numbers") }} as en

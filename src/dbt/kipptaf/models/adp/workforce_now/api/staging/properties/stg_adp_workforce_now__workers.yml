@@ -1,12 +1,29 @@
 models:
   - name: stg_adp_workforce_now__workers
+    description: >-
+      Worker records from the ADP Workforce Now Worker Management API
+      (/hr/v2/workers). A worker is a person who performs duties and
+      responsibilities for an organization, filling one or more positions
+      through work assignments as an employee or contractor. Includes personal
+      demographics, employment status, and organizational assignments. All
+      PII/SPI data (birth date, government IDs, pay rates) is masked by default
+      and requires API-Central project configuration to unmask. Code objects
+      have short_name and long_name sub-fields; ADP returns long_name instead of
+      short_name when the value exceeds 20 characters. legal_address is the
+      primary or secondary legal address; other_personal_addresses contains
+      non-legal addresses.
     columns:
       - name: associate_oid
         data_type: string
+        description: >-
+          Unique identifier across all of ADP. A worker with multiple positions
+          has one associate_oid, one worker_id, and one position_id per
+          position.
       - name: effective_date_start
         data_type: date
       - name: worker_id__id_value
         data_type: string
+        description: Worker ID, unique to a client's employee.
       - name: worker_id__scheme_code__code_value
         data_type: string
       - name: worker_id__scheme_code__long_name
@@ -15,10 +32,15 @@ models:
         data_type: string
       - name: worker_status__status_code__code_value
         data_type: string
+        description: >-
+          Employment status code indicating whether the worker is currently
+          employed (A = Active). Based on primary work assignment.
       - name: worker_status__status_code__long_name
         data_type: string
+        description: Employment status long name.
       - name: worker_status__status_code__short_name
         data_type: string
+        description: Employment status short name.
       - name: language_code__code_value
         data_type: string
       - name: language_code__long_name
@@ -39,6 +61,10 @@ models:
         data_type: string
       - name: person__birth_name__family_name_1
         data_type: string
+        description: Maiden Name
+        config:
+          meta:
+            contains_pii: true
       - name: person__birth_name__nick_name
         data_type: string
       - name: person__birth_name__generation_affix_code__code_value
@@ -55,34 +81,72 @@ models:
         data_type: string
       - name: person__legal_name__family_name_1
         data_type: string
+        description: Last Name
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_name__formatted_name
         data_type: string
+        description: Employee ID bar Name
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_name__given_name
         data_type: string
+        description: First Name
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_name__middle_name
         data_type: string
+        description: Middle Name
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_name__nick_name
         data_type: string
+        description:
+          Preferred Name This field is remaining for legacy API user support.
+          User should use the preferredName object going forward
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_name__generation_affix_code__code_value
         data_type: string
+        description: Generation Suffix
       - name: person__legal_name__generation_affix_code__long_name
         data_type: string
       - name: person__legal_name__generation_affix_code__short_name
         data_type: string
+        description: Generation Suffix
       - name: person__legal_name__qualification_affix_code__code_value
         data_type: string
+        description: Professional Suffix
       - name: person__legal_name__qualification_affix_code__long_name
         data_type: string
       - name: person__legal_name__qualification_affix_code__short_name
         data_type: string
+        description: Professional Suffix
       - name: person__preferred_name__formatted_name
         data_type: string
       - name: person__preferred_name__given_name
         data_type: string
+        description: Preferred First Name
+        config:
+          meta:
+            contains_pii: true
       - name: person__preferred_name__middle_name
         data_type: string
+        description: Preferred Middle Name
+        config:
+          meta:
+            contains_pii: true
       - name: person__preferred_name__family_name_1
         data_type: string
+        description: Preferred Last Name
+        config:
+          meta:
+            contains_pii: true
       - name: person__preferred_name__nick_name
         data_type: string
       - name: person__preferred_name__generation_affix_code__code_value
@@ -99,58 +163,97 @@ models:
         data_type: string
       - name: person__ethnicity_code__code_value
         data_type: string
+        description: ethnicityCode
       - name: person__ethnicity_code__long_name
         data_type: string
+        description: ethnicityCode
       - name: person__ethnicity_code__short_name
         data_type: string
+        description: ethnicityCode
       - name: person__gender_code__code_value
         data_type: string
+        description: Gender
       - name: person__gender_code__long_name
         data_type: string
       - name: person__gender_code__short_name
         data_type: string
+        description: Gender
       - name: person__gender_self_identity_code__code_value
         data_type: string
+        description: Gender (self ID)
       - name: person__gender_self_identity_code__long_name
         data_type: string
       - name: person__gender_self_identity_code__short_name
         data_type: string
+        description: Gender (self ID)
       - name: person__highest_education_level_code__code_value
         data_type: string
+        description: Educational Level
       - name: person__highest_education_level_code__long_name
         data_type: string
+        description: Educational Level
       - name: person__highest_education_level_code__short_name
         data_type: string
+        description: Educational Level
       - name: person__legal_address__item_id
         data_type: string
       - name: person__legal_address__line_one
         data_type: string
+        description: Address Line 1
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_address__line_two
         data_type: string
+        description: Address Line 2
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_address__line_three
         data_type: string
+        description: Address Line 3
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_address__city_name
         data_type: string
+        description: City
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_address__postal_code
         data_type: string
+        description: Zip Code
+        config:
+          meta:
+            contains_pii: true
       - name: person__legal_address__country_code
         data_type: string
+        description: Country
       - name: person__legal_address__country_subdivision_level_1__subdivision_type
         data_type: string
+        description: State / Territory
       - name: person__legal_address__country_subdivision_level_1__code_value
         data_type: string
+        description: State / Territory
       - name: person__legal_address__country_subdivision_level_1__long_name
         data_type: string
+        description: State / Territory
       - name: person__legal_address__country_subdivision_level_1__short_name
         data_type: string
+        description: State / Territory
       - name: person__legal_address__country_subdivision_level_2__subdivision_type
         data_type: string
+        description: County
       - name: person__legal_address__country_subdivision_level_2__code_value
         data_type: string
+        description: County
       - name: person__legal_address__country_subdivision_level_2__long_name
         data_type: string
+        description: County
       - name: person__legal_address__country_subdivision_level_2__short_name
         data_type: string
+        description: County
       - name: person__legal_address__name_code__code_value
         data_type: string
       - name: person__legal_address__name_code__long_name
@@ -165,10 +268,12 @@ models:
         data_type: string
       - name: person__marital_status_code__code_value
         data_type: string
+        description: Marital Status
       - name: person__marital_status_code__long_name
         data_type: string
       - name: person__marital_status_code__short_name
         data_type: string
+        description: Marital Status
       - name: person__military_status_code__code_value
         data_type: string
       - name: person__military_status_code__long_name
@@ -177,26 +282,36 @@ models:
         data_type: string
       - name: person__preferred_gender_pronoun_code__code_value
         data_type: string
+        description: Pronoun
       - name: person__preferred_gender_pronoun_code__long_name
         data_type: string
+        description: Pronoun
       - name: person__preferred_gender_pronoun_code__short_name
         data_type: string
+        description: Pronoun
       - name: person__race_code__code_value
         data_type: string
+        description: Race
       - name: person__race_code__long_name
         data_type: string
+        description: Race
       - name: person__race_code__short_name
         data_type: string
+        description: Race
       - name: person__race_code__identification_method_code__code_value
         data_type: string
+        description: Not Displayed
       - name: person__race_code__identification_method_code__long_name
         data_type: string
       - name: person__race_code__identification_method_code__short_name
         data_type: string
+        description: Race ID Method
       - name: worker_dates__original_hire_date
         data_type: date
+        description: Original Hire Date
       - name: worker_dates__rehire_date
         data_type: date
+        description: Rehire Date
       - name: worker_dates__termination_date
         data_type: date
       - name: worker_id__scheme_code__effective_date
@@ -235,6 +350,7 @@ models:
         data_type: date
       - name: person__marital_status_code__effective_date
         data_type: date
+        description: Marital Effective Date
       - name: person__military_status_code__effective_date
         data_type: date
       - name: person__preferred_gender_pronoun_code__effective_date
@@ -245,6 +361,10 @@ models:
         data_type: date
       - name: person__birth_date
         data_type: date
+        description: Birth Date Masked by default.
+        config:
+          meta:
+            contains_pii: true
       - name: effective_date_start_timestamp
         data_type: timestamp
       - name: worker_status__status_code__code_value_lag

@@ -36,7 +36,7 @@ select
     {{ date_to_fiscal_year(date_field="date_value", start_month=7, year_source="end") }}
     as fiscal_year,
 
-    date_trunc(date_value, week) as week_start_date,
+    date_trunc(date_value, week) as calendar_week_start_date,
     -- date_add can overflow for dates in the last week of 9999; cap days added
     date_add(
         date_trunc(date_value, week),
@@ -44,10 +44,10 @@ select
             6, date_diff(date(9999, 12, 31), date_trunc(date_value, week), day)
         )
         day
-    ) as week_end_date,
+    ) as calendar_week_end_date,
 
     -- trunk-ignore(sqlfluff/LT01): week(monday) requires special formatting
-    date_trunc(date_value, week(monday)) as week_start_monday,
+    date_trunc(date_value, week(monday)) as school_week_start_date,
 
     -- date_add can overflow for dates in the last week of 9999; cap days added
     date_add(
@@ -62,5 +62,5 @@ select
                 day
             )
         ) day
-    ) as week_end_sunday,
+    ) as school_week_end_date,
 from date_spine
