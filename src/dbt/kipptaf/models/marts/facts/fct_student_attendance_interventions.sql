@@ -66,7 +66,7 @@ select
 
     case
         ai.intervention_status when 'Complete' then true when 'Missing' then false
-    end as is_complete,
+    end as has_communication_log,
 
     ai.is_ca_exception as is_chronic_absence_exception,
 from {{ ref("int_students__attendance_interventions") }} as ai

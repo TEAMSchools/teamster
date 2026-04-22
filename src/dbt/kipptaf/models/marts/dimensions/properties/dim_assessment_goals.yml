@@ -1,12 +1,15 @@
 models:
-  - name: dim_assessment_targets
+  - name: dim_assessment_goals
     description: >-
-      Assessment performance targets dimension. One row per academic year x
-      school x state assessment code x grade level x subject area. Contains
+      Assessment performance goals dimension. One row per academic year x school
+      x state assessment code x grade level x subject area. Contains
       percent-proficient goals at grade, school, region, organization, and band
-      levels. Sourced from the academic goals Google Sheet.
+      levels. Sourced from the academic goals Google Sheet. Renamed from
+      `dim_assessment_targets` — "target" collides with Ed-Fi's AssessmentTarget
+      concept (a specific sub-skill or standard being measured), which is a
+      meaningfully different entity from the performance-goal rows stored here.
     columns:
-      - name: assessment_target_key
+      - name: assessment_goal_key
         data_type: string
         description: >-
           Surrogate key derived from academic_year, school_id,

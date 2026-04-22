@@ -89,7 +89,7 @@ select
 
     academic_year,
     observation_score as score,
-    overall_tier,
+    overall_tier as overall_rating,
     observation_notes as notes,
 
     observed_at_date as observed_date,

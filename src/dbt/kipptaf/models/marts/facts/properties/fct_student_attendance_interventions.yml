@@ -71,11 +71,13 @@ models:
           Student's year-to-date unexcused absence count at the time of
           evaluation.
 
-      - name: is_complete
+      - name: has_communication_log
         data_type: boolean
         description: >-
-          TRUE if the intervention communication was logged (matched in the
-          DeansList comm log), FALSE if no matching communication was found.
+          TRUE if the expected intervention was matched against a communication
+          log record, FALSE if no matching record was found. Existence check,
+          not a workflow-completion flag — absence of a log can reflect either a
+          skipped intervention or a logging gap.
 
       - name: is_chronic_absence_exception
         data_type: boolean

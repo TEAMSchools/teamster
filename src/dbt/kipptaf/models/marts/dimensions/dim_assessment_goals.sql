@@ -52,7 +52,7 @@ select
                 "d.illuminate_subject_area",
             ]
         )
-    }} as assessment_target_key,
+    }} as assessment_goal_key,
 
     {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }} as location_key,
 

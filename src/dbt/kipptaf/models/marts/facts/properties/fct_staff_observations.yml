@@ -80,11 +80,13 @@ models:
           Overall numeric score for the observation, averaged across measurement
           items.
 
-      - name: overall_tier
+      - name: overall_rating
         data_type: int64
         description: >-
-          Performance tier (1-4) derived from the overall observation score
-          using standard thresholds.
+          Performance rating (1-4) derived from the overall observation score
+          using standard thresholds. Renamed from `overall_tier` to disambiguate
+          from triage/escalation `_tier` columns elsewhere in the marts (e.g.,
+          `fct_support_tickets.tech_tier`).
 
       - name: notes
         data_type: string

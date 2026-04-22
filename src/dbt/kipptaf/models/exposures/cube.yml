@@ -10,7 +10,7 @@ exposures:
       - ref("bridge_student_contacts")
       - ref("bridge_survey_questions")
       - ref("dim_assessment_comparisons")
-      - ref("dim_assessment_targets")
+      - ref("dim_assessment_goals")
       - ref("dim_assessments")
       - ref("dim_college_enrollments")
       - ref("dim_colleges")

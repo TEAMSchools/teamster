@@ -62,7 +62,7 @@ select
     i.location,
     i.context,
     i.status,
-    i.referral_tier,
+    i.referral_tier as referral_category,
 
     i.is_referral,
     i.is_active,

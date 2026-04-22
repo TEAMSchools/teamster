@@ -83,7 +83,9 @@ models:
       - name: is_private_measurement
         data_type: boolean
         description: >-
-          TRUE if this measurement is marked private within the rubric.
+          TRUE if this specific measurement is marked private within the rubric
+          — visible to observers and leaders with access to the observed staff
+          member, but hidden from the observee themselves.
 
       - name: is_required
         data_type: boolean

@@ -89,8 +89,9 @@ models:
       - name: tech_tier
         data_type: string
         description: >-
-          Technology tier classification from the Zendesk custom Tech Tier
-          field, indicating complexity or routing level.
+          Support escalation tier for the ticket, from the Zendesk custom Tech
+          Tier field. Values: `tier_1` (frontline helpdesk), `tier_2`
+          (specialist), `tier_3` (engineer / vendor escalation). Ordinal.
 
       - name: reply_count
         data_type: int64

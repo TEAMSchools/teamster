@@ -35,7 +35,9 @@ models:
       - name: is_private
         data_type: boolean
         description: >-
-          TRUE if the rubric is marked private in SchoolMint Grow.
+          TRUE if the rubric is marked private in SchoolMint Grow — visible to
+          observers and leaders with access to the observed staff member, but
+          hidden from the observee themselves.
 
       - name: is_published
         data_type: boolean

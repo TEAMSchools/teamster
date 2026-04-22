@@ -77,4 +77,9 @@ models:
       - name: is_reportable
         data_type: boolean
         description: >-
-          TRUE if this consequence is flagged as reportable for state reporting.
+          TRUE if this consequence is flagged reportable in the DeansList
+          penalty configuration. The specific reporting frame (state DOE / EWEG
+          / federal CRDC / internal) is set per-penalty by DeansList admins and
+          is not encoded in the flag itself — verify the penalty's intended
+          reporting scope in DL config before aggregating for a compliance
+          submission.

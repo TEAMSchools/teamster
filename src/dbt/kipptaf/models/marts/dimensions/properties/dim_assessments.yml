@@ -5,6 +5,19 @@ models:
       Covers internal Illuminate assessments, NJ and FL state assessments, and
       college-entrance assessments (SAT, ACT, AP). scope indicates whether
       scores are linked at the enrollment level or student level.
+
+      Two subject-normalization columns coexist for college-entrance comparisons
+      (both NULL for other assessment types):
+
+      - `aligned_academic_subject` — **within-test-family** normalization.
+        SAT EBRW and PSAT EBRW both align to EBRW. Use this when comparing
+        scores across administrations of the same test family (e.g.,
+        SAT-to-PSAT growth).
+      - `combined_academic_subject` — **cross-test-family** normalization.
+        Further collapses across test families so SAT and ACT scores can
+        land in the same bucket (e.g., SAT EBRW and ACT Reading combine to
+        EBRW/Reading). Use this for apples-to-oranges comparisons across
+        test families.
     columns:
       - name: assessment_key
         data_type: string

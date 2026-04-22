@@ -91,11 +91,16 @@ models:
       - name: is_attendance_call
         data_type: boolean
         description: >-
-          TRUE if the communication reason starts with 'Att:' indicating it is
-          an attendance-related call.
+          TRUE if the communication reason starts with 'Att:' — routine
+          attendance outreach (absences, tardies). Mutually exclusive with
+          is_truancy_call; chronic-absence / truancy communications are tracked
+          separately. For a total count of attendance-related contacts, use
+          `is_attendance_call OR is_truancy_call`.
 
       - name: is_truancy_call
         data_type: boolean
         description: >-
-          TRUE if the communication reason starts with 'Chronic Absence:'
-          indicating it is a truancy intervention call.
+          TRUE if the communication reason starts with 'Chronic Absence:' — the
+          specific chronic-absence / truancy intervention workflow. Mutually
+          exclusive with is_attendance_call (which covers routine attendance
+          outreach); neither is a subset of the other.

@@ -86,12 +86,14 @@ models:
             source_system: DeansList
             source_model: int_deanslist__incidents
             source_column: status
-      - name: referral_tier
+      - name: referral_category
         data_type: string
         description: >-
-          Normalized severity tier (Low, Middle, High, Social Work,
-          Non-Behavioral, Other). Derived from category_tier with
-          region-specific mappings.
+          Categorical routing bucket for the referral — not an ordinal tier.
+          Values: Low, Middle, High, Social Work, Non-Behavioral, Other.
+          "Low"/"Middle"/"High" describe severity; "Social Work" and
+          "Non-Behavioral" are parallel routing categories, not severity levels.
+          Derived from category_tier with region-specific mappings.
 
       - name: is_referral
         data_type: boolean
