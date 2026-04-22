@@ -11,6 +11,9 @@ models:
         description: >-
           Surrogate key derived from survey_id. Primary key for the survey
           dimension. Generated with generate_surrogate_key(["survey_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null

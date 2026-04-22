@@ -7,22 +7,44 @@ models:
       effective dates change. FKs to dim_course_sections via course_section_key
       and to dim_staff via staff_key.
 
+    constraints:
+      - type: primary_key
+        columns: [course_section_key, staff_key, role, effective_start_date]
+        warn_unsupported: false
     columns:
       - name: course_section_key
         data_type: string
         description: >-
           Surrogate key derived from sections_dcid and _dbt_source_relation. FK
           to dim_course_sections.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_course_sections')
+            to_columns: [course_section_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_course_sections')
+                field: course_section_key
       - name: staff_key
         data_type: string
         description: >-
           Surrogate key derived from employee_number. FK to dim_staff.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: role
         data_type: string
         description: >-

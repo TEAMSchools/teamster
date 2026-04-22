@@ -8,6 +8,9 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from region name.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null

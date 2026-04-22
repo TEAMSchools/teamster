@@ -24,6 +24,9 @@ models:
         description: >-
           Surrogate key derived from type, title, subject_area, category,
           module_code, and grade_level_tested. Primary key.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null

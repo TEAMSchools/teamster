@@ -10,6 +10,9 @@ models:
         description: >-
           Surrogate primary key derived from candidate_id. Generated with
           generate_surrogate_key(["candidate_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null

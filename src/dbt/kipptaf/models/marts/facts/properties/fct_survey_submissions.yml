@@ -14,6 +14,9 @@ models:
         description: >-
           Surrogate key derived from survey_id, survey_response_id, and
           respondent identifier. Primary key for this fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -23,15 +26,34 @@ models:
         description: >-
           FK to dim_survey_administrations. Identifies which survey
           administration this submission belongs to.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_survey_administrations')
+            to_columns: [survey_administration_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_survey_administrations')
+                field: survey_administration_key
       - name: date_submitted_key
         data_type: date
         description: >-
           FK to dim_dates (role-playing as submission date). The local date the
           survey was submitted.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: respondent_type
         data_type: string
         description: >-
@@ -52,18 +74,48 @@ models:
           FK to dim_staff for the respondent. Populated when respondent_type is
           staff. Null for student and family.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: student_enrollment_key
         data_type: string
         description: >-
           FK to dim_student_enrollments for the respondent. Populated when
           respondent_type is student. Null for staff and family.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
       - name: student_contact_person_key
         data_type: string
         description: >-
           FK to dim_student_contact_persons for the respondent. Populated when
           respondent_type is family. Null for staff and student.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_contact_persons')
+            to_columns: [student_contact_person_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_contact_persons')
+                field: student_contact_person_key
       - name: subject_staff_key
         data_type: string
         description: >-
@@ -72,6 +124,16 @@ models:
           (direct report) evaluates their manager (subject). Null for all other
           survey types.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: academic_year
         data_type: int64
         description: >-

@@ -11,6 +11,9 @@ models:
         data_type: date
         description: >-
           Calendar date. Primary key and join target for all mart models.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null

@@ -18,6 +18,9 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from location name.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -28,6 +31,11 @@ models:
           Foreign key to dim_regions. Surrogate key derived from the canonical
           region. Nullable when the location has no region mapping (e.g.,
           network-level locations).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_regions')
+            to_columns: [region_key]
+            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:

@@ -30,6 +30,9 @@ models:
         description: >-
           Surrogate key derived from student_number, _dbt_source_relation, and
           calendardate. Primary key for this fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -39,21 +42,50 @@ models:
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
           student_number, _dbt_source_relation, academic_year, and entrydate.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
       - name: date_key
         data_type: date
         description: >-
           Calendar date of the attendance record. FK to dim_dates. Also used
           with location_key to join dim_school_calendars.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: location_key
         data_type: string
         description: >-
           FK to dim_locations. Surrogate key derived from location_clean_name.
           Used with date_key to join dim_school_calendars.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
       - name: term_key
         data_type: string
         description: >-
@@ -62,10 +94,13 @@ models:
           stg_google_sheets__reporting__terms on (schoolid, term,
           academic_year). Null when the attendance row's term does not appear in
           the terms sheet for that school-year.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
         data_tests:
           - relationships:
-              config:
-                severity: warn
               arguments:
                 to: ref('dim_terms')
                 field: term_key

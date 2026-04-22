@@ -7,8 +7,6 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["recruiter"]) }} as recruiter_staff_key,
 
-    dbt_scd_id as staffing_position_natural_key,
-
     academic_year,
     recruitment_group,
     adp_dept as home_department_name,

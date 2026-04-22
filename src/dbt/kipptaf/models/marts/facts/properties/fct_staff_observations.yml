@@ -13,6 +13,9 @@ models:
         description: >-
           Surrogate primary key derived from observation_id. Generated with
           generate_surrogate_key(["o.observation_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -22,9 +25,18 @@ models:
         description: >-
           Foreign key to dim_staff for the observed teacher. Surrogate key
           derived from employee_number.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: staff_observation_type_key
         data_type: string
         description: >-
@@ -32,6 +44,11 @@ models:
           the SchoolMint Grow generic tag_id for the observation type. Null when
           the observation type abbreviation does not resolve to an active
           observationtypes tag.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_observation_types')
+            to_columns: [staff_observation_type_key]
+            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:
@@ -43,6 +60,11 @@ models:
         description: >-
           Foreign key to dim_staff_observation_rubrics. Surrogate key derived
           from rubric_id. Null when the observation has no rubric attached.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_observation_rubrics')
+            to_columns: [staff_observation_rubric_key]
+            warn_unsupported: false
         data_tests:
           # TODO: #3712 — dim source is measurement-grain, excludes rubrics
           # without nested measurements. Promote to error once resolved.
@@ -57,18 +79,48 @@ models:
           Foreign key to dim_staff for the observer. Surrogate key derived from
           observer_employee_number.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: location_key
         data_type: string
         description: >-
           Foreign key to dim_locations. Surrogate key derived from the school's
           location_clean_name.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
       - name: term_key
         data_type: string
         description: >-
           Foreign key to dim_terms. Surrogate key derived from term composite
           fields.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
       - name: academic_year
         data_type: int64
         description: >-

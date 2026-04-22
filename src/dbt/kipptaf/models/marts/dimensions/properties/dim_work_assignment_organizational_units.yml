@@ -15,6 +15,9 @@ models:
           effective_date_start. Generated with
           generate_surrogate_key(["item_id", "assignment_type",
           "effective_date_start"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -24,6 +27,11 @@ models:
         description: >-
           Foreign key to dim_staff_work_assignments. Surrogate key derived from
           item_id. Generated with generate_surrogate_key(["item_id"]).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_work_assignments')
+            to_columns: [work_assignment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:

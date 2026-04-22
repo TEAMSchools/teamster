@@ -12,6 +12,9 @@ models:
         description: >-
           Surrogate key derived from region_name and
           family_communication_reason. Primary key for this dimension.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -20,6 +23,11 @@ models:
         data_type: string
         description: >-
           FK to dim_regions. Surrogate key derived from region_name.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_regions')
+            to_columns: [region_key]
+            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:

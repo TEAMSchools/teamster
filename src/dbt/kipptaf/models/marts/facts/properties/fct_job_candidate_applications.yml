@@ -12,6 +12,9 @@ models:
         description: >-
           Surrogate primary key derived from application_id. Generated with
           generate_surrogate_key(["application_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -21,15 +24,29 @@ models:
         description: >-
           Foreign key to dim_job_candidates. Surrogate key derived from
           candidate_id.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_job_candidates')
+            to_columns: [job_candidate_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_job_candidates')
+                field: job_candidate_key
       - name: shared_with_location_key
         data_type: string
         description: >-
           Foreign key to dim_locations for the location this application is
           shared with. Surrogate key derived from school_shared_with. Nullable
           when the application has no shared location.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
         data_tests:
           # TODO: #3672 — ~20% rows fail FK; promote to error
           # once upstream crosswalk covers `KIPP High School` and siblings.
@@ -37,21 +54,38 @@ models:
               arguments:
                 to: ref('dim_locations')
                 field: location_key
-              config:
-                severity: warn
-
       - name: job_posting_key
         data_type: string
         description: >-
           Foreign key to dim_job_postings. Surrogate key derived from job_title,
           department_internal, and job_city.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_job_postings')
+            to_columns: [job_posting_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_job_postings')
+                field: job_posting_key
       - name: created_date_key
         data_type: date
         description: >-
           Foreign key to dim_dates for the date the application entered the New
           stage. Matches dim_dates.date_key.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: state
         data_type: string
         description: >-

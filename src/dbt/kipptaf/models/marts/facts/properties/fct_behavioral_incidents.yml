@@ -13,6 +13,9 @@ models:
         description: >-
           Surrogate key derived from incident_id and _dbt_source_relation.
           Primary key for this fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -22,9 +25,18 @@ models:
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
           student_number, _dbt_source_relation, academic_year, and entrydate.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
       - name: referring_staff_key
         data_type: string
         description: >-
@@ -32,6 +44,11 @@ models:
           from the DeansList user's email resolved to an employee_number via
           int_people__staff_roster, then hashed with generate_surrogate_key.
           Nullable when the DeansList user cannot be matched to a staff record.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:
@@ -44,6 +61,16 @@ models:
           FK to dim_dates for the date the incident was created. Matches
           dim_dates.date_key.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: academic_year
         data_type: int64
         description: >-
@@ -111,9 +138,29 @@ models:
           FK to dim_dates for the date the incident was closed. Matches
           dim_dates.date_key. Nullable — open incidents have no close date.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: return_date_key
         data_type: date
         description: >-
           FK to dim_dates for the date the student is expected to return.
           Matches dim_dates.date_key. Nullable — not all incidents have a return
           date.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
