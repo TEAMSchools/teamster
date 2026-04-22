@@ -16,6 +16,7 @@ models:
           - not_null
 
       - name: name
+        quote: true
         data_type: string
         description: >-
           Region name (Newark, Camden, Miami, Paterson).

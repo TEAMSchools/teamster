@@ -46,6 +46,7 @@ models:
                 to: ref('dim_staff')
                 field: staff_key
       - name: role
+        quote: true
         data_type: string
         description: >-
           User configurable name uniquely identifying the role to the user

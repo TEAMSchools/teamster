@@ -1,11 +1,23 @@
 select
     {{ dbt_utils.generate_surrogate_key(["dbt_scd_id"]) }} as staffing_position_key,
 
-    {{ dbt_utils.generate_surrogate_key(["adp_location"]) }} as location_key,
+    if(
+        adp_location is not null,
+        {{ dbt_utils.generate_surrogate_key(["adp_location"]) }},
+        cast(null as string)
+    ) as location_key,
 
-    {{ dbt_utils.generate_surrogate_key(["teammate"]) }} as incumbent_staff_key,
+    if(
+        teammate is not null,
+        {{ dbt_utils.generate_surrogate_key(["teammate"]) }},
+        cast(null as string)
+    ) as incumbent_staff_key,
 
-    {{ dbt_utils.generate_surrogate_key(["recruiter"]) }} as recruiter_staff_key,
+    if(
+        recruiter is not null,
+        {{ dbt_utils.generate_surrogate_key(["recruiter"]) }},
+        cast(null as string)
+    ) as recruiter_staff_key,
 
     academic_year,
     recruitment_group,

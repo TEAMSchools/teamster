@@ -43,6 +43,7 @@ models:
                 field: region_key
 
       - name: name
+        quote: true
         data_type: string
         description: >-
           Canonical location name.
