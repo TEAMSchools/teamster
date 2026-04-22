@@ -42,7 +42,8 @@ models:
                 to: ref('dim_locations')
                 field: location_key
 
-      - name: term_type
+      - name: type
+        quote: true
         data_type: string
         description: >-
           Category of period (e.g., academic, PM, survey, assessment, fiscal).
@@ -57,12 +58,12 @@ models:
         description: >-
           Display name for the period.
 
-      - name: term_start_date
+      - name: start_date
         data_type: date
         description: >-
           First day of the period.
 
-      - name: term_end_date
+      - name: end_date
         data_type: date
         description: >-
           Last day of the period.
