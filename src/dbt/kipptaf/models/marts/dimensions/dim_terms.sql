@@ -35,11 +35,11 @@ select
         cast(null as string)
     ) as location_key,
 
-    t.`type` as `type`,
+    t.`type`,
     t.code as term_code,
     t.`name` as term_name,
-    t.`start_date` as `start_date`,
-    t.end_date as end_date,
+    t.`start_date`,
+    t.end_date,
     t.academic_year,
     t.fiscal_year,
     t.grade_band,
