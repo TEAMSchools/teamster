@@ -14,6 +14,9 @@ models:
           Surrogate key derived from student_number, _dbt_source_relation,
           academic_year, entrydate, and term_name. Grain: one row per
           student_enrollment x term, per spec.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -23,9 +26,18 @@ models:
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
           student_number, _dbt_source_relation, academic_year, and entrydate.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
       - name: term_key
         data_type: string
         description: >-
@@ -33,6 +45,11 @@ models:
           start_date, region, and school_id of the matching reporting term. Null
           when the PowerSchool term / year / school does not map to a
           reporting-term record.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:

@@ -14,6 +14,9 @@ models:
           assignment_id, and goal tag_id. Generated with
           generate_surrogate_key(["gu.internal_id_int", "a.assignment_id",
           "m.tag_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -23,14 +26,28 @@ models:
         description: >-
           Foreign key to dim_staff for the teacher receiving the goal. Surrogate
           key derived from employee_number.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: staff_observation_goal_type_key
         data_type: string
         description: >-
           Foreign key to dim_staff_observation_goal_types. Surrogate key derived
           from the goal tag_id.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_observation_goal_types')
+            to_columns: [staff_observation_goal_type_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:
@@ -45,6 +62,16 @@ models:
           Surrogate key derived from creator employee_number. May be null if the
           creator cannot be matched to the staff roster.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: assignment_date
         data_type: date
         description: >-

@@ -15,6 +15,9 @@ models:
         description: >-
           Surrogate primary key derived from ticket id. Generated with
           generate_surrogate_key(["t.id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -24,9 +27,18 @@ models:
         description: >-
           Foreign key to dim_staff for the ticket submitter. Surrogate key
           derived from submitter employee_number.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: assignee_staff_key
         data_type: string
         description: >-
@@ -34,6 +46,16 @@ models:
           key derived from assignee employee_number. Nullable — unassigned
           tickets have no assignee.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: original_assignee_staff_key
         data_type: string
         description: >-
@@ -41,6 +63,16 @@ models:
           Surrogate key derived from original assignee employee_number. Nullable
           — not all tickets have a creation-time assignee.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: location_key
         data_type: string
         description: >-
@@ -48,22 +80,33 @@ models:
           custom field value on the ticket. Currently fails 100% relationships
           against dim_locations pending Zendesk-slug → canonical-location
           crosswalk (#3709).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:
                 to: ref('dim_locations')
                 field: location_key
-              config:
-                severity: warn
-
       - name: created_date_key
         data_type: date
         description: >-
           Foreign key to dim_dates for the date the ticket was created. Matches
           dim_dates.date_key.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: solved_date_key
         data_type: date
         description: >-
@@ -71,6 +114,16 @@ models:
           dim_dates.date_key. Nullable — open or pending tickets have no solved
           date.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: status
         data_type: string
         description: >-

@@ -13,6 +13,9 @@ models:
         description: >-
           Surrogate key derived from cc_dcid, _dbt_source_relation, and
           storecode. Primary key for this fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -22,17 +25,35 @@ models:
         description: >-
           FK to dim_student_section_enrollments. Surrogate key derived from
           cc_dcid and _dbt_source_relation.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_section_enrollments')
+            to_columns: [student_section_enrollment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_student_section_enrollments')
+                field: student_section_enrollment_key
       - name: student_enrollment_key
         data_type: string
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
           student_number, _dbt_source_relation, academic_year, and entrydate.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
       - name: term_key
         data_type: string
         description: >-
@@ -40,18 +61,48 @@ models:
           start_date, region, and school_id. Null when storecode does not map to
           a reporting term for the school and region.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
       - name: term_start_date_key
         data_type: date
         description: >-
           Start date of the term bin. FK to dim_dates (role-playing as term
           start date).
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: term_end_date_key
         data_type: date
         description: >-
           End date of the term bin. FK to dim_dates (role-playing as term end
           date).
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: academic_year
         data_type: int64
         description: >-

@@ -13,6 +13,9 @@ models:
           Surrogate primary key derived from item_id and effective_date_start.
           Generated with generate_surrogate_key(["item_id",
           "effective_date_start"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -22,6 +25,11 @@ models:
         description: >-
           Foreign key to dim_staff_work_assignments. Surrogate key derived from
           item_id. Generated with generate_surrogate_key(["item_id"]).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_work_assignments')
+            to_columns: [work_assignment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:
@@ -35,6 +43,16 @@ models:
           Role-playing FK to dim_dates. The date this compensation version
           became effective, from ADP baseRemuneration.effectiveDate.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: effective_end_date_key
         data_type: date
         description: >-
@@ -42,6 +60,16 @@ models:
           effective. Computed as one day before the next version's
           effective_start_date_key, or 9999-12-31 for the current version.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: annual_wage
         data_type: numeric
         description: >-

@@ -17,6 +17,9 @@ models:
         description: >-
           Surrogate key derived from item_id. Primary key for this dimension.
           Generated with generate_surrogate_key(["item_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -28,6 +31,11 @@ models:
           with generate_surrogate_key(["employee_number"]). Null when the
           associate_oid has no active number mapping in
           stg_people__employee_numbers.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:
@@ -42,6 +50,11 @@ models:
           approves this assignment's time records (distinct from the org-chart
           manager on dim_work_assignment_reporting_relationships). Null when the
           approver's associate_oid has no active number mapping.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:

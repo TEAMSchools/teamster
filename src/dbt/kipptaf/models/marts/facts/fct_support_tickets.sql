@@ -14,13 +14,23 @@ select
     {{ dbt_utils.generate_surrogate_key(["submitter.employee_number"]) }}
     as submitter_staff_key,
 
-    {{ dbt_utils.generate_surrogate_key(["assignee.employee_number"]) }}
-    as assignee_staff_key,
+    if(
+        assignee.employee_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["assignee.employee_number"]) }},
+        cast(null as string)
+    ) as assignee_staff_key,
 
-    {{ dbt_utils.generate_surrogate_key(["orig_assignee.employee_number"]) }}
-    as original_assignee_staff_key,
+    if(
+        orig_assignee.employee_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["orig_assignee.employee_number"]) }},
+        cast(null as string)
+    ) as original_assignee_staff_key,
 
-    {{ dbt_utils.generate_surrogate_key(["cf.location"]) }} as location_key,
+    if(
+        cf.location is not null,
+        {{ dbt_utils.generate_surrogate_key(["cf.location"]) }},
+        cast(null as string)
+    ) as location_key,
 
     cast(t.created_at as date) as created_date_key,
 

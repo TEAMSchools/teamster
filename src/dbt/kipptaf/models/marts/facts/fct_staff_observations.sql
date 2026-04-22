@@ -92,7 +92,7 @@ select
     overall_tier as overall_rating,
     observation_notes as notes,
 
-    observed_at_date as observed_date,
+    observed_at_date as observed_date_key,
     observed_at_timestamp as observed_timestamp,
     glows as positive_feedback,
     grows as growth_areas,

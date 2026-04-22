@@ -13,6 +13,9 @@ models:
           plan_name, and enrollment_start_date. Generated with
           generate_surrogate_key(["employee_number", "plan_type", "plan_name",
           "enrollment_start_date"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -22,6 +25,11 @@ models:
         description: >-
           Foreign key to dim_staff. Surrogate key derived from employee_number.
           Generated with generate_surrogate_key(["employee_number"]).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:

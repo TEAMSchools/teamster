@@ -10,6 +10,9 @@ models:
         description: >-
           Surrogate key derived from student_number. Primary key for the student
           dimension.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
