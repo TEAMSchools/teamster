@@ -23,7 +23,7 @@ with
             school_id,
             powerschool_year_id,
         from {{ ref("stg_google_sheets__reporting__terms") }}
-        where `type` = 'quarter'
+        where `type` = 'RT'
     ),
 
     gpa_term as (
@@ -102,18 +102,22 @@ select
         )
     }} as student_enrollment_key,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "rt.type",
-                "rt.code",
-                "rt.name",
-                "rt.start_date",
-                "rt.region",
-                "rt.school_id",
-            ]
-        )
-    }} as term_key,
+    if(
+        rt.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "rt.type",
+                    "rt.code",
+                    "rt.name",
+                    "rt.start_date",
+                    "rt.region",
+                    "rt.school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
 
     enr.academic_year,
     gt.semester,
@@ -136,9 +140,7 @@ select
 
     gt.n_failing_y1,
 
-    gt.is_current as is_current_term,
-
-    if(gt.rn_current = 1, true, false) as is_current_row,
+    if(gt.rn_current = 1, true, false) as is_current,
 from gpa_term as gt
 inner join
     student_enrollments as enr
@@ -148,7 +150,6 @@ inner join
     and {{ union_dataset_join_clause(left_alias="gt", right_alias="enr") }}
 left join
     reporting_terms as rt
-    on gt.term_name = rt.code
+    on gt.term_name = rt.`name`
     and gt.schoolid = rt.school_id
-    and gt.region = rt.region
-    and gt.yearid = rt.powerschool_year_id - 1990
+    and gt.yearid = rt.powerschool_year_id

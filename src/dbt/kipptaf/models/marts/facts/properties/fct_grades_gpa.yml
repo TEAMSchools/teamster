@@ -30,8 +30,14 @@ models:
         data_type: string
         description: >-
           FK to dim_terms. Surrogate key derived from type, code, name,
-          start_date, region, and school_id. Null when term_name does not map to
-          a reporting term for the school and region.
+          start_date, region, and school_id of the matching reporting term. Null
+          when the PowerSchool term / year / school does not map to a
+          reporting-term record.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
 
       - name: academic_year
         data_type: int64
@@ -118,14 +124,10 @@ models:
           Count of courses with a failing Y1 letter grade (F or F*) in the
           current academic year.
 
-      - name: is_current_term
+      - name: is_current
         data_type: boolean
         description: >-
-          TRUE if this term is the current active term based on today's date.
-
-      - name: is_current_row
-        data_type: boolean
-        description: >-
-          TRUE for the most recent snapshot per student x school, ordered by
-          yearid desc then term desc. Use this flag to collapse to the latest
-          GPA state.
+          TRUE for the most recent row per student x school, ordered by yearid
+          desc then term desc. Use this flag to collapse to the latest GPA state
+          per student-school. For "active term today" filters, traverse term_key
+          to dim_terms.is_current instead.
