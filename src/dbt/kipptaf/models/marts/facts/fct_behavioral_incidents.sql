@@ -12,6 +12,23 @@ with
                 order by entrydate desc
             ) as rn,
         from {{ ref("base_powerschool__student_enrollments") }}
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
+    staff_roster_by_email as (
+        select work_email, employee_number, assignment_status, effective_date_start,
+        from {{ ref("int_people__staff_roster") }}
+        where work_email is not null
+    ),
+
+    staff_roster_by_email_dedup as (
+        {{
+            dbt_utils.deduplicate(
+                relation="staff_roster_by_email",
+                partition_by="work_email",
+                order_by="if(assignment_status = 'Active', 0, 1), effective_date_start desc",
+            )
+        }}
     )
 
 select
@@ -60,4 +77,4 @@ inner join
     and {{ union_dataset_join_clause(left_alias="i", right_alias="enr") }}
     and enr.rn = 1
 left join {{ ref("stg_deanslist__users") }} as u on i.create_by = u.dl_user_id
-left join {{ ref("int_people__staff_roster") }} as sr on u.email = sr.work_email
+left join staff_roster_by_email_dedup as sr on u.email = sr.work_email

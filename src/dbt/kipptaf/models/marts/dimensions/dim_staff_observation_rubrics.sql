@@ -12,7 +12,6 @@ with
             created,
             last_modified,
         from {{ ref("stg_schoolmint_grow__rubrics__measurement_groups__measurements") }}
-        where measurement_group_id is not null
     ),
 
     deduplicate as (
