@@ -2,65 +2,87 @@ models:
   - name: rpt_tableau__college_assessment_dashboard_benchmark_calcs
     description: >
       Student-level college assessment scores used to calculate the percentage
-      of students meeting readiness benchmark for KIPP Forward use.
+      of students meeting readiness benchmarks for KIPP Forward use. One row per
+      student per (aligned_scope, benchmark_name) combination — including
+      students with no qualifying score (null max_score) so they count in the
+      denominator. Excludes IEP-exempt students and students without a
+      graduation year. Scores reflect each student's all-time best across
+      administrations, not scoped to the current academic year.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - student_number
-              - academic_year
-              - score_type
+              - aligned_scope
               - benchmark_name
     columns:
-      - name: academic_year
-        data_type: int64
       - name: region
+        description: KIPP region the student's school belongs to.
         data_type: string
       - name: school
+        description: School name.
         data_type: string
-      - name: grade_level
-        data_type: int64
       - name: student_number
+        description: Student Number assigned by the school. Indexed.
         data_type: int64
-      - name: enroll_status
-        data_type: int64
+      - name: student_name
+        description: Student's full name.
+        data_type: string
       - name: iep_status
+        description: >
+          Database extension field associated to the Students table. Conditional
+          on spedlep.
         data_type: string
       - name: is_504
+        description: Whether the student has a 504 accommodation plan.
         data_type: boolean
-      - name: grad_iep_exempt_status_overall
-        data_type: string
       - name: lep_status
+        description: Student Limited English Proficiency status.
         data_type: boolean
-      - name: ktc_cohort
-        data_type: int64
       - name: graduation_year
+        description: Student graduation year.
         data_type: int64
       - name: year_in_network
+        description:
+          Number of years the student has been enrolled in the KIPP network.
         data_type: int64
       - name: college_match_gpa
+        description: Cumulative GPA used for college match categorization.
         data_type: numeric
       - name: college_match_gpa_bands
+        description: GPA band grouping for college match purposes.
+        data_type: string
+      - name: aligned_scope
+        description: >
+          Assessment scope used for benchmark comparison. PSAT10 and PSAT NMSQT
+          are merged into PSAT10/NMSQT; all other scopes (PSAT 8/9, SAT) are
+          unchanged.
         data_type: string
       - name: test_type
-        data_type: string
-      - name: scope
+        description: Broad classification of the assessment (e.g., SAT Suite).
         data_type: string
       - name: score_type
+        description: >
+          Specific score dimension within the assessment (e.g., sat_total,
+          sat_ebrw, sat_math).
         data_type: string
       - name: subject_area
+        description: >
+          Subject area of the score — Combined, EBRW, or Math. Combined rows are
+          cross-joined with the three named benchmarks; EBRW and Math rows use
+          subject_area as the benchmark_name directly.
         data_type: string
-      - name: aligned_subject_area
-        data_type: string
-      - name: test_date
-        data_type: date
-      - name: max_scale_score
+      - name: max_score
+        description: >
+          Highest scale score for the student on this aligned scope and subject
+          area across all assessment administrations. Null for students with no
+          qualifying score. Used as the score value for benchmark percent-met
+          calculations in Tableau.
         data_type: numeric
-      - name: scale_score
-        data_type: numeric
-      - name: ccr_period
-        data_type: string
-      - name: ccr_teacher
-        data_type: string
       - name: benchmark_name
+        description: >
+          Readiness benchmark label. One of College-Ready, HS-Ready, EA/ED-Ready
+          (for Combined rows) or EBRW, Math (for subject-specific rows). Tableau
+          consumers filter to a single benchmark_name and compare max_score
+          against a dynamic threshold parameter to compute percent met.
         data_type: string
