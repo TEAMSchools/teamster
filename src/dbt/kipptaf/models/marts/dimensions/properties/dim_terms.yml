@@ -14,6 +14,9 @@ models:
           code, name, start date, region, and school ID as internal inputs;
           region and school ID are not exposed as mart columns (reachable via
           region_key and location_key FK traversal).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -24,6 +27,11 @@ models:
           Foreign key to dim_regions. Surrogate key derived from the canonical
           region. Nullable for org-wide periods and for terms whose school is
           not mapped to a region.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_regions')
+            to_columns: [region_key]
+            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:
@@ -36,6 +44,11 @@ models:
           Foreign key to dim_locations. Surrogate key derived from the location
           name. Nullable when the period is region-wide or when the school is
           not present in dim_locations.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:

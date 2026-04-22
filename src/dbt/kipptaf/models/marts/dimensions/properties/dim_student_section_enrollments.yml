@@ -14,6 +14,9 @@ models:
         description: >-
           Surrogate key derived from cc_dcid and _dbt_source_relation. Primary
           key for this dimension — unique per CC record per region.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -25,14 +28,33 @@ models:
           academic_year, and entrydate. FK to dim_student_enrollments. Null when
           no matching student enrollment record covers the CC dateenrolled.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
       - name: course_section_key
         data_type: string
         description: >-
           Surrogate key derived from sections_dcid and _dbt_source_relation. FK
           to dim_course_sections.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_course_sections')
+            to_columns: [course_section_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_course_sections')
+                field: course_section_key
       - name: term_key
         data_type: string
         description: >-
@@ -41,6 +63,16 @@ models:
           the course-enrollment's term ID does not match any reporting term for
           the section's school and region.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
       - name: academic_year
         data_type: int64
         description: >-

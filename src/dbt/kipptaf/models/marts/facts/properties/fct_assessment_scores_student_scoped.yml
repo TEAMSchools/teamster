@@ -11,6 +11,9 @@ models:
         data_type: string
         description: >-
           Surrogate key. Primary key for this fact table.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -20,17 +23,47 @@ models:
         description: >-
           FK to dim_students. Derived from student_number.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_students')
+            to_columns: [student_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
       - name: assessment_key
         data_type: string
         description: >-
           FK to dim_assessments.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_assessments')
+            to_columns: [assessment_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_assessments')
+                field: assessment_key
       - name: test_date_key
         data_type: date
         description: >-
           FK to dim_dates. The date the assessment was taken. Null for AP exams
           where only the academic year is recorded.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: academic_year
         data_type: int64
         description: >-

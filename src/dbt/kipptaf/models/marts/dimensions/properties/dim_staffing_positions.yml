@@ -14,6 +14,9 @@ models:
         description: >-
           Surrogate primary key derived from dbt_scd_id (snapshot row
           identifier). Generated with generate_surrogate_key(["dbt_scd_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -23,6 +26,11 @@ models:
         description: >-
           Foreign key to dim_locations. Surrogate key derived from the home work
           location name.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
         data_tests:
           # TODO: #3686 — adp_location vs dim_locations.location_name coverage
           # gap (same class as #3672). Promote to error once crosswalk is clean.
@@ -30,15 +38,17 @@ models:
               arguments:
                 to: ref('dim_locations')
                 field: location_key
-              config:
-                severity: warn
-
       - name: incumbent_staff_key
         data_type: string
         description: >-
           Foreign key to dim_staff for the incumbent (staff member filling the
           position). Surrogate key derived from the teammate employee number.
           Nullable — open positions have no incumbent.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           # TODO: #3710 — Seat Tracker retains historical incumbents outside
           # dim_staff's active-primary scope. Promote to error once resolved.
@@ -53,6 +63,11 @@ models:
           Foreign key to dim_staff for the assigned recruiter. Surrogate key
           derived from the recruiter employee number. Nullable — positions may
           have no assigned recruiter.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           # TODO: #3710 — Seat Tracker recruiter values include staff outside
           # dim_staff's active-primary scope. Promote to error once resolved.
@@ -60,12 +75,6 @@ models:
               arguments:
                 to: ref('dim_staff')
                 field: staff_key
-
-      - name: staffing_position_natural_key
-        data_type: string
-        description: >-
-          The dbt snapshot SCD identifier (dbt_scd_id). Uniquely identifies this
-          specific version of a staffing position.
 
       - name: academic_year
         data_type: int64

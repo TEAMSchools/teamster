@@ -12,6 +12,9 @@ models:
           Surrogate primary key derived from job_title, department_internal, and
           job_city. Generated with generate_surrogate_key(["job_title",
           "department_internal", "job_city"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null

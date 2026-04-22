@@ -11,6 +11,9 @@ models:
         description: >-
           Surrogate key derived from sections_dcid and _dbt_source_relation.
           Primary key for this dimension.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -20,9 +23,18 @@ models:
         description: >-
           Surrogate key derived from courses_course_number and
           _dbt_source_relation. FK to dim_courses.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_courses')
+            to_columns: [course_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_courses')
+                field: course_key
       - name: location_key
         data_type: string
         description: >-
@@ -30,6 +42,16 @@ models:
           Null when the section's school ID does not match any location in the
           crosswalk.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
       - name: identifier
         data_type: string
         description: >-

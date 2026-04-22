@@ -13,6 +13,9 @@ models:
         description: >-
           Surrogate key derived from survey_administration_key, respondent_type,
           and the three respondent FK columns. Primary key for this dimension.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -22,9 +25,18 @@ models:
         description: >-
           FK to dim_survey_administrations. Identifies which survey
           administration this expectation belongs to.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_survey_administrations')
+            to_columns: [survey_administration_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_survey_administrations')
+                field: survey_administration_key
       - name: respondent_type
         data_type: string
         description: >-
@@ -45,14 +57,44 @@ models:
           FK to dim_staff. Populated when respondent_type is staff. Null for
           student and family respondents.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: student_enrollment_key
         data_type: string
         description: >-
           FK to dim_student_enrollments. Populated when respondent_type is
           student. Null for staff and family respondents.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
       - name: student_contact_person_key
         data_type: string
         description: >-
           FK to dim_student_contact_persons. Populated when respondent_type is
           family. Null for staff and student respondents.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_contact_persons')
+            to_columns: [student_contact_person_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_contact_persons')
+                field: student_contact_person_key

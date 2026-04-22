@@ -12,6 +12,9 @@ models:
         description: >-
           Surrogate key derived from survey_id and term composite fields.
           Primary key for this dimension.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -20,17 +23,35 @@ models:
         data_type: string
         description: >-
           FK to dim_surveys. Surrogate key derived from survey_id.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_surveys')
+            to_columns: [survey_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_surveys')
+                field: survey_key
       - name: term_key
         data_type: string
         description: >-
           FK to dim_terms. Surrogate key derived from term composite fields
           (type, code, name, start_date, region, school_id).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
       - name: academic_year
         data_type: int64
         description: >-

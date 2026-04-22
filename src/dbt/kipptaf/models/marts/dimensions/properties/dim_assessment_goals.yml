@@ -15,6 +15,9 @@ models:
           Surrogate key derived from academic_year, school_id,
           state_assessment_code, grade_level, and illuminate_subject_area.
           Primary key.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -25,6 +28,16 @@ models:
           FK to dim_locations. Derived from location_clean_name. Null when the
           school does not appear in the location crosswalk.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
       - name: academic_year
         data_type: int64
         description: >-

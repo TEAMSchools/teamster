@@ -11,6 +11,9 @@ models:
         description: >-
           Surrogate primary key derived from the goal tag ID. Generated with
           generate_surrogate_key(["tag_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null

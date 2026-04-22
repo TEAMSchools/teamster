@@ -8,24 +8,46 @@ models:
       keys to dim_students via student_key and to dim_student_contact_persons
       via student_contact_person_key.
 
+    constraints:
+      - type: primary_key
+        columns: [student_key, student_contact_person_key]
+        warn_unsupported: false
     columns:
       - name: student_key
         data_type: string
         description: >-
           Surrogate key for the student. Foreign key to dim_students. Derived
           from student_number via generate_surrogate_key.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_students')
+            to_columns: [student_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
       - name: student_contact_person_key
         data_type: string
         description: >-
           Surrogate key for the contact person. Foreign key to
           dim_student_contact_persons. Derived from _dbt_source_relation and
           powerschool_person_id.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_contact_persons')
+            to_columns: [student_contact_person_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_student_contact_persons')
+                field: student_contact_person_key
       - name: relationship_type
         data_type: string
         description: >-
