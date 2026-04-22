@@ -119,6 +119,11 @@ depends on accurate retry outcomes — a retry silently reported as non-
 FAILURE while its event log ends in RunFailureEvent will point root-cause
 analysis in the wrong direction.
 
+MANDATORY: every retry entry MUST have retryStatus ∈ {SUCCESS, FAILURE}.
+"UNKNOWN", null, or missing is a bug — re-query list_runs AND get_run_logs
+for that runId before writing. The validation block below rejects any
+other value.
+
 ## 3. Failed sensor/schedule ticks
 
 list_code_locations → names + loadStatus.
@@ -376,18 +381,29 @@ Skip empty steps.
 ## Validation (after all writes)
 
 Re-read each JSON file and verify:
-  (a) Pagination terminated: every file's `pagination.complete` MUST be true
-      (i.e. lastPageSize < limit). If any file has complete=false, you stopped
-      paginating early — go re-query that step until a short page is returned.
-      This check is the PRIMARY guard against silent truncation. Do NOT skip
-      it. Comparing two numbers from the same truncated query is not a check
-      — it passes vacuously by construction.
+  (a) Pagination terminated: every file's `pagination.complete` MUST be
+      STRICTLY lastPageSize < limit. If lastPageSize == limit, complete is
+      FALSE regardless of what was written — re-paginate. If any file has
+      complete=false, you stopped paginating early — go re-query that step
+      until a short page is returned. This check is the PRIMARY guard
+      against silent truncation. Do NOT skip it. Comparing two numbers from
+      the same truncated query is not a check — it passes vacuously by
+      construction.
   (b) Step 1: successCount + failureCount + canceledCount > 0 (at least one
       status must have runs — 0/0/0 means pagination failed; re-query).
-  (c) Step 3: per-location tick array length == failureCount AND
+  (c) Step 2: every retry entry has retryStatus ∈ {SUCCESS, FAILURE}. Any
+      "UNKNOWN", null, or missing value is a bug — re-fetch get_run_logs
+      for that runId and derive from the terminal event.
+  (d) Step 3: per-location tick array length == failureCount AND
       pagination.complete=true. If either fails, re-query and rewrite.
-  (d) Step 6: all timestamps fall within {UTC_START}–{UTC_END}. Remove any
-      out-of-window entries.
+  (e) Step 6: all timestamps fall within {UTC_START}–{UTC_END}. Remove any
+      out-of-window entries. ALSO: for every Evicted/OOMKilling pod event
+      with a pod name matching `dagster-run-<runId>-*`, look up that runId
+      in step 1's SUCCESS count context OR list_runs(run_ids=[<id>]). If
+      the run's status is SUCCESS AND the pod event timestamp is within
+      60s AFTER the run's endTime, tag the event with
+      "post_success_cleanup": true. Phase 2 must exclude these from OOM
+      findings — pod cleanup after a successful run is not a failure.
 Fix any mismatches before returning.
 
 Return JSON manifest: {filename: absolute_path}.
@@ -533,10 +549,18 @@ runs and backfills if present.
 if none. For step 8, split the Emerging Issues section into two subsections:
 
 - **In-window groups** (step 8 `inWindow`): groups that surfaced during the
-  day-2 window. Correlate each with runs/ticks from the timeline — if the
-  group's stack trace matches a retry-recovered run, it is likely a
-  false-positive from a retry-wrapped helper (see teamster/CLAUDE.md). Recommend
-  changing the helper's log level in that case.
+  day-2 window. **First, dedupe against the timeline:** each group's
+  `affectedServices[].version` is a pod name (e.g.
+  `dagster-step-<hash>-<suffix>` or `dagster-run-<runId>-<suffix>`). Query GCP
+  logs for ERROR-severity entries on that pod within the group's lastSeenTime
+  window and extract the `k8s-pod/dagster/run-id` label. If that runId is a
+  failed run already listed in the timeline (step 1), mark the group "same event
+  as run X" and fold it INTO the existing timeline entry instead of reporting it
+  as a separate finding. Only groups with NO matching run are standalone
+  emerging issues. For remaining (non-deduped) groups: if the stack trace
+  matches a retry-recovered run, it is likely a false-positive from a
+  retry-wrapped helper (see teamster/CLAUDE.md). Recommend changing the helper's
+  log level in that case.
 - **Stale open groups** (step 8 `staleOpen`): OPEN groups last-seen before the
   window. Treat as cleanup candidates. Note the last-seen date and whether the
   stack matches a retry-wrapped helper. These do not belong in the timeline.
