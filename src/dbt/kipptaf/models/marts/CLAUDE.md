@@ -35,6 +35,12 @@ because R7 covers the same ground.
   (e.g. `full_name` on every person dim — not `student_name`). Otherwise default
   to unqualified.
 
+### BI presentation is Cube's job
+
+Don't entity-qualify bare reserved-word columns to satisfy BI field-list
+readability — Cube `title:` aliases BI presentation. Evaluate R10 /
+reserved-word rename decisions against raw-SQL ergonomics only.
+
 ### Degenerate-dim rule
 
 Text columns (e.g. `incident_type`, `consequence_type`) drop `_code` / `_name`
@@ -133,6 +139,12 @@ All midnight → drop is safe. Distributed times → column carries real
 time-of-day; keep. SmartRecruiters state-transition fields are the canonical
 trap — field names end in `_date` but values are full ISO timestamps.
 
+## Descriptions are source-agnostic
+
+Source-system internal field names (`cc_dateleft`, `WorkAssignment.jobTitle`,
+`powerschool_student_number`, etc.) belong in `config.meta.source_column`, not
+in the user-visible `description:`.
+
 ## Stale metadata from copy-paste
 
 A copy-pasted column block usually keeps the old `description:` and
@@ -155,6 +167,9 @@ Every external consumer (Tableau, Google Sheets, Cube, AppSheet, etc.) that
 reads a mart must have a dbt exposure under `src/dbt/kipptaf/models/exposures/`.
 Without one, column renames and removals silently break downstream — dbt has no
 other signal.
+
+Every mart must appear in `cube.yml`'s `cube_semantic_layer.depends_on`; other
+exposures reference `rpt_*` / staging / intermediate models, not marts.
 
 ## Not in this layer
 

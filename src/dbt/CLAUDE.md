@@ -298,6 +298,8 @@ All SQL follows `.trunk/config/.sqlfluff`. Key enforced rules:
 - **Trailing commas**: required in `SELECT` clauses
 - **Reserved words**: BigQuery reserved words as column names must be
   backtick-quoted in SQL and have `quote: true` in properties YAML
+- **No self-aliases** (sqlfluff AL09): drop `as <name>` when the output name
+  equals the source column, including backticked reserved words
 - **String literals**: single quotes only (no double quotes)
 - **Line length**: 88 characters max
 

@@ -150,3 +150,7 @@ data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not
 
 Truncates results at 50 rows. When querying `INFORMATION_SCHEMA.COLUMNS` for
 wide tables, paginate with `WHERE ordinal_position > N`.
+
+Pre-merge queries against PR-branch schema use
+`dbt_cloud_pr_<ci_id>_<pr_num>_<schema>` — prod `<schema>` lacks unmerged
+renames.
