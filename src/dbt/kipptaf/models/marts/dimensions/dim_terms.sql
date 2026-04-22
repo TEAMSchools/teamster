@@ -6,10 +6,7 @@ with
     locations_lookup as (
         select powerschool_school_id, location_name, region,
         from {{ ref("stg_people__locations") }}
-        where
-            not is_pathways
-            and location_name <> 'KIPP Whittier Elementary'
-            and powerschool_school_id <> 0
+        where powerschool_school_id <> 0
     )
 
 select

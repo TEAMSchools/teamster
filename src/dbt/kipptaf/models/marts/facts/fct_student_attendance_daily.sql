@@ -2,7 +2,6 @@ with
     locations as (
         select powerschool_school_id, dagster_code_location, location_name,
         from {{ ref("stg_people__locations") }}
-        where not is_pathways and location_name <> 'KIPP Whittier Elementary'
     )
 
 select

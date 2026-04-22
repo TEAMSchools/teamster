@@ -14,4 +14,3 @@ select
 
     coalesce(abbreviation, location_name) as abbreviation,
 from {{ ref("stg_people__locations") }}
-where not is_pathways and location_name <> 'KIPP Whittier Elementary'

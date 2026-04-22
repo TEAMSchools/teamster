@@ -2,7 +2,6 @@ with
     locations as (
         select powerschool_school_id, location_name,
         from {{ ref("stg_people__locations") }}
-        where not is_pathways and location_name <> 'KIPP Whittier Elementary'
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate

@@ -1,6 +1,6 @@
 with
     locations as (
-        select powerschool_school_id, dagster_code_location, location_name, is_pathways,
+        select powerschool_school_id, dagster_code_location, location_name,
         from {{ ref("stg_people__locations") }}
     )
 
@@ -16,4 +16,3 @@ inner join
     locations as loc
     on cd.schoolid = loc.powerschool_school_id
     and {{ extract_code_location("cd") }} = loc.dagster_code_location
-where not loc.is_pathways and loc.location_name <> 'KIPP Whittier Elementary'

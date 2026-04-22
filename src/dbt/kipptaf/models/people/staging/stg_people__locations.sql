@@ -62,7 +62,6 @@ select
     powerschool_school_id,
     dagster_code_location,
     location_name,
-    is_pathways,
 
     abbreviation,
     region,
@@ -74,3 +73,8 @@ select
     head_of_schools_employee_number,
     campus_name,
 from deduplicated
+-- Canonical mart scope: pathways (KIPP Forward post-secondary) and the
+-- 'KIPP Whittier Elementary' row are excluded from the analytics locations
+-- surface. Whittier's exclusion predates this model; the filter was duplicated
+-- across 8 mart consumers and centralized here to keep the quirk upstream.
+where not is_pathways and location_name <> 'KIPP Whittier Elementary'
