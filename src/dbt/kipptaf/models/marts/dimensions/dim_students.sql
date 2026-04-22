@@ -16,7 +16,7 @@ select
     secondary_state_studentnumber as district_student_identifier,
     state_studentnumber as state_student_identifier,
     salesforce_id as salesforce_contact_id,
-    student_name,
+    student_name as full_name,
     dob as birth_date,
     gender as gender_identity,
     lunch_status as meal_eligibility_status,

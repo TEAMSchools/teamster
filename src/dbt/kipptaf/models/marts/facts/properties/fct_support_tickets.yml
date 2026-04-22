@@ -62,16 +62,16 @@ models:
           dim_dates.date_key. Nullable — open or pending tickets have no solved
           date.
 
-      - name: ticket_status
+      - name: status
         data_type: string
         description: >-
           Zendesk ticket workflow status (closed, open, new, pending, solved).
 
-      - name: ticket_subject
+      - name: subject
         data_type: string
         description: Subject line of the ticket as entered by the submitter.
 
-      - name: ticket_category
+      - name: category
         data_type: string
         description: >-
           Ticket category from the Zendesk custom Category field (e.g.,
@@ -83,10 +83,12 @@ models:
           Technology tier classification from the Zendesk custom Tech Tier
           field, indicating complexity or routing level.
 
-      - name: ticket_location
+      - name: location
         data_type: string
         description: >-
-          Location value from the Zendesk custom Location field on the ticket.
+          Raw Location value from the Zendesk custom Location field on the
+          ticket. Degenerate text; the surrogate-hashed FK to dim_locations is
+          exposed separately as location_key.
 
       - name: reply_count
         data_type: int64
@@ -115,10 +117,6 @@ models:
         description:
           Number of times the ticket was assigned to a different group.
 
-      - name: ticket_created_date
-        data_type: date
-        description: Calendar date the ticket was created.
-
       - name: created_timestamp
         data_type: timestamp
         description: Timestamp when the ticket was created in Zendesk.
@@ -136,6 +134,6 @@ models:
         description:
           Timestamp when the ticket was solved. Null for unsolved tickets.
 
-      - name: ticket_url
+      - name: url
         data_type: string
         description: Direct URL to the ticket in the Zendesk agent interface.

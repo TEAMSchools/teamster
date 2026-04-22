@@ -31,11 +31,19 @@ models:
                 to: ref('dim_staff_work_assignments')
                 field: work_assignment_key
 
-      - name: effective_date_key
+      - name: effective_start_date_key
         data_type: date
         description: >-
-          Role-playing foreign key to dim_dates. The effective date of this
-          earnings version as a raw DATE value matching dim_dates.date_key.
+          Role-playing FK to dim_dates. The date this earnings version became
+          effective, from additionalRemunerations.effectiveDate.
+
+      - name: effective_end_date_key
+        data_type: date
+        description: >-
+          Role-playing FK to dim_dates. Last date this earnings version was
+          effective. Computed as one day before the next version's
+          effective_start_date_key (within the same assignment and earning
+          type), or 9999-12-31 for the current version.
 
       - name: earning_code
         data_type: string
@@ -55,21 +63,8 @@ models:
           Dollar amount of the additional earning rate for this version, from
           additionalRemunerations.rate.amountValue.
 
-      - name: effective_start_date
-        data_type: date
-        description: >-
-          Date this earnings version became effective, from
-          additionalRemunerations.effectiveDate.
-
-      - name: effective_end_date
-        data_type: date
-        description: >-
-          Last date this earnings version was effective. Computed as one day
-          before the next version's effective_start_date (within the same
-          assignment and earning type), or 9999-12-31 for the current version.
-
       - name: is_current
         data_type: boolean
         description: >-
           TRUE if this is the most recent earnings version for the assignment
-          and earning type (effective_end_date = 9999-12-31).
+          and earning type (effective_end_date_key = 9999-12-31).

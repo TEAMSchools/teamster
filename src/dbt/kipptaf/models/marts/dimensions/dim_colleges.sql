@@ -22,7 +22,7 @@ select
     d.college_state as state_abbreviation,
 
     x.nces_id,
-    x.meets_full_need,
+    x.meets_full_need as meets_full_financial_need,
     x.is_strong_oos_option as is_strong_out_of_state_option,
 
     a.competitiveness_ranking as selectivity_tier,

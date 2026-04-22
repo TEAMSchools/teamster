@@ -54,23 +54,24 @@ models:
           ADP position identifier associated with this work assignment
           (WorkAssignment positionID).
 
-      - name: primary_indicator
+      - name: is_primary_position
         data_type: boolean
         description: >-
           TRUE if this is the primary work assignment for the worker. A worker
           may have multiple assignments; at most one is primary.
 
-      - name: management_position_indicator
+      - name: is_management_position
         data_type: boolean
         description: >-
           TRUE if this work assignment is designated as a management position in
           ADP.
 
-      - name: voluntary_indicator
+      - name: is_voluntary_termination
         data_type: boolean
         description: >-
-          TRUE if participation in this work assignment is voluntary (e.g.,
-          stipend-based supplemental assignments).
+          TRUE if the separation from this work assignment was voluntary (e.g.,
+          resignation), as recorded in ADP voluntaryIndicator. Meaningful only
+          for terminated assignments.
 
       - name: full_time_equivalency
         data_type: float64

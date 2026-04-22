@@ -61,10 +61,11 @@ models:
           where the student has a KIPPADB record; null otherwise. Used across
           KIPPADB consumer tools (Overgrad, alumni tracking, etc.).
 
-      - name: student_name
+      - name: full_name
         data_type: string
         description: >-
-          Last, First, Mi. Indexed.
+          Student's full name in "Last, First, Mi." format from PowerSchool
+          lastfirst. Matches dim_staff.full_name naming.
 
         config:
           meta:

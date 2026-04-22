@@ -27,22 +27,22 @@ models:
       - name: start_date_key
         data_type: date
         description: >-
-          The start date of the association of this teacher to this section.
+          FK to dim_dates. The date the consequence began.
 
         config:
           meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__sectionteacher
+            source_system: DeansList
+            source_model: int_deanslist__incidents__penalties
             source_column: start_date
       - name: end_date_key
         data_type: date
         description: >-
-          The end date of the association of this teacher to this section.
+          FK to dim_dates. The date the consequence ended.
 
         config:
           meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__sectionteacher
+            source_system: DeansList
+            source_model: int_deanslist__incidents__penalties
             source_column: end_date
       - name: consequence_type
         data_type: string
@@ -77,23 +77,3 @@ models:
         data_type: boolean
         description: >-
           TRUE if this consequence is flagged as reportable for state reporting.
-
-      - name: consequence_start_date
-        data_type: date
-        description: >-
-          The start date of the association of this teacher to this section.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__sectionteacher
-            source_column: start_date
-      - name: consequence_end_date
-        data_type: date
-        description: >-
-          The end date of the association of this teacher to this section.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__sectionteacher
-            source_column: end_date

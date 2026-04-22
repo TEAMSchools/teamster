@@ -32,7 +32,7 @@ select
         sr.employee_number is not null,
         {{ dbt_utils.generate_surrogate_key(["sr.employee_number"]) }},
         cast(null as string)
-    ) as staff_key,
+    ) as communicator_staff_key,
 
     c.call_date as date_key,
 
@@ -43,8 +43,6 @@ select
     c.reason,
     c.call_status as communication_outcome,
     c.response as notes,
-
-    c.call_date as communication_date,
 
     c.is_attendance_call,
     c.is_truancy_call,

@@ -60,10 +60,10 @@ models:
         description: >-
           TRUE if this contact has custodial rights for this student.
 
-      - name: lives_with
+      - name: is_household_member
         data_type: boolean
         description: >-
-          TRUE if the student lives with this contact person.
+          TRUE if the student lives with this contact person (household member).
 
     data_tests:
       - dbt_utils.unique_combination_of_columns:

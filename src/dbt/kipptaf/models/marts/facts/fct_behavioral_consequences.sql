@@ -37,9 +37,6 @@ select
 
     p.is_suspension,
     p.is_reportable,
-
-    p.start_date as consequence_start_date,
-    p.end_date as consequence_end_date,
 from {{ ref("int_deanslist__incidents__penalties") }} as p
 inner join
     enrollments as enr

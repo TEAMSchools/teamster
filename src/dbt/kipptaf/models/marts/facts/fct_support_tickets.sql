@@ -26,12 +26,12 @@ select
 
     cast(tm.solved_at as date) as solved_date_key,
 
-    t.status as ticket_status,
-    t.subject as ticket_subject,
+    t.status,
+    t.subject,
 
-    cf.category as ticket_category,
+    cf.category,
     cf.tech_tier,
-    cf.location as ticket_location,
+    cf.location,
 
     tm.replies as reply_count,
     tm.full_resolution_time_in_minutes_business as business_minutes_to_solve,
@@ -40,13 +40,12 @@ select
     tm.assignee_stations as agent_reassignment_count,
     tm.group_stations as group_reassignment_count,
 
-    cast(t.created_at as date) as ticket_created_date,
     t.created_at as created_timestamp,
     tm.initially_assigned_at as initially_assigned_timestamp,
     tm.assignee_updated_at as assignee_updated_timestamp,
     tm.solved_at as solved_timestamp,
 
-    concat('https://teamschools.zendesk.com/agent/tickets/', t.id) as ticket_url,
+    concat('https://teamschools.zendesk.com/agent/tickets/', t.id) as url,
 from {{ source("zendesk", "tickets") }} as t
 inner join {{ ref("stg_zendesk__users") }} as su on t.submitter_id = su.id
 inner join

@@ -52,9 +52,9 @@ select
     ) as time_service_supervisor_staff_key,
 
     wa.position_id,
-    wa.primary_indicator,
-    wa.management_position_indicator,
-    wa.voluntary_indicator,
+    wa.primary_indicator as is_primary_position,
+    wa.management_position_indicator as is_management_position,
+    wa.voluntary_indicator as is_voluntary_termination,
     wa.full_time_equivalence_ratio as full_time_equivalency,
     wa.payroll_file_number,
     wa.payroll_group_code,

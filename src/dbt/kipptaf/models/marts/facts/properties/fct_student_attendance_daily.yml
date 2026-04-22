@@ -6,8 +6,8 @@ models:
       indicators, and membership value. School calendar attributes
       (is_in_session, is_membership_day) are reached via compound join on
       (date_key, location_key) to dim_school_calendars, avoiding a diamond path
-      through dim_locations. FK to dim_student_enrollments, dim_dates, and
-      dim_school_calendars.
+      through dim_locations. FK to dim_student_enrollments, dim_dates,
+      dim_locations, dim_terms, and dim_school_calendars.
     columns:
       - name: student_attendance_daily_key
         data_type: string
@@ -37,6 +37,22 @@ models:
         description: >-
           FK to dim_locations. Surrogate key derived from location_clean_name.
           Used with date_key to join dim_school_calendars.
+
+      - name: term_key
+        data_type: string
+        description: >-
+          FK to dim_terms. Surrogate key derived from (term_type, term_code,
+          term_name, term_start_date, region, school_id) via left join to
+          stg_google_sheets__reporting__terms on (schoolid, term,
+          academic_year). Null when the attendance row's term does not appear in
+          the terms sheet for that school-year.
+        data_tests:
+          - relationships:
+              config:
+                severity: warn
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
 
       - name: academic_year
         data_type: int64
@@ -99,11 +115,6 @@ models:
         data_type: string
         description: >-
           Semester code for the attendance date (e.g., S1, S2).
-
-      - name: term_code
-        data_type: string
-        description: >-
-          Term code for the attendance date (e.g., Q1, Q2, Q3, Q4).
 
       - name: is_absent
         data_type: int64

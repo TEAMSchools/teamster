@@ -77,13 +77,13 @@ models:
       - name: incident_status
         data_type: string
         description: >-
-          Indicates if the course was made either by a user or automatically by
-          an import. Validvalues: 0=user-created, 3=auto-created.
+          DeansList workflow status for the incident (e.g., Open, Closed,
+          Pending).
 
         config:
           meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__courses
+            source_system: DeansList
+            source_model: int_deanslist__incidents
             source_column: status
       - name: referral_tier
         data_type: string
@@ -101,11 +101,6 @@ models:
         data_type: boolean
         description: >-
           TRUE if the incident is currently active (not archived/closed).
-
-      - name: incident_date
-        data_type: date
-        description: >-
-          Date the incident was created, cast from create_ts_date.
 
       - name: close_date
         data_type: date

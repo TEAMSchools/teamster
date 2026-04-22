@@ -30,8 +30,6 @@ select
 
     st.yearid + 1990 as academic_year,
     st.att_code as attendance_code,
-    st.streak_start_date,
-    st.streak_end_date,
     st.streak_length_membership,
     st.streak_length_calendar,
 from {{ ref("int_powerschool__attendance_streak") }} as st

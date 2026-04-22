@@ -24,7 +24,7 @@ models:
         data_tests:
           - not_null
 
-      - name: staff_key
+      - name: communicator_staff_key
         data_type: string
         description: >-
           FK to dim_staff for the staff member who logged the communication.
@@ -81,11 +81,6 @@ models:
             source_system: DeansList
             source_model: int_deanslist__comm_log
             source_column: response
-      - name: communication_date
-        data_type: date
-        description: >-
-          Date the communication was logged.
-
       - name: communication_timestamp
         data_type: timestamp
         description: >-

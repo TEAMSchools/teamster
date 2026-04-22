@@ -38,11 +38,13 @@ models:
           National Center for Education Statistics (NCES) identifier from the
           NSC crosswalk. Null when the college is not mapped in the crosswalk.
 
-      - name: meets_full_need
+      - name: meets_full_financial_need
         data_type: boolean
         description: >-
-          TRUE if the college meets 100% of demonstrated financial need for
-          admitted students, per the NSC crosswalk.
+          TRUE if the college publicly commits to meeting 100% of every admitted
+          student's demonstrated financial need, per the NSC crosswalk. R3
+          exception — kept as a named predicate phrase rather than is_ prefix
+          for readability.
 
       - name: is_strong_out_of_state_option
         data_type: boolean

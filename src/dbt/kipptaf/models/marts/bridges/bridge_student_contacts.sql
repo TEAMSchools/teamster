@@ -29,7 +29,7 @@ select
     c.isemergency = 1 as is_emergency,
     c.schoolpickupflg = 1 as is_pickup,
     c.iscustodial = 1 as is_custodial,
-    c.liveswithflg = 1 as lives_with,
+    c.liveswithflg = 1 as is_household_member,
 
 from contacts_union as c
 inner join

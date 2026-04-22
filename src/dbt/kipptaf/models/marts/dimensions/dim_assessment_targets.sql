@@ -57,7 +57,6 @@ select
     {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }} as location_key,
 
     d.academic_year,
-    d.school_id,
     d.state_assessment_code,
     d.illuminate_subject_area as academic_subject,
     d.grade_level as assessment_grade_level,

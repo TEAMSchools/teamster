@@ -50,7 +50,6 @@ select
     i.is_referral,
     i.is_active,
 
-    cast(i.create_ts_date as date) as incident_date,
     cast(i.close_ts_date as date) as close_date,
     cast(i.return_date_date as date) as return_date,
 from {{ ref("int_deanslist__incidents") }} as i

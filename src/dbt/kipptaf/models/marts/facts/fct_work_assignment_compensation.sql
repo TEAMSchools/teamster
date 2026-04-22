@@ -38,14 +38,13 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["item_id"]) }} as work_assignment_key,
 
-    effective_date_start as effective_date_key,
+    effective_date_start as effective_start_date_key,
+    effective_date_end as effective_end_date_key,
 
     annual_rate as annual_wage,
     hourly_rate as hourly_wage,
     daily_rate,
     period_rate,
-    effective_date_start as effective_start_date,
-    effective_date_end as effective_end_date,
 
     if(effective_date_end = '9999-12-31', true, false) as is_current,
 from windowed
