@@ -46,6 +46,9 @@
       "mcp__dagster__list_schedules",
       "mcp__dagster__list_sensors",
       "mcp__dagster__search_assets",
+      "mcp__dbt__get_job_run_details",
+      "mcp__dbt__get_job_run_error",
+      "mcp__dbt__list_jobs",
       "mcp__dbt__show",
       "mcp__gke__get_cluster",
       "mcp__gke__get_gke_release_notes",
@@ -69,11 +72,10 @@
       "Read(//tmp/dagster/**)",
       "Read(//workspaces/teamster/**)",
       "Skill(claude-md-management:revise-claude-md:*)",
+      "Skill(commit-commands:commit:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)",
-      "Write(/.worktrees/**)",
       "Write(/.claude/scratch/**)",
-      "Write(/.worktrees/**)",
-      "Skill(commit-commands:commit:*)"
+      "Write(/.worktrees/**)"
     ],
     "deny": [
       "Bash(* gcloud *)",
@@ -111,7 +113,7 @@
     ],
     "additionalDirectories": [
       "/workspaces/teamster/.worktrees/**",
-      "/workspaces/teamster/.claude/scratch"
+      "/workspaces/teamster/.claude/scratch/**"
     ]
   },
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],

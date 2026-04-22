@@ -150,3 +150,14 @@ data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not
 
 Truncates results at 50 rows. When querying `INFORMATION_SCHEMA.COLUMNS` for
 wide tables, paginate with `WHERE ordinal_position > N`.
+
+### dbt MCP
+
+Auth via `scripts/dbt-mcp-launch.sh` — do not add `DBT_TOKEN` to `.mcp.json`
+directly. `list_jobs` is hard-filtered to `DBT_PROD_ENV_ID`, currently staging
+(70403104014899); per-call `environment_id` / `project_id` args exposed by the
+schema are ignored. Run-inspection tools (`list_jobs_runs`,
+`get_job_run_details`, `get_job_run_error`) ignore env scope and work across
+environments by `job_id` / `run_id`. For successful runs, call
+`get_job_run_error` with `warning_only=true` to surface test warnings —
+status=Success does not mean warning-free.
