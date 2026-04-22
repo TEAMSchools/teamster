@@ -2,10 +2,9 @@ models:
   - name: dim_work_assignment_types
     description: >-
       Work assignment type dimension with derived Type 2 SCD tracking. One row
-      per assignment x worker type change point. Detects changes to
-      workerTypeCode and benefits eligibility class (from workerGroups[]) via
-      daily payload-hash comparison. FK to dim_staff_work_assignments via
-      work_assignment_key.
+      per assignment x worker type change point. Detects changes to worker type
+      code and benefits eligibility class via daily payload-hash comparison. FK
+      to dim_staff_work_assignments via work_assignment_key.
     columns:
       - name: work_assignment_type_key
         data_type: string
@@ -32,21 +31,17 @@ models:
       - name: worker_type_code
         data_type: string
         description: >-
-          ADP worker type code value for the assignment (e.g., 'ALT', 'FLT'),
-          from WorkAssignment workerTypeCode.codeValue.
+          Worker type code for the assignment (e.g., 'ALT', 'FLT').
 
       - name: worker_type_name
         data_type: string
         description: >-
-          Display name for the worker type, coalesced from longName and
-          shortName of WorkAssignment workerTypeCode.
+          Display name for the worker type.
 
       - name: benefits_eligibility_class
         data_type: string
         description: >-
-          Benefits eligibility class name extracted from WorkAssignment
-          workerGroups[] where nameCode = 'Benefits Eligibility Class',
-          coalesced from groupCode longName and shortName.
+          Benefits eligibility class name for this assignment.
 
       - name: effective_start_date
         data_type: date

@@ -38,8 +38,8 @@ models:
         description: >-
           Surrogate key derived from type, code, name, start_date, region, and
           school_id of the matching reporting term. FK to dim_terms. Null when
-          cc_abs_termid does not match any reporting term powerschool_term_id
-          for the section's school and region.
+          the course-enrollment's term ID does not match any reporting term for
+          the section's school and region.
 
       - name: academic_year
         data_type: int64
@@ -51,20 +51,19 @@ models:
       - name: entry_date
         data_type: date
         description: >-
-          Date the student enrolled in this section (cc_dateenrolled from
-          PowerSchool).
+          Date the student enrolled in this section.
 
       - name: exit_date
         data_type: date
         description: >-
-          Date the student left this section (cc_dateleft from PowerSchool).
+          Date the student left this section.
 
       - name: is_dropped_section
         data_type: boolean
         description: >-
           TRUE if this specific section enrollment was dropped by the student
-          mid-term, as determined by PowerSchool sectionid sign and exit date
-          logic.
+          mid-term, determined by the combination of a negative section ID (drop
+          marker) and an early exit date.
 
       - name: is_dropped_course
         data_type: boolean

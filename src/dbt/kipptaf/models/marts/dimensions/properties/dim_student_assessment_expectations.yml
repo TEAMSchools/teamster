@@ -10,8 +10,8 @@ models:
       - name: student_assessment_expectation_key
         data_type: string
         description: >-
-          Surrogate key derived from powerschool_student_number, assessment_id,
-          and administered_at. Primary key.
+          Surrogate key derived from student_number, assessment_id, and
+          administered_at. Primary key.
         data_tests:
           - unique
           - not_null
@@ -32,8 +32,7 @@ models:
       - name: student_key
         data_type: string
         description: >-
-          FK to dim_students. Surrogate key derived from
-          powerschool_student_number.
+          FK to dim_students. Surrogate key derived from student_number.
         data_tests:
           - relationships:
               arguments:

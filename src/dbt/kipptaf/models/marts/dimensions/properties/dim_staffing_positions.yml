@@ -21,8 +21,8 @@ models:
       - name: location_key
         data_type: string
         description: >-
-          Foreign key to dim_locations. Surrogate key derived from adp_location
-          (home work location name).
+          Foreign key to dim_locations. Surrogate key derived from the home work
+          location name.
         data_tests:
           # TODO: #3686 — adp_location vs dim_locations.location_name coverage
           # gap (same class as #3672). Promote to error once crosswalk is clean.
@@ -76,12 +76,12 @@ models:
       - name: home_department_name
         data_type: string
         description: >-
-          ADP department name for this position (adp_dept from seat tracker).
+          Department name for this position, sourced from the HR seat tracker.
 
       - name: title
         data_type: string
         description:
-          ADP job title for this position (adp_title from seat tracker).
+          Job title for this position, sourced from the HR seat tracker.
 
       - name: is_active
         data_type: boolean

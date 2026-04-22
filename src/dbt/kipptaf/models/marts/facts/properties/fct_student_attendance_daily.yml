@@ -72,13 +72,11 @@ models:
       - name: attendance_value
         data_type: float64
         description: >-
-          Changed name from Membership_Percentage to better reflect the data.
-          This is the attendancevalue to use for a student for a day based on
-          the Conversion_Mode_CD, FTEID and Input_Valuespecified (and Day Part
-          ID, if day part processing is enabled). This value is a real number
-          andtypically, but not necessarily, reflects a fraction of 1 where 1 is
-          a full attendance value. Used inconjunction with ADA to aggregate
-          attendance.
+          Daily attendance value — a real number, typically a fraction of 1
+          where 1 is a full attendance day. Used with membership_value to
+          compute ADA. Precision depends on the source SIS's attendance mode
+          (full-day vs period-level vs day-part); see source_model for
+          provenance.
 
         config:
           meta:

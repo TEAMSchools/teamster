@@ -64,8 +64,8 @@ models:
       - name: full_name
         data_type: string
         description: >-
-          Student's full name in "Last, First, Mi." format from PowerSchool
-          lastfirst. Matches dim_staff.full_name naming.
+          Student's full name in "Last, First, Mi." format. Matches
+          dim_staff.full_name naming.
 
         config:
           meta:
