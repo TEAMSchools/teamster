@@ -4,9 +4,9 @@ models:
       GPA periodic-snapshot fact table. One row per student enrollment x term.
       Contains term GPA, year-to-date GPA (weighted and unweighted), semester
       GPA, cumulative GPA, credit hours earned and attempted, and failing course
-      count. Preserves history across terms with is_current_row flag to collapse
-      to the most recent snapshot per student x school. FK to
-      dim_student_enrollments and dim_terms.
+      count. Preserves history across terms with is_current flag to collapse to
+      the most recent row per student x school. FK to dim_student_enrollments
+      and dim_terms.
     columns:
       - name: grades_gpa_key
         data_type: string

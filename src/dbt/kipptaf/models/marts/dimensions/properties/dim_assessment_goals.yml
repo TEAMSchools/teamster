@@ -28,7 +28,7 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          Academic year the targets apply to.
+          Academic year the goals apply to.
 
       - name: state_assessment_code
         data_type: string
