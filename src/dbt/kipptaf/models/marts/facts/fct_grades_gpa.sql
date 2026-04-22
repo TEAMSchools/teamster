@@ -123,22 +123,22 @@ select
     gt.semester,
 
     gt.gpa_term,
-    gt.gpa_y1,
-    gt.gpa_y1_unweighted,
+    gt.gpa_y1 as gpa_ytd,
+    gt.gpa_y1_unweighted as gpa_ytd_unweighted,
     gt.gpa_semester,
     gt.grade_avg_term,
-    gt.grade_avg_y1,
+    gt.grade_avg_y1 as grade_avg_ytd,
 
     gt.cumulative_y1_gpa as cumulative_gpa,
     gt.cumulative_y1_gpa_unweighted as cumulative_gpa_unweighted,
     gt.cumulative_y1_gpa_projected as cumulative_gpa_projected,
 
     gt.total_credit_hours_term as credit_hours_term,
-    gt.total_credit_hours_y1 as credit_hours_y1,
+    gt.total_credit_hours_y1 as credit_hours_ytd,
     gt.earned_credits_cum as credit_hours_earned_cumulative,
     gt.potential_credits_cum as credit_hours_attempted_cumulative,
 
-    gt.n_failing_y1,
+    gt.n_failing_y1 as n_failing_ytd,
 
     if(gt.rn_current = 1, true, false) as is_current,
 from gpa_term as gt

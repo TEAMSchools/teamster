@@ -34,14 +34,14 @@ models:
                 to: ref('dim_staff')
                 field: staff_key
 
-      - name: time_service_supervisor_staff_key
+      - name: time_approver_staff_key
         data_type: string
         description: >-
-          Surrogate key derived from the time-service supervisor's
+          Surrogate key derived from the time-and-attendance approver's
           employee_number. FK to dim_staff identifying the supervisor who
-          approves this assignment's time records. Null when the supervisor's
-          associate_oid has no active number mapping in
-          stg_people__employee_numbers.
+          approves this assignment's time records (distinct from the org-chart
+          manager on dim_work_assignment_reporting_relationships). Null when the
+          approver's associate_oid has no active number mapping.
         data_tests:
           - relationships:
               arguments:

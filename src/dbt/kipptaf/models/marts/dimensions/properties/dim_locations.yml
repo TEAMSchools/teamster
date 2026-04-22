@@ -3,8 +3,16 @@ models:
     description: >-
       School and office location dimension. One row per school or office.
       Conformed dimension. Region context is reached via the region_key FK to
-      dim_regions. Campus is a physical site grouping where multiple schools
-      share a building.
+      dim_regions.
+
+      Mixed-grain: this dim contains BOTH school-level rows and campus-level
+      rows (a campus is a physical site where multiple schools share a
+      building). The `is_campus` flag distinguishes them — set TRUE for
+      campus-level rows, FALSE for individual schools. The `campus` column on a
+      school row names its parent campus (may be null for standalone schools).
+      When joining to a fact, decide deliberately whether you want campus-grain
+      or school-grain aggregation; default is school-grain (filter `WHERE NOT
+      is_campus`).
     columns:
       - name: location_key
         data_type: string

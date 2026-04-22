@@ -69,13 +69,13 @@ select
     fg.term_letter_grade_adjusted as letter_grade_adjusted,
     fg.citizenship as citizenship_grade,
 
-    fg.y1_percent_grade,
-    fg.y1_percent_grade_adjusted,
-    fg.y1_letter_grade,
-    fg.y1_letter_grade_adjusted,
+    fg.y1_percent_grade as ytd_percent_grade,
+    fg.y1_percent_grade_adjusted as ytd_percent_grade_adjusted,
+    fg.y1_letter_grade as ytd_letter_grade,
+    fg.y1_letter_grade_adjusted as ytd_letter_grade_adjusted,
 
     fg.term_grade_points as grade_points_earned,
-    fg.y1_grade_points,
+    fg.y1_grade_points as ytd_grade_points,
 
     fg.potential_credit_hours,
 

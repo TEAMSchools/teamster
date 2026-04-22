@@ -55,12 +55,12 @@ models:
           Weighted GPA for this term only, calculated as weighted grade points
           divided by credit hours for the term.
 
-      - name: gpa_y1
+      - name: gpa_ytd
         data_type: float64
         description: >-
           Year-to-date weighted GPA across all terms in the academic year.
 
-      - name: gpa_y1_unweighted
+      - name: gpa_ytd_unweighted
         data_type: float64
         description: >-
           Year-to-date unweighted GPA using the unweighted grade scale.
@@ -75,7 +75,7 @@ models:
         description: >-
           Average percent grade across all courses for this term.
 
-      - name: grade_avg_y1
+      - name: grade_avg_ytd
         data_type: float64
         description: >-
           Year-to-date average percent grade across all courses.
@@ -101,7 +101,7 @@ models:
         description: >-
           Total credit hours for courses with grades in this term.
 
-      - name: credit_hours_y1
+      - name: credit_hours_ytd
         data_type: float64
         description: >-
           Total credit hours for courses with Y1 grades in the academic year.
@@ -118,7 +118,7 @@ models:
           Cumulative credit hours attempted (all enrolled courses) across all
           academic years.
 
-      - name: n_failing_y1
+      - name: n_failing_ytd
         data_type: int64
         description: >-
           Count of courses with a failing Y1 letter grade (F or F*) in the

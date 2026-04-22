@@ -92,24 +92,24 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__pgfinalgrades
             source_column: citizenship
-      - name: y1_percent_grade
+      - name: ytd_percent_grade
         data_type: float64
         description: >-
           Year-to-date (Y1) running percent grade, weighted across terms
           completed so far.
 
-      - name: y1_percent_grade_adjusted
+      - name: ytd_percent_grade_adjusted
         data_type: float64
         description: >-
           Year-to-date adjusted percent grade with minimum-grade floor applied.
 
-      - name: y1_letter_grade
+      - name: ytd_letter_grade
         data_type: string
         description: >-
-          Year-to-date letter grade derived from y1_percent_grade_adjusted via
+          Year-to-date letter grade derived from ytd_percent_grade_adjusted via
           the weighted grade scale.
 
-      - name: y1_letter_grade_adjusted
+      - name: ytd_letter_grade_adjusted
         data_type: string
         description: >-
           Year-to-date adjusted letter grade with F* designation for grades
@@ -127,10 +127,10 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__gradescaleitem
             source_column: grade_points
-      - name: y1_grade_points
+      - name: ytd_grade_points
         data_type: float64
         description: >-
-          Year-to-date GPA grade points derived from y1_percent_grade_adjusted
+          Year-to-date GPA grade points derived from ytd_percent_grade_adjusted
           via the weighted grade scale.
 
       - name: potential_credit_hours

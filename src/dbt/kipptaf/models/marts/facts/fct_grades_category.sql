@@ -64,7 +64,7 @@ select
 
     cg.percent_grade,
     cg.citizenship_grade,
-    cg.percent_grade_y1_running,
+    cg.percent_grade_y1_running as percent_grade_ytd_running,
 
     cg.is_current,
 from {{ ref("int_powerschool__category_grades") }} as cg

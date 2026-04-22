@@ -49,7 +49,7 @@ select
         sup.employee_number is not null,
         {{ dbt_utils.generate_surrogate_key(["sup.employee_number"]) }},
         cast(null as string)
-    ) as time_service_supervisor_staff_key,
+    ) as time_approver_staff_key,
 
     wa.position_id,
     wa.primary_indicator as is_primary_position,

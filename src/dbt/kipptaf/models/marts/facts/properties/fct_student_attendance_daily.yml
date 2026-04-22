@@ -8,6 +8,22 @@ models:
       (date_key, location_key) to dim_school_calendars, avoiding a diamond path
       through dim_locations. FK to dim_student_enrollments, dim_dates,
       dim_locations, dim_terms, and dim_school_calendars.
+
+      Four numeric attendance measures coexist — use the right one for the
+      question:
+
+      - `attendance_value` (0.0–1.0) — raw fractional attendance contribution
+        from the source SIS's attendance mode. Denominator of ADA numerator.
+      - `membership_value` (0.0–1.0) — fractional enrollment/membership claim
+        on the day (split across schools if dual-enrolled). Denominator of ADA.
+      - `present_weight` — like `attendance_value` but tardies weight 0.67.
+        Use when a tardy should count as partial presence, not full.
+      - `is_present_weighted` — not on this fact; see upstream if needed.
+
+      Most dashboards: divide `SUM(attendance_value) / SUM(membership_value)`
+      for ADA, `SUM(is_absent) / SUM(is_membership_day)` for absence rate. Use
+      the `is_*` flags for categorical breakdowns (Present/Absent/Tardy/
+      OSS/ISS) or the `attendance_category` column for a single GROUP BY axis.
     columns:
       - name: student_attendance_daily_key
         data_type: string
