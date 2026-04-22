@@ -17,12 +17,12 @@ models:
       - name: lea_student_identifier
         data_type: int64
         description: >-
-          KIPP's own SIS identifier for the student. KIPP is a charter-LEA
-          operating within a host public school district; this column is the
-          identifier issued by KIPP as the LEA. Sourced from PowerSchool
-          student_number for NJ regions (and Focus local ID for Miami once Focus
-          lands). Maps to Ed-Fi District / CEDS District-assigned number from
-          KIPP-as-LEA's perspective.
+          KIPP's own SIS identifier for the student. KIPP is a charter Local
+          Education Agency (LEA) operating within a host public school district;
+          this column is the identifier issued by KIPP as the LEA. Sourced from
+          the SIS student number for NJ regions (and Focus local ID for Miami
+          once Focus lands). Maps to Ed-Fi District / CEDS District-assigned
+          number from KIPP-as-LEA's perspective.
         data_tests:
           - not_null
 
@@ -98,7 +98,8 @@ models:
       - name: meal_eligibility_status
         data_type: string
         description: >-
-          NSLP meal eligibility status (e.g., Free, Reduced, Paid).
+          National School Lunch Program (NSLP) meal eligibility status (e.g.,
+          Free, Reduced, Paid).
 
       - name: enrollment_status
         data_type: string
@@ -121,13 +122,13 @@ models:
       - name: is_ell
         data_type: boolean
         description: >-
-          TRUE if the student has a non-null lep_status, indicating active
-          English Language Learner classification.
+          TRUE if the student is classified as an active English Language
+          Learner (ELL).
 
       - name: has_iep
         data_type: boolean
         description: >-
-          TRUE if the student's iep_status is 'With IEP'.
+          TRUE if the student has an Individualized Education Program (IEP).
 
       - name: race
         data_type: string
