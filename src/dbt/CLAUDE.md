@@ -161,7 +161,10 @@ data_tests:
 
 - Do not add `store_failures: true` to individual tests — the project default
   handles it
-- Tests that must error (not warn) need explicit `config: severity: error`
+- Staging-layer tests MUST set `config: severity: error` on every test. The
+  project default is `warn`, so staging tests without explicit `severity: error`
+  silently degrade to warnings and won't fail CI. Intermediate/mart/`rpt_` tests
+  may omit the override where a warning is acceptable.
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
 
@@ -228,6 +231,11 @@ dimension and fail.
   `ON` clauses. Deleted rows should never reach intermediate or mart models.
   Omit columns whose value is predetermined by the WHERE filter (e.g.,
   `deleted_at` after `WHERE deleted_at IS NULL`) — they add no signal.
+- **Google Sheets external-table case**: `select *,` in a staging model inherits
+  the sheet header case (often PascalCase). Contract-enforced YAML column names
+  must match that case, or use explicit `<raw> as <renamed>` aliasing in the
+  staging SQL. Don't rename columns in `sources-external.yml` just to normalize
+  case — that rebuilds the external table and forces sheet-header coordination.
 - **No `GROUP BY` without aggregation** — use `DISTINCT` instead (see next rule
   for deduplication constraints).
 - **No manual deduplication** — do not use `SELECT DISTINCT` or
@@ -281,6 +289,10 @@ alias.
   Describe calculated fields by logic. Use qualitative language — no stats.
 - Columns with `data_tests:` should be sorted to the top of the `columns:` list
   for visibility.
+- Test placement by arity: single-column tests (`unique`, `not_null`, etc.) go
+  on the column itself. Multi-column tests
+  (`dbt_utils.unique_combination_of_columns`, etc.) go at model level in a
+  `data_tests:` block placed ABOVE the `columns:` block.
 - Column renames for semantic clarity (e.g., boolean prefixing with `is_`,
   reserved word aliases) belong in the staging model, not downstream.
 

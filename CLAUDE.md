@@ -37,6 +37,11 @@ this step.**
 - **Worktree**: `gh issue develop <number> --name <branch>` (no `--checkout`),
   then `git worktree add .worktrees/<branch> <branch>`.
 
+- **Linking an existing remote branch to an issue**:
+  `mcp__github__create_branch` and GraphQL `createLinkedBranch` both no-op when
+  the branch already exists. Delete the remote branch, then
+  `gh issue develop <num> --name <branch>`, then re-push local commits.
+
 - **Worktree git commands**: Always `cd` to the worktree before running `git`
   commands — the main repo and worktree have separate git state. Running
   `git commit` from the main repo commits to `main`, not the worktree branch.
