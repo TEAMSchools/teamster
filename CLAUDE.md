@@ -74,6 +74,13 @@ this step.**
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
   `uv run`, `gh`, `docker`, `trunk`, `ls`).
 
+- **Verify tool-call results for resource creation/update**: syntax errors in
+  structured tool-call parameters (malformed closing tags, misnested blocks) can
+  silently produce corrupted values — the call succeeds without error, just with
+  the wrong payload. After any call that creates or updates a resource with
+  string fields (issue title, PR body, commit message, etc.), check the returned
+  values match intent before moving on.
+
 - **Trunk linting/formatting**: Do not run `trunk fmt` manually — formatting is
   handled by the PostToolUse hook (after Edit/Write) and `trunk-fmt-pre-commit`
   (at commit time). **Before pushing from a worktree**, run
