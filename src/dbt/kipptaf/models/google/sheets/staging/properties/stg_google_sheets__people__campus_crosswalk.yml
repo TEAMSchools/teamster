@@ -5,13 +5,17 @@ models:
       location it belongs to, along with school-level metadata. Sourced from
       a Google Sheet maintained by the People team.
     columns:
-      - name: Name
-        description: Campus name (distinct from Location_Name).
-        data_type: string
       - name: Location_Name
         description: |
           Canonical location name from `int_people__location_crosswalk`. Join
           key to `int_people__staff_roster.home_work_location_reporting_name`.
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: Name
+        description: Campus name (distinct from Location_Name).
         data_type: string
       - name: Region
         description: Region the campus belongs to.
@@ -31,9 +35,3 @@ models:
       - name: Is_Pathways
         description: Whether the campus is part of the Pathways program.
         data_type: boolean
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - Name
-              - Is_Pathways

@@ -3,6 +3,14 @@ models:
     description: |
       Lookup from ADP business unit + canonical location to Zendesk
       organization. Sourced from a Google Sheet maintained by IT.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - adp_business_unit
+              - location_clean_name
+          config:
+            severity: error
     columns:
       - name: adp_business_unit
         description: ADP `home_business_unit` code for the staff member.
@@ -18,9 +26,3 @@ models:
       - name: zendesk_secondary_location
         description: Secondary location attribute for the Zendesk user record.
         data_type: string
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - adp_business_unit
-              - location_clean_name

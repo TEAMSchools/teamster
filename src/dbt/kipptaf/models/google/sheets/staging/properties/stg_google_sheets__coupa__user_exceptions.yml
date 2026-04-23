@@ -9,7 +9,9 @@ models:
         description: ADP employee number (HRIS employee ID).
         data_type: int64
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
       - name: coupa_school_name
         description: Override school name for Coupa user record.
         data_type: string

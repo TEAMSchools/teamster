@@ -4,6 +4,14 @@ models:
       Lookup from ADP business unit + canonical location to Sage Intacct
       program and location codes. Sourced from a Google Sheet maintained by
       Finance.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - adp_business_unit_home_code
+              - location_clean_name
+          config:
+            severity: error
     columns:
       - name: adp_business_unit_home_code
         description: ADP `home_business_unit` code.
@@ -20,9 +28,3 @@ models:
       - name: sage_intacct_location
         description: Sage Intacct location code.
         data_type: int64
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - adp_business_unit_home_code
-              - location_clean_name

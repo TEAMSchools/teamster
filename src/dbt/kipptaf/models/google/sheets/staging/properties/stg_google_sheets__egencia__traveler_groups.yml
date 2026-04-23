@@ -3,6 +3,16 @@ models:
     description: |
       Cascading lookup from ADP org / job attributes to Egencia traveler
       group. Sourced from a Google Sheet maintained by Finance.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - adp_home_business_unit_name
+              - location_clean_name
+              - adp_department_home_name
+              - adp_job_title
+          config:
+            severity: error
     columns:
       - name: adp_home_business_unit_name
         description: ADP `home_business_unit` name for the traveler.
@@ -21,11 +31,3 @@ models:
       - name: egencia_traveler_group
         description: Traveler group assignment in Egencia.
         data_type: string
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - adp_home_business_unit_name
-              - location_clean_name
-              - adp_department_home_name
-              - adp_job_title

@@ -10,7 +10,9 @@ models:
           key to `int_people__staff_roster.home_work_location_reporting_name`.
         data_type: string
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
       - name: coupa_address_name
         description: Address name as it appears in Coupa's address book.
         data_type: string
