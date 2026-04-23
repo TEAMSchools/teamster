@@ -5,25 +5,31 @@
 
 ## Problem
 
-Four Google Sheet crosswalks downstream of ADP are keyed on the raw
-`home_work_location_name` value: coupa `address_name_crosswalk`, egencia
-`traveler_groups`, zendesk `zendesk_org_lookup`, and (partially) people
-`campus_crosswalk`. When ADP renames a physical location, every one of these
-sheets must be updated in lockstep with `int_people__location_crosswalk`. The
-failure mode is silent — missed sheets produce NULL joins or dropped rows with
-no test signal.
+Multiple downstream crosswalks and one intermediate model are keyed on the raw
+`home_work_location_name` value from ADP. When ADP renames a physical location,
+every one of them must be updated in lockstep with
+`int_people__location_crosswalk`. The failure mode is silent — missed sheets
+produce NULL joins or dropped rows with no test signal, and the leadership
+crosswalk silently splits one logical school into two rows.
+
+Affected sheets: coupa `address_name_crosswalk`, coupa `intacct_program_lookup`,
+coupa `user_exceptions`, egencia `traveler_groups`, zendesk
+`zendesk_org_lookup`, and (partially) people `campus_crosswalk`. Affected
+intermediate model: `int_people__leadership_crosswalk`.
 
 `int_people__location_crosswalk` already absorbs raw-name changes via alias rows
 (one row per ADP spelling, all pointing to the same `clean_name`). The
-downstream crosswalks do not benefit from that indirection because they join on
+downstream consumers do not benefit from that indirection because they join on
 the raw name directly.
 
 ## Goal
 
-Rekey the four downstream crosswalks on `location_clean_name` so that raw ADP
-name changes stop propagating past `int_people__location_crosswalk`. After this
-change, a raw ADP rename is handled in exactly one place (the location crosswalk
-sheet) via an alias row.
+Rekey five downstream crosswalk sheets on `location_clean_name` and switch
+`int_people__leadership_crosswalk` to group on
+`home_work_location_reporting_name` so that raw ADP name changes stop
+propagating past `int_people__location_crosswalk`. After this change, a raw ADP
+rename is handled in exactly one place (the location crosswalk sheet) via an
+alias row.
 
 ## Out of scope
 
@@ -45,13 +51,15 @@ multi-sheet update (runbook added — see Operational Guide section below).
 
 ### Source sheets
 
-One row per logical school (already the structure; no dedup needed). All four
-sheets get edited in-place at merge time:
+One row per logical school (already the structure; no dedup needed). Six sheets
+get edited in-place at merge time:
 
 | Sheet                               | Current key column             | New key column        |
 | ----------------------------------- | ------------------------------ | --------------------- |
 | `src_coupa__address_name_crosswalk` | `adp_home_work_location_name`  | `location_clean_name` |
-| `src_egencia__traveler_groups`      | `adp_home_work_location_name`  | `location_clean_name` |
+| `src_coupa__intacct_program_lookup` | `ADP_Home_Work_Location_Name`  | `location_clean_name` |
+| `src_coupa__user_exceptions`        | `home_work_location_name`      | `location_clean_name` |
+| `src_egencia__traveler_groups_v2`   | `adp_home_work_location_name`  | `location_clean_name` |
 | zendesk `zendesk_org_lookup`        | `adp_location`                 | `location_clean_name` |
 | `src_people__campus_crosswalk`      | `Name` (ADP-lookup usage only) | no sheet change       |
 
@@ -65,41 +73,67 @@ which already holds the clean name.
 
 ### Staging models
 
-Three staging YAMLs and SQL files updated:
+Six staging YAMLs updated:
 
 - `stg_google_sheets__coupa__address_name_crosswalk`
+- `stg_google_sheets__coupa__intacct_program_lookup`
+- `stg_google_sheets__coupa__user_exceptions`
 - `stg_google_sheets__egencia__traveler_groups`
 - `stg_google_sheets__zendesk_org_lookup`
 - `stg_google_sheets__people__campus_crosswalk` (no rename; test only)
 
 Each gets:
 
-1. Column renamed in staging SQL to reflect new semantics
-   (`adp_home_work_location_name` → `location_clean_name` for coupa/egencia;
-   `adp_location` → `location_clean_name` for zendesk).
+1. Column renamed to `location_clean_name` (except campus_crosswalk, which keeps
+   its existing `Name` / `Location_Name` columns).
 2. `unique` test on the clean-name column — catches silent join fan-out, which
    no existing test covers.
 3. `description` added to model and every column (project convention).
 
 Zendesk's composite join (`adp_business_unit + adp_location`) becomes
-(`adp_business_unit + location_clean_name`); the uniqueness test uses
-`dbt_utils.unique_combination_of_columns` over that pair.
+(`adp_business_unit + location_clean_name`); egencia's composite becomes
+(`adp_home_business_unit_name + location_clean_name + adp_department_home_name + adp_job_title`);
+coupa `intacct_program_lookup` becomes
+(`adp_business_unit_home_code + location_clean_name`). Each uses
+`dbt_utils.unique_combination_of_columns`.
 
-### Downstream extracts
+### Intermediate model: `int_people__leadership_crosswalk`
 
-Seven extract files change. All already source from `int_people__staff_roster` /
-`_history` which carries `home_work_location_reporting_name`, so no new
-`int_people__location_crosswalk` joins are introduced — only join-column swaps.
+Currently groups `int_people__staff_roster.home_work_location_name` (raw ADP) —
+a location rename would split one logical school into two rows, giving
+incomplete leadership. Switch the model to group on
+`home_work_location_reporting_name` and emit that as `home_work_location_name`'s
+replacement column. Downstream consumers that join on the old column name update
+in lockstep.
 
-| File                                              | New join                                                          |
-| ------------------------------------------------- | ----------------------------------------------------------------- |
-| `extracts/coupa/rpt_coupa__users.sql`             | `sub.home_work_location_reporting_name = ipl.location_clean_name` |
-| `extracts/egencia/rpt_egencia__users.sql`         | `sr.home_work_location_reporting_name = tg.location_clean_name`   |
-| `extracts/zendesk/rpt_zendesk__users.sql`         | `sr.home_work_location_reporting_name = zol.location_clean_name`  |
-| `extracts/clever/rpt_clever__staff.sql`           | `sr.home_work_location_reporting_name = ccw.location_name`        |
-| `extracts/clever/rpt_clever__sections.sql`        | `sr.home_work_location_reporting_name = ccw.location_name`        |
-| `extracts/illuminate/rpt_illuminate__roles.sql`   | `sr.home_work_location_reporting_name = cc.location_name`         |
-| `extracts/tableau/rpt_tableau__ddi_dashboard.sql` | `r.home_work_location_reporting_name = cw.location_name`          |
+### Downstream extracts and intermediate consumers
+
+Ten files change. The seven sheet-crosswalk joins plus three joins against
+`int_people__leadership_crosswalk`.
+
+| File                                                           | New join                                                                      |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `extracts/coupa/rpt_coupa__users.sql`                          | swap CTE passthrough + crosswalk joins (`anc`, `ipl1`, `ipl2`, `x`)           |
+| `extracts/egencia/rpt_egencia__users.sql`                      | `sr.home_work_location_reporting_name = tg.location_clean_name`               |
+| `extracts/zendesk/rpt_zendesk__users.sql`                      | `sr.home_work_location_reporting_name = zol.location_clean_name`              |
+| `extracts/clever/rpt_clever__staff.sql`                        | `sr.home_work_location_reporting_name = ccw.location_name`                    |
+| `extracts/clever/rpt_clever__sections.sql`                     | `sr.home_work_location_reporting_name = ccw.location_name`                    |
+| `extracts/illuminate/rpt_illuminate__roles.sql`                | `sr.home_work_location_reporting_name = cc.location_name`                     |
+| `extracts/tableau/rpt_tableau__ddi_dashboard.sql`              | `r.home_work_location_reporting_name = cw.location_name` (line 523 only)      |
+| `people/intermediate/int_people__renewal_status.sql`           | `h.home_work_location_reporting_name = ayl.home_work_location_reporting_name` |
+| `extracts/tableau/rpt_tableau__staff_roster.sql`               | `b.home_work_location_reporting_name = lc.home_work_location_reporting_name`  |
+| `extracts/google/sheets/rpt_gsheets__pm_assignment_roster.sql` | `sr.home_work_location_reporting_name = lc.home_work_location_reporting_name` |
+
+For coupa, `rpt_coupa__users` swaps its CTE passthrough column — the `all_users`
+CTE selects `sr.home_work_location_reporting_name as home_work_location_name`
+(preserving the column name within the file so downstream CTEs don't need
+restructuring) and all four crosswalk join RHSs switch to `location_clean_name`.
+The user_exceptions override column on line 179 flows through the same CTE, so
+that join also resolves correctly.
+
+**Not changed (already correct):** `rpt_appsheet__seat_tracker_roster` joins to
+`stg_google_sheets__people__location_crosswalk` on `lc.name` — the canonical
+alias-resolution pattern. Out of scope.
 
 #### Output column preservation
 
@@ -164,10 +198,11 @@ covering two scenarios:
 
 1. Edit `clean_name` in `src_people__location_crosswalk` (updates all aliases
    atomically).
-2. Edit the four downstream crosswalks in lockstep: coupa
-   `address_name_crosswalk`, egencia `traveler_groups`, zendesk
-   `zendesk_org_lookup`, `campus_crosswalk` — update the value in the
-   `location_clean_name` / `location_name` column in each.
+2. Edit the five downstream crosswalks in lockstep: coupa
+   `address_name_crosswalk`, coupa `intacct_program_lookup`, coupa
+   `user_exceptions`, egencia `traveler_groups`, zendesk `zendesk_org_lookup`,
+   `campus_crosswalk` — update the value in the `location_clean_name` /
+   `location_name` column in each.
 3. Audit any Tableau workbooks filtering on the string value.
 4. Verification: row-count parity check on the seven affected extracts.
 
