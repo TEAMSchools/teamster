@@ -1,19 +1,39 @@
 models:
   - name: stg_google_sheets__people__campus_crosswalk
+    description: |
+      Campus roll-up crosswalk — maps each campus `name` to the canonical
+      location it belongs to, along with school-level metadata. Sourced from
+      a Google Sheet maintained by the People team.
     columns:
-      - name: Name
+      - name: name
+        description: Campus name (distinct from location_name).
         data_type: string
-      - name: Location_Name
+      - name: location_name
+        description: |
+          Canonical location name from `int_people__location_crosswalk`. Join
+          key to `int_people__staff_roster.home_work_location_reporting_name`.
         data_type: string
-      - name: Region
+      - name: region
+        description: Region the campus belongs to.
         data_type: string
-      - name: Grade_Band
+      - name: grade_band
+        description: Grade band the campus serves.
         data_type: string
-      - name: PowerSchool_School_ID
+      - name: powerschool_school_id
+        description: PowerSchool `school_id` for the campus.
         data_type: int64
-      - name: Reporting_School_ID
+      - name: reporting_school_id
+        description: Stable reporting ID for the campus.
         data_type: int64
-      - name: Abbreviation
+      - name: abbreviation
+        description: Short code / abbreviation for the campus.
         data_type: string
-      - name: Is_Pathways
+      - name: is_pathways
+        description: Whether the campus is part of the Pathways program.
         data_type: boolean
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - name
+              - is_pathways

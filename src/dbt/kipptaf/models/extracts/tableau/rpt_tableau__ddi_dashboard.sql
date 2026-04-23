@@ -520,7 +520,7 @@ inner join
     and o.observed_at between w.week_start_monday and w.week_end_sunday
 left join
     {{ ref("stg_google_sheets__people__location_crosswalk") }} as cw
-    on r.home_work_location_name = cw.name
+    on r.home_work_location_reporting_name = cw.location_name
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
     on r.home_work_location_powerschool_school_id
