@@ -43,6 +43,8 @@
       "mcp__dbt__list_jobs_runs",
       "mcp__dbt__list_jobs",
       "mcp__dbt__show",
+      "mcp__github__add_issue_comment",
+      "mcp__github__create_branch",
       "mcp__github__get_commit",
       "mcp__github__get_file_contents",
       "mcp__github__get_label",
@@ -53,6 +55,7 @@
       "mcp__github__get_team_members",
       "mcp__github__get_teams",
       "mcp__github__issue_read",
+      "mcp__github__issue_write",
       "mcp__github__list_branches",
       "mcp__github__list_commits",
       "mcp__github__list_issue_types",
@@ -61,6 +64,7 @@
       "mcp__github__list_releases",
       "mcp__github__list_tags",
       "mcp__github__pull_request_read",
+      "mcp__github__push_files",
       "mcp__github__search_code",
       "mcp__github__search_issues",
       "mcp__github__search_pull_requests",
@@ -91,8 +95,7 @@
       "Skill(commit-commands:commit:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)",
       "Write(/.claude/scratch/**)",
-      "Write(/.worktrees/**)",
-      "mcp__github__issue_write"
+      "Write(/.worktrees/**)"
     ],
     "deny": [
       "Bash(* gcloud *)",
