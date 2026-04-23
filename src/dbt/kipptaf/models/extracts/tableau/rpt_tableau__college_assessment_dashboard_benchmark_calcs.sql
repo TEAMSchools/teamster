@@ -103,8 +103,10 @@ with
             s.score_type,
             s.scale_score,
 
-            max(s.scale_score) over (
-                partition by e.student_number, e.aligned_scope, e.subject_area
+            cast(
+                max(s.scale_score) over (
+                    partition by e.student_number, e.aligned_scope, e.subject_area
+                ) as int64
             ) as max_score,
 
         from scaffold as e

@@ -78,7 +78,7 @@ models:
           area across all assessment administrations. Null for students with no
           qualifying score. Used as the score value for benchmark percent-met
           calculations in Tableau.
-        data_type: numeric
+        data_type: int64
       - name: benchmark_name
         description: >
           Readiness benchmark label. One of College-Ready, HS-Ready, EA/ED-Ready
