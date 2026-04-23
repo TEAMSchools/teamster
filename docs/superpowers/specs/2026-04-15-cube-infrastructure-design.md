@@ -137,7 +137,7 @@ scope unless the user has `cube-access-staff-all`:
 ```sql
 WHERE employee_number IN (
   SELECT h.descendant_employee_number
-  FROM kipptaf_marts.dim_staff_hierarchy h
+  FROM kipptaf_marts.bridge_staff_hierarchy h
   JOIN kipptaf_marts.dim_staff s
     ON s.employee_number = h.ancestor_employee_number
   WHERE s.google_email = '{securityContext.email}'
@@ -251,9 +251,9 @@ canSwitchSqlUser: (current_user, new_user) =>
   new_user.endsWith("@apps.teamschools.org");
 ```
 
-## New dbt Model: `dim_staff_hierarchy`
+## New dbt Model: `bridge_staff_hierarchy`
 
-**Location:** `src/dbt/kipptaf/models/marts/dimensions/dim_staff_hierarchy.sql`
+**Location:** `src/dbt/kipptaf/models/marts/bridges/bridge_staff_hierarchy.sql`
 
 **Purpose:** Transitive closure of the org chart. Used by `queryRewrite` to
 filter staff cube results to a manager's reporting chain.
@@ -271,8 +271,8 @@ rows (`depth = 0`). Built recursively from `dim_staff.manager_employee_number`.
 Refreshes on the standard marts cadence so org chart changes propagate
 automatically.
 
-`dim_staff_hierarchy` is not a Cube model — it is a small lookup table used only
-as a filter subquery in `queryRewrite`.
+`bridge_staff_hierarchy` is not a Cube model — it is a small lookup table used
+only as a filter subquery in `queryRewrite`.
 
 ## Cube Cloud Setup (one-time)
 
