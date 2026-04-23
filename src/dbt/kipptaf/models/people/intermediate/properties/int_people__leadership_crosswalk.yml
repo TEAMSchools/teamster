@@ -1,73 +1,133 @@
 models:
   - name: int_people__leadership_crosswalk
+    description: |
+      One row per logical school (keyed on PowerSchool school ID) with the
+      employee numbers and contact attributes of the school leader, head of
+      school, director of school operations (DSO), managing director of school
+      operations (MDSO), and regional managing director of operations (MDO).
+      Derived from `int_people__staff_roster` after filtering to the relevant
+      leadership job titles. Grouped on `home_work_location_reporting_name` so
+      an ADP rename does not split a school into two rows.
     config:
       materialized: table
     columns:
       - name: home_work_location_powerschool_school_id
+        description: |
+          PowerSchool `school_id` for the school. Stable surrogate for a
+          logical school — the uniqueness grain of this model.
         data_type: int64
+        data_tests:
+          - unique
       - name: home_work_location_reporting_name
+        description: |
+          Canonical location name from `int_people__location_crosswalk`.
+          Clean reporting name used for display and downstream joins.
+        data_type: string
+      - name: home_work_location_abbreviation
+        description: Short code / abbreviation for the school.
+        data_type: string
+      - name: home_work_location_campus_name
+        description: Campus name the school rolls up to.
         data_type: string
       - name: dso_employee_number
+        description: Employee number of the Director of School Operations.
         data_type: int64
       - name: sl_employee_number
+        description: Employee number of the School Leader.
         data_type: int64
       - name: school_leader_preferred_name_lastfirst
+        description: School Leader's preferred name in `Last, First` format.
         data_type: string
       - name: school_leader_mail
+        description: School Leader's primary email address.
         data_type: string
       - name: school_leader_google_email
+        description: School Leader's Google Workspace email address.
         data_type: string
       - name: school_leader_job_title
+        description: School Leader's ADP job title.
         data_type: string
       - name: school_leader_report_to_employee_number
+        description: Employee number the School Leader reports to.
         data_type: int64
       - name: school_leader_sam_account_name
+        description: School Leader's Active Directory `sAMAccountName`.
         data_type: string
       - name: head_of_school_employee_number
+        description: |
+          Employee number of the Head of School (the School Leader's
+          supervisor).
         data_type: int64
       - name: head_of_school_preferred_name_lastfirst
+        description: Head of School's preferred name in `Last, First` format.
         data_type: string
       - name: head_of_school_mail
+        description: Head of School's primary email address.
         data_type: string
       - name: head_of_school_google_email
+        description: Head of School's Google Workspace email address.
         data_type: string
       - name: head_of_school_job_title
+        description: Head of School's ADP job title.
         data_type: string
       - name: head_of_school_sam_account_name
+        description: Head of School's Active Directory `sAMAccountName`.
         data_type: string
       - name: dso_preferred_name_lastfirst
+        description: DSO's preferred name in `Last, First` format.
         data_type: string
       - name: dso_mail
+        description: DSO's primary email address.
         data_type: string
       - name: dso_google_email
+        description: DSO's Google Workspace email address.
         data_type: string
       - name: dso_job_title
+        description: DSO's ADP job title.
         data_type: string
       - name: dso_report_to_employee_number
+        description: Employee number the DSO reports to.
         data_type: int64
       - name: dso_sam_account_name
+        description: DSO's Active Directory `sAMAccountName`.
         data_type: string
       - name: mdso_employee_number
+        description: |
+          Employee number of the Managing Director of School Operations (the
+          DSO's supervisor).
         data_type: int64
       - name: mdso_preferred_name_lastfirst
+        description: MDSO's preferred name in `Last, First` format.
         data_type: string
       - name: mdso_mail
+        description: MDSO's primary email address.
         data_type: string
       - name: mdso_google_email
+        description: MDSO's Google Workspace email address.
         data_type: string
       - name: mdso_job_title
+        description: MDSO's ADP job title.
         data_type: string
       - name: mdso_sam_account_name
+        description: MDSO's Active Directory `sAMAccountName`.
         data_type: string
       - name: mdo_employee_number
+        description: |
+          Employee number of the regional Managing Director of Operations, keyed
+          on `home_work_location_region`.
         data_type: int64
       - name: mdo_preferred_name_lastfirst
+        description: MDO's preferred name in `Last, First` format.
         data_type: string
       - name: mdo_mail
+        description: MDO's primary email address.
         data_type: string
       - name: mdo_google_email
+        description: MDO's Google Workspace email address.
         data_type: string
       - name: mdo_job_title
+        description: MDO's ADP job title.
         data_type: string
       - name: mdo_sam_account_name
+        description: MDO's Active Directory `sAMAccountName`.
         data_type: string

@@ -291,6 +291,8 @@ left join
 left join
     {{ ref("stg_google_sheets__coupa__intacct_program_lookup") }} as ipl1
     on sub.home_business_unit_code = ipl1.adp_business_unit_home_code
+    /* sub.home_work_location_name carries home_work_location_reporting_name
+       (clean name) — aliased through the all_users CTE */
     and sub.home_work_location_name = ipl1.location_clean_name
 left join
     {{ ref("stg_google_sheets__coupa__intacct_program_lookup") }} as ipl2

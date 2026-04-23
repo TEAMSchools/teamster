@@ -48,6 +48,10 @@ everywhere:
    - `src_egencia__traveler_groups_v2` — update `adp_home_work_location_name`
    - zendesk `org_lookup` — update `ADP_Location`
    - `src_people__campus_crosswalk` — update `Location_Name`
+   - `src_google_appsheet__seat_tracker__seats` — update `adp_location` values
+     manually. This is a free-text AppSheet column not resolved through
+     `int_people__location_crosswalk`; joins in `int_people__renewal_status`
+     will silently drop to NULL without this step (tracked by #3728).
 3. Audit any Tableau workbooks that filter on the string literal of the old
    clean name and update them.
 

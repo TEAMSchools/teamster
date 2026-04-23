@@ -5,7 +5,7 @@ models:
       group. Sourced from a Google Sheet maintained by Finance.
     columns:
       - name: adp_home_business_unit_name
-        description: ADP `home_business_unit` code for the traveler.
+        description: ADP `home_business_unit` name for the traveler.
         data_type: string
       - name: location_clean_name
         description: |

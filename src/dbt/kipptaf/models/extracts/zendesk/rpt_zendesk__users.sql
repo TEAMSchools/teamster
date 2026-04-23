@@ -5,6 +5,8 @@ with
             sr.personal_email,
             sr.google_email,
             sr.home_business_unit_code as adp__home_business_unit_code,
+            /* alias name frozen by Zendesk ingestion contract; value is the
+               clean reporting name, not raw ADP */
             sr.home_work_location_reporting_name as adp__home_work_location_name,
 
             u.name as zendesk__name,
