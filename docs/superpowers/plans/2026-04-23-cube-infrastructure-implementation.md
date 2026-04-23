@@ -104,13 +104,6 @@ schemaVersion: ({ securityContext }) => securityContext?.schemaVersion ?? "v1",
 
 Returns `string[]` of `cube-*` group names for the requesting user.
 
-!!! warning "Async not confirmed" Cube docs only show synchronous
-`contextToGroups` examples. Our design calls the Admin Directory API, which
-requires async/await. Verify that Cube awaits a returned Promise before shipping
-to production. If not supported, the alternative is to pre-resolve groups in the
-downstream tool and include them in the JWT payload, letting `contextToGroups`
-read directly from `securityContext.groups`.
-
 ```javascript
 const groupCache = new Map(); // email → { groups, expiresAt }
 const CACHE_TTL_MS = 5 * 60 * 1000;

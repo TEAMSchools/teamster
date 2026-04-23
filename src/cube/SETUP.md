@@ -15,6 +15,11 @@ Performed in the Cube Cloud UI by an admin:
    - `CUBEJS_API_SECRET` — generate a strong random secret
    - `GOOGLE_DIRECTORY_SA_KEY` — Admin Directory API service account
      (base64-encoded)
+   - `GOOGLE_DIRECTORY_SA_SUBJECT` — email of the Workspace super-admin that
+     granted the service account domain-wide delegation (e.g.
+     `admin@apps.teamschools.org`)
+   - `CUBEJS_SQL_SUPER_USER=cube-superset-service` — SQL API super-user for
+     Superset user impersonation (follow-up integration)
 6. The service account for BigQuery needs `roles/bigquery.dataViewer` and
    `roles/bigquery.jobUser` on the `teamster-332318` project
 7. The Admin Directory API service account needs domain-wide delegation scoped
