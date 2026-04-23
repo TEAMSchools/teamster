@@ -18,16 +18,17 @@ Single `model: haiku` Agent call. Compute time window:
   (absolute, 5 PM ET that date)
 - ET = UTC-4 (EDT Mar–Nov) or UTC-5 (EST Nov–Mar). Compute RFC 3339 + epoch.
 
-Replace `{EPOCH}`, `{UTC_START}`, `{UTC_END}`, `{DATE}` below. Run
-`mkdir -p .claude/scratch/day2/{DATE}` before dispatching.
+Replace `{EPOCH}`, `{UTC_START}`, `{UTC_END}` below. Run
+`rm -rf .claude/scratch/day2` before dispatching — each invocation starts from
+an empty directory (the Write tool recreates it).
 
 ```text
-Gather Dagster+GCP data. Write each step's JSON to .claude/scratch/day2/{DATE}/
+Gather Dagster+GCP data. Write each step's JSON to .claude/scratch/day2/
 via Write tool. No prose. Classification fields expected.
 
-Parallelization: 1,3,4,5,6,7,8,10,11 independent. 2,9 depend on 1.
-3a,3b depend on 3. 4a depends on 4. Fan-out within steps (all get_run_logs
-at once, all get_tick_history at once).
+Parallelization: 1,3,4,7,9,10,11,12,14,15 independent. 2,13 depend on 1.
+5,6 depend on 3. 8 depends on 7. Fan-out within steps (all get_run_logs at
+once, all get_tick_history at once).
 
 ## Pagination contract (MANDATORY for every step)
 
@@ -39,42 +40,61 @@ is complete.
 
 Each per-step JSON MUST include a top-level field:
   "pagination": {"pages": N, "lastPageSize": M, "limit": L, "complete": M < L}
-If complete=false you have a bug — loop more.
+If complete=false you have a bug — loop more. For steps with multiple
+paginated sub-queries (step 1: failure/success/canceled), emit one
+pagination object per sub-query keyed by status.
 
 Page-cursor patterns:
 - list_runs / list_backfills / get_tick_history: pass cursor or use
   before_timestamp=<oldest_returned - 1> for the next page
-- mcp__gke__query_logs / list_log_entries: use the OLDEST returned timestamp
-  as the next time_range.start_time (results returned ascending)
-- list_alerts: nextPageToken
+- mcp__gke__query_logs / mcp__observability__list_log_entries: use the
+  OLDEST returned timestamp as the next time_range.start_time (results
+  returned ascending)
+- list_alerts / list_group_stats: nextPageToken
+
+Individual steps below do NOT re-explain pagination — they only note the
+limit and any step-specific cursor quirks. The global contract applies
+unconditionally.
 
 ## 1. Failed runs
 
-mcp__dagster__list_runs(statuses=["FAILURE"], created_after={EPOCH}, limit=100).
-MUST paginate via cursor until a page returns < 100. Collect ALL.
+list_runs(statuses=["FAILURE"], created_after={EPOCH}, limit=100). Paginate
+per contract. Collect ALL.
 
 Then IN PARALLEL:
-- Per run: mcp__dagster__get_run_logs(run_id=<id>,
+- Per run: get_run_logs(run_id=<id>,
     filter_types=["ExecutionStepFailureEvent","RunFailureEvent","EngineEvent"],
     limit=500).
-- list_runs(statuses=["SUCCESS"], created_after={EPOCH}, limit=25).
-  MUST paginate via cursor until a page returns < 25, summing pages into a
-  count. Write ONLY {count: N, pages: P, lastPageSize: M, complete: M<25} —
-  do NOT include the full run list (response is too large for the MCP tool's
-  token limit at higher page sizes). Use limit=25 — full run details (asset
-  selections, tags, step stats) make each run ~1.5KB of JSON.
-  If you write count without paginating to a short page, the count is wrong.
+- list_runs(statuses=["SUCCESS"], created_after={EPOCH}, limit=25). Paginate
+  and sum into a count. Write ONLY
+  {count: N, pages: P, lastPageSize: M, complete: M<25} — NOT the full run
+  list (response exceeds token limit at higher page sizes). Full run details
+  (asset selections, tags, step stats) are ~1.5KB each.
 - list_runs(statuses=["CANCELED"], created_after={EPOCH}, limit=25). Same
-  count-only treatment, same pagination requirement.
+  count-only treatment.
 
 Per failed run: runId, jobName, dagster/code_location, startTime, endTime,
 RunFailureEvent message, dagster/will_retry, dagster/auto_retry_run_id.
 Totals: failureCount, successCount, canceledCount.
 
+`step-1-failed-runs.json` top-level shape:
+  {
+    "failureCount": N, "failures": [...],
+    "successCount": N,
+    "canceledCount": N,
+    "pagination": {
+      "failure":  {pages, lastPageSize, limit: 100, complete},
+      "success":  {pages, lastPageSize, limit: 25, complete},
+      "canceled": {pages, lastPageSize, limit: 25, complete}
+    }
+  }
+
 Classify by the FIRST rule that matches, checked in this order. The error
 CLASS (first line of error.message) takes precedence over the stack trace —
-a traceback that passes through `ssh_resource` or `k8s_client` does NOT
-mean network or API failure; the caller's class name is what matters.
+a traceback that passes through `ssh_resource`
+(`src/teamster/libraries/powerschool/sis/odbc/resources.py`) or
+`k8s_client` does NOT mean network or API failure; the caller's class name
+is what matters.
 
   Preemption/Interrupt: error class `DagsterExecutionInterruptedError`
     OR EngineEvent message "Step execution terminated by interrupt"
@@ -124,7 +144,7 @@ MANDATORY: every retry entry MUST have retryStatus ∈ {SUCCESS, FAILURE}.
 for that runId before writing. The validation block below rejects any
 other value.
 
-## 3. Failed sensor/schedule ticks
+## 3. Failed sensor ticks
 
 list_code_locations → names + loadStatus.
 
@@ -132,7 +152,7 @@ Per LOADED location IN PARALLEL:
   list_sensors(repository_location_name="<loc>", sensor_status="RUNNING") →
     collect ALL sensor names (AUTO_MATERIALIZE and STANDARD types).
   list_schedules(repository_location_name="<loc>", schedule_status="RUNNING") →
-    collect schedule names (used in 3b).
+    collect schedule names (used in step 6).
 
 CRITICAL: do NOT hardcode `<loc>__automation_condition_sensor` or any other
 sensor name. A location has one automation-condition sensor plus many
@@ -143,10 +163,8 @@ automation sensor is queried.
 
 Then IN PARALLEL across all (location, sensor) pairs:
   get_tick_history(name="<sensor>", repository_location_name="<loc>",
-    statuses=["FAILURE"], limit=100, after_timestamp={EPOCH}).
-  MUST paginate: if a page returns 100 ticks, re-query with
-  before_timestamp=<oldest_returned_timestamp - 1>, after_timestamp={EPOCH}.
-  Loop until a page returns < 100. Concatenate pages.
+    statuses=["FAILURE"], limit=100, after_timestamp={EPOCH}). Paginate per
+  contract; cursor is before_timestamp=<oldest_returned - 1>.
 
 A single sensor with 60+ failures can blow the tool-result token budget. If
 a single get_tick_history page exceeds the token limit, the tool will error
@@ -158,7 +176,7 @@ sensorType (AUTO_MATERIALIZE or STANDARD), grpcIp (extracted from
 "ipv4:<ip>:<port>" if present in error — mostly relevant for
 AUTO_MATERIALIZE sensors, STANDARD sensor failures rarely have gRPC IPs),
 error (300 chars, first-line class + first exception message). Note
-locations with 0 failures across all sensors. Flag non-LOADED for 3a.
+locations with 0 failures across all sensors. Flag non-LOADED for step 5.
 
 Per sensor write ALL failure ticks as an array (not count + sample).
 CRITICAL: write every tick — do not summarize, sample, or truncate.
@@ -189,12 +207,35 @@ Bucket failures by error-class fingerprint (first line of error.message)
 in Phase 2 analysis — 61 identical `DagsterUnknownPartitionError` ticks on
 one sensor is one finding, not 61.
 
-## 3a. Location load failures (depends on 3)
+## 4. Freshness state changes
+
+search_assets iterates all LOADED code locations; collect every asset whose
+definition has a `freshnessPolicy` (non-null). Then fan-out IN PARALLEL:
+  get_asset_health(asset_keys=[<batch of ≤250>]).
+
+Per asset record: key, freshnessStatus (HEALTHY/WARNING/DEGRADED/UNKNOWN),
+freshnessStatusChangedTimestamp, latestMaterializationTimestamp,
+freshnessStatusMetadata.lastMaterializedTimestamp.
+
+Flag any asset whose `freshnessStatusChangedTimestamp` falls within
+{UTC_START}–{UTC_END} — every transition in the window is a day-2 signal
+even if the asset is currently HEALTHY. Dagster+ freshness alerts do NOT
+surface in step 10 GKE events or step 11 Cloud Monitoring alerts; this is
+the only step that captures them.
+
+For each flagged asset also fetch materialization cadence:
+  get_asset_materializations(asset_key, limit=10).
+Phase 2 uses the cadence + policy config (deadline_cron,
+lower_bound_delta) to detect cron-vs-arrival-time misalignments (a policy
+whose deadline_cron fires BEFORE the asset's typical materialization time
+produces nightly false-positive FAIL→PASS flaps).
+
+## 5. Location load failures (depends on 3)
 
 Per non-LOADED location: get_location_load_history(location_name, limit=10).
 Collect: locationName, loadStatus, triggerTimestamp, error.
 
-## 3b. Schedule tick failures (depends on 3)
+## 6. Schedule tick failures (depends on 3)
 
 Per RUNNING schedule from step 3 IN PARALLEL:
   get_tick_history(name="<schedule>", repository_location_name="<loc>",
@@ -219,7 +260,7 @@ If Phase 2 analysis needs to investigate schedule alert noise, query GCP agent
 container logs: `textPayload:("Error serving request" AND "schedule" AND
 "UNAVAILABLE")` on `user-cloud-dagster-cloud-agent-agent` pods.
 
-## 4. Agent health
+## 7. Agent health
 
 get_cloud_agents(errors_after={EPOCH}). Steady state matches the
 `dagsterCloudAgent.replicas` setting in `.k8s/dagster/values-override.yaml`
@@ -230,10 +271,12 @@ agents with heartbeat in window + all RUNNING. Note: the errors array is
 capped at 25 per agent — if 25 errors are returned, earlier errors in the
 window were evicted.
 
-## 4a. Agent pod churn (depends on 4)
+## 8. Agent pod churn (depends on 7)
 
-Skip if all agents RUNNING with 0 errors. Otherwise count pod creates
-(step 6 captures preemption events for all pods):
+Skip ONLY IF every agent has status=RUNNING AND errors=[] (empty array).
+If any agent has status != RUNNING OR a non-empty errors array, run this
+step. Otherwise count pod creates (step 10 captures preemption events for
+all pods):
 
 mcp__gke__query_logs(project_id="teamster-332318",
   query='resource.type="k8s_cluster"
@@ -247,12 +290,12 @@ mcp__gke__query_logs(project_id="teamster-332318",
 Normal Helm upgrade at replicas=1, maxSurge=200% = 2 creates per rollout. More
 than 3 creates in a short window = crash loop or preemption storm.
 
-## 5. Daemon health
+## 9. Daemon health
 
 get_daemon_health(). Collect: daemonType, healthy. Only include errors if
 unhealthy. Skip lastHeartbeatTime (null on Cloud).
 
-## 6. GKE critical events
+## 10. GKE critical events
 
 Two queries IN PARALLEL. CRITICAL: include `format=` on query_logs and the
 `jsonPayload.reason=(...)` clause on both — without either, the tools return
@@ -295,19 +338,16 @@ Per entry: timestamp, reason, pod/object name, message. Verify all entries
 have timestamps within {UTC_START}–{UTC_END} before writing — discard any
 outside the window.
 
-`mcp__gke__query_logs` caps at 100 results — results returned ASCENDING by
-timestamp. MUST paginate: if a page returns 100 (truncated), re-query with
-`time_range.start_time = <last_returned_timestamp + 1s>`, same end_time.
-Loop until a page returns < 100. Deduplicate by timestamp + pod name across
-pages. Same rule for `mcp__observability__list_log_entries` (use
-nextPageToken or oldest timestamp).
+Both tools cap at 100 results. Paginate per contract; cursor is
+`time_range.start_time = <last_returned + 1s>` (results ascending).
+Deduplicate by timestamp + pod name across pages.
 
 If a response still exceeds token limits AFTER confirming format= and
 reason-filter are correct, split by reason: run one query per reason value
 and concatenate results. Do NOT skip the step or write empty results with a
 "deferred" note — the Phase 2 correlation depends on real pod events.
 
-## 7. Alerts
+## 11. Alerts
 
 Two calls IN PARALLEL:
   list_alerts(parent="projects/teamster-332318", filter='state="OPEN"').
@@ -318,11 +358,11 @@ resource labels, metric type, policy. Pod type from name:
   dagster-step-* → step worker, dagster-run-* → run coordinator,
   <loc>-prod-* → code server.
 
-## 8. Error groups
+## 12. Error groups
 
 mcp__observability__list_group_stats(projectName="projects/teamster-332318",
   timeRangePeriod="PERIOD_30_DAYS", order="LAST_SEEN_DESC", pageSize=25).
-MUST paginate via pageToken until a page returns < 25.
+Paginate per contract via pageToken.
 
 Capture ALL groups with resolutionStatus="OPEN" regardless of when they were
 last seen — open groups are actionable cleanup targets whether or not they
@@ -331,11 +371,17 @@ triggered in the day-2 window. `timeRangePeriod` caps the retrieval window at
 Use `PERIOD_30_DAYS` (not narrower), because `PERIOD_1_DAY` silently omits
 groups last-seen >24h ago even though they are still OPEN.
 
-Bucket in post-processing:
-  - inWindow: lastSeenTime within {UTC_START}–{UTC_END} → Phase 2 correlates
-    with runs/ticks for root-cause linkage
-  - staleOpen: lastSeenTime older than {UTC_START} → Phase 2 surfaces as
-    cleanup / emerging-issue candidates without correlating to timeline
+Bucket in post-processing (OPEN groups only — drop RESOLVED / MUTED from
+both buckets):
+  - inWindow: resolutionStatus="OPEN" AND lastSeenTime within window →
+    Phase 2 correlates with runs/ticks for root-cause linkage
+  - staleOpen: resolutionStatus="OPEN" AND lastSeenTime older than
+    UTC_START → Phase 2 surfaces as cleanup / emerging-issue candidates
+    without correlating to timeline
+RESOLVED and MUTED groups are retained in the file for audit visibility
+but get neither bucket flag (both booleans=false). Phase 2 ignores them
+unless they transitioned to RESOLVED inside the window (separate cleanup
+signal, not an incident).
 
 Many OPEN groups are false positives from retry-wrapped helpers that log
 `.exception()` at ERROR severity on transient failures the retry layer
@@ -346,7 +392,7 @@ active incidents.
 Per group: ID, count, firstSeenTime, lastSeenTime, exception (300 chars),
 services, resolutionStatus.
 
-## 9. OOM drill-down (depends on 1)
+## 13. OOM drill-down (depends on 1)
 
 Skip if no "Node OOM/eviction" runs. Per OOM run:
 list_time_series(name="projects/teamster-332318",
@@ -357,26 +403,37 @@ list_time_series(name="projects/teamster-332318",
 Pod prefix: <loc>-prod-* (code server), dagster-run-* (coordinator),
 dagster-step-* (step). Collect: peak bytes, limit bytes.
 
-## 10. Queued/stuck runs
+## 14. Queued/stuck runs
 
 list_runs(statuses=["QUEUED","NOT_STARTED","MANAGED","STARTING"],
   created_after={EPOCH}, limit=20).
 Flag runs queued >15 min. Collect: runId, jobName, status, startTime, duration.
 
-## 11. Backfills
+## 15. Backfills
 
 IN PARALLEL: list_backfills(status="REQUESTED", limit=10),
 list_backfills(status="FAILED", created_after={EPOCH}, limit=10).
 Collect: backfillId, status, numPartitions, timestamp, error.
 
-Write JSON to .claude/scratch/day2/{DATE}/:
-  step-1-failed-runs.json, step-2-retries.json, step-3-ticks.json,
-  step-3a-load-failures.json, step-3b-schedule-ticks.json,
-  step-4-agents.json, step-4a-agent-pod-churn.json,
-  step-5-daemons.json, step-6-gke-events.json,
-  step-7-alerts.json, step-8-error-groups.json, step-9-oom-metrics.json,
-  step-10-queued-runs.json, step-11-backfills.json.
+Write JSON to .claude/scratch/day2/:
+  step-01-failed-runs.json, step-02-retries.json, step-03-ticks.json,
+  step-04-freshness.json, step-05-load-failures.json,
+  step-06-schedule-ticks.json, step-07-agents.json,
+  step-08-agent-pod-churn.json, step-09-daemons.json,
+  step-10-gke-events.json, step-11-alerts.json,
+  step-12-error-groups.json, step-13-oom-metrics.json,
+  step-14-queued-runs.json, step-15-backfills.json.
 Skip empty steps.
+
+## Subagent partial-return fallback
+
+If the Phase 1 subagent returns with some steps missing from the manifest
+(context budget exhaustion, timeout, or errored tool call), do NOT
+re-dispatch the full Phase 1. Identify which step files are missing or
+empty and dispatch a follow-up haiku subagent scoped to only those steps,
+passing the same {EPOCH}/{UTC_START}/{UTC_END} and the pagination
+contract. Merge the new files into the same scratch directory before
+Phase 2.
 
 ## Validation (after all writes)
 
@@ -396,7 +453,7 @@ Re-read each JSON file and verify:
       for that runId and derive from the terminal event.
   (d) Step 3: per-location tick array length == failureCount AND
       pagination.complete=true. If either fails, re-query and rewrite.
-  (e) Step 6: all timestamps fall within {UTC_START}–{UTC_END}. Remove any
+  (e) Step 10: all timestamps fall within {UTC_START}–{UTC_END}. Remove any
       out-of-window entries. ALSO: for every Evicted/OOMKilling pod event
       with a pod name matching `dagster-run-<runId>-*`, look up that runId
       in step 1's SUCCESS count context OR list_runs(run_ids=[<id>]). If
@@ -411,7 +468,7 @@ Return JSON manifest: {filename: absolute_path}.
 
 ## Phase 2: Correlate and report
 
-Read from `.claude/scratch/day2/{DATE}/` per manifest.
+Read from `.claude/scratch/day2/` per manifest.
 
 **Pagination gate (run BEFORE any analysis)**: For each per-step JSON, check
 `pagination.complete`. If any file has `complete: false`, do NOT draw
@@ -424,11 +481,11 @@ truncated data are silently wrong; the rest of the analysis depends on them.
 
 **Reclassify** runs using cross-signal context:
 
-- "Unclassified"/"Connection failure" → "Agent API timeout" if agent errors show
-  "ReadTimeout" + `*.agent.dagster.cloud` in same window. Note: ReadTimeout to
-  `*.agent.dagster.cloud` only appears in agent `errors` array, not GKE logs.
-- Override wrong categories (e.g. "Code error" that's actually K8s API timeout).
-- New OOM runs → pull memory metrics per step 9.
+| From                              | To                | Trigger signal                                                                                                 |
+| --------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------- |
+| Unclassified / Connection failure | Agent API timeout | Agent `errors` array contains `ReadTimeout` + `*.agent.dagster.cloud` in same window (not visible in GKE logs) |
+| Code error                        | K8s API timeout   | Error class is actually `DagsterK8sUnrecoverableAPIError` — stack-trace match alone is insufficient            |
+| Unclassified                      | Node OOM/eviction | GKE pod event `OOMKilling` or `Evicted` for run's pod — then run step 13 drill-down                            |
 
 **Tick failure analysis**: For any location with >5 gRPC UNAVAILABLE tick
 failures, run this procedure before attributing a root cause:
@@ -480,10 +537,10 @@ agent-side (reducing reconciliation rate or upstream deterministic naming).
 
 **Agent topology**: Steady state matches the `dagsterCloudAgent.replicas`
 setting (currently 1 in `.k8s/dagster/values-override.yaml`). Flag deviations.
-Cross-reference step 6 pod events filtered to
+Cross-reference step 10 pod events filtered to
 `user-cloud-dagster-cloud-agent-agent` for cause (Preempted/Evicted/OOMKilling).
-Step 4a churn: at replicas=1 with maxSurge=200%, normal Helm upgrade = 2
-creates. 3-4 creates = a rollout retry; >>4 = sustained storm.
+Step 8 churn: at replicas=1 with maxSurge=200%, normal Helm upgrade = 2 creates.
+3-4 creates = a rollout retry; >>4 = sustained storm.
 
 In this codebase, agent pods run at priority 1000 (`dagster-agent`
 PriorityClass) — same tier as run/step pods, so they CANNOT be preempted by
@@ -546,9 +603,9 @@ outages, agent errors → tick failures, daemon issues → tick/run impacts, ale
 runs and backfills if present.
 
 **Emerging issues**: Error groups not yet causing failures but increasing. Omit
-if none. For step 8, split the Emerging Issues section into two subsections:
+if none. For step 12, split the Emerging Issues section into two subsections:
 
-- **In-window groups** (step 8 `inWindow`): groups that surfaced during the
+- **In-window groups** (step 12 `inWindow`): groups that surfaced during the
   day-2 window. **First, dedupe against the timeline:** each group's
   `affectedServices[].version` is a pod name (e.g.
   `dagster-step-<hash>-<suffix>` or `dagster-run-<runId>-<suffix>`). Query GCP
@@ -561,7 +618,7 @@ if none. For step 8, split the Emerging Issues section into two subsections:
   matches a retry-recovered run, it is likely a false-positive from a
   retry-wrapped helper (see teamster/CLAUDE.md). Recommend changing the helper's
   log level in that case.
-- **Stale open groups** (step 8 `staleOpen`): OPEN groups last-seen before the
+- **Stale open groups** (step 12 `staleOpen`): OPEN groups last-seen before the
   window. Treat as cleanup candidates. Note the last-seen date and whether the
   stack matches a retry-wrapped helper. These do not belong in the timeline.
 
@@ -586,4 +643,19 @@ Flag truncation if any query hit pagination limits.
 
 Reference `.k8s/CLAUDE.md` for scheduling, topology, security, config.
 
-Write report to `.claude/scratch/day2/{DATE}/report.md`.
+Write report to `.claude/scratch/day2/report.md`.
+
+## Appendix: Targeted investigations (skip full skill)
+
+### Specific agent ID query (not general health)
+
+1. `get_cloud_agents(agent_id="<id>", errors_after=<epoch>)`
+2. `list_runs(statuses=["FAILURE"])` ±30 min around error
+3. GKE events same window
+
+Run all three before concluding — even if agent looks healthy now.
+
+### Re-execution chains
+
+`get_run_group(run_id)` returns the full chain in one call. Don't traverse
+parentRunId/rootRunId via get_run/list_runs.

@@ -5,8 +5,8 @@ from dagster import AssetKey, FreshnessPolicy
 from teamster.code_locations.kippnewark import LOCAL_TIMEZONE
 
 titan_policy = FreshnessPolicy.cron(
-    deadline_cron="30 23 * * *",
-    lower_bound_delta=timedelta(minutes=30),
+    deadline_cron="0 1 * * *",
+    lower_bound_delta=timedelta(hours=1),
     timezone=str(LOCAL_TIMEZONE),
 )
 

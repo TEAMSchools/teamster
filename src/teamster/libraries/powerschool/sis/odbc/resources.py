@@ -46,13 +46,15 @@ class PowerSchoolODBCResource(ConfigurableResource):
     retry_count: int = 0
     retry_delay: int = 1
     tcp_connect_timeout: float = 5.0
-    call_timeout: int = 300_000
-    """Per-call timeout in milliseconds (default 5 min).
+    call_timeout: int = 10_000
+    """Per-round-trip timeout in milliseconds (default 10s).
 
     Limits each individual Oracle round-trip (execute, fetchmany, etc.).
-    If the SSH tunnel drops mid-transfer, the call fails with a timeout
-    error instead of blocking indefinitely, allowing the retry loop to
-    recover.
+    Healthy COUNT(*) probes complete in <500ms; 10s is >20× typical and
+    catches stalled tunnels fast. A hung round-trip raises DPI-1067 with
+    the in-flight SQL surfaced in the run log, which the retry layer can
+    recover from — rather than the whole tick running out the 600s sensor
+    timeout and surfacing an opaque DagsterUserCodeUnreachableError.
     """
 
     _connect_params: ConnectParams = PrivateAttr()
