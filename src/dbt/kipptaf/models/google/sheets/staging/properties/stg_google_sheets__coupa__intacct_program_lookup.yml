@@ -1,11 +1,28 @@
 models:
   - name: stg_google_sheets__coupa__intacct_program_lookup
+    description: |
+      Lookup from ADP business unit + canonical location to Sage Intacct
+      program and location codes. Sourced from a Google Sheet maintained by
+      Finance.
     columns:
-      - name: ADP_Business_Unit_Home_Code
+      - name: adp_business_unit_home_code
+        description: ADP `home_business_unit` code.
         data_type: string
-      - name: ADP_Home_Work_Location_Name
+      - name: location_clean_name
+        description: |
+          Canonical location name from `int_people__location_crosswalk`. Join
+          key to `int_people__staff_roster.home_work_location_reporting_name`.
+          The literal value `'Default'` is used for the fallback row.
         data_type: string
-      - name: Sage_Intacct_Program
+      - name: sage_intacct_program
+        description: Sage Intacct program code.
         data_type: int64
-      - name: Sage_Intacct_Location
+      - name: sage_intacct_location
+        description: Sage Intacct location code.
         data_type: int64
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - adp_business_unit_home_code
+              - location_clean_name
