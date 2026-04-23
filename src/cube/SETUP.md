@@ -24,7 +24,7 @@ Performed in the Cube Cloud UI by an admin:
 
 1. `cp src/cube/.env.example src/cube/.env`
 2. Fill in `CUBE_GROUP_MAP` with your email and the groups you want to simulate:
-   ```
+   ```bash
    CUBE_GROUP_MAP={"you@apps.teamschools.org":["cube-network-detail"]}
    ```
 3. Run the **Cube: Dev Server** VS Code task (`Ctrl+Shift+P` → Tasks: Run Task)
