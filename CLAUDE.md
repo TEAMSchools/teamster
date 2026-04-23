@@ -37,6 +37,11 @@ this step.**
 - **Worktree**: `gh issue develop <number> --name <branch>` (no `--checkout`),
   then `git worktree add .worktrees/<branch> <branch>`.
 
+- **Linking an existing remote branch to an issue**:
+  `mcp__github__create_branch` and GraphQL `createLinkedBranch` both no-op when
+  the branch already exists. Delete the remote branch, then
+  `gh issue develop <num> --name <branch>`, then re-push local commits.
+
 - **Worktree git commands**: Always `cd` to the worktree before running `git`
   commands — the main repo and worktree have separate git state. Running
   `git commit` from the main repo commits to `main`, not the worktree branch.
@@ -68,6 +73,13 @@ this step.**
 - **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
   `uv run`, `gh`, `docker`, `trunk`, `ls`).
+
+- **Verify tool-call results for resource creation/update**: syntax errors in
+  structured tool-call parameters (malformed closing tags, misnested blocks) can
+  silently produce corrupted values — the call succeeds without error, just with
+  the wrong payload. After any call that creates or updates a resource with
+  string fields (issue title, PR body, commit message, etc.), check the returned
+  values match intent before moving on.
 
 - **Trunk linting/formatting**: Do not run `trunk fmt` manually — formatting is
   handled by the PostToolUse hook (after Edit/Write) and `trunk-fmt-pre-commit`

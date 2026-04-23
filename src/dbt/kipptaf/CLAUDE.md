@@ -109,6 +109,11 @@ Facebook, Illuminate Fivetran, Instagram.
 Canonical-grain consumers (1 row per logical school) should use
 `stg_people__locations` instead (#3633).
 
+**`stg_google_sheets__people__campus_crosswalk`** uniqueness grain is
+`Location_Name` only. `Name` is the parent campus and repeats across sibling
+schools (e.g., `KIPP Miami - North Campus` rolls up five `Location_Name`
+children).
+
 ## Cross-Project Refs
 
 Sources models from: `powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`,
