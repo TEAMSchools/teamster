@@ -8,14 +8,17 @@ models:
       district SFTP files become available.
     config:
       materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - surrogate_key
     columns:
       - name: surrogate_key
         data_type: string
         description: >-
           Hash of student_primary_id, school_year, pm_period, measure,
-          probe_number, and device_date.
-        data_tests:
-          - unique
+          probe_number, device_date, and assessment_grade.
       - name: school_name
         data_type: string
         description: School name as provided in the vendor file.

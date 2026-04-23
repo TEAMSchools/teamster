@@ -34,6 +34,7 @@ select
                 "measure",
                 "probe_number",
                 "device_date",
+                "assessment_grade",
             ]
         )
     }} as surrogate_key,
