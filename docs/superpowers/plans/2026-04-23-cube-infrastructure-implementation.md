@@ -45,8 +45,9 @@ src/cube/
     "dev": "cubejs-server"
   },
   "dependencies": {
-    "@cubejs-backend/bigquery-driver": "latest",
-    "@cubejs-backend/server": "latest"
+    "@cubejs-backend/bigquery-driver": "1.6.38",
+    "@cubejs-backend/server": "1.6.38",
+    "googleapis": "171.4.0"
   }
 }
 ```
@@ -80,19 +81,14 @@ node_modules/
 
 ## Step 5 — `cube.js`
 
-Four responsibilities in order: dbt metadata, `contextToGroups`, `queryRewrite`,
-`canSwitchSqlUser`.
+Three responsibilities in order: `contextToGroups`, `queryRewrite`,
+`canSwitchSqlUser`. dbt Cloud metadata integration is configured in the Cube
+Cloud UI — no `cube.js` code needed (see spec §1).
 
 ### 5a. dbt metadata integration
 
-Use `@cubejs-backend/dbt-schema-extension-dbt-cloud` when `DBT_CLOUD_TOKEN` is
-set. For local dev the extension is omitted and Cube reads YAML directly.
-
-```javascript
-const dbtCloudExtension = process.env.DBT_CLOUD_TOKEN
-  ? require("@cubejs-backend/dbt-schema-extension-dbt-cloud")
-  : null;
-```
+Configure in the **Cube Cloud UI**: Settings → Integrations → dbt Cloud, connect
+to project `211862`. No code changes to `cube.js` are required.
 
 Add to the exported config:
 

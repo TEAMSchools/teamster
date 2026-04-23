@@ -29,8 +29,13 @@ module.exports = {
 
     // Local dev: CUBE_GROUP_MAP bypasses Directory API
     if (process.env.CUBE_GROUP_MAP) {
-      const map = JSON.parse(process.env.CUBE_GROUP_MAP);
-      return (map[email] ?? []).filter((g) => g.startsWith("cube-"));
+      try {
+        const map = JSON.parse(process.env.CUBE_GROUP_MAP);
+        return (map[email] ?? []).filter((g) => g.startsWith("cube-"));
+      } catch (err) {
+        console.error("CUBE_GROUP_MAP is not valid JSON:", err.message);
+        return [];
+      }
     }
 
     // Check cache
@@ -152,7 +157,10 @@ module.exports = {
       ...(query.measures ?? []),
     ].some((m) => STAFF_CUBES.some((c) => m.startsWith(c)));
     if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
-      query.segments = [...(query.segments ?? []), "dim_staff.reporting_chain"];
+      query = {
+        ...query,
+        segments: [...(query.segments ?? []), "dim_staff.reporting_chain"],
+      };
     }
 
     return { ...query, filters };

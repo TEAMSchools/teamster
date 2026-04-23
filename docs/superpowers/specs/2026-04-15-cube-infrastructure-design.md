@@ -225,12 +225,14 @@ Four responsibilities:
 
 ### 1. dbt Cloud metadata integration
 
-Cube fetches the compiled manifest from dbt Cloud project `211862` at startup
-using `DBT_CLOUD_TOKEN`. Column descriptions, model descriptions, types, and
-PK/FK relationships populate Cube's schema automatically. The `primary_key` and
-`foreign_key` constraints added to every mart in PR #3714 are surfaced in
-`manifest.json` as machine-readable join metadata — Cube uses these to discover
-join paths between cubes without manual YAML configuration.
+dbt Cloud integration is configured in the **Cube Cloud UI** (Settings →
+Integrations → dbt Cloud) — no `cube.js` code is required. Cube fetches the
+compiled manifest from dbt Cloud project `211862` automatically. Column
+descriptions, model descriptions, types, and PK/FK relationships populate Cube's
+schema from the manifest. The `primary_key` and `foreign_key` constraints added
+to every mart in PR #3714 are surfaced in `manifest.json` as machine-readable
+join metadata — Cube uses these to discover join paths between cubes without
+manual YAML configuration.
 
 For local dev, Cube reads a locally generated manifest. Run
 `uv run dbt compile --project-dir src/dbt/kipptaf` once on initial setup and
