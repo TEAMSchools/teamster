@@ -1,11 +1,26 @@
 models:
   - name: stg_google_sheets__zendesk_org_lookup
+    description: |
+      Lookup from ADP business unit + canonical location to Zendesk
+      organization. Sourced from a Google Sheet maintained by IT.
     columns:
-      - name: ADP_Business_Unit
+      - name: adp_business_unit
+        description: ADP `home_business_unit` code for the staff member.
         data_type: string
-      - name: ADP_Location
+      - name: location_clean_name
+        description: |
+          Canonical location name from `int_people__location_crosswalk`. Join
+          key to `int_people__staff_roster.home_work_location_reporting_name`.
         data_type: string
-      - name: Zendesk_Organization
+      - name: zendesk_organization
+        description: Organization name in Zendesk.
         data_type: string
-      - name: Zendesk_Secondary_Location
+      - name: zendesk_secondary_location
+        description: Secondary location attribute for the Zendesk user record.
         data_type: string
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - adp_business_unit
+              - location_clean_name

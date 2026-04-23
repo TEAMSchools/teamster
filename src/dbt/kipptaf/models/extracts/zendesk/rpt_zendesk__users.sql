@@ -5,7 +5,7 @@ with
             sr.personal_email,
             sr.google_email,
             sr.home_business_unit_code as adp__home_business_unit_code,
-            sr.home_work_location_name as adp__home_work_location_name,
+            sr.home_work_location_reporting_name as adp__home_work_location_name,
 
             u.name as zendesk__name,
             u.suspended as zendesk__suspended,
@@ -43,7 +43,7 @@ with
         left join
             {{ ref("stg_google_sheets__zendesk_org_lookup") }} as zol
             on sr.adp__home_business_unit_code = zol.adp_business_unit
-            and sr.adp__home_work_location_name = zol.adp_location
+            and sr.adp__home_work_location_name = zol.location_clean_name
         left join
             {{ ref("stg_zendesk__organizations") }} as o
             on zol.zendesk_organization = o.name

@@ -23,13 +23,13 @@ sources:
                 - zendesk
                 - org_lookup
         columns:
-          - name: ADP_Business_Unit
+          - name: adp_business_unit
             data_type: string
-          - name: ADP_Location
+          - name: location_clean_name
             data_type: string
-          - name: Zendesk_Organization
+          - name: zendesk_organization
             data_type: string
-          - name: Zendesk_Secondary_Location
+          - name: zendesk_secondary_location
             data_type: string
       - name: src_google_sheets__student_graduation_path_combos
         external:
