@@ -68,8 +68,8 @@ cube-school-{slug}-detail    # one school, row-level
 cube-school-{slug}-summary   # one school, aggregates only
 ```
 
-`{region}` matches `location_region` values from `dim_locations` (lowercased,
-hyphenated). `{slug}` matches `location_abbreviation` from `dim_locations`.
+`{region}` matches `region_key` values from `dim_locations` (lowercased,
+hyphenated). `{slug}` matches `abbreviation` from `dim_locations`.
 
 A user with `-detail` access can see everything a `-summary` user can see, plus
 individual rows. `cube-school-{slug}-summary` exists for users who should see
@@ -121,8 +121,10 @@ Locally, `CUBE_GROUP_MAP` env var replaces the Directory API call. The
 Applied to every query. Logic evaluated in priority order:
 
 1. User has `cube-network-*` → no location filter
-2. User has `cube-region-{region}-*` → filter by `location_region`
-3. User has `cube-school-{slug}-*` → filter by `location_abbreviation`
+2. User has `cube-region-{region}-*` → filter by `region_key` (FK on
+   `dim_locations`)
+3. User has `cube-school-{slug}-*` → filter by `abbreviation` (on
+   `dim_locations`)
 4. No matching scope group → query returns empty (default deny)
 
 **Detail vs summary:** The `-detail` and `-summary` group suffixes drive which
@@ -135,11 +137,11 @@ enforced via `accessPolicy` on the views themselves (follow-up spec) — not by
 scope unless the user has `cube-access-staff-all`:
 
 ```sql
-WHERE employee_number IN (
-  SELECT h.descendant_employee_number
+WHERE staff_unique_id IN (
+  SELECT h.descendant_staff_unique_id
   FROM kipptaf_marts.bridge_staff_hierarchy h
   JOIN kipptaf_marts.dim_staff s
-    ON s.employee_number = h.ancestor_employee_number
+    ON s.staff_unique_id = h.ancestor_staff_unique_id
   WHERE s.google_email = '{securityContext.email}'
 )
 ```
@@ -261,15 +263,15 @@ filter staff cube results to a manager's reporting chain.
 **Schema:**
 
 ```text
-ancestor_employee_number    STRING   NOT NULL
-descendant_employee_number  STRING   NOT NULL
+ancestor_staff_unique_id    STRING   NOT NULL
+descendant_staff_unique_id  STRING   NOT NULL
 depth                       INT64    NOT NULL
 ```
 
 One row per (ancestor, descendant) pair at any depth, including self-referential
-rows (`depth = 0`). Built recursively from `dim_staff.manager_employee_number`.
-Refreshes on the standard marts cadence so org chart changes propagate
-automatically.
+rows (`depth = 0`). Built recursively from the reporting relationship in
+`dim_work_assignment_reporting_relationships`. Refreshes on the standard marts
+cadence so org chart changes propagate automatically.
 
 `bridge_staff_hierarchy` is not a Cube model — it is a small lookup table used
 only as a filter subquery in `queryRewrite`.
