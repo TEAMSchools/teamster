@@ -40,12 +40,13 @@ everywhere:
    share the same `clean_name`, the update propagates atomically to every
    historical alias.
 2. Edit the five downstream crosswalk sheets **in lockstep** — each one joins on
-   the clean name:
-   - `src_coupa__address_name_crosswalk` — update `location_clean_name`
-   - `src_coupa__intacct_program_lookup` — update `location_clean_name`
-   - `src_coupa__user_exceptions` — update `location_clean_name`
-   - `src_egencia__traveler_groups_v2` — update `location_clean_name`
-   - zendesk `org_lookup` — update `location_clean_name`
+   the clean name via a staging-model alias. Update the value in the noted
+   column; do not rename the column header:
+   - `src_coupa__address_name_crosswalk` — update `adp_home_work_location_name`
+   - `src_coupa__intacct_program_lookup` — update `ADP_Home_Work_Location_Name`
+   - `src_coupa__user_exceptions` — update `home_work_location_name`
+   - `src_egencia__traveler_groups_v2` — update `adp_home_work_location_name`
+   - zendesk `org_lookup` — update `ADP_Location`
    - `src_people__campus_crosswalk` — update `Location_Name`
 3. Audit any Tableau workbooks that filter on the string literal of the old
    clean name and update them.
