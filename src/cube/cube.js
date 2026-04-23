@@ -8,6 +8,11 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 module.exports = {
   ...(dbtCloudExtension ? { schemaExtensions: [dbtCloudExtension] } : {}),
 
+  driverFactory: () => ({
+    type: "bigquery",
+    database: "kipptaf_marts",
+  }),
+
   schemaVersion: ({ securityContext }) =>
     securityContext?.schemaVersion ?? "v1",
 
