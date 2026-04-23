@@ -23,13 +23,13 @@ sources:
                 - zendesk
                 - org_lookup
         columns:
-          - name: adp_business_unit
+          - name: ADP_Business_Unit
             data_type: string
-          - name: location_clean_name
+          - name: ADP_Location
             data_type: string
-          - name: zendesk_organization
+          - name: Zendesk_Organization
             data_type: string
-          - name: zendesk_secondary_location
+          - name: Zendesk_Secondary_Location
             data_type: string
       - name: src_google_sheets__student_graduation_path_combos
         external:
@@ -437,7 +437,7 @@ sources:
         columns:
           - name: adp_home_business_unit_name
             data_type: string
-          - name: location_clean_name
+          - name: adp_home_work_location_name
             data_type: string
           - name: adp_department_home_name
             data_type: string
@@ -618,7 +618,7 @@ sources:
             sheet_range: src_coupa__address_name_crosswalk
             skip_leading_rows: 1
         columns:
-          - name: location_clean_name
+          - name: adp_home_work_location_name
             data_type: string
           - name: coupa_address_name
             data_type: string
@@ -692,7 +692,7 @@ sources:
             data_type: int64
           - name: coupa_school_name
             data_type: string
-          - name: location_clean_name
+          - name: home_work_location_name
             data_type: string
           - name: sage_intacct_department
             data_type: int64
@@ -713,15 +713,6 @@ sources:
               - https://docs.google.com/spreadsheets/d/1j7sBEH-PrkHTv83y3pYrgOPQvRm7S6vdXESbR_OYNFE
             sheet_range: src_coupa__intacct_program_lookup
             skip_leading_rows: 1
-        columns:
-          - name: adp_business_unit_home_code
-            data_type: string
-          - name: location_clean_name
-            data_type: string
-          - name: sage_intacct_program
-            data_type: int64
-          - name: sage_intacct_location
-            data_type: int64
         config:
           meta:
             dagster:
