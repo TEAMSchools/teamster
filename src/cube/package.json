@@ -1,0 +1,12 @@
+{
+  "name": "teamster-cube",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cubejs-server"
+  },
+  "dependencies": {
+    "@cubejs-backend/bigquery-driver": "latest",
+    "@cubejs-backend/server": "latest"
+  }
+}

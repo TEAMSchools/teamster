@@ -134,16 +134,31 @@ enforced via `accessPolicy` on the views themselves (follow-up spec) — not by
 `queryRewrite`. `queryRewrite` handles row-level location filtering only.
 
 **Org-hierarchy filter (staff cubes only):** Applied in addition to location
-scope unless the user has `cube-access-staff-all`:
+scope unless the user has `cube-access-staff-all`. Implemented as a
+`reporting_chain` segment on each staff cube (YAML implementation spec) —
+`queryRewrite` adds the segment name to the query.
 
-```sql
-WHERE staff_unique_id IN (
-  SELECT h.descendant_staff_unique_id
-  FROM kipptaf_marts.bridge_staff_hierarchy h
-  JOIN kipptaf_marts.dim_staff s
-    ON s.staff_unique_id = h.ancestor_staff_unique_id
-  WHERE s.google_email = '{securityContext.email}'
-)
+The segment approach is intentional: Cube's REST API filter operators (`equals`,
+`contains`, etc.) do not accept SQL subqueries, and pre-fetching the reporting
+chain in `queryRewrite` would require a separate round-trip to BigQuery before
+the real query runs — and would bloat the filter with a long
+`IN (key1, key2, ...)` list for managers with large teams. Instead, the segment
+SQL is part of the `WHERE` clause Cube hands to BigQuery, so the subquery
+executes as a single BigQuery operation. Cube templates in
+`SECURITY_CONTEXT.email` at query time and never touches the hierarchy data
+itself.
+
+```yaml
+segments:
+  - name: reporting_chain
+    sql: >
+      {staff_key} IN (
+        SELECT h.descendant_staff_key
+        FROM kipptaf_marts.bridge_staff_hierarchy h
+        JOIN kipptaf_marts.dim_staff s
+          ON s.staff_key = h.ancestor_staff_key
+        WHERE s.google_email = '{SECURITY_CONTEXT.email}'
+      )
 ```
 
 ### Layer 3 — Column-level access policies (YAML)
@@ -202,7 +217,7 @@ established via SQL user switching on each query.
 | Hook              | How it uses email                                                       |
 | ----------------- | ----------------------------------------------------------------------- |
 | `contextToGroups` | Key for Google Directory API call; key for 5-minute in-memory cache     |
-| `queryRewrite`    | Inserted into org-hierarchy subquery via `JOIN kipptaf_marts.dim_staff` |
+| `queryRewrite`    | Passed to `SECURITY_CONTEXT.email` in the `reporting_chain` segment SQL |
 
 ## `cube.js` Configuration
 
@@ -263,9 +278,9 @@ filter staff cube results to a manager's reporting chain.
 **Schema:**
 
 ```text
-ancestor_staff_unique_id    STRING   NOT NULL
-descendant_staff_unique_id  STRING   NOT NULL
-depth                       INT64    NOT NULL
+ancestor_staff_key    STRING   NOT NULL
+descendant_staff_key  STRING   NOT NULL
+depth                 INT64    NOT NULL
 ```
 
 One row per (ancestor, descendant) pair at any depth, including self-referential
@@ -275,6 +290,14 @@ cadence so org chart changes propagate automatically.
 
 `bridge_staff_hierarchy` is not a Cube model — it is a small lookup table used
 only as a filter subquery in `queryRewrite`.
+
+!!! warning "Prerequisite for staff cubes" Before staff cubes (`dim_staff`,
+`fct_staff_attrition`, etc.) can be added to the Cube semantic layer,
+`bridge_staff_hierarchy` must return correct depth-1+ rows. This requires fixing
+`dim_staff_work_assignments.staff_key`, which is currently `NULL` for all rows
+in production due to an OID vs. worker ID join mismatch in its upstream
+intermediate model. Tracked in
+[#3729](https://github.com/TEAMSchools/teamster/issues/3729).
 
 ## Cube Cloud Setup (one-time)
 
