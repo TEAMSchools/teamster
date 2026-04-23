@@ -110,8 +110,13 @@ contextToGroups: async ({ securityContext }) => {
 
   // Local dev: CUBE_GROUP_MAP bypasses Directory API
   if (process.env.CUBE_GROUP_MAP) {
-    const map = JSON.parse(process.env.CUBE_GROUP_MAP);
-    return (map[email] ?? []).filter((g) => g.startsWith("cube-"));
+    try {
+      const map = JSON.parse(process.env.CUBE_GROUP_MAP);
+      return (map[email] ?? []).filter((g) => g.startsWith("cube-"));
+    } catch (err) {
+      console.error("CUBE_GROUP_MAP is not valid JSON:", err.message);
+      return [];
+    }
   }
 
   // Check cache
@@ -119,29 +124,34 @@ contextToGroups: async ({ securityContext }) => {
   if (cached && cached.expiresAt > Date.now()) return cached.groups;
 
   // Call Admin Directory API
-  const { google } = require("googleapis");
-  const auth = new google.auth.GoogleAuth({
-    credentials: JSON.parse(
-      Buffer.from(process.env.GOOGLE_DIRECTORY_SA_KEY, "base64").toString()
-    ),
-    scopes: ["https://www.googleapis.com/auth/admin.directory.group.member.readonly"],
-    clientOptions: { subject: "admin@apps.teamschools.org" },
-  });
-  const admin = google.admin({ version: "directory_v1", auth });
+  try {
+    const { google } = require("googleapis");
+    const auth = new google.auth.GoogleAuth({
+      credentials: JSON.parse(
+        Buffer.from(process.env.GOOGLE_DIRECTORY_SA_KEY, "base64").toString(),
+      ),
+      scopes: ["https://www.googleapis.com/auth/admin.directory.group.member.readonly"],
+      clientOptions: { subject: process.env.GOOGLE_DIRECTORY_SA_SUBJECT },
+    });
+    const admin = google.admin({ version: "directory_v1", auth });
 
-  let groups = [];
-  let pageToken;
-  do {
-    const res = await admin.groups.list({ userKey: email, pageToken });
-    groups = groups.concat(
-      (res.data.groups ?? []).map((g) => g.email.split("@")[0])
-    );
-    pageToken = res.data.nextPageToken;
-  } while (pageToken);
+    let groups = [];
+    let pageToken;
+    do {
+      const res = await admin.groups.list({ userKey: email, pageToken });
+      groups = groups.concat(
+        (res.data.groups ?? []).map((g) => g.email.split("@")[0]),
+      );
+      pageToken = res.data.nextPageToken;
+    } while (pageToken);
 
-  const cubeGroups = groups.filter((g) => g.startsWith("cube-"));
-  groupCache.set(email, { groups: cubeGroups, expiresAt: Date.now() + CACHE_TTL_MS });
-  return cubeGroups;
+    const cubeGroups = groups.filter((g) => g.startsWith("cube-"));
+    groupCache.set(email, { groups: cubeGroups, expiresAt: Date.now() + CACHE_TTL_MS });
+    return cubeGroups;
+  } catch (err) {
+    console.error(`contextToGroups failed for ${email}:`, err);
+    return []; // default deny on API failure
+  }
 },
 ```
 
@@ -154,38 +164,47 @@ applied to staff cubes unless user has `cube-access-staff-all`.
 queryRewrite: (query, { securityContext }) => {
   const groups = securityContext?.groups ?? [];
 
-  // Users without cube-access-student-data see no student cubes
-  const STUDENT_CUBES = [
-    "fct_student_attendance_daily",
-    "fct_student_attendance_interventions",
-    // ... full list populated during YAML implementation
-  ];
-  const hasStudentAccess = groups.includes("cube-access-student-data");
-  if (!hasStudentAccess) {
-    const filteredCubes = query.dimensions?.filter(
-      (d) => !STUDENT_CUBES.some((c) => d.startsWith(c))
-    );
-    query = { ...query, dimensions: filteredCubes ?? [] };
+  // Users without cube-access-student-data see no student cubes.
+  // STUDENT_CUBES and STAFF_CUBES are module-level constants (full lists
+  // populated during YAML implementation).
+  if (!groups.includes("cube-access-student-data")) {
+    query = {
+      ...query,
+      dimensions: (query.dimensions ?? []).filter(
+        (d) => !STUDENT_CUBES.some((c) => d.startsWith(c)),
+      ),
+      measures: (query.measures ?? []).filter(
+        (m) => !STUDENT_CUBES.some((c) => m.startsWith(c)),
+      ),
+    };
   }
 
   // Location scope — evaluate in priority order
   const networkGroup = groups.find((g) => g.startsWith("cube-network-"));
-  const regionGroup = groups.find((g) => /^cube-region-[^-]+-/.test(g));
-  const schoolGroup = groups.find((g) => /^cube-school-[^-]+-/.test(g));
+  const regionGroup = groups.find((g) =>
+    /^cube-region-.+?-(?:detail|summary)$/.test(g),
+  );
+  const schoolGroup = groups.find((g) =>
+    /^cube-school-.+?-(?:detail|summary)$/.test(g),
+  );
 
   let locationFilter = null;
 
   if (networkGroup) {
     // No location filter
   } else if (regionGroup) {
-    const region = regionGroup.replace(/^cube-region-/, "").replace(/-(?:detail|summary)$/, "");
+    const region = regionGroup
+      .replace(/^cube-region-/, "")
+      .replace(/-(?:detail|summary)$/, "");
     locationFilter = {
       member: "dim_locations.region_key",
       operator: "equals",
       values: [region],
     };
   } else if (schoolGroup) {
-    const slug = schoolGroup.replace(/^cube-school-/, "").replace(/-(?:detail|summary)$/, "");
+    const slug = schoolGroup
+      .replace(/^cube-school-/, "")
+      .replace(/-(?:detail|summary)$/, "");
     locationFilter = {
       member: "dim_locations.abbreviation",
       operator: "equals",
@@ -193,19 +212,21 @@ queryRewrite: (query, { securityContext }) => {
     };
   } else {
     // Default deny — no scope group
-    return { ...query, filters: [{ member: "dim_locations.abbreviation", operator: "equals", values: [] }] };
+    return {
+      ...query,
+      filters: [{ member: "dim_locations.abbreviation", operator: "equals", values: [] }],
+    };
   }
 
   const filters = [...(query.filters ?? [])];
   if (locationFilter) filters.push(locationFilter);
 
   // Org-hierarchy filter: inject segment defined in staff cube YAML
-  const STAFF_CUBES = ["dim_staff", "fct_staff_attrition", "fct_staff_observations"];
   const touchesStaffCube = [...(query.dimensions ?? []), ...(query.measures ?? [])].some(
-    (m) => STAFF_CUBES.some((c) => m.startsWith(c))
+    (m) => STAFF_CUBES.some((c) => m.startsWith(c)),
   );
   if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
-    query.segments = [...(query.segments ?? []), "dim_staff.reporting_chain"];
+    query = { ...query, segments: [...(query.segments ?? []), "dim_staff.reporting_chain"] };
   }
 
   return { ...query, filters };
