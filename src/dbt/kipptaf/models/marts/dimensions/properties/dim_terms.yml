@@ -13,7 +13,8 @@ models:
           Surrogate key for this dimension. Hash composition uses term type,
           code, name, start date, region, and school ID as internal inputs;
           region and school ID are not exposed as mart columns. Region
-          attributes reach via dim_terms → dim_locations → dim_regions.
+          attributes are reachable via dim_terms → dim_locations → dim_regions
+          FK traversal.
         constraints:
           - type: primary_key
             warn_unsupported: false
