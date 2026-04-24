@@ -16,6 +16,27 @@ models:
               - aligned_scope
               - benchmark_name
     columns:
+      - name: benchmark_goal
+        description: >
+          Hardcoded score threshold for the benchmark. Derived from
+          benchmark_group — each scope/subject_area/benchmark_name combination
+          maps to a fixed integer cutoff.
+        data_type: int64
+        data_tests:
+          - not_null
+      - name: met_benchmark_goal
+        description: >
+          Whether the student met the benchmark. Met if max_score >=
+          benchmark_goal, Not Met otherwise, No Data if the student has no
+          qualifying score.
+        data_type: string
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - Met
+                  - Not Met
+                  - No Data
       - name: region
         description: KIPP region the student's school belongs to.
         data_type: string
@@ -82,7 +103,5 @@ models:
       - name: benchmark_name
         description: >
           Readiness benchmark label. One of College-Ready, HS-Ready, EA/ED-Ready
-          (for Combined rows) or EBRW, Math (for subject-specific rows). Tableau
-          consumers filter to a single benchmark_name and compare max_score
-          against a dynamic threshold parameter to compute percent met.
+          (for Combined rows) or EBRW, Math (for subject-specific rows).
         data_type: string
