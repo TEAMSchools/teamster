@@ -78,5 +78,5 @@ models:
       - name: city
         data_type: string
         description: >-
-          Canonical city column for region mapping (feeds `dim_terms.region_key`
-          / `dim_locations.region_key`).
+          Canonical city column for region mapping (feeds
+          `dim_locations.region_key`).
