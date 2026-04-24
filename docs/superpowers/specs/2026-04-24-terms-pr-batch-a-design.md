@@ -1,29 +1,41 @@
-# PR batch A (terms): fix `dim_terms` duplicate and 37M `term_key` orphans
+# PR batch A (terms): fix 37M `term_key` orphans, close #3677
 
 Closes #3677 and #3717.
 
 ## Context
 
-`unique_dim_terms_term_key` warns on one duplicate row (#3677), and six
+`unique_dim_terms_term_key` warned on one duplicate row (#3677), and six
 fact-side `term_key` `relationships` tests fail against `dim_terms` with a total
-of ~37M orphan rows (#3717). Investigation via BigQuery MCP confirmed every
-orphan hashes to the same value: `eb66153e09d138b38fc979bff5b437d5` — the
-all-NULL `dbt_utils.generate_surrogate_key()` output. All 37M orphans are rows
-where the fact-side LEFT JOIN to `stg_google_sheets__reporting__terms` failed to
-match and produced a null-composite hash rather than a real `term_key`.
+of ~37M orphan rows (#3717). BigQuery investigation showed:
+
+- Every orphan `term_key` across all six consumers hashes to
+  `eb66153e09d138b38fc979bff5b437d5` — the all-NULL output of
+  `dbt_utils.generate_surrogate_key()`. All 37M orphans are rows where the
+  fact-side LEFT JOIN to `stg_google_sheets__reporting__terms` failed to match
+  and produced the null-composite hash rather than a real `term_key` or `NULL`.
+- The current `stg_google_sheets__reporting__terms` has zero duplicates under
+  the existing `term_key` composition
+  `(type, code, name, start_date, region, school_id)`. #3677 appears already
+  resolved in the sheet.
+
+Grain analysis confirmed the current 6-tuple is the minimum key that the sheet's
+data supports — smaller grains collapse legitimately distinct rows (e.g.,
+SURVEY/SCD with multiple `name` values; WT/MG/O3 sharing codes like
+`'1: Strong Start'`; SRE phases with the same code and different `end_date`).
 
 ## Root causes
 
 ### 1. Wrong filter literal in three grades facts
 
 `fct_grades_assignments`, `fct_grades_category`, and `fct_grades_term` filter
-their `reporting_terms` CTE by ``where `type` = 'quarter'``. The sheet has no
-`type='quarter'` — actual codes are `RC`, `RT`, `SY`, `WT`, `SURVEY`, etc. The
-CTE is empty, every LEFT JOIN returns null, and every row gets the
-null-composite hash. Correct code is `'RT'` (reporting term), matching the
-filter already used in `dim_student_assessment_expectations`.
+their `reporting_terms` CTE by ``where `type` = 'quarter'``. No such code exists
+in the sheet — actual codes are `RC`, `RT`, `SY`, `WT`, `SURVEY`, etc. The CTE
+is empty, every LEFT JOIN returns null, and every row gets the null-composite
+hash. Correct code is `'RT'`, matching the filter already used in
+`dim_student_assessment_expectations`.
 
-Impact: ~32.8M of the 37M orphans.
+Impact: ~32.8M of the 37M orphans (24.6M `fct_grades_assignments`, 7.9M
+`fct_grades_category`, 0.26M `fct_grades_term`).
 
 ### 2. Missing nullable-FK wrapper on `term_key`
 
@@ -39,148 +51,143 @@ if(
 ) as fk_col,
 ```
 
-`term_key` is unwrapped on all six marts. Rows that don't match any RT row get
-the null-composite hash, which fails `relationships` against any real
-`dim_terms.term_key`. Wrapping it makes unmatched rows honestly NULL; dbt's
+`term_key` is unwrapped on all six consumer marts. Rows that don't match any RT
+row get the null-composite hash, which fails `relationships` against any real
+`dim_terms.term_key`. Wrapping makes unmatched rows honestly NULL; dbt's
 `relationships` test ignores NULLs.
 
-### 3. `region` is a redundant join column and hash input
-
-`school_id` is network-unique in PowerSchool (and in `stg_people__locations`'s
-`powerschool_school_id`). Including `region` in the join and in the `term_key`
-hash composition adds no identity signal and blocks the pre-AY24 legacy RT rows
-from matching post-refactor facts: the sheet has 760 legacy RT rows with
-`region IS NULL` spanning 2002–2026, and per-region rows only start 2024-07-01
-(2025-07-01 for Paterson). With `region` in the join, a fact row dated 2020 with
-`region='Newark'` can't match the legacy row for its school_id because
-`'Newark' = NULL` is false.
-
-Pre-merge BigQuery checks confirmed it is safe to drop `region` from the join
-and hash:
-
-- No `(school_id, start_date, end_date)` duplicates in RT rows.
-- No overlapping RT date ranges for any `school_id`.
-- Legacy rows end 2024-06-30 per school; per-region rows start 2024-07-01 —
-  clean AY24 handoff, no double-match.
-
-### 4. `dim_terms.region_key` is a diamond FK
+### 3. `dim_terms.region_key` is a diamond FK
 
 `marts/CLAUDE.md` → "Strict-chain traversal": a dim must not carry an FK to a
 deeper dim already reachable via its direct-parent chain. `dim_terms` has both
 `location_key` (FK to `dim_locations`) and `region_key` (FK to `dim_regions`).
 `dim_locations.region_key` already exists, so region is reachable via
-`dim_terms → dim_locations → dim_regions`. The direct `dim_terms.region_key` is
-a diamond and must be dropped.
-
-No mart references `dim_terms` directly via `ref()` — consumption is via
-`term_key` FK only — so removing the column has no downstream blast radius
-inside `marts/`.
-
-### 5. Source sheet duplicate (#3677)
-
-One `(type, code, name, start_date, region, school_id)` row is duplicated in
-`src_google_sheets__reporting__terms`. Once `region` drops out of the `term_key`
-composition (change 3), re-verify whether the duplicate still produces a
-duplicate hash under the reduced key — it probably does, since the duplicate
-rows share `school_id`. Clean the source sheet per issue #3677's recommended
-option 1.
+`dim_terms → dim_locations → dim_regions`. The direct `dim_terms.region_key`
+must be dropped. No mart `ref()`s `dim_terms` to read `region_key`, so blast
+radius inside `marts/` is zero.
 
 ## Changes
 
 ### SQL
 
-All six marts adopt the same `term_key` shape:
+All six consumer marts adopt the nullable-FK shape on `term_key` (input list
+unchanged — current 6-tuple):
 
 ```sql
 if(
     rt.code is not null,
-    {{ dbt_utils.generate_surrogate_key(
-        ["rt.type", "rt.code", "rt.name", "rt.start_date", "rt.school_id"]
-    ) }},
+    {{ dbt_utils.generate_surrogate_key([
+        "rt.type", "rt.code", "rt.name",
+        "rt.start_date", "rt.region", "rt.school_id"
+    ]) }},
     cast(null as string)
 ) as term_key,
 ```
 
-Join conditions become `(school_id, date-range)` + `type = 'RT'`. Files:
+`rt.code` is contract-enforced `not null` on the staging model, so it is the
+cleanest match-guard.
 
-- `src/dbt/kipptaf/models/marts/facts/fct_grades_assignments.sql` — `'quarter'`
-  → `'RT'`; drop `rt.region` from hash + join; nullable wrap.
+Files:
+
+- `src/dbt/kipptaf/models/marts/facts/fct_grades_assignments.sql` — change
+  `'quarter'` → `'RT'` in the `reporting_terms` CTE; apply nullable wrap.
 - `src/dbt/kipptaf/models/marts/facts/fct_grades_category.sql` — same.
 - `src/dbt/kipptaf/models/marts/facts/fct_grades_term.sql` — same.
-- `src/dbt/kipptaf/models/marts/facts/fct_staff_observations.sql` — drop region
-  from hash + join; nullable wrap. (Uses `t_*` alias variables; adapt.)
+- `src/dbt/kipptaf/models/marts/facts/fct_staff_observations.sql` — apply
+  nullable wrap (uses `t_*` alias variables; preserve them).
 - `src/dbt/kipptaf/models/marts/dimensions/dim_student_section_enrollments.sql`
-  — drop region from hash + join; nullable wrap.
+  — apply nullable wrap.
 - `src/dbt/kipptaf/models/marts/dimensions/dim_student_assessment_expectations.sql`
-  — drop region from hash + join; nullable wrap.
+  — apply nullable wrap.
 
 `dim_terms`:
 
-- Drop `region` from the `term_key` hash composition (new input list:
-  `[type, code, name, start_date, school_id]`).
-- Drop the `region_key` column, its YAML entry, and any `constraints:` FK to
-  `dim_regions`.
+- Drop the `region_key` SELECT block, its YAML column entry, and its
+  `constraints:` FK to `dim_regions`.
+- `term_key` composition and join logic unchanged.
 
-### Source sheet
+### `dim_terms` FK surface
 
-Edit `src_google_sheets__reporting__terms` in Google Sheets to remove the one
-duplicate row identified in #3677. Verify uniqueness under the reduced
-`(type, code, name, start_date, school_id)` key before saving. Coordinate with
-the sheet owner.
+After the change, `dim_terms` carries `term_key` (PK) and `location_key` (FK to
+`dim_locations`). Region attributes reach via
+`dim_terms → dim_locations → dim_regions`.
 
 ### Column-naming audit spec
 
 Append an entry to the "Enumerated surrogate-key changes" table in
 `docs/superpowers/specs/2026-04-15-column-naming-audit.md` documenting the
-`term_key` composition change (`region` dropped) on `dim_terms` and all six
-consumers.
+nullable-wrap change on `term_key` across the six consumers. Rule 4 ("Null
+handling changes") of the hash-change discipline applies: unmatched rows move
+from the null-composite hash to `NULL`; matched rows' hash values are unchanged.
 
 ## Blast radius
 
-- `term_key` hash values change for every matched row in `dim_terms` and all six
-  consumers (composition change). This is a full-refresh required change; no
-  external consumers read `term_key` as a natural value, so the hash turnover is
-  invisible downstream.
-- 37M null-composite rows become `NULL` `term_key` (honest unmatched) or a real
-  `term_key` (newly matched against legacy RT rows, post-AY24 boundary fix).
-- `dim_terms.region_key` removal — no consumer inside `marts/` reads this
-  column. Verify no rpt/extract/exposure reads it before merge.
-- Cube semantic layer: `region_key` will need to be removed from any Cube
-  definition that declares the FK. Check `cube.yml` / Cube-generated semantic
-  layer artifacts in the PR.
+- Matched rows in all six consumers: `term_key` values unchanged.
+- Previously null-composite rows (~37M): become `NULL` (honest unmatched) or a
+  real `term_key` (for the grades facts where `'quarter'` → `'RT'` now finds a
+  match).
+- `dim_terms.region_key` removal: no mart consumer reads it. Verify in PR that
+  no `rpt_*`/extract/exposure reads it either.
+- Cube semantic layer: if generated with a `region_key` FK declaration on
+  `dim_terms`, that annotation must regenerate/update in the same PR.
 
 ## Residual out of scope
 
-The `int_assessments__scaffold.region IS NULL` residual (~1.6M rows, of which
-273K also have `administered_at IS NULL`) is an upstream data-quality issue in
-the assessment scaffold, not a terms issue. Open a follow-up to fix scaffold
-region population. Does not block this PR.
+Some fact-side rows will remain unmatched (now `NULL` `term_key`) after the fix.
+Causes, by consumer:
 
-The ~105 Paterson 2026-02-02 residual is small and likely a `school_id` mismatch
-in Paterson RT sheet coverage. Bundle into the same follow-up.
+- `dim_student_assessment_expectations` — pre-AY24-25 Newark/Camden/Miami
+  assessments have no matching per-region RT row in the sheet; 1.6M rows with
+  `int_assessments__scaffold.region IS NULL` (upstream scaffold bug); small
+  Paterson sheet coverage gap for 2026-02-02.
+- Analogous pre-AY24 gaps expected in `dim_student_section_enrollments`,
+  `fct_staff_observations`, and the three grades facts after the `'RT'` fix.
+
+These are sheet-coverage and upstream-scaffold issues, not `term_key` logic
+bugs. File follow-up issues:
+
+1. Backfill pre-AY24 per-region RT rows in the reporting terms sheet (or
+   document the historical `NULL` `term_key` as intentional).
+2. Fix `int_assessments__scaffold.region IS NULL` population.
+
+Neither blocks this PR.
+
+## Issue #3677 disposition
+
+Current `stg_google_sheets__reporting__terms` has 0 duplicate groups under the
+6-tuple, and current `dim_terms` has 0 duplicate `term_key` values (verified via
+BigQuery). The sheet owner appears to have cleaned the row between the issue
+reopen and now. Close #3677 with a link to this PR and the BQ verification
+query.
 
 ## Verification plan
 
-1. Pre-merge: confirm no new `(school_id, date-range)` fan-out by re-running the
-   overlap check against whatever sheet state exists at merge time.
-2. Local staging build with `--full-refresh` of:
+1. Local staging build with `--full-refresh` of:
    `dim_terms+ fct_grades_assignments fct_grades_category fct_grades_term dim_student_section_enrollments dim_student_assessment_expectations fct_staff_observations`.
-3. `dbt test --select dim_terms+` expects:
-   - `unique_dim_terms_term_key` — pass (after sheet dedup).
-   - Six `relationships` tests on `term_key` — pass.
-4. BigQuery MCP spot check post-build:
+2. `dbt test --select dim_terms+` expects:
+   - `unique_dim_terms_term_key` — pass.
+   - Six `relationships` tests on fact-side `term_key` — pass (NULLs ignored by
+     the test).
+3. BigQuery spot check post-build, per consumer:
    ```sql
-   select count(*) from <schema>.fct_grades_assignments
+   select count(*) from <schema>.<model>
    where term_key is not null
      and term_key not in (select term_key from <schema>.dim_terms)
    ```
-   Expect 0 on all six consumers.
+   Expect 0 on all six.
+4. Confirm no `rpt_*`/extract/exposure references `dim_terms.region_key` before
+   merge:
+   ```bash
+   grep -rn "dim_terms" src/dbt/kipptaf/models | grep region_key
+   ```
 
 ## Acceptance
 
 - [ ] `unique_dim_terms_term_key` clean.
 - [ ] All six fact-side `term_key` `relationships` tests clean.
-- [ ] `dim_terms.region_key` removed; no downstream breakage.
+- [ ] `dim_terms.region_key` removed; no downstream reference remains.
 - [ ] Hash-change entry added to column-naming audit spec.
-- [ ] Follow-up issue filed for `int_assessments__scaffold.region` nulls and
-      Paterson RT sheet coverage gap.
+- [ ] Follow-up issues filed: (a) sheet backfill of pre-AY24 per-region RT rows,
+      (b) `int_assessments__scaffold.region` null population, (c) Paterson RT
+      sheet coverage for early 2026.
+- [ ] #3677 closed with link to BQ verification.
