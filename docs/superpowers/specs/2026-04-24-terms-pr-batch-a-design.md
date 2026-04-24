@@ -56,7 +56,26 @@ row get the null-composite hash, which fails `relationships` against any real
 `dim_terms.term_key`. Wrapping makes unmatched rows honestly NULL; dbt's
 `relationships` test ignores NULLs.
 
-### 3. `dim_terms.region_key` is a diamond FK
+### 3. Broken `yearid` predicate in two grades facts
+
+`fct_grades_category.sql:82` and `fct_grades_term.sql:98` join with
+`cg.yearid = rt.powerschool_year_id - 1990`. The sheet's `powerschool_year_id`
+is already stored as the PowerSchool `yearid` offset (e.g. AY2024 row has
+`powerschool_year_id = 34`, matching `base_powerschool__final_grades.yearid`).
+Subtracting 1990 turns the predicate into `yearid = -1956` — never matches. The
+`- 1990` must be removed. Verified against live data: removing it produces
+~1.14M matches for AY2024 alone; current code produces 0.
+
+### 4. Wrong join column for grades storecode
+
+`fct_grades_category.sql:79` and `fct_grades_term.sql:95` join
+`cg.storecode = rt.code`. PowerSchool `storecode` values are `Q1`, `Q2`, `Q3`,
+`Q4`; RT-type `rt.code` values are `RT0`, `RT1`, `RT2`, `RT3`, `RT4` — they
+never align. The correct column is `rt.name`, which holds the PowerSchool-facing
+quarter/trimester label (`Q1`–`Q4`, `T1`–`T3`, `EOY`, `Summer School`,
+`Capstone`). Join predicate becomes `cg.storecode = rt.name`.
+
+### 5. `dim_terms.region_key` is a diamond FK
 
 `marts/CLAUDE.md` → "Strict-chain traversal": a dim must not carry an FK to a
 deeper dim already reachable via its direct-parent chain. `dim_terms` has both
@@ -91,8 +110,14 @@ Files:
 
 - `src/dbt/kipptaf/models/marts/facts/fct_grades_assignments.sql` — change
   `'quarter'` → `'RT'` in the `reporting_terms` CTE; apply nullable wrap.
-- `src/dbt/kipptaf/models/marts/facts/fct_grades_category.sql` — same.
-- `src/dbt/kipptaf/models/marts/facts/fct_grades_term.sql` — same.
+- `src/dbt/kipptaf/models/marts/facts/fct_grades_category.sql` — `'quarter'` →
+  `'RT'`; `cg.storecode = rt.code` → `cg.storecode = rt.name`;
+  `cg.yearid = rt.powerschool_year_id - 1990` →
+  `cg.yearid = rt.powerschool_year_id`; apply nullable wrap.
+- `src/dbt/kipptaf/models/marts/facts/fct_grades_term.sql` — `'quarter'` →
+  `'RT'`; `fg.storecode = rt.code` → `fg.storecode = rt.name`;
+  `fg.yearid = rt.powerschool_year_id - 1990` →
+  `fg.yearid = rt.powerschool_year_id`; apply nullable wrap.
 - `src/dbt/kipptaf/models/marts/facts/fct_staff_observations.sql` — apply
   nullable wrap (uses `t_*` alias variables; preserve them).
 - `src/dbt/kipptaf/models/marts/dimensions/dim_student_section_enrollments.sql`
