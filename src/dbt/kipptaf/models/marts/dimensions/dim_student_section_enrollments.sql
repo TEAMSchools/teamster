@@ -69,6 +69,7 @@ left join
     on cc.cc_abs_termid = rt.powerschool_term_id
     and cc.sections_schoolid = rt.school_id
     and cc.region = rt.region
+    and rt.`type` = 'RT'
 
 -- TODO: overlapping enrollment records at same school cause join
 -- fan-out; qualify picks latest entrydate (#3633)
