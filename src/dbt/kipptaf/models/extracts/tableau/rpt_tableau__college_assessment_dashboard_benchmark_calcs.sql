@@ -17,6 +17,40 @@ with
             regexp_extract(benchmark_group, r'^.+_([^_]+)_[^_]+$') as subject_area,
             regexp_extract(benchmark_group, r'_([^_]+)$') as benchmark_name,
 
+            case
+                benchmark_group
+                when 'PSAT 8/9_EBRW_EBRW'
+                then 410
+                when 'PSAT10/NMSQT_EBRW_EBRW'
+                then 430
+                when 'SAT_EBRW_EBRW'
+                then 480
+                when 'PSAT 8/9_Math_Math'
+                then 450
+                when 'PSAT10/NMSQT_Math_Math'
+                then 480
+                when 'SAT_Math_Math'
+                then 530
+                when 'PSAT 8/9_Combined_College-Ready'
+                then 860
+                when 'PSAT 8/9_Combined_EA/ED-Ready'
+                then 1100
+                when 'PSAT 8/9_Combined_HS-Ready'
+                then 800
+                when 'PSAT10/NMSQT_Combined_College-Ready'
+                then 910
+                when 'PSAT10/NMSQT_Combined_EA/ED-Ready'
+                then 1100
+                when 'PSAT10/NMSQT_Combined_HS-Ready'
+                then 840
+                when 'SAT_Combined_College-Ready'
+                then 1010
+                when 'SAT_Combined_EA/ED-Ready'
+                then 1200
+                when 'SAT_Combined_HS-Ready'
+                then 890
+            end as benchmark_goal,
+
         from {{ ref("int_extracts__student_enrollments") }}
         cross join
             unnest(
@@ -98,6 +132,7 @@ with
             e.aligned_scope,
             e.subject_area,
             e.benchmark_name,
+            e.benchmark_goal,
 
             s.test_type,
             s.score_type,
@@ -135,5 +170,14 @@ select
     subject_area,
     max_score,
     benchmark_name,
+    benchmark_goal,
+
+    case
+        when max_score is null
+        then 'No Data'
+        when max_score >= benchmark_goal
+        then 'Met'
+        else 'Not Met'
+    end as met_benchmark_goal,
 
 from base

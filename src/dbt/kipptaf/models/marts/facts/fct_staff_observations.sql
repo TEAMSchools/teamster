@@ -62,18 +62,22 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["location_clean_name"]) }} as location_key,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "t_type",
-                "t_code",
-                "t_name",
-                "t_start_date",
-                "t_region",
-                "t_school_id",
-            ]
-        )
-    }} as term_key,
+    if(
+        t_code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "t_type",
+                    "t_code",
+                    "t_name",
+                    "t_start_date",
+                    "t_region",
+                    "t_school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
 
     if(
         observation_type_tag_id is not null,
