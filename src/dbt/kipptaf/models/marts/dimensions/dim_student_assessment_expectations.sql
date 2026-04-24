@@ -41,18 +41,22 @@ select
         )
     }} as assessment_key,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "rt.type",
-                "rt.code",
-                "rt.name",
-                "rt.start_date",
-                "rt.region",
-                "rt.school_id",
-            ]
-        )
-    }} as term_key,
+    if(
+        rt.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "rt.type",
+                    "rt.code",
+                    "rt.name",
+                    "rt.start_date",
+                    "rt.region",
+                    "rt.school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
 
     if(
         sc.powerschool_student_number is not null,

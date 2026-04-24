@@ -24,7 +24,7 @@ with
             school_id,
             powerschool_year_id,
         from {{ ref("stg_google_sheets__reporting__terms") }}
-        where `type` = 'quarter'
+        where `type` = 'RT'
     )
 
 select
@@ -42,18 +42,22 @@ select
     {{ dbt_utils.generate_surrogate_key(["ce.cc_dcid", "ce._dbt_source_relation"]) }}
     as student_section_enrollment_key,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "rt.type",
-                "rt.code",
-                "rt.name",
-                "rt.start_date",
-                "rt.region",
-                "rt.school_id",
-            ]
-        )
-    }} as term_key,
+    if(
+        rt.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "rt.type",
+                    "rt.code",
+                    "rt.name",
+                    "rt.start_date",
+                    "rt.region",
+                    "rt.school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
 
     ce.cc_academic_year as academic_year,
 
@@ -76,7 +80,7 @@ inner join
     and {{ union_dataset_join_clause(left_alias="cg", right_alias="ce") }}
 left join
     reporting_terms as rt
-    on cg.storecode = rt.code
+    on cg.storecode = rt.name
     and cg.schoolid = rt.school_id
     and ce.region = rt.region
-    and cg.yearid = rt.powerschool_year_id - 1990
+    and cg.yearid = rt.powerschool_year_id
