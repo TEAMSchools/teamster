@@ -24,12 +24,6 @@ select
     }} as term_key,
 
     if(
-        t.city is not null,
-        {{ dbt_utils.generate_surrogate_key(["t.city"]) }},
-        cast(null as string)
-    ) as region_key,
-
-    if(
         ll.location_name is not null,
         {{ dbt_utils.generate_surrogate_key(["ll.location_name"]) }},
         cast(null as string)
