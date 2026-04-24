@@ -79,6 +79,13 @@ Two inline patterns (see spec for details):
 - **Region source schema** (kipptaf `sources-kipp*` files only): prefixes for
   `dev` only (`defer` resolves to production)
 
+## dbt Cloud CI state comparison
+
+`state:modified+` hashes every source node through `{{ target.name }}`
+rendering. The CI job and the parse job in its `deferring_environment_id` must
+share `target_name`, or every source with the target-conditional schema pattern
+hash-mismatches and fans out to rebuild the whole graph.
+
 ## Source File Conventions
 
 - **`sources-bigquery.yml`** — BQ-native sources (Airbyte, Fivetran, frozen

@@ -1,10 +1,13 @@
 {
   "permissions": {
     "allow": [
+      "Bash(//workspaces/teamster/.trunk/tools/trunk check --ci)",
       "Bash(cat)",
       "Bash(git diff)",
       "Bash(git status)",
       "Bash(git worktree list)",
+      "Bash(mkdir -p .claude/scratch/day2)",
+      "Bash(rm -rf .claude/scratch/day2)",
       "Bash(uv tool list)",
       "Edit(/.claude/scratch/**)",
       "Edit(/.claude/skills/dagster-day2/**)",
@@ -38,8 +41,10 @@
       "mcp__dagster__list_schedules",
       "mcp__dagster__list_sensors",
       "mcp__dagster__search_assets",
+      "mcp__dbt__get_job_details",
       "mcp__dbt__get_job_run_details",
       "mcp__dbt__get_job_run_error",
+      "mcp__dbt__list_job_run_artifacts",
       "mcp__dbt__list_jobs_runs",
       "mcp__dbt__list_jobs",
       "mcp__dbt__show",
@@ -96,8 +101,8 @@
       "Skill(claude-md-management:revise-claude-md:*)",
       "Skill(commit-commands:commit:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)",
-      "Write(/.claude/scratch/**)",
-      "Write(/.worktrees/**)"
+      "Write(//workspaces/teamster/.claude/scratch/day2/*)",
+      "Write(//workspaces/teamster/.worktrees/**)"
     ],
     "deny": [
       "Bash(* gcloud *)",
@@ -135,7 +140,8 @@
     ],
     "additionalDirectories": [
       "/workspaces/teamster/.worktrees/**",
-      "/workspaces/teamster/.claude/scratch/**"
+      "/workspaces/teamster/.claude/scratch/**",
+      "/workspaces/teamster/.claude/scratch/day2"
     ]
   },
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],

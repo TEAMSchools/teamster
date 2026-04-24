@@ -46,15 +46,19 @@ class PowerSchoolODBCResource(ConfigurableResource):
     retry_count: int = 0
     retry_delay: int = 1
     tcp_connect_timeout: float = 5.0
-    call_timeout: int = 10_000
-    """Per-round-trip timeout in milliseconds (default 10s).
+    call_timeout: int = 15_000
+    """Per-round-trip timeout in milliseconds (default 15s).
 
     Limits each individual Oracle round-trip (execute, fetchmany, etc.).
-    Healthy COUNT(*) probes complete in <500ms; 10s is >20× typical and
+    Healthy COUNT(*) probes complete in <500ms; 15s is >30× typical and
     catches stalled tunnels fast. A hung round-trip raises DPI-1067 with
     the in-flight SQL surfaced in the run log, which the retry layer can
     recover from — rather than the whole tick running out the 600s sensor
     timeout and surfacing an opaque DagsterUserCodeUnreachableError.
+
+    Bumped from 10s after observing pgfinalgrades on kippnewark hit
+    DPY-4024 during post-lockout recovery (2026-04-24); at 15s × 3
+    attempts the total budget is 45s, still well under the 600s tick cap.
     """
 
     _connect_params: ConnectParams = PrivateAttr()

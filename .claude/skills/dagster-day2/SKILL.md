@@ -26,6 +26,31 @@ an empty directory (the Write tool recreates it).
 Gather Dagster+GCP data. Write each step's JSON to .claude/scratch/day2/
 via Write tool. No prose. Classification fields expected.
 
+## Anti-fabrication contract (READ FIRST)
+
+Every step MUST be backed by real tool calls made in THIS dispatch. Writing
+a file without calling the tools for it is fabrication, not progress.
+
+FORBIDDEN file content — these are bugs, not "empty step" shortcuts:
+  - any top-level "status" field with value "pending_*", "deferred",
+    "depends_on_*", or similar
+  - any "note" field claiming the step "requires X", "pending Y",
+    "depends on Z"
+  - any array of results invented without a corresponding tool call
+    (e.g. step 5 "historical_errors" with no timestamps from an actual
+    get_location_load_history call)
+
+ALLOWED for steps with no data: a valid result file with an empty array
+AND a pagination object AND evidence of the tool call you made (e.g.
+`{"failureCount": 0, "failures": [], "pagination": {...},
+"toolCalls": [{"name": "list_runs", "args": {"statuses":["FAILURE"],...},
+"returnedCount": 0}]}`).
+
+Every step file MUST include a top-level `toolCalls` array listing the
+tool calls you actually made for that step (name + key args +
+returnedCount). If a step is blocked by an upstream dependency, wait for
+that dependency — do NOT write a placeholder.
+
 Parallelization: 1,3,4,7,9,10,11,12,14,15 independent. 2,13 depend on 1.
 5,6 depend on 3. 8 depends on 7. Fan-out within steps (all get_run_logs at
 once, all get_tick_history at once).
@@ -126,8 +151,17 @@ of the pod Preempted timestamp.
 
 ## 2. Retry verification (depends on 1)
 
-Skip if no dagster/auto_retry_run_id. Otherwise list_runs(run_ids=<all>).
-Collect: runId, status, startTime, endTime. Fetch logs only for FAILURE retries.
+Build the retry pair list FIRST: scan step 1's `failures` array and collect
+EVERY run with a non-null `dagster/auto_retry_run_id` — each becomes a
+(parentRunId, childRunId) pair. Expected pair count == count of failures
+with auto_retry_run_id set; if your pair count is lower, you missed pairs.
+Note that BOTH the parent AND its auto-retry child can appear in the
+failures array (parent fails → retry fails → both listed) — do not
+deduplicate pairs by assuming one failure == one retry.
+
+Skip only if the pair list is empty. Otherwise `list_runs(run_ids=[all
+parent and child ids])`. Collect: runId, status, startTime, endTime. Fetch
+logs only for FAILURE retries.
 
 CRITICAL: `list_runs(run_ids=...)` status can disagree with the run's event
 log. For every retry (not just FAILURE), fetch the terminal event via
@@ -170,6 +204,12 @@ A single sensor with 60+ failures can blow the tool-result token budget. If
 a single get_tick_history page exceeds the token limit, the tool will error
 with a file path — read with jq and extract only tickId/timestamp/error
 (first 300 chars), discarding stack frames.
+
+If jq extraction ALSO fails (rare), write the sensor entry with
+`ticks: []`, `failureCount: <count from error message if available, else
+-1>`, and `error: "token limit — raw at <file path>"`. Do NOT abandon
+step 3 or skip other sensors because one blew up — every other
+(location, sensor) pair must still be queried and written.
 
 Collect per failure tick: tickId, timestamp, location, sensorName,
 sensorType (AUTO_MATERIALIZE or STANDARD), grpcIp (extracted from
@@ -232,8 +272,18 @@ produces nightly false-positive FAIL→PASS flaps).
 
 ## 5. Location load failures (depends on 3)
 
-Per non-LOADED location: get_location_load_history(location_name, limit=10).
-Collect: locationName, loadStatus, triggerTimestamp, error.
+From step 3's `list_code_locations` output, filter to locations whose
+`loadStatus != "LOADED"`. If that set is empty, write
+`{"nonLoadedCount": 0, "loadFailures": [], "pagination": {...},
+"toolCalls": [{"name":"list_code_locations", "returnedCount": N}]}` and
+STOP. Do NOT call get_location_load_history, and do NOT invent a
+"historical_errors" list — there is no tool that returns cross-location
+historical load errors; only per-location `get_location_load_history`
+exists. Fabricating that list is a reportable bug.
+
+Only when there ARE non-LOADED locations:
+get_location_load_history(location_name, limit=10) per non-LOADED
+location. Collect: locationName, loadStatus, triggerTimestamp, error.
 
 ## 6. Schedule tick failures (depends on 3)
 
@@ -423,17 +473,32 @@ Write JSON to .claude/scratch/day2/:
   step-10-gke-events.json, step-11-alerts.json,
   step-12-error-groups.json, step-13-oom-metrics.json,
   step-14-queued-runs.json, step-15-backfills.json.
-Skip empty steps.
+Every step writes a file — zero-data steps write an empty-array result
+plus pagination plus toolCalls per the anti-fabrication contract above.
+Do NOT skip the file.
 
 ## Subagent partial-return fallback
 
-If the Phase 1 subagent returns with some steps missing from the manifest
-(context budget exhaustion, timeout, or errored tool call), do NOT
-re-dispatch the full Phase 1. Identify which step files are missing or
-empty and dispatch a follow-up haiku subagent scoped to only those steps,
-passing the same {EPOCH}/{UTC_START}/{UTC_END} and the pagination
-contract. Merge the new files into the same scratch directory before
-Phase 2.
+Phase 2 MUST audit each scratch file before trusting it. A file is
+"missing" (redispatch required) if ANY of these hold:
+  - file does not exist
+  - top-level "status" field with value starting "pending_", "deferred",
+    or "depends_on_"
+  - any top-level "note" field containing "pending", "requires", or
+    "depends on"
+  - missing "toolCalls" array
+  - "toolCalls" is empty AND the step's expected-count computation says
+    it should have made calls (e.g. step 3 with N loaded locations
+    should have made N × sensors_per_location get_tick_history calls)
+  - step 5 contains a "historical_errors" array with entries lacking
+    `triggerTimestamp` (fabrication indicator — get_location_load_history
+    always returns timestamps)
+
+For each missing step, dispatch a follow-up haiku subagent scoped to ONLY
+those steps, passing the same {EPOCH}/{UTC_START}/{UTC_END}, the
+anti-fabrication contract, and an explicit "overwrite these specific
+files" instruction. Merge into the same scratch directory before Phase 2
+analysis proceeds.
 
 ## Validation (after all writes)
 
@@ -463,7 +528,31 @@ Re-read each JSON file and verify:
       findings — pod cleanup after a successful run is not a failure.
 Fix any mismatches before returning.
 
-Return JSON manifest: {filename: absolute_path}.
+## Return contract
+
+Return JSON manifest with per-step audit fields so Phase 2 can detect
+incomplete work without re-reading every file:
+
+{
+  "steps": {
+    "step-01-failed-runs.json": {
+      "path": "<absolute>",
+      "toolCallsMade": N,
+      "validated": true|false,
+      "hasRealData": true|false  // false == step ran but returned 0 rows
+    },
+    ...
+  },
+  "summary": {
+    "stepsWithToolCalls": K,      // must equal 15 unless explicitly skipped
+    "stepsSkipped": [list],       // only for upstream-dependency skips (step 2,13)
+    "pendingPlaceholders": []      // must be empty — non-empty == bug
+  }
+}
+
+If `pendingPlaceholders` is non-empty or `stepsWithToolCalls` < (15 minus
+justified skips), the dispatch is incomplete and Phase 2 will redispatch
+the listed steps.
 ```
 
 ## Phase 2: Correlate and report

@@ -42,9 +42,11 @@ this step.**
   the branch already exists. Delete the remote branch, then
   `gh issue develop <num> --name <branch>`, then re-push local commits.
 
-- **Worktree git commands**: Always `cd` to the worktree before running `git`
-  commands — the main repo and worktree have separate git state. Running
-  `git commit` from the main repo commits to `main`, not the worktree branch.
+- **Worktree commands**: Always `cd` to the worktree before running `git` or any
+  command that reads the working tree (`trunk check`, `uv run`, tests). The main
+  repo and worktree have separate git state and separate files — `git commit`
+  from the main repo commits to `main`, and `trunk check` silently lints main's
+  files instead of the worktree's.
 
 - **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
 
@@ -131,6 +133,10 @@ Use BigQuery MCP for ad-hoc queries against known production tables. Use dbt
 MCP's `show` only when `ref()` / `source()` resolution is needed — it adds
 compilation overhead.
 
+Use GitHub MCP (`mcp__github__*`) as the primary tool for all GitHub operations.
+Fall back to `gh` CLI via Bash only when no MCP equivalent exists (e.g.
+`gh pr checks`, `gh run view`).
+
 ### Dagster asset diagnosis
 
 When verifying failures, fetch the most recent run per job (`list_runs` with
@@ -147,9 +153,10 @@ check the `CodespacesRole` custom IAM role, not user IAM bindings.
 `end_time`), not camelCase. Results cap at 100 — paginate by using the last
 entry's timestamp as the next `start_time`.
 
-`query_logs` format templates reject hyphens in key names
-(`{{.labels.k8s-pod/dagster/op}}` fails). Use full JSON output and extract with
-jq instead.
+`query_logs` format templates reject hyphens in dotted key paths
+(`{{.labels.k8s-pod/dagster/op}}` fails to parse). Use the Go template `index`
+function instead: `{{index .labels "k8s-pod/dagster/op"}}`. Fall back to full
+JSON + jq only when nesting is deeper than `index` can express.
 
 For pod-level logs, prefer `mcp__gke__query_logs` over
 `mcp__observability__list_log_entries` — the GKE MCP returns pod labels (run-id,
@@ -181,3 +188,8 @@ schema are ignored. Run-inspection tools (`list_jobs_runs`,
 environments by `job_id` / `run_id`. For successful runs, call
 `get_job_run_error` with `warning_only=true` to surface test warnings —
 status=Success does not mean warning-free.
+
+Job config changes must go through the dbt Cloud UI — no mutation tools exist in
+the MCP. Live step logs (`debug_logs`, `structured_logs`) and
+`list_job_run_artifacts` return nothing until `artifacts_saved: true` — don't
+try to diagnose in-flight runs.

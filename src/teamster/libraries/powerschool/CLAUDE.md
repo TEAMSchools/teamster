@@ -49,7 +49,9 @@ because `@contextmanager` only allows one `yield`.
 
 `call_timeout` on `PowerSchoolODBCResource` governs a **single Oracle
 round-trip**, not total query wall time. Sizing it as query time oversizes it —
-healthy COUNT probes complete in <500ms.
+healthy COUNT probes complete in <500ms. Default is 15s (bumped from 10s on
+2026-04-24 after pgfinalgrades on kippnewark hit DPY-4024 during post-lockout
+recovery).
 
 Sensor-tick budget: Dagster sensor ticks hard-cap at 600s. Keep
 `call_timeout × max_attempts` well below 600s so a hung round-trip raises
