@@ -57,10 +57,6 @@ deployments.
 
 ## External Table Pattern
 
-All staging sources use BigQuery external tables backed by GCS (Avro format,
-BigLake connection, 7-day staleness window). Each source's `sources.yml`
-includes `dagster: asset_key` metadata so Dagster can track lineage.
-
 When a PR adds or modifies an external source, flag that the developer must
 stage it with `--target staging` before the dbt Cloud CI job will pass.
 
@@ -291,6 +287,10 @@ alias.
 
 ### YAML conventions
 
+- **Read `properties.yml` before modifying a model.** It carries the
+  authoritative `description:`, `data_tests:`, contract column types, and
+  `config.meta.source_column` pointers. Copy-pasted column blocks rot here first
+  — verify every paste against the current source.
 - All new or modified models require `description:` on the model and every
   column. Profile staging data via BigQuery MCP; infer downstream from parents.
   Describe calculated fields by logic. Use qualitative language — no stats.

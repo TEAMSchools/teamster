@@ -194,16 +194,9 @@ exposures reference `rpt_*` / staging / intermediate models, not marts.
 
 ## Deferred structural follow-ups
 
-Tracked under #3631 (star-schema second pass):
-
-- #3672 — `fct_job_candidate_applications.shared_with_location_key` coverage
-- #3686 — `dim_staffing_positions.location_key` coverage
-- #3688 — `fct_grades_assignments` polymorphic score split
-- #3689 — `dim_locations` address unification +
-  `dim_work_assignment_locations.location_key` FK
-
-Before proposing a new structural mart change, check these — the case may
-already be tracked and deferred.
+Before proposing a new structural mart change, check the open items on the
+[Data Team project board](https://github.com/orgs/TEAMSchools/projects/4) — the
+case may already be tracked and deferred.
 
 ## SIS-migration insulation
 

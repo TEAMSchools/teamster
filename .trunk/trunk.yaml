@@ -65,6 +65,10 @@ lint:
         - svgo
         - taplo
     - paths:
+        - src/cube/package-lock.json
+      linters:
+        - osv-scanner
+    - paths:
         - .k8s/**/values.yaml
       linters:
         - ALL

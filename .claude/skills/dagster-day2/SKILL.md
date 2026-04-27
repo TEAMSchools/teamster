@@ -9,9 +9,14 @@ description: >-
 
 # Day-2 Operations Check
 
-## Phase 1: Gather data (Haiku subagent)
+## Phase 1: Gather data
 
-Single `model: haiku` Agent call. Compute time window:
+Single Agent call (omit `model` — default model). Phase 1 is structured
+tool-call work where fabrication is silent and expensive to detect; haiku has
+been observed inventing run IDs, pod names, agent IDs, and timestamps even with
+the anti-fabrication contract in place. Do NOT use `model: haiku`.
+
+Compute time window:
 
 - **Default:** 5 PM ET previous business day → now
 - **With arg:** `/dagster-day2 24h` (relative) or `/dagster-day2 2026-03-29`
@@ -89,14 +94,20 @@ per contract. Collect ALL.
 Then IN PARALLEL:
 - Per run: get_run_logs(run_id=<id>,
     filter_types=["ExecutionStepFailureEvent","RunFailureEvent","EngineEvent"],
-    limit=500).
-- list_runs(statuses=["SUCCESS"], created_after={EPOCH}, limit=25). Paginate
-  and sum into a count. Write ONLY
-  {count: N, pages: P, lastPageSize: M, complete: M<25} — NOT the full run
-  list (response exceeds token limit at higher page sizes). Full run details
-  (asset selections, tags, step stats) are ~1.5KB each.
-- list_runs(statuses=["CANCELED"], created_after={EPOCH}, limit=25). Same
-  count-only treatment.
+    limit=500). EngineEvent is noisy — concurrency-slot grants, step starts,
+    process exits, etc. When extracting cause-of-failure from the result,
+    keep only EngineEvent messages whose text contains one of:
+    "terminat", "SIGTERM", "preempt", "BackoffLimit", "OOM", "Evicted",
+    "interrupt", "Deleting Kubernetes job". Discard the rest.
+- list_runs(statuses=["SUCCESS"], created_after={EPOCH}, limit=100). Paginate
+  via before_timestamp cursors and DEDUPE returned IDs by run.id (the cursor
+  cap can return overlap on boundary timestamps). Write ONLY
+  {count: N, pages: P, lastPageSize: M, complete: M<100, dedupedFromRawRows: K}
+  — NOT the full run list (response exceeds token limit at higher page sizes).
+  Full run details (asset selections, tags, step stats) are ~1.5KB each. Use
+  limit=100 (not 25) — at 25 a busy 3-day window costs 100+ pages.
+- list_runs(statuses=["CANCELED"], created_after={EPOCH}, limit=100). Same
+  count-only, deduped treatment.
 
 Per failed run: runId, jobName, dagster/code_location, startTime, endTime,
 RunFailureEvent message, dagster/will_retry, dagster/auto_retry_run_id.
@@ -292,6 +303,13 @@ Per RUNNING schedule from step 3 IN PARALLEL:
     statuses=["FAILURE"], limit=20, after_timestamp={EPOCH}).
 Collect: tickId, timestamp, location, schedule name, error (300 chars).
 
+You MUST issue one get_tick_history call per running schedule. "Sampling"
+or "spot-checking N of M" is a bug, not a shortcut — a single failing
+schedule on a non-checked location is exactly the signal the report exists
+to surface. Validation requires:
+toolCalls.filter(name == 'get_tick_history').length ==
+sum(len(schedulesByLocation[loc]) for loc in loadedLocations).
+
 Only terminal failures matter here. The scheduler daemon retries gRPC calls
 indefinitely within a single tick evaluation — agent-level "Error serving
 request" logs during code server preemption are noise, not tick failures.
@@ -321,6 +339,11 @@ agents with heartbeat in window + all RUNNING. Note: the errors array is
 capped at 25 per agent — if 25 errors are returned, earlier errors in the
 window were evicted.
 
+Agent IDs returned by this tool are 36-char RFC 4122 UUIDs (8-4-4-4-12 hex
+with hyphens, e.g. `c71e6874-780e-4750-9fff-215524b568d7`). Anything
+shorter, hex-only without hyphens, or fanciful (`agent-1`, `agent-1-gke-*`)
+is fabrication — re-issue the call.
+
 ## 8. Agent pod churn (depends on 7)
 
 Skip ONLY IF every agent has status=RUNNING AND errors=[] (empty array).
@@ -335,8 +358,16 @@ mcp__gke__query_logs(project_id="teamster-332318",
     AND jsonPayload.involvedObject.namespace="dagster-cloud"
     AND jsonPayload.involvedObject.name:"user-cloud-dagster-cloud-agent-agent"
     AND jsonPayload.reason="SuccessfulCreate"',
-  time_range={startTime: "{UTC_START}", endTime: "{UTC_END}"}, limit=100,
+  time_range={"start_time": "{UTC_START}", "end_time": "{UTC_END}"}, limit=100,
   format="{{.timestamp}} {{.jsonPayload.involvedObject.name}} {{.jsonPayload.message}}").
+
+CRITICAL: paste the call template literally. `mcp__gke__query_logs` accepts
+ONLY snake_case `time_range.start_time` / `end_time`. camelCase
+(`startTime`/`endTime`) is silently ignored, the query becomes unbounded,
+and the result is plausibly empty. Do NOT pass `since: "3h"` or any other
+shorthand — that schema does not exist on this tool and produces silent
+zero-result garbage.
+
 Normal Helm upgrade at replicas=1, maxSurge=200% = 2 creates per rollout. More
 than 3 creates in a short window = crash loop or preemption storm.
 
@@ -462,8 +493,13 @@ Flag runs queued >15 min. Collect: runId, jobName, status, startTime, duration.
 ## 15. Backfills
 
 IN PARALLEL: list_backfills(status="REQUESTED", limit=10),
-list_backfills(status="FAILED", created_after={EPOCH}, limit=10).
+list_backfills(status="FAILED", limit=10).
 Collect: backfillId, status, numPartitions, timestamp, error.
+
+CRITICAL: `list_backfills` rejects `status` and `created_after` together
+with `DagsterInvariantViolationError: Cannot provide status and filters to
+get_backfills`. Do NOT pass `created_after` when `status` is set — call
+without `created_after`, then drop entries older than {EPOCH} client-side.
 
 Write JSON to .claude/scratch/day2/:
   step-01-failed-runs.json, step-02-retries.json, step-03-ticks.json,
@@ -473,6 +509,9 @@ Write JSON to .claude/scratch/day2/:
   step-10-gke-events.json, step-11-alerts.json,
   step-12-error-groups.json, step-13-oom-metrics.json,
   step-14-queued-runs.json, step-15-backfills.json.
+Use these filenames EXACTLY — `step-14-queued.json` and
+`step-06-schedule-tick-failures.json` are typos that broke gap-fill in a
+prior run. The Phase 2 manifest audit keys on these literal filenames.
 Every step writes a file — zero-data steps write an empty-array result
 plus pagination plus toolCalls per the anti-fabrication contract above.
 Do NOT skip the file.
@@ -494,11 +533,11 @@ Phase 2 MUST audit each scratch file before trusting it. A file is
     `triggerTimestamp` (fabrication indicator — get_location_load_history
     always returns timestamps)
 
-For each missing step, dispatch a follow-up haiku subagent scoped to ONLY
-those steps, passing the same {EPOCH}/{UTC_START}/{UTC_END}, the
-anti-fabrication contract, and an explicit "overwrite these specific
-files" instruction. Merge into the same scratch directory before Phase 2
-analysis proceeds.
+For each missing step, dispatch a follow-up subagent (default model — NOT
+haiku) scoped to ONLY those steps, passing the same
+{EPOCH}/{UTC_START}/{UTC_END}, the anti-fabrication contract, and an
+explicit "overwrite these specific files" instruction. Merge into the same
+scratch directory before Phase 2 analysis proceeds.
 
 ## Validation (after all writes)
 
@@ -526,6 +565,31 @@ Re-read each JSON file and verify:
       60s AFTER the run's endTime, tag the event with
       "post_success_cleanup": true. Phase 2 must exclude these from OOM
       findings — pod cleanup after a successful run is not a failure.
+  (f) Pod-event run-window match: for EVERY pod event whose name matches
+      `dagster-run-<runId>-*` or `dagster-step-<runId>-*`, the event
+      timestamp MUST fall in [run.startTime - 60s, run.endTime + 300s] for
+      that runId. If it doesn't, the timestamp is either a transcription
+      error (re-fetch and rewrite) or you've matched the wrong runId.
+      Resolve before writing. This catches the date-off-by-N-days class of
+      error where a pod-event date got copied wrong but still passed the
+      in-window check.
+  (g) Plausibility regex sweep — re-read each step file and reject ANY
+      hit from the patterns below. A hit means the agent fabricated;
+      re-issue the underlying tool call:
+        - run-id-shaped strings that aren't UUIDs:
+          `\b(run-[a-z0-9]+|run_[a-z0-9]+|run[A-Z][a-z]+\d+)\b`
+        - obviously-placeholder hex: `\babc123\b`, `\bdef456\b`,
+          `\b0123456789abcdef\b`
+        - placeholder pod names: `dagster-job-pod`, `<pod-name>`,
+          `pod-name-here`, `example-pod`
+        - placeholder agent IDs: `agent-\d`, `agent-1-gke-\w+`, or any
+          agent.id from get_cloud_agents that is NOT a 36-char UUID
+        - wrong namespace for any cluster query: namespace not in
+          {"dagster-cloud", "kube-system", "gke-managed-system"}
+        - wrong host for agent ReadTimeout: hosts not ending in
+          `.agent.dagster.cloud`
+        - hand-typed "since" / "ago" forms in tool args
+          (`"since": "3h"`, `"ago": "2h"`) — schema is `time_range` only
 Fix any mismatches before returning.
 
 ## Return contract
