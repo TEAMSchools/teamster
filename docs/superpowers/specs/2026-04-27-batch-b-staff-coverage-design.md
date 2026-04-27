@@ -505,54 +505,21 @@ regardless of our changes — the reconciliation probe will surface this. Triage
 decision: fixing #3681 is small enough to fold into this PR _if_ the root cause
 is a narrow SQL bug in `dim_staff_status.sql`; defer otherwise.
 
-### Post-merge follow-ups
-
-- Open an issue: "audit Paterson `business_unit_name` filter on
-  `int_people__staff_roster_history`." Document why the filter exists, and
-  whether the consumers that still depend on `int_people__staff_roster_history`
-  (e.g., `dim_staff`, `int_people__staff_roster`) should also incidentally gain
-  Paterson coverage by removing the filter — out of scope for Batch B but a
-  natural follow-up given Batch B already exposes Paterson on the attrition /
-  survey-expectation side.
-
 ## Incidental Paterson coverage
 
 Paterson staff exist in ADP and flow through every dim Batch B traverses
 (`dim_work_assignment_status`, `dim_work_assignment_primary` (NEW),
 `dim_work_assignment_jobs`, `dim_staff_work_assignments`). Paterson is filtered
-out of `int_people__staff_roster_history` only — see lines 113–118 of that
-model:
-
-```sql
-where w.effective_date_end >= '2021-01-01'
-  and coalesce(w.organizational_unit__home__business_unit__name, '')
-      != 'KIPP Paterson'
-  and coalesce(w.organizational_unit__assigned__business_unit__name, '')
-      != 'KIPP Paterson'
-```
+out of `int_people__staff_roster_history` only — lines 113–118 of that model —
+and that filter is a stale workaround from when Paterson joined the network
+mid-year without ADP onboarding; ADP coverage came online later and the filter
+was never removed.
 
 Because Batch B retires that intermediate from `fct_staff_attrition` and
-`bridge_survey_expectations`, those marts will gain Paterson rows after merge —
-a coverage expansion that wasn't in the original issue scope but is a direct
-consequence of the SCD-correct rebuild.
-
-**Scope decision:** keep the incidental coverage. Filtering Paterson back out at
-the mart layer would re-introduce the same kind of consumer-side workaround the
-rebuild is meant to eliminate. The surface change is transparent: `dim_staff`
-(current snapshot) and `int_people__staff_roster` (its derivative) still exclude
-Paterson — no other models gain or lose Paterson rows.
-
-**Reconciliation guidance:** the probe queries (Testing section) partition by
-region so Paterson drift can be inspected separately. Sanity-check that Paterson
-row counts are plausible relative to Paterson headcount; spot-check a few
-attrition + survey rows for data quality. If Paterson ADP records have known
-issues (the reason the filter exists in the first place), the probe will surface
-them and we can decide whether to:
-
-- ship as-is (incidental coverage, accept any Paterson data quality artifacts as
-  a separate concern), or
-- add a Paterson exclusion at the bridge / fact layer with a `-- TODO: <issue>`
-  comment pointing at the audit follow-up.
+`bridge_survey_expectations`, those marts will gain Paterson rows after merge.
+Incidental but correct: keep the coverage. Reconciliation probes partition by
+region so Paterson row counts can be sanity-checked separately, but no
+Paterson-specific data-quality caveat applies.
 
 ## Out of scope
 
