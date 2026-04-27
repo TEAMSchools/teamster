@@ -31,7 +31,7 @@ src/cube/
   model/
     cubes/.gitkeep
     views/.gitkeep
-  SETUP.md
+  # no SETUP.md — setup guide lives at docs/guides/cube.md
 ```
 
 ## Step 2 — `package.json`
@@ -88,13 +88,9 @@ Cloud UI — no `cube.js` code needed (see spec §1).
 ### 5a. dbt metadata integration
 
 Configure in the **Cube Cloud UI**: Settings → Integrations → dbt Cloud, connect
-to project `211862`. No code changes to `cube.js` are required.
-
-Add to the exported config:
-
-```javascript
-schemaVersion: ({ securityContext }) => securityContext?.schemaVersion ?? "v1",
-```
+to project `211862`. No code changes to `cube.js` are required. `schemaVersion`
+is omitted — KIPP uses a single schema for all users, so Cube's default
+file-hash-based invalidation is correct and no JWT read is needed.
 
 ### 5b. `contextToGroups`
 
@@ -102,7 +98,26 @@ Returns `string[]` of `cube-*` group names for the requesting user.
 
 ```javascript
 const groupCache = new Map(); // email → { groups, expiresAt }
-const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function nextMidnightEastern() {
+  const now = new Date();
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: false,
+    })
+      .formatToParts(now)
+      .filter(({ type }) => type !== "literal")
+      .map(({ type, value }) => [type, +value]),
+  );
+  const msElapsedToday =
+    (parts.hour * 3600 + parts.minute * 60 + parts.second) * 1000 +
+    now.getMilliseconds();
+  return now.getTime() + (24 * 60 * 60 * 1000 - msElapsedToday);
+}
 
 contextToGroups: async ({ securityContext }) => {
   const email = securityContext?.email;
@@ -140,13 +155,13 @@ contextToGroups: async ({ securityContext }) => {
     do {
       const res = await admin.groups.list({ userKey: email, pageToken });
       groups = groups.concat(
-        (res.data.groups ?? []).map((g) => g.email.split("@")[0]),
+        (res.data.groups ?? []).map((g) => (g.email ?? "").split("@")[0]),
       );
       pageToken = res.data.nextPageToken;
     } while (pageToken);
 
     const cubeGroups = groups.filter((g) => g.startsWith("cube-"));
-    groupCache.set(email, { groups: cubeGroups, expiresAt: Date.now() + CACHE_TTL_MS });
+    groupCache.set(email, { groups: cubeGroups, expiresAt: nextMidnightEastern() });
     return cubeGroups;
   } catch (err) {
     console.error(`contextToGroups failed for ${email}:`, err);
@@ -256,20 +271,25 @@ support SQL subqueries. Example segment YAML:
 
 ```javascript
 canSwitchSqlUser: (current_user, new_user) =>
-  current_user === "cube-superset-service" &&
+  current_user === process.env.CUBEJS_SQL_SUPER_USER &&
   new_user.endsWith("@apps.teamschools.org"),
 ```
 
-## Step 6 — `SETUP.md`
+## Step 6 — `docs/guides/cube.md`
 
-Brief engineer-facing guide. Three sections:
+Engineer-facing setup guide — moved to the MkDocs site rather than living in
+`src/cube/`. Covers:
 
-1. **Cube Cloud one-time setup** — reproduce the "Cube Cloud Setup" section from
-   the spec verbatim
-2. **Local dev** — `cp .env.example .env`, fill in `CUBE_GROUP_MAP`, run the VS
-   Code task
-3. **Warning** — do not use the Cube Playground Models tab in dev mode; it
-   overwrites YAML files
+1. **Why a service account key is required** — Cube Cloud SaaS vs Workload
+   Identity
+2. **Directory API service account setup** — create SA, enable Admin SDK API,
+   grant DWD, encode key
+3. **Impersonation subject account setup** — dedicated super-admin account
+4. **Cube Cloud one-time setup** — environment variables and BigQuery IAM
+5. **Local dev** — `cp .env.example .env`, fill in `CUBE_GROUP_MAP`, run VS Code
+   task
+6. **Warnings** — `CUBE_GROUP_MAP` must never be set in Cube Cloud; do not use
+   the Playground Models tab
 
 ## Step 7 — VS Code task
 

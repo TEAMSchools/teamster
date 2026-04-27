@@ -42,7 +42,7 @@ src/cube/
   model/
     cubes/                 # One YAML file per mart — populated in follow-up spec
     views/                 # Empty for now — populated in follow-up spec
-  SETUP.md                 # Cube Cloud one-time setup + local dev guide
+  # setup guide moved to docs/guides/cube.md
 ```
 
 ## Security Model
@@ -111,7 +111,7 @@ regions. Network-wide staff access requires `cube-network-detail`.
 
 At request time, `contextToGroups` calls the Admin Directory API using
 `securityContext.email`, filters the result to `cube-*` groups only, and returns
-the group list. Results are cached 5 minutes per email.
+the group list. Results are cached until midnight Eastern time per email.
 
 Locally, `CUBE_GROUP_MAP` env var replaces the Directory API call. The
 `contextToGroups` function is `async`.
@@ -214,10 +214,10 @@ established via SQL user switching on each query.
 
 ### What `securityContext.email` drives
 
-| Hook              | How it uses email                                                       |
-| ----------------- | ----------------------------------------------------------------------- |
-| `contextToGroups` | Key for Google Directory API call; key for 5-minute in-memory cache     |
-| `queryRewrite`    | Passed to `SECURITY_CONTEXT.email` in the `reporting_chain` segment SQL |
+| Hook              | How it uses email                                                           |
+| ----------------- | --------------------------------------------------------------------------- |
+| `contextToGroups` | Key for Google Directory API call; key for midnight-Eastern in-memory cache |
+| `queryRewrite`    | Passed to `SECURITY_CONTEXT.email` in the `reporting_chain` segment SQL     |
 
 ## `cube.js` Configuration
 
@@ -245,7 +245,8 @@ auto-populated column descriptions but nothing else.
 
 Async function. Checks `CUBE_GROUP_MAP` first (local dev fallback). In Cloud
 deployments, calls the Admin Directory API using `securityContext.email`,
-filters to `cube-*` groups, and caches the result 5 minutes per email.
+filters to `cube-*` groups, and caches the result until midnight Eastern per
+email. Group membership changes are not expected mid-day.
 
 ### 3. `queryRewrite` — row-level security
 
@@ -266,7 +267,7 @@ from switching:
 
 ```javascript
 canSwitchSqlUser: (current_user, new_user) =>
-  current_user === "cube-superset-service" &&
+  current_user === process.env.CUBEJS_SQL_SUPER_USER &&
   new_user.endsWith("@apps.teamschools.org");
 ```
 
