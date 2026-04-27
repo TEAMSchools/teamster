@@ -1,0 +1,73 @@
+models:
+  - name: dim_work_assignment_primary
+    description: >-
+      Primary-position SCD for ADP work assignments. One row per work assignment
+      x is_primary_position version. Hash-based change detection over
+      int_adp_workforce_now__workers__work_assignments collapses adjacent SCD
+      rows whose primary_indicator value is unchanged. Used as a date-correct
+      lookup by fct_staff_attrition and bridge_survey_expectations to determine
+      which work assignment was primary at a point in time; primary_indicator
+      changes within an item_id over time on roughly 4% of work assignments.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: effective_start_date <= effective_end_date
+    columns:
+      - name: work_assignment_primary_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from item_id and effective_date_start.
+          Generated with generate_surrogate_key(["item_id",
+          "effective_date_start"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: work_assignment_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_work_assignments. Surrogate key derived from
+          item_id. Generated with generate_surrogate_key(["item_id"]).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_work_assignments')
+            to_columns: [work_assignment_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff_work_assignments')
+                field: work_assignment_key
+
+      - name: is_primary_position
+        data_type: boolean
+        description: >-
+          TRUE if this work assignment was the worker's primary work assignment
+          during the version's effective window. A worker may have multiple
+          concurrent assignments; at most one is primary at any moment.
+        data_tests:
+          - not_null
+
+      - name: effective_start_date
+        data_type: date
+        description: >-
+          Date this is_primary_position version became effective, from the
+          source SCD row that triggered the change point.
+        data_tests:
+          - not_null
+
+      - name: effective_end_date
+        data_type: date
+        description: >-
+          Date through which this is_primary_position version is in effect.
+          '9999-12-31' for the current version (no later change point).
+
+      - name: is_current
+        data_type: boolean
+        description: >-
+          TRUE when effective_end_date is the sentinel '9999-12-31' (this row is
+          the latest version per work assignment).
