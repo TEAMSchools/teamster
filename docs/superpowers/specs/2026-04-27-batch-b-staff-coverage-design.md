@@ -44,11 +44,11 @@ failing relationships tests:
 | `dim_staffing_positions.incumbent_staff_key`    |    692 | Seat-tracker placeholder codes (0, 1, 2, 999995–999999)                     | Mart null-map  |
 | `dim_staffing_positions.recruiter_staff_key`    |    107 | Seat-tracker placeholder code (0)                                           | Mart null-map  |
 
-The seat-tracker codes are domain encodings that flag positions whose real
-employee_number is not yet linked (e.g., `999998` ≈ `Staffed/New Hire` pending
-ADP onboarding; `999997` ≈ `Position Closed` swap/budget changes). Rows carry
-valid seat-state data and must be preserved; only the spurious employee_number
-is replaced with NULL.
+The seat-tracker codes are confirmed domain placeholders (not test records) that
+flag positions whose real employee_number is not yet linked (e.g., `999998` ≈
+`Staffed/New Hire` pending ADP onboarding; `999997` ≈ `Position Closed`
+swap/budget changes). Rows carry valid seat-state data and must be preserved;
+only the spurious employee_number is replaced with NULL.
 
 The "Awesome Teacher" account (SchoolMint Grow `internal_id_int = 999999`, email
 `awesometeacher@apps.teamschools.org`) is a real test account in production
@@ -422,10 +422,14 @@ attrition rows:
 Run on the PR-branch dbt-Cloud-CI schema before merge:
 
 - `fct_staff_attrition` — row count + `is_attrition` totals per academic year,
-  before vs. after. Expect ≤ ~3.8% drift from the primary- history correction.
-  Larger drift = logic regression.
+  before vs. after, **partitioned by region**. Expected drift:
+  - Non-Paterson rows: ≤ ~3.8% drift from the `primary_indicator` correction.
+    Larger drift in the non-Paterson partition = logic regression.
+  - Paterson rows: 0 → N (incidental coverage). Sanity-check N is plausible
+    relative to Paterson headcount.
 - `bridge_survey_expectations` — row count per `survey_administration_key`,
-  before vs. after. Small drift expected; large drift = bug.
+  before vs. after, **partitioned by region**. Same expected drift shape: small
+  drift in non-Paterson, 0 → N for Paterson.
 
 ### CI
 
@@ -503,12 +507,52 @@ is a narrow SQL bug in `dim_staff_status.sql`; defer otherwise.
 
 ### Post-merge follow-ups
 
-- Open an issue: "seat tracker placeholder code semantics — confirm with ops."
-  Tracks whether the null-mapping at `dim_staffing_positions` should eventually
-  move upstream once domain meaning is confirmed.
-- Confirm coverage of an existing issue (or open a new one) for the Paterson
-  coverage gap (PowerSchool-only staff absent from all ADP- derived dims —
-  orthogonal to Batch B but relevant to the broader staff-coverage story).
+- Open an issue: "audit Paterson `business_unit_name` filter on
+  `int_people__staff_roster_history`." Document why the filter exists, and
+  whether the consumers that still depend on `int_people__staff_roster_history`
+  (e.g., `dim_staff`, `int_people__staff_roster`) should also incidentally gain
+  Paterson coverage by removing the filter — out of scope for Batch B but a
+  natural follow-up given Batch B already exposes Paterson on the attrition /
+  survey-expectation side.
+
+## Incidental Paterson coverage
+
+Paterson staff exist in ADP and flow through every dim Batch B traverses
+(`dim_work_assignment_status`, `dim_work_assignment_primary` (NEW),
+`dim_work_assignment_jobs`, `dim_staff_work_assignments`). Paterson is filtered
+out of `int_people__staff_roster_history` only — see lines 113–118 of that
+model:
+
+```sql
+where w.effective_date_end >= '2021-01-01'
+  and coalesce(w.organizational_unit__home__business_unit__name, '')
+      != 'KIPP Paterson'
+  and coalesce(w.organizational_unit__assigned__business_unit__name, '')
+      != 'KIPP Paterson'
+```
+
+Because Batch B retires that intermediate from `fct_staff_attrition` and
+`bridge_survey_expectations`, those marts will gain Paterson rows after merge —
+a coverage expansion that wasn't in the original issue scope but is a direct
+consequence of the SCD-correct rebuild.
+
+**Scope decision:** keep the incidental coverage. Filtering Paterson back out at
+the mart layer would re-introduce the same kind of consumer-side workaround the
+rebuild is meant to eliminate. The surface change is transparent: `dim_staff`
+(current snapshot) and `int_people__staff_roster` (its derivative) still exclude
+Paterson — no other models gain or lose Paterson rows.
+
+**Reconciliation guidance:** the probe queries (Testing section) partition by
+region so Paterson drift can be inspected separately. Sanity-check that Paterson
+row counts are plausible relative to Paterson headcount; spot-check a few
+attrition + survey rows for data quality. If Paterson ADP records have known
+issues (the reason the filter exists in the first place), the probe will surface
+them and we can decide whether to:
+
+- ship as-is (incidental coverage, accept any Paterson data quality artifacts as
+  a separate concern), or
+- add a Paterson exclusion at the bridge / fact layer with a `-- TODO: <issue>`
+  comment pointing at the audit follow-up.
 
 ## Out of scope
 
@@ -525,8 +569,16 @@ is a narrow SQL bug in `dim_staff_status.sql`; defer otherwise.
   stretch).
 - `int_people__staff_roster_history` — unchanged. Still drives `dim_staff` and
   `int_people__staff_roster`.
-- Paterson coverage — Paterson staff are PowerSchool-only and absent from
-  ADP/Dayforce-derived dims. Systemic gap; separate issue.
+- Paterson coverage — Paterson staff **are** in ADP and flow through
+  `dim_work_assignment_status`, `dim_staff_work_assignments`,
+  `dim_work_assignment_primary`, and `dim_work_assignment_jobs` (these source
+  `int_adp_workforce_now__workers__work_assignments` directly, unfiltered).
+  Today they're filtered out only at `int_people__staff_roster_history` (lines
+  113–118: `business_unit_name != 'KIPP Paterson'`). Because Batch B retires
+  that intermediate from the attrition / survey-expectation chain, **Paterson
+  staff will incidentally appear** in `fct_staff_attrition` and
+  `bridge_survey_expectations` after this batch. See "Incidental Paterson
+  coverage" below.
 
 ## Related project-board issues
 
