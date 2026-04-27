@@ -27,13 +27,11 @@ with
 
             'staff' as respondent_type,
 
-            {{ dbt_utils.generate_surrogate_key(["swa.employee_number"]) }}
-            as staff_key,
+            swa.staff_key,
 
             cast(null as string) as student_enrollment_key,
             cast(null as string) as student_contact_person_key,
 
-            swa.employee_number,
         from survey_admin as sa
         inner join
             {{ ref("dim_work_assignment_status") }} as wast
@@ -61,13 +59,11 @@ with
 
             'staff' as respondent_type,
 
-            {{ dbt_utils.generate_surrogate_key(["swa.employee_number"]) }}
-            as staff_key,
+            swa.staff_key,
 
             cast(null as string) as student_enrollment_key,
             cast(null as string) as student_contact_person_key,
 
-            swa.employee_number,
         from survey_admin as sa
         inner join
             {{ ref("dim_work_assignment_status") }} as wast
@@ -95,13 +91,11 @@ with
 
             'staff' as respondent_type,
 
-            {{ dbt_utils.generate_surrogate_key(["swa.employee_number"]) }}
-            as staff_key,
+            swa.staff_key,
 
             cast(null as string) as student_enrollment_key,
             cast(null as string) as student_contact_person_key,
 
-            swa.employee_number,
         from survey_admin as sa
         inner join
             {{ ref("dim_work_assignment_status") }} as wast

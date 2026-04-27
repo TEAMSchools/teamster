@@ -3,13 +3,14 @@ with
        dim_work_assignment_status (status SCD), filtered to primary,
        non-Intern assignments via inner joins to
        dim_work_assignment_primary and dim_work_assignment_jobs.
-       dim_staff_work_assignments resolves item_id -> employee_number. */
+       dim_staff_work_assignments resolves item_id -> staff_key, and
+       dim_staff resolves staff_key -> employee_number via staff_unique_id. */
     teammate_history as (
         select
             wast.effective_start_date as effective_date_start,
             wast.effective_end_date as effective_date_end,
             wast.effective_start_date as assignment_status_effective_date,
-            swa.employee_number,
+            ds.staff_unique_id as employee_number,
             wast.status_code,
             wast.reason_name,
 
@@ -36,7 +37,7 @@ with
         inner join
             {{ ref("dim_staff_work_assignments") }} as swa
             on wast.work_assignment_key = swa.work_assignment_key
-        where swa.employee_number is not null
+        inner join {{ ref("dim_staff") }} as ds on swa.staff_key = ds.staff_key
     ),
 
     academic_years as (
