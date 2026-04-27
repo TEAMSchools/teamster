@@ -10,7 +10,9 @@ models:
       dim_work_assignment_jobs (position_title SCD, for the intern filter),
       joined to dim_staff_work_assignments to resolve employee_number. FKs to
       dim_staff_status (the worker-status version effective on
-      outcome_determination_date).
+      outcome_determination_date). Coverage limitation: pre-2021 NJ Dayforce-era
+      staff are not included — the work-assignment dim family sources ADP only.
+      Tracked at #3744 for upstream Dayforce union work.
     columns:
       - name: staff_attrition_key
         data_type: string
