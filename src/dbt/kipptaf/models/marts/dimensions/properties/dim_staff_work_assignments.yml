@@ -66,12 +66,6 @@ models:
         description: >-
           Position identifier associated with this work assignment.
 
-      - name: is_primary_position
-        data_type: boolean
-        description: >-
-          TRUE if this is the primary work assignment for the worker. A worker
-          may have multiple assignments; at most one is primary.
-
       - name: is_management_position
         data_type: boolean
         description: >-
