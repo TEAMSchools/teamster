@@ -137,6 +137,16 @@ Use GitHub MCP (`mcp__github__*`) as the primary tool for all GitHub operations.
 Fall back to `gh` CLI via Bash only when no MCP equivalent exists (e.g.
 `gh pr checks`, `gh run view`).
 
+`mcp__github__issue_write` `labels` parameter expects a comma-separated string
+(`"dbt,feat"`), not a JSON array. Either pass the string or omit and follow up
+with `gh issue edit --add-label`.
+
+ProjectV2 field mutations (Status / Tier / Driver / etc.) aren't exposed by
+`mcp__github__*`. Use
+`gh project item-edit --id <ITEM_ID> --project-id <PROJECT_ID> --field-id <FIELD_ID> --single-select-option-id <OPTION_ID>`.
+No output on success — verify via `gh api graphql` querying the item's
+`fieldValues`.
+
 ### Dagster asset diagnosis
 
 When verifying failures, fetch the most recent run per job (`list_runs` with
