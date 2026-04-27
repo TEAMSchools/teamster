@@ -5,11 +5,7 @@ select
         )
     }} as staff_observation_goal_key,
 
-    if(
-        gu.internal_id_int is not null,
-        {{ dbt_utils.generate_surrogate_key(["gu.internal_id_int"]) }},
-        cast(null as string)
-    ) as teacher_staff_key,
+    {{ dbt_utils.generate_surrogate_key(["gu.internal_id_int"]) }} as teacher_staff_key,
 
     if(
         sr_creator.employee_number is not null,

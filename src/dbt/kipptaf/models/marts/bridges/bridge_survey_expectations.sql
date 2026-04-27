@@ -18,8 +18,9 @@ with
         inner join {{ ref("dim_surveys") }} as s on sa.survey_key = s.survey_key
     ),
 
-    /* Staff SCD expectations: active staff during SCD window */
-    staff_scd as (
+    /* Staff expectations: primary, active staff during the response window
+       for the SCD / Manager / Support staff surveys. */
+    staff as (
         select
             sa.survey_administration_key,
             sa.survey_key,
@@ -31,7 +32,6 @@ with
 
             cast(null as string) as student_enrollment_key,
             cast(null as string) as student_contact_person_key,
-
         from survey_admin as sa
         inner join
             {{ ref("dim_work_assignment_status") }} as wast
@@ -47,71 +47,12 @@ with
         inner join
             {{ ref("dim_staff_work_assignments") }} as swa
             on wast.work_assignment_key = swa.work_assignment_key
-        where sa.name = 'School Community Diagnostic Staff Survey'
-    ),
-
-    /* Staff Manager Survey expectations: direct reports evaluate manager */
-    staff_manager as (
-        select
-            sa.survey_administration_key,
-            sa.survey_key,
-            sa.term_key,
-
-            'staff' as respondent_type,
-
-            swa.staff_key,
-
-            cast(null as string) as student_enrollment_key,
-            cast(null as string) as student_contact_person_key,
-
-        from survey_admin as sa
-        inner join
-            {{ ref("dim_work_assignment_status") }} as wast
-            on sa.response_deadline_date
-            between wast.effective_start_date and wast.effective_end_date
-            and wast.status_code = 'A'
-        inner join
-            {{ ref("dim_work_assignment_primary") }} as wap
-            on wast.work_assignment_key = wap.work_assignment_key
-            and sa.response_deadline_date
-            between wap.effective_start_date and wap.effective_end_date
-            and wap.is_primary_position
-        inner join
-            {{ ref("dim_staff_work_assignments") }} as swa
-            on wast.work_assignment_key = swa.work_assignment_key
-        where sa.name = 'Manager Survey'
-    ),
-
-    /* Staff Support Survey expectations */
-    staff_support as (
-        select
-            sa.survey_administration_key,
-            sa.survey_key,
-            sa.term_key,
-
-            'staff' as respondent_type,
-
-            swa.staff_key,
-
-            cast(null as string) as student_enrollment_key,
-            cast(null as string) as student_contact_person_key,
-
-        from survey_admin as sa
-        inner join
-            {{ ref("dim_work_assignment_status") }} as wast
-            on sa.response_deadline_date
-            between wast.effective_start_date and wast.effective_end_date
-            and wast.status_code = 'A'
-        inner join
-            {{ ref("dim_work_assignment_primary") }} as wap
-            on wast.work_assignment_key = wap.work_assignment_key
-            and sa.response_deadline_date
-            between wap.effective_start_date and wap.effective_end_date
-            and wap.is_primary_position
-        inner join
-            {{ ref("dim_staff_work_assignments") }} as swa
-            on wast.work_assignment_key = swa.work_assignment_key
-        where sa.name = 'Support Survey'
+        where
+            sa.name in (
+                'School Community Diagnostic Staff Survey',
+                'Manager Survey',
+                'Support Survey'
+            )
     ),
 
     /* Student SCD expectations: enrolled students */
@@ -179,27 +120,7 @@ with
             staff_key,
             student_enrollment_key,
             student_contact_person_key,
-        from staff_scd
-        union all
-        select
-            survey_administration_key,
-            survey_key,
-            term_key,
-            respondent_type,
-            staff_key,
-            student_enrollment_key,
-            student_contact_person_key,
-        from staff_manager
-        union all
-        select
-            survey_administration_key,
-            survey_key,
-            term_key,
-            respondent_type,
-            staff_key,
-            student_enrollment_key,
-            student_contact_person_key,
-        from staff_support
+        from staff
         union all
         select
             survey_administration_key,
