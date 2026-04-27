@@ -546,6 +546,12 @@ Paterson-specific data-quality caveat applies.
   staff will incidentally appear** in `fct_staff_attrition` and
   `bridge_survey_expectations` after this batch. See "Incidental Paterson
   coverage" below.
+- Dayforce pre-2021 NJ historical coverage — the new `fct_staff_attrition` chain
+  is ADP-only because the entire work-assignment dim family sources
+  `int_adp_workforce_now__workers__work_assignments`. Reconciliation against the
+  PR-branch schema confirmed pre-2021 rows drop ~99.9% (Dayforce-era staff).
+  Restoring Dayforce coverage requires unioning into the upstream dims; tracked
+  at [#3744](https://github.com/TEAMSchools/teamster/issues/3744).
 
 ## Related project-board issues
 

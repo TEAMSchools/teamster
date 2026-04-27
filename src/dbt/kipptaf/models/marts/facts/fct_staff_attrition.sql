@@ -4,7 +4,13 @@ with
        non-Intern assignments via inner joins to
        dim_work_assignment_primary and dim_work_assignment_jobs.
        dim_staff_work_assignments resolves item_id -> staff_key, and
-       dim_staff resolves staff_key -> employee_number via staff_unique_id. */
+       dim_staff resolves staff_key -> employee_number via staff_unique_id.
+
+       Limitation: pre-2021 NJ Dayforce-era staff are not covered. The
+       retired int_people__staff_roster_history chain unioned Dayforce
+       records; the work-assignment dim family is ADP-only. Restoring
+       Dayforce coverage requires unioning into the upstream dims —
+       tracked at #3744. */
     teammate_history as (
         select
             wast.effective_start_date as effective_date_start,
