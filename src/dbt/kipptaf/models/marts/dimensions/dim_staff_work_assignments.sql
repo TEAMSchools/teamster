@@ -29,6 +29,16 @@ with
         where wa.is_current_record
     ),
 
+    workers as (
+        {{
+            dbt_utils.deduplicate(
+                relation=ref("int_adp_workforce_now__workers"),
+                partition_by="associate_oid",
+                order_by="effective_date_start desc",
+            )
+        }}
+    ),
+
     employee_numbers as (
         select employee_number, adp_associate_id,
         from {{ ref("stg_people__employee_numbers") }}
@@ -45,8 +55,8 @@ select
     ) as staff_key,
 
     if(
-        sup.employee_number is not null,
-        {{ dbt_utils.generate_surrogate_key(["sup.employee_number"]) }},
+        sup_en.employee_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["sup_en.employee_number"]) }},
         cast(null as string)
     ) as time_approver_staff_key,
 
@@ -73,8 +83,11 @@ select
     as is_time_and_attendance_active,
     wa.worker_time_profile__time_zone_code as time_zone_code,
 from work_assignments as wa
-left join employee_numbers as en on wa.associate_oid = en.adp_associate_id
+left join workers as w on wa.associate_oid = w.associate_oid
+left join employee_numbers as en on w.worker_id__id_value = en.adp_associate_id
 left join
-    employee_numbers as sup
+    workers as sup_w
     on wa.worker_time_profile__time_service_supervisor__associate_oid
-    = sup.adp_associate_id
+    = sup_w.associate_oid
+left join
+    employee_numbers as sup_en on sup_w.worker_id__id_value = sup_en.adp_associate_id
