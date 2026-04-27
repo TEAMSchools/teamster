@@ -6,6 +6,14 @@ Intra-mart refs are permitted (e.g. `bridge_survey_expectations → dim_surveys`
 `fct_staff_attrition → dim_staff_status`). When renaming a mart column, grep
 `ref(...)` within `marts/` too — not just outside.
 
+**Bridge models (`bridge_*`)** are factless facts that link two or more
+dimensions via a many-to-many relationship and carry no measures. They live in
+`marts/bridges/`. Naming follows `bridge_<entity>_<entity>` or
+`bridge_<concept>` when the linked entities are obvious from context. Like dims
+and facts, bridges inherit `contract: enforced: true` and `materialized: view`,
+and require an explicit uniqueness test on their PK. Bridges follow the same
+strict-chain rule as facts — no diamond paths to a shared ancestor dim.
+
 ## Column-naming rubric
 
 Applied to every column in every mart model. Numbering matches the spec
@@ -190,7 +198,6 @@ Tracked under #3631 (star-schema second pass):
 
 - #3672 — `fct_job_candidate_applications.shared_with_location_key` coverage
 - #3686 — `dim_staffing_positions.location_key` coverage
-- #3687 — `int_people__staff_roster_history` multi-assignment fan-out
 - #3688 — `fct_grades_assignments` polymorphic score split
 - #3689 — `dim_locations` address unification +
   `dim_work_assignment_locations.location_key` FK
