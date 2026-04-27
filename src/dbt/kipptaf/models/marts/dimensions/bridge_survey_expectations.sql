@@ -27,20 +27,28 @@ with
 
             'staff' as respondent_type,
 
-            {{ dbt_utils.generate_surrogate_key(["srh.employee_number"]) }}
+            {{ dbt_utils.generate_surrogate_key(["swa.employee_number"]) }}
             as staff_key,
 
             cast(null as string) as student_enrollment_key,
             cast(null as string) as student_contact_person_key,
 
-            srh.employee_number,
+            swa.employee_number,
         from survey_admin as sa
         inner join
-            {{ ref("int_people__staff_roster_history") }} as srh
+            {{ ref("dim_work_assignment_status") }} as wast
             on sa.response_deadline_date
-            between srh.work_assignment_actual_start_date and srh.effective_date_end
-            and srh.primary_indicator
-            and srh.assignment_status = 'Active'
+            between wast.effective_start_date and wast.effective_end_date
+            and wast.status_code = 'A'
+        inner join
+            {{ ref("dim_work_assignment_primary") }} as wap
+            on wast.work_assignment_key = wap.work_assignment_key
+            and sa.response_deadline_date
+            between wap.effective_start_date and wap.effective_end_date
+            and wap.is_primary_position
+        inner join
+            {{ ref("dim_staff_work_assignments") }} as swa
+            on wast.work_assignment_key = swa.work_assignment_key
         where sa.name = 'School Community Diagnostic Staff Survey'
     ),
 
@@ -53,20 +61,28 @@ with
 
             'staff' as respondent_type,
 
-            {{ dbt_utils.generate_surrogate_key(["srh.employee_number"]) }}
+            {{ dbt_utils.generate_surrogate_key(["swa.employee_number"]) }}
             as staff_key,
 
             cast(null as string) as student_enrollment_key,
             cast(null as string) as student_contact_person_key,
 
-            srh.employee_number,
+            swa.employee_number,
         from survey_admin as sa
         inner join
-            {{ ref("int_people__staff_roster_history") }} as srh
+            {{ ref("dim_work_assignment_status") }} as wast
             on sa.response_deadline_date
-            between srh.work_assignment_actual_start_date and srh.effective_date_end
-            and srh.primary_indicator
-            and srh.assignment_status = 'Active'
+            between wast.effective_start_date and wast.effective_end_date
+            and wast.status_code = 'A'
+        inner join
+            {{ ref("dim_work_assignment_primary") }} as wap
+            on wast.work_assignment_key = wap.work_assignment_key
+            and sa.response_deadline_date
+            between wap.effective_start_date and wap.effective_end_date
+            and wap.is_primary_position
+        inner join
+            {{ ref("dim_staff_work_assignments") }} as swa
+            on wast.work_assignment_key = swa.work_assignment_key
         where sa.name = 'Manager Survey'
     ),
 
@@ -79,20 +95,28 @@ with
 
             'staff' as respondent_type,
 
-            {{ dbt_utils.generate_surrogate_key(["srh.employee_number"]) }}
+            {{ dbt_utils.generate_surrogate_key(["swa.employee_number"]) }}
             as staff_key,
 
             cast(null as string) as student_enrollment_key,
             cast(null as string) as student_contact_person_key,
 
-            srh.employee_number,
+            swa.employee_number,
         from survey_admin as sa
         inner join
-            {{ ref("int_people__staff_roster_history") }} as srh
+            {{ ref("dim_work_assignment_status") }} as wast
             on sa.response_deadline_date
-            between srh.work_assignment_actual_start_date and srh.effective_date_end
-            and srh.primary_indicator
-            and srh.assignment_status = 'Active'
+            between wast.effective_start_date and wast.effective_end_date
+            and wast.status_code = 'A'
+        inner join
+            {{ ref("dim_work_assignment_primary") }} as wap
+            on wast.work_assignment_key = wap.work_assignment_key
+            and sa.response_deadline_date
+            between wap.effective_start_date and wap.effective_end_date
+            and wap.is_primary_position
+        inner join
+            {{ ref("dim_staff_work_assignments") }} as swa
+            on wast.work_assignment_key = swa.work_assignment_key
         where sa.name = 'Support Survey'
     ),
 
