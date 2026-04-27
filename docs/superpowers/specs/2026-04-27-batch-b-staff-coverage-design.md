@@ -65,11 +65,12 @@ than relying on the current snapshot.
 ```text
 bridge_survey_expectations →  dim_work_assignment_status (status='A', date-range)
                            →  dim_work_assignment_primary (NEW; is_primary_position, date-range)
-                           →  dim_staff_work_assignments (current; staff_key, job_title)
+                           →  dim_staff_work_assignments (current; staff_key only)
 
 fct_staff_attrition        →  dim_work_assignment_status (status transitions, date-range)
                            →  dim_work_assignment_primary (NEW; date-range)
-                           →  dim_staff_work_assignments (current; staff_key, job_title)
+                           →  dim_work_assignment_jobs (position_title, date-range; intern filter)
+                           →  dim_staff_work_assignments (current; staff_key only)
                            +  primary_work_assignment_status_key (role-played FK
                               → dim_work_assignment_status)
 ```
@@ -79,8 +80,10 @@ traversal mirrors the existing star-schema pattern documented in
 `marts/CLAUDE.md` (e.g.,
 `fct_staff_observations → dim_staff_work_assignments → dim_work_assignment_locations → dim_locations → dim_regions`).
 
-`dim_staff`, `dim_staff_status`, `dim_staff_work_assignments`, and
-`dim_work_assignment_status` remain unchanged.
+`dim_staff`, `dim_staff_status`, `dim_work_assignment_status`, and
+`dim_work_assignment_jobs` remain unchanged. `dim_staff_work_assignments` is
+edited only to drop the now-redundant `is_primary_position` column (its
+date-correct counterpart now lives in the new `dim_work_assignment_primary`).
 `int_people__staff_roster_history` remains unchanged (still drives `dim_staff`
 and `int_people__staff_roster`).
 
@@ -126,6 +129,16 @@ and `int_people__staff_roster`).
 
 **Cube exposure:** add to `cube.yml` `cube_semantic_layer.depends_on`.
 
+### Edited mart: `dim_staff_work_assignments`
+
+Drop the `is_primary_position` column from the SELECT and the properties YAML.
+The date-correct value now lives on `dim_work_assignment_primary`; keeping both
+forms invites mis-use (R8/R9). Cube consumers that filter on
+`staff_work_assignments.is_primary_position` must traverse to
+`dim_work_assignment_primary` instead — flag in the PR description.
+
+No other column changes; surrogate-key composition unchanged.
+
 ### Renamed mart: `dim_survey_expectations` → `bridge_survey_expectations`
 
 **Rename targets:**
@@ -155,6 +168,9 @@ inner join dim_staff_work_assignments as swa
     on wap.work_assignment_key = swa.work_assignment_key
 ```
 
+(`dim_work_assignment_jobs` is not joined here — survey expectations don't
+filter on job_title.)
+
 Output gains `work_assignment_status_key` FK (the date-active status version).
 PK composition unchanged (whatever `dim_survey_expectations` uses today —
 verified during implementation).
@@ -173,21 +189,21 @@ the same shape; the rebuild applies uniformly.
 
 **Replace `teammate_history` CTE.** Cohort, returner, and termination CTEs
 source from
-`dim_work_assignment_status × dim_work_assignment_primary × dim_staff_work_assignments`
+`dim_work_assignment_status × dim_work_assignment_primary × dim_work_assignment_jobs × dim_staff_work_assignments`
 instead of `int_people__staff_roster_history`.
 
 - **Year cohort**: `dim_work_assignment_status` with `status_code = 'A'`
   overlapping the academic-year window, intersected with
-  `dim_work_assignment_primary` (`is_primary_position` overlapping same window),
-  joined to `dim_staff_work_assignments` for `staff_key` and `job_title` (the
-  intern filter is preserved against `dim_staff_work_assignments.job_title`,
-  documented as a current-snapshot approximation).
-- **Returner cohort**: `dim_work_assignment_status` active on the year- boundary
+  `dim_work_assignment_primary` (`is_primary_position` overlapping same window)
+  and `dim_work_assignment_jobs` (`position_title != 'Intern'` overlapping same
+  window), joined to `dim_staff_work_assignments` for `staff_key`. Date-correct
+  intern filter via the SCD.
+- **Returner cohort**: `dim_work_assignment_status` active on the year-boundary
   date (e.g., date(ay+1, 9, 1) for foundation), intersected with primary on that
-  date.
+  date and (where intern filter applies) jobs on that date.
 - **Termination cohorts**: `dim_work_assignment_status` rows with
   `status_code = 'T'` and `effective_start_date` in window, intersected with
-  primary on the termination date.
+  primary on the termination date and jobs on the termination date.
 
 **Add role-played FK.** `primary_work_assignment_status_key` →
 `dim_work_assignment_status`, populated for both attrition and non- attrition
@@ -300,7 +316,7 @@ dim_survey_administrations × dim_surveys
       and response_deadline_date between effective_start_date and effective_end_date
       and is_primary_position
   → inner join dim_staff_work_assignments
-       on work_assignment_key (resolves staff_key, job_title)
+       on work_assignment_key (resolves staff_key)
   → emit (survey_administration_key, work_assignment_status_key, staff_key,
           respondent_type='staff')
 ```
@@ -314,18 +330,21 @@ year_cohort:
       AND effective_start_date <= date(ay+1, 4, 30)
       AND effective_end_date  >= date(ay, 9, 1)
     × dim_work_assignment_primary (overlap same window, is_primary_position=true)
-    × dim_staff_work_assignments (staff_key, job_title for intern filter)
+    × dim_work_assignment_jobs    (overlap same window, position_title != 'Intern')
+    × dim_staff_work_assignments  (resolves staff_key)
     → (ay, employee_number, max(effective_start_date) tiebreak)
 
 returner_cohort:
   dim_work_assignment_status active on date(ay+1, 9, 1) (status_code='A')
     × dim_work_assignment_primary (primary on that date)
+    × dim_work_assignment_jobs    (position_title != 'Intern' on that date)
     → (ay, employee_number)
 
 terminations:
   dim_work_assignment_status WHERE status_code='T'
     AND effective_start_date BETWEEN date(ay, 9, 1) AND date(ay+1, 4, 30)
     × dim_work_assignment_primary (primary on termination date)
+    × dim_work_assignment_jobs    (position_title != 'Intern' on termination date)
     → (ay, employee_number, termination details, work_assignment_status_key)
 
 attrition rows:
@@ -412,15 +431,19 @@ automatically.
    exclude `internal_id_int = 999999`.
 3. **New mart `dim_work_assignment_primary`.** SQL + properties YAML +
    `cube.yml` entry.
-4. **Rebuild `fct_staff_attrition`.** Rework cohort/termination CTEs; add
-   `primary_work_assignment_status_key`; drop `SELECT DISTINCT` blocks. Update
-   properties YAML.
-5. **Rename + rebuild `bridge_survey_expectations`.** File rename + logic
-   refactor + `cube.yml` rename + Tableau exposure rename + intra- mart `ref()`
+4. **Drop `is_primary_position` from `dim_staff_work_assignments`.** Remove from
+   SELECT, properties YAML, and `cube.yml` (Cube schema). Verify no downstream
+   `ref()` consumers rely on it.
+5. **Rebuild `fct_staff_attrition`.** Rework cohort/termination CTEs to traverse
+   `dim_work_assignment_status × dim_work_assignment_primary × dim_work_assignment_jobs × dim_staff_work_assignments`;
+   add `primary_work_assignment_status_key`; drop `SELECT DISTINCT` blocks.
+   Update properties YAML.
+6. **Rename + rebuild `bridge_survey_expectations`.** File rename + logic
+   refactor + `cube.yml` rename + Tableau exposure rename + intra-mart `ref()`
    updates.
-6. **`marts/CLAUDE.md`** — add `bridge_*` paragraph; strike #3687 from deferred
+7. **`marts/CLAUDE.md`** — add `bridge_*` paragraph; strike #3687 from deferred
    follow-ups.
-7. **Hash-change audit.** Append entries to
+8. **Hash-change audit.** Append entries to
    `docs/superpowers/specs/2026-04-15-column-naming-audit.md`.
 
 ### Verification before merge
@@ -464,8 +487,9 @@ unrelated to the planned changes:
 - `dim_staff_status` — unchanged. Folding assignment attributes into it was
   considered and rejected (effective-date semantics mix; name becomes
   misleading).
-- `dim_staff_work_assignments` — remains current-snapshot. Converting to SCD2
-  was considered and rejected (large blast radius across all facts that FK to
+- `dim_staff_work_assignments` — remains current-snapshot (only edit is dropping
+  `is_primary_position`, covered above). Converting to full SCD2 was considered
+  and rejected (large blast radius across all facts that FK to
   `work_assignment_key`).
 - `dim_work_assignment_status` — unchanged. Folding `primary_indicator` into it
   was considered and rejected (effective-date semantics mix; name semantic
@@ -474,13 +498,3 @@ unrelated to the planned changes:
   `int_people__staff_roster`.
 - Paterson coverage — Paterson staff are PowerSchool-only and absent from
   ADP/Dayforce-derived dims. Systemic gap; separate issue.
-
-## Documented limitation
-
-`fct_staff_attrition`'s intern-filter (`job_title != 'Intern'`) sources
-`job_title` from `dim_staff_work_assignments` (current snapshot). If a work
-assignment's `job_title` changed between historical academic-year windows and
-now, the filter classifies based on the current title. Acceptable approximation
-given intern → permanent transitions are rare within a single `item_id`. If this
-proves problematic, a follow-up issue can extend the new SCD pattern to
-`job_title` (mirroring the `dim_work_assignment_primary` shape).
