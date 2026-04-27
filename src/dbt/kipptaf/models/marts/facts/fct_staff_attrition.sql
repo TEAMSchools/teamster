@@ -59,7 +59,7 @@ with
             teammate_history as th
             on th.effective_date_start <= date(ay.academic_year + 1, 4, 30)
             and th.effective_date_end >= date(ay.academic_year, 9, 1)
-        where th.status_code = 'A'
+        where th.status_code != 'T'
         group by ay.academic_year, th.employee_number
     ),
 
@@ -72,7 +72,7 @@ with
             teammate_history as th
             on date(ay.academic_year + 1, 9, 1)
             between th.effective_date_start and th.effective_date_end
-        where th.status_code = 'A'
+        where th.status_code != 'T'
         group by ay.academic_year, th.employee_number
     ),
 
@@ -94,7 +94,7 @@ with
             teammate_history as th
             on th.assignment_status_effective_date
             between date(ay.academic_year, 9, 1) and date(ay.academic_year + 1, 4, 30)
-        where th.status_code in ('T', 'D')
+        where th.status_code = 'T'
     ),
 
     /* New Jersey Compliance Attrition: latest record for staff  */
@@ -111,7 +111,7 @@ with
             teammate_history as th
             on th.effective_date_start <= date(ay.academic_year + 1, 6, 30)
             and th.effective_date_end >= date(ay.academic_year, 7, 1)
-        where th.status_code = 'A'
+        where th.status_code != 'T'
         group by ay.academic_year, th.employee_number
     ),
 
@@ -124,7 +124,7 @@ with
             teammate_history as th
             on date(ay.academic_year + 1, 7, 1)
             between th.effective_date_start and th.effective_date_end
-        where th.status_code = 'A'
+        where th.status_code != 'T'
         group by ay.academic_year, th.employee_number
     ),
 
@@ -146,7 +146,7 @@ with
             teammate_history as th
             on th.assignment_status_effective_date
             between date(ay.academic_year, 7, 1) and date(ay.academic_year + 1, 6, 30)
-        where th.status_code in ('T', 'D')
+        where th.status_code = 'T'
     ),
 
     /* Recruitment Attrition: latest record for staff not in an  */
@@ -163,7 +163,7 @@ with
             teammate_history as th
             on th.effective_date_start <= date(ay.academic_year + 1, 8, 31)
             and th.effective_date_end >= date(ay.academic_year, 9, 1)
-        where th.status_code = 'A'
+        where th.status_code != 'T'
         group by ay.academic_year, th.employee_number
     ),
 
@@ -176,7 +176,7 @@ with
             teammate_history as th
             on date(ay.academic_year + 1, 9, 1)
             between th.effective_date_start and th.effective_date_end
-        where th.status_code = 'A'
+        where th.status_code != 'T'
         group by ay.academic_year, th.employee_number
     ),
 
@@ -198,7 +198,7 @@ with
             teammate_history as th
             on th.assignment_status_effective_date
             between date(ay.academic_year, 9, 1) and date(ay.academic_year + 1, 8, 31)
-        where th.status_code in ('T', 'D')
+        where th.status_code = 'T'
     ),
 
     /* left joins to compare prior year to following year rosters  */
