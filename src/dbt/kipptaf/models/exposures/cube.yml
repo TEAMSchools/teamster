@@ -45,6 +45,7 @@ exposures:
       - ref("dim_work_assignment_jobs")
       - ref("dim_work_assignment_locations")
       - ref("dim_work_assignment_organizational_units")
+      - ref("dim_work_assignment_primary")
       - ref("dim_work_assignment_reporting_relationships")
       - ref("dim_work_assignment_status")
       - ref("dim_work_assignment_types")
