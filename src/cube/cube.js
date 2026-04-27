@@ -2,7 +2,7 @@ const groupCache = new Map(); // email → { groups, expiresAt }
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 // STUDENT_CUBES: cubes that require cube-access-student-data.
-// Populated here as a placeholder — full list added during YAML implementation.
+// TODO: populate full list during YAML implementation (follow-up to PR #3715).
 const STUDENT_CUBES = [
   "fct_student_attendance_daily",
   "fct_student_attendance_interventions",
@@ -20,15 +20,13 @@ module.exports = {
     database: "kipptaf_marts",
   }),
 
-  schemaVersion: ({ securityContext }) =>
-    securityContext?.schemaVersion ?? "v1",
-
   contextToGroups: async ({ securityContext }) => {
     const email = securityContext?.email;
     if (!email) return [];
 
-    // Local dev: CUBE_GROUP_MAP bypasses Directory API
-    if (process.env.CUBE_GROUP_MAP) {
+    // Local dev only: CUBE_GROUP_MAP bypasses Directory API.
+    // Must never be set in Cube Cloud — see SETUP.md.
+    if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
       try {
         const map = JSON.parse(process.env.CUBE_GROUP_MAP);
         return (map[email] ?? []).filter((g) => g.startsWith("cube-"));
@@ -67,7 +65,7 @@ module.exports = {
       do {
         const res = await admin.groups.list({ userKey: email, pageToken });
         groups = groups.concat(
-          (res.data.groups ?? []).map((g) => g.email.split("@")[0]),
+          (res.data.groups ?? []).map((g) => (g.email ?? "").split("@")[0]),
         );
         pageToken = res.data.nextPageToken;
       } while (pageToken);
@@ -104,10 +102,10 @@ module.exports = {
     // Location scope — evaluate in priority order
     const networkGroup = groups.find((g) => g.startsWith("cube-network-"));
     const regionGroup = groups.find((g) =>
-      /^cube-region-.+?-(?:detail|summary)$/.test(g),
+      /^cube-region-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
     );
     const schoolGroup = groups.find((g) =>
-      /^cube-school-.+?-(?:detail|summary)$/.test(g),
+      /^cube-school-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
     );
 
     let locationFilter = null;
@@ -167,6 +165,6 @@ module.exports = {
   },
 
   canSwitchSqlUser: (current_user, new_user) =>
-    current_user === "cube-superset-service" &&
+    current_user === process.env.CUBEJS_SQL_SUPER_USER &&
     new_user.endsWith("@apps.teamschools.org"),
 };

@@ -38,7 +38,12 @@ Performed in the Cube Cloud UI by an admin:
 ADC is used for BigQuery auth locally — run the **GCloud: Application Default
 Login** VS Code task first if you haven't already.
 
-## Warning
+## Warnings
+
+Do **not** set `CUBE_GROUP_MAP` in Cube Cloud — it bypasses the Directory API
+entirely and must only be used for local dev. The `cube.js` guard relies on
+`NODE_ENV !== "production"` as a second line of defense, but the variable should
+never be configured in Cube Cloud in the first place.
 
 Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,
