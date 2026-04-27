@@ -137,8 +137,6 @@ with
             }} as student_enrollment_key,
 
             cast(null as string) as student_contact_person_key,
-
-            enr.student_number as respondent_identifier,
         from survey_admin as sa
         inner join
             {{ ref("int_extracts__student_enrollments") }} as enr
@@ -224,8 +222,7 @@ with
         from family_scd
     )
 
--- TODO: #3687 — roster history has multiple assignments per employee
-select distinct
+select
     {{
         dbt_utils.generate_surrogate_key(
             [

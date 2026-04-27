@@ -47,9 +47,7 @@ with
     ),
 
     academic_years as (
-        select employee_number, academic_year,
-        from teammate_history
-        group by employee_number, academic_year
+        select distinct employee_number, academic_year, from teammate_history
     ),
 
     /* Foundation Attrition: latest record for staff not  */
@@ -73,14 +71,13 @@ with
     /* Foundation Attrition: any staff not in terminated or deceased status  */
     /* on 9/1 of the following academic year  */
     foundation_returner_cohort as (
-        select ay.academic_year, th.employee_number,
+        select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
             teammate_history as th
             on date(ay.academic_year + 1, 9, 1)
             between th.effective_date_start and th.effective_date_end
         where th.status_code != 'T'
-        group by ay.academic_year, th.employee_number
     ),
 
     /* Foundation Attrition: first termination record within the window  */
@@ -125,14 +122,13 @@ with
     /* New Jersey Compliance Attrition: any staff not in  */
     /* terminated or deceased status on 7/1 of the following academic year  */
     nj_returner_cohort as (
-        select ay.academic_year, th.employee_number,
+        select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
             teammate_history as th
             on date(ay.academic_year + 1, 7, 1)
             between th.effective_date_start and th.effective_date_end
         where th.status_code != 'T'
-        group by ay.academic_year, th.employee_number
     ),
 
     /* NJ Compliance: first termination record within the window  */
@@ -177,14 +173,13 @@ with
     /* Recruitment Attrition: any staff not in terminated or deceased  */
     /* status on 9/1 of the following academic year  */
     recruitment_returner_cohort as (
-        select ay.academic_year, th.employee_number,
+        select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
             teammate_history as th
             on date(ay.academic_year + 1, 9, 1)
             between th.effective_date_start and th.effective_date_end
         where th.status_code != 'T'
-        group by ay.academic_year, th.employee_number
     ),
 
     /* Recruitment: first termination record within the window  */

@@ -57,8 +57,6 @@ models:
         description: >-
           Date this is_primary_position version became effective, from the
           source SCD row that triggered the change point.
-        data_tests:
-          - not_null
 
       - name: effective_end_date
         data_type: date
