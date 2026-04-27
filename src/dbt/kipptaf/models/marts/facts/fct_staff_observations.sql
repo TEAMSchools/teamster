@@ -55,10 +55,17 @@ with
 select
     {{ dbt_utils.generate_surrogate_key(["observation_id"]) }} as staff_observation_key,
 
-    {{ dbt_utils.generate_surrogate_key(["employee_number"]) }} as teacher_staff_key,
+    if(
+        employee_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["employee_number"]) }},
+        cast(null as string)
+    ) as teacher_staff_key,
 
-    {{ dbt_utils.generate_surrogate_key(["observer_employee_number"]) }}
-    as observer_staff_key,
+    if(
+        observer_employee_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["observer_employee_number"]) }},
+        cast(null as string)
+    ) as observer_staff_key,
 
     {{ dbt_utils.generate_surrogate_key(["location_clean_name"]) }} as location_key,
 
