@@ -7,8 +7,11 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["gu.internal_id_int"]) }} as teacher_staff_key,
 
-    {{ dbt_utils.generate_surrogate_key(["sr_creator.employee_number"]) }}
-    as creator_staff_key,
+    if(
+        sr_creator.employee_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["sr_creator.employee_number"]) }},
+        cast(null as string)
+    ) as creator_staff_key,
 
     {{ dbt_utils.generate_surrogate_key(["m.tag_id"]) }}
     as staff_observation_goal_type_key,

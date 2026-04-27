@@ -1,5 +1,5 @@
 models:
-  - name: dim_survey_expectations
+  - name: bridge_survey_expectations
     description: >-
       Survey expectation dimension. One row per respondent x
       survey_administration. Scaffolded from business rules defining which

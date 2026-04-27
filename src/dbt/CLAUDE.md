@@ -302,6 +302,9 @@ alias.
   `data_tests:` block placed ABOVE the `columns:` block.
 - Column renames for semantic clarity (e.g., boolean prefixing with `is_`,
   reserved word aliases) belong in the staging model, not downstream.
+- Data and column semantics — code values, identifier formats, join keys, grain
+  notes — belong in the model's `description:` (or `config.meta`), not
+  CLAUDE.md. CLAUDE.md is for workflow conventions and tooling guidance only.
 
 ### Legacy `base_` prefix
 

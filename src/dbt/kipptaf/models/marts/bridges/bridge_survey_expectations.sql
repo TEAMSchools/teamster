@@ -18,8 +18,9 @@ with
         inner join {{ ref("dim_surveys") }} as s on sa.survey_key = s.survey_key
     ),
 
-    /* Staff SCD expectations: active staff during SCD window */
-    staff_scd as (
+    /* Staff expectations: primary, active staff during the response window
+       for the SCD / Manager / Support staff surveys. */
+    staff as (
         select
             sa.survey_administration_key,
             sa.survey_key,
@@ -27,73 +28,31 @@ with
 
             'staff' as respondent_type,
 
-            {{ dbt_utils.generate_surrogate_key(["srh.employee_number"]) }}
-            as staff_key,
+            swa.staff_key,
 
             cast(null as string) as student_enrollment_key,
             cast(null as string) as student_contact_person_key,
-
-            srh.employee_number,
         from survey_admin as sa
         inner join
-            {{ ref("int_people__staff_roster_history") }} as srh
+            {{ ref("dim_work_assignment_status") }} as wast
             on sa.response_deadline_date
-            between srh.work_assignment_actual_start_date and srh.effective_date_end
-            and srh.primary_indicator
-            and srh.assignment_status = 'Active'
-        where sa.name = 'School Community Diagnostic Staff Survey'
-    ),
-
-    /* Staff Manager Survey expectations: direct reports evaluate manager */
-    staff_manager as (
-        select
-            sa.survey_administration_key,
-            sa.survey_key,
-            sa.term_key,
-
-            'staff' as respondent_type,
-
-            {{ dbt_utils.generate_surrogate_key(["srh.employee_number"]) }}
-            as staff_key,
-
-            cast(null as string) as student_enrollment_key,
-            cast(null as string) as student_contact_person_key,
-
-            srh.employee_number,
-        from survey_admin as sa
+            between wast.effective_start_date and wast.effective_end_date
+            and wast.status_code = 'A'
         inner join
-            {{ ref("int_people__staff_roster_history") }} as srh
-            on sa.response_deadline_date
-            between srh.work_assignment_actual_start_date and srh.effective_date_end
-            and srh.primary_indicator
-            and srh.assignment_status = 'Active'
-        where sa.name = 'Manager Survey'
-    ),
-
-    /* Staff Support Survey expectations */
-    staff_support as (
-        select
-            sa.survey_administration_key,
-            sa.survey_key,
-            sa.term_key,
-
-            'staff' as respondent_type,
-
-            {{ dbt_utils.generate_surrogate_key(["srh.employee_number"]) }}
-            as staff_key,
-
-            cast(null as string) as student_enrollment_key,
-            cast(null as string) as student_contact_person_key,
-
-            srh.employee_number,
-        from survey_admin as sa
+            {{ ref("dim_work_assignment_primary") }} as wap
+            on wast.work_assignment_key = wap.work_assignment_key
+            and sa.response_deadline_date
+            between wap.effective_start_date and wap.effective_end_date
+            and wap.is_primary_position
         inner join
-            {{ ref("int_people__staff_roster_history") }} as srh
-            on sa.response_deadline_date
-            between srh.work_assignment_actual_start_date and srh.effective_date_end
-            and srh.primary_indicator
-            and srh.assignment_status = 'Active'
-        where sa.name = 'Support Survey'
+            {{ ref("dim_staff_work_assignments") }} as swa
+            on wast.work_assignment_key = swa.work_assignment_key
+        where
+            sa.name in (
+                'School Community Diagnostic Staff Survey',
+                'Manager Survey',
+                'Support Survey'
+            )
     ),
 
     /* Student SCD expectations: enrolled students */
@@ -119,8 +78,6 @@ with
             }} as student_enrollment_key,
 
             cast(null as string) as student_contact_person_key,
-
-            enr.student_number as respondent_identifier,
         from survey_admin as sa
         inner join
             {{ ref("int_extracts__student_enrollments") }} as enr
@@ -163,27 +120,7 @@ with
             staff_key,
             student_enrollment_key,
             student_contact_person_key,
-        from staff_scd
-        union all
-        select
-            survey_administration_key,
-            survey_key,
-            term_key,
-            respondent_type,
-            staff_key,
-            student_enrollment_key,
-            student_contact_person_key,
-        from staff_manager
-        union all
-        select
-            survey_administration_key,
-            survey_key,
-            term_key,
-            respondent_type,
-            staff_key,
-            student_enrollment_key,
-            student_contact_person_key,
-        from staff_support
+        from staff
         union all
         select
             survey_administration_key,
@@ -206,8 +143,7 @@ with
         from family_scd
     )
 
--- TODO: #3687 — roster history has multiple assignments per employee
-select distinct
+select
     {{
         dbt_utils.generate_surrogate_key(
             [

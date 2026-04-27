@@ -8,13 +8,15 @@ select
     ) as location_key,
 
     if(
-        teammate is not null,
+        teammate is not null
+        and teammate not in (0, 1, 2, 999995, 999996, 999997, 999998, 999999),
         {{ dbt_utils.generate_surrogate_key(["teammate"]) }},
         cast(null as string)
     ) as incumbent_staff_key,
 
     if(
-        recruiter is not null,
+        recruiter is not null
+        and recruiter not in (0, 1, 2, 999995, 999996, 999997, 999998, 999999),
         {{ dbt_utils.generate_surrogate_key(["recruiter"]) }},
         cast(null as string)
     ) as recruiter_staff_key,
