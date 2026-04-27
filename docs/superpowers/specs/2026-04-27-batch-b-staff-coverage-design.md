@@ -480,7 +480,7 @@ automatically.
 If implementation surfaces additional fan-out, coverage gaps, or test failures
 unrelated to the planned changes:
 
-1. **Triage immediately.** Classify as side-effect (in-scope), pre- existing
+1. **Triage immediately.** Classify as side-effect (in-scope), pre-existing
    latent issue exposed by stricter SCD traversal (judgment call), or unrelated
    (defer).
 2. **Address in this PR if** the fix is small, mechanically related to the SCD
@@ -491,6 +491,15 @@ unrelated to the planned changes:
    dims.
 4. **Document each triage decision** in the PR description so reviewers can see
    what was kept/punted and why.
+
+**Known triage candidate — #3681** (`dim_staff_status` has 0 rows in
+production). `fct_staff_attrition` retains its `staff_status_key` FK to
+`dim_staff_status` (the diamond constraint blocks introducing a competing FK to
+`dim_work_assignment_status`). If #3681 is still open when Batch B reaches
+reconciliation, the existing `staff_status_key` chain will remain broken
+regardless of our changes — the reconciliation probe will surface this. Triage
+decision: fixing #3681 is small enough to fold into this PR _if_ the root cause
+is a narrow SQL bug in `dim_staff_status.sql`; defer otherwise.
 
 ### Post-merge follow-ups
 
@@ -518,3 +527,43 @@ unrelated to the planned changes:
   `int_people__staff_roster`.
 - Paterson coverage — Paterson staff are PowerSchool-only and absent from
   ADP/Dayforce-derived dims. Systemic gap; separate issue.
+
+## Related project-board issues
+
+Batch B's blast radius touches several open issues besides #3687 and #3716.
+Reviewed against the
+[PR Batch B project view](https://github.com/orgs/TEAMSchools/projects/4/views/1):
+
+**Partially resolves:**
+
+- **#3704** — "simplify `dim_staff_observation_expectations` /
+  `dim_survey_expectations` scaffolds." Survey side is largely addressed by this
+  batch: the brittle `int_people__staff_roster_history` SCD chain in
+  `dim_survey_expectations` is replaced with the SCD-correct
+  `dim_work_assignment_status × dim_work_assignment_primary` traversal, and the
+  model is renamed `bridge_survey_expectations` to reflect its factless-fact
+  semantics. The observation side (`dim_staff_observation_expectations`) is
+  untouched. After Batch B, #3704's residual scope shrinks to the observation
+  half.
+
+**Establishes precedent for:**
+
+- **#3700** — "evaluate bridge table candidates for multi-value student/staff
+  attributes." Different bridge use case (multi-value attribute vs. many-to-many
+  association), but Batch B introduces the first `bridge_*` model and adds the
+  `bridge_*` paragraph to `marts/CLAUDE.md` defining naming and shape
+  conventions that #3700 will follow.
+
+**Adjacent but not resolved:**
+
+- **#3681** — `dim_staff_status` has 0 rows in production. Batch B retains
+  `fct_staff_attrition`'s `staff_status_key` FK to `dim_staff_status` (the
+  diamond rule prevents introducing a competing FK). If #3681 is open at ship
+  time, the existing FK chain stays broken regardless. Surfaced as a known
+  triage candidate (see "In-flight triage rule" above).
+- **#3641, #3680, #3722** (Batch D — staff observations). Batch B edits
+  `fct_staff_observation_goals` and `fct_staff_observations` for null-wraps and
+  sentinel filters only. Their concerns (FK additions, intermediate refactor,
+  rubric coverage) are unrelated.
+- **#3686** — `dim_staffing_positions.location_key` coverage. Batch B touches
+  the same model for null-mapping but does not address location coverage.
