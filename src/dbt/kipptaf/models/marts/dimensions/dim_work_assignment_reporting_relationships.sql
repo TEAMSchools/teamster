@@ -49,13 +49,9 @@ with
     ),
 
     workers as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("int_adp_workforce_now__workers"),
-                partition_by="associate_oid",
-                order_by="effective_date_start desc",
-            )
-        }}
+        select associate_oid, worker_id__id_value,
+        from {{ ref("stg_adp_workforce_now__workers") }}
+        where is_current_record
     ),
 
     employee_numbers as (
