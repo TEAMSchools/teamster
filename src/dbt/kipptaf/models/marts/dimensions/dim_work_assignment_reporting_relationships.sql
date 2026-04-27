@@ -48,6 +48,16 @@ with
         where attribute_hash != attribute_hash_lag
     ),
 
+    workers as (
+        {{
+            dbt_utils.deduplicate(
+                relation=ref("int_adp_workforce_now__workers"),
+                partition_by="associate_oid",
+                order_by="effective_date_start desc",
+            )
+        }}
+    ),
+
     employee_numbers as (
         select employee_number, adp_associate_id,
         from {{ ref("stg_people__employee_numbers") }}
@@ -71,4 +81,5 @@ select
 
     if(cp.effective_date_end = '9999-12-31', true, false) as is_current,
 from change_points as cp
-left join employee_numbers as mgr on cp.manager_associate_oid = mgr.adp_associate_id
+left join workers as mgr_w on cp.manager_associate_oid = mgr_w.associate_oid
+left join employee_numbers as mgr on mgr_w.worker_id__id_value = mgr.adp_associate_id
