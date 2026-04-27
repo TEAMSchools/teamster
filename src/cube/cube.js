@@ -1,5 +1,24 @@
 const groupCache = new Map(); // email → { groups, expiresAt }
-const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function nextMidnightEastern() {
+  const now = new Date();
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: false,
+    })
+      .formatToParts(now)
+      .filter(({ type }) => type !== "literal")
+      .map(({ type, value }) => [type, +value]),
+  );
+  const msElapsedToday =
+    (parts.hour * 3600 + parts.minute * 60 + parts.second) * 1000 +
+    now.getMilliseconds();
+  return now.getTime() + (24 * 60 * 60 * 1000 - msElapsedToday);
+}
 
 // STUDENT_CUBES: cubes that require cube-access-student-data.
 // TODO: populate full list during YAML implementation (follow-up to PR #3715).
@@ -25,7 +44,7 @@ module.exports = {
     if (!email) return [];
 
     // Local dev only: CUBE_GROUP_MAP bypasses Directory API.
-    // Must never be set in Cube Cloud — see SETUP.md.
+    // Must never be set in Cube Cloud — see docs/guides/cube.md.
     if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
       try {
         const map = JSON.parse(process.env.CUBE_GROUP_MAP);
@@ -73,7 +92,7 @@ module.exports = {
       const cubeGroups = groups.filter((g) => g.startsWith("cube-"));
       groupCache.set(email, {
         groups: cubeGroups,
-        expiresAt: Date.now() + CACHE_TTL_MS,
+        expiresAt: nextMidnightEastern(),
       });
       return cubeGroups;
     } catch (err) {
