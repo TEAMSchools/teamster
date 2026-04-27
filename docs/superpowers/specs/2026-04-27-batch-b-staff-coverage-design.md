@@ -63,17 +63,33 @@ than relying on the current snapshot.
 ## Architecture
 
 ```text
-bridge_survey_expectations →  dim_work_assignment_status (status='A', date-range)
-                           →  dim_work_assignment_primary (NEW; is_primary_position, date-range)
-                           →  dim_staff_work_assignments (current; staff_key only)
+# Internal lookups (CTEs in each consumer); NOT output FKs on the
+# resulting bridge/fact (would create diamond paths to dim_staff).
 
-fct_staff_attrition        →  dim_work_assignment_status (status transitions, date-range)
-                           →  dim_work_assignment_primary (NEW; date-range)
-                           →  dim_work_assignment_jobs (position_title, date-range; intern filter)
-                           →  dim_staff_work_assignments (current; staff_key only)
-                           +  primary_work_assignment_status_key (role-played FK
-                              → dim_work_assignment_status)
+bridge_survey_expectations  uses internally:
+                            dim_work_assignment_status (status='A', date-range)
+                            dim_work_assignment_primary (NEW; is_primary_position, date-range)
+                            dim_staff_work_assignments (current; staff_key resolution)
+                            output FKs unchanged: survey_administration_key,
+                            staff_key, student_enrollment_key,
+                            student_contact_person_key
+
+fct_staff_attrition         uses internally:
+                            dim_work_assignment_status (status transitions, date-range)
+                            dim_work_assignment_primary (NEW; date-range)
+                            dim_work_assignment_jobs    (position_title, date-range;
+                                                          intern filter)
+                            dim_staff_work_assignments (current; staff_key resolution)
+                            output FKs unchanged: staff_status_key
 ```
+
+The SCD dims drive _which rows are emitted_ and _what `is_attrition` /
+status-related columns hold_, but they are not exposed as new top-level FKs on
+either consumer. Adding `work_assignment_status_key` /
+`primary_work_assignment_status_key` as output FKs would create a diamond path
+to `dim_staff` (one route via the new FK through `dim_staff_work_assignments`,
+another via the existing `staff_key` / `staff_status_key`), violating
+`marts/CLAUDE.md`'s strict-chain rule.
 
 Both consumers stop referencing `int_people__staff_roster_history` directly. The
 traversal mirrors the existing star-schema pattern documented in
@@ -171,16 +187,17 @@ inner join dim_staff_work_assignments as swa
 (`dim_work_assignment_jobs` is not joined here — survey expectations don't
 filter on job_title.)
 
-Output gains `work_assignment_status_key` FK (the date-active status version).
-PK composition unchanged (whatever `dim_survey_expectations` uses today —
-verified during implementation).
+Output FK shape unchanged: `survey_administration_key`, `staff_key`,
+`student_enrollment_key`, `student_contact_person_key`. PK composition unchanged
+(whatever `dim_survey_expectations` uses today — verified during
+implementation). The SCD lookups stay inside CTEs to avoid a diamond path to
+`dim_staff` via `dim_work_assignment_status → dim_staff_work_assignments`.
 
 **Properties YAML:**
 
 - Update `name`, model description, column descriptions for the rebuilt flow.
-- New `relationships` test on `work_assignment_status_key` →
-  `dim_work_assignment_status`.
 - Existing uniqueness test verified to still hold under new join chain.
+- No new FK columns; no new relationships tests on the bridge.
 
 ### Edited mart: `fct_staff_attrition`
 
@@ -205,10 +222,13 @@ instead of `int_people__staff_roster_history`.
   `status_code = 'T'` and `effective_start_date` in window, intersected with
   primary on the termination date and jobs on the termination date.
 
-**Add role-played FK.** `primary_work_assignment_status_key` →
-`dim_work_assignment_status`, populated for both attrition and non- attrition
-rows (the version active at `outcome_determination_date`). Wrapped per the
-nullable surrogate-key pattern.
+**No new output FK.** A `primary_work_assignment_status_key` FK to
+`dim_work_assignment_status` was considered for slicing attrition by role
+context, but rejected — it would create a diamond path to `dim_staff` alongside
+the existing `staff_status_key` chain. The SCD lookups stay inside CTEs only;
+output FK shape is unchanged (`staff_status_key` remains the sole staff-side
+FK). Consumers that want role context at termination time can build it as a
+derived attribute in BI rather than via FK.
 
 **Drop the three `SELECT DISTINCT` blocks** and their `-- TODO: #3687` comments.
 
@@ -283,10 +303,11 @@ with the seat-tracker domain owners.
 
 **`docs/superpowers/specs/2026-04-15-column-naming-audit.md`:**
 
-- Append entries to the "Enumerated surrogate-key changes" table for the new
-  `work_assignment_primary_key`, the new `primary_work_assignment_status_key` FK
-  on `fct_staff_attrition`, and the new `work_assignment_status_key` FK on
-  `bridge_survey_expectations`.
+- Append an entry to the "Enumerated surrogate-key changes" table for the new
+  `work_assignment_primary_key` (composition:
+  `[item_id, effective_start_date]`). No FK additions on `fct_staff_attrition`
+  or `bridge_survey_expectations` — the SCDs are used in CTEs only, no new keys
+  exposed.
 
 ## Data flow
 
@@ -317,8 +338,8 @@ dim_survey_administrations × dim_surveys
       and is_primary_position
   → inner join dim_staff_work_assignments
        on work_assignment_key (resolves staff_key)
-  → emit (survey_administration_key, work_assignment_status_key, staff_key,
-          respondent_type='staff')
+  → emit (survey_administration_key, staff_key, respondent_type='staff')
+  -- (no work_assignment_status_key FK on output; would diamond to dim_staff)
 ```
 
 ### `fct_staff_attrition` (foundation variant; NJ + recruitment analogous)
@@ -345,13 +366,14 @@ terminations:
     AND effective_start_date BETWEEN date(ay, 9, 1) AND date(ay+1, 4, 30)
     × dim_work_assignment_primary (primary on termination date)
     × dim_work_assignment_jobs    (position_title != 'Intern' on termination date)
-    → (ay, employee_number, termination details, work_assignment_status_key)
+    → (ay, employee_number, termination details)
 
 attrition rows:
   year_cohort
     LEFT JOIN returner_cohort
     LEFT JOIN terminations (rn=1)
-    → is_attrition, termination_*, primary_work_assignment_status_key
+    → is_attrition, termination_*
+  -- (no work_assignment_status_key FK on output; would diamond to dim_staff)
 ```
 
 ### Defensive flows (#3716)
@@ -384,18 +406,16 @@ attrition rows:
 - `dbt_utils.expression_is_true` for
   `effective_start_date <= effective_end_date`.
 
-### New tests on rebuilt `bridge_survey_expectations`
+### Tests on rebuilt `bridge_survey_expectations`
 
 - Existing PK uniqueness test (`dbt_utils.unique_combination_of_columns` or
-  `unique`) — verify still holds.
-- New `relationships` test on `work_assignment_status_key` →
-  `dim_work_assignment_status`.
+  `unique`) — verify still holds under new join chain.
+- No new FK columns on the bridge → no new relationships tests.
 
-### New tests on rebuilt `fct_staff_attrition`
+### Tests on rebuilt `fct_staff_attrition`
 
 - Existing `unique` on `staff_attrition_key` — must still hold.
-- New `relationships` test on `primary_work_assignment_status_key` →
-  `dim_work_assignment_status` (with null-wrap on the FK).
+- No new FK columns on the fact → no new relationships tests.
 
 ### Manual reconciliation probes
 
@@ -436,8 +456,8 @@ automatically.
    `ref()` consumers rely on it.
 5. **Rebuild `fct_staff_attrition`.** Rework cohort/termination CTEs to traverse
    `dim_work_assignment_status × dim_work_assignment_primary × dim_work_assignment_jobs × dim_staff_work_assignments`;
-   add `primary_work_assignment_status_key`; drop `SELECT DISTINCT` blocks.
-   Update properties YAML.
+   drop `SELECT DISTINCT` blocks. No new output FKs (the SCDs stay inside CTEs
+   to avoid a diamond to `dim_staff`). Update properties YAML.
 6. **Rename + rebuild `bridge_survey_expectations`.** File rename + logic
    refactor + `cube.yml` rename + Tableau exposure rename + intra-mart `ref()`
    updates.
