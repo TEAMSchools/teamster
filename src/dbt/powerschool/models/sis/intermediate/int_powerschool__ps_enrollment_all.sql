@@ -72,4 +72,3 @@ left join
     on sr.schoolid = p2.schoolid
     and t.yearid = p2.yearid
     and p2.name = 'ATT_IntervalDuration' -#}
-    

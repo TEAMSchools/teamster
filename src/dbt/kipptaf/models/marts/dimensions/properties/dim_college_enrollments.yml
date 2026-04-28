@@ -1,0 +1,124 @@
+models:
+  - name: dim_college_enrollments
+    description: >-
+      College enrollment dimension. One row per student x college combination,
+      representing the full tenure of a student's enrollment at a given college
+      across all NSC enrollment records. FK to dim_students (via student_key),
+      dim_colleges (via college_key), and dim_dates (role-playing via
+      start_date_key and end_date_key).
+    columns:
+      - name: college_enrollment_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from student_number and
+          college_code_branch. Generated with
+          generate_surrogate_key(["student_number", "college_code_branch"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_key
+        data_type: string
+        description: >-
+          Surrogate key derived from student_number. FK to dim_students.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_students')
+            to_columns: [student_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
+      - name: college_key
+        data_type: string
+        description: >-
+          Surrogate key derived from college_code_branch. FK to dim_colleges.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_colleges')
+            to_columns: [college_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_colleges')
+                field: college_key
+      - name: start_date_key
+        data_type: date
+        description: >-
+          Earliest enrollment_begin date across all NSC records for this student
+          x college combination. FK to dim_dates (role-playing as enrollment
+          start date).
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: end_date_key
+        data_type: date
+        description: >-
+          Latest enrollment_end date across all NSC records for this student x
+          college combination. FK to dim_dates (role-playing as enrollment end
+          date).
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: status
+        data_type: string
+        description: >-
+          Latest NSC enrollment status code for this student x college tenure
+          (e.g., "F" = full-time, "H" = half-time, "W" = withdrawn, "G" =
+          graduated).
+
+      - name: degree_title
+        data_type: string
+        description: >-
+          Title of the degree awarded or in progress as reported in the latest
+          NSC enrollment record (e.g., "Bachelor of Arts").
+
+      - name: major
+        data_type: string
+        description: >-
+          Primary academic major as reported in the latest NSC enrollment record
+          for this student x college tenure.
+
+      - name: class_level
+        data_type: string
+        description: >-
+          Class level of the student at the college in the latest NSC enrollment
+          record (e.g., "Freshman", "Sophomore").
+
+      - name: is_graduated
+        data_type: boolean
+        description: >-
+          TRUE if any NSC enrollment record for this student x college
+          combination includes a graduated flag of "Y".
+
+      - name: is_withdrawn
+        data_type: boolean
+        description: >-
+          TRUE if any NSC enrollment record for this student x college
+          combination includes an enrollment status of "W" (withdrawn).

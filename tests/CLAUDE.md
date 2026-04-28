@@ -28,6 +28,9 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
 - **`conftest.py`**: contains a single session-scoped autouse fixture that
   bootstraps secrets from 1Password on demand. No shared test fixtures — see
   `utils.py` for SSH/DB resource helpers (require env vars).
+- **Token file missing**: `_bootstrap_secrets` silently returns when
+  `/etc/secret-volume/.op-token` doesn't exist. If ALL env vars are missing,
+  check the token file first — don't investigate individual env vars.
 - **Archived tests**: `_test_` prefix in `archive/` subdirectories — ignored by
   pytest by convention, not markers.
 - **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields inside
@@ -37,6 +40,11 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
 - **Worktree tests**: VS Code doesn't discover tests in worktrees. Run manually
   ensuring `OP_SERVICE_ACCOUNT_TOKEN` is set, then
   `cd .worktrees/<branch> && uv run pytest ...`.
+- **Unit testing Dagster resources**: `SSHResource` and other
+  `ConfigurableResource` subclasses are frozen Pydantic models — use
+  `build_resources()` context manager to instantiate, then call methods on
+  `resources.<name>`. `PrivateAttr` fields (`_log`, `_service`) accept direct
+  assignment; use `object.__setattr__` to monkey-patch methods.
 - **SSH `test=True`**: `SSHResource` reads the SSH password from a secret file
   by default (`test=False`). Integration tests must set `test=True` and pass
   `password` directly so each district uses its own credentials.

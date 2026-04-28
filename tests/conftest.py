@@ -41,7 +41,7 @@ def _inject_env_vars(token: str) -> None:
         pytest.skip(f"{_ENV_TPL} not found")
 
     result = subprocess.run(
-        ["op", "run", f"--env-file={_ENV_TPL}", "--", "env", "-0"],
+        ["op", "run", "--no-masking", f"--env-file={_ENV_TPL}", "--", "env", "-0"],
         capture_output=True,
         text=True,
         env={**os.environ, "OP_SERVICE_ACCOUNT_TOKEN": token},

@@ -11,7 +11,6 @@ from teamster.code_locations.kipptaf import (
     DBT_PROJECT,
     adp,
     airbyte,
-    asset_checks,
     collegeboard,
     couchdrop,
     coupa,
@@ -19,6 +18,7 @@ from teamster.code_locations.kipptaf import (
     deanslist,
     dlt,
     extracts,
+    freshness,
     google,
     knowbe4,
     ldap,
@@ -29,10 +29,10 @@ from teamster.code_locations.kipptaf import (
     powerschool,
     resources,
     smartrecruiters,
-    surveys,
     tableau,
     zendesk,
 )
+from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DLT_RESOURCE,
@@ -51,33 +51,35 @@ from teamster.core.resources import (
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=[
-        *dbt.asset_specs,
-        *google.asset_specs,
-        *airbyte.asset_specs,
-        *load_assets_from_modules(
-            modules=[
-                dbt,
-                dlt,
-                google,
-                adp,
-                collegeboard,
-                coupa,
-                deanslist,
-                extracts,
-                knowbe4,
-                ldap,
-                level_data,
-                nsc,
-                overgrad,
-                performance_management,
-                powerschool,
-                smartrecruiters,
-                tableau,
-            ]
-        ),
-    ],
-    asset_checks=asset_checks.freshness_checks,
+    assets=apply_freshness_policies(
+        [
+            *dbt.asset_specs,
+            *google.asset_specs,
+            *airbyte.asset_specs,
+            *load_assets_from_modules(
+                modules=[
+                    dbt,
+                    dlt,
+                    google,
+                    adp,
+                    collegeboard,
+                    coupa,
+                    deanslist,
+                    extracts,
+                    knowbe4,
+                    ldap,
+                    level_data,
+                    nsc,
+                    overgrad,
+                    performance_management,
+                    powerschool,
+                    smartrecruiters,
+                    tableau,
+                ]
+            ),
+        ],
+        policies=freshness.policies,
+    ),
     schedules=[
         *dlt.schedules,
         *google.schedules,
@@ -90,7 +92,6 @@ defs = Definitions(
         *level_data.schedules,
         *powerschool.schedules,
         *smartrecruiters.schedules,
-        *surveys.schedules,
         *tableau.schedules,
         *zendesk.schedules,
     ],
@@ -111,7 +112,6 @@ defs = Definitions(
         "db_bigquery": BIGQUERY_RESOURCE,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "dlt": DLT_RESOURCE,
-        "email": resources.OUTLOOK_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_directory": resources.GOOGLE_DIRECTORY_RESOURCE,
         "google_drive": GOOGLE_DRIVE_RESOURCE,

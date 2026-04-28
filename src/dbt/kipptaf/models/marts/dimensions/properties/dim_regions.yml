@@ -1,0 +1,37 @@
+models:
+  - name: dim_regions
+    description: >-
+      Region reference dimension. One row per KIPP region. Conformed dimension
+      joinable from any fact or dimension that carries a region context.
+    columns:
+      - name: region_key
+        data_type: string
+        description: >-
+          Surrogate key derived from region name.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: name
+        quote: true
+        data_type: string
+        description: >-
+          Region name (Newark, Camden, Miami, Paterson).
+
+      - name: state
+        data_type: string
+        description: >-
+          US state (NJ or FL).
+
+      - name: timezone
+        data_type: string
+        description: >-
+          IANA timezone identifier.
+
+      - name: legal_entity
+        data_type: string
+        description: >-
+          Legal entity name for this region in ADP.

@@ -1,0 +1,132 @@
+models:
+  - name: dim_student_enrollments
+    description: >-
+      Student enrollment dimension. One row per student x school x academic year
+      enrollment record. Each re-enrollment within a year is a distinct record
+      identified by entrydate. Entry and exit dates bound each enrollment
+      period. FK to dim_students, dim_locations, and dim_dates (role-playing via
+      entry_date_key and exit_date_key).
+    columns:
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          Surrogate key derived from student_number, _dbt_source_relation,
+          academic_year, and entrydate. Primary key for this dimension — matches
+          the uniqueness grain on int_extracts__student_enrollments.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_key
+        data_type: string
+        description: >-
+          Surrogate key derived from student_number. FK to dim_students.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_students')
+            to_columns: [student_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
+      - name: location_key
+        data_type: string
+        description: >-
+          Surrogate key derived from location_clean_name. FK to dim_locations.
+          Null when schoolid does not match any location in the crosswalk (e.g.,
+          grade_level 99 placeholder schools).
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+      - name: entry_date_key
+        data_type: date
+        description: >-
+          The date the student enrolled in school for the current enrollment.
+          Indexed.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: entrydate
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: exit_date_key
+        data_type: date
+        description: >-
+          The date the student exited for the current/last enrollment. This is
+          the day after a student-attended class. For example, if the last day
+          the student is in school is a Wednesday, Thursdayis the exit day.
+          Indexed.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: exitdate
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year (July start) in which this enrollment falls. The
+          calendar year in which the academic year begins (e.g., 2025 for the
+          2025-26 school year).
+
+      - name: grade_level
+        data_type: int64
+        description: >-
+          The grade the student is in. Since this is an integer: 0=Kindergarten
+          1, -2=Preschool. Indexed.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: grade_level
+      - name: graduation_year
+        data_type: int64
+        description: >-
+          Student graduation year.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: graduation_year
+      - name: is_retained_year
+        data_type: boolean
+        description: >-
+          TRUE if the student repeated this grade level in the same school
+          compared to the prior academic year.

@@ -4,7 +4,6 @@ from dagster_shared import check
 
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
 from teamster.libraries.coupa.resources import CoupaResource
-from teamster.libraries.email.resources import EmailResource
 from teamster.libraries.google.directory.resources import GoogleDirectoryResource
 from teamster.libraries.knowbe4.resources import KnowBe4Resource
 from teamster.libraries.ldap.resources import LdapResource
@@ -35,14 +34,6 @@ COUPA_RESOURCE = CoupaResource(
     client_id=EnvVar("COUPA_API_CLIENT_ID"),
     client_secret=EnvVar("COUPA_API_CLIENT_SECRET"),
     scope=["core.common.read", "core.user.read"],
-)
-
-OUTLOOK_RESOURCE = EmailResource(
-    host=EnvVar("OUTLOOK_HOST"),
-    port=int(check.not_none(value=EnvVar("OUTLOOK_PORT").get_value())),
-    user=EnvVar("OUTLOOK_USER"),
-    password=EnvVar("OUTLOOK_PASSWORD"),
-    chunk_size=450,
 )
 
 GOOGLE_DIRECTORY_RESOURCE = GoogleDirectoryResource(

@@ -1,0 +1,16 @@
+models:
+  - name: fct_student_attendance_daily
+    description: A fixture fact for testing R9 redundancy detection.
+    columns:
+      - name: attendance_key
+        data_type: string
+        description: Surrogate key.
+      - name: student_enrollment_key
+        data_type: string
+        description: FK to dim_student_enrollments.
+      - name: academic_year
+        data_type: int64
+        description: Academic year.
+      - name: student_number
+        data_type: int64
+        description: Degenerate dimension for filtering.

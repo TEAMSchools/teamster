@@ -7,6 +7,14 @@ models:
         data_type: string
       - name: grade
         data_type: int64
+        description:
+          The letter grade for this student for this section from PGFinal Grades
+          unless the attendancethreshold is not met.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: grade
       - name: admin_season
         data_type: string
       - name: round_number
@@ -29,10 +37,32 @@ models:
         data_type: string
       - name: code
         data_type: string
+        description:
+          Used to track state-specific codes associated with a course, such as
+          the CIP code.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__courses
+            source_column: code
       - name: start_date
         data_type: date
+        description:
+          The start date of the association of this teacher to this section.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sectionteacher
+            source_column: start_date
       - name: end_date
         data_type: date
+        description:
+          The end date of the association of this teacher to this section.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sectionteacher
+            source_column: end_date
       - name: pm_round_days
         data_type: int64
       - name: pm_days

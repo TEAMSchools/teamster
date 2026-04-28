@@ -38,6 +38,26 @@ partitioned assets by comparing the last materialized partition's
 **`schema.py`**: `ORACLE_AVRO_SCHEMA_TYPES` — maps Oracle column types to Avro
 types for schema inference.
 
+## Connection Retry
+
+`with_powerschool_retry()` in `utils.py` wraps `powerschool_connection()` with a
+retry loop. All callers (sensors, schedules, assets) use it instead of
+`powerschool_connection()` directly. The context manager itself cannot retry
+because `@contextmanager` only allows one `yield`.
+
+## Timeouts
+
+`call_timeout` on `PowerSchoolODBCResource` governs a **single Oracle
+round-trip**, not total query wall time. Sizing it as query time oversizes it —
+healthy COUNT probes complete in <500ms. Default is 15s (bumped from 10s on
+2026-04-24 after pgfinalgrades on kippnewark hit DPY-4024 during post-lockout
+recovery).
+
+Sensor-tick budget: Dagster sensor ticks hard-cap at 600s. Keep
+`call_timeout × max_attempts` well below 600s so a hung round-trip raises
+`DPI-1067` (with the in-flight SQL) before Dagster kills the tick with an opaque
+`DagsterUserCodeUnreachableError`.
+
 ## Type Annotations
 
 - `oracledb` lacks type stubs — `cursor.description` elements are `FetchInfo` at

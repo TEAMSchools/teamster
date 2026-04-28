@@ -1,0 +1,46 @@
+models:
+  - name: dim_surveys
+    description: >-
+      Survey instrument dimension. One row per survey definition. Contains
+      stable instrument-level attributes only -- no temporal scoping.
+      Administration windows are in dim_survey_administrations, which
+      foreign-keys to this model via survey_key.
+    columns:
+      - name: survey_key
+        data_type: string
+        description: >-
+          Surrogate key derived from survey_id. Primary key for the survey
+          dimension. Generated with generate_surrogate_key(["survey_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: name
+        quote: true
+        data_type: string
+        description: >-
+          Display name of the survey instrument (e.g., School Community
+          Diagnostic Staff Survey, Manager Survey).
+
+      - name: type
+        quote: true
+        data_type: string
+        description: >-
+          Classification of the survey instrument (e.g., School Community
+          Diagnostic, Manager Survey, Support Survey, Climate Survey).
+
+      - name: category
+        data_type: string
+        description: >-
+          Broad domain the survey measures (e.g., School Culture, Staff
+          Experience, Staff Retention, College & Career). Nullable for
+          uncategorized surveys.
+
+      - name: platform
+        data_type: string
+        description: >-
+          Source platform the survey is administered on (Google Forms, Alchemer,
+          or PowerSchool).

@@ -42,11 +42,13 @@ Cloud:
 
 ## Guides
 
-| Guide                                     | Description                                                            |
-| ----------------------------------------- | ---------------------------------------------------------------------- |
-| [Codespaces](codespaces.md)               | Setting up and using GitHub Codespaces                                 |
-| [Local Development](local-development.md) | Installing dependencies, running Dagster locally, linting, and testing |
-| [Dagster](dagster.md)                     | Tableau scheduling, backfills, branch deployments, monitoring runs     |
-| [Google Sheets & Forms](google-sheets.md) | Adding and updating Google Sheets and Forms sources                    |
-| [dbt Development](dbt-development.md)     | Targets, defer, staging external sources, cross-project workflows      |
-| [SFTP Integration](sftp-integration.md)   | Adding a new SFTP file drop using `init_sftp_integration.py`           |
+| Guide                                       | Description                                                                 |
+| ------------------------------------------- | --------------------------------------------------------------------------- |
+| [Codespaces](codespaces.md)                 | Setting up and using GitHub Codespaces                                      |
+| [Local Development](local-development.md)   | Installing dependencies, running Dagster locally, linting, and testing      |
+| [Dagster](dagster.md)                       | Tableau scheduling, backfills, branch deployments, monitoring runs          |
+| [Google Sheets & Forms](google-sheets.md)   | Adding and updating Google Sheets and Forms sources                         |
+| [dbt Development](dbt-development.md)       | Targets, defer, staging external sources, cross-project workflows           |
+| [SFTP Integration](sftp-integration.md)     | Adding a new SFTP file drop using `init_sftp_integration.py`                |
+| [Claude Code & Superpowers](superpowers.md) | Using Claude Code's structured workflows for features, fixes, and refactors |
+| [Cube](cube.md)                             | Setting up Cube Cloud and running Cube locally                              |

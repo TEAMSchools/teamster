@@ -43,3 +43,14 @@ Pass explicit `deps` to wire in additional upstream assets (e.g., a staging
 table that is the true data source) or to bypass intermediate VIEW assets that
 would otherwise fan out cross-partition updates. Pass `automation_condition` to
 enable reactive triggering (typically `AutomationCondition.eager()`).
+
+## Gotchas
+
+**Empty query results**: The `_asset` function returns early when BigQuery
+yields zero rows — do not remove that guard (`transform_data()` crashes on
+CSV/TSV/TXT with empty data).
+
+**Unpartitioned dep fan-out**: Per `core/CLAUDE.md` "Dep fan-out rule", use
+`any_deps_updated().ignore(AssetSelection.keys(...))` instead of bare `eager()`
+when a partitioned extract has unpartitioned deps. See
+`kipptaf/extracts/assets.py` `_INTACCT_AUTOMATION_CONDITION` for the pattern.

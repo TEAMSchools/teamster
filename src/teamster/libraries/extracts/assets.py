@@ -234,6 +234,7 @@ def build_bigquery_query_sftp_asset(
 
         if len(data) == 0:
             context.log.warning("Query returned an empty result")
+            return
 
         transformed_data = transform_data(
             data=data,

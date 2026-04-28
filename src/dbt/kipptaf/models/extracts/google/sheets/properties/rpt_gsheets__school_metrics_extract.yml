@@ -1,0 +1,107 @@
+models:
+  - name: rpt_gsheets__school_metrics_extract
+    description: >
+      Aggregated school-level metrics in long format for the School Metrics
+      Google Sheet. Each row is one metric value at a specific grain and time
+      scale. Covers attendance (ADA, chronic absence), internal assessment
+      proficiency, DeansList referrals by tier, academic course failure rates,
+      and weighted Y1 GPA. All values are PII-free aggregates — no student-level
+      data is exposed.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - domain
+              - discipline
+              - course_name
+              - module_code
+              - metric
+              - time_scale
+              - region
+              - school
+              - grain_type
+              - grain
+              - teacher_name
+              - manager
+              - manager_job_title
+    columns:
+      - name: domain
+        description: >
+          High-level category for the metric. One of: Assessment, Attendance,
+          Culture, Grades, Academics.
+        data_type: string
+      - name: discipline
+        description: >
+          Subject discipline applicable to assessment proficiency metrics only.
+          Values: ELA, Math. Null for all other domains.
+        data_type: string
+      - name: course_name
+        description: >
+          PowerSchool course name. Populated only for Grades domain (failure
+          rate by section). Null for all other domains.
+        data_type: string
+      - name: module_code
+        description: >
+          Assessment module code (e.g., specific unit or interim assessment
+          identifier). Populated only for Assessment domain so that separate
+          assessments in the same discipline/week appear on separate rows. Null
+          for all other domains.
+        data_type: string
+      - name: metric
+        description: >
+          Name of the specific metric. Tier-level referral metrics use fixed
+          labels: Referrals - All, Referrals - High, Referrals - Middle,
+          Referrals - Low. Category-level referral metrics use the DeansList
+          category name prefixed with "Referrals - " (e.g., "Referrals -
+          Disrespect to Staff"). Other examples: Weekly ADA, % Chronically
+          Absent (ADA <= 90%), Proficiency (Mastery Rate), Failure Rate (Y1),
+          Avg Y1 GPA (Weighted).
+        data_type: string
+      - name: time_scale
+        description: >
+          Reporting period for the metric. All metrics except Failure Rate use
+          "week of YYYY-MM-DD" (Monday start). Failure Rate uses Q1, Q2, Q3, Q4
+          (PowerSchool storecode).
+        data_type: string
+      - name: region
+        description: Region name (e.g., Newark, Camden, Miami, Paterson).
+        data_type: string
+      - name: school
+        description: School abbreviation (e.g., TEAM, NCA, KCA, KMS).
+        data_type: string
+      - name: grain_type
+        description: >
+          Level of aggregation. One of: Homeroom (advisory section), Grade
+          Level, Section (academic course section).
+        data_type: string
+      - name: grain
+        description: >
+          Actual identifier for the grain. Homeroom advisory section number
+          (e.g., 3FSU), numeric grade level as string (e.g., 8), or PowerSchool
+          section number for academic courses.
+        data_type: string
+      - name: teacher_name
+        description: >
+          Formatted name of the lead teacher (homeroom advisor or section
+          teacher). Populated for Homeroom and Section grain types. Null for
+          Grade Level aggregations.
+        data_type: string
+      - name: manager
+        description: >
+          Formatted name of the lead teacher's direct manager (from
+          int_people__staff_roster reports_to_formatted_name). Populated for
+          Homeroom and Section grain types where a single lead teacher can be
+          identified. Null for Grade Level aggregations.
+        data_type: string
+      - name: manager_job_title
+        description: >
+          Job title of the lead teacher's direct manager (from
+          int_people__staff_roster job_title, looked up via
+          reports_to_employee_number). Populated for Homeroom and Section grain
+          types. Null for Grade Level aggregations.
+        data_type: string
+      - name: value
+        description:
+          Numeric metric value. Rates and averages are expressed as decimals
+          (0-1).
+        data_type: float64

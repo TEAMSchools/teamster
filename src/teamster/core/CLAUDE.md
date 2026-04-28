@@ -54,7 +54,21 @@ with the current timestamp.
 
 Three `object_type` modes: `"pickle"`, `"avro"` (writes Fastavro container
 files), `"file"` (writes raw bytes from a local file path). The `test=True` flag
-prefixes GCS paths with `test/` to isolate test runs.
+writes local files to `/tmp/dagster` (not the `dagster-tmp` symlink — causes
+`FileExistsError`) instead of `env/`, and prefixes GCS paths with `test/`.
+
+### `freshness.py`
+
+**`FreshnessPolicy` UI surface**: evaluations do NOT appear on the asset's
+Checks tab — state lives on the Overview sidebar's Freshness panel; alerts fire
+via Dagster+ "Freshness policy violations" policies, not asset-check alerts. Do
+not add `build_last_update_freshness_checks` (it's `@superseded`) to force
+Checks-tab visibility.
+
+**`FreshnessPolicy.cron` window**: valid materialization window is
+`[deadline - lower_bound_delta, deadline]`. A materialization landing AFTER the
+deadline is outside the window. Set `deadline_cron` past the asset's typical
+arrival time, not before, or the check flaps FAIL→PASS every cycle.
 
 ### `asset_checks.py`
 
@@ -94,6 +108,11 @@ built-in Dagster API to suppress this per-asset.
 deploy rollover, the materialization may be stamped with the new deployment's
 code version. `code_version_changed()` returns false permanently — manual
 materialization is the only fix. See dagster-io/dagster#33708.
+
+**Deploy ordering gate**: `_dep_code_version_pending` blocks materialization
+when a direct dependency has `code_version_changed().since(newly_updated())` —
+prevents schema errors when a deploy adds columns through a TABLE → VIEW chain.
+Applied in `_build_dbt_condition()` so all three conditions inherit it.
 
 **Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
 ALL partitions on every materialization. To preserve per-partition triggering,

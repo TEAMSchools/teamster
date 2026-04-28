@@ -183,9 +183,12 @@ models:
         data_type: int64
       - name: sat_grade
         data_type: string
+        description: Categorical mapping of sat_grade.
       - name: powerschool_student_number
         data_type: int64
       - name: test_name
         data_type: string
+        description: Computed expression.
       - name: test_type
         data_type: string
+        description: Computed expression.

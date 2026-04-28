@@ -12,6 +12,8 @@ models:
           probe_number.
         data_tests:
           - unique
+        constraints:
+          - type: primary_key
       - name: source_file_name
         data_type: string
         description: Name of the SFTP source CSV file.

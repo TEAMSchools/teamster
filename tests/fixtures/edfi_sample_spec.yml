@@ -1,0 +1,46 @@
+components:
+  schemas:
+    edFi_student:
+      properties:
+        birthDate:
+          description: The month, day, and year on which an individual was born.
+          type: string
+          format: date
+        firstName:
+          description:
+            A name given to an individual at birth or during a naming ceremony.
+          type: string
+        lastSurname:
+          description: The name borne in common by members of a family.
+          type: string
+        birthSexDescriptor:
+          description: A person's sex at birth.
+          type: string
+        id:
+          description: Resource identifier.
+          type: string
+    edFi_staff:
+      properties:
+        birthDate:
+          description: The month, day, and year on which an individual was born.
+          type: string
+          format: date
+        firstName:
+          description:
+            A name given to an individual at birth or during a naming ceremony.
+          type: string
+        staffUniqueId:
+          description: A unique alphanumeric code assigned to a staff.
+          type: string
+    edFi_studentSchoolAssociation:
+      properties:
+        entryDate:
+          description:
+            The month, day, and year on which an individual enters and begins to
+            receive instructional services in a school.
+          type: string
+          format: date
+        exitWithdrawDate:
+          description: The recorded exit or withdraw date for the student.
+          type: string
+          format: date

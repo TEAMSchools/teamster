@@ -1,0 +1,70 @@
+models:
+  - name: dim_staff_observation_expectations
+    description: >-
+      Observation expectation scaffold. One row per staff member x observation
+      type term. Built by crossing active teaching staff from roster history
+      with PM/walkthrough/O3 term windows from the reporting terms sheet.
+      Enables tracking whether each teacher received their expected observations
+      in each period. Foreign keys to dim_staff and dim_terms.
+    columns:
+      - name: staff_observation_expectation_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from employee_number and term composite
+          fields. Generated with generate_surrogate_key(["srh.employee_number",
+          "t.type", "t.code", "t.name", "t.start_date", "t.region",
+          "t.school_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff. Surrogate key derived from employee_number.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
+      - name: term_key
+        data_type: string
+        description: >-
+          Foreign key to dim_terms. Surrogate key derived from term type, code,
+          name, start_date, region, and school_id.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year of the observation expectation.
+
+      - name: is_current
+        data_type: boolean
+        description: >-
+          TRUE if the current date falls within this observation period.
+
+      - name: position_title
+        data_type: string
+        description: >-
+          Staff member's position title during the observation period.

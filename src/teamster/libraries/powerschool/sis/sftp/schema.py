@@ -10,15 +10,16 @@ class SPEnrollments(SFTPFile):
     dcid: str | None = None
     code1: str | None = None
     code2: str | None = None
-    enter_date: str | None = None
-    exit_date: str | None = None
+    enterdate: str | None = None
+    exitdate: str | None = None
     exitcode: str | None = None
     gradelevel: str | None = None
     programid: str | None = None
     psguid: str | None = None
     schoolid: str | None = None
-    sp_comment: str | None = None
+    spcomment: str | None = None
     studentid: str | None = None
+    custom: str | None = None
 
 
 class Users(SFTPFile):
