@@ -17,6 +17,11 @@ models:
           Canonical location surrogate key passed through from
           stg_google_sheets__people__locations. NULL when the alias name does not
           match any canonical location.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_google_sheets__people__locations')
+                field: location_key
       - name: location_clean_name
         data_type: string
       - name: location_abbreviation

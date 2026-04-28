@@ -1,6 +1,7 @@
 with
-    /* TODO: move region/state/timezone mapping to an external source */
-    /* (seed file or sheet) once Ops takes ownership of the lookup. */
+    /* business_unit_code and legal_entity are sourced from ADP; the */
+    /* remaining region / state / timezone columns are hardcoded by */
+    /* business_unit_code in the final SELECT. */
     bu_xref as (
         select distinct
             organizational_unit__assigned__business_unit__code_value
