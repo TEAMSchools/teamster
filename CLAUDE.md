@@ -135,9 +135,11 @@ Use BigQuery MCP for ad-hoc queries against known production tables. Use dbt
 MCP's `show` only when `ref()` / `source()` resolution is needed — it adds
 compilation overhead.
 
-Use GitHub MCP (`mcp__github__*`) as the primary tool for all GitHub operations.
-Fall back to `gh` CLI via Bash only when no MCP equivalent exists (e.g.
-`gh pr checks`, `gh run view`).
+Default to GitHub MCP (`mcp__github__*`) for all GitHub operations. Only fall
+back to `gh` CLI via Bash when no MCP equivalent exists (e.g. `gh pr checks`,
+`gh run view`, `gh repo edit`). Verify by checking the available
+`mcp__github__*` tool list before reaching for `gh` — don't fall back from
+habit.
 
 `mcp__github__issue_write` `labels` parameter expects a comma-separated string
 (`"dbt,feat"`), not a JSON array. Either pass the string or omit and follow up
