@@ -1,9 +1,4 @@
 with
-    locations as (
-        select powerschool_school_id, dagster_code_location, location_name,
-        from {{ ref("stg_google_sheets__people__locations") }}
-    ),
-
     terms as (
         select
             t.school_id,
@@ -49,7 +44,7 @@ select
 
     ada.calendardate as date_key,
 
-    {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }} as location_key,
+    sch.location_key,
 
     t.term_key,
 
@@ -92,9 +87,9 @@ inner join
     and ada.calendardate < enr.exitdate
     and {{ union_dataset_join_clause(left_alias="ada", right_alias="enr") }}
 left join
-    locations as loc
-    on ada.schoolid = loc.powerschool_school_id
-    and {{ extract_code_location("ada") }} = loc.dagster_code_location
+    {{ ref("stg_powerschool__schools") }} as sch
+    on ada.schoolid = sch.school_number
+    and {{ union_dataset_join_clause(left_alias="ada", right_alias="sch") }}
 left join
     terms as t
     on ada.schoolid = t.school_id
