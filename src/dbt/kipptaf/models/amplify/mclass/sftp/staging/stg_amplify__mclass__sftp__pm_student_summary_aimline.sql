@@ -20,6 +20,25 @@ with
                 coalesce(device_date, sync_date) as device_date
             ),
         from union_relations
+    ),
+
+    enriched as (
+        -- trunk-ignore(sqlfluff/AM04): transformations produces dynamic columns
+        select
+            t.* except (_dbt_source_relation),
+
+            lc.region,
+            lc.abbreviation as school,
+            lc.powerschool_school_id as schoolid,
+
+            regexp_replace(
+                t._dbt_source_relation, r'kipp[a-z]+_', lc.dagster_code_location || '_'
+            ) as _dbt_source_relation,
+
+        from transformations as t
+        left join
+            {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
+            on t.school_name = lc.name
     )
 
 select
@@ -39,4 +58,4 @@ select
         )
     }} as surrogate_key,
 
-from transformations
+from enriched
