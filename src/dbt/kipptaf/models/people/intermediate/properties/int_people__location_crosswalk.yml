@@ -5,7 +5,7 @@ models:
       same canonical `location_clean_name`. Use this model when joining on
       alternate school-name spellings (e.g., ADP home_work_location_name,
       SchoolMint Grow observation school_name). For one-row-per-logical-school,
-      use stg_people__locations.
+      use stg_google_sheets__people__locations.
     columns:
       - name: location_name
         data_type: string

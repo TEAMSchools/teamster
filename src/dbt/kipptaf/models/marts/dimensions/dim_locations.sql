@@ -13,4 +13,4 @@ select
     is_campus,
 
     coalesce(abbreviation, location_name) as abbreviation,
-from {{ ref("stg_people__locations") }}
+from {{ ref("stg_google_sheets__people__locations") }}

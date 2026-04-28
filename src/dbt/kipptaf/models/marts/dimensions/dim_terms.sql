@@ -5,7 +5,7 @@ with
     /* school-level joins resolve to at most one physical school per region */
     locations_lookup as (
         select powerschool_school_id, location_name, region,
-        from {{ ref("stg_people__locations") }}
+        from {{ ref("stg_google_sheets__people__locations") }}
         where powerschool_school_id <> 0
     )
 

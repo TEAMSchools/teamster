@@ -1,7 +1,7 @@
 with
     locations as (
         select powerschool_school_id, location_name,
-        from {{ ref("stg_people__locations") }}
+        from {{ ref("stg_google_sheets__people__locations") }}
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate

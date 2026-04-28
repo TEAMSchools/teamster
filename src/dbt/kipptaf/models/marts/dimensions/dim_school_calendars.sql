@@ -1,7 +1,7 @@
 with
     locations as (
         select powerschool_school_id, dagster_code_location, location_name,
-        from {{ ref("stg_people__locations") }}
+        from {{ ref("stg_google_sheets__people__locations") }}
     )
 
 select
