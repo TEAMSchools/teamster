@@ -15,6 +15,6 @@ select
     pl.head_of_schools_employee_number as location_head_of_schools_employee_number,
     pl.campus_name,
 from {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-inner join
+left join
     {{ ref("stg_google_sheets__people__locations") }} as pl
     on lc.clean_name = pl.location_name

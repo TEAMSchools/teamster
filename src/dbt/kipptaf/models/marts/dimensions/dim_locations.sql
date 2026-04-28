@@ -1,11 +1,7 @@
 select
     location_key,
 
-    if(
-        region is not null,
-        {{ dbt_utils.generate_surrogate_key(["region"]) }},
-        cast(null as string)
-    ) as region_key,
+    {{ dbt_utils.generate_surrogate_key(["business_unit_code"]) }} as region_key,
 
     location_name as `name`,
     grade_band,

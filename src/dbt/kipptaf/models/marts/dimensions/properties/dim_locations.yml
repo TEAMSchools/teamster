@@ -28,9 +28,10 @@ models:
       - name: region_key
         data_type: string
         description: >-
-          Foreign key to dim_regions. Surrogate key derived from the canonical
-          region. Nullable when the location has no region mapping (e.g.,
-          network-level locations).
+          Foreign key to dim_regions. Surrogate key derived from
+          `business_unit_code` so this column hashes exactly the keys produced
+          by `dim_regions.region_key`. Network-level locations (e.g., KIPP NJ)
+          map to KIPP_TAF.
         constraints:
           - type: foreign_key
             to: ref('dim_regions')

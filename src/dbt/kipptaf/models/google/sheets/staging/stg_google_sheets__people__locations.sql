@@ -30,4 +30,17 @@ select
         when 'kipppaterson'
         then 'Paterson'
     end as region,
+
+    case
+        `Dagster_Code_Location`
+        when 'kippnewark'
+        then 'TEAM'
+        when 'kippcamden'
+        then 'KCNA'
+        when 'kippmiami'
+        then 'KIPP_MIAMI'
+        when 'kipppaterson'
+        then 'KPAT'
+        else 'KIPP_TAF'
+    end as business_unit_code,
 from {{ source("google_sheets", "src_google_sheets__people__locations") }}
