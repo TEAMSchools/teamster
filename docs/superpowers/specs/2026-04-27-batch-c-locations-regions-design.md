@@ -111,8 +111,8 @@ exposes, plus the new structural columns:
 
 **New columns — addresses** (#3689):
 
-- `address_line_one`, `address_line_two`, `city`, `postal_code` — nullable
-  (campus-rollup rows have no street address).
+- `address`, `city`, `postal_code` — nullable (campus-rollup rows have no street
+  address). Single-line `address` (line one + line two collapsed).
 
 **New columns — inbound IDs** (resolve `location_key` FKs on facts):
 
@@ -121,7 +121,7 @@ exposes, plus the new structural columns:
   `Room 9 - 60 Park Pl`). Comma-separated in the sheet; unnested in the staging
   model.
 - `smartrecruiters_location_id` — stable native ID.
-- `schoolmint_grow_location_id` — stable native ID.
+- `grow_location_id` — stable native ID.
 - `zendesk_<inbound_field>` — TBD at implementation time (verify which Zendesk
   ticket field carries the location join key — likely `organization_id`).
 
@@ -233,9 +233,9 @@ After repointing, the only consumer of
 
 **`dim_locations`**: same 38 rows, same `location_key = MD5(name)` (no hash
 change — pure structural ADD per the column-naming audit's hash-change rules).
-New columns: `address_line_one`, `address_line_two`, `city`, `postal_code`.
-Mart-scope filter (`is_pathways = false AND name <> 'KIPP Whittier Elementary'`)
-moves into this model.
+New columns: `address`, `city`, `postal_code`. Mart-scope filter
+(`is_pathways = false AND name <> 'KIPP Whittier Elementary'`) moves into this
+model.
 
 **`dim_regions`**: adds `business_unit_code` (`STRING NOT NULL`, unique). 1:1
 with the 5 existing regions. Values from ADP's canonical taxonomy: `KCNA`,
@@ -293,7 +293,7 @@ star-schema facts that traverse FK chains for dimensional context.
 | DeansList          | `int_deanslist__incidents` (CTE-wrap union)        | `deanslist_school_id` on master           |
 | PowerSchool        | `stg_powerschool__schools` (CTE-wrap union)        | `powerschool_school_id`                   |
 | Seat Tracker (ADP) | `int_seat_tracker__snapshot`                       | `adp_location_code` (multi-valued unnest) |
-| SchoolMint Grow    | `int_schoolmint_grow__observations`                | `schoolmint_grow_location_id`             |
+| SchoolMint Grow    | `int_schoolmint_grow__observations`                | `grow_location_id`                        |
 | Zendesk            | `int_zendesk__tickets__custom_fields_pivot`        | `zendesk_<inbound>` on master             |
 | SmartRecruiters    | _no upstream pivot — resolve at mart_              | `smartrecruiters_location_id`             |
 
@@ -391,8 +391,8 @@ Single PR, eight staged commits in dependency order:
    to source from the new master directly (drop dedup, drop campus_crosswalk
    join, drop mart-scope filter, unnest `adp_location_code`). Update all `ref()`
    callers to the new name.
-3. **Move Pathways/Whittier filter** into `dim_locations`. Add
-   `address_line_one/two`, `city`, `postal_code` columns to `dim_locations`.
+3. **Move Pathways/Whittier filter** into `dim_locations`. Add `address`,
+   `city`, `postal_code` columns to `dim_locations`.
 4. **Refactor `int_people__location_crosswalk`** to source canonical attrs from
    `stg_google_sheets__people__locations`. Output shape unchanged.
 5. **Consumer repointing**. Migrate every `ref()` to

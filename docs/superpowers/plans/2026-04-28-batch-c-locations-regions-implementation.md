@@ -60,12 +60,14 @@ Columns:
   `is_pathways`, `dagster_code_location`, `head_of_schools_employee_number`,
   `campus_name`
 - `powerschool_school_id`, `deanslist_school_id`, `reporting_school_id`
-- `address_line_one`, `address_line_two`, `city`, `postal_code`
+- `address`, `city`, `postal_code` (street address kept as a single line —
+  `address_line_two` collapsed into `address`)
 - `smartrecruiters_location_id` — stable SmartRecruiters location identifier;
   joins `app.school_shared_with` from `stg_smartrecruiters__applications`.
-- `schoolmint_grow_location_id` — stable SchoolMint Grow `school_id`, joined to
-  `int_schoolmint_grow__observations` via
-  `o.teaching_assignment_school = master.schoolmint_grow_location_id`.
+- `grow_location_id` — stable Grow (formerly SchoolMint Grow) `school_id`,
+  joined to `int_schoolmint_grow__observations` via
+  `o.teaching_assignment_school = master.grow_location_id`. Sheet header uses
+  the post-rename product name `Grow_Location_ID`.
 
 **No multi-valued columns on the master.** ADP location strings (8 distinct,
 e.g. `Room 9 - 60 Park Pl`) and Zendesk slugs (45 distinct, e.g. `room9`) live
@@ -190,12 +192,11 @@ with
             dagster_code_location,
             head_of_schools_employee_number,
             campus_name,
-            address_line_one,
-            address_line_two,
+            address,
             city,
             postal_code,
             smartrecruiters_location_id,
-            schoolmint_grow_location_id,
+            grow_location_id,
             region as business_unit,
             case
                 dagster_code_location
@@ -295,14 +296,11 @@ models:
         description: |
           Parent campus name from the campus crosswalk (e.g.,
           "KIPP Miami - North Campus" rolls up multiple sibling schools).
-      - name: address_line_one
+      - name: address
         data_type: string
         description: |
-          Physical street address line 1. Nullable for campus-rollup rows
-          and locations without a physical street address.
-      - name: address_line_two
-        data_type: string
-        description: Physical street address line 2. Nullable.
+          Physical street address (single line). Nullable for campus-rollup
+          rows and locations without a physical street address.
       - name: city
         data_type: string
         description: City. Nullable for non-physical rows.
@@ -314,12 +312,12 @@ models:
         description: |
           SmartRecruiters location ID. Joins
           `app.school_shared_with` from `stg_smartrecruiters__applications`.
-      - name: schoolmint_grow_location_id
+      - name: grow_location_id
         data_type: string
         description: |
-          SchoolMint Grow `school_id`. Joins to
+          Grow (formerly SchoolMint Grow) `school_id`. Joins to
           `int_schoolmint_grow__observations` via
-          `o.teaching_assignment_school = master.schoolmint_grow_location_id`.
+          `o.teaching_assignment_school = master.grow_location_id`.
 ```
 
 - [ ] **Step 3: Delete the old `stg_people__locations` files**
@@ -418,8 +416,7 @@ select
     grade_band,
     campus_name as campus,
     is_campus,
-    address_line_one,
-    address_line_two,
+    address,
     city,
     postal_code,
 
@@ -433,17 +430,14 @@ The `WHERE` clause is the migrated mart-scope filter (from
 
 - [ ] **Step 3: Update `properties/dim_locations.yml`**
 
-Add four new columns (`address_line_one`, `address_line_two`, `city`,
-`postal_code`) with `data_type: string` and descriptions matching the staging
-YAML. Place under the existing `columns:` list after `abbreviation`.
+Add three new columns (`address`, `city`, `postal_code`) with
+`data_type: string` and descriptions matching the staging YAML. Place under the
+existing `columns:` list after `abbreviation`.
 
 ```yaml
-- name: address_line_one
+- name: address
   data_type: string
-  description: Physical street address line 1. Nullable.
-- name: address_line_two
-  data_type: string
-  description: Physical street address line 2. Nullable.
+  description: Physical street address (single line). Nullable.
 - name: city
   data_type: string
   description: City. Nullable for non-physical rows (e.g., campus rollups).
@@ -1321,8 +1315,8 @@ git commit -m "feat(dbt): attach location_key to int_seat_tracker__snapshot"
 
 SchoolMint Grow uses stable `school_id` (joined from
 `stg_schoolmint_grow__schools` to observations via
-`o.teaching_assignment_school = s.school_id`). The master's
-`schoolmint_grow_location_id` is single-valued (not multi). Direct join.
+`o.teaching_assignment_school = s.school_id`). The master's `grow_location_id`
+is single-valued (not multi). Direct join.
 
 - [ ] **Step 1: Add the join and `location_key` projection**
 
@@ -1330,7 +1324,7 @@ In the model's existing FROM/JOIN section, add:
 
 ```sql
 left join {{ ref("stg_google_sheets__people__locations") }} as loc
-    on o.teaching_assignment_school = loc.schoolmint_grow_location_id
+    on o.teaching_assignment_school = loc.grow_location_id
 ```
 
 In the SELECT list:
