@@ -25,9 +25,11 @@ this step.**
 
 - **Before writing any spec or plan**: STOP and explicitly ask the user whether
   to open a GitHub issue first. Required for specs/plans; not required for quick
-  fixes. Do not write anything until the user answers. If opening:
-  `gh issue create`; label with conventional commit type, related source
-  systems, and `dagster`/`dbt` when applicable.
+  fixes. Do not write anything until the user answers. If opening: use
+  `mcp__github__issue_write` (see §MCP tool selection — GitHub MCP is the
+  default for GitHub operations, `gh` CLI is the fallback); label with
+  conventional commit type, related source systems, and `dagster`/`dbt` when
+  applicable.
 
 - **Before creating a branch**: ask the user — worktree or branch switch? Do not
   choose for them.
