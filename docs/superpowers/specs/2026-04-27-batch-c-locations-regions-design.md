@@ -187,6 +187,48 @@ attribute columns (`abbreviation`, `grade_band`, `region`,
 `head_of_schools_employee_number`) after the new master is populated and the PR
 is queued.
 
+### Consumer repointing (alias-staging → intermediate)
+
+After the alias-sheet trim, the staging model
+`stg_google_sheets__people__location_crosswalk` becomes a thin 2-column
+passthrough (`name`, `clean_name`). Direct consumers that previously read
+canonical attributes from the staging model (`abbreviation`,
+`powerschool_school_id`, `region`, etc.) must repoint to
+`int_people__location_crosswalk`, which after the rewrite carries the same alias
+grain plus all canonical attrs (sourced from the new master).
+
+Repointing is mechanical: each consumer flips
+`ref("stg_google_sheets__people__location_crosswalk")` →
+`ref("int_people__location_crosswalk")` and renames column references from
+unprefixed (`abbreviation`) to prefixed (`location_abbreviation`) to match
+`int_people__location_crosswalk`'s output schema. No semantic change — same
+values, same grain, just consolidated through the canonical-attr-aware
+intermediate.
+
+**Consumers repointed in this PR**:
+
+- Intermediates: `int_iready__diagnostic_results`,
+  `int_iready__instruction_by_lesson`, `int_iready__instruction_by_lesson_pro`,
+  `int_iready__instructional_usage_data`,
+  `int_amplify__mclass__benchmark_student_summary`,
+  `int_amplify__mclass__pm_student_summary`,
+  `int_performance_management__observations`,
+  `int_finalsite__status_report_unpivot`,
+  `int_students__attendance_interventions`, `int_extracts__student_enrollments`,
+  `int_deanslist__referral_suspension_rollup`, `int_people__temp_staff`.
+- Staging: `stg_powerschool__storedgrades` — currently joins alias staging for
+  an `is_transfer_grade` alias-existence check on `name`. Repoints to
+  `int_people__location_crosswalk` (kipptaf "staging" models that wrap
+  `union_relations` are intermediates by usage anyway, so the layering objection
+  doesn't apply).
+- Reporting / extracts (`rpt_*`): same mechanical repoint. ~10 models in
+  `extracts/clever/`, `extracts/deanslist/`, `extracts/google/`,
+  `extracts/illuminate/`, `extracts/tableau/`. Output unchanged.
+
+After repointing, the only consumer of
+`stg_google_sheets__people__location_crosswalk` (staging) is
+`int_people__location_crosswalk` itself.
+
 ### Mart changes
 
 **`dim_locations`**: same 38 rows, same `location_key = MD5(name)` (no hash
@@ -337,7 +379,7 @@ values, just sourced through the unified pivot.
 
 ## PR sequencing
 
-Single PR, seven staged commits in dependency order:
+Single PR, eight staged commits in dependency order:
 
 1. **Sheet bootstrap** (Ops, off-PR). Ops creates and populates
    `src_google_sheets__people__locations` with all 38 canonical rows × all
@@ -353,10 +395,17 @@ Single PR, seven staged commits in dependency order:
    `address_line_one/two`, `city`, `postal_code` columns to `dim_locations`.
 4. **Refactor `int_people__location_crosswalk`** to source canonical attrs from
    `stg_google_sheets__people__locations`. Output shape unchanged.
-5. **Alias sheet trim** (Ops, off-PR). Ops removes duplicated canonical-attr
-   columns from `src_google_sheets__people__location_crosswalk`. Coordinated
-   with the source YAML update for the trimmed schema.
-6. **Source-system enrichment**. Extend six existing pivot models to attach
+5. **Consumer repointing**. Migrate every `ref()` to
+   `stg_google_sheets__people__location_crosswalk` over to
+   `int_people__location_crosswalk`, plus the column-name updates (unprefixed →
+   `location_*` prefixed). Covers ~12 intermediates, ~10 reporting/extracts, and
+   `stg_powerschool__storedgrades`. Output of every migrated model unchanged.
+6. **Alias sheet trim** (Ops, off-PR). Once consumer repointing is merged, Ops
+   removes duplicated canonical-attr columns from
+   `src_google_sheets__people__location_crosswalk`. The staging model
+   (`stg_google_sheets__people__location_crosswalk`) becomes a 2-column
+   passthrough.
+7. **Source-system enrichment**. Extend six existing pivot models to attach
    `location_key` from the canonical master:
    - `stg_powerschool__schools` (CTE-wrap union)
    - `int_deanslist__incidents` (CTE-wrap union)
@@ -369,7 +418,7 @@ Single PR, seven staged commits in dependency order:
    PowerSchool `schoolid=999999` ("Graduated Students") resolves to `NULL` via
    the LEFT JOIN (no row on master).
 
-7. **Mart child fixes**.
+8. **Mart child fixes**.
    - **#3720 child models** swap `location_key` source to the source-system
      pivot point (or direct master join for SmartRecruiters).
    - **DeansList R9**: `fct_behavioral_incidents` adds `location_key` FK from
