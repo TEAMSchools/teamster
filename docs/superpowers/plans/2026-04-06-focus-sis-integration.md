@@ -1515,8 +1515,6 @@ it as a dbt package and override variables. `{{ project_name }}` in source
 definitions resolves to the consuming district project name, enabling correct
 Dagster asset key lineage.
 
-````
-
 - [ ] **Step 3: Update dlt library CLAUDE.md**
 
 The file `src/teamster/libraries/dlt/CLAUDE.md` does not currently exist (it was
@@ -1536,8 +1534,9 @@ backend.
 - Asset keys: `[code_location, "dlt", "focus", table_name]`
 - Uses `reflection_level="full_with_precision"` — no custom type or nullability
   adapters
-- Factory: `build_focus_dlt_assets(sql_database_credentials, code_location, table_name)`
-````
+- Factory:
+  `build_focus_dlt_assets(sql_database_credentials, code_location, table_name)`
+```
 
 - [ ] **Step 4: Update kippmiami code location CLAUDE.md**
 
