@@ -1182,6 +1182,41 @@ sources:
                 - sheets
                 - people
                 - locations
+        columns:
+          - name: Name
+            data_type: STRING
+          - name: Region
+            data_type: STRING
+          - name: PowerSchool_School_ID
+            data_type: INT64
+          - name: Reporting_School_ID
+            data_type: INT64
+          - name: Grade_Band
+            data_type: STRING
+          - name: Is_Campus
+            data_type: BOOL
+          - name: Is_Pathways
+            data_type: BOOL
+          - name: Abbreviation
+            data_type: STRING
+          - name: Deanslist_School_ID
+            data_type: INT64
+          - name: Dagster_Code_Location
+            data_type: STRING
+          - name: Head_of_Schools_Employee_Number
+            data_type: INT64
+          - name: SmartRecruiters_Location_ID
+            data_type: STRING
+          - name: Grow_Location_ID
+            data_type: STRING
+          - name: Campus_Name
+            data_type: STRING
+          - name: Address
+            data_type: STRING
+          - name: City
+            data_type: STRING
+          - name: Postal_Code
+            data_type: STRING
       - name: src_google_sheets__people__campus_crosswalk
         external:
           options:
