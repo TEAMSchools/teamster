@@ -53,7 +53,7 @@ def build_focus_dlt_assets(
 
     dlt_pipeline = pipeline(
         pipeline_name="focus",
-        destination=bigquery(autodetect_schema=True),
+        destination=bigquery(autodetect_schema=False),
         dataset_name=f"dagster_{code_location}_dlt_focus",
         progress=LogCollector(dump_system_stats=False),
     )
