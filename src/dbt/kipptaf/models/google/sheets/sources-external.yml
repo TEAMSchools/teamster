@@ -1205,8 +1205,8 @@ sources:
             data_type: STRING
           - name: Head_of_Schools_Employee_Number
             data_type: INT64
-          - name: SmartRecruiters_Location_ID
-            data_type: STRING
+          - name: ADP_Location_Code
+            data_type: INT64
           - name: Grow_Location_ID
             data_type: STRING
           - name: Campus_Name

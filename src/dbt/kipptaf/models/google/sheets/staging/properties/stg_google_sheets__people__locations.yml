@@ -74,11 +74,14 @@ models:
         data_type: int64
         description: |
           Employee number of the head of schools responsible for this location.
-      - name: smartrecruiters_location_id
-        data_type: string
+      - name: adp_location_code
+        data_type: int64
         description: |
-          SmartRecruiters location identifier. STRING type for downstream FK
-          uniformity.
+          ADP work-location numeric code (`home_work_location__name_code__code_value`
+          in ADP). Stable single-valued identifier — joined directly from
+          `int_adp_workforce_now__workers__work_assignments`. NULL for canonical
+          rows that have no ADP presence (KIPP Legacy Middle, KIPP Miami -
+          Poinciana Campus, KIPP NJ).
       - name: grow_location_id
         data_type: string
         description: |

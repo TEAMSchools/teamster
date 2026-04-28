@@ -10,7 +10,7 @@ select
     `Deanslist_School_ID` as deanslist_school_id,
     `Dagster_Code_Location` as dagster_code_location,
     `Head_of_Schools_Employee_Number` as head_of_schools_employee_number,
-    `SmartRecruiters_Location_ID` as smartrecruiters_location_id,
+    `ADP_Location_Code` as adp_location_code,
     `Grow_Location_ID` as grow_location_id,
     `Campus_Name` as campus_name,
     `Address` as address,
