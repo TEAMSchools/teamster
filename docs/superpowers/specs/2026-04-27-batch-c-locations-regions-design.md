@@ -20,6 +20,23 @@ The 309K orphan rows resolve to **at most 59 distinct upstream identities**
 across six source systems. The fix is mapping new upstream identifiers to the
 existing 38 canonical locations — not adding canonical rows.
 
+Scope extends beyond the three issues to ensure the resolution architecture
+applies consistently across every mart that carries (or should carry)
+`location_key`:
+
+- **DeansList R9 on `fct_behavioral_incidents`** — replace the degenerate
+  `location` string with a proper `location_key` FK.
+- **PowerSchool consistency migration** — five PS-derived marts that today
+  resolve `location_key` correctly via the existing path
+  (`dim_assessment_goals`, `dim_assessment_targets`, `dim_school_calendars`,
+  `dim_terms`, `fct_student_attendance_daily`) flip to source `location_key`
+  from the unified `stg_powerschool__schools` pivot for architectural
+  consistency.
+- **ADP — `dim_work_assignment_locations` resolution moves upstream** to
+  `int_adp_workforce_now__workers__work_assignments`, the highest shared point
+  in the ADP chain. The mart consumes the already-resolved `location_key` for
+  both the SCD2 `attribute_hash` and the exposed FK.
+
 ## Orphan landscape
 
 | Child model                      | Source                             | Orphan rows |        Distinct codes | Fix                         |
@@ -182,10 +199,12 @@ moves into this model.
 with the 5 existing regions. Values from ADP's canonical taxonomy: `KCNA`,
 `KIPP_MIAMI`, `KIPP_TAF`, `KPAT`, `TEAM`.
 
-**`dim_work_assignment_locations`**: adds `location_key` FK (resolved via the
-new `adp_location_code` column on the canonical master). Drops 8 denormalized
-columns (R9): `location_code`, `location_name`, `address_line_one`,
-`address_line_two`, `city_name`, `postal_code`, `country_code`, `state_code`.
+**`dim_work_assignment_locations`**: adds `location_key` FK (resolved upstream
+in `int_adp_workforce_now__workers__work_assignments` — see Source-system
+enrichment below). The mart reads the already-resolved `location_key`; no master
+join in the mart. Drops 8 denormalized columns (R9): `location_code`,
+`location_name`, `address_line_one`, `address_line_two`, `city_name`,
+`postal_code`, `country_code`, `state_code`.
 
 **SCD2 boundary normalization**. The model is a SQL transform (not a dbt
 snapshot) that recomputes SCD2 boundaries from scratch each run via an
@@ -226,13 +245,15 @@ consumers — rather than creating new intermediates. This stays consistent with
 the long-term direction of deconstructing wide denormalized marts into thin
 star-schema facts that traverse FK chains for dimensional context.
 
-| Source             | Pivot point (existing model)                | Resolution input                          |
-| ------------------ | ------------------------------------------- | ----------------------------------------- |
-| PowerSchool        | `stg_powerschool__schools`                  | `powerschool_school_id`                   |
-| Zendesk            | `int_zendesk__tickets__custom_fields_pivot` | `zendesk_<inbound>` on master             |
-| Seat Tracker (ADP) | `int_seat_tracker__snapshot`                | `adp_location_code` (multi-valued unnest) |
-| SchoolMint Grow    | `int_schoolmint_grow__observations`         | `schoolmint_grow_location_id`             |
-| SmartRecruiters    | _no upstream pivot — resolve at mart_       | `smartrecruiters_location_id`             |
+| Source             | Pivot point (highest shared model)                 | Resolution input                          |
+| ------------------ | -------------------------------------------------- | ----------------------------------------- |
+| ADP                | `int_adp_workforce_now__workers__work_assignments` | `adp_location_code` (multi-valued unnest) |
+| DeansList          | `int_deanslist__incidents` (CTE-wrap union)        | `deanslist_school_id` on master           |
+| PowerSchool        | `stg_powerschool__schools` (CTE-wrap union)        | `powerschool_school_id`                   |
+| Seat Tracker (ADP) | `int_seat_tracker__snapshot`                       | `adp_location_code` (multi-valued unnest) |
+| SchoolMint Grow    | `int_schoolmint_grow__observations`                | `schoolmint_grow_location_id`             |
+| Zendesk            | `int_zendesk__tickets__custom_fields_pivot`        | `zendesk_<inbound>` on master             |
+| SmartRecruiters    | _no upstream pivot — resolve at mart_              | `smartrecruiters_location_id`             |
 
 Each pivot model gains a `location_key` column resolved by joining the canonical
 master (`stg_google_sheets__people__locations`) on the source-specific
@@ -284,15 +305,35 @@ master directly.
 
 ### Mart child changes (consumes resolved `location_key`)
 
-The six child models from #3720 stop joining the canonical master directly
-(except SmartRecruiters). Each picks up `location_key` via its existing join to
-the source pivot point:
+Mart consumers stop joining the canonical master directly (except
+SmartRecruiters). Each picks up `location_key` via its existing join to the
+source pivot point:
+
+**#3720 child models** (failing FK tests today):
 
 - `fct_support_tickets` ← `int_zendesk__tickets__custom_fields_pivot`
 - `dim_student_enrollments`, `dim_course_sections` ← `stg_powerschool__schools`
 - `dim_staffing_positions` ← `int_seat_tracker__snapshot`
 - `fct_staff_observations` ← `int_schoolmint_grow__observations`
 - `fct_job_candidate_applications` — direct join to canonical master
+
+**DeansList R9 (`fct_behavioral_incidents`)**: today carries a degenerate
+`location` string (no FK). After enrichment of `int_deanslist__incidents`,
+`fct_behavioral_incidents` adds `location_key` FK and drops the `location`
+string under R9.
+
+**ADP — `dim_work_assignment_locations`**: stops joining the master itself.
+Reads `location_key` from `int_adp_workforce_now__workers__work_assignments` and
+uses it as both the `attribute_hash` input and the exposed FK. The R9 drop of 8
+denormalized address columns and the SCD2 boundary normalization (see Mart
+changes below) follow naturally.
+
+**PowerSchool consistency migration** (currently passing FK tests, migrated for
+architectural consistency): `dim_assessment_goals`, `dim_assessment_targets`,
+`dim_school_calendars`, `dim_terms`, `fct_student_attendance_daily`. Each flips
+`location_key` resolution to read from `stg_powerschool__schools`
+(post-CTE-wrap) rather than its current path. No FK behavior change — same key
+values, just sourced through the unified pivot.
 
 ## PR sequencing
 
@@ -315,24 +356,43 @@ Single PR, seven staged commits in dependency order:
 5. **Alias sheet trim** (Ops, off-PR). Ops removes duplicated canonical-attr
    columns from `src_google_sheets__people__location_crosswalk`. Coordinated
    with the source YAML update for the trimmed schema.
-6. **Source-system enrichment**. Extend four existing pivot models —
-   `stg_powerschool__schools`, `int_zendesk__tickets__custom_fields_pivot`,
-   `int_seat_tracker__snapshot`, `int_schoolmint_grow__observations` — to attach
-   `location_key` from the canonical master. The PowerSchool `schoolid=999999`
-   "Graduated Students" sentinel resolves to `NULL` via the LEFT JOIN (no row on
-   master); Seat Tracker uses multi-valued unnest on `adp_location_code`.
-7. **Mart child fixes**. Six child mart models swap their `location_key` source
-   to the source-system pivot point (or join the canonical master directly for
-   SmartRecruiters). `business_unit_code` on `dim_regions`; `business_unit_code`
-   FK from `dim_work_assignment_organizational_units`; `location_key` FK + R9 +
-   `attribute_hash` reduction on `dim_work_assignment_locations`.
+6. **Source-system enrichment**. Extend six existing pivot models to attach
+   `location_key` from the canonical master:
+   - `stg_powerschool__schools` (CTE-wrap union)
+   - `int_deanslist__incidents` (CTE-wrap union)
+   - `int_adp_workforce_now__workers__work_assignments` (multi-valued unnest on
+     `adp_location_code`)
+   - `int_zendesk__tickets__custom_fields_pivot`
+   - `int_seat_tracker__snapshot` (multi-valued unnest)
+   - `int_schoolmint_grow__observations`
+
+   PowerSchool `schoolid=999999` ("Graduated Students") resolves to `NULL` via
+   the LEFT JOIN (no row on master).
+
+7. **Mart child fixes**.
+   - **#3720 child models** swap `location_key` source to the source-system
+     pivot point (or direct master join for SmartRecruiters).
+   - **DeansList R9**: `fct_behavioral_incidents` adds `location_key` FK from
+     `int_deanslist__incidents` and drops the degenerate `location` string.
+   - **ADP — `dim_work_assignment_locations`**: reads `location_key` from
+     `int_adp_workforce_now__workers__work_assignments`; uses it as the sole
+     `attribute_hash` input (boundary normalization) and as the exposed FK;
+     drops 8 denormalized address columns under R9.
+   - **PowerSchool consistency migration**: `dim_assessment_goals`,
+     `dim_assessment_targets`, `dim_school_calendars`, `dim_terms`,
+     `fct_student_attendance_daily` flip `location_key` resolution to read from
+     `stg_powerschool__schools`.
+   - **Regions/business unit**: `business_unit_code` on `dim_regions`;
+     `business_unit_code` FK from `dim_work_assignment_organizational_units`.
 
 ## Testing
 
 - Existing relationships tests on the six #3720 child models flip from failing
   to passing (~309K orphans resolved).
-- New relationships test:
-  `dim_work_assignment_organizational_units.business_unit_code → dim_regions.business_unit_code`.
+- New relationships tests:
+  - `dim_work_assignment_locations.location_key → dim_locations.location_key`.
+  - `dim_work_assignment_organizational_units.business_unit_code → dim_regions.business_unit_code`.
+  - `fct_behavioral_incidents.location_key → dim_locations.location_key`.
 - New uniqueness test: `dim_regions.business_unit_code` (single-column).
 - New uniqueness test: `stg_google_sheets__people__locations.location_name`
   (single-column — replaces the alias-grain composite uniqueness check).
@@ -342,6 +402,9 @@ Single PR, seven staged commits in dependency order:
   a row to one without the other.
 - Pre/post SCD2 row count check on `dim_work_assignment_locations` (manual,
   recorded in PR description).
+- Pre-merge orphan-FK check: for each downstream consumer of
+  `dim_work_assignment_locations.work_assignment_location_key`, confirm the
+  consumer's FK set is a subset of the post-collapse key set.
 
 ## Hash-change discipline
 
@@ -360,10 +423,17 @@ Per `src/dbt/CLAUDE.md` enumerated surrogate-key change rules:
   returning real `NULL` for the `999999` sentinel. Hash values on non-sentinel
   rows unchanged.
 - `dim_regions.business_unit_code`: not a surrogate key — natural attribute.
-- All other six child models updating `location_key` resolution: **values
+- `fct_behavioral_incidents.location_key`: **structural add** (rule 5). New FK
+  replacing the degenerate `location` string.
+- All other #3720 child models updating `location_key` resolution: **values
   unify** (rule 1) where the resolution path changes from a now-missing upstream
   string to the canonical name on the master. Hash values change for
   previously-orphaned rows; non-orphan rows unchanged.
+- PowerSchool consistency-migration marts (`dim_assessment_goals`,
+  `dim_assessment_targets`, `dim_school_calendars`, `dim_terms`,
+  `fct_student_attendance_daily`): **no change** (resolution path moves to
+  `stg_powerschool__schools` but `location_key` values are identical to today's
+  path).
 
 Add entries to the column-naming audit spec's "Enumerated surrogate-key changes"
 table for items above flagged by rules 1, 4, or 5.
@@ -381,6 +451,10 @@ table for items above flagged by rules 1, 4, or 5.
   Coupa user exceptions per-user). Not 1:1 with location; not absorbable.
 - **Adding canonical rows for any future locations**. Ops process; out of scope
   for this PR.
+- **`dim_seats` R9** — `home_work_location_name` is a degenerate string with no
+  FK. Could be replaced with `location_key` via the
+  `dim_work_assignment_locations` chain, but that's an R9 collapse on an
+  unrelated dim. Deferred as separate work.
 
 ## Related
 
