@@ -487,11 +487,29 @@ Per `src/dbt/CLAUDE.md` enumerated surrogate-key change rules:
 Add entries to the column-naming audit spec's "Enumerated surrogate-key changes"
 table for items above flagged by rules 1, 4, or 5.
 
+## Cube.js consumer impact
+
+Cube is the sole consumer of marts. Marts are designed for Cube. Verified during
+spec authoring that **no Cube migration work is required for this PR**:
+
+- `src/cube/model/cubes/` and `src/cube/model/views/` are empty — Cube YAML
+  definitions haven't been written yet (in-flight effort, separate spec
+  `2026-04-15-cube-infrastructure-design.md` / plan
+  `2026-04-23-cube-infrastructure-implementation.md`).
+- The cube exposure (`models/exposures/cube.yml`) declares the mart-list
+  dependency surface; every mart touched in this PR is already listed.
+- When Cube YAML is implemented downstream, it consumes the post-Batch-C mart
+  shape natively — no migration debt because there's nothing existing to migrate
+  off the 8 dropped `dim_work_assignment_locations` columns or the dropped
+  `fct_behavioral_incidents.location` string.
+
+If Cube YAML lands before this PR merges, the implementation will need to target
+the post-Batch-C mart shape (the dropped columns won't exist; the new
+`location_key` FKs will). Coordinate sequencing with the Cube implementation
+team.
+
 ## Out of scope
 
-- **Cube.js / Tableau migration off the 8 dropped denormalized columns** on
-  `dim_work_assignment_locations` (#3689's downstream consumer impact).
-  Coordinated separately by the Cube.js implementation.
 - **Folding `coupa__address_name_crosswalk` into the new master** (it is the
   only other 1:1 outbound crosswalk with canonical location). Tangential to the
   three Batch C issues.
