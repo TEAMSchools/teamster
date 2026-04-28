@@ -47,7 +47,6 @@ def build_focus_dlt_assets(
         credentials=sql_database_credentials,
         schema="public",
         table_names=[table_name],
-        defer_table_reflect=True,
         backend="pyarrow",
         reflection_level="full_with_precision",
     )
