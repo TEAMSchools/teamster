@@ -43,13 +43,13 @@ select
     end as eval_date,
 from {{ ref("int_schoolmint_grow__observations") }} as o
 inner join
-    {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-    on o.school_name = lc.name
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on o.school_name = lc.location_name
 left join
     {{ ref("stg_google_sheets__reporting__terms") }} as t
     on o.observation_type_abbreviation = t.type
     and o.observed_at_date_local between t.start_date and t.end_date
-    and lc.region = t.region
+    and lc.location_region = t.region
 /* data prior to 2024 in snapshot */
 where o.is_published and o.academic_year >= 2024
 

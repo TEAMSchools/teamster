@@ -29,9 +29,8 @@ select
         else u.credit_type
     end as agg_credittype,
 
-    if(l.name is null, true, false) as is_transfer_grade,
+    if(l.location_name is null, true, false) as is_transfer_grade,
 
 from union_relations as u
 left join
-    {{ ref("stg_google_sheets__people__location_crosswalk") }} as l
-    on u.schoolname = l.name
+    {{ ref("int_people__location_crosswalk") }} as l on u.schoolname = l.location_name
