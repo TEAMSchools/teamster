@@ -119,8 +119,10 @@ src/cube/model/
       staff.yml                 # dim_staff — Type 1 wrapper + PII
       staff_work_history.yml    # SCD2 domain cube: period intersection
       staff_compensation.yml
+      staff_additional_earnings.yml
       staff_attrition.yml
       staff_benefits.yml
+      staff_memberships.yml
     attendance/
       attendance.yml
       attendance_interventions.yml
@@ -150,6 +152,8 @@ src/cube/model/
       talent.yml
     staffing/
       staffing.yml
+    courses/
+      course_sections.yml
     support/
       support.yml
   views/
@@ -186,13 +190,16 @@ src/cube/model/
     staffing/
       staffing_detail.yml
       staffing_summary.yml
+    courses/
+      courses_detail.yml
+      courses_summary.yml
     support/
       support_detail.yml
       support_summary.yml
 ```
 
-Total cube files: ~42 (down from 72 dbt models). Views: 28 (2 per domain × 14
-domains including students).
+Total cube files: ~42 (down from 72 dbt models). Views: 26 (2 per domain × 13
+non-conformed domains).
 
 ## Domain Breakdown
 
@@ -541,18 +548,33 @@ not exclude the employee). `dim_work_assignment_primary` is LEFT JOIN since not
 all work assignments may have a primary-indicator record.
 
 **Join order:** `dim_staff_work_assignments` anchors the FROM clause.
-`dim_staff` is joined next to resolve the staff entity — required before
-`dim_staff_status` because status joins via `staff_key`, not
-`work_assignment_key`. `dim_staff_status` is joined third and acts as the
-**controlling SCD2**: all subsequent overlap conditions are written against its
-`effective_start_date` / `effective_end_date`, not against each other. The four
-work assignment SCD2 children (`jobs`, `types`, `org_units`, `locations`) follow
-in arbitrary order, each overlap-filtered against `ss`.
-`dim_work_assignment_primary` is LEFT JOINed last since it is optional and
-excluded from GREATEST/LEAST. `dim_staff_status` is chosen as the controlling
-period because employment status spans the broadest date range — using a
-narrower child as the anchor would inadvertently exclude rows where that child
-has no overlapping record.
+`dim_staff_status` is joined first and acts as the **controlling SCD2**: all
+subsequent overlap conditions are written against its `effective_start_date` /
+`effective_end_date`. It joins directly on `swa.staff_key` — no intermediate
+`dim_staff` join is needed in the SQL block (`dim_staff` appears only in
+`joins:` for Cube view traversal). The four work assignment SCD2 children
+(`jobs`, `types`, `org_units`, `locations`) follow in arbitrary order, each
+overlap-filtered against `ss`. `dim_work_assignment_primary` is LEFT JOINed
+last. `dim_staff_status` is the controlling period because employment status
+spans the broadest date range — a narrower child as anchor would inadvertently
+drop rows where that child has no overlapping record.
+
+**`effective_end_date` sentinel:** Open-ended records use `9999-12-31`, not
+NULL. The overlap conditions (`ss.effective_start_date < wj.effective_end_date`
+etc.) are therefore safe without `COALESCE` — NULL would make the comparison
+evaluate to NULL and silently drop active employees.
+
+**`dim_dates` relationship is `one_to_many`:** One work history row spans a date
+range and matches many `dim_dates` rows. This is the reverse of the
+equality-join case (`many_to_one`). Always apply a date filter in queries
+against this cube — without one, each work history row fans out to one result
+row per day in its effective range.
+
+**Location join gap:** `dim_work_assignment_locations` tracks `location_code`
+but has no `location_key` FK to `dim_locations`. The `dim_locations` join cannot
+be declared here — location context for staff is limited to `work_location_code`
+as a string dimension until a `location_key` FK is added to
+`dim_work_assignment_locations` in dbt. Deferred to implementation.
 
 **Primary key rule:** No surrogate key spans the period-intersection rows. Use
 `CONCAT(staff_key, '|', effective_start_date)` — unique per row since an
@@ -592,10 +614,8 @@ cubes:
           wl.effective_end_date
         ) AS effective_end_date
       FROM kipptaf_marts.dim_staff_work_assignments swa
-      JOIN kipptaf_marts.dim_staff s
-        ON swa.staff_key = s.staff_key
       JOIN kipptaf_marts.dim_staff_status ss
-        ON ss.staff_key = s.staff_key
+        ON ss.staff_key = swa.staff_key
       JOIN kipptaf_marts.dim_work_assignment_jobs wj
         ON wj.work_assignment_key = swa.work_assignment_key
         AND ss.effective_start_date < wj.effective_end_date
@@ -623,11 +643,7 @@ cubes:
         sql: >
           {dim_dates.date_day} BETWEEN CAST({CUBE}.effective_start_date AS
           TIMESTAMP) AND CAST({CUBE}.effective_end_date AS TIMESTAMP)
-        relationship: many_to_one
-
-      - name: dim_locations
-        sql: "{dim_locations.location_key} = {CUBE}.location_key"
-        relationship: many_to_one
+        relationship: one_to_many
 
       - name: dim_staff
         sql: "{dim_staff.staff_key} = {CUBE}.staff_key"
@@ -712,6 +728,13 @@ but included where the primary metric is computed over individual days (e.g.,
 attendance — ADA requires grouping by date; excluding `date_day` would make it
 uncomputable for summary consumers).
 
+**`prefix: true` and access policy names:** When a join path uses
+`prefix: true`, Cube prepends the cube name to every field in that block's
+`includes:` list. A field named `full_name` in `dim_staff` becomes
+`dim_staff_full_name` in the view namespace. `access_policy` `excludes:` entries
+must use the post-prefix names — that is why the exclude list says
+`dim_staff_full_name`, not `full_name`.
+
 **Reference: `views/staff/staff_detail.yml` and `staff_summary.yml`**
 
 ```yaml
@@ -736,13 +759,6 @@ views:
           - date_day
           - academic_year
           - month_name
-
-      - join_path: staff_work_history.dim_locations
-        prefix: true
-        includes:
-          - location_name
-          - location_abbreviation
-          - location_grade_band
 
       - join_path: staff_work_history.dim_staff
         prefix: true
@@ -784,13 +800,6 @@ views:
         includes:
           - academic_year
           - month_name
-
-      - join_path: staff_work_history.dim_locations
-        prefix: true
-        includes:
-          - location_name
-          - location_abbreviation
-          - location_grade_band
 
     access_policy:
       - role: "summary-access"
