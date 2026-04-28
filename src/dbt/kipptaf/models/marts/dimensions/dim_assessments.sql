@@ -14,6 +14,10 @@ with
             is_internal_assessment,
 
             'enrollment' as assessment_scope,
+
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
         from {{ ref("int_assessments__assessments") }}
         where is_internal_assessment
     ),
@@ -52,6 +56,10 @@ with
             false as is_internal_assessment,
 
             'enrollment' as assessment_scope,
+
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
         from {{ ref("int_pearson__all_assessments") }}
         where testscalescore is not null
     ),
@@ -73,6 +81,10 @@ with
             false as is_internal_assessment,
 
             'enrollment' as assessment_scope,
+
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
         from {{ ref("int_fldoe__all_assessments") }}
         where scale_score is not null
     ),
@@ -93,6 +105,10 @@ with
             false as is_internal_assessment,
 
             'student' as assessment_scope,
+
+            aligned_subject as combined_academic_subject,
+            aligned_subject_area as aligned_academic_subject,
+            course_discipline as credit_category,
         from {{ ref("int_assessments__college_assessment") }}
     ),
 
@@ -112,6 +128,10 @@ with
             false as is_internal_assessment,
 
             'student' as assessment_scope,
+
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
         from {{ ref("int_assessments__ap_assessments") }}
     ),
 
@@ -146,13 +166,16 @@ select
         )
     }} as assessment_key,
 
-    assessment_type,
+    assessment_type as `type`,
     title,
-    subject_area,
-    scope,
+    subject_area as academic_subject,
+    scope as category,
     module_code,
     module_type,
     grade_level as grade_level_tested,
     is_internal_assessment,
-    assessment_scope,
+    assessment_scope as scope,
+    combined_academic_subject,
+    aligned_academic_subject,
+    credit_category,
 from all_assessments

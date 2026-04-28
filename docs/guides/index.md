@@ -51,3 +51,4 @@ Cloud:
 | [dbt Development](dbt-development.md)       | Targets, defer, staging external sources, cross-project workflows           |
 | [SFTP Integration](sftp-integration.md)     | Adding a new SFTP file drop using `init_sftp_integration.py`                |
 | [Claude Code & Superpowers](superpowers.md) | Using Claude Code's structured workflows for features, fixes, and refactors |
+| [Cube](cube.md)                             | Setting up Cube Cloud and running Cube locally                              |

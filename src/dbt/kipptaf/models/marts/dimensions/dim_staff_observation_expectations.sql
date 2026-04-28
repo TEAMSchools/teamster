@@ -14,7 +14,6 @@ with
             t.is_current,
 
             srh.job_title,
-            srh.assignment_status,
 
             row_number() over (
                 partition by
@@ -74,18 +73,9 @@ select
         )
     }} as term_key,
 
-    employee_number,
-
-    `type` as term_type,
-    code as term_code,
-    `name` as term_name,
     academic_year,
-    start_date as term_start_date,
-    end_date as term_end_date,
-    region,
     is_current,
 
-    job_title,
-    assignment_status,
+    job_title as position_title,
 from scaffold
 where rn = 1

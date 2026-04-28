@@ -5,10 +5,6 @@ with
             rt.effective_date_start,
             rt.reports_to_associate_oid,
             rt.reports_to_position_id,
-            rt.reports_to_worker_id__id_value,
-            rt.reports_to_worker_name__formatted_name,
-            rt.reports_to_worker_name__given_name,
-            rt.reports_to_worker_name__family_name_1,
 
             {{
                 dbt_utils.generate_surrogate_key(
@@ -38,11 +34,6 @@ with
             item_id,
             effective_date_start,
             reports_to_associate_oid as manager_associate_oid,
-            reports_to_position_id as manager_position_id,
-            reports_to_worker_id__id_value as manager_worker_id,
-            reports_to_worker_name__formatted_name as manager_formatted_name,
-            reports_to_worker_name__given_name as manager_given_name,
-            reports_to_worker_name__family_name_1 as manager_family_name_1,
 
             coalesce(
                 date_sub(
@@ -55,22 +46,36 @@ with
             ) as effective_date_end,
         from change_detection
         where attribute_hash != attribute_hash_lag
+    ),
+
+    workers as (
+        select associate_oid, worker_id__id_value,
+        from {{ ref("stg_adp_workforce_now__workers") }}
+        where is_current_record
+    ),
+
+    employee_numbers as (
+        select employee_number, adp_associate_id,
+        from {{ ref("stg_people__employee_numbers") }}
+        where is_active
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["item_id", "effective_date_start"]) }}
+    {{ dbt_utils.generate_surrogate_key(["cp.item_id", "cp.effective_date_start"]) }}
     as work_assignment_reporting_relationship_key,
 
-    {{ dbt_utils.generate_surrogate_key(["item_id"]) }} as work_assignment_key,
+    {{ dbt_utils.generate_surrogate_key(["cp.item_id"]) }} as work_assignment_key,
 
-    manager_associate_oid,
-    manager_position_id,
-    manager_worker_id,
-    manager_formatted_name,
-    manager_given_name,
-    manager_family_name_1,
-    effective_date_start,
-    effective_date_end,
+    if(
+        mgr.employee_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["mgr.employee_number"]) }},
+        cast(null as string)
+    ) as manager_staff_key,
 
-    if(effective_date_end = '9999-12-31', true, false) as is_current_record,
-from change_points
+    cp.effective_date_start as effective_start_date,
+    cp.effective_date_end as effective_end_date,
+
+    if(cp.effective_date_end = '9999-12-31', true, false) as is_current,
+from change_points as cp
+left join workers as mgr_w on cp.manager_associate_oid = mgr_w.associate_oid
+left join employee_numbers as mgr on mgr_w.worker_id__id_value = mgr.adp_associate_id

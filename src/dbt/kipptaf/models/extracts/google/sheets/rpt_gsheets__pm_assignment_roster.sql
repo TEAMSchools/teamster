@@ -66,10 +66,10 @@ left join
     on sr.reports_to_employee_number = sr2.employee_number
 left join
     {{ ref("stg_google_sheets__people__campus_crosswalk") }} as cc
-    on sr.home_work_location_name = cc.location_name
+    on sr.home_work_location_reporting_name = cc.location_name
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
-    on sr.home_work_location_name = lc.home_work_location_name
+    on sr.home_work_location_reporting_name = lc.home_work_location_reporting_name
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on sr.powerschool_teacher_number = tgl.teachernumber

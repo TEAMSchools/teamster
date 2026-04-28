@@ -11,6 +11,9 @@ models:
         description: >-
           Surrogate key derived from sections_dcid and _dbt_source_relation.
           Primary key for this dimension.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -20,17 +23,36 @@ models:
         description: >-
           Surrogate key derived from courses_course_number and
           _dbt_source_relation. FK to dim_courses.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_courses')
+            to_columns: [course_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_courses')
+                field: course_key
       - name: location_key
         data_type: string
         description: >-
           Surrogate key derived from location_clean_name. FK to dim_locations.
-          Null when sections_schoolid does not match any location in the
+          Null when the section's school ID does not match any location in the
           crosswalk.
 
-      - name: section_number
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+      - name: identifier
         data_type: string
         description: >-
           The section number associated with this class. This is implied by the
@@ -44,15 +66,14 @@ models:
       - name: period
         data_type: string
         description: >-
-          Period expression for this section as stored in PowerSchool
-          (sections_expression). Encodes the days and periods when the section
-          meets (e.g., '1(A-F)').
+          Period expression for this section. Encodes the days and periods when
+          the section meets (e.g., '1(A-F)').
 
       - name: room
         data_type: string
         description: >-
-          The room number the section is in. This is not presently tied to Power
-          Scheduler, so it will need to beimported or entered manually. Indexed.
+          The room number the section is in. Not currently tied to the master
+          scheduler — imported or entered manually.
         config:
           meta:
             source_system: PowerSchool

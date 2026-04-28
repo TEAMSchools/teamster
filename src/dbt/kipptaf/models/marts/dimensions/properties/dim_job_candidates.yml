@@ -10,48 +10,27 @@ models:
         description: >-
           Surrogate primary key derived from candidate_id. Generated with
           generate_surrogate_key(["candidate_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
 
-      - name: candidate_id
-        data_type: string
-        description: >-
-          SmartRecruiters unique identifier for the candidate.
-        data_tests:
-          - unique
-          - not_null
-
-      - name: candidate_first_name
+      - name: first_name
         data_type: string
         description: Candidate's first name as entered in SmartRecruiters.
 
-      - name: candidate_last_name
+      - name: last_name
         data_type: string
         description: Candidate's last name as entered in SmartRecruiters.
 
-      - name: candidate_first_and_last_name
+      - name: full_name
         data_type: string
         description:
           Candidate's full name (first and last) as entered in SmartRecruiters.
 
-      - name: candidate_email
+      - name: email
         data_type: string
         description:
           Candidate's primary email address from their SmartRecruiters profile.
-
-      - name: candidate_source
-        data_type: string
-        description: >-
-          Primary source channel that brought the candidate into SmartRecruiters
-          (e.g., LinkedIn, Indeed, Employee Referral).
-
-      - name: candidate_source_type
-        data_type: string
-        description: >-
-          Broad category of the candidate source (e.g., Job Board, Referral,
-          Direct).
-
-      - name: candidate_source_subtype
-        data_type: string
-        description: More granular classification of the candidate source.

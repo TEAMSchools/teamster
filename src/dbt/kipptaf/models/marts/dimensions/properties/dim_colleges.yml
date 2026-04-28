@@ -11,6 +11,9 @@ models:
         description: >-
           Surrogate primary key derived from college_code_branch. Generated with
           generate_surrogate_key(["college_code_branch"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -27,16 +30,10 @@ models:
           College name as reported by NSC, deduplicated to the most recent
           value.
 
-      - name: college_state
+      - name: state_abbreviation
         data_type: string
         description:
           Two-letter state abbreviation for the college as reported by NSC.
-
-      - name: two_year_four_year
-        data_type: string
-        description: >-
-          NSC classification of the college as a two-year or four-year
-          institution (e.g., "2-year", "4-year").
 
       - name: nces_id
         data_type: int64
@@ -44,19 +41,21 @@ models:
           National Center for Education Statistics (NCES) identifier from the
           NSC crosswalk. Null when the college is not mapped in the crosswalk.
 
-      - name: meets_full_need
+      - name: meets_full_financial_need
         data_type: boolean
         description: >-
-          TRUE if the college meets 100% of demonstrated financial need for
-          admitted students, per the NSC crosswalk.
+          TRUE if the college publicly commits to meeting 100% of every admitted
+          student's demonstrated financial need, per the NSC crosswalk. R3
+          exception — kept as a named predicate phrase rather than is_ prefix
+          for readability.
 
-      - name: is_strong_oos_option
+      - name: is_strong_out_of_state_option
         data_type: boolean
         description: >-
           TRUE if the college is considered a strong out-of-state option for
           KIPP students, per the NSC crosswalk.
 
-      - name: selectivity
+      - name: selectivity_tier
         data_type: string
         description: >-
           Selectivity tier of the college from the Salesforce account

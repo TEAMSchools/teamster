@@ -11,25 +11,21 @@ models:
         description: >-
           Surrogate primary key derived from the generic tag ID. Generated with
           generate_surrogate_key(["tag_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
 
-      - name: observation_type_id
-        data_type: string
-        description: >-
-          SchoolMint Grow generic tag identifier for the observation type.
-        data_tests:
-          - unique
-          - not_null
-
-      - name: observation_type_name
+      - name: name
+        quote: true
         data_type: string
         description: >-
           Full display name of the observation type (e.g., Walkthrough,
           One-on-One, PM Semester).
 
-      - name: observation_type_abbreviation
+      - name: abbreviation
         data_type: string
         description: >-
           Short code for the observation type (e.g., WT, O3, PMS).

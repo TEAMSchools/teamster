@@ -13,6 +13,9 @@ models:
           Surrogate primary key derived from student_number and
           college_code_branch. Generated with
           generate_surrogate_key(["student_number", "college_code_branch"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -21,16 +24,34 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from student_number. FK to dim_students.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_students')
+            to_columns: [student_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
       - name: college_key
         data_type: string
         description: >-
           Surrogate key derived from college_code_branch. FK to dim_colleges.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_colleges')
+            to_columns: [college_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_colleges')
+                field: college_key
       - name: start_date_key
         data_type: date
         description: >-
@@ -38,6 +59,16 @@ models:
           x college combination. FK to dim_dates (role-playing as enrollment
           start date).
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: end_date_key
         data_type: date
         description: >-
@@ -45,36 +76,22 @@ models:
           college combination. FK to dim_dates (role-playing as enrollment end
           date).
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          Student Number assigned by the school. Indexed.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_number
-            contains_pii: true
-            column_role: primary_key
-      - name: college_code_branch
-        data_type: string
-        description: >-
-          NSC college code including branch suffix. Natural identifier for the
-          college in this enrollment record.
-
-      - name: enrollment_status
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: status
         data_type: string
         description: >-
           Latest NSC enrollment status code for this student x college tenure
           (e.g., "F" = full-time, "H" = half-time, "W" = withdrawn, "G" =
           graduated).
-
-      - name: degree_pursued
-        data_type: string
-        description: >-
-          Two-year or four-year classification of the degree being pursued,
-          derived from the latest NSC enrollment record for this tenure.
 
       - name: degree_title
         data_type: string

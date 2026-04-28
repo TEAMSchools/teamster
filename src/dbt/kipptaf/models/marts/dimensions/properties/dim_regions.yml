@@ -8,11 +8,15 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from region name.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
 
-      - name: region
+      - name: name
+        quote: true
         data_type: string
         description: >-
           Region name (Newark, Camden, Miami, Paterson).

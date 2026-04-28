@@ -1,8 +1,16 @@
 models:
   - name: int_people__location_crosswalk
+    description: |
+      One row per location alias — multiple raw `name` spellings map to the
+      same canonical `location_clean_name`. Use this model when joining on
+      alternate school-name spellings (e.g., ADP home_work_location_name,
+      SchoolMint Grow observation school_name). For one-row-per-logical-school,
+      use stg_people__locations.
     columns:
       - name: location_name
         data_type: string
+        data_tests:
+          - unique
       - name: location_clean_name
         data_type: string
       - name: location_abbreviation

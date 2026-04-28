@@ -45,7 +45,7 @@ select
 from {{ ref("int_people__staff_roster") }} as sr
 inner join
     {{ ref("stg_google_sheets__people__campus_crosswalk") }} as cc
-    on sr.home_work_location_name = cc.name
+    on sr.home_work_location_reporting_name = cc.location_name
     and not cc.is_pathways
 where
     sr.worker_status_code != 'Terminated'

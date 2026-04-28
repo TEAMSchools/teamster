@@ -11,6 +11,9 @@ models:
         data_type: string
         description: >-
           Surrogate key. Primary key for this fact table.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -20,39 +23,54 @@ models:
         description: >-
           FK to dim_students. Derived from student_number.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_students')
+            to_columns: [student_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
       - name: assessment_key
         data_type: string
         description: >-
           FK to dim_assessments.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_assessments')
+            to_columns: [assessment_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_assessments')
+                field: assessment_key
       - name: test_date_key
         data_type: date
         description: >-
           FK to dim_dates. The date the assessment was taken. Null for AP exams
           where only the academic year is recorded.
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          PowerSchool student number.
-
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: academic_year
         data_type: int64
         description: >-
           Academic year the assessment was administered.
 
-      - name: assessment_scope
-        data_type: string
-        description: >-
-          Assessment family (SAT, ACT, PSAT, AP).
-
-      - name: subject_area
-        data_type: string
-        description: >-
-          Subject or section tested (e.g., Math, Reading, Composite, Combined,
-          or AP subject name).
-
-      - name: score_type
+      - name: type
+        quote: true
         data_type: string
         description: >-
           Specific score variant (e.g., act_composite, sat_total_score,
@@ -64,36 +82,27 @@ models:
           Scale score achieved on this test section. For AP exams, the exam
           grade (1-5).
 
-      - name: percent_correct
-        data_type: numeric
-        description: >-
-          Percent correct where available. Null for most college assessments.
-
       - name: administration_round
         data_type: string
         description: >-
           Administration round label. Null for AP exams.
-
-      - name: course_discipline
-        data_type: string
-        description: >-
-          Course discipline alignment (e.g., ENG, MATH). Null for AP exams.
 
       - name: test_type
         data_type: string
         description: >-
           Official or Practice.
 
-      - name: rn_highest
+      - name: rank
+        quote: true
         data_type: int64
         description: >-
-          Row number ranking by highest score within student x score_type
-          (college) or student x AP course (AP). 1 = best score.
+          Rank by highest score within student x type (college) or student x AP
+          course (AP). 1 = best score.
 
       - name: max_scale_score
         data_type: numeric
         description: >-
-          Highest scale score for this student x score_type across all
+          Highest scale score for this student x type across all
           administrations. Null for AP.
 
       - name: superscore
@@ -107,24 +116,13 @@ models:
         description: >-
           Running maximum scale score up to this test date. Null for AP.
 
-      - name: aligned_subject_area
-        data_type: string
-        description: >-
-          Standardized subject area for cross-test comparison (e.g., Total,
-          Math, EBRW/Reading). Null for AP.
-
-      - name: aligned_subject
-        data_type: string
-        description: >-
-          Aligned subject for grouping across SAT and ACT. Null for AP.
-
       - name: proficiency_level
         data_type: string
         description: >-
           Proficiency classification. For AP: Qualified (score >= 3) or Not
           Qualified. Null for college-entrance assessments.
 
-      - name: score_source
+      - name: provider
         data_type: string
         description: >-
-          Source system: college (SAT/ACT/PSAT) or ap.
+          Source provider: college (SAT/ACT/PSAT) or ap.

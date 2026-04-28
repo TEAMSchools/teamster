@@ -1,17 +1,23 @@
 models:
-  - name: dim_assessment_targets
+  - name: dim_assessment_goals
     description: >-
-      Assessment performance targets dimension. One row per academic year x
-      school x state assessment code x grade level x subject area. Contains
+      Assessment performance goals dimension. One row per academic year x school
+      x state assessment code x grade level x subject area. Contains
       percent-proficient goals at grade, school, region, organization, and band
-      levels. Sourced from the academic goals Google Sheet.
+      levels. Sourced from the academic goals Google Sheet. Renamed from
+      `dim_assessment_targets` — "target" collides with Ed-Fi's AssessmentTarget
+      concept (a specific sub-skill or standard being measured), which is a
+      meaningfully different entity from the performance-goal rows stored here.
     columns:
-      - name: assessment_target_key
+      - name: assessment_goal_key
         data_type: string
         description: >-
           Surrogate key derived from academic_year, school_id,
           state_assessment_code, grade_level, and illuminate_subject_area.
           Primary key.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -22,27 +28,33 @@ models:
           FK to dim_locations. Derived from location_clean_name. Null when the
           school does not appear in the location crosswalk.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
       - name: academic_year
         data_type: int64
         description: >-
-          Academic year the targets apply to.
-
-      - name: school_id
-        data_type: int64
-        description: >-
-          PowerSchool school number.
+          Academic year the goals apply to.
 
       - name: state_assessment_code
         data_type: string
         description: >-
           State assessment test code (e.g., ELA05, ALG1, SCI08).
 
-      - name: illuminate_subject_area
+      - name: academic_subject
         data_type: string
         description: >-
-          Subject area label as used in Illuminate.
+          Subject area tested (Ed-Fi academic_subject_descriptor). Sourced from
+          the Illuminate subject_area label.
 
-      - name: assessment_grade_level
+      - name: grade_level
         data_type: int64
         description: >-
           The grade level the student was in for this enrollment or if EOY, the
@@ -82,13 +94,3 @@ models:
         data_type: float64
         description: >-
           Target percent proficient for this assessment band.
-
-      - name: school_level
-        data_type: string
-        description: >-
-          School level classification (ES, MS, HS).
-
-      - name: region
-        data_type: string
-        description: >-
-          Network region (Newark, Camden, Miami, Paterson).

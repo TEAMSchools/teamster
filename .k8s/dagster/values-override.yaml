@@ -118,7 +118,16 @@ workspace:
           cpu: 500m
           memory: 2.0Gi
         limits:
-          cpu: 750m
+          # Bumped from 750m to 1000m on 2026-04-24 after a kipptaf code
+          # server pod hit the GKE High CPU Limit alert (self-resolved in
+          # 68s). Dagster+ Hybrid's sensor/schedule/asset daemons run in
+          # the control plane, but code servers still serve sensor
+          # evaluations, workspace snapshots, and gRPC health checks —
+          # kipptaf's large definitions module (every integration) bursts
+          # above 750m during sensor eval waves. Priority tier (0) is
+          # unchanged, so topology preferences and dagster-run preemption
+          # behavior are unaffected.
+          cpu: 1000m
           memory: 2.5Gi
       securityContext:
         runAsNonRoot: true

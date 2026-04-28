@@ -13,6 +13,9 @@ models:
           Surrogate key derived from student_number, _dbt_source_relation,
           academic_year, and entrydate. Primary key for this dimension — matches
           the uniqueness grain on int_extracts__student_enrollments.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -21,9 +24,18 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from student_number. FK to dim_students.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_students')
+            to_columns: [student_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
       - name: location_key
         data_type: string
         description: >-
@@ -31,6 +43,16 @@ models:
           Null when schoolid does not match any location in the crosswalk (e.g.,
           grade_level 99 placeholder schools).
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
       - name: entry_date_key
         data_type: date
         description: >-
@@ -42,6 +64,16 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: entrydate
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: exit_date_key
         data_type: date
         description: >-
@@ -55,6 +87,16 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: exitdate
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: academic_year
         data_type: int64
         description: >-
@@ -83,21 +125,6 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__studentcorefields
             source_column: graduation_year
-      - name: school_level
-        data_type: string
-        description: >-
-          School level abbreviation for the enrolling school (ES, MS, HS).
-
-      - name: enroll_status
-        data_type: int64
-        description: >-
-          The enrollment status of the student.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: enroll_status
       - name: is_retained_year
         data_type: boolean
         description: >-

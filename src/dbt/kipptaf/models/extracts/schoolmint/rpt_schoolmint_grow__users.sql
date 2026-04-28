@@ -20,7 +20,7 @@ with
             sr.employee_number as user_internal_id,
             sr.google_email as user_email,
             sr.reports_to_employee_number as manager_internal_id,
-            sr.home_work_location_name as school_name,
+            sr.home_work_location_reporting_name as school_name,
             sr.home_department_name as course_name,
 
             sr.given_name || ' ' || sr.family_name_1 as user_name,

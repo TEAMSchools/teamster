@@ -1,7 +1,7 @@
 with
     workers as (
         select
-            w.associate_oid,
+            w.worker_id__id_value as worker_id,
             w.effective_date_start,
             w.worker_status__status_code__code_value,
             w.worker_status__status_code__long_name,
@@ -22,14 +22,14 @@ with
             *,
 
             lag(attribute_hash, 1, '') over (
-                partition by associate_oid order by effective_date_start asc
+                partition by worker_id order by effective_date_start asc
             ) as attribute_hash_lag,
         from workers
     ),
 
     change_points as (
         select
-            associate_oid,
+            worker_id,
             effective_date_start,
             worker_status__status_code__code_value as status_code,
 
@@ -41,7 +41,7 @@ with
             coalesce(
                 date_sub(
                     lead(effective_date_start) over (
-                        partition by associate_oid order by effective_date_start asc
+                        partition by worker_id order by effective_date_start asc
                     ),
                     interval 1 day
                 ),
@@ -62,12 +62,12 @@ select
 
     cp.status_code,
     cp.status_name,
-    cp.effective_date_start,
-    cp.effective_date_end,
+    cp.effective_date_start as effective_start_date,
+    cp.effective_date_end as effective_end_date,
 
-    if(cp.effective_date_end = '9999-12-31', true, false) as is_current_record,
+    if(cp.effective_date_end = '9999-12-31', true, false) as is_current,
 from change_points as cp
 inner join
     {{ ref("stg_people__employee_numbers") }} as en
-    on cp.associate_oid = en.adp_associate_id
+    on cp.worker_id = en.adp_associate_id
     and en.is_active

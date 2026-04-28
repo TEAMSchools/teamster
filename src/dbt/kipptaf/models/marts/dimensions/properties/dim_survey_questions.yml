@@ -14,11 +14,14 @@ models:
           Surrogate key derived from question_shortname. Primary key for this
           dimension. Generated with
           generate_surrogate_key(["question_shortname"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
 
-      - name: question_shortname
+      - name: shortname
         data_type: string
         description: >-
           Abbreviated identifier for the question, used as the unique grain.
@@ -28,12 +31,14 @@ models:
           - unique
           - not_null
 
-      - name: question_text
+      - name: text
+        quote: true
         data_type: string
         description: >-
           Full text of the survey question as presented to respondents.
 
-      - name: question_type
+      - name: type
+        quote: true
         data_type: string
         description: >-
           Type of question (e.g., SCALE, TEXT, RADIO, CHECKBOX, Row). Google

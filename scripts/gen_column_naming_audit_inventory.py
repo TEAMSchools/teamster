@@ -138,8 +138,8 @@ def _check_naming_rules(col_name: str) -> tuple[str, str] | None:
     return None
 
 
-def _load_edfi_extract(fh: TextIO) -> dict[str, list[dict[str, str]]]:
-    """Load the vendored Ed-Fi attribute CSV into a lookup dict.
+def _load_attribute_extract(fh: TextIO) -> dict[str, list[dict[str, str]]]:
+    """Load an attribute CSV (Ed-Fi or CEDS) into a lookup dict.
 
     Returns {attribute_snake: [{entity, attribute_camel, description}, ...]}.
     """
@@ -157,29 +157,30 @@ def _load_edfi_extract(fh: TextIO) -> dict[str, list[dict[str, str]]]:
     return result
 
 
-def _edfi_exact_match(
-    col_name: str, edfi: dict[str, list[dict[str, str]]]
+def _exact_match(
+    col_name: str,
+    attrs: dict[str, list[dict[str, str]]],
+    label: str,
 ) -> tuple[str, str] | None:
-    """Tier 1: exact token-set match against Ed-Fi attributes.
+    """Tier 1: exact token-set match against a standard's attributes.
 
     Returns (proposed_name, reviewer_note) or None.
     """
     col_tokens = frozenset(col_name.split("_"))
-    for snake, entries in edfi.items():
-        edfi_tokens = frozenset(snake.split("_"))
-        if col_tokens == edfi_tokens:
+    for snake, entries in attrs.items():
+        if frozenset(snake.split("_")) == col_tokens:
             parts = []
             for e in entries:
                 desc_preview = e["description"][:80] if e["description"] else ""
                 parts.append(f"{e['entity']}.{e['attribute_camel']} — {desc_preview}")
-            note = "Ed-Fi exact: " + "; ".join(parts)
-            return (snake, note)
+            return (snake, f"{label} exact: " + "; ".join(parts))
     return None
 
 
-def _edfi_fuzzy_match(
+def _fuzzy_match(
     col_name: str,
-    edfi: dict[str, list[dict[str, str]]],
+    attrs: dict[str, list[dict[str, str]]],
+    label: str,
     threshold: float = 0.6,
     max_candidates: int = 3,
 ) -> str | None:
@@ -188,7 +189,7 @@ def _edfi_fuzzy_match(
     Returns a reviewer_note string with candidates, or None.
     """
     candidates: list[tuple[float, str, list[dict[str, str]]]] = []
-    for snake, entries in edfi.items():
+    for snake, entries in attrs.items():
         ratio = difflib.SequenceMatcher(None, col_name, snake).ratio()
         if ratio >= threshold:
             candidates.append((ratio, snake, entries))
@@ -206,7 +207,7 @@ def _edfi_fuzzy_match(
             parts.append(
                 f"{snake} ({e['entity']}.{e['attribute_camel']} — {desc_preview})"
             )
-    return "Ed-Fi candidates: " + "; ".join(parts)
+    return f"{label} candidates: " + "; ".join(parts)
 
 
 def _join_notes(existing: str, new: str) -> str:
@@ -216,22 +217,25 @@ def _join_notes(existing: str, new: str) -> str:
     return f"{existing}. {new}"
 
 
-def _append_edfi_notes(
+def _append_standard_notes(
     row: dict[str, str],
     col_name: str,
-    edfi: dict[str, list[dict[str, str]]],
-) -> None:
-    """Append Ed-Fi matching notes to a row's reviewer_notes.
+    attrs: dict[str, list[dict[str, str]]],
+    label: str,
+    allow_action: bool,
+) -> bool:
+    """Append one standard's matching notes to a row.
 
-    If the row has no action from another rule, exact matches set
-    action=rename and fuzzy matches add candidates. If another rule
-    already set the action, Ed-Fi candidates are appended as
-    informational notes.
+    When `allow_action` is True and the row is still unrouted
+    (action=keep with no rule_ref), an exact match sets action=rename
+    and rule_ref=R6, and a fuzzy match sets rule_ref=R6 alone.
+    Otherwise notes are appended as informational candidates.
+
+    Returns True if the row was routed to a rename/rule action by this
+    call, so subsequent standards can downgrade to informational mode.
     """
-    existing_action = row.get("action", "keep")
-
-    if existing_action == "keep" and not row.get("rule_ref"):
-        exact = _edfi_exact_match(col_name, edfi)
+    if allow_action:
+        exact = _exact_match(col_name, attrs, label)
         if exact is not None:
             proposed, note = exact
             if proposed != col_name:
@@ -239,27 +243,54 @@ def _append_edfi_notes(
                 row["proposed_name"] = proposed
             row["rule_ref"] = "R6"
             row["reviewer_notes"] = _join_notes(row.get("reviewer_notes", ""), note)
-            return
-
-        fuzzy = _edfi_fuzzy_match(col_name, edfi)
+            return True
+        fuzzy = _fuzzy_match(col_name, attrs, label)
         if fuzzy is not None:
             row["rule_ref"] = "R6"
             row["reviewer_notes"] = _join_notes(row.get("reviewer_notes", ""), fuzzy)
-            return
-    else:
-        exact = _edfi_exact_match(col_name, edfi)
-        if exact is not None:
-            _, note = exact
-            row["reviewer_notes"] = _join_notes(row.get("reviewer_notes", ""), note)
-            return
+            return True
+        return False
 
-        fuzzy = _edfi_fuzzy_match(col_name, edfi)
-        if fuzzy is not None:
-            row["reviewer_notes"] = _join_notes(row.get("reviewer_notes", ""), fuzzy)
+    exact = _exact_match(col_name, attrs, label)
+    if exact is not None:
+        row["reviewer_notes"] = _join_notes(row.get("reviewer_notes", ""), exact[1])
+        return False
+    fuzzy = _fuzzy_match(col_name, attrs, label)
+    if fuzzy is not None:
+        row["reviewer_notes"] = _join_notes(row.get("reviewer_notes", ""), fuzzy)
+    return False
+
+
+def _append_all_standard_notes(
+    row: dict[str, str],
+    col_name: str,
+    standards: list[tuple[str, dict[str, list[dict[str, str]]]]],
+) -> None:
+    """Append Ed-Fi then CEDS matching notes.
+
+    Ed-Fi is primary for auto-rename/rule-ref routing (R6). CEDS is
+    always additive — once Ed-Fi has routed the row (or on every row
+    once routing is off), CEDS candidates are appended as
+    informational notes only.
+    """
+    existing_action = row.get("action", "keep")
+    routed = existing_action != "keep" or bool(row.get("rule_ref"))
+    for label, attrs in standards:
+        this_routed = _append_standard_notes(
+            row,
+            col_name,
+            attrs,
+            label=label,
+            allow_action=not routed,
+        )
+        routed = routed or this_routed
+
+
+Standards = list[tuple[str, dict[str, list[dict[str, str]]]]]
 
 
 def _read_mart_yaml(
-    path: Path, edfi: dict[str, list[dict[str, str]]] | None = None
+    path: Path, standards: Standards | None = None
 ) -> list[dict[str, str]]:
     """Parse a single mart properties YAML into audit-row dicts."""
     with path.open(encoding="utf-8") as fh:
@@ -321,8 +352,8 @@ def _read_mart_yaml(
                         f"{row['source_system']} {row['source_model']}"
                     )
 
-            if edfi is not None:
-                _append_edfi_notes(row, col_name, edfi)
+            if standards is not None:
+                _append_all_standard_notes(row, col_name, standards)
 
             rows.append(row)
 
@@ -354,6 +385,53 @@ MART_YAML_DIRS: tuple[Path, ...] = (
 
 OUTPUT_CSV = Path("docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv")
 EDFI_CSV = Path("docs/superpowers/specs/edfi-v6.1.0-attributes.csv")
+CEDS_CSV = Path("docs/superpowers/specs/ceds-v14.0.0.0-attributes.csv")
+
+_PRESERVED_FIELDS: tuple[str, ...] = (
+    "action",
+    "proposed_name",
+    "rule_ref",
+    "review_status",
+    "reviewer_notes",
+)
+
+
+def _load_prior_decisions(
+    path: Path,
+) -> dict[tuple[str, str], dict[str, str]]:
+    """Read an existing inventory and capture approved-row decisions.
+
+    Returns {(model, current_column): {action, proposed_name, rule_ref,
+    review_status, reviewer_notes}} for rows where review_status is
+    anything other than 'not_reviewed' or empty.
+    """
+    if not path.exists():
+        return {}
+    with path.open(encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        preserved: dict[tuple[str, str], dict[str, str]] = {}
+        for row in reader:
+            status = row.get("review_status", "") or ""
+            if status in ("", "not_reviewed"):
+                continue
+            key = (row["model"], row["current_column"])
+            preserved[key] = {field: row.get(field, "") for field in _PRESERVED_FIELDS}
+    return preserved
+
+
+def _overlay_prior_decisions(
+    rows: list[dict[str, str]],
+    preserved: dict[tuple[str, str], dict[str, str]],
+) -> int:
+    """Overwrite generated fields with previously-approved values."""
+    applied = 0
+    for row in rows:
+        key = (row["model"], row["current_column"])
+        if key in preserved:
+            for field in _PRESERVED_FIELDS:
+                row[field] = preserved[key][field]
+            applied += 1
+    return applied
 
 
 def _sort_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
@@ -446,26 +524,38 @@ def _apply_r9(rows: list[dict[str, str]]) -> int:
 
 
 def _write_csv(rows: list[dict[str, str]], fh: TextIO) -> None:
-    writer = csv.DictWriter(fh, fieldnames=list(CSV_FIELDS))
+    writer = csv.DictWriter(fh, fieldnames=list(CSV_FIELDS), lineterminator="\n")
     writer.writeheader()
     for row in rows:
         writer.writerow({key: row.get(key, "") for key in CSV_FIELDS})
 
 
 def main() -> None:
-    edfi: dict[str, list[dict[str, str]]] | None = None
-    if EDFI_CSV.exists():
-        with EDFI_CSV.open(encoding="utf-8") as fh:
-            edfi = _load_edfi_extract(fh)
-        print(f"Loaded {sum(len(v) for v in edfi.values())} Ed-Fi attributes")
+    standards: Standards = []
+    for label, path in (("Ed-Fi", EDFI_CSV), ("CEDS", CEDS_CSV)):
+        if not path.exists():
+            continue
+        with path.open(encoding="utf-8") as fh:
+            attrs = _load_attribute_extract(fh)
+        standards.append((label, attrs))
+        print(f"Loaded {sum(len(v) for v in attrs.values())} {label} attributes")
+
+    preserved = _load_prior_decisions(OUTPUT_CSV)
+    if preserved:
+        print(f"Preserving {len(preserved)} previously-reviewed rows")
 
     rows: list[dict[str, str]] = []
     for directory in MART_YAML_DIRS:
         for yaml_path in sorted(directory.glob("*.yml")):
-            rows.extend(_read_mart_yaml(yaml_path, edfi=edfi))
+            rows.extend(_read_mart_yaml(yaml_path, standards=standards or None))
     r9_count = _apply_r9(rows)
     if r9_count:
         print(f"Flagged {r9_count} redundant columns (R9)")
+
+    applied = _overlay_prior_decisions(rows, preserved)
+    if applied:
+        print(f"Overlaid {applied} preserved decisions")
+
     sorted_rows = _sort_rows(rows)
 
     OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
