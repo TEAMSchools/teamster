@@ -49,8 +49,6 @@ select
     g.goal,
     g.goal_numeric,
     g.goal_integer,
-    g.goal_numeric,
-    g.goal_integer,
 
     'Student and Family Experience' as layer,
     'Student Retention' as indicator,
@@ -110,8 +108,6 @@ select
     g.goal,
     g.goal_numeric,
     g.goal_integer,
-    g.goal_numeric,
-    g.goal_integer,
 
     'Student and Family Experience' as layer,
     'Student Retention' as indicator,
@@ -166,8 +162,6 @@ select
     g.aggregation_hash,
     g.aggregation_display,
     g.goal,
-    g.goal_numeric,
-    g.goal_integer,
     g.goal_numeric,
     g.goal_integer,
 
