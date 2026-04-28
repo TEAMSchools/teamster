@@ -11,6 +11,10 @@ select
     grade_band,
     campus_name as campus,
     is_campus,
+    address,
+    city,
+    postal_code,
 
     coalesce(abbreviation, location_name) as abbreviation,
 from {{ ref("stg_google_sheets__people__locations") }}
+where not is_pathways and location_name <> 'KIPP Whittier Elementary'
