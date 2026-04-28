@@ -47,6 +47,10 @@ select
     g.aggregation_hash,
     g.aggregation_display,
     g.goal,
+    g.goal_numeric,
+    g.goal_integer,
+    g.goal_numeric,
+    g.goal_integer,
 
     'Student and Family Experience' as layer,
     'Student Retention' as indicator,
@@ -77,7 +81,9 @@ group by
     g.aggregation_type,
     g.aggregation_hash,
     g.aggregation_display,
-    g.goal
+    g.goal,
+    g.goal_numeric,
+    g.goal_integer
 
 union all
 
@@ -102,6 +108,10 @@ select
     g.aggregation_hash,
     g.aggregation_display,
     g.goal,
+    g.goal_numeric,
+    g.goal_integer,
+    g.goal_numeric,
+    g.goal_integer,
 
     'Student and Family Experience' as layer,
     'Student Retention' as indicator,
@@ -129,7 +139,9 @@ group by
     g.aggregation_type,
     g.aggregation_hash,
     g.aggregation_display,
-    g.goal
+    g.goal,
+    g.goal_numeric,
+    g.goal_integer
 
 union all
 
@@ -154,6 +166,10 @@ select
     g.aggregation_hash,
     g.aggregation_display,
     g.goal,
+    g.goal_numeric,
+    g.goal_integer,
+    g.goal_numeric,
+    g.goal_integer,
 
     'Student and Family Experience' as layer,
     'Student Retention' as indicator,
@@ -179,4 +195,6 @@ group by
     g.aggregation_type,
     g.aggregation_hash,
     g.aggregation_display,
-    g.goal
+    g.goal,
+    g.goal_numeric,
+    g.goal_integer

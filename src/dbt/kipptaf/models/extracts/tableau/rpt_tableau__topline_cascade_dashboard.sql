@@ -19,6 +19,8 @@ select
     db.aggregation_hash,
     db.aggregation_display,
     db.goal,
+    db.goal_numeric,
+    db.goal_integer,
     db.metric_aggregate_value,
     db.metric_aggregate_value_numeric,
     db.metric_aggregate_value_integer,
