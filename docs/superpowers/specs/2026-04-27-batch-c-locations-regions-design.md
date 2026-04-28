@@ -184,9 +184,34 @@ with the 5 existing regions. Values from ADP's canonical taxonomy: `KCNA`,
 new `adp_location_code` column on the canonical master). Drops 8 denormalized
 columns (R9): `location_code`, `location_name`, `address_line_one`,
 `address_line_two`, `city_name`, `postal_code`, `country_code`, `state_code`.
-SCD2 grain preserved; row count expected to stay ≤ baseline (boundary collapses
-possible if previous version splits were driven only by address mutations now
-resolved through the FK).
+
+**SCD2 boundary normalization**. The model is a SQL transform (not a dbt
+snapshot) that recomputes SCD2 boundaries from scratch each run via an
+`attribute_hash` + `LAG` window over
+`int_adp_workforce_now__workers__work_assignments`. Today's hash inputs include
+5 address columns:
+
+```text
+home_work_location__name_code__code_value
+home_work_location__address__line_one
+home_work_location__address__city_name
+home_work_location__address__postal_code
+home_work_location__address__country_subdivision_level_1__code_value
+```
+
+Pure address mutations on the same `code_value` cut redundant boundaries on
+every work-assignment SCD2 row at that location, even though the work-assignment
+didn't change. Reducing `attribute_hash` inputs to `[location_key]` only —
+resolved via the new crosswalk on `home_work_location__name_code__code_value` —
+collapses these redundant boundaries automatically on the next run. No backfill
+job required.
+
+**Hash-change implication for `work_assignment_location_key`** (=
+`MD5(item_id, effective_date_start)`): retained boundary rows keep their key;
+collapsed redundant rows simply drop out of the dim. Pre-merge validation: for
+each downstream consumer FKing to `work_assignment_location_key`, confirm the FK
+set is a subset of the post- collapse key set (no orphans introduced by
+collapse). Recorded in PR description.
 
 **`dim_work_assignment_organizational_units`**: `business_unit_code` becomes an
 FK to `dim_regions.business_unit_code`. Add relationships test.
@@ -280,22 +305,6 @@ table for items above flagged by rules 1, 4, or 5.
   Coupa user exceptions per-user). Not 1:1 with location; not absorbable.
 - **Adding canonical rows for any future locations**. Ops process; out of scope
   for this PR.
-- **`dim_work_assignment_locations` SCD2 boundary normalization**.
-  `dim_work_assignment_locations` is SCD Type 2 — each row represents a version
-  of a work-assignment-location pairing valid between an
-  `effective_from`/`effective_to` date range. A new version row is created
-  whenever any tracked attribute changes. Today, the 8 denormalized address
-  columns are part of what's tracked, so a _location's_ address mutation (e.g.,
-  ADP corrects a city-name spelling, or `address_line_two` is added) triggers a
-  boundary cut on every work-assignment SCD2 row at that location — even though
-  the work-assignment itself didn't change. After R9, those 8 columns are gone
-  and address corrections on the location are absorbed into `dim_locations`
-  without touching SCD2 history. Going-forward boundaries will be minimal
-  automatically. Existing historical rows that were split by pure address
-  mutations remain as separate SCD2 versions even though they're now
-  indistinguishable on the new key set — redundant but not wrong. Collapsing
-  them would require a one-shot backfill that rewrites history; deferred as
-  separate work since no downstream consumer breaks on the redundant rows.
 
 ## Related
 
