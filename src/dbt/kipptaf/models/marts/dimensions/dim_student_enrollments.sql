@@ -1,9 +1,3 @@
-with
-    locations as (
-        select powerschool_school_id, dagster_code_location, location_name,
-        from {{ ref("stg_google_sheets__people__locations") }}
-    )
-
 select
     {{
         dbt_utils.generate_surrogate_key(
@@ -18,7 +12,7 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["enr.student_number"]) }} as student_key,
 
-    {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }} as location_key,
+    sch.location_key,
 
     enr.entrydate as entry_date_key,
     enr.exitdate as exit_date_key,
@@ -30,6 +24,6 @@ select
 
 from {{ ref("base_powerschool__student_enrollments") }} as enr
 left join
-    locations as loc
-    on enr.schoolid = loc.powerschool_school_id
-    and {{ extract_code_location("enr") }} = loc.dagster_code_location
+    {{ ref("stg_powerschool__schools") }} as sch
+    on enr.schoolid = sch.school_number
+    and {{ union_dataset_join_clause(left_alias="enr", right_alias="sch") }}
