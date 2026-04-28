@@ -30,23 +30,29 @@ A Cube Cloud deployment has two contexts:
 - **Production environment** — always tracks `main`. This is what downstream
   tools (Superset, Streamlit) connect to. Redeploys automatically when `main`
   changes.
-- **Development mode** — accessed via the Cube Cloud UI. Has a branch switcher
-  in the status bar that lets you switch to any branch. Cube Cloud automatically
-  activates a staging environment for that branch on demand, suspending it after
-  10 minutes of inactivity.
+- **Staging environments** — one per branch, activated automatically when a user
+  switches to that branch in the Cube Cloud UI. Each has its own isolated API
+  endpoints. Multiple staging environments can be active simultaneously for
+  different branches. Suspends after 10 minutes of inactivity by default; toggle
+  **always active** in Settings → Staging Environments to keep a branch live for
+  multi-day stakeholder review.
+- **Development mode** — the interactive UI session in Cube Cloud. Used for
+  authoring and testing; switching branches here activates that branch's staging
+  environment.
 
 ### How KIPP uses them
 
 One deployment covers everything:
 
-| Context     | What it is                         | Tracks                          |
-| ----------- | ---------------------------------- | ------------------------------- |
-| Production  | Production environment             | `main`, auto-redeploys on merge |
-| Dev/Staging | Development mode + branch switcher | Any branch, activates on demand |
+| Context     | What it is                                        | Tracks                                      |
+| ----------- | ------------------------------------------------- | ------------------------------------------- |
+| Production  | Production environment                            | `main`, auto-redeploys on merge             |
+| Staging     | Per-branch staging environments, separate API URL | Any branch, multiple active simultaneously  |
+| Development | Interactive dev mode in Cube Cloud UI             | Any branch, activates that branch's staging |
 
-Switching branches in development mode is how analysts test feature branches,
-how reviewers validate changes, and how stakeholders preview models before merge
-— all without any additional infrastructure.
+Staging environments are how analysts test feature branches, reviewers validate
+changes, and stakeholders preview models before merge — all within one
+deployment, with no additional infrastructure.
 
 ## Development Workflow
 
@@ -125,17 +131,17 @@ since they're both hitting the same branch.
 
 When a business user needs to validate changes before merge:
 
-1. In Cube Cloud, enter **Development Mode** and switch to the feature branch
-2. Point the staging instance of the connected tool (dashboard, etc.) at the
-   branch's API URL — find it under **API Credentials** in development mode
-3. Share the staging tool URL with the stakeholder
-4. Stakeholder tests queries and dashboards against live data
-5. Once the stakeholder approves, merge the PR — production redeploys
+1. In Cube Cloud, switch to the feature branch — this activates a staging
+   environment for that branch
+2. Go to **Settings → Staging Environments** and toggle the branch to **always
+   active** so queries don't fail when no one is viewing the branch
+3. Find the branch's API URL under **API Credentials**
+4. Point the staging instance of the connected tool (dashboard, etc.) at that
+   URL and share it with the stakeholder
+5. Stakeholder tests queries and dashboards against live data — multiple
+   branches can have active staging environments simultaneously
+6. Once the stakeholder approves, merge the PR — production redeploys
    automatically from `main`
-
-!!! note "One branch at a time" Development mode tracks one branch at a time per
-deployment. If two PRs need stakeholder review simultaneously, sequence them or
-coordinate with the team.
 
 ## Local Dev
 

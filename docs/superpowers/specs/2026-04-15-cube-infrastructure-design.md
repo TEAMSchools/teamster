@@ -317,10 +317,11 @@ Performed in the Cube Cloud UI:
    account from Google Workspace admin — required for Admin Directory API access
    in Cloud deployments
 
-Development and staging environments are handled via the branch switcher in Cube
-Cloud's development mode — no separate deployments needed. Switching to a branch
-activates a staging environment for it automatically; it suspends after 10
-minutes of inactivity.
+Staging environments are per-branch — switching to a branch in Cube Cloud
+activates an isolated staging environment with its own API endpoints. Multiple
+branches can have active staging environments simultaneously. Environments
+suspend after 10 minutes of inactivity; toggle **always active** in Settings →
+Staging Environments to keep a branch live for extended stakeholder review.
 
 ## Local Development
 
