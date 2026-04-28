@@ -500,10 +500,6 @@ table for items above flagged by rules 1, 4, or 5.
   Coupa user exceptions per-user). Not 1:1 with location; not absorbable.
 - **Adding canonical rows for any future locations**. Ops process; out of scope
   for this PR.
-- **`dim_seats` R9** — `home_work_location_name` is a degenerate string with no
-  FK. Could be replaced with `location_key` via the
-  `dim_work_assignment_locations` chain, but that's an R9 collapse on an
-  unrelated dim. Deferred as separate work.
 
 ## Related
 
