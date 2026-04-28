@@ -1,14 +1,18 @@
 models:
   - name: fct_staff_attrition
     description: >-
-      Staff attrition fact table. One row per employee x academic_year x
-      attrition_type. Captures whether each staff member left the organization
-      measured across three methodologies with different window definitions:
-      foundation (9/1–4/30), nj_compliance (7/1–6/30), and recruitment
-      (9/1–8/31). Interns whose assignment status reason is Internship Ended are
-      excluded. FKs to dim_staff_status (the status version effective on the
-      outcome-determination date: return-check date for retained, termination
-      date for attritors).
+      Staff attrition fact. One row per employee_number x academic_year x
+      attrition_type (foundation, nj_compliance, recruitment). is_attrition is
+      true when the employee was in a primary, non-Intern, Active assignment
+      during the year window but not on the year-following boundary date.
+      Source-of-truth is dim_work_assignment_status (assignment-status SCD)
+      intersected with dim_work_assignment_primary (is_primary_position SCD) and
+      dim_work_assignment_jobs (position_title SCD, for the intern filter),
+      joined to dim_staff_work_assignments to resolve employee_number. FKs to
+      dim_staff_status (the worker-status version effective on
+      outcome_determination_date). Coverage limitation: pre-2021 NJ Dayforce-era
+      staff are not included — the work-assignment dim family sources ADP only.
+      Tracked at #3744 for upstream Dayforce union work.
     columns:
       - name: staff_attrition_key
         data_type: string

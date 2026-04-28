@@ -24,15 +24,16 @@ models:
         data_type: string
         description: >-
           Foreign key to dim_staff for the observed teacher. Surrogate key
-          derived from employee_number.
+          derived from employee_number. Nullable — observations whose source row
+          has no employee_number (or carries the SchoolMint Grow test sentinel
+          999999) flow through with a NULL key per the standard null-wrap
+          pattern.
         constraints:
           - type: foreign_key
             to: ref('dim_staff')
             to_columns: [staff_key]
             warn_unsupported: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_staff')

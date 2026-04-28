@@ -16,14 +16,25 @@ models:
       - name: associate_oid
         data_type: string
         description: >-
-          Unique identifier across all of ADP. A worker with multiple positions
-          has one associate_oid, one worker_id, and one position_id per
-          position.
+          ADP-internal unique worker identifier (~16 chars). Stable per worker
+          across all of ADP; one associate_oid per worker regardless of position
+          count. **Do not join directly to
+          `stg_people__employee_numbers.adp_associate_id`** — those are
+          different identifier formats (the latter is the 9-char
+          `worker_id__id_value`). To resolve `employee_number` from a model that
+          exposes `associate_oid`, bridge through this model's
+          `worker_id__id_value`.
       - name: effective_date_start
         data_type: date
       - name: worker_id__id_value
         data_type: string
-        description: Worker ID, unique to a client's employee.
+        description: >-
+          ADP `worker_id` (~9 chars). Equals
+          `stg_people__employee_numbers.adp_associate_id` — this is the correct
+          join key for resolving `employee_number` from any ADP model that has
+          `associate_oid`. Confusingly, the column on
+          `stg_people__employee_numbers` is named `adp_associate_id` but the
+          value is the worker_id, not the `associate_oid`.
       - name: worker_id__scheme_code__code_value
         data_type: string
       - name: worker_id__scheme_code__long_name
