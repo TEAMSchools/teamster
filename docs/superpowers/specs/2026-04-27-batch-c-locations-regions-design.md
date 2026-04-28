@@ -280,8 +280,22 @@ table for items above flagged by rules 1, 4, or 5.
   Coupa user exceptions per-user). Not 1:1 with location; not absorbable.
 - **Adding canonical rows for any future locations**. Ops process; out of scope
   for this PR.
-- **`dim_work_assignment_locations` SCD2 boundary normalization**. If the R9
-  drop collapses prior version boundaries, that's accepted behavior.
+- **`dim_work_assignment_locations` SCD2 boundary normalization**.
+  `dim_work_assignment_locations` is SCD Type 2 — each row represents a version
+  of a work-assignment-location pairing valid between an
+  `effective_from`/`effective_to` date range. A new version row is created
+  whenever any tracked attribute changes. Today, the 8 denormalized address
+  columns are part of what's tracked, so a _location's_ address mutation (e.g.,
+  ADP corrects a city-name spelling, or `address_line_two` is added) triggers a
+  boundary cut on every work-assignment SCD2 row at that location — even though
+  the work-assignment itself didn't change. After R9, those 8 columns are gone
+  and address corrections on the location are absorbed into `dim_locations`
+  without touching SCD2 history. Going-forward boundaries will be minimal
+  automatically. Existing historical rows that were split by pure address
+  mutations remain as separate SCD2 versions even though they're now
+  indistinguishable on the new key set — redundant but not wrong. Collapsing
+  them would require a one-shot backfill that rewrites history; deferred as
+  separate work since no downstream consumer breaks on the redundant rows.
 
 ## Related
 
