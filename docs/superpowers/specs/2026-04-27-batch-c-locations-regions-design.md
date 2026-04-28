@@ -248,6 +248,35 @@ join target for downstream marts (`dim_student_enrollments`,
 Google-Sheets-sourced column into a staging model is unusual but consistent with
 kipptaf-staging's role as the project-level source-cleanup boundary.
 
+Today `stg_powerschool__schools` is a bare `dbt_utils.union_relations(...)` call
+— extending it in-place requires wrapping the union in a CTE so the
+canonical-master join can sit downstream:
+
+```sql
+with
+    unioned as (
+        {{
+            dbt_utils.union_relations(
+                relations=[
+                    source("kippnewark_powerschool", "stg_powerschool__schools"),
+                    source("kippcamden_powerschool", "stg_powerschool__schools"),
+                    source("kippmiami_powerschool", "stg_powerschool__schools"),
+                    source("kipppaterson_powerschool", "stg_powerschool__schools"),
+                ]
+            )
+        }}
+    )
+
+select u.*, loc.location_key,
+from unioned as u
+left join {{ ref("stg_google_sheets__people__locations") }} as loc
+    on u.school_number = loc.powerschool_school_id
+```
+
+The existing `dbt_union_relations_automation_condition()` staleness handling
+continues to apply — wrapping the union in a CTE doesn't change recompilation
+triggers.
+
 SmartRecruiters has a single consumer (`fct_job_candidate_applications`), no
 upstream intermediate, and no upstream "locations" table — creating an
 intermediate for one mart is over-engineering, so the mart joins the canonical
