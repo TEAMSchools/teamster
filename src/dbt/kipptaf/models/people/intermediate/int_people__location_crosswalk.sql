@@ -1,19 +1,19 @@
 select
     lc.name as location_name,
-    lc.clean_name as location_clean_name,
-    lc.abbreviation as location_abbreviation,
-    lc.grade_band as location_grade_band,
-    lc.region as location_region,
-    lc.powerschool_school_id as location_powerschool_school_id,
-    lc.deanslist_school_id as location_deanslist_school_id,
-    lc.reporting_school_id as location_reporting_school_id,
-    lc.is_campus as location_is_campus,
-    lc.is_pathways as location_is_pathways,
-    lc.dagster_code_location as location_dagster_code_location,
-    lc.head_of_schools_employee_number as location_head_of_schools_employee_number,
 
-    cc.name as campus_name,
+    pl.location_name as location_clean_name,
+    pl.abbreviation as location_abbreviation,
+    pl.grade_band as location_grade_band,
+    pl.region as location_region,
+    pl.powerschool_school_id as location_powerschool_school_id,
+    pl.deanslist_school_id as location_deanslist_school_id,
+    pl.reporting_school_id as location_reporting_school_id,
+    pl.is_campus as location_is_campus,
+    pl.is_pathways as location_is_pathways,
+    pl.dagster_code_location as location_dagster_code_location,
+    pl.head_of_schools_employee_number as location_head_of_schools_employee_number,
+    pl.campus_name,
 from {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-left join
-    {{ ref("stg_google_sheets__people__campus_crosswalk") }} as cc
-    on lc.clean_name = cc.location_name
+inner join
+    {{ ref("stg_google_sheets__people__locations") }} as pl
+    on lc.clean_name = pl.location_name
