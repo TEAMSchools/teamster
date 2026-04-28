@@ -21,11 +21,11 @@ select
 
     gt3.name as observation_grade,
 
+    loc.location_key,
+
     safe_cast(ut.internal_id as int) as teacher_internal_id,
 
     safe_cast(uo.internal_id as int) as observer_internal_id,
-
-    loc.location_key,
 from {{ ref("stg_schoolmint_grow__observations") }} as o
 left join {{ ref("stg_schoolmint_grow__users") }} as ut on o.teacher_id = ut.user_id
 left join {{ ref("stg_schoolmint_grow__users") }} as uo on o.observer_id = uo.user_id
