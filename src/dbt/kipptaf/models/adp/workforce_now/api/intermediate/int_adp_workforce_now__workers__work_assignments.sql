@@ -460,11 +460,7 @@ select
         wage_law_coverage__wage_law_name_code__short_name
     ) as wage_law_coverage__wage_law_name_code__name,
 
-    if(
-        loc.location_name is not null,
-        {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }},
-        cast(null as string)
-    ) as location_key,
+    loc.location_key,
 from work_assignments_parsed
 left join
     {{ ref("stg_google_sheets__people__locations") }} as loc

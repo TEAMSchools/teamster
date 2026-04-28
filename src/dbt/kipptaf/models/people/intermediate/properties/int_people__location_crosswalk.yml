@@ -11,6 +11,12 @@ models:
         data_type: string
         data_tests:
           - unique
+      - name: location_key
+        data_type: string
+        description: |
+          Canonical location surrogate key passed through from
+          stg_google_sheets__people__locations. NULL when the alias name does not
+          match any canonical location.
       - name: location_clean_name
         data_type: string
       - name: location_abbreviation

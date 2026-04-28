@@ -1,4 +1,6 @@
 select
+    {{ dbt_utils.generate_surrogate_key(["`Name`"]) }} as location_key,
+
     `Name` as location_name,
     `Region` as business_unit,
     `PowerSchool_School_ID` as powerschool_school_id,

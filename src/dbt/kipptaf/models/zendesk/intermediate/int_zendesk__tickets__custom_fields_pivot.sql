@@ -92,11 +92,7 @@ select
     cf.`type`,
     cf.vendor,
 
-    if(
-        loc.location_clean_name is not null,
-        {{ dbt_utils.generate_surrogate_key(["loc.location_clean_name"]) }},
-        cast(null as string)
-    ) as location_key,
+    loc.location_key,
 from pivoted as cf
 left join
     {{ ref("int_people__location_crosswalk") }} as loc

@@ -1,5 +1,5 @@
 select
-    {{ dbt_utils.generate_surrogate_key(["location_name"]) }} as location_key,
+    location_key,
 
     if(
         region is not null,

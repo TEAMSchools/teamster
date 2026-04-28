@@ -12,14 +12,7 @@ with
         }}
     )
 
-select
-    u.*,
-
-    if(
-        loc.location_name is not null,
-        {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }},
-        cast(null as string)
-    ) as location_key,
+select u.*, loc.location_key,
 from unioned as u
 left join
     {{ ref("stg_google_sheets__people__locations") }} as loc

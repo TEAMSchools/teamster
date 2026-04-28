@@ -82,11 +82,7 @@ select
         coalesce(os1.valid_to, os2.valid_from - 1)
     ) as valid_to,
 
-    if(
-        loc.location_clean_name is not null,
-        {{ dbt_utils.generate_surrogate_key(["loc.location_clean_name"]) }},
-        cast(null as string)
-    ) as location_key,
+    loc.location_key,
 from ordered_snapshot as os1
 left join
     ordered_snapshot as os2

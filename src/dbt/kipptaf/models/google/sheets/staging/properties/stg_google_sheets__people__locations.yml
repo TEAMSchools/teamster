@@ -6,6 +6,19 @@ models:
       school location data including addresses, IDs, and regional attributes.
       Pathways and Whittier filtering is deferred to dim_locations.
     columns:
+      - name: location_key
+        data_type: string
+        description: |
+          Canonical location surrogate key (`MD5(location_name)`). Single source
+          of truth — every downstream consumer selects this directly rather than
+          recomputing the hash.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: location_name
         data_type: string
         description: |

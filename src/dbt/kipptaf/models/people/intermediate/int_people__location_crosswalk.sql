@@ -1,6 +1,7 @@
 select
     lc.name as location_name,
 
+    pl.location_key,
     pl.location_name as location_clean_name,
     pl.abbreviation as location_abbreviation,
     pl.grade_band as location_grade_band,
