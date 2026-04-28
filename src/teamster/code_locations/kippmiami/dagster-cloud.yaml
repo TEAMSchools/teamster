@@ -170,6 +170,8 @@ locations:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
                     key: port
+              - name: FOCUS_DB__CREDENTIALS__QUERY__SSLMODE
+                value: require
         run_k8s_config:
           container_config:
             env:
@@ -298,3 +300,5 @@ locations:
                   secretKeyRef:
                     name: op-focus-db-kippmiami
                     key: port
+              - name: FOCUS_DB__CREDENTIALS__QUERY__SSLMODE
+                value: require
