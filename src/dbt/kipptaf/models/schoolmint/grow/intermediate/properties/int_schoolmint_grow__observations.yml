@@ -1,6 +1,17 @@
 models:
   - name: int_schoolmint_grow__observations
     columns:
+      - name: location_key
+        data_type: string
+        description: >
+          MD5 surrogate key for the canonical school location. Null when
+          s.school_id does not match any grow_location_id in
+          stg_google_sheets__people__locations.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("dim_locations")
+                field: location_key
       - name: observation_id
         data_type: string
       - name: rubric_id

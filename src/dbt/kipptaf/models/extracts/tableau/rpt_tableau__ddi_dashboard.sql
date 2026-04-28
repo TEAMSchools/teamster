@@ -4,7 +4,7 @@ with
             il.academic_year_int,
             il.student_id,
 
-            cw.powerschool_school_id,
+            cw.location_powerschool_school_id as powerschool_school_id,
 
             pw.week_start_monday,
 
@@ -21,18 +21,18 @@ with
             ) as is_pass_4_lessons_int,
         from {{ ref("int_iready__instruction_by_lesson_union") }} as il
         inner join
-            {{ ref("stg_google_sheets__people__location_crosswalk") }} as cw
-            on il.school = cw.name
+            {{ ref("int_people__location_crosswalk") }} as cw
+            on il.school = cw.location_name
         inner join
             {{ ref("int_powerschool__calendar_week") }} as pw
             on il.academic_year_int = pw.academic_year
-            and cw.powerschool_school_id = pw.schoolid
+            and cw.location_powerschool_school_id = pw.schoolid
             and il.completion_date between pw.week_start_monday and pw.week_end_sunday
         group by
             il.academic_year_int,
             il.student_id,
             il.subject,
-            cw.powerschool_school_id,
+            cw.location_powerschool_school_id,
             pw.week_start_monday
     ),
 
@@ -419,7 +419,7 @@ select
     null as enroll_status,
     null as cohort,
 
-    cw.grade_band as school_level,
+    cw.location_grade_band as school_level,
 
     null as gender,
     null as ethnicity,
@@ -519,8 +519,8 @@ inner join
     on r.home_work_location_powerschool_school_id = w.schoolid
     and o.observed_at between w.week_start_monday and w.week_end_sunday
 left join
-    {{ ref("stg_google_sheets__people__location_crosswalk") }} as cw
-    on r.home_work_location_reporting_name = cw.clean_name
+    {{ ref("int_people__location_crosswalk") }} as cw
+    on r.home_work_location_reporting_name = cw.location_clean_name
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
     on r.home_work_location_powerschool_school_id

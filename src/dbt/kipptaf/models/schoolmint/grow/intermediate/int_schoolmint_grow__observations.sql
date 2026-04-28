@@ -21,10 +21,11 @@ select
 
     gt3.name as observation_grade,
 
+    loc.location_key,
+
     safe_cast(ut.internal_id as int) as teacher_internal_id,
 
     safe_cast(uo.internal_id as int) as observer_internal_id,
-
 from {{ ref("stg_schoolmint_grow__observations") }} as o
 left join {{ ref("stg_schoolmint_grow__users") }} as ut on o.teacher_id = ut.user_id
 left join {{ ref("stg_schoolmint_grow__users") }} as uo on o.observer_id = uo.user_id
@@ -40,3 +41,8 @@ left join
 left join
     {{ ref("stg_schoolmint_grow__generic_tags") }} as gt3
     on o.teaching_assignment_grade = gt3.tag_id
+left join
+    {{ ref("stg_google_sheets__people__locations") }} as loc
+    on s.school_id = loc.grow_location_id
+    and not loc.is_pathways
+    and loc.location_name <> 'KIPP Whittier Elementary'

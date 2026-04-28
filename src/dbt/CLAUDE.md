@@ -110,6 +110,30 @@ subdirectories, not at the top-level `models/` directory.
   `{{ project_name }}`.
 - **kipp\* projects** (kipptaf, kippnewark, etc.): hardcode the project name.
 
+### Google Sheets external sources
+
+Declare `columns:` at the source level (parallel to `external:`, not nested
+inside it — nested `columns:` silently no-ops back to autodetect). Autodetect
+drops columns where every row is NULL and type-infers from data values, so
+text-formatted `00000` in Sheets becomes INT64.
+
+```yaml
+- name: src_<...>
+  external:
+    options: { ... }
+  columns:
+    - name: <Header_Name>
+      data_type: STRING
+```
+
+### Rebuild staging after sheet edits before testing
+
+After Ops edits a Google Sheet source or after running
+`stage_external_sources --target staging`, rebuild downstream `stg_*` tables
+(default materialization is `table`) before trusting test results:
+`dbt build --select <staging_model>+1 --exclude resource_type:test`. A "drift"
+against stale staging is a false positive.
+
 ## Shipped Profiles (`src/dbt/*/profiles.yml`)
 
 Dagster-only: default target `prod` + `defer` output. Branch deployments
@@ -227,6 +251,13 @@ if(
 
 Without this, relationship tests check the placeholder hash against the parent
 dimension and fail.
+
+### Don't inline CASE expressions in generate_surrogate_key
+
+`dbt_utils.generate_surrogate_key(["case <col> when ... end"])` compiles via
+Jinja's implicit-string-concat across adjacent list elements — unreviewable, and
+a comma inserted between fragments silently changes the SQL. Derive the computed
+value as a named column in an upstream CTE, then hash that column.
 
 ### SQL conventions
 

@@ -129,6 +129,10 @@ via `op read`, execs). Do not revert to `op run` in `.mcp.json` —
 `OP_SERVICE_ACCOUNT_TOKEN` is scrubbed post-boot by `postStart.sh`, so `op run`
 silently breaks after the first Codespace restart.
 
+- **MCP outages**: If an MCP tool returns "server disconnected" or clearly
+  impaired responses, surface to the user before working around with raw `gh` /
+  BigQuery calls.
+
 ### MCP tool selection
 
 Use BigQuery MCP for ad-hoc queries against known production tables. Use dbt

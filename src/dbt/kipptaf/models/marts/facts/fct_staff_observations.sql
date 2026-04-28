@@ -21,7 +21,8 @@ with
             o.locked,
             o.observation_notes,
 
-            lc.location_clean_name,
+            gro.location_key,
+
             lc.location_region,
 
             ot.tag_id as observation_type_tag_id,
@@ -67,7 +68,7 @@ select
         cast(null as string)
     ) as observer_staff_key,
 
-    {{ dbt_utils.generate_surrogate_key(["location_clean_name"]) }} as location_key,
+    location_key,
 
     if(
         t_code is not null,

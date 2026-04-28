@@ -40,6 +40,25 @@ with
                 ]
             ) as family_communication_reason
         cross join unnest(['Newark', 'Camden']) as region_name
+    ),
+
+    with_business_unit as (
+        select
+            *,
+
+            case
+                region_name
+                when 'Newark'
+                then 'TEAM'
+                when 'Camden'
+                then 'KCNA'
+                when 'Miami'
+                then 'KIPP_MIAMI'
+                when 'Paterson'
+                then 'KPAT'
+                else 'KIPP_TAF'
+            end as business_unit_code,
+        from intervention_scaffold
     )
 
 select
@@ -49,8 +68,8 @@ select
         )
     }} as intervention_type_key,
 
-    {{ dbt_utils.generate_surrogate_key(["region_name"]) }} as region_key,
+    {{ dbt_utils.generate_surrogate_key(["business_unit_code"]) }} as region_key,
 
     family_communication_reason,
     absence_threshold,
-from intervention_scaffold
+from with_business_unit

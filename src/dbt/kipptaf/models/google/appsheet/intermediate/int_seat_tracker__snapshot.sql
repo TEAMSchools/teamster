@@ -81,8 +81,15 @@ select
         '{{ var("current_fiscal_year") }}-06-30',
         coalesce(os1.valid_to, os2.valid_from - 1)
     ) as valid_to,
+
+    loc.location_key,
 from ordered_snapshot as os1
 left join
     ordered_snapshot as os2
     on os1.staffing_model_id = os2.staffing_model_id
     and os1.rn_valid_from - 1 = os2.rn_valid_from
+left join
+    {{ ref("int_people__location_crosswalk") }} as loc
+    on os1.adp_location = loc.location_name
+    and not loc.location_is_pathways
+    and loc.location_clean_name <> 'KIPP Whittier Elementary'

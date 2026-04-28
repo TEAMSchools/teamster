@@ -4,10 +4,20 @@ models:
       Region reference dimension. One row per KIPP region. Conformed dimension
       joinable from any fact or dimension that carries a region context.
     columns:
+      - name: business_unit_code
+        data_type: string
+        description: |
+          ADP business-unit code (KCNA, KIPP_MIAMI, KIPP_TAF, KPAT, TEAM). 1:1
+          with regions. FK target for
+          dim_work_assignment_organizational_units.business_unit_code.
+        data_tests:
+          - not_null
+          - unique
+
       - name: region_key
         data_type: string
         description: >-
-          Surrogate key derived from region name.
+          Surrogate key derived from business_unit_code.
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -19,7 +29,7 @@ models:
         quote: true
         data_type: string
         description: >-
-          Region name (Newark, Camden, Miami, Paterson).
+          Region name (Camden, Miami, Newark, Paterson, TAF).
 
       - name: state
         data_type: string
